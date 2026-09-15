@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <array>
+#include <cerrno>
 #include <memory>
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -215,44 +216,84 @@ string Util::execUnixCommand(const char* cmd){
     cout << "Exec:" << cmd << endl;
     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
     if (!pipe) {
-        throw runtime_error("popen() failed!");
+        cout << "popen() failed for: " << cmd << endl;
+        return result;  // never throw: there is no handler anywhere and an abort() takes the whole UI down
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();
     }
-    if (!result.empty()) {
-        result.erase(remove(result.begin(), result.end(), '\n'));
-    }
+    result.erase(remove(result.begin(), result.end(), '\n'), result.end());
     return result;
+}
+
+//*******************************
+// Util::runAndWait
+//*******************************
+// fork + exec the program and wait for it to finish.
+// returns the exit status of the program, or -1 if it could not be started.
+int Util::runAndWait(const string &exe, const vector<string> &args) {
+    cout << "CMD line to execute: '" << exe << "'";
+    for (const string &arg : args) {
+        cout << " '" << arg << "'";
+    }
+    cout << endl;
+
+#ifdef _WIN32
+    cout << "runAndWait is not supported on Windows" << endl;
+    return -1;
+#else
+    // argv[0] is the program itself, then the args, then a null terminator
+    vector<const char *> argv;
+    argv.push_back(exe.c_str());
+    for (const string &arg : args) {
+        argv.push_back(arg.c_str());
+    }
+    argv.push_back(nullptr);
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        cout << "fork() failed: " << strerror(errno) << endl;
+        return -1;
+    }
+    if (pid == 0) {
+        // child. if exec fails we must not return into the parent's code path (that would run a second GUI).
+        execvp(exe.c_str(), const_cast<char **>(argv.data()));
+        _exit(127);
+    }
+
+    int status = 0;
+    if (waitpid(pid, &status, 0) == -1) {
+        cout << "waitpid() failed: " << strerror(errno) << endl;
+        return -1;
+    }
+    if (WIFEXITED(status)) {
+        int exitCode = WEXITSTATUS(status);
+        if (exitCode == 127) {
+            cout << "could not start: " << exe << endl;
+        }
+        return exitCode;
+    }
+    if (WIFSIGNALED(status)) {
+        cout << exe << " was killed by signal " << WTERMSIG(status) << endl;
+    }
+    return -1;
+#endif
 }
 
 //*******************************
 // Util::execFork
 //*******************************
+// kept for the pscbios launch in gui.cpp. argvNew is argv[0] ... null terminator
 void Util::execFork(const char *cmd,  vector<const char *> argvNew)
 {
     cout << "calling Util::execFork()" << endl;
-    cout << "CMD line to execute: ";
-    cout << cmd << " ";
-    for (const char *s:argvNew) {
-        if (s != nullptr) {
-            cout << s << " ";
+    vector<string> args;
+    for (size_t i = 1; i < argvNew.size(); i++) {
+        if (argvNew[i] != nullptr) {
+            args.push_back(argvNew[i]);
         }
     }
-    cout << endl;
-
-    string link = cmd;
-
-#ifdef _WIN32
-    cout << "execFork is not supported on Windows" << endl;
-#else
-    int pid = fork();
-    if (!pid) {
-        execvp(link.c_str(), (char **) argvNew.data());
-    }
-
-    waitpid(pid, NULL, 0);
-#endif
+    runAndWait(cmd, args);
 }
 
 //*******************************

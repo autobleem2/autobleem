@@ -1,7 +1,6 @@
 
 #include <string>
 #include <unistd.h>
-#include <sys/wait.h>
 #include "util.h"
 #include "DirEntry.h"
 #include "engine/inifile.h"
@@ -28,18 +27,6 @@ string valueOrDefault(string name, string def, map<string,string> iniValues) {
 }
 
 #define PCSX "/tmp/pcsx"
-
-//*******************************
-// execute
-//*******************************
-void execute(int argc, char** argv)
-{
-    int pid = fork();
-    if (!pid) {
-        execvp(PCSX, argv);
-    }
-    waitpid(pid, NULL, 0);
-}
 
 //*******************************
 // main
@@ -114,12 +101,9 @@ int main (int argc, char *argv[])
         }
     }
 
-    vector<char*> argvNew;
-    for (const auto& arg : arguments)
-        argvNew.push_back((char*)arg.data());
-
-    argvNew.push_back(nullptr);
-    execute(argvNew.size() - 1, argvNew.data());
+    // arguments[0] is this program's own name. runAndWait adds argv[0] for pcsx itself.
+    arguments.erase(arguments.begin());
+    Util::runAndWait(PCSX, arguments);
 
     if (memcard!="SONY")
     {

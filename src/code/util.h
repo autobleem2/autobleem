@@ -47,7 +47,9 @@ public:
 
     static std::string getAvailableSpace();
     static std::string floatToString(float f, int n);
-    static std::string execUnixCommand(const char* cmd);
+    static std::string execUnixCommand(const char* cmd);   // run a shell command, return its stdout ("" on failure)
+    // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait. returns exit code, -1 if it could not run.
+    static int runAndWait(const std::string& exe, const std::vector<std::string>& args);
     static void execFork(const char* cmd,  std::vector<const char *> argvNew);
 
     static void powerOff();

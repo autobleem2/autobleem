@@ -2,9 +2,6 @@
 // Created by screemer on 2/13/19.
 //
 
-#ifndef _WIN32
-#include <sys/wait.h>
-#endif
 #include "pcsx_interceptor.h"
 #include "../util.h"
 #include "../util_time.h"
@@ -59,7 +56,7 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
     string lastCDpoint = game->ssFolder + sep + "lastcdimg.txt";
     string lastCDpointX = game->ssFolder + sep + "lastcdimg." + to_string(resumepoint)+".txt";
     gui->saveSelection();
-    std::vector<const char *> argvNew;
+    std::vector<string> args;
     string gameFile = "";
 
     string region = "2"; // need to find out if console is jap to switch to 2 - later on
@@ -79,8 +76,7 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
     trim(game->ssFolder);
     game->ssFolder = DirEntry::removeSeparatorFromEndOfPath(game->ssFolder);
 
-    argvNew.push_back(link.c_str());
-    argvNew.push_back(game->ssFolder.c_str());
+    args.push_back(game->ssFolder);
 
     remove (lastCDpoint.c_str());
 
@@ -103,52 +99,24 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
         }
     }
 
-    gameFile += "";
-
-    argvNew.push_back(gameFile.c_str());
+    args.push_back(gameFile);
     // hack to get language from lang file
     string langStr = _("|@lang|");
     if (langStr == "|@lang|") {
         langStr = "2";
     }
-    argvNew.push_back(langStr.c_str()); // lang by language file hack
-    argvNew.push_back(region.c_str());
-    argvNew.push_back(game->folder.c_str());
-    if (resumepoint != -1) {
-        argvNew.push_back("1");
-    } else {
-        argvNew.push_back("0");
-    }
-    argvNew.push_back(aspect.c_str());
-    argvNew.push_back(filter.c_str());
-
-    if (padMapping.empty())
-    {
-        argvNew.push_back("NA");
-    } else
-    {
-        argvNew.push_back(padMapping.c_str());
-    }
-
-    argvNew.push_back(nullptr);
-
-    cout << "CMD line to execute: ";
-    for (const char *s:argvNew) {
-        if (s != nullptr) {
-            cout << "'" << s << "' ";
-        }
-    }
-    cout << endl;
+    args.push_back(langStr); // lang by language file hack
+    args.push_back(region);
+    args.push_back(game->folder);
+    args.push_back(resumepoint != -1 ? "1" : "0");
+    args.push_back(aspect);
+    args.push_back(filter);
+    args.push_back(padMapping.empty() ? "NA" : padMapping);
 
 #ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
-    int pid = fork();
-    if (!pid) {
-        execvp(link.c_str(), (char **) argvNew.data());
-    }
-
-    waitpid(pid, NULL, 0);
+    Util::runAndWait(link, args);
 #endif
     cleanupConfig(game);
 

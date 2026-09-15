@@ -10,11 +10,6 @@
 #include <unistd.h>
 #include "../environment.h"
 
-#ifndef __APPLE__
-#ifndef _WIN32
-#include <wait.h>
-#endif
-#endif
 using namespace std;
 
 bool LaunchInterceptor::execute(PsGamePtr &game, int resumepoint) {
@@ -34,29 +29,13 @@ bool LaunchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     }
 
     gui->saveSelection();
-    std::vector<const char *> argvNew;
 
     string link = game->base + sep+ game->startup;
-    argvNew.push_back(link.c_str());
-    argvNew.push_back(nullptr);
-
-    cout << "CMD line to execute: ";
-    for (const char *s:argvNew) {
-        if (s != nullptr) {
-            cout << s << " ";
-        }
-    }
-    cout << endl;
-
 
 #ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
-    int pid = fork();
-    if (!pid) {
-        execvp(link.c_str(), (char **) argvNew.data());
-    }
-    waitpid(pid, NULL, 0);
+    Util::runAndWait(link, {});
     usleep(3 * 1000);
 #endif
 

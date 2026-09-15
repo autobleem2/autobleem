@@ -3,9 +3,6 @@
 //
 
 #include "retboot_interceptor.h"
-#ifndef _WIN32
-#include <sys/wait.h>
-#endif
 #include "../util.h"
 #include "../gui/gui.h"
 #include "../lang.h"
@@ -31,7 +28,6 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     string padMapping = gui->padMapping;
 
     gui->saveSelection();
-    std::vector<const char *> argvNew;
     string gameFile = "";
 
     cout << "Starting RetroArch Emu" << endl;
@@ -40,7 +36,6 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
         cout << "RA FOREIGN MODE" << endl;
     }
     string link = "/media/Autobleem/rc/launch_rb.sh";
-    argvNew.push_back(link.c_str());
 
     if (!game->foreign) {
         gameFile += (game->folder + sep + game->base);
@@ -88,18 +83,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     if (game->foreign) {
         RACore = game->core_path;
     }
-    argvNew.push_back(gameFile.c_str());
-    argvNew.push_back(RACore.c_str());
-
-    argvNew.push_back(nullptr);
-
-    cout << "CMD line to execute: ";
-    for (const char *s:argvNew) {
-        if (s != nullptr) {
-            cout << s << " ";
-        }
-    }
-    cout << endl;
+    vector<string> args { gameFile, RACore };
 
     // core config here - to be optional
     if (gui->cfg.inifile.values["raconfig"]=="true") {
@@ -110,11 +94,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
 #ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
-    int pid = fork();
-    if (!pid) {
-        execvp(link.c_str(), (char **) argvNew.data());
-    }
-    waitpid(pid, NULL, 0);
+    Util::runAndWait(link, args);
     usleep(3 * 1000);
 #endif
 
