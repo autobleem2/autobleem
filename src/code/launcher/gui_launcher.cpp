@@ -287,10 +287,7 @@ void GuiLauncher::showSetName() {
 
     string numGames = " (" + to_string(numberOfNonDuplicatedGamesInCarousel) + " " + _("games") + ")";
 
-    auto str = gui->cfg.inifile.values["showingtimeout"];
-    long timeout{0};
-    if (str != "")
-        timeout = stoi(str.c_str()) * TicksPerSecond;
+    long timeout = Util::toInt(gui->cfg.inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
     if (currentSet == SET_PS1) {
         if (currentPS1_SelectState == SET_PS1_All_Games) {

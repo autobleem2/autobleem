@@ -326,19 +326,43 @@ bool RAIntegrator::isJSONPlaylist(string path) {
 // RAIntegrator::parseJSON
 //********************
 PsGames RAIntegrator::parseJSON(string path) {
+    PsGames psGames;
     std::ifstream in(path, std::ifstream::binary);
+    if (!in.is_open()) {
+        cout << "Could not open playlist: " << path << endl;
+        return psGames;
+    }
+
+    // a truncated or hand edited playlist must not take the whole UI down (nlohmann throws on bad input)
     json j;
-    in >> j;
+    try {
+        in >> j;
+    } catch (const json::exception &e) {
+        cout << "Playlist " << path << " is not valid JSON: " << e.what() << endl;
+        return psGames;
+    }
 
     int id = 0;
-    PsGames psGames;
+    json array = j.value("items", json::array());
+    if (!array.is_array()) {
+        cout << "Playlist " << path << " has no items array" << endl;
+        return psGames;
+    }
 
-    json array = j["items"];
+    // read a string field. a missing field or a field that is not a string returns the default.
+    auto str = [](const json &item, const char *key, const string &def = "") -> string {
+        auto it = item.find(key);
+        if (it == item.end() || !it->is_string())
+            return def;
+        return it->get<string>();
+    };
 
     for (const auto & item : array) {
+        if (!item.is_object())
+            continue;
         PsGamePtr game{new PsGame};
         game->gameId = id++;
-        game->title = item["label"];
+        game->title = str(item, "label");
         game->publisher = "";
         game->year = 0;
         game->players = 0;
@@ -351,10 +375,10 @@ PsGames RAIntegrator::parseJSON(string path) {
         game->hd = false;
         game->favorite = false;
         game->foreign = true;
-        game->core_name = item["core_name"];
-        game->core_path = item["core_path"];
-        game->db_name = item["db_name"];
-        game->image_path = item["path"];
+        game->core_name = str(item, "core_name", "DETECT");
+        game->core_path = str(item, "core_path", "DETECT");
+        game->db_name = str(item, "db_name");
+        game->image_path = str(item, "path");
 
 #ifdef AB_DEBUG_HOST
         // if you are running in the debugging environment then /media might be shared drive /media/sf_G_DRIVE etc

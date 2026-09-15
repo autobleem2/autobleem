@@ -47,7 +47,9 @@ GuiBase::GuiBase() {
 #endif
 
 
+    // SDL_ttf and SDL_mixer are initialized once here; the Gui is a singleton that lives for the whole run
     TTF_Init();
+    Mix_Init(0);
     sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer);
     themeFonts.openAllFonts(getCurrentThemeFontPath(), renderer);
 }
@@ -56,7 +58,9 @@ GuiBase::GuiBase() {
 // GuiBase::~GuiBase
 //********************
 GuiBase::~GuiBase() {
-    SDL_Quit();
+    // SDL_Quit() is called by main() after everything else is torn down
+    Mix_Quit();
+    TTF_Quit();
 }
 
 //*******************************
@@ -415,8 +419,6 @@ void Gui::display(bool forceScan, const string &_pathToGamesDir, Database *db, b
     printf("But we are linking against SDL version %d.%d.%d.\n",
            linked.major, linked.minor, linked.patch);
 
-    Mix_Init(0);
-    TTF_Init();
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
 
     loadAssets();

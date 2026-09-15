@@ -4,6 +4,7 @@
 #include <fstream>
 #include <array>
 #include <cerrno>
+#include <climits>
 #include <memory>
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -72,6 +73,21 @@ bool Util::isInteger(const char *input) {
         }
     }
     return true;
+}
+
+//*******************************
+// Util::toInt
+//*******************************
+// parses leading whitespace, an optional sign and digits. anything else (or an empty string) returns def.
+int Util::toInt(const string &s, int def) {
+    const char *start = s.c_str();
+    char *end = nullptr;
+    errno = 0;
+    long value = strtol(start, &end, 10);
+    if (end == start || errno == ERANGE || value > INT_MAX || value < INT_MIN) {
+        return def;
+    }
+    return (int) value;
 }
 
 //*******************************

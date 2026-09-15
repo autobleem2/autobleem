@@ -34,8 +34,9 @@ void PadMapper::registerPad(int joy_idx) {
         return;
     string name = SDL_GameControllerName(controller);
     cout << "New GameController name: " << name << endl;
-    char *mappingString = SDL_GameControllerMapping(controller);
-    cout << "New GameController mapping: " << mappingString << endl;
+    char *mappingString = SDL_GameControllerMapping(controller);   // may be NULL, must be SDL_free'd
+    cout << "New GameController mapping: " << (mappingString ? mappingString : "(none)") << endl;
+    SDL_free(mappingString);
     ControllerInfo *info = new ControllerInfo();
     info->pad = controller;
     info->joy = SDL_GameControllerGetJoystick(controller);

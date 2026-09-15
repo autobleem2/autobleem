@@ -186,10 +186,17 @@ void rewriteGamelistXml() {
 }
 
 //*******************************
-// main
+// runAutobleem
 //*******************************
-int main(int argc, char *argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
+// the whole program. main() below only wraps it so that a stray exception is logged instead of a silent abort().
+static int runAutobleem(int argc, char *argv[]) {
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        cerr << "SDL_Init failed: " << SDL_GetError() << endl;
+        return EXIT_FAILURE;
+    }
+    // the Gui singleton (window, renderer, textures) is destroyed during static destruction, which happens
+    // after main() returns. registering SDL_Quit here (before the singleton exists) makes it run after that.
+    atexit(SDL_Quit);
     SDL_InitSubSystem(SDL_INIT_AUDIO);
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     Env::autobleemKernel = DirEntry::exists("/autobleem");
@@ -379,8 +386,21 @@ int main(int argc, char *argv[]) {
 
     Gui::splash(_("Loading ... Please Wait ..."));
     gui->finish();
-    SDL_Quit();
     delete coverdb;
 
-    exit(0);
+    return EXIT_SUCCESS;
+}
+
+//*******************************
+// main
+//*******************************
+int main(int argc, char *argv[]) {
+    try {
+        return runAutobleem(argc, argv);
+    } catch (const std::exception &e) {
+        cerr << "FATAL: unhandled exception: " << e.what() << endl;
+    } catch (...) {
+        cerr << "FATAL: unhandled exception of unknown type" << endl;
+    }
+    return EXIT_FAILURE;
 }
