@@ -44,8 +44,8 @@ void GuiLauncher::updateMeta() {
 // GuiLauncher::getGames_SET_SUBDIR
 //*******************************
 void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
-    GameRowInfos gameRowInfos;
-    gui->db->getGameRowInfos(&gameRowInfos);
+    SubDirRowInfos gameRowInfos;
+    gui->db->loadSubDirRows(&gameRowInfos);
     if (gameRowInfos.size() == 0)
         return; // no games!
     currentUSBGameDirName = gameRowInfos[rowIndex].rowName;
@@ -55,11 +55,10 @@ void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
             cout << "game row: " << gameRowInfo.subDirRowIndex << ", " << gameRowInfo.rowName << ", " <<
                  gameRowInfo.indentLevel << ", " << gameRowInfo.numGames << endl;
 #endif
-    PsGames completeList;
-    gui->db->getGames(&completeList);
+    PsGames completeList = PsGame::fromRecords(gui->db->loadUsbGames());
 
     vector<int> gameIdsInRow;
-    gui->db->getGameIdsInRow(&gameIdsInRow, rowIndex);
+    gui->db->loadGameIdsInSubDirRow(&gameIdsInRow, rowIndex);
 #if 0
     for (auto &id : gameIdsInRow) {
             cout << "game row: " << selectedRowIndex << ", id: " << id << endl;
@@ -81,8 +80,7 @@ void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
 // GuiLauncher::appendGames_SET_INTERNAL
 //*******************************
 void GuiLauncher::appendGames_SET_INTERNAL(PsGames *gamesList) {
-    PsGames internal;
-    gui->internalDB->getInternalGames(&internal);
+    PsGames internal = PsGame::fromRecords(gui->internalDB->loadInternalGames());
     for (const auto &internalGame : internal) {
         gamesList->push_back(internalGame);
     }

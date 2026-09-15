@@ -1,15 +1,16 @@
-#include "GetGameDirHierarchy.h"
-#include "../util.h"
-#include "../main.h"
-#include <iostream>
-#include "scanner.h"
-#include <fstream>
-#include "../environment.h"
+#include "ableem/engine/games_hierarchy.h"
+#include "ableem/engine/environment.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/strings.h"
 
-//#include <experimental/filesystem>
-//namespace fs = std::experimental::filesystem;
+#include <algorithm>
+#include <fstream>
+#include <iostream>
 
 using namespace std;
+
+namespace ableem {
+
 
                                 //*******************************
                                 // GameSubDir
@@ -32,9 +33,9 @@ GameSubDir::GameSubDir(const std::string & _fullPath, int _displayIndentLevel, G
 void GameSubDir::scanAll() {
     DirEntries dirs = DirEntry::diru_DirsOnly(fullPath);
     for (auto & dirEntry : dirs) {
-        if (dirEntry.name == "!SaveStates")
+        if (dirEntry.name == SAVESTATES_DIR_NAME)
             continue;
-        if (dirEntry.name == "!MemCards")
+        if (dirEntry.name == MEMCARDS_DIR_NAME)
             continue;
 
         DirEntry::fixCommaInDirOrFileName(fullPath, &dirEntry);
@@ -42,7 +43,7 @@ void GameSubDir::scanAll() {
         string path = fullPath + sep + dirEntry.name;
         //cout << "path: " << path << endl;
         if (DirEntry::thereIsAGameFile(path)) {
-            USBGamePtr game{new USBGame};
+            UsbGamePtr game{new UsbGame};
             game->fullPath = path;
             game->gameDirName = dirEntry.name;
             gamesInThisDir.emplace_back(game);
@@ -73,20 +74,20 @@ void GameSubDir::scanAll() {
 // if both ames have a serial comare the serials
 // else compare the gameDirName
 //*******************************
-bool GameSubDir::sameGame(const USBGamePtr &game1, const USBGamePtr &game2) {
+bool GameSubDir::sameGame(const UsbGamePtr &game1, const UsbGamePtr &game2) {
     if (game1->serial != "" && game2->serial != "")
         return (game1->serial == game2->serial);
     else
-        return Util::compareCaseInsensitive(game1->title, game2->title);
+        return Strings::compareCaseInsensitive(game1->title, game2->title);
 }
 
 //*******************************
 // GameSubDir::removeChildGamesThatAreDuplicatesOfGamesInThisRow
 // remove any games in the second vector that are duplicates of games in the first vector.
 //*******************************
-void GameSubDir::removeGamesInSecondListThatMatchAGameInFirstList(USBGames &parentGames, USBGames &childGames, std::ofstream &dupFile) {
+void GameSubDir::removeGamesInSecondListThatMatchAGameInFirstList(UsbGames &parentGames, UsbGames &childGames, std::ofstream &dupFile) {
     for (auto &parentGame : parentGames) {
-        auto it = remove_if(begin(childGames), end(childGames), [&parentGame, &dupFile] (USBGamePtr &childGame) {
+        auto it = remove_if(begin(childGames), end(childGames), [&parentGame, &dupFile] (UsbGamePtr &childGame) {
             cout << "compare " << parentGame->title << " with " << childGame->title << endl;
             if (sameGame(parentGame, childGame)) {
                 dupFile << "removed duplicate child game: " << childGame->fullPath << endl;
@@ -105,14 +106,14 @@ void GameSubDir::removeGamesInSecondListThatMatchAGameInFirstList(USBGames &pare
 // GameSubDir::removeDuplicateGamesLeavingOne
 // remove duplicate games in the vector leaving a single game of each title.
 //*******************************
-void GameSubDir::removeDuplicateGamesLeavingOne(USBGames &games, std::ofstream &dupFile) {
+void GameSubDir::removeDuplicateGamesLeavingOne(UsbGames &games, std::ofstream &dupFile) {
     // do a reverse sort of the games by the full path.
     // we want to keep the highest path alphabetically.  when adjacent_find finds a matching title after the second sort
     // it will return an iter to the first adjacent pair.  that is the one we will delete.  so the game being deleted
     // will be the lower title alphabetically.
-    sort(begin(games), end(games),  [] (const USBGamePtr &g1, const USBGamePtr &g2)
+    sort(begin(games), end(games),  [] (const UsbGamePtr &g1, const UsbGamePtr &g2)
                                     { return lessCaseInsensitive(g2->fullPath, g1->fullPath); });
-    USBGame::sortByTitle(games);
+    UsbGame::sortByTitle(games);
     auto it = begin(games); // simply to get the correct type.  for some reason auto gave an error.
     while ((it = adjacent_find(begin(games), end(games), sameGame)) != end(games)) {
         dupFile << "removed duplicate: " << (*it)->fullPath <<
@@ -142,7 +143,7 @@ void GameSubDir::makeGamesToDisplayWhileRemovingChildDuplicates(ofstream &dupFil
     // what games to display for this game dir row after duplicates have been removed
     gamesToDisplay += gamesInThisDir;
     gamesToDisplay += gamesInChildrenDirs;
-    USBGame::sortByTitle(gamesToDisplay);
+    UsbGame::sortByTitle(gamesToDisplay);
 }
 
 //*******************************
@@ -187,13 +188,13 @@ void GamesHierarchy::getHierarchy(const std::string & path) {
     for (auto & row : gameSubDirRows) {
         row->displayRowIndex = rowIndex++;  // put the row index into the row for print and debugging convenience.
 
-        USBGame::sortByTitle(row->gamesToDisplay);
-        USBGame::sortByTitle(row->gamesInThisDir);
-        USBGame::sortByTitle(row->gamesInChildrenDirs);
+        UsbGame::sortByTitle(row->gamesToDisplay);
+        UsbGame::sortByTitle(row->gamesInThisDir);
+        UsbGame::sortByTitle(row->gamesInChildrenDirs);
     }
     printRowGameInfo(false);
 
-    string opath = Env::getWorkingPath() + sep + "gameHierarchy_beforeScan.txt";
+    string opath = Environment::getWorkingPath() + sep + "gameHierarchy_beforeScan.txt";
     ofstream outfile;
     outfile.open(opath);
     DirEntry::checkWritable(outfile, opath);   // diagnostics only, keep going
@@ -208,7 +209,7 @@ void GamesHierarchy::getHierarchy(const std::string & path) {
 // run this after Scanner has filled in the serial so we can correctly match duplicate games
 //*******************************
 void GamesHierarchy::makeGamesToDisplayWhileRemovingChildDuplicates() {
-    string dupFilePath = Env::getWorkingPath() + sep + "duplicateGames.txt";
+    string dupFilePath = Environment::getWorkingPath() + sep + "duplicateGames.txt";
     dupFile.open(dupFilePath.c_str(), ios::binary);
 
     if (gameSubDirRows.size() > 0)
@@ -220,8 +221,8 @@ void GamesHierarchy::makeGamesToDisplayWhileRemovingChildDuplicates() {
 //*******************************
 // GamesHierarchy::getAllGames
 //*******************************
-USBGames GamesHierarchy::getAllGames() {
-    USBGames allGames;
+UsbGames GamesHierarchy::getAllGames() {
+    UsbGames allGames;
     for (auto & row : gameSubDirRows)
         allGames += row->gamesInThisDir;
 
@@ -233,7 +234,7 @@ USBGames GamesHierarchy::getAllGames() {
 //*******************************
 bool GamesHierarchy::gamesDoNotMatchAutobleemPrev(const std::string & autobleemPrevPath) {
     auto allGames = getAllGames();
-    USBGame::sortByFullPath(allGames);
+    UsbGame::sortByFullPath(allGames);
     //cout << "gamesDoNotMatchAutobleemPrev" << endl;
     for (const auto &g : allGames) cout << g->fullPath << endl;
 
@@ -259,7 +260,7 @@ bool GamesHierarchy::gamesDoNotMatchAutobleemPrev(const std::string & autobleemP
 void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
     auto allGames = getAllGames();
 
-    USBGame::sortByFullPath(allGames);
+    UsbGame::sortByFullPath(allGames);
     cout << "writeAutobleemPrev" << endl;
     for (const auto &g : allGames) cout << g->fullPath << endl;
 
@@ -276,22 +277,22 @@ void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
 // GamesHierarchy::removeGameFromEntireHierarchy
 // if a game failed to verify in Scanner it needs to be removed
 //*******************************
-void GamesHierarchy::removeGameFromEntireHierarchy(USBGamePtr &game) {
+void GamesHierarchy::removeGameFromEntireHierarchy(UsbGamePtr &game) {
     // the game did not pass the verify step and was not added to the DB.
     // remove the game everywhere in the gamesHierarchy
     cout << "game: " << game->title << " did not pass verify() test" << endl;
     // remove the game everywhere in the gamesHierarchy
     for (auto &row : gameSubDirRows) {
         auto it = remove_if(begin(row->gamesInThisDir), end(row->gamesInThisDir),
-                            [&](USBGamePtr &g) { return g->fullPath == game->fullPath; });
+                            [&](UsbGamePtr &g) { return g->fullPath == game->fullPath; });
         row->gamesInThisDir.erase(it, end(row->gamesInThisDir));
 
         it = remove_if(begin(row->gamesInChildrenDirs), end(row->gamesInChildrenDirs),
-                       [&](USBGamePtr &g) { return g->fullPath == game->fullPath; });
+                       [&](UsbGamePtr &g) { return g->fullPath == game->fullPath; });
         row->gamesInChildrenDirs.erase(it, end(row->gamesInChildrenDirs));
 
         it = remove_if(begin(row->gamesToDisplay), end(row->gamesToDisplay),
-                       [&](USBGamePtr &g) { return g->fullPath == game->fullPath; });
+                       [&](UsbGamePtr &g) { return g->fullPath == game->fullPath; });
         row->gamesToDisplay.erase(it, end(row->gamesToDisplay));
     }
 }
@@ -349,3 +350,5 @@ void GamesHierarchy::printRowGameInfo(bool alsoPrintGames) {
 void GamesHierarchy::printRowDisplayGameInfo(bool alsoPrintGames) {
     dumpRowDisplayGameInfo(cout, alsoPrintGames);
 }
+
+} // namespace ableem

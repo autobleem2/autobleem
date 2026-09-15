@@ -4,32 +4,17 @@
 #pragma once
 
 #include "../main.h"
-#include "game.h"
-#include "database.h"
-#include "../gui/gui.h"
-#include "../util.h"
-#include <map>
-#include "../main.h"
-#include <algorithm>
-#include "GetGameDirHierarchy.h"
+#include <memory>
 
 //******************
 // Scanner
 //******************
-class Scanner {
+// The scanning itself is ableem::GameScanner. This app-side singleton supplies what the library deliberately
+// does not have: the splash-screen progress (translated) and the "do we need to scan at all" flag main.cpp
+// maintains.
+class Scanner : public GameScanner, private ScanProgressListener {
 public:
-    Scanner() {}
-    USBGames gamesToAddToDB;
-    bool forceScan=false;
-    bool noGamesFoundDuringScan=false;
-
-    void scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy);
-    void repairBrokenCueFiles(const std::string & path);
-
-    void unecm(const std::string & path); // this routine removes Error Correction files from the bin file to save space
-    void updateRegionalDB(GamesHierarchy &gamesHierarchy, Database *db);
-
-    static bool areThereGameFilesInDir(const std::string & path);
+    bool forceScan = false;
 
     Scanner(Scanner const &) = delete;
     Scanner &operator=(Scanner const &) = delete;
@@ -40,6 +25,6 @@ public:
     }
 
 private:
-    bool complete;
-    void moveFolderIfNeeded(const std::string &gameDirName, std::string gameDataPath, std::string path);
+    Scanner() : GameScanner(this) {}
+    void onScanProgress(ScanStage stage, const std::string &detail) override;
 };

@@ -7,20 +7,16 @@
 
 #include <iostream>
 #include <memory>
-#include "engine/database.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
 #include "main.h"
 #include "ver_migration.h"
-#include "engine/coverdb.h"
 #include "util.h"
 #include <unistd.h>
-#include "engine/GetGameDirHierarchy.h"
 #include "lang.h"
 #include "launcher/emu_interceptor.h"
 #include "launcher/pcsx_interceptor.h"
 #include "launcher/retboot_interceptor.h"
-#include "engine/GetGameDirHierarchy.h"
 #include "environment.h"
 #include "launcher/ra_integrator.h"
 #include "launcher/launch_interceptor.h"
@@ -28,7 +24,7 @@
 
 using namespace std;
 
-Database * db;      // non-owning: the Database objects live in runAutobleem()
+GameDatabase * db;      // non-owning: the GameDatabase objects live in runAutobleem()
 
 //*******************************
 // setupEnvironment
@@ -165,21 +161,21 @@ int scanGames(GamesHierarchy &gamesHierarchy) {
     shared_ptr<Gui> gui(Gui::getInstance());
     shared_ptr<Scanner> scanner(Scanner::getInstance());
 
-    if (!db->createInitialDatabase()) {
+    if (!db->createSchema()) {
         cout << "Error creating db structure" << endl;
 
         return EXIT_FAILURE;
     };
 
-    if (!db->truncate())
+    if (!db->clearAllTables())
     {
         gui->drawText("ERROR IN DB");
         sleep(1);
         return EXIT_FAILURE;
     }
 
-    scanner->scanUSBGamesDirectory(gamesHierarchy);
-    scanner->updateRegionalDB(gamesHierarchy, gui->db);
+    scanner->scanGamesDirectory(gamesHierarchy, *gui->coverdb);
+    scanner->writeRegionalDatabase(gamesHierarchy, *gui->db);
 
     gui->drawText(_("Total:") + " " + to_string(scanner->gamesToAddToDB.size()) + " " + _("games scanned") + ".");
     sleep(1);
@@ -201,8 +197,7 @@ void rewriteGamelistXml() {
 
     DirEntry::removeFile(filePath);
 
-    PsGames currentGames;
-    Gui::getInstance()->db->getGames(&currentGames);
+    PsGames currentGames = PsGame::fromRecords(Gui::getInstance()->db->loadUsbGames());
 
     ofstream xml;
     xml.open(filePath.c_str(), ios::binary);
@@ -269,31 +264,31 @@ static int runAutobleem(int argc, char *argv[]) {
     });
     lang->load(gui->cfg.inifile.values["language"]);
 
-    unique_ptr<Coverdb> coverdb(new Coverdb());
+    unique_ptr<CoverDatabase> coverdb(new CoverDatabase(Env::getPathToCoversDBDir()));
     gui->coverdb = coverdb.get();
 
-    unique_ptr<Database> regionalDB(new Database());
-    if (!regionalDB->connect(Env::getPathToRegionalDBFile())) {
+    unique_ptr<GameDatabase> regionalDB(new GameDatabase());
+    if (!regionalDB->open(Env::getPathToRegionalDBFile())) {
         return EXIT_FAILURE;
     }
     db = regionalDB.get();
     gui->db = db;
-    db->createInitialDatabase();
+    db->createSchema();
 
     // if the /System/Databases/internal.db doesn't exist make a copy from the PSC
     cout << "Importing internal games from PSC to USB" << endl;
     Util::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
 
     // add favorites and history columns to internal.db if the column doesn't exist
-    unique_ptr<Database> internalDB(new Database());
-    if (!internalDB->connect(Env::getPathToInternalDBFile())) {
+    unique_ptr<GameDatabase> internalDB(new GameDatabase());
+    if (!internalDB->open(Env::getPathToInternalDBFile())) {
         return EXIT_FAILURE;
     }
     gui->internalDB = internalDB.get();
-    gui->internalDB->addFavoriteColumn(); // add the favorites column if it doesn't exist
-    gui->internalDB->addHistoryColumn();  // add the history column if it doesn't exist
-    gui->internalDB->addLastPlayedColumn();  // add the last played column if it doesn't exist
-    gui->internalDB->addPlayUsingRAColumn(); // add the favorites column if it doesn't exist
+    gui->internalDB->addFavoriteColumnIfMissing(); // add the favorites column if it doesn't exist
+    gui->internalDB->addHistoryColumnIfMissing();  // add the history column if it doesn't exist
+    gui->internalDB->addLastPlayedColumnIfMissing();  // add the last played column if it doesn't exist
+    gui->internalDB->addPlayUsingRAColumnIfMissing(); // add the favorites column if it doesn't exist
 
     string dbpath = Env::getPathToRegionalDBFile();
     string pathToGamesDir = Env::getPathToGamesDir();
@@ -308,11 +303,11 @@ static int runAutobleem(int argc, char *argv[]) {
     GamesHierarchy gamesHierarchy;
     gamesHierarchy.getHierarchy(pathToGamesDir);
 
-    USBGames allGames = gamesHierarchy.getAllGames();
-    USBGame::sortByFullPath(allGames);
+    UsbGames allGames = gamesHierarchy.getAllGames();
+    UsbGame::sortByFullPath(allGames);
 
     bool autobleemPrevOutOfDate = gamesHierarchy.gamesDoNotMatchAutobleemPrev(prevPath);
-    bool thereAreRawGameFilesInGamesDir = scanner->areThereGameFilesInDir(pathToGamesDir);
+    bool thereAreRawGameFilesInGamesDir = Scanner::hasLooseGameFiles(pathToGamesDir);
 
     if (!prevFileExists || !gamelistXmlExists || thereAreRawGameFilesInGamesDir || autobleemPrevOutOfDate) {
         scanner->forceScan = true;

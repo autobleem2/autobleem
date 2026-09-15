@@ -1,26 +1,26 @@
-//
-// Created by screemer on 2018-12-15.
-//
-#include "game.h"
-#include "metadata.h"
-#include "../main.h"
-#include "../main.h"
-#include "../gui/gui.h"
+#include "ableem/engine/usb_game.h"
+#include "ableem/engine/config_file_editor.h"
+#include "ableem/engine/cover_database.h"
+#include "ableem/engine/environment.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/game_metadata.h"
+#include "ableem/engine/ini_file.h"
+#include "ableem/engine/serial_scanner.h"
+#include "ableem/engine/strings.h"
+
 #include <sstream>
 #include <fstream>
 #include <iostream>
-#include "../engine/scanner.h"
-#include "../environment.h"
-#include "../lang.h"
-#include "../util_time.h"
-#include <ctime>
 
 using namespace std;
 
+namespace ableem {
+
+
 //*******************************
-// USBGame::validateCue
+// UsbGame::validateCue
 //*******************************
-bool USBGame::validateCue(string cuePath, string path) {
+bool UsbGame::validateCue(string cuePath, string path) {
     vector<string> binFiles;
     string line;
     ifstream cueStream;
@@ -53,9 +53,9 @@ bool USBGame::validateCue(string cuePath, string path) {
 }
 
 //*******************************
-// USBGame::valueOrDefault
+// UsbGame::valueOrDefault
 //*******************************
-string USBGame::valueOrDefault(string name, string def, bool setAutomationIfDefaultUsed) {
+string UsbGame::valueOrDefault(string name, string def, bool setAutomationIfDefaultUsed) {
     string value;
     if (iniValues.find(name) != iniValues.end()) {
         value = trim(iniValues.find(name)->second);
@@ -73,64 +73,64 @@ string USBGame::valueOrDefault(string name, string def, bool setAutomationIfDefa
 }
 
 //*******************************
-// USBGame::verify
+// UsbGame::verify
 //*******************************
-bool USBGame::verify(std::vector<std::string> *failureReasons) {
+bool UsbGame::verify(std::vector<std::string> *failureReasons) {
     bool result = true;
 
     if (discs.size() == 0) {
         if (failureReasons)
-            failureReasons->emplace_back(_("No discs"));
+            failureReasons->emplace_back("No discs");
         result = false;
     }
 
     for (int i = 0; i < discs.size(); i++) {
         if (discs[i].diskName.length() == 0) {
             if (failureReasons)
-                failureReasons->emplace_back(_("No disc name"));
+                failureReasons->emplace_back("No disc name");
             result = false;
         }
         if (!discs[i].cueFound) {
             cout << i << discs[i].diskName << discs[i].cueFound << endl;
             if (failureReasons)
-                failureReasons->emplace_back(_("Cue file not found"));
+                failureReasons->emplace_back("Cue file not found");
             result = false;
         }
         if (!discs[i].binVerified) {
             if (failureReasons)
-                failureReasons->emplace_back(_("Bin file failed to verify"));
+                failureReasons->emplace_back("Bin file failed to verify");
             result = false;
         }
     }
 
     if (!gameDataFound) {
         if (failureReasons)
-            failureReasons->emplace_back(_("Game file not found"));
+            failureReasons->emplace_back("Game file not found");
         result = false;
     }
     if (!gameIniFound) {
         if (failureReasons)
-            failureReasons->emplace_back(_("Game.ini file not found"));
+            failureReasons->emplace_back("Game.ini file not found");
         result = false;
     }
     if (!gameIniValid) {
         if (failureReasons)
-            failureReasons->emplace_back(_("Game.ini file not valid"));
+            failureReasons->emplace_back("Game.ini file not valid");
         result = false;
     }
     if (!coverImageFound) {
         if (failureReasons)
-            failureReasons->emplace_back(_("Cover image file not found"));
+            failureReasons->emplace_back("Cover image file not found");
         result = false;
     }
     if (!licFound) {
         if (failureReasons)
-            failureReasons->emplace_back(_(".lic file not found"));
+            failureReasons->emplace_back(".lic file not found");
         result = false;
     }
     if (!pcsxCfgFound) {
         if (failureReasons)
-            failureReasons->emplace_back(_("pcsx.cfg file not found"));
+            failureReasons->emplace_back("pcsx.cfg file not found");
         result = false;
     }
 
@@ -142,9 +142,9 @@ bool USBGame::verify(std::vector<std::string> *failureReasons) {
 }
 
 //*******************************
-// USBGame::print
+// UsbGame::print
 //*******************************
-bool USBGame::print() {
+bool UsbGame::print() {
     cout << "-------------------" << endl;
     cout << "Printing game data:" << endl;
     cout << "-----------------" << endl;
@@ -166,7 +166,6 @@ bool USBGame::print() {
     cout << "Favorite: " << favorite << endl;
     cout << "Play Using RA: " << play_using_ra << endl;
     cout << "Last Played: " << last_played << endl;
-    cout << "Last Played: " << UtilTime::timeToDisplayTimeString(last_played) << endl;
 
     for (int i = 0; i < discs.size(); i++) {
         cout << "  Disc:" << i + 1 << "  " << discs[i].diskName << endl;
@@ -188,12 +187,12 @@ bool USBGame::print() {
 }
 
 //*******************************
-// USBGame::recoverMissingFiles
+// UsbGame::recoverMissingFiles
 //*******************************
-void USBGame::recoverMissingFiles() {
-    string workingPath = Env::getWorkingPath();
+void UsbGame::recoverMissingFiles(CoverDatabase &coverDb) {
+    string workingPath = Environment::getWorkingPath();
 
-    Metadata md;
+    GameMetadata md;
     bool metadataLoaded = false;
 
     if (this->imageType == IMAGE_PBP) {
@@ -289,7 +288,7 @@ void USBGame::recoverMissingFiles() {
             string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
 
-                if (md.lookupBySerial(serial)) {
+                if (coverDb.findBySerial(serial, md)) {
                     metadataLoaded = true;
                     cout << "Updating cover in recoverMissingFiles()" << destination << endl;
                     ofstream pngFile;
@@ -302,7 +301,7 @@ void USBGame::recoverMissingFiles() {
                         coverImageFound = true;
                     }
                 };
-                md.clean();
+                md.clearCover();
 
             }
             coverImageFound = true;
@@ -322,7 +321,7 @@ void USBGame::recoverMissingFiles() {
         if (!metadataLoaded) {
             string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
-                metadataLoaded = md.lookupBySerial(serial);
+                metadataLoaded = coverDb.findBySerial(serial, md);
             }
         }
 
@@ -340,8 +339,7 @@ void USBGame::recoverMissingFiles() {
                 region = 2;
             }
         }
-        md.clean();
-        shared_ptr<Gui> gui(Gui::getInstance());
+        md.clearCover();
         DirEntry::copy(source, destination);
 
         ConfigFileEditor processor;
@@ -351,9 +349,9 @@ void USBGame::recoverMissingFiles() {
 }
 
 //*******************************
-// USBGame::updateObj
+// UsbGame::applyIniValues
 //*******************************
-void USBGame::updateObj() {
+void UsbGame::applyIniValues() {
     string tmp;
     discs.clear();
     title = valueOrDefault("title", gameDirName);
@@ -363,12 +361,12 @@ void USBGame::updateObj() {
     string automation = valueOrDefault("automation", "0");
     automationUsed = atoi(automation.c_str());
     tmp = valueOrDefault("players", "1");
-    if (Util::isInteger(tmp.c_str())) players = atoi(tmp.c_str()); else players = 1;
+    if (Strings::isInteger(tmp.c_str())) players = atoi(tmp.c_str()); else players = 1;
     tmp = valueOrDefault("year", "2018");
 
-    if (Util::isInteger(tmp.c_str())) year = atoi(tmp.c_str()); else year = 2018;
+    if (Strings::isInteger(tmp.c_str())) year = atoi(tmp.c_str()); else year = 2018;
     tmp = valueOrDefault("highres","0");
-    if (Util::isInteger(tmp.c_str())) highRes = atoi(tmp.c_str()); else highRes = 0;
+    if (Strings::isInteger(tmp.c_str())) highRes = atoi(tmp.c_str()); else highRes = 0;
     favorite = valueOrDefault("favorite", "0", false);  // favorite is a new field that didn't exist before so
     play_using_ra = valueOrDefault("play_us_ra", "false", false);  // favorite is a new field that didn't exist before so
     // don't set automationUsed if it doesn't exist
@@ -379,7 +377,7 @@ void USBGame::updateObj() {
         istringstream f(tmp);
         string s;
         while (getline(f, s, ',')) {
-            s = Util::unescapeCommas(s);
+            s = Strings::unescapeCommas(s);
             strings.push_back(s);
         }
         for (int i = 0; i < strings.size(); i++) {
@@ -420,9 +418,9 @@ void USBGame::updateObj() {
 }
 
 //*******************************
-// USBGame::saveIni
+// UsbGame::saveGameIni
 //*******************************
-void USBGame::saveIni(string path) {
+void UsbGame::saveGameIni(const string &path) {
     //cout << "Overwritting ini file" << path << endl;
     IniFile ini;
     ini.section = "Game";
@@ -445,7 +443,7 @@ void USBGame::saveIni(string path) {
 
     stringstream ss;
     for (int i = 0; i < discs.size(); i++) {
-        ss << Util::escapeCommas(discs[i].diskName);
+        ss << Strings::escapeCommas(discs[i].diskName);
         if (i != discs.size() - 1) {
             ss << ",";
         }
@@ -456,9 +454,9 @@ void USBGame::saveIni(string path) {
 }
 
 //*******************************
-// USBGame::parseIni
+// UsbGame::parseIni
 //*******************************
-void USBGame::parseIni(string path) {
+void UsbGame::parseIni(const string &path) {
     iniValues.clear();
     IniFile ini;
     ini.load(path);
@@ -471,16 +469,18 @@ void USBGame::parseIni(string path) {
 }
 
 //*******************************
-// USBGame::readIni
+// UsbGame::loadGameIni
 //*******************************
-void USBGame::readIni(string path) {
+void UsbGame::loadGameIni(const string &path) {
     parseIni(path);
-    updateObj();
+    applyIniValues();
 }
 
 //*******************************
-// USBGames += USBGames
+// UsbGames += UsbGames
 //*******************************
-void operator += (USBGames &dest, const USBGames &src) {
+void operator += (UsbGames &dest, const UsbGames &src) {
     copy(begin(src), end(src), back_inserter(dest));
 }
+
+} // namespace ableem

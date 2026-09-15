@@ -12,6 +12,20 @@
 using namespace std;
 
 //*******************************
+// PsGame::fromRecords
+//*******************************
+PsGames PsGame::fromRecords(const ableem::GameRecords &records) {
+    PsGames games;
+    games.reserve(records.size());
+    for (const auto &record : records) {
+        PsGamePtr game{new PsGame};
+        static_cast<ableem::GameRecord &>(*game) = record;
+        games.push_back(game);
+    }
+    return games;
+}
+
+//*******************************
 // PsGame::isCleanExit
 //*******************************
 bool PsGame::isCleanExit() {

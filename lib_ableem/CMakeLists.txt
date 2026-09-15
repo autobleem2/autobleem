@@ -28,6 +28,11 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/iso_directory.cpp
         src/engine/serial_scanner.cpp
         src/engine/ecm_decoder.cpp
+        src/engine/game_database.cpp
+        src/engine/cover_database.cpp
+        src/engine/usb_game.cpp
+        src/engine/games_hierarchy.cpp
+        src/engine/game_scanner.cpp
         src/engine/md5.cpp
         src/engine/unecm.c
         src/engine/cd_image_reader.h

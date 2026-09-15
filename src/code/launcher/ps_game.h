@@ -7,36 +7,15 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <ableem/engine/game_record.h>
 
 //******************
 // PsGame
 //******************
-class PsGame {
+// A game as the UI sees it. The database part is ableem::GameRecord; this adds what only the launcher knows
+// (RetroArch / App entries and the resume points under ssFolder).
+class PsGame : public ableem::GameRecord {
 public:
-    int gameId = 0;
-    std::string title;
-    std::string publisher;
-    int year = 0;
-    std::string serial;
-    std::string region;
-    int players = 0;
-
-    std::string memcard;
-    std::string folder;     // game folder.  internal example: "/gaadata/8/", USB example: "/media/Games/Racing/007 Racing"
-    std::string ssFolder;  // !SaveStates folder.  ex: "/Games/!SaveStates/8", "/Games/!SaveStates/007 Racing"
-
-    std::string base; // file name of the game.  not sure if extension is included.  
-                      // code looks for .pbp extension and replaces it with cue.  but elsewhere .png is appended without removing extension.
-
-    bool internal = false;
-    bool hd = false;
-    bool locked = false;
-    int cds = 1;
-    // special flags
-    bool favorite = false;
-    bool play_using_ra = false;
-    int history = 0;    // 0 = not in history list.  1-100 if in the history list
-    time_t last_played;     // in seconds since 1970
     bool foreign = false; // to state it is not PS1 game (RA)
     bool app = false;
 
@@ -51,6 +30,8 @@ public:
 
     std::string db_name;
 
+    // what the database hands out is plain records; wrap them for the UI
+    static std::vector<std::shared_ptr<PsGame>> fromRecords(const ableem::GameRecords &records);
 
     void setMemCard(std::string name);
     std::string findResumePicture();

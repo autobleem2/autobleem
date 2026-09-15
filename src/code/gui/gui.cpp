@@ -325,7 +325,7 @@ void Gui::criticalException(const string &text) {
 //*******************************
 // Gui::display
 //*******************************
-void Gui::display(bool forceScan, const string &_pathToGamesDir, Database *db, bool resume) {
+void Gui::display(bool forceScan, const string &_pathToGamesDir, GameDatabase *db, bool resume) {
     this->db = db;
     this->pathToGamesDir = _pathToGamesDir;
     this->forceScan = forceScan;
@@ -374,7 +374,7 @@ void Gui::menuSelection() {
     shared_ptr<Scanner> scanner(Scanner::getInstance());
 
 
-    if (!coverdb->isValid()) {
+    if (!coverdb->hasAnyRegion()) {
         criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
     }
     otherMenuShift = false;
@@ -649,8 +649,7 @@ void Gui::exportDBToRetroarch() {
     ordered_json j;
     j["version"]="1.0";
 
-    PsGames gamesList;
-    db->getGames(&gamesList);
+    PsGames gamesList = PsGame::fromRecords(db->loadUsbGames());
     sort(gamesList.begin(), gamesList.end(), sortByTitle);
 
     ordered_json items = ordered_json::array();

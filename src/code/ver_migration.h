@@ -5,7 +5,7 @@
 #pragma once
 
 #include <string>
-#include "engine/database.h"
+#include "main.h"
 
 #if 0   // no longer used
 //******************
@@ -14,7 +14,7 @@
 class VerMigration {
 public:
     std::string getLastRunVersion();
-    void migrate04_05(Database * db);
-    void migrate(Database * db);
+    void migrate04_05(GameDatabase * db);
+    void migrate(GameDatabase * db);
 };
 #endif

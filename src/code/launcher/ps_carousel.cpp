@@ -48,8 +48,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 coverPng = Texture();
 #ifdef AB_DEBUG_HOST
                 if ((*this)->internal) {
-                    Metadata md;
-                    if (md.lookupBySerial((*this)->serial) && !md.bytes.empty()) {
+                    GameMetadata md;
+                    if (Gui::getInstance()->coverdb->findBySerial((*this)->serial, md) && !md.bytes.empty()) {
                         coverPng = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
                     }
                 }

@@ -7,6 +7,7 @@
 #include "ver_migration.h"
 #include "util.h"
 #include "engine/config.h"
+#include "gui/gui.h"
 #include "main.h"
 #include <fstream>
 #include <iostream>
@@ -58,7 +59,7 @@ void split(const string& s, char c,
 //*******************************
 // VerMigration::migrate04_05
 //*******************************
-void VerMigration::migrate04_05(Database * db)
+void VerMigration::migrate04_05(GameDatabase * db)
 {
     cout << "Migrating 0.4.0 to 0.5.0" << endl;
     // update game ini's with correct year (by title)
@@ -91,8 +92,8 @@ void VerMigration::migrate04_05(Database * db)
             string title = ini.values["title"];
             cout << title << endl;
 
-            Metadata md;
-            md.lookupByTitle(title);
+            GameMetadata md;
+            Gui::getInstance()->coverdb->findByTitle(title, md);
             if (md.valid)
             {
                 cout << to_string(md.year) << endl;
@@ -108,7 +109,7 @@ void VerMigration::migrate04_05(Database * db)
 //*******************************
 // VerMigration::migrate
 //*******************************
-void VerMigration::migrate(Database * db)
+void VerMigration::migrate(GameDatabase * db)
 {
     string last=getLastRunVersion();
     Config cfg;

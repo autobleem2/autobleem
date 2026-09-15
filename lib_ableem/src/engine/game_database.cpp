@@ -1,12 +1,19 @@
-#include "database.h"
-#include "../main.h"
-#include "../util.h"
+#include "ableem/engine/game_database.h"
+#include "ableem/engine/environment.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/game_types.h"
+#include "ableem/engine/ini_file.h"
+#include "ableem/engine/serial_scanner.h"
+#include "ableem/engine/strings.h"
+
+#include <sqlite3ab.h>
 #include <iostream>
 #include <vector>
-#include "../main.h"
-#include "../environment.h"
 
 using namespace std;
+
+namespace ableem {
+
 
                                   //*******************************
                                   // DATABASE SQL
@@ -16,13 +23,13 @@ using namespace std;
 // covers?.db
 //*******************************
 
-// used by: querySerial
+// used by: findMetadataBySerial
 static const char SELECT_META[] = "SELECT SERIAL,TITLE, PUBLISHER, \
                                 RELEASE,PLAYERS,  COVER FROM SERIALS s \
                                 JOIN GAME g on s.GAME=g.id \
                                 WHERE SERIAL=? OR SERIAL LIKE ?";
 
-// used by: queryTitle
+// used by: findMetadataByTitle
 static const char SELECT_TITLE[] = "SELECT SERIAL,TITLE, PUBLISHER, \
                                 RELEASE,PLAYERS, COVER FROM SERIALS s \
                                 JOIN GAME g on s.GAME=g.id \
@@ -30,7 +37,7 @@ static const char SELECT_TITLE[] = "SELECT SERIAL,TITLE, PUBLISHER, \
 
 //*******************************
 // RELEASE_YEAR is found in both internal.db and regional.db
-// used by Database::updateYear() which is only called by VerMigration::migrate04_05()
+// used by GameDatabase::updateYear() which is only called by VerMigration::migrate04_05()
 // VerMigration appears to be no longer used
 //*******************************
 // used by: updateYear
@@ -43,7 +50,7 @@ static const char UPDATE_YEAR[] = "UPDATE GAME SET RELEASE_YEAR=? WHERE GAME_ID=
 // used by: updateMemcard
 static const char UPDATE_MEMCARD[] = "UPDATE GAME SET MEMCARD=? WHERE GAME_ID=?";
 
-// used by: getGames
+// used by: loadUsbGames
 static const char GAMES_DATA[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, \
                                   PLAYERS, PATH, SSPATH, MEMCARD, d.BASENAME, HISTORY, LAST_PLAYED, \
                                   COUNT(d.GAME_ID) as NUMD \
@@ -51,8 +58,8 @@ static const char GAMES_DATA[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER
                                   GROUP BY g.GAME_ID HAVING MIN(d.DISC_NUMBER) \
                                   ORDER BY g.GAME_TITLE_STRING asc,d.DISC_NUMBER ASC";
 
-// used by: refreshGameInternal
-// used by: refreshGame
+// used by: reloadInternalGame
+// used by: reloadUsbGame
 static const char GAMES_DATA_SINGLE[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, \
                                         PLAYERS, PATH, SSPATH, MEMCARD, d.BASENAME, HISTORY, LAST_PLAYED, \
                                         COUNT(d.GAME_ID) as NUMD \
@@ -67,7 +74,7 @@ static const char INSERT_GAME[] = "INSERT INTO GAME ([GAME_ID],[GAME_TITLE_STRIN
                                    [PATH],[SSPATH],[MEMCARD]) \
                                    values (?,?,?,?,?,'CERO_A','QR_Code_GM','',?,?,?)";
 
-// used by: createInitialDatabase
+// used by: createSchema
 static const char CREATE_GAME_SQL[] = " CREATE TABLE IF NOT EXISTS GAME  \
      ( GAME_ID integer NOT NULL UNIQUE, \
        GAME_TITLE_STRING text, \
@@ -84,14 +91,14 @@ static const char CREATE_GAME_SQL[] = " CREATE TABLE IF NOT EXISTS GAME  \
        LAST_PLAYED integer, \
        PRIMARY KEY ( GAME_ID ) )";
 
-// used by: createInitialDatabase
+// used by: createSchema
 static const char CREATE_DISC_SQL[] = " CREATE TABLE IF NOT EXISTS DISC \
      ( [GAME_ID] integer, \
        [DISC_NUMBER] integer, \
        [BASENAME] text, \
           UNIQUE ([GAME_ID], [DISC_NUMBER]) )";
 
-// used by: createInitialDatabase
+// used by: createSchema
 static const char CREATE_SUBDIR_ROW_SQL[] = " CREATE TABLE IF NOT EXISTS SUBDIR_ROWS  \
      ( SUBDIR_ROW_INDEX integer NOT NULL UNIQUE, \
        SUBDIR_ROW_NAME text, \
@@ -99,7 +106,7 @@ static const char CREATE_SUBDIR_ROW_SQL[] = " CREATE TABLE IF NOT EXISTS SUBDIR_
        NUM_GAMES integer,    \
        PRIMARY KEY ( SUBDIR_ROW_INDEX ) )";
 
-// used by: createInitialDatabase
+// used by: createSchema
 static const char CREATE_SUBDIR_GAMES_TO_DISPLAY_ON_ROW_SQL[] = " CREATE TABLE IF NOT EXISTS SUBDIR_GAMES_TO_DISPLAY_ON_ROW  \
      ( SUBDIR_ROW_INDEX integer, GAME_ID integer )";
 
@@ -111,23 +118,23 @@ static const char INSERT_SUBDIR_ROW[] = "INSERT INTO SUBDIR_ROWS \
         ([SUBDIR_ROW_INDEX],[SUBDIR_ROW_NAME],[INDENT_LEVEL],[NUM_GAMES]) \
         values (?,?,?,?)";
 
-// used by: getGameRowInfos
+// used by: loadSubDirRows
 static const char GET_SUBDIR_ROW[] = "SELECT SUBDIR_ROW_INDEX, SUBDIR_ROW_NAME, INDENT_LEVEL, NUM_GAMES FROM \
         SUBDIR_ROWS ORDER BY SUBDIR_ROW_INDEX";
 
-// used by: insertSubDirGames
+// used by: insertSubDirRowGame
 static const char INSERT_SUBDIR_GAME[] = "INSERT INTO SUBDIR_GAMES_TO_DISPLAY_ON_ROW \
         ([SUBDIR_ROW_INDEX],[GAME_ID]) values (?,?)";
 
-// used by: getGameRowGameInfos
+// used by: loadSubDirRowGames
 static const char GET_SUBDIR_GAME[] = "SELECT SUBDIR_ROW_INDEX, GAME_ID FROM \
         SUBDIR_GAMES_TO_DISPLAY_ON_ROW ORDER BY SUBDIR_ROW_INDEX";
 
-// used by: getGameIdsInRow
+// used by: loadGameIdsInSubDirRow
 static const char GET_SUBDIR_GAME_ON_ROW[] = "SELECT GAME_ID FROM \
         SUBDIR_GAMES_TO_DISPLAY_ON_ROW WHERE SUBDIR_ROW_INDEX =?";
 
-// used by: deleteGameIdInAllTables
+// used by: deleteGame
 static const char DELETE_GAME_ID_FROM_DISC[] = "DELETE FROM DISC WHERE GAME_ID =?";
 static const char DELETE_GAME_ID_FROM_GAME[] = "DELETE FROM GAME WHERE GAME_ID =?";
 static const char DELETE_GAME_ID_FROM_SUBDIR_GAMES_TO_DISPLAY_ON_ROW[] = "DELETE FROM SUBDIR_GAMES_TO_DISPLAY_ON_ROW WHERE GAME_ID =?";
@@ -136,41 +143,41 @@ static const char DELETE_GAME_ID_FROM_SUBDIR_GAMES_TO_DISPLAY_ON_ROW[] = "DELETE
 // internal.db
 //*******************************
 
-// used by: refreshGameInternal
+// used by: reloadInternalGame
 static const char GAMES_DATA_SINGLE_INTERNAL[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, PLAYERS, d.BASENAME,  COUNT(d.GAME_ID) as NUMD, \
                                      FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
                                      WHERE g.GAME_ID=?  \
                                      GROUP BY g.GAME_ID HAVING MIN(d.DISC_NUMBER) \
                                      ORDER BY g.GAME_TITLE_STRING asc,d.DISC_NUMBER ASC";
 
-// used by: getInternalGames
+// used by: loadInternalGames
 static const char GAMES_DATA_INTERNAL[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, PLAYERS, d.BASENAME,  COUNT(d.GAME_ID) as NUMD, \
                                      FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
                                      GROUP BY g.GAME_ID HAVING MIN(d.DISC_NUMBER) \
                                      ORDER BY g.GAME_TITLE_STRING asc,d.DISC_NUMBER ASC";
 
-// used by: addFavoriteColumn for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
+// used by: addFavoriteColumnIfMissing for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
 static const char ADD_FAVORITE_COLUMN[] = "ALTER TABLE GAME ADD COLUMN FAVORITE INT DEFAULT 0";
 
 // used by: updateFavorite for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
 static const char UPDATE_FAVORITE[] = "UPDATE GAME SET FAVORITE=? WHERE GAME_ID=?";
 
-// used by: addHistoryColumn for the internal.db and regional.db
+// used by: addHistoryColumnIfMissing for the internal.db and regional.db
 static const char ADD_HISTORY_COLUMN[] = "ALTER TABLE GAME ADD COLUMN HISTORY INT DEFAULT 0";
 
 // used by: updateHistory for the internal.db and regional.db
 static const char UPDATE_HISTORY[] = "UPDATE GAME SET HISTORY=? WHERE GAME_ID=?";
 
-// used by: addLastPlayedColumn for the internal.db and regional.db
+// used by: addLastPlayedColumnIfMissing for the internal.db and regional.db
 static const char ADD_LAST_PLAYED_COLUMN[] = "ALTER TABLE GAME ADD COLUMN LAST_PLAYED INT DEFAULT 0";
 
 // used by: updateDatePlayed for the internal.db and regional.db
 static const char UPDATE_LAST_PLAYED[] = "UPDATE GAME SET LAST_PLAYED=? WHERE GAME_ID=?";
 
-// used by: addPlayUsingRAColumn for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
+// used by: addPlayUsingRAColumnIfMissing for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
 static const char ADD_PLAY_USING_RA_COLUMN[] = "ALTER TABLE GAME ADD COLUMN PLAY_USING_RA INT DEFAULT 0";
 
-// used by: addPlayUsingRAColumn for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
+// used by: addPlayUsingRAColumnIfMissing for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
 static const char UPDATE_PLAY_USING_RA[] = "UPDATE GAME SET PLAY_USING_RA=? WHERE GAME_ID=?";
 
 //*******************************
@@ -180,10 +187,10 @@ static const char UPDATE_PLAY_USING_RA[] = "UPDATE GAME SET PLAY_USING_RA=? WHER
 // used by: updateTitle
 static const char UPDATE_TITLE[] = "UPDATE GAME SET GAME_TITLE_STRING=? WHERE GAME_ID=?";
 
-// used by: getNumGames
+// used by: countGames
 static const char NUM_GAMES[] = "SELECT COUNT(*) as ctn FROM GAME";
 
-// used by: createInitialDatabase
+// used by: createSchema
 static const char CREATE_LANGUAGE_SPECIFIC_SQL[] = "CREATE TABLE IF NOT EXISTS LANGUAGE_SPECIFIC \
       ( [DEFAULT_VALUE] text, \
         [LANGUAGE_ID] integer, \
@@ -197,7 +204,7 @@ static const char COMMIT[] = "COMMIT";
 // used by: rollback
 static const char ROLLBACK[] = "ROLLBACK";
 
-// used by: truncate
+// used by: clearAllTables
 static const char DELETE_GAME_DATA[] = "DELETE FROM GAME";
 static const char DELETE_DISC_DATA[] = "DELETE FROM DISC";
 static const char DELETE_LANGUAGE_DATA[] = "DELETE FROM LANGUAGE_SPECIFIC";
@@ -263,15 +270,15 @@ private:
 // readGameIni
 //*******************************
 // USB games keep some flags in Game.ini rather than in the database
-void readGameIni(PsGamePtr &game) {
-    string gameIniPath = game->folder + sep + GAME_INI;
+void readGameIni(GameRecord &game) {
+    string gameIniPath = game.folder + sep + GAME_INI;
     if (DirEntry::exists(gameIniPath)) {
         IniFile ini;
         ini.load(gameIniPath);
-        game->locked =  !(ini.values["automation"]=="1");
-        game->hd =       (ini.values["highres"]=="1");
-        game->favorite = (ini.values["favorite"] == "1");
-        game->play_using_ra = (ini.values["play_using_ra"] == "true");
+        game.locked =  !(ini.values["automation"]=="1");
+        game.hd =       (ini.values["highres"]=="1");
+        game.favorite = (ini.values["favorite"] == "1");
+        game.play_using_ra = (ini.values["play_using_ra"] == "true");
     }
 }
 
@@ -279,10 +286,10 @@ void readGameIni(PsGamePtr &game) {
 // readMetadataRow
 //*******************************
 // columns of SELECT_META and SELECT_TITLE: SERIAL, TITLE, PUBLISHER, RELEASE, PLAYERS, COVER
-void readMetadataRow(Stmt &stmt, Metadata *md) {
+void readMetadataRow(Stmt &stmt, GameMetadata *md) {
     md->title = stmt.colText(1);
     md->publisher = stmt.colText(2);
-    Util::cleanPublisherString(md->publisher);
+    Strings::cleanPublisherString(md->publisher);
     md->year = stmt.colInt(3);
     md->players = stmt.colInt(4);
     md->bytes = stmt.colBlob(5);
@@ -293,63 +300,63 @@ void readMetadataRow(Stmt &stmt, Metadata *md) {
 // readInternalGameRow
 //*******************************
 // columns of GAMES_DATA_INTERNAL and GAMES_DATA_SINGLE_INTERNAL
-void readInternalGameRow(Stmt &stmt, PsGamePtr &psGame) {
+void readInternalGameRow(Stmt &stmt, GameRecord &psGame) {
     int id = stmt.colInt(0);
-    psGame->gameId = id;
-    psGame->title = stmt.colText(1);
-    psGame->publisher = stmt.colText(2);
-    Util::cleanPublisherString(psGame->publisher);
-    psGame->year = stmt.colInt(3);
-    psGame->players = stmt.colInt(4);
-    psGame->folder = "/gaadata/" + to_string(id) + "/";
-    psGame->ssFolder = Env::getPathToSaveStatesDir() + sep + to_string(id) + "/";
-    psGame->base = stmt.colText(5);
-    psGame->serial = psGame->base;
-    psGame->region = SerialScanner::serialToRegion(psGame->serial);
-    psGame->memcard = "SONY";
-    psGame->internal = true;
-    psGame->cds = stmt.colInt(6);
-    psGame->favorite = (stmt.colInt(7) != 0);
-    psGame->play_using_ra = (stmt.colInt(8) != 0);
-    psGame->history = stmt.colInt(9);
-    psGame->last_played = stmt.colInt(10);
+    psGame.gameId = id;
+    psGame.title = stmt.colText(1);
+    psGame.publisher = stmt.colText(2);
+    Strings::cleanPublisherString(psGame.publisher);
+    psGame.year = stmt.colInt(3);
+    psGame.players = stmt.colInt(4);
+    psGame.folder = Environment::getPathToInternalGamesDir() + sep + to_string(id) + "/";
+    psGame.ssFolder = Environment::getPathToSaveStatesDir() + sep + to_string(id) + "/";
+    psGame.base = stmt.colText(5);
+    psGame.serial = psGame.base;
+    psGame.region = SerialScanner::serialToRegion(psGame.serial);
+    psGame.memcard = "SONY";
+    psGame.internal = true;
+    psGame.cds = stmt.colInt(6);
+    psGame.favorite = (stmt.colInt(7) != 0);
+    psGame.play_using_ra = (stmt.colInt(8) != 0);
+    psGame.history = stmt.colInt(9);
+    psGame.last_played = stmt.colInt(10);
 }
 
 //*******************************
 // readUSBGameRow
 //*******************************
 // columns of GAMES_DATA and GAMES_DATA_SINGLE
-void readUSBGameRow(Stmt &stmt, PsGamePtr &game) {
-    game->gameId = stmt.colInt(0);
-    game->title = stmt.colText(1);
-    game->publisher = stmt.colText(2);
-    Util::cleanPublisherString(game->publisher);
-    game->year = stmt.colInt(3);
-    game->players = stmt.colInt(4);
-    game->folder = stmt.colText(5);
-    game->ssFolder = stmt.colText(6);
-    game->memcard = stmt.colText(7);
-    game->base = stmt.colText(8);
-    game->history = stmt.colInt(9);
-    game->last_played = stmt.colInt(10);
-    game->cds = stmt.colInt(11);
+void readUSBGameRow(Stmt &stmt, GameRecord &game) {
+    game.gameId = stmt.colInt(0);
+    game.title = stmt.colText(1);
+    game.publisher = stmt.colText(2);
+    Strings::cleanPublisherString(game.publisher);
+    game.year = stmt.colInt(3);
+    game.players = stmt.colInt(4);
+    game.folder = stmt.colText(5);
+    game.ssFolder = stmt.colText(6);
+    game.memcard = stmt.colText(7);
+    game.base = stmt.colText(8);
+    game.history = stmt.colInt(9);
+    game.last_played = stmt.colInt(10);
+    game.cds = stmt.colInt(11);
     readGameIni(game);
 }
 
 } // namespace
 
 //*******************************
-// Database::~Database
+// GameDatabase::~GameDatabase
 //*******************************
-Database::~Database() {
-    disconnect();
+GameDatabase::~GameDatabase() {
+    close();
 }
 
 //*******************************
-// Database::getNumGames
+// GameDatabase::countGames
 //*******************************
-int Database::getNumGames() {
-    Stmt stmt(db, NUM_GAMES, "getNumGames");
+int GameDatabase::countGames() {
+    Stmt stmt(db, NUM_GAMES, "countGames");
     if (stmt.ok() && stmt.row()) {
         return stmt.colInt(0);
     }
@@ -357,10 +364,10 @@ int Database::getNumGames() {
 }
 
 //*******************************
-// Database::updateYear
+// GameDatabase::updateYear
 // called by VerMigration::migrate04_05()
 //*******************************
-bool Database::updateYear(int id, int year) {
+bool GameDatabase::updateYear(int id, int year) {
     Stmt stmt(db, UPDATE_YEAR, "updateYear");
     if (!stmt.ok()) return false;
     stmt.bind(1, year);
@@ -369,9 +376,9 @@ bool Database::updateYear(int id, int year) {
 }
 
 //*******************************
-// Database::updateMemcard
+// GameDatabase::updateMemcard
 //*******************************
-bool Database::updateMemcard(int id, string memcard) {
+bool GameDatabase::updateMemcard(int id, string memcard) {
     Stmt stmt(db, UPDATE_MEMCARD, "updateMemcard");
     if (!stmt.ok()) return false;
     stmt.bind(1, memcard);
@@ -380,9 +387,9 @@ bool Database::updateMemcard(int id, string memcard) {
 }
 
 //*******************************
-// Database::updateTitle
+// GameDatabase::updateTitle
 //*******************************
-bool Database::updateTitle(int id, string title) {
+bool GameDatabase::updateTitle(int id, string title) {
     Stmt stmt(db, UPDATE_TITLE, "updateTitle");
     if (!stmt.ok()) return false;
     stmt.bind(1, title);
@@ -391,9 +398,9 @@ bool Database::updateTitle(int id, string title) {
 }
 
 //*******************************
-// Database::updateFavorite
+// GameDatabase::updateFavorite
 //*******************************
-bool Database::updateFavorite(int id, int favorite) {
+bool GameDatabase::updateFavorite(int id, int favorite) {
     Stmt stmt(db, UPDATE_FAVORITE, "updateFavorite");
     if (!stmt.ok()) return false;
     stmt.bind(1, favorite);
@@ -402,9 +409,9 @@ bool Database::updateFavorite(int id, int favorite) {
 }
 
 //*******************************
-// Database::updatePlayUsingRA
+// GameDatabase::updatePlayUsingRA
 //*******************************
-bool Database::updatePlayUsingRA(int id, int play_using_ra) {
+bool GameDatabase::updatePlayUsingRA(int id, int play_using_ra) {
     Stmt stmt(db, UPDATE_PLAY_USING_RA, "updatePlayUsingRA");
     if (!stmt.ok()) return false;
     stmt.bind(1, play_using_ra);
@@ -413,10 +420,10 @@ bool Database::updatePlayUsingRA(int id, int play_using_ra) {
 }
 
 //*******************************
-// Database::updateHistory
+// GameDatabase::updateHistory
 // 0 = not in history, 1-100 history from latest game played to oldest
 //*******************************
-bool Database::updateHistory(int id, int rank) {
+bool GameDatabase::updateHistory(int id, int rank) {
     Stmt stmt(db, UPDATE_HISTORY, "updateHistory");
     if (!stmt.ok()) return false;
     stmt.bind(1, rank);
@@ -425,10 +432,10 @@ bool Database::updateHistory(int id, int rank) {
 }
 
 //*******************************
-// Database::updateDatePlayed
+// GameDatabase::updateDatePlayed
 // seconds since 1970
 //*******************************
-bool Database::updateDatePlayed(int id, int date_in_seconds) {
+bool GameDatabase::updateDatePlayed(int id, int date_in_seconds) {
     Stmt stmt(db, UPDATE_LAST_PLAYED, "updateDatePlayed");
     if (!stmt.ok()) return false;
     stmt.bind(1, date_in_seconds);
@@ -437,10 +444,10 @@ bool Database::updateDatePlayed(int id, int date_in_seconds) {
 }
 
 //*******************************
-// Database::queryTitle
+// GameDatabase::findMetadataByTitle
 //*******************************
-bool Database::queryTitle(string title, Metadata *md) {
-    Stmt stmt(db, SELECT_TITLE, "queryTitle");
+bool GameDatabase::findMetadataByTitle(string title, GameMetadata *md) {
+    Stmt stmt(db, SELECT_TITLE, "findMetadataByTitle");
     if (!stmt.ok()) return false;
     stmt.bind(1, title);
     if (stmt.row()) {
@@ -451,11 +458,11 @@ bool Database::queryTitle(string title, Metadata *md) {
 }
 
 //*******************************
-// Database::querySerial
+// GameDatabase::findMetadataBySerial
 //*******************************
-bool Database::querySerial(string serial, Metadata *md) {
+bool GameDatabase::findMetadataBySerial(string serial, GameMetadata *md) {
     string serialLike = serial + "-%";
-    Stmt stmt(db, SELECT_META, "querySerial");
+    Stmt stmt(db, SELECT_META, "findMetadataBySerial");
     if (!stmt.ok()) return false;
     stmt.bind(1, serial);
     stmt.bind(2, serialLike);
@@ -463,35 +470,34 @@ bool Database::querySerial(string serial, Metadata *md) {
         readMetadataRow(stmt, md);
         md->serial = serial;
         md->region = SerialScanner::serialToRegion(md->serial);
-        //cout << "querySerial: " << "serial " << serial << ", " << md->title << endl;
+        //cout << "findMetadataBySerial: " << "serial " << serial << ", " << md->title << endl;
         return true;
     }
     return false;
 }
 
 //*******************************
-// Database::getInternalGames
+// GameDatabase::loadInternalGames
 //*******************************
-bool Database::getInternalGames(PsGames *result) {
-    result->clear();
-    Stmt stmt(db, GAMES_DATA_INTERNAL, "getInternalGames");
-    if (!stmt.ok()) return false;
+GameRecords GameDatabase::loadInternalGames() {
+    GameRecords result;
+    Stmt stmt(db, GAMES_DATA_INTERNAL, "loadInternalGames");
+    if (!stmt.ok()) return result;
     while (stmt.row()) {
-        PsGamePtr psGame{new PsGame};
+        GameRecord psGame;
         readInternalGameRow(stmt, psGame);
-        result->push_back(psGame);
-        //cout << "getInternalGames: " << game->serial << ", " << game->title << endl;
+        result.push_back(psGame);
     }
-    return true;
+    return result;
 }
 
 //*******************************
-// Database::refreshGameInternal
+// GameDatabase::reloadInternalGame
 //*******************************
-bool Database::refreshGameInternal(PsGamePtr &psGame) {
-    Stmt stmt(db, GAMES_DATA_SINGLE_INTERNAL, "refreshGameInternal");
+bool GameDatabase::reloadInternalGame(GameRecord &psGame) {
+    Stmt stmt(db, GAMES_DATA_SINGLE_INTERNAL, "reloadInternalGame");
     if (!stmt.ok()) return false;
-    stmt.bind(1, psGame->gameId);
+    stmt.bind(1, psGame.gameId);
     while (stmt.row()) {
         readInternalGameRow(stmt, psGame);
         readGameIni(psGame);
@@ -500,12 +506,12 @@ bool Database::refreshGameInternal(PsGamePtr &psGame) {
 }
 
 //*******************************
-// Database::refreshGame
+// GameDatabase::reloadUsbGame
 //*******************************
-bool Database::refreshGame(PsGamePtr &game) {
-    Stmt stmt(db, GAMES_DATA_SINGLE, "refreshGame");
+bool GameDatabase::reloadUsbGame(GameRecord &game) {
+    Stmt stmt(db, GAMES_DATA_SINGLE, "reloadUsbGame");
     if (!stmt.ok()) return false;
-    stmt.bind(1, game->gameId);
+    stmt.bind(1, game.gameId);
     while (stmt.row()) {
         readUSBGameRow(stmt, game);
     }
@@ -513,26 +519,25 @@ bool Database::refreshGame(PsGamePtr &game) {
 }
 
 //*******************************
-// Database::getGames
+// GameDatabase::loadUsbGames
 //*******************************
-bool Database::getGames(PsGames *result) {
-    result->clear();
-    Stmt stmt(db, GAMES_DATA, "getGames");
-    if (!stmt.ok()) return false;
+GameRecords GameDatabase::loadUsbGames() {
+    GameRecords result;
+    Stmt stmt(db, GAMES_DATA, "loadUsbGames");
+    if (!stmt.ok()) return result;
     while (stmt.row()) {
-        PsGamePtr game{new PsGame};
+        GameRecord game;
         readUSBGameRow(stmt, game);
-        //cout << "getGames: " << game->serial << ", " << game->title << endl;
-        result->push_back(game);
+        result.push_back(game);
     }
-    return true;
+    return result;
 }
 
 //*******************************
-// Database::getGameRowInfos
+// GameDatabase::loadSubDirRows
 //*******************************
-bool Database::getGameRowInfos(GameRowInfos *gameRowInfos) {
-    Stmt stmt(db, GET_SUBDIR_ROW, "getGameRowInfos");
+bool GameDatabase::loadSubDirRows(SubDirRowInfos *gameRowInfos) {
+    Stmt stmt(db, GET_SUBDIR_ROW, "loadSubDirRows");
     if (!stmt.ok()) return false;
     while (stmt.row()) {
         SubDirRowInfo subDirRowInfo;
@@ -552,13 +557,13 @@ bool Database::getGameRowInfos(GameRowInfos *gameRowInfos) {
 }
 
 //*******************************
-// Database::getGameRowGameInfos
+// GameDatabase::loadSubDirRowGames
 //*******************************
-bool Database::getGameRowGameInfos(GameRowGames *gameRowGames) {
-    Stmt stmt(db, GET_SUBDIR_GAME, "getGameRowGameInfos");
+bool GameDatabase::loadSubDirRowGames(SubDirRowGames *gameRowGames) {
+    Stmt stmt(db, GET_SUBDIR_GAME, "loadSubDirRowGames");
     if (!stmt.ok()) return false;
     while (stmt.row()) {
-        GameRowGame gameRowGame;
+        SubDirRowGame gameRowGame;
         gameRowGame.rowIndex = stmt.colInt(0);
         gameRowGame.gameId = stmt.colInt(1);
 
@@ -570,10 +575,10 @@ bool Database::getGameRowGameInfos(GameRowGames *gameRowGames) {
 }
 
 //*******************************
-// Database::getGameIdsInRow
+// GameDatabase::loadGameIdsInSubDirRow
 //*******************************
-bool Database::getGameIdsInRow(vector<int> *gameIdsInRow, int row) {
-    Stmt stmt(db, GET_SUBDIR_GAME_ON_ROW, "getGameIdsInRow");
+bool GameDatabase::loadGameIdsInSubDirRow(vector<int> *gameIdsInRow, int row) {
+    Stmt stmt(db, GET_SUBDIR_GAME_ON_ROW, "loadGameIdsInSubDirRow");
     if (!stmt.ok()) return false;
     stmt.bind(1, row);
     while (stmt.row()) {
@@ -584,9 +589,9 @@ bool Database::getGameIdsInRow(vector<int> *gameIdsInRow, int row) {
 }
 
 //*******************************
-// Database::insertDisc
+// GameDatabase::insertDisc
 //*******************************
-bool Database::insertDisc(int id, int discNum, string discName) {
+bool GameDatabase::insertDisc(int id, int discNum, string discName) {
     Stmt stmt(db, INSERT_DISC, "insertDisc");
     if (!stmt.ok()) return false;
     stmt.bind(1, id);
@@ -596,11 +601,11 @@ bool Database::insertDisc(int id, int discNum, string discName) {
 }
 
 //*******************************
-// Database::insertGame
+// GameDatabase::insertGame
 //*******************************
-bool Database::insertGame(int id, string title, string publisher, int players, int year, string path, string sspath,
+bool GameDatabase::insertGame(int id, string title, string publisher, int players, int year, string path, string sspath,
                           string memcard) {
-    Util::cleanPublisherString(publisher);
+    Strings::cleanPublisherString(publisher);
     Stmt stmt(db, INSERT_GAME, "insertGame");
     if (!stmt.ok()) return false;
     stmt.bind(1, id);
@@ -615,10 +620,10 @@ bool Database::insertGame(int id, string title, string publisher, int players, i
 }
 
 //*******************************
-// Database::subDirRowsTableIsEmpty
+// GameDatabase::subDirRowsTableIsEmpty
 // returns true if no rows in table or failure
 // *******************************
-bool Database::subDirRowsTableIsEmpty() {
+bool GameDatabase::subDirRowsTableIsEmpty() {
     Stmt stmt(db, IS_SUBDIR_ROWS_TABLE_EMPTY, "subDirRowsTableIsEmpty");
     if (stmt.ok() && stmt.row()) {
         return stmt.colInt(0) == 0;   // true if no rows in table
@@ -627,9 +632,9 @@ bool Database::subDirRowsTableIsEmpty() {
 }
 
 //*******************************
-// Database::insertSubDirRow
+// GameDatabase::insertSubDirRow
 //*******************************
-bool Database::insertSubDirRow(int rowIndex, string rowName, int indentLevel, int numGames) {
+bool GameDatabase::insertSubDirRow(int rowIndex, string rowName, int indentLevel, int numGames) {
     Stmt stmt(db, INSERT_SUBDIR_ROW, "insertSubDirRow");
     if (!stmt.ok()) return false;
     stmt.bind(1, rowIndex);
@@ -640,10 +645,10 @@ bool Database::insertSubDirRow(int rowIndex, string rowName, int indentLevel, in
 }
 
 //*******************************
-// Database::insertSubDirGames
+// GameDatabase::insertSubDirRowGame
 //*******************************
-bool Database::insertSubDirGames(int rowIndex, int gameId) {
-    Stmt stmt(db, INSERT_SUBDIR_GAME, "insertSubDirGames");
+bool GameDatabase::insertSubDirRowGame(int rowIndex, int gameId) {
+    Stmt stmt(db, INSERT_SUBDIR_GAME, "insertSubDirRowGame");
     if (!stmt.ok()) return false;
     stmt.bind(1, rowIndex);
     stmt.bind(2, gameId);
@@ -651,9 +656,9 @@ bool Database::insertSubDirGames(int rowIndex, int gameId) {
 }
 
 //*******************************
-// Database::executeCreateStatement
+// GameDatabase::executeCreateStatement
 //*******************************
-bool Database::executeCreateStatement(const char *sql, const string &name) {
+bool GameDatabase::executeCreateStatement(const char *sql, const string &name) {
     char *errorReport = nullptr;
     cout << "Creating " << name << " (if not exists)" << endl;
     int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errorReport);
@@ -667,9 +672,9 @@ bool Database::executeCreateStatement(const char *sql, const string &name) {
 }
 
 //*******************************
-// Database::executeStatement
+// GameDatabase::executeStatement
 //*******************************
-bool Database::executeStatement(const char *sql, const string &outMsg, const string &errorMsg) {
+bool GameDatabase::executeStatement(const char *sql, const string &outMsg, const string &errorMsg) {
     char *errorReport = nullptr;
     cout << outMsg << endl;
     int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errorReport);
@@ -683,10 +688,10 @@ bool Database::executeStatement(const char *sql, const string &outMsg, const str
 }
 
 //*******************************
-// Database::connect
+// GameDatabase::open
 //*******************************
-bool Database::connect(string fileName) {
-    disconnect();   // in case connect is called twice
+bool GameDatabase::open(const string &fileName) {
+    close();   // in case open is called twice
     int rc = sqlite3_open(fileName.c_str(), &db);
     if (rc != SQLITE_OK) {
         cerr << "Failed: db:: connect, " << fileName << endl;
@@ -700,9 +705,9 @@ bool Database::connect(string fileName) {
 }
 
 //*******************************
-// Database::disconnect
+// GameDatabase::close
 //*******************************
-void Database::disconnect() {
+void GameDatabase::close() {
     if (db != nullptr) {
         cout << "Disconnecting DBs" << endl;
         sqlite3_db_cacheflush(db);
@@ -712,30 +717,30 @@ void Database::disconnect() {
 }
 
 //*******************************
-// Database::beginTransaction
+// GameDatabase::beginTransaction
 //*******************************
-bool Database::beginTransaction() {
+bool GameDatabase::beginTransaction() {
     return executeStatement(BEGIN_TRANSACTION, "Begin Transaction", "Error beginning  transaction");
 }
 
 //*******************************
-// Database::commit
+// GameDatabase::commit
 //*******************************
-bool Database::commit() {
+bool GameDatabase::commit() {
     return executeStatement(COMMIT, "Commit", "Error on commit");
 }
 
 //*******************************
-// Database::rollback
+// GameDatabase::rollback
 //*******************************
-bool Database::rollback() {
+bool GameDatabase::rollback() {
     return executeStatement(ROLLBACK, "Rollback", "Error on rollback");
 }
 
 //*******************************
-// Database::truncate
+// GameDatabase::clearAllTables
 //*******************************
-bool Database::truncate() {
+bool GameDatabase::clearAllTables() {
     bool ok = true;
     ok &= executeStatement(DELETE_GAME_DATA, "Truncating all data", "Error truncating data");
     ok &= executeStatement(DELETE_DISC_DATA, "Truncating all data", "Error truncating data");
@@ -746,9 +751,9 @@ bool Database::truncate() {
 }
 
 //*******************************
-// Database::createInitialDatabase
+// GameDatabase::createSchema
 //*******************************
-bool Database::createInitialDatabase() {
+bool GameDatabase::createSchema() {
     if (!executeCreateStatement(CREATE_GAME_SQL, "GAME")) return false;
     executeCreateStatement(ADD_HISTORY_COLUMN, "History column" ); // add column to existing table
     executeCreateStatement(ADD_LAST_PLAYED_COLUMN, "Last_Played column" ); // add column to existing table
@@ -761,47 +766,47 @@ bool Database::createInitialDatabase() {
 }
 
 //*******************************
-// Database::addFavoriteColumn
+// GameDatabase::addFavoriteColumnIfMissing
 //*******************************
-void Database::addFavoriteColumn() {
+void GameDatabase::addFavoriteColumnIfMissing() {
     executeCreateStatement(ADD_FAVORITE_COLUMN, "Favorite column" );
 }
 
 //*******************************
-// Database::addPlayUsingRAColumn
+// GameDatabase::addPlayUsingRAColumnIfMissing
 //*******************************
-void Database::addPlayUsingRAColumn() {
+void GameDatabase::addPlayUsingRAColumnIfMissing() {
     executeCreateStatement(ADD_PLAY_USING_RA_COLUMN, "Play Using RA column" );
 }
 
 //*******************************
-// Database::addHistoryColumn
+// GameDatabase::addHistoryColumnIfMissing
 //*******************************
-void Database::addHistoryColumn() {
+void GameDatabase::addHistoryColumnIfMissing() {
     executeCreateStatement(ADD_HISTORY_COLUMN, "History column" );
 }
 
 //*******************************
-// Database::addLastPlayedColumn
+// GameDatabase::addLastPlayedColumnIfMissing
 //*******************************
-void Database::addLastPlayedColumn() {
+void GameDatabase::addLastPlayedColumnIfMissing() {
     executeCreateStatement(ADD_LAST_PLAYED_COLUMN, "Last_Played column" );
 }
 
 //*******************************
-// Database::deleteGameIdFromOneTable
+// GameDatabase::deleteGameIdFromOneTable
 //*******************************
-bool Database::deleteGameIdFromOneTable(int id, const string& cmd_str) {
-    Stmt stmt(db, cmd_str.c_str(), "deleteGameIdFromOneTable");
+bool GameDatabase::deleteGameIdFromOneTable(int id, const char *sql) {
+    Stmt stmt(db, sql, "deleteGameIdFromOneTable");
     if (!stmt.ok()) return false;
     stmt.bind(1, id);
     return stmt.step() == SQLITE_DONE;
 }
 
 //*******************************
-// Database::deleteGameIdFromAllTables
+// GameDatabase::deleteGame
 //*******************************
-bool Database::deleteGameIdFromAllTables(int id) {
+bool GameDatabase::deleteGame(int id) {
     if (!beginTransaction()) return false;   // all the statements must succeed or the DB won't be modified
 
     bool success = deleteGameIdFromOneTable(id, DELETE_GAME_ID_FROM_DISC)
@@ -816,3 +821,5 @@ bool Database::deleteGameIdFromAllTables(int id) {
 
     return success;
 }
+
+} // namespace ableem

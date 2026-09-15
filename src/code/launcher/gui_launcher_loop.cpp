@@ -395,8 +395,8 @@ void GuiLauncher::loop_nextGameFirstLetter()
 void GuiLauncher::loop_chooseGameDir() {
     // pop game dir menu
     powerOffShift = false;
-    GameRowInfos gameRowInfos;
-    gui->db->getGameRowInfos(&gameRowInfos);
+    SubDirRowInfos gameRowInfos;
+    gui->db->loadSubDirRows(&gameRowInfos);
     if (gameRowInfos.size() == 0) {
         return; // no games!
     }
@@ -951,7 +951,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
                 gameIni.reload(carouselGames[selGameIndex]->folder + sep + GAME_INI);
                 gui->db->updateTitle(carouselGames[selGameIndex]->gameId, gameIni.values["title"]);
             }
-            gui->db->refreshGame(carouselGames[selGameIndex]);
+            gui->db->reloadUsbGame(*carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
                 editor.gameIni.values["favorite"] == "0") {
                 gui->lastSet = SET_PS1;
@@ -962,7 +962,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             if (editor.changes) {
                 gui->internalDB->updateTitle(carouselGames[selGameIndex]->gameId, editor.lastName);
             }
-            gui->internalDB->refreshGameInternal(carouselGames[selGameIndex]);
+            gui->internalDB->reloadInternalGame(*carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
                 editor.gameData->favorite == false) {
                 gui->lastSet = SET_PS1;

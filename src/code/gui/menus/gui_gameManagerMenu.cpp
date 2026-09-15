@@ -10,7 +10,6 @@
 #include "../../lang.h"
 #include <ftw.h>
 #include "../../engine/scanner.h"
-#include "../../engine/database.h"
 
 using namespace std;
 
@@ -22,7 +21,7 @@ void GuiManager::init() {
     GuiMenuBase::init();    // call the base class init()
 
     psGames.clear();
-    gui->db->getGames(&psGames);    // Create list of games
+    psGames = PsGame::fromRecords(gui->db->loadUsbGames());    // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);  // sort by title
     for (int i = 0; i < psGames.size(); ++i) {
         // left column              right column
@@ -117,12 +116,11 @@ void GuiManager::doSquare_Pressed() {
     if (delGame) {
         cout << "Trying to delete " << gameName << endl;
         gui->renderStatus(_("Please wait ... deleting") + " " + gameName);
-        bool success = gui->db->deleteGameIdFromAllTables(gameId);
+        bool success = gui->db->deleteGame(gameId);
         if (success) {
             success = DirEntry::removeDirAndContents(game->folder);
             if (success) {
-                PsGames currentGames;
-                gui->db->getGames(&currentGames);
+                PsGames currentGames = PsGame::fromRecords(gui->db->loadUsbGames());
                 int numberOfGamesRemainingWithSameSaveState = count_if(begin(currentGames), end(currentGames),
                                                                        [&](const PsGamePtr &g) {
                                                                            return g->ssFolder == gameSaveStateFolder;

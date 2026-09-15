@@ -86,16 +86,6 @@ add_executable(
         src/code/engine/cardedit.h
         src/code/engine/config.cpp
         src/code/engine/config.h
-        src/code/engine/coverdb.cpp
-        src/code/engine/coverdb.h
-        src/code/engine/database.cpp
-        src/code/engine/database.h
-        src/code/engine/game.cpp
-        src/code/engine/game.h
-        src/code/engine/GetGameDirHierarchy.cpp
-        src/code/engine/GetGameDirHierarchy.h
-        src/code/engine/metadata.cpp
-        src/code/engine/metadata.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
         src/code/environment.cpp

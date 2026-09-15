@@ -7,10 +7,10 @@
 #include <ableem/ableem.h>
 #include <string>
 #include <memory>
-#include "../engine/database.h"
 #include "../engine/config.h"
-#include "../engine/coverdb.h"
 #include "../engine/scanner.h"
+#include "../launcher/ps_game.h"
+#include "../util.h"
 #include "gui_font.h"
 #include "../environment.h"
 
@@ -53,10 +53,10 @@ public:
     IniFile defaultData;
     Config cfg;
 
-    Coverdb *coverdb = nullptr;
+    CoverDatabase *coverdb = nullptr;
     // db and internalDB are set in main.cpp and remain alive until exit
-    Database *db = nullptr;
-    Database *internalDB = nullptr;
+    GameDatabase *db = nullptr;
+    GameDatabase *internalDB = nullptr;
 
     bool inGuiLauncher = false;
 
@@ -70,7 +70,7 @@ public:
 
     void loadAssets(bool reloadMusic = true);
 
-    void display(bool forceScan, const std::string &_pathToGamesDir, Database *db, bool resume);
+    void display(bool forceScan, const std::string &_pathToGamesDir, GameDatabase *db, bool resume);
 
     void hideMouseCursor();
 
