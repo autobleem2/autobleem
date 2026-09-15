@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+#include <cerrno>
 #include "main.h"
 #include <dirent.h>
 #include <libgen.h>
@@ -70,6 +71,7 @@ void DirEntry::generateM3UForDirectory(std::string path, std::string basename) {
     string m3uName = DirEntry::fixPath(path) + sep + basename + ".m3u";
     if (files.size() > 1) {
         ofstream os(m3uName);
+        if (!checkWritable(os, m3uName)) return;
         for (const string &file:files) {
             os   << file << endl;
         }
@@ -350,6 +352,16 @@ bool DirEntry::renameFile(const std::string& pathFrom, const std::string& pathTo
 //*******************************
 bool DirEntry::copyFile(const std::string& pathFrom, const std::string& pathTo) {
     return DirEntry::copy(pathFrom, pathTo) == 0;
+}
+
+//*******************************
+// DirEntry::checkWritable
+//*******************************
+bool DirEntry::checkWritable(const ofstream &os, const string &path) {
+    if (os.is_open())
+        return true;
+    cout << "ERROR: cannot write file: " << path << " (" << strerror(errno) << ")" << endl;
+    return false;
 }
 
 //*******************************

@@ -254,7 +254,9 @@ void PcsxInterceptor::prepareResumePoint(PsGamePtr & game, int pointId) {
 
             ofstream os;
             os.open(lastCDpointX);
-            os << imageToLoad << endl;
+            if (DirEntry::checkWritable(os, lastCDpointX)) {
+                os << imageToLoad << endl;
+            }
             os.close();
 
             std::getline(is, line);

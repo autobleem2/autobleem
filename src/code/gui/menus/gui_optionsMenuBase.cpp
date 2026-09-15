@@ -141,7 +141,7 @@ std::string GuiOptionsMenuBase::doPrevNextOption(bool next) {
 string GuiOptionsMenuBase::doOptionIndex(unsigned int index) {
     if (validSelectedIndex()) {
         auto & choices = lines[selected].choices;
-        if (choices.size() > 0 && index >= 0 && index < choices.size()) {
+        if (choices.size() > 0 && index < choices.size()) {
             string nextValue = choices[index];
             gui->cfg.inifile.values[lines[selected].iniKey] = nextValue;
             return nextValue;

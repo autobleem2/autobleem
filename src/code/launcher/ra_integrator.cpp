@@ -420,20 +420,20 @@ PsGames RAIntegrator::parse6line(string path) {
     string crc = "";
     string db_name = "";
 
-    int id = 0;
-    while (!in.eof()) {
+    if (!in.is_open()) {
+        cout << "Could not open playlist: " << path << endl;
+        return psGames;
+    }
 
-        getline(in, game_path);
-        if (in.eof()) break;
-        getline(in, label);
-        if (in.eof()) break;
-        getline(in, core_path);
-        if (in.eof()) break;
-        getline(in, core_name);
-        if (in.eof()) break;
-        getline(in, crc);
-        if (in.eof()) break;
-        getline(in, db_name);
+    int id = 0;
+    // six lines per game. getline() is false at end of file or on a read error (eof() alone never becomes
+    // true on a stream that failed to open, which would loop forever)
+    while (getline(in, game_path)) {
+        if (!getline(in, label)) break;
+        if (!getline(in, core_path)) break;
+        if (!getline(in, core_name)) break;
+        if (!getline(in, crc)) break;
+        if (!getline(in, db_name)) break;
 
         PsGamePtr game{new PsGame};
         game->gameId = id++;

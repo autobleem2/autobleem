@@ -156,6 +156,7 @@ void rewriteGamelistXml() {
 
     ofstream xml;
     xml.open(filePath.c_str(), ios::binary);
+    if (!DirEntry::checkWritable(xml, filePath)) return;
 
     xml << "<?xml version=\"1.0\"?>" << endl;
     xml << "<gameList>" << endl;

@@ -81,6 +81,7 @@ void Lang::dump(string fileName) {
     map<string, string>::iterator it;
 
     ofstream os(fileSave);
+    if (!DirEntry::checkWritable(os, fileSave)) return;
     for (string data:newData) {
         cout << data << endl;
         os << data << endl << data << endl;

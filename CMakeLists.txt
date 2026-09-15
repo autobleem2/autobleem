@@ -37,10 +37,10 @@ else()
 #			SET(CMAKE_C_FLAGS "-Wall -W")
 #			SET(CMAKE_CXX_FLAGS "-Wall -W")
 
-			message(STATUS "Enabling some warnings")
-			# some compiler warnings
-			SET(CMAKE_C_FLAGS "-Wreturn-type -Wuninitialized")
-			SET(CMAKE_CXX_FLAGS "-Wreturn-type -Wuninitialized")
+			message(STATUS "Enabling warnings")
+			# the noisy ones are switched off; everything that is left should be fixed, not ignored
+			SET(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function")
+			SET(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function")
 
 #			message(STATUS "Enabling additional memory debugging")
 			# memory sanitizer with all compiler warnings

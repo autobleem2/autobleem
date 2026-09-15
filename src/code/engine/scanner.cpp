@@ -44,6 +44,7 @@ void Scanner::updateRegionalDB(GamesHierarchy &gamesHierarchy, Database *db) {
     string path = Env::getWorkingPath() + sep + "autobleem.list";
     ofstream outfile;
     outfile.open(path);
+    DirEntry::checkWritable(outfile, path);   // the db is still updated; the list is used by the shell scripts
     if (complete) {
         db->beginTransaction();
         for (int i = 0; i < gamesToAddToDB.size(); i++) {
@@ -106,6 +107,9 @@ void repairBinCommaNames(const string & path) {
                 // process cue inside
                 ifstream is(path + sep + entry.name);
                 ofstream os(path + sep + entry.name + ".new");
+                if (!is.is_open() || !DirEntry::checkWritable(os, path + sep + entry.name + ".new")) {
+                    continue;   // leave the original cue alone rather than replacing it with nothing
+                }
                 string line;
                 while (getline(is, line)) {
                     trim(line);
@@ -151,6 +155,7 @@ void repairMissingCue(const string & path, const string & folderName) {
         string newCueName = path + sep + folderName + EXT_CUE;
         ofstream os;
         os.open(newCueName);
+        if (!DirEntry::checkWritable(os, newCueName)) return;
         // let's create new one
         bool first = true;
         int track = 1;
@@ -263,6 +268,7 @@ void Scanner::repairBrokenCueFiles(const string & path) {
 
             ofstream os;
             os.open(cuePath);
+            if (!DirEntry::checkWritable(os, cuePath)) continue;
             // let's create new one
             bool first = true;
             int track = 1;
@@ -318,6 +324,7 @@ void Scanner::scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy) {
     string badGameFilePath = Env::getWorkingPath() + sep + "gamesThatFailedVerifyCheck.txt";
     ofstream badGameFile;
     badGameFile.open(badGameFilePath.c_str(), ios::binary);
+    DirEntry::checkWritable(badGameFile, badGameFilePath);   // diagnostics only, keep going
 
 #if 0
     int i = 0;
@@ -426,11 +433,13 @@ void Scanner::scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy) {
                                 cout << "Updating cover in scanUSBGamesDirectory()" << newFilename << endl;
                                 ofstream pngFile;
                                 pngFile.open(newFilename, ios::binary);
-                                pngFile.write(md.bytes.data(), md.bytes.size());
-                                pngFile.flush();
-                                pngFile.close();
-                                game->automationUsed = false;
-                                game->coverImageFound = true;
+                                if (DirEntry::checkWritable(pngFile, newFilename)) {
+                                    pngFile.write(md.bytes.data(), md.bytes.size());
+                                    pngFile.flush();
+                                    pngFile.close();
+                                    game->automationUsed = false;
+                                    game->coverImageFound = true;
+                                }
                             }
 						}
 
@@ -489,6 +498,7 @@ void Scanner::scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy) {
     string path = Env::getWorkingPath() + sep + "gameHierarchy_afterScanAndRemovingDuplicates.txt";
     ofstream outfile;
     outfile.open(path);
+    DirEntry::checkWritable(outfile, path);   // diagnostics only, keep going
     gamesHierarchy.dumpRowGameInfo(outfile, true);
     outfile << endl << endl;
     gamesHierarchy.dumpRowDisplayGameInfo(outfile, true);

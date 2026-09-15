@@ -3,6 +3,7 @@
 //
 
 #include "inifile.h"
+#include "../DirEntry.h"
 #include "../main.h"
 #include <iostream>
 #include <fstream>
@@ -71,6 +72,7 @@ void Inifile::save(const string & _path) {
     cout << "Writing ini file: " << _path << endl;
     ofstream os;
     os.open(_path);
+    if (!DirEntry::checkWritable(os, _path)) return;
     os << "[" << section <<"]" << endl;
     for (map<string,string>::iterator iter = values.begin(); iter != values.end(); ++iter)
     {

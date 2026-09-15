@@ -67,7 +67,11 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
         string pbpFileName = DirEntry::findFirstFile(EXT_PBP, destinationDir);
         if (pbpFileName != "") {
             ifstream is;
-            is.open(destinationDir + sep + pbpFileName);
+            is.open(destinationDir + sep + pbpFileName, ios::binary);
+            if (!is.is_open()) {
+                cout << "Cannot open PBP: " << destinationDir + sep + pbpFileName << endl;
+                return "";
+            }
 
             long magic = Util::readDword(&is);
             if (magic != 0x50425000) {

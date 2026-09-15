@@ -286,14 +286,11 @@ void Gui::loadAssets(bool reloadMusic) {
     themeData.load(defaultPath + "theme.ini");
     themeData.OverwriteAndAppend(themePath + "theme.ini");    // adds to default/theme.ini values
 
-    bool reloading = false;
-
     if (backgroundImg != nullptr) {
         Mix_FreeChunk(cursor);
         Mix_FreeChunk(cancel);
         Mix_FreeChunk(home_down);
         Mix_FreeChunk(home_up);
-        reloading = true;
         backgroundImg = nullptr;
     }
 
@@ -439,6 +436,7 @@ void Gui::saveSelection() {
     ofstream os;
     string path = cfg.inifile.values["cfg"];
     os.open(path);
+    if (!DirEntry::checkWritable(os, path)) return;   // the rc scripts then keep the previous selection
     os << "#!/bin/sh" << endl << endl;
     os << "AB_SELECTION=" << menuOption << endl;
     os << "AB_THEME=" << cfg.inifile.values["theme"] << endl;
@@ -777,7 +775,9 @@ void Gui::exportDBToRetroarch() {
     j["items"] = items;
 
     cout << j.dump() << endl;
-    std::ofstream o(Env::getPathToRetroarchDir() + sep + "playlists/" + RA_PLAYLIST);
+    string playlistPath = Env::getPathToRetroarchDir() + sep + "playlists/" + RA_PLAYLIST;
+    std::ofstream o(playlistPath);
+    if (!DirEntry::checkWritable(o, playlistPath)) return;
     o << std::setw(2) << j << std::endl;
     o.flush();
     o.close();

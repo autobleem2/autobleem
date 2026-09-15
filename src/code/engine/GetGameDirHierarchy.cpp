@@ -197,6 +197,7 @@ void GamesHierarchy::getHierarchy(const std::string & path) {
     string opath = Env::getWorkingPath() + sep + "gameHierarchy_beforeScan.txt";
     ofstream outfile;
     outfile.open(opath);
+    DirEntry::checkWritable(outfile, opath);   // diagnostics only, keep going
     dumpRowGameInfo(outfile, true);
     outfile << endl << endl;
     dumpRowDisplayGameInfo(outfile, true);
@@ -239,7 +240,7 @@ bool GamesHierarchy::gamesDoNotMatchAutobleemPrev(const std::string & autobleemP
 
     ifstream prev;
     prev.open(autobleemPrevPath.c_str(), ios::binary);
-    for (const auto game : allGames) {
+    for (const auto &game : allGames) {
         string pathInFile;
         getline(prev, pathInFile);
         //cout << "compare " << pathInFile << " ======== " << game->fullPath << endl;
@@ -265,7 +266,8 @@ void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
 
     ofstream prev;
     prev.open(autobleemPrevPath.c_str(), ios::binary);
-    for (const auto game : allGames) {
+    if (!DirEntry::checkWritable(prev, autobleemPrevPath)) return;   // a missing .prev just forces a rescan next boot
+    for (const auto &game : allGames) {
         prev << game->fullPath << endl;
     }
     prev.close();

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 #include "util.h"
 #include "main.h"
 #include <tuple>
@@ -51,6 +52,8 @@ public:
     static DirEntries diru_FilesOnly(std::string path);  // diru but only returns files
 
     static bool copy(const std::string& source, const std::string& dest);
+    // logs when an output file could not be opened. returns false in that case so the caller can bail out.
+    static bool checkWritable(const std::ofstream &os, const std::string &path);
     static bool exists(const std::string &name);        // return if a file or dir exists
     static bool createDir(const std::string &name);
     static int rmDir(std::string path);

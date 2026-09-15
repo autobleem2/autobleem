@@ -114,10 +114,15 @@ void CardEdit::setSlotData(int slot, unsigned char* buffer, unsigned char *diren
 
 int CardEdit::load_file(std::string filename) {
     ifstream f(filename, ifstream::ate | ifstream::binary);
+    if (!f.is_open()) {
+        cout << "Cannot open memory card: " << filename << endl;
+        return -1;
+    }
     // index set to end
     if (f.tellg() < 131072) {
+        cout << "Memory card file is too small: " << filename << endl;
         f.close();
-        return 0;
+        return -1;
     } // the file is too small...
     if (f.tellg() == 134976) {
         // This must be a DexDrive file.
@@ -137,10 +142,11 @@ int CardEdit::load_file(std::string filename) {
 
 
 int CardEdit::save_file(string filename) {
-    ofstream f(filename);
+    ofstream f(filename, ios::binary);
+    if (!DirEntry::checkWritable(f, filename)) return -1;
     f.write(memoryCard, 131072);
     f.close();
-    return 0;
+    return f.good() ? 0 : -1;
 
 }
 
