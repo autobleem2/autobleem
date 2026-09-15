@@ -137,16 +137,6 @@ void Gui::splash(const string &message) {
     gui->drawText(message);
 }
 
-extern "C"
-{
-//*******************************
-// Gui::splash
-//*******************************
-void splash(char *message) {
-    shared_ptr<Gui> gui(Gui::getInstance());
-    gui->drawText(message);
-}
-}
 
 //*******************************
 // Gui::getR
@@ -227,7 +217,7 @@ void Gui::loadAssets(bool reloadMusic) {
 
     defaultData.load(defaultPath + "theme.ini");
     themeData.load(defaultPath + "theme.ini");
-    themeData.OverwriteAndAppend(themePath + "theme.ini");    // adds to default/theme.ini values
+    themeData.mergeFrom(themePath + "theme.ini");    // adds to default/theme.ini values
 
     backgroundImg = Texture();  // release the previous theme's textures/sounds before loading the new ones
     cursor = ableem::Sound();
@@ -396,7 +386,7 @@ void Gui::menuSelection() {
     string RA_or_EA = _("RetroArch");
     string cfgPath = Env::getPathToRetroarchDir() + sep + "retroboot/retroboot.cfg";
     if (DirEntry::exists(cfgPath)) {
-        Inifile RBcfg;
+        IniFile RBcfg;
         RBcfg.load(cfgPath);
         if (RBcfg.values["use_emulationstation"] == "1")
             RA_or_EA = _("EmulationStation");

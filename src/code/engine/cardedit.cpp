@@ -1,6 +1,6 @@
 #include <cstring>
 #include "cardedit.h"
-#include "../DirEntry.h"
+#include "../main.h"
 #include "../lang.h"
 #include <string>
 #include <fstream>

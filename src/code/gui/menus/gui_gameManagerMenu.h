@@ -31,5 +31,5 @@ public:
 
     PsGames psGames;
     static int flushCovers(const char *file, const struct stat *sb, int flag, struct FTW *s);
-    static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return SortByCaseInsensitive(i->title, j->title); }
+    static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }
 };

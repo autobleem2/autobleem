@@ -186,5 +186,5 @@ public:
     void forceSettingsOnly();
     void showAllOptions();
 
-    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return SortByCaseInsensitive(i->title, j->title); }
+    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return lessCaseInsensitive(i->title, j->title); }
 };

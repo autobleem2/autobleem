@@ -10,8 +10,8 @@
 #include <algorithm>
 #include "../util.h"
 #include <json.h>
-#include "../engine/cfgprocessor.h"
-#include "../DirEntry.h"
+#include "../main.h"
+#include "../main.h"
 #include "../environment.h"
 
 using namespace nlohmann;
@@ -47,7 +47,7 @@ RAIntegrator::~RAIntegrator() {
 //********************
 bool RAIntegrator::isValidPlaylist(string path) {
     // check file extension
-    if (ReturnLowerCase(DirEntry::getFileExtension(path)) != "lpl") {
+    if (toLowerCopy(DirEntry::getFileExtension(path)) != "lpl") {
         cout << "Extension is not .lpl" << endl;
         return false;
     }

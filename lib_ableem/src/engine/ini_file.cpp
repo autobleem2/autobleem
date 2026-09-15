@@ -1,22 +1,19 @@
-//
-// Created by screemer on 2018-12-19.
-//
+#include "ableem/engine/ini_file.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/strings.h"
 
-#include "inifile.h"
-#include "../DirEntry.h"
-#include "../main.h"
 #include <iostream>
 #include <fstream>
-#include "../util.h"
 
 using namespace std;
 
+namespace ableem {
+
 //*******************************
-// Inifile::load
+// IniFile::load
 //*******************************
-void Inifile::load(const string & _path) {
+void IniFile::load(const string &_path) {
     this->path = _path;
-    //cout << "Reading ini file: " << path << endl;
     ifstream file;
     string iniLine;
     file.open(path);
@@ -26,14 +23,13 @@ void Inifile::load(const string & _path) {
         return;
     }
 
-    while (Util::getlineRemoveCR(file, iniLine)) {
-        Util::removeComment(iniLine);   // remove '#' to end of line
+    while (Strings::getlineRemoveCR(file, iniLine)) {
+        Strings::removeComment(iniLine);   // remove '#' to end of line
         iniLine = trim(iniLine);
         if (iniLine.length() == 0) continue;    // blank line
-        if (iniLine[0]=='[')
-        {
+        if (iniLine[0] == '[') {
             iniLine = ltrim(iniLine);
-            iniLine = iniLine.substr(1,iniLine.find(']')-1);
+            iniLine = iniLine.substr(1, iniLine.find(']') - 1);
             section = iniLine;
         }
         if (iniLine.find('=') != string::npos) {
@@ -41,7 +37,7 @@ void Inifile::load(const string & _path) {
             string paramName = iniLine.substr(0, iniLine.find('='));
             string paramVal = iniLine.substr(iniLine.find('=') + 1, string::npos);
             if (paramName == "publisher")
-                Util::cleanPublisherString(paramVal);
+                Strings::cleanPublisherString(paramVal);
             values[paramName] = paramVal;
         }
 
@@ -51,37 +47,36 @@ void Inifile::load(const string & _path) {
 }
 
 //*******************************
-// Inifile::reload
+// IniFile::reload
 //*******************************
-void Inifile::reload(const string & _path) {
+void IniFile::reload(const string &_path) {
     values.clear();
     load(_path);
 }
 
 //*******************************
-// Inifile::OverwriteAndAppend
+// IniFile::mergeFrom
 //*******************************
-void Inifile::OverwriteAndAppend(const string & _path) {
+void IniFile::mergeFrom(const string &_path) {
     load(_path);
 }
 
 //*******************************
-// Inifile::save
+// IniFile::save
 //*******************************
-void Inifile::save(const string & _path) {
+void IniFile::save(const string &_path) {
     cout << "Writing ini file: " << _path << endl;
     ofstream os;
     os.open(_path);
     if (!DirEntry::checkWritable(os, _path)) return;
-    os << "[" << section <<"]" << endl;
-    for (map<string,string>::iterator iter = values.begin(); iter != values.end(); ++iter)
-    {
-        string k =  iter->first;
+    os << "[" << section << "]" << endl;
+    for (map<string, string>::iterator iter = values.begin(); iter != values.end(); ++iter) {
+        string k = iter->first;
         string v = iter->second;
-        k=lcase(k);
+        k = lcase(k);
         if (k == "publisher")
-            Util::cleanPublisherString(v);
-        k[0]=toupper(k[0]);
+            Strings::cleanPublisherString(v);
+        k[0] = toupper(k[0]);
 
         os << k << "=" << v << endl;
     }
@@ -90,14 +85,16 @@ void Inifile::save(const string & _path) {
 }
 
 //*******************************
-// Inifile::print
+// IniFile::print
 //*******************************
-void Inifile::print() {
+void IniFile::print() {
     cout << "section = " << section << '\n';
     cout << "path = " << path << '\n';
     cout << "entry = " << entry << '\n';
 
-    for (auto & item : values)
+    for (auto &item : values)
         cout << item.first << " = " << item.second << '\n';
     cout << flush;
 }
+
+} // namespace ableem

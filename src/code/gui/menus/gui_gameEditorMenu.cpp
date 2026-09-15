@@ -6,8 +6,8 @@
 #include "../gui.h"
 #include "../gui_keyboard.h"
 #include "../gui_selectmemcard.h"
-#include "../../engine/memcard.h"
-#include "../../engine/cfgprocessor.h"
+#include "../../main.h"
+#include "../../main.h"
 #include "../../lang.h"
 #include <sstream>
 #include "../../environment.h"
@@ -33,7 +33,7 @@ using namespace std;
 //*******************************
 void GuiEditor::processOptionChange(bool direction) {
     shared_ptr<Gui> gui(Gui::getInstance());
-    CfgProcessor processor;
+    ConfigFileEditor processor;
 
     string path = gameFolder;
     if (internal) {
@@ -272,7 +272,7 @@ void GuiEditor::processOptionChange(bool direction) {
 //*******************************
 void GuiEditor::refreshData() {
     shared_ptr<Gui> gui(Gui::getInstance());
-    CfgProcessor processor;
+    ConfigFileEditor processor;
     string path = gameFolder;
     if (internal) {
         path = gameData->ssFolder;
@@ -525,7 +525,7 @@ void GuiEditor::loop() {
                                 }
 
                                 if (!cancelled) {
-                                    Memcard memcard(gui->pathToGamesDir);
+                                    MemcardManager memcard(gui->pathToGamesDir);
                                     string savePath =
                                             Env::getPathToSaveStatesDir() + sep + gameIni.entry + sep + "memcards";
                                     memcard.storeToRepo(savePath, result);
@@ -592,6 +592,9 @@ void GuiEditor::loop() {
                         }
                         refreshData();
                     };
+                    break;
+                default:
+                    break;
             }
         }
         render();

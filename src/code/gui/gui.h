@@ -49,8 +49,8 @@ private:
     std::string themePath;
 
 public:
-    Inifile themeData;
-    Inifile defaultData;
+    IniFile themeData;
+    IniFile defaultData;
     Config cfg;
 
     Coverdb *coverdb = nullptr;
@@ -150,7 +150,7 @@ public:
         return s;
     }
 
-    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return SortByCaseInsensitive(i->title, j->title); }
+    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return lessCaseInsensitive(i->title, j->title); }
 
     //*******************************
     // Rect and Size routines

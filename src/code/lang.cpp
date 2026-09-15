@@ -6,7 +6,7 @@
 #include "util.h"
 #include <fstream>
 #include <iostream>
-#include "DirEntry.h"
+#include "main.h"
 #include "environment.h"
 
 using namespace std;

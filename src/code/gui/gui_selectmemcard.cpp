@@ -6,7 +6,7 @@
 
 #include <string>
 #include "gui.h"
-#include "../engine/memcard.h"
+#include "../main.h"
 #include "gui_confirm.h"
 #include "gui_keyboard.h"
 #include "../lang.h"
@@ -19,7 +19,7 @@ void GuiSelectMemcard::init() {
     cards.clear();
 
     shared_ptr<Gui> gui(Gui::getInstance());
-    Memcard memcardOps(gui->pathToGamesDir);
+    MemcardManager memcardOps(gui->pathToGamesDir);
     if (listType==MC_CUSTOM) {
         cards = memcardOps.list();
     } else

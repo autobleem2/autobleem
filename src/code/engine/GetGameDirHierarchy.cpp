@@ -1,9 +1,8 @@
 #include "GetGameDirHierarchy.h"
 #include "../util.h"
-#include "../DirEntry.h"
+#include "../main.h"
 #include <iostream>
 #include "scanner.h"
-#include "serialscanner.h"
 #include <fstream>
 #include "../environment.h"
 
@@ -112,7 +111,7 @@ void GameSubDir::removeDuplicateGamesLeavingOne(USBGames &games, std::ofstream &
     // it will return an iter to the first adjacent pair.  that is the one we will delete.  so the game being deleted
     // will be the lower title alphabetically.
     sort(begin(games), end(games),  [] (const USBGamePtr &g1, const USBGamePtr &g2)
-                                    { return SortByCaseInsensitive(g2->fullPath, g1->fullPath); });
+                                    { return lessCaseInsensitive(g2->fullPath, g1->fullPath); });
     USBGame::sortByTitle(games);
     auto it = begin(games); // simply to get the correct type.  for some reason auto gave an error.
     while ((it = adjacent_find(begin(games), end(games), sameGame)) != end(games)) {

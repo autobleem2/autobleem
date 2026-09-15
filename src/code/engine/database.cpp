@@ -1,10 +1,9 @@
 #include "database.h"
-#include "inifile.h"
+#include "../main.h"
 #include "../util.h"
 #include <iostream>
 #include <vector>
-#include "serialscanner.h"
-#include "../DirEntry.h"
+#include "../main.h"
 #include "../environment.h"
 
 using namespace std;
@@ -267,7 +266,7 @@ private:
 void readGameIni(PsGamePtr &game) {
     string gameIniPath = game->folder + sep + GAME_INI;
     if (DirEntry::exists(gameIniPath)) {
-        Inifile ini;
+        IniFile ini;
         ini.load(gameIniPath);
         game->locked =  !(ini.values["automation"]=="1");
         game->hd =       (ini.values["highres"]=="1");

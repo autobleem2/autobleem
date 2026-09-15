@@ -1,20 +1,21 @@
-//
-// Created by screemer on 2019-01-15.
-//
+#include "ableem/engine/config_file_editor.h"
+#include "ableem/engine/environment.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/strings.h"
 
-#include "cfgprocessor.h"
-#include "../util.h"
 #include <fstream>
-#include "../DirEntry.h"
 #include <iostream>
-#include "../environment.h"
+#include <vector>
 
 using namespace std;
 
+namespace ableem {
+
+
 //*******************************
-// CfgProcessor::replaceProperty
+// ConfigFileEditor::replaceProperty
 //*******************************
-void CfgProcessor::replaceProperty(string fullCfgFilePath, string property, string newline) {
+void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, string newline) {
  //   cout << "cfg replace, '" << fullCfgFilePath << "', '" << property << "' with: '" << newline << "'" << endl;
     if (!DirEntry::exists(fullCfgFilePath)) {
         cout << "  cfg file doesn't exist" << endl;
@@ -62,9 +63,9 @@ void CfgProcessor::replaceProperty(string fullCfgFilePath, string property, stri
 }
 
 //*******************************
-// CfgProcessor::getValueFromCfgFile
+// ConfigFileEditor::getValueFromCfgFile
 //*******************************
-string CfgProcessor::getValueFromCfgFile(string fullCfgFilePath, string property) {
+string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string property) {
    // cout << "cfg getValue, '" << fullCfgFilePath << "', '" << property << "'" << endl;
     fstream file(fullCfgFilePath, ios::in);
     vector<string> lines;
@@ -95,12 +96,12 @@ string CfgProcessor::getValueFromCfgFile(string fullCfgFilePath, string property
 }
 
 //*******************************
-// CfgProcessor::getValue
+// ConfigFileEditor::getValue
 // example gamePath = "/media/Games/!SaveStates/7"
 // example gamePath = "/media/Games/!SaveStates/Driver 2" or
 // example gamePath = "/media/Games/Racing/Driver 2"
 //*******************************
-string CfgProcessor::getValue(string gamePath, string property) {
+string ConfigFileEditor::getValue(string gamePath, string property) {
     string fullCfgFilePath = gamePath + sep + PCSX_CFG;
     if (!DirEntry::exists(fullCfgFilePath)) {
         cout << "  cfg file doesn't exist" << endl;
@@ -112,11 +113,11 @@ string CfgProcessor::getValue(string gamePath, string property) {
 }
 
 //*******************************
-// CfgProcessor::replacePropertyInAllCfgsInDir
+// ConfigFileEditor::replacePropertyInAllCfgsInDir
 // example pathToCfgDir = "/media/Games/!SaveStates/12/cfg"
 // example pathToCfgDir = "/media/Games/!SaveStates/Driver 2/cfg"
 //*******************************
-void CfgProcessor::replacePropertyInAllCfgsInDir(string pathToCfgDir, string property, string newline) {
+void ConfigFileEditor::replacePropertyInAllCfgsInDir(string pathToCfgDir, string property, string newline) {
     cout << "cfg replaceInAllCfg, '" << pathToCfgDir << "', '" << property << "'" << endl;
     for (const DirEntry &cfgEntry : DirEntry::diru_FilesOnly(pathToCfgDir)) {
         if (DirEntry::matchExtension(cfgEntry.name, ".cfg")) {
@@ -127,10 +128,10 @@ void CfgProcessor::replacePropertyInAllCfgsInDir(string pathToCfgDir, string pro
 }
 
 //*******************************
-// CfgProcessor::replaceInternal
+// ConfigFileEditor::replaceInternal
 // example gamePathInSaveStates = "/media/Games/!SaveStates/12"
 //*******************************
-void CfgProcessor::replaceInternal(string gamePathInSaveStates, string property, string newline) {
+void ConfigFileEditor::replaceInternal(string gamePathInSaveStates, string property, string newline) {
     string realCfgPath = gamePathInSaveStates + sep + PCSX_CFG;
     replaceProperty(realCfgPath, property, newline);
 
@@ -138,40 +139,42 @@ void CfgProcessor::replaceInternal(string gamePathInSaveStates, string property,
 }
 
 //*******************************
-// CfgProcessor::replaceUSB
+// ConfigFileEditor::replaceUsb
 // example entry = "Driver 2"
 // example gamePath = "/media/Games/Racing"
 //*******************************
-void CfgProcessor::replaceUSB(string entry, string gamePath, string property, string newline) {
+void ConfigFileEditor::replaceUsb(string entry, string gamePath, string property, string newline) {
     string realCfgPath = gamePath + sep + entry + sep + PCSX_CFG;
     replaceProperty(realCfgPath, property, newline);    // replace in the game dir pcsx.cfg
 
-    realCfgPath = Env::getPathToSaveStatesDir() + sep + entry + sep + PCSX_CFG;
+    realCfgPath = Environment::getPathToSaveStatesDir() + sep + entry + sep + PCSX_CFG;
     replaceProperty(realCfgPath, property, newline);    // replace in the !SaveStates/game/pcsx.cfg
 
     // replace in the !SaveStates/game/cfg/*.cfg
-    replacePropertyInAllCfgsInDir(Env::getPathToSaveStatesDir() + sep + entry + sep + "cfg", property, newline);
+    replacePropertyInAllCfgsInDir(Environment::getPathToSaveStatesDir() + sep + entry + sep + "cfg", property, newline);
 }
 
 //*******************************
-// CfgProcessor::replace
+// ConfigFileEditor::replace
 // example entry = "Driver 2"
 // example gamePath = "/media/Games/Racing/Driver 2", internal = false
 // example gamePath = "/media/Games/!SaveStates/12", internal = true
 //*******************************
-void CfgProcessor::replace(string entry, string gamePath, string property, string newline, bool internal) {
+void ConfigFileEditor::replace(string entry, string gamePath, string property, string newline, bool internal) {
     if (internal)
         replaceInternal(gamePath, property, newline);
     else
-        replaceUSB(entry, DirEntry::getDirNameFromPath(gamePath), property, newline);
+        replaceUsb(entry, DirEntry::getDirNameFromPath(gamePath), property, newline);
 }
 
 
 //*******************************
-// CfgProcessor::replaceRaConf
+// ConfigFileEditor::replaceInFile
 //*******************************
-void CfgProcessor::replaceRaConf(std::string fullCfgFilePath, std::string property, std::string newline)
+void ConfigFileEditor::replaceInFile(std::string fullCfgFilePath, std::string property, std::string newline)
 {
-    cout << "cfg replaceRaConf, '" << fullCfgFilePath << "', '" << property << "'" << endl;
+    cout << "cfg replaceInFile, '" << fullCfgFilePath << "', '" << property << "'" << endl;
     replaceProperty(fullCfgFilePath, property, newline);
 }
+
+} // namespace ableem

@@ -1,25 +1,28 @@
-//
-// Created by screemer on 2/3/19.
-//
+#include "ableem/engine/serial_scanner.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/iso_directory.h"
+#include "ableem/engine/strings.h"
+#include "binary_reader.h"
+#include "md5.h"
 
-#include "../main.h"
-#include "serialscanner.h"
-#include "isodir.h"
+#include <algorithm>
 #include <sstream>
-#include "../util.h"
 #include <fstream>
 #include <iostream>
-#include "../DirEntry.h"
+#include <vector>
 
 using namespace std;
+
+namespace ableem {
+
 
 // The SerialScanner class reads the serial number in a CDROM BIN file which is an ISO 9660 image of a CDROM.
 // https://en.wikipedia.org/wiki/ISO_9660
 
 //*******************************
-// SerialScanner::fixSerial
+// SerialScanner::normalizeSerial
 //*******************************
-string SerialScanner::fixSerial(string serial) {
+string SerialScanner::normalizeSerial(string serial) {
     replace(serial.begin(), serial.end(), '_', '-');
     serial.erase(remove(serial.begin(), serial.end(), '.'), serial.end());
     string fixed = "";
@@ -44,23 +47,23 @@ string SerialScanner::fixSerial(string serial) {
 }
 
 //*******************************
-// SerialScanner::scanSerial
+// SerialScanner::readSerial
 //*******************************
-string SerialScanner::scanSerial(ImageType imageType, string path, string firstBinPath)
+string SerialScanner::readSerial(ImageType imageType, string path, string firstBinPath)
 {
-    string serial = scanSerialInternal(imageType,path,firstBinPath);
+    string serial = readSerialFromImage(imageType,path,firstBinPath);
     std::cout <<serial<<endl;
     if (serial.empty())
     {
-        serial = workarounds(imageType,path,firstBinPath);
+        serial = readSerialByWorkaround(imageType,path,firstBinPath);
     }
     return serial;
 }
 
 //*******************************
-// SerialScanner::scanSerialInternal
+// SerialScanner::readSerialFromImage
 //*******************************
-string SerialScanner::scanSerialInternal(ImageType imageType, string path, string firstBinPath) {
+string SerialScanner::readSerialFromImage(ImageType imageType, string path, string firstBinPath) {
     std::cout << imageType << "   " << path << "   " << firstBinPath << endl;
     if (imageType == IMAGE_PBP) {
         string destinationDir = path ;
@@ -73,26 +76,26 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
                 return "";
             }
 
-            long magic = Util::readDword(&is);
+            long magic = readUint32LE(is);
             if (magic != 0x50425000) {
                 return "";
             }
-            long second = Util::readDword(&is);
+            long second = readUint32LE(is);
             if (second != 0x10000) {
                 return "";
             }
-            long sfoStart = Util::readDword(&is);
+            long sfoStart = readUint32LE(is);
 
             is.seekg(sfoStart, ios::beg);
 
-            unsigned int signature = Util::readDword(&is);
+            unsigned int signature = readUint32LE(is);
             if (signature != 1179865088) {
                 return "";
             }
-            unsigned int version = Util::readDword(&is);;
-            unsigned int fields_table_offs = Util::readDword(&is);
-            unsigned int values_table_offs = Util::readDword(&is);
-            int nitems = Util::readDword(&is);
+            readUint32LE(is);    // version
+            unsigned int fields_table_offs = readUint32LE(is);
+            unsigned int values_table_offs = readUint32LE(is);
+            int nitems = readUint32LE(is);
 
             vector<string> fields;
             vector<string> values;
@@ -101,16 +104,16 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
             is.seekg(sfoStart, ios::beg);
             is.seekg(fields_table_offs, ios::cur);
             for (int i = 0; i < nitems; i++) {
-                string fieldName = Util::readString(&is);
-                Util::skipZeros(&is);
+                string fieldName = readCString(is);
+                skipZeros(is);
                 fields.push_back(fieldName);
             }
 
             is.seekg(sfoStart, ios::beg);
             is.seekg(values_table_offs, ios::cur);
             for (int i = 0; i < nitems; i++) {
-                string valueName = Util::readString(&is);
-                Util::skipZeros(&is);
+                string valueName = readCString(is);
+                skipZeros(is);
                 values.push_back(valueName);
             }
 
@@ -119,7 +122,7 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
             for (int i = 0; i < nitems; i++) {
                 if (fields[i] == "DISC_ID") {
                     string potentialSerial = values[i];
-                    return fixSerial(potentialSerial);
+                    return normalizeSerial(potentialSerial);
                 }
             }
         }
@@ -133,13 +136,12 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
         }
 
         for (int level = 1; level < 4; level++) {
-            Isodir dirLoader;
-            IsoDirectory dir = dirLoader.getDir(firstBinPath, level, imageType==IMAGE_CHD);
+            IsoDirectory dir = IsoDirectoryReader::read(firstBinPath, level, imageType == IMAGE_CHD);
             string serialFound = "";
             if (!dir.rootDir.empty()) {
                 for (const string & entry:dir.rootDir) {
                  //   cout << entry << endl;
-                    string potentialSerial = fixSerial(entry);
+                    string potentialSerial = normalizeSerial(entry);
                     for (const string & prefix:prefixes) {
                         int pos = potentialSerial.find(prefix.c_str(), 0);
                         if (pos == 0) {
@@ -149,7 +151,7 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
                         }
                     }
                 }
-                string volume = fixSerial(dir.volumeName);
+                string volume = normalizeSerial(dir.volumeName);
                 for (const string & prefix:prefixes) {
                     int pos = volume.find(prefix.c_str(), 0);
                     if (pos == 0) {
@@ -168,9 +170,9 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
 }
 
 //*******************************
-// SerialScanner::workarounds
+// SerialScanner::readSerialByWorkaround
 //*******************************
-string SerialScanner::workarounds(ImageType imageType, string path, string firstBinPath)
+string SerialScanner::readSerialByWorkaround(ImageType imageType, string path, string firstBinPath)
 {
     string fileToScan = "";
     if (DirEntry::imageTypeUsesACueFile(imageType))
@@ -189,21 +191,41 @@ string SerialScanner::workarounds(ImageType imageType, string path, string first
     // BH2 - Resident Evil 1.5
     if (fileToScan.find("BH2")!=string::npos)
     {
-        return serialByMd5(fileToScan);
+        return serialFromMd5(fileToScan);
     }
     return "";
 }
 
 
 //*******************************
-// SerialScanner::serialByMd5
+// SerialScanner::serialFromMd5
 //*******************************
-string SerialScanner::serialByMd5(string scanFile)
+string SerialScanner::serialFromMd5(string scanFile)
 {
-    string head=Util::execUnixCommand(("head -c 1M \""+scanFile+"\" | md5sum | awk '{print $1}'").c_str());
-    string tail=Util::execUnixCommand(("tail -c 1M \""+scanFile+"\" | md5sum | awk '{print $1}'").c_str());
+    const size_t oneMb = 1024 * 1024;
+    ifstream is(scanFile, ios::binary);
+    if (!is.is_open()) {
+        return "";
+    }
+    is.seekg(0, ios::end);
+    size_t fileSize = (size_t) is.tellg();
+    vector<unsigned char> buffer;
 
-    return head+tail;
+    // md5 of the first 1 MB ("head -c 1M")
+    size_t headLen = fileSize < oneMb ? fileSize : oneMb;
+    buffer.resize(headLen);
+    is.seekg(0, ios::beg);
+    is.read((char *) buffer.data(), headLen);
+    string head = Md5::ofBytes(buffer.data(), headLen);
+
+    // md5 of the last 1 MB ("tail -c 1M")
+    size_t tailLen = headLen;
+    buffer.resize(tailLen);
+    is.seekg(fileSize - tailLen, ios::beg);
+    is.read((char *) buffer.data(), tailLen);
+    string tail = Md5::ofBytes(buffer.data(), tailLen);
+
+    return head + tail;
 }
 
 //*******************************
@@ -221,3 +243,5 @@ string SerialScanner::serialToRegion(const string & serial)
 
     return region;
 }
+
+} // namespace ableem

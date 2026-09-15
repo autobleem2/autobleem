@@ -3,11 +3,9 @@
 //
 #include "game.h"
 #include "metadata.h"
-#include "isodir.h"
-#include "inifile.h"
-#include "cfgprocessor.h"
+#include "../main.h"
+#include "../main.h"
 #include "../gui/gui.h"
-#include "serialscanner.h"
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -288,7 +286,7 @@ void USBGame::recoverMissingFiles() {
             // maybe we can do better ?
             cout << "getting serial from Image File" << endl;
          
-            string serial = SerialScanner::scanSerial(imageType, fullPath, firstBinPath);
+            string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
 
                 if (md.lookupBySerial(serial)) {
@@ -322,7 +320,7 @@ void USBGame::recoverMissingFiles() {
         bool japan = false;
 
         if (!metadataLoaded) {
-            string serial = SerialScanner::scanSerial(imageType, fullPath, firstBinPath);
+            string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
                 metadataLoaded = md.lookupBySerial(serial);
             }
@@ -346,8 +344,8 @@ void USBGame::recoverMissingFiles() {
         shared_ptr<Gui> gui(Gui::getInstance());
         DirEntry::copy(source, destination);
 
-        CfgProcessor processor;
-        processor.replaceUSB(gameDirName, fullPath, "region", "region = " + to_string(region));
+        ConfigFileEditor processor;
+        processor.replaceUsb(gameDirName, fullPath, "region", "region = " + to_string(region));
         pcsxCfgFound = true;
     }
 }
@@ -381,7 +379,7 @@ void USBGame::updateObj() {
         istringstream f(tmp);
         string s;
         while (getline(f, s, ',')) {
-            s = Util::decode(s);
+            s = Util::unescapeCommas(s);
             strings.push_back(s);
         }
         for (int i = 0; i < strings.size(); i++) {
@@ -426,7 +424,7 @@ void USBGame::updateObj() {
 //*******************************
 void USBGame::saveIni(string path) {
     //cout << "Overwritting ini file" << path << endl;
-    Inifile ini;
+    IniFile ini;
     ini.section = "Game";
     ini.values["title"] = title;
     ini.values["publisher"] = publisher;
@@ -447,7 +445,7 @@ void USBGame::saveIni(string path) {
 
     stringstream ss;
     for (int i = 0; i < discs.size(); i++) {
-        ss << Util::escape(discs[i].diskName);
+        ss << Util::escapeCommas(discs[i].diskName);
         if (i != discs.size() - 1) {
             ss << ",";
         }
@@ -462,7 +460,7 @@ void USBGame::saveIni(string path) {
 //*******************************
 void USBGame::parseIni(string path) {
     iniValues.clear();
-    Inifile ini;
+    IniFile ini;
     ini.load(path);
     if (ini.values.empty()) {
         gameIniFound = false;

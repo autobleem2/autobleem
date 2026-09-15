@@ -16,7 +16,6 @@
 #include "util.h"
 #include <unistd.h>
 #include "engine/GetGameDirHierarchy.h"
-#include "engine/memcard.h"
 #include "lang.h"
 #include "launcher/emu_interceptor.h"
 #include "launcher/pcsx_interceptor.h"
@@ -31,12 +30,64 @@ using namespace std;
 
 Database * db;      // non-owning: the Database objects live in runAutobleem()
 
-// these are defined in environment.h and are meant to not be modified once they are initialized here.
-extern bool private_singleArgPassed;
-extern string private_pathToUSBDrive;
-extern string private_pathToGamesDir;
-extern string private_pathToRegionalDBFile;
-extern string private_pathToInternalDBFile;
+//*******************************
+// setupEnvironment
+//*******************************
+// Tells ableem::Environment where everything is. This is the one place that knows the difference between the
+// console layout and a debug host.
+//
+// On a debug host a single arg (the path to the root of a usb drive) is optional instead of two args. In that
+// mode, as much as possible, files from the usb drive are used instead of files in the debug build environment
+// (the UI theme, the cover dbs, regional.db, the .prev file, the RetroArch playlists, the lang files, config.ini,
+// ...), so you can debug the contents of a usb drive someone sent you.
+static bool setupEnvironment(int argc, char *argv[]) {
+    string usbRoot, gamesDir, regionalDb, internalDb;
+    bool singleArg = false;
+    if (argc == 1 + 1) {
+        // the single arg is the path to the usb drive
+        singleArg = true;
+        usbRoot = argv[1];
+        regionalDb = usbRoot + sep + "System/Databases/regional.db";
+        internalDb = usbRoot + sep + "System/Databases/internal.db";
+        gamesDir = usbRoot + sep + "Games";
+    } else if (argc == 1 + 2) {
+        // the two args are the path to the regional.db file and the path to the /Games dir on the usb drive
+        regionalDb = argv[1];
+#ifdef AB_DEBUG_HOST
+        internalDb = "internal.db";   // it's in the same dir as the autobleem-gui app you are debugging
+#else
+        internalDb = "/media/System/Databases/internal.db";
+#endif
+        gamesDir = argv[2];
+        usbRoot = DirEntry::getDirNameFromPath(gamesDir);
+    } else {
+        cout << "USAGE: autobleem-gui /path/dbfilename.db /path/to/games" << endl;
+        return false;
+    }
+    Env::setUsbRoot(usbRoot);
+    Env::setGamesDir(gamesDir);
+    Env::setRegionalDbFile(regionalDb);
+    Env::setInternalDbFile(internalDb);
+
+#ifdef AB_DEBUG_HOST
+    if (singleArg) {
+        Env::setWorkingPath(usbRoot + sep + "Autobleem/bin/autobleem");
+        Env::setThemesDir(usbRoot + sep + "themes");
+        Env::setCoversDbDir(usbRoot + sep + "Autobleem/bin/db");
+    } else {
+        // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)
+        Env::setThemesDir(Env::getWorkingPath() + sep + "themes");
+        Env::setCoversDbDir("../db");
+    }
+    Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
+#else
+    (void) singleArg;
+    Env::setSonyDataPath("/usr/sony/share/data");
+    Env::setThemesDir("/media/themes");
+    Env::setCoversDbDir("../db");
+#endif
+    return true;
+}
 
 //*******************************
 // copyGameFilesInGamesDirToSubDirs
@@ -205,27 +256,7 @@ static int runAutobleem(int argc, char *argv[]) {
     shared_ptr<Lang> lang(Lang::getInstance());
 
 
-    if (argc == 1 + 1) {
-        // the single arg is the path to the usb drive
-        private_singleArgPassed = true;
-        private_pathToUSBDrive = argv[1];
-        private_pathToRegionalDBFile = private_pathToUSBDrive + sep + "System/Databases/regional.db";
-        private_pathToInternalDBFile = private_pathToUSBDrive + sep + "System/Databases/internal.db";
-        private_pathToGamesDir = private_pathToUSBDrive + sep + "Games";
-    } else if (argc == 1 + 2) {
-        // the two args are the path to the regional.db file and the path to the /Games dir on the usb drive
-        private_singleArgPassed = false;
-        private_pathToRegionalDBFile = argv[1];
-#ifdef AB_DEBUG_HOST
-        private_pathToInternalDBFile = "internal.db";   // it's in the same dir as the autobleem-gui app you are debugging
-#else
-        private_pathToInternalDBFile = "/media/System/Databases/internal.db";
-#endif
-        private_pathToGamesDir = argv[2];
-        private_pathToUSBDrive = DirEntry::getDirNameFromPath(private_pathToGamesDir);
-    }
-    else {
-        cout << "USAGE: autobleem-gui /path/dbfilename.db /path/to/games" << endl;
+    if (!setupEnvironment(argc, argv)) {
         return EXIT_FAILURE;
     }
 
@@ -267,7 +298,7 @@ static int runAutobleem(int argc, char *argv[]) {
     string dbpath = Env::getPathToRegionalDBFile();
     string pathToGamesDir = Env::getPathToGamesDir();
 
-    Memcard memcardOperation(pathToGamesDir);
+    MemcardManager memcardOperation(pathToGamesDir);
     memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
 
     string prevPath = Env::getWorkingPath() + sep + "autobleem.prev";

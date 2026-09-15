@@ -1,14 +1,11 @@
-// CD image reader classes for scanner
-
+// lib_ableem - engine (private): sector-level readers for PS1 disc images. Used by IsoDirectoryReader only.
 #pragma once
 
-#include "../main.h"
 #include <string>
 #include <vector>
 #include <fstream>
 #include <iostream>
-#include <iomanip>
-#ifndef AB_NO_CHD
+#ifndef ABLEEM_NO_CHD
 #include <libmamecd/cdrom.h>
 #endif
 
@@ -16,16 +13,25 @@
 #include <string.h>
 
 #define SECTOR_SIZE 2352
-#ifdef AB_NO_CHD
+#ifdef ABLEEM_NO_CHD
 #define CD_FRAME_SIZE 2352   // normally provided by libmamecd/cdrom.h
 #endif
 #define DATA_SIZE 2048
 #define MAX_OFFSET 500
 
-using namespace std;
+namespace ableem {
 
-// Helper class to read bin file as "CDROM" data
-class CDReader
+using std::string;
+using std::vector;
+using std::ifstream;
+using std::ios;
+using std::cout;
+using std::endl;
+
+
+// Reads a raw 2352-byte-sector disc image (.bin/.img) as 2048-byte data sectors; calibrate() finds the
+// data offset by locating the "CD001" ISO9660 marker in sector 16.
+class CdImageReader
 {
 private:
     ifstream stream;
@@ -36,7 +42,7 @@ private:
     bool opened = false;
 
 public:
-    virtual ~CDReader() { }
+    virtual ~CdImageReader() { }
 
     void setOffset(int off)
     {
@@ -216,8 +222,8 @@ public:
     }
 };
 
-#ifndef AB_NO_CHD
-class CHDReader : public CDReader
+#ifndef ABLEEM_NO_CHD
+class ChdImageReader : public CdImageReader
 {
 private:
     chd_file *inputchd = NULL;
@@ -225,7 +231,7 @@ private:
     const cdrom_toc *toc = NULL;
 
 public:
-    ~CHDReader() override { closeImage(); }
+    ~ChdImageReader() override { closeImage(); }
 
     void closeImage() override
     {
@@ -298,4 +304,6 @@ public:
         setCurrentSector(sectorNum);
     }
 };
-#endif // AB_NO_CHD
+#endif // ABLEEM_NO_CHD
+
+} // namespace ableem

@@ -2,9 +2,7 @@
 #include <string>
 #include <unistd.h>
 #include "util.h"
-#include "DirEntry.h"
-#include "engine/inifile.h"
-#include "engine/memcard.h"
+#include "main.h"
 
 using namespace std;
 
@@ -35,19 +33,19 @@ int main (int argc, char *argv[])
 {
     string path="/data/AppData/sony/title/";
     string sourceCard="/media/Games/!MemCards/";
-    Inifile ini;
+    IniFile ini;
     ini.load(path+"Game.ini");
     string imageType=valueOrDefault("imagetype","0",ini.values);
     string memcard=valueOrDefault("memcard","SONY",ini.values);
 
-    Inifile cfg;
+    IniFile cfg;
     cfg.load("/media/Autobleem/bin/autobleem/config.ini");
 
     if (memcard!="SONY")
     {
         if (DirEntry::exists(sourceCard+memcard))
         {
-            Memcard card("/media/Games/");
+            MemcardManager card("/media/Games/");
             if (!card.swapIn("./.pcsx",memcard))
             {
                 memcard = "SONY";
@@ -106,7 +104,7 @@ int main (int argc, char *argv[])
 
     if (memcard!="SONY")
     {
-            Memcard card("/media/Games/");
+            MemcardManager card("/media/Games/");
             card.swapOut("./.pcsx",memcard);
     }
 

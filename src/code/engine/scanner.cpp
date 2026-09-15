@@ -3,9 +3,7 @@
 //
 
 #include "scanner.h"
-#include "ecmhelper.h"
-#include "cfgprocessor.h"
-#include "serialscanner.h"
+#include "../main.h"
 #include "../lang.h"
 #include <fstream>
 #include <iostream>
@@ -27,9 +25,8 @@ void Scanner::unecm(const string & path) {
     for (const DirEntry & entry: DirEntry::dir(path)) {
         if (entry.name[0] == '.') continue;
         if (DirEntry::matchExtension(entry.name, EXT_ECM)) {
-            Ecmhelper ecm;
             Gui::splash(_("Decompressing ecm:"));
-            if (ecm.unecm(path + sep + entry.name, path + sep + entry.name.substr(0, entry.name.length() - 4))) {
+            if (EcmDecoder::decode(path + sep + entry.name, path + sep + entry.name.substr(0, entry.name.length() - 4))) {
                 DirEntry::removeFile(path + sep + entry.name);
             }
         }
@@ -60,7 +57,7 @@ void Scanner::updateRegionalDB(GamesHierarchy &gamesHierarchy, Database *db) {
             }
             string gamePath = DirEntry::removeSeparatorFromEndOfPath(data->fullPath);
             string ssPath = DirEntry::removeSeparatorFromEndOfPath(data->saveStatePath);
-            outfile << i + 1 << "," << Util::escape(gamePath) << "," << Util::escape(ssPath) << '\n';
+            outfile << i + 1 << "," << Util::escapeCommas(gamePath) << "," << Util::escapeCommas(ssPath) << '\n';
         }
         db->commit();
     }
@@ -401,7 +398,7 @@ void Scanner::scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy) {
             if (game->gameIniFound)
                 game->readIni(gameIniPath); // read it in now in case we need to create or update the serial/region
 
-            game->serial = SerialScanner::scanSerial(game->imageType, game->fullPath + sep, game->firstBinPath);
+            game->serial = SerialScanner::readSerial(game->imageType, game->fullPath + sep, game->firstBinPath);
             game->region = SerialScanner::serialToRegion(game->serial);
             //cout << "serial: " << game->serial << ", region: " << game->region << ", " << game->title <<endl;
             //cout << "Last Played: " << Util::timeToDisplayTimeString(game->last_played) << endl;

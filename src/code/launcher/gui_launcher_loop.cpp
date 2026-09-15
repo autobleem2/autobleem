@@ -357,7 +357,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                 // we have prev/next game first letter;
                 selGameIndex = nextGame;
                 gui->cursor.play();
-                notificationLines[1].setText(ReturnUpperCase(carouselGames[selGameIndex]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
                 setInitialPositions(selGameIndex);
                 updateMeta();
@@ -365,7 +365,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
             } else {
                 // no change
                 gui->cancel.play();
-                notificationLines[1].setText(ReturnUpperCase(carouselGames[selGameIndex]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
             }
         }
@@ -763,7 +763,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             if (gui->runningGame->play_using_ra)
                 return loop_squareButton_Pressed();     // play internal PSX game in RA
         } else {
-            Inifile gameini;
+            IniFile gameini;
             gameini.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
             if (gameini.values["play_using_ra"] == "true")
                 return loop_squareButton_Pressed();     // play PSX game in RA
@@ -927,7 +927,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
 
     gui->cursor.play();
     GuiEditor editor(*gui);
-    Inifile gameIni;
+    IniFile gameIni;
     if (selGameIndexInCarouselGamesIsValid()) {
         editor.internal = carouselGames[selGameIndex]->internal;
         if (!editor.internal) {
@@ -1016,7 +1016,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
         // Mapped card
         memcard = "SONY";
         if (!carouselGames[selGameIndex]->internal) {
-            Inifile gameini;
+            IniFile gameini;
             gameini.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
             memcard = gameini.values["memcard"];
         }

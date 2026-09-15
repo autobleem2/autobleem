@@ -9,7 +9,7 @@
 #include "../gui/gui.h"
 #include "../util.h"
 #include <map>
-#include "../DirEntry.h"
+#include "../main.h"
 #include <algorithm>
 #include "GetGameDirHierarchy.h"
 

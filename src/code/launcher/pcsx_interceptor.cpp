@@ -7,8 +7,8 @@
 #include "../util_time.h"
 #include "../gui/gui.h"
 #include "../lang.h"
-#include "../engine/memcard.h"
-#include "../engine/cfgprocessor.h"
+#include "../main.h"
+#include "../main.h"
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -19,11 +19,11 @@ using namespace std;
 void PcsxInterceptor::cleanupConfig(PsGamePtr &game)
 {
     // copy back config to its place
-    CfgProcessor processor;
+    ConfigFileEditor processor;
     string newConfig = game->ssFolder + sep + "autobleem.cfg";
     if (DirEntry::exists(newConfig)) {
         // fix bios
-        processor.replaceRaConf(newConfig,"Bios","Bios = SET_BY_PCSX");
+        processor.replaceInFile(newConfig,"Bios","Bios = SET_BY_PCSX");
 
 
 
@@ -129,13 +129,13 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
 void PcsxInterceptor::memcardIn(PsGamePtr & game) {
     string memcard = "SONY";
     if (!game->internal) {
-        Inifile gameini;
+        IniFile gameini;
         gameini.load(game->folder + sep + GAME_INI);
         memcard = gameini.values["memcard"];
     }
     if (memcard != "SONY") {
         if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
-            Memcard card(Env::getPathToGamesDir() + sep);
+            MemcardManager card(Env::getPathToGamesDir() + sep);
             if (!card.swapIn(game->ssFolder, game->memcard)) {
                 game->setMemCard("SONY");
             };
@@ -149,12 +149,12 @@ void PcsxInterceptor::memcardIn(PsGamePtr & game) {
 void PcsxInterceptor::memcardOut(PsGamePtr & game) {
     string memcard = "SONY";
     if (!game->internal) {
-        Inifile gameini;
+        IniFile gameini;
         gameini.load(game->folder + sep + GAME_INI);
         memcard = gameini.values["memcard"];
     }
     if (memcard != "SONY") {
-        Memcard card(Env::getPathToGamesDir() + sep);
+        MemcardManager card(Env::getPathToGamesDir() + sep);
         card.swapOut(game->ssFolder, game->memcard);
     }
 }

@@ -1,13 +1,11 @@
-#include "util.h"
-#include "DirEntry.h"
-#include "main.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/environment.h"
+#include "ableem/engine/strings.h"
 
-#include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <cerrno>
-#include "main.h"
 #include <dirent.h>
 #include <libgen.h>
 #include <iostream>
@@ -15,8 +13,17 @@
 
 using namespace std;
 
+namespace ableem {
+
 // 0.5MB
 #define FILE_BUFFER_SIZE 524288
+
+//*******************************
+// DirEntry::sortDirEntryByName
+//*******************************
+bool DirEntry::sortDirEntryByName(const DirEntry &i, const DirEntry &j) {
+    return lessCaseInsensitive(i.name, j.name);
+}
 
 //*******************************
 // append separator helper function
@@ -64,8 +71,8 @@ void DirEntry::generateM3UForDirectory(std::string path, std::string basename) {
     DirEntries filesInPath = DirEntry::diru_FilesOnly(path);
     for (const DirEntry &entry:filesInPath) {
         string ext = DirEntry::getFileExtension(entry.name);
-        if (Util::compareCaseInsensitive(ext, "pbp")
-            || Util::compareCaseInsensitive(ext, "cue"))
+        if (Strings::compareCaseInsensitive(ext, "pbp")
+            || Strings::compareCaseInsensitive(ext, "cue"))
             files.push_back(entry.name);
     }
     string m3uName = DirEntry::fixPath(path) + sep + basename + ".m3u";
@@ -112,7 +119,7 @@ string DirEntry::removeSeparatorFromEndOfPath(const string& path)
 // DirEntry::removeGamesPathFromFrontOfPath
 //*******************************
 string DirEntry::removeGamesPathFromFrontOfPath(const std::string& path) {
-    string gamesDir = Env::getPathToGamesDir() + sep;
+    string gamesDir = Environment::getPathToGamesDir() + sep;
     int len = gamesDir.size();
     if (path.compare(0, len, gamesDir) == 0)
         return string(path).erase(0, len);
@@ -170,7 +177,7 @@ bool DirEntry::fixCommaInDirOrFileName(const std::string &path, DirEntry *entry)
     // fix for comma in dirname
     if (entry->name.find(",") != string::npos) {
         string newName = entry->name;
-        Util::replaceAll(newName, ",", "-");
+        Strings::replaceAll(newName, ",", "-");
         DirEntry::renameFile(path + sep + entry->name, path + sep + newName);
         entry->name = newName;
         return true;
@@ -478,7 +485,7 @@ vector<string> DirEntry::cueToBinList(string cueFile) {
     while (getline(is, line)) {
         line = trim(line);
         if (line.substr(0, 4) == "FILE") {
-            binList.push_back(Util::getStringWithinChar(line, '"'));
+            binList.push_back(Strings::getStringWithinChar(line, '"'));
         }
     }
 
@@ -496,7 +503,7 @@ DirEntry::getFilesWithExtension(const string &path, const DirEntries &entries, c
         if(isDirectory(path + sep + entry.name))
             continue;
         // make it case insensitive compare (find .bin and .BIN)
-        fileExt = ReturnLowerCase(getFileExtension(entry.name));
+        fileExt = toLowerCopy(getFileExtension(entry.name));
         if (find(extensions.begin(), extensions.end(), fileExt) != extensions.end()) {
             fileList.push_back(entry);
         }
@@ -514,7 +521,7 @@ void DirEntry::print() const {
 //*******************************
 // DirEntries::print(const DirEntries &entries)
 //*******************************
-static void print(const DirEntries &entries) {
+void DirEntry::print(const DirEntries &entries) {
     for (auto & entry : entries)
         entry.print();
 }
@@ -586,3 +593,5 @@ tuple<ImageType, string> DirEntry::getGameFile(const DirEntries &entries) {
     else
         return make_tuple(IMAGE_NO_GAME_FOUND, "");
 }
+
+} // namespace ableem

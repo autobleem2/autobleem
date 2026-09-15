@@ -7,8 +7,8 @@
 #include "../util.h"
 #include "../util_time.h"
 #include "../lang.h"
-#include "../engine/inifile.h"
-#include "../DirEntry.h"
+#include "../main.h"
+#include "../main.h"
 #include "../environment.h"
 
 using namespace std;
@@ -53,7 +53,7 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
     string appendText = psGame->players == 1 ? _("Player") : _("Players");
     if (!psGame->foreign) {
         if (psGame->serial == "") {
-            Inifile iniFile;
+            IniFile iniFile;
             iniFile.load(psGame->folder + sep + "Game.ini");
             psGame->serial = iniFile.values["serial"];
             psGame->region = iniFile.values["region"];

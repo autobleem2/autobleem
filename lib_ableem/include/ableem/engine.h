@@ -1,0 +1,14 @@
+// lib_ableem - the engine half of the library: no SDL, no rendering. Filesystem, strings, configuration
+// files, the game database, disc image inspection and the game scanner. Link target: ableem_engine.
+#pragma once
+
+#include "engine/game_types.h"
+#include "engine/strings.h"
+#include "engine/filesystem.h"
+#include "engine/environment.h"
+#include "engine/ini_file.h"
+#include "engine/config_file_editor.h"
+#include "engine/memcard_manager.h"
+#include "engine/iso_directory.h"
+#include "engine/serial_scanner.h"
+#include "engine/ecm_decoder.h"

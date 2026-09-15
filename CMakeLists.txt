@@ -70,52 +70,34 @@ find_package(Threads REQUIRED)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
     set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
 endif()
+set(ABLEEM_ENABLE_CHD ${AB_ENABLE_CHD} CACHE BOOL "" FORCE)
 add_subdirectory(lib_ableem)
 
-if (AB_ENABLE_CHD)
-    set(AB_CHD_LIBS mamecd)
-else()
+if (NOT AB_ENABLE_CHD)
     message(STATUS "CHD support disabled")
     add_compile_definitions(AB_NO_CHD)
-    set(AB_CHD_LIBS)
 endif()
-
-add_library(sqlite3 STATIC libs/sqlite/sqlite3ab.c )
 
 add_executable(
         autobleem-gui
         src/code/DebugTimer.cpp
         src/code/DebugTimer.h
-        src/code/DirEntry.cpp
-        src/code/DirEntry.h
         src/code/engine/cardedit.cpp
         src/code/engine/cardedit.h
-        src/code/engine/cfgprocessor.cpp
-        src/code/engine/cfgprocessor.h
         src/code/engine/config.cpp
         src/code/engine/config.h
         src/code/engine/coverdb.cpp
         src/code/engine/coverdb.h
         src/code/engine/database.cpp
         src/code/engine/database.h
-        src/code/engine/ecmhelper.cpp
-        src/code/engine/ecmhelper.h
         src/code/engine/game.cpp
         src/code/engine/game.h
         src/code/engine/GetGameDirHierarchy.cpp
         src/code/engine/GetGameDirHierarchy.h
-        src/code/engine/inifile.cpp
-        src/code/engine/inifile.h
-        src/code/engine/isodir.cpp
-        src/code/engine/isodir.h
-        src/code/engine/memcard.cpp
-        src/code/engine/memcard.h
         src/code/engine/metadata.cpp
         src/code/engine/metadata.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
-        src/code/engine/serialscanner.cpp
-        src/code/engine/serialscanner.h
         src/code/environment.cpp
         src/code/environment.h
         src/code/gui/gui.cpp
@@ -201,17 +183,11 @@ add_executable(
         src/code/launcher/retboot_interceptor.h
         src/code/main.cpp
         src/code/main.h
-        src/code/unecm.c
         src/code/util.cpp
         src/code/util.h
         src/code/ver_migration.cpp
         src/code/ver_migration.h
         src/code/util_time.h src/code/util_time.cpp)
-
-target_include_directories(autobleem-gui PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/sqlite>
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/nlohmann>
-		)
 
 if (NOT WIN32)
     # starter wraps /tmp/pcsx on the console for the stock SonyUI path. it is not useful on a Windows dev build.
@@ -219,22 +195,19 @@ if (NOT WIN32)
             src/code/starter.cpp
             src/code/util.h
             src/code/util.cpp
-            src/code/DirEntry.h
-            src/code/DirEntry.cpp
-            src/code/engine/inifile.cpp
-            src/code/engine/memcard.cpp src/code/engine/memcard.h
             src/code/environment.h
             src/code/environment.cpp
             )
+    target_link_libraries(starter ableem_engine)
 endif()
 
 target_link_libraries(autobleem-gui
          Threads::Threads
          ableem
-		 sqlite3
-         ${AB_CHD_LIBS}
          ${CMAKE_DL_LIBS}
 )
+# TEMPORARY (removed once database/json move into lib_ableem/engine)
+target_include_directories(autobleem-gui PRIVATE lib_ableem/third_party/sqlite lib_ableem/third_party/nlohmann)
 
 
 #add_custom_command(TARGET autobleem-gui PRE_BUILD

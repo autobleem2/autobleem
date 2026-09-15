@@ -5,7 +5,7 @@
 #include "config.h"
 #include "../util.h"
 #include "../launcher/gui_NotificationLine.h"
-#include "../DirEntry.h"
+#include "../main.h"
 #include "../environment.h"
 
 //*******************************

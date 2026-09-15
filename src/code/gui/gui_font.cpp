@@ -2,7 +2,7 @@
 #include <iostream>
 #include "../util.h"
 #include <cassert>
-#include "../DirEntry.h"
+#include "../main.h"
 #include "gui.h"
 
 using namespace std;

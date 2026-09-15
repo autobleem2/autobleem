@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../gui_screen.h"
-#include "../../engine/inifile.h"
+#include "../../main.h"
 #include "../../launcher/ps_game.h"
 
 //********************
@@ -17,7 +17,7 @@ public:
     void loop();
 
     void refreshData();
-    Inifile gameIni;
+    IniFile gameIni;
     std::string gameFolder; // ex: /Games/Racing/007 Racing
 
     int highres = 0;

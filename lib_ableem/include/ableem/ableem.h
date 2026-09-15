@@ -1,9 +1,8 @@
 #pragma once
-// Convenience header pulling in the whole public API. Individual headers can be included on their own too.
-//
-// ui/    - everything SDL/rendering-facing: window, renderer, textures, fonts, audio, input, screens.
-// engine/ - reserved for future non-rendering portable library code; empty for now.
-
+// ui/     - everything SDL/rendering-facing: window, renderer, textures, fonts, audio, input, screens (target: ableem).
+// engine/ - portable, SDL-free logic: filesystem, config files, database, disc images, game scanning
+//           (target: ableem_engine, which ableem links).
+#include "engine.h"
 #include "ui/types.h"
 #include "ui/platform.h"
 #include "ui/renderer.h"

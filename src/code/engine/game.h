@@ -71,13 +71,13 @@ public:
     std::map<std::string, std::string> iniValues;
 
     static void sortByTitle(USBGames &games) { std::sort(games.begin(), games.end(),
-                                                         [] (const USBGamePtr &g1, const USBGamePtr &g2) { return SortByCaseInsensitive(g1->title, g2->title); }); }
+                                                         [] (const USBGamePtr &g1, const USBGamePtr &g2) { return lessCaseInsensitive(g1->title, g2->title); }); }
     static void sortByFullPath(USBGames &games) { std::sort(begin(games), end(games),
-                                                            [] (const USBGamePtr &g1, const USBGamePtr &g2) { return SortByCaseInsensitive(g1->fullPath, g2->fullPath); }); }
+                                                            [] (const USBGamePtr &g1, const USBGamePtr &g2) { return lessCaseInsensitive(g1->fullPath, g2->fullPath); }); }
     static void sortByGameDirName(USBGames &games) { std::sort(begin(games), end(games),
-                                                            [] (const USBGamePtr &g1, const USBGamePtr &g2) { return SortByCaseInsensitive(g1->gameDirName, g2->gameDirName); }); }
+                                                            [] (const USBGamePtr &g1, const USBGamePtr &g2) { return lessCaseInsensitive(g1->gameDirName, g2->gameDirName); }); }
     static void sortBySerial(USBGames &games) { std::sort(begin(games), end(games),
-                                                          [] (const USBGamePtr &g1, const USBGamePtr &g2) { return SortByCaseInsensitive(g1->serial, g2->serial); }); }
+                                                          [] (const USBGamePtr &g1, const USBGamePtr &g2) { return lessCaseInsensitive(g1->serial, g2->serial); }); }
 
 private:
     void parseIni(std::string path);

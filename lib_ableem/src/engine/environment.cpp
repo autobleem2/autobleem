@@ -1,0 +1,83 @@
+#include "ableem/engine/environment.h"
+#include "ableem/engine/filesystem.h"
+#include "ableem/engine/game_types.h"
+
+#include <climits>
+#include <unistd.h>
+
+using namespace std;
+
+namespace ableem {
+
+namespace {
+    // file-local so nothing outside the setters can touch them
+    string usbRoot;
+    string gamesDir;
+    string regionalDbFile;
+    string internalDbFile;
+    string workingPath;
+    string sonyDataPath;
+    string themesDir;
+    string coversDbDir;
+    string internalGamesDir = "/gaadata";
+}
+
+//*******************************
+// Environment:: setters
+//*******************************
+void Environment::setUsbRoot(const string &path) { usbRoot = path; }
+void Environment::setGamesDir(const string &path) { gamesDir = path; }
+void Environment::setRegionalDbFile(const string &path) { regionalDbFile = path; }
+void Environment::setInternalDbFile(const string &path) { internalDbFile = path; }
+void Environment::setWorkingPath(const string &path) { workingPath = path; }
+void Environment::setSonyDataPath(const string &path) { sonyDataPath = path; }
+void Environment::setThemesDir(const string &path) { themesDir = path; }
+void Environment::setCoversDbDir(const string &path) { coversDbDir = path; }
+void Environment::setInternalGamesDir(const string &path) { internalGamesDir = path; }
+
+//*******************************
+// Environment:: getters
+//*******************************
+string Environment::getPathToUSBRoot() { return usbRoot; }
+string Environment::getPathToAutobleemDir() { return usbRoot + sep + "Autobleem"; }
+string Environment::getPathToAppsDir() { return usbRoot + sep + "Apps"; }
+string Environment::getPathToRCDir() { return getPathToAutobleemDir() + sep + "rc"; }
+string Environment::getPathToGamesDir() { return gamesDir; }
+string Environment::getPathToMemCardsDir() { return gamesDir + sep + MEMCARDS_DIR_NAME; }
+string Environment::getPathToSaveStatesDir() { return gamesDir + sep + SAVESTATES_DIR_NAME; }
+string Environment::getPathToSystemDir() { return usbRoot + sep + "System"; }
+string Environment::getPathToRetroarchDir() { return usbRoot + sep + "retroarch"; }
+string Environment::getPathToRetroarchPlaylistsDir() { return getPathToRetroarchDir() + sep + "playlists"; }
+string Environment::getPathToRetroarchCoreFile() { return getPathToRetroarchDir() + sep + "cores/km_pcsx_rearmed_neon_libretro.so"; }
+string Environment::getPathToRomsDir() { return usbRoot + sep + "roms"; }
+string Environment::getPathToRegionalDBFile() { return regionalDbFile; }
+string Environment::getPathToInternalDBFile() { return internalDbFile; }
+string Environment::getPathToInternalGamesDir() { return internalGamesDir; }
+
+//*******************************
+// Environment::getWorkingPath
+// the resources dir. when the application never set one (the console runs autobleem-gui from its own dir)
+// it is the current directory.
+//*******************************
+string Environment::getWorkingPath() {
+    if (!workingPath.empty())
+        return workingPath;
+    char temp[PATH_MAX];
+    return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+}
+
+string Environment::getPathToMemcardTemplateDir() { return getWorkingPath() + sep + "memcard"; }
+
+//*******************************
+// Environment::getSonyPath / getSonyFontPath
+//*******************************
+string Environment::getSonyPath() { return sonyDataPath; }
+string Environment::getSonyFontPath() { return getSonyPath() + sep + "font"; }
+
+//*******************************
+// Environment::getPathToThemesDir / getPathToCoversDBDir
+//*******************************
+string Environment::getPathToThemesDir() { return themesDir; }
+string Environment::getPathToCoversDBDir() { return coversDbDir; }
+
+} // namespace ableem

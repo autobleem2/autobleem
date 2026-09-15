@@ -3,14 +3,14 @@
 //
 #pragma once
 
-#include "inifile.h"
+#include "../main.h"
 
 //******************
 // Config
 //******************
 class Config {
 public:
-    Inifile inifile;
+    IniFile inifile;
     Config();
     void save();
 };

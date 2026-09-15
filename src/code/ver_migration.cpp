@@ -7,7 +7,7 @@
 #include "ver_migration.h"
 #include "util.h"
 #include "engine/config.h"
-#include "engine/inifile.h"
+#include "main.h"
 #include <fstream>
 #include <iostream>
 using namespace std;
@@ -86,7 +86,7 @@ void VerMigration::migrate04_05(Database * db)
             {
                 continue;
             }
-            Inifile ini;
+            IniFile ini;
             ini.load(gameIniLoc);
             string title = ini.values["title"];
             cout << title << endl;

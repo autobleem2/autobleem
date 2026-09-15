@@ -148,7 +148,7 @@ void GuiLauncher::getGames_SET_APPS(PsGames *gamesList) {
         std::string appIni = appPath + sep + dir.name + sep + "app.ini";
         cout << "AppIni: " << appIni << endl;
         if (DirEntry::exists(appIni)) {
-            Inifile file;
+            IniFile file;
             file.load(appIni);
             PsGamePtr game{new PsGame};
             game->gameId = 0;
@@ -343,7 +343,7 @@ void GuiLauncher::loadAssets() {
         gui->input().flushEvents();
     }
 
-    Inifile colorsFile;
+    IniFile colorsFile;
     if (DirEntry::exists(gui->getCurrentThemePath() + sep + "colors.ini")) {
         colorsFile.load(gui->getCurrentThemePath() + sep + "colors.ini");
         fgColor.r = gui->getR(colorsFile.values["fg"]);

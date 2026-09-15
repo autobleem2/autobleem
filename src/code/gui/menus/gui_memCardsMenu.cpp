@@ -1,7 +1,7 @@
 #include "gui_memCardsMenu.h"
 #include <string>
 #include "../gui.h"
-#include "../../engine/memcard.h"
+#include "../../main.h"
 #include "../gui_confirm.h"
 #include "../gui_keyboard.h"
 #include "../../lang.h"
@@ -14,7 +14,7 @@ using namespace std;
 void GuiMemcards::init() {
     GuiMenuBase::init();    // call the base init
 
-    Memcard memcardOps(gui->pathToGamesDir);
+    MemcardManager memcardOps(gui->pathToGamesDir);
     lines = memcardOps.list();
 }
 
@@ -60,8 +60,8 @@ void GuiMemcards::doSquare_Pressed() {
     }
 
     if (!cancelled) {
-        Memcard memcardOps(gui->pathToGamesDir);
-        memcardOps.newCard(result);
+        MemcardManager memcardOps(gui->pathToGamesDir);
+        memcardOps.create(result);
         lines = memcardOps.list();
         int i = 0;
         for (const string & card : lines) {
@@ -95,8 +95,8 @@ void GuiMemcards::doTriangle_Pressed() {
         bool result = guiConfirm.result;
 
         if (result) {
-            Memcard memcardOps(gui->pathToGamesDir);
-            memcardOps.deleteCard(lines[selected]);
+            MemcardManager memcardOps(gui->pathToGamesDir);
+            memcardOps.remove(lines[selected]);
             lines = memcardOps.list();
         }
         render();
@@ -136,7 +136,7 @@ void GuiMemcards::doCross_Pressed() {
     }
 
     if (!cancelled) {
-        Memcard memcardOps(gui->pathToGamesDir);
+        MemcardManager memcardOps(gui->pathToGamesDir);
         memcardOps.rename(lines[selected], result);
         init();
         int pos = 0;

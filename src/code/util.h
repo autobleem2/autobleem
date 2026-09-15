@@ -1,10 +1,4 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-/* 
  * File:   util.h
  * Author: screemer
  *
@@ -16,38 +10,17 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <ableem/engine/strings.h>
 #include "environment.h"    // for AB_DEBUG_HOST
 
 //******************
 // Util
 //******************
-class Util {
+// The string helpers (Util::trim, Util::replaceAll, Util::toInt, ...) are ableem::Strings, inherited so the
+// existing call sites keep working. What is left here is process/console specific and stays in the app.
+class Util : public ableem::Strings {
 public:
-    static std::string escape(std::string input);
-    static std::string decode(std::string input);
-    static void replaceAll(std::string &str, const std::string &from, const std::string &to);
-
-    static bool isInteger(const char *input);
-    static int toInt(const std::string& s, int def = 0);   // like stoi but returns def instead of throwing
-    static bool compareCaseInsensitive(std::string first, std::string second);
-
-    static unsigned char readChar(std::ifstream * stream);
-    static unsigned long readDword(std::ifstream * stream);
-    static std::string readString(int size, std::ifstream * stream);
-    static std::string readString(std::ifstream * stream);
-    static void skipZeros(std::ifstream * stream);
-    static std::string commaSep(const std::string& input, int pos);
-    static std::string ltrim(const std::string& s);
-    static std::string rtrim(const std::string& s);
-    static std::string trim(const std::string& s);
-    static std::string getStringWithinChar(std::string s, char del);
-    static void removeCharsFromString(std::string& str, std::string charsToRemove);
-    static void removeCRLFFromString(std::string& str) { removeCharsFromString(str, "\r\n"); }
-    static std::istream& getlineRemoveCR(std::istream& is, std::string& str);
-    static void removeComment(std::string& str);    // remove "#" to end of line
-
     static std::string getAvailableSpace();
-    static std::string floatToString(float f, int n);
     static std::string execUnixCommand(const char* cmd);   // run a shell command, return its stdout ("" on failure)
     // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait. returns exit code, -1 if it could not run.
     static int runAndWait(const std::string& exe, const std::vector<std::string>& args);
@@ -55,11 +28,8 @@ public:
 
     static void powerOff();
 
-    static void cleanPublisherString(std::string & pub);  // remove any trailing "." or spaces
     static void dumpMemory(const char *p, int count);
-    static std::vector<std::string> getTokens(const std::string& str, char delim);
 
     static unsigned int getRandomNumber();
     static unsigned int getRandomIndex(unsigned int size);
 };
-

@@ -32,7 +32,12 @@
 #include <stdio.h>
 #include <string.h>
 
-void splash(char *message);
+// progress is reported through this callback (see unecm_set_progress) instead of the original stderr spam
+static void (*progress_cb)(const char *message) = 0;
+
+void unecm_set_progress(void (*cb)(const char *message)) {
+    progress_cb = cb;
+}
 
 /***************************************************************************/
 
@@ -213,10 +218,9 @@ void setcounter(unsigned n) {
         unsigned a = (n + 64) / 128;
         unsigned d = (mycounter_total + 64) / 128;
         if (!d) d = 1;
-        fprintf(stderr, "Decoding (%02d%%)\r", (100 * a) / d);
         char buffer[1024];
-        sprintf(buffer, "Decoding ECMed bin (%02d%%)\r", (100 * a) / d);
-        splash(buffer);
+        sprintf(buffer, "Decoding ECMed bin (%02d%%)", (100 * a) / d);
+        if (progress_cb) progress_cb(buffer);
     }
     mycounter = n;
 }
