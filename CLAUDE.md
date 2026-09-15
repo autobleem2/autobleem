@@ -8,23 +8,30 @@ This file is the primary documentation for the codebase — the source itself is
 
 ## Current work (2026-09)
 
-Refactor for stability, then add features. Priorities, in order:
+Refactor for stability, then add features. Done on 2026-09-15 (one commit per step, see `git log`):
 
-1. Behavior-neutral safety fixes: RAII instead of raw `new`/`delete`, check `fork()`/`execvp()`/file opens,
-   fix functions with missing returns on error paths.
-2. Centralize hard-coded paths (`/media/...`, `/tmp/...`, `/usr/sony/share/data`, `/gaadata`) and the
-   `#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)` PC-vs-PSC switches into `Environment`.
-3. `enum class` for the `#define`-int "enums" (`EMU_*`, `SET_*`, `STATE_*`, `SEL_OPTION_*`).
-4. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
+- Phase 0: Windows/MinGW dev build (`make_win.sh`), `AB_DEBUG_HOST` macro, keyboard-as-gamepad, `tools/win_drive.ps1`.
+- Phase 1: no uncaught exceptions (playlist JSON, `stoi`, `popen`), `Util::runAndWait` for every fork/exec,
+  SDL subsystem lifecycle (`TTF`/`Mix` init once, `SDL_Quit` via `atexit`), unit-buffered logs.
+- Phase 2: `database.cpp` uses a local RAII `Stmt` wrapper (no leaked statements, NULL-safe columns, rollback).
+- Phase 3: no raw owning `new`/`delete` left: stack objects for short-lived helpers and screens, `unique_ptr`
+  for DBs, interceptors, `GuiLauncher` elements, pads, memory-card editors.
+- Phase 4: `DirEntry::checkWritable` on every writer, `-Wall -Wextra` clean debug builds.
+
+Still to do, in order:
+
+1. `enum class` for the `#define`-int "enums" (`EMU_*`, `SET_*`, `STATE_*`, `SEL_OPTION_*`) - compiler-driven.
+2. Centralize the remaining hard-coded paths (`/media/...`, `/tmp/...`, `/usr/sony/share/data`, `/gaadata`) in
+   `Environment`.
+3. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
+4. Set up the Sony ARM toolchain and verify on a console (nothing above has been run on real hardware yet).
 5. Features.
-
-Also planned: a **MinGW/Windows build** for testing basic functionality on the dev machine (see Build).
-The final ARM toolchain will be set up later together with the user.
 
 ## Build
 
 Two targets in `CMakeLists.txt`: `autobleem-gui` (the app) and `starter` (small PCSX wrapper used by the
-stock-UI path). C++11. `sqlite3` is built from `libs/sqlite/sqlite3ab.c`.
+stock-UI path). **C++14** (the Sony toolchain is GCC 8+). `sqlite3` is built from `libs/sqlite/sqlite3ab.c`.
+Debug builds compile with `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
 - **ARM (real target)**: `make_arm.sh` → `PSCtoolchainV8.cmake` (`armv8-sony-linux-gnueabihf-gcc`, `--static -Os -s`).
   Requires the toolchain at `/opt/toolchain/armv8-sony-linux-gnueabihf`. Not available on this Windows host yet.
@@ -99,17 +106,17 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 | Area | Files | Notes |
 |---|---|---|
 | Entry | `main.cpp` | Parses argv → `Environment`; opens both DBs; adds columns to internal.db; restores memcards; decides `forceScan`; outer loop `menuSelection()` → `MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. |
-| `main.h` | | Shared enums/constants (`ImageType`, file extension consts) and inline string helpers (`trim`, `lcase`...). Uses `std::ptr_fun`/`not1` (gone in C++17). |
+| `main.h` | | Shared enums/constants (`ImageType`, file extension consts) and inline in-place string helpers (`trim`, `lcase`...). |
 | `environment.*` | `Env` | All path getters. `private_*` globals are set once in `main()`. Extend this instead of adding new literal paths. |
-| `DirEntry.*` | | Filesystem helpers (dir listing, copy/rename/remove, cue parsing, name fixing). Only place using `dirent`. |
-| `util.*`, `util_time.*` | | String/stream helpers, `execUnixCommand` (popen), `execFork`, `powerOff`. |
+| `DirEntry.*` | | Filesystem helpers (dir listing, copy/rename/remove, cue parsing, name fixing). Only place using `dirent`. `checkWritable(ofstream, path)` - call it after opening any output file. |
+| `util.*`, `util_time.*` | | String/stream helpers, `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `toInt(str, def)` (never throws), `powerOff`. |
 | `lang.*` | `_()` | gettext-style lookup from `resources/lang/<Language>.txt`. Emoji markers like `\|@X\|` in strings are replaced by button textures by `Gui::renderText`. |
 | `engine/scanner.*` | `Scanner` singleton | Walks `/Games`, repairs cue files (comma names, missing cue), runs `unecm`, verifies discs, fills `gamesToAddToDB`, writes `regional.db` + `autobleem.list`. |
 | `engine/GetGameDirHierarchy.*` | `GamesHierarchy` | Sub-directory tree of `/Games` → `SUBDIR_ROWS` tables; `autobleem.prev` file detects changes to force rescan. |
 | `engine/game.*` | `USBGame`/`Disc` | A game on USB as discovered by the scanner; reads/writes `Game.ini`; `verify()`. |
 | `engine/serialscanner.*`, `cdreader.h`, `isodir.*` | | Extract PS1 serial (SLUS-xxxxx) from BIN/PBP/CHD by reading the ISO9660 dir; CHD via libmamecd. |
 | `engine/metadata.*`, `coverdb.*` | | Look up title/publisher/year/cover PNG blob in the 3 regional `covers*.db` (U/E/J). |
-| `engine/database.*` | `Database` | Thin SQLite wrapper, prepared statements only. Schema notes in `engine/database_tables.txt`. Same class serves `regional.db`, `internal.db` and cover DBs. |
+| `engine/database.*` | `Database` | Thin SQLite wrapper. Every query uses the file-local RAII `Stmt` class (`ok()/bind()/row()/colInt()/colText()/colBlob()`); add new queries the same way. Schema notes in `engine/database_tables.txt`. Same class serves `regional.db`, `internal.db` and cover DBs; the destructor disconnects. |
 | `engine/memcard.*`, `cardedit.*` | | Memory-card swap in/out (`!MemCards`) and .mcd block editor. |
 | `engine/cfgprocessor.*`, `inifile.*`, `config.*` | | pcsx.cfg / RetroArch cfg rewriting; generic ini map; `config.ini` (keys are lower-cased on load, e.g. `values["theme"]`). |
 | `engine/padmapper.*` | | SDL GameController mapping, hot-plug, power button. |
@@ -135,7 +142,12 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 ## Conventions and gotchas
 
 - Singletons via `static shared_ptr<T> getInstance()`: `Gui`, `Scanner`, `Lang`, `RAIntegrator`.
-  `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are raw pointers owned by `main()`.
+  `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are non-owning pointers; the objects are `unique_ptr`s in
+  `runAutobleem()` (main.cpp). `GuiLauncher`'s named `PsObj*` members are non-owning shortcuts into
+  `staticElements`/`frontElemets`, which own them (`addStaticElement(new T(...))`).
+- Ownership rule: no raw owning pointers. Short-lived helpers and screens are stack objects; anything that
+  must outlive a scope goes in a `unique_ptr`. Exceptions are never thrown on purpose; `main()` has a
+  last-resort `catch` that logs to `AB_err.txt`.
 - `sep` is the path separator (a `Sep` helper in `DirEntry.h` wrapping `separator`, which is `'\\'` under
   `_WIN32`, `'/'` otherwise); paths are built by string concatenation. Several places still hard-code `"/"` or
   match `"/Games"` — a MinGW build should probably force `'/'` (Windows APIs accept it) rather than mix both.
@@ -145,11 +157,15 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
   easy to mix up; converting to `enum class` is on the plan.
 - The carousel duplicates games when fewer than 13 exist, so one `PsGamePtr` may appear in several
   `PsCarouselGame`s (see comment in `gui_launcher.h`).
-- `Gui::display()` calls `TTF_Init()`/`Mix_Init()` every time it is re-entered after a game; `GuiBase::~GuiBase()`
-  calls `SDL_Quit()` and `main()` calls it again. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
-- After `execvp` in the child there is no `_exit()` — if exec fails the child keeps running GUI code. Fix when
-  touching the interceptors.
-- Console `stdout`/`stderr` go to `/media/System/Logs/AB_*.txt`; `cout` is the logging mechanism.
+- SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
+  runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
+- `Gui::menuSelection()` recurses into itself after every sub-screen; screens created there are wrapped in
+  explicit `{}` scopes so they are destroyed before the recursion.
+- Console `stdout`/`stderr` go to `/media/System/Logs/AB_*.txt`; `cout` is the logging mechanism and is
+  unit-buffered so the last lines survive a crash.
+- Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
+  (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it.
+- Scripts that edit sources from Python must pass `encoding='utf-8'` (CLAUDE.md got mangled once).
 - Shell scripts and cfg/ini files must stay **LF** (enforced by `.gitattributes`). Do not let the Windows
   editor convert them.
 - Keep the two `trim` families in mind: in-place `trim()` from `main.h` vs copying `Util::trim()`.
@@ -158,4 +174,4 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 ## Git
 
 Repo was `git init`ed on 2026-09-15 from the final source snapshot (no upstream history here; the public
-history is at github.com/screemerpl/cbleemsync). Commit per logical refactor step; only commit when asked.
+history is at github.com/screemerpl/cbleemsync). Commit per logical refactor step. `.gitattributes` forces LF.
