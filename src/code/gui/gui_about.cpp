@@ -54,7 +54,7 @@ void GuiAbout::render() {
 
     renderer.fillRect(rect2);
 
-    fx.render();
+    fx.render(gui->platform().ticks());
 
     int yoffset = 150;
     ableem::Rect rect;

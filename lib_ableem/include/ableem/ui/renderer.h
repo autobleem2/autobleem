@@ -26,6 +26,9 @@ public:
 
     void fillRect(const Rect &r);
     void fillRect(); // fills the entire current render target (screen or whatever setTarget() pointed at)
+    // fills every rect in one draw call, all in the current draw color - far cheaper than looping fillRect()
+    // for things like a starfield with hundreds of small rects on weak hardware.
+    void fillRects(const Rect *rects, int count);
     void drawRect(const Rect &r);
     void drawLine(Point a, Point b);
 

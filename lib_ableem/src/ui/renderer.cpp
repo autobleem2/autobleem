@@ -3,6 +3,7 @@
 #include "ableem/ui/texture.h"
 #include "sdl_common.h"
 #include <stdexcept>
+#include <vector>
 
 namespace ableem {
 
@@ -63,6 +64,15 @@ void Renderer::fillRect(const Rect &r) {
 
 void Renderer::fillRect() {
     SDL_RenderFillRect(impl->renderer, nullptr);
+}
+
+void Renderer::fillRects(const Rect *rects, int count) {
+    if (count <= 0) return;
+    // thread_local so repeated calls (once per frame, per color bucket) don't reallocate
+    thread_local std::vector<SDL_Rect> buffer;
+    buffer.resize(count);
+    for (int i = 0; i < count; i++) buffer[i] = toSDL(rects[i]);
+    SDL_RenderFillRects(impl->renderer, buffer.data(), count);
 }
 
 void Renderer::drawRect(const Rect &r) {
