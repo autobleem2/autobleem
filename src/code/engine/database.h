@@ -43,6 +43,10 @@ using GameRowGames = std::vector<GameRowGame>;
 //******************
 class Database {
 public:
+    Database() {}
+    ~Database();    // disconnects
+    Database(const Database &) = delete;
+    Database &operator=(const Database &) = delete;
 
     bool connect(std::string fileName);
     void disconnect();
@@ -55,6 +59,7 @@ public:
 
     bool beginTransaction();
     bool commit();
+    bool rollback();
 
     bool insertGame(int id, std::string title, std::string publisher, int players, int year, std::string path, std::string sspath,
                     std::string memcard);
@@ -87,7 +92,7 @@ public:
     bool deleteGameIdFromOneTable(int id, const std::string& cmd_str);
     bool deleteGameIdFromAllTables(int id);
 private:
-    sqlite3 *db;
-    bool executeCreateStatement(char *sql, std::string name);
-    bool executeStatement(char *sql, std::string outMsg, std::string errorMsg);
+    sqlite3 *db = nullptr;
+    bool executeCreateStatement(const char *sql, const std::string &name);
+    bool executeStatement(const char *sql, const std::string &outMsg, const std::string &errorMsg);
 };

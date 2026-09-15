@@ -21,13 +21,12 @@ Coverdb::Coverdb()
 
     for (int i=0;i<3;i++)
     {
-        covers[i]= nullptr;
         auto filename = Env::getPathToCoversDBDir() + sep + "covers" + regionStr[i] + ".db";
         if (DirEntry::exists(filename)) {
-                covers[i] = new Database();
-                bool success = covers[i]->connect(filename);
-                if (!success) {
+                covers[i].reset(new Database());
+                if (!covers[i]->connect(filename)) {
                     cout << "failed to open database " << filename << endl;
+                    covers[i].reset();
                 }
         }
         else {
@@ -41,14 +40,7 @@ Coverdb::Coverdb()
 //*******************************
 Coverdb::~Coverdb()
 {
-    for (int i=0;i<3;i++)
-    {
-        if (covers[i]!= nullptr)
-        {
-            covers[i]->disconnect();
-            delete covers[i];
-        }
-    }
+    // the unique_ptrs disconnect and delete the databases
 }
 
 //*******************************
@@ -57,7 +49,7 @@ Coverdb::~Coverdb()
 bool Coverdb::isValid()
 {
     bool valid = false;
-    for (Database *db:covers)
+    for (const auto &db : covers)
     {
         if (db!= nullptr) valid = true;
     }

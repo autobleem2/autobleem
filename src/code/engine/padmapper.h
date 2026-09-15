@@ -80,6 +80,7 @@ public:
 
     void flushPads();
 
+    // register/remove pads on hot plug. on a debug host this also turns keyboard events into pad events.
     void handleHotPlug(SDL_Event *event);
 
     void handlePowerBtn(SDL_Event *event);

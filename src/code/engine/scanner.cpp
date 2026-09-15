@@ -425,8 +425,8 @@ void Scanner::scanUSBGamesDirectory(GamesHierarchy &gamesHierarchy) {
                                 string newFilename = game->fullPath + sep + game->discs[0].cueName + EXT_PNG;
                                 cout << "Updating cover in scanUSBGamesDirectory()" << newFilename << endl;
                                 ofstream pngFile;
-                                pngFile.open(newFilename);
-                                pngFile.write(md.bytes, md.dataSize);
+                                pngFile.open(newFilename, ios::binary);
+                                pngFile.write(md.bytes.data(), md.bytes.size());
                                 pngFile.flush();
                                 pngFile.close();
                                 game->automationUsed = false;

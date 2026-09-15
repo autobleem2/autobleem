@@ -190,6 +190,11 @@ void rewriteGamelistXml() {
 //*******************************
 // the whole program. main() below only wraps it so that a stray exception is logged instead of a silent abort().
 static int runAutobleem(int argc, char *argv[]) {
+    // stdout/stderr go to /media/System/Logs/AB_*.txt (see run.sh). without this they are block buffered and the
+    // last lines before a crash never reach the file, which is exactly when they are needed.
+    cout.setf(ios::unitbuf);
+    cerr.setf(ios::unitbuf);
+
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         cerr << "SDL_Init failed: " << SDL_GetError() << endl;
         return EXIT_FAILURE;

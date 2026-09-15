@@ -45,9 +45,9 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
 #ifdef AB_DEBUG_HOST
                 if ((*this)->internal) {
                     Metadata md;
-                    if (md.lookupBySerial((*this)->serial) && md.bytes && md.dataSize) {
+                    if (md.lookupBySerial((*this)->serial) && !md.bytes.empty()) {
                         // freesrc=1: the RWops is closed by IMG_LoadTexture_RW
-                        coverPng = IMG_LoadTexture_RW(renderer, SDL_RWFromMem(md.bytes, md.dataSize), 1);
+                        coverPng = IMG_LoadTexture_RW(renderer, SDL_RWFromMem(md.bytes.data(), md.bytes.size()), 1);
                     }
                 }
 #endif

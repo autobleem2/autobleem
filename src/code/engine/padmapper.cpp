@@ -58,7 +58,54 @@ void PadMapper::handlePowerBtn(SDL_Event *event)
         }
     }
 }
+#ifdef AB_DEBUG_HOST
+//*******************************
+// translateKeyboardToPad
+//*******************************
+// development machines usually have no gamepad. rewrite a key event into the pad event the screens expect.
+// the letters used here are not used by any screen (the on screen keyboard navigates with arrows).
+//   X = cross     O = circle    S = square    T = triangle
+//   I J K L = d-pad up left down right         Space = Start    B = Select (Back)
+//   Q = L1        E = R1        1 = L2        2 = R2
+static void translateKeyboardToPad(SDL_Event *event) {
+    if (event->type != SDL_KEYDOWN && event->type != SDL_KEYUP)
+        return;
+    if (event->key.repeat)
+        return;
+    bool down = (event->type == SDL_KEYDOWN);
+    int button = -1;
+    bool dpad = false;
+    switch (event->key.keysym.sym) {
+        case SDLK_x: button = SDL_BTN_CROSS; break;
+        case SDLK_o: button = SDL_BTN_CIRCLE; break;
+        case SDLK_s: button = SDL_BTN_SQUARE; break;
+        case SDLK_t: button = SDL_BTN_TRIANGLE; break;
+        case SDLK_SPACE: button = SDL_BTN_START; break;
+        case SDLK_b: button = SDL_BTN_SELECT; break;
+        case SDLK_q: button = SDL_BTN_L1; break;
+        case SDLK_e: button = SDL_BTN_R1; break;
+        case SDLK_1: button = SDL_BTN_L2; break;
+        case SDLK_2: button = SDL_BTN_R2; break;
+        case SDLK_i: button = SDL_BTN_DUP; dpad = true; break;
+        case SDLK_k: button = SDL_BTN_DDOWN; dpad = true; break;
+        case SDLK_j: button = SDL_BTN_DLEFT; dpad = true; break;
+        case SDLK_l: button = SDL_BTN_DRIGHT; dpad = true; break;
+        default: return;
+    }
+    if (dpad) {
+        event->type = down ? SDL_CONTROLLERHATMOTIONDOWN : SDL_CONTROLLERHATMOTIONUP;
+    } else {
+        event->type = down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP;
+    }
+    event->cbutton.button = button;
+    event->cbutton.state = down ? SDL_PRESSED : SDL_RELEASED;
+}
+#endif
+
 void PadMapper::handleHotPlug(SDL_Event *event) {
+#ifdef AB_DEBUG_HOST
+    translateKeyboardToPad(event);
+#endif
     if (event->type == SDL_JOYDEVICEADDED) {
         registerPad(event->jdevice.which);
     } else if (event->type == SDL_JOYDEVICEREMOVED) {

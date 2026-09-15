@@ -3,6 +3,7 @@
 //
 #pragma once
 #include "../main.h"
+#include <vector>
 
 //******************
 // Metadata
@@ -15,20 +16,12 @@ public:
     std::string serial;
     std::string region;
     int players = 0;
-    char *bytes = NULL;
-    int dataSize = 0;
+    std::vector<char> bytes;    // the cover PNG, empty if none
     bool valid = false;
 
     std::string lastRegion="U";
 
     bool lookupBySerial(const std::string & serial);
     bool lookupByTitle(const std::string & title);
-    void clean()
-    {
-        if (bytes != NULL)
-        {
-            delete [] bytes;
-            bytes=NULL;
-        }
-    }
+    void clean() { bytes.clear(); }
 };

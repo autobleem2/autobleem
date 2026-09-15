@@ -58,6 +58,11 @@ Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr 
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
 `backup_internal.sh`.
 
+**Keyboard = gamepad on debug hosts** (`PadMapper::translateKeyboardToPad`, `AB_DEBUG_HOST` only):
+`X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
+`Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
+to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
+
 ### Running on PC (debug)
 
 ```

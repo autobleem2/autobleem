@@ -13,7 +13,7 @@ using namespace std;
 bool Metadata::lookupBySerial(const string & serial) {
     shared_ptr<Gui> gui(Gui::getInstance());
     for (int i = 0; i < 3; i++) {
-            Database *db= gui->coverdb->covers[i];
+            Database *db = gui->coverdb->covers[i].get();
             if (db== nullptr) continue;
 
             if (db->querySerial(serial, this)) {
@@ -31,7 +31,7 @@ bool Metadata::lookupBySerial(const string & serial) {
 bool Metadata::lookupByTitle(const string & title) {
     shared_ptr<Gui> gui(Gui::getInstance());
     for (int i = 0; i < 3; i++) {
-        Database *db= gui->coverdb->covers[i];
+        Database *db = gui->coverdb->covers[i].get();
         if (db== nullptr) continue;
 
             if (db->queryTitle(title, this)) {
