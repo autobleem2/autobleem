@@ -9,12 +9,10 @@
 #include <sstream>
 #include <algorithm>
 #include "../util.h"
-#include <json.h>
-#include "../main.h"
 #include "../main.h"
 #include "../environment.h"
+#include <cassert>
 
-using namespace nlohmann;
 
 //********************
 // RAIntegrator::getInstance()
@@ -80,7 +78,7 @@ std::tuple<bool,int> RAIntegrator::playlistNameToIndex(const string& name) {
 PsGames RAIntegrator::readGamesFromPlaylistFile(const std::string& path) {
     cout << "Parsing Playlist: " << path << endl;
     PsGames psGames;
-    if (isJSONPlaylist(path)) {
+    if (ableem::RetroArchPlaylist::isJsonFormat(path)) {
         psGames = parseJSON(path);
     } else {
         psGames = parse6line(path);
@@ -307,62 +305,20 @@ bool RAIntegrator::findOverrideCore(PsGamePtr game, string &core_name, string &c
 }
 
 //********************
-// RAIntegrator::isJSONPlaylist
-//********************
-bool RAIntegrator::isJSONPlaylist(string path) {
-    std::ifstream in(path, std::ifstream::binary);
-    string line;
-    getline(in, line);
-    trim(line);
-    if (line.empty()) {
-        return false;
-    }
-    if (line == "{")
-        return true;
-    return false;
-}
-
-//********************
 // RAIntegrator::parseJSON
 //********************
 PsGames RAIntegrator::parseJSON(string path) {
     PsGames psGames;
-    std::ifstream in(path, std::ifstream::binary);
-    if (!in.is_open()) {
-        cout << "Could not open playlist: " << path << endl;
-        return psGames;
-    }
-
-    // a truncated or hand edited playlist must not take the whole UI down (nlohmann throws on bad input)
-    json j;
-    try {
-        in >> j;
-    } catch (const json::exception &e) {
-        cout << "Playlist " << path << " is not valid JSON: " << e.what() << endl;
+    ableem::RetroArchPlaylistEntries entries;
+    if (!ableem::RetroArchPlaylist::loadJson(path, entries)) {
         return psGames;
     }
 
     int id = 0;
-    json array = j.value("items", json::array());
-    if (!array.is_array()) {
-        cout << "Playlist " << path << " has no items array" << endl;
-        return psGames;
-    }
-
-    // read a string field. a missing field or a field that is not a string returns the default.
-    auto str = [](const json &item, const char *key, const string &def = "") -> string {
-        auto it = item.find(key);
-        if (it == item.end() || !it->is_string())
-            return def;
-        return it->get<string>();
-    };
-
-    for (const auto & item : array) {
-        if (!item.is_object())
-            continue;
+    for (const auto &entry : entries) {
         PsGamePtr game{new PsGame};
         game->gameId = id++;
-        game->title = str(item, "label");
+        game->title = entry.label;
         game->publisher = "";
         game->year = 0;
         game->players = 0;
@@ -375,10 +331,10 @@ PsGames RAIntegrator::parseJSON(string path) {
         game->hd = false;
         game->favorite = false;
         game->foreign = true;
-        game->core_name = str(item, "core_name", "DETECT");
-        game->core_path = str(item, "core_path", "DETECT");
-        game->db_name = str(item, "db_name");
-        game->image_path = str(item, "path");
+        game->core_name = entry.core_name;
+        game->core_path = entry.core_path;
+        game->db_name = entry.db_name;
+        game->image_path = entry.path;
 
 #ifdef AB_DEBUG_HOST
         // if you are running in the debugging environment then /media might be shared drive /media/sf_G_DRIVE etc
@@ -401,7 +357,6 @@ PsGames RAIntegrator::parseJSON(string path) {
             cout << "Game invalid: title = '" << game->title << "'" <<  endl;
         }
     }
-    in.close();
     return psGames;
 }
 
@@ -411,33 +366,19 @@ PsGames RAIntegrator::parseJSON(string path) {
 //********************
 PsGames RAIntegrator::parse6line(string path) {
     PsGames psGames;
-    std::ifstream in(path, ifstream::binary);
-
-    string game_path = "";
-    string label = "";
-    string core_path = "";
-    string core_name = "";
-    string crc = "";
-    string db_name = "";
-
-    if (!in.is_open()) {
-        cout << "Could not open playlist: " << path << endl;
+    ableem::RetroArchPlaylistEntries entries;
+    if (!ableem::RetroArchPlaylist::loadSixLine(path, entries)) {
         return psGames;
     }
 
     int id = 0;
-    // six lines per game. getline() is false at end of file or on a read error (eof() alone never becomes
-    // true on a stream that failed to open, which would loop forever)
-    while (getline(in, game_path)) {
-        if (!getline(in, label)) break;
-        if (!getline(in, core_path)) break;
-        if (!getline(in, core_name)) break;
-        if (!getline(in, crc)) break;
-        if (!getline(in, db_name)) break;
+    for (const auto &entry : entries) {
+        string core_path = entry.core_path;
+        string core_name = entry.core_name;
 
         PsGamePtr game{new PsGame};
         game->gameId = id++;
-        game->title = label;
+        game->title = entry.label;
         game->publisher = "";
         game->year = 0;
         game->players = 0;
@@ -452,8 +393,8 @@ PsGames RAIntegrator::parse6line(string path) {
         game->foreign = true;
         game->core_name = core_name;
         game->core_path = core_path;
-        game->db_name = db_name;
-        game->image_path = game_path;
+        game->db_name = entry.db_name;
+        game->image_path = entry.path;
         if ((core_path == "DETECT") || (core_name == "DETECT")) {
             bool coreFound = autoDetectCorePath(game, core_name, core_path);
             if (!coreFound) continue;
@@ -471,7 +412,6 @@ PsGames RAIntegrator::parse6line(string path) {
             psGames.emplace_back(game);
         }
     }
-    in.close();
     return psGames;
 }
 

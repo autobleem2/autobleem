@@ -196,8 +196,6 @@ target_link_libraries(autobleem-gui
          ableem
          ${CMAKE_DL_LIBS}
 )
-# TEMPORARY (removed once database/json move into lib_ableem/engine)
-target_include_directories(autobleem-gui PRIVATE lib_ableem/third_party/sqlite lib_ableem/third_party/nlohmann)
 
 
 #add_custom_command(TARGET autobleem-gui PRE_BUILD

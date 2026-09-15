@@ -17,23 +17,18 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
-#include <json.h>
-#include "../nlohmann/fifo_map.h"
+#include <cassert>
 
 using namespace std;
-using namespace nlohmann;
 using ableem::Rect;
 using ableem::Size;
 using ableem::Color;
 using ableem::Texture;
 using ableem::Event;
 using ableem::Button;
-
-// A workaround to give to use fifo_map as map, we are just ignoring the 'less' compare
-template<class K, class V, class dummy_compare, class A>
-using my_workaround_fifo_map = fifo_map<K, V, fifo_map_compare<K>, A>;
-using ordered_json = basic_json<my_workaround_fifo_map>;
-
+using ableem::RetroArchPlaylist;
+using ableem::RetroArchPlaylistEntry;
+using ableem::RetroArchPlaylistEntries;
 
 #define RA_PLAYLIST "AutoBleem.lpl"
 
@@ -646,23 +641,15 @@ void Gui::finish() {
 // Gui::exportDBToRetroarch
 //*******************************
 void Gui::exportDBToRetroarch() {
-    ordered_json j;
-    j["version"]="1.0";
-
     PsGames gamesList = PsGame::fromRecords(db->loadUsbGames());
     sort(gamesList.begin(), gamesList.end(), sortByTitle);
 
-    ordered_json items = ordered_json::array();
-    // copy the gamesList into json object
-    for_each(begin(gamesList), end(gamesList), [&](PsGamePtr &game)
-    {
-        ordered_json item = ordered_json::object();
-
+    RetroArchPlaylistEntries entries;
+    for (const PsGamePtr &game : gamesList) {
         string gameFile = (game->folder + sep + game->base);
         if (!DirEntry::matchExtension(game->base, ".pbp")) {
             gameFile += ".cue";
         }
-        gameFile += "";
 
         string base;
         if (DirEntry::isPBPFile(game->base)) {
@@ -674,26 +661,17 @@ void Gui::exportDBToRetroarch() {
             gameFile = game->folder + sep + base + ".m3u";
         }
 
+        RetroArchPlaylistEntry entry;
+        entry.path = gameFile;
+        entry.label = game->title;
+        entry.core_path = Env::getPathToRetroarchCoreFile();
+        entry.core_name = "DETECT";
+        entry.crc32 = "00000000|crc";
+        entry.db_name = RA_PLAYLIST;
+        entries.push_back(entry);
+    }
 
-        item["path"]=gameFile;
-        item["label"]=game->title;
-        item["core_path"]=Env::getPathToRetroarchCoreFile();
-        item["core_name"]="DETECT";
-        item["crc32"]="00000000|crc";
-        item["db_name"]=RA_PLAYLIST;
-
-        items.push_back(item);
-    });
-
-    j["items"] = items;
-
-    cout << j.dump() << endl;
-    string playlistPath = Env::getPathToRetroarchDir() + sep + "playlists/" + RA_PLAYLIST;
-    std::ofstream o(playlistPath);
-    if (!DirEntry::checkWritable(o, playlistPath)) return;
-    o << std::setw(2) << j << std::endl;
-    o.flush();
-    o.close();
+    RetroArchPlaylist::save(Env::getPathToRetroarchPlaylistsDir() + sep + RA_PLAYLIST, entries);
 }
 
 //*******************************

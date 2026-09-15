@@ -19,3 +19,4 @@
 #include "engine/usb_game.h"
 #include "engine/games_hierarchy.h"
 #include "engine/game_scanner.h"
+#include "engine/retroarch_playlist.h"

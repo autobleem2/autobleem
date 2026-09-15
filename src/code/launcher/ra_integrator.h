@@ -86,7 +86,6 @@ public:
 private:
     bool isGameValid(PsGamePtr game);
     bool isValidPlaylist(string path);
-    bool isJSONPlaylist(string path);
     PsGames parseJSON(string path);
     PsGames parse6line(string path);
     CoreInfoPtr parseCoreInfo(string file, string entry);
