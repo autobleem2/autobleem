@@ -1,5 +1,5 @@
-#include "ableem/font.h"
-#include "ableem/renderer.h"
+#include "ableem/ui/font.h"
+#include "ableem/ui/renderer.h"
 #include "sdl_common.h"
 #include <iostream>
 #include <vector>

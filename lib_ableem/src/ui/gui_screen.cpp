@@ -1,4 +1,4 @@
-#include "ableem/gui_screen.h"
+#include "ableem/ui/gui_screen.h"
 
 namespace ableem {
 

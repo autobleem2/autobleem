@@ -12,19 +12,19 @@ else()
 endif()
 
 add_library(ableem ${ABLEEM_LIB_KIND}
-        src/platform.cpp
-        src/renderer.cpp
-        src/texture.cpp
-        src/font.cpp
-        src/audio.cpp
-        src/input.cpp
-        src/gui_base.cpp
-        src/gui_screen.cpp
-        src/SDL_FontCache.c
-        src/SDL_FontCache.h
-        src/psc_event_filter.c
-        src/psc_event_filter.h
-        src/sdl_common.h
+        src/ui/platform.cpp
+        src/ui/renderer.cpp
+        src/ui/texture.cpp
+        src/ui/font.cpp
+        src/ui/audio.cpp
+        src/ui/input.cpp
+        src/ui/gui_base.cpp
+        src/ui/gui_screen.cpp
+        src/ui/SDL_FontCache.c
+        src/ui/SDL_FontCache.h
+        src/ui/psc_event_filter.c
+        src/ui/psc_event_filter.h
+        src/ui/sdl_common.h
         )
 
 target_include_directories(ableem

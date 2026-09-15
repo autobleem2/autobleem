@@ -1,5 +1,5 @@
-#include "ableem/input.h"
-#include "ableem/platform.h"
+#include "ableem/ui/input.h"
+#include "ableem/ui/platform.h"
 #include "sdl_common.h"
 #include "psc_event_filter.h"
 #include <iostream>

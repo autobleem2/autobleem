@@ -37,6 +37,13 @@ A portable static library (`lib_ableem/`, namespace `ableem`) that owns every SD
 call. The app talks to it only through `include/ableem/*.h` - `ableem.h` pulls in the whole API. Never add a
 `#include <SDL2/...>` to anything under `src/code/`; if you need new SDL functionality, add it to the library.
 
+Public headers are split by purpose, mirrored in `lib_ableem/src/`:
+- `include/ableem/ui/` - everything below (Platform, Renderer, Texture, Font, Audio, Input, GuiBase, GuiScreen,
+  types.h) - all of it is SDL/rendering-facing. App code includes these as `<ableem/ui/xxx.h>`.
+- `include/ableem/engine/` - reserved, empty for now. Would hold portable non-rendering logic if pieces of the
+  app's `src/code/engine/` (database, scanner, ...) are ever pulled into the library.
+- `include/ableem/ableem.h` - stays at the root (not under `ui/`) since it's the umbrella over both.
+
 - **`Platform`** - owns SDL_Init/window/TTF_Init/Mix_Init (created by `GuiBase`). `isDevHost()` replaces the
   app's old per-call `AB_DEBUG_HOST` checks for cursor grab; `setPowerOffHandler()` is how the app supplies
   what "power off" means (main.cpp wires it once to `gui->drawText(...); Util::powerOff();`) - `Input::poll()`
@@ -53,7 +60,7 @@ call. The app talks to it only through `include/ableem/*.h` - `ableem.h` pulls i
 - **`Sound`/`Music`/`Audio`** - `Sound::play()` replaces `Mix_PlayChannel(-1, chunk, 0)`; `Audio::close()` is
   the old "close until `Mix_QuerySpec` fails" loop, now one call (`gui->audio().close()`).
 - **`Input`** - one `poll(Event&)` replaces `SDL_PollEvent` + `PadMapper` + `gui/abl.c`'s PSC event filter
-  (still there, moved to `lib_ableem/src/psc_event_filter.c`, wired up by `Input`'s constructor). `Event::Type`
+  (still there, moved to `lib_ableem/src/ui/psc_event_filter.c`, wired up by `Input`'s constructor). `Event::Type`
   is `Quit/ButtonDown/ButtonUp/DpadDown/DpadUp/KeyDown/KeyUp/TextInput/PadAdded/PadRemoved/RenderReset`;
   `Button`/`Key` replace `SDL_BTN_*`/`SDLK_*`. `dpadUp()/Down()/Left()/Right()/Centered()` are the old
   `PadMapper::isUp()` etc (state, not just "this event's direction" - screens read them right after `poll()`

@@ -1,6 +1,6 @@
 #pragma once
-#include <ableem/font.h>
-#include <ableem/renderer.h>
+#include <ableem/ui/font.h>
+#include <ableem/ui/renderer.h>
 #include <map>
 #include <string>
 

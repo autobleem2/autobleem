@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <ableem/renderer.h>
-#include <ableem/texture.h>
+#include <ableem/ui/renderer.h>
+#include <ableem/ui/texture.h>
 #include <string>
 #include "../gui/gui.h"
 

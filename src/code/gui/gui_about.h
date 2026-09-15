@@ -6,7 +6,7 @@
 #include "gui_screen.h"
 #include "starfx.h"
 #include "gui_font.h"
-#include <ableem/texture.h>
+#include <ableem/ui/texture.h>
 
 //********************
 // GuiAbout

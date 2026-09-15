@@ -1,6 +1,6 @@
-#include "ableem/renderer.h"
-#include "ableem/platform.h"
-#include "ableem/texture.h"
+#include "ableem/ui/renderer.h"
+#include "ableem/ui/platform.h"
+#include "ableem/ui/texture.h"
 #include "sdl_common.h"
 #include <stdexcept>
 

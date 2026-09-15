@@ -6,8 +6,8 @@
 
 #include "ps_game.h"
 #include <vector>
-#include <ableem/renderer.h>
-#include <ableem/texture.h>
+#include <ableem/ui/renderer.h>
+#include <ableem/ui/texture.h>
 #include "ra_integrator.h"
 
 //******************

@@ -8,8 +8,8 @@
 
 #include "../gui/gui_screen.h"
 #include "../engine/cardedit.h"
-#include <ableem/texture.h>
-#include <ableem/font.h>
+#include <ableem/ui/texture.h>
+#include <ableem/ui/font.h>
 #include <string>
 
 using namespace std;

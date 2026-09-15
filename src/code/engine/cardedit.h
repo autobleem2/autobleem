@@ -8,8 +8,8 @@
 
 #include <string>
 #include <iconv.h>
-#include <ableem/renderer.h>
-#include <ableem/texture.h>
+#include <ableem/ui/renderer.h>
+#include <ableem/ui/texture.h>
 #include <vector>
 #include <cstdint>
 
