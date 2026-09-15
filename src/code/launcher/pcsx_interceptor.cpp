@@ -8,7 +8,7 @@
 #include "../gui/gui.h"
 #include "../lang.h"
 #include "../main.h"
-#include "../main.h"
+#include "../app.h"
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -44,17 +44,11 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
 
     shared_ptr<Gui> gui(Gui::getInstance());
 
-    if (game->internal) {
-        gui->internalDB->updateDatePlayed(game->gameId, UtilTime::getCurrentTime());
-    } else {
-        gui->db->updateDatePlayed(game->gameId, UtilTime::getCurrentTime());
-    }
-
-    string padMapping = gui->padMapping;
+    App::get().library().updateDatePlayed(*game, UtilTime::getCurrentTime());
 
     string lastCDpoint = game->ssFolder + sep + "lastcdimg.txt";
     string lastCDpointX = game->ssFolder + sep + "lastcdimg." + to_string(resumepoint)+".txt";
-    gui->saveSelection();
+    App::get().writeSelectionScript();
     std::vector<string> args;
     string gameFile = "";
 
@@ -110,7 +104,7 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
     args.push_back(resumepoint != -1 ? "1" : "0");
     args.push_back(aspect);
     args.push_back(filter);
-    args.push_back(padMapping.empty() ? "NA" : padMapping);
+    args.push_back("NA");   // pad mapping per-game was never wired up; this was always the fallback
 
 #ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");

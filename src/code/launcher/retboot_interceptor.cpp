@@ -7,7 +7,7 @@
 #include "../gui/gui.h"
 #include "../lang.h"
 #include "../main.h"
-#include "../main.h"
+#include "../app.h"
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -25,9 +25,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
 
     shared_ptr<Gui> gui(Gui::getInstance());
 
-    string padMapping = gui->padMapping;
-
-    gui->saveSelection();
+    App::get().writeSelectionScript();
     string gameFile = "";
 
     cout << "Starting RetroArch Emu" << endl;

@@ -396,7 +396,7 @@ void GuiLauncher::loop_chooseGameDir() {
     // pop game dir menu
     powerOffShift = false;
     SubDirRowInfos gameRowInfos;
-    gui->db->loadSubDirRows(&gameRowInfos);
+    app.library().usbGames().loadSubDirRows(&gameRowInfos);
     if (gameRowInfos.size() == 0) {
         return; // no games!
     }
@@ -694,21 +694,21 @@ void GuiLauncher::loop_squareButton_Pressed() {
             if (selGameIndexInCarouselGamesIsValid() && carouselGames[selGameIndex]->foreign) {
                 return;
             }
-            gui->startingGame = true;
+            app.session().startingGame = true;
             if (selGameIndexInCarouselGamesIsValid()) {
-                gui->runningGame = carouselGames[selGameIndex];
-                gui->lastSelIndex = selGameIndex;
-                addGameToPS1GameHistoryAsLatestGamePlayed(gui->runningGame);
+                app.session().runningGame = carouselGames[selGameIndex];
+                app.session().launcher.selIndex = selGameIndex;
+                addGameToPS1GameHistoryAsLatestGamePlayed(app.session().runningGame);
             }
-            gui->resumepoint = -1;
-            gui->lastSet = currentSet;
+            app.session().resumePoint = -1;
+            app.session().launcher.set = currentSet;
             if (currentSet == SET_PS1)
-                gui->lastPS1_SelectState = currentPS1_SelectState;
-            gui->lastUSBGameDirIndex = currentUSBGameDirIndex;
-            gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
+                app.session().launcher.ps1SelectState = currentPS1_SelectState;
+            app.session().launcher.usbGameDirIndex = currentUSBGameDirIndex;
+            app.session().launcher.raPlaylistIndex = currentRAPlaylistIndex;
             menuVisible = false;
 
-            gui->emuMode = EMU_RETROARCH;
+            app.session().emuMode = EmuMode::RetroArch;
         }
     }
 }
@@ -739,28 +739,28 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
         return;
     }
 
-    gui->startingGame = true;
+    app.session().startingGame = true;
     if (selGameIndexInCarouselGamesIsValid()) {
-        gui->runningGame = carouselGames[selGameIndex];
-        gui->lastSelIndex = selGameIndex;
+        app.session().runningGame = carouselGames[selGameIndex];
+        app.session().launcher.selIndex = selGameIndex;
     }
-    gui->resumepoint = -1;
-    gui->lastSet = currentSet;
+    app.session().resumePoint = -1;
+    app.session().launcher.set = currentSet;
     if (currentSet == SET_PS1)
-        gui->lastPS1_SelectState = currentPS1_SelectState;
-    gui->lastUSBGameDirIndex = currentUSBGameDirIndex;
-    gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
+        app.session().launcher.ps1SelectState = currentPS1_SelectState;
+    app.session().launcher.usbGameDirIndex = currentUSBGameDirIndex;
+    app.session().launcher.raPlaylistIndex = currentRAPlaylistIndex;
     menuVisible = false;
 
     if (currentSet == SET_PS1)
-        addGameToPS1GameHistoryAsLatestGamePlayed(gui->runningGame);
+        addGameToPS1GameHistoryAsLatestGamePlayed(app.session().runningGame);
 
-    gui->emuMode = EMU_PCSX;
+    app.session().emuMode = EmuMode::Pcsx;
 
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
     if (currentSet == SET_PS1) {
-        if (gui->runningGame->internal) {
-            if (gui->runningGame->play_using_ra)
+        if (app.session().runningGame->internal) {
+            if (app.session().runningGame->play_using_ra)
                 return loop_squareButton_Pressed();     // play internal PSX game in RA
         } else {
             IniFile gameini;
@@ -772,25 +772,25 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             return loop_squareButton_Pressed();     // play PSX game in RA
     }
 
-    if (gui->runningGame->foreign)
+    if (app.session().runningGame->foreign)
     {
-        if (!gui->runningGame->app) {
-            gui->emuMode = EMU_RETROARCH;
-            gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
-            gui->lastRAPlaylistName = currentRAPlaylistName;
+        if (!app.session().runningGame->app) {
+            app.session().emuMode = EmuMode::RetroArch;
+            app.session().launcher.raPlaylistIndex = currentRAPlaylistIndex;
+            app.session().launcher.raPlaylistName = currentRAPlaylistName;
         } else {
             GuiAppStart appStartScreen(*gui);
-            appStartScreen.setGame(gui->runningGame);
+            appStartScreen.setGame(app.session().runningGame);
             appStartScreen.show();
             bool result = appStartScreen.result;
             // Do not run
             if (!result)
             {
-                gui->startingGame = false;
+                app.session().startingGame = false;
                 menuVisible = true;
 
             }
-            gui->emuMode = EMU_LAUNCHER;
+            app.session().emuMode = EmuMode::Launcher;
             }
     }
 }
@@ -826,10 +826,7 @@ void GuiLauncher::addGameToPS1GameHistoryAsLatestGamePlayed(PsGamePtr game) {
     histGamesList.emplace_back(game);
 
     for (auto & g : histGamesList) {
-        if (g->internal)
-            gui->internalDB->updateHistory(g->gameId, g->history);
-        else
-            gui->db->updateHistory(g->gameId, g->history);
+        app.library().updateHistory(*g);
     }
 }
 
@@ -837,7 +834,7 @@ void GuiLauncher::addGameToPS1GameHistoryAsLatestGamePlayed(PsGamePtr game) {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
-    gui->resumingGui = false;
+    app.session().resumingGui = false;
     if (menu->selOption == SEL_OPTION_RESUME_FROM_SAVESTATE) {
         loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
     }
@@ -869,7 +866,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
     if (exitCode == 0) {
         freeAssets();
         loadAssets();
-        gui->resumingGui = false;
+        app.session().resumingGui = false;
         currentSet = lastSet;
         if (currentSet == SET_PS1)
             currentPS1_SelectState = lastPS1_SelectState;
@@ -949,24 +946,24 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         if (!editor.internal) {
             if (editor.changes) {
                 gameIni.reload(carouselGames[selGameIndex]->folder + sep + GAME_INI);
-                gui->db->updateTitle(carouselGames[selGameIndex]->gameId, gameIni.values["title"]);
+                app.library().updateTitle(*carouselGames[selGameIndex], gameIni.values["title"]);
             }
-            gui->db->reloadUsbGame(*carouselGames[selGameIndex]);
+            app.library().reload(*carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
                 editor.gameIni.values["favorite"] == "0") {
-                gui->lastSet = SET_PS1;
-                gui->lastPS1_SelectState = SET_PS1_Favorites;
+                app.session().launcher.set = SET_PS1;
+                app.session().launcher.ps1SelectState = SET_PS1_Favorites;
                 loadAssets();   // reload - one less favorite game in display
             }
         } else {
             if (editor.changes) {
-                gui->internalDB->updateTitle(carouselGames[selGameIndex]->gameId, editor.lastName);
+                app.library().updateTitle(*carouselGames[selGameIndex], editor.lastName);
             }
-            gui->internalDB->reloadInternalGame(*carouselGames[selGameIndex]);
+            app.library().reload(*carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
                 editor.gameData->favorite == false) {
-                gui->lastSet = SET_PS1;
-                gui->lastPS1_SelectState = SET_PS1_Favorites;
+                app.session().launcher.set = SET_PS1;
+                app.session().launcher.ps1SelectState = SET_PS1_Favorites;
                 loadAssets();   // reload - one less favorite game in display
             }
         }
@@ -1077,17 +1074,17 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
         if (sselector->operation == OP_LOAD) {
             if (game->isResumeSlotActive(slot)) {
                 gui->cursor.play();
-                gui->startingGame = true;
-                gui->runningGame = carouselGames[selGameIndex];
-                gui->lastSelIndex = selGameIndex;
-                gui->resumepoint = slot;
-                gui->lastSet = currentSet;
+                app.session().startingGame = true;
+                app.session().runningGame = carouselGames[selGameIndex];
+                app.session().launcher.selIndex = selGameIndex;
+                app.session().resumePoint = slot;
+                app.session().launcher.set = currentSet;
                 if (currentSet == SET_PS1)
-                    gui->lastPS1_SelectState = currentPS1_SelectState;
-                gui->lastUSBGameDirIndex = currentUSBGameDirIndex;
-                gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
+                    app.session().launcher.ps1SelectState = currentPS1_SelectState;
+                app.session().launcher.usbGameDirIndex = currentUSBGameDirIndex;
+                app.session().launcher.raPlaylistIndex = currentRAPlaylistIndex;
                 sselector->cleanSaveStateImages();
-                gui->emuMode = EMU_PCSX;
+                app.session().emuMode = EmuMode::Pcsx;
                 menuVisible = false;
             } else {
                 gui->cancel.play();

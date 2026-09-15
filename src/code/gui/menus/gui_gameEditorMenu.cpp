@@ -54,7 +54,7 @@ void GuiEditor::processOptionChange(bool direction) {
                         gameData->favorite = false;
                     }
                 }
-                gui->internalDB->updateFavorite(gameData->gameId, gameData->favorite);
+                app.library().internalGames().updateFavorite(gameData->gameId, gameData->favorite);
             } else {
                 if (gameIni.values["favorite"] == "")
                     gameIni.values["favorite"] = "0";   // doesn't exist yet in this ini so set to 0
@@ -82,7 +82,7 @@ void GuiEditor::processOptionChange(bool direction) {
                         gameData->play_using_ra = false;
                     }
                 }
-                gui->internalDB->updatePlayUsingRA(gameData->gameId, gameData->play_using_ra);
+                app.library().internalGames().updatePlayUsingRA(gameData->gameId, gameData->play_using_ra);
             } else {
                 if (gameIni.values["play_using_ra"] == "")
                     gameIni.values["play_using_ra"] = "false";   // doesn't exist yet in this ini so set to 0
@@ -525,7 +525,7 @@ void GuiEditor::loop() {
                                 }
 
                                 if (!cancelled) {
-                                    MemcardManager memcard(gui->pathToGamesDir);
+                                    MemcardManager memcard(Env::getPathToGamesDir());
                                     string savePath =
                                             Env::getPathToSaveStatesDir() + sep + gameIni.entry + sep + "memcards";
                                     memcard.storeToRepo(savePath, result);

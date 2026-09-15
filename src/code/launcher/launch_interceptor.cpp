@@ -6,6 +6,7 @@
 #include "../util.h"
 #include "../util_time.h"
 #include "../gui/gui.h"
+#include "../app.h"
 #include <iostream>
 #include <unistd.h>
 #include "../environment.h"
@@ -18,17 +19,13 @@ bool LaunchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     shared_ptr<Gui> gui(Gui::getInstance());
     cout << "Starting External App" << endl;
 
-    if (game->internal) {
-        gui->internalDB->updateDatePlayed(game->gameId, UtilTime::getCurrentTime());
-    } else {
-        gui->db->updateDatePlayed(game->gameId, UtilTime::getCurrentTime());
-    }
+    App::get().library().updateDatePlayed(*game, UtilTime::getCurrentTime());
 
     if (game->foreign) {
         cout << "FOREIGN MODE" << endl;
     }
 
-    gui->saveSelection();
+    App::get().writeSelectionScript();
 
     string link = game->base + sep+ game->startup;
 

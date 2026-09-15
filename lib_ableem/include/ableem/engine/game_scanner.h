@@ -21,7 +21,8 @@ enum class ScanStage {
     Game,               // detail: the game dir name
     DecompressingEcm,   // detail: "" at the start, then the decoder's "Decoding ECMed bin (nn%)" messages
     UpdatingDatabase,   // detail: ""
-    GameFailedVerify    // detail: the game's full path
+    GameFailedVerify,   // detail: the game's full path
+    MovingFile          // detail: the file being moved into its own game sub-directory
 };
 
 //******************
@@ -54,6 +55,11 @@ public:
 
     // true when game files (pbp/bin/cue/img/chd) sit directly in the dir instead of in sub-dirs
     static bool hasLooseGameFiles(const std::string &path);
+
+    // moves every pbp/cue(+its bins)/img/bin sitting directly in `path` into its own new sub-directory (one
+    // per game), the layout the rest of the scanner expects. reports each move as ScanStage::MovingFile.
+    // returns true if anything was moved.
+    bool moveLooseGameFilesIntoSubDirs(const std::string &path);
 
 private:
     ScanProgressListener *listener;

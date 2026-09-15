@@ -9,10 +9,10 @@
 #include "menus/gui_memCardsMenu.h"
 #include "menus/gui_gameManagerMenu.h"
 #include "gui_confirm.h"
-#include "../ver_migration.h"
 #include "../launcher/gui_launcher.h"
 #include "gui_padTest.h"
 #include "../lang.h"
+#include "../app.h"
 #include <unistd.h>
 #include <iostream>
 #include <iomanip>
@@ -26,13 +26,6 @@ using ableem::Color;
 using ableem::Texture;
 using ableem::Event;
 using ableem::Button;
-using ableem::RetroArchPlaylist;
-using ableem::RetroArchPlaylistEntry;
-using ableem::RetroArchPlaylistEntries;
-
-#define RA_PLAYLIST "AutoBleem.lpl"
-
-
 //********************
 // Gui::Gui
 //********************
@@ -320,11 +313,7 @@ void Gui::criticalException(const string &text) {
 //*******************************
 // Gui::display
 //*******************************
-void Gui::display(bool forceScan, const string &_pathToGamesDir, GameDatabase *db, bool resume) {
-    this->db = db;
-    this->pathToGamesDir = _pathToGamesDir;
-    this->forceScan = forceScan;
-
+void Gui::display(bool resume) {
     cout << platform().versionString() << endl;
 
     platform().setScaleQuality(2);
@@ -336,26 +325,8 @@ void Gui::display(bool forceScan, const string &_pathToGamesDir, GameDatabase *d
         splashScreen.show();
         hideMouseCursor();
     } else {
-        resumingGui = true;
+        App::get().session().resumingGui = true;
     }
-}
-
-//*******************************
-// Gui::saveSelection
-//*******************************
-void Gui::saveSelection() {
-    ofstream os;
-    string path = cfg.inifile.values["cfg"];
-    os.open(path);
-    if (!DirEntry::checkWritable(os, path)) return;   // the rc scripts then keep the previous selection
-    os << "#!/bin/sh" << endl << endl;
-    os << "AB_SELECTION=" << menuOption << endl;
-    os << "AB_THEME=" << cfg.inifile.values["theme"] << endl;
-    os << "AB_PCSX=" << cfg.inifile.values["pcsx"] << endl;
-    os << "AB_MIP=" << cfg.inifile.values["mip"] << endl;
-
-    os.flush();
-    os.close();
 }
 
 bool otherMenuShift = false;
@@ -369,11 +340,12 @@ void Gui::menuSelection() {
     shared_ptr<Scanner> scanner(Scanner::getInstance());
 
 
-    if (!coverdb->hasAnyRegion()) {
+    if (!App::get().library().covers().hasAnyRegion()) {
         criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
     }
     otherMenuShift = false;
     powerOffShift = false;
+    bool forceScan = App::get().session().forceScan;
     string mainMenu = "|@Start| " + _("AutoBleem") + "    |@X|  " + _("Re/Scan") + " ";
     if (cfg.inifile.values["ui"] == "classic") {
         mainMenu += "  |@O|  " + _("Original") + "  ";
@@ -414,21 +386,21 @@ void Gui::menuSelection() {
 
     bool menuVisible = true;
     while (menuVisible) {
-        if (startingGame) {
-            drawText(runningGame->title);
-            this->menuOption = MENU_OPTION_START;
+        if (App::get().session().startingGame) {
+            drawText(App::get().session().runningGame->title);
+            App::get().session().menuOption = MENU_OPTION_START;
             menuVisible = false;
-            startingGame = false;
+            App::get().session().startingGame = false;
             return;
         }
 
-        if (resumingGui) {
+        if (App::get().session().resumingGui) {
             {   // scoped: the screen must be gone before menuSelection() recurses
                 GuiLauncher launcherScreen(*this);
                 launcherScreen.show();
             }
             drawText("");
-            resumingGui = false;
+            App::get().session().resumingGui = false;
             menuSelection();
             menuVisible = false;
         }
@@ -485,13 +457,13 @@ void Gui::menuSelection() {
                             if (e.button == Button::Start) {
                                 if (cfg.inifile.values["ui"] == "classic") {
                                     cursor.play();
-                                    this->menuOption = MENU_OPTION_RUN;
+                                    App::get().session().menuOption = MENU_OPTION_RUN;
                                     menuVisible = false;
                                 } else {
-                                    if (lastSet < 0) {
-                                        lastSet = SET_PS1;
-                                        lastSelIndex = 0;
-                                        resumingGui = false;
+                                    if (App::get().session().launcher.set < 0) {
+                                        App::get().session().launcher.set = SET_PS1;
+                                        App::get().session().launcher.selIndex = 0;
+                                        App::get().session().resumingGui = false;
                                     }
                                     cursor.play();
                                     drawText(_("Starting EvolutionUI"));
@@ -519,22 +491,22 @@ void Gui::menuSelection() {
                                         result = confirm.result;
                                     }
                                     if (result) {
-                                        this->menuOption = MENU_OPTION_RETRO;
+                                        App::get().session().menuOption = MENU_OPTION_RETRO;
                                         menuVisible = false;
                                     } else {
                                         menuSelection();
                                         menuVisible = false;
                                     }
                                 } else {
-                                    exportDBToRetroarch();
-                                    this->menuOption = MENU_OPTION_RETRO;
+                                    App::get().library().exportToRetroArchPlaylist();
+                                    App::get().session().menuOption = MENU_OPTION_RETRO;
                                     menuVisible = false;
                                 }
                             };
 
                         if (e.button == Button::Cross) {
                             cursor.play();
-                            this->menuOption = MENU_OPTION_SCAN;
+                            App::get().session().menuOption = MENU_OPTION_SCAN;
 
                             menuVisible = false;
                         };
@@ -561,7 +533,7 @@ void Gui::menuSelection() {
                             if (cfg.inifile.values["ui"] == "classic")
                                 if (e.button == Button::Circle) {
                                     cancel.play();
-                                    this->menuOption = MENU_OPTION_SONY;
+                                    App::get().session().menuOption = MENU_OPTION_SONY;
                                     menuVisible = false;
                                 };
                         break;
@@ -637,42 +609,6 @@ void Gui::finish() {
     backgroundImg = Texture();
 }
 
-//*******************************
-// Gui::exportDBToRetroarch
-//*******************************
-void Gui::exportDBToRetroarch() {
-    PsGames gamesList = PsGame::fromRecords(db->loadUsbGames());
-    sort(gamesList.begin(), gamesList.end(), sortByTitle);
-
-    RetroArchPlaylistEntries entries;
-    for (const PsGamePtr &game : gamesList) {
-        string gameFile = (game->folder + sep + game->base);
-        if (!DirEntry::matchExtension(game->base, ".pbp")) {
-            gameFile += ".cue";
-        }
-
-        string base;
-        if (DirEntry::isPBPFile(game->base)) {
-            base = game->base.substr(0, game->base.length() - 4);
-        } else {
-            base = game->base;
-        }
-        if (DirEntry::exists(game->folder + sep + base + ".m3u")) {
-            gameFile = game->folder + sep + base + ".m3u";
-        }
-
-        RetroArchPlaylistEntry entry;
-        entry.path = gameFile;
-        entry.label = game->title;
-        entry.core_path = Env::getPathToRetroarchCoreFile();
-        entry.core_name = "DETECT";
-        entry.crc32 = "00000000|crc";
-        entry.db_name = RA_PLAYLIST;
-        entries.push_back(entry);
-    }
-
-    RetroArchPlaylist::save(Env::getPathToRetroarchPlaylistsDir() + sep + RA_PLAYLIST, entries);
-}
 
 //*******************************
 // Rect and Size routines

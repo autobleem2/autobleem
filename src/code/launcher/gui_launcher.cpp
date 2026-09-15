@@ -45,7 +45,7 @@ void GuiLauncher::updateMeta() {
 //*******************************
 void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
     SubDirRowInfos gameRowInfos;
-    gui->db->loadSubDirRows(&gameRowInfos);
+    app.library().usbGames().loadSubDirRows(&gameRowInfos);
     if (gameRowInfos.size() == 0)
         return; // no games!
     currentUSBGameDirName = gameRowInfos[rowIndex].rowName;
@@ -55,10 +55,10 @@ void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
             cout << "game row: " << gameRowInfo.subDirRowIndex << ", " << gameRowInfo.rowName << ", " <<
                  gameRowInfo.indentLevel << ", " << gameRowInfo.numGames << endl;
 #endif
-    PsGames completeList = PsGame::fromRecords(gui->db->loadUsbGames());
+    PsGames completeList = PsGame::fromRecords(app.library().usbGames().loadUsbGames());
 
     vector<int> gameIdsInRow;
-    gui->db->loadGameIdsInSubDirRow(&gameIdsInRow, rowIndex);
+    app.library().usbGames().loadGameIdsInSubDirRow(&gameIdsInRow, rowIndex);
 #if 0
     for (auto &id : gameIdsInRow) {
             cout << "game row: " << selectedRowIndex << ", id: " << id << endl;
@@ -80,7 +80,7 @@ void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
 // GuiLauncher::appendGames_SET_INTERNAL
 //*******************************
 void GuiLauncher::appendGames_SET_INTERNAL(PsGames *gamesList) {
-    PsGames internal = PsGame::fromRecords(gui->internalDB->loadInternalGames());
+    PsGames internal = PsGame::fromRecords(app.library().internalGames().loadInternalGames());
     for (const auto &internalGame : internal) {
         gamesList->push_back(internalGame);
     }
@@ -320,20 +320,20 @@ void GuiLauncher::loadAssets() {
     vector<string> texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
                             _("Edit Memory Card information"), _("Resume game from saved state point")};
 
-    currentSet = gui->lastSet;
+    currentSet = app.session().launcher.set;
     if (currentSet == SET_PS1)
-        currentPS1_SelectState = gui->lastPS1_SelectState;
-    currentUSBGameDirIndex = gui->lastUSBGameDirIndex;
-    currentRAPlaylistIndex = gui->lastRAPlaylistIndex;
+        currentPS1_SelectState = app.session().launcher.ps1SelectState;
+    currentUSBGameDirIndex = app.session().launcher.usbGameDirIndex;
+    currentRAPlaylistIndex = app.session().launcher.raPlaylistIndex;
     if (currentRAPlaylistIndex < raPlaylists.size())
-        currentRAPlaylistName = raPlaylists[gui->lastRAPlaylistIndex];
-    if (gui->lastRAPlaylistIndex < raPlaylists.size())
-        gui->lastRAPlaylistName = raPlaylists[gui->lastRAPlaylistIndex];
+        currentRAPlaylistName = raPlaylists[app.session().launcher.raPlaylistIndex];
+    if (app.session().launcher.raPlaylistIndex < raPlaylists.size())
+        app.session().launcher.raPlaylistName = raPlaylists[app.session().launcher.raPlaylistIndex];
 #if 0
-    if (gui->lastRAPlaylistName != "")
+    if (app.session().launcher.raPlaylistName != "")
     {
-        currentRAPlaylistName = gui->lastRAPlaylistName;
-        //gui->lastRAPlaylistName = "";
+        currentRAPlaylistName = app.session().launcher.raPlaylistName;
+        //app.session().launcher.raPlaylistName = "";
     }
 #endif
 
@@ -370,9 +370,9 @@ void GuiLauncher::loadAssets() {
     publisher = "";
     year = "";
     players = "";
-    cout << "Last Index" << gui->lastSelIndex << endl;
-    if (gui->lastSelIndex != 0) {
-        selGameIndex = gui->lastSelIndex;
+    cout << "Last Index" << app.session().launcher.selIndex << endl;
+    if (app.session().launcher.selIndex != 0) {
+        selGameIndex = app.session().launcher.selIndex;
         setInitialPositions(selGameIndex);
     }
 
@@ -487,11 +487,11 @@ void GuiLauncher::loadAssets() {
     sselector->font24 = gui->themeFonts[FONT_22_MED];
     sselector->visible = false;
 
-    if (gui->resumingGui) {
+    if (app.session().resumingGui) {
         cout << "Restoring GUI state" << endl;
         PsGamePtr &game = carouselGames[selGameIndex];
 
-        if (gui->emuMode == EMU_PCSX) {
+        if (app.session().emuMode == EmuMode::Pcsx) {
             if (game->isCleanExit()) {
                 sselector->loadSaveStateImages(game, true);
                 sselector->visible = true;
@@ -556,7 +556,6 @@ void GuiLauncher::freeAssets() {
 // run when screen is loaded
 void GuiLauncher::init() {
     gui = Gui::getInstance();
-    gui->inGuiLauncher = true;
 
     raIntegrator = RAIntegrator::getInstance();
     loadAssets();
@@ -568,7 +567,6 @@ void GuiLauncher::init() {
 // run when screen is loaded
 GuiLauncher::~GuiLauncher() {
     freeAssets();
-    gui->inGuiLauncher = false;
 }
 
 //*******************************

@@ -19,7 +19,7 @@ void GuiSelectMemcard::init() {
     cards.clear();
 
     shared_ptr<Gui> gui(Gui::getInstance());
-    MemcardManager memcardOps(gui->pathToGamesDir);
+    MemcardManager memcardOps(Env::getPathToGamesDir());
     if (listType==MC_CUSTOM) {
         cards = memcardOps.list();
     } else

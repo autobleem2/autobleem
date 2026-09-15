@@ -171,12 +171,13 @@ add_executable(
         src/code/launcher/ra_integrator.h
         src/code/launcher/retboot_interceptor.cpp
         src/code/launcher/retboot_interceptor.h
+        src/code/app.cpp
+        src/code/app.h
+        src/code/session.h
         src/code/main.cpp
         src/code/main.h
         src/code/util.cpp
         src/code/util.h
-        src/code/ver_migration.cpp
-        src/code/ver_migration.h
         src/code/util_time.h src/code/util_time.cpp)
 
 if (NOT WIN32)

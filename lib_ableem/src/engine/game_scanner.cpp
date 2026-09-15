@@ -539,4 +539,55 @@ bool GameScanner::hasLooseGameFiles(const string & path) {
     return fileList.size() > 0;
 }
 
+//*******************************
+// GameScanner::moveLooseGameFilesIntoSubDirs
+//*******************************
+bool GameScanner::moveLooseGameFilesIntoSubDirs(const string &path) {
+    bool moved = false;
+
+    // pbp/cue/chd first - a cue's bins are moved alongside it, so they must not also be picked up as loose
+    // bin/img files below
+    vector<string> extensions = {"pbp", "cue", "chd"};
+    DirEntries globalFileList = DirEntry::diru(path);
+    DirEntries fileList = DirEntry::getFilesWithExtension(path, globalFileList, extensions);
+
+    for (const auto &entry : fileList) {
+        report(ScanStage::MovingFile, entry.name);
+        string filenameWE = DirEntry::getFileNameWithoutExtension(entry.name);
+        if (!DirEntry::exists(path + sep + entry.name)) continue;   // already moved (e.g. as another cue's bin)
+
+        if (DirEntry::getFileExtension(entry.name) == "cue") {
+            vector<string> binList = DirEntry::cueToBinList(path + sep + entry.name);
+            if (!binList.empty()) {
+                DirEntry::createDir(path + sep + filenameWE);
+                DirEntry::renameFile(path + sep + entry.name, path + sep + filenameWE + sep + entry.name);
+                for (const auto &bin : binList) {
+                    report(ScanStage::MovingFile, bin);
+                    DirEntry::renameFile(path + sep + bin, path + sep + filenameWE + sep + bin);
+                }
+                moved = true;
+            }
+        } else {
+            DirEntry::createDir(path + sep + filenameWE);
+            DirEntry::renameFile(path + sep + entry.name, path + sep + filenameWE + sep + entry.name);
+            moved = true;
+        }
+    }
+
+    // then whatever bin/img files are left over (not claimed by a cue above)
+    extensions = {"img", "bin"};
+    fileList = DirEntry::getFilesWithExtension(path, globalFileList, extensions);
+    for (const auto &entry : fileList) {
+        report(ScanStage::MovingFile, entry.name);
+        string filenameWE = DirEntry::getFileNameWithoutExtension(entry.name);
+        if (!DirEntry::exists(path + sep + entry.name)) continue;
+
+        DirEntry::createDir(path + sep + filenameWE);
+        DirEntry::renameFile(path + sep + entry.name, path + sep + filenameWE + sep + entry.name);
+        moved = true;
+    }
+
+    return moved;
+}
+
 } // namespace ableem

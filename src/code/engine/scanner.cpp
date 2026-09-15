@@ -30,5 +30,8 @@ void Scanner::onScanProgress(ScanStage stage, const string &detail) {
             Gui::splash(_("Game failed to verify:") + " " + detail);
             sleep(3);   // long enough to read it
             break;
+        case ScanStage::MovingFile:
+            Gui::splash(_("Moving :") + " " + detail);
+            break;
     }
 }

@@ -5,6 +5,7 @@
 #include "ps_carousel.h"
 #include "../gui/gui.h"
 #include "../engine/scanner.h"
+#include "../app.h"
 #include "ra_integrator.h"
 #include <unistd.h>
 #include <iostream>
@@ -49,7 +50,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
 #ifdef AB_DEBUG_HOST
                 if ((*this)->internal) {
                     GameMetadata md;
-                    if (Gui::getInstance()->coverdb->findBySerial((*this)->serial, md) && !md.bytes.empty()) {
+                    if (App::get().library().covers().findBySerial((*this)->serial, md) && !md.bytes.empty()) {
                         coverPng = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
                     }
                 }

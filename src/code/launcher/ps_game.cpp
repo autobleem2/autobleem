@@ -6,6 +6,7 @@
 #include "../util.h"
 #include "../main.h"
 #include "../gui/gui.h"
+#include "../app.h"
 #include <fstream>
 #include <iostream>
 
@@ -50,8 +51,7 @@ void PsGame::setMemCard(string name) {
         ini.load(this->folder + sep + GAME_INI);
         ini.values["memcard"] = name;
         ini.save(this->folder + sep + GAME_INI);
-        shared_ptr<Gui> gui(Gui::getInstance());
-        gui->db->updateMemcard(this->gameId, name);
+        App::get().library().usbGames().updateMemcard(this->gameId, name);
     }
 }
 

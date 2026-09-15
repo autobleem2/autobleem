@@ -13,28 +13,14 @@
 #include "../util.h"
 #include "gui_font.h"
 #include "../environment.h"
+#include "../session.h"
 
 using namespace std;
-
-enum MenuOption { MENU_OPTION_SCAN = 1, MENU_OPTION_RUN, MENU_OPTION_SONY, MENU_OPTION_RETRO, MENU_OPTION_START };
-
-#define EMU_PCSX          0
-#define EMU_RETROARCH     1
-#define EMU_LAUNCHER      2
 
 #define SCREEN_WIDTH  ableem::GuiBase::ScreenWidth
 #define SCREEN_HEIGHT ableem::GuiBase::ScreenHeight
 
 enum XAlignment { XALIGN_LEFT, XALIGN_CENTER, XALIGN_RIGHT };
-
-// if you add a new set also update setNames in gui_launcher.cpp
-#define SET_PS1      0
-#define SET_RETROARCH 1
-#define SET_APPS 2
-#define SET_LAST 2
-
-// SET_PS1 select sub states. keep SET_PS1_Games_Subdir last as it's going to be left off the L2+Select menu
-enum { SET_PS1_All_Games=0, SET_PS1_Internal_Only, SET_PS1_Favorites, SET_PS1_History, SET_PS1_Games_Subdir };
 
 //********************
 // Gui
@@ -53,13 +39,6 @@ public:
     IniFile defaultData;
     Config cfg;
 
-    CoverDatabase *coverdb = nullptr;
-    // db and internalDB are set in main.cpp and remain alive until exit
-    GameDatabase *db = nullptr;
-    GameDatabase *internalDB = nullptr;
-
-    bool inGuiLauncher = false;
-
     Fonts themeFonts;
     Fonts sonyFonts;
 
@@ -70,7 +49,7 @@ public:
 
     void loadAssets(bool reloadMusic = true);
 
-    void display(bool forceScan, const std::string &_pathToGamesDir, GameDatabase *db, bool resume);
+    void display(bool resume);
 
     void hideMouseCursor();
 
@@ -80,8 +59,6 @@ public:
     static void splash(const std::string & message);
 
     void menuSelection();
-
-    void saveSelection();
 
     unsigned char getR(const std::string &val);
 
@@ -93,8 +70,6 @@ public:
 
     ableem::Texture loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname);
 
-    void exportDBToRetroarch();
-
     void stopAudio();
     void playMusic(bool customMusic, string musicPath);
     void restartAudio(int freq);
@@ -102,17 +77,6 @@ public:
     bool customMusic=false;
     int freq = 44100;
     string musicPath;
-
-    MenuOption menuOption = MENU_OPTION_SCAN;
-
-    // these are saved in gui so the next time Start brings up the carousel it can restore to last state
-    int lastSet = SET_PS1;          // one of these: all games, internal, usb game dir, favorites, RA playlist
-    // SET_PS1_All_Games, SET_PS1_Internal_Only, SET_PS1_Favorites, SET_PS1_History, SET_PS1_Games_Subdir
-    int lastPS1_SelectState = SET_PS1_All_Games;
-    int lastSelIndex = 0;           // index into carouselGames
-    int lastUSBGameDirIndex = 0;    // top row in menu = /Games
-    int lastRAPlaylistIndex = 0;    // top row in menu = first playlist name
-    string lastRAPlaylistName = "";
 
     ableem::Rect backgroundRect;
     ableem::Rect logoRect;
@@ -122,24 +86,14 @@ public:
     ableem::Texture cdJewel;
     std::map<std::string, ableem::Texture> buttonTextureMap;
 
-    std::string pathToGamesDir; // path to /Games.  "/media/Games" or "/debugSystemPath/Games".
-
     ableem::Music music;
     ableem::Font themeFont;
-    bool forceScan = false;
 
     ableem::Sound cancel;
     ableem::Sound cursor;
     ableem::Sound home_down;
     ableem::Sound home_up;
     ableem::Sound resume;
-
-    bool startingGame = false;
-    bool resumingGui = false;
-    PsGamePtr runningGame;
-    int emuMode = EMU_PCSX;
-    int resumepoint = -1;
-    string padMapping;
 
     Gui(Gui const &) = delete;
 

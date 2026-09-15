@@ -14,7 +14,7 @@ using namespace std;
 void GuiMemcards::init() {
     GuiMenuBase::init();    // call the base init
 
-    MemcardManager memcardOps(gui->pathToGamesDir);
+    MemcardManager memcardOps(Env::getPathToGamesDir());
     lines = memcardOps.list();
 }
 
@@ -60,7 +60,7 @@ void GuiMemcards::doSquare_Pressed() {
     }
 
     if (!cancelled) {
-        MemcardManager memcardOps(gui->pathToGamesDir);
+        MemcardManager memcardOps(Env::getPathToGamesDir());
         memcardOps.create(result);
         lines = memcardOps.list();
         int i = 0;
@@ -95,7 +95,7 @@ void GuiMemcards::doTriangle_Pressed() {
         bool result = guiConfirm.result;
 
         if (result) {
-            MemcardManager memcardOps(gui->pathToGamesDir);
+            MemcardManager memcardOps(Env::getPathToGamesDir());
             memcardOps.remove(lines[selected]);
             lines = memcardOps.list();
         }
@@ -136,7 +136,7 @@ void GuiMemcards::doCross_Pressed() {
     }
 
     if (!cancelled) {
-        MemcardManager memcardOps(gui->pathToGamesDir);
+        MemcardManager memcardOps(Env::getPathToGamesDir());
         memcardOps.rename(lines[selected], result);
         init();
         int pos = 0;

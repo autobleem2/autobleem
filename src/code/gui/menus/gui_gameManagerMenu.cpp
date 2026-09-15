@@ -21,7 +21,7 @@ void GuiManager::init() {
     GuiMenuBase::init();    // call the base class init()
 
     psGames.clear();
-    psGames = PsGame::fromRecords(gui->db->loadUsbGames());    // Create list of games
+    psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames());    // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);  // sort by title
     for (int i = 0; i < psGames.size(); ++i) {
         // left column              right column
@@ -94,7 +94,7 @@ void GuiManager::doCircle_Pressed() {
     gui->cancel.play();
     if (changes)
     {
-        gui->forceScan=true;
+        app.session().forceScan = true;
     }
     menuVisible = false;
 }
@@ -116,11 +116,11 @@ void GuiManager::doSquare_Pressed() {
     if (delGame) {
         cout << "Trying to delete " << gameName << endl;
         gui->renderStatus(_("Please wait ... deleting") + " " + gameName);
-        bool success = gui->db->deleteGame(gameId);
+        bool success = app.library().usbGames().deleteGame(gameId);
         if (success) {
             success = DirEntry::removeDirAndContents(game->folder);
             if (success) {
-                PsGames currentGames = PsGame::fromRecords(gui->db->loadUsbGames());
+                PsGames currentGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames());
                 int numberOfGamesRemainingWithSameSaveState = count_if(begin(currentGames), end(currentGames),
                                                                        [&](const PsGamePtr &g) {
                                                                            return g->ssFolder == gameSaveStateFolder;
@@ -142,7 +142,7 @@ void GuiManager::doSquare_Pressed() {
         cout << "Failed to delete " << gameName << endl;
         gui->renderStatus(_("Failed to delete") + " " + gameName);
     }
-    gui->forceScan = true;  // in order for the sub dir hierarchy to be fixed we have to do a rescan
+    app.session().forceScan = true;  // in order for the sub dir hierarchy to be fixed we have to do a rescan
     //menuVisible = false;
     init(); // refresh games list and menu item count
     render();
@@ -165,12 +165,12 @@ void GuiManager::doTriangle_Pressed() {
 
         int errors = 0;
         int flags = FTW_DEPTH | FTW_PHYS | FTW_CHDIR;
-        //cout << gui->pathToGamesDir << endl;
-        if (nftw(DirEntry::fixPath(gui->pathToGamesDir).c_str(), flushCovers, 1, flags) != 0) {
+        //cout << Env::getPathToGamesDir() << endl;
+        if (nftw(DirEntry::fixPath(Env::getPathToGamesDir()).c_str(), flushCovers, 1, flags) != 0) {
             errors++;
         }
 
-        gui->forceScan = true;
+        app.session().forceScan = true;
         menuVisible = false;
     } else {
         render();
