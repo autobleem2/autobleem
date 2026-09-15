@@ -11,9 +11,7 @@ public:
     void render() { GuiScrollWin::render(); }
     void loop();
 
-    SDL_JoystickID joyid = -1;
+    int joyid = -1;   // SDL_JoystickID; kept as a plain int so this header needs no SDL type
 
-    GuiPadTest(SDL_Shared<SDL_Renderer> renderer1) : GuiScrollWin(renderer1)
-    {
-    };
+    using GuiScrollWin::GuiScrollWin;
 };

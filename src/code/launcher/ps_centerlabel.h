@@ -5,7 +5,6 @@
 #pragma once
 
 #include "ps_obj.h"
-#include "../gui/gui_font_wrapper.h"
 #include "../gui/gui_font.h"
 
 //******************
@@ -14,13 +13,13 @@
 class PsCenterLabel : public PsObj {
 public:
     std::string text;
-    FC_Font_Shared font;
-    SDL_Color textColor;
-    FC_Size textSize;
+    ableem::Font font;
+    ableem::Color textColor;
+    ableem::Size textSize;
 
     void render();
 
-    void setText(const std::string & _text, SDL_Color _textColor);
+    void setText(const std::string & _text, ableem::Color _textColor);
 
     PsCenterLabel(const std::string & name1, const std::string & texPath = "");
     ~PsCenterLabel();

@@ -26,7 +26,6 @@
 #include "launcher/ra_integrator.h"
 #include "launcher/launch_interceptor.h"
 #include "launcher/gui_app_start.h"
-#include "gui/abl.h"
 
 using namespace std;
 
@@ -197,15 +196,11 @@ static int runAutobleem(int argc, char *argv[]) {
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        cerr << "SDL_Init failed: " << SDL_GetError() << endl;
-        return EXIT_FAILURE;
-    }
+    // SDL_Init/InitSubSystem/TTF_Init/Mix_Init all happen inside ableem::Platform, constructed the first time
+    // the Gui singleton is created below. Registering SDL_Quit here (before that happens) makes it run after
     // the Gui singleton (window, renderer, textures) is destroyed during static destruction, which happens
-    // after main() returns. registering SDL_Quit here (before the singleton exists) makes it run after that.
-    atexit(SDL_Quit);
-    SDL_InitSubSystem(SDL_INIT_AUDIO);
-    SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+    // after main() returns.
+    atexit(ableem::Platform::shutdownSDL);
     Env::autobleemKernel = DirEntry::exists("/autobleem");
     shared_ptr<Lang> lang(Lang::getInstance());
 
@@ -237,7 +232,10 @@ static int runAutobleem(int argc, char *argv[]) {
     // now that Environment is setup, routines that need the paths can be called
     shared_ptr<Gui> gui(Gui::getInstance());
     shared_ptr<Scanner> scanner(Scanner::getInstance());
-    gui->mapper.init();
+    gui->platform().setPowerOffHandler([gui]() {
+        gui->drawText(_("POWERING OFF... PLEASE WAIT"));
+        Util::powerOff();
+    });
     lang->load(gui->cfg.inifile.values["language"]);
 
     unique_ptr<Coverdb> coverdb(new Coverdb());
@@ -317,20 +315,9 @@ static int runAutobleem(int argc, char *argv[]) {
             cout << "Starting game" << endl;
             gui->finish();
 
-            int numtimesopened, frequency, channels;
-            Uint16 format;
-            numtimesopened=Mix_QuerySpec(&frequency, &format, &channels);
-            for (int i=0;i<numtimesopened;i++)
-            {
-                Mix_CloseAudio();
-            }
-            while(Mix_QuerySpec(&frequency, &format, &channels))
-            {
-                Mix_CloseAudio();
-            }
+            gui->audio().close();
 
-
-            gui->mapper.flushPads();
+            gui->input().flushPads();
 
             gui->saveSelection();
             unique_ptr<EmuInterceptor> interceptor;
@@ -371,12 +358,11 @@ static int runAutobleem(int argc, char *argv[]) {
             usleep(300*1000);
 
 
-            gui->mapper.probePads();
+            gui->input().probePads();
             gui->runningGame.reset();    // replace with shared_ptr pointing to nullptr
             gui->startingGame = false;
             // remove all events if something left
-            SDL_PumpEvents();
-            SDL_FlushEvents(SDL_FIRSTEVENT,SDL_LASTEVENT);
+            gui->input().flushEvents();
 
             gui->display(false, pathToGamesDir, db, true);
         }

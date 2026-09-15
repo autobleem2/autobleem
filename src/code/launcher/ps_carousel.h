@@ -6,8 +6,8 @@
 
 #include "ps_game.h"
 #include <vector>
-#include <SDL2/SDL_ttf.h>
-#include "../gui/gui_sdl_wrapper.h"
+#include <ableem/renderer.h>
+#include <ableem/texture.h>
 #include "ra_integrator.h"
 
 //******************
@@ -38,9 +38,9 @@ struct PsCarouselGame : public PsGamePtr {
     long animationStart = 0;
     long animationDuration = 0;
     bool visible = false;
-    SDL_Shared<SDL_Texture> coverPng;
+    ableem::Texture coverPng;
 
-    void loadTex(SDL_Shared<SDL_Renderer> renderer);
+    void loadTex(ableem::Renderer &renderer);
     void freeTex();
 };
 

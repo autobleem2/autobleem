@@ -8,7 +8,6 @@
 #include "../gui_selectmemcard.h"
 #include "../../engine/memcard.h"
 #include "../../engine/cfgprocessor.h"
-#include <SDL2/SDL_image.h>
 #include "../../lang.h"
 #include <sstream>
 #include "../../environment.h"
@@ -307,12 +306,12 @@ void GuiEditor::init() {
         bool pngLoaded = false;
         for (const DirEntry & entry:DirEntry::diru(gameFolder)) {
             if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
-                cover = IMG_LoadTexture(renderer, (gameFolder + sep + entry.name).c_str());
+                cover = ableem::Texture::loadFile(renderer, gameFolder + sep + entry.name);
                 pngLoaded = true;
             }
         }
         if (!pngLoaded) {
-            cover = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "default.png").c_str());
+            cover = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
         }
     } else {
         // recover ini
@@ -333,12 +332,12 @@ void GuiEditor::init() {
         bool pngLoaded = false;
         for (const DirEntry & entry:DirEntry::diru(gameData->folder)) {
             if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
-                cover = IMG_LoadTexture(renderer, (gameData->folder + sep + entry.name).c_str());
+                cover = ableem::Texture::loadFile(renderer, gameData->folder + sep + entry.name);
                 pngLoaded = true;
             }
         }
         if (!pngLoaded) {
-            cover = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "default.png").c_str());
+            cover = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
         }
     }
 
@@ -443,15 +442,15 @@ void GuiEditor::render() {
 
     gui->renderStatus(guiMenu);
 
-    SDL_Rect rect;
+    ableem::Rect rect;
     rect.x = atoi(gui->themeData.values["ecoverx"].c_str());
     rect.y = atoi(gui->themeData.values["ecovery"].c_str());
     rect.w = 226;
     rect.h = 226;
 
-    SDL_RenderCopy(renderer, cover, NULL, &rect);
+    renderer.copy(cover, nullptr, &rect);
 
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -461,27 +460,19 @@ void GuiEditor::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-                }
-            }
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_CONTROLLERHATMOTIONDOWN:  /* Handle Joystick Motion */
-                case SDL_CONTROLLERHATMOTIONUP:
+                case Event::Type::DpadDown:  /* Handle Joystick Motion */
+                case Event::Type::DpadUp:
 
-                    if (gui->mapper.isDown(&e)) {
+                    if (gui->input().dpadDown()) {
                         do {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             selOption++;
                             if (selOption > OPT_LAST) {
                                 selOption = OPT_LAST;
@@ -489,9 +480,9 @@ void GuiEditor::loop() {
                             render();
                         } while (fastForwardUntilAnotherEvent(120));
                     }
-                    if (gui->mapper.isUp(&e)) {
+                    if (gui->input().dpadUp()) {
                         do {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             selOption--;
                             if (selOption < OPT_FIRST) {
                                 selOption = OPT_FIRST;
@@ -501,28 +492,28 @@ void GuiEditor::loop() {
                     }
 
 
-                    if (gui->mapper.isRight(&e)) {
+                    if (gui->input().dpadRight()) {
                         do {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             processOptionChange(true);
                             render();
                         } while (fastForwardUntilAnotherEvent(80));
                     }
-                    if (gui->mapper.isLeft(&e)) {
+                    if (gui->input().dpadLeft()) {
                         do {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             processOptionChange(false);
                             render();
                         } while (fastForwardUntilAnotherEvent(80));
                     }
                     break;
 
-                case SDL_CONTROLLERBUTTONDOWN:
+                case Event::Type::ButtonDown:
                     if (!internal) {
                         if (gameIni.values["memcard"] == "SONY") {
-                            if (e.cbutton.button == SDL_BTN_START) {
-                                Mix_PlayChannel(-1, gui->cursor, 0);
-                                GuiKeyboard keyboard(renderer);
+                            if (e.button == Button::Start) {
+                                gui->cursor.play();
+                                GuiKeyboard keyboard(*gui);
                                 keyboard.label = _("Enter new name for memory card");
                                 keyboard.result = gameIni.values["title"];
                                 keyboard.show();
@@ -544,13 +535,13 @@ void GuiEditor::loop() {
                             };
                         }
                     } else {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                        gui->cancel.play();
                     }
 
-                    if (e.cbutton.button == SDL_BTN_SQUARE) {
+                    if (e.button == Button::Square) {
                         if (!internal) {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
-                            GuiSelectMemcard selector(renderer);
+                            gui->cursor.play();
+                            GuiSelectMemcard selector(*gui);
                             selector.cardSelected = gameIni.values["memcard"];
                             selector.show();
 
@@ -564,20 +555,20 @@ void GuiEditor::loop() {
                                 }
                             }
                         } else {
-                            Mix_PlayChannel(-1, gui->cancel, 0);
+                            gui->cancel.play();
                         }
                     };
 
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
-                        cover = nullptr;
+                    if (e.button == Button::Circle) {
+                        gui->cancel.play();
+                        cover = ableem::Texture();
                         menuVisible = false;
 
                     };
 
-                    if (e.cbutton.button == SDL_BTN_TRIANGLE) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
-                        GuiKeyboard keyboard(renderer);
+                    if (e.button == Button::Triangle) {
+                        gui->cursor.play();
+                        GuiKeyboard keyboard(*gui);
                         keyboard.label = _("Enter new game name");
                         keyboard.result = gameIni.values["title"];
                         keyboard.show();

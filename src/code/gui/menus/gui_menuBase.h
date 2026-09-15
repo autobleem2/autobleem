@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include "../../lang.h"
-#include "../gui_sdl_wrapper.h"
 
 //*******************************
 // GuiMenuBase template class
@@ -13,7 +12,7 @@
 template<typename LineDataType>
 class GuiMenuBase : public GuiScreen {
 public:
-    GuiMenuBase(SDL_Shared<SDL_Renderer> _renderer) : GuiScreen(_renderer) {}
+    GuiMenuBase(ableem::GuiBase &_gui) : GuiScreen(_gui) {}
 
     virtual void init();
     virtual void render();
@@ -50,7 +49,7 @@ public:
     virtual void doHome();
     virtual void doEnd();
 
-    FC_Font_Shared font;
+    ableem::Font font;
     bool useSmallerFont = false;    // useful for 2 column menu with long strings
 
     // plain menu
@@ -168,7 +167,7 @@ void GuiMenuBase<LineDataType>::renderSelectionBox() {
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::render()
 {
-    SDL_RenderClear(renderer);
+    renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderLogo(true);
@@ -182,7 +181,7 @@ void GuiMenuBase<LineDataType>::render()
     renderSelectionBox();
 
     gui->renderStatus(getStatusLine());
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -210,7 +209,7 @@ std::string GuiMenuBase<LineDataType>::getStatusLine() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doKeyDown() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (getVerticalSize() > 1) {
         if (selected >= getVerticalSize() - 1) {
             selected = 0;
@@ -230,7 +229,7 @@ void GuiMenuBase<LineDataType>::doKeyDown() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doKeyUp() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (getVerticalSize() > 1) {
         if (selected <= 0) {
             selected = getVerticalSize() - 1;
@@ -272,7 +271,7 @@ void GuiMenuBase<LineDataType>::doJoyUp() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doPageDown() {
-    Mix_PlayChannel(-1, gui->home_up, 0);
+    gui->home_up.play();
     if (getVerticalSize() > 1) {
         if (lastVisibleIndex + maxVisible >= getVerticalSize()) {
             selected = getVerticalSize() - 1;
@@ -288,7 +287,7 @@ void GuiMenuBase<LineDataType>::doPageDown() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doPageUp() {
-    Mix_PlayChannel(-1, gui->home_down, 0);
+    gui->home_down.play();
     if (getVerticalSize() > 1) {
         if (firstVisibleIndex - maxVisible < 0) {
             selected = 0;
@@ -304,7 +303,7 @@ void GuiMenuBase<LineDataType>::doPageUp() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doHome() {
-    Mix_PlayChannel(-1, gui->home_down, 0);
+    gui->home_down.play();
     if (getVerticalSize() > 1) {
         selected = 0;
         computePagePosition();
@@ -316,7 +315,7 @@ void GuiMenuBase<LineDataType>::doHome() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doEnd() {
-    Mix_PlayChannel(-1, gui->home_down, 0);
+    gui->home_down.play();
     if (getVerticalSize() > 1) {
         selected = getVerticalSize() - 1;
         computePagePosition();
@@ -328,7 +327,7 @@ void GuiMenuBase<LineDataType>::doEnd() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doCircle_Pressed() {
-    Mix_PlayChannel(-1, gui->cancel, 0);
+    gui->cancel.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -338,7 +337,7 @@ void GuiMenuBase<LineDataType>::doCircle_Pressed() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doCross_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     cancelled = false;
     if (!lines.empty())
     {

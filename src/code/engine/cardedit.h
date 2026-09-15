@@ -8,9 +8,10 @@
 
 #include <string>
 #include <iconv.h>
-#include <SDL2/SDL_render.h>
+#include <ableem/renderer.h>
+#include <ableem/texture.h>
 #include <vector>
-#include "../gui/gui_sdl_wrapper.h"
+#include <cstdint>
 
 #pragma once
 
@@ -36,7 +37,7 @@ public:
 class CardEdit
 {
 public:
-    CardEdit(SDL_Shared<SDL_Renderer> renderer1);
+    CardEdit(ableem::Renderer &renderer1);
 	~CardEdit();
 
 	// action commands
@@ -54,7 +55,7 @@ public:
     string get_slot_title(int slot);
     bool is_slot_top(int slot);
     string get_slot_gameID(int slot);
-    SDL_Shared<SDL_Texture> get_slot_icon(int slot, int frame);
+    ableem::Texture get_slot_icon(int slot, int frame);
 
 	// information change command
 	void set_slot_gameID(int slot, string newID);
@@ -74,7 +75,7 @@ public:
 
     int next_slot_map[15];
 private:
-    SDL_Shared<SDL_Renderer> renderer;
+    ableem::Renderer &renderer;
 	char memoryCard[131072];   //a memory card can hold 128K
 	bool slot_is_used[15];
 
@@ -84,7 +85,7 @@ private:
     string slot_Pcodes[15];
     string slot_gameID[15];
     string slot_titles[15];
-    SDL_Shared<SDL_Texture>  slot_icons[15][3];
+    ableem::Texture  slot_icons[15][3];
 	void update();
 	void update_slot_is_used();  // also updates block_type and next slot map
 	void update_slot_is_deleted();

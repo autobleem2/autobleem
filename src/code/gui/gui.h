@@ -3,24 +3,18 @@
 //
 #pragma once
 
-#include "abl.h"
 #include "../main.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
+#include <ableem/ableem.h>
 #include <string>
 #include <memory>
 #include "../engine/database.h"
 #include "../engine/config.h"
 #include "../engine/coverdb.h"
 #include "../engine/scanner.h"
-#include "../engine/padmapper.h"
-#include "gui_sdl_wrapper.h"
-//#include "gui_font_wrapper.h"
 #include "gui_font.h"
 #include "../environment.h"
 
+using namespace std;
 
 enum MenuOption { MENU_OPTION_SCAN = 1, MENU_OPTION_RUN, MENU_OPTION_SONY, MENU_OPTION_RETRO, MENU_OPTION_START };
 
@@ -28,8 +22,8 @@ enum MenuOption { MENU_OPTION_SCAN = 1, MENU_OPTION_RUN, MENU_OPTION_SONY, MENU_
 #define EMU_RETROARCH     1
 #define EMU_LAUNCHER      2
 
-#define SCREEN_WIDTH  1280
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH  ableem::GuiBase::ScreenWidth
+#define SCREEN_HEIGHT ableem::GuiBase::ScreenHeight
 
 enum XAlignment { XALIGN_LEFT, XALIGN_CENTER, XALIGN_RIGHT };
 
@@ -43,47 +37,36 @@ enum XAlignment { XALIGN_LEFT, XALIGN_CENTER, XALIGN_RIGHT };
 enum { SET_PS1_All_Games=0, SET_PS1_Internal_Only, SET_PS1_Favorites, SET_PS1_History, SET_PS1_Games_Subdir };
 
 //********************
-// GuiBase
-//********************
-class GuiBase {
-public:
-    SDL_Shared<SDL_Window> window;
-    SDL_Shared<SDL_Renderer> renderer;
-
-    Fonts themeFonts;
-    Fonts sonyFonts;
-    Config cfg;
-    bool inGuiLauncher = false;
-
-    std::string getCurrentThemePath();
-    std::string getCurrentThemeImagePath();
-    std::string getCurrentThemeFontPath();
-    std::string getCurrentThemeSoundPath();
-
-    GuiBase();
-    ~GuiBase();
-};
-
-//********************
 // Gui
 //********************
-class Gui : public GuiBase {
+// All SDL access lives in lib_ableem; Gui derives from ableem::GuiBase (window/renderer/input/audio) and adds
+// everything theme/config/database related, which lib_ableem intentionally knows nothing about.
+class Gui : public ableem::GuiBase {
 private:
 
-    Gui() { mapper.probePads(); }
+    Gui();
 
-    string themePath;
+    std::string themePath;
 
 public:
-    PadMapper mapper;
     Inifile themeData;
     Inifile defaultData;
+    Config cfg;
 
     Coverdb *coverdb = nullptr;
     // db and internalDB are set in main.cpp and remain alive until exit
     Database *db = nullptr;
     Database *internalDB = nullptr;
 
+    bool inGuiLauncher = false;
+
+    Fonts themeFonts;
+    Fonts sonyFonts;
+
+    std::string getCurrentThemePath();
+    std::string getCurrentThemeImagePath();
+    std::string getCurrentThemeFontPath();
+    std::string getCurrentThemeSoundPath();
 
     void loadAssets(bool reloadMusic = true);
 
@@ -100,16 +83,15 @@ public:
 
     void saveSelection();
 
-    Uint8 getR(const std::string &val);
+    unsigned char getR(const std::string &val);
 
-    Uint8 getG(const std::string &val);
+    unsigned char getG(const std::string &val);
 
-    Uint8 getB(const std::string &val);
+    unsigned char getB(const std::string &val);
 
     void criticalException(const std::string &text);
 
-    SDL_Shared<SDL_Texture>
-    loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname);
+    ableem::Texture loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname);
 
     void exportDBToRetroarch();
 
@@ -132,25 +114,25 @@ public:
     int lastRAPlaylistIndex = 0;    // top row in menu = first playlist name
     string lastRAPlaylistName = "";
 
-    SDL_Rect backgroundRect;
-    SDL_Rect logoRect;
+    ableem::Rect backgroundRect;
+    ableem::Rect logoRect;
 
-    SDL_Shared<SDL_Texture> backgroundImg;
-    SDL_Shared<SDL_Texture> logo;
-    SDL_Shared<SDL_Texture> cdJewel;
-    std::map<std::string, SDL_Shared<SDL_Texture>> buttonTextureMap;
+    ableem::Texture backgroundImg;
+    ableem::Texture logo;
+    ableem::Texture cdJewel;
+    std::map<std::string, ableem::Texture> buttonTextureMap;
 
     std::string pathToGamesDir; // path to /Games.  "/media/Games" or "/debugSystemPath/Games".
 
-    Mix_Music *music = nullptr;
-    FC_Font_Shared themeFont;
+    ableem::Music music;
+    ableem::Font themeFont;
     bool forceScan = false;
 
-    Mix_Chunk *cancel = nullptr;
-    Mix_Chunk *cursor = nullptr;
-    Mix_Chunk *home_down = nullptr;
-    Mix_Chunk *home_up = nullptr;
-    Mix_Chunk *resume = nullptr;
+    ableem::Sound cancel;
+    ableem::Sound cursor;
+    ableem::Sound home_down;
+    ableem::Sound home_up;
+    ableem::Sound resume;
 
     bool startingGame = false;
     bool resumingGui = false;
@@ -174,19 +156,19 @@ public:
     // Rect and Size routines
     //*******************************
 
-    // return FC_Size w of font text and h of font
-    FC_Size FC_getFontTextSize(FC_Font_Shared font, const char *text=nullptr);
-    FC_Size FC_getFontTextSize(FC_Font_Shared font, const string& text="") {
-        return FC_getFontTextSize(font, text.c_str());
+    // return the w of the rendered text and h of the font
+    ableem::Size getFontTextSize(const ableem::Font &font, const char *text=nullptr);
+    ableem::Size getFontTextSize(const ableem::Font &font, const string& text="") {
+        return getFontTextSize(font, text.c_str());
     }
-    // return FC_Rect w of font text and h of font
-    FC_Rect FC_getFontTextRect(FC_Font_Shared font, const char *text=nullptr, int x=0, int y=0);
-    FC_Rect FC_getFontTextRect(FC_Font_Shared font, const string& text="", int x=0, int y=0) {
-        return FC_getFontTextRect(font, text.c_str(), x, y);
+    // return a rect at (x,y) sized to the rendered text
+    ableem::Rect getFontTextRect(const ableem::Font &font, const char *text=nullptr, int x=0, int y=0);
+    ableem::Rect getFontTextRect(const ableem::Font &font, const string& text="", int x=0, int y=0) {
+        return getFontTextRect(font, text.c_str(), x, y);
     }
 
-    FC_Rect getOpscreenRectOfTheme();
-    FC_Rect getTextRectOfTheme();
+    ableem::Rect getOpscreenRectOfTheme();
+    ableem::Rect getTextRectOfTheme();
 
     int getCheckIconWidth();    // returns the width of the check icon texture.  used to compute the x position.
     static int align_xPosition(XAlignment xAlign, int x, int width);
@@ -197,9 +179,9 @@ public:
 
     struct TextOrEmojiTokenInfo {
         std::string tokenString;
-        SDL_Shared<SDL_Texture> emoji;  // not null only if tokenString is an emoji marker such as "|@X|"
-        FC_Rect rect;                   // position, width, and height of rendered text or emoji texture
-                                        // the x, y position is relative to the upper left corner of the string
+        ableem::Texture emoji;   // valid() only if tokenString is an emoji marker such as "|@X|"
+        ableem::Rect rect;       // position, width, and height of rendered text or emoji texture
+                                 // the x, y position is relative to the upper left corner of the string
     };
 
     // break up the text into tokens of text or the token of an emoji icon
@@ -208,19 +190,19 @@ public:
     struct AllTextOrEmojiTokenInfo {
         std::vector<TextOrEmojiTokenInfo> tokenInfos;
 
-        FC_Font_Shared font;
-        int x=0,y=0;            // upper left corner of the string on the display
-        FC_Size totalSize;      // the total width and height of all the tokens
+        ableem::Font font;
+        int x=0,y=0;             // upper left corner of the string on the display
+        ableem::Size totalSize;  // the total width and height of all the tokens
         bool useTextColor = false;
-        SDL_Color textColor;
+        ableem::Color textColor;
         bool drawBackgroundRect = false;
 
         AllTextOrEmojiTokenInfo() { }
-        AllTextOrEmojiTokenInfo(FC_Font_Shared _font, const std::string & _text) { getTokenInfo(_font, _text); }
-        void getTokenInfo(FC_Font_Shared _font, const std::string & _text);
+        AllTextOrEmojiTokenInfo(ableem::Font _font, const std::string & _text) { getTokenInfo(_font, _text); }
+        void getTokenInfo(ableem::Font _font, const std::string & _text);
 
         void compute_xy_relativeOffsets(); // compute x offset, center the y offset of each token to the total height
-        void setTextColor(SDL_Color color) { textColor = color; textColor.a = SDL_ALPHA_OPAQUE; useTextColor = true; }
+        void setTextColor(ableem::Color color) { textColor = color; textColor.a = 255; useTextColor = true; }
 
         // renders/draws the text and emoji icons at the chosen position on the screen
         void render(int x, int y, XAlignment xAlign = XALIGN_LEFT);
@@ -231,24 +213,24 @@ public:
     //*******************************
 
     // renders/draws the line of text and emoji icons at the chosen position on the screen.  returns the height.
-    int renderText(FC_Font_Shared font, const std::string & text, int x, int y, XAlignment xAlign = XALIGN_LEFT);
+    int renderText(const ableem::Font &font, const std::string & text, int x, int y, XAlignment xAlign = XALIGN_LEFT);
 
     // if background == true it draws a solid grey box around/behind the text
     // this routine does not support emoji icons.  text only.
-    int renderText_WithColor(FC_Font_Shared font, const std::string & text, int x, int y, SDL_Color textColor,
+    int renderText_WithColor(const ableem::Font &font, const std::string & text, int x, int y, ableem::Color textColor,
                              XAlignment xAlign = XALIGN_LEFT, bool background = false);
 
     // returns rectangle height
     int renderTextLine(const std::string & text, int line, int yoffset = 0,
                        XAlignment xAlign = XALIGN_LEFT, int xoffset = 0,
-                       FC_Font_Shared font = FC_Font_Shared());   // font will default to themeFont in the cpp
+                       ableem::Font font = ableem::Font());   // font will default to themeFont in the cpp
 
     int renderTextLineToColumns(const string &textLeft, const string &textRight, int xLeft, int xRight, int line,
-                                int yoffset = 0, FC_Font_Shared font = FC_Font_Shared());
+                                int yoffset = 0, ableem::Font font = ableem::Font());
 
     int renderTextLineOptions(const std::string & text, int line, int yoffset = 0,  XAlignment xAlign = XALIGN_LEFT, int xoffset = 0);
 
-    void renderSelectionBox(int line, int yoffset, int xoffset = 0, FC_Font_Shared font = FC_Font_Shared());
+    void renderSelectionBox(int line, int yoffset, int xoffset = 0, ableem::Font font = ableem::Font());
 
     void renderLabelBox(int line, int yoffset);
 

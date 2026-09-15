@@ -4,10 +4,6 @@
 
 #include "gui_keyboard.h"
 #include "gui_about.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include "gui.h"
 #include "../lang.h"
@@ -50,17 +46,17 @@ void GuiKeyboard::render() {
     //*******************************
     // drawRectangle lambda
     //*******************************
-    auto drawRectangle = [&] (SDL_Rect& rect) {
+    auto drawRectangle = [&] (ableem::Rect& rect) {
         string fg = gui->themeData.values["text_fg"];
-        SDL_SetRenderDrawColor(renderer, gui->getR(fg), gui->getG(fg), gui->getB(fg), 255);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_RenderDrawRect(renderer, &rect);
-        SDL_Rect rectSelection2;
+        renderer.setDrawColor(ableem::Color(gui->getR(fg), gui->getG(fg), gui->getB(fg), 255));
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.drawRect(rect);
+        ableem::Rect rectSelection2;
         rectSelection2.x = rect.x + 1;
         rectSelection2.y = rect.y + 1;
         rectSelection2.w = rect.w - 2;
         rectSelection2.h = rect.h - 2;
-        SDL_RenderDrawRect(renderer, &rectSelection2);
+        renderer.drawRect(rectSelection2);
     };
 
     string displayResult;
@@ -71,25 +67,24 @@ void GuiKeyboard::render() {
     displayResult.insert(cursorIndex, "#");
     gui->renderTextLine(displayResult, 1, yoffset, XALIGN_CENTER);
 
-    SDL_Rect rect2 = gui->getOpscreenRectOfTheme();
-    Uint16 fontHeight = FC_GetLineHeight(gui->themeFont);
-    SDL_Shared<SDL_Texture> tex;
+    ableem::Rect rect2 = gui->getOpscreenRectOfTheme();
+    int fontHeight = gui->themeFont.lineHeight();
 
     if (L2_cursor_shift || usingUsbKeyboard) {
-        FC_Rect rectEditbox = gui->FC_getFontTextRect(gui->themeFont, displayResult);
+        ableem::Rect rectEditbox = gui->getFontTextRect(gui->themeFont, displayResult);
         rectEditbox.x = gui->align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
         rectEditbox.y = (1 * rectEditbox.h) + yoffset;  // line 1 (0 == top)
 
         // compute the bounding box around the cursor (#)
-        FC_Size textBeforeCursorSize;
+        ableem::Size textBeforeCursorSize;
         // get the size of the text before the cursor
         if (cursorIndex > 0) {
-            textBeforeCursorSize = gui->FC_getFontTextSize(gui->themeFont, displayResult.substr(0, cursorIndex));
+            textBeforeCursorSize = gui->getFontTextSize(gui->themeFont, displayResult.substr(0, cursorIndex));
         }
         // get the cursor size
-        FC_Size cursorSize = gui->FC_getFontTextSize(gui->themeFont, "#");
+        ableem::Size cursorSize = gui->getFontTextSize(gui->themeFont, "#");
         // bounding box rectangle around the # cursor
-        SDL_Rect cursorRect { rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y,    // x, y position
+        ableem::Rect cursorRect { rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y,    // x, y position
                               cursorSize.w, cursorSize.h };                             // w, h
 
         drawRectangle(cursorRect);
@@ -98,7 +93,7 @@ void GuiKeyboard::render() {
     if (!usingUsbKeyboard) {
         for (int x = 0; x < numColumns; x++) {
             for (int y = 0; y < numRows; y++) {
-                SDL_Rect rectSelection;
+                ableem::Rect rectSelection;
                 rectSelection.x = rect2.x + indentOffset;
                 rectSelection.y = yoffset + fontHeight * (y + 3);
                 rectSelection.w = rect2.w - (indentOffset + indentOffset);
@@ -113,10 +108,10 @@ void GuiKeyboard::render() {
                 rectSelection.x = rectSelection.x + ((buttonWidth + 11) * x);
 
                 string bg = gui->themeData.values["key_bg"];
-                SDL_SetRenderDrawColor(renderer, gui->getR(bg), gui->getG(bg), gui->getB(bg),
-                                       atoi(gui->themeData.values["keyalpha"].c_str()));
-                SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-                SDL_RenderFillRect(renderer, &rectSelection);
+                renderer.setDrawColor(ableem::Color(gui->getR(bg), gui->getG(bg), gui->getB(bg),
+                                       atoi(gui->themeData.values["keyalpha"].c_str())));
+                renderer.setBlendMode(ableem::BlendMode::Blend);
+                renderer.fillRect(rectSelection);
 
                 string text = rows[y][x];
                 if (L1_caps_shift) {
@@ -145,25 +140,7 @@ void GuiKeyboard::render() {
                 _("Move Cursor") + "(#)" + " |@S| " + _("Space") +
                 "      |@Start| " + _("Confirm") + "  |@O| " + _("Cancel") + " |");
     }
-    SDL_RenderPresent(renderer);
-}
-
-//*******************************
-// GuiKeyboard::handlePowerShutdownAndQuit
-//*******************************
-// returns true if applicable event type and it was handled
-bool GuiKeyboard::handlePowerShutdownAndQuit(SDL_Event &e) {
-    if (e.type == SDL_KEYDOWN) {
-        if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-            gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-            Util::powerOff();
-            return true;    // but it will never get here
-        }
-    } else if (e.type == SDL_QUIT) { // this is for pc Only
-        menuVisible = false;
-        return true;
-    }
-    return false;
+    renderer.present();
 }
 
 //*******************************
@@ -208,7 +185,7 @@ void GuiKeyboard::doKbdEnd() {
 // GuiKeyboard::doKbdBackspace
 //*******************************
 void GuiKeyboard::doKbdBackspace() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!result.empty() && cursorIndex > 0) {
         result = result.erase(cursorIndex - 1, 1);
         --cursorIndex;
@@ -222,7 +199,7 @@ void GuiKeyboard::doKbdBackspace() {
 // GuiKeyboard::doKbdDelete
 //*******************************
 void GuiKeyboard::doKbdDelete() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!result.empty() && cursorIndex < result.size()) {
         result = result.erase(cursorIndex, 1);
     }
@@ -235,7 +212,7 @@ void GuiKeyboard::doKbdDelete() {
 // GuiKeyboard::doKbdTab
 //*******************************
 void GuiKeyboard::doKbdTab() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     L2_cursor_shift = !L2_cursor_shift;
     usingUsbKeyboard = !usingUsbKeyboard;
     render();
@@ -245,7 +222,7 @@ void GuiKeyboard::doKbdTab() {
 // GuiKeyboard::doKbdEscape
 //*******************************
 void GuiKeyboard::doKbdEscape() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -254,7 +231,7 @@ void GuiKeyboard::doKbdEscape() {
 // GuiKeyboard::doKbdReturn
 //*******************************
 void GuiKeyboard::doKbdReturn() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     cancelled = false;
     menuVisible = false;
 }
@@ -262,10 +239,10 @@ void GuiKeyboard::doKbdReturn() {
 //*******************************
 // GuiKeyboard::doKbdTextInput
 //*******************************
-void GuiKeyboard::doKbdTextInput(SDL_Event& e) {
-    Mix_PlayChannel(-1, gui->cursor, 0);
-    result.insert(cursorIndex, e.text.text);
-    cursorIndex += strlen(e.text.text);
+void GuiKeyboard::doKbdTextInput(const std::string& text) {
+    gui->cursor.play();
+    result.insert(cursorIndex, text);
+    cursorIndex += text.size();
     L2_cursor_shift = true;
     usingUsbKeyboard = true;
     render();
@@ -275,7 +252,7 @@ void GuiKeyboard::doKbdTextInput(SDL_Event& e) {
 // GuiKeyboard::doL1_up
 //*******************************
 void GuiKeyboard::doL1_up() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     L1_caps_shift = false;
     render();
 }
@@ -284,7 +261,7 @@ void GuiKeyboard::doL1_up() {
 // GuiKeyboard::doL2_up
 //*******************************
 void GuiKeyboard::doL2_up() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     L2_cursor_shift = false;
     render();
 }
@@ -293,7 +270,7 @@ void GuiKeyboard::doL2_up() {
 // GuiKeyboard::doL1_down
 //*******************************
 void GuiKeyboard::doL1_down() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     L1_caps_shift = true;
     render();
 }
@@ -302,7 +279,7 @@ void GuiKeyboard::doL1_down() {
 // GuiKeyboard::doL2_down
 //*******************************
 void GuiKeyboard::doL2_down() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     L2_cursor_shift = true;
     render();
 }
@@ -311,7 +288,7 @@ void GuiKeyboard::doL2_down() {
 // GuiKeyboard::doTrianglePressed
 //*******************************
 void GuiKeyboard::doTriangle() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!result.empty() && cursorIndex > 0) {
         result = result.erase(cursorIndex - 1, 1);
         --cursorIndex;
@@ -323,7 +300,7 @@ void GuiKeyboard::doTriangle() {
 // GuiKeyboard::doSquarePressed
 //*******************************
 void GuiKeyboard::doSquare() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     result.insert(cursorIndex, " ");
     ++cursorIndex;
     render();
@@ -333,7 +310,7 @@ void GuiKeyboard::doSquare() {
 // GuiKeyboard::doCrossPressed
 //*******************************
 void GuiKeyboard::doCross() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     string character = rows[sely][selx];
     string ch;
     if (L1_caps_shift)
@@ -349,7 +326,7 @@ void GuiKeyboard::doCross() {
 // GuiKeyboard::doStartPressed
 //*******************************
 void GuiKeyboard::doStart() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     cancelled = false;
     menuVisible = false;
 }
@@ -358,7 +335,7 @@ void GuiKeyboard::doStart() {
 // GuiKeyboard::doCirclePressed
 //*******************************
 void GuiKeyboard::doCircle() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -367,7 +344,7 @@ void GuiKeyboard::doCircle() {
 // GuiKeyboard::doJoyRight
 //*******************************
 void GuiKeyboard::doJoyRight() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (L2_cursor_shift) {
         if (cursorIndex != result.size())
             ++cursorIndex;
@@ -384,7 +361,7 @@ void GuiKeyboard::doJoyRight() {
 // GuiKeyboard::doJoyLeft
 //*******************************
 void GuiKeyboard::doJoyLeft() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (L2_cursor_shift) {
         if (cursorIndex > 0)
             --cursorIndex;
@@ -401,7 +378,7 @@ void GuiKeyboard::doJoyLeft() {
 // GuiKeyboard::doJoyDown
 //*******************************
 void GuiKeyboard::doJoyDown() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!L2_cursor_shift) {
         sely++;
         if (sely > ylast) {
@@ -415,7 +392,7 @@ void GuiKeyboard::doJoyDown() {
 // GuiKeyboard::doJoyUp
 //*******************************
 void GuiKeyboard::doJoyUp() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!L2_cursor_shift) {
         sely--;
         if (sely < 0) {
@@ -433,94 +410,96 @@ void GuiKeyboard::loop() {
 
     menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (handlePowerShutdownAndQuit(e))
+        Event e;
+        while (gui->input().poll(e)) {
+            if (e.type == Event::Type::Quit) {
+                menuVisible = false;
                 continue;
+            }
 
             switch (e.type) {
-                case SDL_KEYDOWN:
-                    if (e.key.keysym.sym == SDLK_RIGHT) {
+                case Event::Type::KeyDown:
+                    if (e.key == Key::Right) {
                         doKbdRight();
 
-                    } else if (e.key.keysym.sym == SDLK_LEFT) {
+                    } else if (e.key == Key::Left) {
                         doKbdLeft();
 
-                    } else if (e.key.keysym.sym == SDLK_HOME) {
+                    } else if (e.key == Key::Home) {
                         doKbdHome();
 
-                    } else if (e.key.keysym.sym == SDLK_END) {
+                    } else if (e.key == Key::End) {
                         doKbdEnd();
 
-                    } else if (e.key.keysym.sym == SDLK_BACKSPACE) {
+                    } else if (e.key == Key::Backspace) {
                         doKbdBackspace();
 
-                    } else if (e.key.keysym.sym == SDLK_DELETE) {
+                    } else if (e.key == Key::Delete) {
                         doKbdDelete();
 
-                    } else if (e.key.keysym.sym == SDLK_TAB) {
+                    } else if (e.key == Key::Tab) {
                         doKbdTab();
 
-                    } else if (e.key.keysym.sym == SDLK_ESCAPE) {
+                    } else if (e.key == Key::Escape) {
                         doKbdEscape();
 
-                    } else if (e.key.keysym.sym == SDLK_RETURN) {
+                    } else if (e.key == Key::Return) {
                         doKbdReturn();
                     }
                     break;
 
-                case SDL_TEXTINPUT:
-                    doKbdTextInput(e);
+                case Event::Type::TextInput:
+                    doKbdTextInput(e.text);
                     break;
 
-                case SDL_CONTROLLERBUTTONUP:
-                    if (e.cbutton.button == SDL_BTN_L1) {
+                case Event::Type::ButtonUp:
+                    if (e.button == Button::L1) {
                         doL1_up();
-                    } else if (e.cbutton.button == SDL_BTN_L2) {
+                    } else if (e.button == Button::L2) {
                         doL2_up();
                     }
                     break;
 
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_L1) {     // caps shift
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::L1) {     // caps shift
                         doL1_down();
-                    } else if (e.cbutton.button == SDL_BTN_L2) {     // move cursor shift
+                    } else if (e.button == Button::L2) {     // move cursor shift
                         doL2_down();
                     }
 
                     if (!L2_cursor_shift) {
-                        if (e.cbutton.button == SDL_BTN_TRIANGLE) {   // delete char on the left
+                        if (e.button == Button::Triangle) {   // delete char on the left
                             doTriangle();
-                        } else if (e.cbutton.button == SDL_BTN_SQUARE) {     //insert space
+                        } else if (e.button == Button::Square) {     //insert space
                             doSquare();
-                        } else if (e.cbutton.button == SDL_BTN_CROSS) {
+                        } else if (e.button == Button::Cross) {
                             doCross();
-                        } else if (e.cbutton.button == SDL_BTN_START) {  // Confirm
+                        } else if (e.button == Button::Start) {  // Confirm
                             doStart();
-                        } else if (e.cbutton.button == SDL_BTN_CIRCLE) { // Cancel
+                        } else if (e.button == Button::Circle) { // Cancel
                             doCircle();
                         }
                     }
                     break;
 
-                case SDL_CONTROLLERHATMOTIONDOWN:
-                case SDL_CONTROLLERHATMOTIONUP:
-                    if (gui->mapper.isRight(&e)) {
+                case Event::Type::DpadDown:
+                case Event::Type::DpadUp:
+                    if (gui->input().dpadRight()) {
                         doJoyRight();
-                    } else if (gui->mapper.isLeft(&e)) {
+                    } else if (gui->input().dpadLeft()) {
                         doJoyLeft();
                     }
 
                     if (!L2_cursor_shift) {
-                        if (gui->mapper.isDown(&e)) {
+                        if (gui->input().dpadDown()) {
                             doJoyDown();
-                        } else if (gui->mapper.isUp(&e)) {
+                        } else if (gui->input().dpadUp()) {
                             doJoyUp();
                         }
                     }
 
+                    break;
+                default:
                     break;
             }
         }

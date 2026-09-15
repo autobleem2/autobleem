@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../gui/gui_screen.h"
+#include <ableem/texture.h>
 
 //******************
 // GuiBtnGuide
@@ -15,7 +16,7 @@ public:
 
     void loop();
 
-    SDL_Shared<SDL_Texture> backgroundImg;
+    ableem::Texture backgroundImg;
 
     using GuiScreen::GuiScreen;
 };

@@ -4,8 +4,6 @@
 
 #include "gui_mc_manager.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <string>
 #include <iostream>
 #include "../gui/gui.h"
@@ -22,8 +20,8 @@ void GuiMcManager::init() {
 
 void GuiMcManager::loadAssets() {
     shared_ptr<Gui> gui(Gui::getInstance());
-    mcGrid = IMG_LoadTexture(renderer, (gui->getCurrentThemeImagePath() + sep + "MC/Dot_Matrix.png").c_str());
-    mcPencil = IMG_LoadTexture(renderer, (gui->getCurrentThemeImagePath() + sep + "MC/Pencil_Carsor.png").c_str());
+    mcGrid = ableem::Texture::loadFile(renderer, gui->getCurrentThemeImagePath() + sep + "MC/Dot_Matrix.png");
+    mcPencil = ableem::Texture::loadFile(renderer, gui->getCurrentThemeImagePath() + sep + "MC/Pencil_Carsor.png");
     fontJIS = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "japanese.ttf", 20, renderer);
 
     memcard1.reset(new CardEdit(renderer));
@@ -84,14 +82,14 @@ void GuiMcManager::renderPencil(int memcard, int col, int row) {
         pencilPos.x = mc2XStart + (col * pencilShiftX);
     }
     pencilPos.y = mcYStart + (row * pencilShiftY);
-    SDL_RenderCopy(renderer, mcPencil, nullptr, &pencilPos);
+    renderer.copy(mcPencil, nullptr, &pencilPos);
 }
 
 void GuiMcManager::trySave()
 {
     if (changes)
     {
-        GuiConfirm confirm(renderer);
+        GuiConfirm confirm(*gui);
         confirm.label = _("Do you want to save memcards data ?");
         confirm.show();
         if (confirm.result) {
@@ -118,22 +116,23 @@ void GuiMcManager::renderStatic() {
             "|");
 
     //Draw dot matrix image
-    SDL_Rect input, output;
-    SDL_QueryTexture(mcGrid, NULL, NULL, &input.w, &input.h);
-    SDL_QueryTexture(mcGrid, NULL, NULL, &output.w, &output.h);
+    ableem::Rect input, output;
+    ableem::Size gridSize = mcGrid.size();
+    input.w = output.w = gridSize.w;
+    input.h = output.h = gridSize.h;
     input.x = 0, input.y = 0;
     output.x = 80;
     output.y = 80;
-    SDL_RenderCopy(renderer, mcGrid, &input, &output);
+    renderer.copy(mcGrid, &input, &output);
     output.x = 940;
     output.y = 80;
-    SDL_RenderCopy(renderer, mcGrid, &input, &output);
+    renderer.copy(mcGrid, &input, &output);
 
 }
 
 void GuiMcManager::renderMemCardIcons(int memcard) {
     const int xStartMC1 = 80, xStartMC2 = 940, yStart = 80, xDecal = 10, yDecal = 10, xShift = 80, yShift = 80;
-    SDL_Rect output;
+    ableem::Rect output;
     output.h = 75;
     output.w = 75;
 
@@ -160,7 +159,7 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
         output.x = start + (xShift * col) + xDecal;
         output.y = yStart + (yShift * line) + yDecal;
         if (currentCard->get_slot_is_used(i)) {
-            SDL_RenderCopy(renderer, currentCard->get_slot_icon(i, frame), nullptr, &output);
+            renderer.copy(currentCard->get_slot_icon(i, frame), nullptr, &output);
         }
     }
 }
@@ -203,7 +202,7 @@ void GuiMcManager::render() {
 
     //Draw the pencil
     renderPencil(pencilMemcard, pencilColumn, pencilRow);
-    SDL_RenderPresent(renderer);
+    renderer.present();
 
 }
 
@@ -212,37 +211,28 @@ void GuiMcManager::loop() {
     bool menuVisible = true;
     while (menuVisible) {
 
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-
-                }
-            }
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::Circle) {
+                        gui->cancel.play();
                         trySave();
                         menuVisible = false;
                     };
-                    if (e.cbutton.button == SDL_BTN_CROSS) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (e.button == Button::Cross) {
+                        gui->cursor.play();
                         trySave();
                         memcard1->load_file(card1path);
                         memcard2->load_file(card2path);
                         changes = false;
                     };
-                    if (e.cbutton.button == SDL_BTN_SELECT) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (e.button == Button::Select) {
+                        gui->cursor.play();
                         unique_ptr<CardEdit> newCard(new CardEdit(renderer));
                         CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
                         int last = 0;
@@ -256,7 +246,7 @@ void GuiMcManager::loop() {
 
                             if (destSlots.size() > 0)
                             {
-                                Mix_PlayChannel(-1, gui->cursor, 0);
+                                gui->cursor.play();
                                 int exportSize = src->getExportSize(slot);
                                 vector<unsigned char> buffer(exportSize);
                                 src->exportGame(slot,buffer.data());
@@ -273,10 +263,10 @@ void GuiMcManager::loop() {
                         }
                     }
 
-                    if (e.cbutton.button == SDL_BTN_START) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (e.button == Button::Start) {
+                        gui->cursor.play();
                         trySave();
-                        GuiSelectMemcard select(renderer);
+                        GuiSelectMemcard select(*gui);
                         select.listType=MC_MANAGER;
                         select.show();
                         if (select.selected!=-1)
@@ -300,7 +290,7 @@ void GuiMcManager::loop() {
                             changes = false;
                         }
                     }
-                    if (e.cbutton.button == SDL_BTN_TRIANGLE) {
+                    if (e.button == Button::Triangle) {
                         CardEdit *card;
                         if (pencilMemcard == 1) {
                             card = memcard1.get();
@@ -309,20 +299,20 @@ void GuiMcManager::loop() {
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!card->is_slot_top(slot)) {
-                            Mix_PlayChannel(-1, gui->cancel, 0);
+                            gui->cancel.play();
                             continue;
                         }
                         if (card->get_slot_is_free(slot)) {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             continue;
                         }
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                        gui->cursor.play();
                         card->delete_game(slot);
                         changes=true;
 
 
                     };
-                    if (e.cbutton.button == SDL_BTN_SQUARE) {
+                    if (e.button == Button::Square) {
                         CardEdit *src, *dest;
                         if (pencilMemcard == 1) {
                             src = memcard1.get();
@@ -333,11 +323,11 @@ void GuiMcManager::loop() {
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!src->is_slot_top(slot)) {
-                            Mix_PlayChannel(-1, gui->cancel, 0);
+                            gui->cancel.play();
                             continue;
                         }
                         if (src->get_slot_is_free(slot)) {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             continue;
                         }
 
@@ -346,7 +336,7 @@ void GuiMcManager::loop() {
 
                         if (destSlots.size() > 0)
                         {
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             int exportSize = src->getExportSize(slot);
                             vector<unsigned char> buffer(exportSize);
                             src->exportGame(slot,buffer.data());
@@ -354,32 +344,34 @@ void GuiMcManager::loop() {
                             changes = true;
                         } else
                         {
-                            Mix_PlayChannel(-1, gui->cancel, 0);
+                            gui->cancel.play();
                         }
                     };
                     break;
 
-                case SDL_CONTROLLERHATMOTIONDOWN:  /* Handle Joystick Motion */
-                case SDL_CONTROLLERHATMOTIONUP:
-                    if (gui->mapper.isCenter(&e)) {
+                case Event::Type::DpadDown:  /* Handle Joystick Motion */
+                case Event::Type::DpadUp:
+                    if (gui->input().dpadCentered()) {
 
                     }
-                    if (gui->mapper.isLeft(&e)) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (gui->input().dpadLeft()) {
+                        gui->cursor.play();
                         pencilLeft();
                     }
-                    if (gui->mapper.isRight(&e)) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (gui->input().dpadRight()) {
+                        gui->cursor.play();
                         pencilRight();
                     }
-                    if (gui->mapper.isUp(&e)) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (gui->input().dpadUp()) {
+                        gui->cursor.play();
                         pencilUp();
                     }
-                    if (gui->mapper.isDown(&e)) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                    if (gui->input().dpadDown()) {
+                        gui->cursor.play();
                         pencilDown();
                     }
+                    break;
+                default:
                     break;
             }
         }

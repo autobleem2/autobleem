@@ -7,10 +7,10 @@ using namespace std;
 //*******************************
 // NotificationLine::setText
 //*******************************
-void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds, const SDL_Color & _textColor, FontEnum _fontEnum) {
+void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds, const ableem::Color & _textColor, FontEnum _fontEnum) {
     text = _text;
     timed = (_timeLimitInMilliSeconds != 0);
-    notificationTime = SDL_GetTicks();  // tick count when setText called
+    notificationTime = Gui::getInstance()->platform().ticks();  // tick count when setText called
     if (notificationTime == 0)  // if by chance it's 0.  0 flags that the timeLimit has been reached and to turn off the display
         ++notificationTime;
     timeLimit = _timeLimitInMilliSeconds;
@@ -32,7 +32,7 @@ void NotificationLine::tickTock() {
     auto gui = Gui::getInstance();
     if (timed) {
         if (notificationTime != 0) {
-            long currentTimeTicks = SDL_GetTicks();
+            long currentTimeTicks = gui->platform().ticks();
             if (currentTimeTicks - notificationTime > timeLimit) // if time limit reached
                 notificationTime = 0;   // turn off the display
         }

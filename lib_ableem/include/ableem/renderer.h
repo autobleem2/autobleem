@@ -25,6 +25,7 @@ public:
     void setBlendMode(BlendMode mode);
 
     void fillRect(const Rect &r);
+    void fillRect(); // fills the entire current render target (screen or whatever setTarget() pointed at)
     void drawRect(const Rect &r);
     void drawLine(Point a, Point b);
 

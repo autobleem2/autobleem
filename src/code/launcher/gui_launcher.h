@@ -25,7 +25,7 @@
 #define STATE_RESUME   2
 #define STATE_INFO     3
 
-extern const SDL_Color brightWhite;
+extern const ableem::Color brightWhite;
 
 //******************
 // GuiLauncher
@@ -43,13 +43,13 @@ public:
     vector<string> headers;
     vector<string> texts;
     long time = 0;
-    SDL_Event e;
+    ableem::Event e;
     // for prev/next first letter fast forwarding
-    Uint32 prevNextFastForwardTimeLimit = 200;
+    unsigned int prevNextFastForwardTimeLimit = 200;
     bool L1_isPressedForFastForward = false;
-    Uint32 L1_fastForwardTimeStart = 0;
+    unsigned int L1_fastForwardTimeStart = 0;
     bool R1_isPressedForFastForward = false;
-    Uint32 R1_fastForwardTimeStart = 0;
+    unsigned int R1_fastForwardTimeStart = 0;
 
     void loop();
 
@@ -139,8 +139,8 @@ public:
     std::unique_ptr<PsMenu> menu;
     PsStateSelector * sselector= nullptr;
 
-    SDL_Color fgColor { 255, 255, 255, SDL_ALPHA_OPAQUE };
-    SDL_Color secColor { 100, 100, 100, SDL_ALPHA_OPAQUE };
+    ableem::Color fgColor { 255, 255, 255, 255 };
+    ableem::Color secColor { 100, 100, 100, 255 };
 
     std::vector<std::unique_ptr<PsObj>> staticElements;
     std::vector<std::unique_ptr<PsObj>> frontElemets;

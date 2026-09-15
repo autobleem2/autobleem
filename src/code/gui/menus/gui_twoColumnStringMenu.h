@@ -17,7 +17,7 @@ struct TwoColumnsOfText {
 //*******************************
 class GuiTwoColumnStringMenu : public GuiMenuBase<TwoColumnsOfText> {
 public:
-    GuiTwoColumnStringMenu(SDL_Shared<SDL_Renderer> _renderer) : GuiMenuBase(_renderer) {}
+    GuiTwoColumnStringMenu(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
 
     int xoffset_L = 0;
     int xoffset_R = 500;

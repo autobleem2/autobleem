@@ -2,7 +2,6 @@
 // Created by screemer on 2/8/19.
 //
 
-#include <SDL2/SDL.h>
 #include "gui_launcher.h"
 #include "../gui/gui.h"
 #include "../gui/menus/gui_optionsMenu.h"
@@ -14,7 +13,7 @@
 
 using namespace std;
 
-const SDL_Color brightWhite = {255, 255, 255, SDL_ALPHA_OPAQUE};
+const ableem::Color brightWhite = {255, 255, 255, 255};
 
 
 //*******************************
@@ -341,7 +340,7 @@ void GuiLauncher::loadAssets() {
 #endif
 
     for (int i = 0; i < 100; i++) {
-        SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+        gui->input().flushEvents();
     }
 
     Inifile colorsFile;
@@ -350,11 +349,11 @@ void GuiLauncher::loadAssets() {
         fgColor.r = gui->getR(colorsFile.values["fg"]);
         fgColor.g = gui->getG(colorsFile.values["fg"]);
         fgColor.b = gui->getB(colorsFile.values["fg"]);
-        fgColor.a = SDL_ALPHA_OPAQUE;
+        fgColor.a = 255;
         secColor.r = gui->getR(colorsFile.values["sec"]);
         secColor.g = gui->getG(colorsFile.values["sec"]);
         secColor.b = gui->getB(colorsFile.values["sec"]);
-        secColor.a = SDL_ALPHA_OPAQUE;
+        secColor.a = 255;
     }
 
     gui->themeFonts.openAllFonts(gui->getCurrentThemeFontPath(), renderer);
@@ -379,7 +378,7 @@ void GuiLauncher::loadAssets() {
         setInitialPositions(selGameIndex);
     }
 
-    long time = SDL_GetTicks();
+    long time = gui->platform().ticks();
 
     cout << "Loading theme and creating objects" << endl;
     if (DirEntry::exists(gui->getCurrentThemeImagePath() + sep + "GR/AB_BG.png")) {
@@ -580,7 +579,7 @@ GuiLauncher::~GuiLauncher() {
 // start scroll animation to next game
 void GuiLauncher::scrollLeft(int speed) {
     scrolling = true;
-    long time = SDL_GetTicks();
+    long time = gui->platform().ticks();
     for (auto &game : carouselGames) {
 
         if (game.visible) {
@@ -608,7 +607,7 @@ void GuiLauncher::scrollLeft(int speed) {
 // start scroll animation to previous game
 void GuiLauncher::scrollRight(int speed) {
     scrolling = true;
-    long time = SDL_GetTicks();
+    long time = gui->platform().ticks();
     for (auto &game : carouselGames) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -650,7 +649,7 @@ void GuiLauncher::updateVisibility() {
 //*******************************
 // this method runs during the loop to update positions of the covers during animation
 void GuiLauncher::updatePositions() {
-    long currentTime = SDL_GetTicks();
+    long currentTime = gui->platform().ticks();
     for (auto &game : carouselGames) {
         if (game.visible) {
             if (game.animationStart != 0) {
@@ -681,8 +680,8 @@ void GuiLauncher::render() {
         sselector->frame = menu->savestate;
     }
 
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(renderer);
+    renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
+    renderer.clear();
 
     for (auto &obj : staticElements) {
 
@@ -693,22 +692,22 @@ void GuiLauncher::render() {
     if (!carouselGames.empty()) {
         for (const auto &game : carouselGames) {
             if (game.visible) {
-                SDL_Shared<SDL_Texture> currentGameTex = game.coverPng;
+                ableem::Texture currentGameTex = game.coverPng;
                 PsScreenpoint point = game.actual;
 
-                SDL_Rect coverRect;
+                ableem::Rect coverRect;
                 coverRect.x = point.x;
                 coverRect.y = point.y;
                 coverRect.w = 226 * point.scale;
                 coverRect.h = 226 * point.scale;
 
-                SDL_Rect fullRect;
+                ableem::Rect fullRect;
                 fullRect.x = 0;
                 fullRect.y = 0;
                 fullRect.w = 226;
                 fullRect.h = 226;
-                SDL_SetTextureColorMod(currentGameTex, point.shade, point.shade, point.shade);
-                SDL_RenderCopy(renderer, currentGameTex, &fullRect, &coverRect);
+                currentGameTex.setColorMod(ableem::Color(point.shade, point.shade, point.shade));
+                renderer.copy(currentGameTex, &fullRect, &coverRect);
             }
         }
     }
@@ -725,7 +724,7 @@ void GuiLauncher::render() {
     for (auto &obj : frontElemets)
         obj->render();
 
-    SDL_RenderPresent(gui->renderer);
+    gui->renderer().present();
 }
 
 //*******************************
@@ -733,7 +732,7 @@ void GuiLauncher::render() {
 //*******************************
 // handler of next game
 void GuiLauncher::nextCarouselGame(int speed) {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     scrollLeft(speed);
     selGameIndex++;
     if (selGameIndex >= carouselGames.size()) {
@@ -749,7 +748,7 @@ void GuiLauncher::nextCarouselGame(int speed) {
 //*******************************
 // handler of prev game
 void GuiLauncher::prevCarouselGame(int speed) {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     scrollRight(speed);
     selGameIndex--;
     if (selGameIndex < 0) {
@@ -901,7 +900,7 @@ void GuiLauncher::moveMainCover(int state) {
     point2.scale = 1;
     point2.shade = 220;
 
-    long time = SDL_GetTicks();
+    long time = gui->platform().ticks();
 
     if (selGameIndexInCarouselGamesIsValid()) {
         if (state == STATE_GAMES) {
@@ -921,7 +920,7 @@ void GuiLauncher::moveMainCover(int state) {
 //*******************************
 void GuiLauncher::switchState(int state, int time) {
     if (state == STATE_GAMES) {
-        Mix_PlayChannel(-1, gui->home_up, 0);
+        gui->home_up.play();
         settingsBack->animEndTime = time + 100;
         settingsBack->nextLen = 100;
         playButton->visible = true;
@@ -943,7 +942,7 @@ void GuiLauncher::switchState(int state, int time) {
 
         moveMainCover(state);
     } else {
-        Mix_PlayChannel(-1, gui->home_down, 0);
+        gui->home_down.play();
         settingsBack->animEndTime = time + 100;
         settingsBack->nextLen = 280;
         playButton->visible = false;

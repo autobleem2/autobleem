@@ -9,18 +9,25 @@
 #include "menus/gui_memCardsMenu.h"
 #include "menus/gui_gameManagerMenu.h"
 #include "gui_confirm.h"
-#include <SDL2/SDL_image.h>
 #include "../ver_migration.h"
 #include "../launcher/gui_launcher.h"
 #include "gui_padTest.h"
+#include "../lang.h"
 #include <unistd.h>
 #include <iostream>
 #include <iomanip>
+#include <cstring>
 #include <json.h>
 #include "../nlohmann/fifo_map.h"
 
 using namespace std;
 using namespace nlohmann;
+using ableem::Rect;
+using ableem::Size;
+using ableem::Color;
+using ableem::Texture;
+using ableem::Event;
+using ableem::Button;
 
 // A workaround to give to use fifo_map as map, we are just ignoring the 'less' compare
 template<class K, class V, class dummy_compare, class A>
@@ -32,41 +39,18 @@ using ordered_json = basic_json<my_workaround_fifo_map>;
 
 
 //********************
-// GuiBase::GuiBase
+// Gui::Gui
 //********************
-GuiBase::GuiBase() {
-    window = SDL_CreateWindow("AutoBleem", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-#ifdef AB_DEBUG_HOST
-
-#else
-    SDL_ShowCursor(SDL_DISABLE);
-    SDL_SetWindowGrab(window, SDL_TRUE);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-#endif
-
-
-    // SDL_ttf and SDL_mixer are initialized once here; the Gui is a singleton that lives for the whole run
-    TTF_Init();
-    Mix_Init(0);
-    sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer);
-    themeFonts.openAllFonts(getCurrentThemeFontPath(), renderer);
-}
-
-//********************
-// GuiBase::~GuiBase
-//********************
-GuiBase::~GuiBase() {
-    // SDL_Quit() is called by main() after everything else is torn down
-    Mix_Quit();
-    TTF_Quit();
+Gui::Gui() {
+    sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer());
+    themeFonts.openAllFonts(getCurrentThemeFontPath(), renderer());
+    input().probePads();
 }
 
 //*******************************
-// GuiBase::getCurrentThemePath
+// Gui::getCurrentThemePath
 //*******************************
-string GuiBase::getCurrentThemePath() {
+string Gui::getCurrentThemePath() {
 #ifdef AB_DEBUG_HOST
     string path = Env::getPathToThemesDir() + sep + cfg.inifile.values["theme"];
     if (!DirEntry::exists(path)) {
@@ -84,9 +68,9 @@ string GuiBase::getCurrentThemePath() {
 }
 
 //*******************************
-// GuiBase::getCurrentThemeImagePath
+// Gui::getCurrentThemeImagePath
 //*******************************
-string GuiBase::getCurrentThemeImagePath() {
+string Gui::getCurrentThemeImagePath() {
 #ifdef AB_DEBUG_HOST
     string path = getCurrentThemePath() + sep + "images";
     if (!DirEntry::exists(path)) {
@@ -104,9 +88,9 @@ string GuiBase::getCurrentThemeImagePath() {
 }
 
 //*******************************
-// GuiBase::getCurrentThemeSoundPath
+// Gui::getCurrentThemeSoundPath
 //*******************************
-string GuiBase::getCurrentThemeSoundPath() {
+string Gui::getCurrentThemeSoundPath() {
 #ifdef AB_DEBUG_HOST
     string path = getCurrentThemePath() + sep + "sounds";
     if (!DirEntry::exists(path)) {
@@ -125,9 +109,9 @@ string GuiBase::getCurrentThemeSoundPath() {
 }
 
 //*******************************
-// GuiBase::getCurrentThemeFontPath
+// Gui::getCurrentThemeFontPath
 //*******************************
-string GuiBase::getCurrentThemeFontPath() {
+string Gui::getCurrentThemeFontPath() {
 #ifdef AB_DEBUG_HOST
     string path = getCurrentThemePath() + sep + "font";
     if (!DirEntry::exists(path)) {
@@ -167,99 +151,58 @@ void splash(char *message) {
 //*******************************
 // Gui::getR
 //*******************************
-Uint8 Gui::getR(const string &val) {
+unsigned char Gui::getR(const string &val) {
     return atoi(Util::commaSep(val, 0).c_str());
 }
 
 //*******************************
 // Gui::getG
 //*******************************
-Uint8 Gui::getG(const string &val) {
+unsigned char Gui::getG(const string &val) {
     return atoi(Util::commaSep(val, 1).c_str());
 }
 
 //*******************************
 // Gui::getB
 //*******************************
-Uint8 Gui::getB(const string &val) {
+unsigned char Gui::getB(const string &val) {
     return atoi(Util::commaSep(val, 2).c_str());
 }
 
-
-
 void Gui::stopAudio() {
-    int numtimesopened, frequency, channels;
-    Uint16 format;
-    numtimesopened=Mix_QuerySpec(&frequency, &format, &channels);
-    for (int i=0;i<numtimesopened;i++)
-    {
-        Mix_CloseAudio();
-    }
-    while(Mix_QuerySpec(&frequency, &format, &channels))
-    {
-        Mix_CloseAudio();
-    }
+    audio().close();
 }
 
 void Gui::restartAudio(int freq) {
-    int numtimesopened, frequency, channels;
-    Uint16 format;
-    numtimesopened = Mix_QuerySpec(&frequency, &format, &channels);
-    for (int i = 0; i < numtimesopened; i++) {
-        Mix_CloseAudio();
-    }
-    while (Mix_QuerySpec(&frequency, &format, &channels));
-
-
-    if (Mix_OpenAudio(freq, MIX_DEFAULT_FORMAT, 2, 1024) == -1) {
-        printf("Unable to open audio: %s\n", Mix_GetError());
-    }
-
-    const char *driver_name = SDL_GetCurrentAudioDriver();
-
-    if (driver_name) {
-        printf("Audio subsystem initialized; driver = %s.\n", driver_name);
-    } else {
-        printf("Audio subsystem not initialized.\n");
-    }
+    audio().open(freq, 2, 1024);
 }
 
 void Gui::playMusic(bool customMusic, string musicPath) {
     if (cfg.inifile.values["nomusic"] != "true")
         if (themeData.values["loop"] != "-1") {
             if (!customMusic) {
-                music = Mix_LoadMUS((themePath + themeData.values["music"]).c_str());
-                if (music == nullptr) { printf("Unable to load Music file: %s\n", Mix_GetError()); }
-                if (Mix_PlayMusic(music, themeData.values["loop"] == "1" ? -1 : 0) == -1) {
-                    printf("Unable to play music file: %s\n", Mix_GetError());
-                }
+                music = ableem::Music::load(themePath + themeData.values["music"]);
+                music.play(themeData.values["loop"] == "1" ? -1 : 0);
             } else {
-                music = Mix_LoadMUS((Env::getWorkingPath() + sep + "music/" + musicPath).c_str());
-                if (music == nullptr) { printf("Unable to load Music file: %s\n", Mix_GetError()); }
-                if (Mix_PlayMusic(music, -1) == -1) {
-                    printf("Unable to play music file: %s\n", Mix_GetError());
-                }
+                music = ableem::Music::load(Env::getWorkingPath() + sep + "music/" + musicPath);
+                music.play(-1);
             }
-
         }
 }
 
 void Gui::freeMusic() {
-    if (music != nullptr) {
-        Mix_FreeMusic(music);
-        music = nullptr;
-    }
+    music = ableem::Music();
 }
 //*******************************
 // Gui::loadThemeTexture
 //*******************************
-SDL_Shared<SDL_Texture>
+Texture
 Gui::loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname) {
-    SDL_Shared<SDL_Texture> tex = nullptr;
+    Texture tex;
     if (DirEntry::exists(themePath + themeData.values[texname])) {
-        tex = IMG_LoadTexture(renderer, (themePath + themeData.values[texname]).c_str());
+        tex = Texture::loadFile(renderer(), themePath + themeData.values[texname]);
     } else {
-        tex = IMG_LoadTexture(renderer, (defaultPath + defaultData.values[texname]).c_str());
+        tex = Texture::loadFile(renderer(), defaultPath + defaultData.values[texname]);
     }
     return tex;
 }
@@ -286,13 +229,11 @@ void Gui::loadAssets(bool reloadMusic) {
     themeData.load(defaultPath + "theme.ini");
     themeData.OverwriteAndAppend(themePath + "theme.ini");    // adds to default/theme.ini values
 
-    if (backgroundImg != nullptr) {
-        Mix_FreeChunk(cursor);
-        Mix_FreeChunk(cancel);
-        Mix_FreeChunk(home_down);
-        Mix_FreeChunk(home_up);
-        backgroundImg = nullptr;
-    }
+    backgroundImg = Texture();  // release the previous theme's textures/sounds before loading the new ones
+    cursor = ableem::Sound();
+    cancel = ableem::Sound();
+    home_down = ableem::Sound();
+    home_up = ableem::Sound();
 
     logoRect.x = atoi(themeData.values["lpositionx"].c_str());
     logoRect.y = atoi(themeData.values["lpositiony"].c_str());
@@ -303,14 +244,14 @@ void Gui::loadAssets(bool reloadMusic) {
     logo = loadThemeTexture(themePath, defaultPath, "logo");
     if (cfg.inifile.values["jewel"] != "none") {
         if (cfg.inifile.values["jewel"] == "default") {
-            cdJewel = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "evoimg/nofilter.png").c_str());
+            cdJewel = Texture::loadFile(renderer(), Env::getWorkingPath() + sep + "evoimg/nofilter.png");
         } else {
-            cdJewel = IMG_LoadTexture(renderer,
-                                      (Env::getWorkingPath() + sep + "evoimg/frames/" +
-                                       cfg.inifile.values["jewel"]).c_str());
+            cdJewel = Texture::loadFile(renderer(),
+                                        Env::getWorkingPath() + sep + "evoimg/frames/" +
+                                        cfg.inifile.values["jewel"]);
         }
     } else {
-        cdJewel = nullptr;
+        cdJewel = Texture();
     }
 
     buttonTextureMap["O"] = loadThemeTexture(themePath, defaultPath, "circle");
@@ -334,7 +275,7 @@ void Gui::loadAssets(bool reloadMusic) {
     string fontSizeString = themeData.values["fsize"];
     if (fontSizeString != "")
         fontSize = atoi(fontSizeString.c_str());
-    themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer);
+    themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer());
 
     if (reloadMusic) {
         freeMusic();
@@ -355,24 +296,20 @@ void Gui::loadAssets(bool reloadMusic) {
         this->restartAudio(freq);
         this->playMusic(customMusic, musicPath);
     }
-    cursor = Mix_LoadWAV((this->getCurrentThemeSoundPath() + sep + "cursor.wav").c_str());
-    cancel = Mix_LoadWAV((this->getCurrentThemeSoundPath() + sep + "cancel.wav").c_str());
-    home_up = Mix_LoadWAV((this->getCurrentThemeSoundPath() + sep + "home_up.wav").c_str());
-    home_down = Mix_LoadWAV((this->getCurrentThemeSoundPath() + sep + "home_down.wav").c_str());
-    resume = Mix_LoadWAV((this->getCurrentThemeSoundPath() + sep + "resume_new.wav").c_str());
+    cursor = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "cursor.wav");
+    cancel = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "cancel.wav");
+    home_up = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "home_up.wav");
+    home_down = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "home_down.wav");
+    resume = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "resume_new.wav");
 }
 
 //*******************************
 // Gui::hideMouseCursor
 //*******************************
 void Gui::hideMouseCursor() {
-
-#ifdef AB_DEBUG_HOST
-#else
-    SDL_ShowCursor(SDL_DISABLE);
-    SDL_SetWindowGrab(window, SDL_TRUE);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-#endif
+    if (!platform().isDevHost()) {
+        platform().hideAndGrabCursor();
+    }
 }
 
 //*******************************
@@ -381,17 +318,14 @@ void Gui::hideMouseCursor() {
 void Gui::criticalException(const string &text) {
     drawText(text);
     while (true) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            mapper.handleHotPlug(&e);
-            mapper.handlePowerBtn(&e);
-
-            if (e.type == SDL_QUIT)
+        Event e;
+        while (input().poll(e)) {
+            if (e.type == Event::Type::Quit)
                 return;
-            else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
+            else if (e.type == Event::Type::KeyUp && e.key == ableem::Key::Escape)
                 return;
 
-            if (e.type == SDL_CONTROLLERBUTTONDOWN) {
+            if (e.type == Event::Type::ButtonDown) {
                 return;
             }
         }
@@ -406,22 +340,14 @@ void Gui::display(bool forceScan, const string &_pathToGamesDir, Database *db, b
     this->pathToGamesDir = _pathToGamesDir;
     this->forceScan = forceScan;
 
-    SDL_version compiled;
-    SDL_version linked;
+    cout << platform().versionString() << endl;
 
-    SDL_VERSION(&compiled);
-    SDL_GetVersion(&linked);
-    printf("We compiled against SDL version %d.%d.%d ...\n",
-           compiled.major, compiled.minor, compiled.patch);
-    printf("But we are linking against SDL version %d.%d.%d.\n",
-           linked.major, linked.minor, linked.patch);
-
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "2");
+    platform().setScaleQuality(2);
 
     loadAssets();
 
     if (!resume) {
-        GuiSplash splashScreen(renderer);
+        GuiSplash splashScreen(*this);
         splashScreen.show();
         hideMouseCursor();
     } else {
@@ -488,7 +414,7 @@ void Gui::menuSelection() {
 
 
     string gamepadNotice = "";
-    if (SDL_NumJoysticks() > mapper.getActivePadNum()) {
+    if (input().joystickCount() > input().activePadCount()) {
         gamepadNotice = _(
                 "NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.");
     }
@@ -513,7 +439,7 @@ void Gui::menuSelection() {
 
         if (resumingGui) {
             {   // scoped: the screen must be gone before menuSelection() recurses
-                GuiLauncher launcherScreen(renderer);
+                GuiLauncher launcherScreen(*this);
                 launcherScreen.show();
             }
             drawText("");
@@ -521,45 +447,43 @@ void Gui::menuSelection() {
             menuSelection();
             menuVisible = false;
         }
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            mapper.handleHotPlug(&e);
-            mapper.handlePowerBtn(&e);
+        Event e;
+        while (input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
 
-                case SDL_CONTROLLERBUTTONUP:
+                case Event::Type::ButtonUp:
                     if (!forceScan) {
-                        if (e.cbutton.button == SDL_BTN_L1) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::L1) {
+                            cursor.play();
                             drawText(mainMenu);
                             otherMenuShift = false;
                         }
-                        if (e.cbutton.button == SDL_BTN_L2) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::L2) {
+                            cursor.play();
                             powerOffShift = false;
                         }
                     }
                     break;
-                case SDL_CONTROLLERBUTTONDOWN:
+                case Event::Type::ButtonDown:
                     if (!forceScan) {
-                        if (e.cbutton.button == SDL_BTN_L1) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::L1) {
+                            cursor.play();
                             drawText(otherMenu);
                             otherMenuShift = true;
                         }
-                        if (e.cbutton.button == SDL_BTN_L2) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::L2) {
+                            cursor.play();
                             powerOffShift = true;
                         }
                     }
 
                     if (powerOffShift) {
-                        if (e.cbutton.button == SDL_BTN_R2) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::R2) {
+                            cursor.play();
                             drawText(_("POWERING OFF... PLEASE WAIT"));
 #ifdef AB_DEBUG_HOST
                             exit(0);
@@ -573,9 +497,9 @@ void Gui::menuSelection() {
 
                     if (!otherMenuShift) {
                         if (!forceScan)
-                            if (e.cbutton.button == SDL_BTN_START) {
+                            if (e.button == Button::Start) {
                                 if (cfg.inifile.values["ui"] == "classic") {
-                                    Mix_PlayChannel(-1, cursor, 0);
+                                    cursor.play();
                                     this->menuOption = MENU_OPTION_RUN;
                                     menuVisible = false;
                                 } else {
@@ -584,11 +508,11 @@ void Gui::menuSelection() {
                                         lastSelIndex = 0;
                                         resumingGui = false;
                                     }
-                                    Mix_PlayChannel(-1, cursor, 0);
+                                    cursor.play();
                                     drawText(_("Starting EvolutionUI"));
                                     loadAssets(false);
                                     {   // scoped: the screen must be gone before menuSelection() recurses
-                                        GuiLauncher launcherScreen(renderer);
+                                        GuiLauncher launcherScreen(*this);
                                         launcherScreen.show();
                                     }
 
@@ -598,13 +522,13 @@ void Gui::menuSelection() {
                             };
 
                         if (!forceScan)
-                            if (e.cbutton.button == SDL_BTN_SQUARE) {
-                                Mix_PlayChannel(-1, cursor, 0);
+                            if (e.button == Button::Square) {
+                                cursor.play();
                                 if (!DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) {
 
                                     bool result;
                                     {   // scoped: the screen must be gone before menuSelection() recurses
-                                        GuiConfirm confirm(renderer);
+                                        GuiConfirm confirm(*this);
                                         confirm.label = _("RetroArch is not installed");
                                         confirm.show();
                                         result = confirm.result;
@@ -623,26 +547,26 @@ void Gui::menuSelection() {
                                 }
                             };
 
-                        if (e.cbutton.button == SDL_BTN_CROSS) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Cross) {
+                            cursor.play();
                             this->menuOption = MENU_OPTION_SCAN;
 
                             menuVisible = false;
                         };
-                        if (e.cbutton.button == SDL_BTN_TRIANGLE) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Triangle) {
+                            cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
-                                GuiAbout aboutScreen(renderer);
+                                GuiAbout aboutScreen(*this);
                                 aboutScreen.show();
                             }
 
                             menuSelection();
                             menuVisible = false;
                         };
-                        if (e.cbutton.button == SDL_BTN_SELECT) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Select) {
+                            cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
-                                GuiOptions options(renderer);
+                                GuiOptions options(*this);
                                 options.show();
                             }
                             menuSelection();
@@ -650,37 +574,35 @@ void Gui::menuSelection() {
                         };
                         if (!forceScan)
                             if (cfg.inifile.values["ui"] == "classic")
-                                if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                                    Mix_PlayChannel(-1, cancel, 0);
+                                if (e.button == Button::Circle) {
+                                    cancel.play();
                                     this->menuOption = MENU_OPTION_SONY;
                                     menuVisible = false;
                                 };
                         break;
                     } else {
-                        if (e.cbutton.button == SDL_BTN_SQUARE) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Square) {
+                            cursor.play();
                             stopAudio();
-                            mapper.flushPads();
+                            input().flushPads();
 #ifdef AB_DEBUG_HOST
                             drawText("Small delay to test");
-                            SDL_Delay(2000);
+                            platform().delay(2000);
 #endif
                             string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
-                            vector<const char *> argvNew{cmd.c_str(), nullptr};
-                            Util::execFork(cmd.c_str(), argvNew);
-                            SDL_PumpEvents();
-                            SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
-                            mapper.probePads();
+                            Util::runAndWait(cmd, {});
+                            input().flushEvents();
+                            input().probePads();
                             restartAudio(freq);
                             playMusic(customMusic,musicPath);
                             menuSelection();
                             menuVisible = false;
                         };
 
-                        if (e.cbutton.button == SDL_BTN_CROSS) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Cross) {
+                            cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
-                                GuiMemcards memcardsScreen(renderer);
+                                GuiMemcards memcardsScreen(*this);
                                 memcardsScreen.show();
                             }
 
@@ -688,10 +610,10 @@ void Gui::menuSelection() {
                             menuVisible = false;
                         };
 
-                        if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                            Mix_PlayChannel(-1, cursor, 0);
+                        if (e.button == Button::Circle) {
+                            cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
-                                GuiManager managerScreen(renderer);
+                                GuiManager managerScreen(*this);
                                 managerScreen.show();
                             }
 
@@ -699,6 +621,9 @@ void Gui::menuSelection() {
                             menuVisible = false;
                         };
                     }
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -709,23 +634,22 @@ void Gui::menuSelection() {
 //*******************************
 void Gui::finish() {
 
-    if (Mix_PlayingMusic()) {
-        Mix_FadeOutMusic(300);
-        while (Mix_PlayingMusic()) {
+    if (music.isPlaying()) {
+        music.fadeOut(300);
+        while (music.isPlaying()) {
         }
     } else {
         usleep(300 * TicksPerSecond);
     }
 
-    Mix_HaltMusic();
-    Mix_FreeMusic(music);
-    Mix_FreeChunk(cursor);
-    Mix_FreeChunk(cancel);
-    Mix_FreeChunk(home_down);
-    Mix_FreeChunk(home_up);
-    Mix_CloseAudio();
-    music = nullptr;
-    backgroundImg = nullptr;
+    music.halt();
+    music = ableem::Music();
+    cursor = ableem::Sound();
+    cancel = ableem::Sound();
+    home_down = ableem::Sound();
+    home_up = ableem::Sound();
+    audio().close();
+    backgroundImg = Texture();
 }
 
 //*******************************
@@ -788,31 +712,32 @@ void Gui::exportDBToRetroarch() {
 //*******************************
 
 //*******************************
-// Gui::FC_getFontTextSize
-// return FC_Size w of font text and h of font
+// Gui::getFontTextSize
+// return the w of the rendered text and h of the font
 //*******************************
-FC_Size Gui::FC_getFontTextSize(FC_Font_Shared font, const char *text) {
-    assert(font != nullptr);
-    FC_Size size;
-    if (font == nullptr || text == nullptr || strlen(text) == 0)
+Size Gui::getFontTextSize(const ableem::Font &font, const char *text) {
+    Size size;
+    if (!font.valid()) {
+        size.w = 0;
+        size.h = 0;
+        return size;
+    }
+    if (text == nullptr || strlen(text) == 0)
         size.w = 0;
     else
-        size.w = FC_GetWidth(font, text);
-    if (font == nullptr)
-        size.h = 0;
-    else
-        size.h = FC_GetLineHeight(font);
+        size.w = font.width(text);
+    size.h = font.lineHeight();
 
     return size;
 }
 
 //*******************************
-// Gui::FC_getFontTextRect
-// return FC_Rect w of font text and h of font
+// Gui::getFontTextRect
+// return a rect at (x,y) sized to the rendered text
 //*******************************
-FC_Rect Gui::FC_getFontTextRect(FC_Font_Shared font, const char *text, int x, int y) {
-    FC_Size size = FC_getFontTextSize(font, text);
-    FC_Rect rect;
+Rect Gui::getFontTextRect(const ableem::Font &font, const char *text, int x, int y) {
+    Size size = getFontTextSize(font, text);
+    Rect rect;
     rect.x = x;
     rect.y = y;
     rect.w = size.w;
@@ -825,8 +750,8 @@ FC_Rect Gui::FC_getFontTextRect(FC_Font_Shared font, const char *text, int x, in
 //*******************************
 // Gui::getOpscreenRectOfTheme
 //*******************************
-SDL_Rect Gui::getOpscreenRectOfTheme() {
-    SDL_Rect rect;
+Rect Gui::getOpscreenRectOfTheme() {
+    Rect rect;
     rect.x = atoi(themeData.values["opscreenx"].c_str());
     rect.y = atoi(themeData.values["opscreeny"].c_str());
     rect.w = atoi(themeData.values["opscreenw"].c_str());
@@ -838,8 +763,8 @@ SDL_Rect Gui::getOpscreenRectOfTheme() {
 //*******************************
 // Gui::getTextRectOfTheme
 //*******************************
-SDL_Rect Gui::getTextRectOfTheme() {
-    SDL_Rect rect;
+Rect Gui::getTextRectOfTheme() {
+    Rect rect;
     rect.x = atoi(themeData.values["textx"].c_str());
     rect.y = atoi(themeData.values["texty"].c_str());
     rect.w = atoi(themeData.values["textw"].c_str());
@@ -853,17 +778,15 @@ SDL_Rect Gui::getTextRectOfTheme() {
 // returns the width of the check/uncheck icon textures
 //*******************************
 int Gui::getCheckIconWidth() {
-    int checkIconWidth=0;
-    int checkIconHeight=0;
     auto it = buttonTextureMap.find("Check");
     if (it != buttonTextureMap.end()) {
-        SDL_QueryTexture(it->second, nullptr, nullptr, &checkIconWidth, &checkIconHeight);
+        return it->second.size().w;
     } else {
         cout << "missing check icon" << endl;
         assert(false);
     }
 
-    return checkIconWidth;
+    return 0;
 }
 
 //*******************************
@@ -897,11 +820,11 @@ void Gui::AllTextOrEmojiTokenInfo::compute_xy_relativeOffsets() {
 // break up the text into tokens of pure text or an emoji icon marker
 // return a vector of the text, emoji texture pointers, width and height of each token and the total width and height.
 //*******************************
-void Gui::AllTextOrEmojiTokenInfo::getTokenInfo(FC_Font_Shared _font, const string & _text) {
+void Gui::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, const string & _text) {
     auto gui = Gui::getInstance();
     font = _font;
-    if (!font)
-        font = gui->themeFont;   // if font == nullptr, default to themeFont
+    if (!font.valid())
+        font = gui->themeFont;   // if font is invalid, default to themeFont
 
     //
     // break up the text into tokens of text and emoji markers
@@ -922,26 +845,25 @@ void Gui::AllTextOrEmojiTokenInfo::getTokenInfo(FC_Font_Shared _font, const stri
         TextOrEmojiTokenInfo tokenInfo;
         tokenInfo.tokenString = tokenString;
         if (tokenString[0] == '@') {    // if emoji marker
-            int w, h;
             auto it = gui->buttonTextureMap.find(tokenString.c_str()+1);
             if (it != gui->buttonTextureMap.end()) {
-                tokenInfo.emoji = it->second;   // save the texture pointer
-                SDL_QueryTexture(it->second, nullptr, nullptr, &w, &h);
+                tokenInfo.emoji = it->second;   // save the texture
+                Size s = it->second.size();
                 tokenInfo.rect.x = 0;
                 tokenInfo.rect.y = 0;
-                tokenInfo.rect.w = w;
-                tokenInfo.rect.h = h;
+                tokenInfo.rect.w = s.w;
+                tokenInfo.rect.h = s.h;
                 // update overall size
-                totalSize.w += w;
-                if (h > totalSize.h)
-                    totalSize.h = h;
+                totalSize.w += s.w;
+                if (s.h > totalSize.h)
+                    totalSize.h = s.h;
                 // add the token info
                 tokenInfos.emplace_back(tokenInfo);
             } else {
                 cout << "emoji not found for " << tokenString << endl;
             }
         } else {
-            tokenInfo.rect = gui->FC_getFontTextRect(font, tokenString);
+            tokenInfo.rect = gui->getFontTextRect(font, tokenString);
             // update overall size
             totalSize.w += tokenInfo.rect.w;
             if (tokenInfo.rect.h > totalSize.h)
@@ -967,7 +889,7 @@ void Gui::AllTextOrEmojiTokenInfo::getTokenInfo(FC_Font_Shared _font, const stri
 //*******************************
 void Gui::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAlign) {
     auto gui = Gui::getInstance();
-    auto renderer = gui->renderer;
+    ableem::Renderer &renderer = gui->renderer();
 
     // compute x offset, center the y offset of each token to the total height
     compute_xy_relativeOffsets();
@@ -978,31 +900,31 @@ void Gui::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAlign) {
 
     if (drawBackgroundRect) {
         // render a grey box behind the text
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 70);
-        SDL_Rect backRect;
+        renderer.setDrawColor(Color(0, 0, 0, 70));
+        Rect backRect;
         backRect.x = x - 10;
         backRect.y = y - 2;
         backRect.w = totalSize.w + 20;
         backRect.h = totalSize.h + 4;
 
-        SDL_RenderFillRect(renderer, &backRect);
+        renderer.fillRect(backRect);
     }
 
     for (auto& tokenInfo : tokenInfos) {
-        if (tokenInfo.emoji) {
+        if (tokenInfo.emoji.valid()) {
             // the token is an emoji texture
-            FC_Rect tempRect = tokenInfo.rect;
+            Rect tempRect = tokenInfo.rect;
             tempRect.x += x;
             tempRect.y += y;
-            SDL_RenderCopy(renderer, tokenInfo.emoji, nullptr, &tempRect);
+            renderer.copy(tokenInfo.emoji, nullptr, &tempRect);
         } else {
             // the token is text
             if (useTextColor) {
-                FC_DrawColor(font, renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                             textColor, tokenInfo.tokenString.c_str());
+                font.drawColor(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
+                               textColor, tokenInfo.tokenString);
             } else {
-                FC_DrawAlign(font, renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                             FC_ALIGN_LEFT, tokenInfo.tokenString.c_str());
+                font.drawAlign(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
+                               ableem::Align::Left, tokenInfo.tokenString);
             }
         }
     }
@@ -1016,7 +938,7 @@ void Gui::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAlign) {
 // Gui::renderText
 // renders/draws the line of text and emoji icons at the chosen position on the screen.  returns the height.
 //*******************************
-int Gui::renderText(FC_Font_Shared font, const string & text, int x, int y, XAlignment xAlign) {
+int Gui::renderText(const ableem::Font &font, const string & text, int x, int y, XAlignment xAlign) {
     AllTextOrEmojiTokenInfo allTokenInfo(font, text);
     allTokenInfo.render(x, y, xAlign);
 
@@ -1028,7 +950,7 @@ int Gui::renderText(FC_Font_Shared font, const string & text, int x, int y, XAli
 // if background == true it draws a solid grey box around/behind the text
 // this routine does not support emoji icons.  text only.
 //*******************************
-int Gui::renderText_WithColor(FC_Font_Shared font, const std::string &text, int x, int y, SDL_Color textColor,
+int Gui::renderText_WithColor(const ableem::Font &font, const std::string &text, int x, int y, Color textColor,
                               XAlignment xAlign, bool background) {
     AllTextOrEmojiTokenInfo allTokenInfo(font, text);
     allTokenInfo.setTextColor(textColor);
@@ -1042,12 +964,12 @@ int Gui::renderText_WithColor(FC_Font_Shared font, const std::string &text, int 
 //*******************************
 // Gui::renderTextLine
 //*******************************
-int Gui::renderTextLine(const string &text, int line, int yoffset, XAlignment xAlign, int xoffset, FC_Font_Shared font) {
-    if (!font)
+int Gui::renderTextLine(const string &text, int line, int yoffset, XAlignment xAlign, int xoffset, ableem::Font font) {
+    if (!font.valid())
         font = themeFont;   // default to themeFont
 
-    SDL_Rect opscreen = getOpscreenRectOfTheme();
-    Uint16 fontHeight = FC_GetLineHeight(font);
+    Rect opscreen = getOpscreenRectOfTheme();
+    int fontHeight = font.lineHeight();
     int x = opscreen.x + 10 + xoffset;
     int y = (fontHeight * line) + yoffset;
 
@@ -1065,7 +987,7 @@ int Gui::renderTextLine(const string &text, int line, int yoffset, XAlignment xA
 //*******************************
 int Gui::renderTextLineToColumns(const string &textLeft, const string &textRight,
                                  int xLeft, int xRight,
-                                 int line, int yoffset, FC_Font_Shared font) {
+                                 int line, int yoffset, ableem::Font font) {
 
     renderTextLine(textLeft,  line, yoffset, XALIGN_LEFT, xLeft, font);
     int h = renderTextLine(textRight, line, yoffset, XALIGN_LEFT, xRight, font);
@@ -1099,8 +1021,8 @@ int Gui::renderTextLineOptions(const string &_text, int line, int yoffset, XAlig
     }
 
     // render the check/uncheck icon on the right side of opscreen
-    SDL_Rect opscreen = getOpscreenRectOfTheme();
-    Uint16 fontHeight = FC_GetLineHeight(themeFont);
+    Rect opscreen = getOpscreenRectOfTheme();
+    int fontHeight = themeFont.lineHeight();
 
     int x = opscreen.x + opscreen.w - 10 - getCheckIconWidth();
     int y = (fontHeight * line) + yoffset;
@@ -1116,23 +1038,22 @@ int Gui::renderTextLineOptions(const string &_text, int line, int yoffset, XAlig
 //*******************************
 // Gui::renderSelectionBox
 //*******************************
-void Gui::renderSelectionBox(int line, int yoffset, int xoffset, FC_Font_Shared font) {
-    SDL_Shared<SDL_Texture> textTex;
-    if (!font)
+void Gui::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font font) {
+    if (!font.valid())
         font = themeFont;
 
     string fg = themeData.values["text_fg"];
-    Uint16 fontHeight = FC_GetLineHeight(font);
-    SDL_Rect opscreen = getOpscreenRectOfTheme();
-    SDL_Rect rectSelection;
+    int fontHeight = font.lineHeight();
+    Rect opscreen = getOpscreenRectOfTheme();
+    Rect rectSelection;
     rectSelection.x = opscreen.x + 5 + xoffset;
     rectSelection.y = yoffset + fontHeight * (line);
     rectSelection.w = opscreen.w - 10 - xoffset;
     rectSelection.h = fontHeight;
 
-    SDL_SetRenderDrawColor(renderer, getR(fg), getG(fg), getB(fg), 255);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_RenderDrawRect(renderer, &rectSelection);
+    renderer().setDrawColor(Color(getR(fg), getG(fg), getB(fg), 255));
+    renderer().setBlendMode(ableem::BlendMode::Blend);
+    renderer().drawRect(rectSelection);
 }
 
 //*******************************
@@ -1140,26 +1061,26 @@ void Gui::renderSelectionBox(int line, int yoffset, int xoffset, FC_Font_Shared 
 //*******************************
 void Gui::renderLabelBox(int line, int yoffset) {
     string bg = themeData.values["label_bg"];
-    Uint16 fontHeight = FC_GetLineHeight(themeFont);
-    SDL_Rect opscreen = getOpscreenRectOfTheme();
-    SDL_Rect rectSelection;
+    int fontHeight = themeFont.lineHeight();
+    Rect opscreen = getOpscreenRectOfTheme();
+    Rect rectSelection;
     rectSelection.x = opscreen.x + 5;
     rectSelection.y = yoffset + fontHeight * (line);
     rectSelection.w = opscreen.w - 10;
     rectSelection.h = fontHeight;
 
-    SDL_SetRenderDrawColor(renderer, getR(bg), getG(bg), getB(bg), atoi(themeData.values["keyalpha"].c_str()));
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_RenderFillRect(renderer, &rectSelection);
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["keyalpha"].c_str())));
+    renderer().setBlendMode(ableem::BlendMode::Blend);
+    renderer().fillRect(rectSelection);
 }
 
 //*******************************
 // Gui::renderTextChar
 //*******************************
 void Gui::renderTextChar(const string &text, int line, int yoffset, int x) {
-    Uint16 fontHeight = FC_GetLineHeight(themeFont);
+    int fontHeight = themeFont.lineHeight();
     int y = (fontHeight * line) + yoffset;
-    FC_DrawAlign(themeFont, renderer, x, y, FC_ALIGN_LEFT, text.c_str());
+    themeFont.drawAlign(renderer(), x, y, ableem::Align::Left, text);
 }
 
 //*******************************
@@ -1175,9 +1096,9 @@ void Gui::renderFreeSpace() {
 // Gui::renderBackground
 //*******************************
 void Gui::renderBackground() {
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, backgroundImg, nullptr, &backgroundRect);
+    renderer().setDrawColor(Color(0x00, 0x00, 0x00, 0x00));
+    renderer().clear();
+    renderer().copy(backgroundImg, nullptr, &backgroundRect);
 }
 
 //*******************************
@@ -1185,15 +1106,15 @@ void Gui::renderBackground() {
 //*******************************
 int Gui::renderLogo(bool small) {
     if (!small) {
-        SDL_RenderCopy(renderer, logo, nullptr, &logoRect);
+        renderer().copy(logo, nullptr, &logoRect);
         return 0;
     } else {
-        SDL_Rect rect;
+        Rect rect;
         rect.x = atoi(themeData.values["opscreenx"].c_str());
         rect.y = atoi(themeData.values["opscreeny"].c_str());
         rect.w = logoRect.w / 3;
         rect.h = logoRect.h / 3;
-        SDL_RenderCopy(renderer, logo, nullptr, &rect);
+        renderer().copy(logo, nullptr, &rect);
         return rect.y + rect.h;
     }
 }
@@ -1204,10 +1125,10 @@ int Gui::renderLogo(bool small) {
 void Gui::renderStatus(const string &text, int posy) {
     string bg = themeData.values["text_bg"];
 
-    SDL_SetRenderDrawColor(renderer, getR(bg), getG(bg), getB(bg), atoi(themeData.values["textalpha"].c_str()));
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_Rect rect = getTextRectOfTheme();
-    SDL_RenderFillRect(renderer, &rect);
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["textalpha"].c_str())));
+    renderer().setBlendMode(ableem::BlendMode::Blend);
+    Rect rect = getTextRectOfTheme();
+    renderer().fillRect(rect);
 
     int y = atoi(themeData.values["ttop"].c_str());
     if (posy!=-1)
@@ -1221,12 +1142,12 @@ void Gui::renderStatus(const string &text, int posy) {
 //*******************************
 void Gui::renderTextBar() {
     string bg = themeData.values["main_bg"];
-    SDL_SetRenderDrawColor(renderer, getR(bg), getG(bg), getB(bg), atoi(themeData.values["mainalpha"].c_str()));
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["mainalpha"].c_str())));
+    renderer().setBlendMode(ableem::BlendMode::Blend);
 
-    SDL_Rect rect2 = getOpscreenRectOfTheme();
+    Rect rect2 = getOpscreenRectOfTheme();
 
-    SDL_RenderFillRect(renderer, &rect2);
+    renderer().fillRect(rect2);
 }
 
 //*******************************
@@ -1237,6 +1158,5 @@ void Gui::drawText(const string &text, const string &topLine) {
     renderLogo(false);
     renderStatus(text);
     renderStatus(topLine, 5);
-    SDL_RenderPresent(renderer);
+    renderer().present();
 }
-

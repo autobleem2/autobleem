@@ -1,9 +1,8 @@
 #pragma once
 
-#include <SDL2/SDL_ttf.h>
+#include <ableem/types.h>
 #include <vector>
 #include <string>
-#include "../gui/gui_font_wrapper.h"
 #include "../gui/gui_font.h"
 
 #define TicksPerSecond 1000
@@ -20,11 +19,11 @@ struct NotificationLine {
     bool timed = true;
     long notificationTime = 0;  // the tick time when setText was called.  this is in milliseconds.
     long timeLimit = 0; // display ends when current tick - notificationTime > timeLimit.  this is in milliseconds.
-    SDL_Color textColor =  { 255, 255, 255, SDL_ALPHA_OPAQUE };  // brightWhite
+    ableem::Color textColor =  { 255, 255, 255, 255 };  // brightWhite
     FontEnum fontEnum = FONT_22_MED;
 
     // timelimit is in milliseconds.  a timeLimit of 0 = no limit.
-    void setText(std::string _text, long _timeLimit, const SDL_Color & _textColor, FontEnum fontEnum);
+    void setText(std::string _text, long _timeLimit, const ableem::Color & _textColor, FontEnum fontEnum);
     void setText(std::string _text, long _timeLimit);
 
     void tickTock();

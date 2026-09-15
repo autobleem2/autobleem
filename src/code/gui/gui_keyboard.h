@@ -16,8 +16,6 @@ public:
     virtual void loop();
     virtual void init();
 
-    bool handlePowerShutdownAndQuit(SDL_Event &e);  // returns true if applicable event type and it was handled
-
     void doKbdRight();
     void doKbdLeft();
     void doKbdHome();
@@ -27,7 +25,7 @@ public:
     void doKbdTab();
     void doKbdEscape();
     void doKbdReturn();
-    void doKbdTextInput(SDL_Event& e);
+    void doKbdTextInput(const std::string& text);
 
     void doL1_up();
     void doL2_up();

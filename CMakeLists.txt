@@ -65,24 +65,12 @@ endif()
 
 find_package(Threads REQUIRED)
 
-# lib_ableem: the portable SDL2 wrapper. Built first and standalone (its own SDL discovery, its own demo) so
-# it stays usable outside this app; the autobleem-gui target below is ported to link it and drop SDL
-# entirely in a later step of the ongoing refactor (see CLAUDE.md).
+# lib_ableem: the portable SDL2 wrapper (own SDL discovery, own demo). autobleem-gui links it and does not
+# touch SDL directly at all - see CLAUDE.md.
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
     set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
 endif()
 add_subdirectory(lib_ableem)
-
-if (MINGW)
-    # MSYS2/MinGW development build: SDL2 libs come from pkg-config
-    message(STATUS "Building for Windows (MinGW)")
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(SDL2ALL REQUIRED IMPORTED_TARGET sdl2 SDL2_image SDL2_mixer SDL2_ttf)
-    set(AB_SDL_LIBS PkgConfig::SDL2ALL)
-else()
-    find_package(SDL2 REQUIRED)
-    set(AB_SDL_LIBS SDL2 SDL2_image SDL2_mixer SDL2_ttf)
-endif()
 
 if (AB_ENABLE_CHD)
     set(AB_CHD_LIBS mamecd)
@@ -124,8 +112,6 @@ add_executable(
         src/code/engine/memcard.h
         src/code/engine/metadata.cpp
         src/code/engine/metadata.h
-        src/code/engine/padmapper.cpp
-        src/code/engine/padmapper.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
         src/code/engine/serialscanner.cpp
@@ -140,23 +126,17 @@ add_executable(
         src/code/gui/gui_confirm.h
         src/code/gui/gui_font.cpp
         src/code/gui/gui_font.h
-        src/code/gui/gui_font_wrapper.h
         src/code/gui/gui_keyboard.cpp
         src/code/gui/gui_keyboard.h
         src/code/gui/gui_padTest.cpp
         src/code/gui/gui_padTest.h
-        src/code/gui/gui_screen.cpp
         src/code/gui/gui_screen.h
         src/code/gui/gui_scrollWin.cpp
         src/code/gui/gui_scrollWin.h
-        src/code/gui/gui_sdl_wrapper.cpp
-        src/code/gui/gui_sdl_wrapper.h
         src/code/gui/gui_selectmemcard.cpp
         src/code/gui/gui_selectmemcard.h
         src/code/gui/gui_splash.cpp
         src/code/gui/gui_splash.h
-		src/code/gui/SDL_FontCache.h
-		src/code/gui/SDL_FontCache.c
         src/code/gui/menus/gui_gameDirMenu.h
         src/code/gui/menus/gui_gameEditorMenu.cpp
         src/code/gui/menus/gui_gameEditorMenu.h
@@ -226,7 +206,7 @@ add_executable(
         src/code/util.h
         src/code/ver_migration.cpp
         src/code/ver_migration.h
-        src/code/util_time.h src/code/util_time.cpp src/code/gui/abl.c src/code/gui/abl.h)
+        src/code/util_time.h src/code/util_time.cpp)
 
 target_include_directories(autobleem-gui PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/sqlite>
@@ -250,7 +230,7 @@ endif()
 
 target_link_libraries(autobleem-gui
          Threads::Threads
-         ${AB_SDL_LIBS}
+         ableem
 		 sqlite3
          ${AB_CHD_LIBS}
          ${CMAKE_DL_LIBS}

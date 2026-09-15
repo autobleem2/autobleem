@@ -9,7 +9,7 @@
 //*******************************
 class GuiPlaylists : public GuiStringMenu {
 public:
-    GuiPlaylists(SDL_Shared<SDL_Renderer> _renderer) : GuiStringMenu(_renderer) {}
+    GuiPlaylists(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override {
         for (const string& playlist : playlists) {

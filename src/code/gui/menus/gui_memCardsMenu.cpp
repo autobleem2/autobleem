@@ -1,6 +1,4 @@
 #include "gui_memCardsMenu.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
 #include <string>
 #include "../gui.h"
 #include "../../engine/memcard.h"
@@ -37,7 +35,7 @@ string GuiMemcards::getStatusLine() {
 // GuiMemcards::doCirclePressed
 //*******************************
 void GuiMemcards::doCircle_Pressed() {
-    Mix_PlayChannel(-1, gui->cancel, 0);
+    gui->cancel.play();
     menuVisible = false;
 }
 
@@ -45,8 +43,8 @@ void GuiMemcards::doCircle_Pressed() {
 // GuiMemcards::doSquarePressed
 //*******************************
 void GuiMemcards::doSquare_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiKeyboard keyboard(renderer);
+    gui->cursor.play();
+    GuiKeyboard keyboard(*gui);
     keyboard.label = _("Enter new card name");
     keyboard.show();
     string result = keyboard.result;
@@ -89,9 +87,9 @@ void GuiMemcards::doSquare_Pressed() {
 // GuiMemcards::doTrianglePressed
 //*******************************
 void GuiMemcards::doTriangle_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (getVerticalSize() != 0) {
-        GuiConfirm guiConfirm(renderer);
+        GuiConfirm guiConfirm(*gui);
         guiConfirm.label = _("Delete card") + " '" + lines[selected] + "' ?";
         guiConfirm.show();
         bool result = guiConfirm.result;
@@ -109,12 +107,12 @@ void GuiMemcards::doTriangle_Pressed() {
 // GuiMemcards::doCrossPressed
 //*******************************
 void GuiMemcards::doCross_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (lines.empty()) {
         return;
     }
 
-    GuiKeyboard keyboard(renderer);
+    GuiKeyboard keyboard(*gui);
     keyboard.label = _("Enter new name for card") + " '" + lines[selected] + "'";
     keyboard.result = lines[selected];
     keyboard.show();

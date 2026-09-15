@@ -8,7 +8,8 @@
 
 #include "../gui/gui_screen.h"
 #include "../engine/cardedit.h"
-#include "../gui/gui_font_wrapper.h"
+#include <ableem/texture.h>
+#include <ableem/font.h>
 #include <string>
 
 using namespace std;
@@ -17,7 +18,7 @@ class GuiMcManager : public GuiScreen {
 public:
     string leftCardName;
     string rightCardName;
-    SDL_Shared<SDL_Texture> backgroundImg;
+    ableem::Texture backgroundImg;
     string card1path;
     string card2path;
 
@@ -35,7 +36,7 @@ public:
 private:
     int counter = 0;
     int animFrame=0;
-    FC_Font_Shared fontJIS;
+    ableem::Font fontJIS;
     void renderStatic();
     void renderPencil(int memcard, int row, int column);
     void renderMemCardIcons(int memcard);
@@ -55,7 +56,7 @@ private:
     int pencilRow;
     int pencilMemcard;
 
-    SDL_Rect pencilPos;
-    SDL_Shared<SDL_Texture> mcGrid;
-    SDL_Shared<SDL_Texture> mcPencil;
+    ableem::Rect pencilPos;
+    ableem::Texture mcGrid;
+    ableem::Texture mcPencil;
 };

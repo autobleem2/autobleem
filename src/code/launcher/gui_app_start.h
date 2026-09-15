@@ -6,12 +6,11 @@
 #define AUTOBLEEM_GUI_GUI_APP_START_H
 
 #include "../gui/gui_screen.h"
-#include "../gui/gui_font_wrapper.h"
 #include "ps_game.h"
 
 class GuiAppStart : public GuiScreen {
 private:
-    FC_Font_Shared font;
+    ableem::Font font;
     PsGamePtr game;
     int firstLine = 0;
     int maxLines = 25;

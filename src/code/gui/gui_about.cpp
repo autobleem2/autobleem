@@ -3,10 +3,6 @@
 //
 
 #include "gui_about.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include "gui.h"
 #include "../lang.h"
@@ -15,9 +11,9 @@
 
 void GuiAbout::init() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
-    fx.renderer = renderer;
+    fx.renderer = &renderer;
     font = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "about.ttf", 17, renderer);
-    logo = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "ablogo.png").c_str());
+    logo = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "ablogo.png");
 }
 
 //*******************************
@@ -47,26 +43,26 @@ void GuiAbout::render() {
 
     gui->renderBackground();
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 235);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    renderer.setDrawColor(ableem::Color(0, 0, 0, 235));
+    renderer.setBlendMode(ableem::BlendMode::Blend);
 
-    SDL_Rect rect2;
+    ableem::Rect rect2;
     rect2.x = 0;
     rect2.y = 0;
     rect2.w = SCREEN_WIDTH;
     rect2.h = SCREEN_HEIGHT;
 
-    SDL_RenderFillRect(renderer, &rect2);
+    renderer.fillRect(rect2);
 
     fx.render();
 
     int yoffset = 150;
-    SDL_Rect rect;
+    ableem::Rect rect;
     rect.x = SCREEN_WIDTH/2-100;
     rect.y = 5;
     rect.w = 200;
     rect.h = 141;
-    SDL_RenderCopy(renderer, logo, nullptr, &rect);
+    renderer.copy(logo, nullptr, &rect);
 
 
     int line = 1;
@@ -76,7 +72,7 @@ void GuiAbout::render() {
     }
 
     gui->renderStatus("|@O| " + _("Go back") + "|",680);
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -87,23 +83,22 @@ void GuiAbout::loop() {
     menuVisible = true;
     while (menuVisible) {
         render();
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::Circle) {
+                        gui->cancel.play();
                         menuVisible = false;
 
                     };
-
+                    break;
+                default:
+                    break;
 
             }
 

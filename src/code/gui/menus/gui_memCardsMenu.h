@@ -10,7 +10,7 @@
 //********************
 class GuiMemcards : public GuiStringMenu {
 public:
-    GuiMemcards(SDL_Shared<SDL_Renderer> _renderer) : GuiStringMenu(_renderer) {}
+    GuiMemcards(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override;
 

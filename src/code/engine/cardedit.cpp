@@ -17,8 +17,7 @@ using namespace std;
 #define PSX_BLOCK_LINK 0x02
 #define PSX_BLOCK_LINK_END 0x03
 
-CardEdit::CardEdit(SDL_Shared<SDL_Renderer> renderer1) {
-    renderer = renderer1;
+CardEdit::CardEdit(ableem::Renderer &renderer1) : renderer(renderer1) {
     // Initialise the card contents
     memset(memoryCard, 0, sizeof(memoryCard));
 
@@ -36,11 +35,12 @@ CardEdit::CardEdit(SDL_Shared<SDL_Renderer> renderer1) {
         int pitch;
         void *pixels;
         for (int icon=0;icon<3;icon++) {
-            slot_icons[i][icon] = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 16, 16);
-            SDL_LockTexture(slot_icons[i][icon], NULL, &pixels, &pitch);
+            slot_icons[i][icon] = ableem::Texture::createStreaming(renderer, 16, 16);
             //Copy loaded/formatted surface pixels
-            std::memset(pixels, 0, 16 * 16 * 4);
-            SDL_UnlockTexture(slot_icons[i][icon]);
+            auto lock = slot_icons[i][icon].lock();
+            for (int y = 0; y < 16; y++)
+                for (int x = 0; x < 16; x++)
+                    lock.set(x, y, ableem::Color(0, 0, 0, 0));
         }
         slot_titles[i]="";
         slot_Pcodes[i]="";
@@ -556,45 +556,29 @@ void CardEdit::update_slot_iconImages() {
                 }
 
                 icn_pos = 0;
-                void *pixels;
-                int pitch;
-                SDL_LockTexture(slot_icons[i][icon], NULL, &pixels, &pitch);
-                Uint32 *pixelData = (Uint32 *) pixels;
-                SDL_PixelFormat *fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-                for (int y = 0; y < 16; y++) {
-                    for (int x = 0; x < 16; x += 2) {
-                        unsigned char index;
+                {
+                    auto lock = slot_icons[i][icon].lock();
+                    for (int y = 0; y < 16; y++) {
+                        for (int x = 0; x < 16; x += 2) {
+                            unsigned char index;
 
-                        //Copy loaded/formatted surface pixels
-                        index = (memoryCard[dataaddr + icn_pos] | 0xF0) ^ 0xF0;
-                        Uint32 color1 = SDL_MapRGBA(fmt, palette[index].r, palette[index].g, palette[index].b, 255);
-                        pixelData[x + y * 16] = color1;
+                            //Copy loaded/formatted surface pixels
+                            index = (memoryCard[dataaddr + icn_pos] | 0xF0) ^ 0xF0;
+                            lock.set(x, y, ableem::Color(palette[index].r, palette[index].g, palette[index].b, 255));
 
-                        //slot_icons[i]->setPixel(x, y, palette[index]);
-
-                        index = (((memoryCard[dataaddr + icn_pos]) >> 4) | 0xF0) ^ 0xF0;
-                        Uint32 color2 = SDL_MapRGBA(fmt, palette[index].r, palette[index].g, palette[index].b, 255);
-                        //slot_icons[i]->setPixel(x+1, y, palette[index]);
-                        pixelData[x + 1 + y * 16] = color2;
-                        icn_pos += 1;
+                            index = (((memoryCard[dataaddr + icn_pos]) >> 4) | 0xF0) ^ 0xF0;
+                            lock.set(x + 1, y, ableem::Color(palette[index].r, palette[index].g, palette[index].b, 255));
+                            icn_pos += 1;
+                        }
                     }
                 }
-                SDL_UnlockTexture(slot_icons[i][icon]);
-                SDL_FreeFormat(fmt);
             } else {
-                void *pixels;
-                int pitch;
-                SDL_LockTexture(slot_icons[i][icon], NULL, &pixels, &pitch);
-                Uint32 *pixelData = (Uint32 *) pixels;
-                SDL_PixelFormat *fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-                Uint32 transparent = SDL_MapRGBA(fmt, 0, 0, 0, 127);
+                auto lock = slot_icons[i][icon].lock();
                 for (int y = 0; y < 16; y++) {
                     for (int x = 0; x < 16; x++) {
-                        pixelData[x + y * 16] = transparent;
+                        lock.set(x, y, ableem::Color(0, 0, 0, 127));
                     }
                 }
-                SDL_UnlockTexture(slot_icons[i][icon]);
-                SDL_FreeFormat(fmt);
             }
         }
     }
@@ -602,7 +586,7 @@ void CardEdit::update_slot_iconImages() {
     // now update link blocks to have dimmed image
     for (int i=0;i<15;i++)
     {
-        SDL_Shared<SDL_Texture> currentTex;
+        ableem::Texture currentTex;
         if (is_slot_top(i))
         {
             currentTex = slot_icons[i][0];
@@ -614,32 +598,18 @@ void CardEdit::update_slot_iconImages() {
                     continue; // do not touch top slot
                 } else
                 {
-                    SDL_PixelFormat *fmt = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
                     for (int icon=0;icon<3;icon++) {
-                        void *pixels;
-                        int pitch;
-                        void *destpixels;
-                        int destpitch;
-                        SDL_LockTexture(slot_icons[slot][icon], NULL, &destpixels, &destpitch);
-                        SDL_LockTexture(currentTex, NULL, &pixels, &pitch);
-                        Uint32 *pixelData = (Uint32 *) pixels;
-                        Uint32 *pixelDataDest = (Uint32 *) destpixels;
+                        auto destLock = slot_icons[slot][icon].lock();
+                        auto srcLock = currentTex.lock();
 
-                        Uint8 r,g,b,a;
-                        Uint32 transparent = SDL_MapRGBA(fmt, 0, 0, 0, 127);
                         for (int y = 0; y < 16; y++) {
                             for (int x = 0; x < 16; x++) {
-                                SDL_GetRGBA(pixelData[x+y*16],fmt,&r,&g,&b,&a);
-                                Uint32 processedColour = SDL_MapRGBA(fmt, r/3,g/3,b/3,255);
-                                pixelDataDest[x + y * 16] = processedColour;
+                                ableem::Color c = srcLock.get(x, y);
+                                destLock.set(x, y, ableem::Color(c.r/3, c.g/3, c.b/3, 255));
                             }
                         }
-                        SDL_UnlockTexture(currentTex);
-                        SDL_UnlockTexture(slot_icons[slot][icon]);
-
                     }
                     slot_has_icon[slot] = true;
-                    SDL_FreeFormat(fmt);
                 }
             }
         }
@@ -670,7 +640,7 @@ bool CardEdit::get_slot_is_free(int slot) {
     return false;
 }
 
-SDL_Shared<SDL_Texture> CardEdit::get_slot_icon(int slot, int frame) {
+ableem::Texture CardEdit::get_slot_icon(int slot, int frame) {
     return slot_icons[slot][frame];
 }
 

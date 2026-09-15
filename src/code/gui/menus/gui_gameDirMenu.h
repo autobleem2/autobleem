@@ -10,7 +10,7 @@
 //*******************************
 class GuiGameDirMenu : public GuiStringMenu {
 public:
-    GuiGameDirMenu(SDL_Shared<SDL_Renderer> _renderer) : GuiStringMenu(_renderer) {}
+    GuiGameDirMenu(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     virtual std::string getTitle() override { return "-=" + _("Select PS1 Game Category") + "=-"; }
     virtual std::string getStatusLine() override { return GuiStringMenu::getStatusLine(); }

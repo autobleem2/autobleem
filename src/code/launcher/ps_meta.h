@@ -6,9 +6,6 @@
 
 #include "ps_obj.h"
 #include "ps_game.h"
-#include <SDL2/SDL_ttf.h>
-#include "../gui/gui_sdl_wrapper.h"
-#include "../gui/gui_font_wrapper.h"
 #include "../gui/gui_font.h"
 
 class PsGame;
@@ -26,17 +23,17 @@ public:
     std::string region;
     std::string last_played;
     Fonts fonts;
-    SDL_Color textColor;
+    ableem::Color textColor;
 
-    SDL_Shared<SDL_Texture> internalOnTex;
-    SDL_Shared<SDL_Texture> internalOffTex;
-    SDL_Shared<SDL_Texture> hdOnTex;
-    SDL_Shared<SDL_Texture> hdOffTex;
-    SDL_Shared<SDL_Texture> lockOnTex;
-    SDL_Shared<SDL_Texture> lockOffTex;
-    SDL_Shared<SDL_Texture> cdTex;
-    SDL_Shared<SDL_Texture> favoriteTex;
-    SDL_Shared<SDL_Texture> raTex;
+    ableem::Texture internalOnTex;
+    ableem::Texture internalOffTex;
+    ableem::Texture hdOnTex;
+    ableem::Texture hdOffTex;
+    ableem::Texture lockOnTex;
+    ableem::Texture lockOffTex;
+    ableem::Texture cdTex;
+    ableem::Texture favoriteTex;
+    ableem::Texture raTex;
 
     int nextPos = 0;
     int prevPos = 0;
@@ -56,9 +53,9 @@ public:
                      const std::string & yearTxt, const std::string & serial, const std::string & region,
                      const std::string & playersTxt, bool internal, bool hd, bool locked, int discs, bool favorite,
                      bool play_using_ra, bool foreign, bool app, const std::string& last_played,
-                     SDL_Color _textColor);
+                     ableem::Color _textColor);
 
-    void updateTexts(PsGamePtr & game, SDL_Color _textColor);
+    void updateTexts(PsGamePtr & game, ableem::Color _textColor);
 
     void destroy();
 

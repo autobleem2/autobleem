@@ -5,8 +5,6 @@
 #include "ps_stateselector.h"
 #include "../lang.h"
 #include "../gui/gui.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include "gui_launcher.h"
 
 using namespace std;
@@ -17,7 +15,7 @@ using namespace std;
 void PsStateSelector::cleanSaveStateImages()
 {
     for (int i=0;i<4;i++)
-        slotImg[i] = nullptr;
+        slotImg[i] = ableem::Texture();
 }
 
 //*******************************
@@ -34,17 +32,17 @@ void PsStateSelector::loadSaveStateImages(PsGamePtr & game, bool saving)
     }
     for (int i=0;i<4;i++)
     {
-        slotImg[i] = nullptr;
+        slotImg[i] = ableem::Texture();
         slotActive[i]=false;
         if (!saving) {
             if (game->isResumeSlotActive(i)) {
-                slotImg[i] = IMG_LoadTexture(renderer, game->findResumePicture(i).c_str());
+                slotImg[i] = ableem::Texture::loadFile(renderer, game->findResumePicture(i));
                 slotActive[i]=true;
             }
         } else
         {
             if (game->isResumeSlotActive(i)) {
-                slotImg[i] = IMG_LoadTexture(renderer, game->findResumePicture(i).c_str());
+                slotImg[i] = ableem::Texture::loadFile(renderer, game->findResumePicture(i));
 
             }
             slotActive[i]=true;
@@ -62,17 +60,17 @@ void PsStateSelector::render()
         float scale = 2.7f;
         x=10;
         y=220;
-        SDL_SetRenderDrawColor(renderer,0,0,0,200);
-        SDL_Rect rect;
+        renderer.setDrawColor(ableem::Color(0,0,0,200));
+        ableem::Rect rect;
         rect.x=0;
         rect.y=100;
         rect.w=SCREEN_WIDTH;
         rect.h=SCREEN_HEIGHT-200;
-        SDL_RenderFillRect(renderer,&rect);
+        renderer.fillRect(rect);
 
         int w = 118 * scale;
         int h = 118 * scale;
-        SDL_Rect input, output;
+        ableem::Rect input, output;
         input.x = 0, input.y = 0;
         input.h = 118, input.w = 118;
         output.x = x ;
@@ -88,8 +86,6 @@ void PsStateSelector::render()
         }
 
         shared_ptr<Gui> gui(Gui::getInstance());
-        SDL_Shared<SDL_Texture> infoText;
-        SDL_Rect infoRect, infoDest;
 
         gui->renderText_WithColor(font30, _(text), 0, 110, brightWhite, XALIGN_CENTER);
 
@@ -108,30 +104,27 @@ void PsStateSelector::render()
 
             if (selSlot==i)
             {
-                SDL_SetTextureColorMod(frame, 255, 128, 128);
+                frame.setColorMod(ableem::Color(255, 128, 128));
             } else
             {
-                SDL_SetTextureColorMod(frame, 255, 255, 255);
+                frame.setColorMod(ableem::Color(255, 255, 255));
             }
-            SDL_RenderCopy(renderer, frame, &input, &output);
-            SDL_SetTextureColorMod(frame, 255, 255, 255);
+            renderer.copy(frame, &input, &output);
+            frame.setColorMod(ableem::Color(255, 255, 255));
 
 
-            if (slotImg[i]!= nullptr)
+            if (slotImg[i].valid())
             {
-                Uint32 format;
-                int access;
-                int wt,ht;
+                ableem::Size s = slotImg[i].size();
 
-                SDL_QueryTexture(slotImg[i], &format, &access, &wt, &ht);
-                input.x=0; input.y=0; input.w=wt; input.h=ht;
-                SDL_Rect imgOut;
+                input.x=0; input.y=0; input.w=s.w; input.h=s.h;
+                ableem::Rect imgOut;
                 imgOut.x = x+(118*scale)*i + 67;
                 imgOut.y = y+90;
                 imgOut.w=184;
                 imgOut.h=140;
 
-                SDL_RenderCopy(renderer, slotImg[i], &input, &imgOut);
+                renderer.copy(slotImg[i], &input, &imgOut);
             }
 
             gui->renderText_WithColor(font24, _("Slot") + " " + to_string(i+1), output.x + 60, 270, brightWhite);

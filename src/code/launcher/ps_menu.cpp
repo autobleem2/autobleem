@@ -3,7 +3,6 @@
 //
 
 #include "ps_menu.h"
-#include <SDL2/SDL_image.h>
 using namespace std;
 
 //*******************************
@@ -18,10 +17,10 @@ PsMenu::PsMenu(string name1, string texPath) : PsObj(name1, "") {
 // PsMenu::loadAssets
 //*******************************
 void PsMenu::loadAssets() {
-    settings = IMG_LoadTexture(renderer, (path + "/CB/Setting_ICN.png").c_str());
-    guide = IMG_LoadTexture(renderer, (path + "/CB/Manual_ICN.png").c_str());
-    memcard = IMG_LoadTexture(renderer, (path + "/CB/MemoryCard_ICN.png").c_str());
-    savestate = IMG_LoadTexture(renderer, (path + "/CB/Resume.png").c_str());
+    settings = ableem::Texture::loadFile(renderer, path + "/CB/Setting_ICN.png");
+    guide = ableem::Texture::loadFile(renderer, path + "/CB/Manual_ICN.png");
+    memcard = ableem::Texture::loadFile(renderer, path + "/CB/MemoryCard_ICN.png");
+    savestate = ableem::Texture::loadFile(renderer, path + "/CB/Resume.png");
     x = 640 - 118 / 2;
     y = 520;
     oy = y;
@@ -32,7 +31,7 @@ void PsMenu::loadAssets() {
 // PsMenu::freeAssets
 //*******************************
 void PsMenu::freeAssets() {
-    resume = nullptr;
+    resume = ableem::Texture();
 }
 
 #define ICON_GAP 130.0f
@@ -166,7 +165,7 @@ void PsMenu::update(long time) {
 void PsMenu::render() {
     int w = 118 * optionscales[0];
     int h = 118 * optionscales[0];
-    SDL_Rect input, output;
+    ableem::Rect input, output;
     input.x = 0, input.y = 0;
     input.h = 118, input.w = 118;
     output.x = x + xoff[0];
@@ -174,7 +173,7 @@ void PsMenu::render() {
     output.w = w;
     output.h = h;
 
-    SDL_RenderCopy(renderer, settings, &input, &output);
+    renderer.copy(settings, &input, &output);
 
     if (!foreign) {
         w = 118 * optionscales[1];
@@ -187,7 +186,7 @@ void PsMenu::render() {
         output.w = w;
         output.h = h;
 
-        SDL_RenderCopy(renderer, guide, &input, &output);
+        renderer.copy(guide, &input, &output);
 
 
         w = 118 * optionscales[2];
@@ -199,7 +198,7 @@ void PsMenu::render() {
         output.w = w;
         output.h = h;
 
-        SDL_RenderCopy(renderer, memcard, &input, &output);
+        renderer.copy(memcard, &input, &output);
 
         w = 118 * optionscales[3];
         h = 118 * optionscales[3];
@@ -210,20 +209,17 @@ void PsMenu::render() {
         output.w = w;
         output.h = h;
 
-        SDL_RenderCopy(renderer, savestate, &input, &output);
+        renderer.copy(savestate, &input, &output);
 
-        if (resume != nullptr) {
-            Uint32 format;
-            int access;
-            int tw, th;
-            SDL_QueryTexture(resume, &format, &access, &tw, &th);
-            input.h = th;
-            input.w = tw;
+        if (resume.valid()) {
+            ableem::Size s = resume.size();
+            input.h = s.h;
+            input.w = s.w;
             output.x = x + 130 * 3 + 25 * optionscales[3] + xoff[3];
             output.y = y + yoff[3] + 33 * optionscales[3];
             output.w = 68 * optionscales[3];
             output.h = 52 * optionscales[3];
-            SDL_RenderCopy(renderer, resume, &input, &output);
+            renderer.copy(resume, &input, &output);
         }
     }
 }
@@ -233,5 +229,5 @@ void PsMenu::render() {
 //*******************************
 void PsMenu::setResumePic(string picturePath)
 {
-    resume = IMG_LoadTexture(renderer,picturePath.c_str());
+    resume = ableem::Texture::loadFile(renderer, picturePath);
 }

@@ -16,13 +16,13 @@ PsCenterLabel::PsCenterLabel(const string & name1, const string & texPath) : PsO
 //*******************************
 // PsCenterLabel::setText
 //*******************************
-void PsCenterLabel::setText(const string & _text, SDL_Color _textColor)
+void PsCenterLabel::setText(const string & _text, ableem::Color _textColor)
 {
     text = _text;
     textColor = _textColor;
-    textColor.a = SDL_ALPHA_OPAQUE; // if you're rendering with a different color you need this or it will be transparent
+    textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
 
-    textSize = gui->FC_getFontTextSize(font, text);
+    textSize = gui->getFontTextSize(font, text);
     x = gui->align_xPosition(XALIGN_CENTER, x, textSize.w);
 }
 

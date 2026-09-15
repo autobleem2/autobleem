@@ -12,7 +12,7 @@
 //********************
 class GuiManager : public GuiTwoColumnStringMenu {
 public:
-    GuiManager(SDL_Shared<SDL_Renderer> _renderer) : GuiTwoColumnStringMenu(_renderer) {}
+    GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;
     void render() override;

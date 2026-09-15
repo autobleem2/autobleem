@@ -186,7 +186,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 // GuiOptions::doCircle_Pressed
 //*******************************
 void GuiOptions::doCircle_Pressed() {
-    Mix_PlayChannel(-1, gui->cancel, 0);
+    gui->cancel.play();
     string cfg_path = Env::getWorkingPath() + sep + "config.ini";
     gui->cfg.inifile.load(cfg_path);    // restore the original config.ini settings
     lang->load(gui->cfg.inifile.values["language"]);    // restore the original lang
@@ -199,7 +199,7 @@ void GuiOptions::doCircle_Pressed() {
 // GuiOptions::doCross_Pressed
 //*******************************
 void GuiOptions::doCross_Pressed() {
-    Mix_PlayChannel(-1, gui->cancel, 0);
+    gui->cancel.play();
     gui->cfg.save();
     menuVisible = false;
     exitCode = 0;
@@ -229,7 +229,7 @@ void GuiOptions::doJoyLeft() {
 // GuiOptions::doKeyRight
 //*******************************
 void GuiOptions::doKeyRight() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     doPrevNextOption(true);
 }
 
@@ -237,6 +237,6 @@ void GuiOptions::doKeyRight() {
 // GuiOptions::doKeyLeft
 //*******************************
 void GuiOptions::doKeyLeft() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     doPrevNextOption(false);
 }

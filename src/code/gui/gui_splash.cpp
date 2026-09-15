@@ -14,38 +14,36 @@ using namespace std;
 //*******************************
 void GuiSplash::render() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
-    int w, h; // texture width & height
-    SDL_SetTextureBlendMode(gui->backgroundImg, SDL_BLENDMODE_BLEND);
-    SDL_QueryTexture(gui->backgroundImg, NULL, NULL, &w, &h);
+    gui->backgroundImg.setBlendMode(ableem::BlendMode::Blend);
+    ableem::Size size = gui->backgroundImg.size();
     gui->backgroundRect.x = 0;
     gui->backgroundRect.y = 0;
-    gui->backgroundRect.w = w;
-    gui->backgroundRect.h = h;
-    SDL_QueryTexture(gui->logo, NULL, NULL, &w, &h);
+    gui->backgroundRect.w = size.w;
+    gui->backgroundRect.h = size.h;
 
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-    SDL_RenderClear(renderer);
-    SDL_SetTextureAlphaMod(gui->backgroundImg, alpha);
-    SDL_SetTextureAlphaMod(gui->logo, alpha);
-    Mix_VolumeMusic(alpha / 3);
+    renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
+    renderer.clear();
+    gui->backgroundImg.setAlphaMod(alpha);
+    gui->logo.setAlphaMod(alpha);
+    gui->music.setVolume(alpha / 3);
 
-    SDL_RenderCopy(renderer, gui->backgroundImg, NULL, &gui->backgroundRect);
-    SDL_RenderCopy(renderer, gui->logo, NULL, &gui->logoRect);
+    renderer.copy(gui->backgroundImg, nullptr, &gui->backgroundRect);
+    renderer.copy(gui->logo, nullptr, &gui->logoRect);
 
     string bg = gui->themeData.values["text_bg"];
 
     int bg_alpha = atoi(gui->themeData.values["textalpha"].c_str()) * alpha / 255;
 
-    SDL_SetRenderDrawColor(renderer, gui->getR(bg), gui->getG(bg), gui->getB(bg), bg_alpha);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_Rect rect = gui->getTextRectOfTheme();
-    SDL_RenderFillRect(renderer, &rect);
+    renderer.setDrawColor(ableem::Color(gui->getR(bg), gui->getG(bg), gui->getB(bg), bg_alpha));
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    ableem::Rect rect = gui->getTextRectOfTheme();
+    renderer.fillRect(rect);
 
     int y = atoi(gui->themeData.values["ttop"].c_str());
     string splashText = _("AutoBleem")+" " + gui->cfg.inifile.values["version"];
     gui->renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
 
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -54,27 +52,19 @@ void GuiSplash::render() {
 void GuiSplash::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
 
-    Mix_VolumeMusic(0);
+    gui->music.setVolume(0);
     alpha = 0;
-    start = SDL_GetTicks();
+    start = gui->platform().ticks();
     while (1) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-                }
-            }
-            if (e.type == SDL_QUIT)
+        Event e;
+        while (gui->input().poll(e)) {
+            if (e.type == Event::Type::Quit)
                 break;
-            else if (e.type == SDL_KEYUP && e.key.keysym.sym == SDLK_ESCAPE)
+            else if (e.type == Event::Type::KeyUp && e.key == Key::Escape)
                 break;
         }
         render();
-        int current = SDL_GetTicks();
+        int current = gui->platform().ticks();
         int time = current - start;
         if (time > 2) {
             if (alpha < 255) {
@@ -86,7 +76,7 @@ void GuiSplash::loop() {
 
                 break;
             }
-            start = SDL_GetTicks();
+            start = gui->platform().ticks();
         }
     }
 }

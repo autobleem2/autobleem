@@ -6,8 +6,7 @@
 
 #include "ps_obj.h"
 #include "ps_game.h"
-#include <SDL2/SDL_ttf.h>
-#include "../gui/gui_font_wrapper.h"
+#include "../gui/gui_font.h"
 
 #define OP_LOAD 0
 #define OP_SAVE 1
@@ -25,13 +24,13 @@ public:
 
     void freeImages();
 
-    SDL_Shared<SDL_Texture> frame;
+    ableem::Texture frame;
 
-    SDL_Shared<SDL_Texture> slotImg[4];
+    ableem::Texture slotImg[4];
     bool slotActive[4];
 
-    FC_Font_Shared font30;
-    FC_Font_Shared font24;
+    ableem::Font font30;
+    ableem::Font font24;
 
     int selSlot = 0;
 

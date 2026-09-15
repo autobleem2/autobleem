@@ -6,65 +6,68 @@
 #include "../gui/gui.h"
 #include "../engine/scanner.h"
 #include "ra_integrator.h"
-#include <SDL2/SDL_image.h>
 #include <unistd.h>
 #include <iostream>
 #include "../environment.h"
 
 using namespace std;
+using ableem::Texture;
+using ableem::Rect;
+using ableem::Size;
+using ableem::Color;
+using ableem::BlendMode;
 
 #define SLOT_SIZE 120
 
 //*******************************
 // PsCarouselGame::loadTex
 //*******************************
-void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
+void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
     shared_ptr<Gui> gui(Gui::getInstance());
 
     if (!(*this)->foreign) {
-        if (coverPng == nullptr) {
-            SDL_Shared<SDL_Texture> renderSurface = SDL_CreateTexture(renderer,
-                                                                      SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_TARGET,
-                                                                      226, 226);
-            SDL_Rect fullRect;
+        if (!coverPng.valid()) {
+            // note: the render target is RGBA8888 rather than the original's ABGR32 - SDL blends identically
+            // either way since the renderer converts at draw time, only the in-memory byte order differs.
+            Texture renderSurface = Texture::createTarget(renderer, 226, 226);
+            Rect fullRect;
 
-            SDL_SetRenderTarget(renderer, renderSurface);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-            SDL_SetTextureBlendMode(renderSurface, SDL_BLENDMODE_NONE);
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-            SDL_RenderFillRect(renderer, nullptr);
-            SDL_SetTextureBlendMode(renderSurface, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            renderer.setTarget(&renderSurface);
+            renderer.setBlendMode(BlendMode::None);
+            renderSurface.setBlendMode(BlendMode::None);
+            renderer.setDrawColor(Color(255, 255, 255, 0));
+            renderer.fillRect();
+            renderSurface.setBlendMode(BlendMode::Blend);
+            renderer.setBlendMode(BlendMode::Blend);
 
             string imagePath = (*this)->folder + sep + (*this)->base + ".png";
-            SDL_SetRenderTarget(renderer, nullptr);
+            renderer.setTarget(nullptr);
             if (DirEntry::exists(imagePath)) {
-                coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
+                coverPng = Texture::loadFile(renderer, imagePath);
             } else {
-                coverPng = nullptr;
+                coverPng = Texture();
 #ifdef AB_DEBUG_HOST
                 if ((*this)->internal) {
                     Metadata md;
                     if (md.lookupBySerial((*this)->serial) && !md.bytes.empty()) {
-                        // freesrc=1: the RWops is closed by IMG_LoadTexture_RW
-                        coverPng = IMG_LoadTexture_RW(renderer, SDL_RWFromMem(md.bytes.data(), md.bytes.size()), 1);
+                        coverPng = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
                     }
                 }
 #endif
             }
 
-            if (coverPng != nullptr) {
-                SDL_SetRenderTarget(renderer, renderSurface);
+            if (coverPng.valid()) {
+                renderer.setTarget(&renderSurface);
                 fullRect.x = 0;
                 fullRect.y = 0;
                 fullRect.h = 226, fullRect.w = 226;
 
-                Uint32 format;
-                int access;
-                SDL_QueryTexture(coverPng, &format, &access, &fullRect.w, &fullRect.h);
+                Size s = coverPng.size();
+                fullRect.w = s.w;
+                fullRect.h = s.h;
 
-                SDL_Rect outputRect;
-                if (gui->cdJewel != nullptr) {
+                Rect outputRect;
+                if (gui->cdJewel.valid()) {
                     outputRect.x = 23;
                     outputRect.y = 5;
                     outputRect.h = 217;
@@ -75,40 +78,38 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
                     outputRect.h = 226;
                     outputRect.w = 226;
                 }
-                if (coverPng != nullptr) {
-                    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-                    SDL_RenderCopy(renderer, coverPng, &fullRect, &outputRect);
-                    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+                if (coverPng.valid()) {
+                    renderer.setBlendMode(BlendMode::Add);
+                    renderer.copy(coverPng, &fullRect, &outputRect);
+                    renderer.setBlendMode(BlendMode::Blend);
                 }
-                coverPng = nullptr;
+                coverPng = Texture();
 
                 fullRect.x = 0;
                 fullRect.y = 0;
                 fullRect.h = 226, fullRect.w = 226;
-                if (gui->cdJewel != nullptr) {
-                    SDL_RenderCopy(renderer, gui->cdJewel, &fullRect, &fullRect);
+                if (gui->cdJewel.valid()) {
+                    renderer.copy(gui->cdJewel, &fullRect, &fullRect);
                 }
                 coverPng = renderSurface;
             }
-            SDL_SetRenderTarget(renderer, nullptr);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            renderer.setTarget(nullptr);
+            renderer.setBlendMode(BlendMode::Blend);
         }
     } else {
-        if (coverPng == nullptr) {
-            SDL_Shared<SDL_Texture> renderSurface = SDL_CreateTexture(renderer,
-                                                                      SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_TARGET,
-                                                                      226, 226);
-            SDL_Rect fullRect;
+        if (!coverPng.valid()) {
+            Texture renderSurface = Texture::createTarget(renderer, 226, 226);
+            Rect fullRect;
 
-            SDL_SetRenderTarget(renderer, renderSurface);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-            SDL_SetTextureBlendMode(renderSurface, SDL_BLENDMODE_NONE);
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
-            SDL_RenderFillRect(renderer, nullptr);
-            SDL_SetTextureBlendMode(renderSurface, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            renderer.setTarget(&renderSurface);
+            renderer.setBlendMode(BlendMode::None);
+            renderSurface.setBlendMode(BlendMode::None);
+            renderer.setDrawColor(Color(255, 255, 255, 0));
+            renderer.fillRect();
+            renderSurface.setBlendMode(BlendMode::Blend);
+            renderer.setBlendMode(BlendMode::Blend);
 
-            SDL_SetRenderTarget(renderer, nullptr);
+            renderer.setTarget(nullptr);
             string imagePath;
             if (!(*this)->app) {
                 auto makeBoxArtPath = [&] (const string& boxartDir) -> string
@@ -121,45 +122,42 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
                 string imagePath2 = makeBoxArtPath("Named_Titles");
                 string imagePath3 = makeBoxArtPath("Named_Snaps");
                 if (DirEntry::exists(imagePath)) {
-                    coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
+                    coverPng = Texture::loadFile(renderer, imagePath);
                 } else if (DirEntry::exists(imagePath2)) {
                     imagePath = imagePath2;
-                    coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
+                    coverPng = Texture::loadFile(renderer, imagePath);
                 } else if (DirEntry::exists(imagePath3)) {
                     imagePath = imagePath3;
-                    coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
+                    coverPng = Texture::loadFile(renderer, imagePath);
                 } else {
                     // use default
                     cout << "boxart image NOT found for " << imagePath << endl;
-                    coverPng = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "evoimg/ra-cover.png").c_str());
+                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/ra-cover.png");
                 }
             } else
             {
                 imagePath = (*this)->image_path;
 
                 if (DirEntry::exists(imagePath)) {
-                    coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
+                    coverPng = Texture::loadFile(renderer, imagePath);
                 } else {
                     // use default
                     cout << "boxart image NOT found for " << imagePath << endl;
-                    coverPng = IMG_LoadTexture(renderer, (Env::getWorkingPath() + sep + "evoimg/app-cover.png").c_str());
+                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/app-cover.png");
                 }
             }
 
-
-            SDL_Rect imageCoverRect;
-            int w,h;
-
-            SDL_SetRenderTarget(renderer, renderSurface);
+            renderer.setTarget(&renderSurface);
             fullRect.x = 0;
             fullRect.y = 0;
             fullRect.h = 226, fullRect.w = 226;
 
-            Uint32 format;
-            int access;
-            SDL_QueryTexture(coverPng, &format, &access, &fullRect.w, &fullRect.h);
+            Size s = coverPng.size();
+            fullRect.w = s.w;
+            fullRect.h = s.h;
             float aspectRatio = (fullRect.w*1.0f)/(fullRect.h*1.0f);
-            SDL_Rect outputRect;
+            (void)aspectRatio;   // computed but unused, kept to match the original for now
+            Rect outputRect;
 
             // calculate output rect with aspect ratio
             int biggerSize = fullRect.w>fullRect.h ? fullRect.w : fullRect.h;
@@ -173,18 +171,18 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
             outputRect.y = (226-outputRect.h)/2;
 
 
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
-            SDL_RenderCopy(renderer, coverPng, &fullRect, &outputRect);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            renderer.setBlendMode(BlendMode::Add);
+            renderer.copy(coverPng, &fullRect, &outputRect);
+            renderer.setBlendMode(BlendMode::Blend);
 
-            coverPng = nullptr;
+            coverPng = Texture();
             fullRect.x = 0;
             fullRect.y = 0;
             fullRect.h = 226, fullRect.w = 226;
             coverPng = renderSurface;
 
-            SDL_SetRenderTarget(renderer, nullptr);
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            renderer.setTarget(nullptr);
+            renderer.setBlendMode(BlendMode::Blend);
         }
     }
 }
@@ -193,7 +191,7 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
 // PsCarouselGame::freeTex
 //*******************************
 void PsCarouselGame::freeTex() {
-    coverPng = nullptr;
+    coverPng = Texture();
 }
 
 //*******************************

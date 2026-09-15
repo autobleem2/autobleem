@@ -4,10 +4,6 @@
 
 #include "gui_selectmemcard.h"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include "gui.h"
 #include "../engine/memcard.h"
@@ -96,7 +92,7 @@ void GuiSelectMemcard::render() {
 
     gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) +
                       "   |@L1|/|@R1| " + _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -106,26 +102,18 @@ void GuiSelectMemcard::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     bool menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-                }
-            }
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_CONTROLLERHATMOTIONDOWN:
-                case SDL_CONTROLLERHATMOTIONUP:
-                    if (gui->mapper.isDown(&e)) {
+                case Event::Type::DpadDown:
+                case Event::Type::DpadUp:
+                    if (gui->input().dpadDown()) {
 
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             selected++;
                             if (selected >= cards.size()) {
                                 selected = 0;
@@ -134,9 +122,9 @@ void GuiSelectMemcard::loop() {
                             }
                             render();
                         }
-                    if (gui->mapper.isUp(&e)) {
+                    if (gui->input().dpadUp()) {
 
-                            Mix_PlayChannel(-1, gui->cursor, 0);
+                            gui->cursor.play();
                             selected--;
                             if (selected < 0) {
                                 selected = cards.size() - 1;
@@ -147,10 +135,10 @@ void GuiSelectMemcard::loop() {
                         }
 
                     break;
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_R1) {
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::R1) {
 
-                        Mix_PlayChannel(-1, gui->home_up, 0);
+                        gui->home_up.play();
                         selected += maxVisible;
                         if (selected >= cards.size()) {
                             selected = cards.size() - 1;
@@ -159,9 +147,9 @@ void GuiSelectMemcard::loop() {
                         lastVisible = firstVisible + maxVisible;
                         render();
                     };
-                    if (e.cbutton.button == SDL_BTN_L1) {
+                    if (e.button == Button::L1) {
 
-                        Mix_PlayChannel(-1, gui->home_down, 0);
+                        gui->home_down.play();
                         selected -= maxVisible;
                         if (selected < 0) {
                             selected = 0;
@@ -171,18 +159,21 @@ void GuiSelectMemcard::loop() {
                         render();
                     };
 
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
+                    if (e.button == Button::Circle) {
 
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                        gui->cancel.play();
                         selected = -1;
                         menuVisible = false;
 
                     };
-                    if (e.cbutton.button == SDL_BTN_CROSS) {
+                    if (e.button == Button::Cross) {
                         cardSelected = cards[selected];
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                        gui->cursor.play();
                         menuVisible = false;
                     };
+                    break;
+                default:
+                    break;
             }
         }
     }

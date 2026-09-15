@@ -5,7 +5,8 @@
 
 #include "gui_screen.h"
 #include "starfx.h"
-#include "gui_font_wrapper.h"
+#include "gui_font.h"
+#include <ableem/texture.h>
 
 //********************
 // GuiAbout
@@ -16,7 +17,7 @@ public:
     void init();
     void render();
     void loop();
-    SDL_Shared<SDL_Texture> logo;
-    FC_Font_Shared font;
+    ableem::Texture logo;
+    ableem::Font font;
     using GuiScreen::GuiScreen;
 };

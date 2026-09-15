@@ -5,8 +5,7 @@
 #pragma once
 
 #include <vector>
-#include <SDL2/SDL_render.h>
-#include "gui_sdl_wrapper.h"
+#include <ableem/renderer.h>
 
 #define STARS_PER_LAYER 60
 #define SPEED_DIFFERENCE 1.0f
@@ -44,10 +43,8 @@ class StarFx {
 public:
     StarFx();
     void render();
-    SDL_Shared<SDL_Renderer> renderer;
+    ableem::Renderer *renderer = nullptr;   // set by the owning screen before the first render()
 
 private:
     vector<Star> starLayers[7];
 };
-
-

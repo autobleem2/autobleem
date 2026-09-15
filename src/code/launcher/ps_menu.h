@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <SDL2/SDL_render.h>
+#include <ableem/texture.h>
 #include "ps_obj.h"
 #include <string>
 
@@ -16,11 +16,11 @@
 //******************
 class PsMenu : public PsObj {
 public:
-    SDL_Shared<SDL_Texture> settings;
-    SDL_Shared<SDL_Texture> guide;
-    SDL_Shared<SDL_Texture> memcard;
-    SDL_Shared<SDL_Texture> savestate;
-    SDL_Shared<SDL_Texture> resume;
+    ableem::Texture settings;
+    ableem::Texture guide;
+    ableem::Texture memcard;
+    ableem::Texture savestate;
+    ableem::Texture resume;
 
     int x = 0, y = 0, oy = 0, ox = 0;
     int xoff[4] = {0,0,0,0};

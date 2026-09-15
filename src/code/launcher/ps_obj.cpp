@@ -3,16 +3,12 @@
 //
 
 #include "ps_obj.h"
-#include <SDL2/SDL_image.h>
 using namespace std;
 
 //*******************************
 // PsObj::PsObj
 //*******************************
-PsObj::PsObj(string name1, string texPath) : name(name1) {
-    gui = Gui::getInstance();
-    renderer = gui->renderer;
-
+PsObj::PsObj(string name1, string texPath) : gui(Gui::getInstance()), renderer(gui->renderer()), name(name1) {
     if (texPath != "") {
         load(texPath);
     }
@@ -22,11 +18,10 @@ PsObj::PsObj(string name1, string texPath) : name(name1) {
 // PsObj::load
 //*******************************
 void PsObj::load(const string & imagePath) {
-    tex = IMG_LoadTexture(renderer, imagePath.c_str());
-    Uint32 format;
-    int access;
-
-    SDL_QueryTexture(tex, &format, &access, &w, &h);
+    tex = ableem::Texture::loadFile(renderer, imagePath);
+    ableem::Size size = tex.size();
+    w = size.w;
+    h = size.h;
     x = 0, y = 0;
     ow = w;
     oh = h;
@@ -43,16 +38,8 @@ void PsObj::destroy() {
 //*******************************
 void PsObj::render() {
     if (visible) {
-        SDL_Rect rect;
-        rect.x = x;
-        rect.y = y;
-        rect.w = w;
-        rect.h = h;
-        SDL_Rect fullRect;
-        fullRect.x = 0;
-        fullRect.y = 0;
-        fullRect.w = w;
-        fullRect.h = h;
-        SDL_RenderCopy(renderer, tex, &fullRect, &rect);
+        ableem::Rect rect(x, y, w, h);
+        ableem::Rect fullRect(0, 0, w, h);
+        renderer.copy(tex, &fullRect, &rect);
     }
 }

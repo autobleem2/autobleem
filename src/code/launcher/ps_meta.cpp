@@ -6,7 +6,6 @@
 #include "ps_game.h"
 #include "../util.h"
 #include "../util_time.h"
-#include <SDL2/SDL_image.h>
 #include "../lang.h"
 #include "../engine/inifile.h"
 #include "../DirEntry.h"
@@ -21,7 +20,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
                          const string & serial, const string & region, const string & playersTxt, bool internal,
                          bool hd, bool locked, int discs, bool favorite, bool play_using_ra, bool foreign, bool app,
                          const string& last_played,
-                         SDL_Color _textColor) {
+                         ableem::Color _textColor) {
     this->discs = discs;
     this->internal = internal;
     this->hd = hd;
@@ -38,7 +37,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
     this->app = app;
     this->last_played = last_played;
     textColor = _textColor;
-    textColor.a = SDL_ALPHA_OPAQUE; // if you're rendering with a different color you need this or it will be transparent
+    textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
 
     if (foreign) {
         trim(publisher);
@@ -50,7 +49,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
 //*******************************
 // PsMeta::updateTexts
 //*******************************
-void PsMeta::updateTexts(PsGamePtr & psGame, SDL_Color _textColor) {
+void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
     string appendText = psGame->players == 1 ? _("Player") : _("Players");
     if (!psGame->foreign) {
         if (psGame->serial == "") {
@@ -104,25 +103,23 @@ void PsMeta::render() {
         return;
     }
 
-    if (internalOffTex == nullptr) {
+    if (!internalOffTex.valid()) {
         string curPath = Env::getWorkingPath() + sep;
-        internalOnTex =  IMG_LoadTexture(renderer, (curPath + "evoimg/ps1.png").c_str());
-        internalOffTex = IMG_LoadTexture(renderer, (curPath + "evoimg/usb.png").c_str());
-        hdOnTex =        IMG_LoadTexture(renderer, (curPath + "evoimg/hd.png").c_str());
-        hdOffTex =       IMG_LoadTexture(renderer, (curPath + "evoimg/sd.png").c_str());
-        lockOnTex =      IMG_LoadTexture(renderer, (curPath + "evoimg/lock.png").c_str());
-        lockOffTex =     IMG_LoadTexture(renderer, (curPath + "evoimg/unlock.png").c_str());
-        cdTex =          IMG_LoadTexture(renderer, (curPath + "evoimg/cd.png").c_str());
-        favoriteTex =    IMG_LoadTexture(renderer, (curPath + "evoimg/favorite.png").c_str());
-        raTex =          IMG_LoadTexture(renderer, (curPath + "evoimg/ra.png").c_str());
+        internalOnTex =  ableem::Texture::loadFile(renderer, curPath + "evoimg/ps1.png");
+        internalOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/usb.png");
+        hdOnTex =        ableem::Texture::loadFile(renderer, curPath + "evoimg/hd.png");
+        hdOffTex =       ableem::Texture::loadFile(renderer, curPath + "evoimg/sd.png");
+        lockOnTex =      ableem::Texture::loadFile(renderer, curPath + "evoimg/lock.png");
+        lockOffTex =     ableem::Texture::loadFile(renderer, curPath + "evoimg/unlock.png");
+        cdTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
+        favoriteTex =    ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
+        raTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
     }
 
     if (visible) {
-        Uint32 format;
-        int access;
         int w, h;
-        SDL_Rect rect;
-        SDL_Rect fullRect;
+        ableem::Rect rect;
+        ableem::Rect fullRect;
 
         auto nameFont = fonts[FONT_28_BOLD];
         auto otherFont = fonts[FONT_15_BOLD];
@@ -130,13 +127,13 @@ void PsMeta::render() {
         int yOffset = 0;
         // game name line
         // if the game name goes off the end of the screen use a smaller font
-        int textWidth = FC_GetWidth(nameFont, gameName.c_str());
+        int textWidth = nameFont.width(gameName);
         if (x + textWidth > SCREEN_WIDTH) {
             int miniMe = 28.0 * ((float)(SCREEN_WIDTH - x) / (float)(textWidth)) + 0.5;
             nameFont = Fonts::openSpecificSharedCachedFont(FONT_BOLD, miniMe);
 
             // if it's still a bit over the right edge go down one more font size
-            textWidth = FC_GetWidth(nameFont, gameName.c_str());
+            textWidth = nameFont.width(gameName);
             if (x + textWidth > SCREEN_WIDTH) {
                 --miniMe;
                 nameFont = Fonts::openSpecificSharedCachedFont(FONT_BOLD, miniMe);
@@ -167,7 +164,8 @@ void PsMeta::render() {
             // PS1 icons line
             gui->renderText(otherFont, players, x + 35, y + yOffset);
 
-            SDL_QueryTexture(tex, &format, &access, &w, &h);
+            ableem::Size s = tex.size();
+            w = s.w; h = s.h;
             rect.x = x;
             rect.y = y + yOffset - 2;
             rect.w = w;
@@ -177,12 +175,12 @@ void PsMeta::render() {
             fullRect.y = 0;
             fullRect.w = w;
             fullRect.h = h;
-            SDL_RenderCopy(renderer, tex, &fullRect, &rect);
+            renderer.copy(tex, &fullRect, &rect);
 
             int xoffset = 190, spread = 40;
             // render internal icon
             rect.x = x + 135;
-            SDL_RenderCopy(renderer, cdTex, &fullRect, &rect);
+            renderer.copy(cdTex, &fullRect, &rect);
 
             gui->renderText(otherFont, to_string(discs), x + 170, y + yOffset);
 
@@ -198,40 +196,41 @@ void PsMeta::render() {
             if (internal) {
                 locked = true;
                 hd = false;
-                SDL_RenderCopy(renderer, internalOnTex, &fullRect, &rect);
+                renderer.copy(internalOnTex, &fullRect, &rect);
             } else {
-                SDL_RenderCopy(renderer, internalOffTex, &fullRect, &rect);
+                renderer.copy(internalOffTex, &fullRect, &rect);
             }
 
             int spreadCount = 1;
             rect.x = x + xoffset + (spread * spreadCount);
             if (hd) {
-                SDL_RenderCopy(renderer, hdOnTex, &fullRect, &rect);
+                renderer.copy(hdOnTex, &fullRect, &rect);
             } else {
-                SDL_RenderCopy(renderer, hdOffTex, &fullRect, &rect);
+                renderer.copy(hdOffTex, &fullRect, &rect);
             }
             ++spreadCount;
             rect.x = x + xoffset + (spread * spreadCount);
             if (locked) {
-                SDL_RenderCopy(renderer, lockOnTex, &fullRect, &rect);
+                renderer.copy(lockOnTex, &fullRect, &rect);
             } else {
-                SDL_RenderCopy(renderer, lockOffTex, &fullRect, &rect);
+                renderer.copy(lockOffTex, &fullRect, &rect);
             }
             if (favorite) {
                 ++spreadCount;
                 rect.x = x + xoffset + (spread * spreadCount);
-                SDL_RenderCopy(renderer, favoriteTex, &fullRect, &rect);
+                renderer.copy(favoriteTex, &fullRect, &rect);
             }
             if (play_using_ra) {
                 ++spreadCount;
                 rect.x = x + xoffset + (spread * spreadCount);
-                SDL_RenderCopy(renderer, raTex, &fullRect, &rect);
+                renderer.copy(raTex, &fullRect, &rect);
             }
         } else
         {
             // retroarch icon
             if (!app) {
-                SDL_QueryTexture(raTex, &format, &access, &w, &h);
+                ableem::Size s = raTex.size();
+                w = s.w; h = s.h;
                 rect.x = x;
                 rect.y = y + yOffset - 2;
                 rect.w = w;
@@ -241,7 +240,7 @@ void PsMeta::render() {
                 fullRect.y = 0;
                 fullRect.w = w;
                 fullRect.h = h;
-                SDL_RenderCopy(renderer, raTex, &fullRect, &rect);
+                renderer.copy(raTex, &fullRect, &rect);
             }
         }
     }

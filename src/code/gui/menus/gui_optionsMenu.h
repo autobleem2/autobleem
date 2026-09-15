@@ -31,8 +31,8 @@ enum {
 //********************
 class GuiOptions : public GuiOptionsMenuBase {
 public:
-    GuiOptions(SDL_Shared<SDL_Renderer> _renderer)
-        : GuiOptionsMenuBase(_renderer) {}
+    GuiOptions(ableem::GuiBase &_gui)
+        : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
     //void render() override;

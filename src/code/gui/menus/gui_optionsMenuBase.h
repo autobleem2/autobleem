@@ -23,7 +23,7 @@ struct OptionsInfo {
 //*******************************
 class GuiOptionsMenuBase : public GuiMenuBase<OptionsInfo> {
 public:
-    GuiOptionsMenuBase(SDL_Shared<SDL_Renderer> _renderer) : GuiMenuBase(_renderer) {}
+    GuiOptionsMenuBase(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
     virtual void init();
 
     std::shared_ptr<Lang> lang;             // so we can translate OptionsInfo.descriptionToTranslate

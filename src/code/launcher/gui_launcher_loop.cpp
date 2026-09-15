@@ -40,7 +40,7 @@ void GuiLauncher::loop() {
         texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
                  _("Edit Memory Card information"), _("Resume game from saved state point")};
 
-        time = SDL_GetTicks();
+        time = gui->platform().ticks();
         for (auto &obj : staticElements) {
             obj->update(time);
         }
@@ -72,25 +72,21 @@ void GuiLauncher::loop() {
             }
         }
 
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_KEYDOWN:
-                    if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                        gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                        Util::powerOff();
-                    }
+                case Event::Type::KeyDown:
+                    // the power button / Esc case is already handled inside Input::poll (see
+                    // Platform::setPowerOffHandler, wired up once in main.cpp)
                     break;
-                case SDL_CONTROLLERHATMOTIONDOWN:  /* Handle Joystick Motion */
-                case SDL_CONTROLLERHATMOTIONUP:
+                case Event::Type::DpadDown:  /* Handle Joystick Motion */
+                case Event::Type::DpadUp:
                     if (powerOffShift)
                         continue;
-                    if (gui->mapper.isCenter(&e)) {
+                    if (gui->input().dpadCentered()) {
                         if (state == STATE_GAMES) {
                             if (carouselGames.empty()) {
                                 continue;
@@ -98,16 +94,16 @@ void GuiLauncher::loop() {
                         }
                         motionStart = 0;
                     }
-                    if (gui->mapper.isLeft(&e)) {
+                    if (gui->input().dpadLeft()) {
                         loop_joyMoveLeft();
                     }
-                    else if (gui->mapper.isRight(&e)) {
+                    else if (gui->input().dpadRight()) {
                         loop_joyMoveRight();
                     }
-                    else if (gui->mapper.isUp(&e)) {
+                    else if (gui->input().dpadUp()) {
                         loop_joyMoveUp();
                     }
-                    else if (gui->mapper.isDown(&e)) {
+                    else if (gui->input().dpadDown()) {
                         loop_joyMoveDown();
                     }
                     else {
@@ -115,27 +111,29 @@ void GuiLauncher::loop() {
                     }
                     break;
 
-                case SDL_CONTROLLERBUTTONDOWN:
+                case Event::Type::ButtonDown:
                     loop_joyButton_Pressed();    // button pressed
                     break;
-                case SDL_CONTROLLERBUTTONUP:
+                case Event::Type::ButtonUp:
                     loop_joyButtonReleased();   // button released
+                    break;
+                default:
                     break;
 
             }   // switch (e.type)
-        // end if (SDL_PollEvent(&e))
+        // end while (gui->input().poll(e))
         }
 
         { // no event.  see if we're holding down L1 or R1 for fast forward first letter
             if (L1_isPressedForFastForward) {
-                Uint32 timePressed = (SDL_GetTicks() - L1_fastForwardTimeStart);
+                unsigned int timePressed = (gui->platform().ticks() - L1_fastForwardTimeStart);
                 if (timePressed > prevNextFastForwardTimeLimit) {
                     loop_prevGameFirstLetter();
                 }
             }
 
             if (R1_isPressedForFastForward) {
-                Uint32 timePressed = (SDL_GetTicks() - R1_fastForwardTimeStart);
+                unsigned int timePressed = (gui->platform().ticks() - R1_fastForwardTimeStart);
                 if (timePressed > prevNextFastForwardTimeLimit) {
                     loop_nextGameFirstLetter();
                 }
@@ -165,7 +163,7 @@ void GuiLauncher::loop_joyMoveLeft() {
         if (!menu->foreign) {
             if (menu->selOption != SEL_OPTION_AB_SETTINGS) {
                 if (menu->animationStarted == 0) {
-                    Mix_PlayChannel(-1, gui->cursor, 0);
+                    gui->cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 0;
                     menu->duration = 100;
@@ -178,7 +176,7 @@ void GuiLauncher::loop_joyMoveLeft() {
 
     } else if (state == STATE_RESUME) {
         if (sselector->selSlot != 0) {
-            Mix_PlayChannel(-1, gui->cursor, 0);
+            gui->cursor.play();
             sselector->selSlot--;
         }
     }
@@ -203,7 +201,7 @@ void GuiLauncher::loop_joyMoveRight() {
         if (!menu->foreign) {
             if (menu->selOption != SEL_OPTION_RESUME_FROM_SAVESTATE) {
                 if (menu->animationStarted == 0) {
-                    Mix_PlayChannel(-1, gui->cursor, 0);
+                    gui->cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 1;
                     menu->duration = 100;
@@ -216,7 +214,7 @@ void GuiLauncher::loop_joyMoveRight() {
 
     } else if (state == STATE_RESUME) {
         if (sselector->selSlot != 3) {
-            Mix_PlayChannel(-1, gui->cursor, 0);
+            gui->cursor.play();
             sselector->selSlot++;
         }
     }
@@ -259,14 +257,14 @@ void GuiLauncher::loop_joyMoveDown() {
 // button pressed
 //*******************************
 void GuiLauncher::loop_joyButton_Pressed() {
-    if (e.cbutton.button == SDL_BTN_L2) {
-        Mix_PlayChannel(-1, gui->cursor, 0);
+    if (e.button == Button::L2) {
+        gui->cursor.play();
         powerOffShift = true;
     }
 
     if (powerOffShift) {
-        if (e.cbutton.button == SDL_BTN_R2) {
-            Mix_PlayChannel(-1, gui->cursor, 0);
+        if (e.button == Button::R2) {
+            gui->cursor.play();
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));
             Util::powerOff();
             return;
@@ -274,35 +272,35 @@ void GuiLauncher::loop_joyButton_Pressed() {
     }
 
 
-    if (e.cbutton.button == SDL_BTN_SELECT) {
+    if (e.button == Button::Select) {
         loop_selectButton_Pressed();
     };
 
-    if (e.cbutton.button == SDL_BTN_START) {
+    if (e.button == Button::Start) {
         loop_startButton_Pressed();
     };
 
     if (powerOffShift)
         return; // none of the following buttons should work if L2 is pressed
 
-    if (e.cbutton.button == SDL_BTN_L1) {
+    if (e.button == Button::L1) {
         L1_isPressedForFastForward = true;
         loop_prevGameFirstLetter();
 
-    } else if (e.cbutton.button == SDL_BTN_R1) {
+    } else if (e.button == Button::R1) {
         R1_isPressedForFastForward = true;
         loop_nextGameFirstLetter();
 
-    } else if (e.cbutton.button == SDL_BTN_CIRCLE) {
+    } else if (e.button == Button::Circle) {
         loop_circleButton_Pressed();
 
-    } else if (e.cbutton.button == SDL_BTN_TRIANGLE) {
+    } else if (e.button == Button::Triangle) {
         loop_triangleButton_Pressed();
 
-    } else if (e.cbutton.button == SDL_BTN_SQUARE) {
+    } else if (e.button == Button::Square) {
         loop_squareButton_Pressed();
 
-    } else if (e.cbutton.button == SDL_BTN_CROSS) {
+    } else if (e.button == Button::Cross) {
         loop_crossButton_Pressed();
     };
 }
@@ -311,7 +309,7 @@ void GuiLauncher::loop_joyButton_Pressed() {
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
 void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, true is next
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
 
     if (state == STATE_GAMES) {
         if (carouselGames.empty()) {
@@ -358,7 +356,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
             if (nextGame != selGameIndex) {
                 // we have prev/next game first letter;
                 selGameIndex = nextGame;
-                Mix_PlayChannel(-1, gui->cursor, 0);
+                gui->cursor.play();
                 notificationLines[1].setText(ReturnUpperCase(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
                 setInitialPositions(selGameIndex);
@@ -366,7 +364,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                 menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
             } else {
                 // no change
-                Mix_PlayChannel(-1, gui->cancel, 0);
+                gui->cancel.play();
                 notificationLines[1].setText(ReturnUpperCase(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
             }
@@ -379,7 +377,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
 //*******************************
 void GuiLauncher::loop_prevGameFirstLetter() {
     loop_prevNextGameFirstLetter(false);
-    L1_fastForwardTimeStart = SDL_GetTicks();
+    L1_fastForwardTimeStart = gui->platform().ticks();
 };
 
 //*******************************
@@ -388,7 +386,7 @@ void GuiLauncher::loop_prevGameFirstLetter() {
 void GuiLauncher::loop_nextGameFirstLetter()
 {
     loop_prevNextGameFirstLetter(true);
-    R1_fastForwardTimeStart = SDL_GetTicks();
+    R1_fastForwardTimeStart = gui->platform().ticks();
 };
 
 //*******************************
@@ -402,7 +400,7 @@ void GuiLauncher::loop_chooseGameDir() {
     if (gameRowInfos.size() == 0) {
         return; // no games!
     }
-    GuiGameDirMenu guiGameDirMenu(renderer);
+    GuiGameDirMenu guiGameDirMenu(*gui);
 
     // add All Games and Internal Games only if origames is true in the config.ini
     int offsetToGamesSubDirs {0};
@@ -517,7 +515,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
         return;
     }
     powerOffShift = false;
-    GuiPlaylists playlists(renderer);
+    GuiPlaylists playlists(*gui);
     playlists.playlists = raPlaylists;
     playlists.integrator = raIntegrator;
 
@@ -570,7 +568,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
         }
         else {
             // switch to next Select Mode
-            Mix_PlayChannel(-1, gui->cursor, 0);
+            gui->cursor.play();
 
             int previousSet = currentSet;
             currentSet++;
@@ -598,7 +596,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
 // pick a random game
 //*******************************
 void GuiLauncher::loop_startButton_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
 
     if (state == STATE_GAMES) {
         if (carouselGames.empty()) {
@@ -607,7 +605,7 @@ void GuiLauncher::loop_startButton_Pressed() {
 
         selGameIndex = Util::getRandomIndex(carouselGames.size());
         if (selGameIndexInCarouselGamesIsValid()) {
-            Mix_PlayChannel(-1, gui->cursor, 0);
+            gui->cursor.play();
             setInitialPositions(selGameIndex);
             updateMeta();
             menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
@@ -626,10 +624,10 @@ void GuiLauncher::loop_circleButton_Pressed() {
             motionStart = 0;
         }
     } else if (state == STATE_GAMES) {
-        Mix_PlayChannel(-1, gui->cancel, 0);
+        gui->cancel.play();
         menuVisible = false;
     } else if (state == STATE_RESUME) {
-        Mix_PlayChannel(-1, gui->cursor, 0);
+        gui->cursor.play();
         sselector->visible = false;
         arrow->visible = true;
         sselector->cleanSaveStateImages();
@@ -649,8 +647,8 @@ void GuiLauncher::loop_circleButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != STATE_RESUME) {
-        Mix_PlayChannel(-1, gui->cursor, 0);
-        GuiBtnGuide guide(renderer);
+        gui->cursor.play();
+        GuiBtnGuide guide(*gui);
         guide.backgroundImg = background->tex;
         guide.show();
     } else {
@@ -659,9 +657,9 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                 auto game = carouselGames[selGameIndex];
                 int slot = sselector->selSlot;
                 if (game->isResumeSlotActive(slot)) {
-                    Mix_PlayChannel(-1, gui->cursor, 0);
+                    gui->cursor.play();
 
-                    GuiConfirm confirm(renderer);
+                    GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
                     confirm.show();
 
@@ -675,7 +673,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                     sselector->operation = OP_LOAD;
                 }
             } else {
-                Mix_PlayChannel(-1, gui->cancel, 0);
+                gui->cancel.play();
             }
         }
     }
@@ -781,7 +779,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
             gui->lastRAPlaylistName = currentRAPlaylistName;
         } else {
-            GuiAppStart appStartScreen(gui->renderer);
+            GuiAppStart appStartScreen(*gui);
             appStartScreen.setGame(gui->runningGame);
             appStartScreen.show();
             bool result = appStartScreen.result;
@@ -858,13 +856,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     int lastSet = currentSet;
     int lastPS1_SelectState = currentPS1_SelectState;
     int lastUSBGameDirIndex = currentUSBGameDirIndex;
     int lastRAPlaylistIndex = currentRAPlaylistIndex;
     int lastGame = selGameIndex;
-    GuiOptions option(renderer);
+    GuiOptions option(*gui);
     option.show();
     bool exitCode = option.exitCode;
 
@@ -927,8 +925,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         return;
     }
 
-    Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiEditor editor(renderer);
+    gui->cursor.play();
+    GuiEditor editor(*gui);
     Inifile gameIni;
     if (selGameIndexInCarouselGamesIsValid()) {
         editor.internal = carouselGames[selGameIndex]->internal;
@@ -1031,8 +1029,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
         rightCardName = "[2]"+ memcard;
     }
 
-    Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiMcManager mcManager(renderer);
+    gui->cursor.play();
+    GuiMcManager mcManager(*gui);
     mcManager.backgroundImg=background->tex;
     mcManager.leftCardName = leftCardName;
     mcManager.rightCardName = rightCardName;
@@ -1056,7 +1054,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     }
 
     if (resumeAvailable) {
-        Mix_PlayChannel(-1, gui->cursor, 0);
+        gui->cursor.play();
         sselector->visible = true;
         if (selGameIndexInCarouselGamesIsValid())
             sselector->loadSaveStateImages(carouselGames[selGameIndex], false);
@@ -1064,7 +1062,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
         sselector->selSlot = 0;
         sselector->operation = OP_LOAD;
     } else {
-        Mix_PlayChannel(-1, gui->cancel, 0);
+        gui->cancel.play();
     }
 }
 
@@ -1078,7 +1076,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 
         if (sselector->operation == OP_LOAD) {
             if (game->isResumeSlotActive(slot)) {
-                Mix_PlayChannel(-1, gui->cursor, 0);
+                gui->cursor.play();
                 gui->startingGame = true;
                 gui->runningGame = carouselGames[selGameIndex];
                 gui->lastSelIndex = selGameIndex;
@@ -1092,16 +1090,16 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                 gui->emuMode = EMU_PCSX;
                 menuVisible = false;
             } else {
-                Mix_PlayChannel(-1, gui->cancel, 0);
+                gui->cancel.play();
             }
         } else {
-            //Mix_PlayChannel(-1, gui->cursor, 0);
+            //gui->cursor.play();
             PcsxInterceptor interceptor;
             interceptor.saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
             carouselGames[selGameIndex]->storeResumePicture(sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
-            Mix_PlayChannel(-1, gui->resume, 0);
+            gui->resume.play();
             notificationLines[1].setText(
                     _("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                     DefaultShowingTimeout);
@@ -1122,15 +1120,15 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 // button released
 //*******************************
 void GuiLauncher::loop_joyButtonReleased() {
-    if (e.cbutton.button == SDL_BTN_L2) {
-        Mix_PlayChannel(-1, gui->cursor, 0);
+    if (e.button == Button::L2) {
+        gui->cursor.play();
         powerOffShift = false;
     }
 
-    if (L1_isPressedForFastForward && (e.cbutton.button == SDL_BTN_L1)) {
+    if (L1_isPressedForFastForward && (e.button == Button::L1)) {
         L1_isPressedForFastForward = false;
     }
-    else if (R1_isPressedForFastForward && (e.cbutton.button == SDL_BTN_R1)) {
+    else if (R1_isPressedForFastForward && (e.button == Button::R1)) {
         R1_isPressedForFastForward = false;
     }
 }

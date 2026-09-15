@@ -17,6 +17,9 @@ Refactor for stability, then add features. Done on 2026-09-15 (one commit per st
 - Phase 3: no raw owning `new`/`delete` left: stack objects for short-lived helpers and screens, `unique_ptr`
   for DBs, interceptors, `GuiLauncher` elements, pads, memory-card editors.
 - Phase 4: `DirEntry::checkWritable` on every writer, `-Wall -Wextra` clean debug builds.
+- lib_ableem: every SDL/SDL_image/SDL_mixer/SDL_ttf/SDL_FontCache call moved out of the app into a new static
+  library, `lib_ableem/` (namespace `ableem`). The app links `ableem` and includes no SDL header anywhere;
+  `grep -rl "SDL2/" src/code` returns nothing. See the "lib_ableem" section below.
 
 Still to do, in order:
 
@@ -24,8 +27,49 @@ Still to do, in order:
 2. Centralize the remaining hard-coded paths (`/media/...`, `/tmp/...`, `/usr/sony/share/data`, `/gaadata`) in
    `Environment`.
 3. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
-4. Set up the Sony ARM toolchain and verify on a console (nothing above has been run on real hardware yet).
+4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
+   hardware yet - only the Windows/MinGW build has been exercised).
 5. Features.
+
+## lib_ableem
+
+A portable static library (`lib_ableem/`, namespace `ableem`) that owns every SDL/SDL_image/SDL_mixer/SDL_ttf
+call. The app talks to it only through `include/ableem/*.h` - `ableem.h` pulls in the whole API. Never add a
+`#include <SDL2/...>` to anything under `src/code/`; if you need new SDL functionality, add it to the library.
+
+- **`Platform`** - owns SDL_Init/window/TTF_Init/Mix_Init (created by `GuiBase`). `isDevHost()` replaces the
+  app's old per-call `AB_DEBUG_HOST` checks for cursor grab; `setPowerOffHandler()` is how the app supplies
+  what "power off" means (main.cpp wires it once to `gui->drawText(...); Util::powerOff();`) - `Input::poll()`
+  calls it automatically on the console power button or Esc, so screens never check for that themselves.
+  `Platform::shutdownSDL()` must be registered with `atexit()` before the first `GuiBase`/`Gui` is constructed
+  (done once, in `main.cpp`) - it runs SDL_Quit() after everything else is destroyed.
+- **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`.
+- **`Texture`** - shared handle (copy freely) with `loadFile/loadMemory/createTarget/createStreaming`, plus
+  `PixelLock` (RAII `lock()`) for per-pixel `get/set` - replaces the old manual `SDL_LockTexture` +
+  `SDL_AllocFormat`/`SDL_MapRGBA` dance (see `engine/cardedit.cpp`, the memory card icon renderer).
+- **`Font`** - shared handle over SDL_FontCache: `textSize/width/lineHeight/draw/drawAlign/drawColor`. The
+  app's own `Fonts`/`FontEnum` (`gui/gui_font.*`) is unchanged in spirit - it still maps FONT_15_BOLD etc to a
+  themed .ttf path, just building `ableem::Font`s now instead of `FC_Font_Shared`s.
+- **`Sound`/`Music`/`Audio`** - `Sound::play()` replaces `Mix_PlayChannel(-1, chunk, 0)`; `Audio::close()` is
+  the old "close until `Mix_QuerySpec` fails" loop, now one call (`gui->audio().close()`).
+- **`Input`** - one `poll(Event&)` replaces `SDL_PollEvent` + `PadMapper` + `gui/abl.c`'s PSC event filter
+  (still there, moved to `lib_ableem/src/psc_event_filter.c`, wired up by `Input`'s constructor). `Event::Type`
+  is `Quit/ButtonDown/ButtonUp/DpadDown/DpadUp/KeyDown/KeyUp/TextInput/PadAdded/PadRemoved/RenderReset`;
+  `Button`/`Key` replace `SDL_BTN_*`/`SDLK_*`. `dpadUp()/Down()/Left()/Right()/Centered()` are the old
+  `PadMapper::isUp()` etc (state, not just "this event's direction" - screens read them right after `poll()`
+  returns a Dpad event, same priority order as before: up, down, right, left, center).
+  `setKeyboardAsPad(true)` (the default on a dev host) is what lets `tools/win_drive.ps1` drive the app -
+  X/O/S/T = cross/circle/square/triangle, I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2.
+- **`GuiBase`/`GuiScreen`** - `GuiBase` owns Platform+Renderer+Input+Audio in that order. The app's `Gui`
+  (`gui/gui.h`) derives from it and adds theme/config/database/carousel state - lib_ableem has no idea what a
+  theme or a database is. The app's own `gui/gui_screen.h` is now a thin shim: `class GuiScreen :
+  public ableem::GuiScreen` that also carries `std::shared_ptr<Gui> gui` and `ableem::Renderer &renderer` as
+  members, so every existing screen file keeps writing `gui->cursor.play()` / `renderer.copy(...)` unchanged -
+  only the SDL-specific calls inside each screen needed converting, not every constructor caller. Screens are
+  constructed with a `GuiBase&`, in practice always `*gui` (e.g. `GuiConfirm confirm(*gui);`).
+- **CMake**: `add_subdirectory(lib_ableem)` from the root file; `ABLEEM_EMBEDDED_TARGET` is forced on for the
+  ARM build (no cursor grab, keyboard-as-pad off); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
+  from-scratch smoke test of the library alone - texture + font + sound + input, no AutoBleem code involved.
 
 ## Build
 
@@ -47,7 +91,7 @@ Debug builds compile with `-Wall -Wextra` (a few noisy categories off) - keep th
   images and is NOT in the repo. `AB_ENABLE_CHD=OFF` defines `AB_NO_CHD`, which compiles out `CHDReader`
   (`.chd` games then scan as "no serial").
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored: SQLite (`libs/sqlite`),
-  nlohmann json + `fifo_map` (`libs/nlohmann`), `SDL_FontCache` and `unecm.c` (in `src/code`).
+  nlohmann json + `fifo_map` (`libs/nlohmann`), `unecm.c` (in `src/code`). SDL_FontCache now lives in lib_ableem.
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - No tests exist.
 
@@ -119,13 +163,11 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 | `engine/database.*` | `Database` | Thin SQLite wrapper. Every query uses the file-local RAII `Stmt` class (`ok()/bind()/row()/colInt()/colText()/colBlob()`); add new queries the same way. Schema notes in `engine/database_tables.txt`. Same class serves `regional.db`, `internal.db` and cover DBs; the destructor disconnects. |
 | `engine/memcard.*`, `cardedit.*` | | Memory-card swap in/out (`!MemCards`) and .mcd block editor. |
 | `engine/cfgprocessor.*`, `inifile.*`, `config.*` | | pcsx.cfg / RetroArch cfg rewriting; generic ini map; `config.ini` (keys are lower-cased on load, e.g. `values["theme"]`). |
-| `engine/padmapper.*` | | SDL GameController mapping, hot-plug, power button. |
 | `gui/gui.*` | `Gui` singleton | Owns SDL window/renderer, fonts, theme (`theme.ini` merged over `themes/default`), music/sfx, both DB pointers, carousel restore state (`lastSet`, `lastSelIndex`...). `menuSelection()` is the classic-UI main menu event loop. `display()` (re)inits and shows splash or resumes the launcher. |
 | `gui/gui_screen.*` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/gui_*` | | Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, star FX. |
-| `gui/gui_sdl_wrapper.h` | `SDL_Shared<T>` | RAII shared handle for SDL_Window/Renderer/Texture/Surface. Use it for any new SDL resource. |
-| `gui/SDL_FontCache.*`, `gui_font.*` | | Vendored font cache + `Fonts` loader (theme fonts and Sony SST fonts). |
+| `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: cover carousel, sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. |
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
 | `launcher/ps_game.*` | `PsGame` | Game as seen by the UI (from DB or playlist). `PsGamePtr = shared_ptr<PsGame>`. Handles resume-point pictures/slots. |
@@ -134,7 +176,7 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
 | `ver_migration.*` | | One-off migrations between AutoBleem versions (`/media/System/Logs/ver.txt`). |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
-| `gui/abl.c` | | C helper (splash from C code). `unecm.c`: ECM decoder. |
+| `unecm.c` | | ECM decoder. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb`, `autobleem`, `default`,
 `evolution`), bundled Apps, release notes. `db/` is git-ignored (cover DBs live there).

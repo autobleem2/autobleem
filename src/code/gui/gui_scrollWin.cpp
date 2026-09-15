@@ -2,7 +2,6 @@
 // Created by steve on 12/28/19.
 //
 #include "gui_scrollWin.h"
-#include <SDL2/SDL.h>
 #include <string>
 #include <iostream>
 
@@ -26,7 +25,7 @@ void GuiScrollWin::render() {
     for (int i=0; i < lines.size(); ++ i) {
         gui->renderTextLine(lines[i], i, 0, XALIGN_LEFT);
     }
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //********************

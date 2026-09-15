@@ -61,6 +61,10 @@ void Renderer::fillRect(const Rect &r) {
     SDL_RenderFillRect(impl->renderer, &sr);
 }
 
+void Renderer::fillRect() {
+    SDL_RenderFillRect(impl->renderer, nullptr);
+}
+
 void Renderer::drawRect(const Rect &r) {
     SDL_Rect sr = toSDL(r);
     SDL_RenderDrawRect(impl->renderer, &sr);

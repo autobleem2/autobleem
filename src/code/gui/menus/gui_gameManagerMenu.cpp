@@ -3,8 +3,6 @@
 //
 
 #include "gui_gameManagerMenu.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
 #include <string>
 #include <iostream>
 #include "gui_gameEditorMenu.h"
@@ -40,7 +38,7 @@ void GuiManager::init() {
 //*******************************
 void GuiManager::render()
 {
-    SDL_RenderClear(renderer);
+    renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderLogo(true);
@@ -53,7 +51,7 @@ void GuiManager::render()
     renderSelectionBox();
 
     gui->renderStatus(getStatusLine());
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -94,7 +92,7 @@ int GuiManager::flushCovers(const char *file, const struct stat* /*sb*/, int /*f
 // GuiManager::doCircle_Pressed
 //*******************************
 void GuiManager::doCircle_Pressed() {
-    Mix_PlayChannel(-1, gui->cancel, 0);
+    gui->cancel.play();
     if (changes)
     {
         gui->forceScan=true;
@@ -106,12 +104,12 @@ void GuiManager::doCircle_Pressed() {
 // GuiManager::doSquare_Pressed
 //*******************************
 void GuiManager::doSquare_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     auto game = psGames[selected];
     int gameId = game->gameId;
     string gameName = game->title;
     string gameSaveStateFolder = game->ssFolder;
-    GuiConfirm confirm(renderer);
+    GuiConfirm confirm(*gui);
     confirm.label = _("Are you sure you want to delete") + " " + gameName + "?";
     confirm.show();
     bool delGame = confirm.result;
@@ -130,7 +128,7 @@ void GuiManager::doSquare_Pressed() {
                                                                            return g->ssFolder == gameSaveStateFolder;
                                                                        });
                 if (numberOfGamesRemainingWithSameSaveState == 0) {
-                    GuiConfirm confirm(renderer);
+                    GuiConfirm confirm(*gui);
                     confirm.label = _("Delete !SaveState folder for game") + " " + gameName + "?";
                     confirm.show();
                     bool delSSFolder = confirm.result;
@@ -156,8 +154,8 @@ void GuiManager::doSquare_Pressed() {
 // GuiManager::doTriangle_Pressed
 //*******************************
 void GuiManager::doTriangle_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiConfirm confirm(renderer);
+    gui->cursor.play();
+    GuiConfirm confirm(*gui);
     confirm.label = _("Are you sure you want to flush all covers?");
     confirm.show();
     bool delCovers = confirm.result;
@@ -185,12 +183,12 @@ void GuiManager::doTriangle_Pressed() {
 // GuiManager::doCross_Pressed
 //*******************************
 void GuiManager::doCross_Pressed() {
-    Mix_PlayChannel(-1, gui->cursor, 0);
+    gui->cursor.play();
     if (!psGames.empty())
     {
         string selectedGameFolder = psGames[selected]->folder;
         {
-            GuiEditor editor(renderer);
+            GuiEditor editor(*gui);
             editor.gameData = psGames[selected];
             editor.gameFolder = selectedGameFolder;
             editor.gameIni.load(selectedGameFolder + sep + GAME_INI);

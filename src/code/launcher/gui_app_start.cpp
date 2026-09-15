@@ -3,10 +3,6 @@
 //
 
 #include "gui_app_start.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -63,16 +59,16 @@ void GuiAppStart::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
 // readme:
-    SDL_SetRenderDrawColor(renderer,0, 0, 0, 128);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    renderer.setDrawColor(ableem::Color(0, 0, 0, 128));
+    renderer.setBlendMode(ableem::BlendMode::Blend);
 
-    SDL_Rect rect2;
+    ableem::Rect rect2;
     rect2.x = 10;
     rect2.y = 10;
     rect2.w = 1260;
     rect2.h = 600;
 
-    SDL_RenderFillRect(renderer, &rect2);
+    renderer.fillRect(rect2);
 
     // scrollbar
     rect2.x = 1240;
@@ -80,24 +76,24 @@ void GuiAppStart::render() {
     rect2.w = 20;
     rect2.h = 20*25;
 
-    SDL_RenderFillRect(renderer, &rect2);
+    renderer.fillRect(rect2);
 
     // draw scroll position
     if (maxLines<totalLines) {
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+        renderer.setDrawColor(ableem::Color(255, 255, 255, 255));
         int heightOfBar = 500/(totalLines-maxLines);
 
         rect2.x = 1242;
         rect2.y = 40 + firstLine*heightOfBar;
         rect2.w = 16;
         rect2.h = heightOfBar;
-        SDL_RenderFillRect(renderer, &rect2);
+        renderer.fillRect(rect2);
 
     }
     int yoffset = 15;
     gui->renderTextLine(appName, 0, yoffset, XALIGN_LEFT, 10, font);
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderDrawLine(renderer, rect2.x, 35,rect2.w,35);
+    renderer.setDrawColor(ableem::Color(255, 255, 255, 255));
+    renderer.drawLine(ableem::Point{rect2.x, 35}, ableem::Point{rect2.w, 35});
 
     if (scrolling>0)
     {
@@ -138,7 +134,7 @@ void GuiAppStart::render() {
 
 
     gui->renderStatus("|@X| " + _("OK") + "  |@O| " + _("Cancel") +"|");
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 
@@ -146,46 +142,38 @@ void GuiAppStart::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     bool menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
+        Event e;
         render();
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-
-                }
-            }
-
+        while (gui->input().poll(e)) {
             switch (e.type) {
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_CROSS) {
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::Cross) {
                         result = true;
                         menuVisible = false;
                     };
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
+                    if (e.button == Button::Circle) {
                         result = false;
                         menuVisible = false;
                     };
                     break;
 
-                case SDL_CONTROLLERHATMOTIONDOWN:  /* Handle Joystick Motion */
-                case SDL_CONTROLLERHATMOTIONUP:
+                case Event::Type::DpadDown:  /* Handle Joystick Motion */
+                case Event::Type::DpadUp:
                     if (totalLines!=0) {
-                        if (gui->mapper.isUp(&e)) {
+                        if (gui->input().dpadUp()) {
                             scrolling = -1;
                         }
-                        if (gui->mapper.isDown(&e)) {
+                        if (gui->input().dpadDown()) {
 
 
                             scrolling = 1;
                         }
-                        if (gui->mapper.isCenter(&e)) {
+                        if (gui->input().dpadCentered()) {
                             scrolling = 0;
                         }
                     }
+                    break;
+                default:
                     break;
             }
         }

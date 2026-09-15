@@ -1,7 +1,6 @@
 
 #include "gui_padTest.h"
 #include <unistd.h>
-#include <SDL2/SDL.h>
 #include <string>
 #include "gui.h"
 #include "../lang.h"
@@ -10,16 +9,42 @@
 
 using namespace std;
 
+namespace {
+string buttonName(ableem::Button b) {
+    switch (b) {
+        case ableem::Button::Cross: return "Cross";
+        case ableem::Button::Circle: return "Circle";
+        case ableem::Button::Square: return "Square";
+        case ableem::Button::Triangle: return "Triangle";
+        case ableem::Button::Start: return "Start";
+        case ableem::Button::Select: return "Select";
+        case ableem::Button::L1: return "L1";
+        case ableem::Button::R1: return "R1";
+        case ableem::Button::L2: return "L2";
+        case ableem::Button::R2: return "R2";
+        case ableem::Button::DpadUp: return "DpadUp";
+        case ableem::Button::DpadDown: return "DpadDown";
+        case ableem::Button::DpadLeft: return "DpadLeft";
+        case ableem::Button::DpadRight: return "DpadRight";
+        default: return "None";
+    }
+}
+} // namespace
+
 //*******************************
 // GuiPadTest::init
 //*******************************
 void GuiPadTest::init() {
     GuiScrollWin::init();
     if (joyid != -1) {
-        SDL_Joystick *joy = SDL_JoystickFromInstanceID(joyid);
-
         appendLine("-=" + _("New GamePad found") + "=-");
-        appendLine(SDL_JoystickName(joy));
+        auto pads = gui->input().pads();
+        for (const auto &pad : pads) {
+            if (pad.index == joyid) {
+                appendLine(pad.name);
+                break;
+            }
+        }
     }
     appendLine("Hold down three buttons to exit");
 }
@@ -29,58 +54,39 @@ void GuiPadTest::init() {
 //*******************************
 void GuiPadTest::loop() {
     // eat any events in the queue
-    SDL_Event e;
-    while (SDL_PollEvent(&e))
+    Event e;
+    while (gui->input().poll(e))
         ;
 
-    shared_ptr<Gui> gui(Gui::getInstance());
     int buttonDownCount = 0;
     while (buttonDownCount >= 0 && buttonDownCount < 3) {
-        SDL_Event e;
-        auto status = SDL_PollEvent(&e);
+        bool status = gui->input().poll(e);
         if (status) {
-            if (e.type == SDL_KEYDOWN) {
-                appendLine("SDL_KEYDOWN = " + to_string(e.key.keysym.scancode));
-            } else if (e.type == SDL_KEYUP) {
-                appendLine("SDL_KEYUP = " + to_string(e.key.keysym.scancode));
-
-            } else if (e.type == SDL_CONTROLLERBUTTONDOWN) {
-                appendLine("SDL_CONTROLLERBUTTONDOWN = " + to_string(e.cbutton.button));
+            if (e.type == Event::Type::KeyDown) {
+                appendLine("KeyDown");
+            } else if (e.type == Event::Type::KeyUp) {
+                appendLine("KeyUp");
+            } else if (e.type == Event::Type::ButtonDown) {
+                appendLine("ButtonDown = " + buttonName(e.button));
                 buttonDownCount++;
-            } else if (e.type == SDL_CONTROLLERBUTTONUP) {
-                appendLine("SDL_CONTROLLERBUTTONUP = " + to_string(e.cbutton.button));
+            } else if (e.type == Event::Type::ButtonUp) {
+                appendLine("ButtonUp = " + buttonName(e.button));
                 if (buttonDownCount > 0)
                     buttonDownCount--;
-
-            } else if (e.type == SDL_CONTROLLERHATMOTIONUP) {
-                appendLine("SDL_CONTROLLERHATMOTIONUP = " + to_string(e.jhat.value));
-            } else if (e.type == SDL_CONTROLLERHATMOTIONDOWN) {
-#if 0
-                // controller on valium
-                if (e.jaxis.value == -32768 || e.jaxis.value == 32767 || e.jaxis.value == 0 ||
-                    e.jaxis.value == -1 || e.jaxis.value == 1) {
-                    appendLine("SDL_CONTROLLERHATMOTIONDOWN = " + to_string(e.jaxis.axis) + ", " + to_string(e.jaxis.value));
-                }
-#else
-                appendLine("SDL_CONTROLLERHATMOTIONDOWN = " + to_string(e.jaxis.axis) + ", " + to_string(e.jaxis.value));
-#endif
-            } else if (e.type == SDL_MOUSEMOTION ||
-                       e.type == SDL_MOUSEBUTTONDOWN ||
-                       e.type == SDL_MOUSEBUTTONUP ||
-                       e.type == SDL_MOUSEWHEEL ||
-                       e.type == SDL_WINDOWEVENT
-                      ) {
+            } else if (e.type == Event::Type::DpadUp) {
+                appendLine("DpadUp = " + buttonName(e.button));
+            } else if (e.type == Event::Type::DpadDown) {
+                appendLine("DpadDown = " + buttonName(e.button));
+            } else if (e.type == Event::Type::Quit) {
                 ; // ignore
             } else {
-                stringstream strhex;
-                strhex << std::hex << e.type;
-                appendLine("something else = 0x" + strhex.str());
+                appendLine("something else");
             }
             render();
         }
     }
     appendLine("Release all buttons now");
     sleep(3);
-    while (SDL_PollEvent(&e))
+    while (gui->input().poll(e))
         ;   // eat any events in the queue
 }

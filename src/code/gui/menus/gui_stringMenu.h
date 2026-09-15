@@ -1,15 +1,13 @@
 #pragma once
 
 #include "gui_menuBase.h"
-#include <SDL2/SDL_render.h>
-#include "../gui_sdl_wrapper.h"
 
 //*******************************
 // class GuiStringMenu
 //*******************************
 class GuiStringMenu : public GuiMenuBase<std::string> {
 public:
-    GuiStringMenu(SDL_Shared<SDL_Renderer> _renderer) : GuiMenuBase(_renderer) {}
+    GuiStringMenu(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
 
     virtual std::string getTitle() override { return GuiMenuBase::getTitle(); }
     virtual std::string getStatusLine() override { return GuiMenuBase::getStatusLine(); }

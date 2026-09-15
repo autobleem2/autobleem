@@ -3,10 +3,6 @@
 //
 
 #include "gui_btn_guide.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include "../gui/gui.h"
 #include "../lang.h"
@@ -55,7 +51,7 @@ void GuiBtnGuide::render() {
     renderTextLineToColumns("|@L2| + |@R2|",             _("In Boot Menu: Safe Power Off The Console"));
 
     gui->renderStatus("|@O| " + _("Go back") + "|");
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -65,26 +61,21 @@ void GuiBtnGuide::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-                }
-            }
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
             switch (e.type) {
-                case SDL_CONTROLLERBUTTONUP:
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                case Event::Type::ButtonUp:
+                    if (e.button == Button::Circle) {
+                        gui->cancel.play();
                         menuVisible = false;
                     };
+                    break;
+                default:
+                    break;
             }
         }
     }

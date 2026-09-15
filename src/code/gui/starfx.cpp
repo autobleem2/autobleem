@@ -40,16 +40,15 @@ void StarFx::render()
     }
     for (int i=0;i<7;i++) {
         for (int star = 0; star < STARS_PER_LAYER; star++) {
-            SDL_Rect rect;
+            ableem::Rect rect;
             rect.x=starLayers[i][star].x;
             rect.y=starLayers[i][star].y;
             rect.w=starLayers[i][star].size;
             rect.h=starLayers[i][star].size;
-            RGB lastColor;
-            SDL_GetRenderDrawColor(renderer, &lastColor.r,&lastColor.g,&lastColor.b,&lastColor.a);
-            SDL_SetRenderDrawColor(renderer, starLayers[i][star].color.r,starLayers[i][star].color.g,starLayers[i][star].color.b,255);
-            SDL_RenderFillRect(renderer,&rect);
-            SDL_GetRenderDrawColor(renderer, &lastColor.r,&lastColor.g,&lastColor.b,&lastColor.a);
+            ableem::Color lastColor = renderer->drawColor();
+            renderer->setDrawColor(ableem::Color(starLayers[i][star].color.r,starLayers[i][star].color.g,starLayers[i][star].color.b,255));
+            renderer->fillRect(rect);
+            renderer->setDrawColor(lastColor);
         }
     }
 }

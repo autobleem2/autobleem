@@ -4,10 +4,6 @@
 
 #include "gui_confirm.h"
 #include "gui_about.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_mixer.h>
-#include <SDL2/SDL_ttf.h>
 #include <string>
 #include "gui.h"
 #include "../lang.h"
@@ -28,7 +24,7 @@ void GuiConfirm::render()
 
 
     gui->renderStatus("|@X| "+_("Confirm")+"  |@O| "+_("Cancel")+" |");
-    SDL_RenderPresent(renderer);
+    renderer.present();
 }
 
 //*******************************
@@ -39,48 +35,41 @@ void GuiConfirm::loop()
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     while (menuVisible) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            gui->mapper.handleHotPlug(&e);
-            gui->mapper.handlePowerBtn(&e);
-            if (e.type == SDL_KEYDOWN) {
-                if (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE) {
-                    gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                    Util::powerOff();
-                }
-            }
-
+        Event e;
+        while (gui->input().poll(e)) {
             // this is for pc Only
-            if (e.type == SDL_QUIT) {
+            if (e.type == Event::Type::Quit) {
                 menuVisible = false;
             }
 
             switch (e.type) {
-                case SDL_CONTROLLERBUTTONDOWN:
-                    if (e.cbutton.button == SDL_BTN_CROSS) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                case Event::Type::ButtonDown:
+                    if (e.button == Button::Cross) {
+                        gui->cursor.play();
                         result = true;
                         menuVisible = false;
                     };
 
-                    if (e.cbutton.button == SDL_BTN_CIRCLE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                    if (e.button == Button::Circle) {
+                        gui->cancel.play();
                         result = false;
                         menuVisible = false;
                     };
                     break;
 
-                case SDL_KEYDOWN:
-                    if (e.key.keysym.sym == SDLK_RETURN) {
-                        Mix_PlayChannel(-1, gui->cursor, 0);
+                case Event::Type::KeyDown:
+                    if (e.key == Key::Return) {
+                        gui->cursor.play();
                         result = true;
                         menuVisible = false;
                     }
-                    if (e.key.keysym.sym == SDLK_ESCAPE) {
-                        Mix_PlayChannel(-1, gui->cancel, 0);
+                    if (e.key == Key::Escape) {
+                        gui->cancel.play();
                         result = false;
                         menuVisible = false;
                     }
+                    break;
+                default:
                     break;
             }
         }
