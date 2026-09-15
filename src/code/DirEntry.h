@@ -10,11 +10,9 @@
 //*******************************
 // separator
 //*******************************
-#ifdef _WIN32
-    static const char separator = '\\';
-#else
-    static const char separator = '/';
-#endif
+// '/' on every platform: the code base hard-codes "/" in places and Windows accepts forward slashes,
+// so mixing separators on a Windows dev build would only break string comparisons.
+static const char separator = '/';
 
 //*******************************
 // append separator helper function

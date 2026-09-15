@@ -42,16 +42,12 @@ void PsCarouselGame::loadTex(SDL_Shared<SDL_Renderer> renderer) {
                 coverPng = IMG_LoadTexture(renderer, imagePath.c_str());
             } else {
                 coverPng = nullptr;
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
                 if ((*this)->internal) {
                     Metadata md;
                     if (md.lookupBySerial((*this)->serial) && md.bytes && md.dataSize) {
-                        char fname[] = "/tmp/AutoBleem_XXXXXX.png";
-                        int pngFile = mkstemps(fname, 4);
-                        write(pngFile, md.bytes, md.dataSize);
-                        close(pngFile);
-                        coverPng = IMG_LoadTexture(renderer, fname);
-                        remove(fname);
+                        // freesrc=1: the RWops is closed by IMG_LoadTexture_RW
+                        coverPng = IMG_LoadTexture_RW(renderer, SDL_RWFromMem(md.bytes, md.dataSize), 1);
                     }
                 }
 #endif

@@ -66,7 +66,7 @@ bool GuiOptionsMenuBase::validSelectedIndex() {
 //*******************************
 // void GuiOptionsMenuBase::getChoicesSize()
 //*******************************
-uint GuiOptionsMenuBase::getChoicesSize() {
+unsigned int GuiOptionsMenuBase::getChoicesSize() {
     if (validSelectedIndex())
         return lines[selected].choices.size();
     else
@@ -76,7 +76,7 @@ uint GuiOptionsMenuBase::getChoicesSize() {
 //*******************************
 // void GuiOptionsMenuBase::getCurrentOptionIndex()
 //*******************************
-uint GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo& info, const std::string & current) {
+unsigned int GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo& info, const std::string & current) {
     const vector<string>& list = info.choices;
     // find current position
     int pos = 0;
@@ -138,7 +138,7 @@ std::string GuiOptionsMenuBase::doPrevNextOption(bool next) {
 //*******************************
 // void GuiOptionsMenuBase::doOptionIndex()
 //*******************************
-string GuiOptionsMenuBase::doOptionIndex(uint index) {
+string GuiOptionsMenuBase::doOptionIndex(unsigned int index) {
     if (validSelectedIndex()) {
         auto & choices = lines[selected].choices;
         if (choices.size() > 0 && index >= 0 && index < choices.size()) {
@@ -177,7 +177,7 @@ string GuiOptionsMenuBase::doLastOption() {
 //*******************************
 // void GuiOptionsMenuBase::computeAmountTomoveBy()
 //*******************************
-int GuiOptionsMenuBase::computeAmountTomoveBy(uint totalSize) {
+int GuiOptionsMenuBase::computeAmountTomoveBy(unsigned int totalSize) {
     if (totalSize == 0)
         return 0;
     else if (totalSize <= 10)

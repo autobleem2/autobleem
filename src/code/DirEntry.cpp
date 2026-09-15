@@ -195,7 +195,8 @@ DirEntries DirEntry::dir(string path) {
     if (dir != NULL) {
         struct dirent *entry = readdir(dir);
         while (entry != NULL) {
-            DirEntry obj(entry->d_name, entry->d_type);
+            // note: d_type is not a bool and is not available on every platform. use stat like diru() does.
+            DirEntry obj(entry->d_name, isDirectory(path + sep + entry->d_name));
             result.push_back(obj);
             entry = readdir(dir);
         }
@@ -268,7 +269,11 @@ bool DirEntry::exists(const string &_name) {
 //*******************************
 bool DirEntry::createDir(const string &_name) {
     auto name = fixPath(_name);
+#ifdef _WIN32
+    const int dir_err = mkdir(name.c_str());
+#else
     const int dir_err = mkdir(name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#endif
     return (-1 != dir_err);
 }
 
@@ -479,34 +484,20 @@ string DirEntry::getFileNameWithoutExtension(const string &filename) {
 // Return the bin list declared in a cue file
 vector<string> DirEntry::cueToBinList(string cueFile) {
     vector<string> binList;
-    FILE *fp;
-    char *cline = NULL;
     string line;
-    size_t length = 0;
-    ssize_t read;
 
-    //Opening file
-    fp = fopen(cueFile.c_str(), "r");
-    if (fp == NULL) {
-        printf("Error opening cue file");
+    ifstream is(cueFile);
+    if (!is.is_open()) {
+        cout << "Error opening cue file: " << cueFile << endl;
         return binList;
     }
 
     //Reading line by line
-    while ((read = getline(&cline, &length, fp)) != -1) {
-        line = cline;
+    while (getline(is, line)) {
         line = trim(line);
         if (line.substr(0, 4) == "FILE") {
-            binList.push_back(Util::getStringWithinChar(line, '"').c_str());
+            binList.push_back(Util::getStringWithinChar(line, '"'));
         }
-    }
-
-    //Closing file pointer
-    fclose(fp);
-
-    //Freeing line pointer
-    if (cline) {
-        free(cline);
     }
 
     return binList;

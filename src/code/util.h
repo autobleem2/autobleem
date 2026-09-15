@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include "environment.h"    // for AB_DEBUG_HOST
 
 //******************
 // Util

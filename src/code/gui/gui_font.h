@@ -3,6 +3,7 @@
 #include "gui_font_wrapper.h"
 #include "gui_sdl_wrapper.h"
 #include <map>
+#include <string>
 
 enum FontEnum {
     FONT_15_BOLD,

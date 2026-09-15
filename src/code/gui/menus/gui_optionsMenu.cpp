@@ -161,7 +161,7 @@ string GuiOptions::doRandomOption() {
 //*******************************
 // string GuiOptions::doOptionIndex()
 //*******************************
-string GuiOptions::doOptionIndex(uint index) {
+string GuiOptions::doOptionIndex(unsigned int index) {
     if (validSelectedIndex()) {
         int id = lines[selected].id;
         // do the default action

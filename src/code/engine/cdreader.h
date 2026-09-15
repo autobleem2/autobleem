@@ -8,12 +8,17 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#ifndef AB_NO_CHD
 #include <libmamecd/cdrom.h>
+#endif
 
 #include <stdio.h>
 #include <string.h>
 
 #define SECTOR_SIZE 2352
+#ifdef AB_NO_CHD
+#define CD_FRAME_SIZE 2352   // normally provided by libmamecd/cdrom.h
+#endif
 #define DATA_SIZE 2048
 #define MAX_OFFSET 500
 
@@ -215,6 +220,7 @@ public:
     }
 };
 
+#ifndef AB_NO_CHD
 class CHDReader : public CDReader
 {
 private:
@@ -294,3 +300,4 @@ public:
         setCurrentSector(sectorNum);
     }
 };
+#endif // AB_NO_CHD

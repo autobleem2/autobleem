@@ -53,6 +53,7 @@ CTestTestfile.cmake
 #ARM and local system shell script Build folders
 build_arm/
 build_sys/
+build_win/
 db/
 
 #If you edit, or view, a file in Visual Studio in open folder mode it creates files in a .vs folder to keep track

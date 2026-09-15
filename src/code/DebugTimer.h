@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
 
 #ifndef NDEBUG  // if debug build
 //******************

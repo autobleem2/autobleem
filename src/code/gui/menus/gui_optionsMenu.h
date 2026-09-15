@@ -53,7 +53,7 @@ public:
     virtual std::string doPrevNextOption(bool next) { return GuiOptionsMenuBase::doPrevNextOption(next); }
     virtual std::string doRandomOption();   // only a few lines will use this.  most will just return.
 
-    virtual std::string doOptionIndex(uint index) override ;
+    virtual std::string doOptionIndex(unsigned int index) override ;
 
     int exitCode=0;
 

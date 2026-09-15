@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(winget install --id MSYS2.MSYS2 --exact --accept-source-agreements --accept-package-agreements --silent)",
+      "Bash(xargs sed -i 's/#if defined\\(__x86_64__\\) || defined\\(_M_X64\\) || defined \\(PI_DEBUG\\)/#ifdef AB_DEBUG_HOST/')",
+      "Bash(sed -i 's/^\\\\* text=auto$/* text=auto eol=lf/' .gitattributes)",
+      "Bash(git add *)",
+      "Bash(python -)",
+      "PowerShell($env:MSYSTEM='UCRT64'; & C:\\\\msys64\\\\usr\\\\bin\\\\bash.exe -lc \"cd /e/Programming/autobleem-develop && chmod +x make_win.sh && ./make_win.sh 2>&1 | grep -E 'error|Error|warning: unused|FAILED|ninja:|-- ' | head -60\")",
+      "PowerShell($env:MSYSTEM='UCRT64'; & C:\\\\msys64\\\\usr\\\\bin\\\\bash.exe -lc \"cd /e/Programming/autobleem-develop/build_win && ninja -k 0 2>&1 | grep -E 'error|FAILED|ninja:' | head -60\")",
+      "PowerShell($env:MSYSTEM='UCRT64'; & C:\\\\msys64\\\\usr\\\\bin\\\\bash.exe -lc \"cd /e/Programming/autobleem-develop/build_win && ninja -k 0 2>&1 | grep -E 'error|FAILED|ninja:|undefined' | head -60\")",
+      "PowerShell($env:MSYSTEM='UCRT64'; & C:\\\\msys64\\\\usr\\\\bin\\\\bash.exe -lc \"cd /e/Programming/autobleem-develop/build_win && ninja 2>&1 | tail -3; ls -la autobleem-gui.exe; ls | head -30\")",
+      "PowerShell($U = \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\e--Programming-autobleem-develop\\\\cbd52741-4faa-43c3-a2c2-27e374fb04c9\\\\scratchpad\\\\usb\"; $env:PATH = \"C:\\\\msys64\\\\ucrt64\\\\bin;$env:PATH\"; Set-Location \"$U\\\\Autobleem\\\\bin\\\\autobleem\"; $p = Start-Process -FilePath \".\\\\autobleem-gui.exe\" -ArgumentList \"`\"$U`\"\" -RedirectStandardOutput \"$U\\\\System\\\\Logs\\\\AB_out.txt\" -RedirectStandardError \"$U\\\\System\\\\Logs\\\\AB_err.txt\" -PassThru; Start-Sleep 8; $alive = -not $p.HasExited; \"alive after 8s: $alive  exitcode: $\\($p.ExitCode\\)\"; if \\($alive\\) { Stop-Process -Id $p.Id -Force }; \"---- OUT ----\"; Get-Content \"$U\\\\System\\\\Logs\\\\AB_out.txt\" | Select-Object -First 40; \"---- ERR ----\"; Get-Content \"$U\\\\System\\\\Logs\\\\AB_err.txt\" | Select-Object -First 20)",
+      "PowerShell($U = \"$env:LOCALAPPDATA\\\\Temp\\\\claude\\\\e--Programming-autobleem-develop\\\\cbd52741-4faa-43c3-a2c2-27e374fb04c9\\\\scratchpad\\\\usb\"; $env:PATH = \"C:\\\\msys64\\\\ucrt64\\\\bin;$env:PATH\"; Set-Location \"$U\\\\Autobleem\\\\bin\\\\autobleem\"; $p = Start-Process -FilePath \".\\\\autobleem-gui.exe\" -ArgumentList \"`\"$U`\"\" -RedirectStandardOutput \"$U\\\\System\\\\Logs\\\\AB_out.txt\" -RedirectStandardError \"$U\\\\System\\\\Logs\\\\AB_err.txt\" -PassThru; Start-Sleep 7; Add-Type -AssemblyName System.Windows.Forms,System.Drawing; $b = New-Object System.Drawing.Bitmap 1280,720; $g = [System.Drawing.Graphics]::FromImage\\($b\\); $g.CopyFromScreen\\(0,0,0,0,$b.Size\\); $b.Save\\(\"$U\\\\..\\\\shot.png\"\\); Stop-Process -Id $p.Id -Force; \"saved\")",
+      "Bash(git commit -q -m 'Phase 0: Windows \\(MinGW\\) development build *)"
+    ]
+  }
+}

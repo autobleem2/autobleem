@@ -112,7 +112,12 @@ IsoDirectory Isodir::getDir(string binPath, int maxlevel, bool useCHD)
     }
     else
     {
+#ifdef AB_NO_CHD
+        cout << "CHD support not compiled in, skipping " << binPath << endl;
+        return getEmptyDir();
+#else
         reader = new CHDReader();
+#endif
     }
     reader->openImage(binPath);
     if (!reader->isOpen())

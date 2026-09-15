@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.6)
 project(autobleem-gui)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# CHD image support needs libmamecd which is only available in the PSC toolchain sysroot.
+# switch it off for development builds that do not have the library.
+option(AB_ENABLE_CHD "Enable CHD image support (requires libmamecd)" ON)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
@@ -58,8 +63,26 @@ else()
 	endif()
 endif()
 
-find_package(Threads REQUIRED
-             SDL2 REQUIRED)
+find_package(Threads REQUIRED)
+
+if (MINGW)
+    # MSYS2/MinGW development build: SDL2 libs come from pkg-config
+    message(STATUS "Building for Windows (MinGW)")
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SDL2ALL REQUIRED IMPORTED_TARGET sdl2 SDL2_image SDL2_mixer SDL2_ttf)
+    set(AB_SDL_LIBS PkgConfig::SDL2ALL)
+else()
+    find_package(SDL2 REQUIRED)
+    set(AB_SDL_LIBS SDL2 SDL2_image SDL2_mixer SDL2_ttf)
+endif()
+
+if (AB_ENABLE_CHD)
+    set(AB_CHD_LIBS mamecd)
+else()
+    message(STATUS "CHD support disabled")
+    add_compile_definitions(AB_NO_CHD)
+    set(AB_CHD_LIBS)
+endif()
 
 add_library(sqlite3 STATIC libs/sqlite/sqlite3ab.c )
 
@@ -202,26 +225,26 @@ target_include_directories(autobleem-gui PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libs/nlohmann>
 		)
 
-add_executable(starter
-		src/code/starter.cpp
-		src/code/util.h
-		src/code/util.cpp
-		src/code/DirEntry.h
-		src/code/DirEntry.cpp
-        src/code/engine/inifile.cpp
-        src/code/engine/memcard.cpp src/code/engine/memcard.h
-		src/code/environment.h
-		src/code/environment.cpp
-		)
+if (NOT WIN32)
+    # starter wraps /tmp/pcsx on the console for the stock SonyUI path. it is not useful on a Windows dev build.
+    add_executable(starter
+            src/code/starter.cpp
+            src/code/util.h
+            src/code/util.cpp
+            src/code/DirEntry.h
+            src/code/DirEntry.cpp
+            src/code/engine/inifile.cpp
+            src/code/engine/memcard.cpp src/code/engine/memcard.h
+            src/code/environment.h
+            src/code/environment.cpp
+            )
+endif()
 
 target_link_libraries(autobleem-gui
          Threads::Threads
-         SDL2
-         SDL2_image
-         SDL2_mixer
-         SDL2_ttf
+         ${AB_SDL_LIBS}
 		 sqlite3
-         mamecd
+         ${AB_CHD_LIBS}
          ${CMAKE_DL_LIBS}
 )
 

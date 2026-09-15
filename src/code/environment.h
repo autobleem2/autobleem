@@ -2,6 +2,16 @@
 
 #include <string>
 
+//*******************************
+// AB_DEBUG_HOST
+//*******************************
+// defined when building for a development machine (PC/Mac/Windows/Raspberry Pi) instead of the PlayStation Classic.
+// on a debug host: files are read relative to the working dir / the usb root passed on the command line,
+// emulators are not forked, and console-only paths (/media, /usr/sony) are not used.
+#if defined(__x86_64__) || defined(_M_X64) || defined(_WIN32) || defined(PI_DEBUG)
+#define AB_DEBUG_HOST 1
+#endif
+
 struct Environment {
     static std::string getPathToUSBRoot();
     static std::string getPathToAutobleemDir();

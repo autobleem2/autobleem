@@ -3,7 +3,9 @@
 //
 
 #include "retboot_interceptor.h"
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 #include "../util.h"
 #include "../gui/gui.h"
 #include "../lang.h"
@@ -105,7 +107,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
         transferConfig(game);
     }
 
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
     int pid = fork();

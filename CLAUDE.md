@@ -29,19 +29,34 @@ stock-UI path). C++11. `sqlite3` is built from `libs/sqlite/sqlite3ab.c`.
 - **ARM (real target)**: `make_arm.sh` → `PSCtoolchainV8.cmake` (`armv8-sony-linux-gnueabihf-gcc`, `--static -Os -s`).
   Requires the toolchain at `/opt/toolchain/armv8-sony-linux-gnueabihf`. Not available on this Windows host yet.
 - **Mac/Linux**: `make_mac.sh`, `make_sys.sh`.
-- **Windows/MinGW**: not yet supported. Known porting surface (small):
-  - `fork/execvp/waitpid` in `util.cpp`, `starter.cpp` and the three interceptors (interceptors already skip the
-    fork on x86 via the `__x86_64__` ifdef and show a splash instead).
-  - `DirEntry.cpp`: `opendir/readdir/mkdir/stat` (MinGW provides `dirent.h`; `mkdir` takes one arg).
-  - `Util::execUnixCommand` uses `popen`; `Util::getAvailableSpace` shells out to `df` (already stubbed on x86).
-  - `unistd.h`/`usleep` in ~12 files (MinGW has both).
-  - `Env::getWorkingPath` uses `getcwd`/`PATH_MAX`.
-  - **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by `engine/cdreader.h` for CHD
-    images. It is NOT in the repo. For a Windows build either provide it, substitute libchdr, or compile out CHD.
+- **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
+  (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
+  Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
+  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
+  skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `Util::execFork` stubbed.
+  The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `environment.h`) — use it, never
+  `__x86_64__` directly.
+- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by `engine/cdreader.h` for CHD
+  images and is NOT in the repo. `AB_ENABLE_CHD=OFF` defines `AB_NO_CHD`, which compiles out `CHDReader`
+  (`.chd` games then scan as "no serial").
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored: SQLite (`libs/sqlite`),
   nlohmann json + `fifo_map` (`libs/nlohmann`), `SDL_FontCache` and `unecm.c` (in `src/code`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - No tests exist.
+
+### Smoke test layout (Windows)
+
+A fake USB root works for 1-arg mode. Minimum tree (cover DBs in `db/` are 5 KB stubs, fine for UI testing):
+```
+usb/Autobleem/bin/autobleem/   <- contents of build_win/ (exe + resources)
+usb/Autobleem/bin/db/          <- db/covers*.db
+usb/Autobleem/rc/              <- payload/Autobleem/rc/*
+usb/System/Databases/internal.db  <- src/resources/internal.db
+usb/System/Logs/               usb/Games/<game dirs>/   usb/themes/ <- payload/themes/*
+```
+Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr are the log. Expected noise on
+Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
+`backup_internal.sh`.
 
 ### Running on PC (debug)
 

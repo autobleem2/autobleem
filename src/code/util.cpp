@@ -2,7 +2,11 @@
 #include "main.h"
 
 #include <fstream>
+#include <array>
+#include <memory>
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 #include <unistd.h>
 #include <iomanip>
 #include <string.h>
@@ -17,7 +21,7 @@ using namespace std;
 //*******************************
 void Util::powerOff()
 {
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
     exit(0);
 #else
     Util::execUnixCommand("shutdown -h now");
@@ -144,7 +148,7 @@ unsigned long Util::readDword(ifstream *stream) {
  * Return the available space of a usb device
  */
 string Util::getAvailableSpace(){
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
     return "x86 - does not care about free space - Does not work on mac";
     #else
     string str;
@@ -239,12 +243,16 @@ void Util::execFork(const char *cmd,  vector<const char *> argvNew)
 
     string link = cmd;
 
+#ifdef _WIN32
+    cout << "execFork is not supported on Windows" << endl;
+#else
     int pid = fork();
     if (!pid) {
         execvp(link.c_str(), (char **) argvNew.data());
     }
 
     waitpid(pid, NULL, 0);
+#endif
 }
 
 //*******************************

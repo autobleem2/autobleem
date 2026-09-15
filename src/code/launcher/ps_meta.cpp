@@ -154,7 +154,7 @@ void PsMeta::render() {
 
         yOffset += 21;
         // last played line
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
         // the devel system has time
         gui->renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
 #else

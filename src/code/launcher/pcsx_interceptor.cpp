@@ -2,7 +2,9 @@
 // Created by screemer on 2/13/19.
 //
 
+#ifndef _WIN32
 #include <sys/wait.h>
+#endif
 #include "pcsx_interceptor.h"
 #include "../util.h"
 #include "../util_time.h"
@@ -138,7 +140,7 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
     }
     cout << endl;
 
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
     int pid = fork();

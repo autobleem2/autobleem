@@ -11,7 +11,9 @@
 #include "../environment.h"
 
 #ifndef __APPLE__
+#ifndef _WIN32
 #include <wait.h>
+#endif
 #endif
 using namespace std;
 
@@ -47,7 +49,7 @@ bool LaunchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     cout << endl;
 
 
-#if defined(__x86_64__) || defined(_M_X64) || defined (PI_DEBUG)
+#ifdef AB_DEBUG_HOST
     Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
 #else
     int pid = fork();
