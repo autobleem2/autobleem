@@ -116,7 +116,9 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 
 - Singletons via `static shared_ptr<T> getInstance()`: `Gui`, `Scanner`, `Lang`, `RAIntegrator`.
   `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are raw pointers owned by `main()`.
-- `sep` is the path separator constant (from `DirEntry.h`); paths are built by string concatenation.
+- `sep` is the path separator (a `Sep` helper in `DirEntry.h` wrapping `separator`, which is `'\\'` under
+  `_WIN32`, `'/'` otherwise); paths are built by string concatenation. Several places still hard-code `"/"` or
+  match `"/Games"` — a MinGW build should probably force `'/'` (Windows APIs accept it) rather than mix both.
 - Ini keys are lower-cased: `cfg.inifile.values["theme"]`, `themeData.values["background"]`.
 - Bool-ish config values are the strings `"true"`/`"false"`; ints are parsed with `atoi`.
 - Menu/emulator/state selections are plain `int`s with `#define`s (`EMU_PCSX`, `SET_PS1`, `STATE_GAMES`) —
