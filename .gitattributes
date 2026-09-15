@@ -1,0 +1,16 @@
+* text=auto
+*.sh text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.txt text eol=lf
+*.rules text eol=lf
+*.png binary
+*.db binary
+*.ttf binary
+*.ogg binary
+*.wav binary
+*.mcd binary
+*.dat binary
+*.DAT binary
+*.rdb binary
+*.gz binary
