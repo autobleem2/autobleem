@@ -402,7 +402,7 @@ void GuiLauncher::loop_chooseGameDir() {
     if (gameRowInfos.size() == 0) {
         return; // no games!
     }
-    auto guiGameDirMenu = new GuiGameDirMenu(renderer);
+    GuiGameDirMenu guiGameDirMenu(renderer);
 
     // add All Games and Internal Games only if origames is true in the config.ini
     int offsetToGamesSubDirs {0};
@@ -413,8 +413,8 @@ void GuiLauncher::loop_chooseGameDir() {
         getGames_SET_SUBDIR(&gamesList, 0);
         int usbOnly = gamesList.size();
         appendGames_SET_INTERNAL(&gamesList);
-        guiGameDirMenu->lines.emplace_back(_("All Games") + " ( " + to_string(gamesList.size()) + ")");
-        guiGameDirMenu->lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) + ")"); // 20 games
+        guiGameDirMenu.lines.emplace_back(_("All Games") + " ( " + to_string(gamesList.size()) + ")");
+        guiGameDirMenu.lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) + ")"); // 20 games
         offsetToGamesSubDirs = 2;
     } else {
         // show internal is disabled.  top game row 0 shows all usb games from /Games down.
@@ -425,28 +425,28 @@ void GuiLauncher::loop_chooseGameDir() {
     bool top = true;
     for (auto &rowInfo : gameRowInfos) {
         if (top) {
-            guiGameDirMenu->lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
+            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
                                                _("USB Games") + // display "USB Games" instead of "Games"
                                                " ( " + to_string(rowInfo.numGames) + ")");
             top = false;
         } else {
-            guiGameDirMenu->lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
+            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
                                                rowInfo.rowName +
                                                " ( " + to_string(rowInfo.numGames) + ")");
         }
     }
 
     // add Favorite Games at the bottom
-    int favoritesIndex = guiGameDirMenu->lines.size();  // favorites is the last line
+    int favoritesIndex = guiGameDirMenu.lines.size();  // favorites is the last line
     PsGames gamesList;
     getGames_SET_FAVORITE(&gamesList);
-    guiGameDirMenu->lines.emplace_back(_("Favorite Games") + " ( " + to_string(gamesList.size()) + ")");
+    guiGameDirMenu.lines.emplace_back(_("Favorite Games") + " ( " + to_string(gamesList.size()) + ")");
 
     // add History Games at the bottom
-    int historyIndex = guiGameDirMenu->lines.size();  // history is the last line
+    int historyIndex = guiGameDirMenu.lines.size();  // history is the last line
     gamesList.clear();
     getGames_SET_HISTORY(&gamesList);
-    guiGameDirMenu->lines.emplace_back(_("Game History") + " ( " + to_string(gamesList.size()) + ")");
+    guiGameDirMenu.lines.emplace_back(_("Game History") + " ( " + to_string(gamesList.size()) + ")");
 
     // set initial selected row
     int nextSel = offsetToGamesSubDirs; // set to game dir as default
@@ -468,30 +468,29 @@ void GuiLauncher::loop_chooseGameDir() {
         }
     }
 
-    guiGameDirMenu->selected = nextSel;
+    guiGameDirMenu.selected = nextSel;
 
     // display the menu and return when user made selection or canceled
-    guiGameDirMenu->show();
-    bool cancelled = guiGameDirMenu->cancelled;
+    guiGameDirMenu.show();
+    bool cancelled = guiGameDirMenu.cancelled;
 
     // set the select state to the user selection
     if (!cancelled) {
-        if (showInternalGames && guiGameDirMenu->selected < offsetToGamesSubDirs)
-            currentPS1_SelectState = guiGameDirMenu->selected;  // SET_PS1_All_Games or SET_PS1_Internal_Only
-        else if (guiGameDirMenu->selected == favoritesIndex)
+        if (showInternalGames && guiGameDirMenu.selected < offsetToGamesSubDirs)
+            currentPS1_SelectState = guiGameDirMenu.selected;  // SET_PS1_All_Games or SET_PS1_Internal_Only
+        else if (guiGameDirMenu.selected == favoritesIndex)
             currentPS1_SelectState = SET_PS1_Favorites;
-        else if (guiGameDirMenu->selected == historyIndex)
+        else if (guiGameDirMenu.selected == historyIndex)
             currentPS1_SelectState = SET_PS1_History;
         else {
             currentPS1_SelectState = SET_PS1_Games_Subdir;
-            currentUSBGameDirIndex = guiGameDirMenu->selected - offsetToGamesSubDirs;
+            currentUSBGameDirIndex = guiGameDirMenu.selected - offsetToGamesSubDirs;
             currentUSBGameDirName = "";
             if (currentUSBGameDirIndex < gameRowInfos.size())
                 currentUSBGameDirName = gameRowInfos[currentUSBGameDirIndex].rowName;
         }
     }
 
-    delete guiGameDirMenu;
 
     if (cancelled)
         return;
@@ -518,26 +517,25 @@ void GuiLauncher::loop_chooseRAPlaylist() {
         return;
     }
     powerOffShift = false;
-    auto playlists = new GuiPlaylists(renderer);
-    playlists->playlists = raPlaylists;
-    playlists->integrator = raIntegrator;
+    GuiPlaylists playlists(renderer);
+    playlists.playlists = raPlaylists;
+    playlists.integrator = raIntegrator;
 
     // set the selected menu line to be the current playlist
     int nextSel = 0;
     int i = 0;
-    for (string plist:playlists->playlists) {
+    for (string plist:playlists.playlists) {
         if (plist == currentRAPlaylistName) {
             nextSel = i;
             break;
         }
         i++;
     }
-    playlists->selected = nextSel;
+    playlists.selected = nextSel;
 
-    playlists->show();
-    bool cancelled = playlists->cancelled;
-    int selected = playlists->selected;
-    delete playlists;
+    playlists.show();
+    bool cancelled = playlists.cancelled;
+    int selected = playlists.selected;
 
     if (cancelled)
         return;
@@ -652,10 +650,9 @@ void GuiLauncher::loop_circleButton_Pressed() {
 void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != STATE_RESUME) {
         Mix_PlayChannel(-1, gui->cursor, 0);
-        GuiBtnGuide *guide = new GuiBtnGuide(renderer);
-        guide->backgroundImg = background->tex;
-        guide->show();
-        delete guide;
+        GuiBtnGuide guide(renderer);
+        guide.backgroundImg = background->tex;
+        guide.show();
     } else {
         if (sselector->operation == OP_LOAD) {
             if (selGameIndexInCarouselGamesIsValid()) {
@@ -664,11 +661,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                 if (game->isResumeSlotActive(slot)) {
                     Mix_PlayChannel(-1, gui->cursor, 0);
 
-                    GuiConfirm *confirm = new GuiConfirm(renderer);
-                    confirm->label = _("Are you sure?");
-                    confirm->show();
+                    GuiConfirm confirm(renderer);
+                    confirm.label = _("Are you sure?");
+                    confirm.show();
 
-                    if (confirm->result) {
+                    if (confirm.result) {
                         game->removeResumePoint(slot);
                     }
                     sselector->cleanSaveStateImages();
@@ -676,7 +673,6 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                     state = STATE_RESUME;
                     sselector->selSlot = 0;
                     sselector->operation = OP_LOAD;
-                    delete (confirm);
                 }
             } else {
                 Mix_PlayChannel(-1, gui->cancel, 0);
@@ -785,11 +781,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             gui->lastRAPlaylistIndex = currentRAPlaylistIndex;
             gui->lastRAPlaylistName = currentRAPlaylistName;
         } else {
-            auto appStartScreen = new GuiAppStart(gui->renderer);
-            appStartScreen->setGame(gui->runningGame);
-            appStartScreen->show();
-            bool result = appStartScreen->result;
-            delete appStartScreen;
+            GuiAppStart appStartScreen(gui->renderer);
+            appStartScreen.setGame(gui->runningGame);
+            appStartScreen.show();
+            bool result = appStartScreen.result;
             // Do not run
             if (!result)
             {
@@ -869,10 +864,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
     int lastUSBGameDirIndex = currentUSBGameDirIndex;
     int lastRAPlaylistIndex = currentRAPlaylistIndex;
     int lastGame = selGameIndex;
-    GuiOptions *option = new GuiOptions(renderer);
-    option->show();
-    bool exitCode = option->exitCode;
-    delete option;
+    GuiOptions option(renderer);
+    option.show();
+    bool exitCode = option.exitCode;
 
     if (exitCode == 0) {
         freeAssets();
@@ -934,45 +928,45 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
     }
 
     Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiEditor *editor = new GuiEditor(renderer);
+    GuiEditor editor(renderer);
     Inifile gameIni;
     if (selGameIndexInCarouselGamesIsValid()) {
-        editor->internal = carouselGames[selGameIndex]->internal;
-        if (!editor->internal) {
-            editor->gameFolder = carouselGames[selGameIndex]->folder;
-            editor->gameData = carouselGames[selGameIndex];
+        editor.internal = carouselGames[selGameIndex]->internal;
+        if (!editor.internal) {
+            editor.gameFolder = carouselGames[selGameIndex]->folder;
+            editor.gameData = carouselGames[selGameIndex];
             gameIni.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
             string folderNoLast = DirEntry::removeSeparatorFromEndOfPath(carouselGames[selGameIndex]->folder);
             // change "/media/Games/Racing/Driver 2" to "Driver 2"
             gameIni.entry = DirEntry::getFileNameFromPath(folderNoLast);
-            editor->gameIni = gameIni;
+            editor.gameIni = gameIni;
         } else {
-            editor->gameData = carouselGames[selGameIndex];
+            editor.gameData = carouselGames[selGameIndex];
         }
     }
 
-    editor->show();
+    editor.show();
 
     if (selGameIndexInCarouselGamesIsValid()) {
-        if (!editor->internal) {
-            if (editor->changes) {
+        if (!editor.internal) {
+            if (editor.changes) {
                 gameIni.reload(carouselGames[selGameIndex]->folder + sep + GAME_INI);
                 gui->db->updateTitle(carouselGames[selGameIndex]->gameId, gameIni.values["title"]);
             }
             gui->db->refreshGame(carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
-                editor->gameIni.values["favorite"] == "0") {
+                editor.gameIni.values["favorite"] == "0") {
                 gui->lastSet = SET_PS1;
                 gui->lastPS1_SelectState = SET_PS1_Favorites;
                 loadAssets();   // reload - one less favorite game in display
             }
         } else {
-            if (editor->changes) {
-                gui->internalDB->updateTitle(carouselGames[selGameIndex]->gameId, editor->lastName);
+            if (editor.changes) {
+                gui->internalDB->updateTitle(carouselGames[selGameIndex]->gameId, editor.lastName);
             }
             gui->internalDB->refreshGameInternal(carouselGames[selGameIndex]);
             if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_Favorites &&
-                editor->gameData->favorite == false) {
+                editor.gameData->favorite == false) {
                 gui->lastSet = SET_PS1;
                 gui->lastPS1_SelectState = SET_PS1_Favorites;
                 loadAssets();   // reload - one less favorite game in display
@@ -1038,14 +1032,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
     }
 
     Mix_PlayChannel(-1, gui->cursor, 0);
-    auto mcManager = new GuiMcManager(renderer);
-    mcManager->backgroundImg=background->tex;
-    mcManager->leftCardName = leftCardName;
-    mcManager->rightCardName = rightCardName;
-    mcManager->card1path = cardPath1;
-    mcManager->card2path = cardPath2;
-    mcManager->show();
-    delete mcManager;
+    GuiMcManager mcManager(renderer);
+    mcManager.backgroundImg=background->tex;
+    mcManager.leftCardName = leftCardName;
+    mcManager.rightCardName = rightCardName;
+    mcManager.card1path = cardPath1;
+    mcManager.card2path = cardPath2;
+    mcManager.show();
 }
 
 //*******************************

@@ -46,12 +46,11 @@ void GuiMemcards::doCircle_Pressed() {
 //*******************************
 void GuiMemcards::doSquare_Pressed() {
     Mix_PlayChannel(-1, gui->cursor, 0);
-    GuiKeyboard *keyboard = new GuiKeyboard(renderer);
-    keyboard->label = _("Enter new card name");
-    keyboard->show();
-    string result = keyboard->result;
-    bool cancelled = keyboard->cancelled;
-    delete (keyboard);
+    GuiKeyboard keyboard(renderer);
+    keyboard.label = _("Enter new card name");
+    keyboard.show();
+    string result = keyboard.result;
+    bool cancelled = keyboard.cancelled;
 
     if (result.empty()) {
         cancelled = true;
@@ -92,11 +91,10 @@ void GuiMemcards::doSquare_Pressed() {
 void GuiMemcards::doTriangle_Pressed() {
     Mix_PlayChannel(-1, gui->cursor, 0);
     if (getVerticalSize() != 0) {
-        GuiConfirm *guiConfirm = new GuiConfirm(renderer);
-        guiConfirm->label = _("Delete card") + " '" + lines[selected] + "' ?";
-        guiConfirm->show();
-        bool result = guiConfirm->result;
-        delete (guiConfirm);
+        GuiConfirm guiConfirm(renderer);
+        guiConfirm.label = _("Delete card") + " '" + lines[selected] + "' ?";
+        guiConfirm.show();
+        bool result = guiConfirm.result;
 
         if (result) {
             Memcard memcardOps(gui->pathToGamesDir);
@@ -116,13 +114,12 @@ void GuiMemcards::doCross_Pressed() {
         return;
     }
 
-    GuiKeyboard *keyboard = new GuiKeyboard(renderer);
-    keyboard->label = _("Enter new name for card") + " '" + lines[selected] + "'";
-    keyboard->result = lines[selected];
-    keyboard->show();
-    string result = keyboard->result;
-    bool cancelled = keyboard->cancelled;
-    delete (keyboard);
+    GuiKeyboard keyboard(renderer);
+    keyboard.label = _("Enter new name for card") + " '" + lines[selected] + "'";
+    keyboard.result = lines[selected];
+    keyboard.show();
+    string result = keyboard.result;
+    bool cancelled = keyboard.cancelled;
 
     if (result.empty()) {
         cancelled = true;

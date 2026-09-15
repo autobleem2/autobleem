@@ -424,9 +424,8 @@ void Gui::display(bool forceScan, const string &_pathToGamesDir, Database *db, b
     loadAssets();
 
     if (!resume) {
-        auto *splashScreen = new GuiSplash(renderer);
-        splashScreen->show();
-        delete splashScreen;
+        GuiSplash splashScreen(renderer);
+        splashScreen.show();
         hideMouseCursor();
     } else {
         resumingGui = true;
@@ -515,9 +514,10 @@ void Gui::menuSelection() {
         }
 
         if (resumingGui) {
-            auto launcherScreen = new GuiLauncher(renderer);
-            launcherScreen->show();
-            delete launcherScreen;
+            {   // scoped: the screen must be gone before menuSelection() recurses
+                GuiLauncher launcherScreen(renderer);
+                launcherScreen.show();
+            }
             drawText("");
             resumingGui = false;
             menuSelection();
@@ -589,9 +589,10 @@ void Gui::menuSelection() {
                                     Mix_PlayChannel(-1, cursor, 0);
                                     drawText(_("Starting EvolutionUI"));
                                     loadAssets(false);
-                                    auto launcherScreen = new GuiLauncher(renderer);
-                                    launcherScreen->show();
-                                    delete launcherScreen;
+                                    {   // scoped: the screen must be gone before menuSelection() recurses
+                                        GuiLauncher launcherScreen(renderer);
+                                        launcherScreen.show();
+                                    }
 
                                     menuSelection();
                                     menuVisible = false;
@@ -603,11 +604,13 @@ void Gui::menuSelection() {
                                 Mix_PlayChannel(-1, cursor, 0);
                                 if (!DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) {
 
-                                    auto confirm = new GuiConfirm(renderer);
-                                    confirm->label = _("RetroArch is not installed");
-                                    confirm->show();
-                                    bool result = confirm->result;
-                                    delete confirm;
+                                    bool result;
+                                    {   // scoped: the screen must be gone before menuSelection() recurses
+                                        GuiConfirm confirm(renderer);
+                                        confirm.label = _("RetroArch is not installed");
+                                        confirm.show();
+                                        result = confirm.result;
+                                    }
                                     if (result) {
                                         this->menuOption = MENU_OPTION_RETRO;
                                         menuVisible = false;
@@ -630,18 +633,20 @@ void Gui::menuSelection() {
                         };
                         if (e.cbutton.button == SDL_BTN_TRIANGLE) {
                             Mix_PlayChannel(-1, cursor, 0);
-                            auto *aboutScreen = new GuiAbout(renderer);
-                            aboutScreen->show();
-                            delete aboutScreen;
+                            {   // scoped: the screen must be gone before menuSelection() recurses
+                                GuiAbout aboutScreen(renderer);
+                                aboutScreen.show();
+                            }
 
                             menuSelection();
                             menuVisible = false;
                         };
                         if (e.cbutton.button == SDL_BTN_SELECT) {
                             Mix_PlayChannel(-1, cursor, 0);
-                            auto options = new GuiOptions(renderer);
-                            options->show();
-                            delete options;
+                            {   // scoped: the screen must be gone before menuSelection() recurses
+                                GuiOptions options(renderer);
+                                options.show();
+                            }
                             menuSelection();
                             menuVisible = false;
                         };
@@ -676,9 +681,10 @@ void Gui::menuSelection() {
 
                         if (e.cbutton.button == SDL_BTN_CROSS) {
                             Mix_PlayChannel(-1, cursor, 0);
-                            auto memcardsScreen = new GuiMemcards(renderer);
-                            memcardsScreen->show();
-                            delete memcardsScreen;
+                            {   // scoped: the screen must be gone before menuSelection() recurses
+                                GuiMemcards memcardsScreen(renderer);
+                                memcardsScreen.show();
+                            }
 
                             menuSelection();
                             menuVisible = false;
@@ -686,9 +692,10 @@ void Gui::menuSelection() {
 
                         if (e.cbutton.button == SDL_BTN_CIRCLE) {
                             Mix_PlayChannel(-1, cursor, 0);
-                            auto managerScreen = new GuiManager(renderer);
-                            managerScreen->show();
-                            delete managerScreen;
+                            {   // scoped: the screen must be gone before menuSelection() recurses
+                                GuiManager managerScreen(renderer);
+                                managerScreen.show();
+                            }
 
                             menuSelection();
                             menuVisible = false;

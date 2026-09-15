@@ -522,13 +522,12 @@ void GuiEditor::loop() {
                         if (gameIni.values["memcard"] == "SONY") {
                             if (e.cbutton.button == SDL_BTN_START) {
                                 Mix_PlayChannel(-1, gui->cursor, 0);
-                                GuiKeyboard *keyboard = new GuiKeyboard(renderer);
-                                keyboard->label = _("Enter new name for memory card");
-                                keyboard->result = gameIni.values["title"];
-                                keyboard->show();
-                                string result = keyboard->result;
-                                bool cancelled = keyboard->cancelled;
-                                delete (keyboard);
+                                GuiKeyboard keyboard(renderer);
+                                keyboard.label = _("Enter new name for memory card");
+                                keyboard.result = gameIni.values["title"];
+                                keyboard.show();
+                                string result = keyboard.result;
+                                bool cancelled = keyboard.cancelled;
 
                                 if (result.empty()) {
                                     cancelled = true;
@@ -551,20 +550,19 @@ void GuiEditor::loop() {
                     if (e.cbutton.button == SDL_BTN_SQUARE) {
                         if (!internal) {
                             Mix_PlayChannel(-1, gui->cursor, 0);
-                            GuiSelectMemcard *selector = new GuiSelectMemcard(renderer);
-                            selector->cardSelected = gameIni.values["memcard"];
-                            selector->show();
+                            GuiSelectMemcard selector(renderer);
+                            selector.cardSelected = gameIni.values["memcard"];
+                            selector.show();
 
-                            if (selector->selected != -1) {
-                                if (selector->selected == 0) {
+                            if (selector.selected != -1) {
+                                if (selector.selected == 0) {
                                     gameIni.values["memcard"] = "SONY";
                                     gameIni.save(gameIni.path);
                                 } else {
-                                    gameIni.values["memcard"] = selector->cards[selector->selected];
+                                    gameIni.values["memcard"] = selector.cards[selector.selected];
                                     gameIni.save(gameIni.path);
                                 }
                             }
-                            delete (selector);
                         } else {
                             Mix_PlayChannel(-1, gui->cancel, 0);
                         }
@@ -579,13 +577,12 @@ void GuiEditor::loop() {
 
                     if (e.cbutton.button == SDL_BTN_TRIANGLE) {
                         Mix_PlayChannel(-1, gui->cursor, 0);
-                        GuiKeyboard *keyboard = new GuiKeyboard(renderer);
-                        keyboard->label = _("Enter new game name");
-                        keyboard->result = gameIni.values["title"];
-                        keyboard->show();
-                        string result = keyboard->result;
-                        bool cancelled = keyboard->cancelled;
-                        delete (keyboard);
+                        GuiKeyboard keyboard(renderer);
+                        keyboard.label = _("Enter new game name");
+                        keyboard.result = gameIni.values["title"];
+                        keyboard.show();
+                        string result = keyboard.result;
+                        bool cancelled = keyboard.cancelled;
 
                         if (result.empty()) {
                             cancelled = true;

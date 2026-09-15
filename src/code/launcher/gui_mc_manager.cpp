@@ -91,15 +91,14 @@ void GuiMcManager::trySave()
 {
     if (changes)
     {
-        auto confirm = new GuiConfirm(renderer);
-        confirm->label = _("Do you want to save memcards data ?");
-        confirm->show();
-        if (confirm->result) {
+        GuiConfirm confirm(renderer);
+        confirm.label = _("Do you want to save memcards data ?");
+        confirm.show();
+        if (confirm.result) {
             memcard1->save_file(card1path);
             memcard2->save_file(card2path);
             changes = false;
         }
-        delete (confirm);
         changes = false;
     }
 }
@@ -288,30 +287,29 @@ void GuiMcManager::loop() {
                     if (e.cbutton.button == SDL_BTN_START) {
                         Mix_PlayChannel(-1, gui->cursor, 0);
                         trySave();
-                        auto select = new GuiSelectMemcard(renderer);
-                        select->listType=MC_MANAGER;
-                        select->show();
-                        if (select->selected!=-1)
+                        GuiSelectMemcard select(renderer);
+                        select.listType=MC_MANAGER;
+                        select.show();
+                        if (select.selected!=-1)
                         {
-                            if (select->selected==0) {
+                            if (select.selected==0) {
                                 rightCardName = rightCardName_ori;
                                 card2path = cardPath_ori;
                                 memcard2->load_file(card2path);
                             } else
                             {
                                 // this is custom
-                                int cardNumCustom=atoi(select->cardSelected.substr(1,1).c_str());
-                                string memcard = select->cardSelected.substr(4);
+                                int cardNumCustom=atoi(select.cardSelected.substr(1,1).c_str());
+                                string memcard = select.cardSelected.substr(4);
                                 string cardPath =  Env::getPathToMemCardsDir() + sep + memcard  + "/card" + to_string(cardNumCustom) + ".mcd";
 
-                                rightCardName = select->cardSelected;
+                                rightCardName = select.cardSelected;
                                 card2path = cardPath;
                                 cout << "Card:" << cardPath << endl;
                                 memcard2->load_file(card2path);
                             }
                             changes = false;
                         }
-                        delete select;
                     }
                     if (e.cbutton.button == SDL_BTN_TRIANGLE) {
                         CardEdit *card;
