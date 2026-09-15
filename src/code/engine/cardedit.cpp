@@ -22,10 +22,13 @@ CardEdit::CardEdit(SDL_Shared<SDL_Renderer> renderer1) {
     // Initialise the card contents
     memset(memoryCard, 0, sizeof(memoryCard));
 
-    convTable = new uint8_t[25088];
-    ifstream is(Env::getWorkingPath() + sep + "shiftjis.dat");
-    is.read(reinterpret_cast<char *>(convTable), 25088);
-    is.close();
+    convTable.assign(25088, 0);
+    ifstream is(Env::getWorkingPath() + sep + "shiftjis.dat", ios::binary);
+    if (is.is_open()) {
+        is.read(reinterpret_cast<char *>(convTable.data()), convTable.size());
+    } else {
+        cout << "shiftjis.dat not found, japanese memory card titles will not be converted" << endl;
+    }
 
     // Create image buffers for icons
     for (int i = 0; i < 15; i++) {
@@ -50,7 +53,6 @@ CardEdit::CardEdit(SDL_Shared<SDL_Renderer> renderer1) {
 }
 
 CardEdit::~CardEdit() {
-    delete convTable;
 }
 
 vector<int> CardEdit::getGameSlots(int startslot)

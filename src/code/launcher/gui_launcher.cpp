@@ -149,8 +149,8 @@ void GuiLauncher::getGames_SET_APPS(PsGames *gamesList) {
         std::string appIni = appPath + sep + dir.name + sep + "app.ini";
         cout << "AppIni: " << appIni << endl;
         if (DirEntry::exists(appIni)) {
-            Inifile *file = new Inifile();
-            file->load(appIni);
+            Inifile file;
+            file.load(appIni);
             PsGamePtr game{new PsGame};
             game->gameId = 0;
             game->year = 0;
@@ -158,18 +158,17 @@ void GuiLauncher::getGames_SET_APPS(PsGames *gamesList) {
             game->memcard = "";
             game->cds = 0;
 
-            game->title = file->values["title"];
-            game->publisher = file->values["author"];
-            game->readme_path = appPath + sep + dir.name + sep + file->values["readme"];
-            game->startup = file->values["startup"];
-            game->image_path = appPath + sep + dir.name + sep + file->values["image"];
+            game->title = file.values["title"];
+            game->publisher = file.values["author"];
+            game->readme_path = appPath + sep + dir.name + sep + file.values["readme"];
+            game->startup = file.values["startup"];
+            game->image_path = appPath + sep + dir.name + sep + file.values["image"];
             game->base = appPath + sep + dir.name;
-            game->kernel = file->values["kernel"] == "true";
+            game->kernel = file.values["kernel"] == "true";
             game->app = true;
             game->foreign = true;
 
             gamesList->push_back(game);
-            delete file;
         }
     }
 }

@@ -1096,9 +1096,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             }
         } else {
             //Mix_PlayChannel(-1, gui->cursor, 0);
-            PcsxInterceptor *interceptor = new PcsxInterceptor();
-            interceptor->saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
-            delete interceptor;
+            PcsxInterceptor interceptor;
+            interceptor.saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
             carouselGames[selGameIndex]->storeResumePicture(sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;

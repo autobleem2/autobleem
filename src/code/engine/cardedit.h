@@ -94,6 +94,6 @@ private:
 	void update_slot_titles();
 	void update_slot_iconImages();
     string sj2utf8(const string &input);
-    uint8_t * convTable;
+    std::vector<uint8_t> convTable;   // shift-jis conversion table (shiftjis.dat)
 };
 
