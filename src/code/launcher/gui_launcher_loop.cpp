@@ -41,7 +41,7 @@ void GuiLauncher::loop() {
                  _("Edit Memory Card information"), _("Resume game from saved state point")};
 
         time = SDL_GetTicks();
-        for (auto obj:staticElements) {
+        for (auto &obj : staticElements) {
             obj->update(time);
         }
 

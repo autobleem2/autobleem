@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <memory>
 #include "engine/database.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
@@ -29,7 +30,7 @@
 
 using namespace std;
 
-Database * db;
+Database * db;      // non-owning: the Database objects live in runAutobleem()
 
 // these are defined in environment.h and are meant to not be modified once they are initialized here.
 extern bool private_singleArgPassed;
@@ -238,14 +239,14 @@ static int runAutobleem(int argc, char *argv[]) {
     gui->mapper.init();
     lang->load(gui->cfg.inifile.values["language"]);
 
-    Coverdb *coverdb = new Coverdb();
-    gui->coverdb = coverdb;
+    unique_ptr<Coverdb> coverdb(new Coverdb());
+    gui->coverdb = coverdb.get();
 
-    db = new Database();
-    if (!db->connect(Env::getPathToRegionalDBFile())) {
-        delete db;
+    unique_ptr<Database> regionalDB(new Database());
+    if (!regionalDB->connect(Env::getPathToRegionalDBFile())) {
         return EXIT_FAILURE;
     }
+    db = regionalDB.get();
     gui->db = db;
     db->createInitialDatabase();
 
@@ -254,12 +255,11 @@ static int runAutobleem(int argc, char *argv[]) {
     Util::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
 
     // add favorites and history columns to internal.db if the column doesn't exist
-    Database *internalDB = new Database();
+    unique_ptr<Database> internalDB(new Database());
     if (!internalDB->connect(Env::getPathToInternalDBFile())) {
-        delete internalDB;
         return EXIT_FAILURE;
     }
-    gui->internalDB = internalDB;
+    gui->internalDB = internalDB.get();
     gui->internalDB->addFavoriteColumn(); // add the favorites column if it doesn't exist
     gui->internalDB->addHistoryColumn();  // add the history column if it doesn't exist
     gui->internalDB->addLastPlayedColumn();  // add the last played column if it doesn't exist
@@ -332,20 +332,20 @@ static int runAutobleem(int argc, char *argv[]) {
             gui->mapper.flushPads();
 
             gui->saveSelection();
-            EmuInterceptor *interceptor;
+            unique_ptr<EmuInterceptor> interceptor;
             if (gui->runningGame->foreign)
             {
                 if (!gui->runningGame->app)
                 {
-                    interceptor = new RetroArchInterceptor();
+                    interceptor.reset(new RetroArchInterceptor());
                 } else {
-                     interceptor =  new LaunchInterceptor();
+                    interceptor.reset(new LaunchInterceptor());
                 }
             } else {
                 if (gui->emuMode == EMU_PCSX) {
-                    interceptor = new PcsxInterceptor();
+                    interceptor.reset(new PcsxInterceptor());
                 } else {
-                    interceptor = new RetroArchInterceptor();
+                    interceptor.reset(new RetroArchInterceptor());
                 }
             }
 
@@ -353,7 +353,7 @@ static int runAutobleem(int argc, char *argv[]) {
             interceptor->prepareResumePoint(gui->runningGame, gui->resumepoint);
             interceptor->execute(gui->runningGame, gui->resumepoint );
             interceptor->memcardOut(gui->runningGame);
-            delete (interceptor);
+            interceptor.reset();
 
             bool reloadFavHist {false};
             if (gui->runningGame->foreign)
@@ -380,17 +380,17 @@ static int runAutobleem(int argc, char *argv[]) {
             gui->display(false, pathToGamesDir, db, true);
         }
     }
-    db->disconnect();
-    delete db;
-	db = nullptr;
-
-    internalDB->disconnect();
-    delete internalDB;
-	internalDB = nullptr;
+    // close the databases before the gui goes away. the Gui keeps raw pointers to them, so clear those too.
+    regionalDB.reset();
+    db = nullptr;
+    gui->db = nullptr;
+    internalDB.reset();
+    gui->internalDB = nullptr;
 
     Gui::splash(_("Loading ... Please Wait ..."));
     gui->finish();
-    delete coverdb;
+    coverdb.reset();
+    gui->coverdb = nullptr;
 
     return EXIT_SUCCESS;
 }

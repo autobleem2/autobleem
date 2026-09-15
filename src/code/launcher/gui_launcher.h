@@ -124,29 +124,33 @@ public:
 
     int len = 100;
 
-    PsSettingsBack *settingsBack;
-    PsObj *playButton;
-    PsZoomBtn *playText;
-    PsMeta *meta;
+    // the screen elements are owned by staticElements / frontElemets (created in loadAssets, freed in freeAssets).
+    // the named pointers below are non-owning shortcuts into those vectors.
+    PsSettingsBack *settingsBack = nullptr;
+    PsObj *playButton = nullptr;
+    PsZoomBtn *playText = nullptr;
+    PsMeta *meta = nullptr;
 
-    PsObj *background;
-    PsMoveBtn *arrow;
-    PsObj *xButton;
-    PsObj *oButton;
-    PsObj *tButton;
-    PsMenu *menu;
+    PsObj *background = nullptr;
+    PsMoveBtn *arrow = nullptr;
+    PsObj *xButton = nullptr;
+    PsObj *oButton = nullptr;
+    PsObj *tButton = nullptr;
+    std::unique_ptr<PsMenu> menu;
     PsStateSelector * sselector= nullptr;
 
     SDL_Color fgColor { 255, 255, 255, SDL_ALPHA_OPAQUE };
     SDL_Color secColor { 100, 100, 100, SDL_ALPHA_OPAQUE };
 
-    std::vector<PsObj *> staticElements;
-    std::vector<PsObj *> frontElemets;
-    std::vector<PsObj *> menuElements;
-    std::vector<PsObj *> carousel;
+    std::vector<std::unique_ptr<PsObj>> staticElements;
+    std::vector<std::unique_ptr<PsObj>> frontElemets;
 
-    PsCenterLabel * menuHead;
-    PsCenterLabel * menuText;
+    // adds an element to one of the vectors above and returns the non-owning pointer for the shortcut members
+    template <typename T> T *addStaticElement(T *obj) { staticElements.emplace_back(obj); return obj; }
+    template <typename T> T *addFrontElement(T *obj) { frontElemets.emplace_back(obj); return obj; }
+
+    PsCenterLabel * menuHead = nullptr;
+    PsCenterLabel * menuText = nullptr;
 
     std::string gameName;
     std::string publisher;

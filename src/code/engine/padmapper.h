@@ -3,6 +3,8 @@
 //
 #pragma once
 
+#include <memory>
+
 #include <SDL2/SDL_events.h>
 #include <vector>
 #include "../main.h"
@@ -42,7 +44,7 @@ class PadMapper {
 private:
     string currentControllerdb = "";
     vector<string> gamedbpaths;
-    vector<ControllerInfo *> connectedPads;
+    vector<unique_ptr<ControllerInfo>> connectedPads;
     bool status[4];
 public:
 

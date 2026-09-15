@@ -37,13 +37,13 @@ void PadMapper::registerPad(int joy_idx) {
     char *mappingString = SDL_GameControllerMapping(controller);   // may be NULL, must be SDL_free'd
     cout << "New GameController mapping: " << (mappingString ? mappingString : "(none)") << endl;
     SDL_free(mappingString);
-    ControllerInfo *info = new ControllerInfo();
+    unique_ptr<ControllerInfo> info(new ControllerInfo());
     info->pad = controller;
     info->joy = SDL_GameControllerGetJoystick(controller);
     info->guid = guid_str;
     info->name = name;
     info->index = joy_idx;
-    connectedPads.push_back(info);
+    connectedPads.push_back(std::move(info));
     cout << "New GameController GUID: " << guid_str << "  Name:" << name << endl;
     cout << "MAP: " << mappingString << endl;
 }
@@ -114,10 +114,8 @@ void PadMapper::handleHotPlug(SDL_Event *event) {
 }
 
 void PadMapper::flushPads() {
-    for (int i = 0; i < connectedPads.size(); i++) {
-        ControllerInfo *ci = connectedPads[i];
+    for (auto &ci : connectedPads) {
         SDL_GameControllerClose(ci->pad);
-        delete ci;
     }
     connectedPads.clear();
     SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
@@ -126,14 +124,13 @@ void PadMapper::flushPads() {
 
 void PadMapper::removePad(int joy_idx) {
     int indexToRemove = -1;
-    for (int i = 0; i < connectedPads.size(); i++) {
-        ControllerInfo *ci = connectedPads[i];
+    for (size_t i = 0; i < connectedPads.size(); i++) {
+        ControllerInfo *ci = connectedPads[i].get();
         SDL_JoystickID instance_id=SDL_JoystickInstanceID(ci->joy);
         if (joy_idx == instance_id) {
             indexToRemove = i;
             cout << "Pad disconnected: " << ci->index << ":" << ci->name << endl;
             SDL_GameControllerClose(ci->pad);
-            delete ci;
             break;
         }
     }

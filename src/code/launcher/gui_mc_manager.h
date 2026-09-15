@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "../gui/gui_screen.h"
 #include "../engine/cardedit.h"
 #include "../gui/gui_font_wrapper.h"
@@ -44,7 +46,7 @@ private:
     void pencilLeft();
     void pencilRight();
 
-    CardEdit * memcard1, *memcard2;
+    std::unique_ptr<CardEdit> memcard1, memcard2;
     const int mc1XStart = 150;
     const int mc2XStart = 1010;
     const int mcYStart = 150;

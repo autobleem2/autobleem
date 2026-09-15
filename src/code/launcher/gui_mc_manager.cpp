@@ -26,8 +26,8 @@ void GuiMcManager::loadAssets() {
     mcPencil = IMG_LoadTexture(renderer, (gui->getCurrentThemeImagePath() + sep + "MC/Pencil_Carsor.png").c_str());
     fontJIS = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "japanese.ttf", 20, renderer);
 
-    memcard1 = new CardEdit(renderer);
-    memcard2 = new CardEdit(renderer);
+    memcard1.reset(new CardEdit(renderer));
+    memcard2.reset(new CardEdit(renderer));
 
     memcard1->load_file(card1path);
     memcard2->load_file(card2path);
@@ -141,12 +141,12 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
     CardEdit *currentCard;
     if (memcard == 1) {
         start = xStartMC1;
-        currentCard = memcard1;
+        currentCard = memcard1.get();
     }
 
     if (memcard == 2) {
         start = xStartMC2;
-        currentCard = memcard2;
+        currentCard = memcard2.get();
     }
 
 
@@ -170,10 +170,10 @@ void GuiMcManager::renderMetaInfo() {
 
     CardEdit *card;
     if (pencilMemcard == 1) {
-        card = memcard1;
+        card = memcard1.get();
 
     } else {
-        card = memcard2;
+        card = memcard2.get();
     }
 
     string title = card->get_slot_title(pencilColumn + pencilRow * 3);
@@ -243,15 +243,8 @@ void GuiMcManager::loop() {
                     };
                     if (e.cbutton.button == SDL_BTN_SELECT) {
                         Mix_PlayChannel(-1, gui->cursor, 0);
-                        CardEdit *newCard = new CardEdit(renderer);
-                        CardEdit *src;
-                        if (pencilMemcard == 1) {
-                            src = memcard1;
-
-                        } else {
-                            src = memcard2;
-
-                        }
+                        unique_ptr<CardEdit> newCard(new CardEdit(renderer));
+                        CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
                         int last = 0;
                         for (int slot = 0; slot < 15; slot++) {
                             if (!src->is_slot_top(slot))
@@ -264,24 +257,20 @@ void GuiMcManager::loop() {
                             if (destSlots.size() > 0)
                             {
                                 Mix_PlayChannel(-1, gui->cursor, 0);
-                                unsigned char * buffer;
                                 int exportSize = src->getExportSize(slot);
-                                buffer = new unsigned char[exportSize];
-                                src->exportGame(slot,buffer);
-                                newCard->importGame(buffer,exportSize);
-                                delete buffer;
+                                vector<unsigned char> buffer(exportSize);
+                                src->exportGame(slot,buffer.data());
+                                newCard->importGame(buffer.data(),exportSize);
                                 changes = true;
 
                             }
                         }
+                        // the compacted card replaces the old one (which is deleted by the unique_ptr)
                         if (pencilMemcard == 1) {
-                            memcard1 = newCard;
-                            delete(src);
-                        } else
-                        {
-                            memcard2 = newCard;
-                            delete(src);
-                        };
+                            memcard1 = std::move(newCard);
+                        } else {
+                            memcard2 = std::move(newCard);
+                        }
                     }
 
                     if (e.cbutton.button == SDL_BTN_START) {
@@ -314,9 +303,9 @@ void GuiMcManager::loop() {
                     if (e.cbutton.button == SDL_BTN_TRIANGLE) {
                         CardEdit *card;
                         if (pencilMemcard == 1) {
-                            card = memcard1;
+                            card = memcard1.get();
                         } else {
-                            card = memcard2;
+                            card = memcard2.get();
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!card->is_slot_top(slot)) {
@@ -336,11 +325,11 @@ void GuiMcManager::loop() {
                     if (e.cbutton.button == SDL_BTN_SQUARE) {
                         CardEdit *src, *dest;
                         if (pencilMemcard == 1) {
-                            src = memcard1;
-                            dest = memcard2;
+                            src = memcard1.get();
+                            dest = memcard2.get();
                         } else {
-                            src = memcard2;
-                            dest= memcard1;
+                            src = memcard2.get();
+                            dest = memcard1.get();
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!src->is_slot_top(slot)) {
@@ -358,13 +347,10 @@ void GuiMcManager::loop() {
                         if (destSlots.size() > 0)
                         {
                             Mix_PlayChannel(-1, gui->cursor, 0);
-                            unsigned char * buffer;
                             int exportSize = src->getExportSize(slot);
-                            buffer = new unsigned char[exportSize];
-
-                            src->exportGame(slot,buffer);
-                            dest->importGame(buffer,exportSize);
-                            delete buffer;
+                            vector<unsigned char> buffer(exportSize);
+                            src->exportGame(slot,buffer.data());
+                            dest->importGame(buffer.data(),exportSize);
                             changes = true;
                         } else
                         {
