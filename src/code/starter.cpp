@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "util.h"
 #include "main.h"
+#include "environment.h"
 
 using namespace std;
 
@@ -31,21 +32,24 @@ string valueOrDefault(string name, string def, map<string,string> iniValues) {
 //*******************************
 int main (int argc, char *argv[])
 {
+    // starter only ever runs on the console, from the stock UI: the usb layout is fixed
+    Env::setUsbRoot("/media");
+    Env::setGamesDir("/media/Games");
     string path="/data/AppData/sony/title/";
-    string sourceCard="/media/Games/!MemCards/";
+    string sourceCard=Env::getPathToMemCardsDir() + sep;
     IniFile ini;
     ini.load(path+"Game.ini");
     string imageType=valueOrDefault("imagetype","0",ini.values);
     string memcard=valueOrDefault("memcard","SONY",ini.values);
 
     IniFile cfg;
-    cfg.load("/media/Autobleem/bin/autobleem/config.ini");
+    cfg.load(Env::getPathToAutobleemDir() + sep + "bin/autobleem/config.ini");
 
     if (memcard!="SONY")
     {
         if (DirEntry::exists(sourceCard+memcard))
         {
-            MemcardManager card("/media/Games/");
+            MemcardManager card(Env::getPathToGamesDir());
             if (!card.swapIn("./.pcsx",memcard))
             {
                 memcard = "SONY";
@@ -104,7 +108,7 @@ int main (int argc, char *argv[])
 
     if (memcard!="SONY")
     {
-            MemcardManager card("/media/Games/");
+            MemcardManager card(Env::getPathToGamesDir());
             card.swapOut("./.pcsx",memcard);
     }
 

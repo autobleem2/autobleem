@@ -20,12 +20,18 @@ Refactor for stability, then add features. Done on 2026-09-15 (one commit per st
 - lib_ableem: every SDL/SDL_image/SDL_mixer/SDL_ttf/SDL_FontCache call moved out of the app into a new static
   library, `lib_ableem/` (namespace `ableem`). The app links `ableem` and includes no SDL header anywhere;
   `grep -rl "SDL2/" src/code` returns nothing. See the "lib_ableem" section below.
+- lib_ableem/engine: the SDL-free half of the app (filesystem, strings, ini/cfg files, the SQLite game
+  database, cover dbs, disc image inspection, the scanner, RetroArch playlists, vendored sqlite/json/unecm)
+  moved into a second target, `ableem_engine`, under `lib_ableem/include/ableem/engine/`. Every path the
+  engine uses comes from `ableem::Environment` (set once in `main.cpp`); the engine has no idea what a Gui
+  is (scan progress goes through `ScanProgressListener`). Verified byte-identical scan output before/after.
 
 Still to do, in order:
 
 1. `enum class` for the `#define`-int "enums" (`EMU_*`, `SET_*`, `STATE_*`, `SEL_OPTION_*`) - compiler-driven.
-2. Centralize the remaining hard-coded paths (`/media/...`, `/tmp/...`, `/usr/sony/share/data`, `/gaadata`) in
-   `Environment`.
+2. Centralize the hard-coded paths still in the app (`/media/themes` + `/usr/sony/share/data` in `gui.cpp`'s
+   theme loaders, `/media/Autobleem/rc/*.sh` in the interceptors and `main.cpp`, `/media/retroarch/...` in
+   `retboot_interceptor.cpp`, `/media/System/Logs/ver.txt`) in `Env` - the engine side is done.
 3. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
 4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
    hardware yet - only the Windows/MinGW build has been exercised).
@@ -33,16 +39,62 @@ Still to do, in order:
 
 ## lib_ableem
 
-A portable static library (`lib_ableem/`, namespace `ableem`) that owns every SDL/SDL_image/SDL_mixer/SDL_ttf
-call. The app talks to it only through `include/ableem/*.h` - `ableem.h` pulls in the whole API. Never add a
-`#include <SDL2/...>` to anything under `src/code/`; if you need new SDL functionality, add it to the library.
+A portable library (`lib_ableem/`, namespace `ableem`) in two CMake targets, mirrored in `include/ableem/`
+and `lib_ableem/src/`:
+- **`ableem_engine`** (`include/ableem/engine/`, umbrella `<ableem/engine.h>`) - no SDL at all: filesystem,
+  strings, ini/cfg files, the SQLite game database, cover dbs, disc images, the scanner, RetroArch playlists.
+  `starter` links only this. Vendored code lives in `lib_ableem/third_party/` (sqlite, nlohmann json) and
+  `src/engine/unecm.c`, all private to the library - the app includes none of them.
+- **`ableem`** (`include/ableem/ui/`, links `ableem_engine`) - owns every SDL/SDL_image/SDL_mixer/SDL_ttf
+  call: Platform, Renderer, Texture, Font, Audio, Input, GuiBase, GuiScreen, types.h.
+- `include/ableem/ableem.h` - the umbrella over both.
 
-Public headers are split by purpose, mirrored in `lib_ableem/src/`:
-- `include/ableem/ui/` - everything below (Platform, Renderer, Texture, Font, Audio, Input, GuiBase, GuiScreen,
-  types.h) - all of it is SDL/rendering-facing. App code includes these as `<ableem/ui/xxx.h>`.
-- `include/ableem/engine/` - reserved, empty for now. Would hold portable non-rendering logic if pieces of the
-  app's `src/code/engine/` (database, scanner, ...) are ever pulled into the library.
-- `include/ableem/ableem.h` - stays at the root (not under `ui/`) since it's the umbrella over both.
+Never add a `#include <SDL2/...>` to anything under `src/code/`; if you need new SDL functionality, add it to
+the library. Same for sqlite/json: extend `GameDatabase`/`RetroArchPlaylist` instead.
+
+### engine
+
+The app imports the engine names into its global namespace once, in `src/code/main.h` (explicit `using`
+declarations - not `using namespace ableem`, because the app's `GuiScreen` shares its name with
+`ableem::GuiScreen`), so app code writes `DirEntry::exists(...)`, `IniFile`, `GameDatabase` unqualified.
+
+- **`Environment`** (`engine/environment.h`) - every path the engine touches. The library has no
+  `AB_DEBUG_HOST`, `/media`, `/gaadata` or `/usr/sony` literals: `main.cpp`'s `setupEnvironment()` decides
+  the layout for the platform and calls the setters (`setUsbRoot/GamesDir/RegionalDbFile/InternalDbFile/
+  WorkingPath/SonyDataPath/ThemesDir/CoversDbDir/InternalGamesDir`) once; everything else is derived
+  (`getPathToMemCardsDir()` = games + `!MemCards`, `getPathToMemcardTemplateDir()` = working + `memcard`, ...).
+  The app's `Env` (`src/code/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
+  `starter` sets the two roots it needs itself.
+- **`DirEntry`/`sep`** (`engine/filesystem.h`) and the string helpers (`engine/strings.h`: in-place `trim/
+  lcase/...` free functions, copying `Strings::trim/replaceAll/toInt/...`) are the old `DirEntry.h`, `main.h`
+  and `Util` string parts, unchanged in API. `Util` (`src/code/util.h`) derives from `ableem::Strings` and keeps
+  only the process helpers (`runAndWait`, `execUnixCommand`, `powerOff`, ...).
+- **`game_types.h`** - `ImageType`, `GAME_INI`/`EXT_*`, `SAVESTATES_DIR_NAME`/`MEMCARDS_DIR_NAME`.
+- **`IniFile`** (`load/reload/mergeFrom/save`), **`ConfigFileEditor`** (pcsx.cfg / RetroArch cfg line editing:
+  `getValue/replaceUsb/replaceInternal/replace/replaceInFile`), **`MemcardManager`** (`create/remove/rename/
+  list/swapIn/swapOut/backup/restore/restoreAll/storeToRepo` over `<games>/!MemCards`).
+- **`GameDatabase`** (`engine/game_database.h`) - the SQLite wrapper for regional.db, internal.db and the
+  covers dbs, file-local RAII `Stmt` class inside; add queries the same way. Rows come back as
+  `GameRecord`s (`engine/game_record.h`); the app's `PsGame : ableem::GameRecord` adds the launcher-only fields
+  and `PsGame::fromRecords()` wraps `loadUsbGames()`/`loadInternalGames()` results. `reloadUsbGame(*game)`
+  refreshes one. Schema notes in `lib_ableem/src/engine/database_tables.txt`.
+- **`CoverDatabase(coversDir)`** - the three regional covers dbs; `findBySerial/findByTitle(.., GameMetadata&)`
+  (was `Metadata::lookupBy*` reaching into `gui->coverdb`). `Gui::coverdb` still points at the one instance
+  owned by `runAutobleem()`.
+- **`UsbGame`/`GamesHierarchy`/`GameScanner`** - the scan. `GameScanner::scanGamesDirectory(hierarchy,
+  coverDb)` then `writeRegionalDatabase(hierarchy, db)`; progress is reported to a `ScanProgressListener`
+  (`ScanStage::Scanning/Game/DecompressingEcm/UpdatingDatabase/GameFailedVerify`). The app's `Scanner`
+  singleton (`src/code/engine/scanner.*`) derives from `GameScanner`, implements the listener with
+  `Gui::splash(_(...))` (and the 3 s pause after a failed verify) and keeps the `forceScan` flag.
+  `UsbGame::verify()` reasons are plain English (only written to `gamesThatFailedVerifyCheck.txt`).
+- **`SerialScanner`** (`readSerial/readSerialFromImage/readSerialByWorkaround/serialFromMd5/normalizeSerial/
+  serialToRegion`), **`IsoDirectoryReader::read`**, **`EcmDecoder::decode`** (+ `setProgressHandler`, which
+  is how unecm.c's percentage messages reach the splash). Private: `cd_image_reader.h` (`CdImageReader`,
+  `ChdImageReader` behind `ABLEEM_ENABLE_CHD`), `binary_reader.h`, `md5.*` (replaces `head|md5sum`).
+- **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`.
+  `Gui::exportDBToRetroarch` and `RAIntegrator::parseJSON/parse6line` are the only callers.
+
+### ui
 
 - **`Platform`** - owns SDL_Init/window/TTF_Init/Mix_Init (created by `GuiBase`). `isDevHost()` replaces the
   app's old per-call `AB_DEBUG_HOST` checks for cursor grab; `setPowerOffHandler()` is how the app supplies
@@ -75,14 +127,16 @@ Public headers are split by purpose, mirrored in `lib_ableem/src/`:
   only the SDL-specific calls inside each screen needed converting, not every constructor caller. Screens are
   constructed with a `GuiBase&`, in practice always `*gui` (e.g. `GuiConfirm confirm(*gui);`).
 - **CMake**: `add_subdirectory(lib_ableem)` from the root file; `ABLEEM_EMBEDDED_TARGET` is forced on for the
-  ARM build (no cursor grab, keyboard-as-pad off); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
-  from-scratch smoke test of the library alone - texture + font + sound + input, no AutoBleem code involved.
+  ARM build (no cursor grab, keyboard-as-pad off); `ABLEEM_ENABLE_CHD` follows the root `AB_ENABLE_CHD`
+  (libmamecd is linked by `ableem_engine`); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
+  from-scratch smoke test of the ui library alone - texture + font + sound + input, no AutoBleem code involved.
 
 ## Build
 
-Two targets in `CMakeLists.txt`: `autobleem-gui` (the app) and `starter` (small PCSX wrapper used by the
-stock-UI path). **C++14** (the Sony toolchain is GCC 8+). `sqlite3` is built from `libs/sqlite/sqlite3ab.c`.
-Debug builds compile with `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
+Two targets in `CMakeLists.txt`: `autobleem-gui` (the app, links `ableem`) and `starter` (small PCSX wrapper
+used by the stock-UI path, links `ableem_engine` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
+compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
+`-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
 - **ARM (real target)**: `make_arm.sh` → `PSCtoolchainV8.cmake` (`armv8-sony-linux-gnueabihf-gcc`, `--static -Os -s`).
   Requires the toolchain at `/opt/toolchain/armv8-sony-linux-gnueabihf`. Not available on this Windows host yet.
@@ -94,11 +148,12 @@ Debug builds compile with `-Wall -Wextra` (a few noisy categories off) - keep th
   skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `Util::execFork` stubbed.
   The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `environment.h`) — use it, never
   `__x86_64__` directly.
-- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by `engine/cdreader.h` for CHD
-  images and is NOT in the repo. `AB_ENABLE_CHD=OFF` defines `AB_NO_CHD`, which compiles out `CHDReader`
-  (`.chd` games then scan as "no serial").
-- External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored: SQLite (`libs/sqlite`),
-  nlohmann json + `fifo_map` (`libs/nlohmann`), `unecm.c` (in `src/code`). SDL_FontCache now lives in lib_ableem.
+- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by
+  `lib_ableem/src/engine/cd_image_reader.h` for CHD images and is NOT in the repo. `AB_ENABLE_CHD=OFF`
+  (which also sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles out `ChdImageReader` (`.chd` games
+  then scan as "no serial").
+- External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored, all inside lib_ableem:
+  SQLite and nlohmann json + `fifo_map` (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - No tests exist.
 
@@ -116,7 +171,7 @@ Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr 
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
 `backup_internal.sh`.
 
-**Keyboard = gamepad on debug hosts** (`PadMapper::translateKeyboardToPad`, `AB_DEBUG_HOST` only):
+**Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
 `X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
 `Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
 to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
@@ -156,20 +211,14 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 
 | Area | Files | Notes |
 |---|---|---|
-| Entry | `main.cpp` | Parses argv → `Environment`; opens both DBs; adds columns to internal.db; restores memcards; decides `forceScan`; outer loop `menuSelection()` → `MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. |
-| `main.h` | | Shared enums/constants (`ImageType`, file extension consts) and inline in-place string helpers (`trim`, `lcase`...). |
-| `environment.*` | `Env` | All path getters. `private_*` globals are set once in `main()`. Extend this instead of adding new literal paths. |
-| `DirEntry.*` | | Filesystem helpers (dir listing, copy/rename/remove, cue parsing, name fixing). Only place using `dirent`. `checkWritable(ofstream, path)` - call it after opening any output file. |
-| `util.*`, `util_time.*` | | String/stream helpers, `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `toInt(str, def)` (never throws), `powerOff`. |
+| Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout); opens both DBs; adds columns to internal.db; restores memcards; decides `forceScan`; outer loop `menuSelection()` → `MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. |
+| `main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
+| `environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
+| `util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |
 | `lang.*` | `_()` | gettext-style lookup from `resources/lang/<Language>.txt`. Emoji markers like `\|@X\|` in strings are replaced by button textures by `Gui::renderText`. |
-| `engine/scanner.*` | `Scanner` singleton | Walks `/Games`, repairs cue files (comma names, missing cue), runs `unecm`, verifies discs, fills `gamesToAddToDB`, writes `regional.db` + `autobleem.list`. |
-| `engine/GetGameDirHierarchy.*` | `GamesHierarchy` | Sub-directory tree of `/Games` → `SUBDIR_ROWS` tables; `autobleem.prev` file detects changes to force rescan. |
-| `engine/game.*` | `USBGame`/`Disc` | A game on USB as discovered by the scanner; reads/writes `Game.ini`; `verify()`. |
-| `engine/serialscanner.*`, `cdreader.h`, `isodir.*` | | Extract PS1 serial (SLUS-xxxxx) from BIN/PBP/CHD by reading the ISO9660 dir; CHD via libmamecd. |
-| `engine/metadata.*`, `coverdb.*` | | Look up title/publisher/year/cover PNG blob in the 3 regional `covers*.db` (U/E/J). |
-| `engine/database.*` | `Database` | Thin SQLite wrapper. Every query uses the file-local RAII `Stmt` class (`ok()/bind()/row()/colInt()/colText()/colBlob()`); add new queries the same way. Schema notes in `engine/database_tables.txt`. Same class serves `regional.db`, `internal.db` and cover DBs; the destructor disconnects. |
-| `engine/memcard.*`, `cardedit.*` | | Memory-card swap in/out (`!MemCards`) and .mcd block editor. |
-| `engine/cfgprocessor.*`, `inifile.*`, `config.*` | | pcsx.cfg / RetroArch cfg rewriting; generic ini map; `config.ini` (keys are lower-cased on load, e.g. `values["theme"]`). |
+| `engine/scanner.*` | `Scanner` singleton | `ableem::GameScanner` + its `ScanProgressListener`: maps scan stages to `Gui::splash(_(...))`, keeps `forceScan`. The scanning, hierarchy, serial/metadata lookup, database and memcard logic all live in lib_ableem's engine now (see the lib_ableem section). |
+| `engine/cardedit.*` | `CardEdit` | .mcd block editor / icon renderer (stays in the app: it draws with `ableem::Texture`). |
+| `engine/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). |
 | `gui/gui.*` | `Gui` singleton | Owns SDL window/renderer, fonts, theme (`theme.ini` merged over `themes/default`), music/sfx, both DB pointers, carousel restore state (`lastSet`, `lastSelIndex`...). `menuSelection()` is the classic-UI main menu event loop. `display()` (re)inits and shows splash or resumes the launcher. |
 | `gui/gui_screen.*` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
@@ -177,13 +226,12 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 | `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: cover carousel, sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. |
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
-| `launcher/ps_game.*` | `PsGame` | Game as seen by the UI (from DB or playlist). `PsGamePtr = shared_ptr<PsGame>`. Handles resume-point pictures/slots. |
+| `launcher/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields and the resume-point pictures/slots. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
 | `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
 | `ver_migration.*` | | One-off migrations between AutoBleem versions (`/media/System/Logs/ver.txt`). |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
-| `unecm.c` | | ECM decoder. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb`, `autobleem`, `default`,
 `evolution`), bundled Apps, release notes. `db/` is git-ignored (cover DBs live there).
@@ -197,9 +245,9 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 - Ownership rule: no raw owning pointers. Short-lived helpers and screens are stack objects; anything that
   must outlive a scope goes in a `unique_ptr`. Exceptions are never thrown on purpose; `main()` has a
   last-resort `catch` that logs to `AB_err.txt`.
-- `sep` is the path separator (a `Sep` helper in `DirEntry.h` wrapping `separator`, which is `'\\'` under
-  `_WIN32`, `'/'` otherwise); paths are built by string concatenation. Several places still hard-code `"/"` or
-  match `"/Games"` — a MinGW build should probably force `'/'` (Windows APIs accept it) rather than mix both.
+- `sep` is the path separator (a `Sep` helper in `<ableem/engine/filesystem.h>` wrapping `separator`, which is
+  `'/'` on every platform - Windows accepts it, and the code base compares paths as strings); paths are built by
+  string concatenation. `path + sep` only appends when the separator is not already there.
 - Ini keys are lower-cased: `cfg.inifile.values["theme"]`, `themeData.values["background"]`.
 - Bool-ish config values are the strings `"true"`/`"false"`; ints are parsed with `atoi`.
 - Menu/emulator/state selections are plain `int`s with `#define`s (`EMU_PCSX`, `SET_PS1`, `STATE_GAMES`) —
@@ -217,7 +265,8 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 - Scripts that edit sources from Python must pass `encoding='utf-8'` (CLAUDE.md got mangled once).
 - Shell scripts and cfg/ini files must stay **LF** (enforced by `.gitattributes`). Do not let the Windows
   editor convert them.
-- Keep the two `trim` families in mind: in-place `trim()` from `main.h` vs copying `Util::trim()`.
+- Keep the two `trim` families in mind: in-place `trim()` (`ableem::trim`, via `main.h`) vs copying `Util::trim()`
+  (`ableem::Strings::trim`).
 - Match existing style: 4-space indent, `//***` banner comments above functions, `using namespace std;` in .cpp.
 
 ## Git
