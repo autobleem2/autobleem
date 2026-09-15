@@ -47,14 +47,13 @@ int main (int argc, char *argv[])
     {
         if (DirEntry::exists(sourceCard+memcard))
         {
-            Memcard * card = new Memcard("/media/Games/");
-            if (!card->swapIn("./.pcsx",memcard))
+            Memcard card("/media/Games/");
+            if (!card.swapIn("./.pcsx",memcard))
             {
                 memcard = "SONY";
                 ini.values["memcard"]="SONY";
                 ini.save(path+"Game.ini");
             };
-            delete card;
         }
     }
 
@@ -107,9 +106,8 @@ int main (int argc, char *argv[])
 
     if (memcard!="SONY")
     {
-            Memcard * card = new Memcard("/media/Games/");
-            card->swapOut("./.pcsx",memcard);
-            delete card;
+            Memcard card("/media/Games/");
+            card.swapOut("./.pcsx",memcard);
     }
 
     return 0;

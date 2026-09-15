@@ -19,11 +19,11 @@ using namespace std;
 void PcsxInterceptor::cleanupConfig(PsGamePtr &game)
 {
     // copy back config to its place
-    auto processor = new CfgProcessor();
+    CfgProcessor processor;
     string newConfig = game->ssFolder + sep + "autobleem.cfg";
     if (DirEntry::exists(newConfig)) {
         // fix bios
-        processor->replaceRaConf(newConfig,"Bios","Bios = SET_BY_PCSX");
+        processor.replaceRaConf(newConfig,"Bios","Bios = SET_BY_PCSX");
 
 
 
@@ -35,7 +35,6 @@ void PcsxInterceptor::cleanupConfig(PsGamePtr &game)
         }
         DirEntry::removeFile(newConfig);
     }
-    delete processor;
 }
 //*******************************
 // PcsxInterceptor::execute
@@ -136,11 +135,10 @@ void PcsxInterceptor::memcardIn(PsGamePtr & game) {
     }
     if (memcard != "SONY") {
         if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
-            Memcard *card = new Memcard(Env::getPathToGamesDir() + sep);
-            if (!card->swapIn(game->ssFolder, game->memcard)) {
+            Memcard card(Env::getPathToGamesDir() + sep);
+            if (!card.swapIn(game->ssFolder, game->memcard)) {
                 game->setMemCard("SONY");
             };
-            delete card;
         }
     }
 }
@@ -156,9 +154,8 @@ void PcsxInterceptor::memcardOut(PsGamePtr & game) {
         memcard = gameini.values["memcard"];
     }
     if (memcard != "SONY") {
-        Memcard *card = new Memcard(Env::getPathToGamesDir() + sep);
-        card->swapOut(game->ssFolder, game->memcard);
-        delete card;
+        Memcard card(Env::getPathToGamesDir() + sep);
+        card.swapOut(game->ssFolder, game->memcard);
     }
 }
 

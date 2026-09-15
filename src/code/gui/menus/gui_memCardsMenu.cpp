@@ -16,9 +16,8 @@ using namespace std;
 void GuiMemcards::init() {
     GuiMenuBase::init();    // call the base init
 
-    Memcard *memcardOps = new Memcard(gui->pathToGamesDir);
-    lines = memcardOps->list();
-    delete memcardOps;
+    Memcard memcardOps(gui->pathToGamesDir);
+    lines = memcardOps.list();
 }
 
 //*******************************
@@ -64,9 +63,9 @@ void GuiMemcards::doSquare_Pressed() {
     }
 
     if (!cancelled) {
-        Memcard *memcardOps = new Memcard(gui->pathToGamesDir);
-        memcardOps->newCard(result);
-        lines = memcardOps->list();
+        Memcard memcardOps(gui->pathToGamesDir);
+        memcardOps.newCard(result);
+        lines = memcardOps.list();
         int i = 0;
         for (const string & card : lines) {
             if (card == result) {
@@ -83,7 +82,6 @@ void GuiMemcards::doSquare_Pressed() {
             }
             i++;
         }
-        delete memcardOps;
     }
     render();
 }
@@ -101,10 +99,9 @@ void GuiMemcards::doTriangle_Pressed() {
         delete (guiConfirm);
 
         if (result) {
-            Memcard *memcardOps = new Memcard(gui->pathToGamesDir);
-            memcardOps->deleteCard(lines[selected]);
-            lines = memcardOps->list();
-            delete memcardOps;
+            Memcard memcardOps(gui->pathToGamesDir);
+            memcardOps.deleteCard(lines[selected]);
+            lines = memcardOps.list();
         }
         render();
     }
@@ -144,9 +141,8 @@ void GuiMemcards::doCross_Pressed() {
     }
 
     if (!cancelled) {
-        Memcard *memcardOps = new Memcard(gui->pathToGamesDir);
-        memcardOps->rename(lines[selected], result);
-        delete memcardOps;
+        Memcard memcardOps(gui->pathToGamesDir);
+        memcardOps.rename(lines[selected], result);
         init();
         int pos = 0;
         for (const string & card:lines) {

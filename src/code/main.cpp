@@ -268,9 +268,8 @@ static int runAutobleem(int argc, char *argv[]) {
     string dbpath = Env::getPathToRegionalDBFile();
     string pathToGamesDir = Env::getPathToGamesDir();
 
-    Memcard *memcardOperation = new Memcard(pathToGamesDir);
-    memcardOperation->restoreAll(Env::getPathToSaveStatesDir());
-    delete memcardOperation;
+    Memcard memcardOperation(pathToGamesDir);
+    memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
 
     string prevPath = Env::getWorkingPath() + sep + "autobleem.prev";
     bool prevFileExists = DirEntry::exists(prevPath);

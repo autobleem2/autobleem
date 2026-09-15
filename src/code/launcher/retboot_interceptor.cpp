@@ -58,18 +58,17 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     // figure out which plugin is selected
     string gpu;
     if (!game->foreign) {
-        CfgProcessor *processor = new CfgProcessor();
+        CfgProcessor processor;
         string path = game->folder;
         if (game->internal) {
             path = game->ssFolder;
         }
 
-        gpu = processor->getValue(path, "gpu3");
+        gpu = processor.getValue(path, "gpu3");
         gpu = Util::trim(gpu);
         if (gpu.empty()) {
             gpu = PCSX_NEON;
         }
-        delete (processor);
     } else {
         gpu = "NONE";
     }
@@ -119,11 +118,10 @@ void RetroArchInterceptor::memcardIn(PsGamePtr &game) {
         }
         if (memcard != "SONY") {
             if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
-                Memcard *card = new Memcard(Env::getPathToGamesDir() + sep);
-                if (!card->swapIn(game->ssFolder, game->memcard)) {
+                Memcard card(Env::getPathToGamesDir() + sep);
+                if (!card.swapIn(game->ssFolder, game->memcard)) {
                     game->setMemCard("SONY");
                 };
-                delete card;
             }
         }
 
@@ -161,9 +159,8 @@ void RetroArchInterceptor::memcardOut(PsGamePtr &game) {
             memcard = gameini.values["memcard"];
         }
         if (memcard != "SONY") {
-            Memcard *card = new Memcard(Env::getPathToGamesDir() + sep);
-            card->swapOut(game->ssFolder, game->memcard);
-            delete card;
+            Memcard card(Env::getPathToGamesDir() + sep);
+            card.swapOut(game->ssFolder, game->memcard);
         }
         string base;
         if (DirEntry::isPBPFile(game->base)) {
@@ -213,126 +210,124 @@ void RetroArchInterceptor::transferConfig(PsGamePtr &game) {
         if (game->internal) {
             path = game->ssFolder;
         }
-        CfgProcessor *processor = new CfgProcessor();
+        CfgProcessor processor;
 
-        int highres = atoi(processor->getValue(path, "gpu_neon.enhancement_enable").c_str());
-        int speedhack = atoi(processor->getValue(path, "gpu_neon.enhancement_no_main").c_str());
-        int clock = strtol(processor->getValue(path, "psx_clock").c_str(), NULL, 16);
-        int dither = atoi(processor->getValue(path, "gpu_peops.iUseDither").c_str());
+        int highres = atoi(processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
+        int speedhack = atoi(processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
+        int clock = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
+        int dither = atoi(processor.getValue(path, "gpu_peops.iUseDither").c_str());
         int interpolation = strtol(
-                processor->getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
+                processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
 
-        int scanlines = atoi(processor->getValue(path, "scanlines").c_str());
-        int scanline_level = strtol(processor->getValue(path, "scanline_level").c_str(), NULL, 16);
-        int frameskip = atoi(processor->getValue(path, "frameskip3").c_str());
+        int scanlines = atoi(processor.getValue(path, "scanlines").c_str());
+        int scanline_level = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
+        int frameskip = atoi(processor.getValue(path, "frameskip3").c_str());
 
 
         //RA_CORE_CONFIG
         if (highres != 0)
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_enable",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_enable",
                                      "pcsx_rearmed_neon_enhancement_enable = \"enabled\" ");
         else
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_enable",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_enable",
                                      "pcsx_rearmed_neon_enhancement_enable = \"disabled\" ");
 
         if (dither != 0)
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_dithering",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_dithering",
                                      "pcsx_rearmed_dithering = \"enabled\" ");
         else
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_dithering",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_dithering",
                                      "pcsx_rearmed_dithering = \"disabled\" ");
 
         if (speedhack != 0)
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_no_main",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_no_main",
                                      "pcsx_rearmed_neon_enhancement_no_main = \"enabled\" ");
         else
 
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_no_main",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_neon_enhancement_no_main",
                                      "pcsx_rearmed_neon_enhancement_no_main = \"disabled\" ");
 
-        processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_psxclock",
+        processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_psxclock",
                                  "pcsx_rearmed_psxclock = \"" + to_string(clock) + "\" ");
-        processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_show_bios_bootlogo",
+        processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_show_bios_bootlogo",
                                  "pcsx_rearmed_show_bios_bootlogo  = \"enabled\" ");
-        processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_nocdaudio",
+        processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_nocdaudio",
                                  "pcsx_rearmed_nocdaudio  = \"enabled\" ");
 
         if (interpolation == 0) {
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
                                      "pcsx_rearmed_spu_interpolation = \"off\" ");
         }
         if (interpolation == 1) {
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
                                      "pcsx_rearmed_spu_interpolation = \"simple\" ");
         }
         if (interpolation == 2) {
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
                                      "pcsx_rearmed_spu_interpolation = \"gaussian\" ");
         }
         if (interpolation == 3) {
-            processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
+            processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_spu_interpolation",
                                      "pcsx_rearmed_spu_interpolation = \"cubic\" ");
         }
 
-        processor->replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_frameskip",
+        processor.replaceRaConf(RA_CORE_CONFIG, "pcsx_rearmed_frameskip",
                                  "pcsx_rearmed_frameskip  = \"" + to_string(frameskip) + "\" ");
         if (scanlines == 1) {
 
             float opacity = scanline_level / 100.0f;
-            processor->replaceRaConf(RA_CONFIG, "input_overlay",
+            processor.replaceRaConf(RA_CONFIG, "input_overlay",
                                      "input_overlay  = \":/overlay/scanlines.cfg\" ");
-            processor->replaceRaConf(RA_CONFIG, "input_overlay_enable",
+            processor.replaceRaConf(RA_CONFIG, "input_overlay_enable",
                                      "input_overlay_enable  = \"true\" ");
-            processor->replaceRaConf(RA_CONFIG, "input_overlay_opacity",
+            processor.replaceRaConf(RA_CONFIG, "input_overlay_opacity",
                                      "input_overlay_opacity  = \"" + to_string(opacity) + "\" ");
         }
-        delete processor;
     }
 
     // RA_CONFIG
-    CfgProcessor *processor = new CfgProcessor();
+    CfgProcessor processor;
     string aspect = gui->cfg.inifile.values["aspect"]; // true - 1280x720 - false 960x720
     string filter = gui->cfg.inifile.values["mip"]; // true - billiner
     if (aspect == "true") {
         // widescreen
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_width",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_width",
                                  "custom_viewport_width  = \"1280\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_height",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_height",
                                  "custom_viewport_height  = \"720\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_x",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_x",
                                  "custom_viewport_x  = \"0\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_y",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_y",
                                  "custom_viewport_y  = \"0\" ");
-        processor->replaceRaConf(RA_CONFIG, "aspect_ratio_index",
+        processor.replaceRaConf(RA_CONFIG, "aspect_ratio_index",
                                  "aspect_ratio_index  = \"23\" ");
 
     } else {
         // 4:3
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_width",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_width",
                                  "custom_viewport_width  = \"960\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_height",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_height",
                                  "custom_viewport_height  = \"720\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_x",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_x",
                                  "custom_viewport_x  = \"160\" ");
-        processor->replaceRaConf(RA_CONFIG, "custom_viewport_y",
+        processor.replaceRaConf(RA_CONFIG, "custom_viewport_y",
                                  "custom_viewport_y  = \"0\" ");
-        processor->replaceRaConf(RA_CONFIG, "aspect_ratio_index",
+        processor.replaceRaConf(RA_CONFIG, "aspect_ratio_index",
                                  "aspect_ratio_index  = \"0\" ");
 
     }
 
 
     if (filter != "true") {
-        processor->replaceRaConf(RA_CONFIG, "video_smooth",
+        processor.replaceRaConf(RA_CONFIG, "video_smooth",
                                  "video_smooth  = \"true\" ");
     } else {
-        processor->replaceRaConf(RA_CONFIG, "video_smooth",
+        processor.replaceRaConf(RA_CONFIG, "video_smooth",
                                  "video_smooth  = \"false\" ");
     }
-    delete processor;
 }

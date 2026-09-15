@@ -23,14 +23,14 @@ void GuiSelectMemcard::init() {
     cards.clear();
 
     shared_ptr<Gui> gui(Gui::getInstance());
-    Memcard *memcardOps = new Memcard(gui->pathToGamesDir);
+    Memcard memcardOps(gui->pathToGamesDir);
     if (listType==MC_CUSTOM) {
-        cards = memcardOps->list();
+        cards = memcardOps.list();
     } else
     {
         cards.push_back(_("CONFIGURED"));
         // build memcards list
-        vector<string> customList = memcardOps->list();
+        vector<string> customList = memcardOps.list();
         for (const string& mc:customList)
         {
             cards.push_back("[1] "+mc);
@@ -56,7 +56,6 @@ void GuiSelectMemcard::init() {
         it = cards.begin();
         cards.insert(it, string("(" + _("Internal") + ")"));
     }
-    delete memcardOps;
 }
 
 //*******************************

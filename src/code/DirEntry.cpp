@@ -122,13 +122,8 @@ string DirEntry::removeGamesPathFromFrontOfPath(const std::string& path) {
 // DirEntry::getFileNameFromPath
 //*******************************
 string DirEntry::getFileNameFromPath(const string &path) {
-    string result = "";
-    char *cstr = new char[path.length() + 1];
-    strcpy(cstr, path.c_str());
-    char *base = basename(cstr);
-    result += base;
-    delete[] cstr;
-    return result;
+    string copy = path;     // basename() may modify its argument
+    return basename(&copy[0]);
 }
 
 //*******************************
@@ -136,13 +131,8 @@ string DirEntry::getFileNameFromPath(const string &path) {
 //*******************************
 string DirEntry::getDirNameFromPath(const string& path)
 {
-    string result = "";
-    char *cstr = new char[path.length() + 1];
-    strcpy(cstr, path.c_str());
-    char * base = dirname(cstr);
-    result += base;
-    delete [] cstr;
-    return result;
+    string copy = path;     // dirname() may modify its argument
+    return dirname(&copy[0]);
 }
 
 //*******************************
@@ -150,7 +140,8 @@ string DirEntry::getDirNameFromPath(const string& path)
 //*******************************
 bool DirEntry::isDirectory(const string &path) {
     struct stat path_stat;
-    stat(path.c_str(), &path_stat);
+    if (stat(path.c_str(), &path_stat) != 0)
+        return false;   // does not exist (st_mode would be uninitialized)
     return S_ISDIR(path_stat.st_mode);
 }
 
@@ -283,7 +274,6 @@ bool DirEntry::createDir(const string &_name) {
 int DirEntry::rmDir(string path) {
     fixPath(path);
     DIR *d = opendir(path.c_str());
-    size_t path_len = path.size();
     int r = -1;
 
     if (d) {
@@ -293,31 +283,20 @@ int DirEntry::rmDir(string path) {
 
         while (!r && (p = readdir(d))) {
             int r2 = -1;
-            char *buf;
-            size_t len;
 
             /* Skip the names "." and ".." as we don't want to recurse on them. */
             if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, "..")) {
                 continue;
             }
 
-            len = path_len + strlen(p->d_name) + 2;
-            buf = new char[len];
-
-            if (buf) {
-                struct stat statbuf;
-
-                snprintf(buf, len, "%s/%s", path.c_str(), p->d_name);
-
-                if (!stat(buf, &statbuf)) {
-                    if (S_ISDIR(statbuf.st_mode)) {
-                        r2 = rmDir(buf);
-                    } else {
-                        r2 = unlink(buf);
-                    }
+            string entryPath = path + "/" + p->d_name;
+            struct stat statbuf;
+            if (!stat(entryPath.c_str(), &statbuf)) {
+                if (S_ISDIR(statbuf.st_mode)) {
+                    r2 = rmDir(entryPath);
+                } else {
+                    r2 = unlink(entryPath.c_str());
                 }
-
-                delete (buf);
             }
 
             r = r2;
@@ -377,29 +356,20 @@ bool DirEntry::copyFile(const std::string& pathFrom, const std::string& pathTo) 
 // DirEntry::copy
 //*******************************
 bool DirEntry::copy(const string &source, const string &dest) {
-    ifstream infile;
-    ofstream outfile;
-
-    char *buffer;
-    buffer = new char[FILE_BUFFER_SIZE];
-
-    infile.open(source, ios::binary);
-    outfile.open(dest, ios::binary);
+    ifstream infile(source, ios::binary);
+    ofstream outfile(dest, ios::binary);
 
     if (!infile.good()) return false;
     if (!outfile.good()) return false;
 
+    vector<char> buffer(FILE_BUFFER_SIZE);
     while (true) {
-        int read = infile.readsome(buffer, FILE_BUFFER_SIZE);
+        streamsize read = infile.readsome(buffer.data(), buffer.size());
         if (read == 0) break;
-        outfile.write(buffer, read);
+        outfile.write(buffer.data(), read);
     }
-    infile.close();
     outfile.flush();
-    outfile.close();
-    delete buffer;
-
-    return true;
+    return outfile.good();
 }
 
 //*******************************

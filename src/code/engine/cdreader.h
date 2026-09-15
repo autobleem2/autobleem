@@ -28,14 +28,16 @@ using namespace std;
 class CDReader
 {
 private:
-    ifstream *stream;
+    ifstream stream;
     int offset = 0;
-    char *buffer;
+    vector<char> buffer;    // one frame (CD_FRAME_SIZE); allocated by openImage, freed with the reader
     int sectorpos = 0;
     int currentSector = 0;
     bool opened = false;
 
 public:
+    virtual ~CDReader() { }
+
     void setOffset(int off)
     {
         offset = off;
@@ -44,13 +46,13 @@ public:
     {
         return offset;
     }
-    void setBuffer(char *buff)
+    void allocateBuffer()
     {
-        buffer = buff;
+        buffer.assign(CD_FRAME_SIZE, 0);
     }
     char *getBuffer()
     {
-        return buffer;
+        return buffer.data();
     }
     int getSectorPos()
     {
@@ -171,8 +173,8 @@ public:
     virtual void selectSector(int sectorNum)
     {
         int addr = sectorNum * SECTOR_SIZE + offset;
-        stream->seekg(addr, ios::beg);
-        stream->read(buffer, SECTOR_SIZE);
+        stream.seekg(addr, ios::beg);
+        stream.read(buffer.data(), SECTOR_SIZE);
         sectorpos = 0;
         currentSector = sectorNum;
     }
@@ -182,24 +184,18 @@ public:
     }
     virtual int openImage(string imagePath)
     {
-        buffer = new char[CD_FRAME_SIZE];
+        allocateBuffer();
         cout << "Opening ISO image" << endl;
         offset = 0;
         opened = false;
         sectorpos = 0;
         currentSector = 0;
-        stream = new ifstream(imagePath, ios::binary | ios::in);
-        if (!stream->good())
+        stream.open(imagePath, ios::binary | ios::in);
+        if (!stream.is_open() || !stream.good())
         {
-            delete stream;
             return -1;
         }
-        if (!stream->is_open())
-        {
-            delete stream;
-            return -1;
-        }
-        stream->seekg(0);
+        stream.seekg(0);
         if (calibrate(MAX_OFFSET) != 0)
         {
             return -1;
@@ -210,13 +206,13 @@ public:
     }
     virtual void closeImage()
     {
-        delete buffer;
-        delete stream;
+        stream.close();
+        opened = false;
     }
 
     virtual bool endStream()
     {
-        return stream->tellg() == -1;
+        return stream.tellg() == -1;
     }
 };
 
@@ -229,9 +225,11 @@ private:
     const cdrom_toc *toc = NULL;
 
 public:
+    ~CHDReader() override { closeImage(); }
+
     void closeImage() override
     {
-        delete getBuffer();
+        setOpen(false);
         if (cdrom_chd != NULL)
         {
             cdrom_close(cdrom_chd);
@@ -252,7 +250,7 @@ public:
     }
     int openImage(string imagePath) override
     {
-        setBuffer(new char[CD_FRAME_SIZE]);
+        allocateBuffer();
         cout << "Opening CHD image" << endl;
         setOpen(false);
         setSectorpos(0);

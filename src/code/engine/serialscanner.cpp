@@ -129,10 +129,8 @@ string SerialScanner::scanSerialInternal(ImageType imageType, string path, strin
         }
 
         for (int level = 1; level < 4; level++) {
-            Isodir *dirLoader = new Isodir();
-        
-            IsoDirectory dir = dirLoader->getDir(firstBinPath, level, imageType==IMAGE_CHD);
-            delete dirLoader;
+            Isodir dirLoader;
+            IsoDirectory dir = dirLoader.getDir(firstBinPath, level, imageType==IMAGE_CHD);
             string serialFound = "";
             if (!dir.rootDir.empty()) {
                 for (const string & entry:dir.rootDir) {

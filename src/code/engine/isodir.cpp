@@ -3,6 +3,7 @@
 //
 
 #include "isodir.h"
+#include <memory>
 #include <fstream>
 #include <iostream>
 
@@ -104,11 +105,11 @@ void Isodir::readDir(vector<string> *data, CDReader *reader, unsigned int sector
 //*******************************
 IsoDirectory Isodir::getDir(string binPath, int maxlevel, bool useCHD)
 {
-    CDReader *reader;
+    unique_ptr<CDReader> reader;
 
     if (!useCHD)
     {
-        reader = new CDReader();
+        reader.reset(new CDReader());
     }
     else
     {
@@ -116,13 +117,12 @@ IsoDirectory Isodir::getDir(string binPath, int maxlevel, bool useCHD)
         cout << "CHD support not compiled in, skipping " << binPath << endl;
         return getEmptyDir();
 #else
-        reader = new CHDReader();
+        reader.reset(new CHDReader());
 #endif
     }
     reader->openImage(binPath);
     if (!reader->isOpen())
     {
-        delete reader;
         return getEmptyDir();
     }
     reader->selectSector(16);
@@ -135,9 +135,8 @@ IsoDirectory Isodir::getDir(string binPath, int maxlevel, bool useCHD)
     IsoDirectory result;
     result.systemName = trim(system);
     result.volumeName = trim(volname);
-    readDir(&result.rootDir, reader, sector, maxlevel, 0);
+    readDir(&result.rootDir, reader.get(), sector, maxlevel, 0);
     reader->closeImage();
-    delete reader;
     if (result.rootDir.empty())
     {
         return getEmptyDir();

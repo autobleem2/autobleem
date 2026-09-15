@@ -231,13 +231,12 @@ void USBGame::recoverMissingFiles() {
                 automationUsed = false;
                 for (DirEntry dirEntry:fileList)
                 {
-                    Disc *disc=new Disc();
-                    disc->diskName = dirEntry.name;    // the full filename including the .CHD
-                    disc->cueFound = true;
-                    disc->cueName = dirEntry.name;
-                    disc->binVerified = true;
-                    discs.push_back(*disc);
-                    delete disc;
+                    Disc disc;
+                    disc.diskName = dirEntry.name;    // the full filename including the .CHD
+                    disc.cueFound = true;
+                    disc.cueName = dirEntry.name;
+                    disc.binVerified = true;
+                    discs.push_back(disc);
                 }
 
 
@@ -345,9 +344,8 @@ void USBGame::recoverMissingFiles() {
         shared_ptr<Gui> gui(Gui::getInstance());
         DirEntry::copy(source, destination);
 
-        CfgProcessor * processor=new CfgProcessor();
-        processor->replaceUSB(gameDirName, fullPath, "region", "region = " + to_string(region));
-        delete(processor);
+        CfgProcessor processor;
+        processor.replaceUSB(gameDirName, fullPath, "region", "region = " + to_string(region));
         pcsxCfgFound = true;
     }
 }
@@ -426,24 +424,24 @@ void USBGame::updateObj() {
 //*******************************
 void USBGame::saveIni(string path) {
     //cout << "Overwritting ini file" << path << endl;
-    Inifile *ini = new Inifile();
-    ini->section = "Game";
-    ini->values["title"] = title;
-    ini->values["publisher"] = publisher;
-    ini->values["year"] = to_string(year);
-    ini->values["serial"] = serial;
-    ini->values["region"] = region;
-    ini->values["players"] = to_string(players);
-    ini->values["automation"] = to_string(automationUsed);
-    ini->values["imagetype"] = to_string(imageType);
-    ini->values["highres"] = to_string(highRes);
+    Inifile ini;
+    ini.section = "Game";
+    ini.values["title"] = title;
+    ini.values["publisher"] = publisher;
+    ini.values["year"] = to_string(year);
+    ini.values["serial"] = serial;
+    ini.values["region"] = region;
+    ini.values["players"] = to_string(players);
+    ini.values["automation"] = to_string(automationUsed);
+    ini.values["imagetype"] = to_string(imageType);
+    ini.values["highres"] = to_string(highRes);
     if (memcard.empty())
-        ini->values["memcard"] = "SONY";
+        ini.values["memcard"] = "SONY";
     else
-        ini->values["memcard"] = memcard;
+        ini.values["memcard"] = memcard;
 
-    ini->values["Favorite"] = favorite;
-    ini->values["Play_using_ra"] = play_using_ra;
+    ini.values["Favorite"] = favorite;
+    ini.values["Play_using_ra"] = play_using_ra;
 
     stringstream ss;
     for (int i = 0; i < discs.size(); i++) {
@@ -452,9 +450,8 @@ void USBGame::saveIni(string path) {
             ss << ",";
         }
     }
-    ini->values["discs"] = ss.str();
-    ini->save(path);
-    delete ini;
+    ini.values["discs"] = ss.str();
+    ini.save(path);
     gameIniFound = true;
 }
 
@@ -463,16 +460,14 @@ void USBGame::saveIni(string path) {
 //*******************************
 void USBGame::parseIni(string path) {
     iniValues.clear();
-    Inifile *ini = new Inifile();
-    ini->load(path);
-    if (ini->values.empty()) {
+    Inifile ini;
+    ini.load(path);
+    if (ini.values.empty()) {
         gameIniFound = false;
-        delete ini;
         return;
     }
     gameIniFound = true;
-    iniValues = ini->values;
-    delete ini;
+    iniValues = ini.values;
 }
 
 //*******************************

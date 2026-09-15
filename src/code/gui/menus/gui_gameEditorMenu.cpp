@@ -34,7 +34,7 @@ using namespace std;
 //*******************************
 void GuiEditor::processOptionChange(bool direction) {
     shared_ptr<Gui> gui(Gui::getInstance());
-    CfgProcessor *processor = new CfgProcessor();
+    CfgProcessor processor;
 
     string path = gameFolder;
     if (internal) {
@@ -127,7 +127,7 @@ void GuiEditor::processOptionChange(bool direction) {
             }
             gameIni.values["highres"] = to_string(highres);
 
-            processor->replace(gameIni.entry, path, "gpu_neon.enhancement_enable",
+            processor.replace(gameIni.entry, path, "gpu_neon.enhancement_enable",
                                "gpu_neon.enhancement_enable = " + gameIni.values["highres"], internal);
             if (!internal) {
                 gameIni.save(gameIni.path);
@@ -147,7 +147,7 @@ void GuiEditor::processOptionChange(bool direction) {
                 }
             }
 
-            processor->replace(gameIni.entry, path, "gpu_neon.enhancement_no_main",
+            processor.replace(gameIni.entry, path, "gpu_neon.enhancement_no_main",
                                "gpu_neon.enhancement_no_main = " + to_string(speedhack), internal);
             refreshData();
             break;
@@ -162,7 +162,7 @@ void GuiEditor::processOptionChange(bool direction) {
                     scanlines = 1;
                 }
             }
-            processor->replace(gameIni.entry, path, "scanlines",
+            processor.replace(gameIni.entry, path, "scanlines",
                                "scanlines = " + to_string(scanlines), internal);
             refreshData();
             break;
@@ -183,7 +183,7 @@ void GuiEditor::processOptionChange(bool direction) {
             ss << std::hex << scanlineLevel;
             s = ss.str();
 
-            processor->replace(gameIni.entry, path, "scanline_level",
+            processor.replace(gameIni.entry, path, "scanline_level",
                                "scanline_level = " + s, internal);
             refreshData();
             break;
@@ -205,7 +205,7 @@ void GuiEditor::processOptionChange(bool direction) {
             ss << std::hex << clock;
             s = ss.str();
 
-            processor->replace(gameIni.entry, path, "psx_clock",
+            processor.replace(gameIni.entry, path, "psx_clock",
                                "psx_clock = " + s, internal);
             refreshData();
             break;
@@ -227,7 +227,7 @@ void GuiEditor::processOptionChange(bool direction) {
             ss << std::hex << frameskip;
             s = ss.str();
 
-            processor->replace(gameIni.entry, path, "frameskip3",
+            processor.replace(gameIni.entry, path, "frameskip3",
                                "frameskip3 = " + s, internal);
             refreshData();
             break;
@@ -248,7 +248,7 @@ void GuiEditor::processOptionChange(bool direction) {
             ss << std::hex << interpolation;
             s = ss.str();
 
-            processor->replace(gameIni.entry, path, "spu_config.iUseInterpolation",
+            processor.replace(gameIni.entry, path, "spu_config.iUseInterpolation",
                                "spu_config.iUseInterpolation = " + s, internal);
             refreshData();
             break;
@@ -260,13 +260,12 @@ void GuiEditor::processOptionChange(bool direction) {
                 } else {
                     gpu = "builtin_gpu";
                 }
-                processor->replace(gameIni.entry, path, "Gpu3",
+                processor.replace(gameIni.entry, path, "Gpu3",
                                    "Gpu3 = " + gpu, internal);
                 refreshData();
             }
             break;
     }
-    delete (processor);
 }
 
 //*******************************
@@ -274,22 +273,21 @@ void GuiEditor::processOptionChange(bool direction) {
 //*******************************
 void GuiEditor::refreshData() {
     shared_ptr<Gui> gui(Gui::getInstance());
-    CfgProcessor *processor = new CfgProcessor();
+    CfgProcessor processor;
     string path = gameFolder;
     if (internal) {
         path = gameData->ssFolder;
     }
-    highres       = atoi  (processor->getValue(path, "gpu_neon.enhancement_enable").c_str());
-    speedhack     = atoi  (processor->getValue(path, "gpu_neon.enhancement_no_main").c_str());
-    clock         = strtol(processor->getValue(path, "psx_clock").c_str(), NULL, 16);
-    gpu           =        processor->getValue(path, "gpu3");
-    frameskip     = atoi  (processor->getValue(path, "frameskip3").c_str());
-    dither        = atoi  (processor->getValue(path, "gpu_peops.iUseDither").c_str());
-    scanlines     = atoi  (processor->getValue(path, "scanlines").c_str());
-    scanlineLevel = strtol(processor->getValue(path, "scanline_level").c_str(), NULL, 16);
-    interpolation = strtol(processor->getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
+    highres       = atoi  (processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
+    speedhack     = atoi  (processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
+    clock         = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
+    gpu           =        processor.getValue(path, "gpu3");
+    frameskip     = atoi  (processor.getValue(path, "frameskip3").c_str());
+    dither        = atoi  (processor.getValue(path, "gpu_peops.iUseDither").c_str());
+    scanlines     = atoi  (processor.getValue(path, "scanlines").c_str());
+    scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
+    interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
 
-    delete processor;
 }
 
 //*******************************
@@ -537,10 +535,10 @@ void GuiEditor::loop() {
                                 }
 
                                 if (!cancelled) {
-                                    Memcard *memcard = new Memcard(gui->pathToGamesDir);
+                                    Memcard memcard(gui->pathToGamesDir);
                                     string savePath =
                                             Env::getPathToSaveStatesDir() + sep + gameIni.entry + sep + "memcards";
-                                    memcard->storeToRepo(savePath, result);
+                                    memcard.storeToRepo(savePath, result);
                                     gameIni.values["memcard"] = result;
                                     gameIni.save(gameIni.path);
                                 }

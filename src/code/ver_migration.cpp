@@ -91,18 +91,15 @@ void VerMigration::migrate04_05(Database * db)
             string title = ini.values["title"];
             cout << title << endl;
 
-            Metadata * md = new Metadata();
-            md->lookupByTitle(title);
+            Metadata md;
+            md.lookupByTitle(title);
+            if (md.valid)
             {
-                if(md->valid)
-                {
-                    cout << to_string(md->year) << endl;
-                    db->updateYear(atoi(id.c_str()),md->year);
-                    ini.values["year"]=to_string(md->year);
-                    ini.save(gameIniLoc);
-                }
+                cout << to_string(md.year) << endl;
+                db->updateYear(atoi(id.c_str()),md.year);
+                ini.values["year"]=to_string(md.year);
+                ini.save(gameIniLoc);
             }
-            delete (md);
         }
     }
     is.close();

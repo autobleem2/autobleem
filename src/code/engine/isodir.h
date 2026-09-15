@@ -36,5 +36,4 @@ public:
 private:
 
     std::string removeVersion(std::string input);
-    std::ifstream * stream;
 };
