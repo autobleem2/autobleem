@@ -1,0 +1,53 @@
+#pragma once
+
+#include "types.h"
+
+namespace ableem {
+
+class Platform;
+class Texture;
+
+//******************
+// Renderer
+//******************
+// Wraps the one SDL_Renderer the app uses. Owned by GuiBase; screens receive a reference.
+class ABLEEM_API Renderer {
+public:
+    Renderer(const Renderer &) = delete;
+    Renderer &operator=(const Renderer &) = delete;
+    ~Renderer();
+
+    void clear();
+    void present();
+
+    void setDrawColor(Color c);
+    Color drawColor() const;
+    void setBlendMode(BlendMode mode);
+
+    void fillRect(const Rect &r);
+    void drawRect(const Rect &r);
+    void drawLine(Point a, Point b);
+
+    // src/dst nullptr means "whole texture" / "whole render target"
+    void copy(const Texture &tex, const Rect *src = nullptr, const Rect *dst = nullptr);
+
+    // nullptr switches back to rendering to the screen
+    void setTarget(Texture *target);
+
+    int width() const;
+    int height() const;
+
+private:
+    friend class Platform;
+    friend class GuiBase;
+    friend class Texture;
+    friend class Font;
+    explicit Renderer(Platform &platform);
+    struct Impl;
+    Impl *impl;
+
+public:
+    void *native() const; // internal use by Texture/Font implementations
+};
+
+} // namespace ableem

@@ -65,6 +65,14 @@ endif()
 
 find_package(Threads REQUIRED)
 
+# lib_ableem: the portable SDL2 wrapper. Built first and standalone (its own SDL discovery, its own demo) so
+# it stays usable outside this app; the autobleem-gui target below is ported to link it and drop SDL
+# entirely in a later step of the ongoing refactor (see CLAUDE.md).
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
+    set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
+endif()
+add_subdirectory(lib_ableem)
+
 if (MINGW)
     # MSYS2/MinGW development build: SDL2 libs come from pkg-config
     message(STATUS "Building for Windows (MinGW)")

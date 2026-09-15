@@ -64,3 +64,4 @@ db/
 
 #Claude Code local settings
 .claude/settings.local.json
+build_win2/
