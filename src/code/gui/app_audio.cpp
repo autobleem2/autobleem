@@ -3,7 +3,6 @@
 //
 
 #include "app_audio.h"
-#include "../app.h"
 #include "../core/services/environment.h"
 #include "../core/main.h"
 #include "../core/model/timing.h"   // TicksPerSecond
@@ -16,9 +15,9 @@ using namespace std;
 // AppAudio::playMusic
 //*******************************
 void AppAudio::playMusic() {
-    if (App::get().config().inifile.values["nomusic"] == "true") return;
+    if (config_.inifile.values["nomusic"] == "true") return;
 
-    Theme &theme = App::get().theme();
+    Theme &theme = theme_;
     if (theme.data.values["loop"] == "-1") return;
 
     if (!customMusic) {
@@ -41,7 +40,7 @@ void AppAudio::freeMusic() {
 // AppAudio::loadTheme
 //*******************************
 void AppAudio::loadTheme(bool reloadMusic) {
-    Theme &theme = App::get().theme();
+    Theme &theme = theme_;
 
     if (reloadMusic) {
         freeMusic();
@@ -50,9 +49,9 @@ void AppAudio::loadTheme(bool reloadMusic) {
     customMusic = false;
     freq = 32000;
     musicPath = theme.data.values["music"];
-    if (App::get().config().inifile.values["music"] != "--") {
+    if (config_.inifile.values["music"] != "--") {
         customMusic = true;
-        musicPath = App::get().config().inifile.values["music"];
+        musicPath = config_.inifile.values["music"];
     }
 
     if (DirEntry::getFileExtension(musicPath) == "ogg") {

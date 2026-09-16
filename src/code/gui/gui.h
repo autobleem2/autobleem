@@ -7,7 +7,6 @@
 #include <ableem/ableem.h>
 #include <string>
 #include <memory>
-#include "../engine/scanner.h"
 #include "../core/model/ps_game.h"
 #include "../core/services/system.h"
 #include "gui_font.h"

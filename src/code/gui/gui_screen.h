@@ -25,5 +25,5 @@ public:
 
     std::shared_ptr<Gui> gui;
     ableem::Renderer &renderer;
-    App &app;   // the model: app.library(), app.session(), app.scanner()
+    App &app;   // the model: app.library(), app.session(), app.config(), the services
 };

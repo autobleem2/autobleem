@@ -7,7 +7,6 @@
 #include <sstream>
 #include <iostream>
 #include "../../gui/gui.h"
-#include "../../engine/scanner.h"
 
 
 using namespace std;

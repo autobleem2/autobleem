@@ -5,7 +5,6 @@
 #include "evoui_btn_guide.h"
 #include <string>
 #include "../../gui/gui.h"
-#include "../../engine/scanner.h"
 
 using namespace std;
 

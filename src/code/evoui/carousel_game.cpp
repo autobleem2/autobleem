@@ -4,7 +4,6 @@
 
 #include "carousel_game.h"
 #include "../gui/gui.h"
-#include "../engine/scanner.h"
 #include "../app.h"
 #include "../core/services/retroarch.h"
 #include <unistd.h>

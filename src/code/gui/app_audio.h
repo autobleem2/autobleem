@@ -3,8 +3,12 @@
 //
 #pragma once
 
-#include <string>
+#include "../core/services/config.h"
+#include "../core/services/theme.h"
+
 #include <ableem/ui/audio.h>
+
+#include <string>
 
 //******************
 // AppAudio
@@ -17,7 +21,7 @@
 // (open/close). Everything that knows what a theme or config.ini is lives here.
 class AppAudio {
 public:
-    explicit AppAudio(ableem::Audio &device) : device(device) {}
+    AppAudio(ableem::Audio &device, Config &config, Theme &theme) : device(device), config_(config), theme_(theme) {}
 
     // (re)loads the current theme's sound effects. When reloadMusic is true the mixer is also reopened at the
     // sample rate the track needs and the track is started. Called from Gui::loadAssets.
@@ -42,6 +46,8 @@ public:
 
 private:
     ableem::Audio &device;
+    Config &config_;
+    Theme &theme_;
 
     bool customMusic = false;    // true when config.ini names a track of the user's own
     int freq = 44100;

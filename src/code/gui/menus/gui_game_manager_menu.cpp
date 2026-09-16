@@ -7,7 +7,6 @@
 #include <iostream>
 #include "gui_game_editor_menu.h"
 #include "../screens/gui_confirm.h"
-#include "../../engine/scanner.h"
 
 using namespace std;
 

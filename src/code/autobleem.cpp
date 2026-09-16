@@ -4,6 +4,7 @@
 #include "autobleem.h"
 #include "core/services/system.h"
 #include "gui/screens/gui_classic_menu.h"
+#include "gui/scan_progress.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -79,12 +80,13 @@ void AutoBleem::rescan(GamesHierarchy &gamesHierarchy, const string &prevPath) {
         return;
     }
 
-    scanner_->scanGamesDirectory(gamesHierarchy, gameLibrary.covers());
-    scanner_->writeRegionalDatabase(gamesHierarchy, gameLibrary.usbGames());
+    SplashScanProgress progress;
+    GameScanner scanner(&progress);
+    scanner.scanGamesDirectory(gamesHierarchy, gameLibrary.covers());
+    scanner.writeRegionalDatabase(gamesHierarchy, gameLibrary.usbGames());
 
-    gui_->drawText(_("Total:") + " " + to_string(scanner_->gamesToAddToDB.size()) + " " + _("games scanned") + ".");
+    gui_->drawText(_("Total:") + " " + to_string(scanner.gamesToAddToDB.size()) + " " + _("games scanned") + ".");
     sleep(1);
-    scanner_->gamesToAddToDB.clear();
 
     gameLibrary.writeEmulationStationGamelist();
 }
@@ -145,7 +147,7 @@ int AutoBleem::run() {
     gamesHierarchy.getHierarchy(pathToGamesDir);
 
     bool autobleemPrevOutOfDate = gamesHierarchy.gamesDoNotMatchAutobleemPrev(prevPath);
-    bool thereAreRawGameFilesInGamesDir = Scanner::hasLooseGameFiles(pathToGamesDir);
+    bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     if (!prevFileExists || !gamelistXmlExists || thereAreRawGameFilesInGamesDir || autobleemPrevOutOfDate) {
         session_.forceScan = true;
@@ -153,8 +155,10 @@ int AutoBleem::run() {
 
     gui_->display(false);
 
-    if (thereAreRawGameFilesInGamesDir)
-        scanner_->moveLooseGameFilesIntoSubDirs(pathToGamesDir);   // gui_->display() needs to be up first
+    if (thereAreRawGameFilesInGamesDir) {
+        SplashScanProgress progress;
+        GameScanner(&progress).moveLooseGameFilesIntoSubDirs(pathToGamesDir);   // gui_->display() needs to be up first
+    }
 
     while (session_.menuOption == MENU_OPTION_SCAN || session_.menuOption == MENU_OPTION_START) {
         {

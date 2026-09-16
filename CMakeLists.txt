@@ -139,12 +139,10 @@ endif()
 add_library(ab_ui STATIC
         src/code/app.cpp
         src/code/app.h
-        src/code/engine/app_audio.cpp
-        src/code/engine/app_audio.h
         src/code/engine/cardedit.cpp
         src/code/engine/cardedit.h
-        src/code/engine/scanner.cpp
-        src/code/engine/scanner.h
+        src/code/gui/app_audio.cpp
+        src/code/gui/app_audio.h
         src/code/gui/gui.cpp
         src/code/gui/gui.h
         src/code/gui/screens/gui_about.cpp
@@ -158,6 +156,8 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_pad_test.cpp
         src/code/gui/screens/gui_pad_test.h
         src/code/gui/gui_screen.h
+        src/code/gui/scan_progress.cpp
+        src/code/gui/scan_progress.h
         src/code/gui/screens/gui_scroll_win.cpp
         src/code/gui/screens/gui_scroll_win.h
         src/code/gui/screens/gui_select_memcard.cpp

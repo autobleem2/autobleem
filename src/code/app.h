@@ -18,15 +18,14 @@
 #include "core/services/retroarch.h"
 #include "core/services/clock.h"
 #include "core/services/theme.h"
-#include "engine/app_audio.h"
-#include "engine/scanner.h"
+#include "gui/app_audio.h"
 #include "gui/gui.h"
 
 //******************
 // App
 //******************
 // Owns the model: config.ini, the game library (both game databases + the cover database), the session
-// (what to show/start next), the scanner, the services, and the Gui singleton. Gui is only the screen -
+// (what to show/start next), the services, and the Gui singleton. Gui is only the screen -
 // nothing non-graphical lives there. This is the top of ab_ui: every screen gets it as its `app` member, and
 // the executable's AutoBleem derives from it to add run(). It takes the ProcessRunner from whoever
 // constructs it, because which one is right (fork on the console, a splash on a dev host) is that caller's
@@ -56,7 +55,6 @@ public:
     RetroArchService &retroArch() { return retroArch_; }
     Lang &lang() { return lang_; }
     Session &session() { return session_; }
-    Scanner &scanner() { return *scanner_; }
 
 protected:
     static App *instance;
@@ -69,7 +67,6 @@ protected:
     Clock clock_{cfg_};
     std::shared_ptr<Gui> gui_;
     std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body
-    std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;
     Session session_;
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference

@@ -1,17 +1,17 @@
 //
-// Created by screemer on 2018-12-15.
+// SplashScanProgress: the scan's progress on the splash screen.
 //
+#include "scan_progress.h"
+#include "gui.h"
 
-#include "scanner.h"
-#include "../gui/gui.h"
 #include <unistd.h>
 
 using namespace std;
 
 //*******************************
-// Scanner::onScanProgress
+// SplashScanProgress::onScanProgress
 //*******************************
-void Scanner::onScanProgress(ScanStage stage, const string &detail) {
+void SplashScanProgress::onScanProgress(ScanStage stage, const string &detail) {
     switch (stage) {
         case ScanStage::Scanning:
             Gui::splash(_("Scanning..."));
