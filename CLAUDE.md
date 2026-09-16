@@ -37,6 +37,11 @@ Done on 2026-09-16:
   `Gui` is left with the window/renderer, the fonts and textures, the text/rect rendering helpers, and
   `menuSelection()` - the classic-UI main menu loop, which is the next thing that should become a screen.
 
+The next structural step is planned in `docs/refactor-plan.md`: split `src/code` into `ab_core` (model +
+services, no SDL, unit tested with doctest), `ab_ui` and `ab_evoui`, moving the game queries, settings,
+memcard/savestate and launch logic out of the screens that currently hold them. The list below is folded into
+that plan's phases.
+
 Still to do, in order:
 
 1. `enum class` for the `#define`-int "enums" (`EMU_*`, `SET_*`, `STATE_*`, `SEL_OPTION_*`) - compiler-driven.
