@@ -73,8 +73,9 @@ public:
 
     void flushEvents(); // discard everything currently queued (SDL_PumpEvents + SDL_FlushEvents)
 
-    // true if a controller axis/hat event is sitting in the queue right now, without consuming it. used to
-    // implement "repeat while held" key-repeat style loops (see GuiScreen::fastForwardUntilAnotherEvent).
+    // true if a controller axis/hat event (or, with the keyboard as the pad, a key event) is sitting in the
+    // queue right now, without consuming it. used to implement "repeat while held" key-repeat style loops
+    // (see GuiScreen::fastForwardUntilAnotherEvent).
     bool padEventPending() const;
 
     // current dpad state, as tracked from the DpadDown/DpadUp events seen by poll()

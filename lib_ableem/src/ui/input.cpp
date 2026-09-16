@@ -250,6 +250,11 @@ bool Input::padEventPending() const {
     SDL_Event e;
     int n = SDL_PeepEvents(&e, 1, SDL_PEEKEVENT, SDL_CONTROLLERAXISMOTION, SDL_CONTROLLERDEVICEREMAPPED);
     n += SDL_PeepEvents(&e, 1, SDL_PEEKEVENT, SDL_CONTROLLERHATMOTIONUP, SDL_CONTROLLERHATMOTIONDOWN);
+    if (impl->keyboardAsPad) {
+        // on a dev host the pad is the keyboard, so a key going up is the "another event" a screen's
+        // fast-forward loop is waiting for; without this the loop never sees the release and repeats forever
+        n += SDL_PeepEvents(&e, 1, SDL_PEEKEVENT, SDL_KEYDOWN, SDL_KEYUP);
+    }
     return n > 0;
 }
 
