@@ -173,8 +173,8 @@ void GuiLauncher::getGames_SET_APPS(PsGames *gamesList) {
 //*******************************
 // GuiLauncher::switchSet
 //*******************************
-void GuiLauncher::switchSet(int newSet, bool noForce) {     // Warning: newSet is not used.  probably not the intent.
-    cout << "Switching to Set: " << currentSet << endl;
+void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newSet is not used.  probably not the intent.
+    cout << "Switching to Set: " << static_cast<int>(currentSet) << endl;
     // clear the carousel text
     if (!carouselGames.empty()) {
         for (auto &game : carouselGames) {
@@ -185,43 +185,43 @@ void GuiLauncher::switchSet(int newSet, bool noForce) {     // Warning: newSet i
     cout << "Reloading games list" << endl; // get fresh list of games for this set
     PsGames gamesList;
 
-    if (currentSet == SET_PS1) {
+    if (currentSet == GameSet::PS1) {
 
         // if do not show internal games
         if (app.config().inifile.values["origames"] != "true") {
-            if (currentPS1_SelectState == SET_PS1_All_Games || currentPS1_SelectState == SET_PS1_Internal_Only) {
-                currentPS1_SelectState = SET_PS1_Games_Subdir;
+            if (currentPS1_SelectState == Ps1SelectState::AllGames || currentPS1_SelectState == Ps1SelectState::InternalOnly) {
+                currentPS1_SelectState = Ps1SelectState::GamesSubdir;
                 //if (selGameIndexInCarouselGamesIsValid())
             }
         }
 
-        if (currentPS1_SelectState == SET_PS1_All_Games) {
+        if (currentPS1_SelectState == Ps1SelectState::AllGames) {
             bool includeInternal = app.config().inifile.values["origames"] == "true";
             gamesList = getAllPS1Games(true, includeInternal);
 
-        } else if (currentPS1_SelectState == SET_PS1_Internal_Only) {
+        } else if (currentPS1_SelectState == Ps1SelectState::InternalOnly) {
             appendGames_SET_INTERNAL(&gamesList);   // since it starts out empty this sets only internal
 
-        } else if (currentPS1_SelectState == SET_PS1_Games_Subdir) {
+        } else if (currentPS1_SelectState == Ps1SelectState::GamesSubdir) {
             // get the games in the current subdir of /Games and on down
             getGames_SET_SUBDIR(&gamesList, currentUSBGameDirIndex);
 
-        } else if (currentPS1_SelectState == SET_PS1_Favorites) {
+        } else if (currentPS1_SelectState == Ps1SelectState::Favorites) {
             getGames_SET_FAVORITE(&gamesList);
 
-        } else if (currentPS1_SelectState == SET_PS1_History) {
+        } else if (currentPS1_SelectState == Ps1SelectState::History) {
             getGames_SET_HISTORY(&gamesList);
         }
 
-    } else if (currentSet == SET_RETROARCH) {
+    } else if (currentSet == GameSet::RetroArch) {
         getGames_SET_RETROARCH(currentRAPlaylistName, &gamesList);
 
-    } else if (currentSet == SET_APPS) {
+    } else if (currentSet == GameSet::Apps) {
         getGames_SET_APPS(&gamesList);
     }
 
-    if (!(currentSet == SET_RETROARCH && currentRAPlaylistName == raIntegrator->historyDisplayName)) {
-        if (currentSet == SET_PS1 && currentPS1_SelectState == SET_PS1_History) {
+    if (!(currentSet == GameSet::RetroArch && currentRAPlaylistName == raIntegrator->historyDisplayName)) {
+        if (currentSet == GameSet::PS1 && currentPS1_SelectState == Ps1SelectState::History) {
             // sort by history 1-100.  1 is latest game played, 100 is the oldest
             sort(begin(gamesList), end(gamesList),
                  [&](PsGamePtr p1, PsGamePtr p2) { return p1->history < p2->history; });
@@ -258,7 +258,7 @@ void GuiLauncher::switchSet(int newSet, bool noForce) {     // Warning: newSet i
     }
 
     if (!noForce) {
-        if ((currentSet == SET_RETROARCH) || (currentSet == SET_APPS)) {
+        if ((currentSet == GameSet::RetroArch) || (currentSet == GameSet::Apps)) {
             forceSettingsOnly();
         }
     }
@@ -278,31 +278,24 @@ void GuiLauncher::showSetName() {
                                           _("Showing: Game History") + " ",
                                           _("Showing: USB Games Directory:") + " "
     };
-    assert(currentPS1_SelectState >= 0 && currentPS1_SelectState <= SET_PS1_Games_Subdir);
-    assert(setPS1SubStateNames.size()-1 == SET_PS1_Games_Subdir);  // currentPS1_SelectState out of range
+    assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
+    assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
     string numGames = " (" + to_string(numberOfNonDuplicatedGamesInCarousel) + " " + _("games") + ")";
 
     long timeout = Util::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
-    if (currentSet == SET_PS1) {
-        if (currentPS1_SelectState == SET_PS1_All_Games) {
-            notificationLines[0].setText(setPS1SubStateNames[currentPS1_SelectState] + numGames, timeout);
-        } else if (currentPS1_SelectState == SET_PS1_Internal_Only) {
-            notificationLines[0].setText(setPS1SubStateNames[currentPS1_SelectState] + numGames, timeout);
-        } else if (currentPS1_SelectState == SET_PS1_Favorites) {
-            notificationLines[0].setText(setPS1SubStateNames[currentPS1_SelectState] + numGames, timeout);
-        } else if (currentPS1_SelectState == SET_PS1_History) {
-            notificationLines[0].setText(setPS1SubStateNames[currentPS1_SelectState] + numGames, timeout);
-        } else if (currentPS1_SelectState == SET_PS1_Games_Subdir) {
-            notificationLines[0].setText(
-                    setPS1SubStateNames[currentPS1_SelectState] + currentUSBGameDirName + numGames, timeout);
+    if (currentSet == GameSet::PS1) {
+        string name = setPS1SubStateNames[static_cast<int>(currentPS1_SelectState)];
+        if (currentPS1_SelectState == Ps1SelectState::GamesSubdir) {
+            name += currentUSBGameDirName;
         }
-    } else if (currentSet == SET_RETROARCH) {
+        notificationLines[0].setText(name + numGames, timeout);
+    } else if (currentSet == GameSet::RetroArch) {
         string playlist = DirEntry::getFileNameWithoutExtension(currentRAPlaylistName);
-        notificationLines[0].setText(setNames[currentSet] + playlist + " " + numGames, timeout);
-    } else if (currentSet == SET_APPS) {
-        notificationLines[0].setText(setNames[currentSet] + numGames, timeout);
+        notificationLines[0].setText(setNames[static_cast<int>(currentSet)] + playlist + " " + numGames, timeout);
+    } else if (currentSet == GameSet::Apps) {
+        notificationLines[0].setText(setNames[static_cast<int>(currentSet)] + numGames, timeout);
     }
 }
 
@@ -321,7 +314,7 @@ void GuiLauncher::loadAssets() {
                             _("Edit Memory Card information"), _("Resume game from saved state point")};
 
     currentSet = app.session().launcher.set;
-    if (currentSet == SET_PS1)
+    if (currentSet == GameSet::PS1)
         currentPS1_SelectState = app.session().launcher.ps1SelectState;
     currentUSBGameDirIndex = app.session().launcher.usbGameDirIndex;
     currentRAPlaylistIndex = app.session().launcher.raPlaylistIndex;
@@ -495,7 +488,7 @@ void GuiLauncher::loadAssets() {
             if (game->isCleanExit()) {
                 sselector->loadSaveStateImages(game, true);
                 sselector->visible = true;
-                state = STATE_RESUME;
+                state = LauncherScreenState::Resume;
             } else {
                 notificationLines[1].setText(_("OOPS! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
@@ -508,7 +501,7 @@ void GuiLauncher::loadAssets() {
 
 
     //switchSet(currentSet,false);
-    if ((currentSet == SET_RETROARCH) || (currentSet == SET_APPS)) {
+    if ((currentSet == GameSet::RetroArch) || (currentSet == GameSet::Apps)) {
         forceSettingsOnly();
     } else {
         if (menu->foreign) {
@@ -880,7 +873,7 @@ void GuiLauncher::setInitialPositions(int selected) {
 //*******************************
 // GuiLauncher::moveMainCover
 //*******************************
-void GuiLauncher::moveMainCover(int state) {
+void GuiLauncher::moveMainCover(LauncherScreenState state) {
     if (selGameIndex == -1) {
         return;
     }
@@ -899,7 +892,7 @@ void GuiLauncher::moveMainCover(int state) {
     long time = gui->platform().ticks();
 
     if (selGameIndexInCarouselGamesIsValid()) {
-        if (state == STATE_GAMES) {
+        if (state == LauncherScreenState::Games) {
             carouselGames[selGameIndex].destination = point1;
             carouselGames[selGameIndex].animationStart = time;
             carouselGames[selGameIndex].animationDuration = 200;
@@ -914,8 +907,8 @@ void GuiLauncher::moveMainCover(int state) {
 //*******************************
 // GuiLauncher::switchState
 //*******************************
-void GuiLauncher::switchState(int state, int time) {
-    if (state == STATE_GAMES) {
+void GuiLauncher::switchState(LauncherScreenState state, int time) {
+    if (state == LauncherScreenState::Games) {
         app.audio().home_up.play();
         settingsBack->animEndTime = time + 100;
         settingsBack->nextLen = 100;
@@ -926,7 +919,7 @@ void GuiLauncher::switchState(int state, int time) {
             meta->nextPos = 285;
             meta->prevPos = meta->y;
         }
-        this->state = STATE_GAMES;
+        this->state = LauncherScreenState::Games;
         arrow->visible = false;
         arrow->animationStarted = time;
         menu->duration = 200;
@@ -948,7 +941,7 @@ void GuiLauncher::switchState(int state, int time) {
             meta->nextPos = 215;
             meta->prevPos = meta->y;
         }
-        this->state = STATE_SET;
+        this->state = LauncherScreenState::Set;
         arrow->visible = true;
         arrow->animationStarted = time;
         menu->duration = 200;

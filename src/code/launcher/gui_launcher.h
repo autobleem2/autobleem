@@ -20,10 +20,8 @@
 #include "ra_integrator.h"
 #include "../gui/gui.h"
 
-#define STATE_GAMES    0
-#define STATE_SET      1
-#define STATE_RESUME   2
-#define STATE_INFO     3
+// which sub-screen of the launcher is showing
+enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
 
 extern const ableem::Color brightWhite;
 
@@ -88,13 +86,13 @@ public:
     void updateMeta();
     void loadAssets();
     void freeAssets();
-    void moveMainCover(int state);
+    void moveMainCover(LauncherScreenState state);
 
     shared_ptr<Gui> gui;
 
-    int currentSet = SET_PS1;
-    int currentPS1_SelectState = SET_PS1_All_Games;    // SET_PS1_All_Games, SET_PS1_Internal_Only, SET_PS1_Favorites, SET_PS1_Games_Subdir
-    void switchSet(int newSet, bool noForce);
+    GameSet currentSet = GameSet::PS1;
+    Ps1SelectState currentPS1_SelectState = Ps1SelectState::AllGames;
+    void switchSet(GameSet newSet, bool noForce);
     void showSetName();
 
     void getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex);
@@ -174,7 +172,7 @@ public:
     std::shared_ptr<RAIntegrator> raIntegrator;
     std::vector<std::string> raPlaylists;
 
-    int state = STATE_GAMES;
+    LauncherScreenState state = LauncherScreenState::Games;
     void setInitialPositions(int selected);
     int getPreviousId(int id);
     int getNextId(int id);
@@ -182,7 +180,7 @@ public:
     void scrollRight(int speed);
     void updatePositions();
     void updateVisibility();
-    void switchState(int state, int time);
+    void switchState(LauncherScreenState state, int time);
     void forceSettingsOnly();
     void showAllOptions();
 

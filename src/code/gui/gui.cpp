@@ -314,11 +314,6 @@ void Gui::menuSelection() {
                                     App::get().session().menuOption = MENU_OPTION_RUN;
                                     menuVisible = false;
                                 } else {
-                                    if (App::get().session().launcher.set < 0) {
-                                        App::get().session().launcher.set = SET_PS1;
-                                        App::get().session().launcher.selIndex = 0;
-                                        App::get().session().resumingGui = false;
-                                    }
                                     App::get().audio().cursor.play();
                                     drawText(_("Starting EvolutionUI"));
                                     loadAssets(false);
