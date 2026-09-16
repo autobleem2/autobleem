@@ -197,6 +197,8 @@ target_link_libraries(ab_ui ab_core ableem)
 # classic menu is a screen in the executable now (phase C step 14), which is what let the targets exist.
 add_library(ab_evoui STATIC
         src/code/launcher/gui_NotificationLine.cpp
+        src/code/launcher/carousel.cpp
+        src/code/launcher/carousel.h
         src/code/launcher/gui_NotificationLine.h
         src/code/launcher/gui_app_start.cpp
         src/code/launcher/gui_app_start.h

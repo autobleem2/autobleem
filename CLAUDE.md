@@ -147,7 +147,8 @@ Still to do, in order:
    `app.cpp`, `/media/System/Logs/ver.txt`) in `Env` - the engine side is done, so are the theme loaders
    (`Theme` asks `Env` for both branches now), and so are the launch scripts and RetroArch paths
    (`LaunchService`, step 10).
-3. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
+3. Split `GuiLauncher` - phase D of the plan. Step 15 (`Carousel`) is done; step 16 (the input/screen seam)
+   is next.
 4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
    hardware yet - only the Windows/MinGW build has been exercised).
 5. Features.
@@ -366,7 +367,8 @@ defaults, which both the services and the screens need.
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/gui_*` | | Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, star FX. |
 | `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
-| `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: cover carousel, sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. |
+| `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: the sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. Holds the `Carousel` as `carousel`. |
+| `launcher/carousel.*` | `Carousel` | The row of covers: `games` (with the fewer-than-13 duplication rule), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. |
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
@@ -399,7 +401,7 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 - Menu/emulator/state selections are plain `int`s with `#define`s (`EMU_PCSX`, `SET_PS1`, `STATE_GAMES`) —
   easy to mix up; converting to `enum class` is on the plan.
 - The carousel duplicates games when fewer than 13 exist, so one `PsGamePtr` may appear in several
-  `PsCarouselGame`s (see comment in `gui_launcher.h`).
+  `PsCarouselGame`s (see `Carousel::setGames` and the comment in `carousel.h`).
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
 - Console `stdout`/`stderr` go to `/media/System/Logs/AB_*.txt`; `cout` is the logging mechanism and is

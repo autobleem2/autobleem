@@ -44,7 +44,7 @@ void GuiLauncher::loop() {
         }
 
         menu->update(time);
-        updatePositions();
+        carousel.updatePositions();
         render();
 
         if (motionStart != 0) {
@@ -52,11 +52,11 @@ void GuiLauncher::loop() {
             if (timePressed > 300) {
                 if (time - timespeed > 100) {
                     if (motionDir == 0) {
-                        if (!scrolling) {
+                        if (!carousel.scrolling) {
                             nextCarouselGame(60);
                         }
                     } else {
-                        if (!scrolling) {
+                        if (!carousel.scrolling) {
                             prevCarouselGame(60);
                         }
                     }
@@ -86,7 +86,7 @@ void GuiLauncher::loop() {
                         continue;
                     if (gui->input().dpadCentered()) {
                         if (state == LauncherScreenState::Games) {
-                            if (carouselGames.empty()) {
+                            if (carousel.games.empty()) {
                                 continue;
                             }
                         }
@@ -147,13 +147,13 @@ void GuiLauncher::loop() {
 //*******************************
 void GuiLauncher::loop_joyMoveLeft() {
     if (state == LauncherScreenState::Games) {
-        if (carouselGames.empty()) {
+        if (carousel.games.empty()) {
             return;
         }
-        if (!scrolling) {
+        if (!carousel.scrolling) {
             motionStart = time;
             motionDir = 1;
-            scrolling = true;
+            carousel.scrolling = true;
             prevCarouselGame(110);
         }
     } else if (state == LauncherScreenState::Set) {
@@ -185,13 +185,13 @@ void GuiLauncher::loop_joyMoveLeft() {
 //*******************************
 void GuiLauncher::loop_joyMoveRight() {
     if (state == LauncherScreenState::Games) {
-        if (carouselGames.empty()) {
+        if (carousel.games.empty()) {
             return;
         }
-        if (!scrolling) {
+        if (!carousel.scrolling) {
             motionStart = time;
             motionDir = 0;
-            scrolling = true;
+            carousel.scrolling = true;
             nextCarouselGame(110);
         }
     } else if (state == LauncherScreenState::Set) {
@@ -222,7 +222,7 @@ void GuiLauncher::loop_joyMoveRight() {
 // GuiLauncher::loop_joyMoveUp
 //*******************************
 void GuiLauncher::loop_joyMoveUp() {
-    if (scrolling) {
+    if (carousel.scrolling) {
         return;
     }
     if (state == LauncherScreenState::Set) {
@@ -238,7 +238,7 @@ void GuiLauncher::loop_joyMoveUp() {
 // GuiLauncher::loop_joyMoveDown
 //*******************************
 void GuiLauncher::loop_joyMoveDown() {
-    if (scrolling) {
+    if (carousel.scrolling) {
         return;
     }
     if (state == LauncherScreenState::Games) {
@@ -310,19 +310,19 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
     app.audio().cursor.play();
 
     if (state == LauncherScreenState::Games) {
-        if (carouselGames.empty()) {
+        if (carousel.games.empty()) {
             return;
         }
 
-        if (carouselGames[selGameIndex]->title == "") {
+        if (carousel.games[carousel.selected]->title == "") {
             return;
         }
 
         // find the index of all the first letters
         map<char, int> firstLetterToIndex;
-        for (int index = 0; index < carouselGames.size() ; ++index) {
-            if (carouselGames[index]->title != "") {
-                char firstLetter = toupper(carouselGames[index]->title[0]);
+        for (int index = 0; index < carousel.games.size() ; ++index) {
+            if (carousel.games[index]->title != "") {
+                char firstLetter = toupper(carousel.games[index]->title[0]);
                 if (firstLetterToIndex.find(firstLetter) == firstLetterToIndex.end())   // if letter not in map
                     firstLetterToIndex[firstLetter] = index;    // add the first letter to the map
             }
@@ -331,9 +331,9 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
         if (firstLetterToIndex.size() == 0)
             return; // nothing with a title
 
-        if (selGameIndexInCarouselGamesIsValid()) {
-            char currentLetter = toupper(carouselGames[selGameIndex]->title[0]);
-            int nextGame = selGameIndex;
+        if (carousel.selectedIsValid()) {
+            char currentLetter = toupper(carousel.games[carousel.selected]->title[0]);
+            int nextGame = carousel.selected;
             if (firstLetterToIndex.size() == 1) {
                 nextGame = firstLetterToIndex[currentLetter];   // there is only one first letter in the games
             } else {
@@ -351,19 +351,19 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                 }
             }
 
-            if (nextGame != selGameIndex) {
+            if (nextGame != carousel.selected) {
                 // we have prev/next game first letter;
-                selGameIndex = nextGame;
+                carousel.selected = nextGame;
                 app.audio().cursor.play();
-                notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
-                setInitialPositions(selGameIndex);
+                carousel.setInitialPositions(carousel.selected);
                 updateMeta();
-                menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+                menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
             } else {
                 // no change
                 app.audio().cancel.play();
-                notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
             }
         }
@@ -492,9 +492,9 @@ void GuiLauncher::loop_chooseGameDir() {
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
-    if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
+    if (carousel.selected != -1 && carousel.selectedIsValid()) {
         updateMeta();
-        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
     } else {
         updateMeta();
     }
@@ -540,9 +540,9 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
-    if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
+    if (carousel.selected != -1 && carousel.selectedIsValid()) {
         updateMeta();
-        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
     } else {
         updateMeta();
     }
@@ -575,9 +575,9 @@ void GuiLauncher::loop_selectButton_Pressed() {
 
             switchSet(selection.set,false);
             showSetName();
-            if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
+            if (carousel.selected != -1 && carousel.selectedIsValid()) {
                 updateMeta();
-                menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+                menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
             } else {
                 updateMeta();
             }
@@ -593,16 +593,16 @@ void GuiLauncher::loop_startButton_Pressed() {
     app.audio().cursor.play();
 
     if (state == LauncherScreenState::Games) {
-        if (carouselGames.empty()) {
+        if (carousel.games.empty()) {
             return;
         }
 
-        selGameIndex = Util::getRandomIndex(carouselGames.size());
-        if (selGameIndexInCarouselGamesIsValid()) {
+        carousel.selected = Util::getRandomIndex(carousel.games.size());
+        if (carousel.selectedIsValid()) {
             app.audio().cursor.play();
-            setInitialPositions(selGameIndex);
+            carousel.setInitialPositions(carousel.selected);
             updateMeta();
-            menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+            menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
         }
     }
 }
@@ -625,8 +625,8 @@ void GuiLauncher::loop_circleButton_Pressed() {
         sselector->visible = false;
         arrow->visible = true;
         sselector->cleanSaveStateImages();
-        if (selGameIndexInCarouselGamesIsValid())
-            menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+        if (carousel.selectedIsValid())
+            menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
 
         if (sselector->operation == OP_LOAD) {
             state = LauncherScreenState::Set;
@@ -647,8 +647,8 @@ void GuiLauncher::loop_triangleButton_Pressed() {
         guide.show();
     } else {
         if (sselector->operation == OP_LOAD) {
-            if (selGameIndexInCarouselGamesIsValid()) {
-                auto game = carouselGames[selGameIndex];
+            if (carousel.selectedIsValid()) {
+                auto game = carousel.games[carousel.selected];
                 int slot = sselector->selSlot;
                 if (app.resumePoints().slotIsActive(*game, slot)) {
                     app.audio().cursor.play();
@@ -661,7 +661,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                         app.resumePoints().removeSlot(*game, slot);
                     }
                     sselector->cleanSaveStateImages();
-                    sselector->loadSaveStateImages(carouselGames[selGameIndex], false);
+                    sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
                     state = LauncherScreenState::Resume;
                     sselector->selSlot = 0;
                     sselector->operation = OP_LOAD;
@@ -682,15 +682,15 @@ void GuiLauncher::loop_squareButton_Pressed() {
     if (DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) { // retroarch is a file!!
 
         if (state == LauncherScreenState::Games) {
-            if (carouselGames.empty()) {
+            if (carousel.games.empty()) {
                 return;
             }
-            if (selGameIndexInCarouselGamesIsValid() && carouselGames[selGameIndex]->foreign) {
+            if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
                 return;
             }
             app.session().startingGame = true;
-            if (selGameIndexInCarouselGamesIsValid()) {
-                app.session().runningGame = carouselGames[selGameIndex];
+            if (carousel.selectedIsValid()) {
+                app.session().runningGame = carousel.games[carousel.selected];
                 app.gameCatalog().recordGamePlayed(app.session().runningGame);
             }
             app.session().resumePoint = -1;
@@ -724,13 +724,13 @@ void GuiLauncher::loop_crossButton_Pressed() {
 // GuiLauncher::loop_crossButtonPressed_STATE_GAMES
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
-    if (carouselGames.empty()) {
+    if (carousel.games.empty()) {
         return;
     }
 
     app.session().startingGame = true;
-    if (selGameIndexInCarouselGamesIsValid()) {
-        app.session().runningGame = carouselGames[selGameIndex];
+    if (carousel.selectedIsValid()) {
+        app.session().runningGame = carousel.games[carousel.selected];
     }
     app.session().resumePoint = -1;
     rememberSelection();
@@ -748,7 +748,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
                 return loop_squareButton_Pressed();     // play internal PSX game in RA
         } else {
             IniFile gameini;
-            gameini.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
+            gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
             if (gameini.values["play_using_ra"] == "true")
                 return loop_squareButton_Pressed();     // play PSX game in RA
         }
@@ -805,7 +805,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
     Ps1SelectState lastPS1_SelectState = selection.ps1SelectState;
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
-    int lastGame = selGameIndex;
+    int lastGame = carousel.selected;
     GuiOptions option(*gui);
     option.show();
     bool exitCode = option.exitCode;
@@ -819,36 +819,36 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
             selection.ps1SelectState = lastPS1_SelectState;
         selection.usbGameDirIndex = lastUSBGameDirIndex;
         selection.raPlaylistIndex = lastRAPlaylistIndex;
-        selGameIndex = lastGame;
+        carousel.selected = lastGame;
         bool resetCarouselPosition = false;
 
         switchSet(selection.set,false);
         showSetName();
 
         if (resetCarouselPosition) {
-            if (carouselGames.empty()) {
-                selGameIndex = -1;
+            if (carousel.games.empty()) {
+                carousel.selected = -1;
                 updateMeta();
             } else {
-                selGameIndex = 0;
-                setInitialPositions(0);
+                carousel.selected = 0;
+                carousel.setInitialPositions(0);
                 updateMeta();
             }
         } else {
-            if (selGameIndex != -1) {
-                setInitialPositions(selGameIndex);
+            if (carousel.selected != -1) {
+                carousel.setInitialPositions(carousel.selected);
                 updateMeta();
-                if (selGameIndexInCarouselGamesIsValid())
-                    menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+                if (carousel.selectedIsValid())
+                    menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
             }
         }
 
-        if (!carouselGames.empty()) {
+        if (!carousel.games.empty()) {
             gui->loadAssets();
-            for (auto &game : carouselGames) {
+            for (auto &game : carousel.games) {
                 game.freeTex();
             }
-            setInitialPositions(selGameIndex);
+            carousel.setInitialPositions(carousel.selected);
         } else {
             gui->loadAssets();
             meta->gameName = "";
@@ -865,26 +865,26 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
-    if (carouselGames.empty()) {
+    if (carousel.games.empty()) {
         return;
     }
 
     app.audio().cursor.play();
     GuiEditor editor(*gui);
-    if (selGameIndexInCarouselGamesIsValid()) {
-        editor.gameData = carouselGames[selGameIndex];
+    if (carousel.selectedIsValid()) {
+        editor.gameData = carousel.games[carousel.selected];
     }
 
     editor.show();
 
-    if (selGameIndexInCarouselGamesIsValid()) {
-        if (!carouselGames[selGameIndex]->internal) {
+    if (carousel.selectedIsValid()) {
+        if (!carousel.games[carousel.selected]->internal) {
             if (editor.changes) {
                 IniFile gameIni;
-                gameIni.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
-                app.library().updateTitle(*carouselGames[selGameIndex], gameIni.values["title"]);
+                gameIni.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
+                app.library().updateTitle(*carousel.games[carousel.selected], gameIni.values["title"]);
             }
-            app.library().reload(*carouselGames[selGameIndex]);
+            app.library().reload(*carousel.games[carousel.selected]);
             if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::Favorites &&
                 editor.settings.ini.values["favorite"] == "0") {
                 app.session().launcher.set = GameSet::PS1;
@@ -893,9 +893,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             }
         } else {
             if (editor.changes) {
-                app.library().updateTitle(*carouselGames[selGameIndex], editor.lastName);
+                app.library().updateTitle(*carousel.games[carousel.selected], editor.lastName);
             }
-            app.library().reload(*carouselGames[selGameIndex]);
+            app.library().reload(*carousel.games[carousel.selected]);
             if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::Favorites &&
                 editor.gameData->favorite == false) {
                 app.session().launcher.set = GameSet::PS1;
@@ -905,11 +905,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         }
     }
 
-    // if the current set is favorites and the user removes the last favorite selGameIndex will be -1
-    if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
-        setInitialPositions(selGameIndex);
+    // if the current set is favorites and the user removes the last favorite carousel.selected will be -1
+    if (carousel.selected != -1 && carousel.selectedIsValid()) {
+        carousel.setInitialPositions(carousel.selected);
         updateMeta();
-        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
+        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
 
         PsScreenpoint point2;
         point2.x = 640 - 113;
@@ -917,9 +917,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         point2.scale = 1;
         point2.shade = 220;
 
-        carouselGames[selGameIndex].destination = point2;
-        carouselGames[selGameIndex].actual = point2;
-        carouselGames[selGameIndex].current = point2;
+        carousel.games[carousel.selected].destination = point2;
+        carousel.games[carousel.selected].actual = point2;
+        carousel.games[carousel.selected].current = point2;
     }
     // fix to put back cover on top position
 }
@@ -928,10 +928,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
-    if (carouselGames.empty()) {
+    if (carousel.games.empty()) {
         return;
     }
-    if (selGameIndexInCarouselGamesIsValid() && carouselGames[selGameIndex]->foreign)
+    if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign)
     {
         return;
     }
@@ -941,16 +941,16 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
     string cardPath1;
     string cardPath2;
     string memcard; // Mapped card
-    if (selGameIndexInCarouselGamesIsValid()) {
+    if (carousel.selectedIsValid()) {
         leftCardName = "[1]" + _("INTERNAL");
         rightCardName = "[2]" + _("INTERNAL");
-        cardPath1 = carouselGames[selGameIndex]->ssFolder + "memcards/card1.mcd";
-        cardPath2 = carouselGames[selGameIndex]->ssFolder + "memcards/card2.mcd";
+        cardPath1 = carousel.games[carousel.selected]->ssFolder + "memcards/card1.mcd";
+        cardPath2 = carousel.games[carousel.selected]->ssFolder + "memcards/card2.mcd";
         // Mapped card
         memcard = "SONY";
-        if (!carouselGames[selGameIndex]->internal) {
+        if (!carousel.games[carousel.selected]->internal) {
             IniFile gameini;
-            gameini.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
+            gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
             memcard = gameini.values["memcard"];
         }
     }
@@ -976,12 +976,12 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE() {
-    if (carouselGames.empty()) {
+    if (carousel.games.empty()) {
         return;
     }
     bool resumeAvailable = false;
     for (int i = 0; i < 4; i++) {
-        if (selGameIndexInCarouselGamesIsValid() && app.resumePoints().slotIsActive(*carouselGames[selGameIndex], i)) {
+        if (carousel.selectedIsValid() && app.resumePoints().slotIsActive(*carousel.games[carousel.selected], i)) {
             resumeAvailable = true;
         }
     }
@@ -989,8 +989,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     if (resumeAvailable) {
         app.audio().cursor.play();
         sselector->visible = true;
-        if (selGameIndexInCarouselGamesIsValid())
-            sselector->loadSaveStateImages(carouselGames[selGameIndex], false);
+        if (carousel.selectedIsValid())
+            sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
         state = LauncherScreenState::Resume;
         sselector->selSlot = 0;
         sselector->operation = OP_LOAD;
@@ -1003,15 +1003,15 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
 // GuiLauncher::loop_crossButtonPressed_STATE_RESUME
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
-    if (selGameIndexInCarouselGamesIsValid()) {
-        auto game = carouselGames[selGameIndex];
+    if (carousel.selectedIsValid()) {
+        auto game = carousel.games[carousel.selected];
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
             if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
-                app.session().runningGame = carouselGames[selGameIndex];
+                app.session().runningGame = carousel.games[carousel.selected];
                 app.session().resumePoint = slot;
                 rememberSelection();
                 sselector->cleanSaveStateImages();
@@ -1022,8 +1022,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             }
         } else {
             //app.audio().cursor.play();
-            app.resumePoints().saveAfterLaunch(*carouselGames[selGameIndex], sselector->selSlot);
-            app.resumePoints().storePictureForSlot(*carouselGames[selGameIndex], sselector->selSlot);
+            app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
+            app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
             app.audio().resume.play();
@@ -1031,7 +1031,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                     _("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                     DefaultShowingTimeout);
 
-            menu->setResumePic(app.resumePoints().pictureForSlot(*carouselGames[selGameIndex], sselector->selSlot));
+            menu->setResumePic(app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
 
             if (sselector->operation == OP_LOAD) {
                 state = LauncherScreenState::Set;

@@ -365,7 +365,18 @@ shrinks the input to the next:
 **Phase D — split `GuiLauncher`** (the existing todo #3). Deliberately last: phases B and C take roughly 600
 lines out of it first, so what is left is genuinely carousel and input.
 
-15. `carousel.*` (positions, the duplicated-games rule, cover loading).
+15. ~~`carousel.*` (positions, the duplicated-games rule, cover loading).~~ **done 2026-09-16.**
+    `launcher/carousel.*`: `games` and `selected`, the `PsCarousel` position table, `scrolling`, the
+    duplicated-games rule (`setGames`), `setInitialPositions`, both scrolls, `moveMainCover`,
+    `updatePositions`/`updateVisibility` and the cover-drawing part of `render()`. `GuiLauncher` holds it
+    as `carousel` and its ~200 references became `carousel.games` / `carousel.selected` /
+    `carousel.selectedIsValid()` by search-and-replace; `gui_launcher.cpp` is 520 lines from 834.
+    `Carousel` takes a `GuiBase&` for the renderer and the clock. Two small things folded in:
+    `setInitialPositions`'s twelve unrolled blocks are two six-step loops with the same result, and
+    `PsCarouselGame` takes its `PsGamePtr` by const reference. The `GuiLauncher` `gui` shadow section 7
+    warned about is gone - the new member is initialised from the base's `gui`, which the shadow would have
+    hidden behind a null pointer. Verified: scroll both ways with key repeat, the cover moving up for the
+    game menu and back, a set switch onto a two-game playlist filling all thirteen positions.
 16. `launcher_input.*` / `launcher_screen.*` along the existing file seam.
 
 ## 6. Invariants to enforce

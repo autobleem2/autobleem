@@ -28,7 +28,7 @@ public:
 // So more than one PsCarouselGame could be using the same PsGamePtr.
 struct PsCarouselGame : public PsGamePtr {
     PsCarouselGame() = delete;
-    PsCarouselGame(PsGamePtr & game) : PsGamePtr(game) { };
+    PsCarouselGame(const PsGamePtr &game) : PsGamePtr(game) {}
 
     PsScreenpoint current;
     PsScreenpoint destination;

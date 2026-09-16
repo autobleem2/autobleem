@@ -9,7 +9,7 @@
 #include "ps_settings_back.h"
 #include "ps_zoom_btn.h"
 #include "ps_meta.h"
-#include "ps_carousel.h"
+#include "carousel.h"
 #include "ps_move_bnt.h"
 #include "ps_menu.h"
 #include "ps_centerlabel.h"
@@ -84,9 +84,6 @@ public:
     void updateMeta();
     void loadAssets();
     void freeAssets();
-    void moveMainCover(LauncherScreenState state);
-
-    shared_ptr<Gui> gui;
 
     // what the carousel is showing. loadAssets() seeds it from the Session, rememberSelection() writes it
     // back when a game starts.
@@ -96,13 +93,11 @@ public:
     void showSetName();
 
     NotificationLines notificationLines; // top two lines of the screen
-    int numberOfNonDuplicatedGamesInCarousel = 0;
 
     bool powerOffShift=false;
 
-    PsCarousel carouselPositions;
-
-    int len = 100;
+    // the row of covers: the games it shows, the selected one, the scroll animation
+    Carousel carousel{*gui};
 
     // the screen elements are owned by staticElements / frontElemets (created in loadAssets, freed in freeAssets).
     // the named pointers below are non-owning shortcuts into those vectors.
@@ -141,26 +136,11 @@ public:
 
     bool staticMeta=false;
     bool gameInfoVisible = true;
-    bool scrolling = false;
     using GuiScreen::GuiScreen;
-
-    // the carousel of games.
-    // Note that if there are less than 13 games in the gamesList the games are duplicated to fill out the carousel.
-    // So the same PsGamePtr could be in more than one PsCarouselGame.
-    std::vector<PsCarouselGame> carouselGames;
-    int selGameIndex = 0;
-    bool selGameIndexInCarouselGamesIsValid() { return ((selGameIndex >= 0) && (selGameIndex < carouselGames.size())); }
 
     std::vector<std::string> raPlaylists;
 
     LauncherScreenState state = LauncherScreenState::Games;
-    void setInitialPositions(int selected);
-    int getPreviousId(int id);
-    int getNextId(int id);
-    void scrollLeft(int speed);
-    void scrollRight(int speed);
-    void updatePositions();
-    void updateVisibility();
     void switchState(LauncherScreenState state, int time);
     void forceSettingsOnly();
     void showAllOptions();
