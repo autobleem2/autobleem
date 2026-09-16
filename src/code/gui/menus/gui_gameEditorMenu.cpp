@@ -7,9 +7,7 @@
 #include "../gui_keyboard.h"
 #include "../gui_selectmemcard.h"
 #include "../../core/main.h"
-#include "../../core/main.h"
 #include "../../core/lang.h"
-#include <sstream>
 #include "../../core/environment.h"
 
 using namespace std;
@@ -31,317 +29,75 @@ using namespace std;
 //*******************************
 // GuiEditor::processOptionChange
 //*******************************
+// right (direction true) is "on" / "more", left is "off" / "less"
 void GuiEditor::processOptionChange(bool direction) {
-    shared_ptr<Gui> gui(Gui::getInstance());
-    ConfigFileEditor processor;
-
-    string path = gameFolder;
-    if (internal) {
-        path = gameData->ssFolder;
-    }
-    stringstream ss;
-    string s;
+    GameSettingsService &svc = app.gameSettings();
+    const PcsxSettings &pcsx = settings.pcsx;
+    int step = direction ? 1 : -1;
 
     switch (selOption) {
         case OPT_FAVORITE:
-            if (internal) {
-                if (direction == true) {
-                    if (gameData->favorite == false) {
-                        gameData->favorite = true;
-                    }
-                } else {
-                    if (gameData->favorite == true) {
-                        gameData->favorite = false;
-                    }
-                }
-                app.library().internalGames().updateFavorite(gameData->gameId, gameData->favorite);
-            } else {
-                if (gameIni.values["favorite"] == "")
-                    gameIni.values["favorite"] = "0";   // doesn't exist yet in this ini so set to 0
-                if (direction == true) {
-                    if (gameIni.values["favorite"] == "0") {
-                        gameIni.values["favorite"] = "1";
-                    }
-                } else {
-                    if (gameIni.values["favorite"] == "1") {
-                        gameIni.values["favorite"] = "0";
-                    }
-                }
-                gameIni.save(gameIni.path);
-            }
+            svc.setFavorite(settings, direction);
             break;
 
         case OPT_PLAY_USING_RA:
-            if (internal) {
-                if (direction == true) {
-                    if (gameData->play_using_ra == false) {
-                        gameData->play_using_ra = true;
-                    }
-                } else {
-                    if (gameData->play_using_ra == true) {
-                        gameData->play_using_ra = false;
-                    }
-                }
-                app.library().internalGames().updatePlayUsingRA(gameData->gameId, gameData->play_using_ra);
-            } else {
-                if (gameIni.values["play_using_ra"] == "")
-                    gameIni.values["play_using_ra"] = "false";   // doesn't exist yet in this ini so set to 0
-                if (direction == true) {
-                    if (gameIni.values["play_using_ra"] == "false") {
-                        gameIni.values["play_using_ra"] = "true";
-                    }
-                } else {
-                    if (gameIni.values["play_using_ra"] == "true") {
-                        gameIni.values["play_using_ra"] = "false";
-                    }
-                }
-                gameIni.save(gameIni.path);
-            }
+            svc.setPlayUsingRa(settings, direction);
             break;
 
         case OPT_LOCK:
-            if (!internal) {
-                if (direction == true) {
-                    if (gameIni.values["automation"] == "1") {
-                        gameIni.values["automation"] = "0";
-                    }
-                } else {
-                    if (gameIni.values["automation"] == "0") {
-                        gameIni.values["automation"] = "1";
-                    }
-                }
-                gameIni.save(gameIni.path);
-            }
+            svc.setLocked(settings, direction);
             break;
 
         case OPT_HIGHRES:
-            if (direction == false) {
-                if (highres == 1) {
-                    highres = 0;
-                }
-            } else {
-                if (highres == 0) {
-                    highres = 1;
-                }
-            }
-            gameIni.values["highres"] = to_string(highres);
-
-            processor.replace(gameIni.entry, path, "gpu_neon.enhancement_enable",
-                               "gpu_neon.enhancement_enable = " + gameIni.values["highres"], internal);
-            if (!internal) {
-                gameIni.save(gameIni.path);
-            }
-
-            refreshData();
+            svc.setHighres(settings, direction);
             break;
 
         case OPT_SPEEDHACK:
-            if (direction == false) {
-                if (speedhack == 1) {
-                    speedhack = 0;
-                }
-            } else {
-                if (speedhack == 0) {
-                    speedhack = 1;
-                }
-            }
-
-            processor.replace(gameIni.entry, path, "gpu_neon.enhancement_no_main",
-                               "gpu_neon.enhancement_no_main = " + to_string(speedhack), internal);
-            refreshData();
+            svc.setSpeedhack(settings, direction);
             break;
 
         case OPT_SCANLINES:
-            if (direction == false) {
-                if (scanlines == 1) {
-                    scanlines = 0;
-                }
-            } else {
-                if (scanlines == 0) {
-                    scanlines = 1;
-                }
-            }
-            processor.replace(gameIni.entry, path, "scanlines",
-                               "scanlines = " + to_string(scanlines), internal);
-            refreshData();
+            svc.setScanlines(settings, direction);
             break;
 
         case OPT_SCANLINELV:
-            if (direction == true) {
-                scanlineLevel++;
-                if (scanlineLevel > 100) {
-                    scanlineLevel = 100;
-                }
-            } else {
-                scanlineLevel--;
-                if (scanlineLevel < 0) {
-                    scanlineLevel = 0;
-                }
-            }
-
-            ss << std::hex << scanlineLevel;
-            s = ss.str();
-
-            processor.replace(gameIni.entry, path, "scanline_level",
-                               "scanline_level = " + s, internal);
-            refreshData();
+            svc.setScanlineLevel(settings, pcsx.scanlineLevel + step);
             break;
 
         case OPT_CLOCK_PSX:
-            if (direction == true) {
-                clock++;
-                if (clock > 100) {
-                    clock = 100;
-                }
-
-            } else {
-                clock--;
-                if (clock < 0) {
-                    clock = 0;
-                }
-            }
-
-            ss << std::hex << clock;
-            s = ss.str();
-
-            processor.replace(gameIni.entry, path, "psx_clock",
-                               "psx_clock = " + s, internal);
-            refreshData();
+            svc.setClock(settings, pcsx.clock + step);
             break;
 
         case OPT_FRAMESKIP:
-            if (direction == true) {
-
-                frameskip++;
-                if (frameskip > 3) {
-                    frameskip = 3;
-                }
-            } else {
-                frameskip--;
-                if (frameskip < 0) {
-                    frameskip = 0;
-                }
-            }
-
-            ss << std::hex << frameskip;
-            s = ss.str();
-
-            processor.replace(gameIni.entry, path, "frameskip3",
-                               "frameskip3 = " + s, internal);
-            refreshData();
+            svc.setFrameskip(settings, pcsx.frameskip + step);
             break;
 
         case OPT_INTERPOLATION:
-            if (direction == true) {
-                interpolation++;
-                if (interpolation > 3) {
-                    interpolation = 3;
-                }
-            } else {
-                interpolation--;
-                if (interpolation < 0) {
-                    interpolation = 0;
-                }
-            }
-
-            ss << std::hex << interpolation;
-            s = ss.str();
-
-            processor.replace(gameIni.entry, path, "spu_config.iUseInterpolation",
-                               "spu_config.iUseInterpolation = " + s, internal);
-            refreshData();
+            svc.setInterpolation(settings, pcsx.interpolation + step);
             break;
 
         case OPT_PLUGIN:
-            if (!internal) {
-                if (direction == true) {
-                    gpu = "gpu_peops.so";
-                } else {
-                    gpu = "builtin_gpu";
-                }
-                processor.replace(gameIni.entry, path, "Gpu3",
-                                   "Gpu3 = " + gpu, internal);
-                refreshData();
-            }
+            svc.setGpuPlugin(settings, direction ? GameSettingsService::PeopsGpu : GameSettingsService::BuiltinGpu);
             break;
     }
-}
-
-//*******************************
-// GuiEditor::refreshData
-//*******************************
-void GuiEditor::refreshData() {
-    shared_ptr<Gui> gui(Gui::getInstance());
-    ConfigFileEditor processor;
-    string path = gameFolder;
-    if (internal) {
-        path = gameData->ssFolder;
-    }
-    highres       = atoi  (processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
-    speedhack     = atoi  (processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
-    clock         = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
-    gpu           =        processor.getValue(path, "gpu3");
-    frameskip     = atoi  (processor.getValue(path, "frameskip3").c_str());
-    dither        = atoi  (processor.getValue(path, "gpu_peops.iUseDither").c_str());
-    scanlines     = atoi  (processor.getValue(path, "scanlines").c_str());
-    scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
-    interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
-
 }
 
 //*******************************
 // GuiEditor::init
 //*******************************
 void GuiEditor::init() {
-    shared_ptr<Gui> gui(Gui::getInstance());
-    if (!internal) {
-        if (this->gameIni.values["memcard"] != "SONY") {
-            string cardpath =
-                    Env::getPathToMemCardsDir() + sep + this->gameIni.values["memcard"];
-            if (!DirEntry::exists(cardpath)) {
-                this->gameIni.values["memcard"] = "SONY";
-            }
-        }
+    settings = app.gameSettings().open(gameData);
 
-        bool pngLoaded = false;
-        for (const DirEntry & entry:DirEntry::diru(gameFolder)) {
-            if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
-                cover = ableem::Texture::loadFile(renderer, gameFolder + sep + entry.name);
-                pngLoaded = true;
-            }
-        }
-        if (!pngLoaded) {
-            cover = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
-        }
-    } else {
-        // recover ini
-        this->gameIni.values["title"] = gameData->title;
-        this->gameIni.values["publisher"] = gameData->publisher;
-        this->gameIni.values["year"] = to_string(gameData->year);
-        this->gameIni.values["players"] = to_string(gameData->players);
-        this->gameIni.values["memcard"] = gameData->memcard;
-
-        if (this->gameIni.values["memcard"] != "SONY") {
-            string cardpath =
-                    Env::getPathToMemCardsDir() + sep + this->gameIni.values["memcard"];
-            if (!DirEntry::exists(cardpath)) {
-                this->gameIni.values["memcard"] = "SONY";
-            }
-        }
-
-        bool pngLoaded = false;
-        for (const DirEntry & entry:DirEntry::diru(gameData->folder)) {
-            if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
-                cover = ableem::Texture::loadFile(renderer, gameData->folder + sep + entry.name);
-                pngLoaded = true;
-            }
-        }
-        if (!pngLoaded) {
-            cover = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
+    bool pngLoaded = false;
+    for (const DirEntry & entry:DirEntry::diru(gameData->folder)) {
+        if (DirEntry::matchExtension(entry.name, EXT_PNG)) {
+            cover = ableem::Texture::loadFile(renderer, gameData->folder + sep + entry.name);
+            pngLoaded = true;
         }
     }
-
-    refreshData();
+    if (!pngLoaded) {
+        cover = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
+    }
 }
 
 //*******************************
@@ -349,6 +105,9 @@ void GuiEditor::init() {
 //*******************************
 void GuiEditor::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    const bool internal = settings.internal;
+    IniFile &gameIni = settings.ini;
+    const PcsxSettings &pcsx = settings.pcsx;
 
     int line = 0;
     gui->renderBackground();
@@ -401,29 +160,29 @@ void GuiEditor::render() {
             _("Lock data:") + (gameIni.values["automation"] == "0" ? string("|@Check|") : string("|@Uncheck|")),
             OPT_LOCK, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("High res:") + (highres == 1 ? string("|@Check|") : string("|@Uncheck|")),
+    gui->renderTextLineOptions(_("High res:") + (pcsx.highres == 1 ? string("|@Check|") : string("|@Uncheck|")),
             OPT_HIGHRES, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("SpeedHack:") + (speedhack == 1 ? string("|@Check|") : string("|@Uncheck|")),
+    gui->renderTextLineOptions(_("SpeedHack:") + (pcsx.speedhack == 1 ? string("|@Check|") : string("|@Uncheck|")),
             OPT_SPEEDHACK, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("Scanlines:") + (scanlines == 1 ? string("|@Check|") : string("|@Uncheck|")),
+    gui->renderTextLineOptions(_("Scanlines:") + (pcsx.scanlines == 1 ? string("|@Check|") : string("|@Uncheck|")),
             OPT_SCANLINES, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("Scanline Level:") + " " + to_string(scanlineLevel),
+    gui->renderTextLineOptions(_("Scanline Level:") + " " + to_string(pcsx.scanlineLevel),
             OPT_SCANLINELV, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("Clock:") + " " + to_string(clock),
+    gui->renderTextLineOptions(_("Clock:") + " " + to_string(pcsx.clock),
             OPT_CLOCK_PSX, yoffset, XALIGN_LEFT, 300);
 
-    gui->renderTextLineOptions(_("Frameskip:") + " " + to_string(frameskip),
+    gui->renderTextLineOptions(_("Frameskip:") + " " + to_string(pcsx.frameskip),
             OPT_FRAMESKIP, yoffset, XALIGN_LEFT, 300);
 
     if (!internal) {
-        gui->renderTextLineOptions(_("Plugin:") + " " + gpu, OPT_PLUGIN, yoffset, XALIGN_LEFT, 300);
+        gui->renderTextLineOptions(_("Plugin:") + " " + pcsx.gpu, OPT_PLUGIN, yoffset, XALIGN_LEFT, 300);
     }
 
-    gui->renderTextLineOptions(_("Spu Interpolation:") + " " + to_string(interpolation),
+    gui->renderTextLineOptions(_("Spu Interpolation:") + " " + to_string(pcsx.interpolation),
             OPT_INTERPOLATION, yoffset, XALIGN_LEFT, 300);
 
     gui->renderSelectionBox(selOption, yoffset, 300);
@@ -458,6 +217,9 @@ void GuiEditor::render() {
 //*******************************
 void GuiEditor::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    const bool internal = settings.internal;
+    IniFile &gameIni = settings.ini;
+
     menuVisible = true;
     while (menuVisible) {
         Event e;
@@ -528,8 +290,7 @@ void GuiEditor::loop() {
                                     string savePath =
                                             Env::getPathToSaveStatesDir() + sep + gameIni.entry + sep + "memcards";
                                     app.memcards().storeGameCardsAsSet(savePath, result);
-                                    gameIni.values["memcard"] = result;
-                                    gameIni.save(gameIni.path);
+                                    app.gameSettings().setMemcard(settings, result);
                                 }
                             };
                         }
@@ -546,11 +307,9 @@ void GuiEditor::loop() {
 
                             if (selector.selected != -1) {
                                 if (selector.selected == 0) {
-                                    gameIni.values["memcard"] = "SONY";
-                                    gameIni.save(gameIni.path);
+                                    app.gameSettings().setMemcard(settings, "SONY");
                                 } else {
-                                    gameIni.values["memcard"] = selector.cards[selector.selected];
-                                    gameIni.save(gameIni.path);
+                                    app.gameSettings().setMemcard(settings, selector.cards[selector.selected]);
                                 }
                             }
                         } else {
@@ -580,16 +339,12 @@ void GuiEditor::loop() {
 
                         if (!cancelled) {
                             if (!internal) {
-                                gameIni.values["title"] = result;
-                                gameIni.values["automation"] = "0";
-                                gameIni.save(gameIni.path);
-                                changes = true;
+                                app.gameSettings().rename(settings, result);
                             } else {
                                 lastName = result;
-                                changes = true;
                             }
+                            changes = true;
                         }
-                        refreshData();
                     };
                     break;
                 default:

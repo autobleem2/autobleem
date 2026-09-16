@@ -245,7 +245,26 @@ shrinks the input to the next:
    With that, **`PsGame` is what its name says** - `ableem::GameRecord` plus the launcher-only fields, 29
    lines, no filesystem at all. The last of it, the Game.ini memcard write, went into `MemcardService`
    alongside the database write it belongs with, which is what section 3 of this plan asked for.
-9. `GameSettingsService`
+9. ~~`GameSettingsService`~~ **done 2026-09-16.** `GuiEditor` is 320 lines instead of 600, and every one
+   of them is rendering or input. The service is `open()` (the Game.ini, or for an internal game an ini
+   filled in from the record; then the nine pcsx.cfg reads) plus one setter per editor option, each
+   preserving the file encoding it had - 0/1 flags in decimal, the levels in hex, `frameskip3` written in
+   hex but read in decimal (0..3, so it never mattered). The **favorite toggles deferred from step 7** are
+   here, not in `GameCatalogService`: in the editor they were one of six identical read-modify-save blocks
+   over one `IniFile`, and that ini is what this service is.
+
+   Both callers used to seed the editor's ini by hand, the same five lines twice; they set `gameData` now
+   and `open()` does the rest. `GuiEditor::gameFolder` and `internal` were always `game->folder` and
+   `game->internal` at both call sites, so they are gone.
+
+   Two things pinned rather than fixed: `setLocked` only flips Automation from its opposite value (an ini
+   with no key is left alone - the scanner always writes one), and `setMemcard` writes the ini but not
+   regional.db's MEMCARD column, which `MemcardService::setCardForGame` does; a launch reads the ini so the
+   stale column has no effect. Both are asserted in `tests/core/test_game_settings.cpp` under a comment.
+
+   Smoke testing this found a dev-host bug in lib_ableem, fixed in its own commit: with the keyboard as
+   the pad, `Input::padEventPending()` never saw a key release, so every classic screen's d-pad repeat loop
+   spun forever on the first press. The console was never affected.
 10. `LaunchService` (introduces `ProcessRunner`)
 11. `RetroArchService`
 

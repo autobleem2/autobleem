@@ -873,33 +873,22 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
 
     app.audio().cursor.play();
     GuiEditor editor(*gui);
-    IniFile gameIni;
     if (selGameIndexInCarouselGamesIsValid()) {
-        editor.internal = carouselGames[selGameIndex]->internal;
-        if (!editor.internal) {
-            editor.gameFolder = carouselGames[selGameIndex]->folder;
-            editor.gameData = carouselGames[selGameIndex];
-            gameIni.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
-            string folderNoLast = DirEntry::removeSeparatorFromEndOfPath(carouselGames[selGameIndex]->folder);
-            // change "/media/Games/Racing/Driver 2" to "Driver 2"
-            gameIni.entry = DirEntry::getFileNameFromPath(folderNoLast);
-            editor.gameIni = gameIni;
-        } else {
-            editor.gameData = carouselGames[selGameIndex];
-        }
+        editor.gameData = carouselGames[selGameIndex];
     }
 
     editor.show();
 
     if (selGameIndexInCarouselGamesIsValid()) {
-        if (!editor.internal) {
+        if (!carouselGames[selGameIndex]->internal) {
             if (editor.changes) {
-                gameIni.reload(carouselGames[selGameIndex]->folder + sep + GAME_INI);
+                IniFile gameIni;
+                gameIni.load(carouselGames[selGameIndex]->folder + sep + GAME_INI);
                 app.library().updateTitle(*carouselGames[selGameIndex], gameIni.values["title"]);
             }
             app.library().reload(*carouselGames[selGameIndex]);
             if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::Favorites &&
-                editor.gameIni.values["favorite"] == "0") {
+                editor.settings.ini.values["favorite"] == "0") {
                 app.session().launcher.set = GameSet::PS1;
                 app.session().launcher.ps1SelectState = Ps1SelectState::Favorites;
                 loadAssets();   // reload - one less favorite game in display

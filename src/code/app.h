@@ -10,6 +10,7 @@
 #include "core/services/config.h"
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
+#include "core/services/game_settings.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "engine/theme.h"
@@ -42,6 +43,7 @@ public:
     ableem::GameLibrary &library() { return gameLibrary; }
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
+    GameSettingsService &gameSettings() { return gameSettings_; }
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
     Session &session() { return session_; }
@@ -64,6 +66,7 @@ private:
     ableem::GameLibrary gameLibrary;
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
+    GameSettingsService gameSettings_{gameLibrary};
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     Session session_;

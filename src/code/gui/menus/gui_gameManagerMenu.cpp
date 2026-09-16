@@ -158,11 +158,6 @@ void GuiManager::doCross_Pressed() {
         {
             GuiEditor editor(*gui);
             editor.gameData = psGames[selected];
-            editor.gameFolder = selectedGameFolder;
-            editor.gameIni.load(selectedGameFolder + sep + GAME_INI);
-            string folderNoLast = DirEntry::removeSeparatorFromEndOfPath(selectedGameFolder);
-            // change "/media/Games/Racing/Driver 2" to "Driver 2"
-            editor.gameIni.entry = DirEntry::getFileNameFromPath(folderNoLast);
             editor.show();
             if (editor.changes)
             {

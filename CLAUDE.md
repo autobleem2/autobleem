@@ -90,6 +90,13 @@ fall back to SONY" branch is unreachable behind a redundant existence guard.
 header documents the file layout. Two naming quirks callers depend on: slot 0's picture has no number in
 its name, and `lastPicture()` uses slot 0's picture name whichever slot it finds.
 
+`GameSettingsService` (`core/services/game_settings.*`) is what the game editor edits: `open(game)` gives a
+`GameSettings` (the game's Game.ini as an `IniFile` - filled in from the record for an internal game, which
+has no file - plus the nine `pcsx.cfg` values), and one setter per editor option writes it back with the
+encoding PCSX expects (0/1 flags decimal, levels hex, every `!SaveStates` copy via `ConfigFileEditor`).
+The favorite/play-using-RA toggles live here (Game.ini for USB, internal.db for internal). `GuiEditor` is
+now only the screen: callers set `gameData` and `show()`.
+
 **`PsGame` is now a data record** - `ableem::GameRecord` plus the launcher-only fields and
 `fromRecords()`, and nothing else. No filesystem, no `App`, no `Gui`.
 
@@ -327,6 +334,7 @@ defaults, which both the services and the screens need.
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
 | `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
+| `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
 | `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |
