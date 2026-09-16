@@ -22,11 +22,19 @@
 // which sub-screen of the launcher is showing
 enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
 
+// the four icons of the settings overlay, in the order PsMenu lays them out. PsMenu::selOption stays a plain
+// index into that row (it also animates the zoom per option), so it is compared through selOptionIs.
+enum class LauncherMenuOption : int { AbSettings = 0, EditGameSettings, EditMemcardInfo, ResumeFromSavestate };
+inline bool selOptionIs(int selOption, LauncherMenuOption option) { return selOption == static_cast<int>(option); }
+
 extern const ableem::Color brightWhite;
 
 //******************
 // GuiLauncher
 //******************
+// The EvolutionUI launcher. One class in three files: launcher_screen.cpp (assets, sets, the metadata panel,
+// state transitions, render), launcher_input.cpp (the event loop and the per-button handlers) and
+// launcher_actions.cpp (what Cross does: start the game, open the editors and choosers, reconcile after).
 class GuiLauncher : public GuiScreen {
 public:
     void init();

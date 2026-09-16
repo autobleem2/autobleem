@@ -204,9 +204,10 @@ add_library(ab_evoui STATIC
         src/code/launcher/gui_app_start.h
         src/code/launcher/gui_btn_guide.cpp
         src/code/launcher/gui_btn_guide.h
-        src/code/launcher/gui_launcher.cpp
         src/code/launcher/gui_launcher.h
-        src/code/launcher/gui_launcher_loop.cpp
+        src/code/launcher/launcher_actions.cpp
+        src/code/launcher/launcher_input.cpp
+        src/code/launcher/launcher_screen.cpp
         src/code/launcher/gui_mc_manager.cpp
         src/code/launcher/gui_mc_manager.h
         src/code/launcher/ps_carousel.cpp

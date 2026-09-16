@@ -1,5 +1,6 @@
 //
-// Created by screemer on 2/8/19.
+// GuiLauncher, the screen half: assets, the sets and the metadata panel, the settings overlay's state
+// transitions, and render(). Input is launcher_input.cpp, the sub-screen actions launcher_actions.cpp.
 //
 
 #include "gui_launcher.h"

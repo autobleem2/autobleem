@@ -377,7 +377,20 @@ lines out of it first, so what is left is genuinely carousel and input.
     warned about is gone - the new member is initialised from the base's `gui`, which the shadow would have
     hidden behind a null pointer. Verified: scroll both ways with key repeat, the cover moving up for the
     game menu and back, a set switch onto a two-game playlist filling all thirteen positions.
-16. `launcher_input.*` / `launcher_screen.*` along the existing file seam.
+16. ~~`launcher_input.*` / `launcher_screen.*` along the existing file seam.~~ **done 2026-09-16.**
+    `gui_launcher.cpp` -> `launcher_screen.cpp` (521 lines: assets, sets, metadata panel, state
+    transitions, render) and `gui_launcher_loop.cpp` -> `launcher_input.cpp` (595: the event loop and the
+    per-button handlers), both `git mv` so the history follows. A third seam was plain once the carousel
+    was out: the eight handlers that *do* something - start the game, open the settings / game editor /
+    memory-card manager / resume selector, the L2+Select sub-directory and playlist choosers - and then
+    reconcile the carousel afterwards, are `launcher_actions.cpp` (484). The class is unchanged;
+    `LauncherMenuOption` moved to the header because two files use it now. No behaviour change, and
+    nothing to test but the app: scroll, game menu, editor, button guide, set switch and a RetroArch launch
+    all as before.
+
+**With that the plan is complete**: phases A to D, every step, plus the three bugs the extractions pinned
+and the power-off unification. What it did not do, by the user's choice, is step 3: nothing here has run on
+a console. That is the next thing.
 
 ## 6. Invariants to enforce
 
