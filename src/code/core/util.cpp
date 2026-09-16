@@ -21,12 +21,16 @@ using namespace std;
 //*******************************
 // Util::powerOff
 //*******************************
+// The one way the app powers the console off: the launcher's L2+R2, the classic menu's L2+R2 and the
+// console's power button all come here. sync() first, so the last log lines and any ini just written
+// reach the USB stick before the halt.
 void Util::powerOff()
 {
 #ifdef AB_DEBUG_HOST
     exit(0);
 #else
     Util::execUnixCommand("shutdown -h now");
+    sync();
     exit(0);
 #endif
 }

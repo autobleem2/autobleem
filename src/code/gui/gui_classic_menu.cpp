@@ -12,8 +12,6 @@
 #include "../core/environment.h"
 #include "../core/util.h"
 
-#include <unistd.h>
-
 using namespace std;
 
 //*******************************
@@ -95,13 +93,7 @@ void ClassicMenuScreen::showLauncher() {
 //*******************************
 void ClassicMenuScreen::powerOff() {
     gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-#ifdef AB_DEBUG_HOST
-    exit(0);
-#else
-    Util::execUnixCommand("shutdown -h now");
-    sync();
-    exit(1);
-#endif
+    Util::powerOff();
 }
 
 //*******************************

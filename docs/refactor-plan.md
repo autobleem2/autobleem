@@ -345,8 +345,9 @@ shrinks the input to the next:
     (init + render) and breaks out of the event drain, so the loop's next iteration picks up
     `startingGame`/`resumingGui` the way the recursive call's first lines did. The one observable
     difference is that the stack no longer grows a frame per sub-screen visit. The power-off block
-    (`shutdown -h now; sync(); exit(1)`) is kept as it was rather than routed through `Util::powerOff()`,
-    which exits 0 and does not sync; that unification is a deliberate change for another day.
+    (`shutdown -h now; sync(); exit(1)`) was kept as it was rather than routed through `Util::powerOff()`,
+    which exited 0 and did not sync; unified the same day, at the user's call: `Util::powerOff()` syncs
+    and exits 0, and all three power-off paths (both L2+R2 menus and the power button) use it.
     Verified with the About, Options, Advanced-row, Start -> launcher -> launch -> back sequence.
 
     **And then the targets.** With the classic menu out of `Gui`, the only file in `gui/` that named the
