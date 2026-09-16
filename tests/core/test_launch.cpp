@@ -259,7 +259,18 @@ TEST_CASE("RetroArch is started through rc/launch_rb.sh with the image and the c
         CHECK(lib.runner.only().args[0] == lib.tmp.at("Games/Tekken 3/Tekken 3.m3u"));
     }
 
-    // Pinned, not endorsed: a RetroArch launch never recorded a "last played" time - only PCSX and Apps did.
+    // a RetroArch launch is a play too (it was not recorded as one until 2026-09-16)
+    CHECK(lib.usbGame()->last_played > 0);
+}
+
+TEST_CASE("a playlist entry's launch records nothing: its id is a playlist index, not a database row") {
+    Launching lib;
+    lib.configure("Raconfig=false\n");
+    PsGamePtr rom = lib.foreignGame(false);
+    rom->gameId = 1;   // the same number as Tekken 3's row, by coincidence - which is the point
+
+    lib.service->launch(rom, EmuMode::RetroArch, -1);
+
     CHECK(lib.usbGame()->last_played == 0);
 }
 

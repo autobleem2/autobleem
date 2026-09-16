@@ -227,6 +227,12 @@ void LaunchService::cleanupPcsxConfig(PsGame &game) {
 void LaunchService::launchRetroArch(PsGame &game) {
     cout << "calling LaunchService::launchRetroArch()" << endl;
 
+    // one of our own games: a playlist entry's gameId is only its index in the playlist, and would name
+    // some unrelated row in regional.db
+    if (!game.foreign) {
+        library_.updateDatePlayed(game, time(nullptr));
+    }
+
     string gameFile = "";
 
     cout << "Starting RetroArch Emu" << endl;

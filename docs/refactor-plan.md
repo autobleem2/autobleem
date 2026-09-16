@@ -283,7 +283,9 @@ shrinks the input to the next:
     find nothing; RetroArch is left with three `input_overlay = ...` lines and its defaults for the other
     two. The fix is to replace the longer keys first, or teach `ConfigFileEditor` to match `key =`. It is
     a behaviour change, so today's output is asserted in `tests/core/test_launch.cpp` with a comment.
-    Also pinned: a RetroArch launch never recorded a "last played" time - only PCSX and Apps did.
+    Also pinned, and fixed the same day: a RetroArch launch never recorded a "last played" time - only
+    PCSX and Apps did. It does now, for the library's own games only: a playlist entry's `gameId` is its
+    index in the playlist and would have named an unrelated regional.db row.
 
     Two non-behaviour changes folded in: the selection script was written twice per launch (once by
     `App::launchGame`, once by each interceptor's `execute`) and is written once now, and the 3 ms
