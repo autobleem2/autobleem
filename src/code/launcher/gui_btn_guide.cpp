@@ -27,7 +27,7 @@ void GuiBtnGuide::render() {
     auto font = gui->sonyFonts[FONT_20_BOLD];
 
     auto renderTextLineToColumns = [&] (const string &textLeft, const string &textRight) {
-        gui->renderTextLineToColumns(textLeft, textRight, xLeft, xRight, line++, yoffset, font);
+        gui->text().renderTextLineToColumns(textLeft, textRight, xLeft, xRight, line++, yoffset, font);
     };
 
     renderTextLineToColumns("",                          "-=" + _("Button Guide") + "=-");

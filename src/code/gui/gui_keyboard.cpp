@@ -40,15 +40,15 @@ void GuiKeyboard::render() {
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderLogo(true);
-    gui->renderLabelBox(1, yoffset);
-    gui->renderTextLine("-= " + label + " =-", 0, yoffset, XALIGN_CENTER);
+    gui->text().renderLabelBox(1, yoffset);
+    gui->text().renderTextLine("-= " + label + " =-", 0, yoffset, XALIGN_CENTER);
 
     //*******************************
     // drawRectangle lambda
     //*******************************
     auto drawRectangle = [&] (ableem::Rect& rect) {
         string fg = app.theme().data.values["text_fg"];
-        renderer.setDrawColor(ableem::Color(gui->getR(fg), gui->getG(fg), gui->getB(fg), 255));
+        renderer.setDrawColor(ableem::Color(gui->text().getR(fg), gui->text().getG(fg), gui->text().getB(fg), 255));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.drawRect(rect);
         ableem::Rect rectSelection2;
@@ -65,24 +65,24 @@ void GuiKeyboard::render() {
     else
         displayResult = result;
     displayResult.insert(cursorIndex, "#");
-    gui->renderTextLine(displayResult, 1, yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine(displayResult, 1, yoffset, XALIGN_CENTER);
 
-    ableem::Rect rect2 = gui->getOpscreenRectOfTheme();
+    ableem::Rect rect2 = gui->text().getOpscreenRectOfTheme();
     int fontHeight = gui->themeFont.lineHeight();
 
     if (L2_cursor_shift || usingUsbKeyboard) {
-        ableem::Rect rectEditbox = gui->getFontTextRect(gui->themeFont, displayResult);
-        rectEditbox.x = gui->align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
+        ableem::Rect rectEditbox = gui->text().getFontTextRect(gui->themeFont, displayResult);
+        rectEditbox.x = gui->text().align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
         rectEditbox.y = (1 * rectEditbox.h) + yoffset;  // line 1 (0 == top)
 
         // compute the bounding box around the cursor (#)
         ableem::Size textBeforeCursorSize;
         // get the size of the text before the cursor
         if (cursorIndex > 0) {
-            textBeforeCursorSize = gui->getFontTextSize(gui->themeFont, displayResult.substr(0, cursorIndex));
+            textBeforeCursorSize = gui->text().getFontTextSize(gui->themeFont, displayResult.substr(0, cursorIndex));
         }
         // get the cursor size
-        ableem::Size cursorSize = gui->getFontTextSize(gui->themeFont, "#");
+        ableem::Size cursorSize = gui->text().getFontTextSize(gui->themeFont, "#");
         // bounding box rectangle around the # cursor
         ableem::Rect cursorRect { rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y,    // x, y position
                               cursorSize.w, cursorSize.h };                             // w, h
@@ -108,7 +108,7 @@ void GuiKeyboard::render() {
                 rectSelection.x = rectSelection.x + ((buttonWidth + 11) * x);
 
                 string bg = app.theme().data.values["key_bg"];
-                renderer.setDrawColor(ableem::Color(gui->getR(bg), gui->getG(bg), gui->getB(bg),
+                renderer.setDrawColor(ableem::Color(gui->text().getR(bg), gui->text().getG(bg), gui->text().getB(bg),
                                        atoi(app.theme().data.values["keyalpha"].c_str())));
                 renderer.setBlendMode(ableem::BlendMode::Blend);
                 renderer.fillRect(rectSelection);
@@ -118,7 +118,7 @@ void GuiKeyboard::render() {
                     text = ucase(text);
                 }
 
-                gui->renderTextChar(text, 3 + y, yoffset, rectSelection.x + 10);
+                gui->text().renderTextChar(text, 3 + y, yoffset, rectSelection.x + 10);
 
                 // display rectangle around current character
                 if (!L2_cursor_shift) { // don't draw rectangle if in move cursor mode

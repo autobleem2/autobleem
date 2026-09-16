@@ -22,8 +22,8 @@ void PsCenterLabel::setText(const string & _text, ableem::Color _textColor)
     textColor = _textColor;
     textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
 
-    textSize = gui->getFontTextSize(font, text);
-    x = gui->align_xPosition(XALIGN_CENTER, x, textSize.w);
+    textSize = gui->text().getFontTextSize(font, text);
+    x = gui->text().align_xPosition(XALIGN_CENTER, x, textSize.w);
 }
 
 //*******************************
@@ -39,6 +39,6 @@ PsCenterLabel::~PsCenterLabel()
 void PsCenterLabel::render()
 {
     if (visible) {
-        gui->renderText_WithColor(font, text, x, y, textColor, XALIGN_CENTER);
+        gui->text().renderText_WithColor(font, text, x, y, textColor, XALIGN_CENTER);
     }
 }

@@ -139,30 +139,30 @@ void PsMeta::render() {
                 nameFont = Fonts::openSpecificSharedCachedFont(FONT_BOLD, miniMe);
             }
         }
-        gui->renderText(nameFont, gameName, x, y + yOffset);
+        gui->text().renderText(nameFont, gameName, x, y + yOffset);
 
         yOffset += 35;
         // publisher line
-        gui->renderText(otherFont, publisher, x, y + yOffset);
+        gui->text().renderText(otherFont, publisher, x, y + yOffset);
 
         yOffset += 21;
         // serial number line
-        gui->renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x, y + yOffset);
+        gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x, y + yOffset);
 
         yOffset += 21;
         // last played line
 #ifdef AB_DEBUG_HOST
         // the devel system has time
-        gui->renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+        gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
 #else
         if (Env::autobleemKernel)
-            gui->renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+            gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
 #endif
 
         yOffset += 22;
         if (!foreign) {
             // PS1 icons line
-            gui->renderText(otherFont, players, x + 35, y + yOffset);
+            gui->text().renderText(otherFont, players, x + 35, y + yOffset);
 
             ableem::Size s = tex.size();
             w = s.w; h = s.h;
@@ -182,7 +182,7 @@ void PsMeta::render() {
             rect.x = x + 135;
             renderer.copy(cdTex, &fullRect, &rect);
 
-            gui->renderText(otherFont, to_string(discs), x + 170, y + yOffset);
+            gui->text().renderText(otherFont, to_string(discs), x + 170, y + yOffset);
 
             rect.x = x + xoffset;
             rect.y = y + yOffset - 2;

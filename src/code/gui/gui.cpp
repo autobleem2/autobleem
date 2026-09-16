@@ -29,7 +29,7 @@ using ableem::Button;
 //********************
 // Gui::Gui
 //********************
-Gui::Gui() {
+Gui::Gui() : text_(renderer(), App::get().theme(), themeFont, buttonTextureMap) {
     sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer());
     themeFonts.openAllFonts(App::get().theme().fontPath(), renderer());
     input().probePads();
@@ -43,27 +43,6 @@ void Gui::splash(const string &message) {
     gui->drawText(message);
 }
 
-
-//*******************************
-// Gui::getR
-//*******************************
-unsigned char Gui::getR(const string &val) {
-    return atoi(Util::commaSep(val, 0).c_str());
-}
-
-//*******************************
-// Gui::getG
-//*******************************
-unsigned char Gui::getG(const string &val) {
-    return atoi(Util::commaSep(val, 1).c_str());
-}
-
-//*******************************
-// Gui::getB
-//*******************************
-unsigned char Gui::getB(const string &val) {
-    return atoi(Util::commaSep(val, 2).c_str());
-}
 
 //*******************************
 // Gui::loadThemeTexture
@@ -445,388 +424,12 @@ void Gui::finish() {
 
 
 //*******************************
-// Rect and Size routines
-//*******************************
-
-//*******************************
-// Gui::getFontTextSize
-// return the w of the rendered text and h of the font
-//*******************************
-Size Gui::getFontTextSize(const ableem::Font &font, const char *text) {
-    Size size;
-    if (!font.valid()) {
-        size.w = 0;
-        size.h = 0;
-        return size;
-    }
-    if (text == nullptr || strlen(text) == 0)
-        size.w = 0;
-    else
-        size.w = font.width(text);
-    size.h = font.lineHeight();
-
-    return size;
-}
-
-//*******************************
-// Gui::getFontTextRect
-// return a rect at (x,y) sized to the rendered text
-//*******************************
-Rect Gui::getFontTextRect(const ableem::Font &font, const char *text, int x, int y) {
-    Size size = getFontTextSize(font, text);
-    Rect rect;
-    rect.x = x;
-    rect.y = y;
-    rect.w = size.w;
-    rect.h = size.h;
-
-    return rect;
-
-}
-
-//*******************************
-// Gui::getOpscreenRectOfTheme
-//*******************************
-Rect Gui::getOpscreenRectOfTheme() {
-    Rect rect;
-    rect.x = atoi(App::get().theme().data.values["opscreenx"].c_str());
-    rect.y = atoi(App::get().theme().data.values["opscreeny"].c_str());
-    rect.w = atoi(App::get().theme().data.values["opscreenw"].c_str());
-    rect.h = atoi(App::get().theme().data.values["opscreenh"].c_str());
-
-    return rect;
-}
-
-//*******************************
-// Gui::getTextRectOfTheme
-//*******************************
-Rect Gui::getTextRectOfTheme() {
-    Rect rect;
-    rect.x = atoi(App::get().theme().data.values["textx"].c_str());
-    rect.y = atoi(App::get().theme().data.values["texty"].c_str());
-    rect.w = atoi(App::get().theme().data.values["textw"].c_str());
-    rect.h = atoi(App::get().theme().data.values["texth"].c_str());
-
-    return rect;
-}
-
-//*******************************
-// Gui::getCheckIconWidth
-// returns the width of the check/uncheck icon textures
-//*******************************
-int Gui::getCheckIconWidth() {
-    auto it = buttonTextureMap.find("Check");
-    if (it != buttonTextureMap.end()) {
-        return it->second.size().w;
-    } else {
-        cout << "missing check icon" << endl;
-        assert(false);
-    }
-
-    return 0;
-}
-
-//*******************************
-// Gui::align_xPosition
-//*******************************
-int Gui::align_xPosition(XAlignment xAlign, int x, int width) {
-    if (xAlign == XALIGN_CENTER) {
-        x = (SCREEN_WIDTH / 2) - width / 2;
-    } else if (xAlign == XALIGN_RIGHT) {
-        x = SCREEN_WIDTH - x - width;
-    }
-
-    return x;
-}
-
-//*******************************
-// Gui::AllTextOrEmojiTokenInfo::compute_xy_relativeOffsets
-// compute x offset, center the y offset of each token to the total height
-//*******************************
-void Gui::AllTextOrEmojiTokenInfo::compute_xy_relativeOffsets() {
-    int xOffset = 0;
-    for (auto& info : tokenInfos) {
-        x = xOffset;
-        xOffset += info.rect.w;
-        info.rect.y = (totalSize.h - info.rect.h) / 2;
-    }
-}
-
-//*******************************
-// Gui::AllTextOrEmojiTokenInfo::getTokenInfo
-// break up the text into tokens of pure text or an emoji icon marker
-// return a vector of the text, emoji texture pointers, width and height of each token and the total width and height.
-//*******************************
-void Gui::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, const string & _text) {
-    auto gui = Gui::getInstance();
-    font = _font;
-    if (!font.valid())
-        font = gui->themeFont;   // if font is invalid, default to themeFont
-
-    //
-    // break up the text into tokens of text and emoji markers
-    //
-    string text = _text;
-    if (text.empty()) text = " ";
-    if (text.back() != '|') {
-        text = text + "|";  // in case a terminating | is needed
-    }
-    auto tokenStrings =  Util::getTokens(text, '|');
-
-    //
-    // fill the info structures
-    //
-
-    for (const auto& tokenString : tokenStrings) {      // for each token string
-        if (tokenString == "") continue;
-        TextOrEmojiTokenInfo tokenInfo;
-        tokenInfo.tokenString = tokenString;
-        if (tokenString[0] == '@') {    // if emoji marker
-            auto it = gui->buttonTextureMap.find(tokenString.c_str()+1);
-            if (it != gui->buttonTextureMap.end()) {
-                tokenInfo.emoji = it->second;   // save the texture
-                Size s = it->second.size();
-                tokenInfo.rect.x = 0;
-                tokenInfo.rect.y = 0;
-                tokenInfo.rect.w = s.w;
-                tokenInfo.rect.h = s.h;
-                // update overall size
-                totalSize.w += s.w;
-                if (s.h > totalSize.h)
-                    totalSize.h = s.h;
-                // add the token info
-                tokenInfos.emplace_back(tokenInfo);
-            } else {
-                cout << "emoji not found for " << tokenString << endl;
-            }
-        } else {
-            tokenInfo.rect = gui->getFontTextRect(font, tokenString);
-            // update overall size
-            totalSize.w += tokenInfo.rect.w;
-            if (tokenInfo.rect.h > totalSize.h)
-                totalSize.h = tokenInfo.rect.h;
-            // add the token info
-            tokenInfos.emplace_back(tokenInfo);
-        }
-    }
-
-    int xOffset = 0;
-    for (auto& tokenInfo : tokenInfos) {
-        // set the x posit within the string
-        tokenInfo.rect.x = xOffset;
-        xOffset += tokenInfo.rect.w;
-        // adjust the text y and emoji y so they are centered in the total height
-        tokenInfo.rect.y = (totalSize.h - tokenInfo.rect.h) / 2;
-    }
-}
-
-//*******************************
-// Gui::AllTextOrEmojiTokenInfo::render
-// renders/draws the text and emoji icons at the chosen position on the screen
-//*******************************
-void Gui::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAlign) {
-    auto gui = Gui::getInstance();
-    ableem::Renderer &renderer = gui->renderer();
-
-    // compute x offset, center the y offset of each token to the total height
-    compute_xy_relativeOffsets();
-
-    // adjust the upper left corner postion if needed
-    if (xAlign != XALIGN_LEFT)
-        x = align_xPosition(xAlign, x, totalSize.w);
-
-    if (drawBackgroundRect) {
-        // render a grey box behind the text
-        renderer.setDrawColor(Color(0, 0, 0, 70));
-        Rect backRect;
-        backRect.x = x - 10;
-        backRect.y = y - 2;
-        backRect.w = totalSize.w + 20;
-        backRect.h = totalSize.h + 4;
-
-        renderer.fillRect(backRect);
-    }
-
-    for (auto& tokenInfo : tokenInfos) {
-        if (tokenInfo.emoji.valid()) {
-            // the token is an emoji texture
-            Rect tempRect = tokenInfo.rect;
-            tempRect.x += x;
-            tempRect.y += y;
-            renderer.copy(tokenInfo.emoji, nullptr, &tempRect);
-        } else {
-            // the token is text
-            if (useTextColor) {
-                font.drawColor(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                               textColor, tokenInfo.tokenString);
-            } else {
-                font.drawAlign(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                               ableem::Align::Left, tokenInfo.tokenString);
-            }
-        }
-    }
-}
-
-//*******************************
-// Text Rendering routines
-//*******************************
-
-//*******************************
-// Gui::renderText
-// renders/draws the line of text and emoji icons at the chosen position on the screen.  returns the height.
-//*******************************
-int Gui::renderText(const ableem::Font &font, const string & text, int x, int y, XAlignment xAlign) {
-    AllTextOrEmojiTokenInfo allTokenInfo(font, text);
-    allTokenInfo.render(x, y, xAlign);
-
-    return allTokenInfo.totalSize.h;    // return the height
-}
-
-//*******************************
-// Gui::renderText_WithColor
-// if background == true it draws a solid grey box around/behind the text
-// this routine does not support emoji icons.  text only.
-//*******************************
-int Gui::renderText_WithColor(const ableem::Font &font, const std::string &text, int x, int y, Color textColor,
-                              XAlignment xAlign, bool background) {
-    AllTextOrEmojiTokenInfo allTokenInfo(font, text);
-    allTokenInfo.setTextColor(textColor);
-    allTokenInfo.drawBackgroundRect = background;
-
-    allTokenInfo.render(x, y, xAlign);
-
-    return allTokenInfo.totalSize.h;    // return the height
-};
-
-//*******************************
-// Gui::renderTextLine
-//*******************************
-int Gui::renderTextLine(const string &text, int line, int yoffset, XAlignment xAlign, int xoffset, ableem::Font font) {
-    if (!font.valid())
-        font = themeFont;   // default to themeFont
-
-    Rect opscreen = getOpscreenRectOfTheme();
-    int fontHeight = font.lineHeight();
-    int x = opscreen.x + 10 + xoffset;
-    int y = (fontHeight * line) + yoffset;
-
-    if (line<0)
-    {
-        line=-line;
-        y=line;
-    }
-
-    return renderText(font, text, x, y, xAlign);
-}
-
-//*******************************
-// Gui::renderTextLineToColumns
-//*******************************
-int Gui::renderTextLineToColumns(const string &textLeft, const string &textRight,
-                                 int xLeft, int xRight,
-                                 int line, int yoffset, ableem::Font font) {
-
-    renderTextLine(textLeft,  line, yoffset, XALIGN_LEFT, xLeft, font);
-    int h = renderTextLine(textRight, line, yoffset, XALIGN_LEFT, xRight, font);
-
-    return h;   // rectangle height
-}
-
-//*******************************
-// Gui::renderTextLineOptions
-//*******************************
-int Gui::renderTextLineOptions(const string &_text, int line, int yoffset, XAlignment xAlign, int xoffset) {
-    string text = _text;
-
-    // if there is a check or uncheck icon, flag which one and remove the emoji toekn from the string
-    int button = -1;
-    if (text.find("|@Check|") != std::string::npos) {
-        button = 1;
-    }
-    if (text.find("|@Uncheck|") != std::string::npos) {
-        button = 0;
-    }
-    if (button != -1) {
-        text = text.substr(0, text.find("|"));
-    }
-
-    // render the text string without the check/uncheck icon
-    int h = renderTextLine(text, line, yoffset, xAlign, xoffset);
-
-    if (button == -1) {
-        return h;   // there is no check/uncheck emoji on this line
-    }
-
-    // render the check/uncheck icon on the right side of opscreen
-    Rect opscreen = getOpscreenRectOfTheme();
-    int fontHeight = themeFont.lineHeight();
-
-    int x = opscreen.x + opscreen.w - 10 - getCheckIconWidth();
-    int y = (fontHeight * line) + yoffset;
-    if (button == 1) {
-        renderText(themeFont, "|@Check|", x, y);
-    } else if (button == 0) {
-        renderText(themeFont, "|@Uncheck|", x, y);
-    }
-
-    return h;
-}
-
-//*******************************
-// Gui::renderSelectionBox
-//*******************************
-void Gui::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font font) {
-    if (!font.valid())
-        font = themeFont;
-
-    string fg = App::get().theme().data.values["text_fg"];
-    int fontHeight = font.lineHeight();
-    Rect opscreen = getOpscreenRectOfTheme();
-    Rect rectSelection;
-    rectSelection.x = opscreen.x + 5 + xoffset;
-    rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 10 - xoffset;
-    rectSelection.h = fontHeight;
-
-    renderer().setDrawColor(Color(getR(fg), getG(fg), getB(fg), 255));
-    renderer().setBlendMode(ableem::BlendMode::Blend);
-    renderer().drawRect(rectSelection);
-}
-
-//*******************************
-// Gui::renderLabelBox
-//*******************************
-void Gui::renderLabelBox(int line, int yoffset) {
-    string bg = App::get().theme().data.values["label_bg"];
-    int fontHeight = themeFont.lineHeight();
-    Rect opscreen = getOpscreenRectOfTheme();
-    Rect rectSelection;
-    rectSelection.x = opscreen.x + 5;
-    rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 10;
-    rectSelection.h = fontHeight;
-
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["keyalpha"].c_str())));
-    renderer().setBlendMode(ableem::BlendMode::Blend);
-    renderer().fillRect(rectSelection);
-}
-
-//*******************************
-// Gui::renderTextChar
-//*******************************
-void Gui::renderTextChar(const string &text, int line, int yoffset, int x) {
-    int fontHeight = themeFont.lineHeight();
-    int y = (fontHeight * line) + yoffset;
-    themeFont.drawAlign(renderer(), x, y, ableem::Align::Left, text);
-}
-
-//*******************************
 // Gui::renderFreeSpace
 //*******************************
 void Gui::renderFreeSpace() {
     int x = atoi(App::get().theme().data.values["fsposx"].c_str());
     int y = atoi(App::get().theme().data.values["fsposy"].c_str());
-    renderText(themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
+    text_.renderText(themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
 }
 
 //*******************************
@@ -862,16 +465,17 @@ int Gui::renderLogo(bool small) {
 void Gui::renderStatus(const string &text, int posy) {
     string bg = App::get().theme().data.values["text_bg"];
 
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["textalpha"].c_str())));
+    renderer().setDrawColor(Color(TextRenderer::getR(bg), TextRenderer::getG(bg), TextRenderer::getB(bg),
+                                  atoi(App::get().theme().data.values["textalpha"].c_str())));
     renderer().setBlendMode(ableem::BlendMode::Blend);
-    Rect rect = getTextRectOfTheme();
+    Rect rect = text_.getTextRectOfTheme();
     renderer().fillRect(rect);
 
     int y = atoi(App::get().theme().data.values["ttop"].c_str());
     if (posy!=-1)
         y=posy; // override the bottom status y position.  so far this has never been used.
 
-    renderText(themeFont, text, 0, y, XALIGN_CENTER);
+    text_.renderText(themeFont, text, 0, y, XALIGN_CENTER);
 }
 
 //*******************************
@@ -879,10 +483,11 @@ void Gui::renderStatus(const string &text, int posy) {
 //*******************************
 void Gui::renderTextBar() {
     string bg = App::get().theme().data.values["main_bg"];
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["mainalpha"].c_str())));
+    renderer().setDrawColor(Color(TextRenderer::getR(bg), TextRenderer::getG(bg), TextRenderer::getB(bg),
+                                  atoi(App::get().theme().data.values["mainalpha"].c_str())));
     renderer().setBlendMode(ableem::BlendMode::Blend);
 
-    Rect rect2 = getOpscreenRectOfTheme();
+    Rect rect2 = text_.getOpscreenRectOfTheme();
 
     renderer().fillRect(rect2);
 }

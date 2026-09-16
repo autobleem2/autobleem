@@ -80,9 +80,7 @@ identical `gameIni` blocks there and moves with the rest at step 9.
 `MemcardService` (`core/services/memcard.*`) owns the `!MemCards` sets and which one a game plays with:
 `activeCardName()`, `setCardForGame()` (Game.ini + regional.db together again), `swapInForLaunch()` /
 `swapOutAfterLaunch()` - the halves both interceptors used to duplicate - and the create/list/rename/remove
-the memory-card screens use. Nothing outside it constructs an `ableem::MemcardManager`. It carries one
-**known, deliberately unfixed bug**, commented at the source and pinned by a test: the "card set is gone,
-fall back to SONY" branch is unreachable behind a redundant existence guard.
+the memory-card screens use. Nothing outside it constructs an `ableem::MemcardManager`.
 
 `ResumePointService` (`core/services/resume_point.*`) owns the save-state slots under a game's
 `!SaveStates` folder - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
@@ -118,6 +116,15 @@ follow it.
 
 Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
 `theme.*` and `util_time.*` (`App::get().config()`) and `scanner.*` (6x `Gui::splash`).
+
+**Phase C has started.** `TextRenderer` (`gui/text_renderer.*`, step 12) is the text half of the old `Gui`:
+the `|@X|` token layout, `renderText*`/`renderSelectionBox`/`renderLabelBox`, the opscreen/text rects and
+the `getR/G/B` colour parsing. Screens reach it as `gui->text()`. `Gui` keeps the theme textures and fonts
+(step 13 makes those `ThemeAssets`), the background/logo/status drawing that uses them, and `menuSelection()`.
+
+The three bugs the phase B extractions pinned were each fixed in their own commit on 2026-09-16: the
+memcard fallback guard, `ConfigFileEditor`'s prefix matching (a key now has to be followed by whitespace or
+`=`), and RetroArch launches not recording last_played (they do, for library games only).
 
 **Phase B is complete.** `RetroArchService` (`core/services/retroarch.*`, step 11) is the old `RAIntegrator`
 singleton as an `App`-owned service: reads `retroarch/info/*.info` and `retroarch/playlists/*.lpl` on first
@@ -339,7 +346,8 @@ defaults, which both the services and the screens need.
 | `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `engine/theme.*` | `Theme` | The current theme's `theme.ini` (the selected theme merged over `themes/default/theme.ini`, so every key has a value) and its directories: `path/imagePath/fontPath/soundPath()`, each falling back to `Env::getSonyPath()` when the theme or that sub-dir is missing. Owned by `App`; read as `app.theme().data.values["..."]`. No platform `#ifdef`s - the paths come from `Env`. |
 | `engine/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
-| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), fonts, theme textures, and the text/rect/line rendering helpers every screen draws with. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), fonts, theme textures, the background/logo/status drawing, and `text()`. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's opscreen/text rects, `getR/G/B`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.*` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/gui_*` | | Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, star FX. |

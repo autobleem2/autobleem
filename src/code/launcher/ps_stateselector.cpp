@@ -88,14 +88,14 @@ void PsStateSelector::render()
 
         shared_ptr<Gui> gui(Gui::getInstance());
 
-        gui->renderText_WithColor(font30, _(text), 0, 110, brightWhite, XALIGN_CENTER);
+        gui->text().renderText_WithColor(font30, _(text), 0, 110, brightWhite, XALIGN_CENTER);
 
         if (operation==OP_LOAD) {
-            gui->renderText(font24, "|@T| " + _("Delete") + "     |@X| " + _("Select") + "     |@O| " + _("Cancel") +
+            gui->text().renderText(font24, "|@T| " + _("Delete") + "     |@X| " + _("Select") + "     |@O| " + _("Cancel") +
                                     "|", 0, 150, XALIGN_CENTER);
         } else
         {
-            gui->renderText(font24, "|@X| " + _("Select") + "     |@O| " + _("Cancel") +
+            gui->text().renderText(font24, "|@X| " + _("Select") + "     |@O| " + _("Cancel") +
                                     "|", 0, 150, XALIGN_CENTER);
         }
 
@@ -128,7 +128,7 @@ void PsStateSelector::render()
                 renderer.copy(slotImg[i], &input, &imgOut);
             }
 
-            gui->renderText_WithColor(font24, _("Slot") + " " + to_string(i+1), output.x + 60, 270, brightWhite);
+            gui->text().renderText_WithColor(font24, _("Slot") + " " + to_string(i+1), output.x + 60, 270, brightWhite);
         }
     }
 }

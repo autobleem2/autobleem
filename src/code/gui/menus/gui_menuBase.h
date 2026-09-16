@@ -157,7 +157,7 @@ void GuiMenuBase<LineDataType>::renderLines() {
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::renderSelectionBox() {
     if (!getVerticalSize() == 0) {
-        gui->renderSelectionBox(selected - firstVisibleIndex + firstRow, yoffset, 0, font);
+        gui->text().renderSelectionBox(selected - firstVisibleIndex + firstRow, yoffset, 0, font);
     }
 }
 
@@ -171,7 +171,7 @@ void GuiMenuBase<LineDataType>::render()
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderLogo(true);
-    gui->renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
 
     if (firstRender) {
         computePagePosition();

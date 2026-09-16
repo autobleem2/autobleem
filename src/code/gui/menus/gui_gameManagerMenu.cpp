@@ -43,7 +43,7 @@ void GuiManager::render()
 
     gui->renderFreeSpace();     // this is why this menu's render is special instead of using the base class
 
-    gui->renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
 
     renderLines();
     renderSelectionBox();

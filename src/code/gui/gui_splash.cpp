@@ -33,14 +33,14 @@ void GuiSplash::render() {
 
     int bg_alpha = atoi(app.theme().data.values["textalpha"].c_str()) * alpha / 255;
 
-    renderer.setDrawColor(ableem::Color(gui->getR(bg), gui->getG(bg), gui->getB(bg), bg_alpha));
+    renderer.setDrawColor(ableem::Color(gui->text().getR(bg), gui->text().getG(bg), gui->text().getB(bg), bg_alpha));
     renderer.setBlendMode(ableem::BlendMode::Blend);
-    ableem::Rect rect = gui->getTextRectOfTheme();
+    ableem::Rect rect = gui->text().getTextRectOfTheme();
     renderer.fillRect(rect);
 
     int y = atoi(app.theme().data.values["ttop"].c_str());
     string splashText = _("AutoBleem")+" " + app.config().inifile.values["version"];
-    gui->renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
+    gui->text().renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
 
     renderer.present();
 }

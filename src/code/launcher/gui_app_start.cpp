@@ -91,7 +91,7 @@ void GuiAppStart::render() {
 
     }
     int yoffset = 15;
-    gui->renderTextLine(appName, 0, yoffset, XALIGN_LEFT, 10, font);
+    gui->text().renderTextLine(appName, 0, yoffset, XALIGN_LEFT, 10, font);
     renderer.setDrawColor(ableem::Color(255, 255, 255, 255));
     renderer.drawLine(ableem::Point{rect2.x, 35}, ableem::Point{rect2.w, 35});
 
@@ -121,13 +121,13 @@ void GuiAppStart::render() {
     int currentLine =2;
     if (!readmeLoaded)
     {
-        gui->renderTextLine(_("ReadMe file not found"), 2, yoffset, XALIGN_LEFT, 10, font);
+        gui->text().renderTextLine(_("ReadMe file not found"), 2, yoffset, XALIGN_LEFT, 10, font);
     } else
     {
         for (int i=firstLine;i<firstLine+maxLines;i++)
         {
             std::string lineInFile = getStringLine(buffer,i);
-            gui->renderTextLine(getStringLine(buffer,i), currentLine, yoffset, XALIGN_LEFT, 10, font);
+            gui->text().renderTextLine(getStringLine(buffer,i), currentLine, yoffset, XALIGN_LEFT, 10, font);
             currentLine++;
         }
     }

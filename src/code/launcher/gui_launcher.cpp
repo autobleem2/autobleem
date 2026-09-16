@@ -185,13 +185,13 @@ void GuiLauncher::loadAssets() {
     IniFile colorsFile;
     if (DirEntry::exists(app.theme().path() + sep + "colors.ini")) {
         colorsFile.load(app.theme().path() + sep + "colors.ini");
-        fgColor.r = gui->getR(colorsFile.values["fg"]);
-        fgColor.g = gui->getG(colorsFile.values["fg"]);
-        fgColor.b = gui->getB(colorsFile.values["fg"]);
+        fgColor.r = gui->text().getR(colorsFile.values["fg"]);
+        fgColor.g = gui->text().getG(colorsFile.values["fg"]);
+        fgColor.b = gui->text().getB(colorsFile.values["fg"]);
         fgColor.a = 255;
-        secColor.r = gui->getR(colorsFile.values["sec"]);
-        secColor.g = gui->getG(colorsFile.values["sec"]);
-        secColor.b = gui->getB(colorsFile.values["sec"]);
+        secColor.r = gui->text().getR(colorsFile.values["sec"]);
+        secColor.g = gui->text().getG(colorsFile.values["sec"]);
+        secColor.b = gui->text().getB(colorsFile.values["sec"]);
         secColor.a = 255;
     }
 
@@ -551,9 +551,9 @@ void GuiLauncher::render() {
     menu->render();
 
     auto font24 = gui->themeFonts[FONT_22_MED];
-    gui->renderText_WithColor(font24, _("Enter"), 638, 640, secColor);
-    gui->renderText_WithColor(font24, _("Cancel"), 800, 640, secColor);
-    gui->renderText_WithColor(font24, _("Button Guide"), 945, 640, secColor);
+    gui->text().renderText_WithColor(font24, _("Enter"), 638, 640, secColor);
+    gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, secColor);
+    gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, secColor);
 
     notificationLines.tickTock();
 

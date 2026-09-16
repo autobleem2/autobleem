@@ -321,7 +321,14 @@ shrinks the input to the next:
 
 **Phase C — split `Gui`**
 
-12. `TextRenderer` out of `gui.cpp`.
+12. ~~`TextRenderer` out of `gui.cpp`~~ **done 2026-09-16.** 400 lines out of `gui.cpp` (899 -> 504),
+    the header down from 178 to 95. `TextRenderer` holds references to the renderer, the theme, and `Gui`'s
+    theme font and button-texture map (both of which change when a theme loads), so nothing was copied.
+    The token structs stopped reaching for `Gui::getInstance()` and take the renderer they belong to.
+    Every screen's `gui->renderTextLine(...)` is `gui->text().renderTextLine(...)` - ~100 mechanical
+    edits in 20 files, no signature changed. `renderBackground/Logo/Status/TextBar/FreeSpace/drawText` stay
+    on `Gui` because they draw its textures; they go with step 13. No ctest coverage is possible here;
+    the editor and the button guide screenshots are pixel-identical to the ones before.
 13. `ThemeAssets` out of `gui.cpp`.
 14. `menuSelection()` becomes `ClassicMenuScreen`. After this `Gui` is window + renderer + assets, and
     `App::run()` shows screens instead of calling a method on the Gui.

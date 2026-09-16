@@ -13,6 +13,6 @@ public:
     virtual std::string getStatusLine() override { return GuiMenuBase::getStatusLine(); }
 
     virtual void renderLineIndexOnRow(int index, int row) override {
-        gui->renderTextLine(lines[index], row, yoffset, XALIGN_LEFT, 0, font);
+        gui->text().renderTextLine(lines[index], row, yoffset, XALIGN_LEFT, 0, font);
     }
 };

@@ -23,7 +23,7 @@ void GuiScrollWin::render() {
     int yoffset = gui->renderLogo(true);
 
     for (int i=0; i < lines.size(); ++ i) {
-        gui->renderTextLine(lines[i], i, 0, XALIGN_LEFT);
+        gui->text().renderTextLine(lines[i], i, 0, XALIGN_LEFT);
     }
     renderer.present();
 }
