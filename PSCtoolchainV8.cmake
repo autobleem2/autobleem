@@ -13,3 +13,6 @@ SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a+simd --static -Os -s")
 SET(CMAKE_CXX_FLAGS " -mfloat-abi=hard -march=armv8-a+simd --static -Os -s")
+
+# The unit tests run on the build host, never on the console - there is no reason to cross-compile them.
+set(AB_BUILD_TESTS OFF CACHE BOOL "" FORCE)

@@ -173,8 +173,12 @@ Each item is one commit. Moves are kept content-free and separate from edits, so
    `ab_core` in the phase B step that gives it a seam.
 3. ~~**Attempt an ARM build here**~~ **deferred** — the toolchain is still not on this host. Phases A–D are
    host-verified only, as section 7 anticipated. Do this before any of it ships.
-4. The test harness: doctest, `tests/`, `EnvFixture`, `TempDir`, ctest wiring, and the first tests against
-   `Config` (`Theme` is not in `ab_core` yet, so it joins in step 9's neighbourhood).
+4. ~~The test harness: doctest, `tests/`, `EnvFixture`, `TempDir`, ctest wiring, and the first tests against
+   `Config`~~ **done 2026-09-16.** doctest 2.4.11, `tests/{support,core,third_party}`, `AB_BUILD_TESTS`
+   (forced OFF by `PSCtoolchainV8.cmake`), `make_win.sh` runs `ctest` after every build. 10 test cases /
+   44 assertions over `Config` and over the fixtures themselves — `EnvFixture` is load-bearing enough that
+   trusting it untested would be the wrong kind of economy. Mutation-checked: flipping the `ui` default
+   fails `test_config`, so the suite is not passing vacuously. `Theme` joins when it reaches `ab_core`.
 5. `GameSetSelection` in `core/model/`, replacing the six loose ints shared between `GuiLauncher` and
    `Session::LauncherState`.
 

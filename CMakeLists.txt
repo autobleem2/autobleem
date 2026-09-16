@@ -103,6 +103,15 @@ add_library(ab_core STATIC
         )
 target_link_libraries(ab_core ableem_engine)
 
+# ab_core's tests. Host builds only - there is no reason to cross-compile them, and PSCtoolchainV8.cmake
+# switches AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
+# in the same commit (docs/refactor-plan.md section 4).
+option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
+if (AB_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 add_executable(
         autobleem-gui
         src/code/engine/app_audio.cpp

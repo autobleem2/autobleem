@@ -8,3 +8,6 @@ mkdir -p build_win
 cd build_win
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DAB_ENABLE_CHD=OFF ../
 ninja
+
+# the suite is fast and catches a broken ab_core before the app is ever started
+ctest --output-on-failure

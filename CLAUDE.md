@@ -51,6 +51,11 @@ that plan's phases. Phase A steps 1 and 2 are done:
   It holds `main.h`, `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*` and
   `model/timing.h`. It is deliberately small: only files with no `Gui` and no `App::get()` could move without
   a content change.
+- **Step 4** - the test harness (step 3, the ARM build, is deferred - no toolchain on this host). doctest
+  2.4.11 vendored at `tests/third_party/doctest/doctest.h`, `tests/support/{env_fixture.h,temp_dir.*}`,
+  ctest wiring behind `AB_BUILD_TESTS` (ON for hosts, forced OFF by `PSCtoolchainV8.cmake`), and the first
+  suites: `tests/core/test_config.cpp` and `tests/core/test_env_fixture.cpp`. `make_win.sh` runs `ctest`
+  after every build. `Theme` was to be tested here too, but it is not in `ab_core` yet.
 
 `ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
 constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
@@ -183,7 +188,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
-  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
+  Run needs `C:msys64Crt64in` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
   skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `Util::execFork` stubbed.
   The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `environment.h`) — use it, never
   `__x86_64__` directly.
@@ -194,7 +199,17 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored, all inside lib_ableem:
   SQLite and nlohmann json + `fifo_map` (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
-- No tests exist.
+- **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
+  (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
+  skips them, and the ARM toolchain file forces that. Every service extracted from a screen from here on
+  ships with its tests in the same commit - see `docs/refactor-plan.md` section 4.
+  - `tests/support/env_fixture.h` - **use it in any test that touches a path.** `ableem::Environment`'s
+    setters are static, so without it tests inherit each other's roots and pass or fail by run order.
+  - `tests/support/temp_dir.h` - a scratch tree that deletes itself; `makeSubDir`/`writeFile`/`readFile`.
+  - Add a suite with `ab_add_test(<name> core/<file>.cpp)` in `tests/CMakeLists.txt`. Tests include app
+    headers from `src/code`, e.g. `#include "core/services/config.h"`.
+  - The test exes need `C:\msys64\ucrt64\bin` on PATH to run directly (ctest inherits it from the
+    MSYS2 login shell; running one from another shell exits 127 without it).
 
 ### Smoke test layout (Windows)
 
