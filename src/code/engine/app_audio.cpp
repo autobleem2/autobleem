@@ -6,7 +6,7 @@
 #include "../app.h"
 #include "../core/environment.h"
 #include "../core/main.h"
-#include "../launcher/gui_NotificationLine.h"   // TicksPerSecond
+#include "../core/model/timing.h"   // TicksPerSecond
 
 #include <unistd.h>
 

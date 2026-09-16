@@ -7,7 +7,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include "app.h"
+#include "autobleem.h"
 #include "core/main.h"
 #include "core/util.h"
 #include "core/environment.h"
@@ -94,7 +94,7 @@ static int runAutobleem(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    App app;
+    AutoBleem app;
     return app.run();
 }
 

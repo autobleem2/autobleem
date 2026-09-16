@@ -132,8 +132,13 @@ if (AB_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-add_executable(
-        autobleem-gui
+# ab_ui: the classic UI and everything a screen needs - Gui (the window, the theme's assets, the text
+# renderer), the classic screens and menus, Theme, AppAudio, the Scanner's splash listener, the memory-card
+# editor, and App itself, which is the model every screen holds as `app`. Links ab_core and ableem. Nothing
+# in here knows the EvolutionUI launcher exists.
+add_library(ab_ui STATIC
+        src/code/app.cpp
+        src/code/app.h
         src/code/engine/app_audio.cpp
         src/code/engine/app_audio.h
         src/code/engine/cardedit.cpp
@@ -146,8 +151,6 @@ add_executable(
         src/code/gui/gui.h
         src/code/gui/gui_about.cpp
         src/code/gui/gui_about.h
-        src/code/gui/gui_classic_menu.cpp
-        src/code/gui/gui_classic_menu.h
         src/code/gui/gui_confirm.cpp
         src/code/gui/gui_confirm.h
         src/code/gui/gui_font.cpp
@@ -162,10 +165,6 @@ add_executable(
         src/code/gui/gui_selectmemcard.cpp
         src/code/gui/gui_selectmemcard.h
         src/code/gui/gui_splash.cpp
-        src/code/gui/text_renderer.cpp
-        src/code/gui/text_renderer.h
-        src/code/gui/theme_assets.cpp
-        src/code/gui/theme_assets.h
         src/code/gui/gui_splash.h
         src/code/gui/menus/gui_gameDirMenu.h
         src/code/gui/menus/gui_gameEditorMenu.cpp
@@ -177,24 +176,37 @@ add_executable(
         src/code/gui/menus/gui_menuBase.h
         src/code/gui/menus/gui_optionsMenu.cpp
         src/code/gui/menus/gui_optionsMenu.h
-        src/code/gui/menus/gui_optionsMenuBase.cpp 
+        src/code/gui/menus/gui_optionsMenuBase.cpp
         src/code/gui/menus/gui_optionsMenuBase.h
         src/code/gui/menus/gui_playlistsMenu.h
         src/code/gui/menus/gui_stringMenu.h
         src/code/gui/menus/gui_twoColumnStringMenu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
-        src/code/launcher/gui_app_start.cpp 
-        src/code/launcher/gui_app_start.h 
+        src/code/gui/text_renderer.cpp
+        src/code/gui/text_renderer.h
+        src/code/gui/theme_assets.cpp
+        src/code/gui/theme_assets.h
+        src/code/util_time.cpp
+        src/code/util_time.h
+)
+target_link_libraries(ab_ui ab_core ableem)
+
+# ab_evoui: the EvolutionUI launcher - the carousel and its elements, and the launcher's own sub-screens.
+# Links ab_ui. Gui::menuSelection() used to construct GuiLauncher, which made these two a link cycle; the
+# classic menu is a screen in the executable now (phase C step 14), which is what let the targets exist.
+add_library(ab_evoui STATIC
+        src/code/launcher/gui_NotificationLine.cpp
+        src/code/launcher/gui_NotificationLine.h
+        src/code/launcher/gui_app_start.cpp
+        src/code/launcher/gui_app_start.h
         src/code/launcher/gui_btn_guide.cpp
         src/code/launcher/gui_btn_guide.h
         src/code/launcher/gui_launcher.cpp
-        src/code/launcher/gui_launcher.h 
+        src/code/launcher/gui_launcher.h
         src/code/launcher/gui_launcher_loop.cpp
         src/code/launcher/gui_mc_manager.cpp
         src/code/launcher/gui_mc_manager.h
-        src/code/launcher/gui_NotificationLine.cpp
-        src/code/launcher/gui_NotificationLine.h
         src/code/launcher/ps_carousel.cpp
         src/code/launcher/ps_carousel.h
         src/code/launcher/ps_centerlabel.cpp
@@ -204,10 +216,10 @@ add_executable(
         src/code/launcher/ps_meta.cpp
         src/code/launcher/ps_meta.h
         src/code/launcher/ps_move_bnt.cpp
-        src/code/launcher/ps_move_bnt.h 
+        src/code/launcher/ps_move_bnt.h
         src/code/launcher/ps_obj.cpp
         src/code/launcher/ps_obj.h
-        src/code/launcher/ps_settings_back.cpp 
+        src/code/launcher/ps_settings_back.cpp
         src/code/launcher/ps_settings_back.h
         src/code/launcher/ps_stateselector.cpp
         src/code/launcher/ps_stateselector.h
@@ -215,10 +227,19 @@ add_executable(
         src/code/launcher/ps_static.h
         src/code/launcher/ps_zoom_btn.cpp
         src/code/launcher/ps_zoom_btn.h
-        src/code/app.cpp
-        src/code/app.h
+)
+target_link_libraries(ab_evoui ab_ui)
+
+# the program: main(), AutoBleem (App plus the outer loop) and the classic main menu, the one screen that
+# shows both the classic sub-screens and the launcher.
+add_executable(
+        autobleem-gui
+        src/code/autobleem.cpp
+        src/code/autobleem.h
+        src/code/gui/gui_classic_menu.cpp
+        src/code/gui/gui_classic_menu.h
         src/code/main.cpp
-        src/code/util_time.h src/code/util_time.cpp)
+)
 
 if (NOT WIN32)
     # starter wraps /tmp/pcsx on the console for the stock SonyUI path. it is not useful on a Windows dev build.
@@ -229,8 +250,7 @@ endif()
 
 target_link_libraries(autobleem-gui
          Threads::Threads
-         ab_core
-         ableem
+         ab_evoui
          ${CMAKE_DL_LIBS}
 )
 

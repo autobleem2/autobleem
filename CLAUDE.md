@@ -109,10 +109,12 @@ and RetroArch paths come from `Env` now (`getPathToRCDir()`, `getPathToRetroarch
 **`PsGame` is now a data record** - `ableem::GameRecord` plus the launcher-only fields and
 `fromRecords()`, and nothing else. No filesystem, no `App`, no `Gui`.
 
-`ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
-constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
-layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what removes the cycle; the targets
-follow it.
+**`ab_ui` and `ab_evoui` exist** (2026-09-16, after phase C step 14 broke the `menuSelection()` ->
+`GuiLauncher` cycle). `App` is the model at the top of `ab_ui` - every screen's `app` member - and takes its
+`ProcessRunner` from whoever constructs it; `AutoBleem : App` (`src/code/autobleem.*`, in the executable) adds
+`run()`, the runner choice (fork on the console, splash on a dev host) and owns the outer loop.
+`ClassicMenuScreen` is in the executable too, being the one screen that shows both the classic sub-screens and
+the launcher. The linker now enforces: core knows no SDL, ab_ui knows no launcher, ab_evoui knows no `main`.
 
 Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
 `theme.*` and `util_time.*` (`App::get().config()`) and `scanner.*` (6x `Gui::splash`).
@@ -246,9 +248,12 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 ## Build
 
-Three targets in `CMakeLists.txt`: `ab_core` (`src/code/core/`, the app's SDL-free model+services layer,
-links `ableem_engine`), `autobleem-gui` (the app, links `ab_core` + `ableem`) and `starter` (small PCSX
-wrapper used by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
+Five targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
+app's SDL-free model+services layer, links `ableem_engine`), `ab_ui` (`gui/`, `engine/`, `app.*`,
+`util_time.*`: Gui, the classic screens and menus, Theme/AppAudio/Scanner and the `App` model; links `ab_core` +
+`ableem`), `ab_evoui` (`launcher/`: the EvolutionUI carousel and its screens; links `ab_ui`), `autobleem-gui`
+(`main.cpp`, `autobleem.*`, `gui/gui_classic_menu.*`; links `ab_evoui`) and `starter` (small PCSX wrapper used
+by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
@@ -333,14 +338,16 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 
 ## Source map (`src/code/`)
 
-`src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"); everything else
-compiles straight into `autobleem-gui`. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
+`src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"); `gui/`, `engine/`,
+`app.*` and `util_time.*` are `ab_ui`; `launcher/` is `ab_evoui`; `main.cpp`, `autobleem.*` and
+`gui/gui_classic_menu.*` are the executable. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
 defaults, which both the services and the screens need.
 
 | Area | Files | Notes |
 |---|---|---|
-| Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `App` and calls `run()`. |
-| `app.*` | `App` | The model, and the whole program: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner` and the `Session`, plus the `Gui` singleton. `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `menuSelection()` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → `launcher().launch(...)` → `gui->display(resume=true)`. Builds the `ProcessRunner` the launch service forks with (a splash on the dev host). `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
+| Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `AutoBleem` and calls `run()`. |
+| `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `ClassicMenuScreen` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → `launcher().launch(...)` → `gui->display(resume=true)`. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
+| `app.*` | `App` | The model: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner`, the `Session`, every service and the `Gui` singleton. Top of `ab_ui`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
 | `core/model/session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |

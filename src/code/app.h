@@ -1,6 +1,7 @@
 //
 // App: owns the model. main.cpp used to hold this as loose free functions and a global GameDatabase* - now
-// it's one object, constructed once by main() after Environment is configured.
+// it's one object, constructed once by main() after Environment is configured. What runs the program on top
+// of it - the outer loop, the scan, a game launch - is AutoBleem (autobleem.h), in the executable.
 //
 #pragma once
 
@@ -24,20 +25,21 @@
 // App
 //******************
 // Owns the model: config.ini, the game library (both game databases + the cover database), the session
-// (what to show/start next), the scanner, and the Gui singleton. One instance is created in main() and its
-// run() is the whole program from there on. Gui is only the screen - nothing non-graphical lives there.
+// (what to show/start next), the scanner, the services, and the Gui singleton. Gui is only the screen -
+// nothing non-graphical lives there. This is the top of ab_ui: every screen gets it as its `app` member, and
+// the executable's AutoBleem derives from it to add run(). It takes the ProcessRunner from whoever
+// constructs it, because which one is right (fork on the console, a splash on a dev host) is that caller's
+// decision, not the model's.
 class App {
 public:
-    App();
+    explicit App(std::unique_ptr<ProcessRunner> runner);
     ~App();
     App(const App &) = delete;
     App &operator=(const App &) = delete;
 
     // valid only for the lifetime of the App instance (i.e. for the whole of main()). Used by the few places
-    // that are not screens and so have no `app` member of their own: the launch interceptors, PsGame, UtilTime.
+    // that are not screens and so have no `app` member of their own: Theme, AppAudio, UtilTime, Fonts.
     static App &get();
-
-    int run();
 
     Config &config() { return cfg_; }
     Theme &theme() { return theme_; }
@@ -53,7 +55,7 @@ public:
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
-private:
+protected:
     static App *instance;
 
     // declaration order is construction order: config.ini is read before the Theme that names its
@@ -71,12 +73,6 @@ private:
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     RetroArchService retroArch_;
-    // the dev host has no emulator to fork, so it gets a runner that shows a splash instead (app.cpp)
-    std::unique_ptr<ProcessRunner> runner_ = makeProcessRunner();
+    std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
-
-    static std::unique_ptr<ProcessRunner> makeProcessRunner();
-    bool openLibrary();                                                   // covers dir + regional.db + internal.db
-    void rescan(GamesHierarchy &gamesHierarchy, const std::string &prevPath);   // a Re/Scan menu selection
-    void launchGame();                                                    // the MENU_OPTION_START handling
 };

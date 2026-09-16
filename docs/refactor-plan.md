@@ -167,10 +167,10 @@ Each item is one commit. Moves are kept content-free and separate from edits, so
    `Config` could not reach them. `starter` links `ab_core` alone, which is the standing proof it stays
    SDL-free. The stale `ver_migration.*` row is gone from `CLAUDE.md`.
 
-   **`ab_ui` and `ab_evoui` were not created.** `Gui::menuSelection()` constructs `GuiLauncher` while ~20
-   launcher files use `Gui`: as targets the two would be a link cycle, which enforces nothing and is worse
-   than one target. They wait on step 14, which is what breaks the cycle. Each parked file above joins
-   `ab_core` in the phase B step that gives it a seam.
+   **`ab_ui` and `ab_evoui` were not created** then: `Gui::menuSelection()` constructed `GuiLauncher`
+   while ~20 launcher files use `Gui`, and as targets the two would have been a link cycle. **Created on
+   2026-09-16 after step 14** (see there). Each parked file above joined `ab_core` in the phase B step
+   that gave it a seam, except `theme.*`, `util_time.*` and `scanner.*`, which are in `ab_ui`.
 3. ~~**Attempt an ARM build here**~~ **deferred** — the toolchain is still not on this host. Phases A–D are
    host-verified only, as section 7 anticipated. Do this before any of it ships.
 4. ~~The test harness: doctest, `tests/`, `EnvFixture`, `TempDir`, ctest wiring, and the first tests against
@@ -349,6 +349,18 @@ shrinks the input to the next:
     which exits 0 and does not sync; that unification is a deliberate change for another day.
     Verified with the About, Options, Advanced-row, Start -> launcher -> launch -> back sequence.
 
+    **And then the targets.** With the classic menu out of `Gui`, the only file in `gui/` that named the
+    launcher was the menu itself. The remaining coupling was `App`: every screen holds it as `app` and it
+    also held `run()`, the runner choice and the outer loop, so `ab_ui` would have depended on the
+    executable. `App` is the model now, at the top of `ab_ui`, taking its `ProcessRunner` from whoever
+    constructs it; `AutoBleem : App` (`src/code/autobleem.*`) in the executable adds `run()`,
+    `openLibrary/rescan/launchGame` and `makeProcessRunner()`. `ab_ui` = `gui/` + `engine/` + `app.*` +
+    `util_time.*`, `ab_evoui` = `launcher/`, and the executable is `main.cpp`, `autobleem.*` and
+    `gui_classic_menu.*` - the one screen that shows both the classic sub-screens and the launcher lives
+    above both libraries. Each target links only the one below it, so the linker now enforces what
+    section 6 asked for. One stale include turned up: `app_audio.cpp` took `TicksPerSecond` from a
+    launcher header; it comes from `core/model/timing.h`.
+
 **Phase D — split `GuiLauncher`** (the existing todo #3). Deliberately last: phases B and C take roughly 600
 lines out of it first, so what is left is genuinely carousel and input.
 
@@ -358,7 +370,9 @@ lines out of it first, so what is left is genuinely carousel and input.
 ## 6. Invariants to enforce
 
 - `grep -rl "ableem/ui\|SDL2/" src/code/core` returns nothing. Same check style as the existing SDL grep.
-- Nothing under `core/` includes anything from `ui/` or `evoui/`.
+- Nothing under `core/` includes anything from `ui/` or `evoui/`. Nothing in `ab_ui` (`gui/`, `engine/`,
+  `app.*`) includes anything from `launcher/`; nothing in `launcher/` includes `autobleem.h` or the classic
+  menu. (Both hold as of 2026-09-16, and the link order would break if they stopped.)
 - Services take their dependencies by reference in the constructor. `App::get()` stays the composition root
   only — give `GuiScreen` a `Services &svc` next to its `app`, so screens stop using it as a back door to
   globals.
