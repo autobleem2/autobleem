@@ -6,6 +6,7 @@
 #include "../core/lang.h"
 #include "../gui/gui.h"
 #include "gui_launcher.h"
+#include "../app.h"
 
 using namespace std;
 
@@ -35,14 +36,14 @@ void PsStateSelector::loadSaveStateImages(PsGamePtr & game, bool saving)
         slotImg[i] = ableem::Texture();
         slotActive[i]=false;
         if (!saving) {
-            if (game->isResumeSlotActive(i)) {
-                slotImg[i] = ableem::Texture::loadFile(renderer, game->findResumePicture(i));
+            if (App::get().resumePoints().slotIsActive(*game, i)) {
+                slotImg[i] = ableem::Texture::loadFile(renderer, App::get().resumePoints().pictureForSlot(*game, i));
                 slotActive[i]=true;
             }
         } else
         {
-            if (game->isResumeSlotActive(i)) {
-                slotImg[i] = ableem::Texture::loadFile(renderer, game->findResumePicture(i));
+            if (App::get().resumePoints().slotIsActive(*game, i)) {
+                slotImg[i] = ableem::Texture::loadFile(renderer, App::get().resumePoints().pictureForSlot(*game, i));
 
             }
             slotActive[i]=true;

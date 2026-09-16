@@ -333,7 +333,7 @@ void GuiLauncher::loadAssets() {
         PsGamePtr &game = carouselGames[selGameIndex];
 
         if (app.session().emuMode == EmuMode::Pcsx) {
-            if (game->isCleanExit()) {
+            if (app.resumePoints().exitedCleanly(*game)) {
                 sselector->loadSaveStateImages(game, true);
                 sselector->visible = true;
                 state = LauncherScreenState::Resume;
@@ -361,7 +361,7 @@ void GuiLauncher::loadAssets() {
     updateMeta();
 
     if (selGameIndexInCarouselGamesIsValid()) {
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
     }
 }
 
@@ -577,7 +577,7 @@ void GuiLauncher::nextCarouselGame(int speed) {
     }
     updateMeta();
     if (selGameIndexInCarouselGamesIsValid())
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
 }
 
 //*******************************
@@ -593,7 +593,7 @@ void GuiLauncher::prevCarouselGame(int speed) {
     }
     updateMeta();
     if (selGameIndexInCarouselGamesIsValid())
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
 }
 
 //*******************************

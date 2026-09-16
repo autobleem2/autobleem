@@ -13,7 +13,8 @@
 // PsGame
 //******************
 // A game as the UI sees it. The database part is ableem::GameRecord; this adds what only the launcher knows
-// (RetroArch / App entries and the resume points under ssFolder).
+// (RetroArch / App entries, and where its save states live). The resume points themselves are
+// ResumePointService's - this only says where to look.
 class PsGame : public ableem::GameRecord {
 public:
     bool foreign = false; // to state it is not PS1 game (RA)
@@ -32,18 +33,6 @@ public:
 
     // what the database hands out is plain records; wrap them for the UI
     static std::vector<std::shared_ptr<PsGame>> fromRecords(const ableem::GameRecords &records);
-
-    // Writes the memcard name into this record and into the game's Game.ini. The matching regional.db
-    // update is the caller's, until MemcardService owns both halves (plan step 8). Returns false for a
-    // foreign (RetroArch/App) entry, which has no Game.ini and no database row - so callers can write
-    //     if (game->setMemCardInGameIni(name)) library.usbGames().updateMemcard(game->gameId, name);
-    bool setMemCardInGameIni(const std::string &name);
-    std::string findResumePicture();
-    bool isResumeSlotActive(int slot);
-    std::string findResumePicture(int slot);
-    void storeResumePicture(int slot);
-    bool isCleanExit();
-    void removeResumePoint(int slot);
 };
 
 using PsGamePtr = std::shared_ptr<PsGame>;

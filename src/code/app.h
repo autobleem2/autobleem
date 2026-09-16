@@ -11,6 +11,7 @@
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 #include "core/services/memcard.h"
+#include "core/services/resume_point.h"
 #include "engine/theme.h"
 #include "engine/app_audio.h"
 #include "engine/scanner.h"
@@ -42,6 +43,7 @@ public:
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
     MemcardService &memcards() { return memcards_; }
+    ResumePointService &resumePoints() { return resumePoints_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
@@ -63,6 +65,7 @@ private:
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     MemcardService memcards_{gameLibrary};
+    ResumePointService resumePoints_;
     Session session_;
 
     bool openLibrary();                                                   // covers dir + regional.db + internal.db

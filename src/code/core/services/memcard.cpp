@@ -36,8 +36,17 @@ string MemcardService::activeCardName(const PsGame &game) const {
 // MemcardService::setCardForGame
 //*******************************
 void MemcardService::setCardForGame(PsGame &game, const string &name) {
-    if (game.setMemCardInGameIni(name))
-        library_.usbGames().updateMemcard(game.gameId, name);
+    if (game.foreign)
+        return;     // a RetroArch or App entry has neither a Game.ini nor a database row
+
+    game.memcard = name;
+
+    IniFile ini;
+    ini.load(game.folder + sep + GAME_INI);
+    ini.values["memcard"] = name;
+    ini.save(game.folder + sep + GAME_INI);
+
+    library_.usbGames().updateMemcard(game.gameId, name);
 }
 
 //*******************************

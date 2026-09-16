@@ -360,7 +360,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
                 setInitialPositions(selGameIndex);
                 updateMeta();
-                menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+                menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
             } else {
                 // no change
                 app.audio().cancel.play();
@@ -495,7 +495,7 @@ void GuiLauncher::loop_chooseGameDir() {
     showSetName();
     if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
         updateMeta();
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
     } else {
         updateMeta();
     }
@@ -544,7 +544,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     showSetName();
     if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
         updateMeta();
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
     } else {
         updateMeta();
     }
@@ -579,7 +579,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
             showSetName();
             if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
                 updateMeta();
-                menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+                menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
             } else {
                 updateMeta();
             }
@@ -604,7 +604,7 @@ void GuiLauncher::loop_startButton_Pressed() {
             app.audio().cursor.play();
             setInitialPositions(selGameIndex);
             updateMeta();
-            menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+            menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
         }
     }
 }
@@ -628,7 +628,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
         arrow->visible = true;
         sselector->cleanSaveStateImages();
         if (selGameIndexInCarouselGamesIsValid())
-            menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+            menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
 
         if (sselector->operation == OP_LOAD) {
             state = LauncherScreenState::Set;
@@ -652,7 +652,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
             if (selGameIndexInCarouselGamesIsValid()) {
                 auto game = carouselGames[selGameIndex];
                 int slot = sselector->selSlot;
-                if (game->isResumeSlotActive(slot)) {
+                if (app.resumePoints().slotIsActive(*game, slot)) {
                     app.audio().cursor.play();
 
                     GuiConfirm confirm(*gui);
@@ -660,7 +660,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                     confirm.show();
 
                     if (confirm.result) {
-                        game->removeResumePoint(slot);
+                        app.resumePoints().removeSlot(*game, slot);
                     }
                     sselector->cleanSaveStateImages();
                     sselector->loadSaveStateImages(carouselGames[selGameIndex], false);
@@ -841,7 +841,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
                 setInitialPositions(selGameIndex);
                 updateMeta();
                 if (selGameIndexInCarouselGamesIsValid())
-                    menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+                    menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
             }
         }
 
@@ -922,7 +922,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
     if (selGameIndex != -1 && selGameIndexInCarouselGamesIsValid()) {
         setInitialPositions(selGameIndex);
         updateMeta();
-        menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
+        menu->setResumePic(app.resumePoints().lastPicture(*carouselGames[selGameIndex]));
 
         PsScreenpoint point2;
         point2.x = 640 - 113;
@@ -994,7 +994,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     }
     bool resumeAvailable = false;
     for (int i = 0; i < 4; i++) {
-        if (selGameIndexInCarouselGamesIsValid() && carouselGames[selGameIndex]->isResumeSlotActive(i)) {
+        if (selGameIndexInCarouselGamesIsValid() && app.resumePoints().slotIsActive(*carouselGames[selGameIndex], i)) {
             resumeAvailable = true;
         }
     }
@@ -1021,7 +1021,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
-            if (game->isResumeSlotActive(slot)) {
+            if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
                 app.session().runningGame = carouselGames[selGameIndex];
@@ -1037,7 +1037,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             //app.audio().cursor.play();
             PcsxInterceptor interceptor;
             interceptor.saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
-            carouselGames[selGameIndex]->storeResumePicture(sselector->selSlot);
+            app.resumePoints().storePictureForSlot(*carouselGames[selGameIndex], sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
             app.audio().resume.play();
@@ -1045,7 +1045,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                     _("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                     DefaultShowingTimeout);
 
-            menu->setResumePic(carouselGames[selGameIndex]->findResumePicture(sselector->selSlot));
+            menu->setResumePic(app.resumePoints().pictureForSlot(*carouselGames[selGameIndex], sselector->selSlot));
 
             if (sselector->operation == OP_LOAD) {
                 state = LauncherScreenState::Set;

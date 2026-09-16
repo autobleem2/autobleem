@@ -84,6 +84,15 @@ the memory-card screens use. Nothing outside it constructs an `ableem::MemcardMa
 **known, deliberately unfixed bug**, commented at the source and pinned by a test: the "card set is gone,
 fall back to SONY" branch is unreachable behind a redundant existence guard.
 
+`ResumePointService` (`core/services/resume_point.*`) owns the save-state slots under a game's
+`!SaveStates` folder - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
+`exitedCleanly`, plus `prepareForLaunch`/`saveAfterLaunch` that the PCSX interceptor used to hold. Its
+header documents the file layout. Two naming quirks callers depend on: slot 0's picture has no number in
+its name, and `lastPicture()` uses slot 0's picture name whichever slot it finds.
+
+**`PsGame` is now a data record** - `ableem::GameRecord` plus the launcher-only fields and
+`fromRecords()`, and nothing else. No filesystem, no `App`, no `Gui`.
+
 `ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
 constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
 layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what removes the cycle; the targets
@@ -314,8 +323,9 @@ defaults, which both the services and the screens need.
 | `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: cover carousel, sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. |
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
-| `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields and the resume-point pictures/slots. In `ab_core`: no `App`, no `Gui`. |
+| `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
+| `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |

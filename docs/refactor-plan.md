@@ -222,7 +222,7 @@ shrinks the input to the next:
    `recordGamePlayed` now wraps its writes in one transaction per database. It rewrites the whole ranking
    on every launch, and each loose `UPDATE` was its own disk sync on the console; the suite that exercises
    it went from 37s to 9s, which is the same effect measured from the other side.
-8. `ResumePointService` and **`MemcardService`** - the memcard half **done 2026-09-16**. `MemcardService`
+8. ~~`ResumePointService` and `MemcardService`~~ **done 2026-09-16**, in two commits. `MemcardService`
    owns which set a game plays with and the swap around a launch, which the PCSX and RetroArch interceptors
    each had their own copy of; `memcardIn`/`memcardOut` are one line each now. `PsGame::setMemCard` is one
    call again as `setCardForGame()`, undoing the split step 6 needed. The memory-card screens and the
@@ -234,6 +234,17 @@ shrinks the input to the next:
    at a deleted set therefore keeps pointing at it. Deleting the guard is the fix; it is a behaviour change,
    so today's behaviour is asserted in `tests/core/test_memcard.cpp` and commented at both ends, and fixing
    it should be a deliberate commit that changes that test.
+
+   `ResumePointService` took `PsGame`'s five resume methods and the PCSX interceptor's
+   `prepare`/`saveResumePoint`; the interceptor's two are one line each now. The "read the second line of
+   the filename file to get the state's base name" dance appeared seven times across those seven methods
+   and is one helper. Two naming quirks are preserved and commented because callers depend on them: slot 0's
+   picture has no number in its name, and `lastPicture()` looks for slot 0's picture name whichever slot it
+   finds.
+
+   With that, **`PsGame` is what its name says** - `ableem::GameRecord` plus the launcher-only fields, 29
+   lines, no filesystem at all. The last of it, the Game.ini memcard write, went into `MemcardService`
+   alongside the database write it belongs with, which is what section 3 of this plan asked for.
 9. `GameSettingsService`
 10. `LaunchService` (introduces `ProcessRunner`)
 11. `RetroArchService`

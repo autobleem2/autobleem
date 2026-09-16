@@ -135,112 +135,12 @@ void PcsxInterceptor::memcardOut(PsGamePtr & game) {
 // PcsxInterceptor::saveResumePoint
 //*******************************
 void PcsxInterceptor::saveResumePoint(PsGamePtr & game, int pointId) {
-    string filenamefile = game->ssFolder + sep + "filename.txt";
-    string filenamefileX = game->ssFolder + sep + "filename.txt.res";
-    string filenamepoint = game->ssFolder + sep + "filename."+to_string(pointId)+".txt.res";
-    string lastCDpoint = game->ssFolder + sep + "lastcdimg.txt";
-    string lastCDpointX = game->ssFolder + sep + "lastcdimg."+to_string(pointId)+".txt";
-    if (DirEntry::exists(filenamefile)) {
-        ifstream is(filenamefile.c_str());
-        if (is.is_open()) {
-
-            std::string line;
-            std::getline(is, line);
-            std::getline(is, line);
-
-            // last line is our filename
-            string ssfile = game->ssFolder + sep + "sstates/" + line + ".00" + to_string(pointId) + ".res";
-            string newName = game->ssFolder + sep + "sstates/" + line + ".000";
-
-            DirEntry::removeFile(ssfile);
-            DirEntry::copy(newName.c_str(), ssfile.c_str());
-            DirEntry::removeFile(newName);
-
-            // update image
-
-            is.close();
-        }
-        DirEntry::removeFile(filenamefileX);
-        DirEntry::removeFile(filenamepoint);
-        DirEntry::renameFile(filenamefile, filenamefileX);
-        DirEntry::copy(filenamefileX,filenamepoint);
-        if (DirEntry::exists(lastCDpoint))
-        {
-            DirEntry::removeFile(lastCDpointX);
-            DirEntry::copy(lastCDpoint, lastCDpointX);
-            DirEntry::removeFile(lastCDpoint);
-        }
-    }
+    App::get().resumePoints().saveAfterLaunch(*game, pointId);
 }
 
 //*******************************
 // PcsxInterceptor::prepareResumePoint
 //*******************************
 void PcsxInterceptor::prepareResumePoint(PsGamePtr & game, int pointId) {
-
-    // cleanup after previous crash as pcsx doest not want to save
-    string filenameTrash = game->ssFolder + sep + "filename.txt";
-    if (DirEntry::exists(filenameTrash)) {
-        DirEntry::removeFile(filenameTrash);
-    }
-
-    string ssfile = game->ssFolder + sep + "sstates";
-    for (const DirEntry & sstate:DirEntry::diru(ssfile)) {
-        if (DirEntry::getFileExtension(sstate.name) == "000") {
-            string toDelete = ssfile + sep + sstate.name;
-            DirEntry::removeFile(toDelete);
-        }
-    }
-
-    ssfile = game->ssFolder + sep + "screenshots";
-    for (const DirEntry & sstate:DirEntry::diru(ssfile)) {
-        if (DirEntry::getFileExtension(sstate.name) == "png") {
-            string toDelete = ssfile + sep + sstate.name;
-            DirEntry::removeFile(toDelete);
-        }
-    }
-
-    if (pointId == -1)
-        return;
-    string filenamefile = game->ssFolder + sep + "filename.txt.res";
-    string filenamefileX = game->ssFolder + sep + "filename.txt";
-    string filenamepoint = game->ssFolder + sep + "filename."+to_string(pointId)+".txt.res";
-    DirEntry::removeFile(filenamefileX);
-    if (DirEntry::exists(filenamepoint))
-    {
-        filenamefile = filenamepoint;
-    }
-    if (DirEntry::exists(filenamefile)) {
-        ifstream is(filenamefile.c_str());
-        if (is.is_open()) {
-
-            std::string line;
-            std::getline(is, line);
-            string lastImageInfo = line;
-
-            // fix lastcdpoint
-            string lastCDpointX = game->ssFolder + sep + "lastcdimg."+to_string(pointId)+".txt";
-            DirEntry::removeFile(lastCDpointX);
-            string file = DirEntry::getFileNameFromPath(lastImageInfo);
-            string imageToLoad = game->folder + sep + file;
-
-            ofstream os;
-            os.open(lastCDpointX);
-            if (DirEntry::checkWritable(os, lastCDpointX)) {
-                os << imageToLoad << endl;
-            }
-            os.close();
-
-            std::getline(is, line);
-
-            // last line is our filename
-            string ssfile = game->ssFolder + sep + "sstates/" + line + ".00" + to_string(pointId) + ".res";
-            string newName = game->ssFolder + sep + "sstates/" + line + ".000";
-            if (DirEntry::exists(ssfile)) {
-                DirEntry::removeFile(newName);
-                DirEntry::copy(ssfile.c_str(), newName.c_str());
-            }
-            is.close();
-        }
-    }
+    App::get().resumePoints().prepareForLaunch(*game, pointId);
 }
