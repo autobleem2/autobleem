@@ -31,19 +31,10 @@ private:
 
     Gui();
 
-    std::string themePath;
-
 public:
-    IniFile themeData;
-    IniFile defaultData;
 
     Fonts themeFonts;
     Fonts sonyFonts;
-
-    std::string getCurrentThemePath();
-    std::string getCurrentThemeImagePath();
-    std::string getCurrentThemeFontPath();
-    std::string getCurrentThemeSoundPath();
 
     void loadAssets(bool reloadMusic = true);
 

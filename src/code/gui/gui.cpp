@@ -31,91 +31,9 @@ using ableem::Button;
 //********************
 Gui::Gui() {
     sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer());
-    themeFonts.openAllFonts(getCurrentThemeFontPath(), renderer());
+    themeFonts.openAllFonts(App::get().theme().fontPath(), renderer());
     input().probePads();
 }
-
-//*******************************
-// Gui::getCurrentThemePath
-//*******************************
-string Gui::getCurrentThemePath() {
-#ifdef AB_DEBUG_HOST
-    string path = Env::getPathToThemesDir() + sep + App::get().config().inifile.values["theme"];
-    if (!DirEntry::exists(path)) {
-        path = Env::getSonyPath();
-    }
-    return path;
-#else
-    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "";
-    if (!DirEntry::exists(path))
-    {
-        path = "/usr/sony/share/data";
-    }
-    return path;
-#endif
-}
-
-//*******************************
-// Gui::getCurrentThemeImagePath
-//*******************************
-string Gui::getCurrentThemeImagePath() {
-#ifdef AB_DEBUG_HOST
-    string path = getCurrentThemePath() + sep + "images";
-    if (!DirEntry::exists(path)) {
-        path = Env::getSonyPath() + sep + "images";
-    }
-    return path;
-#else
-    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/images";
-    if (!DirEntry::exists(path))
-    {
-        path = "/usr/sony/share/data/images";
-    }
-    return path;
-#endif
-}
-
-//*******************************
-// Gui::getCurrentThemeSoundPath
-//*******************************
-string Gui::getCurrentThemeSoundPath() {
-#ifdef AB_DEBUG_HOST
-    string path = getCurrentThemePath() + sep + "sounds";
-    if (!DirEntry::exists(path)) {
-        path = Env::getSonyPath() + sep + "sounds";
-    }
-    cout << path << endl;
-    return path;
-#else
-    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/sounds";
-    if (!DirEntry::exists(path))
-    {
-        path = "/usr/sony/share/data/sounds";
-    }
-    return path;
-#endif
-}
-
-//*******************************
-// Gui::getCurrentThemeFontPath
-//*******************************
-string Gui::getCurrentThemeFontPath() {
-#ifdef AB_DEBUG_HOST
-    string path = getCurrentThemePath() + sep + "font";
-    if (!DirEntry::exists(path)) {
-        path = Env::getSonyPath() + sep + "font";
-    }
-    return path;
-#else
-    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/font";
-    if (!DirEntry::exists(path))
-    {
-        path = "/usr/sony/share/data/font";
-    }
-    return path;
-#endif
-}
-
 
 //*******************************
 // Gui::splash
@@ -157,10 +75,10 @@ void Gui::restartAudio(int freq) {
 
 void Gui::playMusic(bool customMusic, string musicPath) {
     if (App::get().config().inifile.values["nomusic"] != "true")
-        if (themeData.values["loop"] != "-1") {
+        if (App::get().theme().data.values["loop"] != "-1") {
             if (!customMusic) {
-                music = ableem::Music::load(themePath + themeData.values["music"]);
-                music.play(themeData.values["loop"] == "1" ? -1 : 0);
+                music = ableem::Music::load(App::get().theme().loadedPath() + App::get().theme().data.values["music"]);
+                music.play(App::get().theme().data.values["loop"] == "1" ? -1 : 0);
             } else {
                 music = ableem::Music::load(Env::getWorkingPath() + sep + "music/" + musicPath);
                 music.play(-1);
@@ -177,10 +95,10 @@ void Gui::freeMusic() {
 Texture
 Gui::loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname) {
     Texture tex;
-    if (DirEntry::exists(themePath + themeData.values[texname])) {
-        tex = Texture::loadFile(renderer(), themePath + themeData.values[texname]);
+    if (DirEntry::exists(themePath + App::get().theme().data.values[texname])) {
+        tex = Texture::loadFile(renderer(), themePath + App::get().theme().data.values[texname]);
     } else {
-        tex = Texture::loadFile(renderer(), defaultPath + defaultData.values[texname]);
+        tex = Texture::loadFile(renderer(), defaultPath + App::get().theme().defaults.values[texname]);
     }
     return tex;
 }
@@ -190,22 +108,9 @@ Gui::loadThemeTexture(const string& themePath, const string& defaultPath, const 
 // Gui::loadAssets
 //*******************************
 void Gui::loadAssets(bool reloadMusic) {
-    // check theme exists - otherwise back to aergb
-
-    string defaultPath = Env::getPathToThemesDir() + sep + "default" + sep;
-    themePath = getCurrentThemePath() + sep;
-
-    cout << "Loading UI theme:" << themePath << endl;
-    if (!DirEntry::exists(themePath + "theme.ini"))
-    {
-        themePath=defaultPath;
-        App::get().config().inifile.values["theme"] = "default";
-        App::get().config().save();
-    }
-
-    defaultData.load(defaultPath + "theme.ini");
-    themeData.load(defaultPath + "theme.ini");
-    themeData.mergeFrom(themePath + "theme.ini");    // adds to default/theme.ini values
+    App::get().theme().load();     // (re)reads theme.ini, falling back to themes/default
+    const string themePath = App::get().theme().loadedPath();
+    const string defaultPath = App::get().theme().defaultsPath();
 
     backgroundImg = Texture();  // release the previous theme's textures/sounds before loading the new ones
     cursor = ableem::Sound();
@@ -213,10 +118,10 @@ void Gui::loadAssets(bool reloadMusic) {
     home_down = ableem::Sound();
     home_up = ableem::Sound();
 
-    logoRect.x = atoi(themeData.values["lpositionx"].c_str());
-    logoRect.y = atoi(themeData.values["lpositiony"].c_str());
-    logoRect.w = atoi(themeData.values["lw"].c_str());
-    logoRect.h = atoi(themeData.values["lh"].c_str());
+    logoRect.x = atoi(App::get().theme().data.values["lpositionx"].c_str());
+    logoRect.y = atoi(App::get().theme().data.values["lpositiony"].c_str());
+    logoRect.w = atoi(App::get().theme().data.values["lw"].c_str());
+    logoRect.h = atoi(App::get().theme().data.values["lh"].c_str());
 
     backgroundImg = loadThemeTexture(themePath, defaultPath, "background");
     logo = loadThemeTexture(themePath, defaultPath, "logo");
@@ -248,9 +153,9 @@ void Gui::loadAssets(bool reloadMusic) {
     buttonTextureMap["Enter"] = loadThemeTexture(themePath, defaultPath, "enter");
     buttonTextureMap["Tab"] = loadThemeTexture(themePath, defaultPath, "tab");
 
-    string fontPath = (themePath + themeData.values["font"]);
+    string fontPath = (themePath + App::get().theme().data.values["font"]);
     int fontSize = 0;
-    string fontSizeString = themeData.values["fsize"];
+    string fontSizeString = App::get().theme().data.values["fsize"];
     if (fontSizeString != "")
         fontSize = atoi(fontSizeString.c_str());
     themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer());
@@ -260,7 +165,7 @@ void Gui::loadAssets(bool reloadMusic) {
     }
     customMusic = false;
     freq = 32000;
-    musicPath = themeData.values["music"];
+    musicPath = App::get().theme().data.values["music"];
     if (App::get().config().inifile.values["music"] != "--") {
         customMusic = true;
         musicPath = App::get().config().inifile.values["music"];
@@ -274,11 +179,11 @@ void Gui::loadAssets(bool reloadMusic) {
         this->restartAudio(freq);
         this->playMusic(customMusic, musicPath);
     }
-    cursor = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "cursor.wav");
-    cancel = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "cancel.wav");
-    home_up = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "home_up.wav");
-    home_down = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "home_down.wav");
-    resume = ableem::Sound::load(this->getCurrentThemeSoundPath() + sep + "resume_new.wav");
+    cursor = ableem::Sound::load(App::get().theme().soundPath() + sep + "cursor.wav");
+    cancel = ableem::Sound::load(App::get().theme().soundPath() + sep + "cancel.wav");
+    home_up = ableem::Sound::load(App::get().theme().soundPath() + sep + "home_up.wav");
+    home_down = ableem::Sound::load(App::get().theme().soundPath() + sep + "home_down.wav");
+    resume = ableem::Sound::load(App::get().theme().soundPath() + sep + "resume_new.wav");
 }
 
 //*******************************
@@ -655,10 +560,10 @@ Rect Gui::getFontTextRect(const ableem::Font &font, const char *text, int x, int
 //*******************************
 Rect Gui::getOpscreenRectOfTheme() {
     Rect rect;
-    rect.x = atoi(themeData.values["opscreenx"].c_str());
-    rect.y = atoi(themeData.values["opscreeny"].c_str());
-    rect.w = atoi(themeData.values["opscreenw"].c_str());
-    rect.h = atoi(themeData.values["opscreenh"].c_str());
+    rect.x = atoi(App::get().theme().data.values["opscreenx"].c_str());
+    rect.y = atoi(App::get().theme().data.values["opscreeny"].c_str());
+    rect.w = atoi(App::get().theme().data.values["opscreenw"].c_str());
+    rect.h = atoi(App::get().theme().data.values["opscreenh"].c_str());
 
     return rect;
 }
@@ -668,10 +573,10 @@ Rect Gui::getOpscreenRectOfTheme() {
 //*******************************
 Rect Gui::getTextRectOfTheme() {
     Rect rect;
-    rect.x = atoi(themeData.values["textx"].c_str());
-    rect.y = atoi(themeData.values["texty"].c_str());
-    rect.w = atoi(themeData.values["textw"].c_str());
-    rect.h = atoi(themeData.values["texth"].c_str());
+    rect.x = atoi(App::get().theme().data.values["textx"].c_str());
+    rect.y = atoi(App::get().theme().data.values["texty"].c_str());
+    rect.w = atoi(App::get().theme().data.values["textw"].c_str());
+    rect.h = atoi(App::get().theme().data.values["texth"].c_str());
 
     return rect;
 }
@@ -945,7 +850,7 @@ void Gui::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font fo
     if (!font.valid())
         font = themeFont;
 
-    string fg = themeData.values["text_fg"];
+    string fg = App::get().theme().data.values["text_fg"];
     int fontHeight = font.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
@@ -963,7 +868,7 @@ void Gui::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font fo
 // Gui::renderLabelBox
 //*******************************
 void Gui::renderLabelBox(int line, int yoffset) {
-    string bg = themeData.values["label_bg"];
+    string bg = App::get().theme().data.values["label_bg"];
     int fontHeight = themeFont.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
@@ -972,7 +877,7 @@ void Gui::renderLabelBox(int line, int yoffset) {
     rectSelection.w = opscreen.w - 10;
     rectSelection.h = fontHeight;
 
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["keyalpha"].c_str())));
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["keyalpha"].c_str())));
     renderer().setBlendMode(ableem::BlendMode::Blend);
     renderer().fillRect(rectSelection);
 }
@@ -990,8 +895,8 @@ void Gui::renderTextChar(const string &text, int line, int yoffset, int x) {
 // Gui::renderFreeSpace
 //*******************************
 void Gui::renderFreeSpace() {
-    int x = atoi(themeData.values["fsposx"].c_str());
-    int y = atoi(themeData.values["fsposy"].c_str());
+    int x = atoi(App::get().theme().data.values["fsposx"].c_str());
+    int y = atoi(App::get().theme().data.values["fsposy"].c_str());
     renderText(themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
 }
 
@@ -1013,8 +918,8 @@ int Gui::renderLogo(bool small) {
         return 0;
     } else {
         Rect rect;
-        rect.x = atoi(themeData.values["opscreenx"].c_str());
-        rect.y = atoi(themeData.values["opscreeny"].c_str());
+        rect.x = atoi(App::get().theme().data.values["opscreenx"].c_str());
+        rect.y = atoi(App::get().theme().data.values["opscreeny"].c_str());
         rect.w = logoRect.w / 3;
         rect.h = logoRect.h / 3;
         renderer().copy(logo, nullptr, &rect);
@@ -1026,14 +931,14 @@ int Gui::renderLogo(bool small) {
 // Gui::renderStatus
 //*******************************
 void Gui::renderStatus(const string &text, int posy) {
-    string bg = themeData.values["text_bg"];
+    string bg = App::get().theme().data.values["text_bg"];
 
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["textalpha"].c_str())));
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["textalpha"].c_str())));
     renderer().setBlendMode(ableem::BlendMode::Blend);
     Rect rect = getTextRectOfTheme();
     renderer().fillRect(rect);
 
-    int y = atoi(themeData.values["ttop"].c_str());
+    int y = atoi(App::get().theme().data.values["ttop"].c_str());
     if (posy!=-1)
         y=posy; // override the bottom status y position.  so far this has never been used.
 
@@ -1044,8 +949,8 @@ void Gui::renderStatus(const string &text, int posy) {
 // Gui::renderTextBar
 //*******************************
 void Gui::renderTextBar() {
-    string bg = themeData.values["main_bg"];
-    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(themeData.values["mainalpha"].c_str())));
+    string bg = App::get().theme().data.values["main_bg"];
+    renderer().setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(App::get().theme().data.values["mainalpha"].c_str())));
     renderer().setBlendMode(ableem::BlendMode::Blend);
 
     Rect rect2 = getOpscreenRectOfTheme();

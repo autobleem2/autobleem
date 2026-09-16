@@ -4,6 +4,7 @@
 #include <cassert>
 #include "../main.h"
 #include "gui.h"
+#include "../app.h"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 ableem::Font Fonts::openSpecificSharedCachedFont(FontType type, int fontSize) {
     auto gui = Gui::getInstance();
 
-    string rootPath = gui->getCurrentThemeFontPath();
+    string rootPath = App::get().theme().fontPath();
     string fontPath;
     if (type == FONT_MED)
         fontPath = rootPath + sep + "SST-Medium.ttf";

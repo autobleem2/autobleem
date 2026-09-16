@@ -342,8 +342,8 @@ void GuiLauncher::loadAssets() {
     }
 
     IniFile colorsFile;
-    if (DirEntry::exists(gui->getCurrentThemePath() + sep + "colors.ini")) {
-        colorsFile.load(gui->getCurrentThemePath() + sep + "colors.ini");
+    if (DirEntry::exists(app.theme().path() + sep + "colors.ini")) {
+        colorsFile.load(app.theme().path() + sep + "colors.ini");
         fgColor.r = gui->getR(colorsFile.values["fg"]);
         fgColor.g = gui->getG(colorsFile.values["fg"]);
         fgColor.b = gui->getB(colorsFile.values["fg"]);
@@ -354,7 +354,7 @@ void GuiLauncher::loadAssets() {
         secColor.a = 255;
     }
 
-    gui->themeFonts.openAllFonts(gui->getCurrentThemeFontPath(), renderer);
+    gui->themeFonts.openAllFonts(app.theme().fontPath(), renderer);
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
@@ -379,33 +379,33 @@ void GuiLauncher::loadAssets() {
     long time = gui->platform().ticks();
 
     cout << "Loading theme and creating objects" << endl;
-    if (DirEntry::exists(gui->getCurrentThemeImagePath() + sep + "GR/AB_BG.png")) {
+    if (DirEntry::exists(app.theme().imagePath() + sep + "GR/AB_BG.png")) {
         staticMeta = true;
-        background = addStaticElement(new PsObj("background", gui->getCurrentThemeImagePath() + sep + "GR/AB_BG.png"));
+        background = addStaticElement(new PsObj("background", app.theme().imagePath() + sep + "GR/AB_BG.png"));
     } else {
         staticMeta = false;
-        background = addStaticElement(new PsObj("background", gui->getCurrentThemeImagePath() + sep + "GR/JP_US_BG.png"));
+        background = addStaticElement(new PsObj("background", app.theme().imagePath() + sep + "GR/JP_US_BG.png"));
     }
 
     background->x = 0;
     background->y = 0;
     background->visible = true;
     string footerFile = "";
-    if (DirEntry::exists(gui->getCurrentThemeImagePath() + sep + "GR/Footer_AB.png")) {
+    if (DirEntry::exists(app.theme().imagePath() + sep + "GR/Footer_AB.png")) {
         footerFile = "GR/Footer_AB.png";
     } else {
         footerFile = "GR/Footer.png";
     }
-    PsObj *footer = addStaticElement(new PsObj("footer", gui->getCurrentThemeImagePath() + sep + footerFile));
+    PsObj *footer = addStaticElement(new PsObj("footer", app.theme().imagePath() + sep + footerFile));
     footer->y = SCREEN_HEIGHT - footer->h;
     footer->visible = true;
 
-    playButton = addStaticElement(new PsObj("playButton", gui->getCurrentThemeImagePath() + sep + "GR/Acid_C_Btn.png"));
+    playButton = addStaticElement(new PsObj("playButton", app.theme().imagePath() + sep + "GR/Acid_C_Btn.png"));
     playButton->y = 428;
     playButton->x = 540;
     playButton->visible = selGameIndex != -1;
 
-    playText = addStaticElement(new PsZoomBtn("playText", gui->getCurrentThemeImagePath() + sep + "BMP_Text/Play_Text.png"));
+    playText = addStaticElement(new PsZoomBtn("playText", app.theme().imagePath() + sep + "BMP_Text/Play_Text.png"));
     playText->y = 428;
     playText->x = 640 - 262 / 2;
     playText->visible = selGameIndex != -1;
@@ -414,16 +414,16 @@ void GuiLauncher::loadAssets() {
     playText->lastTime = time;
 
     string settingsFile = "";
-    if (DirEntry::exists(gui->getCurrentThemeImagePath() + sep + "CB/Function_AB.png")) {
+    if (DirEntry::exists(app.theme().imagePath() + sep + "CB/Function_AB.png")) {
         settingsFile = "/CB/Function_AB.png";
     } else {
         settingsFile = "/CB/Function_BG.png";
     }
-    settingsBack = addStaticElement(new PsSettingsBack("playButton", gui->getCurrentThemeImagePath() + settingsFile));
+    settingsBack = addStaticElement(new PsSettingsBack("playButton", app.theme().imagePath() + settingsFile));
     settingsBack->setCurLen(100);
     settingsBack->visible = true;
 
-    meta = addStaticElement(new PsMeta("meta", gui->getCurrentThemeImagePath() + sep + "CB/PlayerOne.png"));
+    meta = addStaticElement(new PsMeta("meta", app.theme().imagePath() + sep + "CB/PlayerOne.png"));
     meta->fonts = gui->themeFonts;
     meta->x = 785;
     meta->y = 285;
@@ -445,28 +445,28 @@ void GuiLauncher::loadAssets() {
                           fgColor);
     }
 
-    arrow = addStaticElement(new PsMoveBtn("arrow", gui->getCurrentThemeImagePath() + sep + "GR/arrow.png"));
+    arrow = addStaticElement(new PsMoveBtn("arrow", app.theme().imagePath() + sep + "GR/arrow.png"));
     arrow->x = 640 - 12;
     arrow->y = 360;
     arrow->originaly = arrow->y;
     arrow->visible = false;
 
-    xButton = addStaticElement(new PsObj("xbtn", gui->getCurrentThemeImagePath() + sep + "GR/X_Btn_ICN.png"));
+    xButton = addStaticElement(new PsObj("xbtn", app.theme().imagePath() + sep + "GR/X_Btn_ICN.png"));
     xButton->x = 605;
     xButton->y = 640;
     xButton->visible = true;
 
-    oButton = addStaticElement(new PsObj("obtn", gui->getCurrentThemeImagePath() + sep + "GR/Circle_Btn_ICN.png"));
+    oButton = addStaticElement(new PsObj("obtn", app.theme().imagePath() + sep + "GR/Circle_Btn_ICN.png"));
     oButton->x = 765;
     oButton->y = 640;
     oButton->visible = true;
 
-    tButton = addStaticElement(new PsObj("tbtn", gui->getCurrentThemeImagePath() + sep + "GR/Tri_Btn_ICN.png"));
+    tButton = addStaticElement(new PsObj("tbtn", app.theme().imagePath() + sep + "GR/Tri_Btn_ICN.png"));
     tButton->x = 910;
     tButton->y = 640;
     tButton->visible = true;
 
-    menu.reset(new PsMenu("menu", gui->getCurrentThemeImagePath()));
+    menu.reset(new PsMenu("menu", app.theme().imagePath()));
     menu->loadAssets();
 
     menuHead = addStaticElement(new PsCenterLabel("header"));

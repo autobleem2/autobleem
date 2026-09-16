@@ -8,6 +8,7 @@
 
 #include "session.h"
 #include "engine/config.h"
+#include "engine/theme.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
 
@@ -31,6 +32,7 @@ public:
     int run();
 
     Config &config() { return cfg_; }
+    Theme &theme() { return theme_; }
     ableem::GameLibrary &library() { return gameLibrary; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
@@ -42,9 +44,10 @@ public:
 private:
     static App *instance;
 
-    // declaration order is construction order: config.ini is read before the Gui, whose constructor already
-    // needs the theme name from it.
+    // declaration order is construction order: config.ini is read before the Theme that names its
+    // directory, and both before the Gui, whose constructor already needs the theme's font path.
     Config cfg_;
+    Theme theme_;
     std::shared_ptr<Gui> gui_;
     std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;

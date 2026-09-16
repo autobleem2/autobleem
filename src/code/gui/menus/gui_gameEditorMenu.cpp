@@ -443,8 +443,8 @@ void GuiEditor::render() {
     gui->renderStatus(guiMenu);
 
     ableem::Rect rect;
-    rect.x = atoi(gui->themeData.values["ecoverx"].c_str());
-    rect.y = atoi(gui->themeData.values["ecovery"].c_str());
+    rect.x = atoi(app.theme().data.values["ecoverx"].c_str());
+    rect.y = atoi(app.theme().data.values["ecovery"].c_str());
     rect.w = 226;
     rect.h = 226;
 

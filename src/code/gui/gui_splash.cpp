@@ -29,16 +29,16 @@ void GuiSplash::render() {
     renderer.copy(gui->backgroundImg, nullptr, &gui->backgroundRect);
     renderer.copy(gui->logo, nullptr, &gui->logoRect);
 
-    string bg = gui->themeData.values["text_bg"];
+    string bg = app.theme().data.values["text_bg"];
 
-    int bg_alpha = atoi(gui->themeData.values["textalpha"].c_str()) * alpha / 255;
+    int bg_alpha = atoi(app.theme().data.values["textalpha"].c_str()) * alpha / 255;
 
     renderer.setDrawColor(ableem::Color(gui->getR(bg), gui->getG(bg), gui->getB(bg), bg_alpha));
     renderer.setBlendMode(ableem::BlendMode::Blend);
     ableem::Rect rect = gui->getTextRectOfTheme();
     renderer.fillRect(rect);
 
-    int y = atoi(gui->themeData.values["ttop"].c_str());
+    int y = atoi(app.theme().data.values["ttop"].c_str());
     string splashText = _("AutoBleem")+" " + app.config().inifile.values["version"];
     gui->renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
 

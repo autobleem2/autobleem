@@ -88,6 +88,8 @@ add_executable(
         src/code/engine/config.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
+        src/code/engine/theme.cpp
+        src/code/engine/theme.h
         src/code/environment.cpp
         src/code/environment.h
         src/code/gui/gui.cpp
