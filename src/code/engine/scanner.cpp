@@ -4,7 +4,7 @@
 
 #include "scanner.h"
 #include "../gui/gui.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include <unistd.h>
 
 using namespace std;

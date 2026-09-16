@@ -5,7 +5,7 @@
 
 #include "gui_optionsMenuBase.h"
 #include "../gui.h"
-#include "../../lang.h"
+#include "../../core/lang.h"
 #include <string>
 #include <vector>
 

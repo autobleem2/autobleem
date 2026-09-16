@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gui_stringMenu.h"
-#include "../../lang.h"
+#include "../../core/lang.h"
 #include "../../launcher/ra_integrator.h"
 
 //*******************************

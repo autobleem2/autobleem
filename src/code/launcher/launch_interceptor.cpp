@@ -3,13 +3,13 @@
 //
 
 #include "launch_interceptor.h"
-#include "../util.h"
+#include "../core/util.h"
 #include "../util_time.h"
 #include "../gui/gui.h"
 #include "../app.h"
 #include <iostream>
 #include <unistd.h>
-#include "../environment.h"
+#include "../core/environment.h"
 
 using namespace std;
 

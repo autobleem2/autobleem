@@ -5,9 +5,9 @@
 #include "gui_about.h"
 #include <string>
 #include "gui.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include "../engine/scanner.h"
-#include "../environment.h"
+#include "../core/environment.h"
 
 void GuiAbout::init() {
     std::shared_ptr<Gui> gui(Gui::getInstance());

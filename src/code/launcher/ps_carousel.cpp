@@ -9,7 +9,7 @@
 #include "ra_integrator.h"
 #include <unistd.h>
 #include <iostream>
-#include "../environment.h"
+#include "../core/environment.h"
 
 using namespace std;
 using ableem::Texture;

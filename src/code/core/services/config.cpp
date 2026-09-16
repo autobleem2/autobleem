@@ -4,8 +4,8 @@
 
 #include "config.h"
 #include "../util.h"
-#include "../launcher/gui_NotificationLine.h"
 #include "../main.h"
+#include "../model/timing.h"
 #include "../environment.h"
 
 //*******************************

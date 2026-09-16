@@ -3,15 +3,15 @@
 //
 #pragma once
 
-#include "../main.h"
+#include "../core/main.h"
 #include <ableem/ableem.h>
 #include <string>
 #include <memory>
 #include "../engine/scanner.h"
 #include "../launcher/ps_game.h"
-#include "../util.h"
+#include "../core/util.h"
 #include "gui_font.h"
-#include "../environment.h"
+#include "../core/environment.h"
 #include "../session.h"
 
 using namespace std;

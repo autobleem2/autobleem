@@ -7,7 +7,7 @@
 #include <memory>
 
 #include "session.h"
-#include "engine/config.h"
+#include "core/services/config.h"
 #include "engine/theme.h"
 #include "engine/app_audio.h"
 #include "engine/scanner.h"

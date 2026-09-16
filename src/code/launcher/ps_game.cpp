@@ -3,8 +3,8 @@
 //
 
 #include "ps_game.h"
-#include "../util.h"
-#include "../main.h"
+#include "../core/util.h"
+#include "../core/main.h"
 #include "../gui/gui.h"
 #include "../app.h"
 #include <fstream>

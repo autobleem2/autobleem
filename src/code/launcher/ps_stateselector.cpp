@@ -3,7 +3,7 @@
 //
 
 #include "ps_stateselector.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include "../gui/gui.h"
 #include "gui_launcher.h"
 

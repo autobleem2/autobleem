@@ -7,7 +7,7 @@
 #include <iostream>
 #include "gui_gameEditorMenu.h"
 #include "../gui_confirm.h"
-#include "../../lang.h"
+#include "../../core/lang.h"
 #include <ftw.h>
 #include "../../engine/scanner.h"
 

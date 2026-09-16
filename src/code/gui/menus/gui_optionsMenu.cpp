@@ -1,6 +1,6 @@
 #include "gui_optionsMenu.h"
-#include "../../util.h"
-#include "../../environment.h"
+#include "../../core/util.h"
+#include "../../core/environment.h"
 
 using namespace std;
 

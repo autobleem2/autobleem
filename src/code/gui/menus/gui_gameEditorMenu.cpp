@@ -6,11 +6,11 @@
 #include "../gui.h"
 #include "../gui_keyboard.h"
 #include "../gui_selectmemcard.h"
-#include "../../main.h"
-#include "../../main.h"
-#include "../../lang.h"
+#include "../../core/main.h"
+#include "../../core/main.h"
+#include "../../core/lang.h"
 #include <sstream>
-#include "../../environment.h"
+#include "../../core/environment.h"
 
 using namespace std;
 

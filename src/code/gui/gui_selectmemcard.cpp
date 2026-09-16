@@ -6,10 +6,10 @@
 
 #include <string>
 #include "gui.h"
-#include "../main.h"
+#include "../core/main.h"
 #include "gui_confirm.h"
 #include "gui_keyboard.h"
-#include "../lang.h"
+#include "../core/lang.h"
 using namespace std;
 
 //*******************************

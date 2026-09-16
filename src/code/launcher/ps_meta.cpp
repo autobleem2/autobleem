@@ -4,12 +4,12 @@
 
 #include "ps_meta.h"
 #include "ps_game.h"
-#include "../util.h"
+#include "../core/util.h"
 #include "../util_time.h"
-#include "../lang.h"
-#include "../main.h"
-#include "../main.h"
-#include "../environment.h"
+#include "../core/lang.h"
+#include "../core/main.h"
+#include "../core/main.h"
+#include "../core/environment.h"
 
 using namespace std;
 

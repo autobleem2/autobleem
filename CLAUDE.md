@@ -40,11 +40,33 @@ Done on 2026-09-16:
 The next structural step is planned in `docs/refactor-plan.md`: split `src/code` into `ab_core` (model +
 services, no SDL, unit tested with doctest), `ab_ui` and `ab_evoui`, moving the game queries, settings,
 memcard/savestate and launch logic out of the screens that currently hold them. The list below is folded into
-that plan's phases.
+that plan's phases. Phase A steps 1 and 2 are done:
+
+- **Step 1** - the `#define`-int selections are `enum class`es now: `GameSet` (+ `nextGameSet` for the Select
+  wraparound) and `Ps1SelectState` in `session.h`, `LauncherScreenState` in `gui_launcher.h`, and the
+  file-local `LauncherMenuOption` in `gui_launcher_loop.cpp`. `PsMenu::selOption` stays an `int` - it is a
+  generic index into the icon row that `PsMenu` animates by `++`/`--` - and is compared through
+  `selOptionIs()`. `EmuMode` and `MenuOption` were already enums.
+- **Step 2** - `ab_core` exists (`src/code/core/`, links `ableem_engine` only, `starter` links just it).
+  It holds `main.h`, `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*` and
+  `model/timing.h`. It is deliberately small: only files with no `Gui` and no `App::get()` could move without
+  a content change.
+
+`ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
+constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
+layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what removes the cycle; the targets
+follow it.
+
+Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
+`theme.*` and `util_time.*` (`App::get().config()`), `ps_game.*` (`App::get().library()` in `setMemCard`),
+`scanner.*` (6x `Gui::splash`) and the three concrete interceptors (`Gui::splash` + `Gui::getInstance()` +
+`App::get()`). `session.h`, `ra_integrator.*` and `emu_interceptor.*` are clean themselves but include
+`ps_game.h`, so they move when it does.
 
 Still to do, in order:
 
-1. `enum class` for the `#define`-int "enums" (`EMU_*`, `SET_*`, `STATE_*`, `SEL_OPTION_*`) - compiler-driven.
+1. Continue `docs/refactor-plan.md` - phase A step 4 (the doctest harness; step 3, the ARM build, is
+   deferred), then phase B's service extractions.
 2. Centralize the hard-coded paths still in the app (`/media/Autobleem/rc/*.sh` in the interceptors and
    `main.cpp`, `/media/retroarch/...` in `retboot_interceptor.cpp`, `/media/System/Logs/ver.txt`) in `Env` -
    the engine side is done, and so are the theme loaders (`Theme` asks `Env` for both branches now).
@@ -70,7 +92,7 @@ the library. Same for sqlite/json: extend `GameDatabase`/`RetroArchPlaylist` ins
 
 ### engine
 
-The app imports the engine names into its global namespace once, in `src/code/main.h` (explicit `using`
+The app imports the engine names into its global namespace once, in `src/code/core/main.h` (explicit `using`
 declarations - not `using namespace ableem`, because the app's `GuiScreen` shares its name with
 `ableem::GuiScreen`), so app code writes `DirEntry::exists(...)`, `IniFile`, `GameDatabase` unqualified.
 
@@ -79,7 +101,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   the layout for the platform and calls the setters (`setUsbRoot/GamesDir/RegionalDbFile/InternalDbFile/
   WorkingPath/SonyDataPath/ThemesDir/CoversDbDir/InternalGamesDir`) once; everything else is derived
   (`getPathToMemCardsDir()` = games + `!MemCards`, `getPathToMemcardTemplateDir()` = working + `memcard`, ...).
-  The app's `Env` (`src/code/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
+  The app's `Env` (`src/code/core/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
   `starter` sets the two roots it needs itself.
 - **`DirEntry`/`sep`** (`engine/filesystem.h`) and the string helpers (`engine/strings.h`: in-place `trim/
   lcase/...` free functions, copying `Strings::trim/replaceAll/toInt/...`) are the old `DirEntry.h`, `main.h`
@@ -149,8 +171,9 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 ## Build
 
-Two targets in `CMakeLists.txt`: `autobleem-gui` (the app, links `ableem`) and `starter` (small PCSX wrapper
-used by the stock-UI path, links `ableem_engine` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
+Three targets in `CMakeLists.txt`: `ab_core` (`src/code/core/`, the app's SDL-free model+services layer,
+links `ableem_engine`), `autobleem-gui` (the app, links `ab_core` + `ableem`) and `starter` (small PCSX
+wrapper used by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
@@ -225,18 +248,22 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 
 ## Source map (`src/code/`)
 
+`src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"); everything else
+compiles straight into `autobleem-gui`. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
+defaults, which both the services and the screens need.
+
 | Area | Files | Notes |
 |---|---|---|
 | Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `App` and calls `run()`. |
 | `app.*` | `App` | The model, and the whole program: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner` and the `Session`, plus the `Gui` singleton. `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `menuSelection()` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
 | `session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and the carousel's restore state. |
-| `main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
-| `environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
-| `util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |
-| `lang.*` | `_()` | gettext-style lookup from `resources/lang/<Language>.txt`. Emoji markers like `\|@X\|` in strings are replaced by button textures by `Gui::renderText`. |
+| `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
+| `core/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
+| `core/util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |
+| `core/lang.*` | `_()` | gettext-style lookup from `resources/lang/<Language>.txt`. Emoji markers like `\|@X\|` in strings are replaced by button textures by `Gui::renderText`. |
 | `engine/scanner.*` | `Scanner` singleton | `ableem::GameScanner` + its `ScanProgressListener`: maps scan stages to `Gui::splash(_(...))`, keeps `forceScan`. The scanning, hierarchy, serial/metadata lookup, database and memcard logic all live in lib_ableem's engine now (see the lib_ableem section). |
 | `engine/cardedit.*` | `CardEdit` | .mcd block editor / icon renderer (stays in the app: it draws with `ableem::Texture`). |
-| `engine/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
+| `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `engine/theme.*` | `Theme` | The current theme's `theme.ini` (the selected theme merged over `themes/default/theme.ini`, so every key has a value) and its directories: `path/imagePath/fontPath/soundPath()`, each falling back to `Env::getSonyPath()` when the theme or that sub-dir is missing. Owned by `App`; read as `app.theme().data.values["..."]`. No platform `#ifdef`s - the paths come from `Env`. |
 | `engine/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
 | `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), fonts, theme textures, and the text/rect/line rendering helpers every screen draws with. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
@@ -250,7 +277,6 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
 | `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
-| `ver_migration.*` | | One-off migrations between AutoBleem versions (`/media/System/Logs/ver.txt`). |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb`, `autobleem`, `default`,

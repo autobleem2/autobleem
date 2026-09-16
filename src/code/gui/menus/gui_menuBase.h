@@ -4,7 +4,7 @@
 #include "../gui.h"
 #include <vector>
 #include <string>
-#include "../../lang.h"
+#include "../../core/lang.h"
 
 //*******************************
 // GuiMenuBase template class

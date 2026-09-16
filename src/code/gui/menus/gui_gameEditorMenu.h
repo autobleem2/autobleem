@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../gui_screen.h"
-#include "../../main.h"
+#include "../../core/main.h"
 #include "../../launcher/ps_game.h"
 
 //********************

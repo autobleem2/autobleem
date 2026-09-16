@@ -1,8 +1,8 @@
 #include "gui_font.h"
 #include <iostream>
-#include "../util.h"
+#include "../core/util.h"
 #include <cassert>
-#include "../main.h"
+#include "../core/main.h"
 #include "gui.h"
 #include "../app.h"
 

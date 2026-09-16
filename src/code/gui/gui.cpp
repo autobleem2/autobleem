@@ -11,7 +11,7 @@
 #include "gui_confirm.h"
 #include "../launcher/gui_launcher.h"
 #include "gui_padTest.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include "../app.h"
 #include <unistd.h>
 #include <iostream>

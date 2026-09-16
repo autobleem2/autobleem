@@ -1,11 +1,11 @@
 #include <cstring>
 #include "cardedit.h"
-#include "../main.h"
-#include "../lang.h"
+#include "../core/main.h"
+#include "../core/lang.h"
 #include <string>
 #include <fstream>
 #include <iostream>
-#include "../environment.h"
+#include "../core/environment.h"
 
 using namespace std;
 

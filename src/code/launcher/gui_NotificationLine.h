@@ -4,10 +4,8 @@
 #include <vector>
 #include <string>
 #include "../gui/gui_font.h"
+#include "../core/model/timing.h"
 
-#define TicksPerSecond 1000
-#define DefaultShowingTimeout (2 * TicksPerSecond)
-#define DefaultShowingTimeoutText "2"
 
 //******************
 // NotificationLine

@@ -1,6 +1,6 @@
 #include "app.h"
-#include "lang.h"
-#include "util.h"
+#include "core/lang.h"
+#include "core/util.h"
 #include "launcher/emu_interceptor.h"
 #include "launcher/pcsx_interceptor.h"
 #include "launcher/retboot_interceptor.h"

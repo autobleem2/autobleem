@@ -4,8 +4,8 @@
 
 #include "app_audio.h"
 #include "../app.h"
-#include "../environment.h"
-#include "../main.h"
+#include "../core/environment.h"
+#include "../core/main.h"
 #include "../launcher/gui_NotificationLine.h"   // TicksPerSecond
 
 #include <unistd.h>

@@ -78,22 +78,41 @@ if (NOT AB_ENABLE_CHD)
     add_compile_definitions(AB_NO_CHD)
 endif()
 
+# ab_core: the app's model and services layer, the first of the three targets in docs/refactor-plan.md.
+# It links ableem_engine and nothing else, so the linker - not a convention - is what keeps it free of SDL and
+# of screens. That is what makes it testable without a window, and it is what `starter` links below.
+#
+# It starts small on purpose: only files that already have no Gui and no App::get() in them could move here
+# without a content change. theme.*, scanner.*, ps_game.*, util_time.* and the three concrete interceptors are
+# core-shaped but each still reaches the UI or the composition root, so they stay in the app target until
+# phase B of the plan extracts them. ab_ui and ab_evoui are not split out yet either - Gui::menuSelection()
+# constructs GuiLauncher while ~20 launcher files use Gui, so the two would be a link cycle rather than a
+# layering. Phase C step 14 (menuSelection -> ClassicMenuScreen) is what removes that cycle.
+add_library(ab_core STATIC
+        src/code/core/DebugTimer.cpp
+        src/code/core/DebugTimer.h
+        src/code/core/environment.cpp
+        src/code/core/environment.h
+        src/code/core/lang.cpp
+        src/code/core/lang.h
+        src/code/core/main.h
+        src/code/core/services/config.cpp
+        src/code/core/services/config.h
+        src/code/core/util.cpp
+        src/code/core/util.h
+        )
+target_link_libraries(ab_core ableem_engine)
+
 add_executable(
         autobleem-gui
-        src/code/DebugTimer.cpp
-        src/code/DebugTimer.h
         src/code/engine/app_audio.cpp
         src/code/engine/app_audio.h
         src/code/engine/cardedit.cpp
         src/code/engine/cardedit.h
-        src/code/engine/config.cpp
-        src/code/engine/config.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
         src/code/engine/theme.cpp
         src/code/engine/theme.h
-        src/code/environment.cpp
-        src/code/environment.h
         src/code/gui/gui.cpp
         src/code/gui/gui.h
         src/code/gui/gui_about.cpp
@@ -130,8 +149,6 @@ add_executable(
         src/code/gui/menus/gui_twoColumnStringMenu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
-        src/code/lang.cpp
-        src/code/lang.h 
         src/code/launcher/emu_interceptor.cpp
         src/code/launcher/emu_interceptor.h
         src/code/launcher/gui_app_start.cpp 
@@ -179,25 +196,18 @@ add_executable(
         src/code/app.h
         src/code/session.h
         src/code/main.cpp
-        src/code/main.h
-        src/code/util.cpp
-        src/code/util.h
         src/code/util_time.h src/code/util_time.cpp)
 
 if (NOT WIN32)
     # starter wraps /tmp/pcsx on the console for the stock SonyUI path. it is not useful on a Windows dev build.
-    add_executable(starter
-            src/code/starter.cpp
-            src/code/util.h
-            src/code/util.cpp
-            src/code/environment.h
-            src/code/environment.cpp
-            )
-    target_link_libraries(starter ableem_engine)
+    # it links ab_core alone, which is the cheapest standing proof that core pulls in no SDL.
+    add_executable(starter src/code/starter.cpp)
+    target_link_libraries(starter ab_core)
 endif()
 
 target_link_libraries(autobleem-gui
          Threads::Threads
+         ab_core
          ableem
          ${CMAKE_DL_LIBS}
 )

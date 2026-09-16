@@ -142,16 +142,39 @@ Each item is one commit. Moves are kept content-free and separate from edits, so
 
 **Phase A — model, packaging and the test harness**
 
-1. `enum class` for `SET_*`, `STATE_*`, `EMU_*`, `SEL_OPTION_*` into `core/model/enums.h`. (This is the
-   existing todo #1 and it is the right opener: the compiler finds every site that mixes them up.)
-2. Create the three targets and `git mv` the files that are already clean — `session.h`, `config.*`,
-   `theme.*`, `scanner.*`, `ps_game.*`, the interceptors. No content change. Fix `CLAUDE.md`'s source map in
-   the same commit, including the stale `ver_migration.*` row for files that no longer exist.
-3. **Attempt an ARM build here**, before anything else moves. Three static libs change link order under
-   `--static -Os -s`, and the toolchain has never been exercised. A surprise at this point costs one commit
-   instead of twenty.
+1. ~~`enum class` for `SET_*`, `STATE_*`, `EMU_*`, `SEL_OPTION_*`~~ **done 2026-09-16.** `EMU_*` turned out
+   to be `EmuMode` already. The rest became `GameSet` + `Ps1SelectState` (`session.h`),
+   `LauncherScreenState` (`gui_launcher.h`) and a file-local `LauncherMenuOption`
+   (`gui_launcher_loop.cpp`) — not a shared `core/model/enums.h`, because `core/model/` did not exist yet
+   and three of the four are used in exactly one screen. Fold them in when that file appears.
+   `PsMenu::selOption` stayed an `int`: it is a generic index that `PsMenu` animates by `++`/`--`.
+   The compiler earned its keep twice — a dead `launcher.set < 0` guard in `Gui::menuSelection()`, and five
+   identical `showSetName()` branches that collapse to one.
+2. ~~Create the three targets and `git mv` the files that are already clean~~ **partly done 2026-09-16.**
+   The file list above was written without checking, and most of it was not clean:
+
+   | file | what stopped it |
+   |---|---|
+   | `scanner.*` | 6× `Gui::splash` |
+   | `pcsx_`/`retboot_`/`launch_interceptor.*` | `Gui::splash` + `Gui::getInstance()` + `App::get()` |
+   | `theme.*`, `util_time.*` | `App::get().config()` |
+   | `ps_game.*` | `App::get().library()` in `setMemCard` |
+   | `session.h`, `ra_integrator.*`, `emu_interceptor.*` | clean, but include `ps_game.h` |
+
+   So `ab_core` was created with what genuinely had no `Gui` and no `App::get()`: `main.h`,
+   `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*`, plus `model/timing.h` for the
+   `TicksPerSecond` / showing-timeout defines that had been sitting in `gui_NotificationLine.h` where
+   `Config` could not reach them. `starter` links `ab_core` alone, which is the standing proof it stays
+   SDL-free. The stale `ver_migration.*` row is gone from `CLAUDE.md`.
+
+   **`ab_ui` and `ab_evoui` were not created.** `Gui::menuSelection()` constructs `GuiLauncher` while ~20
+   launcher files use `Gui`: as targets the two would be a link cycle, which enforces nothing and is worse
+   than one target. They wait on step 14, which is what breaks the cycle. Each parked file above joins
+   `ab_core` in the phase B step that gives it a seam.
+3. ~~**Attempt an ARM build here**~~ **deferred** — the toolchain is still not on this host. Phases A–D are
+   host-verified only, as section 7 anticipated. Do this before any of it ships.
 4. The test harness: doctest, `tests/`, `EnvFixture`, `TempDir`, ctest wiring, and the first tests against
-   `Config` and `Theme` (already clean, so they exercise the harness rather than new code).
+   `Config` (`Theme` is not in `ab_core` yet, so it joins in step 9's neighbourhood).
 5. `GameSetSelection` in `core/model/`, replacing the six loose ints shared between `GuiLauncher` and
    `Session::LauncherState`.
 

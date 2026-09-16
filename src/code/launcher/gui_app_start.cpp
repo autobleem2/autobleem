@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include "../gui/gui.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include "../engine/scanner.h"
 
 

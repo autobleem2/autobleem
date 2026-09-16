@@ -3,15 +3,15 @@
 //
 
 #include "retboot_interceptor.h"
-#include "../util.h"
+#include "../core/util.h"
 #include "../gui/gui.h"
-#include "../lang.h"
-#include "../main.h"
+#include "../core/lang.h"
+#include "../core/main.h"
 #include "../app.h"
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
-#include "../environment.h"
+#include "../core/environment.h"
 
 #define RA_MEMCARDLOC "/media/retroarch/saves/"
 #define RA_CORE_CONFIG "/media/retroarch/config/retroarch-core-options.cfg"

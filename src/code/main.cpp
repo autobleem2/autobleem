@@ -8,9 +8,9 @@
 #include <cstdlib>
 #include <iostream>
 #include "app.h"
-#include "main.h"
-#include "util.h"
-#include "environment.h"
+#include "core/main.h"
+#include "core/util.h"
+#include "core/environment.h"
 
 using namespace std;
 

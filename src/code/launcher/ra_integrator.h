@@ -7,7 +7,7 @@
 #include <cstring>
 #include <map>
 #include <set>
-#include "../main.h"
+#include "../core/main.h"
 #include "ps_game.h"
 
 using namespace std;

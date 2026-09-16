@@ -8,9 +8,9 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include "../util.h"
-#include "../main.h"
-#include "../environment.h"
+#include "../core/util.h"
+#include "../core/main.h"
+#include "../core/environment.h"
 #include <cassert>
 
 

@@ -3,16 +3,16 @@
 //
 
 #include "pcsx_interceptor.h"
-#include "../util.h"
+#include "../core/util.h"
 #include "../util_time.h"
 #include "../gui/gui.h"
-#include "../lang.h"
-#include "../main.h"
+#include "../core/lang.h"
+#include "../core/main.h"
 #include "../app.h"
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
-#include "../environment.h"
+#include "../core/environment.h"
 
 using namespace std;
 

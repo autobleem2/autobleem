@@ -1,9 +1,9 @@
 
 #include <string>
 #include <unistd.h>
-#include "util.h"
-#include "main.h"
-#include "environment.h"
+#include "core/util.h"
+#include "core/main.h"
+#include "core/environment.h"
 
 using namespace std;
 

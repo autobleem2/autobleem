@@ -1,5 +1,5 @@
 #include "gui_optionsMenuBase.h"
-#include "../../lang.h"
+#include "../../core/lang.h"
 
 using namespace std;
 

@@ -7,10 +7,10 @@
 #include <string>
 #include <iostream>
 #include "../gui/gui.h"
-#include "../lang.h"
+#include "../core/lang.h"
 #include "../gui/gui_confirm.h"
 #include "../gui/gui_selectmemcard.h"
-#include "../environment.h"
+#include "../core/environment.h"
 
 void GuiMcManager::init() {
     rightCardName_ori = rightCardName;
