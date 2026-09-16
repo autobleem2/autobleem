@@ -77,6 +77,13 @@ is a 1..100 ranking, renumbered across USB *and* internal games on every launch,
 before the second call) and `flushAllCovers()`. Favorite toggling is still in `GuiEditor` - it is one of six
 identical `gameIni` blocks there and moves with the rest at step 9.
 
+`MemcardService` (`core/services/memcard.*`) owns the `!MemCards` sets and which one a game plays with:
+`activeCardName()`, `setCardForGame()` (Game.ini + regional.db together again), `swapInForLaunch()` /
+`swapOutAfterLaunch()` - the halves both interceptors used to duplicate - and the create/list/rename/remove
+the memory-card screens use. Nothing outside it constructs an `ableem::MemcardManager`. It carries one
+**known, deliberately unfixed bug**, commented at the source and pinned by a test: the "card set is gone,
+fall back to SONY" branch is unreachable behind a redundant existence guard.
+
 `ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
 constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
 layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what removes the cycle; the targets
@@ -309,6 +316,7 @@ defaults, which both the services and the screens need.
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields and the resume-point pictures/slots. In `ab_core`: no `App`, no `Gui`. |
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
+| `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
 | `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |

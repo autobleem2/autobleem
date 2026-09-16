@@ -525,10 +525,9 @@ void GuiEditor::loop() {
                                 }
 
                                 if (!cancelled) {
-                                    MemcardManager memcard(Env::getPathToGamesDir());
                                     string savePath =
                                             Env::getPathToSaveStatesDir() + sep + gameIni.entry + sep + "memcards";
-                                    memcard.storeToRepo(savePath, result);
+                                    app.memcards().storeGameCardsAsSet(savePath, result);
                                     gameIni.values["memcard"] = result;
                                     gameIni.save(gameIni.path);
                                 }

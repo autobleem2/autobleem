@@ -106,6 +106,8 @@ add_library(ab_core STATIC
         src/code/core/services/game_catalog.h
         src/code/core/services/game_query.cpp
         src/code/core/services/game_query.h
+        src/code/core/services/memcard.cpp
+        src/code/core/services/memcard.h
         src/code/core/util.cpp
         src/code/core/util.h
         )

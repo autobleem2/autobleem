@@ -107,22 +107,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
 //*******************************
 void RetroArchInterceptor::memcardIn(PsGamePtr &game) {
     if (!game->foreign) {
-        string memcard = "SONY";
-        if (!game->internal) {
-            IniFile gameini;
-            gameini.load(game->folder + sep + GAME_INI);
-            memcard = gameini.values["memcard"];
-
-        }
-        if (memcard != "SONY") {
-            if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
-                MemcardManager card(Env::getPathToGamesDir() + sep);
-                if (!card.swapIn(game->ssFolder, game->memcard)) {
-                    if (game->setMemCardInGameIni("SONY"))
-                        App::get().library().usbGames().updateMemcard(game->gameId, "SONY");
-                };
-            }
-        }
+        App::get().memcards().swapInForLaunch(*game);
 
         // Copy the card moved to RA
         string base;
@@ -151,16 +136,8 @@ void RetroArchInterceptor::memcardIn(PsGamePtr &game) {
 //*******************************
 void RetroArchInterceptor::memcardOut(PsGamePtr &game) {
     if (!game->foreign) {
-        string memcard = "SONY";
-        if (!game->internal) {
-            IniFile gameini;
-            gameini.load(game->folder + sep + GAME_INI);
-            memcard = gameini.values["memcard"];
-        }
-        if (memcard != "SONY") {
-            MemcardManager card(Env::getPathToGamesDir() + sep);
-            card.swapOut(game->ssFolder, game->memcard);
-        }
+        App::get().memcards().swapOutAfterLaunch(*game);
+
         string base;
         if (DirEntry::isPBPFile(game->base)) {
             base = game->base.substr(0, game->base.length() - 4);

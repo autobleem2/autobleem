@@ -19,14 +19,13 @@ void GuiSelectMemcard::init() {
     cards.clear();
 
     shared_ptr<Gui> gui(Gui::getInstance());
-    MemcardManager memcardOps(Env::getPathToGamesDir());
     if (listType==MC_CUSTOM) {
-        cards = memcardOps.list();
+        cards = app.memcards().listCards();
     } else
     {
         cards.push_back(_("CONFIGURED"));
         // build memcards list
-        vector<string> customList = memcardOps.list();
+        vector<string> customList = app.memcards().listCards();
         for (const string& mc:customList)
         {
             cards.push_back("[1] "+mc);

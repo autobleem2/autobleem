@@ -10,6 +10,7 @@
 #include "core/services/config.h"
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
+#include "core/services/memcard.h"
 #include "engine/theme.h"
 #include "engine/app_audio.h"
 #include "engine/scanner.h"
@@ -40,6 +41,7 @@ public:
     ableem::GameLibrary &library() { return gameLibrary; }
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
+    MemcardService &memcards() { return memcards_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
@@ -60,6 +62,7 @@ private:
     ableem::GameLibrary gameLibrary;
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
+    MemcardService memcards_{gameLibrary};
     Session session_;
 
     bool openLibrary();                                                   // covers dir + regional.db + internal.db

@@ -121,37 +121,14 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
 // PcsxInterceptor::memcardIn
 //*******************************
 void PcsxInterceptor::memcardIn(PsGamePtr & game) {
-    string memcard = "SONY";
-    if (!game->internal) {
-        IniFile gameini;
-        gameini.load(game->folder + sep + GAME_INI);
-        memcard = gameini.values["memcard"];
-    }
-    if (memcard != "SONY") {
-        if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
-            MemcardManager card(Env::getPathToGamesDir() + sep);
-            if (!card.swapIn(game->ssFolder, game->memcard)) {
-                if (game->setMemCardInGameIni("SONY"))
-                    App::get().library().usbGames().updateMemcard(game->gameId, "SONY");
-            };
-        }
-    }
+    App::get().memcards().swapInForLaunch(*game);
 }
 
 //*******************************
 // PcsxInterceptor::memcardOut
 //*******************************
 void PcsxInterceptor::memcardOut(PsGamePtr & game) {
-    string memcard = "SONY";
-    if (!game->internal) {
-        IniFile gameini;
-        gameini.load(game->folder + sep + GAME_INI);
-        memcard = gameini.values["memcard"];
-    }
-    if (memcard != "SONY") {
-        MemcardManager card(Env::getPathToGamesDir() + sep);
-        card.swapOut(game->ssFolder, game->memcard);
-    }
+    App::get().memcards().swapOutAfterLaunch(*game);
 }
 
 //*******************************
