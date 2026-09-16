@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "ps_obj.h"
-#include "../gui/gui_font.h"
+#include "evoui_obj.h"
+#include "../../gui/gui_font.h"
 
 //******************
 // PsCenterLabel

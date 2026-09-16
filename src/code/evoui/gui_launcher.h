@@ -5,15 +5,15 @@
 
 #include "gui_NotificationLine.h"
 #include "../gui/gui_screen.h"
-#include "ps_obj.h"
-#include "ps_settings_back.h"
-#include "ps_zoom_btn.h"
-#include "ps_meta.h"
+#include "controls/evoui_obj.h"
+#include "controls/evoui_settings_back.h"
+#include "controls/evoui_zoom_btn.h"
+#include "controls/evoui_meta.h"
 #include "carousel.h"
-#include "ps_move_bnt.h"
-#include "ps_menu.h"
-#include "ps_centerlabel.h"
-#include "ps_stateselector.h"
+#include "controls/evoui_move_btn.h"
+#include "controls/evoui_menu.h"
+#include "controls/evoui_centerlabel.h"
+#include "controls/evoui_stateselector.h"
 #include "../core/main.h"
 #include <vector>
 #include <memory>

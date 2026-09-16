@@ -2,7 +2,7 @@
 // Created by screemer on 2/15/19.
 //
 
-#include "ps_move_bnt.h"
+#include "evoui_move_btn.h"
 
 //*******************************
 // PsMoveBtn::update

@@ -2,13 +2,13 @@
 // Created by screemer on 2/12/19.
 //
 
-#include "ps_meta.h"
-#include "../core/model/ps_game.h"
-#include "../core/services/system.h"
-#include "../util_time.h"
-#include "../core/main.h"
-#include "../core/main.h"
-#include "../core/services/environment.h"
+#include "evoui_meta.h"
+#include "../../core/model/ps_game.h"
+#include "../../core/services/system.h"
+#include "../../util_time.h"
+#include "../../core/main.h"
+#include "../../core/main.h"
+#include "../../core/services/environment.h"
 
 using namespace std;
 

@@ -388,6 +388,12 @@ lines out of it first, so what is left is genuinely carousel and input.
     nothing to test but the app: scroll, game menu, editor, button guide, set switch and a RetroArch launch
     all as before.
 
+**Afterwards, at the user's call (2026-09-16):** `core/`'s top level is `main.h` alone (`Lang` went to the
+engine as `ableem::Lang`, `Util` became `services/system.*` + `Strings::`, `environment.*` moved under
+`services/`, the unused `DebugTimer` went), and `launcher/` is `evoui/`, with the `PsObj` family under
+`evoui/controls/` as `evoui_*.{h,cpp}` and `ps_carousel.*` as `carousel_game.*`. The section-2 layout
+above said `evoui/elements/`; `controls/` is what it is called.
+
 **With that the plan is complete**: phases A to D, every step, plus the three bugs the extractions pinned
 and the power-off unification. What it did not do, by the user's choice, is step 3: nothing here has run on
 a console. That is the next thing.

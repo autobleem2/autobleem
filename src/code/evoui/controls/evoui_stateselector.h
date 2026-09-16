@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "ps_obj.h"
-#include "../core/model/ps_game.h"
-#include "../gui/gui_font.h"
+#include "evoui_obj.h"
+#include "../../core/model/ps_game.h"
+#include "../../gui/gui_font.h"
 
 #define OP_LOAD 0
 #define OP_SAVE 1

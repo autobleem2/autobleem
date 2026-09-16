@@ -2,10 +2,10 @@
 // Created by screemer on 2019-02-22.
 //
 
-#include "ps_stateselector.h"
-#include "../gui/gui.h"
-#include "gui_launcher.h"
-#include "../app.h"
+#include "evoui_stateselector.h"
+#include "../../gui/gui.h"
+#include "../gui_launcher.h"
+#include "../../app.h"
 
 using namespace std;
 

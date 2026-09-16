@@ -2,7 +2,7 @@
 // Created by screemer on 2/11/19.
 //
 
-#include "ps_zoom_btn.h"
+#include "evoui_zoom_btn.h"
 
 //*******************************
 // PsZoomBtn::update

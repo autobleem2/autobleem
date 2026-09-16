@@ -253,7 +253,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 Five targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), `ab_ui` (`gui/`, `engine/`, `app.*`,
 `util_time.*`: Gui, the classic screens and menus, Theme/AppAudio/Scanner and the `App` model; links `ab_core` +
-`ableem`), `ab_evoui` (`launcher/`: the EvolutionUI carousel and its screens; links `ab_ui`), `autobleem-gui`
+`ableem`), `ab_evoui` (`evoui/`: the EvolutionUI launcher, its carousel and screens, and `evoui/controls/`; links `ab_ui`), `autobleem-gui`
 (`main.cpp`, `autobleem.*`, `gui/gui_classic_menu.*`; links `ab_evoui`) and `starter` (small PCSX wrapper used
 by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
@@ -341,7 +341,7 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 ## Source map (`src/code/`)
 
 `src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"): `main.h`, `model/` and `services/`, nothing else at its top level; `gui/`, `engine/`,
-`app.*` and `util_time.*` are `ab_ui`; `launcher/` is `ab_evoui`; `main.cpp`, `autobleem.*` and
+`app.*` and `util_time.*` are `ab_ui`; `evoui/` is `ab_evoui`; `main.cpp`, `autobleem.*` and
 `gui/gui_classic_menu.*` are the executable. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
 defaults, which both the services and the screens need.
 
@@ -368,9 +368,9 @@ defaults, which both the services and the screens need.
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/gui_*` | | Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, star FX. |
 | `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
-| `launcher/gui_launcher.h`, `launcher_screen.cpp`, `launcher_input.cpp`, `launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, one class in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop and per-button handlers), and the actions (what Cross does per state and menu icon: start the game, open the settings / game editor / memcard manager / resume selector, the sub-dir and playlist choosers, reconciling afterwards). Holds the `Carousel` as `carousel`. |
-| `launcher/carousel.*` | `Carousel` | The row of covers: `games` (with the fewer-than-13 duplication rule), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. |
-| `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
+| `evoui/gui_launcher.h`, `launcher_screen.cpp`, `launcher_input.cpp`, `launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, one class in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop and per-button handlers), and the actions (what Cross does per state and menu icon: start the game, open the settings / game editor / memcard manager / resume selector, the sub-dir and playlist choosers, reconciling afterwards). Holds the `Carousel` as `carousel`. |
+| `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | The row of covers: `games` (with the fewer-than-13 duplication rule), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. |
+| `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
 | `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
@@ -379,7 +379,7 @@ defaults, which both the services and the screens need.
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), core detection from `info/*.info` + `coreOverride.cfg`, Favorites/History. Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
-| `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
+| `evoui/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens and the two notification lines. |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb`, `autobleem`, `default`,

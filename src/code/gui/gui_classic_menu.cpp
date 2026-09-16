@@ -7,7 +7,7 @@
 #include "menus/gui_optionsMenu.h"
 #include "menus/gui_memCardsMenu.h"
 #include "menus/gui_gameManagerMenu.h"
-#include "../launcher/gui_launcher.h"
+#include "../evoui/gui_launcher.h"
 #include "../core/services/environment.h"
 #include "../core/services/system.h"
 

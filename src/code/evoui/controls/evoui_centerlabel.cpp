@@ -2,7 +2,7 @@
 // Created by screemer on 2019-02-21.
 //
 
-#include "ps_centerlabel.h"
+#include "evoui_centerlabel.h"
 
 using namespace std;
 

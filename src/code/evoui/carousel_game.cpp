@@ -2,7 +2,7 @@
 // Created by screemer on 2/13/19.
 //
 
-#include "ps_carousel.h"
+#include "carousel_game.h"
 #include "../gui/gui.h"
 #include "../engine/scanner.h"
 #include "../app.h"

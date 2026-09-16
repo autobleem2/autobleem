@@ -188,44 +188,45 @@ add_library(ab_ui STATIC
 )
 target_link_libraries(ab_ui ab_core ableem)
 
-# ab_evoui: the EvolutionUI launcher - the carousel and its elements, and the launcher's own sub-screens.
+# ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
+# sub-screens, and under controls/ the PsObj family of animated elements it is built from.
 # Links ab_ui. Gui::menuSelection() used to construct GuiLauncher, which made these two a link cycle; the
 # classic menu is a screen in the executable now (phase C step 14), which is what let the targets exist.
 add_library(ab_evoui STATIC
-        src/code/launcher/gui_NotificationLine.cpp
-        src/code/launcher/carousel.cpp
-        src/code/launcher/carousel.h
-        src/code/launcher/gui_NotificationLine.h
-        src/code/launcher/gui_app_start.cpp
-        src/code/launcher/gui_app_start.h
-        src/code/launcher/gui_btn_guide.cpp
-        src/code/launcher/gui_btn_guide.h
-        src/code/launcher/gui_launcher.h
-        src/code/launcher/launcher_actions.cpp
-        src/code/launcher/launcher_input.cpp
-        src/code/launcher/launcher_screen.cpp
-        src/code/launcher/gui_mc_manager.cpp
-        src/code/launcher/gui_mc_manager.h
-        src/code/launcher/ps_carousel.cpp
-        src/code/launcher/ps_carousel.h
-        src/code/launcher/ps_centerlabel.cpp
-        src/code/launcher/ps_centerlabel.h
-        src/code/launcher/ps_menu.cpp
-        src/code/launcher/ps_menu.h
-        src/code/launcher/ps_meta.cpp
-        src/code/launcher/ps_meta.h
-        src/code/launcher/ps_move_bnt.cpp
-        src/code/launcher/ps_move_bnt.h
-        src/code/launcher/ps_obj.cpp
-        src/code/launcher/ps_obj.h
-        src/code/launcher/ps_settings_back.cpp
-        src/code/launcher/ps_settings_back.h
-        src/code/launcher/ps_stateselector.cpp
-        src/code/launcher/ps_stateselector.h
-        src/code/launcher/ps_static.cpp
-        src/code/launcher/ps_static.h
-        src/code/launcher/ps_zoom_btn.cpp
-        src/code/launcher/ps_zoom_btn.h
+        src/code/evoui/carousel.cpp
+        src/code/evoui/carousel.h
+        src/code/evoui/carousel_game.cpp
+        src/code/evoui/carousel_game.h
+        src/code/evoui/controls/evoui_centerlabel.cpp
+        src/code/evoui/controls/evoui_centerlabel.h
+        src/code/evoui/controls/evoui_menu.cpp
+        src/code/evoui/controls/evoui_menu.h
+        src/code/evoui/controls/evoui_meta.cpp
+        src/code/evoui/controls/evoui_meta.h
+        src/code/evoui/controls/evoui_move_btn.cpp
+        src/code/evoui/controls/evoui_move_btn.h
+        src/code/evoui/controls/evoui_obj.cpp
+        src/code/evoui/controls/evoui_obj.h
+        src/code/evoui/controls/evoui_settings_back.cpp
+        src/code/evoui/controls/evoui_settings_back.h
+        src/code/evoui/controls/evoui_stateselector.cpp
+        src/code/evoui/controls/evoui_stateselector.h
+        src/code/evoui/controls/evoui_static.cpp
+        src/code/evoui/controls/evoui_static.h
+        src/code/evoui/controls/evoui_zoom_btn.cpp
+        src/code/evoui/controls/evoui_zoom_btn.h
+        src/code/evoui/gui_NotificationLine.cpp
+        src/code/evoui/gui_NotificationLine.h
+        src/code/evoui/gui_app_start.cpp
+        src/code/evoui/gui_app_start.h
+        src/code/evoui/gui_btn_guide.cpp
+        src/code/evoui/gui_btn_guide.h
+        src/code/evoui/gui_launcher.h
+        src/code/evoui/gui_mc_manager.cpp
+        src/code/evoui/gui_mc_manager.h
+        src/code/evoui/launcher_actions.cpp
+        src/code/evoui/launcher_input.cpp
+        src/code/evoui/launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
 

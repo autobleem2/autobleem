@@ -2,8 +2,8 @@
 // Created by screemer on 2/11/19.
 //
 
-#include "ps_settings_back.h"
-#include "../gui/gui.h"
+#include "evoui_settings_back.h"
+#include "../../gui/gui.h"
 
 //*******************************
 // PsSettingsBack::setCurLen
