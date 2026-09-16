@@ -404,7 +404,7 @@ void GuiLauncher::loop_chooseGameDir() {
 
     // add All Games and Internal Games only if origames is true in the config.ini
     int offsetToGamesSubDirs {0};
-    bool showInternalGames = (gui->cfg.inifile.values["origames"] == "true");
+    bool showInternalGames = (app.config().inifile.values["origames"] == "true");
     if (showInternalGames) {
         // show internal is enabled.  show usbgames + internal, and show internal only menu items.
         PsGames gamesList;
@@ -768,7 +768,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             if (gameini.values["play_using_ra"] == "true")
                 return loop_squareButton_Pressed();     // play PSX game in RA
         }
-        if (gui->cfg.inifile.values["play_all_psx_with_ra"] == "true")
+        if (app.config().inifile.values["play_all_psx_with_ra"] == "true")
             return loop_squareButton_Pressed();     // play PSX game in RA
     }
 

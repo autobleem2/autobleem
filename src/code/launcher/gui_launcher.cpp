@@ -90,7 +90,7 @@ void GuiLauncher::appendGames_SET_INTERNAL(PsGames *gamesList) {
 // GuiLauncher::getGames_SET_FAVORITE
 //*******************************
 void GuiLauncher::getGames_SET_FAVORITE(PsGames *gamesList) {
-    PsGames completeList = getAllPS1Games(true, gui->cfg.inifile.values["origames"] == "true");
+    PsGames completeList = getAllPS1Games(true, app.config().inifile.values["origames"] == "true");
 
     // put only the favorites in gamesList
     copy_if(begin(completeList), end(completeList), back_inserter(*gamesList),
@@ -101,7 +101,7 @@ void GuiLauncher::getGames_SET_FAVORITE(PsGames *gamesList) {
 // GuiLauncher::getGames_SET_HISTORY
 //*******************************
 void GuiLauncher::getGames_SET_HISTORY(PsGames *gamesList) {
-    PsGames completeList = getAllPS1Games(true, gui->cfg.inifile.values["origames"] == "true");
+    PsGames completeList = getAllPS1Games(true, app.config().inifile.values["origames"] == "true");
 
     // put only the history in gamesList
     copy_if(begin(completeList), end(completeList), back_inserter(*gamesList),
@@ -188,7 +188,7 @@ void GuiLauncher::switchSet(int newSet, bool noForce) {     // Warning: newSet i
     if (currentSet == SET_PS1) {
 
         // if do not show internal games
-        if (gui->cfg.inifile.values["origames"] != "true") {
+        if (app.config().inifile.values["origames"] != "true") {
             if (currentPS1_SelectState == SET_PS1_All_Games || currentPS1_SelectState == SET_PS1_Internal_Only) {
                 currentPS1_SelectState = SET_PS1_Games_Subdir;
                 //if (selGameIndexInCarouselGamesIsValid())
@@ -196,7 +196,7 @@ void GuiLauncher::switchSet(int newSet, bool noForce) {     // Warning: newSet i
         }
 
         if (currentPS1_SelectState == SET_PS1_All_Games) {
-            bool includeInternal = gui->cfg.inifile.values["origames"] == "true";
+            bool includeInternal = app.config().inifile.values["origames"] == "true";
             gamesList = getAllPS1Games(true, includeInternal);
 
         } else if (currentPS1_SelectState == SET_PS1_Internal_Only) {
@@ -283,7 +283,7 @@ void GuiLauncher::showSetName() {
 
     string numGames = " (" + to_string(numberOfNonDuplicatedGamesInCarousel) + " " + _("games") + ")";
 
-    long timeout = Util::toInt(gui->cfg.inifile.values["showingtimeout"], 0) * TicksPerSecond;
+    long timeout = Util::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
     if (currentSet == SET_PS1) {
         if (currentPS1_SelectState == SET_PS1_All_Games) {

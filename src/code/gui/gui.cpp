@@ -40,13 +40,13 @@ Gui::Gui() {
 //*******************************
 string Gui::getCurrentThemePath() {
 #ifdef AB_DEBUG_HOST
-    string path = Env::getPathToThemesDir() + sep + cfg.inifile.values["theme"];
+    string path = Env::getPathToThemesDir() + sep + App::get().config().inifile.values["theme"];
     if (!DirEntry::exists(path)) {
         path = Env::getSonyPath();
     }
     return path;
 #else
-    string path =  "/media/themes/" + cfg.inifile.values["theme"] + "";
+    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "";
     if (!DirEntry::exists(path))
     {
         path = "/usr/sony/share/data";
@@ -66,7 +66,7 @@ string Gui::getCurrentThemeImagePath() {
     }
     return path;
 #else
-    string path =  "/media/themes/" + cfg.inifile.values["theme"] + "/images";
+    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/images";
     if (!DirEntry::exists(path))
     {
         path = "/usr/sony/share/data/images";
@@ -87,7 +87,7 @@ string Gui::getCurrentThemeSoundPath() {
     cout << path << endl;
     return path;
 #else
-    string path =  "/media/themes/" + cfg.inifile.values["theme"] + "/sounds";
+    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/sounds";
     if (!DirEntry::exists(path))
     {
         path = "/usr/sony/share/data/sounds";
@@ -107,7 +107,7 @@ string Gui::getCurrentThemeFontPath() {
     }
     return path;
 #else
-    string path =  "/media/themes/" + cfg.inifile.values["theme"] + "/font";
+    string path =  "/media/themes/" + App::get().config().inifile.values["theme"] + "/font";
     if (!DirEntry::exists(path))
     {
         path = "/usr/sony/share/data/font";
@@ -156,7 +156,7 @@ void Gui::restartAudio(int freq) {
 }
 
 void Gui::playMusic(bool customMusic, string musicPath) {
-    if (cfg.inifile.values["nomusic"] != "true")
+    if (App::get().config().inifile.values["nomusic"] != "true")
         if (themeData.values["loop"] != "-1") {
             if (!customMusic) {
                 music = ableem::Music::load(themePath + themeData.values["music"]);
@@ -199,8 +199,8 @@ void Gui::loadAssets(bool reloadMusic) {
     if (!DirEntry::exists(themePath + "theme.ini"))
     {
         themePath=defaultPath;
-        cfg.inifile.values["theme"] = "default";
-        cfg.save();
+        App::get().config().inifile.values["theme"] = "default";
+        App::get().config().save();
     }
 
     defaultData.load(defaultPath + "theme.ini");
@@ -220,13 +220,13 @@ void Gui::loadAssets(bool reloadMusic) {
 
     backgroundImg = loadThemeTexture(themePath, defaultPath, "background");
     logo = loadThemeTexture(themePath, defaultPath, "logo");
-    if (cfg.inifile.values["jewel"] != "none") {
-        if (cfg.inifile.values["jewel"] == "default") {
+    if (App::get().config().inifile.values["jewel"] != "none") {
+        if (App::get().config().inifile.values["jewel"] == "default") {
             cdJewel = Texture::loadFile(renderer(), Env::getWorkingPath() + sep + "evoimg/nofilter.png");
         } else {
             cdJewel = Texture::loadFile(renderer(),
                                         Env::getWorkingPath() + sep + "evoimg/frames/" +
-                                        cfg.inifile.values["jewel"]);
+                                        App::get().config().inifile.values["jewel"]);
         }
     } else {
         cdJewel = Texture();
@@ -261,9 +261,9 @@ void Gui::loadAssets(bool reloadMusic) {
     customMusic = false;
     freq = 32000;
     musicPath = themeData.values["music"];
-    if (cfg.inifile.values["music"] != "--") {
+    if (App::get().config().inifile.values["music"] != "--") {
         customMusic = true;
-        musicPath = cfg.inifile.values["music"];
+        musicPath = App::get().config().inifile.values["music"];
     }
 
     if (DirEntry::getFileExtension(musicPath) == "ogg") {
@@ -347,7 +347,7 @@ void Gui::menuSelection() {
     powerOffShift = false;
     bool forceScan = App::get().session().forceScan;
     string mainMenu = "|@Start| " + _("AutoBleem") + "    |@X|  " + _("Re/Scan") + " ";
-    if (cfg.inifile.values["ui"] == "classic") {
+    if (App::get().config().inifile.values["ui"] == "classic") {
         mainMenu += "  |@O|  " + _("Original") + "  ";
     }
     string RA_or_EA = _("RetroArch");
@@ -455,7 +455,7 @@ void Gui::menuSelection() {
                     if (!otherMenuShift) {
                         if (!forceScan)
                             if (e.button == Button::Start) {
-                                if (cfg.inifile.values["ui"] == "classic") {
+                                if (App::get().config().inifile.values["ui"] == "classic") {
                                     cursor.play();
                                     App::get().session().menuOption = MENU_OPTION_RUN;
                                     menuVisible = false;
@@ -530,7 +530,7 @@ void Gui::menuSelection() {
                             menuVisible = false;
                         };
                         if (!forceScan)
-                            if (cfg.inifile.values["ui"] == "classic")
+                            if (App::get().config().inifile.values["ui"] == "classic")
                                 if (e.button == Button::Circle) {
                                     cancel.play();
                                     App::get().session().menuOption = MENU_OPTION_SONY;

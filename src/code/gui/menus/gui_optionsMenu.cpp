@@ -111,7 +111,7 @@ void GuiOptions::init() {
 //*******************************
 std::string GuiOptions::getLineText(const OptionsInfo& info) {
     std::string temp = lang->translate(info.descriptionToTranslate) + " ";
-    auto value = gui->cfg.inifile.values[info.iniKey];
+    auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);
     } else {
@@ -188,8 +188,8 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 void GuiOptions::doCircle_Pressed() {
     gui->cancel.play();
     string cfg_path = Env::getWorkingPath() + sep + "config.ini";
-    gui->cfg.inifile.load(cfg_path);    // restore the original config.ini settings
-    lang->load(gui->cfg.inifile.values["language"]);    // restore the original lang
+    app.config().inifile.load(cfg_path);    // restore the original config.ini settings
+    lang->load(app.config().inifile.values["language"]);    // restore the original lang
     gui->loadAssets();                                  // restore original themes
     menuVisible = false;
     exitCode = -1;
@@ -200,7 +200,7 @@ void GuiOptions::doCircle_Pressed() {
 //*******************************
 void GuiOptions::doCross_Pressed() {
     gui->cancel.play();
-    gui->cfg.save();
+    app.config().save();
     menuVisible = false;
     exitCode = 0;
 }

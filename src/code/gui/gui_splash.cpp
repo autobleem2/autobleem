@@ -39,7 +39,7 @@ void GuiSplash::render() {
     renderer.fillRect(rect);
 
     int y = atoi(gui->themeData.values["ttop"].c_str());
-    string splashText = _("AutoBleem")+" " + gui->cfg.inifile.values["version"];
+    string splashText = _("AutoBleem")+" " + app.config().inifile.values["version"];
     gui->renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
 
     renderer.present();

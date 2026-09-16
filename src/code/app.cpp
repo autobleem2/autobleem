@@ -31,7 +31,7 @@ App::App() {
     });
 
     shared_ptr<Lang> lang(Lang::getInstance());
-    lang->load(gui_->cfg.inifile.values["language"]);
+    lang->load(cfg_.inifile.values["language"]);
 }
 
 //*******************************
@@ -68,14 +68,14 @@ bool App::openLibrary() {
 //*******************************
 void App::writeSelectionScript() {
     ofstream os;
-    string path = gui_->cfg.inifile.values["cfg"];
+    string path = cfg_.inifile.values["cfg"];
     os.open(path);
     if (!DirEntry::checkWritable(os, path)) return;   // the rc scripts then keep the previous selection
     os << "#!/bin/sh" << endl << endl;
     os << "AB_SELECTION=" << session_.menuOption << endl;
-    os << "AB_THEME=" << gui_->cfg.inifile.values["theme"] << endl;
-    os << "AB_PCSX=" << gui_->cfg.inifile.values["pcsx"] << endl;
-    os << "AB_MIP=" << gui_->cfg.inifile.values["mip"] << endl;
+    os << "AB_THEME=" << cfg_.inifile.values["theme"] << endl;
+    os << "AB_PCSX=" << cfg_.inifile.values["pcsx"] << endl;
+    os << "AB_MIP=" << cfg_.inifile.values["mip"] << endl;
 
     os.flush();
     os.close();

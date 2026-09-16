@@ -21,7 +21,7 @@ void GuiAbout::init() {
 //*******************************
 void GuiAbout::render() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
-    vector<string> credits = {gui->cfg.inifile.values["version"], " ",
+    vector<string> credits = {app.config().inifile.values["version"], " ",
                               _(".-= Code C++ and shell scripts =-."),
                               "screemer, Axanar, mGGk, nex, genderbent",
                               _(".-= Graphics =-."),

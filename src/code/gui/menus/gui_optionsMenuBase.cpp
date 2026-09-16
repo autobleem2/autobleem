@@ -38,7 +38,7 @@ std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo& info, co
 //*******************************
 std::string GuiOptionsMenuBase::getLineText(const OptionsInfo& info) {
     std::string temp = lang->translate(info.descriptionToTranslate) + " ";
-    auto value = gui->cfg.inifile.values[info.iniKey];
+    auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);
     }
@@ -120,8 +120,8 @@ std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo& info, const std::
 // void GuiOptionsMenuBase::doPrevNextOption()
 //*******************************
 string GuiOptionsMenuBase::doPrevNextOption(OptionsInfo& info, bool next) {
-    string nextValue = getPrevNextOption(info, gui->cfg.inifile.values[info.iniKey], next);
-    gui->cfg.inifile.values[info.iniKey] = nextValue;
+    string nextValue = getPrevNextOption(info, app.config().inifile.values[info.iniKey], next);
+    app.config().inifile.values[info.iniKey] = nextValue;
     return nextValue;
 }
 
@@ -143,7 +143,7 @@ string GuiOptionsMenuBase::doOptionIndex(unsigned int index) {
         auto & choices = lines[selected].choices;
         if (choices.size() > 0 && index < choices.size()) {
             string nextValue = choices[index];
-            gui->cfg.inifile.values[lines[selected].iniKey] = nextValue;
+            app.config().inifile.values[lines[selected].iniKey] = nextValue;
             return nextValue;
         } else
             return "";  // index is not within range
@@ -198,7 +198,7 @@ void GuiOptionsMenuBase::doL1_Pressed() {
         int size = getChoicesSize();
         if (size > 0) {
             auto &info = lines[selected];
-            string value = gui->cfg.inifile.values[info.iniKey];
+            string value = app.config().inifile.values[info.iniKey];
             int index = getCurrentOptionIndex(info, value) - computeAmountTomoveBy(size);
             if (index < 0)
                 doFirstOption();
@@ -217,7 +217,7 @@ void GuiOptionsMenuBase::doR1_Pressed() {
         int size = getChoicesSize();
         if (size > 0) {
             auto &info = lines[selected];
-            string value = gui->cfg.inifile.values[info.iniKey];
+            string value = app.config().inifile.values[info.iniKey];
             int index = getCurrentOptionIndex(info, value) + computeAmountTomoveBy(size);
             if (index >= size)
                 doLastOption();

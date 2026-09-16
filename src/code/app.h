@@ -7,15 +7,16 @@
 #include <memory>
 
 #include "session.h"
+#include "engine/config.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
 
 //******************
 // App
 //******************
-// Owns the game library (both game databases + the cover database), the session (what to show/start next),
-// the scanner, and the Gui singleton. One instance is created in main() and its run() is the whole program
-// from there on.
+// Owns the model: config.ini, the game library (both game databases + the cover database), the session
+// (what to show/start next), the scanner, and the Gui singleton. One instance is created in main() and its
+// run() is the whole program from there on. Gui is only the screen - nothing non-graphical lives there.
 class App {
 public:
     App();
@@ -29,6 +30,7 @@ public:
 
     int run();
 
+    Config &config() { return cfg_; }
     ableem::GameLibrary &library() { return gameLibrary; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
@@ -40,6 +42,9 @@ public:
 private:
     static App *instance;
 
+    // declaration order is construction order: config.ini is read before the Gui, whose constructor already
+    // needs the theme name from it.
+    Config cfg_;
     std::shared_ptr<Gui> gui_;
     std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;

@@ -7,7 +7,6 @@
 #include <ableem/ableem.h>
 #include <string>
 #include <memory>
-#include "../engine/config.h"
 #include "../engine/scanner.h"
 #include "../launcher/ps_game.h"
 #include "../util.h"
@@ -37,7 +36,6 @@ private:
 public:
     IniFile themeData;
     IniFile defaultData;
-    Config cfg;
 
     Fonts themeFonts;
     Fonts sonyFonts;

@@ -1,6 +1,7 @@
 #include "util_time.h"
 #include<time.h>
 #include "gui/gui.h"
+#include "app.h"
 
 using namespace std;
 
@@ -34,7 +35,7 @@ string UtilTime::timeToDisplayTimeString(time_t t, const string& _format) {
 
     if (format == "") {
         // see if the use has a prefered format in config.ini
-        string datetimeFormat = Gui::getInstance()->cfg.inifile.values["datetimeformat"];
+        string datetimeFormat = App::get().config().inifile.values["datetimeformat"];
         if (datetimeFormat != "")
             format = datetimeFormat;    // use the format in the config.ini
         else

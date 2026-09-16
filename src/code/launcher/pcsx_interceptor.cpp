@@ -55,12 +55,12 @@ bool PcsxInterceptor::execute(PsGamePtr & game, int resumepoint) {
     string region = "2"; // need to find out if console is jap to switch to 2 - later on
     string link = "/media/Autobleem/rc/launch.sh";
     string aspect = "0";
-    if (gui->cfg.inifile.values["aspect"] == "true") {
+    if (App::get().config().inifile.values["aspect"] == "true") {
         aspect = "1";
     }
 
     string filter = "0";
-    if (gui->cfg.inifile.values["mip"] == "true") {
+    if (App::get().config().inifile.values["mip"] == "true") {
         filter = "1";
     } else {
         filter = "0";

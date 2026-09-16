@@ -83,7 +83,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
     vector<string> args { gameFile, RACore };
 
     // core config here - to be optional
-    if (gui->cfg.inifile.values["raconfig"]=="true") {
+    if (App::get().config().inifile.values["raconfig"]=="true") {
         backupCoreConfig();
         transferConfig(game);
     }
@@ -96,7 +96,7 @@ bool RetroArchInterceptor::execute(PsGamePtr &game, int resumepoint) {
 #endif
 
     // core config here - to be optional
-    if (gui->cfg.inifile.values["raconfig"]=="true") {
+    if (App::get().config().inifile.values["raconfig"]=="true") {
         restoreCoreConfig();
     }
     return true;
@@ -290,8 +290,8 @@ void RetroArchInterceptor::transferConfig(PsGamePtr &game) {
 
     // RA_CONFIG
     ConfigFileEditor processor;
-    string aspect = gui->cfg.inifile.values["aspect"]; // true - 1280x720 - false 960x720
-    string filter = gui->cfg.inifile.values["mip"]; // true - billiner
+    string aspect = App::get().config().inifile.values["aspect"]; // true - 1280x720 - false 960x720
+    string filter = App::get().config().inifile.values["mip"]; // true - billiner
     if (aspect == "true") {
         // widescreen
         processor.replaceInFile(RA_CONFIG, "custom_viewport_width",
