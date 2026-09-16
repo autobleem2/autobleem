@@ -228,8 +228,8 @@ shrinks the input to the next:
    call again as `setCardForGame()`, undoing the split step 6 needed. The memory-card screens and the
    editor go through it too, so nothing outside the service constructs a `MemcardManager`.
 
-   **Known bug found and pinned, not fixed:** `swapInForLaunch`'s "the set is gone, fall back to SONY"
-   branch is unreachable. `MemcardManager::swapIn()` returns false only when the set directory is missing,
+   **Known bug found and pinned, then fixed on 2026-09-16 in its own commit** (the guard is gone and the
+   test asserts the fallback): `swapInForLaunch`'s "the set is gone, fall back to SONY" branch was unreachable. `MemcardManager::swapIn()` returns false only when the set directory is missing,
    and the `DirEntry::exists` guard immediately above the call has already excluded that. A game pointing
    at a deleted set therefore keeps pointing at it. Deleting the guard is the fix; it is a behaviour change,
    so today's behaviour is asserted in `tests/core/test_memcard.cpp` and commented at both ends, and fixing

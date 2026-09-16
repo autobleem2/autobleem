@@ -57,15 +57,7 @@ void MemcardService::swapInForLaunch(PsGame &game) {
         return;
 
     // The name checked and swapped in is the record's, not the Game.ini's just read. setCardForGame writes
-    // both together so they agree; kept as it was rather than unified inside a structural move.
-    //
-    // KNOWN BUG, preserved from the interceptors this came from: the fallback below cannot run. swapIn()
-    // returns false only when the set directory is missing, which this guard has already excluded, so a
-    // game left pointing at a deleted set keeps pointing at it. Deleting this guard is the fix - it is a
-    // behaviour change, so it is pinned by a test (tests/core/test_memcard.cpp) rather than done here.
-    if (!DirEntry::exists(Env::getPathToMemCardsDir() + sep + game.memcard))
-        return;
-
+    // both together so they agree.
     if (!manager().swapIn(game.ssFolder, game.memcard)) {
         // the set is gone: fall back to the stock card rather than run on whatever is there
         cout << "Memory card set " << game.memcard << " could not be swapped in, falling back to SONY" << endl;

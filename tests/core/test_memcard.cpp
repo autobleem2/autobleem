@@ -107,28 +107,24 @@ TEST_CASE("swapping in puts the chosen set into the game's save-state folder") {
     CHECK(lib.tmp.readFile("Games/Tekken 3/sstates/memcards/card1.mcd") == "fighting saves");
 }
 
-// KNOWN BUG, pinned here rather than fixed inside a structural move - see docs/refactor-plan.md step 8.
-//
-// swapInForLaunch means to drop a game back to the stock card when its set has gone missing, but the
-// fallback cannot run: MemcardManager::swapIn returns false only when the set directory does not exist,
-// and the DirEntry::exists guard just above the call has already ruled that out. So the branch is
-// unreachable and a game left pointing at a deleted set stays pointing at it.
-//
-// The effect is mild - the game launches on its own last cards, not on someone else's - but the code reads
-// as though it handles a case it does not. Deleting the redundant guard is the fix.
-TEST_CASE("a card set that has gone missing leaves the game pointing at it (known bug)") {
+// This was a known bug until 2026-09-16: a redundant DirEntry::exists guard in front of swapIn() made the
+// fallback unreachable, so a game pointing at a deleted set kept pointing at it. Now it drops back to the
+// console's own card, in the Game.ini and in the database, rather than run on whatever cards are there.
+TEST_CASE("a card set that has gone missing drops the game back to the console's own card") {
     Cards lib;
     PsGamePtr game = lib.game();
     lib.service->setCardForGame(*game, "Fighting");
     // ...and then the set is deleted behind its back
     REQUIRE_FALSE(ableem::DirEntry::exists(lib.tmp.at("Games/!MemCards/Fighting")));
+    lib.giveGameItsOwnCards();
 
     lib.service->swapInForLaunch(*game);
 
-    // what it should say is SonyCard. This asserts today's behaviour so that fixing it is a visible,
-    // deliberate change to this test rather than a silent one.
-    CHECK(lib.service->activeCardName(*lib.game()) == "Fighting");
-    CHECK(lib.game()->memcard == "Fighting");
+    CHECK(game->memcard == MemcardService::SonyCard);
+    CHECK(lib.service->activeCardName(*lib.game()) == MemcardService::SonyCard);
+    CHECK(lib.game()->memcard == MemcardService::SonyCard);
+    // and the game's own cards are what it plays with
+    CHECK(lib.tmp.readFile("Games/Tekken 3/sstates/memcards/card1.mcd") == "in play");
 }
 
 TEST_CASE("swapping out copies the game's cards back into its set") {
