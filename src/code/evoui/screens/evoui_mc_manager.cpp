@@ -26,8 +26,8 @@ void GuiMcManager::loadAssets() {
     memcard1.reset(new CardEdit(renderer));
     memcard2.reset(new CardEdit(renderer));
 
-    memcard1->load_file(card1path);
-    memcard2->load_file(card2path);
+    memcard1->load(card1path);
+    memcard2->load(card2path);
 
     pencilPos.w = 42;
     pencilPos.h = 42;
@@ -92,8 +92,8 @@ void GuiMcManager::trySave()
         confirm.label = _("Do you want to save memcards data ?");
         confirm.show();
         if (confirm.result) {
-            memcard1->save_file(card1path);
-            memcard2->save_file(card2path);
+            memcard1->save(card1path);
+            memcard2->save(card2path);
             changes = false;
         }
         changes = false;
@@ -157,8 +157,8 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
         }
         output.x = start + (xShift * col) + xDecal;
         output.y = yStart + (yShift * line) + yDecal;
-        if (currentCard->get_slot_is_used(i)) {
-            renderer.copy(currentCard->get_slot_icon(i, frame), nullptr, &output);
+        if (currentCard->image().isUsed(i)) {
+            renderer.copy(currentCard->icon(i, frame), nullptr, &output);
         }
     }
 }
@@ -174,11 +174,11 @@ void GuiMcManager::renderMetaInfo() {
         card = memcard2.get();
     }
 
-    string title = card->get_slot_title(pencilColumn + pencilRow * 3);
-    string gameID = card->get_slot_gameID(pencilColumn + pencilRow * 3);
-    string pCode = card->get_slot_Pcode(pencilColumn + pencilRow * 3);
+    string title = card->title(pencilColumn + pencilRow * 3);
+    string gameID = card->image().gameId(pencilColumn + pencilRow * 3);
+    string pCode = card->image().productCode(pencilColumn + pencilRow * 3);
 
-    string nextSlot = to_string(card->next_slot_map[pencilColumn + pencilRow * 3]);
+    string nextSlot = to_string(card->image().nextSlot(pencilColumn + pencilRow * 3));
 
     gui->text().renderTextLine(title, -500, 1, XALIGN_CENTER, true, fontJIS);
     gui->text().renderTextLine(gameID, 3, 1, XALIGN_CENTER, true);
@@ -226,8 +226,8 @@ void GuiMcManager::loop() {
                     if (e.button == Button::Cross) {
                         app.audio().cursor.play();
                         trySave();
-                        memcard1->load_file(card1path);
-                        memcard2->load_file(card2path);
+                        memcard1->load(card1path);
+                        memcard2->load(card2path);
                         changes = false;
                     };
                     if (e.button == Button::Select) {
@@ -236,19 +236,19 @@ void GuiMcManager::loop() {
                         CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
                         int last = 0;
                         for (int slot = 0; slot < 15; slot++) {
-                            if (!src->is_slot_top(slot))
+                            if (!src->image().isTop(slot))
                             {
                                 continue;
                             }
-                            int gameSize = src->getGameSlots(slot).size();
-                            vector<int> destSlots = newCard->findEmptySlot(gameSize);
+                            int gameSize = src->image().gameSlots(slot).size();
+                            vector<int> destSlots = newCard->image().findEmptySlots(gameSize);
 
                             if (destSlots.size() > 0)
                             {
                                 app.audio().cursor.play();
-                                int exportSize = src->getExportSize(slot);
+                                int exportSize = src->image().exportSize(slot);
                                 vector<unsigned char> buffer(exportSize);
-                                src->exportGame(slot,buffer.data());
+                                src->image().exportGame(slot,buffer.data());
                                 newCard->importGame(buffer.data(),exportSize);
                                 changes = true;
 
@@ -273,7 +273,7 @@ void GuiMcManager::loop() {
                             if (select.selected==0) {
                                 rightCardName = rightCardName_ori;
                                 card2path = cardPath_ori;
-                                memcard2->load_file(card2path);
+                                memcard2->load(card2path);
                             } else
                             {
                                 // this is custom
@@ -284,7 +284,7 @@ void GuiMcManager::loop() {
                                 rightCardName = select.cardSelected;
                                 card2path = cardPath;
                                 cout << "Card:" << cardPath << endl;
-                                memcard2->load_file(card2path);
+                                memcard2->load(card2path);
                             }
                             changes = false;
                         }
@@ -297,16 +297,16 @@ void GuiMcManager::loop() {
                             card = memcard2.get();
                         }
                         int slot = pencilColumn + pencilRow * 3;
-                        if (!card->is_slot_top(slot)) {
+                        if (!card->image().isTop(slot)) {
                             app.audio().cancel.play();
                             continue;
                         }
-                        if (card->get_slot_is_free(slot)) {
+                        if (card->image().isFree(slot)) {
                             app.audio().cursor.play();
                             continue;
                         }
                         app.audio().cursor.play();
-                        card->delete_game(slot);
+                        card->deleteGame(slot);
                         changes=true;
 
 
@@ -321,24 +321,24 @@ void GuiMcManager::loop() {
                             dest = memcard1.get();
                         }
                         int slot = pencilColumn + pencilRow * 3;
-                        if (!src->is_slot_top(slot)) {
+                        if (!src->image().isTop(slot)) {
                             app.audio().cancel.play();
                             continue;
                         }
-                        if (src->get_slot_is_free(slot)) {
+                        if (src->image().isFree(slot)) {
                             app.audio().cursor.play();
                             continue;
                         }
 
-                        int gameSize = src->getGameSlots(slot).size();
-                        vector<int> destSlots = dest->findEmptySlot(gameSize);
+                        int gameSize = src->image().gameSlots(slot).size();
+                        vector<int> destSlots = dest->image().findEmptySlots(gameSize);
 
                         if (destSlots.size() > 0)
                         {
                             app.audio().cursor.play();
-                            int exportSize = src->getExportSize(slot);
+                            int exportSize = src->image().exportSize(slot);
                             vector<unsigned char> buffer(exportSize);
-                            src->exportGame(slot,buffer.data());
+                            src->image().exportGame(slot,buffer.data());
                             dest->importGame(buffer.data(),exportSize);
                             changes = true;
                         } else

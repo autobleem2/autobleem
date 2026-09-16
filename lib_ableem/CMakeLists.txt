@@ -24,6 +24,7 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/environment.cpp
         src/engine/ini_file.cpp
         src/engine/lang.cpp
+        src/engine/memcard_image.cpp
         src/engine/config_file_editor.cpp
         src/engine/memcard_manager.cpp
         src/engine/iso_directory.cpp

@@ -139,8 +139,6 @@ endif()
 add_library(ab_ui STATIC
         src/code/app.cpp
         src/code/app.h
-        src/code/engine/cardedit.cpp
-        src/code/engine/cardedit.h
         src/code/gui/app_audio.cpp
         src/code/gui/app_audio.h
         src/code/gui/gui.cpp
@@ -193,6 +191,8 @@ target_link_libraries(ab_ui ab_core ableem)
 # Links ab_ui. Gui::menuSelection() used to construct GuiLauncher, which made these two a link cycle; the
 # classic menu is a screen in the executable now (phase C step 14), which is what let the targets exist.
 add_library(ab_evoui STATIC
+        src/code/evoui/card_edit.cpp
+        src/code/evoui/card_edit.h
         src/code/evoui/carousel.cpp
         src/code/evoui/carousel.h
         src/code/evoui/carousel_game.cpp

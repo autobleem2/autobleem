@@ -397,6 +397,14 @@ subfolder (the launcher and its sub-screens as `evoui/screens/evoui_*`, the clas
 menu as `gui/screens/gui_*`, `gui/menus/` staying as it was), the notification lines joined the controls,
 and the camelCase file names became snake_case.
 
+**2026-09-17, the last of it:** `src/code/engine/` is gone. `Theme` and `Clock` (was `UtilTime`) are core
+services with `Config&` and the tests section 4 listed for `Theme`; the `Scanner` singleton is a
+`SplashScanProgress` listener in `gui/` handed to the library's `GameScanner`; `AppAudio` is `gui/app_audio.*`
+with `Config&`/`Theme&`; and `CardEdit` split into `ableem::MemcardImage` in the engine (tested, nine cases
+over a card built byte by byte) and a texture wrapper in `evoui/card_edit.*`. Two things fixed in the
+process rather than carried: the title read past the 64-byte field when it had no terminator, and the game
+id / product code setters wrote no terminator or padding (neither setter had a caller). 15 test suites.
+
 **With that the plan is complete**: phases A to D, every step, plus the three bugs the extractions pinned
 and the power-off unification. What it did not do, by the user's choice, is step 3: nothing here has run on
 a console. That is the next thing.

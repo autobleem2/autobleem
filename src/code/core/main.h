@@ -74,5 +74,6 @@ using ableem::ScanProgressListener;
 // button textures - keep them in the translation. Goes through the ableem::Lang the App registered; with
 // none (a unit test) every string is its own translation.
 using ableem::Lang;
+using ableem::MemcardImage;
 using ableem::Strings;   // the copying string helpers: Strings::trim, Strings::toInt, ... (the old System::)
 inline std::string _(const std::string &input) { return ableem::translate(input); }

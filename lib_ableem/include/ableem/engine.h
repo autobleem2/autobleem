@@ -10,6 +10,7 @@
 #include "engine/lang.h"
 #include "engine/config_file_editor.h"
 #include "engine/memcard_manager.h"
+#include "engine/memcard_image.h"
 #include "engine/iso_directory.h"
 #include "engine/serial_scanner.h"
 #include "engine/ecm_decoder.h"
