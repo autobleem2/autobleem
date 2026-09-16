@@ -146,6 +146,8 @@ add_executable(
         src/code/gui/gui.h
         src/code/gui/gui_about.cpp
         src/code/gui/gui_about.h
+        src/code/gui/gui_classic_menu.cpp
+        src/code/gui/gui_classic_menu.h
         src/code/gui/gui_confirm.cpp
         src/code/gui/gui_confirm.h
         src/code/gui/gui_font.cpp

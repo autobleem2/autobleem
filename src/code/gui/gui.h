@@ -25,9 +25,8 @@ using namespace std;
 // Gui
 //********************
 // All SDL access lives in lib_ableem; Gui derives from ableem::GuiBase (window/renderer/input/audio) and adds
-// the theme's assets, the text renderer, the few drawing helpers that combine the two (background, logo,
-// status bar), and the classic UI's main menu loop (menuSelection(), the last piece here that is not drawing -
-// it should become a screen).
+// the theme's assets, the text renderer, and the few drawing helpers that combine the two (background, logo,
+// status bar). Nothing here decides anything: the screens do, and App::run() shows them.
 class Gui : public ableem::GuiBase {
 private:
 
@@ -46,8 +45,6 @@ public:
 
 
     static void splash(const std::string & message);
-
-    void menuSelection();
 
     void criticalException(const std::string &text);
 

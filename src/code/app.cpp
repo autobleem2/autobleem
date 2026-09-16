@@ -1,6 +1,7 @@
 #include "app.h"
 #include "core/lang.h"
 #include "core/util.h"
+#include "gui/gui_classic_menu.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -186,7 +187,10 @@ int App::run() {
         scanner_->moveLooseGameFilesIntoSubDirs(pathToGamesDir);   // gui_->display() needs to be up first
 
     while (session_.menuOption == MENU_OPTION_SCAN || session_.menuOption == MENU_OPTION_START) {
-        gui_->menuSelection();
+        {
+            ClassicMenuScreen menu(*gui_);
+            menu.show();
+        }
         launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_SCAN) {

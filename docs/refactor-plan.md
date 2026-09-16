@@ -338,8 +338,16 @@ shrinks the input to the next:
     `gui->assets().themeFont` etc. - 33 edits in 8 files. `gui.cpp` is 441 lines (from 899 at the start
     of phase C), the header 85. Verified by cycling the theme in the Options menu: background, logo, font
     and button textures all switch, and cancelling switches them back.
-14. `menuSelection()` becomes `ClassicMenuScreen`. After this `Gui` is window + renderer + assets, and
-    `App::run()` shows screens instead of calling a method on the Gui.
+14. ~~`menuSelection()` becomes `ClassicMenuScreen`.~~ **done 2026-09-16.** `gui/gui_classic_menu.*`;
+    `App::run()` shows it where it called `gui_->menuSelection()`. `Gui` is window + renderer + assets +
+    text + the four drawing helpers, 182 lines of .cpp. The recursion is gone: where `menuSelection()`
+    called itself after a sub-screen and let the outer frame fall through, the screen calls `restart()`
+    (init + render) and breaks out of the event drain, so the loop's next iteration picks up
+    `startingGame`/`resumingGui` the way the recursive call's first lines did. The one observable
+    difference is that the stack no longer grows a frame per sub-screen visit. The power-off block
+    (`shutdown -h now; sync(); exit(1)`) is kept as it was rather than routed through `Util::powerOff()`,
+    which exits 0 and does not sync; that unification is a deliberate change for another day.
+    Verified with the About, Options, Advanced-row, Start -> launcher -> launch -> back sequence.
 
 **Phase D — split `GuiLauncher`** (the existing todo #3). Deliberately last: phases B and C take roughly 600
 lines out of it first, so what is left is genuinely carousel and input.

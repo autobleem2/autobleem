@@ -34,8 +34,8 @@ Done on 2026-09-16:
   `Theme` (the merged theme.ini + the theme's directories) and `AppAudio` (music + the five UI sounds).
   Screens reach them as `app.config()`, `app.theme()`, `app.audio()` through the `app` member of `GuiScreen`;
   the handful of non-screens (`UtilTime`, `Fonts`) use `App::get()`.
-  `Gui` is left with the window/renderer, the fonts and textures, the text/rect rendering helpers, and
-  `menuSelection()` - the classic-UI main menu loop, which is the next thing that should become a screen.
+  `Gui` is left with the window/renderer, `assets()`, `text()` and the background/logo/status drawing
+  (phase C, 2026-09-16).
 
 The next structural step is planned in `docs/refactor-plan.md`: split `src/code` into `ab_core` (model +
 services, no SDL, unit tested with doctest), `ab_ui` and `ab_evoui`, moving the game queries, settings,
@@ -122,8 +122,10 @@ the `|@X|` token layout, `renderText*`/`renderSelectionBox`/`renderLabelBox`, th
 the `getR/G/B` colour parsing. Screens reach it as `gui->text()`. `ThemeAssets` (`gui/theme_assets.*`,
 step 13) is the other half: the theme's font and font sets, the background/logo/jewel textures and the
 button-marker textures, with `load()` reading them for whatever theme config.ini names; screens reach it as
-`gui->assets()`. `Gui` keeps `loadAssets()` (assets + the theme's music), the background/logo/status drawing
-that combines assets and text, and `menuSelection()` - step 14 makes that a screen.
+`gui->assets()`. `Gui` keeps `loadAssets()` (assets + the theme's music) and the background/logo/status
+drawing that combines assets and text. `ClassicMenuScreen` (`gui/gui_classic_menu.*`, step 14) is the old
+`Gui::menuSelection()` as a screen: `App::run()` shows it, it sets `session().menuOption` and closes, or shows
+a sub-screen and restarts itself where the old code recursed. `gui.cpp` is 182 lines.
 
 The three bugs the phase B extractions pinned were each fixed in their own commit on 2026-09-16: the
 memcard fallback guard, `ConfigFileEditor`'s prefix matching (a key now has to be followed by whitespace or
@@ -349,7 +351,8 @@ defaults, which both the services and the screens need.
 | `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `engine/theme.*` | `Theme` | The current theme's `theme.ini` (the selected theme merged over `themes/default/theme.ini`, so every key has a value) and its directories: `path/imagePath/fontPath/soundPath()`, each falling back to `Env::getSonyPath()` when the theme or that sub-dir is missing. Owned by `App`; read as `app.theme().data.values["..."]`. No platform `#ifdef`s - the paths come from `Env`. |
 | `engine/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
-| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/gui_classic_menu.*` | `ClassicMenuScreen` | The classic UI's main menu (Start/Re-Scan/RetroArch/About/Options, L1 for the advanced row, L2+R2 power off). `App::run()` shows it in a loop; it either sets `session().menuOption` and closes, or shows a sub-screen (About, Options, Memory Cards, Game Manager, the EvolutionUI launcher) and restarts. Picks up `session().startingGame` / `resumingGui` before reading input. |
 | `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.ini and reloads everything, falling back to `themes/default` per file. Screens use `gui->assets()`. |
 | `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's opscreen/text rects, `getR/G/B`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.*` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
@@ -392,8 +395,6 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
   `PsCarouselGame`s (see comment in `gui_launcher.h`).
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
-- `Gui::menuSelection()` recurses into itself after every sub-screen; screens created there are wrapped in
-  explicit `{}` scopes so they are destroyed before the recursion.
 - Console `stdout`/`stderr` go to `/media/System/Logs/AB_*.txt`; `cout` is the logging mechanism and is
   unit-buffered so the last lines survive a crash.
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
