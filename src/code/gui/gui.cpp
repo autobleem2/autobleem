@@ -3,7 +3,7 @@
 //
 
 #include "gui.h"
-#include "gui_splash.h"
+#include "screens/gui_splash.h"
 #include "../app.h"
 #include <unistd.h>
 #include <iostream>

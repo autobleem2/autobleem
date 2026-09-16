@@ -392,7 +392,10 @@ lines out of it first, so what is left is genuinely carousel and input.
 engine as `ableem::Lang`, `Util` became `services/system.*` + `Strings::`, `environment.*` moved under
 `services/`, the unused `DebugTimer` went), and `launcher/` is `evoui/`, with the `PsObj` family under
 `evoui/controls/` as `evoui_*.{h,cpp}` and `ps_carousel.*` as `carousel_game.*`. The section-2 layout
-above said `evoui/elements/`; `controls/` is what it is called.
+above said `evoui/elements/`; `controls/` is what it is called. Then both UI libraries got a `screens/`
+subfolder (the launcher and its sub-screens as `evoui/screens/evoui_*`, the classic screens and the classic
+menu as `gui/screens/gui_*`, `gui/menus/` staying as it was), the notification lines joined the controls,
+and the camelCase file names became snake_case.
 
 **With that the plan is complete**: phases A to D, every step, plus the three bugs the extractions pinned
 and the power-off unification. What it did not do, by the user's choice, is step 3: nothing here has run on

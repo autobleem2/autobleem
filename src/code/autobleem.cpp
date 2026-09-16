@@ -3,7 +3,7 @@
 //
 #include "autobleem.h"
 #include "core/services/system.h"
-#include "gui/gui_classic_menu.h"
+#include "gui/screens/gui_classic_menu.h"
 
 #include <cstdlib>
 #include <iostream>

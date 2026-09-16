@@ -145,38 +145,38 @@ add_library(ab_ui STATIC
         src/code/engine/theme.h
         src/code/gui/gui.cpp
         src/code/gui/gui.h
-        src/code/gui/gui_about.cpp
-        src/code/gui/gui_about.h
-        src/code/gui/gui_confirm.cpp
-        src/code/gui/gui_confirm.h
+        src/code/gui/screens/gui_about.cpp
+        src/code/gui/screens/gui_about.h
+        src/code/gui/screens/gui_confirm.cpp
+        src/code/gui/screens/gui_confirm.h
         src/code/gui/gui_font.cpp
         src/code/gui/gui_font.h
-        src/code/gui/gui_keyboard.cpp
-        src/code/gui/gui_keyboard.h
-        src/code/gui/gui_padTest.cpp
-        src/code/gui/gui_padTest.h
+        src/code/gui/screens/gui_keyboard.cpp
+        src/code/gui/screens/gui_keyboard.h
+        src/code/gui/screens/gui_pad_test.cpp
+        src/code/gui/screens/gui_pad_test.h
         src/code/gui/gui_screen.h
-        src/code/gui/gui_scrollWin.cpp
-        src/code/gui/gui_scrollWin.h
-        src/code/gui/gui_selectmemcard.cpp
-        src/code/gui/gui_selectmemcard.h
-        src/code/gui/gui_splash.cpp
-        src/code/gui/gui_splash.h
-        src/code/gui/menus/gui_gameDirMenu.h
-        src/code/gui/menus/gui_gameEditorMenu.cpp
-        src/code/gui/menus/gui_gameEditorMenu.h
-        src/code/gui/menus/gui_gameManagerMenu.cpp
-        src/code/gui/menus/gui_gameManagerMenu.h
-        src/code/gui/menus/gui_memCardsMenu.cpp
-        src/code/gui/menus/gui_memCardsMenu.h
-        src/code/gui/menus/gui_menuBase.h
-        src/code/gui/menus/gui_optionsMenu.cpp
-        src/code/gui/menus/gui_optionsMenu.h
-        src/code/gui/menus/gui_optionsMenuBase.cpp
-        src/code/gui/menus/gui_optionsMenuBase.h
-        src/code/gui/menus/gui_playlistsMenu.h
-        src/code/gui/menus/gui_stringMenu.h
-        src/code/gui/menus/gui_twoColumnStringMenu.h
+        src/code/gui/screens/gui_scroll_win.cpp
+        src/code/gui/screens/gui_scroll_win.h
+        src/code/gui/screens/gui_select_memcard.cpp
+        src/code/gui/screens/gui_select_memcard.h
+        src/code/gui/screens/gui_splash.cpp
+        src/code/gui/screens/gui_splash.h
+        src/code/gui/menus/gui_game_dir_menu.h
+        src/code/gui/menus/gui_game_editor_menu.cpp
+        src/code/gui/menus/gui_game_editor_menu.h
+        src/code/gui/menus/gui_game_manager_menu.cpp
+        src/code/gui/menus/gui_game_manager_menu.h
+        src/code/gui/menus/gui_memcards_menu.cpp
+        src/code/gui/menus/gui_memcards_menu.h
+        src/code/gui/menus/gui_menu_base.h
+        src/code/gui/menus/gui_options_menu.cpp
+        src/code/gui/menus/gui_options_menu.h
+        src/code/gui/menus/gui_options_menu_base.cpp
+        src/code/gui/menus/gui_options_menu_base.h
+        src/code/gui/menus/gui_playlists_menu.h
+        src/code/gui/menus/gui_string_menu.h
+        src/code/gui/menus/gui_two_column_string_menu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
         src/code/gui/text_renderer.cpp
@@ -215,18 +215,18 @@ add_library(ab_evoui STATIC
         src/code/evoui/controls/evoui_static.h
         src/code/evoui/controls/evoui_zoom_btn.cpp
         src/code/evoui/controls/evoui_zoom_btn.h
-        src/code/evoui/gui_NotificationLine.cpp
-        src/code/evoui/gui_NotificationLine.h
-        src/code/evoui/gui_app_start.cpp
-        src/code/evoui/gui_app_start.h
-        src/code/evoui/gui_btn_guide.cpp
-        src/code/evoui/gui_btn_guide.h
-        src/code/evoui/gui_launcher.h
-        src/code/evoui/gui_mc_manager.cpp
-        src/code/evoui/gui_mc_manager.h
-        src/code/evoui/launcher_actions.cpp
-        src/code/evoui/launcher_input.cpp
-        src/code/evoui/launcher_screen.cpp
+        src/code/evoui/controls/evoui_notification_line.cpp
+        src/code/evoui/controls/evoui_notification_line.h
+        src/code/evoui/screens/evoui_app_start.cpp
+        src/code/evoui/screens/evoui_app_start.h
+        src/code/evoui/screens/evoui_btn_guide.cpp
+        src/code/evoui/screens/evoui_btn_guide.h
+        src/code/evoui/screens/evoui_launcher.h
+        src/code/evoui/screens/evoui_mc_manager.cpp
+        src/code/evoui/screens/evoui_mc_manager.h
+        src/code/evoui/screens/evoui_launcher_actions.cpp
+        src/code/evoui/screens/evoui_launcher_input.cpp
+        src/code/evoui/screens/evoui_launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
 
@@ -236,8 +236,8 @@ add_executable(
         autobleem-gui
         src/code/autobleem.cpp
         src/code/autobleem.h
-        src/code/gui/gui_classic_menu.cpp
-        src/code/gui/gui_classic_menu.h
+        src/code/gui/screens/gui_classic_menu.cpp
+        src/code/gui/screens/gui_classic_menu.h
         src/code/main.cpp
 )
 
