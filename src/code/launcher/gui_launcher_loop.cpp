@@ -693,7 +693,7 @@ void GuiLauncher::loop_squareButton_Pressed() {
             app.session().startingGame = true;
             if (selGameIndexInCarouselGamesIsValid()) {
                 app.session().runningGame = carouselGames[selGameIndex];
-                addGameToPS1GameHistoryAsLatestGamePlayed(app.session().runningGame);
+                app.gameCatalog().recordGamePlayed(app.session().runningGame);
             }
             app.session().resumePoint = -1;
             rememberSelection();
@@ -739,7 +739,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     menuVisible = false;
 
     if (selection.set == GameSet::PS1)
-        addGameToPS1GameHistoryAsLatestGamePlayed(app.session().runningGame);
+        app.gameCatalog().recordGamePlayed(app.session().runningGame);
 
     app.session().emuMode = EmuMode::Pcsx;
 
@@ -776,41 +776,6 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             }
             app.session().emuMode = EmuMode::Launcher;
             }
-    }
-}
-
-//*******************************
-// GuiLauncher::addGameToPS1GameHistoryAsLatestGamePlayed
-//*******************************
-void GuiLauncher::addGameToPS1GameHistoryAsLatestGamePlayed(PsGamePtr game) {
-    // include the internal games too as they need to be renumbered and possibly have a game dropped from the list
-    PsGames gamesList = app.gameQuery().allPs1Games(true, true);
-    PsGames histGamesList;
-
-    // put only the games that are in the history in histGamesList
-    // but don't include the game we are adding so we can add it as #1 in the history
-    copy_if(begin(gamesList), end(gamesList), back_inserter(histGamesList),
-            [&](PsGamePtr &g) { return g->history > 0 && g->gameId != game->gameId; });
-
-    // sort history.  1 is latest game played, 100 is the oldest
-    sort(begin(histGamesList), end(histGamesList),
-         [&](PsGamePtr p1, PsGamePtr p2) { return p1->history < p2->history; });
-
-    // change the history number to 2 thru N
-    int h = 2;
-    for (auto & g : histGamesList) {
-        if (h <= 100)               // 100 is the limit to match the RA history limit of 100 games
-            g->history = h++;
-        else
-            g->history = 0;
-    }
-
-    // add the new game at the top of the history
-    game->history = 1;
-    histGamesList.emplace_back(game);
-
-    for (auto & g : histGamesList) {
-        app.library().updateHistory(*g);
     }
 }
 

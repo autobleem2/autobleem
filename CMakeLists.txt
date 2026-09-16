@@ -102,6 +102,8 @@ add_library(ab_core STATIC
         src/code/core/model/timing.h
         src/code/core/services/config.cpp
         src/code/core/services/config.h
+        src/code/core/services/game_catalog.cpp
+        src/code/core/services/game_catalog.h
         src/code/core/services/game_query.cpp
         src/code/core/services/game_query.h
         src/code/core/util.cpp

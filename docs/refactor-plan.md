@@ -209,7 +209,19 @@ shrinks the input to the next:
    needs `createSchema()` before `openInternalGames()`'s column ALTERs mean anything. All three are now
    encoded in `tests/support/game_library_fixture.h`. `ps1GamesInSubDirRow` also had an out-of-range read
    before its bounds check; it returns empty now.
-7. `GameCatalogService`
+7. ~~`GameCatalogService`~~ **done 2026-09-16**, with one deliberate omission. History renumbering, the
+   game delete and the cover flush all moved. **The favorite toggles did not**: in `GuiEditor` the favorite
+   is one of six identical `gameIni` read-modify-save blocks sharing one long-lived `IniFile` member, so
+   pulling one out would leave the editor writing the same file two ways. They move with the rest of the
+   editor at step 9, which is where that ini handling belongs anyway.
+
+   The cover flush no longer uses `nftw()`. Walking with `DirEntry` instead keeps `<ftw.h>` - which is not
+   portable and is awkward on the Windows dev build - out of `ab_core`, and makes the flush assertable
+   against a temp tree.
+
+   `recordGamePlayed` now wraps its writes in one transaction per database. It rewrites the whole ranking
+   on every launch, and each loose `UPDATE` was its own disk sync on the console; the suite that exercises
+   it went from 37s to 9s, which is the same effect measured from the other side.
 8. `ResumePointService` and `MemcardService`
 9. `GameSettingsService`
 10. `LaunchService` (introduces `ProcessRunner`)

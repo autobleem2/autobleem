@@ -8,7 +8,6 @@
 #include "gui_gameEditorMenu.h"
 #include "../gui_confirm.h"
 #include "../../core/lang.h"
-#include <ftw.h>
 #include "../../engine/scanner.h"
 
 using namespace std;
@@ -73,21 +72,6 @@ string GuiManager::getStatusLine() {
 }
 
 //*******************************
-// GuiManager::flushCovers
-//*******************************
-int GuiManager::flushCovers(const char *file, const struct stat* /*sb*/, int /*flag*/, struct FTW* /*s*/)
-{
-    int retval = 0;
-
-    if (DirEntry::getFileExtension(file)=="png")
-    {
-        remove(file);
-    }
-
-    return retval;
-}
-
-//*******************************
 // GuiManager::doCircle_Pressed
 //*******************************
 void GuiManager::doCircle_Pressed() {
@@ -116,26 +100,17 @@ void GuiManager::doSquare_Pressed() {
     if (delGame) {
         cout << "Trying to delete " << gameName << endl;
         gui->renderStatus(_("Please wait ... deleting") + " " + gameName);
-        bool success = app.library().usbGames().deleteGame(gameId);
-        if (success) {
-            success = DirEntry::removeDirAndContents(game->folder);
-            if (success) {
-                PsGames currentGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames());
-                int numberOfGamesRemainingWithSameSaveState = count_if(begin(currentGames), end(currentGames),
-                                                                       [&](const PsGamePtr &g) {
-                                                                           return g->ssFolder == gameSaveStateFolder;
-                                                                       });
-                if (numberOfGamesRemainingWithSameSaveState == 0) {
-                    GuiConfirm confirm(*gui);
-                    confirm.label = _("Delete !SaveState folder for game") + " " + gameName + "?";
-                    confirm.show();
-                    bool delSSFolder = confirm.result;
-                    if (delSSFolder)
-                        DirEntry::removeDirAndContents(gameSaveStateFolder);
-                }
+        auto result = app.gameCatalog().deleteUsbGame(*game);
+        if (result.removed) {
+            // the !SaveStates folder can be shared, so it is only offered when nothing else uses it
+            if (result.saveStateFolderIsNowUnused) {
+                GuiConfirm confirm(*gui);
+                confirm.label = _("Delete !SaveState folder for game") + " " + gameName + "?";
+                confirm.show();
+                if (confirm.result)
+                    app.gameCatalog().removeSaveStateFolder(result.saveStateFolder);
             }
         } else {
-            cout << "Failed to delete directory " << game->folder << endl;
             gui->renderStatus(_("Failed to delete") + " " + gameName);
         }
     } else {
@@ -163,12 +138,7 @@ void GuiManager::doTriangle_Pressed() {
         cout << "Trying to delete covers" << endl;
         gui->renderStatus(_("Please wait ... deleting covers..."));
 
-        int errors = 0;
-        int flags = FTW_DEPTH | FTW_PHYS | FTW_CHDIR;
-        //cout << Env::getPathToGamesDir() << endl;
-        if (nftw(DirEntry::fixPath(Env::getPathToGamesDir()).c_str(), flushCovers, 1, flags) != 0) {
-            errors++;
-        }
+        cout << "Flushed " << app.gameCatalog().flushAllCovers() << " covers" << endl;
 
         app.session().forceScan = true;
         menuVisible = false;

@@ -30,6 +30,5 @@ public:
     virtual void doDelete() override { doSquare_Pressed(); }
 
     PsGames psGames;
-    static int flushCovers(const char *file, const struct stat *sb, int flag, struct FTW *s);
     static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }
 };

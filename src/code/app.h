@@ -8,6 +8,7 @@
 
 #include "session.h"
 #include "core/services/config.h"
+#include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 #include "engine/theme.h"
 #include "engine/app_audio.h"
@@ -38,6 +39,7 @@ public:
     AppAudio &audio() { return *audio_; }   // the music/sfx, not gui->audio()'s mixer device
     ableem::GameLibrary &library() { return gameLibrary; }
     GameQueryService &gameQuery() { return gameQuery_; }
+    GameCatalogService &gameCatalog() { return gameCatalog_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
@@ -57,6 +59,7 @@ private:
     std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
+    GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     Session session_;
 
     bool openLibrary();                                                   // covers dir + regional.db + internal.db

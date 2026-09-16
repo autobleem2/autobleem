@@ -67,7 +67,6 @@ public:
     void loop_squareButton_Pressed();
     void loop_crossButton_Pressed();
     void loop_crossButtonPressed_STATE_GAMES();
-    void addGameToPS1GameHistoryAsLatestGamePlayed(PsGamePtr game);
     void loop_crossButtonPressed_STATE_SET();
     void loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();

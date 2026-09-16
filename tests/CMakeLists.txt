@@ -24,6 +24,7 @@ function(ab_add_test name)
 endfunction()
 
 ab_add_test(test_config core/test_config.cpp)
+ab_add_test(test_game_catalog core/test_game_catalog.cpp)
 ab_add_test(test_game_query core/test_game_query.cpp)
 ab_add_test(test_game_set core/test_game_set.cpp)
 ab_add_test(test_harness core/test_env_fixture.cpp)
