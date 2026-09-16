@@ -133,7 +133,7 @@ string GuiOptions::doPrevNextOption(OptionsInfo& info, bool next) {
     // after doing the default these need special action afterwards
     if (id == CFG_THEME) {
         gui->loadAssets();
-        font = gui->themeFont;  // get the new font for the menu
+        font = gui->assets().themeFont;  // get the new font for the menu
     } else if (id == CFG_LANG) {
         lang->load(nextValue);
     } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
@@ -170,7 +170,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
         // after doing the default these need special action afterwards
         if (id == CFG_THEME) {
             gui->loadAssets();
-            font = gui->themeFont;  // get the new font for the menu
+            font = gui->assets().themeFont;  // get the new font for the menu
         } else if (id == CFG_LANG) {
             lang->load(nextValue);
         } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {

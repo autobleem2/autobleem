@@ -195,7 +195,7 @@ void GuiLauncher::loadAssets() {
         secColor.a = 255;
     }
 
-    gui->themeFonts.openAllFonts(app.theme().fontPath(), renderer);
+    gui->assets().themeFonts.openAllFonts(app.theme().fontPath(), renderer);
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
@@ -265,7 +265,7 @@ void GuiLauncher::loadAssets() {
     settingsBack->visible = true;
 
     meta = addStaticElement(new PsMeta("meta", app.theme().imagePath() + sep + "CB/PlayerOne.png"));
-    meta->fonts = gui->themeFonts;
+    meta->fonts = gui->assets().themeFonts;
     meta->x = 785;
     meta->y = 285;
     meta->visible = true;
@@ -311,12 +311,12 @@ void GuiLauncher::loadAssets() {
     menu->loadAssets();
 
     menuHead = addStaticElement(new PsCenterLabel("header"));
-    menuHead->font = gui->themeFonts[FONT_28_BOLD];
+    menuHead->font = gui->assets().themeFonts[FONT_28_BOLD];
     menuHead->visible = false;
     menuHead->y = 545;
     menuText = addStaticElement(new PsCenterLabel("menuText"));
     menuText->visible = false;
-    menuText->font = gui->themeFonts[FONT_22_MED];
+    menuText->font = gui->assets().themeFonts[FONT_22_MED];
     menuText->y = 585;
 
     menuHead->setText(headers[0], fgColor);
@@ -324,8 +324,8 @@ void GuiLauncher::loadAssets() {
 
 
     sselector = addFrontElement(new PsStateSelector("selector"));
-    sselector->font30 = gui->themeFonts[FONT_28_BOLD];
-    sselector->font24 = gui->themeFonts[FONT_22_MED];
+    sselector->font30 = gui->assets().themeFonts[FONT_28_BOLD];
+    sselector->font24 = gui->assets().themeFonts[FONT_22_MED];
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -550,7 +550,7 @@ void GuiLauncher::render() {
 
     menu->render();
 
-    auto font24 = gui->themeFonts[FONT_22_MED];
+    auto font24 = gui->assets().themeFonts[FONT_22_MED];
     gui->text().renderText_WithColor(font24, _("Enter"), 638, 640, secColor);
     gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, secColor);
     gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, secColor);

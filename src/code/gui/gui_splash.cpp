@@ -13,21 +13,21 @@ using namespace std;
 //*******************************
 void GuiSplash::render() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
-    gui->backgroundImg.setBlendMode(ableem::BlendMode::Blend);
-    ableem::Size size = gui->backgroundImg.size();
-    gui->backgroundRect.x = 0;
-    gui->backgroundRect.y = 0;
-    gui->backgroundRect.w = size.w;
-    gui->backgroundRect.h = size.h;
+    gui->assets().backgroundImg.setBlendMode(ableem::BlendMode::Blend);
+    ableem::Size size = gui->assets().backgroundImg.size();
+    gui->assets().backgroundRect.x = 0;
+    gui->assets().backgroundRect.y = 0;
+    gui->assets().backgroundRect.w = size.w;
+    gui->assets().backgroundRect.h = size.h;
 
     renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
     renderer.clear();
-    gui->backgroundImg.setAlphaMod(alpha);
-    gui->logo.setAlphaMod(alpha);
+    gui->assets().backgroundImg.setAlphaMod(alpha);
+    gui->assets().logo.setAlphaMod(alpha);
     app.audio().music.setVolume(alpha / 3);
 
-    renderer.copy(gui->backgroundImg, nullptr, &gui->backgroundRect);
-    renderer.copy(gui->logo, nullptr, &gui->logoRect);
+    renderer.copy(gui->assets().backgroundImg, nullptr, &gui->assets().backgroundRect);
+    renderer.copy(gui->assets().logo, nullptr, &gui->assets().logoRect);
 
     string bg = app.theme().data.values["text_bg"];
 
@@ -40,7 +40,7 @@ void GuiSplash::render() {
 
     int y = atoi(app.theme().data.values["ttop"].c_str());
     string splashText = _("AutoBleem")+" " + app.config().inifile.values["version"];
-    gui->text().renderText(gui->themeFont, splashText, 0, y, XALIGN_CENTER);
+    gui->text().renderText(gui->assets().themeFont, splashText, 0, y, XALIGN_CENTER);
 
     renderer.present();
 }

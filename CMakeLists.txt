@@ -162,6 +162,8 @@ add_executable(
         src/code/gui/gui_splash.cpp
         src/code/gui/text_renderer.cpp
         src/code/gui/text_renderer.h
+        src/code/gui/theme_assets.cpp
+        src/code/gui/theme_assets.h
         src/code/gui/gui_splash.h
         src/code/gui/menus/gui_gameDirMenu.h
         src/code/gui/menus/gui_gameEditorMenu.cpp

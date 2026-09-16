@@ -68,7 +68,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 fullRect.h = s.h;
 
                 Rect outputRect;
-                if (gui->cdJewel.valid()) {
+                if (gui->assets().cdJewel.valid()) {
                     outputRect.x = 23;
                     outputRect.y = 5;
                     outputRect.h = 217;
@@ -89,8 +89,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 fullRect.x = 0;
                 fullRect.y = 0;
                 fullRect.h = 226, fullRect.w = 226;
-                if (gui->cdJewel.valid()) {
-                    renderer.copy(gui->cdJewel, &fullRect, &fullRect);
+                if (gui->assets().cdJewel.valid()) {
+                    renderer.copy(gui->assets().cdJewel, &fullRect, &fullRect);
                 }
                 coverPng = renderSurface;
             }

@@ -12,6 +12,7 @@
 #include "../core/util.h"
 #include "gui_font.h"
 #include "text_renderer.h"
+#include "theme_assets.h"
 #include "../core/environment.h"
 #include "../core/model/session.h"
 
@@ -24,8 +25,9 @@ using namespace std;
 // Gui
 //********************
 // All SDL access lives in lib_ableem; Gui derives from ableem::GuiBase (window/renderer/input/audio) and adds
-// the theme's fonts and textures, the text renderer, and the classic UI's main menu loop (menuSelection(),
-// the last piece here that is not drawing - it should become a screen).
+// the theme's assets, the text renderer, the few drawing helpers that combine the two (background, logo,
+// status bar), and the classic UI's main menu loop (menuSelection(), the last piece here that is not drawing -
+// it should become a screen).
 class Gui : public ableem::GuiBase {
 private:
 
@@ -33,9 +35,7 @@ private:
 
 public:
 
-    Fonts themeFonts;
-    Fonts sonyFonts;
-
+    // (re)loads the theme's textures and fonts, and its music unless told not to
     void loadAssets(bool reloadMusic = true);
 
     void display(bool resume);
@@ -51,18 +51,6 @@ public:
 
     void criticalException(const std::string &text);
 
-    ableem::Texture loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname);
-
-    ableem::Rect backgroundRect;
-    ableem::Rect logoRect;
-
-    ableem::Texture backgroundImg;
-    ableem::Texture logo;
-    ableem::Texture cdJewel;
-    std::map<std::string, ableem::Texture> buttonTextureMap;
-
-    ableem::Font themeFont;
-
     Gui(Gui const &) = delete;
 
     Gui &operator=(Gui const &) = delete;
@@ -74,6 +62,8 @@ public:
 
     static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return lessCaseInsensitive(i->title, j->title); }
 
+    // the theme's textures and fonts
+    ThemeAssets &assets() { return assets_; }
     // the text drawing: lines, columns, option rows with their check icons, the |@X| button markers
     TextRenderer &text() { return text_; }
 
@@ -90,6 +80,6 @@ public:
     void drawText(const std::string &text, const string &topLine="");
 
 private:
-    // after themeFont and buttonTextureMap: it holds references to both
-    TextRenderer text_;
+    ThemeAssets assets_;
+    TextRenderer text_;    // after assets_: it holds references to the theme font and the button textures
 };

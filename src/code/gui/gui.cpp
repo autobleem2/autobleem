@@ -29,9 +29,8 @@ using ableem::Button;
 //********************
 // Gui::Gui
 //********************
-Gui::Gui() : text_(renderer(), App::get().theme(), themeFont, buttonTextureMap) {
-    sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer());
-    themeFonts.openAllFonts(App::get().theme().fontPath(), renderer());
+Gui::Gui() : assets_(renderer(), App::get().theme(), App::get().config()),
+             text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     input().probePads();
 }
 
@@ -45,72 +44,10 @@ void Gui::splash(const string &message) {
 
 
 //*******************************
-// Gui::loadThemeTexture
-//*******************************
-Texture
-Gui::loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname) {
-    Texture tex;
-    if (DirEntry::exists(themePath + App::get().theme().data.values[texname])) {
-        tex = Texture::loadFile(renderer(), themePath + App::get().theme().data.values[texname]);
-    } else {
-        tex = Texture::loadFile(renderer(), defaultPath + App::get().theme().defaults.values[texname]);
-    }
-    return tex;
-}
-
-
-//*******************************
 // Gui::loadAssets
 //*******************************
 void Gui::loadAssets(bool reloadMusic) {
-    App::get().theme().load();     // (re)reads theme.ini, falling back to themes/default
-    const string themePath = App::get().theme().loadedPath();
-    const string defaultPath = App::get().theme().defaultsPath();
-
-    backgroundImg = Texture();  // release the previous theme's textures before loading the new ones
-
-    logoRect.x = atoi(App::get().theme().data.values["lpositionx"].c_str());
-    logoRect.y = atoi(App::get().theme().data.values["lpositiony"].c_str());
-    logoRect.w = atoi(App::get().theme().data.values["lw"].c_str());
-    logoRect.h = atoi(App::get().theme().data.values["lh"].c_str());
-
-    backgroundImg = loadThemeTexture(themePath, defaultPath, "background");
-    logo = loadThemeTexture(themePath, defaultPath, "logo");
-    if (App::get().config().inifile.values["jewel"] != "none") {
-        if (App::get().config().inifile.values["jewel"] == "default") {
-            cdJewel = Texture::loadFile(renderer(), Env::getWorkingPath() + sep + "evoimg/nofilter.png");
-        } else {
-            cdJewel = Texture::loadFile(renderer(),
-                                        Env::getWorkingPath() + sep + "evoimg/frames/" +
-                                        App::get().config().inifile.values["jewel"]);
-        }
-    } else {
-        cdJewel = Texture();
-    }
-
-    buttonTextureMap["O"] = loadThemeTexture(themePath, defaultPath, "circle");
-    buttonTextureMap["X"] = loadThemeTexture(themePath, defaultPath, "cross");
-    buttonTextureMap["T"] = loadThemeTexture(themePath, defaultPath, "triangle");
-    buttonTextureMap["S"] = loadThemeTexture(themePath, defaultPath, "square");
-    buttonTextureMap["Select"] = loadThemeTexture(themePath, defaultPath, "select");
-    buttonTextureMap["Start"] = loadThemeTexture(themePath, defaultPath, "start");
-    buttonTextureMap["L1"] = loadThemeTexture(themePath, defaultPath, "l1");
-    buttonTextureMap["R1"] = loadThemeTexture(themePath, defaultPath, "r1");
-    buttonTextureMap["L2"] = loadThemeTexture(themePath, defaultPath, "l2");
-    buttonTextureMap["R2"] = loadThemeTexture(themePath, defaultPath, "r2");
-    buttonTextureMap["Check"] = loadThemeTexture(themePath, defaultPath, "check");
-    buttonTextureMap["Uncheck"] = loadThemeTexture(themePath, defaultPath, "uncheck");
-    buttonTextureMap["Esc"] = loadThemeTexture(themePath, defaultPath, "esc");
-    buttonTextureMap["Enter"] = loadThemeTexture(themePath, defaultPath, "enter");
-    buttonTextureMap["Tab"] = loadThemeTexture(themePath, defaultPath, "tab");
-
-    string fontPath = (themePath + App::get().theme().data.values["font"]);
-    int fontSize = 0;
-    string fontSizeString = App::get().theme().data.values["fsize"];
-    if (fontSizeString != "")
-        fontSize = atoi(fontSizeString.c_str());
-    themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer());
-
+    assets_.load();
     App::get().audio().loadTheme(reloadMusic);
 }
 
@@ -419,7 +356,7 @@ void Gui::menuSelection() {
 //*******************************
 void Gui::finish() {
     App::get().audio().shutdown();
-    backgroundImg = Texture();
+    assets_.backgroundImg = Texture();
 }
 
 
@@ -429,7 +366,7 @@ void Gui::finish() {
 void Gui::renderFreeSpace() {
     int x = atoi(App::get().theme().data.values["fsposx"].c_str());
     int y = atoi(App::get().theme().data.values["fsposy"].c_str());
-    text_.renderText(themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
+    text_.renderText(assets_.themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
 }
 
 //*******************************
@@ -438,7 +375,7 @@ void Gui::renderFreeSpace() {
 void Gui::renderBackground() {
     renderer().setDrawColor(Color(0x00, 0x00, 0x00, 0x00));
     renderer().clear();
-    renderer().copy(backgroundImg, nullptr, &backgroundRect);
+    renderer().copy(assets_.backgroundImg, nullptr, &assets_.backgroundRect);
 }
 
 //*******************************
@@ -446,15 +383,15 @@ void Gui::renderBackground() {
 //*******************************
 int Gui::renderLogo(bool small) {
     if (!small) {
-        renderer().copy(logo, nullptr, &logoRect);
+        renderer().copy(assets_.logo, nullptr, &assets_.logoRect);
         return 0;
     } else {
         Rect rect;
         rect.x = atoi(App::get().theme().data.values["opscreenx"].c_str());
         rect.y = atoi(App::get().theme().data.values["opscreeny"].c_str());
-        rect.w = logoRect.w / 3;
-        rect.h = logoRect.h / 3;
-        renderer().copy(logo, nullptr, &rect);
+        rect.w = assets_.logoRect.w / 3;
+        rect.h = assets_.logoRect.h / 3;
+        renderer().copy(assets_.logo, nullptr, &rect);
         return rect.y + rect.h;
     }
 }
@@ -475,7 +412,7 @@ void Gui::renderStatus(const string &text, int posy) {
     if (posy!=-1)
         y=posy; // override the bottom status y position.  so far this has never been used.
 
-    text_.renderText(themeFont, text, 0, y, XALIGN_CENTER);
+    text_.renderText(assets_.themeFont, text, 0, y, XALIGN_CENTER);
 }
 
 //*******************************

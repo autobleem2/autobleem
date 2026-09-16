@@ -68,10 +68,10 @@ void GuiKeyboard::render() {
     gui->text().renderTextLine(displayResult, 1, yoffset, XALIGN_CENTER);
 
     ableem::Rect rect2 = gui->text().getOpscreenRectOfTheme();
-    int fontHeight = gui->themeFont.lineHeight();
+    int fontHeight = gui->assets().themeFont.lineHeight();
 
     if (L2_cursor_shift || usingUsbKeyboard) {
-        ableem::Rect rectEditbox = gui->text().getFontTextRect(gui->themeFont, displayResult);
+        ableem::Rect rectEditbox = gui->text().getFontTextRect(gui->assets().themeFont, displayResult);
         rectEditbox.x = gui->text().align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
         rectEditbox.y = (1 * rectEditbox.h) + yoffset;  // line 1 (0 == top)
 
@@ -79,10 +79,10 @@ void GuiKeyboard::render() {
         ableem::Size textBeforeCursorSize;
         // get the size of the text before the cursor
         if (cursorIndex > 0) {
-            textBeforeCursorSize = gui->text().getFontTextSize(gui->themeFont, displayResult.substr(0, cursorIndex));
+            textBeforeCursorSize = gui->text().getFontTextSize(gui->assets().themeFont, displayResult.substr(0, cursorIndex));
         }
         // get the cursor size
-        ableem::Size cursorSize = gui->text().getFontTextSize(gui->themeFont, "#");
+        ableem::Size cursorSize = gui->text().getFontTextSize(gui->assets().themeFont, "#");
         // bounding box rectangle around the # cursor
         ableem::Rect cursorRect { rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y,    // x, y position
                               cursorSize.w, cursorSize.h };                             // w, h

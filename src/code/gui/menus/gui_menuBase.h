@@ -79,14 +79,14 @@ public:
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::init()
 {
-    font = gui->themeFont;
+    font = gui->assets().themeFont;
 
     maxVisible = atoi(app.theme().data.values["lines"].c_str());
 
     if (useSmallerFont) {
         // sometimes the left column will overwrite into the right column.
         // and the second column sometimes go off the right side.
-        font = gui->themeFonts[FONT_15_BOLD];   // use a smaller font
+        font = gui->assets().themeFonts[FONT_15_BOLD];   // use a smaller font
         // compute the larger number of rows we can now display
         string themeFontSizeString = app.theme().data.values["fsize"];
         int themeFontSize = atoi(themeFontSizeString.c_str());

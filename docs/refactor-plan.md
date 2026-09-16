@@ -329,7 +329,15 @@ shrinks the input to the next:
     edits in 20 files, no signature changed. `renderBackground/Logo/Status/TextBar/FreeSpace/drawText` stay
     on `Gui` because they draw its textures; they go with step 13. No ctest coverage is possible here;
     the editor and the button guide screenshots are pixel-identical to the ones before.
-13. `ThemeAssets` out of `gui.cpp`.
+13. ~~`ThemeAssets` out of `gui.cpp`~~ **done 2026-09-16.** The fonts, the seven named textures and the
+    button-marker map, `loadThemeTexture()` and the body of `loadAssets()` are `gui/theme_assets.*`;
+    `Gui::loadAssets()` is `assets_.load()` plus the theme's music, which is `AppAudio`'s and not a
+    texture. `ThemeAssets` takes the renderer, the `Theme` and the `Config` by reference, so the
+    `App::get()` calls that were in `loadAssets()` are gone from it. `TextRenderer`'s references now point
+    into `assets_`, which is declared first. Screens' `gui->themeFont` / `gui->backgroundImg` / ... are
+    `gui->assets().themeFont` etc. - 33 edits in 8 files. `gui.cpp` is 441 lines (from 899 at the start
+    of phase C), the header 85. Verified by cycling the theme in the Options menu: background, logo, font
+    and button textures all switch, and cancelling switches them back.
 14. `menuSelection()` becomes `ClassicMenuScreen`. After this `Gui` is window + renderer + assets, and
     `App::run()` shows screens instead of calling a method on the Gui.
 

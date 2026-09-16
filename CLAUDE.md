@@ -119,8 +119,11 @@ Still core-shaped but still in the app target, each waiting on the phase B step 
 
 **Phase C has started.** `TextRenderer` (`gui/text_renderer.*`, step 12) is the text half of the old `Gui`:
 the `|@X|` token layout, `renderText*`/`renderSelectionBox`/`renderLabelBox`, the opscreen/text rects and
-the `getR/G/B` colour parsing. Screens reach it as `gui->text()`. `Gui` keeps the theme textures and fonts
-(step 13 makes those `ThemeAssets`), the background/logo/status drawing that uses them, and `menuSelection()`.
+the `getR/G/B` colour parsing. Screens reach it as `gui->text()`. `ThemeAssets` (`gui/theme_assets.*`,
+step 13) is the other half: the theme's font and font sets, the background/logo/jewel textures and the
+button-marker textures, with `load()` reading them for whatever theme config.ini names; screens reach it as
+`gui->assets()`. `Gui` keeps `loadAssets()` (assets + the theme's music), the background/logo/status drawing
+that combines assets and text, and `menuSelection()` - step 14 makes that a screen.
 
 The three bugs the phase B extractions pinned were each fixed in their own commit on 2026-09-16: the
 memcard fallback guard, `ConfigFileEditor`'s prefix matching (a key now has to be followed by whitespace or
@@ -346,7 +349,8 @@ defaults, which both the services and the screens need.
 | `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `engine/theme.*` | `Theme` | The current theme's `theme.ini` (the selected theme merged over `themes/default/theme.ini`, so every key has a value) and its directories: `path/imagePath/fontPath/soundPath()`, each falling back to `Env::getSonyPath()` when the theme or that sub-dir is missing. Owned by `App`; read as `app.theme().data.values["..."]`. No platform `#ifdef`s - the paths come from `Env`. |
 | `engine/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
-| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), fonts, theme textures, the background/logo/status drawing, and `text()`. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `menuSelection()` is the classic-UI main menu event loop (the last piece here that is not drawing - it should become a screen). `display()` (re)inits and shows splash or resumes the launcher. |
+| `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.ini and reloads everything, falling back to `themes/default` per file. Screens use `gui->assets()`. |
 | `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's opscreen/text rects, `getR/G/B`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.*` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
