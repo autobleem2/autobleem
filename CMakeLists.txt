@@ -96,6 +96,10 @@ add_library(ab_core STATIC
         src/code/core/lang.cpp
         src/code/core/lang.h
         src/code/core/main.h
+        src/code/core/model/game_set.h
+        src/code/core/model/ps_game.cpp
+        src/code/core/model/ps_game.h
+        src/code/core/model/timing.h
         src/code/core/services/config.cpp
         src/code/core/services/config.h
         src/code/core/util.cpp
@@ -179,8 +183,6 @@ add_executable(
         src/code/launcher/ps_carousel.h
         src/code/launcher/ps_centerlabel.cpp
         src/code/launcher/ps_centerlabel.h
-        src/code/launcher/ps_game.cpp 
-        src/code/launcher/ps_game.h 
         src/code/launcher/ps_menu.cpp
         src/code/launcher/ps_menu.h
         src/code/launcher/ps_meta.cpp

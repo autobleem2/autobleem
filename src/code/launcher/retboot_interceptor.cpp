@@ -118,7 +118,8 @@ void RetroArchInterceptor::memcardIn(PsGamePtr &game) {
             if (DirEntry::exists(Env::getPathToMemCardsDir() + sep + game->memcard)) {
                 MemcardManager card(Env::getPathToGamesDir() + sep);
                 if (!card.swapIn(game->ssFolder, game->memcard)) {
-                    game->setMemCard("SONY");
+                    if (game->setMemCardInGameIni("SONY"))
+                        App::get().library().usbGames().updateMemcard(game->gameId, "SONY");
                 };
             }
         }

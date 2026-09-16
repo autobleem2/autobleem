@@ -33,7 +33,11 @@ public:
     // what the database hands out is plain records; wrap them for the UI
     static std::vector<std::shared_ptr<PsGame>> fromRecords(const ableem::GameRecords &records);
 
-    void setMemCard(std::string name);
+    // Writes the memcard name into this record and into the game's Game.ini. The matching regional.db
+    // update is the caller's, until MemcardService owns both halves (plan step 8). Returns false for a
+    // foreign (RetroArch/App) entry, which has no Game.ini and no database row - so callers can write
+    //     if (game->setMemCardInGameIni(name)) library.usbGames().updateMemcard(game->gameId, name);
+    bool setMemCardInGameIni(const std::string &name);
     std::string findResumePicture();
     bool isResumeSlotActive(int slot);
     std::string findResumePicture(int slot);

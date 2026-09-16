@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 #include <vector>
 #include <ableem/ui/renderer.h>
 #include <ableem/ui/texture.h>

@@ -5,7 +5,7 @@
 #ifndef AUTOBLEEM_GUI_LAUNCH_INTERCEPTOR_H
 #define AUTOBLEEM_GUI_LAUNCH_INTERCEPTOR_H
 
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 #include "emu_interceptor.h"
 
 #include <string>

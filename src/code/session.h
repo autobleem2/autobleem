@@ -5,7 +5,7 @@
 
 #include <string>
 #include "core/model/game_set.h"
-#include "launcher/ps_game.h"
+#include "core/model/ps_game.h"
 
 //******************
 // menu / launcher selection constants

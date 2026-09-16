@@ -8,7 +8,7 @@
 #include <string>
 #include <memory>
 #include "../engine/scanner.h"
-#include "../launcher/ps_game.h"
+#include "../core/model/ps_game.h"
 #include "../core/util.h"
 #include "gui_font.h"
 #include "../core/environment.h"

@@ -5,7 +5,7 @@
 
 #include "gui_twoColumnStringMenu.h"
 #include "../../core/lang.h"
-#include "../../launcher/ps_game.h"
+#include "../../core/model/ps_game.h"
 
 //********************
 // GuiManager

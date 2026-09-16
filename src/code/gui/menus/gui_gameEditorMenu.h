@@ -5,7 +5,7 @@
 
 #include "../gui_screen.h"
 #include "../../core/main.h"
-#include "../../launcher/ps_game.h"
+#include "../../core/model/ps_game.h"
 
 //********************
 // GuiEditor

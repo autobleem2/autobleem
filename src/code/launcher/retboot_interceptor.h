@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 #include "emu_interceptor.h"
 
 #include <string>

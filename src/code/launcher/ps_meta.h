@@ -5,7 +5,7 @@
 #pragma once
 
 #include "ps_obj.h"
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 #include "../gui/gui_font.h"
 
 class PsGame;

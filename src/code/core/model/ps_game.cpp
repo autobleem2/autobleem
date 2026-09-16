@@ -3,10 +3,8 @@
 //
 
 #include "ps_game.h"
-#include "../core/util.h"
-#include "../core/main.h"
-#include "../gui/gui.h"
-#include "../app.h"
+#include "../util.h"
+#include "../main.h"
 #include <fstream>
 #include <iostream>
 
@@ -42,17 +40,18 @@ bool PsGame::isCleanExit() {
 }
 
 //*******************************
-// PsGame::setMemCard
+// PsGame::setMemCardInGameIni
 //*******************************
-void PsGame::setMemCard(string name) {
-    if (!foreign) {
-        this->memcard = name;
-        IniFile ini;
-        ini.load(this->folder + sep + GAME_INI);
-        ini.values["memcard"] = name;
-        ini.save(this->folder + sep + GAME_INI);
-        App::get().library().usbGames().updateMemcard(this->gameId, name);
-    }
+bool PsGame::setMemCardInGameIni(const string &name) {
+    if (foreign)
+        return false;
+
+    this->memcard = name;
+    IniFile ini;
+    ini.load(this->folder + sep + GAME_INI);
+    ini.values["memcard"] = name;
+    ini.save(this->folder + sep + GAME_INI);
+    return true;
 }
 
 //*******************************

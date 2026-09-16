@@ -8,7 +8,7 @@
 #include <map>
 #include <set>
 #include "../core/main.h"
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 
 using namespace std;
 

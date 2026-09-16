@@ -6,7 +6,7 @@
 #define AUTOBLEEM_GUI_GUI_APP_START_H
 
 #include "../gui/gui_screen.h"
-#include "ps_game.h"
+#include "../core/model/ps_game.h"
 
 class GuiAppStart : public GuiScreen {
 private:
