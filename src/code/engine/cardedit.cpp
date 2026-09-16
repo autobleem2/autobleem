@@ -1,7 +1,6 @@
 #include <cstring>
 #include "cardedit.h"
 #include "../core/main.h"
-#include "../core/lang.h"
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -334,7 +333,6 @@ bool CardEdit::is_slot_top(int slot)
 }
 
 void CardEdit::update_slot_titles() {
-    shared_ptr<Lang> lang(Lang::getInstance());
     int current_pos = 0x2000;  // The second block starts here
 
     for (int i = 0; i < 15; i++) {

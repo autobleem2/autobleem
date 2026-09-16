@@ -1,5 +1,4 @@
 #include "gui_optionsMenuBase.h"
-#include "../../core/lang.h"
 
 using namespace std;
 
@@ -9,7 +8,6 @@ using namespace std;
 void GuiOptionsMenuBase::init()
 {
     GuiMenuBase<OptionsInfo>::init();
-    lang = Lang::getInstance();
 }
 
 //*******************************
@@ -37,7 +35,7 @@ std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo& info, co
 // void GuiOptionsMenuBase::getLineText
 //*******************************
 std::string GuiOptionsMenuBase::getLineText(const OptionsInfo& info) {
-    std::string temp = lang->translate(info.descriptionToTranslate) + " ";
+    std::string temp = app.lang().translate(info.descriptionToTranslate) + " ";
     auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);

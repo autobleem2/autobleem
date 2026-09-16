@@ -52,6 +52,7 @@ public:
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
     RetroArchService &retroArch() { return retroArch_; }
+    Lang &lang() { return lang_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
@@ -61,6 +62,7 @@ protected:
     // declaration order is construction order: config.ini is read before the Theme that names its
     // directory, and both before the Gui, whose constructor already needs the theme's font path.
     Config cfg_;
+    Lang lang_;   // registered as the one _() consults, before anything can call _()
     Theme theme_;
     std::shared_ptr<Gui> gui_;
     std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body

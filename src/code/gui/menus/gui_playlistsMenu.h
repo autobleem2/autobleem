@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gui_stringMenu.h"
-#include "../../core/lang.h"
 
 //*******************************
 // class GuiPlaylists

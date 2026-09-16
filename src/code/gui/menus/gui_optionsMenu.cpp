@@ -78,8 +78,8 @@ void GuiOptions::fill() {
     // this is filled once and not on every render.
     // save the current lang and switch to English.  we need the "Prefix:" to be scanned in English for English.txt
     // getLineText() will do the translation
-    string saveCurrentLang = lang->currentLang;
-    lang->load("English");
+    string saveCurrentLang = app.lang().currentLanguage();
+    app.lang().load(Env::getPathToLangDir(), "English");
 
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true, vector<string> ({ "false", "true" }) );
@@ -92,9 +92,9 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string> ({ "false", "true" }) );
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true, vector<string> ({ "false", "true" }) );
     lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 = no timeout):"), "showingtimeout", false, getTimeoutValues());
-    lines.emplace_back(CFG_LANG, _("Language:"), "language", false, lang->getListOfLanguages());
+    lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
 
-    lang->load(saveCurrentLang);
+    app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
 }
 
 //*******************************
@@ -110,7 +110,7 @@ void GuiOptions::init() {
 // void GuiOptions::getLineText
 //*******************************
 std::string GuiOptions::getLineText(const OptionsInfo& info) {
-    std::string temp = lang->translate(info.descriptionToTranslate) + " ";
+    std::string temp = app.lang().translate(info.descriptionToTranslate) + " ";
     auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);
@@ -135,7 +135,7 @@ string GuiOptions::doPrevNextOption(OptionsInfo& info, bool next) {
         gui->loadAssets();
         font = gui->assets().themeFont;  // get the new font for the menu
     } else if (id == CFG_LANG) {
-        lang->load(nextValue);
+        app.lang().load(Env::getPathToLangDir(), nextValue);
     } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
         gui->loadAssets();
     }
@@ -172,7 +172,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
             gui->loadAssets();
             font = gui->assets().themeFont;  // get the new font for the menu
         } else if (id == CFG_LANG) {
-            lang->load(nextValue);
+            app.lang().load(Env::getPathToLangDir(), nextValue);
         } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
             gui->loadAssets();
         }
@@ -189,7 +189,7 @@ void GuiOptions::doCircle_Pressed() {
     app.audio().cancel.play();
     string cfg_path = Env::getWorkingPath() + sep + "config.ini";
     app.config().inifile.load(cfg_path);    // restore the original config.ini settings
-    lang->load(app.config().inifile.values["language"]);    // restore the original lang
+    app.lang().load(Env::getPathToLangDir(), app.config().inifile.values["language"]);    // restore the original lang
     gui->loadAssets();                                  // restore original themes
     menuVisible = false;
     exitCode = -1;

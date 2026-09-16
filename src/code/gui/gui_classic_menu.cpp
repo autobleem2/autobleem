@@ -8,7 +8,6 @@
 #include "menus/gui_memCardsMenu.h"
 #include "menus/gui_gameManagerMenu.h"
 #include "../launcher/gui_launcher.h"
-#include "../core/lang.h"
 #include "../core/environment.h"
 #include "../core/util.h"
 

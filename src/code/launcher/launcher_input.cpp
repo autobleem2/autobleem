@@ -6,7 +6,6 @@
 #include "../gui/gui.h"
 #include "../gui/gui_confirm.h"
 #include "gui_btn_guide.h"
-#include "../core/lang.h"
 
 #include <algorithm>
 #include <iostream>

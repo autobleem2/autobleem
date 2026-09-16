@@ -7,6 +7,7 @@
 #include "engine/filesystem.h"
 #include "engine/environment.h"
 #include "engine/ini_file.h"
+#include "engine/lang.h"
 #include "engine/config_file_editor.h"
 #include "engine/memcard_manager.h"
 #include "engine/iso_directory.h"

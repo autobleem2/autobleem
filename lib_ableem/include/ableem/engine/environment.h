@@ -45,6 +45,7 @@ struct Environment {
 
     static std::string getWorkingPath();                // the resources dir; the current dir when never set
     static std::string getPathToMemcardTemplateDir();   // working:/memcard - the blank card1.mcd/card2.mcd
+    static std::string getPathToLangDir();              // working:/lang - the <Language>.txt translation files
     static std::string getSonyPath();
     static std::string getSonyFontPath();               // sony:/font
 

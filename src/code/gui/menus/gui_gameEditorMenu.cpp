@@ -7,7 +7,6 @@
 #include "../gui_keyboard.h"
 #include "../gui_selectmemcard.h"
 #include "../../core/main.h"
-#include "../../core/lang.h"
 #include "../../core/environment.h"
 
 using namespace std;

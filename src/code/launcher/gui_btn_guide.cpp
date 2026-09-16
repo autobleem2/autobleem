@@ -5,7 +5,6 @@
 #include "gui_btn_guide.h"
 #include <string>
 #include "../gui/gui.h"
-#include "../core/lang.h"
 #include "../engine/scanner.h"
 
 using namespace std;

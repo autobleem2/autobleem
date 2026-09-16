@@ -92,8 +92,6 @@ add_library(ab_core STATIC
         src/code/core/DebugTimer.h
         src/code/core/environment.cpp
         src/code/core/environment.h
-        src/code/core/lang.cpp
-        src/code/core/lang.h
         src/code/core/main.h
         src/code/core/model/game_set.h
         src/code/core/model/ps_game.cpp

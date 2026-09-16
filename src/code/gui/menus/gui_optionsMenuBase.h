@@ -26,7 +26,6 @@ public:
     GuiOptionsMenuBase(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
     virtual void init();
 
-    std::shared_ptr<Lang> lang;             // so we can translate OptionsInfo.descriptionToTranslate
 
     virtual std::string getBooleanSymbolText(const OptionsInfo& info, const std::string& value);
     virtual std::string getLineText(const OptionsInfo& info);

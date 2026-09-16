@@ -5,7 +5,6 @@
 #include "gui_about.h"
 #include <string>
 #include "gui.h"
-#include "../core/lang.h"
 #include "../engine/scanner.h"
 #include "../core/environment.h"
 

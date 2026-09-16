@@ -4,7 +4,6 @@
 #pragma once
 
 #include "gui_twoColumnStringMenu.h"
-#include "../../core/lang.h"
 #include "../../core/model/ps_game.h"
 
 //********************

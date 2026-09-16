@@ -7,7 +7,6 @@
 #include <string>
 #include <iostream>
 #include "../gui/gui.h"
-#include "../core/lang.h"
 #include "../gui/gui_confirm.h"
 #include "../gui/gui_selectmemcard.h"
 #include "../core/environment.h"

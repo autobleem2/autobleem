@@ -68,3 +68,10 @@ using ableem::GamesHierarchy;
 using ableem::GameScanner;
 using ableem::ScanStage;
 using ableem::ScanProgressListener;
+
+// Translate one UI string: `_("Re/Scan")`. English is the source language, so it is returned unchanged.
+// Strings may contain emoji markers such as |@X| or |@L1|, which TextRenderer replaces with the theme's
+// button textures - keep them in the translation. Goes through the ableem::Lang the App registered; with
+// none (a unit test) every string is its own translation.
+using ableem::Lang;
+inline std::string _(const std::string &input) { return ableem::translate(input); }

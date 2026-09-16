@@ -6,7 +6,6 @@
 #include "../core/model/ps_game.h"
 #include "../core/util.h"
 #include "../util_time.h"
-#include "../core/lang.h"
 #include "../core/main.h"
 #include "../core/main.h"
 #include "../core/environment.h"

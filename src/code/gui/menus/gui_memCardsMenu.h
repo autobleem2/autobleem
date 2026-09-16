@@ -3,7 +3,6 @@
 #include "gui_stringMenu.h"
 #include <vector>
 #include <string>
-#include "../../core/lang.h"
 
 //********************
 // GuiMemcards

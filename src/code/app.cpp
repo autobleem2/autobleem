@@ -1,5 +1,4 @@
 #include "app.h"
-#include "core/lang.h"
 #include "core/util.h"
 
 #include <iostream>
@@ -14,6 +13,8 @@ App *App::instance = nullptr;
 //*******************************
 App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
     instance = this;
+    Lang::setCurrent(&lang_);
+    lang_.load(Env::getPathToLangDir(), cfg_.inifile.values["language"]);
 
     gui_ = Gui::getInstance();
     audio_.reset(new AppAudio(gui_->audio()));
@@ -24,9 +25,6 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
         Util::powerOff();
     });
 
-    shared_ptr<Lang> lang(Lang::getInstance());
-    lang->load(cfg_.inifile.values["language"]);
-
     gameQuery_.setRetroArchGames(&retroArch_);
 }
 
@@ -34,6 +32,7 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
 // App::~App
 //*******************************
 App::~App() {
+    Lang::setCurrent(nullptr);
     instance = nullptr;
 }
 

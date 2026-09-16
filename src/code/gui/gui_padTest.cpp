@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <string>
 #include "gui.h"
-#include "../core/lang.h"
 #include <iostream>
 #include <sstream>
 

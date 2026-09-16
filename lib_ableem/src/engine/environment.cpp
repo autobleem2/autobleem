@@ -67,6 +67,7 @@ string Environment::getWorkingPath() {
 }
 
 string Environment::getPathToMemcardTemplateDir() { return getWorkingPath() + sep + "memcard"; }
+string Environment::getPathToLangDir() { return getWorkingPath() + sep + "lang"; }
 
 //*******************************
 // Environment::getSonyPath / getSonyFontPath

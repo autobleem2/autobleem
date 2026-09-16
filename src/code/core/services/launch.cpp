@@ -3,7 +3,6 @@
 //
 #include "launch.h"
 #include "../environment.h"
-#include "../lang.h"
 #include "../main.h"
 #include "../util.h"
 

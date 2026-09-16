@@ -2,7 +2,6 @@
 // AutoBleem: the program - App plus the loop that runs it.
 //
 #include "autobleem.h"
-#include "core/lang.h"
 #include "core/util.h"
 #include "gui/gui_classic_menu.h"
 

@@ -9,7 +9,6 @@
 #include "../core/main.h"
 #include "gui_confirm.h"
 #include "gui_keyboard.h"
-#include "../core/lang.h"
 using namespace std;
 
 //*******************************
