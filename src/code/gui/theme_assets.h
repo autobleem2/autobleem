@@ -5,7 +5,7 @@
 
 #include "gui_font.h"
 #include "../core/services/config.h"
-#include "../engine/theme.h"
+#include "../core/services/theme.h"
 
 #include <ableem/ableem.h>
 

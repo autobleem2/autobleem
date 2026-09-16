@@ -3,8 +3,7 @@
 //
 
 #include "theme.h"
-#include "../app.h"
-#include "../core/services/environment.h"
+#include "environment.h"
 
 #include <iostream>
 
@@ -14,7 +13,7 @@ using namespace std;
 // Theme::path
 //*******************************
 string Theme::path() {
-    string path = Env::getPathToThemesDir() + sep + App::get().config().inifile.values["theme"];
+    string path = Env::getPathToThemesDir() + sep + config_.inifile.values["theme"];
     if (!DirEntry::exists(path)) {
         path = Env::getSonyPath();
     }
@@ -51,8 +50,8 @@ void Theme::load() {
     cout << "Loading UI theme:" << loadedPath_ << endl;
     if (!DirEntry::exists(loadedPath_ + "theme.ini")) {
         loadedPath_ = defaultsPath_;
-        App::get().config().inifile.values["theme"] = "default";
-        App::get().config().save();
+        config_.inifile.values["theme"] = "default";
+        config_.save();
     }
 
     defaults.load(defaultsPath_ + "theme.ini");

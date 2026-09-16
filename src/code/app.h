@@ -16,7 +16,8 @@
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
-#include "engine/theme.h"
+#include "core/services/clock.h"
+#include "core/services/theme.h"
 #include "engine/app_audio.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
@@ -43,6 +44,7 @@ public:
 
     Config &config() { return cfg_; }
     Theme &theme() { return theme_; }
+    Clock &clock() { return clock_; }
     AppAudio &audio() { return *audio_; }   // the music/sfx, not gui->audio()'s mixer device
     ableem::GameLibrary &library() { return gameLibrary; }
     GameQueryService &gameQuery() { return gameQuery_; }
@@ -63,7 +65,8 @@ protected:
     // directory, and both before the Gui, whose constructor already needs the theme's font path.
     Config cfg_;
     Lang lang_;   // registered as the one _() consults, before anything can call _()
-    Theme theme_;
+    Theme theme_{cfg_};
+    Clock clock_{cfg_};
     std::shared_ptr<Gui> gui_;
     std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body
     std::shared_ptr<Scanner> scanner_;

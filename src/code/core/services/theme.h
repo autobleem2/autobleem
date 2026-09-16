@@ -3,21 +3,26 @@
 //
 #pragma once
 
+#include "config.h"
+#include "../main.h"
+
 #include <string>
-#include "../core/main.h"
 
 //******************
 // Theme
 //******************
 // Everything about the current theme that is *not* graphics: which directory it lives in, and the merged
 // theme.ini (the selected theme's values on top of themes/default/theme.ini, so a partial theme still has a
-// value for every key). Owned by App; the Gui only turns the values here into textures and fonts.
+// value for every key). Owned by App; ThemeAssets only turns the values here into textures and fonts.
 //
 // The directory getters fall back to the stock Sony data dir (Env::getSonyPath()) when the theme, or one of
 // its sub-directories, is missing - that is what makes a theme that ships only, say, its own images still
 // work. Nothing here knows the console's real paths: they all come from Env.
 class Theme {
 public:
+    // which theme is config.ini's "theme"; a theme with no theme.ini at all is written back there as "default"
+    explicit Theme(Config &config) : config_(config) {}
+
     // (re)reads themes/default/theme.ini and merges the selected theme's theme.ini over it. If the selected
     // theme has no theme.ini at all it falls back to "default" and writes that back to config.ini.
     void load();
@@ -41,6 +46,7 @@ public:
     const std::string &defaultsPath() const { return defaultsPath_; }
 
 private:
+    Config &config_;
     std::string loadedPath_;
     std::string defaultsPath_;
 

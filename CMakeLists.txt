@@ -97,6 +97,8 @@ add_library(ab_core STATIC
         src/code/core/services/config.cpp
         src/code/core/services/environment.cpp
         src/code/core/services/environment.h
+        src/code/core/services/clock.cpp
+        src/code/core/services/clock.h
         src/code/core/services/config.h
         src/code/core/services/game_catalog.cpp
         src/code/core/services/game_catalog.h
@@ -116,6 +118,8 @@ add_library(ab_core STATIC
         src/code/core/services/retroarch.h
         src/code/core/services/system.cpp
         src/code/core/services/system.h
+        src/code/core/services/theme.cpp
+        src/code/core/services/theme.h
         )
 target_link_libraries(ab_core ableem_engine)
 
@@ -141,8 +145,6 @@ add_library(ab_ui STATIC
         src/code/engine/cardedit.h
         src/code/engine/scanner.cpp
         src/code/engine/scanner.h
-        src/code/engine/theme.cpp
-        src/code/engine/theme.h
         src/code/gui/gui.cpp
         src/code/gui/gui.h
         src/code/gui/screens/gui_about.cpp
@@ -183,8 +185,6 @@ add_library(ab_ui STATIC
         src/code/gui/text_renderer.h
         src/code/gui/theme_assets.cpp
         src/code/gui/theme_assets.h
-        src/code/util_time.cpp
-        src/code/util_time.h
 )
 target_link_libraries(ab_ui ab_core ableem)
 

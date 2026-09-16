@@ -5,7 +5,7 @@
 #include "evoui_meta.h"
 #include "../../core/model/ps_game.h"
 #include "../../core/services/system.h"
-#include "../../util_time.h"
+#include "../../app.h"
 #include "../../core/main.h"
 #include "../../core/main.h"
 #include "../../core/services/environment.h"
@@ -60,7 +60,7 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
         updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
                     to_string(psGame->players) + " " + appendText,
                     psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                    psGame->foreign, psGame->app, UtilTime::timeToDisplayTimeString(psGame->last_played),
+                    psGame->foreign, psGame->app, App::get().clock().displayTime(psGame->last_played),
                     _textColor);
     } else
     {
@@ -72,7 +72,7 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
             updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
                         to_string(psGame->players) + " " + appendText,
                         psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app,  UtilTime::timeToDisplayTimeString(psGame->last_played),
+                        psGame->foreign, psGame->app,  App::get().clock().displayTime(psGame->last_played),
                         _textColor);
         } else {
             psGame->serial = "";
@@ -81,7 +81,7 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
             updateTexts(psGame->title, psGame->core_name, to_string(psGame->year), psGame->serial, psGame->region,
                         to_string(psGame->players) + " " + appendText,
                         psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app,  UtilTime::timeToDisplayTimeString(psGame->last_played),
+                        psGame->foreign, psGame->app,  App::get().clock().displayTime(psGame->last_played),
                         _textColor);
         }
     }
