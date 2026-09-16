@@ -40,7 +40,8 @@ Done on 2026-09-16:
 The next structural step is planned in `docs/refactor-plan.md`: split `src/code` into `ab_core` (model +
 services, no SDL, unit tested with doctest), `ab_ui` and `ab_evoui`, moving the game queries, settings,
 memcard/savestate and launch logic out of the screens that currently hold them. The list below is folded into
-that plan's phases. Phase A steps 1 and 2 are done:
+that plan's phases. Phase A is done apart from step 3 (the ARM build), which is deferred - no toolchain on
+this host yet:
 
 - **Step 1** - the `#define`-int selections are `enum class`es now: `GameSet` (+ `nextGameSet` for the Select
   wraparound) and `Ps1SelectState` in `session.h`, `LauncherScreenState` in `gui_launcher.h`, and the
@@ -56,6 +57,12 @@ that plan's phases. Phase A steps 1 and 2 are done:
   ctest wiring behind `AB_BUILD_TESTS` (ON for hosts, forced OFF by `PSCtoolchainV8.cmake`), and the first
   suites: `tests/core/test_config.cpp` and `tests/core/test_env_fixture.cpp`. `make_win.sh` runs `ctest`
   after every build. `Theme` was to be tested here too, but it is not in `ab_core` yet.
+- **Step 5** - `core/model/game_set.h` holds `GameSet`, `Ps1SelectState` and `GameSetSelection` (tested in
+  `tests/core/test_game_set.cpp`). `Session::LauncherState` is gone: `Session::launcher` is a
+  `GameSetSelection`, and `GuiLauncher`'s six `current*` mirror fields are one `selection` member that
+  `loadAssets()` seeds and `GuiLauncher::rememberSelection()` writes back. Careful: the PS1 sub-set is
+  deliberately **not** carried across while another set is showing - see the comment on
+  `rememberSelection()`; it is a pre-existing quirk, flagged in the plan, not a fix waiting to happen.
 
 `ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
 constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
@@ -70,8 +77,8 @@ Still core-shaped but still in the app target, each waiting on the phase B step 
 
 Still to do, in order:
 
-1. Continue `docs/refactor-plan.md` - phase A step 4 (the doctest harness; step 3, the ARM build, is
-   deferred), then phase B's service extractions.
+1. Continue `docs/refactor-plan.md` - phase B, the service extractions (`GameQueryService` first). Each one
+   ships with its tests in the same commit, and pulls its file into `ab_core` as it goes.
 2. Centralize the hard-coded paths still in the app (`/media/Autobleem/rc/*.sh` in the interceptors and
    `main.cpp`, `/media/retroarch/...` in `retboot_interceptor.cpp`, `/media/System/Logs/ver.txt`) in `Env` -
    the engine side is done, and so are the theme loaders (`Theme` asks `Env` for both branches now).
@@ -271,7 +278,7 @@ defaults, which both the services and the screens need.
 |---|---|---|
 | Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `App` and calls `run()`. |
 | `app.*` | `App` | The model, and the whole program: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner` and the `Session`, plus the `Gui` singleton. `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `menuSelection()` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
-| `session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and the carousel's restore state. |
+| `session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
 | `core/util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |

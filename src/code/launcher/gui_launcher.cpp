@@ -48,7 +48,7 @@ void GuiLauncher::getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex) {
     app.library().usbGames().loadSubDirRows(&gameRowInfos);
     if (gameRowInfos.size() == 0)
         return; // no games!
-    currentUSBGameDirName = gameRowInfos[rowIndex].rowName;
+    selection.usbGameDirName = gameRowInfos[rowIndex].rowName;
 
 #if 0
     for (auto &gameRowInfo : gameRowInfos)
@@ -171,10 +171,31 @@ void GuiLauncher::getGames_SET_APPS(PsGames *gamesList) {
 }
 
 //*******************************
+// GuiLauncher::rememberSelection
+//*******************************
+// Hands the carousel's position back to the Session, so pressing Start later reopens it where it was.
+// Called on every path that starts a game.
+//
+// The PS1 sub-set is the one field not written back from another set: loadAssets() does not restore it
+// unless the PS1 set is showing, so this screen's copy would be a default, and writing that back would
+// lose the sub-set the user actually left the PS1 carousel in. The two halves have always behaved this
+// way - worth revisiting as a behaviour question, not as part of a structural move.
+//*******************************
+void GuiLauncher::rememberSelection() {
+    if (selGameIndexInCarouselGamesIsValid())
+        selection.gameIndex = selGameIndex;
+
+    Ps1SelectState rememberedPS1SubSet = app.session().launcher.ps1SelectState;
+    app.session().launcher = selection;
+    if (selection.set != GameSet::PS1)
+        app.session().launcher.ps1SelectState = rememberedPS1SubSet;
+}
+
+//*******************************
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newSet is not used.  probably not the intent.
-    cout << "Switching to Set: " << static_cast<int>(currentSet) << endl;
+    cout << "Switching to Set: " << static_cast<int>(selection.set) << endl;
     // clear the carousel text
     if (!carouselGames.empty()) {
         for (auto &game : carouselGames) {
@@ -185,43 +206,43 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newS
     cout << "Reloading games list" << endl; // get fresh list of games for this set
     PsGames gamesList;
 
-    if (currentSet == GameSet::PS1) {
+    if (selection.set == GameSet::PS1) {
 
         // if do not show internal games
         if (app.config().inifile.values["origames"] != "true") {
-            if (currentPS1_SelectState == Ps1SelectState::AllGames || currentPS1_SelectState == Ps1SelectState::InternalOnly) {
-                currentPS1_SelectState = Ps1SelectState::GamesSubdir;
+            if (selection.ps1SelectState == Ps1SelectState::AllGames || selection.ps1SelectState == Ps1SelectState::InternalOnly) {
+                selection.ps1SelectState = Ps1SelectState::GamesSubdir;
                 //if (selGameIndexInCarouselGamesIsValid())
             }
         }
 
-        if (currentPS1_SelectState == Ps1SelectState::AllGames) {
+        if (selection.ps1SelectState == Ps1SelectState::AllGames) {
             bool includeInternal = app.config().inifile.values["origames"] == "true";
             gamesList = getAllPS1Games(true, includeInternal);
 
-        } else if (currentPS1_SelectState == Ps1SelectState::InternalOnly) {
+        } else if (selection.ps1SelectState == Ps1SelectState::InternalOnly) {
             appendGames_SET_INTERNAL(&gamesList);   // since it starts out empty this sets only internal
 
-        } else if (currentPS1_SelectState == Ps1SelectState::GamesSubdir) {
+        } else if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
             // get the games in the current subdir of /Games and on down
-            getGames_SET_SUBDIR(&gamesList, currentUSBGameDirIndex);
+            getGames_SET_SUBDIR(&gamesList, selection.usbGameDirIndex);
 
-        } else if (currentPS1_SelectState == Ps1SelectState::Favorites) {
+        } else if (selection.ps1SelectState == Ps1SelectState::Favorites) {
             getGames_SET_FAVORITE(&gamesList);
 
-        } else if (currentPS1_SelectState == Ps1SelectState::History) {
+        } else if (selection.ps1SelectState == Ps1SelectState::History) {
             getGames_SET_HISTORY(&gamesList);
         }
 
-    } else if (currentSet == GameSet::RetroArch) {
-        getGames_SET_RETROARCH(currentRAPlaylistName, &gamesList);
+    } else if (selection.set == GameSet::RetroArch) {
+        getGames_SET_RETROARCH(selection.raPlaylistName, &gamesList);
 
-    } else if (currentSet == GameSet::Apps) {
+    } else if (selection.set == GameSet::Apps) {
         getGames_SET_APPS(&gamesList);
     }
 
-    if (!(currentSet == GameSet::RetroArch && currentRAPlaylistName == raIntegrator->historyDisplayName)) {
-        if (currentSet == GameSet::PS1 && currentPS1_SelectState == Ps1SelectState::History) {
+    if (!(selection.set == GameSet::RetroArch && selection.raPlaylistName == raIntegrator->historyDisplayName)) {
+        if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::History) {
             // sort by history 1-100.  1 is latest game played, 100 is the oldest
             sort(begin(gamesList), end(gamesList),
                  [&](PsGamePtr p1, PsGamePtr p2) { return p1->history < p2->history; });
@@ -258,7 +279,7 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newS
     }
 
     if (!noForce) {
-        if ((currentSet == GameSet::RetroArch) || (currentSet == GameSet::Apps)) {
+        if ((selection.set == GameSet::RetroArch) || (selection.set == GameSet::Apps)) {
             forceSettingsOnly();
         }
     }
@@ -285,17 +306,17 @@ void GuiLauncher::showSetName() {
 
     long timeout = Util::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
-    if (currentSet == GameSet::PS1) {
-        string name = setPS1SubStateNames[static_cast<int>(currentPS1_SelectState)];
-        if (currentPS1_SelectState == Ps1SelectState::GamesSubdir) {
-            name += currentUSBGameDirName;
+    if (selection.set == GameSet::PS1) {
+        string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
+        if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
+            name += selection.usbGameDirName;
         }
         notificationLines[0].setText(name + numGames, timeout);
-    } else if (currentSet == GameSet::RetroArch) {
-        string playlist = DirEntry::getFileNameWithoutExtension(currentRAPlaylistName);
-        notificationLines[0].setText(setNames[static_cast<int>(currentSet)] + playlist + " " + numGames, timeout);
-    } else if (currentSet == GameSet::Apps) {
-        notificationLines[0].setText(setNames[static_cast<int>(currentSet)] + numGames, timeout);
+    } else if (selection.set == GameSet::RetroArch) {
+        string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
+        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
+    } else if (selection.set == GameSet::Apps) {
+        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + numGames, timeout);
     }
 }
 
@@ -313,19 +334,19 @@ void GuiLauncher::loadAssets() {
     vector<string> texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
                             _("Edit Memory Card information"), _("Resume game from saved state point")};
 
-    currentSet = app.session().launcher.set;
-    if (currentSet == GameSet::PS1)
-        currentPS1_SelectState = app.session().launcher.ps1SelectState;
-    currentUSBGameDirIndex = app.session().launcher.usbGameDirIndex;
-    currentRAPlaylistIndex = app.session().launcher.raPlaylistIndex;
-    if (currentRAPlaylistIndex < raPlaylists.size())
-        currentRAPlaylistName = raPlaylists[app.session().launcher.raPlaylistIndex];
+    selection = app.session().launcher;
+    if (selection.set != GameSet::PS1)
+        selection.ps1SelectState = Ps1SelectState::AllGames;   // see rememberSelection()
+    if (selection.raPlaylistIndex < raPlaylists.size())
+        selection.raPlaylistName = raPlaylists[selection.raPlaylistIndex];
+    // also into the Session directly: rememberSelection() only runs when a game starts, and leaving the
+    // launcher with Circle should not leave a stale playlist name behind.
     if (app.session().launcher.raPlaylistIndex < raPlaylists.size())
         app.session().launcher.raPlaylistName = raPlaylists[app.session().launcher.raPlaylistIndex];
 #if 0
     if (app.session().launcher.raPlaylistName != "")
     {
-        currentRAPlaylistName = app.session().launcher.raPlaylistName;
+        selection.raPlaylistName = app.session().launcher.raPlaylistName;
         //app.session().launcher.raPlaylistName = "";
     }
 #endif
@@ -356,16 +377,16 @@ void GuiLauncher::loadAssets() {
     frontElemets.clear();
     carouselGames.clear();
     carouselPositions.initCoverPositions();
-    switchSet(currentSet, true);
+    switchSet(selection.set, true);
     showSetName();
 
     gameName = "";
     publisher = "";
     year = "";
     players = "";
-    cout << "Last Index" << app.session().launcher.selIndex << endl;
-    if (app.session().launcher.selIndex != 0) {
-        selGameIndex = app.session().launcher.selIndex;
+    cout << "Last Index" << selection.gameIndex << endl;
+    if (selection.gameIndex != 0) {
+        selGameIndex = selection.gameIndex;
         setInitialPositions(selGameIndex);
     }
 
@@ -500,8 +521,8 @@ void GuiLauncher::loadAssets() {
     }
 
 
-    //switchSet(currentSet,false);
-    if ((currentSet == GameSet::RetroArch) || (currentSet == GameSet::Apps)) {
+    //switchSet(selection.set,false);
+    if ((selection.set == GameSet::RetroArch) || (selection.set == GameSet::Apps)) {
         forceSettingsOnly();
     } else {
         if (menu->foreign) {

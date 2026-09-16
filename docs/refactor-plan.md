@@ -179,8 +179,17 @@ Each item is one commit. Moves are kept content-free and separate from edits, so
    44 assertions over `Config` and over the fixtures themselves — `EnvFixture` is load-bearing enough that
    trusting it untested would be the wrong kind of economy. Mutation-checked: flipping the `ui` default
    fails `test_config`, so the suite is not passing vacuously. `Theme` joins when it reaches `ab_core`.
-5. `GameSetSelection` in `core/model/`, replacing the six loose ints shared between `GuiLauncher` and
-   `Session::LauncherState`.
+5. ~~`GameSetSelection` in `core/model/`, replacing the six loose ints shared between `GuiLauncher` and
+   `Session::LauncherState`~~ **done 2026-09-16.** `core/model/game_set.h` now holds `GameSet`,
+   `Ps1SelectState` and `GameSetSelection`; `Session::LauncherState` is gone and `GuiLauncher`'s six
+   `current*` members are one `selection`. The identical five-line save block that appeared at three call
+   sites is `GuiLauncher::rememberSelection()`.
+
+   One quirk was preserved rather than quietly fixed: the PS1 sub-set is not carried across while another
+   set is showing (`loadAssets()` does not restore it, `rememberSelection()` does not write it back), so
+   launching from RetroArch or Apps and then pressing Select back to PS1 lands on All Games rather than
+   where you left it. Both halves have always behaved this way. Copying the struct whole would change it -
+   arguably for the better, but that is a behaviour decision, not a structural one.
 
 **Phase B — extract the services.** One per commit, each with its tests, in this order — each extraction
 shrinks the input to the next:

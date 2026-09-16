@@ -90,8 +90,10 @@ public:
 
     shared_ptr<Gui> gui;
 
-    GameSet currentSet = GameSet::PS1;
-    Ps1SelectState currentPS1_SelectState = Ps1SelectState::AllGames;
+    // what the carousel is showing. loadAssets() seeds it from the Session, rememberSelection() writes it
+    // back when a game starts.
+    GameSetSelection selection;
+    void rememberSelection();
     void switchSet(GameSet newSet, bool noForce);
     void showSetName();
 
@@ -104,14 +106,6 @@ public:
 
     void getGames_SET_RETROARCH(const std::string& playlistName, PsGames *gamesList);
     void getGames_SET_APPS(PsGames* gamesList);
-
-    // current USB Game Dir
-    int currentUSBGameDirIndex = 0;
-    std::string currentUSBGameDirName = "";
-    
-    // current RetroArch Playlist
-    int currentRAPlaylistIndex = 0;
-    std::string currentRAPlaylistName = "";
 
     NotificationLines notificationLines; // top two lines of the screen
     int numberOfNonDuplicatedGamesInCarousel = 0;

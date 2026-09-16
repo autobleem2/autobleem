@@ -4,6 +4,7 @@
 #pragma once
 
 #include <string>
+#include "core/model/game_set.h"
 #include "launcher/ps_game.h"
 
 //******************
@@ -14,19 +15,6 @@ enum MenuOption { MENU_OPTION_SCAN = 1, MENU_OPTION_RUN, MENU_OPTION_SONY, MENU_
 
 // which emulator/launcher path to use for the game about to start
 enum class EmuMode { Pcsx, RetroArch, Launcher };
-
-// the carousel's "set": which games are shown. if you add a new one also update GuiLauncher::showSetName's setNames
-// and GameSetLast below.
-enum class GameSet : int { PS1 = 0, RetroArch = 1, Apps = 2 };
-constexpr GameSet GameSetLast = GameSet::Apps;
-// cycles PS1 -> RetroArch -> Apps -> PS1, the order Select steps through the sets in.
-inline GameSet nextGameSet(GameSet set) {
-    int next = static_cast<int>(set) + 1;
-    return next > static_cast<int>(GameSetLast) ? GameSet::PS1 : static_cast<GameSet>(next);
-}
-
-// GameSet::PS1 select sub states. keep GamesSubdir last as it's going to be left off the L2+Select menu
-enum class Ps1SelectState : int { AllGames = 0, InternalOnly, Favorites, History, GamesSubdir };
 
 //******************
 // Session
@@ -46,13 +34,7 @@ struct Session {
     int resumePoint = -1;
     bool resumingGui = false;   // true right after a game exits: skip the classic menu and reopen the carousel
 
-    // where the EvolutionUI carousel was, so Start brings it back to the same place
-    struct LauncherState {
-        GameSet set = GameSet::PS1;
-        Ps1SelectState ps1SelectState = Ps1SelectState::AllGames;
-        int selIndex = 0;             // index into carouselGames
-        int usbGameDirIndex = 0;      // top row in menu = /Games
-        int raPlaylistIndex = 0;      // top row in menu = first playlist name
-        std::string raPlaylistName;
-    } launcher;
+    // where the EvolutionUI carousel was, so Start brings it back to the same place.
+    // GuiLauncher holds a copy of this and writes it back through GuiLauncher::rememberSelection().
+    GameSetSelection launcher;
 };
