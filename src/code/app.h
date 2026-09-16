@@ -6,11 +6,12 @@
 
 #include <memory>
 
-#include "session.h"
+#include "core/model/session.h"
 #include "core/services/config.h"
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 #include "core/services/game_settings.h"
+#include "core/services/launch.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "engine/theme.h"
@@ -44,14 +45,11 @@ public:
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
     GameSettingsService &gameSettings() { return gameSettings_; }
+    LaunchService &launcher() { return launcher_; }
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
-
-    // writes rc/autobleem_cfg.sh (AB_SELECTION/AB_THEME/AB_PCSX/AB_MIP) so the shell launch scripts see the
-    // menu choice and theme/emulator settings after the GUI exits or before a game starts.
-    void writeSelectionScript();
 
 private:
     static App *instance;
@@ -64,13 +62,17 @@ private:
     std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body
     std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;
+    Session session_;
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     GameSettingsService gameSettings_{gameLibrary};
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
-    Session session_;
+    // the dev host has no emulator to fork, so it gets a runner that shows a splash instead (app.cpp)
+    std::unique_ptr<ProcessRunner> runner_ = makeProcessRunner();
+    LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 
+    static std::unique_ptr<ProcessRunner> makeProcessRunner();
     bool openLibrary();                                                   // covers dir + regional.db + internal.db
     void rescan(GamesHierarchy &gamesHierarchy, const std::string &prevPath);   // a Re/Scan menu selection
     void launchGame();                                                    // the MENU_OPTION_START handling

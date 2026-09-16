@@ -4,8 +4,8 @@
 #pragma once
 
 #include <string>
-#include "core/model/game_set.h"
-#include "core/model/ps_game.h"
+#include "game_set.h"
+#include "ps_game.h"
 
 //******************
 // menu / launcher selection constants
@@ -22,7 +22,7 @@ enum class EmuMode { Pcsx, RetroArch, Launcher };
 // Everything that describes "where we are" across one run of the app: what App::run()'s outer loop should do
 // next, what game (if any) was asked to start, and where the EvolutionUI carousel was so Start can bring it
 // back. Owned by App; reached as `app.session()` from screens (via the GuiScreen shim) or `App::get().session()`
-// from the few places that are not screens (the launch interceptors, PsGame, UtilTime).
+// from the few places that are not screens (UtilTime).
 struct Session {
     MenuOption menuOption = MENU_OPTION_SCAN;
     bool forceScan = false;    // true when the games changed and a rescan is needed before showing the menu

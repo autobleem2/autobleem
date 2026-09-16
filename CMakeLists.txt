@@ -83,9 +83,8 @@ endif()
 # of screens. That is what makes it testable without a window, and it is what `starter` links below.
 #
 # It starts small on purpose: only files that already have no Gui and no App::get() in them could move here
-# without a content change. theme.*, scanner.*, ps_game.*, util_time.* and the three concrete interceptors are
-# core-shaped but each still reaches the UI or the composition root, so they stay in the app target until
-# phase B of the plan extracts them. ab_ui and ab_evoui are not split out yet either - Gui::menuSelection()
+# without a content change. theme.*, scanner.* and util_time.* are core-shaped but each still reaches the UI
+# or the composition root, so they stay in the app target until phase B of the plan extracts them. ab_ui and ab_evoui are not split out yet either - Gui::menuSelection()
 # constructs GuiLauncher while ~20 launcher files use Gui, so the two would be a link cycle rather than a
 # layering. Phase C step 14 (menuSelection -> ClassicMenuScreen) is what removes that cycle.
 add_library(ab_core STATIC
@@ -99,6 +98,7 @@ add_library(ab_core STATIC
         src/code/core/model/game_set.h
         src/code/core/model/ps_game.cpp
         src/code/core/model/ps_game.h
+        src/code/core/model/session.h
         src/code/core/model/timing.h
         src/code/core/services/config.cpp
         src/code/core/services/config.h
@@ -108,8 +108,12 @@ add_library(ab_core STATIC
         src/code/core/services/game_query.h
         src/code/core/services/game_settings.cpp
         src/code/core/services/game_settings.h
+        src/code/core/services/launch.cpp
+        src/code/core/services/launch.h
         src/code/core/services/memcard.cpp
         src/code/core/services/memcard.h
+        src/code/core/services/process_runner.cpp
+        src/code/core/services/process_runner.h
         src/code/core/services/resume_point.cpp
         src/code/core/services/resume_point.h
         src/code/core/util.cpp
@@ -172,8 +176,6 @@ add_executable(
         src/code/gui/menus/gui_twoColumnStringMenu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
-        src/code/launcher/emu_interceptor.cpp
-        src/code/launcher/emu_interceptor.h
         src/code/launcher/gui_app_start.cpp 
         src/code/launcher/gui_app_start.h 
         src/code/launcher/gui_btn_guide.cpp
@@ -185,10 +187,6 @@ add_executable(
         src/code/launcher/gui_mc_manager.h
         src/code/launcher/gui_NotificationLine.cpp
         src/code/launcher/gui_NotificationLine.h
-        src/code/launcher/launch_interceptor.cpp 
-        src/code/launcher/launch_interceptor.h 
-        src/code/launcher/pcsx_interceptor.cpp
-        src/code/launcher/pcsx_interceptor.h
         src/code/launcher/ps_carousel.cpp
         src/code/launcher/ps_carousel.h
         src/code/launcher/ps_centerlabel.cpp
@@ -211,11 +209,8 @@ add_executable(
         src/code/launcher/ps_zoom_btn.h
         src/code/launcher/ra_integrator.cpp
         src/code/launcher/ra_integrator.h
-        src/code/launcher/retboot_interceptor.cpp
-        src/code/launcher/retboot_interceptor.h
         src/code/app.cpp
         src/code/app.h
-        src/code/session.h
         src/code/main.cpp
         src/code/util_time.h src/code/util_time.cpp)
 

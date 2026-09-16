@@ -29,11 +29,11 @@ Refactor for stability, then add features. Done on 2026-09-15 (one commit per st
 Done on 2026-09-16:
 
 - The `Gui` god object is being split into a model (`App`) and a screen (`Gui`). `App` (`src/code/app.*`) was
-  `main.cpp`'s loose free functions and globals; it owns the `Session` (`src/code/session.h`), the game
+  `main.cpp`'s loose free functions and globals; it owns the `Session` (`core/model/session.h`), the game
   library, the scanner, and now everything on the old `Gui` that was not graphics: `Config` (config.ini),
   `Theme` (the merged theme.ini + the theme's directories) and `AppAudio` (music + the five UI sounds).
   Screens reach them as `app.config()`, `app.theme()`, `app.audio()` through the `app` member of `GuiScreen`;
-  the handful of non-screens (the launch interceptors, `UtilTime`, `Fonts`) use `App::get()`.
+  the handful of non-screens (`UtilTime`, `Fonts`) use `App::get()`.
   `Gui` is left with the window/renderer, the fonts and textures, the text/rect rendering helpers, and
   `menuSelection()` - the classic-UI main menu loop, which is the next thing that should become a screen.
 
@@ -97,6 +97,17 @@ encoding PCSX expects (0/1 flags decimal, levels hex, every `!SaveStates` copy v
 The favorite/play-using-RA toggles live here (Game.ini for USB, internal.db for internal). `GuiEditor` is
 now only the screen: callers set `gameData` and `show()`.
 
+`LaunchService` (`core/services/launch.*`) is a game launch start to finish - what `App::launchGame` and
+the three `EmuInterceptor`s (PCSX, RetroArch, Apps) did between them: `writeSelectionScript()`, then
+`launch(game, mode, resumePoint)` picks the path from the game and the mode, swaps the memory cards in,
+prepares the resume point, builds the argv for `rc/launch.sh` / `rc/launch_rb.sh` (or an App's own
+`startup`), runs it through a `ProcessRunner`, and swaps the cards back out. `ProcessRunner`
+(`core/services/process_runner.h`) is the one interface introduced purely for testability: `ForkProcessRunner`
+is `Util::runAndWait`, the dev host installs a `SplashProcessRunner` from `App` (which is where the old
+`#ifdef AB_DEBUG_HOST` in each interceptor went), and the tests pass a recording fake. The launcher script
+and RetroArch paths come from `Env` now (`getPathToRCDir()`, `getPathToRetroarchDir()`), not literals.
+`session.h` moved to `core/model/` with it.
+
 **`PsGame` is now a data record** - `ableem::GameRecord` plus the launcher-only fields and
 `fromRecords()`, and nothing else. No filesystem, no `App`, no `Gui`.
 
@@ -106,17 +117,17 @@ layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what rem
 follow it.
 
 Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
-`theme.*` and `util_time.*` (`App::get().config()`), `scanner.*` (6x `Gui::splash`) and the three concrete
-interceptors (`Gui::splash` + `Gui::getInstance()` + `App::get()`). `session.h`, `ra_integrator.*` and
-`emu_interceptor.*` are clean but not yet moved.
+`theme.*` and `util_time.*` (`App::get().config()`) and `scanner.*` (6x `Gui::splash`). `ra_integrator.*` is
+clean but not yet moved (step 11).
 
 Still to do, in order:
 
 1. Continue `docs/refactor-plan.md` - phase B, the service extractions (`GameQueryService` first). Each one
    ships with its tests in the same commit, and pulls its file into `ab_core` as it goes.
-2. Centralize the hard-coded paths still in the app (`/media/Autobleem/rc/*.sh` in the interceptors and
-   `main.cpp`, `/media/retroarch/...` in `retboot_interceptor.cpp`, `/media/System/Logs/ver.txt`) in `Env` -
-   the engine side is done, and so are the theme loaders (`Theme` asks `Env` for both branches now).
+2. Centralize the hard-coded paths still in the app (`/media/Autobleem/rc/backup_internal.sh` in
+   `app.cpp`, `/media/System/Logs/ver.txt`) in `Env` - the engine side is done, so are the theme loaders
+   (`Theme` asks `Env` for both branches now), and so are the launch scripts and RetroArch paths
+   (`LaunchService`, step 10).
 3. Split `GuiLauncher` (~2,150 lines across `gui_launcher.cpp` + `gui_launcher_loop.cpp`).
 4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
    hardware yet - only the Windows/MinGW build has been exercised).
@@ -312,8 +323,8 @@ defaults, which both the services and the screens need.
 | Area | Files | Notes |
 |---|---|---|
 | Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `App` and calls `run()`. |
-| `app.*` | `App` | The model, and the whole program: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner` and the `Session`, plus the `Gui` singleton. `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `menuSelection()` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → picks an `EmuInterceptor` → `memcardIn/prepareResumePoint/execute/memcardOut` → `gui->display(resume=true)`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
-| `session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
+| `app.*` | `App` | The model, and the whole program: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner` and the `Session`, plus the `Gui` singleton. `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `menuSelection()` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → `launcher().launch(...)` → `gui->display(resume=true)`. Builds the `ProcessRunner` the launch service forks with (a splash on the dev host). `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
+| `core/model/session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
 | `core/util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |
@@ -337,7 +348,7 @@ defaults, which both the services and the screens need.
 | `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
-| `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |
+| `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
 

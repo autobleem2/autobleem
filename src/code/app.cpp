@@ -1,14 +1,9 @@
 #include "app.h"
 #include "core/lang.h"
 #include "core/util.h"
-#include "launcher/emu_interceptor.h"
-#include "launcher/pcsx_interceptor.h"
-#include "launcher/retboot_interceptor.h"
-#include "launcher/launch_interceptor.h"
 #include "launcher/ra_integrator.h"
 
 #include <cstdlib>
-#include <fstream>
 #include <iostream>
 #include <unistd.h>
 
@@ -52,6 +47,33 @@ App &App::get() {
     return *instance;
 }
 
+#ifdef AB_DEBUG_HOST
+namespace {
+// On a PC there is no rc/launch.sh to run and no emulator behind it: show what would have happened and
+// come straight back, which is what the interceptors' #ifdef used to do.
+class SplashProcessRunner : public ProcessRunner {
+public:
+    void run(const string &exe, const vector<string> &args) override {
+        cout << "would run " << exe;
+        for (const string &arg : args) cout << " '" << arg << "'";
+        cout << endl;
+        Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
+    }
+};
+} // namespace
+#endif
+
+//*******************************
+// App::makeProcessRunner
+//*******************************
+unique_ptr<ProcessRunner> App::makeProcessRunner() {
+#ifdef AB_DEBUG_HOST
+    return unique_ptr<ProcessRunner>(new SplashProcessRunner());
+#else
+    return unique_ptr<ProcessRunner>(new ForkProcessRunner());
+#endif
+}
+
 //*******************************
 // App::openLibrary
 //*******************************
@@ -65,24 +87,6 @@ bool App::openLibrary() {
     Util::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
 
     return gameLibrary.openInternalGames();
-}
-
-//*******************************
-// App::writeSelectionScript
-//*******************************
-void App::writeSelectionScript() {
-    ofstream os;
-    string path = cfg_.inifile.values["cfg"];
-    os.open(path);
-    if (!DirEntry::checkWritable(os, path)) return;   // the rc scripts then keep the previous selection
-    os << "#!/bin/sh" << endl << endl;
-    os << "AB_SELECTION=" << session_.menuOption << endl;
-    os << "AB_THEME=" << cfg_.inifile.values["theme"] << endl;
-    os << "AB_PCSX=" << cfg_.inifile.values["pcsx"] << endl;
-    os << "AB_MIP=" << cfg_.inifile.values["mip"] << endl;
-
-    os.flush();
-    os.close();
 }
 
 //*******************************
@@ -125,27 +129,7 @@ void App::launchGame() {
 
     gui_->input().flushPads();
 
-    writeSelectionScript();
-    unique_ptr<EmuInterceptor> interceptor;
-    if (session_.runningGame->foreign) {
-        if (!session_.runningGame->app) {
-            interceptor.reset(new RetroArchInterceptor());
-        } else {
-            interceptor.reset(new LaunchInterceptor());
-        }
-    } else {
-        if (session_.emuMode == EmuMode::Pcsx) {
-            interceptor.reset(new PcsxInterceptor());
-        } else {
-            interceptor.reset(new RetroArchInterceptor());
-        }
-    }
-
-    interceptor->memcardIn(session_.runningGame);
-    interceptor->prepareResumePoint(session_.runningGame, session_.resumePoint);
-    interceptor->execute(session_.runningGame, session_.resumePoint);
-    interceptor->memcardOut(session_.runningGame);
-    interceptor.reset();
+    launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
 
     bool reloadFavHist{false};
     if (session_.runningGame->foreign)
@@ -207,7 +191,7 @@ int App::run() {
 
     while (session_.menuOption == MENU_OPTION_SCAN || session_.menuOption == MENU_OPTION_START) {
         gui_->menuSelection();
-        writeSelectionScript();
+        launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_SCAN) {
             gamesHierarchy.getHierarchy(pathToGamesDir);

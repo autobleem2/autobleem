@@ -265,7 +265,33 @@ shrinks the input to the next:
    Smoke testing this found a dev-host bug in lib_ableem, fixed in its own commit: with the keyboard as
    the pad, `Input::padEventPending()` never saw a key release, so every classic screen's d-pad repeat loop
    spun forever on the first press. The console was never affected.
-10. `LaunchService` (introduces `ProcessRunner`)
+10. ~~`LaunchService` (introduces `ProcessRunner`)~~ **done 2026-09-16.** `App::launchGame`'s interceptor
+    choice and the three interceptors are one service; `launch(game, mode, resumePoint)` is the whole
+    sequence (cards in, resume point prepared, argv built, script run, cards out) and `App::launchGame` is
+    the Gui work around it. `ProcessRunner` is the one seam this plan introduced for testability, and it
+    also absorbed the `#ifdef AB_DEBUG_HOST` each interceptor had: the composition root installs a splash
+    runner on the dev host and the fork runner on the console. The launcher-script and RetroArch paths
+    come from `Env` (`getPathToRCDir()`, `getPathToRetroarchDir()`) - identical on the console, and what
+    lets the tests point them at a temp tree - which is most of the old todo #2. `session.h` moved to
+    `core/model/` with it, and `GuiLauncher`'s one direct `PcsxInterceptor` use (saving a resume point) is
+    the `ResumePointService` call it always was.
+
+    **Known bug found and pinned, not fixed:** `transferRaConfig`'s scanline overlay. `ConfigFileEditor`
+    matches a property as a *line prefix*, so replacing `input_overlay` also rewrites the
+    `input_overlay_enable` and `input_overlay_opacity` lines, and the two replacements meant for them then
+    find nothing; RetroArch is left with three `input_overlay = ...` lines and its defaults for the other
+    two. The fix is to replace the longer keys first, or teach `ConfigFileEditor` to match `key =`. It is
+    a behaviour change, so today's output is asserted in `tests/core/test_launch.cpp` with a comment.
+    Also pinned: a RetroArch launch never recorded a "last played" time - only PCSX and Apps did.
+
+    Two non-behaviour changes folded in: the selection script was written twice per launch (once by
+    `App::launchGame`, once by each interceptor's `execute`) and is written once now, and the 3 ms
+    `usleep` after the run happens on the dev host too, where the interceptors used to skip it.
+
+    The tests (15 cases) build the argv for PCSX with and without a resume point, for RetroArch with each
+    core choice and a foreign playlist entry, and for an App; and, through the fake runner's `whileRunning`
+    hook, look at the tree *during* the run - which memory card is in play, what RetroArch's `.srm` and its
+    config say - and after it. 23 mutations, every one caught.
 11. `RetroArchService`
 
 **Phase C — split `Gui`**

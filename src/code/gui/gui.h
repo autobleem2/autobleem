@@ -12,7 +12,7 @@
 #include "../core/util.h"
 #include "gui_font.h"
 #include "../core/environment.h"
-#include "../session.h"
+#include "../core/model/session.h"
 
 using namespace std;
 

@@ -3,7 +3,6 @@
 #include "../gui/menus/gui_optionsMenu.h"
 #include "../gui/gui_confirm.h"
 #include "../gui/menus/gui_gameEditorMenu.h"
-#include "pcsx_interceptor.h"
 #include "gui_btn_guide.h"
 #include <algorithm>
 #include <iostream>
@@ -1024,8 +1023,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             }
         } else {
             //app.audio().cursor.play();
-            PcsxInterceptor interceptor;
-            interceptor.saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
+            app.resumePoints().saveAfterLaunch(*carouselGames[selGameIndex], sselector->selSlot);
             app.resumePoints().storePictureForSlot(*carouselGames[selGameIndex], sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
