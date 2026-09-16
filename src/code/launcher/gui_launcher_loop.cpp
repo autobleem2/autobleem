@@ -513,7 +513,6 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     powerOffShift = false;
     GuiPlaylists playlists(*gui);
     playlists.playlists = raPlaylists;
-    playlists.integrator = raIntegrator;
 
     // set the selected menu line to be the current playlist
     int nextSel = 0;

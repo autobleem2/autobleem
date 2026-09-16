@@ -155,7 +155,7 @@ void GuiLauncher::loadAssets() {
     cout << "Loading playlists" << endl;
     raPlaylists.clear();
     if (DirEntry::exists(Env::getPathToRetroarchDir())) {
-        raPlaylists = raIntegrator->getPlaylists();
+        raPlaylists = app.retroArch().playlistNames();
     }
     vector<string> headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
     vector<string> texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
@@ -398,7 +398,6 @@ void GuiLauncher::freeAssets() {
 void GuiLauncher::init() {
     gui = Gui::getInstance();
 
-    raIntegrator = RAIntegrator::getInstance();
     loadAssets();
 }
 

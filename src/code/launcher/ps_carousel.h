@@ -8,7 +8,7 @@
 #include <vector>
 #include <ableem/ui/renderer.h>
 #include <ableem/ui/texture.h>
-#include "ra_integrator.h"
+#include "../core/services/retroarch.h"
 
 //******************
 // PsScreenpoint

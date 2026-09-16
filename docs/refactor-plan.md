@@ -292,7 +292,29 @@ shrinks the input to the next:
     core choice and a foreign playlist entry, and for an App; and, through the fake runner's `whileRunning`
     hook, look at the tree *during* the run - which memory card is in play, what RetroArch's `.srm` and its
     config say - and after it. 23 mutations, every one caught.
-11. `RetroArchService`
+11. ~~`RetroArchService`~~ **done 2026-09-16.** `RAIntegrator` moved into core as an `App`-owned service
+    and lost its singleton; the launcher, the playlists menu and the carousel reach it as
+    `app.retroArch()`. Its public surface shrank to what was actually called from outside - the playlist
+    names, a playlist's games and count, the post-run favorites/history reload, `escapeName()` - and the
+    core tables and detection are private. The "drop what `ableem::RetroArchPlaylist` already does" part:
+    the two per-format parsers were one function each over the engine's loaders but had drifted (only the
+    JSON one mapped `/media` onto the USB root for the dev host; the six-line one `continue`d where the
+    JSON one let `isGameValid` drop the entry a few lines later) and are one function now over
+    `RetroArchPlaylist::load()`. The `/media` mapping is unconditional: on the console the USB root *is*
+    `/media`, so it is the identity there, and it is what lets the tests (and the fake USB tree) hold
+    playlists RetroArch itself wrote. Favorites and history, which had a duplicated reload each, share
+    `reloadSpecialPlaylist()`.
+
+    The tests (12 cases) build a RetroArch install in a temp tree - `.info` files, core stubs, ROMs - and
+    cover both playlist formats, the exclusions (AutoBleem's own export, the Apps list, empty files,
+    non-.lpl), core resolution in each of its three ways, the dropped-entry rules including archives,
+    Favorites/History placement and fill-in, and the post-run reload. One thing the mutation check taught:
+    NTFS returns directory entries already sorted case-insensitively, so a sort can only be tested with a
+    lower-case name that byte order puts last.
+
+    With that **phase B is complete**: every service the plan listed exists, is owned by `App`, is in
+    `ab_core`, and has tests. `session.h` went with step 10. Left in the app target and still core-shaped:
+    `theme.*`, `util_time.*` (both `App::get().config()`) and `scanner.*` (`Gui::splash`).
 
 **Phase C — split `Gui`**
 

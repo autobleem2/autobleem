@@ -26,7 +26,7 @@ vector<string> titlesOf(const PsGames &games) {
     return titles;
 }
 
-// stands in for the half of the query still outside ab_core (RAIntegrator, until plan step 11)
+// stands in for RetroArchService, so the PS1 sets are tested with no RetroArch tree at all
 struct FakeRetroArch : RetroArchGames {
     PsGames playlist;
     string historyName = "History";

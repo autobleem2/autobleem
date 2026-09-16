@@ -1,7 +1,6 @@
 #include "app.h"
 #include "core/lang.h"
 #include "core/util.h"
-#include "launcher/ra_integrator.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -29,8 +28,7 @@ App::App() {
     shared_ptr<Lang> lang(Lang::getInstance());
     lang->load(cfg_.inifile.values["language"]);
 
-    // ab_core cannot reach the launcher's RAIntegrator singleton, so the composition root hands it over
-    gameQuery_.setRetroArchGames(RAIntegrator::getInstance().get());
+    gameQuery_.setRetroArchGames(&retroArch_);
 }
 
 //*******************************
@@ -138,9 +136,7 @@ void App::launchGame() {
         reloadFavHist = true;
 
     if (reloadFavHist) {
-        auto ra = RAIntegrator::getInstance();
-        ra->reloadFavorites();  // they could have changed
-        ra->reloadHistory();    // they could have changed
+        retroArch_.reloadFavoritesAndHistory();   // they could have changed
     }
 
     usleep(300 * 1000);

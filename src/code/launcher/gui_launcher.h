@@ -17,7 +17,6 @@
 #include "../core/main.h"
 #include <vector>
 #include <memory>
-#include "ra_integrator.h"
 #include "../gui/gui.h"
 
 // which sub-screen of the launcher is showing
@@ -152,7 +151,6 @@ public:
     int selGameIndex = 0;
     bool selGameIndexInCarouselGamesIsValid() { return ((selGameIndex >= 0) && (selGameIndex < carouselGames.size())); }
 
-    std::shared_ptr<RAIntegrator> raIntegrator;
     std::vector<std::string> raPlaylists;
 
     LauncherScreenState state = LauncherScreenState::Games;

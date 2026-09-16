@@ -14,6 +14,7 @@
 #include "core/services/launch.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
+#include "core/services/retroarch.h"
 #include "engine/theme.h"
 #include "engine/app_audio.h"
 #include "engine/scanner.h"
@@ -48,6 +49,7 @@ public:
     LaunchService &launcher() { return launcher_; }
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
+    RetroArchService &retroArch() { return retroArch_; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
 
@@ -68,6 +70,7 @@ private:
     GameSettingsService gameSettings_{gameLibrary};
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
+    RetroArchService retroArch_;
     // the dev host has no emulator to fork, so it gets a runner that shows a splash instead (app.cpp)
     std::unique_ptr<ProcessRunner> runner_ = makeProcessRunner();
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};

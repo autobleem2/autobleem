@@ -6,7 +6,7 @@
 #include "../gui/gui.h"
 #include "../engine/scanner.h"
 #include "../app.h"
-#include "ra_integrator.h"
+#include "../core/services/retroarch.h"
 #include <unistd.h>
 #include <iostream>
 #include "../core/environment.h"
@@ -116,7 +116,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 auto makeBoxArtPath = [&] (const string& boxartDir) -> string
                         { return Env::getPathToRetroarchDir() + sep + "thumbnails" + sep +
                         DirEntry::getFileNameWithoutExtension((*this)->db_name) + sep +
-                        boxartDir + sep + RAIntegrator::escapeName((*this)->title) + ".png";
+                        boxartDir + sep + RetroArchService::escapeName((*this)->title) + ".png";
                         };
 
                 imagePath = makeBoxArtPath("Named_Boxarts");

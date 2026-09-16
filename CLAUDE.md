@@ -66,8 +66,8 @@ this host yet:
 
 Phase B has started. `GameQueryService` (`core/services/game_query.*`) owns every "which games does this
 set show" question: `GuiLauncher::switchSet()` now calls `app.gameQuery().gamesFor(selection)` and does
-carousel work only. RetroArch is reached through the `RetroArchGames` interface that `RAIntegrator`
-implements, so core never names the launcher singleton. `PsGame` moved to `core/model/` to make that
+carousel work only. RetroArch is reached through the `RetroArchGames` interface that `RetroArchService`
+implements (and a test stub can). `PsGame` moved to `core/model/` to make that
 possible - `setMemCard` is split into `PsGame::setMemCardInGameIni()` (Game.ini, in core) plus an explicit
 `library().usbGames().updateMemcard()` at the two interceptor call sites, until step 8 reunites them.
 
@@ -117,8 +117,13 @@ layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what rem
 follow it.
 
 Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
-`theme.*` and `util_time.*` (`App::get().config()`) and `scanner.*` (6x `Gui::splash`). `ra_integrator.*` is
-clean but not yet moved (step 11).
+`theme.*` and `util_time.*` (`App::get().config()`) and `scanner.*` (6x `Gui::splash`).
+
+**Phase B is complete.** `RetroArchService` (`core/services/retroarch.*`, step 11) is the old `RAIntegrator`
+singleton as an `App`-owned service: reads `retroarch/info/*.info` and `retroarch/playlists/*.lpl` on first
+use, resolves each entry's core (its own if installed, else `resources/coreOverride.cfg`, else the first
+`.info` listing the playlist's database), keeps Favorites/History after the platforms and refreshes them
+after a RetroArch run (`reloadFavoritesAndHistory()`). `escapeName()` is the boxart file name rule.
 
 Still to do, in order:
 
@@ -188,7 +193,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   is how unecm.c's percentage messages reach the splash). Private: `cd_image_reader.h` (`CdImageReader`,
   `ChdImageReader` behind `ABLEEM_ENABLE_CHD`), `binary_reader.h`, `md5.*` (replaces `head|md5sum`).
 - **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`.
-  `Gui::exportDBToRetroarch` and `RAIntegrator::parseJSON/parse6line` are the only callers.
+  `Gui::exportDBToRetroarch` and `RetroArchService` are the only callers.
 
 ### ui
 
@@ -347,7 +352,7 @@ defaults, which both the services and the screens need.
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
 | `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
-| `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
+| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), core detection from `info/*.info` + `coreOverride.cfg`, Favorites/History. Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
@@ -357,7 +362,7 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 
 ## Conventions and gotchas
 
-- Singletons via `static shared_ptr<T> getInstance()`: `Gui`, `Scanner`, `Lang`, `RAIntegrator`.
+- Singletons via `static shared_ptr<T> getInstance()`: `Gui`, `Scanner`, `Lang`.
   `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are non-owning pointers; the objects are `unique_ptr`s in
   `runAutobleem()` (main.cpp). `GuiLauncher`'s named `PsObj*` members are non-owning shortcuts into
   `staticElements`/`frontElemets`, which own them (`addStaticElement(new T(...))`).

@@ -16,8 +16,7 @@ class Config;
 //******************
 // RetroArchGames
 //******************
-// The RetroArch half of the query. It stays outside ab_core until RAIntegrator becomes RetroArchService
-// (plan step 11) - RAIntegrator implements this today, and the tests pass a stub.
+// The RetroArch half of the query: RetroArchService implements it, and the tests pass a stub.
 struct RetroArchGames {
     virtual ~RetroArchGames() {}
     virtual PsGames gamesInPlaylist(const std::string &playlistName) = 0;
@@ -37,8 +36,8 @@ class GameQueryService {
 public:
     GameQueryService(ableem::GameLibrary &library, Config &config) : library_(library), config_(config) {}
 
-    // RAIntegrator is a launcher singleton, so the composition root hands it over rather than core reaching
-    // for it. Null until then: the RetroArch set is simply empty, which is what an unconfigured RetroArch is.
+    // Handed over by the composition root (App) rather than taken in the constructor, so a test can query
+    // the PS1 sets with no RetroArch at all. Null until then: the RetroArch set is simply empty.
     void setRetroArchGames(RetroArchGames *source) { retroArch_ = source; }
 
     // The whole query for one selection, sorted the way that set is displayed.

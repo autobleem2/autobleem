@@ -2,7 +2,6 @@
 
 #include "gui_stringMenu.h"
 #include "../../core/lang.h"
-#include "../../launcher/ra_integrator.h"
 
 //*******************************
 // class GuiPlaylists
@@ -13,7 +12,7 @@ public:
 
     void init() override {
         for (const string& playlist : playlists) {
-            lines.emplace_back(playlist + " (" + to_string(integrator->getGamesNumber(playlist)) + " " + _("games") + ")");
+            lines.emplace_back(playlist + " (" + to_string(app.retroArch().gameCount(playlist)) + " " + _("games") + ")");
         }
         GuiStringMenu::init();
     }
@@ -25,7 +24,6 @@ public:
     void doEscape() { doCircle_Pressed(); }
 
     std::vector<std::string> playlists;
-    shared_ptr<RAIntegrator> integrator;
 };
 
 
