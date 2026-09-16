@@ -381,26 +381,21 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
     string rightCardName;
     string cardPath1;
     string cardPath2;
-    string memcard; // Mapped card
     if (carousel.selectedIsValid()) {
-        leftCardName = "[1]" + _("INTERNAL");
-        rightCardName = "[2]" + _("INTERNAL");
-        cardPath1 = carousel.games[carousel.selected]->ssFolder + "memcards/card1.mcd";
-        cardPath2 = carousel.games[carousel.selected]->ssFolder + "memcards/card2.mcd";
-        // Mapped card
-        memcard = "SONY";
-        if (!carousel.games[carousel.selected]->internal) {
-            IniFile gameini;
-            gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
-            memcard = gameini.values["memcard"];
+        const PsGame &game = *carousel.games[carousel.selected];
+        // the game's own cards, or the set it is mapped to (a game with no Game.ini says "" - its own)
+        string memcard = app.memcards().activeCardName(game);
+        if (memcard == MemcardService::SonyCard || memcard.empty()) {
+            leftCardName = "[1]" + _("INTERNAL");
+            rightCardName = "[2]" + _("INTERNAL");
+            cardPath1 = game.ssFolder + sep + "memcards" + sep + "card1.mcd";
+            cardPath2 = game.ssFolder + sep + "memcards" + sep + "card2.mcd";
+        } else {
+            leftCardName = "[1]" + memcard;
+            rightCardName = "[2]" + memcard;
+            cardPath1 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card1.mcd";
+            cardPath2 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card2.mcd";
         }
-    }
-    if (memcard!="SONY")
-    {
-        cardPath1 =  Env::getPathToMemCardsDir() + sep + memcard  +"card1.mcd";
-        cardPath1 =  Env::getPathToMemCardsDir() + sep + memcard  +"card2.mcd";
-        leftCardName = "[1]"+ memcard;
-        rightCardName = "[2]"+ memcard;
     }
 
     app.audio().cursor.play();
