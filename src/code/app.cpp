@@ -33,6 +33,9 @@ App::App() {
 
     shared_ptr<Lang> lang(Lang::getInstance());
     lang->load(cfg_.inifile.values["language"]);
+
+    // ab_core cannot reach the launcher's RAIntegrator singleton, so the composition root hands it over
+    gameQuery_.setRetroArchGames(RAIntegrator::getInstance().get());
 }
 
 //*******************************

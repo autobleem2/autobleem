@@ -9,6 +9,7 @@
 #include <set>
 #include "../core/main.h"
 #include "../core/model/ps_game.h"
+#include "../core/services/game_query.h"
 
 using namespace std;
 
@@ -47,7 +48,9 @@ struct RAPlaylistInfo {
 //********************
 // RAIntegrator
 //********************
-class RAIntegrator {
+// Implements RetroArchGames so GameQueryService can ask for a playlist's games without ab_core knowing
+// this class exists. Becomes RetroArchService at plan step 11.
+class RAIntegrator : public RetroArchGames {
     RAIntegrator() { }  // only getInstance can call
 public:
     // don't call the read playlist routine until the evironment paths are setup in main.cpp
@@ -74,6 +77,11 @@ public:
 
     vector<string> getPlaylists();
     PsGames getGames(string playlist);
+
+    // RetroArchGames, for GameQueryService
+    PsGames gamesInPlaylist(const std::string &playlistName) override { return getGames(playlistName); }
+    std::string historyPlaylistName() override { return historyDisplayName; }
+
     int getGamesNumber(string playlist);
 
     bool autoDetectCorePath(PsGamePtr game, string& core_name, string& core_path);

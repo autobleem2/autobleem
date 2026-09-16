@@ -64,16 +64,22 @@ this host yet:
   deliberately **not** carried across while another set is showing - see the comment on
   `rememberSelection()`; it is a pre-existing quirk, flagged in the plan, not a fix waiting to happen.
 
+Phase B has started. `GameQueryService` (`core/services/game_query.*`) owns every "which games does this
+set show" question: `GuiLauncher::switchSet()` now calls `app.gameQuery().gamesFor(selection)` and does
+carousel work only. RetroArch is reached through the `RetroArchGames` interface that `RAIntegrator`
+implements, so core never names the launcher singleton. `PsGame` moved to `core/model/` to make that
+possible - `setMemCard` is split into `PsGame::setMemCardInGameIni()` (Game.ini, in core) plus an explicit
+`library().usbGames().updateMemcard()` at the two interceptor call sites, until step 8 reunites them.
+
 `ab_ui` and `ab_evoui` are **not** split out yet, and not for lack of trying: `Gui::menuSelection()`
 constructs `GuiLauncher` while ~20 launcher files use `Gui`, so the two would be a link cycle rather than a
 layering. Phase C step 14 (`menuSelection()` -> `ClassicMenuScreen`) is what removes the cycle; the targets
 follow it.
 
 Still core-shaped but still in the app target, each waiting on the phase B step that gives it a seam:
-`theme.*` and `util_time.*` (`App::get().config()`), `ps_game.*` (`App::get().library()` in `setMemCard`),
-`scanner.*` (6x `Gui::splash`) and the three concrete interceptors (`Gui::splash` + `Gui::getInstance()` +
-`App::get()`). `session.h`, `ra_integrator.*` and `emu_interceptor.*` are clean themselves but include
-`ps_game.h`, so they move when it does.
+`theme.*` and `util_time.*` (`App::get().config()`), `scanner.*` (6x `Gui::splash`) and the three concrete
+interceptors (`Gui::splash` + `Gui::getInstance()` + `App::get()`). `session.h`, `ra_integrator.*` and
+`emu_interceptor.*` are clean but not yet moved.
 
 Still to do, in order:
 
@@ -295,7 +301,8 @@ defaults, which both the services and the screens need.
 | `gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `launcher/gui_launcher.*`, `gui_launcher_loop.cpp` | `GuiLauncher` | EvolutionUI: cover carousel, sets (PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps), settings overlay, resume-state selector, input loop. |
 | `launcher/ps_*.{h,cpp}` | `PsObj` and subclasses | Animated sprite/UI elements of the launcher (carousel, meta panel, menu, buttons, labels). |
-| `launcher/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields and the resume-point pictures/slots. |
+| `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields and the resume-point pictures/slots. In `ab_core`: no `App`, no `Gui`. |
+| `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `launcher/ra_integrator.*` | `RAIntegrator` singleton | Parses RetroArch `.lpl` playlists and core info, favorites/history playlists, core override (`coreOverride.cfg`). |
 | `launcher/*_interceptor.*` | `EmuInterceptor` strategy | `PcsxInterceptor`, `RetroArchInterceptor`, `LaunchInterceptor` (apps): build argv, fork the `rc/*.sh` launcher, manage memcards and save-state resume points. |
 | `launcher/gui_mc_manager.*`, `gui_app_start.*`, `gui_btn_guide.*`, `gui_NotificationLine.*` | | Launcher sub-screens. |

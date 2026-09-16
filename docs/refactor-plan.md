@@ -194,7 +194,21 @@ Each item is one commit. Moves are kept content-free and separate from edits, so
 **Phase B — extract the services.** One per commit, each with its tests, in this order — each extraction
 shrinks the input to the next:
 
-6. `GameQueryService`
+6. ~~`GameQueryService`~~ **done 2026-09-16**, in two commits: `PsGame` had to reach `ab_core` first
+   (`PsGame::setMemCard` split so the Game.ini half is core and the regional.db half stays at the two
+   interceptor call sites until step 8). `GameQueryService::gamesFor(selection)` now answers the whole
+   question `switchSet` used to work out inline - the origames fallback, the five PS1 sub-sets, RetroArch,
+   Apps, and the sorting - and `switchSet` is carousel work only.
+
+   RetroArch is reached through a two-method `RetroArchGames` interface that `RAIntegrator` implements, so
+   core does not know the launcher singleton exists; step 11 replaces the implementation, not the seam.
+
+   Three things the tests turned up that no amount of reading would have: a game with no `DISC` row is
+   invisible to `loadUsbGames` (it is a join), a **USB** game's favorite flag lives in its `Game.ini` and
+   not in `regional.db` (only internal games use the `FAVORITE` column), and a brand-new `internal.db`
+   needs `createSchema()` before `openInternalGames()`'s column ALTERs mean anything. All three are now
+   encoded in `tests/support/game_library_fixture.h`. `ps1GamesInSubDirRow` also had an out-of-range read
+   before its bounds check; it returns empty now.
 7. `GameCatalogService`
 8. `ResumePointService` and `MemcardService`
 9. `GameSettingsService`

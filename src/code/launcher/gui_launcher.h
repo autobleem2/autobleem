@@ -97,16 +97,6 @@ public:
     void switchSet(GameSet newSet, bool noForce);
     void showSetName();
 
-    void getGames_SET_SUBDIR(PsGames* gamesList, int rowIndex);
-    void appendGames_SET_INTERNAL(PsGames* gamesList);
-    void getGames_SET_FAVORITE(PsGames* gamesList);
-    void getGames_SET_HISTORY(PsGames* gamesList);
-
-    PsGames getAllPS1Games(bool includeUSB, bool includeInternal);
-
-    void getGames_SET_RETROARCH(const std::string& playlistName, PsGames *gamesList);
-    void getGames_SET_APPS(PsGames* gamesList);
-
     NotificationLines notificationLines; // top two lines of the screen
     int numberOfNonDuplicatedGamesInCarousel = 0;
 
@@ -177,6 +167,4 @@ public:
     void switchState(LauncherScreenState state, int time);
     void forceSettingsOnly();
     void showAllOptions();
-
-    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return lessCaseInsensitive(i->title, j->title); }
 };

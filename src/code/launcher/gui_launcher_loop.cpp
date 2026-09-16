@@ -403,13 +403,12 @@ void GuiLauncher::loop_chooseGameDir() {
 
     // add All Games and Internal Games only if origames is true in the config.ini
     int offsetToGamesSubDirs {0};
-    bool showInternalGames = (app.config().inifile.values["origames"] == "true");
+    bool showInternalGames = app.gameQuery().showInternalGames();
     if (showInternalGames) {
         // show internal is enabled.  show usbgames + internal, and show internal only menu items.
-        PsGames gamesList;
-        getGames_SET_SUBDIR(&gamesList, 0);
+        PsGames gamesList = app.gameQuery().ps1GamesInSubDirRow(0);
         int usbOnly = gamesList.size();
-        appendGames_SET_INTERNAL(&gamesList);
+        gamesList += app.gameQuery().internalGames();
         guiGameDirMenu.lines.emplace_back(_("All Games") + " ( " + to_string(gamesList.size()) + ")");
         guiGameDirMenu.lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) + ")"); // 20 games
         offsetToGamesSubDirs = 2;
@@ -435,14 +434,12 @@ void GuiLauncher::loop_chooseGameDir() {
 
     // add Favorite Games at the bottom
     int favoritesIndex = guiGameDirMenu.lines.size();  // favorites is the last line
-    PsGames gamesList;
-    getGames_SET_FAVORITE(&gamesList);
+    PsGames gamesList = app.gameQuery().favorites();
     guiGameDirMenu.lines.emplace_back(_("Favorite Games") + " ( " + to_string(gamesList.size()) + ")");
 
     // add History Games at the bottom
     int historyIndex = guiGameDirMenu.lines.size();  // history is the last line
-    gamesList.clear();
-    getGames_SET_HISTORY(&gamesList);
+    gamesList = app.gameQuery().history();
     guiGameDirMenu.lines.emplace_back(_("Game History") + " ( " + to_string(gamesList.size()) + ")");
 
     // set initial selected row
@@ -787,7 +784,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 //*******************************
 void GuiLauncher::addGameToPS1GameHistoryAsLatestGamePlayed(PsGamePtr game) {
     // include the internal games too as they need to be renumbered and possibly have a game dropped from the list
-    PsGames gamesList = getAllPS1Games(true, true);
+    PsGames gamesList = app.gameQuery().allPs1Games(true, true);
     PsGames histGamesList;
 
     // put only the games that are in the history in histGamesList
