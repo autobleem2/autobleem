@@ -427,12 +427,6 @@ void LaunchService::transferRaConfig(PsGame &game) {
         processor.replaceInFile(coreOptions, "pcsx_rearmed_frameskip",
                                 "pcsx_rearmed_frameskip  = \"" + to_string(frameskip) + "\" ");
         if (scanlines == 1) {
-            // KNOWN BUG, preserved from RetroArchInterceptor: replaceInFile matches a property as a line
-            // prefix, so the "input_overlay" replacement rewrites the input_overlay_enable and
-            // input_overlay_opacity lines too, and the two replacements after it find nothing - RetroArch
-            // is left with three "input_overlay = ..." lines and its defaults for enable and opacity.
-            // The fix is to replace the longer keys first, or teach ConfigFileEditor to match "key =".
-            // It is a behaviour change, so it is pinned by tests/core/test_launch.cpp rather than done here.
             float opacity = scanline_level / 100.0f;
             processor.replaceInFile(raConfig, "input_overlay",
                                     "input_overlay  = \":/overlay/scanlines.cfg\" ");

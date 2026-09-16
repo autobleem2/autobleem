@@ -276,7 +276,8 @@ shrinks the input to the next:
     `core/model/` with it, and `GuiLauncher`'s one direct `PcsxInterceptor` use (saving a resume point) is
     the `ResumePointService` call it always was.
 
-    **Known bug found and pinned, not fixed:** `transferRaConfig`'s scanline overlay. `ConfigFileEditor`
+    **Known bug found and pinned, then fixed on 2026-09-16 in its own commit** (`ConfigFileEditor` matches
+    the whole key now): `transferRaConfig`'s scanline overlay. `ConfigFileEditor`
     matches a property as a *line prefix*, so replacing `input_overlay` also rewrites the
     `input_overlay_enable` and `input_overlay_opacity` lines, and the two replacements meant for them then
     find nothing; RetroArch is left with three `input_overlay = ...` lines and its defaults for the other

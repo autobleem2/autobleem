@@ -350,13 +350,11 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_show_bios_bootlogo  = \"enabled\""));
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_nocdaudio  = \"enabled\""));
     // retroarch.cfg: the scanline overlay from pcsx.cfg, the viewport and filter from config.ini
+    // "input_overlay" is a prefix of the next two keys; each line must be matched as a whole key or the
+    // first replacement clobbers the other two (it did, until 2026-09-16)
     CHECK(contains(raConfigInPlay, "input_overlay  = \":/overlay/scanlines.cfg\""));
-    // KNOWN BUG, pinned not fixed (see LaunchService::transferRaConfig): ConfigFileEditor matches a property
-    // as a line prefix, so the input_overlay replacement above also rewrites the _enable and _opacity lines,
-    // and the two replacements meant for them then find nothing. What should be here is
-    //     input_overlay_enable  = "true"   and   input_overlay_opacity  = "0.500000"
-    CHECK_FALSE(contains(raConfigInPlay, "input_overlay_enable"));
-    CHECK_FALSE(contains(raConfigInPlay, "input_overlay_opacity"));
+    CHECK(contains(raConfigInPlay, "input_overlay_enable  = \"true\""));
+    CHECK(contains(raConfigInPlay, "input_overlay_opacity  = \"0.500000\""));
     CHECK(contains(raConfigInPlay, "custom_viewport_width  = \"1280\""));
     CHECK(contains(raConfigInPlay, "custom_viewport_x  = \"0\""));
     CHECK(contains(raConfigInPlay, "aspect_ratio_index  = \"23\""));

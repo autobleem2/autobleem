@@ -11,6 +11,22 @@ using namespace std;
 
 namespace ableem {
 
+namespace {
+
+// Does this line set `property`? Both are already lower-cased. The key must be the whole word: followed by
+// whitespace, '=' or the end of the line. Matching it as a bare prefix used to make "input_overlay" claim
+// "input_overlay_enable" and "input_overlay_opacity" too (and "pcsx_rearmed_frameskip" the newer
+// "pcsx_rearmed_frameskip_type"), so a replace clobbered its neighbours and the replaces meant for them
+// then found nothing.
+bool lineSetsProperty(const string &lcaseline, const string &lcasepattern) {
+    if (lcaseline.rfind(lcasepattern, 0) != 0) return false;
+    if (lcaseline.size() == lcasepattern.size()) return true;
+    char next = lcaseline[lcasepattern.size()];
+    return next == ' ' || next == '\t' || next == '=' || next == '\r';
+}
+
+} // namespace
+
 
 //*******************************
 // ConfigFileEditor::replaceProperty
@@ -41,7 +57,7 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
             lcase(lcaseline);
             lcase(lcasepattern);
 
-            if (lcaseline.rfind(lcasepattern, 0) == 0) {
+            if (lineSetsProperty(lcaseline, lcasepattern)) {
                 fileUpdated = true;
                 cout << "  new line: '" << newline << "'" << endl;
                 lines.push_back(newline);
@@ -79,7 +95,7 @@ string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string prop
             lcase(lcaseline);
             lcase(lcasepattern);
 
-            if (lcaseline.rfind(lcasepattern, 0) == 0) {
+            if (lineSetsProperty(lcaseline, lcasepattern)) {
                 string value = line.substr(lcaseline.find("=") + 1);
                 if (!value.empty() && value.back() == '\r') {
                     value.pop_back();   // remove the trailing /r

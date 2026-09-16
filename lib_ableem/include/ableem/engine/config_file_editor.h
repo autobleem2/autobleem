@@ -1,5 +1,6 @@
 // lib_ableem - engine: line-oriented "property = value" editing of pcsx.cfg / RetroArch .cfg files.
-// A property is matched by a case-insensitive prefix compare of the whole line, and the whole line is replaced.
+// A property is matched case-insensitively as the whole key at the start of a line (followed by whitespace or
+// '='), and the whole line is replaced.
 #pragma once
 
 #include <string>
