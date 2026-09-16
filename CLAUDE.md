@@ -101,7 +101,7 @@ the three `EmuInterceptor`s (PCSX, RetroArch, Apps) did between them: `writeSele
 prepares the resume point, builds the argv for `rc/launch.sh` / `rc/launch_rb.sh` (or an App's own
 `startup`), runs it through a `ProcessRunner`, and swaps the cards back out. `ProcessRunner`
 (`core/services/process_runner.h`) is the one interface introduced purely for testability: `ForkProcessRunner`
-is `Util::runAndWait`, the dev host installs a `SplashProcessRunner` from `App` (which is where the old
+is `System::runAndWait`, the dev host installs a `SplashProcessRunner` from `App` (which is where the old
 `#ifdef AB_DEBUG_HOST` in each interceptor went), and the tests pass a recording fake. The launcher script
 and RetroArch paths come from `Env` now (`getPathToRCDir()`, `getPathToRetroarchDir()`), not literals.
 `session.h` moved to `core/model/` with it.
@@ -215,7 +215,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 - **`Platform`** - owns SDL_Init/window/TTF_Init/Mix_Init (created by `GuiBase`). `isDevHost()` replaces the
   app's old per-call `AB_DEBUG_HOST` checks for cursor grab; `setPowerOffHandler()` is how the app supplies
-  what "power off" means (main.cpp wires it once to `gui->drawText(...); Util::powerOff();`) - `Input::poll()`
+  what "power off" means (main.cpp wires it once to `gui->drawText(...); System::powerOff();`) - `Input::poll()`
   calls it automatically on the console power button or Esc, so screens never check for that themselves.
   `Platform::shutdownSDL()` must be registered with `atexit()` before the first `GuiBase`/`Gui` is constructed
   (done once, in `main.cpp`) - it runs SDL_Quit() after everything else is destroyed.
@@ -266,7 +266,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
   Run needs `C:msys64Crt64in` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
-  skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `Util::execFork` stubbed.
+  skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed.
   The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
 - **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by
