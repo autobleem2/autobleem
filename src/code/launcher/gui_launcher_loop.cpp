@@ -163,7 +163,7 @@ void GuiLauncher::loop_joyMoveLeft() {
         if (!menu->foreign) {
             if (menu->selOption != SEL_OPTION_AB_SETTINGS) {
                 if (menu->animationStarted == 0) {
-                    gui->cursor.play();
+                    app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 0;
                     menu->duration = 100;
@@ -176,7 +176,7 @@ void GuiLauncher::loop_joyMoveLeft() {
 
     } else if (state == STATE_RESUME) {
         if (sselector->selSlot != 0) {
-            gui->cursor.play();
+            app.audio().cursor.play();
             sselector->selSlot--;
         }
     }
@@ -201,7 +201,7 @@ void GuiLauncher::loop_joyMoveRight() {
         if (!menu->foreign) {
             if (menu->selOption != SEL_OPTION_RESUME_FROM_SAVESTATE) {
                 if (menu->animationStarted == 0) {
-                    gui->cursor.play();
+                    app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 1;
                     menu->duration = 100;
@@ -214,7 +214,7 @@ void GuiLauncher::loop_joyMoveRight() {
 
     } else if (state == STATE_RESUME) {
         if (sselector->selSlot != 3) {
-            gui->cursor.play();
+            app.audio().cursor.play();
             sselector->selSlot++;
         }
     }
@@ -258,13 +258,13 @@ void GuiLauncher::loop_joyMoveDown() {
 //*******************************
 void GuiLauncher::loop_joyButton_Pressed() {
     if (e.button == Button::L2) {
-        gui->cursor.play();
+        app.audio().cursor.play();
         powerOffShift = true;
     }
 
     if (powerOffShift) {
         if (e.button == Button::R2) {
-            gui->cursor.play();
+            app.audio().cursor.play();
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));
             Util::powerOff();
             return;
@@ -309,7 +309,7 @@ void GuiLauncher::loop_joyButton_Pressed() {
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
 void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, true is next
-    gui->cursor.play();
+    app.audio().cursor.play();
 
     if (state == STATE_GAMES) {
         if (carouselGames.empty()) {
@@ -356,7 +356,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
             if (nextGame != selGameIndex) {
                 // we have prev/next game first letter;
                 selGameIndex = nextGame;
-                gui->cursor.play();
+                app.audio().cursor.play();
                 notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
                 setInitialPositions(selGameIndex);
@@ -364,7 +364,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                 menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
             } else {
                 // no change
-                gui->cancel.play();
+                app.audio().cancel.play();
                 notificationLines[1].setText(toUpperCopy(carouselGames[selGameIndex]->title.substr(0,1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
             }
@@ -568,7 +568,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
         }
         else {
             // switch to next Select Mode
-            gui->cursor.play();
+            app.audio().cursor.play();
 
             int previousSet = currentSet;
             currentSet++;
@@ -596,7 +596,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
 // pick a random game
 //*******************************
 void GuiLauncher::loop_startButton_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
 
     if (state == STATE_GAMES) {
         if (carouselGames.empty()) {
@@ -605,7 +605,7 @@ void GuiLauncher::loop_startButton_Pressed() {
 
         selGameIndex = Util::getRandomIndex(carouselGames.size());
         if (selGameIndexInCarouselGamesIsValid()) {
-            gui->cursor.play();
+            app.audio().cursor.play();
             setInitialPositions(selGameIndex);
             updateMeta();
             menu->setResumePic(carouselGames[selGameIndex]->findResumePicture());
@@ -624,10 +624,10 @@ void GuiLauncher::loop_circleButton_Pressed() {
             motionStart = 0;
         }
     } else if (state == STATE_GAMES) {
-        gui->cancel.play();
+        app.audio().cancel.play();
         menuVisible = false;
     } else if (state == STATE_RESUME) {
-        gui->cursor.play();
+        app.audio().cursor.play();
         sselector->visible = false;
         arrow->visible = true;
         sselector->cleanSaveStateImages();
@@ -647,7 +647,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != STATE_RESUME) {
-        gui->cursor.play();
+        app.audio().cursor.play();
         GuiBtnGuide guide(*gui);
         guide.backgroundImg = background->tex;
         guide.show();
@@ -657,7 +657,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                 auto game = carouselGames[selGameIndex];
                 int slot = sselector->selSlot;
                 if (game->isResumeSlotActive(slot)) {
-                    gui->cursor.play();
+                    app.audio().cursor.play();
 
                     GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
@@ -673,7 +673,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                     sselector->operation = OP_LOAD;
                 }
             } else {
-                gui->cancel.play();
+                app.audio().cancel.play();
             }
         }
     }
@@ -853,7 +853,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     int lastSet = currentSet;
     int lastPS1_SelectState = currentPS1_SelectState;
     int lastUSBGameDirIndex = currentUSBGameDirIndex;
@@ -922,7 +922,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         return;
     }
 
-    gui->cursor.play();
+    app.audio().cursor.play();
     GuiEditor editor(*gui);
     IniFile gameIni;
     if (selGameIndexInCarouselGamesIsValid()) {
@@ -1026,7 +1026,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
         rightCardName = "[2]"+ memcard;
     }
 
-    gui->cursor.play();
+    app.audio().cursor.play();
     GuiMcManager mcManager(*gui);
     mcManager.backgroundImg=background->tex;
     mcManager.leftCardName = leftCardName;
@@ -1051,7 +1051,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     }
 
     if (resumeAvailable) {
-        gui->cursor.play();
+        app.audio().cursor.play();
         sselector->visible = true;
         if (selGameIndexInCarouselGamesIsValid())
             sselector->loadSaveStateImages(carouselGames[selGameIndex], false);
@@ -1059,7 +1059,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
         sselector->selSlot = 0;
         sselector->operation = OP_LOAD;
     } else {
-        gui->cancel.play();
+        app.audio().cancel.play();
     }
 }
 
@@ -1073,7 +1073,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 
         if (sselector->operation == OP_LOAD) {
             if (game->isResumeSlotActive(slot)) {
-                gui->cursor.play();
+                app.audio().cursor.play();
                 app.session().startingGame = true;
                 app.session().runningGame = carouselGames[selGameIndex];
                 app.session().launcher.selIndex = selGameIndex;
@@ -1087,16 +1087,16 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                 app.session().emuMode = EmuMode::Pcsx;
                 menuVisible = false;
             } else {
-                gui->cancel.play();
+                app.audio().cancel.play();
             }
         } else {
-            //gui->cursor.play();
+            //app.audio().cursor.play();
             PcsxInterceptor interceptor;
             interceptor.saveResumePoint(carouselGames[selGameIndex], sselector->selSlot);
             carouselGames[selGameIndex]->storeResumePicture(sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
-            gui->resume.play();
+            app.audio().resume.play();
             notificationLines[1].setText(
                     _("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                     DefaultShowingTimeout);
@@ -1118,7 +1118,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 //*******************************
 void GuiLauncher::loop_joyButtonReleased() {
     if (e.button == Button::L2) {
-        gui->cursor.play();
+        app.audio().cursor.play();
         powerOffShift = false;
     }
 

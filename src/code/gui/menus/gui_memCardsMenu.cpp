@@ -35,7 +35,7 @@ string GuiMemcards::getStatusLine() {
 // GuiMemcards::doCirclePressed
 //*******************************
 void GuiMemcards::doCircle_Pressed() {
-    gui->cancel.play();
+    app.audio().cancel.play();
     menuVisible = false;
 }
 
@@ -43,7 +43,7 @@ void GuiMemcards::doCircle_Pressed() {
 // GuiMemcards::doSquarePressed
 //*******************************
 void GuiMemcards::doSquare_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     GuiKeyboard keyboard(*gui);
     keyboard.label = _("Enter new card name");
     keyboard.show();
@@ -87,7 +87,7 @@ void GuiMemcards::doSquare_Pressed() {
 // GuiMemcards::doTrianglePressed
 //*******************************
 void GuiMemcards::doTriangle_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (getVerticalSize() != 0) {
         GuiConfirm guiConfirm(*gui);
         guiConfirm.label = _("Delete card") + " '" + lines[selected] + "' ?";
@@ -107,7 +107,7 @@ void GuiMemcards::doTriangle_Pressed() {
 // GuiMemcards::doCrossPressed
 //*******************************
 void GuiMemcards::doCross_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (lines.empty()) {
         return;
     }

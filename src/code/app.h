@@ -9,6 +9,7 @@
 #include "session.h"
 #include "engine/config.h"
 #include "engine/theme.h"
+#include "engine/app_audio.h"
 #include "engine/scanner.h"
 #include "gui/gui.h"
 
@@ -33,6 +34,7 @@ public:
 
     Config &config() { return cfg_; }
     Theme &theme() { return theme_; }
+    AppAudio &audio() { return *audio_; }   // the music/sfx, not gui->audio()'s mixer device
     ableem::GameLibrary &library() { return gameLibrary; }
     Session &session() { return session_; }
     Scanner &scanner() { return *scanner_; }
@@ -49,6 +51,7 @@ private:
     Config cfg_;
     Theme theme_;
     std::shared_ptr<Gui> gui_;
+    std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body
     std::shared_ptr<Scanner> scanner_;
     ableem::GameLibrary gameLibrary;
     Session session_;

@@ -209,7 +209,7 @@ std::string GuiMenuBase<LineDataType>::getStatusLine() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doKeyDown() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (getVerticalSize() > 1) {
         if (selected >= getVerticalSize() - 1) {
             selected = 0;
@@ -229,7 +229,7 @@ void GuiMenuBase<LineDataType>::doKeyDown() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doKeyUp() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (getVerticalSize() > 1) {
         if (selected <= 0) {
             selected = getVerticalSize() - 1;
@@ -271,7 +271,7 @@ void GuiMenuBase<LineDataType>::doJoyUp() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doPageDown() {
-    gui->home_up.play();
+    app.audio().home_up.play();
     if (getVerticalSize() > 1) {
         if (lastVisibleIndex + maxVisible >= getVerticalSize()) {
             selected = getVerticalSize() - 1;
@@ -287,7 +287,7 @@ void GuiMenuBase<LineDataType>::doPageDown() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doPageUp() {
-    gui->home_down.play();
+    app.audio().home_down.play();
     if (getVerticalSize() > 1) {
         if (firstVisibleIndex - maxVisible < 0) {
             selected = 0;
@@ -303,7 +303,7 @@ void GuiMenuBase<LineDataType>::doPageUp() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doHome() {
-    gui->home_down.play();
+    app.audio().home_down.play();
     if (getVerticalSize() > 1) {
         selected = 0;
         computePagePosition();
@@ -315,7 +315,7 @@ void GuiMenuBase<LineDataType>::doHome() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doEnd() {
-    gui->home_down.play();
+    app.audio().home_down.play();
     if (getVerticalSize() > 1) {
         selected = getVerticalSize() - 1;
         computePagePosition();
@@ -327,7 +327,7 @@ void GuiMenuBase<LineDataType>::doEnd() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doCircle_Pressed() {
-    gui->cancel.play();
+    app.audio().cancel.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -337,7 +337,7 @@ void GuiMenuBase<LineDataType>::doCircle_Pressed() {
 //*******************************
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::doCross_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     cancelled = false;
     if (!lines.empty())
     {

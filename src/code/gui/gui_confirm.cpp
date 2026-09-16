@@ -45,13 +45,13 @@ void GuiConfirm::loop()
             switch (e.type) {
                 case Event::Type::ButtonDown:
                     if (e.button == Button::Cross) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         result = true;
                         menuVisible = false;
                     };
 
                     if (e.button == Button::Circle) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         result = false;
                         menuVisible = false;
                     };
@@ -59,12 +59,12 @@ void GuiConfirm::loop()
 
                 case Event::Type::KeyDown:
                     if (e.key == Key::Return) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         result = true;
                         menuVisible = false;
                     }
                     if (e.key == Key::Escape) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         result = false;
                         menuVisible = false;
                     }

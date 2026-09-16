@@ -186,7 +186,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 // GuiOptions::doCircle_Pressed
 //*******************************
 void GuiOptions::doCircle_Pressed() {
-    gui->cancel.play();
+    app.audio().cancel.play();
     string cfg_path = Env::getWorkingPath() + sep + "config.ini";
     app.config().inifile.load(cfg_path);    // restore the original config.ini settings
     lang->load(app.config().inifile.values["language"]);    // restore the original lang
@@ -199,7 +199,7 @@ void GuiOptions::doCircle_Pressed() {
 // GuiOptions::doCross_Pressed
 //*******************************
 void GuiOptions::doCross_Pressed() {
-    gui->cancel.play();
+    app.audio().cancel.play();
     app.config().save();
     menuVisible = false;
     exitCode = 0;
@@ -229,7 +229,7 @@ void GuiOptions::doJoyLeft() {
 // GuiOptions::doKeyRight
 //*******************************
 void GuiOptions::doKeyRight() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     doPrevNextOption(true);
 }
 
@@ -237,6 +237,6 @@ void GuiOptions::doKeyRight() {
 // GuiOptions::doKeyLeft
 //*******************************
 void GuiOptions::doKeyLeft() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     doPrevNextOption(false);
 }

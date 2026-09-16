@@ -220,19 +220,19 @@ void GuiMcManager::loop() {
             switch (e.type) {
                 case Event::Type::ButtonDown:
                     if (e.button == Button::Circle) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         trySave();
                         menuVisible = false;
                     };
                     if (e.button == Button::Cross) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         trySave();
                         memcard1->load_file(card1path);
                         memcard2->load_file(card2path);
                         changes = false;
                     };
                     if (e.button == Button::Select) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         unique_ptr<CardEdit> newCard(new CardEdit(renderer));
                         CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
                         int last = 0;
@@ -246,7 +246,7 @@ void GuiMcManager::loop() {
 
                             if (destSlots.size() > 0)
                             {
-                                gui->cursor.play();
+                                app.audio().cursor.play();
                                 int exportSize = src->getExportSize(slot);
                                 vector<unsigned char> buffer(exportSize);
                                 src->exportGame(slot,buffer.data());
@@ -264,7 +264,7 @@ void GuiMcManager::loop() {
                     }
 
                     if (e.button == Button::Start) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         trySave();
                         GuiSelectMemcard select(*gui);
                         select.listType=MC_MANAGER;
@@ -299,14 +299,14 @@ void GuiMcManager::loop() {
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!card->is_slot_top(slot)) {
-                            gui->cancel.play();
+                            app.audio().cancel.play();
                             continue;
                         }
                         if (card->get_slot_is_free(slot)) {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             continue;
                         }
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         card->delete_game(slot);
                         changes=true;
 
@@ -323,11 +323,11 @@ void GuiMcManager::loop() {
                         }
                         int slot = pencilColumn + pencilRow * 3;
                         if (!src->is_slot_top(slot)) {
-                            gui->cancel.play();
+                            app.audio().cancel.play();
                             continue;
                         }
                         if (src->get_slot_is_free(slot)) {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             continue;
                         }
 
@@ -336,7 +336,7 @@ void GuiMcManager::loop() {
 
                         if (destSlots.size() > 0)
                         {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             int exportSize = src->getExportSize(slot);
                             vector<unsigned char> buffer(exportSize);
                             src->exportGame(slot,buffer.data());
@@ -344,7 +344,7 @@ void GuiMcManager::loop() {
                             changes = true;
                         } else
                         {
-                            gui->cancel.play();
+                            app.audio().cancel.play();
                         }
                     };
                     break;
@@ -355,19 +355,19 @@ void GuiMcManager::loop() {
 
                     }
                     if (gui->input().dpadLeft()) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         pencilLeft();
                     }
                     if (gui->input().dpadRight()) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         pencilRight();
                     }
                     if (gui->input().dpadUp()) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         pencilUp();
                     }
                     if (gui->input().dpadDown()) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         pencilDown();
                     }
                     break;

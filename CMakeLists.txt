@@ -82,6 +82,8 @@ add_executable(
         autobleem-gui
         src/code/DebugTimer.cpp
         src/code/DebugTimer.h
+        src/code/engine/app_audio.cpp
+        src/code/engine/app_audio.h
         src/code/engine/cardedit.cpp
         src/code/engine/cardedit.h
         src/code/engine/config.cpp

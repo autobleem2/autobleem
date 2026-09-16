@@ -70,7 +70,7 @@ void GuiBtnGuide::loop() {
             switch (e.type) {
                 case Event::Type::ButtonUp:
                     if (e.button == Button::Circle) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         menuVisible = false;
                     };
                     break;

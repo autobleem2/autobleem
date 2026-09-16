@@ -65,30 +65,6 @@ unsigned char Gui::getB(const string &val) {
     return atoi(Util::commaSep(val, 2).c_str());
 }
 
-void Gui::stopAudio() {
-    audio().close();
-}
-
-void Gui::restartAudio(int freq) {
-    audio().open(freq, 2, 1024);
-}
-
-void Gui::playMusic(bool customMusic, string musicPath) {
-    if (App::get().config().inifile.values["nomusic"] != "true")
-        if (App::get().theme().data.values["loop"] != "-1") {
-            if (!customMusic) {
-                music = ableem::Music::load(App::get().theme().loadedPath() + App::get().theme().data.values["music"]);
-                music.play(App::get().theme().data.values["loop"] == "1" ? -1 : 0);
-            } else {
-                music = ableem::Music::load(Env::getWorkingPath() + sep + "music/" + musicPath);
-                music.play(-1);
-            }
-        }
-}
-
-void Gui::freeMusic() {
-    music = ableem::Music();
-}
 //*******************************
 // Gui::loadThemeTexture
 //*******************************
@@ -112,11 +88,7 @@ void Gui::loadAssets(bool reloadMusic) {
     const string themePath = App::get().theme().loadedPath();
     const string defaultPath = App::get().theme().defaultsPath();
 
-    backgroundImg = Texture();  // release the previous theme's textures/sounds before loading the new ones
-    cursor = ableem::Sound();
-    cancel = ableem::Sound();
-    home_down = ableem::Sound();
-    home_up = ableem::Sound();
+    backgroundImg = Texture();  // release the previous theme's textures before loading the new ones
 
     logoRect.x = atoi(App::get().theme().data.values["lpositionx"].c_str());
     logoRect.y = atoi(App::get().theme().data.values["lpositiony"].c_str());
@@ -160,30 +132,7 @@ void Gui::loadAssets(bool reloadMusic) {
         fontSize = atoi(fontSizeString.c_str());
     themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer());
 
-    if (reloadMusic) {
-        freeMusic();
-    }
-    customMusic = false;
-    freq = 32000;
-    musicPath = App::get().theme().data.values["music"];
-    if (App::get().config().inifile.values["music"] != "--") {
-        customMusic = true;
-        musicPath = App::get().config().inifile.values["music"];
-    }
-
-    if (DirEntry::getFileExtension(musicPath) == "ogg") {
-        freq = 44100;
-    }
-
-    if (reloadMusic) {
-        this->restartAudio(freq);
-        this->playMusic(customMusic, musicPath);
-    }
-    cursor = ableem::Sound::load(App::get().theme().soundPath() + sep + "cursor.wav");
-    cancel = ableem::Sound::load(App::get().theme().soundPath() + sep + "cancel.wav");
-    home_up = ableem::Sound::load(App::get().theme().soundPath() + sep + "home_up.wav");
-    home_down = ableem::Sound::load(App::get().theme().soundPath() + sep + "home_down.wav");
-    resume = ableem::Sound::load(App::get().theme().soundPath() + sep + "resume_new.wav");
+    App::get().audio().loadTheme(reloadMusic);
 }
 
 //*******************************
@@ -320,12 +269,12 @@ void Gui::menuSelection() {
                 case Event::Type::ButtonUp:
                     if (!forceScan) {
                         if (e.button == Button::L1) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             drawText(mainMenu);
                             otherMenuShift = false;
                         }
                         if (e.button == Button::L2) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             powerOffShift = false;
                         }
                     }
@@ -333,19 +282,19 @@ void Gui::menuSelection() {
                 case Event::Type::ButtonDown:
                     if (!forceScan) {
                         if (e.button == Button::L1) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             drawText(otherMenu);
                             otherMenuShift = true;
                         }
                         if (e.button == Button::L2) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             powerOffShift = true;
                         }
                     }
 
                     if (powerOffShift) {
                         if (e.button == Button::R2) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             drawText(_("POWERING OFF... PLEASE WAIT"));
 #ifdef AB_DEBUG_HOST
                             exit(0);
@@ -361,7 +310,7 @@ void Gui::menuSelection() {
                         if (!forceScan)
                             if (e.button == Button::Start) {
                                 if (App::get().config().inifile.values["ui"] == "classic") {
-                                    cursor.play();
+                                    App::get().audio().cursor.play();
                                     App::get().session().menuOption = MENU_OPTION_RUN;
                                     menuVisible = false;
                                 } else {
@@ -370,7 +319,7 @@ void Gui::menuSelection() {
                                         App::get().session().launcher.selIndex = 0;
                                         App::get().session().resumingGui = false;
                                     }
-                                    cursor.play();
+                                    App::get().audio().cursor.play();
                                     drawText(_("Starting EvolutionUI"));
                                     loadAssets(false);
                                     {   // scoped: the screen must be gone before menuSelection() recurses
@@ -385,7 +334,7 @@ void Gui::menuSelection() {
 
                         if (!forceScan)
                             if (e.button == Button::Square) {
-                                cursor.play();
+                                App::get().audio().cursor.play();
                                 if (!DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) {
 
                                     bool result;
@@ -410,13 +359,13 @@ void Gui::menuSelection() {
                             };
 
                         if (e.button == Button::Cross) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             App::get().session().menuOption = MENU_OPTION_SCAN;
 
                             menuVisible = false;
                         };
                         if (e.button == Button::Triangle) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
                                 GuiAbout aboutScreen(*this);
                                 aboutScreen.show();
@@ -426,7 +375,7 @@ void Gui::menuSelection() {
                             menuVisible = false;
                         };
                         if (e.button == Button::Select) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
                                 GuiOptions options(*this);
                                 options.show();
@@ -437,15 +386,15 @@ void Gui::menuSelection() {
                         if (!forceScan)
                             if (App::get().config().inifile.values["ui"] == "classic")
                                 if (e.button == Button::Circle) {
-                                    cancel.play();
+                                    App::get().audio().cancel.play();
                                     App::get().session().menuOption = MENU_OPTION_SONY;
                                     menuVisible = false;
                                 };
                         break;
                     } else {
                         if (e.button == Button::Square) {
-                            cursor.play();
-                            stopAudio();
+                            App::get().audio().cursor.play();
+                            App::get().audio().close();
                             input().flushPads();
 #ifdef AB_DEBUG_HOST
                             drawText("Small delay to test");
@@ -455,14 +404,14 @@ void Gui::menuSelection() {
                             Util::runAndWait(cmd, {});
                             input().flushEvents();
                             input().probePads();
-                            restartAudio(freq);
-                            playMusic(customMusic,musicPath);
+                            App::get().audio().restart();
+                            App::get().audio().playMusic();
                             menuSelection();
                             menuVisible = false;
                         };
 
                         if (e.button == Button::Cross) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
                                 GuiMemcards memcardsScreen(*this);
                                 memcardsScreen.show();
@@ -473,7 +422,7 @@ void Gui::menuSelection() {
                         };
 
                         if (e.button == Button::Circle) {
-                            cursor.play();
+                            App::get().audio().cursor.play();
                             {   // scoped: the screen must be gone before menuSelection() recurses
                                 GuiManager managerScreen(*this);
                                 managerScreen.show();
@@ -495,22 +444,7 @@ void Gui::menuSelection() {
 // Gui::finish
 //*******************************
 void Gui::finish() {
-
-    if (music.isPlaying()) {
-        music.fadeOut(300);
-        while (music.isPlaying()) {
-        }
-    } else {
-        usleep(300 * TicksPerSecond);
-    }
-
-    music.halt();
-    music = ableem::Music();
-    cursor = ableem::Sound();
-    cancel = ableem::Sound();
-    home_down = ableem::Sound();
-    home_up = ableem::Sound();
-    audio().close();
+    App::get().audio().shutdown();
     backgroundImg = Texture();
 }
 

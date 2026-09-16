@@ -113,7 +113,7 @@ void GuiSelectMemcard::loop() {
                 case Event::Type::DpadUp:
                     if (gui->input().dpadDown()) {
 
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             selected++;
                             if (selected >= cards.size()) {
                                 selected = 0;
@@ -124,7 +124,7 @@ void GuiSelectMemcard::loop() {
                         }
                     if (gui->input().dpadUp()) {
 
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             selected--;
                             if (selected < 0) {
                                 selected = cards.size() - 1;
@@ -138,7 +138,7 @@ void GuiSelectMemcard::loop() {
                 case Event::Type::ButtonDown:
                     if (e.button == Button::R1) {
 
-                        gui->home_up.play();
+                        app.audio().home_up.play();
                         selected += maxVisible;
                         if (selected >= cards.size()) {
                             selected = cards.size() - 1;
@@ -149,7 +149,7 @@ void GuiSelectMemcard::loop() {
                     };
                     if (e.button == Button::L1) {
 
-                        gui->home_down.play();
+                        app.audio().home_down.play();
                         selected -= maxVisible;
                         if (selected < 0) {
                             selected = 0;
@@ -161,14 +161,14 @@ void GuiSelectMemcard::loop() {
 
                     if (e.button == Button::Circle) {
 
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         selected = -1;
                         menuVisible = false;
 
                     };
                     if (e.button == Button::Cross) {
                         cardSelected = cards[selected];
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         menuVisible = false;
                     };
                     break;

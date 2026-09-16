@@ -91,7 +91,7 @@ int GuiManager::flushCovers(const char *file, const struct stat* /*sb*/, int /*f
 // GuiManager::doCircle_Pressed
 //*******************************
 void GuiManager::doCircle_Pressed() {
-    gui->cancel.play();
+    app.audio().cancel.play();
     if (changes)
     {
         app.session().forceScan = true;
@@ -103,7 +103,7 @@ void GuiManager::doCircle_Pressed() {
 // GuiManager::doSquare_Pressed
 //*******************************
 void GuiManager::doSquare_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     auto game = psGames[selected];
     int gameId = game->gameId;
     string gameName = game->title;
@@ -152,7 +152,7 @@ void GuiManager::doSquare_Pressed() {
 // GuiManager::doTriangle_Pressed
 //*******************************
 void GuiManager::doTriangle_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     GuiConfirm confirm(*gui);
     confirm.label = _("Are you sure you want to flush all covers?");
     confirm.show();
@@ -181,7 +181,7 @@ void GuiManager::doTriangle_Pressed() {
 // GuiManager::doCross_Pressed
 //*******************************
 void GuiManager::doCross_Pressed() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!psGames.empty())
     {
         string selectedGameFolder = psGames[selected]->folder;

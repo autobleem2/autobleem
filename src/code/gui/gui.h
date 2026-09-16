@@ -59,14 +59,6 @@ public:
 
     ableem::Texture loadThemeTexture(const string& themePath, const string& defaultPath, const string& texname);
 
-    void stopAudio();
-    void playMusic(bool customMusic, string musicPath);
-    void restartAudio(int freq);
-    void freeMusic();
-    bool customMusic=false;
-    int freq = 44100;
-    string musicPath;
-
     ableem::Rect backgroundRect;
     ableem::Rect logoRect;
 
@@ -75,14 +67,7 @@ public:
     ableem::Texture cdJewel;
     std::map<std::string, ableem::Texture> buttonTextureMap;
 
-    ableem::Music music;
     ableem::Font themeFont;
-
-    ableem::Sound cancel;
-    ableem::Sound cursor;
-    ableem::Sound home_down;
-    ableem::Sound home_up;
-    ableem::Sound resume;
 
     Gui(Gui const &) = delete;
 

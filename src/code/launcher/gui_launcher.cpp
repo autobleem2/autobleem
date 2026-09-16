@@ -728,7 +728,7 @@ void GuiLauncher::render() {
 //*******************************
 // handler of next game
 void GuiLauncher::nextCarouselGame(int speed) {
-    gui->cursor.play();
+    app.audio().cursor.play();
     scrollLeft(speed);
     selGameIndex++;
     if (selGameIndex >= carouselGames.size()) {
@@ -744,7 +744,7 @@ void GuiLauncher::nextCarouselGame(int speed) {
 //*******************************
 // handler of prev game
 void GuiLauncher::prevCarouselGame(int speed) {
-    gui->cursor.play();
+    app.audio().cursor.play();
     scrollRight(speed);
     selGameIndex--;
     if (selGameIndex < 0) {
@@ -916,7 +916,7 @@ void GuiLauncher::moveMainCover(int state) {
 //*******************************
 void GuiLauncher::switchState(int state, int time) {
     if (state == STATE_GAMES) {
-        gui->home_up.play();
+        app.audio().home_up.play();
         settingsBack->animEndTime = time + 100;
         settingsBack->nextLen = 100;
         playButton->visible = true;
@@ -938,7 +938,7 @@ void GuiLauncher::switchState(int state, int time) {
 
         moveMainCover(state);
     } else {
-        gui->home_down.play();
+        app.audio().home_down.play();
         settingsBack->animEndTime = time + 100;
         settingsBack->nextLen = 280;
         playButton->visible = false;

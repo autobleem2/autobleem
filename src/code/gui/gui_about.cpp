@@ -92,7 +92,7 @@ void GuiAbout::loop() {
             switch (e.type) {
                 case Event::Type::ButtonDown:
                     if (e.button == Button::Circle) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         menuVisible = false;
 
                     };

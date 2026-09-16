@@ -472,7 +472,7 @@ void GuiEditor::loop() {
 
                     if (gui->input().dpadDown()) {
                         do {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             selOption++;
                             if (selOption > OPT_LAST) {
                                 selOption = OPT_LAST;
@@ -482,7 +482,7 @@ void GuiEditor::loop() {
                     }
                     if (gui->input().dpadUp()) {
                         do {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             selOption--;
                             if (selOption < OPT_FIRST) {
                                 selOption = OPT_FIRST;
@@ -494,14 +494,14 @@ void GuiEditor::loop() {
 
                     if (gui->input().dpadRight()) {
                         do {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             processOptionChange(true);
                             render();
                         } while (fastForwardUntilAnotherEvent(80));
                     }
                     if (gui->input().dpadLeft()) {
                         do {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             processOptionChange(false);
                             render();
                         } while (fastForwardUntilAnotherEvent(80));
@@ -512,7 +512,7 @@ void GuiEditor::loop() {
                     if (!internal) {
                         if (gameIni.values["memcard"] == "SONY") {
                             if (e.button == Button::Start) {
-                                gui->cursor.play();
+                                app.audio().cursor.play();
                                 GuiKeyboard keyboard(*gui);
                                 keyboard.label = _("Enter new name for memory card");
                                 keyboard.result = gameIni.values["title"];
@@ -535,12 +535,12 @@ void GuiEditor::loop() {
                             };
                         }
                     } else {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                     }
 
                     if (e.button == Button::Square) {
                         if (!internal) {
-                            gui->cursor.play();
+                            app.audio().cursor.play();
                             GuiSelectMemcard selector(*gui);
                             selector.cardSelected = gameIni.values["memcard"];
                             selector.show();
@@ -555,19 +555,19 @@ void GuiEditor::loop() {
                                 }
                             }
                         } else {
-                            gui->cancel.play();
+                            app.audio().cancel.play();
                         }
                     };
 
                     if (e.button == Button::Circle) {
-                        gui->cancel.play();
+                        app.audio().cancel.play();
                         cover = ableem::Texture();
                         menuVisible = false;
 
                     };
 
                     if (e.button == Button::Triangle) {
-                        gui->cursor.play();
+                        app.audio().cursor.play();
                         GuiKeyboard keyboard(*gui);
                         keyboard.label = _("Enter new game name");
                         keyboard.result = gameIni.values["title"];

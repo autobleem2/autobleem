@@ -24,7 +24,7 @@ void GuiSplash::render() {
     renderer.clear();
     gui->backgroundImg.setAlphaMod(alpha);
     gui->logo.setAlphaMod(alpha);
-    gui->music.setVolume(alpha / 3);
+    app.audio().music.setVolume(alpha / 3);
 
     renderer.copy(gui->backgroundImg, nullptr, &gui->backgroundRect);
     renderer.copy(gui->logo, nullptr, &gui->logoRect);
@@ -51,7 +51,7 @@ void GuiSplash::render() {
 void GuiSplash::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
 
-    gui->music.setVolume(0);
+    app.audio().music.setVolume(0);
     alpha = 0;
     start = gui->platform().ticks();
     while (1) {

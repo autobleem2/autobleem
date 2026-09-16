@@ -23,6 +23,7 @@ App::App() {
     instance = this;
 
     gui_ = Gui::getInstance();
+    audio_.reset(new AppAudio(gui_->audio()));
     scanner_ = Scanner::getInstance();
 
     gui_->platform().setPowerOffHandler([this]() {
@@ -117,9 +118,8 @@ void App::rescan(GamesHierarchy &gamesHierarchy, const string &prevPath) {
 //*******************************
 void App::launchGame() {
     cout << "Starting game" << endl;
-    gui_->finish();
+    gui_->finish();          // fades the music out and closes the mixer
 
-    gui_->audio().close();
     gui_->input().flushPads();
 
     writeSelectionScript();

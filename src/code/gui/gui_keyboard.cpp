@@ -185,7 +185,7 @@ void GuiKeyboard::doKbdEnd() {
 // GuiKeyboard::doKbdBackspace
 //*******************************
 void GuiKeyboard::doKbdBackspace() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!result.empty() && cursorIndex > 0) {
         result = result.erase(cursorIndex - 1, 1);
         --cursorIndex;
@@ -199,7 +199,7 @@ void GuiKeyboard::doKbdBackspace() {
 // GuiKeyboard::doKbdDelete
 //*******************************
 void GuiKeyboard::doKbdDelete() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!result.empty() && cursorIndex < result.size()) {
         result = result.erase(cursorIndex, 1);
     }
@@ -212,7 +212,7 @@ void GuiKeyboard::doKbdDelete() {
 // GuiKeyboard::doKbdTab
 //*******************************
 void GuiKeyboard::doKbdTab() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     L2_cursor_shift = !L2_cursor_shift;
     usingUsbKeyboard = !usingUsbKeyboard;
     render();
@@ -222,7 +222,7 @@ void GuiKeyboard::doKbdTab() {
 // GuiKeyboard::doKbdEscape
 //*******************************
 void GuiKeyboard::doKbdEscape() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -231,7 +231,7 @@ void GuiKeyboard::doKbdEscape() {
 // GuiKeyboard::doKbdReturn
 //*******************************
 void GuiKeyboard::doKbdReturn() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     cancelled = false;
     menuVisible = false;
 }
@@ -240,7 +240,7 @@ void GuiKeyboard::doKbdReturn() {
 // GuiKeyboard::doKbdTextInput
 //*******************************
 void GuiKeyboard::doKbdTextInput(const std::string& text) {
-    gui->cursor.play();
+    app.audio().cursor.play();
     result.insert(cursorIndex, text);
     cursorIndex += text.size();
     L2_cursor_shift = true;
@@ -252,7 +252,7 @@ void GuiKeyboard::doKbdTextInput(const std::string& text) {
 // GuiKeyboard::doL1_up
 //*******************************
 void GuiKeyboard::doL1_up() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     L1_caps_shift = false;
     render();
 }
@@ -261,7 +261,7 @@ void GuiKeyboard::doL1_up() {
 // GuiKeyboard::doL2_up
 //*******************************
 void GuiKeyboard::doL2_up() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     L2_cursor_shift = false;
     render();
 }
@@ -270,7 +270,7 @@ void GuiKeyboard::doL2_up() {
 // GuiKeyboard::doL1_down
 //*******************************
 void GuiKeyboard::doL1_down() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     L1_caps_shift = true;
     render();
 }
@@ -279,7 +279,7 @@ void GuiKeyboard::doL1_down() {
 // GuiKeyboard::doL2_down
 //*******************************
 void GuiKeyboard::doL2_down() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     L2_cursor_shift = true;
     render();
 }
@@ -288,7 +288,7 @@ void GuiKeyboard::doL2_down() {
 // GuiKeyboard::doTrianglePressed
 //*******************************
 void GuiKeyboard::doTriangle() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!result.empty() && cursorIndex > 0) {
         result = result.erase(cursorIndex - 1, 1);
         --cursorIndex;
@@ -300,7 +300,7 @@ void GuiKeyboard::doTriangle() {
 // GuiKeyboard::doSquarePressed
 //*******************************
 void GuiKeyboard::doSquare() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     result.insert(cursorIndex, " ");
     ++cursorIndex;
     render();
@@ -310,7 +310,7 @@ void GuiKeyboard::doSquare() {
 // GuiKeyboard::doCrossPressed
 //*******************************
 void GuiKeyboard::doCross() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     string character = rows[sely][selx];
     string ch;
     if (L1_caps_shift)
@@ -326,7 +326,7 @@ void GuiKeyboard::doCross() {
 // GuiKeyboard::doStartPressed
 //*******************************
 void GuiKeyboard::doStart() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     cancelled = false;
     menuVisible = false;
 }
@@ -335,7 +335,7 @@ void GuiKeyboard::doStart() {
 // GuiKeyboard::doCirclePressed
 //*******************************
 void GuiKeyboard::doCircle() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     cancelled = true;
     menuVisible = false;
 }
@@ -344,7 +344,7 @@ void GuiKeyboard::doCircle() {
 // GuiKeyboard::doJoyRight
 //*******************************
 void GuiKeyboard::doJoyRight() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (L2_cursor_shift) {
         if (cursorIndex != result.size())
             ++cursorIndex;
@@ -361,7 +361,7 @@ void GuiKeyboard::doJoyRight() {
 // GuiKeyboard::doJoyLeft
 //*******************************
 void GuiKeyboard::doJoyLeft() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (L2_cursor_shift) {
         if (cursorIndex > 0)
             --cursorIndex;
@@ -378,7 +378,7 @@ void GuiKeyboard::doJoyLeft() {
 // GuiKeyboard::doJoyDown
 //*******************************
 void GuiKeyboard::doJoyDown() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!L2_cursor_shift) {
         sely++;
         if (sely > ylast) {
@@ -392,7 +392,7 @@ void GuiKeyboard::doJoyDown() {
 // GuiKeyboard::doJoyUp
 //*******************************
 void GuiKeyboard::doJoyUp() {
-    gui->cursor.play();
+    app.audio().cursor.play();
     if (!L2_cursor_shift) {
         sely--;
         if (sely < 0) {
