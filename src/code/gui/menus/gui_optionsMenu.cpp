@@ -1,6 +1,6 @@
 #include "gui_optionsMenu.h"
-#include "../../core/util.h"
-#include "../../core/environment.h"
+#include "../../core/services/system.h"
+#include "../../core/services/environment.h"
 
 using namespace std;
 
@@ -153,7 +153,7 @@ string GuiOptions::doRandomOption() {
         auto & choices = lines[selected].choices;
         unsigned int size = choices.size();
         if (size > 1)
-            return doOptionIndex(Util::getRandomIndex(size));
+            return doOptionIndex(System::getRandomIndex(size));
     }
     return "";
 }

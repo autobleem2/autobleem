@@ -9,11 +9,11 @@
 #include <memory>
 #include "../engine/scanner.h"
 #include "../core/model/ps_game.h"
-#include "../core/util.h"
+#include "../core/services/system.h"
 #include "gui_font.h"
 #include "text_renderer.h"
 #include "theme_assets.h"
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 #include "../core/model/session.h"
 
 using namespace std;

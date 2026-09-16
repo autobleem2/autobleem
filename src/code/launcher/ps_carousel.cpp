@@ -9,7 +9,7 @@
 #include "../core/services/retroarch.h"
 #include <unistd.h>
 #include <iostream>
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 
 using namespace std;
 using ableem::Texture;

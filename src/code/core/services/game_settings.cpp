@@ -3,7 +3,7 @@
 //
 #include "game_settings.h"
 #include "../main.h"
-#include "../environment.h"
+#include "environment.h"
 
 #include <ableem/engine/config_file_editor.h>
 

@@ -1,5 +1,5 @@
 #include "app.h"
-#include "core/util.h"
+#include "core/services/system.h"
 
 #include <iostream>
 #include <utility>
@@ -22,7 +22,7 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
 
     gui_->platform().setPowerOffHandler([this]() {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT"));
-        Util::powerOff();
+        System::powerOff();
     });
 
     gameQuery_.setRetroArchGames(&retroArch_);

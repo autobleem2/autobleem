@@ -2,7 +2,7 @@
 // AutoBleem: the program - App plus the loop that runs it.
 //
 #include "autobleem.h"
-#include "core/util.h"
+#include "core/services/system.h"
 #include "gui/gui_classic_menu.h"
 
 #include <cstdlib>
@@ -53,7 +53,7 @@ bool AutoBleem::openLibrary() {
 
     // if the /System/Databases/internal.db doesn't exist make a copy from the PSC
     cout << "Importing internal games from PSC to USB" << endl;
-    Util::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
+    System::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
 
     return gameLibrary.openInternalGames();
 }

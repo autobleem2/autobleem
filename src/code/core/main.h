@@ -25,7 +25,7 @@ using ableem::EXT_CHD;
 using ableem::EXT_CUE;
 using ableem::EXT_LIC;
 
-// in-place string helpers (trim(s) modifies s; the copying versions are Util::trim(s))
+// in-place string helpers (trim(s) modifies s; the copying versions are Strings::trim(s))
 using ableem::ltrim;
 using ableem::rtrim;
 using ableem::trim;
@@ -74,4 +74,5 @@ using ableem::ScanProgressListener;
 // button textures - keep them in the translation. Goes through the ableem::Lang the App registered; with
 // none (a unit test) every string is its own translation.
 using ableem::Lang;
+using ableem::Strings;   // the copying string helpers: Strings::trim, Strings::toInt, ... (the old System::)
 inline std::string _(const std::string &input) { return ableem::translate(input); }

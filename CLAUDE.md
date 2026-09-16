@@ -49,8 +49,8 @@ this host yet:
   generic index into the icon row that `PsMenu` animates by `++`/`--` - and is compared through
   `selOptionIs()`. `EmuMode` and `MenuOption` were already enums.
 - **Step 2** - `ab_core` exists (`src/code/core/`, links `ableem_engine` only, `starter` links just it).
-  It holds `main.h`, `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*` and
-  `model/timing.h`. It is deliberately small: only files with no `Gui` and no `App::get()` could move without
+  It held `main.h`, `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*` and
+  `model/timing.h` at first; on 2026-09-16 the top level was cleared down to `main.h`. It is deliberately small: only files with no `Gui` and no `App::get()` could move without
   a content change.
 - **Step 4** - the test harness (step 3, the ARM build, is deferred - no toolchain on this host). doctest
   2.4.11 vendored at `tests/third_party/doctest/doctest.h`, `tests/support/{env_fixture.h,temp_dir.*}`,
@@ -178,12 +178,12 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   the layout for the platform and calls the setters (`setUsbRoot/GamesDir/RegionalDbFile/InternalDbFile/
   WorkingPath/SonyDataPath/ThemesDir/CoversDbDir/InternalGamesDir`) once; everything else is derived
   (`getPathToMemCardsDir()` = games + `!MemCards`, `getPathToMemcardTemplateDir()` = working + `memcard`, ...).
-  The app's `Env` (`src/code/core/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
+  The app's `Env` (`src/code/core/services/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
   `starter` sets the two roots it needs itself.
 - **`DirEntry`/`sep`** (`engine/filesystem.h`) and the string helpers (`engine/strings.h`: in-place `trim/
   lcase/...` free functions, copying `Strings::trim/replaceAll/toInt/...`) are the old `DirEntry.h`, `main.h`
-  and `Util` string parts, unchanged in API. `Util` (`src/code/util.h`) derives from `ableem::Strings` and keeps
-  only the process helpers (`runAndWait`, `execUnixCommand`, `powerOff`, ...).
+  and `Util` string parts, unchanged in API. The app reaches them as `Strings::`; the process helpers
+  (`runAndWait`, `execUnixCommand`, `powerOff`, ...) are `System` (`core/services/system.h`).
 - **`game_types.h`** - `ImageType`, `GAME_INI`/`EXT_*`, `SAVESTATES_DIR_NAME`/`MEMCARDS_DIR_NAME`.
 - **`Lang`** (`engine/lang.h`) - the translation table: `load(langDir, name)`, `translate`, `listLanguages`,
   `dumpUntranslated`, and `setCurrent`/`ableem::translate()` for a global `_()`. Was the app's `Lang` singleton.
@@ -267,7 +267,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
   Run needs `C:msys64Crt64in` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
   skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `Util::execFork` stubbed.
-  The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `environment.h`) — use it, never
+  The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
 - **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by
   `lib_ableem/src/engine/cd_image_reader.h` for CHD images and is NOT in the repo. `AB_ENABLE_CHD=OFF`
@@ -340,7 +340,7 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/
 
 ## Source map (`src/code/`)
 
-`src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"); `gui/`, `engine/`,
+`src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"): `main.h`, `model/` and `services/`, nothing else at its top level; `gui/`, `engine/`,
 `app.*` and `util_time.*` are `ab_ui`; `launcher/` is `ab_evoui`; `main.cpp`, `autobleem.*` and
 `gui/gui_classic_menu.*` are the executable. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
 defaults, which both the services and the screens need.
@@ -352,8 +352,8 @@ defaults, which both the services and the screens need.
 | `app.*` | `App` | The model: owns `Config`, `Theme`, `AppAudio`, the `GameLibrary`, the `Scanner`, the `Session`, every service and the `Gui` singleton. Top of `ab_ui`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
 | `core/model/session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
-| `core/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
-| `core/util.*`, `util_time.*` | | `Util : ableem::Strings` - the string helpers are inherited; here only `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getRandom*`. |
+| `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags and the `AB_DEBUG_HOST` macro. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
+| `core/services/system.*`, `util_time.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is pairs of lines, source then translation. Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
 | `engine/scanner.*` | `Scanner` singleton | `ableem::GameScanner` + its `ScanProgressListener`: maps scan stages to `Gui::splash(_(...))`, keeps `forceScan`. The scanning, hierarchy, serial/metadata lookup, database and memcard logic all live in lib_ableem's engine now (see the lib_ableem section). |
 | `engine/cardedit.*` | `CardEdit` | .mcd block editor / icon renderer (stays in the app: it draws with `ableem::Texture`). |
@@ -412,7 +412,7 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 - Scripts that edit sources from Python must pass `encoding='utf-8'` (CLAUDE.md got mangled once).
 - Shell scripts and cfg/ini files must stay **LF** (enforced by `.gitattributes`). Do not let the Windows
   editor convert them.
-- Keep the two `trim` families in mind: in-place `trim()` (`ableem::trim`, via `main.h`) vs copying `Util::trim()`
+- Keep the two `trim` families in mind: in-place `trim()` (`ableem::trim`, via `main.h`) vs copying `Strings::trim()`
   (`ableem::Strings::trim`).
 - Match existing style: 4-space indent, `//***` banner comments above functions, `using namespace std;` in .cpp.
 

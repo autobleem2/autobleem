@@ -53,7 +53,7 @@ void GuiMemcards::doSquare_Pressed() {
     }
 
     string testResult = result;
-    if (Util::compareCaseInsensitive("sony", testResult)) {
+    if (Strings::compareCaseInsensitive("sony", testResult)) {
         cancelled = true;
     }
 
@@ -120,7 +120,7 @@ void GuiMemcards::doCross_Pressed() {
     }
 
     string testResult = result;
-    if (Util::compareCaseInsensitive("sony", testResult)) {
+    if (Strings::compareCaseInsensitive("sony", testResult)) {
         cancelled = true;
     }
 

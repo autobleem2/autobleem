@@ -102,7 +102,7 @@ void GuiLauncher::showSetName() {
 
     string numGames = " (" + to_string(carousel.numberOfNonDuplicatedGames) + " " + _("games") + ")";
 
-    long timeout = Util::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
+    long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];

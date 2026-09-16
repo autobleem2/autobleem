@@ -2,7 +2,7 @@
 // TextRenderer: the text/token/rect half of what Gui used to be.
 //
 #include "text_renderer.h"
-#include "../core/util.h"
+#include "../core/services/system.h"
 
 #include <cassert>
 #include <cstring>
@@ -19,15 +19,15 @@ using ableem::Color;
 // TextRenderer::getR / getG / getB
 //*******************************
 unsigned char TextRenderer::getR(const string &val) {
-    return atoi(Util::commaSep(val, 0).c_str());
+    return atoi(Strings::commaSep(val, 0).c_str());
 }
 
 unsigned char TextRenderer::getG(const string &val) {
-    return atoi(Util::commaSep(val, 1).c_str());
+    return atoi(Strings::commaSep(val, 1).c_str());
 }
 
 unsigned char TextRenderer::getB(const string &val) {
-    return atoi(Util::commaSep(val, 2).c_str());
+    return atoi(Strings::commaSep(val, 2).c_str());
 }
 
 //*******************************
@@ -155,7 +155,7 @@ void TextRenderer::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, con
     if (line.back() != '|') {
         line = line + "|";  // in case a terminating | is needed
     }
-    auto tokenStrings = Util::getTokens(line, '|');
+    auto tokenStrings = Strings::getTokens(line, '|');
 
     //
     // fill the info structures

@@ -106,7 +106,7 @@ void Gui::finish() {
 void Gui::renderFreeSpace() {
     int x = atoi(App::get().theme().data.values["fsposx"].c_str());
     int y = atoi(App::get().theme().data.values["fsposy"].c_str());
-    text_.renderText(assets_.themeFont, _("Free space") + " : " + Util::getAvailableSpace(), x, y);
+    text_.renderText(assets_.themeFont, _("Free space") + " : " + System::getAvailableSpace(), x, y);
 }
 
 //*******************************

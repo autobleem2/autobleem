@@ -6,7 +6,7 @@
 #include <string>
 #include "gui.h"
 #include "../engine/scanner.h"
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 
 void GuiAbout::init() {
     std::shared_ptr<Gui> gui(Gui::getInstance());

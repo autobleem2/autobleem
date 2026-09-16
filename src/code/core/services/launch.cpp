@@ -2,9 +2,9 @@
 // LaunchService: what App::launchGame and the three EmuInterceptors used to do between them.
 //
 #include "launch.h"
-#include "../environment.h"
+#include "environment.h"
 #include "../main.h"
-#include "../util.h"
+#include "system.h"
 
 #include <ableem/engine/config_file_editor.h>
 
@@ -259,7 +259,7 @@ void LaunchService::launchRetroArch(PsGame &game) {
         }
 
         gpu = processor.getValue(path, "gpu3");
-        gpu = Util::trim(gpu);
+        gpu = Strings::trim(gpu);
         if (gpu.empty()) {
             gpu = PcsxNeonGpu;
         }

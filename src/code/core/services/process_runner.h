@@ -21,7 +21,7 @@ public:
 //******************
 // ForkProcessRunner
 //******************
-// The real one: Util::runAndWait, i.e. the fork/exec of an rc/*.sh launcher script on the console. The dev
+// The real one: System::runAndWait, i.e. the fork/exec of an rc/*.sh launcher script on the console. The dev
 // host installs a different runner from the composition root (see App), because there is nothing to run.
 class ForkProcessRunner : public ProcessRunner {
 public:

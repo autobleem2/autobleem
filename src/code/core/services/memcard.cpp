@@ -4,7 +4,7 @@
 //
 
 #include "memcard.h"
-#include "../environment.h"
+#include "environment.h"
 #include "../main.h"
 
 #include <iostream>

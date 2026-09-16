@@ -2,7 +2,7 @@
 // RetroArchService: what the RAIntegrator singleton used to be.
 //
 #include "retroarch.h"
-#include "../environment.h"
+#include "environment.h"
 #include "../main.h"
 
 #include <ableem/engine/retroarch_playlist.h>

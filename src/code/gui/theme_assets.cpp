@@ -2,7 +2,7 @@
 // ThemeAssets: the asset half of what Gui used to be.
 //
 #include "theme_assets.h"
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 #include "../core/main.h"
 
 using namespace std;

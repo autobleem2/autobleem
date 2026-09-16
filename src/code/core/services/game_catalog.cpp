@@ -5,7 +5,7 @@
 
 #include "game_catalog.h"
 #include "game_query.h"
-#include "../environment.h"
+#include "environment.h"
 #include "../main.h"
 
 #include <algorithm>

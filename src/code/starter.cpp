@@ -1,9 +1,9 @@
 
 #include <string>
 #include <unistd.h>
-#include "core/util.h"
+#include "core/services/system.h"
 #include "core/main.h"
-#include "core/environment.h"
+#include "core/services/environment.h"
 
 using namespace std;
 
@@ -13,7 +13,7 @@ using namespace std;
 string valueOrDefault(string name, string def, map<string,string> iniValues) {
     string value;
     if (iniValues.find(name) != iniValues.end()) {
-        value = Util::trim(iniValues.find(name)->second);
+        value = Strings::trim(iniValues.find(name)->second);
         if (value.length() == 0) {
 
             return def;
@@ -104,7 +104,7 @@ int main (int argc, char *argv[])
 
     // arguments[0] is this program's own name. runAndWait adds argv[0] for pcsx itself.
     arguments.erase(arguments.begin());
-    Util::runAndWait(PCSX, arguments);
+    System::runAndWait(PCSX, arguments);
 
     if (memcard!="SONY")
     {

@@ -8,8 +8,8 @@
 #include "menus/gui_memCardsMenu.h"
 #include "menus/gui_gameManagerMenu.h"
 #include "../launcher/gui_launcher.h"
-#include "../core/environment.h"
-#include "../core/util.h"
+#include "../core/services/environment.h"
+#include "../core/services/system.h"
 
 using namespace std;
 
@@ -92,7 +92,7 @@ void ClassicMenuScreen::showLauncher() {
 //*******************************
 void ClassicMenuScreen::powerOff() {
     gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-    Util::powerOff();
+    System::powerOff();
 }
 
 //*******************************
@@ -245,7 +245,7 @@ void ClassicMenuScreen::loop() {
                             gui->platform().delay(2000);
 #endif
                             string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
-                            Util::runAndWait(cmd, {});
+                            System::runAndWait(cmd, {});
                             gui->input().flushEvents();
                             gui->input().probePads();
                             app.audio().restart();

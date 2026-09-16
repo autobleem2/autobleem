@@ -4,7 +4,7 @@
 
 #include "app_audio.h"
 #include "../app.h"
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 #include "../core/main.h"
 #include "../core/model/timing.h"   // TicksPerSecond
 

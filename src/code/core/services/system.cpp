@@ -1,47 +1,47 @@
-#include "util.h"
-#include "main.h"
+//
+// System: the process and console helpers.
+//
+#include "system.h"
+#include "../main.h"
 
-#include <fstream>
 #include <array>
 #include <cerrno>
-#include <climits>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <iostream>
 #include <memory>
 #ifndef _WIN32
 #include <sys/wait.h>
 #endif
 #include <unistd.h>
-#include <iomanip>
-#include <string.h>
-#include <sstream>
-#include <iostream>
-#include <stdio.h>
 
 using namespace std;
 
 //*******************************
-// Util::powerOff
+// System::powerOff
 //*******************************
 // The one way the app powers the console off: the launcher's L2+R2, the classic menu's L2+R2 and the
 // console's power button all come here. sync() first, so the last log lines and any ini just written
 // reach the USB stick before the halt.
-void Util::powerOff()
+void System::powerOff()
 {
 #ifdef AB_DEBUG_HOST
     exit(0);
 #else
-    Util::execUnixCommand("shutdown -h now");
+    System::execUnixCommand("shutdown -h now");
     sync();
     exit(0);
 #endif
 }
 
 //*******************************
-// Util::getAvailableSpace
+// System::getAvailableSpace
 //*******************************
 /*
  * Return the available space of a usb device
  */
-string Util::getAvailableSpace(){
+string System::getAvailableSpace(){
 #ifdef AB_DEBUG_HOST
     return "x86 - does not care about free space - Does not work on mac";
     #else
@@ -60,12 +60,12 @@ string Util::getAvailableSpace(){
 }
 
 //*******************************
-// Util::execUnixCommad
+// System::execUnixCommand
 //*******************************
 /*
  * Execute a shell command and return output
  */
-string Util::execUnixCommand(const char* cmd){
+string System::execUnixCommand(const char* cmd){
     array<char, 128> buffer;
     string result;
     cout << "Exec:" << cmd << endl;
@@ -82,11 +82,11 @@ string Util::execUnixCommand(const char* cmd){
 }
 
 //*******************************
-// Util::runAndWait
+// System::runAndWait
 //*******************************
 // fork + exec the program and wait for it to finish.
 // returns the exit status of the program, or -1 if it could not be started.
-int Util::runAndWait(const string &exe, const vector<string> &args) {
+int System::runAndWait(const string &exe, const vector<string> &args) {
     cout << "CMD line to execute: '" << exe << "'";
     for (const string &arg : args) {
         cout << " '" << arg << "'";
@@ -136,36 +136,9 @@ int Util::runAndWait(const string &exe, const vector<string> &args) {
 }
 
 //*******************************
-// Util::execFork
+// System::getRandomNumber
 //*******************************
-// kept for the pscbios launch in gui.cpp. argvNew is argv[0] ... null terminator
-void Util::execFork(const char *cmd,  vector<const char *> argvNew)
-{
-    cout << "calling Util::execFork()" << endl;
-    vector<string> args;
-    for (size_t i = 1; i < argvNew.size(); i++) {
-        if (argvNew[i] != nullptr) {
-            args.push_back(argvNew[i]);
-        }
-    }
-    runAndWait(cmd, args);
-}
-
-//*******************************
-// Util::dumpMemory
-//*******************************
-void Util::dumpMemory(const  char *p, int count) {
-    for (int i=0; i < count; ++i) {
-        printf("%x, ", (unsigned int) *p++);
-        if (i %16 == 15 || i == count-1)
-            cout << endl;
-    }
-}
-
-//*******************************
-// Util::getRandomNumber
-//*******************************
-unsigned int Util::getRandomNumber() {
+unsigned int System::getRandomNumber() {
     static bool firstTime{true};
     if (firstTime) {
         srand(time(nullptr));
@@ -176,9 +149,9 @@ unsigned int Util::getRandomNumber() {
 }
 
 //*******************************
-// Util::getRandomIndex
+// System::getRandomIndex
 // pass 100, get a random index between 0 and 99
 //*******************************
-unsigned int Util::getRandomIndex(unsigned int size) {
+unsigned int System::getRandomIndex(unsigned int size) {
     return getRandomNumber() % size;
 }

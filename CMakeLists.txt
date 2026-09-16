@@ -88,10 +88,6 @@ endif()
 # constructs GuiLauncher while ~20 launcher files use Gui, so the two would be a link cycle rather than a
 # layering. Phase C step 14 (menuSelection -> ClassicMenuScreen) is what removes that cycle.
 add_library(ab_core STATIC
-        src/code/core/DebugTimer.cpp
-        src/code/core/DebugTimer.h
-        src/code/core/environment.cpp
-        src/code/core/environment.h
         src/code/core/main.h
         src/code/core/model/game_set.h
         src/code/core/model/ps_game.cpp
@@ -99,6 +95,8 @@ add_library(ab_core STATIC
         src/code/core/model/session.h
         src/code/core/model/timing.h
         src/code/core/services/config.cpp
+        src/code/core/services/environment.cpp
+        src/code/core/services/environment.h
         src/code/core/services/config.h
         src/code/core/services/game_catalog.cpp
         src/code/core/services/game_catalog.h
@@ -116,8 +114,8 @@ add_library(ab_core STATIC
         src/code/core/services/resume_point.h
         src/code/core/services/retroarch.cpp
         src/code/core/services/retroarch.h
-        src/code/core/util.cpp
-        src/code/core/util.h
+        src/code/core/services/system.cpp
+        src/code/core/services/system.h
         )
 target_link_libraries(ab_core ableem_engine)
 

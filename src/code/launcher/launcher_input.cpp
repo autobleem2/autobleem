@@ -257,7 +257,7 @@ void GuiLauncher::loop_joyButton_Pressed() {
         if (e.button == Button::R2) {
             app.audio().cursor.play();
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-            Util::powerOff();
+            System::powerOff();
             return;
         }
     }
@@ -429,7 +429,7 @@ void GuiLauncher::loop_startButton_Pressed() {
             return;
         }
 
-        carousel.selected = Util::getRandomIndex(carousel.games.size());
+        carousel.selected = System::getRandomIndex(carousel.games.size());
         if (carousel.selectedIsValid()) {
             app.audio().cursor.play();
             carousel.setInitialPositions(carousel.selected);

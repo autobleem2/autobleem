@@ -9,7 +9,7 @@
 #include "../gui/gui.h"
 #include "../gui/gui_confirm.h"
 #include "../gui/gui_selectmemcard.h"
-#include "../core/environment.h"
+#include "../core/services/environment.h"
 
 void GuiMcManager::init() {
     rightCardName_ori = rightCardName;
