@@ -74,6 +74,22 @@ static const char INSERT_GAME[] = "INSERT INTO GAME ([GAME_ID],[GAME_TITLE_STRIN
                                    [PATH],[SSPATH],[MEMCARD]) \
                                    values (?,?,?,?,?,'CERO_A','QR_Code_GM','',?,?,?)";
 
+// used by: loadGamePaths
+static const char SELECT_GAME_PATHS[] = "SELECT GAME_ID, PATH FROM GAME";
+
+// used by: findGameIdByPath
+static const char SELECT_GAME_ID_BY_PATH[] = "SELECT GAME_ID FROM GAME WHERE PATH=?";
+
+// used by: maxGameId
+static const char SELECT_MAX_GAME_ID[] = "SELECT COALESCE(MAX(GAME_ID), 0) FROM GAME";
+
+// used by: updateGame. GAME_ID/PATH/HISTORY/LAST_PLAYED are deliberately not touched - see the header comment
+static const char UPDATE_GAME[] = "UPDATE GAME SET GAME_TITLE_STRING=?, PUBLISHER_NAME=?, PLAYERS=?, \
+                                   RELEASE_YEAR=?, SSPATH=?, MEMCARD=? WHERE GAME_ID=?";
+
+// used by: replaceDiscs
+static const char DELETE_DISCS_FOR_GAME[] = "DELETE FROM DISC WHERE GAME_ID=?";
+
 // used by: createSchema
 static const char CREATE_GAME_SQL[] = " CREATE TABLE IF NOT EXISTS GAME  \
      ( GAME_ID integer NOT NULL UNIQUE, \
@@ -601,6 +617,83 @@ bool GameDatabase::insertDisc(int id, int discNum, string discName) {
 }
 
 //*******************************
+// GameDatabase::replaceDiscs
+//*******************************
+bool GameDatabase::replaceDiscs(int id, const vector<string> &discNames) {
+    if (!beginTransaction()) return false;
+
+    bool success = deleteGameIdFromOneTable(id, DELETE_DISCS_FOR_GAME);
+    for (int i = 0; success && i < static_cast<int>(discNames.size()); i++) {
+        success = insertDisc(id, i + 1, discNames[i]);
+    }
+
+    if (success) {
+        commit();
+    } else {
+        rollback();
+    }
+    return success;
+}
+
+//*******************************
+// GameDatabase::loadGamePaths
+//*******************************
+GamePaths GameDatabase::loadGamePaths() {
+    GamePaths result;
+    Stmt stmt(db, SELECT_GAME_PATHS, "loadGamePaths");
+    if (!stmt.ok()) return result;
+    while (stmt.row()) {
+        GamePath entry;
+        entry.gameId = stmt.colInt(0);
+        entry.path = stmt.colText(1);
+        result.push_back(entry);
+    }
+    return result;
+}
+
+//*******************************
+// GameDatabase::findGameIdByPath
+//*******************************
+bool GameDatabase::findGameIdByPath(const string &path, int *id) {
+    Stmt stmt(db, SELECT_GAME_ID_BY_PATH, "findGameIdByPath");
+    if (!stmt.ok()) return false;
+    stmt.bind(1, path);
+    if (stmt.row()) {
+        if (id) *id = stmt.colInt(0);
+        return true;
+    }
+    return false;
+}
+
+//*******************************
+// GameDatabase::maxGameId
+//*******************************
+int GameDatabase::maxGameId() {
+    Stmt stmt(db, SELECT_MAX_GAME_ID, "maxGameId");
+    if (stmt.ok() && stmt.row()) {
+        return stmt.colInt(0);
+    }
+    return 0;
+}
+
+//*******************************
+// GameDatabase::updateGame
+//*******************************
+bool GameDatabase::updateGame(int id, string title, string publisher, int players, int year, string sspath, string memcard) {
+    Strings::cleanPublisherString(publisher);
+    Stmt stmt(db, UPDATE_GAME, "updateGame");
+    if (!stmt.ok()) return false;
+    stmt.bind(1, title);
+    stmt.bind(2, publisher);
+    stmt.bind(3, players);
+    stmt.bind(4, year);
+    stmt.bind(5, sspath);
+    stmt.bind(6, memcard);
+    stmt.bind(7, id);
+    return stmt.step() == SQLITE_DONE;
+}
+
+//*******************************
 // GameDatabase::insertGame
 //*******************************
 bool GameDatabase::insertGame(int id, string title, string publisher, int players, int year, string path, string sspath,
@@ -653,6 +746,16 @@ bool GameDatabase::insertSubDirRowGame(int rowIndex, int gameId) {
     stmt.bind(1, rowIndex);
     stmt.bind(2, gameId);
     return stmt.step() == SQLITE_DONE;
+}
+
+//*******************************
+// GameDatabase::clearSubDirTables
+//*******************************
+bool GameDatabase::clearSubDirTables() {
+    bool ok = true;
+    ok &= executeStatement(DELETE_SUBDIR_ROW_DATA, "Clearing sub-dir rows", "Error clearing sub-dir rows");
+    ok &= executeStatement(DELETE_SUBDIR_GAME_DATA, "Clearing sub-dir row games", "Error clearing sub-dir row games");
+    return ok;
 }
 
 //*******************************

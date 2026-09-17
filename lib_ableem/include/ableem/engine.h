@@ -20,6 +20,7 @@
 #include "engine/cover_database.h"
 #include "engine/usb_game.h"
 #include "engine/games_hierarchy.h"
+#include "engine/games_fingerprint.h"
 #include "engine/game_scanner.h"
 #include "engine/retroarch_playlist.h"
 #include "engine/theme_spec.h"

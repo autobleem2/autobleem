@@ -70,6 +70,7 @@ using ableem::GameSubDir;
 using ableem::GameSubDirPtr;
 using ableem::GameSubDirRows;
 using ableem::GamesHierarchy;
+using ableem::GamesFingerprint;
 using ableem::GameScanner;
 using ableem::ScanStage;
 using ableem::ScanProgressListener;

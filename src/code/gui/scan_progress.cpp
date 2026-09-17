@@ -11,7 +11,7 @@ using namespace std;
 //*******************************
 // SplashScanProgress::onScanProgress
 //*******************************
-void SplashScanProgress::onScanProgress(ScanStage stage, const string &detail) {
+void SplashScanProgress::onScanProgress(ScanStage stage, const string &detail, int done, int total) {
     switch (stage) {
         case ScanStage::Scanning:
             Gui::splash(_("Scanning..."));

@@ -9,8 +9,9 @@
 add_library(doctest_main STATIC doctest_main.cpp)
 target_include_directories(doctest_main PUBLIC third_party)
 
-# the support pieces every test links: EnvFixture (Environment's setters are global) and TempDir.
-add_library(ab_test_support STATIC support/temp_dir.cpp)
+# the support pieces every test links: EnvFixture (Environment's setters are global), TempDir and
+# makeFakeGame (a real verifiable PS1 game on disk, for tests that exercise the scanner itself).
+add_library(ab_test_support STATIC support/temp_dir.cpp support/fake_game.cpp)
 target_include_directories(ab_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ab_test_support ableem_engine)
 
@@ -26,7 +27,9 @@ endfunction()
 ab_add_test(test_clock core/test_clock.cpp)
 ab_add_test(test_config core/test_config.cpp)
 ab_add_test(test_game_catalog core/test_game_catalog.cpp)
+ab_add_test(test_game_database core/test_game_database.cpp)
 ab_add_test(test_game_query core/test_game_query.cpp)
+ab_add_test(test_games_fingerprint core/test_games_fingerprint.cpp)
 ab_add_test(test_game_set core/test_game_set.cpp)
 ab_add_test(test_game_settings core/test_game_settings.cpp)
 ab_add_test(test_lang core/test_lang.cpp)

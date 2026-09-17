@@ -4,6 +4,7 @@
 // library never draws, sleeps or translates.
 #pragma once
 
+#include <map>
 #include <string>
 
 #include "cover_database.h"
@@ -31,7 +32,15 @@ enum class ScanStage {
 class ScanProgressListener {
 public:
     virtual ~ScanProgressListener() {}
-    virtual void onScanProgress(ScanStage stage, const std::string &detail) = 0;
+    // done/total are both 0 except during ScanStage::Game, where they are this game's 1-based index and the
+    // total game count - everything a progress display needs to show "n/total (nn%)".
+    virtual void onScanProgress(ScanStage stage, const std::string &detail, int done = 0, int total = 0) = 0;
+    // called right after a game passes verify(), so a caller can add it to a database/UI immediately instead
+    // of waiting for the whole scan to finish. game is only valid for the duration of the call.
+    virtual void onGameVerified(const UsbGame &game) {}
+    // called instead of onGameVerified when a game fails verify() and is dropped (see ScanStage::GameFailedVerify
+    // for the human-readable reasons); fullPath is the game's directory.
+    virtual void onGameFailedVerify(const std::string &fullPath) {}
 };
 
 //******************
@@ -48,7 +57,13 @@ public:
 
     // coverDb supplies title/publisher/year/cover art for games whose Game.ini is missing or incomplete
     void scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDatabase &coverDb);
-    void writeRegionalDatabase(GamesHierarchy &gamesHierarchy, GameDatabase &db);   // + autobleem.list in the working path
+
+    // SUBDIR_ROWS + SUBDIR_GAMES_TO_DISPLAY_ON_ROW, cleared and rewritten in one transaction. This class no
+    // longer assigns game ids (a caller doing an incremental scan has to reuse an existing game's id rather
+    // than renumber it - see GameDatabase::findGameIdByPath/insertGame), so idByPath supplies them.
+    static void writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &db, const std::map<std::string, int> &idByPath);
+    // autobleem.list in the working path (id,path,sspath one game per line, read by the rc shell scripts)
+    static void writeAutobleemList(const UsbGames &games, const std::map<std::string, int> &idByPath);
 
     void repairBrokenCueFiles(const std::string &path);
     void decompressEcmFiles(const std::string &path);   // every .ecm in the dir becomes a .bin
@@ -63,9 +78,8 @@ public:
 
 private:
     ScanProgressListener *listener;
-    bool complete = false;
 
-    void report(ScanStage stage, const std::string &detail = "");
+    void report(ScanStage stage, const std::string &detail = "", int done = 0, int total = 0);
     void moveFolderIfNeeded(const std::string &gameDirName, std::string gameDataPath, std::string path);
 };
 

@@ -155,6 +155,18 @@ bool DirEntry::isDirectory(const string &path) {
 }
 
 //*******************************
+// DirEntry::fileSize
+//*******************************
+long long DirEntry::fileSize(const string &path) {
+    struct stat path_stat;
+    if (stat(path.c_str(), &path_stat) != 0)
+        return -1;
+    if (S_ISDIR(path_stat.st_mode))
+        return -1;
+    return static_cast<long long>(path_stat.st_size);
+}
+
+//*******************************
 // DirEntry::replaceTheseCharsWithThisChar
 // replaces all the chars of a selection of chars with a single replacement char
 // returns a string with those chars replaced

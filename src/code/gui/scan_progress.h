@@ -13,5 +13,5 @@
 // game that failed to verify stays up long enough to read. AutoBleem hands one to the GameScanner it makes.
 class SplashScanProgress : public ScanProgressListener {
 public:
-    void onScanProgress(ScanStage stage, const std::string &detail) override;
+    void onScanProgress(ScanStage stage, const std::string &detail, int done, int total) override;
 };

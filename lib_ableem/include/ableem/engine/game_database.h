@@ -37,6 +37,18 @@ struct SubDirRowGame {
 using SubDirRowGames = std::vector<SubDirRowGame>;
 
 //******************
+// GamePath
+//******************
+// one row of regional.db's GAME table, id + folder only - what an incremental scan needs to tell an
+// existing game apart from a new one, and to notice a game whose folder is gone.
+struct GamePath {
+    int gameId = 0;
+    std::string path;
+};
+
+using GamePaths = std::vector<GamePath>;
+
+//******************
 // GameDatabase
 //******************
 class GameDatabase {
@@ -66,6 +78,7 @@ public:
     bool subDirRowsTableIsEmpty();
     bool insertSubDirRow(int rowIndex, std::string rowName, int indentLevel, int numGames);
     bool insertSubDirRowGame(int rowIndex, int gameId);
+    bool clearSubDirTables();   // SUBDIR_ROWS + SUBDIR_GAMES_TO_DISPLAY_ON_ROW only - not GAME/DISC
 
     // covers*.db
     bool findMetadataBySerial(std::string serial, GameMetadata *md);
@@ -74,6 +87,18 @@ public:
     int countGames();
     bool updateYear(int id, int year);
     bool updateMemcard(int id, std::string memcard);
+
+    // regional.db incremental scan support (ScanService): the id/path pairs of every GAME row, so a scan can
+    // tell an existing game from a new one and notice one whose folder is gone; the matching id for one
+    // path (both O(n) full-table reads - fine for the few-hundred-row regional.db this deals with).
+    GamePaths loadGamePaths();
+    bool findGameIdByPath(const std::string &path, int *id);
+    int maxGameId();   // 0 if the table is empty; a new game's id is this + 1
+    // updates everything about an existing game except GAME_ID/PATH/HISTORY/LAST_PLAYED - a rescanned game
+    // keeps its id and play history even when its metadata changed
+    bool updateGame(int id, std::string title, std::string publisher, int players, int year, std::string sspath,
+                    std::string memcard);
+    bool replaceDiscs(int id, const std::vector<std::string> &discNames);   // deletes then re-inserts, in one transaction
 
     GameRecords loadUsbGames();         // regional.db; Game.ini flags are merged in. empty on error.
     GameRecords loadInternalGames();    // internal.db

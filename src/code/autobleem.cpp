@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <map>
 #include <unistd.h>
 
 using namespace std;
@@ -83,7 +84,28 @@ void AutoBleem::rescan(GamesHierarchy &gamesHierarchy, const string &prevPath) {
     SplashScanProgress progress;
     GameScanner scanner(&progress);
     scanner.scanGamesDirectory(gamesHierarchy, gameLibrary.covers());
-    scanner.writeRegionalDatabase(gamesHierarchy, gameLibrary.usbGames());
+
+    // TODO(scan-service): this whole-table renumbering is what ScanService's incremental insert/update/
+    // delete replaces (see docs/refactor-plan.md); kept as-is here only as the bridge while
+    // GameScanner::writeRegionalDatabase is split into writeSubDirRows/writeAutobleemList.
+    GameDatabase &db = gameLibrary.usbGames();
+    map<string, int> idByPath;
+    db.beginTransaction();
+    for (size_t i = 0; i < scanner.gamesToAddToDB.size(); i++) {
+        UsbGamePtr data = scanner.gamesToAddToDB[i];
+        int id = static_cast<int>(i) + 1;
+        data->gameId = id;
+        idByPath[data->fullPath] = id;
+        db.insertGame(id, data->title, data->publisher, data->players, data->year, data->fullPath + sep,
+                      data->saveStatePath + sep, data->memcard);
+        for (size_t j = 0; j < data->discs.size(); j++) {
+            db.insertDisc(id, static_cast<int>(j) + 1, data->discs[j].diskName);
+        }
+    }
+    db.commit();
+
+    GameScanner::writeAutobleemList(scanner.gamesToAddToDB, idByPath);
+    GameScanner::writeSubDirRows(gamesHierarchy, db, idByPath);
 
     gui_->drawText(_("Total:") + " " + to_string(scanner.gamesToAddToDB.size()) + " " + _("games scanned") + ".");
     sleep(1);

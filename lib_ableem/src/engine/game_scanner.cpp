@@ -18,9 +18,9 @@ namespace ableem {
 //*******************************
 // GameScanner::report
 //*******************************
-void GameScanner::report(ScanStage stage, const string &detail) {
+void GameScanner::report(ScanStage stage, const string &detail, int done, int total) {
     if (listener)
-        listener->onScanProgress(stage, detail);
+        listener->onScanProgress(stage, detail, done, total);
 }
 
 
@@ -46,50 +46,47 @@ void GameScanner::decompressEcmFiles(const string & path) {
 }
 
 //*******************************
-// GameScanner::writeRegionalDatabase
+// GameScanner::writeSubDirRows
 //*******************************
-void GameScanner::writeRegionalDatabase(GamesHierarchy &gamesHierarchy, GameDatabase &db) {
-    report(ScanStage::UpdatingDatabase);
-    string path = Environment::getWorkingPath() + sep + "autobleem.list";
-    ofstream outfile;
-    outfile.open(path);
-    DirEntry::checkWritable(outfile, path);   // the db is still updated; the list is used by the shell scripts
-    if (complete) {
-        db.beginTransaction();
-        for (int i = 0; i < gamesToAddToDB.size(); i++) {
-            UsbGamePtr data = gamesToAddToDB[i];
-            cout << "Inserting game ID: " << i + 1 << " - " << data->title << endl;
-            data->gameId = i + 1;
-            db.insertGame(data->gameId, data->title, data->publisher, data->players, data->year, data->fullPath + sep,
-                           data->saveStatePath + sep, data->memcard);
-            if (data->discs.size() == 0)
-                cout << "No discs in game: " << data->title << endl;
-            for (int j = 0; j < data->discs.size(); j++) {
-                db.insertDisc(i + 1, j + 1, data->discs[j].diskName);
-            }
-            string gamePath = DirEntry::removeSeparatorFromEndOfPath(data->fullPath);
-            string ssPath = DirEntry::removeSeparatorFromEndOfPath(data->saveStatePath);
-            outfile << i + 1 << "," << Strings::escapeCommas(gamePath) << "," << Strings::escapeCommas(ssPath) << '\n';
-        }
-        db.commit();
-    }
-    outfile.flush();
-    outfile.close();
-
-    //cout << "about to write hierarchy to DB" << endl;
+void GameScanner::writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &db, const map<string, int> &idByPath) {
     gamesHierarchy.printRowDisplayGameInfo(false);
 
     db.beginTransaction();
+    db.clearSubDirTables();
     for (auto &row : gamesHierarchy.gameSubDirRows) {
-        //cout << " write row: " << row->displayRowIndex << ", " << row->subDirName << ", " << row->displayIndentLevel << ", " << row->gamesToDisplay.size() << endl;
         db.insertSubDirRow(row->displayRowIndex, row->subDirName, row->displayIndentLevel, row->gamesToDisplay.size());
 
         for (auto &game : row->gamesToDisplay) {
-            //cout << " write game: " << game->gameDirName << ", " << row->displayRowIndex << ", " << game->gameId << endl;
-            db.insertSubDirRowGame(row->displayRowIndex, game->gameId);
+            auto it = idByPath.find(game->fullPath);
+            if (it == idByPath.end()) {
+                cout << "writeSubDirRows: no database id for " << game->fullPath << ", skipping" << endl;
+                continue;
+            }
+            db.insertSubDirRowGame(row->displayRowIndex, it->second);
         }
     }
     db.commit();
+}
+
+//*******************************
+// GameScanner::writeAutobleemList
+//*******************************
+void GameScanner::writeAutobleemList(const UsbGames &games, const map<string, int> &idByPath) {
+    string path = Environment::getWorkingPath() + sep + "autobleem.list";
+    ofstream outfile;
+    outfile.open(path);
+    if (!DirEntry::checkWritable(outfile, path)) return;   // the db is still updated; the list is only read by the shell scripts
+
+    for (const UsbGamePtr &game : games) {
+        auto it = idByPath.find(game->fullPath);
+        if (it == idByPath.end())
+            continue;
+        string gamePath = DirEntry::removeSeparatorFromEndOfPath(game->fullPath);
+        string ssPath = DirEntry::removeSeparatorFromEndOfPath(game->saveStatePath);
+        outfile << it->second << "," << Strings::escapeCommas(gamePath) << "," << Strings::escapeCommas(ssPath) << '\n';
+    }
+    outfile.flush();
+    outfile.close();
 }
 
 
@@ -320,7 +317,6 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
 //*******************************
 void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDatabase &coverDb) {
     gamesToAddToDB.clear();  // clear games list
-    complete = false;
 
     report(ScanStage::Scanning);
 
@@ -350,7 +346,10 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
     }
 #endif
 
+    int totalGames = static_cast<int>(allGames.size());
+    int gameIndex = 0;
     for (UsbGamePtr game : allGames) {
+        gameIndex++;
         int i = 0;
         if (game)
             cout << i++ << ": "<< game->gameDirName << ", " << game->fullPath << endl;
@@ -365,7 +364,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
         game->folder_id = 0; // this will not be in use;
         game->saveStatePath = Environment::getPathToSaveStatesDir() + sep + game->gameDirName + sep;
 
-        report(ScanStage::Game, game->gameDirName);
+        report(ScanStage::Game, game->gameDirName, gameIndex, totalGames);
 
         string gamePathWithOutSeparator = DirEntry::removeSeparatorFromEndOfPath(game->fullPath);
 
@@ -486,9 +485,14 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
                     DirEntry::copy(Environment::getWorkingPath() + sep + PCSX_CFG, game->saveStatePath + sep + PCSX_CFG);
                 }
                 DirEntry::generateM3UForDirectory(game->fullPath, game->discs[0].cueName);
+
+                if (listener)
+                    listener->onGameVerified(*game);
             }
             else {
                 report(ScanStage::GameFailedVerify, game->fullPath);
+                if (listener)
+                    listener->onGameFailedVerify(game->fullPath);
                 badGameFile << "Game failed to verify: " << game->fullPath << endl;
                 for (const auto & reason : failureReasons)
                     badGameFile << "Reason: " << reason << endl;
@@ -517,7 +521,6 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
     outfile.close();
 
     noGamesFoundDuringScan = (gamesToAddToDB.size() == 0);
-    complete = true;
 }
 
 //*******************************

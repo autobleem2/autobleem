@@ -58,6 +58,10 @@ public:
     // logs when an output file could not be opened. returns false in that case so the caller can bail out.
     static bool checkWritable(const std::ofstream &os, const std::string &path);
     static bool exists(const std::string &name);        // file or dir
+    // st_size of a file; -1 if it does not exist or is a directory. Deliberately size only, not mtime: the
+    // PSC has no battery-backed clock, so a file's stored modification time cannot be trusted to stay put
+    // across a reboot (see Clock's comment) - GamesFingerprint uses this instead to notice a changed game.
+    static long long fileSize(const std::string &path);
     static bool createDir(const std::string &name);
     static int rmDir(std::string path);                 // recursive; 0 on success
     static bool removeDirAndContents(const std::string path);
