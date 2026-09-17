@@ -1,23 +1,51 @@
+.-= Code C++ and shell scripts =-.
+.-= Cod C++ si scripturi shell =-.
+.-= Database maintenance =-.
+.-= Intretinere baza de date =-.
+.-= Graphics =-.
+.-= Grafica =-.
+.-= Localization support =-.
+.-= Suport localizare =-.
+.-= Retroboot and emulation cores =-.
+.-= Retroboot si nuclee de emulare =-.
+.-= Testing =-.
+.-= Testare =-.
+A scan is already in progress
+O scanare este deja in curs
 About
 Despre
+About AutoBleem
+Despre AutoBleem
 Advanced
 Avansat
 Advanced:
 Avansat:
+All Games
+Toate jocurile
+Are you sure you want to delete
+Esti sigur ca vrei sa stergi
 Are you sure you want to flush all covers?
 Esti sigur ca vrei sa stergi toate cover-urile?
+Are you sure you want to power off?
+Esti sigur ca vrei sa opresti consola?
 Are you sure?
 Esti sigur?
 AutoBleem
 AutoBleem
+AutoBleem resume points not available in RetroArch.
+Punctele de reluare AutoBleem nu sunt disponibile in RetroArch.
 AutoBleem Theme:
 Schema de culori pentru AutoBleem:
 Automatic PlayStation Classic USB launcher
 Automatic PlayStation Classic USB launcher
 Background Music:
 Muzica de fundal:
+Backspace
+Backspace
 Button Guide
 Ghid butoane
+Can't manage games while a scan is running
+Nu poti gestiona jocurile in timpul unei scanari
 Cancel
 Anuleaza
 Caps
@@ -26,6 +54,10 @@ Card
 Card
 Change MC
 Schimba MC
+Change RetroBoot System
+Schimba Sistemul RetroBoot
+Change USB Games Sub-Directory
+Schimba subdirectorul jocurilor USB
 Clock:
 Ceas:
 Close
@@ -36,10 +68,18 @@ Configuration
 Configurare
 Configuration saved - Press |@X| to continue
 Configuratia a fost salvata - Apasa |@X| pentru a continua
+CONFIGURED
+CONFIGURAT
 Confirm
 Confirma
+Controller and system information
+Informatii despre controller si sistem
+Copy
+Copiaza
 Cover Style:
 Stil pentru Cover:
+Create, rename or manage memory card sets
+Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
 Custom
 Personalizat
 Custom Memory Cards
@@ -48,10 +88,20 @@ Customize AutoBleem settings
 Personalizeaza setari AutoBleem
 Decompressing ecm:
 Decomprimare ecm:
+Defragment Card
+Defragmenteaza cardul
 Delete
 Sterge
+Delete !SaveState folder for game
+Sterge folderul !SaveState al jocului
 Delete card
 Sterge card
+Delete Game
+Sterge Jocul
+Delete games, flush covers
+Sterge jocuri, curata coperti
+Do you want to save memcards data ?
+Vrei sa salvezi datele cardurilor de memorie?
 Download latest:
 Descarca ultima varianta:
 DPAD - Same as classic menu
@@ -60,6 +110,8 @@ Edit game parameters
 Editeaza parametri jocului
 Edit Memory Card information
 Editeaza informatia despre Cardul de Memorie
+EmulationStation
+EmulationStation
 Emulator config MENU
 Meniu de configurare al emulatorului
 Enter
@@ -72,24 +124,48 @@ Enter new name for card
 Adauga un nume nou pentru card
 Enter new name for memory card
 Adauga un nume nou pentru cardul de memorie
+Entry
+Intrare
+Exit game
+Iesire din joc
+Exit to
+Iesire spre
+Exit to EvoUI
+Iesire spre EvoUI
+failed
+esuate
+Failed to delete
+Stergere esuata
+Favorite Games
+Jocuri Favorite
 Favorite:
 Setari preferate:
+Final score
+Scor final
 Flush covers
 Sterge cover-urile
 Folder:
 Dosar:
 Frameskip:
 Frameskip:
+Free
+Liber
 Free space
 Spatiu liber
 Game
 Joc
 GAME
 Joc
+Game failed to verify:
+Verificarea jocului a esuat:
+Game History
+Istoric Jocuri
 Game Manager
 Manager jocuri
 Game manager - Select game
 Manager jocuri - selecteaza joc
+GAME OVER
+JOC TERMINAT
 Game:
 Joc:
 games
@@ -106,30 +182,54 @@ Go back
 Inapoi
 Graphics by:
 Grafica de:
+Hardware Information
+Informatii Hardware
 High res:
 High res (rezolutie inalta):
+HIGH SCORE
+SCOR MAXIM
 Hold
 Pauza
 IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
 IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
 In Game
 In joc
+In Retroarch Game
+In jocul RetroArch
+INTERNAL
+INTERN
 Internal
 Intern
+Internal Games
+Jocuri Interne
 Internal Games:
 Jocuri Interne:
 Is your dpad analogue?
 Ai "dpad" analog?
 Language:
 Limba:
+Last Played:
+Ultima data jucat:
+LIFE LOST
+VIATA PIERDUTA
+Link Block
+Bloc de Legatura
+Link end Block
+Sfarsit Bloc de Legatura
+LIVES
+VIETI
 Loading ... Please Wait ...
 Incarca...Te rog asteapta...
 Lock data:
 Restrictioneaza acessul la date:
+Look for new, changed or removed games
+Cauta jocuri noi, modificate sau eliminate
 MemCard Manager will be available soon
 Managerul pentru Carduri de memorie va fi disponibil curand
 MEMORY CARD
 Card Memorie
+Memory Card Manager
+Manager Carduri Memorie
 Memory Card:
 Card Memorie:
 Memory Cards
@@ -138,20 +238,36 @@ Menu
 Meniu
 Menu Theme:
 Schema de culori Meniu:
+Move Cursor
+Muta Cursorul
+Moving :
+Se muta:
 Music:
 Muzica:
 New Card
 Card Nou
 New GamePad found
 Un nou GamePad a fost gasit
+Next Game Platform
+Platforma Urmatoare de Jocuri
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+ATENTIE: Cel putin un controller conectat nu este recunoscut. Configureaza-l din pagina Informatii Hardware.
+OK
+OK
 OOPS! Game crashed. Resume point not available.
 OOPS! Game crashed. Resume point not available.
+Open Retroarch Menu
+Deschide Meniul RetroArch
 Options
 Optiuni
 Original
 Original
 Page
 Pagina
+Play all PSX games with RA:
+Joaca toate jocurile PSX cu RA:
+Play using RA:
+Joaca folosind RA:
 Player
 Jucator
 Players
@@ -160,12 +276,18 @@ Please confirm
 Te rog confirma
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 Te rog conecteaza GamePad la Playstation classic
+Please wait ... deleting
+Asteapta ... se sterge
 Please wait ... deleting covers...
 Stergere Cover-uri...Te rog asteapta...
 Plugin:
 Plugin:
+POWER
+PORNIRE
 Power Off
 Power Off
+POWER SHOT
+FOC PUTERNIC
 POWERING OFF... PLEASE WAIT
 Powering Off...Te rog asteapta
 Press a key for
@@ -182,12 +304,26 @@ QuickBoot:
 QuickBoot:
 Quit emulation - back to AutoBleem
 Inchide simulare - inapoi la AutoBleem
+Random Game
+Joc Aleatoriu
+RAPID FIRE
+FOC RAPID
+Re-Scan Games
+Rescaneaza jocurile
 Re/Scan
 Re/Scan
+ReadMe file not found
+Fisierul ReadMe nu a fost gasit
 Region:
 Regiune:
+Reload Cards
+Reincarca Cardurile
 Rename
 Redenumeste
+RESET
+RESETARE
+Restart
+Reporneste
 RESUME
 Continua
 Resume game from saved state point
@@ -198,20 +334,36 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch nu este instalat
+Run using RetroBoot
+Ruleaza folosind RetroBoot
+Safely power off the console
+Opreste consola in siguranta
+Scan complete:
+Scanare finalizata:
 Scanline Level:
 Nivel ScanLine:
 Scanlines:
 Scanlines:
+Scanning
+Scanare
 Scanning...
 Scanez...
+SCORE
+SCOR
 Select
 Selecteaza
 Select memory card
 Selecteaza card de memorie
 Select or cancel highlighted option
 Confirma sau anuleaza optiunea subliniata
+Select PS1 Game Category
+Selecteaza Categoria de Joc PS1
 SELECT RESUME SLOT TO LOAD
 Selecteaza SLOT pentru incarcare
+Select RetroBoot Platform
+Selecteaza Platforma RetroBoot
+Select Right Card
+Selecteaza Cardul din Dreapta
 SELECT SLOT TO SAVE STATE
 Selecteaza SLOT pentru a salva starea curenta
 Serial:
@@ -220,18 +372,34 @@ SETTINGS
 Setari
 Share MC
 Share MC
+Show Internal Games:
+Arata Jocurile Interne:
 Show RetroArch:
 Afiseaza RetroArch:
 Showing Timeout (0 = no timeout):
 Showing Timeout (0 = no timeout):
+Showing: All Games
+Se arata: Toate Jocurile
 Showing: All games
 Afiseaza: Toate jocurile
+Showing: Apps
+Se arata: Aplicatii
+Showing: Favorite Games
+Se arata: Jocuri Favorite
 Showing: Favorite games
 Afiseaza: Jocul preferate
+Showing: Game History
+Se arata: Istoric Jocuri
+Showing: Internal Games
+Se arata: Jocuri Interne
 Showing: Internal games
 Afiseaza: Jocurile interne
+Showing: Retroarch
+Se arata: Retroarch
 Showing: USB games
 Afiseaza: Jocurile USB
+Showing: USB Games Directory:
+Se arata: Director Jocuri USB:
 Slot
 Port
 Sorting :
@@ -242,26 +410,46 @@ Space
 Spatiu
 SpeedHack:
 SpeedHack:
+SPREAD SHOT
+FOC IMPRASTIAT
 Spu Interpolation:
 Spu Interpolation:
 Starting EvolutionUI
 Starting EvolutionUI
 Support via Discord:
 Support via Discord:
+Surprise
+Surpriza
+SYSTEM
+SISTEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Meniu Sistem (Scanare, RetroArch, Carduri Memorie, Oprire, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 Acest program este gratuit si open source. Functioneaza in Starea Actuala si Noi NU ne asumam raspunderea pentru orice defecte sau stricaciuni.
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Acesta este software liber. Functioneaza CA ATARE si nu ne asumam responsabilitatea pentru probleme sau daune.
 to scan
 Pentru scanare
 Total:
 Total:
 UI:
 Interfata:
+Unknown Core (AutoDetect)
+Nucleu Necunoscut (Autodetectare)
+Update RA Config:
+Actualizeaza Configuratia RA:
 Updating regional.db...
 Actualizez regional.db...
+USB Games
+Jocuri USB
+Use Controller
+Foloseste Controllerul
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 Atentie: Nu a fost gasit nici un COVER DB.Apasa orice buton.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 Atentie: Nu a fost gasit nici un joc. Apasa orice button.
+WAVE
+VAL
 Widescreen:
 WideScreen:
 Year:

@@ -12,8 +12,12 @@
 .-= Testers =-.
 .lic file not found
 Archivo .lic no encontrado
+A scan is already in progress
+Ya hay un escaneo en curso
 About
 Sobre
+About AutoBleem
+Acerca de AutoBleem
 Advanced
 Avanzado
 All Games
@@ -22,6 +26,8 @@ Are you sure you want to delete
 Estas seguro que quieres borrar
 Are you sure you want to flush all covers?
 ¿Estas seguro que quieres eliminar todas las caratulas?
+Are you sure you want to power off?
+¿Seguro que quieres apagar la consola?
 Are you sure?
 ¿Estas seguro?
 AutoBleem
@@ -38,6 +44,8 @@ Bin file failed to verify
 El archivo .bin no se pudo verificar
 Button Guide
 Guia de Botones
+Can't manage games while a scan is running
+No se pueden administrar juegos mientras se realiza un escaneo
 Cancel
 Cancelar
 Caps
@@ -60,12 +68,16 @@ CONFIGURED
 CONFIGURADO
 Confirm
 Confirmar
+Controller and system information
+Información del mando y del sistema
 Copy
 Copiar
 Cover image file not found
 Caratula no encontrada
 Cover Style:
 Estilo de Caratulas:
+Create, rename or manage memory card sets
+Crea, renombra o administra sets de memory cards
 Cue file not found
 Archivo .cue no encontrado
 Custom
@@ -86,6 +98,8 @@ Delete card
 Borrar tarjeta
 Delete Game
 Borrar Juego
+Delete games, flush covers
+Borra juegos, vacía las carátulas
 Do you want to save memcards data ?
 Quieres salvar los datos de las memorycards ?
 Download latest:
@@ -110,14 +124,22 @@ Enter new name for memory card
 Entra nuevo nombre para memory card
 Entry
 Entrada
+Exit game
+Salir del juego
+Exit to
+Salir a
 Exit to EvoUI
 Salir a EvoUI
+failed
+fallidos
 Failed to delete
 Fallo al borrar
 Favorite Games
 Juegos Favoritos
 Favorite:
 Favorito:
+Final score
+Puntuación final
 Flush covers
 Eliminar caratulas
 Folder:
@@ -142,6 +164,8 @@ Game Manager
 Administrador de Juegos
 Game manager - Select game
 Administrador de juegos - Elige juego
+GAME OVER
+FIN DEL JUEGO
 Game.ini file not found
 Archivo game.ini no encontrado
 Game.ini file not valid
@@ -162,6 +186,8 @@ Hardware Information
 Informacion de Hardware
 High res:
 High res:
+HIGH SCORE
+PUNTUACION MAXIMA
 In Boot Menu: Safe Power Off The Console
 En el Menu Principal: Apagado Seguro de la Consola
 In Game
@@ -178,14 +204,20 @@ Language:
 Idioma:
 Last Played:
 Ultima Partida:
+LIFE LOST
+VIDA PERDIDA
 Link Block
 Link Block
 Link end Block
 Link end Block
+LIVES
+VIDAS
 Loading ... Please Wait ...
 Cargando ... Por favor espera ...
 Lock data:
 Bloquear datos:
+Look for new, changed or removed games
+Busca juegos nuevos, modificados o eliminados
 MEMORY CARD
 MEMORY CARD
 Memory Card Manager
@@ -210,6 +242,8 @@ No disc name
 Sin nombre de disco
 No discs
 Sin discos
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+AVISO: Al menos un mando conectado no ha sido reconocido. Configuralo en la pagina de Informacion de Hardware.
 OK
 Aceptar
 OOPS! Game crashed. Resume point not available.
@@ -224,6 +258,10 @@ Page
 Pagina
 pcsx.cfg file not found
 Archivo pcsx.cfg no encontrado
+Play all PSX games with RA:
+Jugar todos los juegos PSX con RA:
+Play using RA:
+Jugar usando RA:
 Player
 Jugador
 Players
@@ -242,6 +280,8 @@ POWER
 POWER
 Power Off
 Apagar
+POWER SHOT
+DISPARO POTENTE
 POWERING OFF... PLEASE WAIT
 APAGANDO... POR FAVOR ESPERA
 Press a key for
@@ -258,6 +298,10 @@ Quit emulation - back to AutoBleem
 Quitar emulacion - volver a AutoBleem
 Random Game
 Juego Aleatorio
+RAPID FIRE
+DISPARO RAPIDO
+Re-Scan Games
+Reescanear juegos
 Re/Scan
 Re/Escanear
 ReadMe file not found
@@ -270,6 +314,8 @@ Rename
 Renombrar
 RESET
 RESET
+Restart
+Reiniciar
 RESUME
 REANUDAR
 Resume game from saved state point
@@ -282,12 +328,20 @@ RetroArch is not installed
 RetroArch no esta instalado
 Run using RetroBoot
 Ejecutar con RetroBoot
+Safely power off the console
+Apaga la consola de forma segura
+Scan complete:
+Escaneo completado:
 Scanline Level:
 Nivel de Scanline:
 Scanlines:
 Scanlines:
+Scanning
+Escaneando
 Scanning...
 Escaneando...
+SCORE
+PUNTUACION
 Select
 Elegir
 Select memory card
@@ -334,12 +388,20 @@ Space
 Espacio
 SpeedHack:
 SpeedHack:
+SPREAD SHOT
+DISPARO MULTIPLE
 Spu Interpolation:
 Spu Interpolation:
 Starting EvolutionUI
 Iniciando EvolutionUI
 Support via Discord:
 Soporte via Discord:
+Surprise
+Sorpresa
+SYSTEM
+SISTEMA
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Menú del sistema (Escaneo, RetroArch, Memory Cards, Apagado, ...)
 This is free software. It works AS IS and We take no responsibility for any issues or damage.
 Este es un software gratuito. Funciona COMO ESTA y no nos hacemos responsables de ningun problema o daño.
 to scan
@@ -362,6 +424,8 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 ADVERTENCIA: COVER BD NO ENCONTRADO. PULSE CUALQUIER BOTON.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 ADVERTENCIA: JUEGOS NO ENCONTRADOS. PULSE CUALQUIER BOTON.
+WAVE
+OLA
 Widescreen:
 Widescreen:
 Year:

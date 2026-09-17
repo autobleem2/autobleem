@@ -1,21 +1,55 @@
 'Tenchu' theme by Kevzombie
 'Tenchu' thema door Kevzombie
+.-= Code C++ and shell scripts =-.
+.-= Code C++ en shell scripts =-.
+.-= Database maintenance =-.
+.-= Database onderhoud =-.
+.-= Graphics =-.
+.-= Graphics =-.
+.-= Localization support =-.
+.-= Vertaling =-.
+.-= Retroboot and emulation cores =-.
+.-= Retroboot en emulatiekernen =-.
+.-= Testing =-.
+.-= Testen =-.
+A scan is already in progress
+Er is al een scan bezig
 About
 Over
 About
 Over
+About AutoBleem
+Over AutoBleem
 Advanced
 Geavanceerd
 Advanced:
 Geavanceerd:
+All Games
+Alle games
+Are you sure you want to delete
+Weet je zeker dat je wilt verwijderen
+Are you sure you want to flush all covers?
+Weet je zeker dat je alle covers wilt wissen?
+Are you sure you want to power off?
+Weet je zeker dat je wilt uitschakelen?
+Are you sure?
+Weet je het zeker?
 AutoBleem
 AutoBleem
+AutoBleem resume points not available in RetroArch.
+AutoBleem hervattingspunten zijn niet beschikbaar in RetroArch.
 AutoBleem Theme:
 AutoBleem Thema:
 Automatic PlayStation Classic USB launcher
 Automatische Playstation Classic USB Launcher
 Background Music:
 Achtergrond Muziek
+Backspace
+Backspace
+Button Guide
+Knoppengids
+Can't manage games while a scan is running
+Kan games niet beheren terwijl een scan actief is
 Cancel
 Annuleer
 Caps
@@ -24,24 +58,64 @@ Card
 Kaart
 Change MC
 Verander MC
+Change RetroBoot System
+Wijzig RetroBoot systeem
+Change USB Games Sub-Directory
+Wijzig USB games submap
+Clock:
+Klok:
 Close
 Sluiten
 Code: AutoBleem Team
 Code: AutoBleem Team
 Configuration
 Configuratie
+CONFIGURED
+GECONFIGUREERD
 Confirm
 Bevestig
+Controller and system information
+Controller- en systeeminformatie
+Copy
+Kopiëren
+Cover Style:
+Cover stijl:
+Create, rename or manage memory card sets
+Memory card-sets aanmaken, hernoemen of beheren
 Custom
 Aangepast
 Custom Memory Cards
 Custom Memory Kaart
+Customize AutoBleem settings
+Pas AutoBleem instellingen aan
+Decompressing ecm:
+Ecm decomprimeren:
+Defragment Card
+Defragmenteer kaart
 Delete
 Verwijder
+Delete !SaveState folder for game
+Verwijder !SaveState-map voor game
 Delete card
 Verwijder kaart
+Delete Game
+Verwijder game
+Delete games, flush covers
+Games verwijderen, covers wissen
+Do you want to save memcards data ?
+Wil je memory card gegevens opslaan?
 Download latest:
 Download laatste versie:
+Edit game parameters
+Bewerk game parameters
+Edit Memory Card information
+Bewerk memory card informatie
+EmulationStation
+EmulationStation
+Emulator config MENU
+Emulator configuratiemenu
+Enter
+Enter
 Enter new card name
 Nieuwe kaart naam
 Enter new game name
@@ -50,16 +124,48 @@ Enter new name for card
 Nieuwe naam voor kaart
 Enter new name for memory card
 Nieuwe naam voor memory card
+Entry
+Item
+Exit game
+Spel afsluiten
+Exit to
+Afsluiten naar
+Exit to EvoUI
+Afsluiten naar EvoUI
+failed
+mislukt
+Failed to delete
+Verwijderen mislukt
+Favorite Games
+Favoriete games
+Favorite:
+Favoriet:
+Final score
+Eindscore
+Flush covers
+Covers wissen
 Folder:
 Map:
+Frameskip:
+Frameskip:
+Free
+Vrij
 Free space
 Vrije ruimte
+GAME
+GAME
 Game
 Game
+Game failed to verify:
+Game verificatie mislukt:
+Game History
+Game geschiedenis
 Game Manager
 Game Manager
 Game manager - Select game
 Game manager - Selecteer game
+GAME OVER
+GAME OVER
 Game:
 Game:
 games
@@ -72,22 +178,52 @@ GFX Filter:
 GFX Filter:
 Go back
 Ga terug
+Hardware Information
+Hardware informatie
 Hi/Lo Res
 Hi/Lo Res
 High res:
 High res:
+HIGH SCORE
+HOOGSTE SCORE
 Hold
 Pauze
+In Game
+In game
+In Retroarch Game
+In RetroArch game
+INTERNAL
+INTERN
 Internal
 Intern
 Internal
 Intern
+Internal Games
+Interne games
+Language:
+Taal:
+Last Played:
+Laatst gespeeld:
+LIFE LOST
+LEVEN VERLOREN
+Link Block
+Link Blok
+Link end Block
+Link Eind Blok
+LIVES
+LEVENS
 Loading ... Please Wait ...
 Laden... Even geduld ...
 Lock
 Gesloten
 Lock data:
 Lock data:
+Look for new, changed or removed games
+Zoek naar nieuwe, gewijzigde of verwijderde games
+MEMORY CARD
+MEMORY CARD
+Memory Card Manager
+Memory Card beheer
 Memory Card:
 Memory Kaart:
 Memory Cards
@@ -96,8 +232,26 @@ Menu
 Menu
 Menu Theme:
 Menu Thema:
+Move Cursor
+Verplaats cursor
+Moving :
+Verplaatsen:
+Music:
+Muziek:
 New Card
 Nieuwe Kaart
+New GamePad found
+Nieuwe controller gevonden
+Next Game Platform
+Volgende game platform
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+LET OP: Ten minste één aangesloten controller wordt niet herkend. Gebruik de pagina Hardware-informatie om deze in te stellen.
+OK
+OK
+OOPS! Game crashed. Resume point not available.
+OEPS! Game is gecrasht. Hervattingspunt niet beschikbaar.
+Open Retroarch Menu
+Open RetroArch menu
 Options
 Options
 Original
@@ -106,53 +260,175 @@ Page
 Pagina
 PCSX Version:
 PCSX Versie:
+Play all PSX games with RA:
+Speel alle PSX games met RA:
+Play using RA:
+Speel met RA:
+Player
+Speler
 Players
 Spelers
 Please confirm
 Bevestig
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 SLUIT EEB PLAYSTATION CLASSIC CONTROLLER AAN
+Please wait ... deleting
+Even geduld ... verwijderen
+Please wait ... deleting covers...
+Even geduld ... covers verwijderen...
+Plugin:
+Plugin:
+POWER
+POWER
+Power Off
+Uitschakelen
+POWER SHOT
+KRACHTSCHOT
+POWERING OFF... PLEASE WAIT
+UITSCHAKELEN... EVEN GEDULD
 Published by:
 Gepubliceerd door:
 Quick boot
 Snel starten
+Quick scroll to next letter
+Snel scrollen naar volgende letter
 QuickBoot:
 Snel Starten:
+Quit emulation - back to AutoBleem
+Emulatie afsluiten - terug naar AutoBleem
+Random Game
+Willekeurige game
+RAPID FIRE
+SNELVUUR
+Re-Scan Games
+Games opnieuw scannen
 Re/Scan
 Re/Scan
+ReadMe file not found
+ReadMe bestand niet gevonden
+Region:
+Regio:
+Reload Cards
+Herlaad kaarten
 Rename
 Hernoem
+RESET
+RESET
+Restart
+Herstart
+RESUME
+HERVATTEN
+Resume game from saved state point
+Hervat game vanaf opgeslagen punt
+Resume point saved to slot
+Hervattingspunt opgeslagen naar slot
 RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch is niet geïnstalleerd
+Run using RetroBoot
+Start met RetroBoot
+Safely power off the console
+Console veilig uitschakelen
+Scan complete:
+Scan voltooid:
+Scanline Level:
+Scanline niveau:
+Scanlines:
+Scanlines:
+Scanning
+Scannen
 Scanning...
 Scannen...
+SCORE
+SCORE
 Select
 Selecteer
 Select memory card
 Selecteer memory card
+Select or cancel highlighted option
+Selecteer of annuleer gemarkeerde optie
+Select PS1 Game Category
+Selecteer PS1 game categorie
+SELECT RESUME SLOT TO LOAD
+SELECTEER SLOT OM TE LADEN
+Select RetroBoot Platform
+Selecteer RetroBoot platform
+Select Right Card
+Selecteer rechter kaart
+SELECT SLOT TO SAVE STATE
+SELECTEER SLOT OM OP TE SLAAN
+Serial:
+Serienummer:
+SETTINGS
+INSTELLINGEN
 Share MC
 Deel MC
+Show Internal Games:
+Toon interne games:
 Show RetroArch:
 Toon RetroArch:
+Showing Timeout (0 = no timeout):
+Toon timeout (0 = geen timeout):
+Showing: All Games
+Toont: Alle games
+Showing: Apps
+Toont: Apps
+Showing: Favorite Games
+Toont: Favoriete games
+Showing: Game History
+Toont: Game geschiedenis
+Showing: Internal Games
+Toont: Interne games
+Showing: Retroarch
+Toont: Retroarch
+Showing: USB Games Directory:
+Toont: USB games map:
+Slot
+Slot
 Space
 Spatie
+SpeedHack:
+SpeedHack:
+SPREAD SHOT
+SPREISCHOT
+Spu Interpolation:
+SPU interpolatie:
 Support via Discord:
 Support ons via Discord:
+Surprise
+Verrassing
+SYSTEM
+SYSTEEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Systeemmenu (Scannen, RetroArch, Memory Cards, Uitschakelen, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 Dit is gratis en open source software. Het werkt ZOALS AANGELEVERD en wij nemen geen verantwoordelijkheid voor eventuele problemen of schade. 
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Dit is gratis software. Het werkt ZOALS HET IS en wij nemen geen verantwoordelijkheid voor problemen of schade.
 to scan
 te scannen
 Total:
 Totaal:
+Unknown Core (AutoDetect)
+Onbekende core (AutoDetectie)
+Update RA Config:
+Update RA configuratie:
 Updating regional.db...
 regional.db updaten...
 Upgrading AutoBleem - Please wait...
 AutoBleem upgraden - Moment...
+USB Games
+USB games
+Use Controller
+Gebruik controller
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 WAARSCHUWING: GEEN COVER DATABASE GEVONDEN. DRUK OP KNOP
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 WAARSCHUWING: GEEN GAMES GEVONDEN. DRUK OP EEN KNOP.
+WAVE
+GOLF
+Widescreen:
+Widescreen:
 Year:
 Jaar:

@@ -12,8 +12,12 @@
 .-= Testovanie =-.
 .lic file not found
 .lic súbor sa nepodarilo nájsť
+A scan is already in progress
+Skenovanie už prebieha
 About
 O programe
+About AutoBleem
+O aplikácii AutoBleem
 Advanced
 Rozšírené
 All Games
@@ -22,6 +26,8 @@ Are you sure you want to delete
 Ste si istý, že chcete zmazať
 Are you sure you want to flush all covers?
 Naozaj chcete zmazať všetky obaly?
+Are you sure you want to power off?
+Naozaj chcete vypnúť konzolu?
 Are you sure?
 Ste si tým istý?
 AutoBleem
@@ -38,6 +44,8 @@ Bin file failed to verify
 Nepodarilo sa overiť súbor bin.
 Button Guide
 Sprievodca tlačidlami
+Can't manage games while a scan is running
+Počas skenovania nie je možné spravovať hry
 Cancel
 Zrušiť
 Caps
@@ -60,12 +68,16 @@ CONFIGURED
 NAKONFIGUROVANÝ
 Confirm
 Potvrdiť
+Controller and system information
+Informácie o ovládači a systéme
 Copy
 Kopírovať
 Cover image file not found
 Nie je možné nájsť obal hry.
 Cover Style:
 Štýl obalu:
+Create, rename or manage memory card sets
+Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 Cue file not found
 Nie je možné nájsť cue súbor.
 Custom
@@ -86,6 +98,8 @@ Delete card
 Zmazať kartu
 Delete Game
 Odstrániť hru
+Delete games, flush covers
+Zmazať hry, vyčistiť obaly
 Do you want to save memcards data ?
 Chcete uložiť údaje z kariet?
 Download latest:
@@ -110,14 +124,22 @@ Enter new name for memory card
 Zadajte nový názov pamäťovej karty
 Entry
 Údaj
+Exit game
+Ukončiť hru
+Exit to
+Prejsť do
 Exit to EvoUI
 Odísť do EvoUI
+failed
+zlyhalo
 Failed to delete
 Nepodarilo sa odstrániť
 Favorite Games
 Obľúbené hry
 Favorite:
 Obľúbené
+Final score
+Konečné skóre
 Flush covers
 Zmazané obaly
 Folder:
@@ -142,6 +164,8 @@ Game Manager
 Správca hier
 Game manager - Select game
 Správca hry - Vybrať hru
+GAME OVER
+KONIEC HRY
 Game.ini file not found
 Súbor hry .ini sa nenašiel.
 Game.ini file not valid
@@ -162,6 +186,8 @@ Hardware Information
 Informácie o hardvéri
 High res:
 Vysoké rozlíšenie:
+HIGH SCORE
+NAJLEPŠIE SKÓRE
 In Boot Menu: Safe Power Off The Console
 V bootovacom menu: Bezpečne vypnúť konzolu
 In Game
@@ -178,14 +204,20 @@ Language:
 Jazyk:
 Last Played:
 Naposledy hrané:
+LIFE LOST
+STRATA ŽIVOTA
 Link Block
 Spojiť blok
 Link end Block
 Spojiť koniec bloku
+LIVES
+ŽIVOTY
 Loading ... Please Wait ...
 Nahrávam ... Čakajte prosím ...
 Lock data:
 Uzamknúť zmeny:
+Look for new, changed or removed games
+Vyhľadáť nové, zmenené alebo odstránené hry
 MEMORY CARD
 PAMÄŤOVÁ KARTA
 Memory Card Manager
@@ -210,6 +242,8 @@ No disc name
 Disk hry bez názvu
 No discs
 Žiadne disky
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+UPOZORNENIE: Aspoň jeden pripojený ovládač nebol rozpoznaný. Nastavte ho na stránke Informácie o hardvéri.
 OK
 OK
 OOPS! Game crashed. Resume point not available.
@@ -224,6 +258,10 @@ Page
 Strana
 pcsx.cfg file not found
 Súbor pcsx.cfg sa nenašiel
+Play all PSX games with RA:
+Hrať všetky PSX hry cez RA:
+Play using RA:
+Hrať cez RA:
 Player
 Hráč
 Players
@@ -242,6 +280,8 @@ POWER
 VÝKON
 Power Off
 Vypnúť
+POWER SHOT
+SILNÁ STRELA
 POWERING OFF... PLEASE WAIT
 VYPÍNAM... ČAKAJTE PROSÍM
 Press a key for
@@ -258,6 +298,10 @@ Quit emulation - back to AutoBleem
 Ukončiť emuláciu - návrat do AutoBleemu
 Random Game
 Náhodná hra
+RAPID FIRE
+RÝCHLOPALBA
+Re-Scan Games
+Znova skenovať hry
 Re/Scan
 Pre/Hľadať
 ReadMe file not found
@@ -270,6 +314,8 @@ Rename
 Premenovať
 RESET
 RESETOVAŤ
+Restart
+Reštartovať
 RESUME
 OBNOVA
 Resume game from saved state point
@@ -282,12 +328,20 @@ RetroArch is not installed
 RetroArch nie je nainštalovaný
 Run using RetroBoot
 Spustiť cez Retroboot
+Safely power off the console
+Bezpečne vypnúť konzolu
+Scan complete:
+Skenovanie dokončené:
 Scanline Level:
 Úroveň obrazových riadkov:
 Scanlines:
 Obrazové riadky:
+Scanning
+Skenovanie
 Scanning...
 Vyhľadávam...
+SCORE
+SKÓRE
 Select
 Vybrať
 Select memory card
@@ -334,12 +388,20 @@ Space
 Medzera
 SpeedHack:
 SpeedHack:
+SPREAD SHOT
+ROZPTÝLENÁ PALBA
 Spu Interpolation:
 Interpolácia zvuku:
 Starting EvolutionUI
 Spúšťam EvolutionUI
 Support via Discord:
 Podpora na Discorde:
+Surprise
+Prekvapenie
+SYSTEM
+SYSTÉM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Systémové menu (Skenovanie, RetroArch, Pamäťové karty, Vypnutie, ...)
 This is free software. It works AS IS and We take no responsibility for any issues or damage.
 Toto je bezplatný softvér. Funguje TAK, AKO JE, a NENESIEME žiadnu zodpovednosť za akékoľvek problémy alebo škody.
 to scan
@@ -362,6 +424,8 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 POZOR: NENAŠLA SA DATABÁZA OBALOV NA HRY. STLAČTE ĽUBOVOĽNÚ KLÁVESU.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 POZOR: NEBOLA NÁJDENÁ ŽIADNA HRA. STLAČTE ĽUBOVOĽNÚ KLÁVESU.
+WAVE
+VLNA
 Widescreen:
 Širokouhlý obraz:
 Year:

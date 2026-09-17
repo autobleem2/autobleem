@@ -1,21 +1,53 @@
 'Tenchu' theme by Kevzombie
 'Tenchu' Theme von Kevzombie
+.-= Code C++ and shell scripts =-.
+.-= Code C++ und Shell-Skripte =-.
+.-= Database maintenance =-.
+.-= Datenbankpflege =-.
+.-= Graphics =-.
+.-= Grafik =-.
+.-= Localization support =-.
+.-= Lokalisierungsunterstützung =-.
+.-= Retroboot and emulation cores =-.
+.-= Retroboot und Emulationskerne =-.
+.-= Testing =-.
+.-= Testen =-.
+A scan is already in progress
+Ein Scan läuft bereits
 About
 Über
 About
 Über
+About AutoBleem
+Über AutoBleem
 Advanced
 Erweitert
 Advanced:
 Erweiterte Menüs:
+All Games
+Alle Spiele
+Are you sure you want to delete
+Möchten Sie wirklich löschen
+Are you sure you want to flush all covers?
+Möchten Sie wirklich alle Cover leeren?
+Are you sure you want to power off?
+Möchten Sie das Gerät wirklich ausschalten?
+Are you sure?
+Sind Sie sicher?
 AutoBleem
 AutoBleem
+AutoBleem resume points not available in RetroArch.
+AutoBleem-Fortsetzungspunkte sind in RetroArch nicht verfügbar.
 AutoBleem Theme:
 AutoBleem Theme:
 Background Music:
 Hintergrunds Musik:
+Backspace
+Rücktaste
 Button Guide
 Tastenübersicht
+Can't manage games while a scan is running
+Spiele können während eines Scans nicht verwaltet werden
 Cancel
 Zurück
 Caps
@@ -24,14 +56,30 @@ Card
 Karte
 Change MC
 Memory Card wechseln
+Change RetroBoot System
+RetroBoot-System wechseln
+Change USB Games Sub-Directory
+USB-Spiele-Unterverzeichnis wechseln
+Clock:
+Uhr:
 Close
 Schliessen
 Code: AutoBleem Team
 Entwicklung: AutoBleem Team
 Configuration
 Konfiguration
+CONFIGURED
+KONFIGURIERT
 Confirm
 Bestätigen
+Controller and system information
+Controller- und Systeminformationen
+Copy
+Kopieren
+Cover Style:
+Cover-Stil:
+Create, rename or manage memory card sets
+Memory-Card-Sets erstellen, umbenennen oder verwalten
 Custom
 Benutzer
 Custom Memory Cards
@@ -40,10 +88,22 @@ Customize AutoBleem settings
 AutoBleem Einstellungen anpassen
 Customize PlayStationClassic or AutoBleem settings
 PlayStation Classic oder AutoBleem Einstellungen anpassen
+Decompressing ecm:
+Ecm wird dekomprimiert:
+Defragment Card
+Karte defragmentieren
 Delete
 Löschen
+Delete !SaveState folder for game
+!SaveState-Ordner für das Spiel löschen
 Delete card
 Karte löschen
+Delete Game
+Spiel löschen
+Delete games, flush covers
+Spiele löschen, Cover leeren
+Do you want to save memcards data ?
+Möchten Sie die Memory-Card-Daten speichern?
 Download latest:
 Aktuellste version:
 DPAD - Same as classic menu
@@ -52,8 +112,12 @@ Edit game parameters
 Spiel Eigenschaften editieren
 Edit Memory Card information
 Memory Card Informationen editieren
+EmulationStation
+EmulationStation
 Emulator config MENU
 Emulator Options Menü
+Enter
+Eingabe
 Enter     
 Eingabe          
 Enter new card name
@@ -64,18 +128,48 @@ Enter new name for card
 Neuer Name für Karte eingeben
 Enter new name for memory card
 Neuen Namen für Memory Card eingeben
+Entry
+Eintrag
+Exit game
+Spiel beenden
+Exit to
+Wechseln zu
+Exit to EvoUI
+Zu EvoUI wechseln
+failed
+fehlgeschlagen
+Failed to delete
+Löschen fehlgeschlagen
+Favorite Games
+Lieblingsspiele
+Favorite:
+Favorit:
+Final score
+Endstand
+Flush covers
+Cover leeren
 Folder:
 Ordner:
+Frameskip:
+Frameskip:
+Free
+Frei
 Free space
 Freier Speicher
 GAME
 SPIEL
 Game
 Spiel
+Game failed to verify:
+Spielverifizierung fehlgeschlagen:
+Game History
+Spielverlauf
 Game Manager
 Spiele Manager
 Game manager - Select game
 Spielemanager - Spiel auswählen
+GAME OVER
+SPIEL VORBEI
 Game:
 Spiel:
 games
@@ -90,36 +184,60 @@ GFX Filter:
 Glättefilter:
 Go back
 Zurück
+Hardware Information
+Hardwareinformationen
 Hi/Lo Res
 Hohe/Niedrige Auflösung
 High res:
 Hohe Auflösung:
+HIGH SCORE
+HIGHSCORE
 Hold
 Halten
 IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
 IM BOOTMENÜ DRÜCKEN UM KONSOLE HERUNTERZUFAHREN (SICHERES AUSSCHALTEN !!!)
 In Game
 Im Spiel
+In Retroarch Game
+Im RetroArch-Spiel
+INTERNAL
+INTERN
 Internal
 Intern
 Internal
 Interne
+Internal Games
+Interne Spiele
 Internal Games:
 Zeige interne Spiele:
 It is not possible to edit internal games
 Es ist nicht möglich interne Spiele zu bearbeiten.
 Language:
 Sprache:
+Last Played:
+Zuletzt gespielt:
+LIFE LOST
+LEBEN VERLOREN
+Link Block
+Verknüpfungsblock
+Link end Block
+Verknüpfungsendblock
+LIVES
+LEBEN
 Loading ... Please Wait ...
 Laden ... Bitte warten ...
 Lock
 Sperren
 Lock data:
 Infos Sperren:
+Look for new, changed or removed games
+Nach neuen, geänderten oder entfernten Spielen suchen
 MemCard Manager will be available soon
 Memory Card Manager befindet sich noch in Entwicklung
 MEMORY CARD
 MEMORY CARD
+Memory Card Manager
+Memory-Card-Manager
 Memory Card:
 Memory Card:
 Memory Cards
@@ -128,12 +246,30 @@ Menu
 Menü
 Menu Theme:
 Menü Theme:
+Move Cursor
+Cursor bewegen
+Moving :
+Verschiebe:
+Music:
+Musik:
 New Card
 Neue Karte
+New GamePad found
+Neuer Controller gefunden
+Next Game Platform
+Nächste Spielplattform
 NO GAMES FOUND IN THIS SECTION
 KEINE SPIELE IN DIESER SEKTION GEFUNDEN
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+HINWEIS: Mindestens ein angeschlossener Controller wird nicht erkannt. Richten Sie ihn auf der Seite Hardwareinformationen ein.
+OK
+OK
 OOPS! Game crashed. Resume point not available
 HUCH! Das Spiel ist abgestürzt. Speicherpunkt ist nicht verfügbar.
+OOPS! Game crashed. Resume point not available.
+HOPPLA! Spiel abgestürzt. Fortsetzungspunkt nicht verfügbar.
+Open Retroarch Menu
+RetroArch-Menü öffnen
 Options
 Optionen
 Original
@@ -142,6 +278,10 @@ Page
 Seite
 PCSX Version:
 PCSX Version:
+Play all PSX games with RA:
+Alle PSX-Spiele mit RA spielen:
+Play using RA:
+Mit RA spielen:
 Player
 Spieler
 Players
@@ -150,8 +290,18 @@ Please confirm
 Bitte bestätigen
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 BITTE CONTROLLER AN DIE PLAYSTATION CLASSIC ANSCHLIESSEN
+Please wait ... deleting
+Bitte warten ... lösche
+Please wait ... deleting covers...
+Bitte warten ... Cover werden gelöscht...
+Plugin:
+Plugin:
+POWER
+STROM
 Power Off
 Ausschalten
+POWER SHOT
+KRAFTSCHUSS
 POWERING OFF... PLEASE WAIT
 HERUNTERFAHREN... BITTE WARTEN
 Published by:
@@ -164,10 +314,26 @@ QuickBoot:
 Schnellstart:
 Quit emulation - back to AutoBleem
 Emulation beenden - Zurück zu AutoBleem
+Random Game
+Zufälliges Spiel
+RAPID FIRE
+SCHNELLFEUER
+Re-Scan Games
+Spiele erneut scannen
 Re/Scan
 Neu/Scannen
+ReadMe file not found
+ReadMe-Datei nicht gefunden
+Region:
+Region:
+Reload Cards
+Karten neu laden
 Rename
 Umbenennen
+RESET
+RESET
+Restart
+Neustart
 RESUME
 FORTSETZEN
 Resume game from saved state point
@@ -178,52 +344,116 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch ist nicht installiert
+Run using RetroBoot
+Mit RetroBoot starten
+Safely power off the console
+Konsole sicher ausschalten
+Scan complete:
+Scan abgeschlossen:
+Scanline Level:
+Scanline-Stufe:
+Scanlines:
+Scanlines:
+Scanning
+Scanne
 Scanning...
 Scanne...
+SCORE
+PUNKTZAHL
 Select
 Auswählen
 Select memory card
 Memory Card auswählen
 Select or cancel highlighted option
 Ausgewählte Option bestätigen oder abbrechen
+Select PS1 Game Category
+PS1-Spielkategorie auswählen
 SELECT RESUME SLOT TO LOAD
 SLOT ZUM FORTSETZEN AUSWÄHLEN
+Select RetroBoot Platform
+RetroBoot-Plattform auswählen
+Select Right Card
+Rechte Karte auswählen
 SELECT SLOT TO SAVE STATE
 SLOT ZUM SPEICHERN AUSWÄHLEN
+Serial:
+Seriennummer:
 SETTINGS
 EINSTELLUNGEN
 Share MC
 MC teilen
+Show Internal Games:
+Interne Spiele anzeigen:
 Show RetroArch:
 Zeige RetroArch:
+Showing Timeout (0 = no timeout):
+Anzeige-Timeout (0 = kein Timeout):
+Showing: All Games
+Zeige: Alle Spiele
 Showing: All games
 Zeige: Alle Spiele
+Showing: Apps
+Zeige: Apps
+Showing: Favorite Games
+Zeige: Lieblingsspiele
 Showing: Favorite games
 Zeige: Favourisierte Spiele
+Showing: Game History
+Zeige: Spielverlauf
+Showing: Internal Games
+Zeige: Interne Spiele
 Showing: Internal games
 Zeige: Interne Spiele
+Showing: Retroarch
+Zeige: Retroarch
 Showing: USB games
 Zeige: USB Spiele
+Showing: USB Games Directory:
+Zeige: USB-Spieleverzeichnis:
 Slot
 Slot
 Space
 Leertaste
+SpeedHack:
+SpeedHack:
+SPREAD SHOT
+STREUSCHUSS
+Spu Interpolation:
+SPU-Interpolation:
 Support via Discord:
 Support Discord:
+Surprise
+Überraschung
+SYSTEM
+SYSTEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Systemmenü (Scan, RetroArch, Memory Cards, Ausschalten, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 Dies ist eine freie und quelloffene Software. Es funktioniert wie vorgegeben und wir tragen keine Verantwortung für eventuelle Schäden.
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Dies ist freie Software. Sie funktioniert WIE SIE IST, und wir übernehmen keine Verantwortung für Probleme oder Schäden.
 to scan
 zum scannen
 Total:
 Insgesamt:
+Unknown Core (AutoDetect)
+Unbekannter Kern (AutoErkennung)
+Update RA Config:
+RA-Konfiguration aktualisieren:
 Updating regional.db...
 Aktualisiere regional.db...
 Upgrading AutoBleem - Please wait...
 Aktualisiere AutoBleem - Bitte warten...
+USB Games
+USB-Spiele
+Use Controller
+Controller verwenden
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 WARNUNG: COVER DB/S NICHT GEFUNDEN. BELIEBIGE TASTE DRÜCKEN.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 WARNUNG: KEINE SPIELE GEFUNDEN. BELIEBIGE TASTE DRÜCKEN.
+WAVE
+WELLE
 Widescreen:
 Breitbild:
 Year:

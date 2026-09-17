@@ -1,23 +1,51 @@
-﻿About
+﻿.-= Code C++ and shell scripts =-.
+.-= Kód C++ a shell skripty =-.
+.-= Database maintenance =-.
+.-= Údržba databáze =-.
+.-= Graphics =-.
+.-= Grafika =-.
+.-= Localization support =-.
+.-= Podpora lokalizace =-.
+.-= Retroboot and emulation cores =-.
+.-= Retroboot a emulační jádra =-.
+.-= Testing =-.
+.-= Testování =-.
+A scan is already in progress
+Prohledávání již probíhá
+About
 O programu
+About AutoBleem
+O aplikaci AutoBleem
 Advanced
 Rozšířené
 Advanced:
 Rozšířené:
+All Games
+Všechny hry
+Are you sure you want to delete
+Opravdu chcete smazat
 Are you sure you want to flush all covers?
 Opravdu chcete smazat všechny obaly?
+Are you sure you want to power off?
+Opravdu chcete vypnout?
 Are you sure?
 Jste si jistí?
 AutoBleem
 AutoBleem
+AutoBleem resume points not available in RetroArch.
+Body pro pokračování AutoBleem nejsou v RetroArch dostupné.
 AutoBleem Theme:
 AutoBleem téma:
 Automatic PlayStation Classic USB launcher
 Automatický USB spouštěč her PlayStation Classic
 Background Music:
 Hudba na pozadí:
+Backspace
+Backspace
 Button Guide
 Průvodce tlačítkami
+Can't manage games while a scan is running
+Během skenování nelze spravovat hry
 Cancel
 Zrušit
 Caps
@@ -26,6 +54,10 @@ Card
 Karta
 Change MC
 Vyměnit Paměťovou kartu
+Change RetroBoot System
+Změnit systém RetroBoot
+Change USB Games Sub-Directory
+Změnit podadresář her na USB
 Clock:
 CPU hodiny
 Close
@@ -40,8 +72,16 @@ Confirm
 Potvrdit
 Button Guide
 Průvodce tlačítky
+CONFIGURED
+NASTAVENO
+Controller and system information
+Informace o ovladači a systému
+Copy
+Kopírovat
 Cover Style:
 Styl obalu:
+Create, rename or manage memory card sets
+Vytvořit, přejmenovat nebo spravovat sady paměťových karet
 Custom
 Vlastní
 Custom Memory Cards
@@ -50,10 +90,20 @@ Customize AutoBleem settings
 Přizpůsobit nastavení AutoBleem
 Decompressing ecm:
 Rozbalování ECM:
+Defragment Card
+Defragmentovat kartu
 Delete
 Smazat
+Delete !SaveState folder for game
+Smazat složku !SaveStates pro hru
 Delete card
 Smazat kartu
+Delete Game
+Smazat hru
+Delete games, flush covers
+Smazat hry, vymazat obálky
+Do you want to save memcards data ?
+Chcete uložit data paměťových karet?
 Download latest:
 Nejnovější verze:
 DPAD - Same as classic menu
@@ -62,6 +112,8 @@ Edit game parameters
 Upravit parametry hry
 Edit Memory Card information
 Upravit informace Paměťové karty
+EmulationStation
+EmulationStation
 Emulator config MENU
 Konfigurace emulátoru MENU
 Enter
@@ -74,24 +126,48 @@ Enter new name for card
 Zadejte nový název karty
 Enter new name for memory card
 Zadejte nový název paměťové karty
+Entry
+Položka
+Exit game
+Ukončit hru
+Exit to
+Přejít do
+Exit to EvoUI
+Ukončit do EvoUI
+failed
+selhalo
+Failed to delete
+Smazání selhalo
+Favorite Games
+Oblíbené hry
 Favorite:
 Oblíbené:
+Final score
+Konečné skóre
 Flush covers
 Smazat obaly
 Folder:
 Složka:
 Frameskip:
 Preskočení snímků:
+Free
+Volné
 Free space
 Volné místo
 Game
 Hra
 GAME
 HRA
+Game failed to verify:
+Ověření hry selhalo:
+Game History
+Historie her
 Game Manager
 Správce her
 Game manager - Select game
 Správce her - Vybrat hru
+GAME OVER
+KONEC HRY
 Game:
 Hra:
 games
@@ -108,30 +184,54 @@ Go back
 Zpět
 Graphics by:
 Grafika:
+Hardware Information
+Informace o hardwaru
 High res:
 Vysoké rozlišení:
+HIGH SCORE
+NEJLEPŠÍ SKÓRE
 Hold
 Čekejte
 IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
 V BOOT MENU PRO VYPNUTÍ KONZOLE (BEZPEČNÉ VYPNUTÍ !!!)
 In Game
 Ve hře
+In Retroarch Game
+Ve hře RetroArch
+INTERNAL
+INTERNÍ
 Internal
 Interní
+Internal Games
+Interní hry
 Internal Games:
 Interní hry:
 Is your dpad analogue?
 Máte analogový dpad?
 Language:
 Jazyk:
+Last Played:
+Naposledy hráno:
+LIFE LOST
+ZTRÁTA ŽIVOTA
+Link Block
+Propojený blok
+Link end Block
+Konec propojeného bloku
+LIVES
+ŽIVOTY
 Loading ... Please Wait ...
 Nahrávám ... Čekejte prosím ...
 Lock data:
 Zamknout data:
+Look for new, changed or removed games
+Vyhledá nové, změněné nebo odebrané hry
 MemCard Manager will be available soon
 Správce Paměťových karet není momentálně k dispozíci
 MEMORY CARD
 PAMĚŤOVÁ KARTA
+Memory Card Manager
+Správce paměťových karet
 Memory Card:
 Paměťová karta:
 Memory Cards
@@ -140,20 +240,36 @@ Menu
 Menu
 Menu Theme:
 Téma menu:
+Move Cursor
+Posunout kurzor
+Moving :
+Přesouvání:
 Music:
 Hudba:
 New Card
 Nová karta
 New GamePad found
 Nalezen nový Gamepad
+Next Game Platform
+Další platforma her
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+UPOZORNĚNÍ: Alespoň jeden připojený ovladač nebyl rozpoznán. Nastavte jej na stránce Informace o hardwaru.
+OK
+OK
 OOPS! Game crashed. Resume point not available.
 Oh! Hra spadla. Bod obnovy není k dispozícii.
+Open Retroarch Menu
+Otevřít nabídku RetroArch
 Options
 Nastavení
 Original
 Originální hry
 Page
 Strana
+Play all PSX games with RA:
+Hrát všechny PSX hry přes RA:
+Play using RA:
+Hrát pomocí RA:
 Player
 Hráč
 Players
@@ -162,12 +278,18 @@ Please confirm
 Potvrďte prosím
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 PŘIPOJTE PROSÍM GAMEPAD K PLAYSTATION CLASSIC
+Please wait ... deleting
+Prosím čekejte ... mazání
 Please wait ... deleting covers...
 Čekejte prosím... mažu obaly...
 Plugin:
 Plugin:
+POWER
+NAPÁJENÍ
 Power Off
 Vypnout
+POWER SHOT
+SILNÁ STŘELA
 POWERING OFF... PLEASE WAIT
 VYPÍNÁM... ČEKEJTE PROSÍM
 Press a key for
@@ -184,12 +306,26 @@ QuickBoot:
 Rychly start:
 Quit emulation - back to AutoBleem
 Ukončit emuláci - návrat do AutoBleem
+Random Game
+Náhodná hra
+RAPID FIRE
+RYCHLOPALBA
+Re-Scan Games
+Znovu prohledat hry
 Re/Scan
 Vy/Hledat
+ReadMe file not found
+Soubor ReadMe nebyl nalezen
 Region:
 Oblast:
+Reload Cards
+Znovu načíst karty
 Rename
 Přejmenovat
+RESET
+RESET
+Restart
+Restartovat
 RESUME
 OBNOVIT
 Resume game from saved state point
@@ -200,20 +336,36 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch není nainstalovaný
+Run using RetroBoot
+Spustit pomocí RetroBoot
+Safely power off the console
+Bezpečně vypnout konzoli
+Scan complete:
+Skenování dokončeno:
 Scanline Level:
 Úroveň obrazových řádků:
 Scanlines:
 Obrazové řádky:
+Scanning
+Skenování
 Scanning...
 Vyhledávam...
+SCORE
+SKÓRE
 Select
 Vybrat
 Select memory card
 Vybrat Paměťovou kartu
 Select or cancel highlighted option
 Vybrat nebo zrušit zvýrazněnou volbu
+Select PS1 Game Category
+Vyberte kategorii her PS1
 SELECT RESUME SLOT TO LOAD
 VYBERTE POZICI, ZE KTERÉ SE NAHRAJE PRERUŠENÁ HRA
+Select RetroBoot Platform
+Vyberte platformu RetroBoot
+Select Right Card
+Vyberte pravou kartu
 SELECT SLOT TO SAVE STATE
 VYBERTE POZICI, NA KTEROU SE ULOŽÍ ROZEHRANÁ HRA
 Serial:
@@ -222,18 +374,34 @@ SETTINGS
 NASTAVENÍ
 Share MC
 Sdílet Paměťovou kartu
+Show Internal Games:
+Zobrazit interní hry:
 Show RetroArch:
 Zobrazit RetroArch:
 Showing Timeout (0 = no timeout):
 Časový limit zobrazení (0 = bez limitu):
+Showing: All Games
+Zobrazeno: Všechny hry
 Showing: All games
 Zobrazené: Všechny hry
+Showing: Apps
+Zobrazeno: Aplikace
+Showing: Favorite Games
+Zobrazeno: Oblíbené hry
 Showing: Favorite games
 Zobrazené: Oblíbené hry
+Showing: Game History
+Zobrazeno: Historie her
+Showing: Internal Games
+Zobrazeno: Interní hry
 Showing: Internal games
 Zobrazené: Hry v interní paměti
+Showing: Retroarch
+Zobrazeno: Retroarch
 Showing: USB games
 Zobrazené: Hry na USB
+Showing: USB Games Directory:
+Zobrazeno: Adresář her na USB:
 Slot
 Pozice
 Sorting :
@@ -244,26 +412,46 @@ Space
 Mezera
 SpeedHack:
 SpeedHack:
+SPREAD SHOT
+ROZPTÝLENÁ PALBA
 Spu Interpolation:
 Interpolace zvuku:
 Starting EvolutionUI
 Spouštím EvolutionUI
 Support via Discord:
 Podpora na Discord:
+Surprise
+Překvapení
+SYSTEM
+SYSTÉM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Systémová nabídka (Skenování, RetroArch, Paměťové karty, Vypnutí, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 AutoBleem je bezplatný open source software. Funguje TAKOVÝ JAKÝ JE, a NENESEME žádnou odpovednost za jakékoliv problémy nebo škody.
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Toto je svobodný software. Funguje TAK, JAK JE, a nenesečáme žádnou odpovědnost za problémy či škody.
 to scan
 k prohledání
 Total:
 Celkem:
 UI:
 Uživatelské rozhraní:
+Unknown Core (AutoDetect)
+Neznámé jádro (Automaticky)
+Update RA Config:
+Aktualizovat konfiguraci RA:
 Updating regional.db...
 Aktualizuji regional.db...
+USB Games
+Hry na USB
+Use Controller
+Použít ovladač
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 POZOR: NENAŠLA SE DATABÁZE OBALŮ NA HRY. STLAČTE LIBOVOLNOU KLÁVESU.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 POZOR: NENALEZENY ŽÁDNÉ HRY. STLAČTE LIBOVOLNOU KLÁVESU.
+WAVE
+VLNA
 Widescreen:
 Širokoúhlý obraz:
 Year:

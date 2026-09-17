@@ -12,8 +12,12 @@
 .-= Testausta =-.
 .lic file not found
 .lic tiedostoa ei löytynyt
+A scan is already in progress
+Skannaus on jo käynnissä
 About
 Tietoja
+About AutoBleem
+Tietoja AutoBleemistä
 Advanced
 Lisäasetukset
 All Games
@@ -22,6 +26,8 @@ Are you sure you want to delete
 Haluatko varmasti poistaa
 Are you sure you want to flush all covers?
 Haluatko varmasti tyhjentää kaikki kannet?
+Are you sure you want to power off?
+Haluatko varmasti sammuttaa laitteen?
 Are you sure?
 Oletko varma?
 AutoBleem
@@ -32,10 +38,14 @@ AutoBleem Theme:
 AutoBleem Teema:
 Background Music:
 Taustamusiikki:
+Backspace
+Askelpalautin
 Bin file failed to verify
 Bin tiedoston varmistus epäonnistui
 Button Guide
 Painikeopas
+Can't manage games while a scan is running
+Pelejä ei voi hallita skannauksen aikana
 Cancel
 Peruuta
 Caps
@@ -60,12 +70,16 @@ CONFIGURED
 MÄÄRITETTY
 Confirm
 Varmista
+Controller and system information
+Ohjaimen ja järjestelmän tiedot
 Copy
 Kopioi
 Cover image file not found
 Kansikuva tiedostoa ei löytynyt
 Cover Style:
 Kannen tyyli:
+Create, rename or manage memory card sets
+Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 Cue file not found
 Cue tiedostoa ei löytynyt
 Custom
@@ -86,6 +100,8 @@ Delete card
 Poista kortti
 Delete Game
 Poista peli
+Delete games, flush covers
+Poista pelejä, tyhjennä kansikuvat
 Do you want to save memcards data ?
 Haluatko tallentaa muistikorttien datan?
 Download latest:
@@ -96,6 +112,8 @@ Edit game parameters
 Muokkaa pelin parametrejä
 Edit Memory Card information
 Muokkaa muistikortin
+EmulationStation
+EmulationStation
 Emulator config MENU
 Emulaattorin konfigurointivalikko
 Enter
@@ -110,14 +128,22 @@ Enter new name for memory card
 Kirjoita uusi nimi muistikortille
 Entry
 Merkintä
+Exit game
+Lopeta peli
+Exit to
+Poistu kohteeseen
 Exit to EvoUI
 Poistu EvoUI:hin
+failed
+epäonnistui
 Failed to delete
 Poisto epäonnistui
 Favorite Games
 Suosikkipelit
 Favorite:
 Suosikki:
+Final score
+Lopullinen pisteet
 Flush covers
 Tyhjennä kannet
 Folder:
@@ -136,10 +162,14 @@ Game failed to verify:
 Pelin varmistus epäonnistui:
 Game file not found
 Peli tiedostoa ei löytynyt
+Game History
+Pelihistoria
 Game Manager
 Pelien hallinta
 Game manager - Select game
 Pelien hallinta - Valitse peli
+GAME OVER
+PELI PÄÄTTYI
 Game.ini file not found
 Game.ini tiedostoa ei löytynyt
 Game.ini file not valid
@@ -160,8 +190,12 @@ GFX Filter:
 GFX-Suodatin:
 Go back
 Mene takaisin
+Hardware Information
+Laitteistotiedot
 High res:
 Korkea resoluutio:
+HIGH SCORE
+PARAS TULOS
 Hold
 Pidä
 In Boot Menu: Safe Power Off The Console
@@ -180,14 +214,22 @@ Is your dpad analogue?
 Onko sinun dpadisi analooginen?
 Language:
 Kieli:
+Last Played:
+Viimeksi pelattu:
+LIFE LOST
+ELÄMÄ MENETETTY
 Link Block
 Linkki Esto
 Link end Block
 Linkin päätylohko
+LIVES
+ELÄMÄT
 Loading ... Please Wait ...
 Ladataan ... Odota hetki ...
 Lock data:
 Lukitse data:
+Look for new, changed or removed games
+Etsi uusia, muuttuneita tai poistettuja pelejä
 MEMORY CARD
 MUISTIKORTTI
 Memory Card Manager
@@ -198,6 +240,8 @@ Memory Cards
 Muistikortti
 Menu
 Valikko
+Move Cursor
+Siirrä kohdistinta
 Moving :
 Liikuta :
 Music:
@@ -206,10 +250,14 @@ New Card
 Uusi kortti
 New GamePad found
 Uusi peliohjain löytyi:
+Next Game Platform
+Seuraava pelialusta
 No disc name
 Ei levyn nimeä
 No discs
 Ei levyjä
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+HUOMIO: Vähintään yhtä liitettyä ohjainta ei tunnistettu. Määritä se Laitteistotiedot-sivulla.
 OK
 OK
 OOPS! Game crashed. Resume point not available.
@@ -224,6 +272,10 @@ Page
 Sivu
 pcsx.cfg file not found
 pcsx.cfg tiedostoa ei löytynyt
+Play all PSX games with RA:
+Pelaa kaikki PSX-pelit RA:lla:
+Play using RA:
+Pelaa RA:lla:
 Player
 Pelaaja
 Players
@@ -242,6 +294,8 @@ POWER
 VIRTA
 Power Off
 Sammuta
+POWER SHOT
+TEHOLAUKAUS
 POWERING OFF... PLEASE WAIT
 SAMMUTETAAN... ODOTA HETKI
 Press a key for
@@ -258,6 +312,12 @@ QuickBoot:
 Nopea käynnistys:
 Quit emulation - back to AutoBleem
 Poistu emulaatiosta - takaisin AutoBleem:iin
+Random Game
+Satunnainen peli
+RAPID FIRE
+PIKATULI
+Re-Scan Games
+Skannaa pelit uudelleen
 Re/Scan
 Uudelleen skannaa/Skannaa
 ReadMe file not found
@@ -268,6 +328,10 @@ Reload Cards
 Lataa kortit uudelleen
 Rename
 Nimeä uudelleen
+RESET
+NOLLAUS
+Restart
+Käynnistä uudelleen
 RESUME
 JATKA
 Resume game from saved state point
@@ -280,14 +344,22 @@ RetroArch is not installed
 RetroArch ei ole asennettu
 Run using RetroBoot
 Käynnistä RetroBootilla
+Safely power off the console
+Sammuta konsoli turvallisesti
 Same as classic menu
 Sama kuin classic valikko
+Scan complete:
+Skannaus valmis:
 Scanline Level:
 Skannaustaso:
 Scanlines:
 Skannauslinjat:
+Scanning
+Skannataan
 Scanning...
 Skannataan:
+SCORE
+PISTEET
 Select
 Valitse
 Select memory card
@@ -320,6 +392,8 @@ Showing: Apps
 Näytetään: Sovellukset
 Showing: Favorite Games
 Näytetään: Suosikkipelit
+Showing: Game History
+Näytetään: Pelihistoria
 Showing: Internal Games
 Näytetään: Sisäiset Pelit
 Showing: Retroarch
@@ -332,14 +406,24 @@ Space
 Väli
 SpeedHack:
 Nopeuden Muutin:
+SPREAD SHOT
+HAJALAUKAUS
 Spu Interpolation:
 SPU-interpolointi:
 Starting EvolutionUI
 Käynnistetään EvolutionUI
 Support via Discord:
 Tuki Discordin kautta:
+Surprise
+Yllätys
+SYSTEM
+JÄRJESTELMÄ
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Järjestelmävalikko (Skannaus, RetroArch, Muistikortit, Sammutus, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 Tämä on ilmainen ja avoimen lähdekoodin ohjelmisto. Se toimii sellaisena kuin SE ON. Emme ota vastuuta mistään ongelmista tai vaurioista.
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Tämä on ilmainen ohjelmisto. Se toimii SELLAISENAAN, emmekä ota vastuuta ongelmista tai vahingoista.
 to scan
 skannata
 Total:
@@ -354,10 +438,14 @@ Updating regional.db...
 Päivitetään regional.db...
 USB Games
 USB Pelit
+Use Controller
+Käytä ohjainta
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 VAROITUS: COVER DB EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 VAROITUS: PELEJÄ EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
+WAVE
+AALTO
 Widescreen:
 Laajakuva:
 Year:

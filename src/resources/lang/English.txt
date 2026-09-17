@@ -12,7 +12,11 @@
 
 .lic file not found
 
+A scan is already in progress
+
 About
+
+About AutoBleem
 
 Advanced
 
@@ -21,6 +25,8 @@ All Games
 Are you sure you want to delete
 
 Are you sure you want to flush all covers?
+
+Are you sure you want to power off?
 
 Are you sure?
 
@@ -37,6 +43,8 @@ Backspace
 Bin file failed to verify
 
 Button Guide
+
+Can't manage games while a scan is running
 
 Cancel
 
@@ -60,11 +68,15 @@ CONFIGURED
 
 Confirm
 
+Controller and system information
+
 Copy
 
 Cover image file not found
 
 Cover Style:
+
+Create, rename or manage memory card sets
 
 Cue file not found
 
@@ -85,6 +97,8 @@ Delete !SaveState folder for game
 Delete card
 
 Delete Game
+
+Delete games, flush covers
 
 Do you want to save memcards data ?
 
@@ -110,13 +124,21 @@ Enter new name for memory card
 
 Entry
 
+Exit game
+
+Exit to
+
 Exit to EvoUI
+
+failed
 
 Failed to delete
 
 Favorite Games
 
 Favorite:
+
+Final score
 
 Flush covers
 
@@ -142,6 +164,8 @@ Game Manager
 
 Game manager - Select game
 
+GAME OVER
+
 Game.ini file not found
 
 Game.ini file not valid
@@ -162,6 +186,8 @@ Hardware Information
 
 High res:
 
+HIGH SCORE
+
 In Boot Menu: Safe Power Off The Console
 
 In Game
@@ -178,13 +204,19 @@ Language:
 
 Last Played:
 
+LIFE LOST
+
 Link Block
 
 Link end Block
 
+LIVES
+
 Loading ... Please Wait ...
 
 Lock data:
+
+Look for new, changed or removed games
 
 MEMORY CARD
 
@@ -210,6 +242,8 @@ No disc name
 
 No discs
 
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+
 OK
 
 OOPS! Game crashed. Resume point not available.
@@ -223,6 +257,10 @@ Original
 Page
 
 pcsx.cfg file not found
+
+Play all PSX games with RA:
+
+Play using RA:
 
 Player
 
@@ -240,6 +278,8 @@ POWER
 
 Power Off
 
+POWER SHOT
+
 POWERING OFF... PLEASE WAIT
 
 Published by:
@@ -249,6 +289,10 @@ Quick scroll to next letter
 Quit emulation - back to AutoBleem
 
 Random Game
+
+RAPID FIRE
+
+Re-Scan Games
 
 Re/Scan
 
@@ -262,6 +306,8 @@ Rename
 
 RESET
 
+Restart
+
 RESUME
 
 Resume game from saved state point
@@ -274,11 +320,19 @@ RetroArch is not installed
 
 Run using RetroBoot
 
+Safely power off the console
+
+Scan complete:
+
 Scanline Level:
 
 Scanlines:
 
+Scanning
+
 Scanning...
+
+SCORE
 
 Select
 
@@ -326,11 +380,19 @@ Space
 
 SpeedHack:
 
+SPREAD SHOT
+
 Spu Interpolation:
 
 Starting EvolutionUI
 
 Support via Discord:
+
+Surprise
+
+SYSTEM
+
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
 
 This is free software. It works AS IS and We take no responsibility for any issues or damage.
 
@@ -351,6 +413,8 @@ USB Games
 Use Controller
 
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
+
+WAVE
 
 Widescreen:
 

@@ -1,21 +1,53 @@
 'Tenchu' theme by Kevzombie
 Thème 'Tenchu' par Kevzombie
+.-= Code C++ and shell scripts =-.
+.-= Code C++ et scripts shell =-.
+.-= Database maintenance =-.
+.-= Maintenance de la base de données =-.
+.-= Graphics =-.
+.-= Graphismes =-.
+.-= Localization support =-.
+.-= Support de localisation =-.
+.-= Retroboot and emulation cores =-.
+.-= Retroboot et cœurs d'émulation =-.
+.-= Testing =-.
+.-= Tests =-.
+A scan is already in progress
+Une analyse est déjà en cours
 About
 À propos
 About
 À propos
+About AutoBleem
+À propos d'AutoBleem
 Advanced
 Paramètres avancés
 Advanced:
 Paramètres avancés:
+All Games
+Tous les jeux
+Are you sure you want to delete
+Êtes-vous sûr de vouloir supprimer
+Are you sure you want to flush all covers?
+Êtes-vous sûr de vouloir vider toutes les jaquettes ?
+Are you sure you want to power off?
+Voulez-vous vraiment éteindre la console ?
+Are you sure?
+Êtes-vous sûr ?
 AutoBleem
 AutoBleem
+AutoBleem resume points not available in RetroArch.
+Les points de reprise AutoBleem ne sont pas disponibles dans RetroArch.
 AutoBleem Theme:
 Thème AutoBleem:
 Background Music:
 Musique de fond:
+Backspace
+Retour arrière
 Button Guide
 Guide des touches
+Can't manage games while a scan is running
+Impossible de gérer les jeux pendant une analyse
 Cancel
 Annuler
 Caps
@@ -24,14 +56,30 @@ Card
 Carte
 Change MC
 Charger CM
+Change RetroBoot System
+Changer le système RetroBoot
+Change USB Games Sub-Directory
+Changer le sous-dossier des jeux USB
+Clock:
+Horloge :
 Close
 Fermer
 Code: AutoBleem Team
 Code: AutoBleem Team
 Configuration
 Paramètres
+CONFIGURED
+CONFIGURÉ
 Confirm
 Valider
+Controller and system information
+Informations sur la manette et le système
+Copy
+Copier
+Cover Style:
+Style de jaquette :
+Create, rename or manage memory card sets
+Créer, renommer ou gérer des jeux de cartes mémoire
 Custom
 Personnalisée
 Custom Memory Cards
@@ -40,10 +88,22 @@ Customize AutoBleem settings
 Personnaliser Configuration AutoBleem
 Customize PlayStationClassic or AutoBleem settings
 Personnaliser la configuration de PlayStationClassic or AutoBleem
+Decompressing ecm:
+Décompression ecm :
+Defragment Card
+Défragmenter la carte
 Delete
 Supprimer
+Delete !SaveState folder for game
+Supprimer le dossier !SaveState du jeu
 Delete card
 Supprimer carte
+Delete Game
+Supprimer le jeu
+Delete games, flush covers
+Supprimer des jeux, vider les jaquettes
+Do you want to save memcards data ?
+Voulez-vous enregistrer les données des cartes mémoire ?
 Download latest:
 Dernière version:
 DPAD - Same as classic menu
@@ -52,6 +112,8 @@ Edit game parameters
 Modifier Paramètres de Jeu
 Edit Memory Card information
 Modifier Paramètres de Carte Mémoire
+EmulationStation
+EmulationStation
 Emulator config MENU
 Menu de configuration de l'émulateur
 Enter
@@ -64,18 +126,48 @@ Enter new name for card
 Nouveau nom de la carte
 Enter new name for memory card
 Nouveau nom de la carte mémoire
+Entry
+Entrée
+Exit game
+Quitter le jeu
+Exit to
+Quitter vers
+Exit to EvoUI
+Quitter vers EvoUI
+failed
+échoué
+Failed to delete
+Échec de la suppression
+Favorite Games
+Jeux favoris
+Favorite:
+Favori :
+Final score
+Score final
+Flush covers
+Vider les jaquettes
 Folder:
 Dossier:
+Frameskip:
+Saut d'images :
+Free
+Libre
 Free space
 Espace disponible
 GAME
 Jeu
 Game
 Jeu
+Game failed to verify:
+Échec de la vérification du jeu :
+Game History
+Historique des jeux
 Game Manager
 Gestionnaire de jeux
 Game manager - Select game
 Gestion des jeux - Choisir un jeu
+GAME OVER
+PARTIE TERMINÉE
 Game:
 Jeu:
 games
@@ -90,34 +182,60 @@ GFX Filter:
 Filtre graphique:
 Go back
 Retour
+Hardware Information
+Informations matérielles
 Hi/Lo Res
 Haute/Basse Définition
 High res:
 Haute définition:
+HIGH SCORE
+MEILLEUR SCORE
 Hold
 Maintenir
 IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
 Arrêt de la console dans le menu principal (arrêt sécuritaire!!!)
 In Game
 En cours de jeu
+In Retroarch Game
+Dans un jeu RetroArch
+INTERNAL
+INTERNE
 Internal
 Interne
 Internal
 Interne
+Internal Games
+Jeux internes
 Internal Games:
 Jeux internes:
 It is not possible to edit internal games
 Impossible d'éditer les jeux internes
+Language:
+Langue :
+Last Played:
+Dernière partie :
+LIFE LOST
+VIE PERDUE
+Link Block
+Bloc de liaison
+Link end Block
+Bloc de fin de liaison
+LIVES
+VIES
 Loading ... Please Wait ...
 Veuillez patienter ...
 Lock
 Verrouiller
 Lock data:
 Verrouiller les données:
+Look for new, changed or removed games
+Rechercher les jeux nouveaux, modifiés ou supprimés
 MemCard Manager will be available soon
 Gestionnaire de carte mémoire disponible bientôt
 MEMORY CARD
 Carte mémoire
+Memory Card Manager
+Gestionnaire de cartes mémoire
 Memory Card:
 Carte mémoire:
 Memory Cards
@@ -126,12 +244,30 @@ Menu
 Menu
 Menu Theme:
 Thème du menu:
+Move Cursor
+Déplacer le curseur
+Moving :
+Déplacement :
+Music:
+Musique :
 New Card
 Nouvelle Carte
+New GamePad found
+Nouvelle manette détectée
+Next Game Platform
+Plateforme de jeux suivante
 NO GAMES FOUND IN THIS SECTION
 Aucun jeu dans cette section
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+AVIS : Au moins une manette connectée n'est pas reconnue. Configurez-la depuis la page Informations matérielles.
+OK
+OK
 OOPS! Game crashed. Resume point not available
 Oups! Point de reprise non-disponible. Le jeu à planté!
+OOPS! Game crashed. Resume point not available.
+OOPS ! Le jeu a planté. Point de reprise non disponible.
+Open Retroarch Menu
+Ouvrir le menu RetroArch
 Options
 Options
 Original
@@ -140,6 +276,10 @@ Page
 Page
 PCSX Version:
 Version PCSX:
+Play all PSX games with RA:
+Jouer à tous les jeux PSX avec RA :
+Play using RA:
+Jouer avec RA :
 Player
 Joueur
 Players
@@ -148,8 +288,18 @@ Please confirm
 Veuillez valider
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 VEUILLEZ CONNECTER UNE MANETTE A LA CONSOLE
+Please wait ... deleting
+Veuillez patienter ... suppression
+Please wait ... deleting covers...
+Veuillez patienter ... suppression des jaquettes...
+Plugin:
+Plugin :
+POWER
+ALIMENTATION
 Power Off
 Arrêt
+POWER SHOT
+TIR PUISSANT
 POWERING OFF... PLEASE WAIT
 Arrêt en cours... Attendre s.v.p.
 Published by:
@@ -162,10 +312,26 @@ QuickBoot:
 Démarrage rapide:
 Quit emulation - back to AutoBleem
 Quitter l'émulation - Retour à AutoBleem
+Random Game
+Jeu aléatoire
+RAPID FIRE
+TIR RAPIDE
+Re-Scan Games
+Ré-analyser les jeux
 Re/Scan
 Relancer le scan
+ReadMe file not found
+Fichier ReadMe introuvable
+Region:
+Région :
+Reload Cards
+Recharger les cartes
 Rename
 Renommer
+RESET
+RÉINITIALISER
+Restart
+Redémarrer
 RESUME
 Retour au jeu
 Resume game from saved state point
@@ -176,52 +342,116 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch n'est pas installé
+Run using RetroBoot
+Lancer avec RetroBoot
+Safely power off the console
+Éteindre la console en toute sécurité
+Scan complete:
+Analyse terminée :
+Scanline Level:
+Niveau des lignes de balayage :
+Scanlines:
+Lignes de balayage :
+Scanning
+Analyse en cours
 Scanning...
 Scan en cours...
+SCORE
+SCORE
 Select
 Choisir
 Select memory card
 Sélection carte mémoire
 Select or cancel highlighted option
 Sélectionner ou annuler l'option surlignée
+Select PS1 Game Category
+Choisir la catégorie de jeu PS1
 SELECT RESUME SLOT TO LOAD
 Reprenez le jeu à partir du dernier point de reprise que vous avez sauvegardé
+Select RetroBoot Platform
+Choisir la plateforme RetroBoot
+Select Right Card
+Choisir la carte de droite
 SELECT SLOT TO SAVE STATE
 Sélectionné le point de reprise pour sauvegarder
+Serial:
+Série :
 SETTINGS
 Configuration
 Share MC
 Partager CM
+Show Internal Games:
+Afficher les jeux internes :
 Show RetroArch:
 Afficher RetroArch:
+Showing Timeout (0 = no timeout):
+Délai d'affichage (0 = aucun délai) :
+Showing: All Games
+Affichage : Tous les jeux
 Showing: All games
 Montrer: Tous les jeux
+Showing: Apps
+Affichage : Applications
+Showing: Favorite Games
+Affichage : Jeux favoris
 Showing: Favorite games
 Montrer: Jeux Favoris
+Showing: Game History
+Affichage : Historique des jeux
+Showing: Internal Games
+Affichage : Jeux internes
 Showing: Internal games
 Montrer: Jeux Internes
+Showing: Retroarch
+Affichage : Retroarch
 Showing: USB games
 Montrer: Jeux USB
+Showing: USB Games Directory:
+Affichage : Dossier des jeux USB :
 Slot
 point de reprise
 Space
 Espace
+SpeedHack:
+SpeedHack :
+SPREAD SHOT
+TIR EN ÉVENTAIL
+Spu Interpolation:
+Interpolation SPU :
 Support via Discord:
 Support via Discord:
+Surprise
+Surprise
+SYSTEM
+SYSTÈME
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Menu système (Analyse, RetroArch, Cartes mémoire, Extinction, ...)
 This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
 Ce logiciel est gratuit et open source. Il est fourni tel quel et aucun problème ou dommage ne pourra nous être imputé.
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Ceci est un logiciel libre. Il fonctionne TEL QUEL et nous déclinons toute responsabilité en cas de problème ou de dommage.
 to scan
 à scanner
 Total:
 Total:
+Unknown Core (AutoDetect)
+Noyau inconnu (Détection auto)
+Update RA Config:
+Mettre à jour la config RA :
 Updating regional.db...
 Mise à jour du fichier regional.db...
 Upgrading AutoBleem - Please wait...
 Mise à jour d'AutoBleem - Veuillez patienter...
+USB Games
+Jeux USB
+Use Controller
+Utiliser la manette
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 ATTANTION : PAS DE BDD DE JAQUETTE TROUVÉES. APPUYER SUR UNE TOUCHE
 WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 ATTENTION : AUCUN JEU TROUVÉ. APPUYER SUR UNE TOUCHE.
+WAVE
+VAGUE
 Widescreen:
 Plein écran:
 Year:

@@ -10,18 +10,26 @@
 .-= Retroboot och emuleringskärnor =-.
 .-= Testing =-.
 .-= Testning =-.
+A scan is already in progress
+En skanning pågår redan
 About
 Om
 About
 Om
+About AutoBleem
+Om AutoBleem
 Advanced
 Avancerat
 Advanced:
 Avancerat:
+All Games
+Alla spel
 Are you sure you want to delete
 Är du säker på att du vill radera
 Are you sure you want to flush all covers?
 Är du säker på att du vill nollställa alla omslag?
+Are you sure you want to power off?
+Är du säker på att du vill stänga av?
 Are you sure?
 Är du säker?
 AutoBleem
@@ -32,8 +40,12 @@ AutoBleem resume points not available in RetroArch.
 AutoBleems spar-punkter är inte tillgängliga i RetroArch.
 Background Music:
 Bakgrundsmusik:
+Backspace
+Backsteg
 Button Guide
 Knappguide
+Can't manage games while a scan is running
+Kan inte hantera spel medan en skanning pågår
 Cancel
 Avbryt
 Caps
@@ -48,8 +60,14 @@ Close
 Stäng
 Configuration
 Konfiguration
+CONFIGURED
+KONFIGURERAD
 Confirm
 Bekräfta
+Controller and system information
+Information om handkontroll och system
+Create, rename or manage memory card sets
+Skapa, byt namn på eller hantera minneskortsuppsättningar
 Custom
 Anpassad
 Custom Memory Cards
@@ -58,8 +76,12 @@ Delete
 Radera
 Delete card
 Radera kort
+Delete games, flush covers
+Ta bort spel, rensa omslag
 Download latest:
 Hämta senaste version:
+EmulationStation
+EmulationStation
 Enter new card name
 Ange namn på nytt kort
 Enter new game name
@@ -68,16 +90,32 @@ Enter new name for card
 Ange nytt namn för kort
 Enter new name for memory card
 Ange nytt namn för minneskort
+Exit game
+Avsluta spel
+Exit to
+Avsluta till
+failed
+misslyckades
+Favorite Games
+Favoritspel
+Final score
+Slutresultat
 Folder:
 Mapp:
 Free space
 Ledigt utrymme
 Game
 Spel
+Game failed to verify:
+Spelverifiering misslyckades:
+Game History
+Spelhistorik
 Game Manager
 Spelbibliotek
 Game manager - Select game
 Spelbibliotek - Välj spel
+GAME OVER
+SPELET ÄR SLUT
 Game:
 Spel:
 Games changed. Press
@@ -88,50 +126,86 @@ GFX Filter:
 Grafikfilter:
 Go back
 Tillbaka
+Hardware Information
+Hårdvaruinformation
 High res:
 Hög upplösning:
+HIGH SCORE
+BÄSTA RESULTAT
 Hold
 Vänta
 Internal
 Intern
 Internal
 Intern
+Internal Games
+Interna spel
 Language:
 Språk:
+Last Played:
+Senast spelad:
+LIFE LOST
+LIV FÖRLORAT
+LIVES
+LIV
 Loading ... Please Wait ...
 Laddar ... Vänligen vänta ...
 Lock data:
 Lås data:
+Look for new, changed or removed games
+Sök efter nya, ändrade eller borttagna spel
 Memory Card:
 Minneskort:
 Memory Cards
 Minneskort
 Menu
 Meny
+Move Cursor
+Flytta markör
 New Card
 Nytt kort
+Next Game Platform
+Nästa spelplattform
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+OBS: Minst en ansluten handkontroll känns inte igen. Ställ in den på sidan Hårdvaruinformation.
 Options
 Alternativ
 Original
 Original
 Page
 Sida
+Play all PSX games with RA:
+Spela alla PSX-spel med RA:
+Play using RA:
+Spela med RA:
 Players
 Spelare
 Please confirm
 Vänligen bekräfta
 PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
 VÄNLIGEN ANSLUT HANDKONTROLL TILL PLAYSTATION CLASSIC
+POWER SHOT
+KRAFTSKOTT
 Published by:
 Utgivet av:
 Quick boot
 Snabbstart
 QuickBoot:
 Snabbstart:
+Random Game
+Slumpmässigt spel
+RAPID FIRE
+SNABBELD
+Re-Scan Games
+Skanna om spel
 Re/Scan
 Re/Scan
+ReadMe file not found
+ReadMe-filen hittades inte
 Rename
 Byt namn
+RESET
+ÅTERSTÄLL
 RetroArch
 RetroArch
 RetroArch is not installed
@@ -278,12 +352,24 @@ Region:
 Region:
 Reload Cards
 Ladda om kort
+Restart
+Starta om
 Resume game from saved state point
 Fortsätt spel från befintlig sparpunkt
 Resume point saved to slot
 Sparpunkt lagrad på position
+Run using RetroBoot
+Kör med RetroBoot
 Run using RetroBoot(if installed)
 Kör med RetroBoot(om installerat)
+Safely power off the console
+Stäng av konsolen säkert
+Scan complete:
+Skanning klar:
+Scanning
+Skannar
+SCORE
+POÄNG
 SELECT RESUME SLOT TO LOAD
 VÄLJ SPARPUNKT ATT LADDA
 SELECT SLOT TO SAVE STATE
@@ -294,6 +380,8 @@ Scanline Level:
 Scanline-nivå:
 Scanlines:
 Scanlines:
+Select PS1 Game Category
+Välj PS1-spelkategori
 Select RetroBoot Platform
 Välj RetroBoot-plattform
 Select Right Card
@@ -302,12 +390,24 @@ Select or cancel highlighted option
 Välj eller avbryt aktuellt alternativ
 Serial:
 Serial:
+Show Internal Games:
+Visa interna spel:
 Showing Timeout (0 = no timeout):
 Visningstimeout (0 = ingen timeout):
+Showing: All Games
+Visar: Alla spel
 Showing: All games
 Visar: alla spel
+Showing: Apps
+Visar: Appar
+Showing: Favorite Games
+Visar: Favoritspel
 Showing: Favorite games
 Visar: favoritspel
+Showing: Game History
+Visar: Spelhistorik
+Showing: Internal Games
+Visar: Interna spel
 Showing: Internal games
 Visar: interna spel
 Showing: Retroarch
@@ -318,15 +418,33 @@ Slot
 Plats
 SpeedHack:
 SpeedHack:
+SPREAD SHOT
+SPRIDNINGSSKOTT
 Spu Interpolation:
 SPU-Interpolation:
 Starting EvolutionUI
 Startar EvolutionUI
+Surprise
+Överraskning
+SYSTEM
+SYSTEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
+Systemmeny (Skanning, RetroArch, Minneskort, Avstängning, ...)
+This is free software. It works AS IS and We take no responsibility for any issues or damage.
+Detta är fri programvara. Den fungerar I BEFINTLIGT SKICK och vi tar inget ansvar för problem eller skador.
 UI:
 UI:
 Unknown Core (AutoDetect)
 Okänd kärna (AutoDetect)
+Update RA Config:
+Uppdatera RA-konfiguration:
+Use Controller
+Använd handkontroll
+WAVE
+VÅG
 Widescreen:
 Widescreen:
 games
 spel
+USB Games
+USB-spel
