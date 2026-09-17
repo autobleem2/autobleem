@@ -103,6 +103,7 @@ void GuiLauncher::loop_chooseGameDir() {
 
     // display the menu and return when user made selection or canceled
     guiGameDirMenu.show();
+    forgetHeldModifiers();   // reached with L2 held; its release went to the menu
     bool cancelled = guiGameDirMenu.cancelled;
 
     // set the select state to the user selection
@@ -165,6 +166,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     playlists.selected = nextSel;
 
     playlists.show();
+    forgetHeldModifiers();   // reached with L2 held; its release went to the menu
     bool cancelled = playlists.cancelled;
     int selected = playlists.selected;
 
@@ -511,6 +513,10 @@ void GuiLauncher::loop_openSystemMenu() {
         systemMenu.show();
         action = systemMenu.result;
     }
+    // reached with L2 held: its release (and R2's) went to the menu, and the sub-screens below run their own
+    // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
+    // as if L2 were down until it was pressed and released again
+    forgetHeldModifiers();
 
     switch (action) {
         case SystemMenuAction::None:

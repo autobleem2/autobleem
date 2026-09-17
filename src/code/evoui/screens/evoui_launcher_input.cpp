@@ -579,6 +579,15 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
 }
 
 //*******************************
+// GuiLauncher::forgetHeldModifiers
+//*******************************
+void GuiLauncher::forgetHeldModifiers() {
+    powerOffShift = false;
+    L1_isPressedForFastForward = false;
+    R1_isPressedForFastForward = false;
+}
+
+//*******************************
 // GuiLauncher::loop_joyButtonReleased
 // button released
 //*******************************

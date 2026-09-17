@@ -90,6 +90,11 @@ public:
 
     // a button is released
     void loop_joyButtonReleased();
+
+    // A sub-screen opened while L2 (or L1/R1) is held runs its own event loop, so the release of that button
+    // reaches the sub-screen, not us - and the launcher would come back believing it is still held. Called
+    // after every show() that can be reached with a modifier down.
+    void forgetHeldModifiers();
     void loop_prevNextGameFirstLetter(bool next);   // false is prev, true is next
     void loop_prevGameFirstLetter();
     void loop_nextGameFirstLetter();
