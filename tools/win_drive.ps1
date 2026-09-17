@@ -5,10 +5,10 @@
 #
 # usage: powershell -ExecutionPolicy Bypass -File tools\win_drive.ps1 -Usb <fake usb root> [-Sequence "<keys>"] [-InitialWait 8]
 #   Sequence: key names separated by ';' each followed by a wait in seconds, e.g. "x;3;space;6"
-#     "q+e" holds the first key while tapping the last (L2 + R2 = power off, from the launcher or the system menu)
+#     "q+e" holds the first key while tapping the last (L2 + R2 opens the launcher's system menu - Re-Scan,
+#     RetroArch, Memory Cards, Game Manager, Power Off among its items; a bare R2 does nothing)
 #   key names (see PadMapper translateKeyboardToPad): x o s t = cross circle square triangle,
 #     i j k l = d-pad, space = Start, b = Select, q e 1 2 = L1 R1 L2 R2, esc = power off
-#     '2' (R2) alone opens the launcher's system menu (Re-Scan, RetroArch, Memory Cards, Game Manager, ...)
 param([Parameter(Mandatory=$true)][string]$Usb, [string]$Sequence = "", [int]$InitialWait = 8)
 $U = $Usb
 $S = Split-Path -Parent $U

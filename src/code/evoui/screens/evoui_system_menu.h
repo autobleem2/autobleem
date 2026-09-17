@@ -1,5 +1,5 @@
 //
-// GuiSystemMenu: the R2 overlay - everything the old classic main menu offered (Re/Scan, RetroArch,
+// GuiSystemMenu: the L2+R2 overlay - everything the old classic main menu offered (Re/Scan, RetroArch,
 // Memory Cards, Game Manager, Hardware Information, Options, About, Power Off), reached from the launcher
 // now that it is the only screen.
 //

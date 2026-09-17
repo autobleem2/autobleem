@@ -199,12 +199,16 @@ Still to do, in order:
      settled right. Per request: `GuiSplash` now holds at full brightness for `SplashHoldDuration` (2s) and
      fades back out before returning instead of cutting away; `GuiLauncher` fades in from black over
      `LauncherFadeInDuration` (300ms) every time it is shown.
-   - **Step 4** - `GuiSystemMenu` (`evoui/screens/evoui_system_menu.*`): the R2 overlay with everything the
+   - **Step 4** - `GuiSystemMenu` (`evoui/screens/evoui_system_menu.*`): the L2+R2 overlay with everything the
      classic menu offered - Re-Scan, RetroArch/EmulationStation, Memory Cards, Game Manager (refuses itself
      while `scanning()` - it deletes folders the scanner may be reading), Hardware Information, Options,
      About, Power Off. A dumb picker (translucent panel, launcher fonts/colours); `GuiLauncher::
-     loop_r2Button_Pressed()` reads its `SystemMenuAction` back and runs it - L2+R2 is still the power-off
-     shortcut, unaffected since it is handled earlier in the same input dispatch.
+     loop_openSystemMenu()` reads its `SystemMenuAction` back and runs it. Originally bound to a bare R2,
+     moved onto L2+R2 (2026-09-17, on request): every other button was already committed to something in at
+     least one launcher state, and L2+R2 used to power off the console directly - reaching for a bare R2
+     with L2 still down from an L2+Select folder/playlist switch risked shutting down by mistake. L2+R2 now
+     opens this menu instead, Power Off is one of its items (behind its own confirm), and bare R2 does
+     nothing.
 
 ## lib_ableem
 
@@ -412,7 +416,7 @@ Boot chain: `rc/autobleem.sh` → unpack libs → `bin/autobleem/run.sh` → `au
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
 or `rc/launch_rb.sh` (RetroArch: file, core). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
-in practice only ever `MENU_OPTION_RETRO` (the R2 system menu's RetroArch/EmulationStation item); starting a
+in practice only ever `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item); starting a
 game and returning from one both loop back into the launcher in-process and never reach it. `selection.sh`
 falls back to relaunching AutoBleem for anything else.
 
@@ -447,10 +451,10 @@ defaults, which both the services and the screens need.
 | `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's menu-panel/status-bar rects, `toColor()`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.h` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
-| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's R2 system menu or its sub-screens: About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window. `gui/starfx.*` is the star field the About screen draws. |
+| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's L2+R2 system menu or its sub-screens: About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window. `gui/starfx.*` is the star field the About screen draws. |
 | `gui/gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
-| `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, R2 among them), and the actions (what Cross does per state and menu icon, and R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running. |
-| `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The R2 overlay: Re-Scan Games, RetroArch/EmulationStation, Memory Cards, Game Manager, Hardware Information, Options, About, Power Off - everything the classic main menu used to offer. A dumb picker (translucent panel, launcher fonts/colours, Up/Down + wrap, Cross/Circle) - it returns a `SystemMenuAction` and `GuiLauncher::loop_r2Button_Pressed()` runs it. |
+| `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, L2+R2 among them), and the actions (what Cross does per state and menu icon, and L2+R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running. |
+| `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The L2+R2 overlay: Re-Scan Games, RetroArch/EmulationStation, Memory Cards, Game Manager, Hardware Information, Options, About, Power Off - everything the classic main menu used to offer, Power Off included (no more direct L2+R2 shutdown). A dumb picker (translucent panel, launcher fonts/colours, Up/Down + wrap, Cross/Circle) - it returns a `SystemMenuAction` and `GuiLauncher::loop_openSystemMenu()` runs it. |
 | `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | The row of covers: `games` (with the fewer-than-13 duplication rule), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. |
 | `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |

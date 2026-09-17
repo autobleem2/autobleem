@@ -261,9 +261,9 @@ void GuiLauncher::loop_joyButton_Pressed() {
 
     if (powerOffShift) {
         if (e.button == Button::R2) {
-            app.audio().cursor.play();
-            gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-            System::powerOff();
+            // was a direct power off; L2+R2 opens the system menu instead now, Power Off among its items -
+            // one accidental R2 while reaching for L2 no longer shuts the console down on the spot
+            loop_openSystemMenu();
             return;
         }
     }
@@ -299,9 +299,6 @@ void GuiLauncher::loop_joyButton_Pressed() {
 
     } else if (e.button == Button::Cross) {
         loop_crossButton_Pressed();
-
-    } else if (e.button == Button::R2) {
-        loop_r2Button_Pressed();
     };
 }
 

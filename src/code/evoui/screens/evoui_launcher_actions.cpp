@@ -485,11 +485,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 }
 
 //*******************************
-// GuiLauncher::loop_r2Button_Pressed
+// GuiLauncher::loop_openSystemMenu
 //*******************************
-// the system menu: everything the classic main menu used to offer, now reached from here (docs/refactor-plan.md
-// Step 4). GuiSystemMenu only picks; every action below is what ClassicMenuScreen used to do for the same item.
-void GuiLauncher::loop_r2Button_Pressed() {
+// the system menu: everything the classic main menu used to offer, now reached with L2+R2 (docs/refactor-plan.md
+// Step 4; moved off a bare R2 so reaching for it can no longer be mistaken for the L2+R2 power-off it replaced -
+// Power Off is one of its own items now). GuiSystemMenu only picks; every action below is what ClassicMenuScreen
+// used to do for the same item.
+void GuiLauncher::loop_openSystemMenu() {
     app.audio().cursor.play();
 
     string retroArchLabel = _("RetroArch");
