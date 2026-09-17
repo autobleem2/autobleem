@@ -57,6 +57,8 @@ using ableem::GameRecord;
 using ableem::GameRecords;
 using ableem::GameMetadata;
 using ableem::GameDatabase;
+using ableem::GamePath;
+using ableem::GamePaths;
 using ableem::SubDirRowInfo;
 using ableem::SubDirRowInfos;
 using ableem::SubDirRowGame;

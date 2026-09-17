@@ -16,6 +16,7 @@
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
+#include "core/services/scan_service.h"
 #include "core/services/clock.h"
 #include "core/services/theme.h"
 #include "gui/app_audio.h"
@@ -53,6 +54,7 @@ public:
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
     RetroArchService &retroArch() { return retroArch_; }
+    ScanService &scans() { return scans_; }
     Lang &lang() { return lang_; }
     Session &session() { return session_; }
 
@@ -75,6 +77,7 @@ protected:
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     RetroArchService retroArch_;
+    ScanService scans_{gameLibrary};
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 };

@@ -11,8 +11,11 @@
 #include <ctime>
 #include <iostream>
 #include <memory>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/wait.h>
+#include <sched.h>
 #endif
 #include <unistd.h>
 
@@ -32,6 +35,22 @@ void System::powerOff()
     System::execUnixCommand("shutdown -h now");
     sync();
     exit(0);
+#endif
+}
+
+//*******************************
+// System::lowerCurrentThreadPriority
+//*******************************
+void System::lowerCurrentThreadPriority() {
+#ifdef _WIN32
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+#elif defined(SCHED_IDLE)
+    struct sched_param param;
+    param.sched_priority = 0;   // SCHED_IDLE requires 0
+    if (sched_setscheduler(0, SCHED_IDLE, &param) != 0)
+        nice(19);   // SCHED_IDLE refused (needs a capability some setups don't grant) - a plain nice bump instead
+#else
+    nice(19);
 #endif
 }
 

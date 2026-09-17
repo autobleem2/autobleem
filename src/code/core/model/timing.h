@@ -9,3 +9,7 @@
 // value. the two must agree, which is why they sit together.
 #define DefaultShowingTimeout (2 * TicksPerSecond)
 #define DefaultShowingTimeoutText "2"
+
+// how often ScanService's watcher takes a fresh fingerprint of the games directory when nothing asked for a
+// scan directly (milliseconds) - see ScanService::checkForChanges()
+#define ScanWatchInterval (10 * TicksPerSecond)

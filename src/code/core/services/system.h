@@ -24,6 +24,12 @@ public:
 
     static void powerOff();                                // halts the console; exits the app on a debug host
 
+    // drops the calling thread (not the process) to the OS's lowest scheduling priority - idle-priority
+    // where the platform has it (SCHED_IDLE / THREAD_PRIORITY_IDLE: runs at full speed when nothing else
+    // wants the CPU, yields almost completely once something else does), a plain nice(19) otherwise. Used
+    // by ScanService's worker thread so a background scan never competes with a running emulator for CPU.
+    static void lowerCurrentThreadPriority();
+
     static std::string getAvailableSpace();                // "N GB / M GB (P%)" for the status bar, from df on /media
 
     static unsigned int getRandomNumber();
