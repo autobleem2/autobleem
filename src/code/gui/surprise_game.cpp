@@ -16,6 +16,7 @@ namespace {
     const int ShipW = 56, ShipH = 42;
     const int AlienW = 48, AlienH = 42;
     const int LaserW = 8, LaserH = 32;
+    const int PowerUpSize = 30;
 
     const int Rows = 4, Cols = 7;
     const int ColSpacing = 68, RowSpacing = 56;
@@ -23,14 +24,31 @@ namespace {
 
     const float PlayerBulletSpeed = 9.0f;   // px per 16ms frame
     const float AlienBulletSpeed = 4.0f;
+    const float PowerUpFallSpeed = 2.2f;
     const unsigned int FireCooldownMs = 220;
     const unsigned int HitInvulnMs = 5000;   // 5s - long enough to recover after a hit
-    const int MaxPlayerBullets = 3;
-    const float FormationStepDown = 16.0f;
-    const float FormationMaxY = 220.0f;   // never lets the marching grid crawl down onto the ship
+    const int MaxPlayerBullets = 6;          // generous enough for a 3-bolt Spread volley plus a bit more
+    const float FormationMaxY = 220.0f;      // never lets the wave crawl down onto the ship
 
     const float DiveDurationFrames = 90.0f;    // ~1.5s at 60fps: swoop from formation to off the bottom
-    const float ReturnDurationFrames = 60.0f;  // ~1s: loop back in from off the top into the formation slot
+    const float ReturnDurationFrames = 60.0f;  // ~1s: fly back in, either after a dive or at wave start
+
+    // the Warblade-style continuous weave: each row sways on its own sine phase, so the wave ripples as a
+    // whole instead of marching and bouncing as a rigid block
+    const float SwayAmplitude = 46.0f;
+    const float SwayAngularSpeed = 1.0f;   // rad/s at wave 1
+    const float RowPhaseStep = 0.7f;       // radians of phase offset between adjacent rows
+    const float FormationDriftSpeed = 0.05f;   // px per 16ms frame, downward, scaled by waveSpeedScale
+
+    const unsigned int EntranceStaggerMs = 180;   // extra entrance delay per row
+    const unsigned int EntranceColStaggerMs = 40; // extra entrance delay per column, for a diagonal cascade
+
+    const int PowerUpDropPercent = 20;   // chance an exploded alien drops one
+    const unsigned int PowerUpDurationMs = 10000;
+
+    bool overlaps(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh) {
+        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
 }
 
 //*******************************
@@ -41,19 +59,22 @@ void SurpriseGame::reset(unsigned int nowTicks) {
     lives = 3;
     score = 0;
     wave = 1;
+    activePowerUp = PowerUpType::None;
+    powerUpUntilTicks = 0;
     playerBullets.clear();
     alienBullets.clear();
+    powerUps.clear();
     lastTicks = nowTicks;
     lastShotTicks = 0;
     hitInvulnUntil = 0;
-    nextDiveAtTicks = nowTicks + 1500;
-    spawnWave();
+    nextDiveAtTicks = nowTicks + 2500;
+    spawnWave(nowTicks);
 }
 
 //*******************************
 // SurpriseGame::spawnWave
 //*******************************
-void SurpriseGame::spawnWave() {
+void SurpriseGame::spawnWave(unsigned int nowTicks) {
     aliens.clear();
     int gridWidth = (Cols - 1) * ColSpacing + AlienW;
     float startX = (SCREEN_WIDTH - gridWidth) / 2.0f;
@@ -63,36 +84,65 @@ void SurpriseGame::spawnWave() {
             Alien a;
             a.baseX = startX + c * ColSpacing;
             a.baseY = TopMargin + r * RowSpacing;
-            a.x = a.baseX;
-            a.y = a.baseY;
+            a.row = r;
             a.kind = r % 2;
+            a.returning = true;
+            a.returnT = 0;
+            a.returnStartX = a.baseX;
+            a.returnStartY = -(float) AlienH - r * 30.0f;
+            a.entranceDelayUntil = nowTicks + r * EntranceStaggerMs + c * EntranceColStaggerMs;
+            a.x = a.returnStartX;
+            a.y = a.returnStartY;
             aliens.push_back(a);
         }
     }
-    formationDir = 1.0f;
-    formationX = 0;
     formationY = 0;
-    formationSpeed = 0.6f + (wave - 1) * 0.15f;
+    waveSpeedScale = 1.0f + (wave - 1) * 0.12f;
     playerBullets.clear();
     alienBullets.clear();
 }
 
 //*******************************
-// SurpriseGame::fire
+// SurpriseGame::tryFire
 //*******************************
-void SurpriseGame::fire(unsigned int nowTicks) {
+void SurpriseGame::tryFire(unsigned int nowTicks) {
     if (gameOver()) return;
-    if (nowTicks - lastShotTicks < FireCooldownMs) return;
+
+    unsigned int cooldown = (activePowerUp == PowerUpType::Rapid) ? FireCooldownMs / 3 : FireCooldownMs;
+    if (nowTicks - lastShotTicks < cooldown) return;
 
     int aliveCount = 0;
     for (const Bullet &b : playerBullets) if (b.alive) aliveCount++;
     if (aliveCount >= MaxPlayerBullets) return;
 
-    Bullet b;
-    b.x = shipX + ShipW / 2.0f - LaserW / 2.0f;
-    b.y = SCREEN_HEIGHT - 90.0f - LaserH;
-    b.alive = true;
-    playerBullets.push_back(b);
+    float startX = shipX + ShipW / 2.0f - LaserW / 2.0f;
+    float startY = SCREEN_HEIGHT - 90.0f - LaserH;
+
+    if (activePowerUp == PowerUpType::Spread) {
+        const float driftAngles[3] = {-2.2f, 0.0f, 2.2f};
+        for (float vx : driftAngles) {
+            Bullet b;
+            b.x = startX;
+            b.y = startY;
+            b.vx = vx;
+            b.alive = true;
+            playerBullets.push_back(b);
+        }
+    } else if (activePowerUp == PowerUpType::Power) {
+        Bullet b;
+        b.x = startX;
+        b.y = startY;
+        b.pierceLeft = 2;   // this bolt can pass through up to 3 aliens total
+        b.alive = true;
+        playerBullets.push_back(b);
+    } else {
+        Bullet b;
+        b.x = startX;
+        b.y = startY;
+        b.alive = true;
+        playerBullets.push_back(b);
+    }
+
     lastShotTicks = nowTicks;
     sounds.playerShoot.play();
 }
@@ -104,6 +154,20 @@ int SurpriseGame::awayFromFormationCount() const {
     int n = 0;
     for (const Alien &a : aliens) if (a.alive && (a.diving || a.returning)) n++;
     return n;
+}
+
+//*******************************
+// SurpriseGame::restX / restY
+// the alien's current "at rest" position: baseY plus the wave's slow downward creep for Y, baseX plus this
+// row's own sine sway for X - this is what gives the formation its continuous Warblade-style ripple.
+//*******************************
+float SurpriseGame::restX(const Alien &a, unsigned int nowTicks) const {
+    float t = nowTicks / 1000.0f;
+    return a.baseX + SwayAmplitude * sinf(SwayAngularSpeed * waveSpeedScale * t + a.row * RowPhaseStep);
+}
+
+float SurpriseGame::restY(const Alien &a) const {
+    return a.baseY + formationY;
 }
 
 //*******************************
@@ -129,31 +193,20 @@ void SurpriseGame::maybeStartDive(unsigned int nowTicks) {
     a.diveTargetX = shipX + ShipW / 2.0f;
 
     uniform_int_distribution<int> nextDelay(1400, 3200);
-    nextDiveAtTicks = nowTicks + nextDelay(rng);
+    nextDiveAtTicks = nowTicks + (unsigned int) (nextDelay(rng) / waveSpeedScale);
 }
 
 //*******************************
 // SurpriseGame::updateAliens
 //*******************************
 void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
-    // formation march: bounce off the screen edges, step down on every bounce
-    float minX = 1e9f, maxX = -1e9f;
-    bool any = false;
+    bool anyResting = false;
     for (const Alien &a : aliens) {
-        if (!a.alive || a.diving || a.returning) continue;
-        any = true;
-        minX = min(minX, a.baseX + formationX);
-        maxX = max(maxX, a.baseX + formationX + AlienW);
+        if (a.alive && !a.diving && !a.returning) { anyResting = true; break; }
     }
-    if (any) {
-        formationX += formationSpeed * formationDir * dtFrames;
-        if (minX <= 12 && formationDir < 0) {
-            formationDir = 1;
-            if (formationY < FormationMaxY) formationY += FormationStepDown;
-        } else if (maxX >= SCREEN_WIDTH - 12 && formationDir > 0) {
-            formationDir = -1;
-            if (formationY < FormationMaxY) formationY += FormationStepDown;
-        }
+    if (anyResting && formationY < FormationMaxY) {
+        formationY += FormationDriftSpeed * waveSpeedScale * dtFrames;
+        if (formationY > FormationMaxY) formationY = FormationMaxY;
     }
 
     for (Alien &a : aliens) {
@@ -167,8 +220,11 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
                 a.diving = false;
                 a.returning = true;
                 a.returnT = 0;
-                a.x = a.baseX + formationX;
-                a.y = -(float) AlienH;
+                a.returnStartX = a.baseX;
+                a.returnStartY = -(float) AlienH;
+                a.entranceDelayUntil = 0;
+                a.x = a.returnStartX;
+                a.y = a.returnStartY;
                 continue;
             }
             float t = a.diveT;
@@ -182,20 +238,27 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
         }
 
         if (a.returning) {
+            if (nowTicks < a.entranceDelayUntil) {
+                a.x = a.returnStartX;
+                a.y = a.returnStartY;
+                continue;   // still waiting for its turn in the cascading entrance
+            }
             a.returnT += dtFrames / ReturnDurationFrames;
+            float targetX = restX(a, nowTicks);
+            float targetY = restY(a);
             if (a.returnT >= 1.0f) {
                 a.returning = false;
-                a.x = a.baseX + formationX;
-                a.y = a.baseY + formationY;
+                a.x = targetX;
+                a.y = targetY;
                 continue;
             }
-            a.x = a.baseX + formationX;
-            a.y = -(float) AlienH + a.returnT * (a.baseY + formationY + (float) AlienH);
+            a.x = a.returnStartX + (targetX - a.returnStartX) * a.returnT;
+            a.y = a.returnStartY + (targetY - a.returnStartY) * a.returnT;
             continue;
         }
 
-        a.x = a.baseX + formationX;
-        a.y = a.baseY + formationY;
+        a.x = restX(a, nowTicks);
+        a.y = restY(a);
     }
 
     maybeStartDive(nowTicks);
@@ -210,7 +273,7 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
             bool blocked = false;
             for (const Alien &other : aliens) {
                 if (&other == &a || !other.alive) continue;
-                if (fabs(other.baseX - a.baseX) < 4 && other.baseY > a.baseY) { blocked = true; break; }
+                if (other.baseX == a.baseX && other.baseY > a.baseY) { blocked = true; break; }
             }
             if (blocked) continue;
             if (chance(rng) != 0) continue;
@@ -232,7 +295,8 @@ void SurpriseGame::updateBullets(float dtFrames) {
     for (Bullet &b : playerBullets) {
         if (!b.alive) continue;
         b.y -= PlayerBulletSpeed * dtFrames;
-        if (b.y < -LaserH) b.alive = false;
+        b.x += b.vx * dtFrames;
+        if (b.y < -LaserH || b.x < -LaserW || b.x > SCREEN_WIDTH) b.alive = false;
     }
     for (Bullet &b : alienBullets) {
         if (!b.alive) continue;
@@ -245,9 +309,48 @@ void SurpriseGame::updateBullets(float dtFrames) {
                                   [](const Bullet &b) { return !b.alive; }), alienBullets.end());
 }
 
-namespace {
-    bool overlaps(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh) {
-        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+//*******************************
+// SurpriseGame::maybeDropPowerUp
+//*******************************
+void SurpriseGame::maybeDropPowerUp(float x, float y) {
+    uniform_int_distribution<int> chance(0, 99);
+    if (chance(rng) >= PowerUpDropPercent) return;
+
+    uniform_int_distribution<int> pick(0, 2);
+    static const PowerUpType types[3] = {PowerUpType::Rapid, PowerUpType::Spread, PowerUpType::Power};
+
+    PowerUp p;
+    p.x = x;
+    p.y = y;
+    p.type = types[pick(rng)];
+    p.alive = true;
+    powerUps.push_back(p);
+}
+
+//*******************************
+// SurpriseGame::updatePowerUps
+//*******************************
+void SurpriseGame::updatePowerUps(float dtFrames, unsigned int nowTicks) {
+    float shipY = SCREEN_HEIGHT - 90.0f;
+    for (PowerUp &p : powerUps) {
+        if (!p.alive) continue;
+        p.y += PowerUpFallSpeed * dtFrames;
+        if (p.y > SCREEN_HEIGHT) {
+            p.alive = false;
+            continue;
+        }
+        if (!gameOver() && overlaps(p.x, p.y, PowerUpSize, PowerUpSize, shipX, shipY, ShipW, ShipH)) {
+            activePowerUp = p.type;
+            powerUpUntilTicks = nowTicks + PowerUpDurationMs;
+            p.alive = false;
+            sounds.powerup.play();
+        }
+    }
+    powerUps.erase(remove_if(powerUps.begin(), powerUps.end(),
+                              [](const PowerUp &p) { return !p.alive; }), powerUps.end());
+
+    if (activePowerUp != PowerUpType::None && nowTicks >= powerUpUntilTicks) {
+        activePowerUp = PowerUpType::None;
     }
 }
 
@@ -260,10 +363,15 @@ void SurpriseGame::handleCollisions(unsigned int nowTicks) {
         for (Alien &a : aliens) {
             if (!a.alive) continue;
             if (overlaps(b.x, b.y, LaserW, LaserH, a.x, a.y, AlienW, AlienH)) {
-                b.alive = false;
                 a.alive = false;
                 bumpScore(a.diving ? 150 : 100);
                 sounds.explosion.play();
+                maybeDropPowerUp(a.x + AlienW / 2.0f - PowerUpSize / 2.0f, a.y);
+                if (b.pierceLeft > 0) {
+                    b.pierceLeft--;
+                } else {
+                    b.alive = false;
+                }
                 break;
             }
         }
@@ -273,6 +381,9 @@ void SurpriseGame::handleCollisions(unsigned int nowTicks) {
     bool invulnerable = nowTicks < hitInvulnUntil;
 
     if (!invulnerable && !gameOver()) {
+        // at most one hit lands per frame - an alien bullet and a diving alien could otherwise both overlap
+        // the ship on the same frame and take two lives before hitInvulnUntil has a chance to guard the second
+        bool hitThisFrame = false;
         for (Bullet &b : alienBullets) {
             if (!b.alive) continue;
             if (overlaps(b.x, b.y, LaserW, LaserH, shipX, shipY, ShipW, ShipH)) {
@@ -280,10 +391,12 @@ void SurpriseGame::handleCollisions(unsigned int nowTicks) {
                 lives--;
                 hitInvulnUntil = nowTicks + HitInvulnMs;
                 sounds.playerHit.play();
+                hitThisFrame = true;
                 break;
             }
         }
         for (Alien &a : aliens) {
+            if (hitThisFrame) break;
             if (!a.alive || !a.diving) continue;
             if (overlaps(a.x, a.y, AlienW, AlienH, shipX, shipY, ShipW, ShipH)) {
                 a.alive = false;
@@ -301,14 +414,14 @@ void SurpriseGame::handleCollisions(unsigned int nowTicks) {
         wave++;
         bumpScore(500);
         sounds.waveClear.play();
-        spawnWave();
+        spawnWave(nowTicks);
     }
 }
 
 //*******************************
 // SurpriseGame::update
 //*******************************
-void SurpriseGame::update(unsigned int nowTicks, bool moveLeft, bool moveRight) {
+void SurpriseGame::update(unsigned int nowTicks, bool moveLeft, bool moveRight, bool fireHeld) {
     unsigned int dt = (lastTicks == 0) ? 16 : (nowTicks - lastTicks);
     if (dt > 200) dt = 200;
     lastTicks = nowTicks;
@@ -323,7 +436,11 @@ void SurpriseGame::update(unsigned int nowTicks, bool moveLeft, bool moveRight) 
 
     updateAliens(dtFrames, nowTicks);
     updateBullets(dtFrames);
+    updatePowerUps(dtFrames, nowTicks);
     handleCollisions(nowTicks);
+
+    bool autofiring = (activePowerUp == PowerUpType::Rapid);
+    if (fireHeld || autofiring) tryFire(nowTicks);
 }
 
 //*******************************
@@ -340,10 +457,20 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
         renderer.copy(tex, nullptr, &dst);
     }
 
+    for (const PowerUp &p : powerUps) {
+        if (!p.alive) continue;
+        const ableem::Texture &tex = p.type == PowerUpType::Rapid ? sprites.powerupRapid
+                                    : p.type == PowerUpType::Spread ? sprites.powerupSpread
+                                                                     : sprites.powerupPower;
+        ableem::Rect dst((int) p.x, (int) p.y, PowerUpSize, PowerUpSize);
+        renderer.copy(tex, nullptr, &dst);
+    }
+
     for (const Bullet &b : playerBullets) {
         if (!b.alive) continue;
+        const ableem::Texture &tex = b.pierceLeft > 0 ? sprites.laserEnemy : sprites.laserPlayer;
         ableem::Rect dst((int) b.x, (int) b.y, LaserW, LaserH);
-        renderer.copy(sprites.laserPlayer, nullptr, &dst);
+        renderer.copy(tex, nullptr, &dst);
     }
     for (const Bullet &b : alienBullets) {
         if (!b.alive) continue;
@@ -362,6 +489,14 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
     text.renderText(font, _("WAVE") + " " + to_string(wave), 0, 20, XALIGN_CENTER);
     text.renderText(font, _("LIVES") + ": " + to_string(max(0, lives)), 30, 20, XALIGN_RIGHT);
     text.renderText(font, _("HIGH SCORE") + ": " + to_string(highScore), 0, 46, XALIGN_CENTER);
+
+    if (activePowerUp != PowerUpType::None) {
+        string name = activePowerUp == PowerUpType::Rapid ? _("RAPID FIRE")
+                    : activePowerUp == PowerUpType::Spread ? _("SPREAD SHOT")
+                                                            : _("POWER SHOT");
+        unsigned int remainingMs = (powerUpUntilTicks > lastTicks) ? (powerUpUntilTicks - lastTicks) : 0;
+        text.renderText(font, name + " " + to_string(remainingMs / 1000 + 1) + "s", 0, 70, XALIGN_CENTER);
+    }
 
     if (gameOver()) {
         text.renderText(font, _("GAME OVER"), 0, SCREEN_HEIGHT / 2 - 20, XALIGN_CENTER);

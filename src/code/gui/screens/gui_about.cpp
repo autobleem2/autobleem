@@ -20,12 +20,17 @@ void GuiAbout::init() {
     sprites.ufo = ableem::Texture::loadFile(renderer, sdir + "ufo.png");
     sprites.laserPlayer = ableem::Texture::loadFile(renderer, sdir + "laser_player.png");
     sprites.laserEnemy = ableem::Texture::loadFile(renderer, sdir + "laser_enemy.png");
+    sprites.powerupRapid = ableem::Texture::loadFile(renderer, sdir + "powerup_rapid.png");
+    sprites.powerupSpread = ableem::Texture::loadFile(renderer, sdir + "powerup_spread.png");
+    sprites.powerupPower = ableem::Texture::loadFile(renderer, sdir + "powerup_power.png");
 
     game.sounds.playerShoot = ableem::Sound::load(sdir + "sfx_player_shoot.ogg");
     game.sounds.enemyShoot = ableem::Sound::load(sdir + "sfx_enemy_shoot.ogg");
     game.sounds.explosion = ableem::Sound::load(sdir + "sfx_explosion.ogg");
     game.sounds.playerHit = ableem::Sound::load(sdir + "sfx_player_hit.ogg");
     game.sounds.waveClear = ableem::Sound::load(sdir + "sfx_wave_clear.ogg");
+    game.sounds.powerup = ableem::Sound::load(sdir + "sfx_powerup.ogg");
+    surpriseMusic = ableem::Music::load(sdir + "music.ogg");
 
     savedHighScore = Strings::toInt(app.config().inifile.values["surprisehighscore"]);
     game.seedHighScore(savedHighScore);
@@ -138,8 +143,7 @@ void GuiAbout::loop() {
         unsigned int ticks = gui->platform().ticks();
 
         if (surpriseMode) {
-            game.update(ticks, gui->input().dpadLeft(), gui->input().dpadRight());
-            if (crossHeld) game.fire(ticks);
+            game.update(ticks, gui->input().dpadLeft(), gui->input().dpadRight(), crossHeld);
 
             if (game.currentHighScore() > savedHighScore) {
                 savedHighScore = game.currentHighScore();
@@ -160,18 +164,33 @@ void GuiAbout::loop() {
                     if (e.button == Button::Start) {
                         if (surpriseMode) {
                             surpriseMode = false;
-                            app.audio().music.setVolume(128);
+                            if (duckedThemeMusic) app.audio().music.setVolume(128);
+                            if (playingFallbackMusic) {
+                                surpriseMusic.halt();
+                                app.audio().playMusic();   // resume whatever the theme/config normally plays
+                            }
+                            duckedThemeMusic = false;
+                            playingFallbackMusic = false;
                             app.audio().cancel.play();
                         } else {
                             surpriseMode = true;
                             crossHeld = false;
                             game.reset(ticks);
-                            app.audio().music.setVolume(64);   // duck to 50% behind the game
+                            if (app.audio().music.isPlaying()) {
+                                // something is already playing (the theme's track or a custom one) -
+                                // just duck it to 50% behind the game
+                                app.audio().music.setVolume(64);
+                                duckedThemeMusic = true;
+                            } else {
+                                // a silent theme or "nomusic": Surprise mode still gets some music
+                                surpriseMusic.play(-1);
+                                surpriseMusic.setVolume(96);
+                                playingFallbackMusic = true;
+                            }
                             app.audio().cursor.play();
                         }
                     } else if (surpriseMode && e.button == Button::Cross) {
                         crossHeld = true;
-                        game.fire(ticks);
                     } else if (surpriseMode && e.button == Button::Select) {
                         game.reset(ticks);
                         crossHeld = false;
