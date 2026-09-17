@@ -61,15 +61,18 @@ void readColor(const json &j, const char *key, ThemeColor &out) {
     if (v && v->is_string()) ThemeColor::parseHex(v->get<string>(), out);
 }
 
-// x/y/w/h + colour + alpha, all optional within the object; the object being there is what sets it
+// x/y/w/h (set when x is there), colour and alpha, each optional on its own
+void readRect(const json &j, int &x, int &y, int &w, int &h, bool &set) {
+    readInt(j, "x", x, set);
+    readInt(j, "y", y);
+    readInt(j, "w", w);
+    readInt(j, "h", h);
+}
+
 void readPanel(const json &j, ThemePanel &out) {
-    readInt(j, "x", out.x);
-    readInt(j, "y", out.y);
-    readInt(j, "w", out.w);
-    readInt(j, "h", out.h);
+    readRect(j, out.x, out.y, out.w, out.h, out.set);
     readColor(j, "color", out.color);
-    readInt(j, "alpha", out.alpha);
-    out.set = true;
+    readOptInt(j, "alpha", out.alpha);
 }
 
 //*******************************
@@ -84,19 +87,24 @@ ordered_json rectJson(int x, int y, int w, int h) {
     return o;
 }
 
-ordered_json panelJson(const ThemePanel &p) {
-    ordered_json o = rectJson(p.x, p.y, p.w, p.h);
-    if (p.color.set) o["color"] = p.color.toHex();
-    o["alpha"] = p.alpha;
-    return o;
-}
-
 void putStr(ordered_json &o, const char *key, const string &s) {
     if (!s.empty()) o[key] = s;
 }
 
 void putColor(ordered_json &o, const char *key, const ThemeColor &c) {
     if (c.set) o[key] = c.toHex();
+}
+
+void putOptInt(ordered_json &o, const char *key, const Opt<int> &v) {
+    if (v.set) o[key] = v.value;
+}
+
+ordered_json panelJson(const ThemePanel &p) {
+    ordered_json o = ordered_json::object();
+    if (p.set) o = rectJson(p.x, p.y, p.w, p.h);
+    putColor(o, "color", p.color);
+    putOptInt(o, "alpha", p.alpha);
+    return o;
 }
 
 void putPoint(ordered_json &o, const char *key, const ThemePoint &p) {
@@ -124,8 +132,17 @@ void mergeColor(ThemeColor &mine, const ThemeColor &base) {
 }
 
 template<class T>
-void mergeSet(T &mine, const T &base) {   // anything with a `set` member
+void mergeSet(T &mine, const T &base) {   // anything with a `set` member and nothing else optional in it
     if (!mine.set) mine = base;
+}
+
+void mergePanel(ThemePanel &mine, const ThemePanel &base) {
+    if (!mine.set) {
+        mine.x = base.x; mine.y = base.y; mine.w = base.w; mine.h = base.h;
+        mine.set = base.set;
+    }
+    mergeColor(mine.color, base.color);
+    mergeSet(mine.alpha, base.alpha);
 }
 
 } // namespace
@@ -197,28 +214,22 @@ bool ThemeSpec::load(const string &path) {
         readStr(*c, "background", classic.background);
         if (const json *l = child(*c, "logo")) {
             readStr(*l, "file", classic.logo.file);
-            readInt(*l, "x", classic.logo.x);
-            readInt(*l, "y", classic.logo.y);
-            readInt(*l, "w", classic.logo.w);
-            readInt(*l, "h", classic.logo.h);
-            classic.logo.set = true;
+            readRect(*l, classic.logo.x, classic.logo.y, classic.logo.w, classic.logo.h, classic.logo.set);
         }
         if (const json *f = child(*c, "font")) {
             readStr(*f, "file", classic.font.file);
-            readInt(*f, "size", classic.font.size);
-            classic.font.set = true;
+            readOptInt(*f, "size", classic.font.size);
         }
         readOptInt(*c, "menuLines", classic.menuLines);
         if (const json *p = child(*c, "menuPanel")) readPanel(*p, classic.menuPanel);
         if (const json *s = child(*c, "statusBar")) {
             readPanel(*s, classic.statusBar);
-            readInt(*s, "textY", classic.statusBar.textY);
+            readOptInt(*s, "textY", classic.statusBar.textY);
         }
         readColor(*c, "textColor", classic.textColor);
         if (const json *k = child(*c, "keyboardKey")) {
             readColor(*k, "color", classic.keyboardKey.color);
-            readInt(*k, "alpha", classic.keyboardKey.alpha);
-            classic.keyboardKey.set = true;
+            readOptInt(*k, "alpha", classic.keyboardKey.alpha);
         }
         readColor(*c, "labelColor", classic.labelColor);
         if (const json *p = child(*c, "freeSpaceText")) {
@@ -316,34 +327,36 @@ bool ThemeSpec::save(const string &path) const {
     {
         ordered_json c = ordered_json::object();
         putStr(c, "background", classic.background);
-        if (classic.logo.set) {
+        {
             ordered_json l = ordered_json::object();
-            l["file"] = classic.logo.file;
-            l["x"] = classic.logo.x;
-            l["y"] = classic.logo.y;
-            l["w"] = classic.logo.w;
-            l["h"] = classic.logo.h;
-            c["logo"] = l;
+            putStr(l, "file", classic.logo.file);
+            if (classic.logo.set) {
+                l["x"] = classic.logo.x;
+                l["y"] = classic.logo.y;
+                l["w"] = classic.logo.w;
+                l["h"] = classic.logo.h;
+            }
+            putObject(c, "logo", l);
         }
-        if (classic.font.set) {
+        {
             ordered_json f = ordered_json::object();
-            f["file"] = classic.font.file;
-            f["size"] = classic.font.size;
-            c["font"] = f;
+            putStr(f, "file", classic.font.file);
+            putOptInt(f, "size", classic.font.size);
+            putObject(c, "font", f);
         }
-        if (classic.menuLines.set) c["menuLines"] = classic.menuLines.value;
-        if (classic.menuPanel.set) c["menuPanel"] = panelJson(classic.menuPanel);
-        if (classic.statusBar.set) {
+        putOptInt(c, "menuLines", classic.menuLines);
+        putObject(c, "menuPanel", panelJson(classic.menuPanel));
+        {
             ordered_json s = panelJson(classic.statusBar);
-            s["textY"] = classic.statusBar.textY;
-            c["statusBar"] = s;
+            putOptInt(s, "textY", classic.statusBar.textY);
+            putObject(c, "statusBar", s);
         }
         putColor(c, "textColor", classic.textColor);
-        if (classic.keyboardKey.set) {
+        {
             ordered_json k = ordered_json::object();
             putColor(k, "color", classic.keyboardKey.color);
-            k["alpha"] = classic.keyboardKey.alpha;
-            c["keyboardKey"] = k;
+            putOptInt(k, "alpha", classic.keyboardKey.alpha);
+            putObject(c, "keyboardKey", k);
         }
         putColor(c, "labelColor", classic.labelColor);
         putPoint(c, "freeSpaceText", classic.freeSpaceText);
@@ -441,14 +454,19 @@ bool ThemeSpec::save(const string &path) const {
 void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(music, base.music);
 
-    mergeStr(classic.background, base.classic.background);
-    mergeSet(classic.logo, base.classic.logo);
-    mergeSet(classic.font, base.classic.font);
+    if (!classic.logo.set) {   // the rect; the file is merged with the other files below
+        classic.logo.x = base.classic.logo.x; classic.logo.y = base.classic.logo.y;
+        classic.logo.w = base.classic.logo.w; classic.logo.h = base.classic.logo.h;
+        classic.logo.set = base.classic.logo.set;
+    }
+    mergeSet(classic.font.size, base.classic.font.size);
     mergeSet(classic.menuLines, base.classic.menuLines);
-    mergeSet(classic.menuPanel, base.classic.menuPanel);
-    mergeSet(classic.statusBar, base.classic.statusBar);
+    mergePanel(classic.menuPanel, base.classic.menuPanel);
+    mergePanel(classic.statusBar, base.classic.statusBar);
+    mergeSet(classic.statusBar.textY, base.classic.statusBar.textY);
     mergeColor(classic.textColor, base.classic.textColor);
-    mergeSet(classic.keyboardKey, base.classic.keyboardKey);
+    mergeColor(classic.keyboardKey.color, base.classic.keyboardKey.color);
+    mergeSet(classic.keyboardKey.alpha, base.classic.keyboardKey.alpha);
     mergeColor(classic.labelColor, base.classic.labelColor);
     mergeSet(classic.freeSpaceText, base.classic.freeSpaceText);
     mergeSet(classic.editorCover, base.classic.editorCover);

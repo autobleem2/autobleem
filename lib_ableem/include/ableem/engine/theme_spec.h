@@ -68,6 +68,8 @@ struct ThemeMusic {
 //******************
 // ThemeLogo / ThemeFont / ThemeFill / ThemePanel
 //******************
+// Each part of these is optional on its own (the file, the rect, the colour, the alpha), so a theme that
+// gives only a rect still inherits the default's fill. `set` is the rect's flag.
 struct ThemeLogo {                  // the classic logo and where it is drawn
     std::string file;
     int x = 0, y = 0, w = 0, h = 0;
@@ -76,25 +78,23 @@ struct ThemeLogo {                  // the classic logo and where it is drawn
 
 struct ThemeFont {                  // a ttf and a point size
     std::string file;
-    int size = 0;
-    bool set = false;
+    Opt<int> size;
 };
 
 struct ThemeFill {                  // a translucent fill: colour + alpha
     ThemeColor color;
-    int alpha = 255;
-    bool set = false;
+    Opt<int> alpha;
 };
 
 struct ThemePanel {                 // a filled rect
     int x = 0, y = 0, w = 0, h = 0;
-    ThemeColor color;
-    int alpha = 255;
     bool set = false;
+    ThemeColor color;
+    Opt<int> alpha;
 };
 
 struct ThemeStatusBar : ThemePanel {   // the classic status line: its bar, and the y the text is drawn at
-    int textY = 0;
+    Opt<int> textY;
 };
 
 //******************

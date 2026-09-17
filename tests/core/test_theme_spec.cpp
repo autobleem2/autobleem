@@ -27,7 +27,6 @@ ThemeSpec fullSpec() {
     s.classic.logo.set = true;
     s.classic.logo.file = "ab.png";
     s.classic.logo.x = 520; s.classic.logo.y = 0; s.classic.logo.w = 240; s.classic.logo.h = 180;
-    s.classic.font.set = true;
     s.classic.font.file = "zrnic.ttf";
     s.classic.font.size = 24;
     s.classic.menuLines = 13;
@@ -41,7 +40,6 @@ ThemeSpec fullSpec() {
     s.classic.statusBar.alpha = 170;
     s.classic.statusBar.textY = 662;
     s.classic.textColor = ThemeColor(255, 255, 255);
-    s.classic.keyboardKey.set = true;
     s.classic.keyboardKey.color = ThemeColor(120, 120, 120);
     s.classic.keyboardKey.alpha = 170;
     s.classic.labelColor = ThemeColor(180, 180, 180);
@@ -164,7 +162,7 @@ TEST_CASE("a partial theme writes only what it sets and reads back as partial") 
     CHECK(in.classic.background == "bg.png");
     CHECK(in.classic.menuLines.set);
     CHECK_FALSE(in.classic.logo.set);
-    CHECK_FALSE(in.classic.font.set);
+    CHECK_FALSE(in.classic.font.size.set);
     CHECK_FALSE(in.music.set);
     CHECK(in.launcher.background.empty());
     CHECK(in.launcher.colors.text.set);
@@ -193,7 +191,6 @@ TEST_CASE("\"music\": null is a theme with no music") {
 TEST_CASE("mergeOver takes the base's value for everything the theme leaves out") {
     ThemeSpec partial;
     partial.classic.background = "aergb.png";
-    partial.classic.font.set = true;
     partial.classic.font.file = "other.ttf";
     partial.classic.font.size = 30;
     partial.classic.buttons.cross = "x.png";
@@ -214,6 +211,30 @@ TEST_CASE("mergeOver takes the base's value for everything the theme leaves out"
     CHECK(partial.launcher.metaPanel == "images/meta_panel.png");
     CHECK(partial.sounds.cursor == "sounds/cursor.wav");
     CHECK(partial.referencedFiles().size() == 42);
+}
+
+TEST_CASE("mergeOver keeps a rect, a colour and an alpha apart: a theme with only the rect inherits the fill") {
+    ThemeSpec partial;
+    partial.classic.menuPanel.set = true;
+    partial.classic.menuPanel.x = 1; partial.classic.menuPanel.y = 2;
+    partial.classic.menuPanel.w = 3; partial.classic.menuPanel.h = 4;
+    partial.classic.statusBar.color = ThemeColor(9, 9, 9);      // a colour without a rect
+    partial.classic.font.file = "mine.ttf";                     // a file without a size
+    partial.classic.logo.file = "mylogo.png";                   // a file without a rect
+
+    partial.mergeOver(fullSpec());
+
+    CHECK(partial.classic.menuPanel.x == 1);
+    CHECK(partial.classic.menuPanel.h == 4);
+    CHECK(partial.classic.menuPanel.color.toHex() == "#000000");
+    CHECK(int(partial.classic.menuPanel.alpha) == 170);
+    CHECK(partial.classic.statusBar.y == -670);
+    CHECK(partial.classic.statusBar.color.toHex() == "#090909");
+    CHECK(int(partial.classic.statusBar.textY) == 662);
+    CHECK(partial.classic.font.file == "mine.ttf");
+    CHECK(int(partial.classic.font.size) == 24);
+    CHECK(partial.classic.logo.file == "mylogo.png");
+    CHECK(partial.classic.logo.w == 240);
 }
 
 TEST_CASE("a file that is not valid JSON, or not there, is reported and leaves the spec alone") {
@@ -240,8 +261,8 @@ TEST_CASE("a key of the wrong type is ignored, not an error") {
     CHECK(spec.classic.background.empty());
     CHECK_FALSE(spec.classic.menuLines.set);
     CHECK_FALSE(spec.classic.textColor.set);
-    CHECK(spec.classic.logo.set);
     CHECK(spec.classic.logo.file == "ab.png");
+    CHECK_FALSE(spec.classic.logo.set);            // "x" is a string, so the rect is not set
     CHECK(spec.classic.logo.x == 0);
     CHECK(spec.launcher.background.empty());
 }
