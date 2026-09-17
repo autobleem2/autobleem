@@ -86,7 +86,10 @@ void GuiOptions::fill() {
     app.lang().load(Env::getPathToLangDir(), "English");
 
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
+#ifndef AB_PLATFORM_RPI
+    // a Pi has no built-in games to show (GameQueryService::showInternalGames is hard false there)
     lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true, vector<string> ({ "false", "true" }) );
+#endif
     lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
     lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
     lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background Music:"), "nomusic", true, vector<string> ({ "true", "false" }) );

@@ -146,13 +146,16 @@ Still to do, in order:
 
 1. Continue `docs/refactor-plan.md` - phase B, the service extractions (`GameQueryService` first). Each one
    ships with its tests in the same commit, and pulls its file into `ab_core` as it goes.
-2. Centralize the hard-coded paths still in the app (`/media/Autobleem/rc/backup_internal.sh` in
-   `app.cpp`, `/media/System/Logs/ver.txt`) in `Env` - the engine side is done, so are the theme loaders
-   (`Theme` asks `Env` for both branches now), and so are the launch scripts and RetroArch paths
-   (`LaunchService`, step 10).
+2. Centralize the hard-coded paths still in the app (`/media/System/Logs/ver.txt`) in `Env` - the engine side
+   is done, so are the theme loaders (`Theme` asks `Env` for both branches now), the launch scripts and
+   RetroArch paths (`LaunchService`, step 10) and `backup_internal.sh` (`Env::getPathToRCDir()`, done with
+   the Pi port). `config.ini`'s `Cfg=` key is still an absolute console path - the Pi installer rewrites it
+   per install, since where it points depends on where the data partition was mounted.
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
 4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
-   hardware yet - only the Windows/MinGW build has been exercised). This is the next thing to do.
+   hardware yet - only the Windows/MinGW and Raspberry Pi cross builds have been exercised, and the latter
+   only as a build). This is the next thing to do. A *second* ARM toolchain now exists on this host (the Pi
+   one, below) - it is not the Sony one and does not substitute for it.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
@@ -216,6 +219,53 @@ CHD support no longer depends on an external install: **`libmamecd` is vendored*
 mingw-w64/UCRT toolchain, and what got trimmed (VS project files, autotools cruft, docs, unused
 encoder/grabbag headers). `AB_ENABLE_CHD` now defaults ON on every host, `make_win.sh` no longer forces it
 OFF, and a full Windows/MinGW rebuild plus `ctest` were verified green with it vendored in.
+
+## Raspberry Pi port (2026-09-17)
+
+A second, *non-PSC* target: AutoBleem as an appliance on **32-bit Raspberry Pi OS Lite**, games on an exFAT
+partition of the SD card that behaves like the console's USB stick. It builds and links; **nothing has run on
+a Pi yet**, and `pcsx-ab` is not ported (PS1 games fall back to RetroArch's `pcsx_rearmed`, which cannot read
+AutoBleem's own save-state slots - "Resume" is therefore a no-op until it is).
+
+- **Toolchain**: `toolchains/rpi/RPitoolchain.cmake` over the Windows-hosted "SysGCC for Raspberry Pi"
+  (`C:\sysGCC\raspberry`, gcc 14.2.0, `arm-linux-gnueabihf`, sysroot rsynced from a real Pi). `./make_rpi.sh`
+  configures and builds into `build_rpi/`. Target is `armv7-a + neon-vfpv4`, so Pi 2/3/4/Zero 2 - **not**
+  armv6 (Pi 1/Zero). Invoke it the way `make_win.sh` is invoked, from the MSYS2 UCRT64 shell, but keep
+  `C:\sysGCC\raspberry\bin` *off* PATH: its `rm`/`mkdir`/`make` shadow the MSYS2 ones and break the script.
+  The compilers are named by absolute path in the toolchain file, so they do not need to be on PATH.
+- **SDL2 discovery**: that sysroot has the SDL2/image/mixer/ttf runtime `.so`s but no `-dev` package - no
+  headers, no unversioned symlinks, no cmake config. `toolchains/rpi/cmake/FindSDL2.cmake` defines all four
+  imported targets itself (lib_ableem does one `find_package(SDL2)` and then links four bare names), with
+  headers from `toolchains/rpi/sdl2-devkit/include` (copied from the MSYS2 SDL2 package - the public headers
+  are arch-independent, and 2.32.10 vs the Pi's 2.32.4 is ABI-safe) and `IMPORTED_LOCATION` pointed straight
+  at the versioned `.so`, which is what makes the missing symlinks irrelevant.
+- **`AB_PLATFORM_RPI`** (`core/services/environment.h`), set by the CMake option `AB_TARGET_RPI` which the
+  toolchain file forces on. A Pi is a *real* target, not an `AB_DEBUG_HOST`: it forks emulators and halts for
+  real. What it changes: `GameQueryService::showInternalGames()` is hard `false` and the "Show Internal Games"
+  row is gone from the Options menu (a Pi has no `/gaadata`); `backup_internal.sh` is not run. The new
+  `AB_ROOT_RELATIVE_LAYOUT` (debug host **or** Pi) is what now selects `setupEnvironment`'s "everything under
+  the root given on the command line" branch, which the Pi shares with the 1-arg debug mode.
+  `internal.db` is still *opened* on a Pi (it comes up empty) because `GameCatalogService`/
+  `GameSettingsService` unconditionally expect the handle.
+- Root `CMakeLists.txt`'s `^arm` branch is PSC-specific (it overwrites `CMAKE_CXX_FLAGS` with
+  `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so `AB_TARGET_RPI` now
+  takes its own branch there. Without that the Pi build was getting armv8 code, which would SIGILL on a Pi 2.
+- **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
+  Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
+  `autobleem-session.sh` loop that replaces `rc/selection.sh`, `shrink-root-init.sh`), and the data-partition
+  tree exactly as it lands on the exFAT partition - `Autobleem/rc/` (the Pi `launch.sh`/`launch_rb.sh`/
+  `retroarch.sh`), `Autobleem/bin/emu/`, `Games/`, `Apps/` (empty dirs kept by `placeholder` files).
+  `tools/make_rpi_package.sh` copies that tree, fills in `Autobleem/bin/autobleem` (`build_rpi/autobleem-gui`
+  + `src/resources`, minus `internal.db`), `Autobleem/bin/db` (`db/covers*.db`) and `themes/`
+  (`payload/themes`), strips the placeholders, and tars it to `build_rpi/autobleem-rpi.tar.gz`. `install.sh`
+  then finds or creates the exFAT partition, copies `Autobleem/ themes/ Games/ Apps/` onto it as they are, and
+  puts the launcher on tty1 via systemd with `getty@tty1` disabled. Documented as `sudo bash install.sh`
+  because a package built on Windows loses the executable bit.
+- Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
+  existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
+  compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
+  is an absolute console path (`/media/Autobleem/rc/autobleem_cfg.sh`) that `writeSelectionScript()` writes
+  and the session wrapper reads back; the installer rewrites it to the real mount point per install.
 
 ## lib_ableem
 
@@ -337,6 +387,8 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 
 - **ARM (real target)**: `make_arm.sh` → `PSCtoolchainV8.cmake` (`armv8-sony-linux-gnueabihf-gcc`, `--static -Os -s`).
   Requires the toolchain at `/opt/toolchain/armv8-sony-linux-gnueabihf`. Not available on this Windows host yet.
+- **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/`, then
+  `tools/make_rpi_package.sh` for the installable tarball. See the "Raspberry Pi port" section above.
 - **Mac/Linux**: `make_mac.sh`, `make_sys.sh`.
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
@@ -485,8 +537,9 @@ defaults, which both the services and the screens need.
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |
 | `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
 
-Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb`, `autobleem`, `default`,
-`evolution`), bundled Apps, release notes. `db/` is git-ignored (cover DBs live there).
+Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
+`default`, `evolution`), bundled Apps, release notes. `payload_rpi/` next to it is the Raspberry Pi installer
+package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
 ## Conventions and gotchas
 

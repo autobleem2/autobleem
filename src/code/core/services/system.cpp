@@ -9,8 +9,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -20,6 +22,16 @@
 #include <unistd.h>
 
 using namespace std;
+
+#ifndef AB_DEBUG_HOST
+namespace {
+string floatToString(float value, int precision) {
+    ostringstream oss;
+    oss << fixed << setprecision(precision) << value;
+    return oss.str();
+}
+}
+#endif
 
 //*******************************
 // System::powerOff
@@ -64,17 +76,13 @@ string System::getAvailableSpace(){
 #ifdef AB_DEBUG_HOST
     return "x86 - does not care about free space - Does not work on mac";
     #else
-    string str;
+    // execUnixCommand returns "" when df fails or nothing under /media is mounted - Strings::toInt makes that
+    // a 0 instead of a thrown exception (this branch had never been compiled before the Pi port)
     int gb = 1024 * 1024;
-    string dfResult;
-    float freeSpace;
-    float totalSpace;
-    int freeSpacePerc;
-    freeSpace = ((float)(stoi(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $4}'"))))/gb;
-    totalSpace = ((float)(stoi(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $2}'"))))/gb;
-    freeSpacePerc = (freeSpace / totalSpace) * 100;
-    str = floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace,2)+ " GB (" + to_string(freeSpacePerc)+"%)";
-    return str;
+    float freeSpace = (float) Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $4}'")) / gb;
+    float totalSpace = (float) Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $2}'")) / gb;
+    int freeSpacePerc = totalSpace > 0 ? (int) ((freeSpace / totalSpace) * 100) : 0;
+    return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) + "%)";
 #endif
 }
 

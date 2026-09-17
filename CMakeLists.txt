@@ -12,8 +12,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # still compiles it out (.chd games then scan as "no serial") if it's ever unwanted.
 option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libmamecd)" ON)
 
+# The Raspberry Pi port (payload_rpi/). A Pi is a real target like the console - it forks the emulators - but
+# its files live on the exFAT data partition it is given on the command line and it has no built-in games.
+# toolchains/rpi/RPitoolchain.cmake forces this on; see AB_PLATFORM_RPI in core/services/environment.h.
+option(AB_TARGET_RPI "Build for the Raspberry Pi instead of the PlayStation Classic" OFF)
+if (AB_TARGET_RPI)
+    message(STATUS "Building for the Raspberry Pi")
+    add_compile_definitions(AB_PLATFORM_RPI)
+endif()
+
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
 	message(STATUS "Building for ARM")
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0)
 		message(STATUS "CXX Compiler Version > 8")
@@ -28,6 +37,13 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )
 
 	include_directories(src/include "/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot/usr/include")
 	link_directories(/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot/usr/lib)
+
+elseif (AB_TARGET_RPI)
+
+	# the -march/-mfpu for a Pi come from the toolchain file (a Pi 2 is armv7, not the console's armv8), and
+	# there is no Sony sysroot to add to the include path.
+	message(STATUS "Building for ARM (Raspberry Pi) CPU flags=${CMAKE_CXX_FLAGS}")
+	include_directories(src/include)
 
 else()
 

@@ -1,0 +1,31 @@
+[Unit]
+Description=AutoBleem launcher
+# the launcher is useless before its games partition is there, and it owns tty1 instead of a login prompt
+RequiresMountsFor=@DATA_MOUNT@
+After=systemd-user-sessions.service sound.target
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/autobleem-session @DATA_MOUNT@
+WorkingDirectory=@DATA_MOUNT@/Autobleem/bin/autobleem
+
+# tty1 is the launcher's screen and its keyboard. TTYVHangup clears whatever held the terminal before us.
+StandardInput=tty-force
+StandardOutput=journal
+StandardError=journal
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+# Raspberry Pi OS Lite has no X and no compositor, so SDL2 draws straight to the KMS/DRM device. Saying so
+# explicitly stops SDL probing (and picking the dummy driver when a probe misfires).
+Environment=SDL_VIDEODRIVER=kmsdrm
+Environment=SDL_AUDIODRIVER=alsa
+
+# a crash should put the launcher back on screen, not drop the user on a black tty
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

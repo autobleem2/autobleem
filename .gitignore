@@ -52,6 +52,7 @@ CTestTestfile.cmake
 
 #ARM and local system shell script Build folders
 build_arm/
+build_rpi/
 build_sys/
 build_win/
 db/

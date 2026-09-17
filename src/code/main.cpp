@@ -18,7 +18,8 @@ using namespace std;
 // setupEnvironment
 //*******************************
 // Tells ableem::Environment where everything is. This is the one place that knows the difference between the
-// console layout and a debug host.
+// console layout and a root given on the command line (a debug host, or the Raspberry Pi port, where that root
+// is the mount point of the exFAT data partition - see payload_rpi/).
 //
 // On a debug host a single arg (the path to the root of a usb drive) is optional instead of two args. In that
 // mode, as much as possible, files from the usb drive are used instead of files in the debug build environment
@@ -37,7 +38,7 @@ static bool setupEnvironment(int argc, char *argv[]) {
     } else if (argc == 1 + 2) {
         // the two args are the path to the regional.db file and the path to the /Games dir on the usb drive
         regionalDb = argv[1];
-#ifdef AB_DEBUG_HOST
+#ifdef AB_ROOT_RELATIVE_LAYOUT
         internalDb = "internal.db";   // it's in the same dir as the autobleem-gui app you are debugging
 #else
         internalDb = "/media/System/Databases/internal.db";
@@ -53,7 +54,7 @@ static bool setupEnvironment(int argc, char *argv[]) {
     Env::setRegionalDbFile(regionalDb);
     Env::setInternalDbFile(internalDb);
 
-#ifdef AB_DEBUG_HOST
+#ifdef AB_ROOT_RELATIVE_LAYOUT
     if (singleArg) {
         Env::setWorkingPath(usbRoot + sep + "Autobleem/bin/autobleem");
         Env::setThemesDir(usbRoot + sep + "themes");

@@ -51,10 +51,14 @@ bool AutoBleem::openLibrary() {
         return false;
     }
 
+#ifndef AB_PLATFORM_RPI
     // if the /System/Databases/internal.db doesn't exist make a copy from the PSC
     cout << "Importing internal games from PSC to USB" << endl;
-    System::execUnixCommand("/media/Autobleem/rc/backup_internal.sh");
+    System::execUnixCommand((Env::getPathToRCDir() + sep + "backup_internal.sh").c_str());
+#endif
 
+    // on a Pi this opens (and so creates) an empty internal.db: nothing ever queries it - the internal sets
+    // are unreachable there - but GameCatalogService and GameSettingsService still expect the handle to exist.
     return gameLibrary.openInternalGames();
 }
 
