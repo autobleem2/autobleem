@@ -110,6 +110,7 @@ struct ClassicTheme {
     ThemePanel menuPanel;           // the translucent panel behind a menu
     ThemeStatusBar statusBar;
     ThemeColor textColor;
+    Opt<bool> textShadow;           // false: no dark halo under the classic UI's text (unset counts as true)
     ThemeFill keyboardKey;          // on-screen keyboard key
     ThemeColor labelColor;          // label box fill
     ThemePoint freeSpaceText;       // where "Free space: ..." is drawn
@@ -134,6 +135,7 @@ struct LauncherTheme {
     std::string settingsPanel;
     std::string metaPanel;
     Opt<bool> metaPanelSlides;      // false: the meta panel stays put when the menu opens (a static layout)
+    Opt<bool> textShadow;           // false: no dark halo under the launcher's text (unset counts as true)
     std::string arrow;
 
     struct Hints { std::string cross, circle, triangle; } hints;                    // the button hints in the footer

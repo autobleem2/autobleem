@@ -181,7 +181,8 @@ void GuiLauncher::loadAssets() {
 
     cout << "Loading theme and creating objects" << endl;
     staticMeta = !theme.metaPanelSlides;
-    background = addStaticElement(new PsObj("background", theme.background));
+    textShadow = !theme.textShadow.set || theme.textShadow;   // a theme has to say no
+    background =addStaticElement(new PsObj("background", theme.background));
     background->x = 0;
     background->y = 0;
     background->visible = true;
@@ -361,6 +362,14 @@ void GuiLauncher::render() {
     renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
     renderer.clear();
 
+    // every text on this screen (meta panel, labels, notifications, the state selector) gets the halo
+    // for the length of this frame, on the launcher's own setting; the classic screens shown from here
+    // render on the classic one, which goes back at the end of the frame
+    const TextRenderer::Shadow classicShadow = gui->text().shadow();
+    TextRenderer::Shadow shadow;
+    shadow.enabled = textShadow;
+    gui->text().setShadow(shadow);
+
     for (auto &obj : staticElements) {
 
         obj->render();
@@ -379,6 +388,7 @@ void GuiLauncher::render() {
     for (auto &obj : frontElemets)
         obj->render();
 
+    gui->text().setShadow(classicShadow);
     gui->renderer().present();
 }
 

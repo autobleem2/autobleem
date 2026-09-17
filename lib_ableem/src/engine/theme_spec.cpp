@@ -227,6 +227,7 @@ bool ThemeSpec::load(const string &path) {
             readOptInt(*s, "textY", classic.statusBar.textY);
         }
         readColor(*c, "textColor", classic.textColor);
+        readOptBool(*c, "textShadow", classic.textShadow);
         if (const json *k = child(*c, "keyboardKey")) {
             readColor(*k, "color", classic.keyboardKey.color);
             readOptInt(*k, "alpha", classic.keyboardKey.alpha);
@@ -270,6 +271,7 @@ bool ThemeSpec::load(const string &path) {
         readStr(*l, "settingsPanel", launcher.settingsPanel);
         readStr(*l, "metaPanel", launcher.metaPanel);
         readOptBool(*l, "metaPanelSlides", launcher.metaPanelSlides);
+        readOptBool(*l, "textShadow", launcher.textShadow);
         readStr(*l, "arrow", launcher.arrow);
         if (const json *h = child(*l, "hints")) {
             readStr(*h, "cross", launcher.hints.cross);
@@ -352,6 +354,7 @@ bool ThemeSpec::save(const string &path) const {
             putObject(c, "statusBar", s);
         }
         putColor(c, "textColor", classic.textColor);
+        if (classic.textShadow.set) c["textShadow"] = classic.textShadow.value;
         {
             ordered_json k = ordered_json::object();
             putColor(k, "color", classic.keyboardKey.color);
@@ -393,6 +396,7 @@ bool ThemeSpec::save(const string &path) const {
         putStr(l, "settingsPanel", launcher.settingsPanel);
         putStr(l, "metaPanel", launcher.metaPanel);
         if (launcher.metaPanelSlides.set) l["metaPanelSlides"] = launcher.metaPanelSlides.value;
+        if (launcher.textShadow.set) l["textShadow"] = launcher.textShadow.value;
         putStr(l, "arrow", launcher.arrow);
         {
             ordered_json h = ordered_json::object();
@@ -465,6 +469,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergePanel(classic.statusBar, base.classic.statusBar);
     mergeSet(classic.statusBar.textY, base.classic.statusBar.textY);
     mergeColor(classic.textColor, base.classic.textColor);
+    mergeSet(classic.textShadow, base.classic.textShadow);
     mergeColor(classic.keyboardKey.color, base.classic.keyboardKey.color);
     mergeSet(classic.keyboardKey.alpha, base.classic.keyboardKey.alpha);
     mergeColor(classic.labelColor, base.classic.labelColor);
@@ -472,6 +477,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(classic.editorCover, base.classic.editorCover);
 
     mergeSet(launcher.metaPanelSlides, base.launcher.metaPanelSlides);
+    mergeSet(launcher.textShadow, base.launcher.textShadow);
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
 

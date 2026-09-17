@@ -36,6 +36,7 @@
       "textY": 662
     },
     "textColor": "#ffffff",
+    "textShadow": true,
     "keyboardKey": {
       "color": "#787878",
       "alpha": 170
@@ -75,6 +76,7 @@
     "settingsPanel": "images/settings_panel.png",
     "metaPanel": "images/meta_panel.png",
     "metaPanelSlides": true,
+    "textShadow": true,
     "arrow": "images/arrow.png",
     "hints": {
       "cross": "images/hint_cross.png",

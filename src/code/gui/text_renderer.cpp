@@ -233,15 +233,29 @@ void TextRenderer::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAli
             renderer.copy(tokenInfo.emoji, nullptr, &tempRect);
         } else {
             // the token is text
-            if (useTextColor) {
-                font.drawColor(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                               textColor, tokenInfo.tokenString);
-            } else {
-                font.drawAlign(renderer, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                               ableem::Align::Left, tokenInfo.tokenString);
-            }
+            text.drawRun(font, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
+                         useTextColor ? &textColor : nullptr, tokenInfo.tokenString);
         }
     }
+}
+
+//*******************************
+// TextRenderer::drawRun
+// one run of text, in `color` or the font's own, with the halo under it when the shadow is on and the
+// text is light
+//*******************************
+void TextRenderer::drawRun(const ableem::Font &font, int x, int y, const Color *color, const string &run) {
+    if (shadow_.enabled && (color == nullptr || Shadow::isLight(*color))) {
+        // the halo first, so the text itself lands on top of it
+        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0},
+                                         {-1, 1},  {0, 1},  {1, 1},  {2, 2}};
+        for (const auto &offset : offsets)
+            font.drawColor(renderer_, x + offset[0], y + offset[1], shadow_.color, run);
+    }
+    if (color != nullptr)
+        font.drawColor(renderer_, x, y, *color, run);
+    else
+        font.drawAlign(renderer_, x, y, ableem::Align::Left, run);
 }
 
 //*******************************
@@ -391,5 +405,5 @@ void TextRenderer::renderLabelBox(int line, int yoffset) {
 void TextRenderer::renderTextChar(const string &text, int line, int yoffset, int x) {
     int fontHeight = themeFont_.lineHeight();
     int y = (fontHeight * line) + yoffset;
-    themeFont_.drawAlign(renderer_, x, y, ableem::Align::Left, text);
+    drawRun(themeFont_, x, y, nullptr, text);
 }

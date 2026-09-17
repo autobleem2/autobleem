@@ -41,6 +41,13 @@ void Gui::splash(const string &message) {
 void Gui::loadAssets(bool reloadMusic) {
     assets_.load();
     App::get().audio().loadTheme(reloadMusic);
+
+    // the classic screens' text halo, on unless the theme says otherwise; the launcher sets its own
+    // around its frame and puts this one back
+    TextRenderer::Shadow shadow;
+    const ableem::Opt<bool> &textShadow = App::get().theme().classic().textShadow;
+    shadow.enabled = !textShadow.set || textShadow;
+    text_.setShadow(shadow);
 }
 
 //*******************************

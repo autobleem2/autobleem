@@ -42,6 +42,7 @@ themes/<name>/
     "menuPanel": { "x": 30, "y": 10, "w": 1220, "h": 530, "color": "#000000", "alpha": 170 },
     "statusBar": { "x": 0, "y": -670, "w": 1280, "h": 30, "textY": 662, "color": "#000000", "alpha": 170 },
     "textColor": "#ffffff",
+    "textShadow": true,
     "keyboardKey": { "color": "#787878", "alpha": 170 },
     "labelColor": "#b4b4b4",
     "freeSpaceText": { "x": 180, "y": 35 },
@@ -59,6 +60,7 @@ themes/<name>/
     "settingsPanel": "images/settings_panel.png",
     "metaPanel": "images/meta_panel.png",
     "metaPanelSlides": true,
+    "textShadow": true,
     "arrow": "images/arrow.png",
     "hints": { "cross": "images/hint_cross.png", "circle": "images/hint_circle.png", "triangle": "images/hint_triangle.png" },
     "menuIcons": { "settings": "images/menu_settings.png", "guide": "images/menu_guide.png",
@@ -83,12 +85,13 @@ themes/<name>/
 | `classic.menuPanel` | The translucent panel behind a menu: rect, fill colour, alpha. |
 | `classic.statusBar` | The status line at the bottom: its bar (rect, colour, alpha) and `textY`, where the text is drawn. Every shipped theme keeps the bar off screen (`y: -670`), so only the text shows. |
 | `classic.textColor` | The classic UI's text and selection-box colour. |
+| `classic.textShadow` | `false` drops the dark halo drawn under the classic UI's text (it keeps white text readable on a light background; on by default). |
 | `classic.keyboardKey` | The on-screen keyboard's key fill; its alpha is also the label box's. |
 | `classic.labelColor` | The label box (dialog titles) fill. |
 | `classic.freeSpaceText` | Where "Free space: ..." is drawn. |
 | `classic.editorCover` | Where the game editor draws the cover. |
 | `classic.buttons` | One image per `\|@X\|` marker in UI strings: `cross circle square triangle start select l1 r1 l2 r2 check uncheck esc enter tab`. |
-| `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). |
+| `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). `textShadow: false` drops the dark halo drawn under the launcher's text (it is what keeps white text readable on a light background; on by default). |
 | `launcher.hints` | The cross/circle/triangle icons in the footer. |
 | `launcher.menuIcons` | The launcher menu's four icons. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |

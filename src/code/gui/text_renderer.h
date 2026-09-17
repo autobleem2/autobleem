@@ -31,6 +31,24 @@ public:
     static ableem::Color toColor(const ThemeColor &color, int alpha);
 
     //*******************************
+    // Shadow
+    //*******************************
+    // A dark halo under light text, so it stays readable on a light background: the token is drawn in
+    // `color` at each of the eight 1px offsets and once more 2px down-right (the drop), then in its own
+    // colour on top. Dark text (the launcher's grey footer hints) and button markers are left alone.
+    // Gui::loadAssets() sets it from the theme (classic.textShadow) for the classic screens; the launcher
+    // swaps in its own (launcher.textShadow) around its frame.
+    struct Shadow {
+        bool enabled = false;
+        ableem::Color color = ableem::Color(0, 0, 0, 150);
+
+        // text at or above mid-grey gets the halo
+        static bool isLight(const ableem::Color &c) { return (c.r * 299 + c.g * 587 + c.b * 114) / 1000 >= 128; }
+    };
+    void setShadow(const Shadow &shadow) { shadow_ = shadow; }
+    const Shadow &shadow() const { return shadow_; }
+
+    //*******************************
     // Rect and Size routines
     //*******************************
 
@@ -117,8 +135,12 @@ public:
     void renderTextChar(const std::string &text, int line, int yoffset, int posx);
 
 private:
+    // one run of text at (x, y), in `color` or the font's own if null, with the halo under it
+    void drawRun(const ableem::Font &font, int x, int y, const ableem::Color *color, const std::string &run);
+
     ableem::Renderer &renderer_;
     Theme &theme_;
     ableem::Font &themeFont_;
     std::map<std::string, ableem::Texture> &emojis_;
+    Shadow shadow_;
 };

@@ -143,6 +143,7 @@ public:
     std::string players;
 
     bool staticMeta=false;
+    bool textShadow = true;     // theme launcher.textShadow: the dark halo under this screen's text
     bool gameInfoVisible = true;
     using GuiScreen::GuiScreen;
 

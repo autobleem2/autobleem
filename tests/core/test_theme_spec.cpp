@@ -40,6 +40,7 @@ ThemeSpec fullSpec() {
     s.classic.statusBar.alpha = 170;
     s.classic.statusBar.textY = 662;
     s.classic.textColor = ThemeColor(255, 255, 255);
+    s.classic.textShadow = true;
     s.classic.keyboardKey.color = ThemeColor(120, 120, 120);
     s.classic.keyboardKey.alpha = 170;
     s.classic.labelColor = ThemeColor(180, 180, 180);
@@ -60,6 +61,7 @@ ThemeSpec fullSpec() {
     l.settingsPanel = "images/settings_panel.png";
     l.metaPanel = "images/meta_panel.png";
     l.metaPanelSlides = true;
+    l.textShadow = false;
     l.arrow = "images/arrow.png";
     l.hints.cross = "images/hint_cross.png"; l.hints.circle = "images/hint_circle.png"; l.hints.triangle = "images/hint_triangle.png";
     l.menuIcons.settings = "images/menu_settings.png"; l.menuIcons.guide = "images/menu_guide.png";
@@ -119,6 +121,8 @@ TEST_CASE("a full theme survives a save/load round trip") {
     CHECK(in.classic.statusBar.y == -670);
     CHECK(in.classic.statusBar.textY == 662);
     CHECK(in.classic.statusBar.alpha == 170);
+    CHECK(in.classic.textShadow.set);
+    CHECK(bool(in.classic.textShadow));
     CHECK(in.classic.keyboardKey.color.toHex() == "#787878");
     CHECK(in.classic.labelColor.toHex() == "#b4b4b4");
     CHECK(in.classic.editorCover.y == 130);
@@ -126,6 +130,8 @@ TEST_CASE("a full theme survives a save/load round trip") {
     CHECK(in.launcher.metaPanel == "images/meta_panel.png");
     CHECK(in.launcher.metaPanelSlides.set);
     CHECK(bool(in.launcher.metaPanelSlides));
+    CHECK(in.launcher.textShadow.set);
+    CHECK_FALSE(bool(in.launcher.textShadow));
     CHECK(in.launcher.menuIcons.resume == "images/menu_resume.png");
     CHECK(in.launcher.fonts.bold == "font/SST-Bold.ttf");
     CHECK(in.launcher.colors.secondary.toHex() == "#646464");
@@ -167,6 +173,8 @@ TEST_CASE("a partial theme writes only what it sets and reads back as partial") 
     CHECK(in.launcher.background.empty());
     CHECK(in.launcher.colors.text.set);
     CHECK_FALSE(in.launcher.colors.secondary.set);
+    CHECK_FALSE(in.launcher.textShadow.set);              // a theme that says nothing gets the default
+    CHECK_FALSE(in.classic.textShadow.set);
 }
 
 TEST_CASE("\"music\": null is a theme with no music") {
@@ -195,6 +203,7 @@ TEST_CASE("mergeOver takes the base's value for everything the theme leaves out"
     partial.classic.font.size = 30;
     partial.classic.buttons.cross = "x.png";
     partial.launcher.metaPanelSlides = false;
+    partial.classic.textShadow = false;
 
     partial.mergeOver(fullSpec());
 
@@ -202,6 +211,9 @@ TEST_CASE("mergeOver takes the base's value for everything the theme leaves out"
     CHECK(partial.classic.font.size == 30);
     CHECK(partial.classic.buttons.cross == "x.png");
     CHECK_FALSE(bool(partial.launcher.metaPanelSlides));
+    CHECK_FALSE(bool(partial.classic.textShadow));           // its own false survives the base's true
+    CHECK(partial.launcher.textShadow.set);                  // the base's
+    CHECK_FALSE(bool(partial.launcher.textShadow));
     CHECK(partial.classic.logo.file == "ab.png");            // the base's
     CHECK(partial.classic.logo.w == 240);
     CHECK(int(partial.classic.menuLines) == 13);
