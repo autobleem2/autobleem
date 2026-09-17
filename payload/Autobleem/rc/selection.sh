@@ -19,18 +19,6 @@ function select_pcsx
       [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
 }
 
-function set_theme
-{
-   if [ "$AB_THEME" = "default" ]
-   then
-     echo Default Theme
-   else
-	 [ -f /media/themes/$AB_THEME/images/Rectangle.png ] && mount -o bind /media/themes/$AB_THEME/images/ /usr/sony/share/data/images/
-     [ -f /media/themes/$AB_THEME/sounds/cancel.wav ] && mount -o bind /media/themes/$AB_THEME/sounds/ /usr/sony/share/data/sounds/
-     [ -f /media/themes/$AB_THEME/font/SST-Bold.ttf ] && mount -o bind /media/themes/$AB_THEME/font/ /usr/sony/share/data/font/
-   fi
-}
-
 function start_sony
 {
 
@@ -53,7 +41,8 @@ function start_autobleem
 }
 
 select_pcsx
-set_theme
+# AB_THEME in autobleem_cfg.sh is no longer used here: themes hold only what autobleem-gui draws (theme.json),
+# not a copy of the console's data tree, so the stock SonyUI is not re-skinned any more.
 
 
 if [ $AB_SELECTION -eq $SEL_ORIGINAL ]

@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "launcher": {
+    "background": "images/launcher_background.png",
+    "footer": "images/launcher_footer.png",
+    "playButton": "images/play_button.png",
+    "playText": "images/play_text.png",
+    "settingsPanel": "images/settings_panel.png",
+    "metaPanel": "images/meta_panel.png",
+    "metaPanelSlides": true,
+    "arrow": "images/arrow.png",
+    "hints": {
+      "cross": "images/hint_cross.png",
+      "circle": "images/hint_circle.png",
+      "triangle": "images/hint_triangle.png"
+    },
+    "menuIcons": {
+      "settings": "images/menu_settings.png",
+      "guide": "images/menu_guide.png",
+      "memcard": "images/menu_memcard.png",
+      "resume": "images/menu_resume.png"
+    },
+    "memcardManager": {
+      "grid": "images/memcard_grid.png",
+      "pencil": "images/memcard_pencil.png"
+    }
+  }
+}

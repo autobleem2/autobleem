@@ -31,7 +31,7 @@ Done on 2026-09-16:
 - The `Gui` god object is being split into a model (`App`) and a screen (`Gui`). `App` (`src/code/app.*`) was
   `main.cpp`'s loose free functions and globals; it owns the `Session` (`core/model/session.h`), the game
   library, the scanner, and now everything on the old `Gui` that was not graphics: `Config` (config.ini),
-  `Theme` (the merged theme.ini + the theme's directories) and `AppAudio` (music + the five UI sounds).
+  `Theme` (the merged, resolved theme.json) and `AppAudio` (music + the five UI sounds).
   Screens reach them as `app.config()`, `app.theme()`, `app.audio()` through the `app` member of `GuiScreen`;
   the handful of non-screens (`Fonts`, the launcher's metadata panel) use `App::get()`.
   `Gui` is left with the window/renderer, `assets()`, `text()` and the background/logo/status drawing
@@ -153,7 +153,12 @@ Still to do, in order:
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
 4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
    hardware yet - only the Windows/MinGW build has been exercised). This is the next thing to do.
-5. Features.
+5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
+   the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
+   (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
+   place - `Theme::load()` does it on first contact, `tools/theme_convert` ahead of time - and `payload/themes`
+   ships converted (aergb 334 -> 29 files). The stock SonyUI is no longer re-skinned (`rc/selection.sh`), and
+   `src/resources/sony/` is just the two SST fonts. Screens read `app.theme().classic()/launcher()/sounds()`.
 
 ## lib_ableem
 
@@ -217,6 +222,11 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `ChdImageReader` behind `ABLEEM_ENABLE_CHD`), `binary_reader.h`, `md5.*` (replaces `head|md5sum`).
 - **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`.
   `Gui::exportDBToRetroarch` and `RetroArchService` are the only callers.
+- **`ThemeSpec`** (`engine/theme_spec.h`) - a theme as a typed struct (`music`, `classic`, `launcher`, `sounds`)
+  with `load/save` of theme.json (never throws), `mergeOver(base)` for a partial theme over the default, and
+  `resolveFiles()` (the theme's file if it exists, else the default's). `fileFields()` is the one list every
+  file loop uses. Scalars a theme may omit are `Opt<T>`; colours are `ThemeColor` (`#rrggbb`).
+  The app's `ThemeConverter` (`core/services/theme_converter.*`) is the only writer besides tests.
 
 ### ui
 
@@ -335,7 +345,7 @@ USB stick root = `/media` on the PSC:
 /media/Games/                     user games, one folder per game; !SaveStates/, !MemCards/ sub-dirs
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
 /media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui)
-/media/themes/<name>/theme.ini    UI themes; /media/retroarch/ RetroBoot; /media/Apps/ launchable apps
+/media/themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/retroarch/ RetroBoot; /media/Apps/ launchable apps
 /gaadata/<id>/                    stock internal games (read-only console storage)
 ```
 
@@ -365,12 +375,13 @@ defaults, which both the services and the screens need.
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
 | `evoui/card_edit.*` | `CardEdit` | A memory card as the manager shows it: `ableem::MemcardImage` plus its 45 icon frames as textures, kept in step after every edit, and the translated "Free"/"Link Block" titles. |
 | `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
-| `core/services/theme.*` | `Theme` | The current theme's `theme.ini` (the selected theme merged over `themes/default/theme.ini`, so every key has a value) and its directories: `path/imagePath/fontPath/soundPath()`, each falling back to `Env::getSonyPath()` when the theme or that sub-dir is missing. Owned by `App`; read as `app.theme().data.values["..."]`. No platform `#ifdef`s - the paths come from `Env`. |
+| `core/services/theme.*` | `Theme` | The current theme's `theme.json` merged over `themes/default/theme.json` (so every key has a value), every file resolved to the theme's own or the default's. `load()` converts an old-layout folder first (`ThemeConverter`). Owned by `App`; read as `app.theme().classic().menuPanel.x`, `app.theme().launcher().footer`, `app.theme().sounds().cursor`. No platform `#ifdef`s - the paths come from `Env`. |
+| `core/services/theme_converter.*` | `ThemeConverter` | `theme.ini` + the PSC data tree -> `theme.json` + role-named files, in place: json first, then the renames, then the deletes. `needsConversion(dir)` is also what makes an old folder count as a theme in the Options menu. `tools/theme_convert` wraps it. |
 | `gui/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
 | `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display()` (re)inits and shows splash or resumes the launcher. |
 | `gui/screens/gui_classic_menu.*` | `ClassicMenuScreen` | The classic UI's main menu (Start/Re-Scan/RetroArch/About/Options, L1 for the advanced row, L2+R2 power off). `App::run()` shows it in a loop; it either sets `session().menuOption` and closes, or shows a sub-screen (About, Options, Memory Cards, Game Manager, the EvolutionUI launcher) and restarts. Picks up `session().startingGame` / `resumingGui` before reading input. |
-| `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.ini and reloads everything, falling back to `themes/default` per file. Screens use `gui->assets()`. |
-| `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's opscreen/text rects, `getR/G/B`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
+| `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.json (`Theme::load()`) and reloads everything from the resolved paths. Screens use `gui->assets()`. |
+| `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's menu-panel/status-bar rects, `toColor()`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.h` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/screens/gui_*` | | The classic screens: Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, and the classic main menu. `gui/starfx.*` is the star field the About screen draws. |
@@ -405,7 +416,7 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`aergb
 - `sep` is the path separator (a `Sep` helper in `<ableem/engine/filesystem.h>` wrapping `separator`, which is
   `'/'` on every platform - Windows accepts it, and the code base compares paths as strings); paths are built by
   string concatenation. `path + sep` only appends when the separator is not already there.
-- Ini keys are lower-cased: `cfg.inifile.values["theme"]`, `themeData.values["background"]`.
+- Ini keys are lower-cased: `cfg.inifile.values["theme"]`. Theme values are typed (`app.theme().classic()`), not a map.
 - Bool-ish config values are the strings `"true"`/`"false"`; ints are parsed with `atoi`.
 - Menu/emulator/state selections are plain `int`s with `#define`s (`EMU_PCSX`, `SET_PS1`, `STATE_GAMES`) —
   easy to mix up; converting to `enum class` is on the plan.
