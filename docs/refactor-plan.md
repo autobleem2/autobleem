@@ -409,6 +409,13 @@ id / product code setters wrote no terminator or padding (neither setter had a c
 and the power-off unification. What it did not do, by the user's choice, is step 3: nothing here has run on
 a console. That is the next thing.
 
+**2026-09-17, a later feature on top of this plan** (CLAUDE.md's "Current work" item 6 has the detail):
+`ClassicMenuScreen` (`gui/screens/gui_classic_menu.*`) and `SplashScanProgress` (`gui/scan_progress.*`),
+both named several times above as artifacts of phase C/D, are deleted - `AutoBleem::run()` goes straight
+into `GuiLauncher` and the scan moved to a background thread (`ScanService`, `core/services/scan_service.*`).
+`Session`'s `MenuOption` lost `SCAN`/`RUN`/`SONY`. Read this section's file paths as historical from here on;
+CLAUDE.md's source map is current.
+
 ## 6. Invariants to enforce
 
 - `grep -rl "ableem/ui\|SDL2/" src/code/core` returns nothing. Same check style as the existing SDL grep.

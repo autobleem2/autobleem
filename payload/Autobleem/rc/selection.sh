@@ -1,11 +1,13 @@
 #!/bin/sh
 
-# This is kind of deprecated - the selector is not needed with EvoUI
+# EvolutionUI is the only UI now (docs/refactor-plan.md, 2026-09): AutoBleem::run()'s loop only ever writes
+# AB_SELECTION=4 (exit to RetroArch/EmulationStation, from the launcher's R2 system menu) before the process
+# actually exits - starting a game and returning from one both loop back into the launcher in-process and
+# never reach this script. The stock SonyUI exit (SEL_ORIGINAL/start_sony) and the old ui=classic path
+# (SEL_SCAN) are gone with the classic menu; anything other than SEL_RETROARCH falls back to relaunching
+# AutoBleem, same as they both used to.
 
-SEL_ORIGINAL=3
 SEL_RETROARCH=4
-SEL_AUTOBLEEM=1
-SEL_SCAN=2
 
 source ./autobleem_cfg.sh
 echo Selection: $AB_SELECTION
@@ -17,14 +19,6 @@ function select_pcsx
       echo Custom PCSX
       cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
       [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
-}
-
-function start_sony
-{
-
-   mount -o remount,rw /data
-   mount -o bind /tmp/pcsx /usr/sony/bin/pcsx
-   ./startsony.sh
 }
 
 function start_retroarch
@@ -45,23 +39,10 @@ select_pcsx
 # not a copy of the console's data tree, so the stock SonyUI is not re-skinned any more.
 
 
-if [ $AB_SELECTION -eq $SEL_ORIGINAL ]
-then
-    start_sony
-fi
-
 if [ $AB_SELECTION -eq $SEL_RETROARCH ]
 then
 	 start_retroarch
-fi
-
-if [ $AB_SELECTION -eq $SEL_AUTOBLEEM ]
-then
-    start_autobleem
-fi
-
-if [ $AB_SELECTION -eq $SEL_SCAN ]
-then
+else
     start_autobleem
 fi
 

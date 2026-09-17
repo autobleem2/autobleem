@@ -162,6 +162,49 @@ Still to do, in order:
    A theme can also be dropped in as `<name>.zip`: `ThemeInstaller` (`core/services/theme_installer.*`)
    unpacks it to `<name>/` at `Theme::load()` / the Options theme list, over `ableem::ZipArchive` (vendored
    miniz, read-only, `lib_ableem/third_party/miniz/`).
+6. Straight into EvolutionUI, with the scan in the background. Done on 2026-09-17 (plan at
+   `C:\Users\Artur Jakubowicz\.claude\plans\lets-plan-some-feature-synchronous-feather.md` if that path is
+   still around; otherwise this entry and the source map are the record). Four steps:
+   - **Step 1** - `GamesFingerprint` (`lib_ableem/engine/games_fingerprint.*`): a snapshot of the games
+     directory keyed by path + file size, deliberately **no mtime** - the PSC has no battery-backed clock,
+     so a stored modification time cannot be trusted to stay put across a reboot (see
+     `DirEntry::fileSize()`'s comment). `ScanProgressListener` gained `done`/`total` on `onScanProgress` and
+     two new per-game callbacks, `onGameVerified`/`onGameFailedVerify`. `GameScanner::writeRegionalDatabase`
+     split into `writeSubDirRows`/`writeAutobleemList`, both keyed by a caller-supplied id-by-path map - the
+     class no longer assigns game ids itself. `GameDatabase` gained `loadGamePaths`/`findGameIdByPath`/
+     `maxGameId`/`updateGame`/`replaceDiscs`/`clearSubDirTables` for that. **Watch the trailing separator**:
+     the `PATH` column always carries one (`insertGame`'s `fullPath + sep`, a no-op if already there), a
+     `UsbGame::fullPath` never does - every lookup by path needs it added back (or stripped, for the
+     id-by-path maps `writeSubDirRows`/`writeAutobleemList` probe with bare `fullPath`). Missing this the
+     first time round made every rescan treat known games as new (duplicate rows); `tests/core/
+     test_scan_service.cpp`'s real-scan integration test is what caught it - the DB-level unit tests didn't,
+     because their fixture never went through `+ sep` at all.
+   - **Step 2** - `ScanService` (`core/services/scan_service.*`, `App::scans()`): one `std::thread` at the
+     OS's lowest scheduling priority (`System::lowerCurrentThreadPriority()` - `SCHED_IDLE` on Linux,
+     `THREAD_PRIORITY_IDLE` on Windows, so a scan never takes CPU from a running emulator) does every bit of
+     filesystem work with its own `CoverDatabase` connection and queues `WorkerEvent`s; `poll()`, called
+     from the main thread, applies every regional.db write and returns a `ScanUpdate`. `requestScan()`/
+     `scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce (two identical fingerprints
+     in a row, `ScanWatchInterval` = 10s apart, `core/model/timing.h`), checked every `threadMain()` cycle
+     when nothing was requested directly.
+   - **Step 3** - `ClassicMenuScreen`/`gui/scan_progress.*` are deleted; `AutoBleem::run()` goes splash ->
+     `GuiLauncher` directly and loops there (`Session::MenuOption` keeps only `IDLE`/`RETRO`/`START`, at
+     their old numeric values - `rc/selection.sh` trimmed to match, `start_autobleem` the fallback for
+     anything but `SEL_RETROARCH`). No more `ui=classic`/EvolutionUI choice (`Config` drops a stale `ui` key
+     on load). Circle in the launcher's `Games` state is a no-op now - there is nothing left to fall back
+     to. `GuiLauncher::loop()` polls the scan once a frame; a new bottom-of-screen line
+     (`scanStatusLine`) shows its progress or a "Scan complete" summary, and any roster change reruns the
+     current set's query and re-selects the same game by id (`reloadGames()`) rather than splicing the
+     carousel - simpler, and it is the one place duplicates-across-folders and sub-dir rows already get
+     settled right. Per request: `GuiSplash` now holds at full brightness for `SplashHoldDuration` (2s) and
+     fades back out before returning instead of cutting away; `GuiLauncher` fades in from black over
+     `LauncherFadeInDuration` (300ms) every time it is shown.
+   - **Step 4** - `GuiSystemMenu` (`evoui/screens/evoui_system_menu.*`): the R2 overlay with everything the
+     classic menu offered - Re-Scan, RetroArch/EmulationStation, Memory Cards, Game Manager (refuses itself
+     while `scanning()` - it deletes folders the scanner may be reading), Hardware Information, Options,
+     About, Power Off. A dumb picker (translucent panel, launcher fonts/colours); `GuiLauncher::
+     loop_r2Button_Pressed()` reads its `SystemMenuAction` back and runs it - L2+R2 is still the power-off
+     shortcut, unaffected since it is handled earlier in the same input dispatch.
 
 ## lib_ableem
 
@@ -275,8 +318,8 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 Five targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), `ab_ui` (`gui/` and `app.*`: Gui, the
-classic screens and menus, AppAudio, the scan splash and the `App` model; links `ab_core` + `ableem`), `ab_evoui` (`evoui/`: the carousel at the top, `screens/` and `controls/`; links `ab_ui`), `autobleem-gui`
-(`main.cpp`, `autobleem.*`, `gui/screens/gui_classic_menu.*`; links `ab_evoui`) and `starter` (small PCSX wrapper used
+classic screens and menus, AppAudio, the splash and the `App` model; links `ab_core` + `ableem`), `ab_evoui` (`evoui/`: the carousel at the top, `screens/` and `controls/`; links `ab_ui`), `autobleem-gui`
+(`main.cpp`, `autobleem.*`; links `ab_evoui`) and `starter` (small PCSX wrapper used
 by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
@@ -367,43 +410,47 @@ USB stick root = `/media` on the PSC:
 
 Boot chain: `rc/autobleem.sh` → unpack libs → `bin/autobleem/run.sh` → `autobleem-gui /media`.
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
-or `rc/launch_rb.sh` (RetroArch: file, core). `Gui::saveSelection()` writes `rc/autobleem_cfg.sh`
-(`AB_SELECTION=...`) which the shell scripts read after the GUI exits.
+or `rc/launch_rb.sh` (RetroArch: file, core). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
+(`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
+in practice only ever `MENU_OPTION_RETRO` (the R2 system menu's RetroArch/EmulationStation item); starting a
+game and returning from one both loop back into the launcher in-process and never reach it. `selection.sh`
+falls back to relaunching AutoBleem for anything else.
 
 ## Source map (`src/code/`)
 
 `src/code/core/` is the `ab_core` static library (no SDL, no screens - see "Current work"): `main.h`, `model/` and `services/`, nothing else at its top level; `gui/` and
-`app.*` are `ab_ui`; `evoui/` is `ab_evoui`; `main.cpp`, `autobleem.*` and
-`gui/screens/gui_classic_menu.*` are the executable. `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
+`app.*` are `ab_ui`; `evoui/` is `ab_evoui`; `main.cpp` and `autobleem.*`
+are the executable (`AutoBleem::run()` shows `GuiLauncher` directly - see "Current work", 2026-09-17). `core/model/timing.h` holds `TicksPerSecond` and the showing-timeout
 defaults, which both the services and the screens need.
 
 | Area | Files | Notes |
 |---|---|---|
 | Entry | `main.cpp` | `setupEnvironment()` parses argv and configures `ableem::Environment` for the platform (the only place that knows `/media`, `/usr/sony`, the 1-arg debug layout), registers `SDL_Quit`, then constructs the one `AutoBleem` and calls `run()`. |
-| `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, decides `forceScan`, then loops `ClassicMenuScreen` → `MENU_OPTION_SCAN`/`MENU_OPTION_START` → `launcher().launch(...)` → `gui->display(resume=true)`. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
-| `app.*` | `App` | The model: owns `Config`, `Lang`, `Theme`, `Clock`, `AppAudio`, the `GameLibrary`, the `Session`, every service and the `Gui` singleton. Top of `ab_ui`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
-| `core/model/session.h` | `Session` | Where we are across one run: `menuOption`, `forceScan`, the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
+| `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, requests a scan up front when `games.fingerprint` doesn't match (or is missing, or there are loose game files, or `gamelist.xml` is gone), starts `scans()` and shows the splash, then loops `GuiLauncher` directly - `MENU_OPTION_START` → `launchGame()` (watching paused around it) → back to the launcher; `MENU_OPTION_RETRO` exits the loop. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
+| `app.*` | `App` | The model: owns `Config`, `Lang`, `Theme`, `Clock`, `AppAudio`, the `GameLibrary`, the `Session`, every service (including `ScanService`, `app.scans()`) and the `Gui` singleton. Top of `ab_ui`. `App::get()` is for the few places that are not screens; screens use `GuiScreen`'s `app` member. |
+| `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
+| `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread and returns a `ScanUpdate` (added/updated/removed games, progress, finished). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce, checked every `ScanWatchInterval` when nothing was requested directly. Owned by `App` (`app.scans()`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags and the `AB_DEBUG_HOST` macro. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
 | `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is pairs of lines, source then translation. Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
-| `gui/scan_progress.*` | `SplashScanProgress` | The `ScanProgressListener` that puts each scan stage on the splash. The scanning itself is lib_ableem's `GameScanner`. |
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
 | `evoui/card_edit.*` | `CardEdit` | A memory card as the manager shows it: `ableem::MemcardImage` plus its 45 icon frames as textures, kept in step after every edit, and the translated "Free"/"Link Block" titles. |
-| `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
+| `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`) and a few obsolete keys dropped on load, `ui` (the classic UI is gone) among them. Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `core/services/theme.*` | `Theme` | The current theme's `theme.json` merged over `themes/default/theme.json` (so every key has a value), every file resolved to the theme's own or the default's. `load()` converts an old-layout folder first (`ThemeConverter`). Owned by `App`; read as `app.theme().classic().menuPanel.x`, `app.theme().launcher().footer`, `app.theme().sounds().cursor`. No platform `#ifdef`s - the paths come from `Env`. |
 | `core/services/theme_installer.*` | `ThemeInstaller` | `<themes>/<name>.zip` -> `<themes>/<name>/` (root files or one folder inside; replaces an existing folder; a non-theme becomes `.zip.bad`). Run by `Theme::load()` and the Options theme list before they look at folders. |
 | `core/services/theme_converter.*` | `ThemeConverter` | `theme.ini` + the PSC data tree -> `theme.json` + role-named files, in place: json first, then the renames, then the deletes. `needsConversion(dir)` is also what makes an old folder count as a theme in the Options menu. `tools/theme_convert` wraps it. |
 | `gui/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
-| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display()` (re)inits and shows splash or resumes the launcher. |
-| `gui/screens/gui_classic_menu.*` | `ClassicMenuScreen` | The classic UI's main menu (Start/Re-Scan/RetroArch/About/Options, L1 for the advanced row, L2+R2 power off). `App::run()` shows it in a loop; it either sets `session().menuOption` and closes, or shows a sub-screen (About, Options, Memory Cards, Game Manager, the EvolutionUI launcher) and restarts. Picks up `session().startingGame` / `resumingGui` before reading input. |
+| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display(resume)` (re)inits and shows the splash (`resume=false`, boot only) or sets `session().resumingGui` for the launcher to pick up (`resume=true`, after a game exits). |
+| `gui/screens/gui_splash.*` | `GuiSplash` | Fades in, holds at full brightness for `SplashHoldDuration` (2s), fades back out, then returns - `Gui::display(false)` is its only caller, once at boot. |
 | `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.json (`Theme::load()`) and reloads everything from the resolved paths. Screens use `gui->assets()`. |
 | `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's menu-panel/status-bar rects, `toColor()`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.h` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. |
 | `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
-| `gui/screens/gui_*` | | The classic screens: Splash, About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window, and the classic main menu. `gui/starfx.*` is the star field the About screen draws. |
+| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's R2 system menu or its sub-screens: About, Confirm dialog, on-screen Keyboard, pad test, memcard select, scroll window. `gui/starfx.*` is the star field the About screen draws. |
 | `gui/gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
-| `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, one class in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop and per-button handlers), and the actions (what Cross does per state and menu icon: start the game, open the settings / game editor / memcard manager / resume selector, the sub-dir and playlist choosers, reconciling afterwards). Holds the `Carousel` as `carousel`. |
+| `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, R2 among them), and the actions (what Cross does per state and menu icon, and R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running. |
+| `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The R2 overlay: Re-Scan Games, RetroArch/EmulationStation, Memory Cards, Game Manager, Hardware Information, Options, About, Power Off - everything the classic main menu used to offer. A dumb picker (translucent panel, launcher fonts/colours, Up/Down + wrap, Cross/Circle) - it returns a `SystemMenuAction` and `GuiLauncher::loop_r2Button_Pressed()` runs it. |
 | `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | The row of covers: `games` (with the fewer-than-13 duplication rule), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. |
 | `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |

@@ -1,5 +1,22 @@
 
                                        *****************************
+                                       Autobleem-0.9.1 Release Notes
+                                       *****************************
+
+**** Straight into the game carousel ****
+AutoBleem now goes straight from the splash screen into the EvolutionUI game carousel - there is no more
+classic text menu in between. Everything that menu used to offer (Re-Scan, RetroArch/EmulationStation,
+Memory Cards, Game Manager, Hardware Information, Options, About, Power Off) is one button press away:
+hold R2 while the carousel is showing to open it.
+
+**** Scanning happens in the background ****
+Re-scanning your games no longer locks up the screen. AutoBleem now watches your Games folder in the
+background and adds, updates or removes games in the carousel as it goes, with the current status shown on
+a line at the bottom of the screen. You can keep browsing, and even start a game, while a scan is still
+running.
+
+
+                                       *****************************
                                        Autobleem-0.9.0 Release Notes
                                        *****************************
 									   
