@@ -26,7 +26,10 @@
 struct ScanUpdate {
     bool active = false;   // a scan is running (set true by ScanStarted, false again once Finished is applied)
 
-    // the latest progress report, untranslated - the launcher builds the status line's text from these
+    // the latest progress report, untranslated - the launcher builds the status line's text from these.
+    // progressed says whether one arrived this poll at all: stage/detail/done/total all sit at harmless
+    // defaults otherwise, indistinguishable from a genuine "just started scanning" report without this.
+    bool progressed = false;
     ableem::ScanStage stage = ableem::ScanStage::Scanning;
     std::string detail;
     int done = 0;
@@ -89,6 +92,11 @@ public:
     bool checkForChanges();
     void runScan();
 
+    // <working>/games.fingerprint - where the fingerprint of the last completed scan is kept. Public so
+    // AutoBleem::run() can apply the same "does the disk match what we last scanned" test at startup,
+    // before start() has even been called, to decide whether to requestScan() right away.
+    static std::string fingerprintFilePath();
+
 private:
     //******************
     // ScannedGame
@@ -139,7 +147,6 @@ private:
     void pushEvent(WorkerEvent event);
     void threadMain();
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
-    static std::string fingerprintFilePath();
 
     ableem::GameLibrary &library_;
 

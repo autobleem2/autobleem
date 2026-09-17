@@ -9,9 +9,11 @@
 // AutoBleem
 //******************
 // One instance is created in main() and its run() is the whole program from there on: open the databases,
-// restore the memory cards, decide whether a rescan is due, then loop the classic menu -> scan / launch a
-// game -> back to the menu. It is also where the ProcessRunner is chosen: the fork on the console, a splash
-// on a dev host where there is nothing to fork.
+// restore the memory cards, start the background scan (ScanService - a rescan is requested up front when
+// the games directory looks like it changed since the last one), show the splash, then loop the launcher ->
+// launch a game -> back to the launcher, until something asks to exit to RetroArch/EmulationStation. It is
+// also where the ProcessRunner is chosen: the fork on the console, a splash on a dev host where there is
+// nothing to fork.
 class AutoBleem : public App {
 public:
     AutoBleem();
@@ -21,6 +23,5 @@ public:
 private:
     static std::unique_ptr<ProcessRunner> makeProcessRunner();
     bool openLibrary();                                                   // covers dir + regional.db + internal.db
-    void rescan(GamesHierarchy &gamesHierarchy, const std::string &prevPath);   // a Re/Scan menu selection
     void launchGame();                                                    // the MENU_OPTION_START handling
 };

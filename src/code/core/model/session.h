@@ -10,8 +10,11 @@
 //******************
 // menu / launcher selection constants
 //******************
-// which top-level screen App::run()'s loop should show next
-enum MenuOption { MENU_OPTION_SCAN = 1, MENU_OPTION_RUN, MENU_OPTION_SONY, MENU_OPTION_RETRO, MENU_OPTION_START };
+// what AutoBleem::run()'s loop does when the launcher closes - written into autobleem_cfg.sh's AB_SELECTION
+// for rc/selection.sh to read after the process exits. The numeric values are part of that contract and
+// must not change. IDLE is the resting default and also what a plain "close the app" leaves behind -
+// selection.sh's own default (start_autobleem, i.e. come straight back here) is the right thing for that.
+enum MenuOption { MENU_OPTION_IDLE = 1, MENU_OPTION_RETRO = 4, MENU_OPTION_START = 5 };
 
 // which emulator/launcher path to use for the game about to start
 enum class EmuMode { Pcsx, RetroArch, Launcher };
@@ -24,8 +27,7 @@ enum class EmuMode { Pcsx, RetroArch, Launcher };
 // back. Owned by App; reached as `app.session()` from screens (via the GuiScreen shim) or `App::get().session()`
 // from the few places that are not screens (UtilTime).
 struct Session {
-    MenuOption menuOption = MENU_OPTION_SCAN;
-    bool forceScan = false;    // true when the games changed and a rescan is needed before showing the menu
+    MenuOption menuOption = MENU_OPTION_IDLE;
 
     // what GuiLauncher asked App::run()'s loop to do
     bool startingGame = false;

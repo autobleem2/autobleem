@@ -32,7 +32,6 @@ TEST_CASE("Config fills in a default for every key the UI reads") {
 
     // the UI reads these without checking whether they are there, so all of them must have a value
     CHECK(config.inifile.values["language"] == "English");
-    CHECK(config.inifile.values["ui"] == "classic");
     CHECK(config.inifile.values["aspect"] == "false");
     CHECK(config.inifile.values["jewel"] == "default");
     CHECK(config.inifile.values["music"] == "--");
@@ -48,14 +47,12 @@ TEST_CASE("Config keeps what the file already says") {
     tmp.writeFile("config.ini",
                   "[General]\n"
                   "Theme=aergb\n"
-                  "UI=EvolutionUI\n"
                   "Language=Polish\n");
 
     Config config;
 
     // keys are lower-cased on load, values are not
     CHECK(config.inifile.values["theme"] == "aergb");
-    CHECK(config.inifile.values["ui"] == "EvolutionUI");
     CHECK(config.inifile.values["language"] == "Polish");
 
     // and the defaults still fill in around them
@@ -74,18 +71,19 @@ TEST_CASE("Config drops the keys older AutoBleem versions wrote") {
                   "Quick=1\n"
                   "Quickmenu=1\n"
                   "Delay=3\n"
-                  "Adv=1\n");
+                  "Adv=1\n"
+                  "UI=classic\n");   // the classic UI is gone - see Session::MenuOption / GuiLauncher
 
     Config config;
 
-    for (const char *gone : {"stheme", "autoregion", "quick", "quickmenu", "delay", "adv"}) {
+    for (const char *gone : {"stheme", "autoregion", "quick", "quickmenu", "delay", "adv", "ui"}) {
         CHECK(config.inifile.values.count(gone) == 0);
     }
     CHECK(config.inifile.values["theme"] == "aergb");
 
     // they are gone from the file on disk too, not just from the live map
     ableem::IniFile onDisk = reloadFromDisk(tmp);
-    for (const char *gone : {"stheme", "autoregion", "quick", "quickmenu", "delay", "adv"}) {
+    for (const char *gone : {"stheme", "autoregion", "quick", "quickmenu", "delay", "adv", "ui"}) {
         CHECK(onDisk.values.count(gone) == 0);
     }
 }

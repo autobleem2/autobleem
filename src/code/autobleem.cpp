@@ -3,12 +3,10 @@
 //
 #include "autobleem.h"
 #include "core/services/system.h"
-#include "gui/screens/gui_classic_menu.h"
-#include "gui/scan_progress.h"
+#include "evoui/screens/evoui_launcher.h"
 
 #include <cstdlib>
 #include <iostream>
-#include <map>
 #include <unistd.h>
 
 using namespace std;
@@ -61,59 +59,6 @@ bool AutoBleem::openLibrary() {
 }
 
 //*******************************
-// AutoBleem::rescan
-// a Re/Scan menu selection: repair/verify every game, rebuild regional.db + autobleem.list, and the
-// EmulationStation gamelist.xml that mirrors it.
-//*******************************
-void AutoBleem::rescan(GamesHierarchy &gamesHierarchy, const string &prevPath) {
-    // write the prev file now. if it's written after the scan, games that failed to verify will already
-    // have been removed from the hierarchy, forcing a rescan on every boot.
-    gamesHierarchy.writeAutobleemPrev(prevPath);
-
-    if (!gameLibrary.usbGames().createSchema()) {
-        cout << "Error creating db structure" << endl;
-        return;
-    }
-
-    if (!gameLibrary.usbGames().clearAllTables()) {
-        gui_->drawText("ERROR IN DB");
-        sleep(1);
-        return;
-    }
-
-    SplashScanProgress progress;
-    GameScanner scanner(&progress);
-    scanner.scanGamesDirectory(gamesHierarchy, gameLibrary.covers());
-
-    // TODO(scan-service): this whole-table renumbering is what ScanService's incremental insert/update/
-    // delete replaces (see docs/refactor-plan.md); kept as-is here only as the bridge while
-    // GameScanner::writeRegionalDatabase is split into writeSubDirRows/writeAutobleemList.
-    GameDatabase &db = gameLibrary.usbGames();
-    map<string, int> idByPath;
-    db.beginTransaction();
-    for (size_t i = 0; i < scanner.gamesToAddToDB.size(); i++) {
-        UsbGamePtr data = scanner.gamesToAddToDB[i];
-        int id = static_cast<int>(i) + 1;
-        data->gameId = id;
-        idByPath[data->fullPath] = id;
-        db.insertGame(id, data->title, data->publisher, data->players, data->year, data->fullPath + sep,
-                      data->saveStatePath + sep, data->memcard);
-        for (size_t j = 0; j < data->discs.size(); j++) {
-            db.insertDisc(id, static_cast<int>(j) + 1, data->discs[j].diskName);
-        }
-    }
-    db.commit();
-
-    GameScanner::writeAutobleemList(scanner.gamesToAddToDB, idByPath);
-    GameScanner::writeSubDirRows(gamesHierarchy, db, idByPath);
-
-    gui_->drawText(_("Total:") + " " + to_string(scanner.gamesToAddToDB.size()) + " " + _("games scanned") + ".");
-    sleep(1);
-
-    gameLibrary.writeEmulationStationGamelist();
-}
-
-//*******************************
 // AutoBleem::launchGame
 //*******************************
 void AutoBleem::launchGame() {
@@ -142,7 +87,6 @@ void AutoBleem::launchGame() {
     // remove all events if something left
     gui_->input().flushEvents();
 
-    session_.forceScan = false;
     gui_->display(true);
 }
 
@@ -155,50 +99,59 @@ int AutoBleem::run() {
         return EXIT_FAILURE;
     }
 
+    if (!gameLibrary.covers().hasAnyRegion()) {
+        // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
+        // every game would otherwise scan in with no title/cover
+        gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
+    }
+
     string pathToGamesDir = Env::getPathToGamesDir();
 
     MemcardManager memcardOperation(pathToGamesDir);
     memcardOperation.restoreAll(Env::getPathToSaveStatesDir());
 
-    string prevPath = Env::getWorkingPath() + sep + "autobleem.prev";
-    bool prevFileExists = DirEntry::exists(prevPath);
+    // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
+    // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
+    // sub-directories is ScanService's worker's job now, the first thing runScan() does.
+    GamesFingerprint storedFingerprint;
+    bool fingerprintOnDiskMatches = storedFingerprint.load(scans().fingerprintFilePath()) &&
+            storedFingerprint == GamesFingerprint::take(pathToGamesDir);
     bool gamelistXmlExists = DirEntry::exists(Env::getPathToRetroarchDir() + sep +
             "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
-
-    GamesHierarchy gamesHierarchy;
-    gamesHierarchy.getHierarchy(pathToGamesDir);
-
-    bool autobleemPrevOutOfDate = gamesHierarchy.gamesDoNotMatchAutobleemPrev(prevPath);
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
-
-    if (!prevFileExists || !gamelistXmlExists || thereAreRawGameFilesInGamesDir || autobleemPrevOutOfDate) {
-        session_.forceScan = true;
-    }
 
     gui_->display(false);
 
-    if (thereAreRawGameFilesInGamesDir) {
-        SplashScanProgress progress;
-        GameScanner(&progress).moveLooseGameFilesIntoSubDirs(pathToGamesDir);   // gui_->display() needs to be up first
+    scans().start();
+    if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
+        scans().requestScan();
     }
 
-    while (session_.menuOption == MENU_OPTION_SCAN || session_.menuOption == MENU_OPTION_START) {
+    while (true) {
         {
-            ClassicMenuScreen menu(*gui_);
-            menu.show();
+            GuiLauncher launcherScreen(*gui_);
+            launcherScreen.show();
         }
+        session_.resumingGui = false;
+
         launcher_.writeSelectionScript();
 
-        if (session_.menuOption == MENU_OPTION_SCAN) {
-            gamesHierarchy.getHierarchy(pathToGamesDir);
-            rescan(gamesHierarchy, prevPath);
-            session_.forceScan = false;
+        if (session_.menuOption == MENU_OPTION_START) {
+            scans().setWatching(false);   // the emulator gets the CPU, not the scanner
+            launchGame();
+            scans().setWatching(true);
+            continue;
         }
 
-        if (session_.menuOption == MENU_OPTION_START) {
-            launchGame();
+        // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item, or a
+        // future one like it); Circle alone in the launcher is a no-op - there is nothing else to show -
+        // so any other return from show() is unexpected and the safest thing is to just show it again
+        if (session_.menuOption == MENU_OPTION_RETRO) {
+            break;
         }
     }
+
+    scans().stop();
 
     // close the databases before the gui goes away.
     gameLibrary.close();

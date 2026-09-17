@@ -264,6 +264,7 @@ ScanUpdate ScanService::poll() {
             }
 
             case WorkerEvent::Kind::Progress:
+                update.progressed = true;
                 update.stage = event.stage;
                 update.detail = event.detail;
                 update.done = event.done;

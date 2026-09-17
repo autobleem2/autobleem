@@ -182,8 +182,6 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_pad_test.cpp
         src/code/gui/screens/gui_pad_test.h
         src/code/gui/gui_screen.h
-        src/code/gui/scan_progress.cpp
-        src/code/gui/scan_progress.h
         src/code/gui/screens/gui_scroll_win.cpp
         src/code/gui/screens/gui_scroll_win.h
         src/code/gui/screens/gui_select_memcard.cpp
@@ -258,14 +256,11 @@ add_library(ab_evoui STATIC
 )
 target_link_libraries(ab_evoui ab_ui)
 
-# the program: main(), AutoBleem (App plus the outer loop) and the classic main menu, the one screen that
-# shows both the classic sub-screens and the launcher.
+# the program: main() and AutoBleem (App plus the outer loop, which shows the launcher directly).
 add_executable(
         autobleem-gui
         src/code/autobleem.cpp
         src/code/autobleem.h
-        src/code/gui/screens/gui_classic_menu.cpp
-        src/code/gui/screens/gui_classic_menu.h
         src/code/main.cpp
 )
 

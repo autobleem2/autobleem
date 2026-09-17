@@ -38,6 +38,7 @@ void GuiLauncher::loop() {
 
         menu->update(time);
         carousel.updatePositions();
+        applyScanUpdate(app.scans().poll());
         render();
 
         if (motionStart != 0) {
@@ -450,8 +451,9 @@ void GuiLauncher::loop_circleButton_Pressed() {
             motionStart = 0;
         }
     } else if (state == LauncherScreenState::Games) {
+        // there is no classic menu to fall back to any more (Step 3, docs/refactor-plan.md) - Circle here
+        // used to close the launcher; R2 (the system menu) is where Power Off and everything else now lives
         app.audio().cancel.play();
-        menuVisible = false;
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;

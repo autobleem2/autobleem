@@ -79,7 +79,7 @@ void GuiManager::doCircle_Pressed() {
     app.audio().cancel.play();
     if (changes)
     {
-        app.session().forceScan = true;
+        app.scans().requestScan();
     }
     menuVisible = false;
 }
@@ -118,7 +118,7 @@ void GuiManager::doSquare_Pressed() {
         cout << "Failed to delete " << gameName << endl;
         gui->renderStatus(_("Failed to delete") + " " + gameName);
     }
-    app.session().forceScan = true;  // in order for the sub dir hierarchy to be fixed we have to do a rescan
+    app.scans().requestScan();  // in order for the sub dir hierarchy to be fixed we have to do a rescan
     //menuVisible = false;
     init(); // refresh games list and menu item count
     if (selected >= (int) psGames.size()) {   // the last game went: the cursor cannot stay past the end
@@ -146,7 +146,7 @@ void GuiManager::doTriangle_Pressed() {
 
         cout << "Flushed " << app.gameCatalog().flushAllCovers() << " covers" << endl;
 
-        app.session().forceScan = true;
+        app.scans().requestScan();
         menuVisible = false;
     } else {
         render();

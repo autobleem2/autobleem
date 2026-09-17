@@ -4,6 +4,7 @@
 
 #include "gui_splash.h"
 #include "../gui.h"
+#include "../../core/model/timing.h"
 using namespace std;
 
 //*******************************
@@ -50,6 +51,7 @@ void GuiSplash::loop() {
 
     app.audio().music.setVolume(0);
     alpha = 0;
+    phase = Phase::FadeIn;
     start = gui->platform().ticks();
     while (1) {
         Event e;
@@ -63,14 +65,29 @@ void GuiSplash::loop() {
         int current = gui->platform().ticks();
         int time = current - start;
         if (time > 2) {
-            if (alpha < 255) {
-                alpha += 10;
-                if (alpha > 255) {
-                    alpha = 255;
+            if (phase == Phase::FadeIn) {
+                if (alpha < 255) {
+                    alpha += 10;
+                    if (alpha > 255) {
+                        alpha = 255;
+                    }
+                } else {
+                    phase = Phase::Hold;
+                    holdStart = gui->platform().ticks();
                 }
-            } else {
-
-                break;
+            } else if (phase == Phase::Hold) {
+                if (gui->platform().ticks() - holdStart >= SplashHoldDuration) {
+                    phase = Phase::FadeOut;
+                }
+            } else {   // FadeOut
+                if (alpha > 0) {
+                    alpha -= 10;
+                    if (alpha < 0) {
+                        alpha = 0;
+                    }
+                } else {
+                    break;
+                }
             }
             start = gui->platform().ticks();
         }

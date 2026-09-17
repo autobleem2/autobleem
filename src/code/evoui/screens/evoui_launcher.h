@@ -5,6 +5,7 @@
 
 #include "../controls/evoui_notification_line.h"
 #include "../../gui/gui_screen.h"
+#include "../../core/services/scan_service.h"
 #include "../controls/evoui_obj.h"
 #include "../controls/evoui_settings_back.h"
 #include "../controls/evoui_zoom_btn.h"
@@ -99,8 +100,20 @@ public:
     void rememberSelection();
     void switchSet(GameSet newSet, bool noForce);
     void showSetName();
+    // re-runs the current set's query and re-selects the same game by id (falling back to the first game,
+    // or none) - what a scan finishing, or the Game Manager/Options changing the roster, needs: the list
+    // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.
+    void reloadGames();
 
     NotificationLines notificationLines; // top two lines of the screen
+
+    // the scan's progress, one line at the very bottom of the screen: applyScanUpdate() (called from loop(),
+    // once a frame) turns each ScanUpdate from app.scans().poll() into this line's text, and reloads the
+    // carousel via reloadGames() whenever the PS1 roster changed and no scroll animation is in the way.
+    NotificationLine scanStatusLine;
+    void applyScanUpdate(const ScanUpdate &update);
+    std::string scanStatusText(const ScanUpdate &update) const;
+    bool scanRosterChangedSinceReload = false;   // set by applyScanUpdate, cleared once reloadGames() runs
 
     bool powerOffShift=false;
 
@@ -145,6 +158,12 @@ public:
     bool staticMeta=false;
     bool textShadow = true;     // theme launcher.textShadow: the dark halo under this screen's text
     bool gameInfoVisible = true;
+
+    // a black overlay fading from fully opaque to transparent over LauncherFadeInDuration, so the launcher
+    // eases in rather than cutting straight in - from black after the splash, or from whatever was on
+    // screen (a sub-screen, PCSX) the rest of the time. loadAssets() restarts it; render() draws it.
+    int fadeAlpha = 255;
+    long fadeStart = 0;
     using GuiScreen::GuiScreen;
 
     std::vector<std::string> raPlaylists;

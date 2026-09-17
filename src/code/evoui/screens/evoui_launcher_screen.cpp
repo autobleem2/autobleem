@@ -119,6 +119,100 @@ void GuiLauncher::showSetName() {
 }
 
 //*******************************
+// GuiLauncher::reloadGames
+//*******************************
+void GuiLauncher::reloadGames() {
+    int keepGameId = -1;
+    bool keepInternal = false;
+    if (carousel.selectedIsValid()) {
+        keepGameId = carousel.games[carousel.selected]->gameId;
+        keepInternal = carousel.games[carousel.selected]->internal;
+    }
+
+    switchSet(selection.set, false);
+
+    if (keepGameId != -1) {
+        for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
+            if (carousel.games[i]->gameId == keepGameId && carousel.games[i]->internal == keepInternal) {
+                carousel.selected = i;
+                break;
+            }
+        }
+    }
+    if (carousel.selectedIsValid()) {
+        carousel.setInitialPositions(carousel.selected);
+    }
+
+    showSetName();
+    updateMeta();
+    if (carousel.selectedIsValid())
+        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
+
+    scanRosterChangedSinceReload = false;
+}
+
+//*******************************
+// GuiLauncher::scanStatusText
+//*******************************
+// the untranslated stage/detail/done/total from ScanUpdate, turned into the one line shown at the bottom of
+// the screen - the same wording SplashScanProgress used to put on the splash for a blocking scan.
+string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
+    switch (update.stage) {
+        case ScanStage::Scanning:
+            return _("Scanning...");
+        case ScanStage::Game: {
+            int percent = update.total > 0 ? (update.done * 100 / update.total) : 0;
+            return _("Scanning") + " " + to_string(update.done) + "/" + to_string(update.total) +
+                   " (" + to_string(percent) + "%): " + update.detail;
+        }
+        case ScanStage::DecompressingEcm:
+            return update.detail.empty() ? _("Decompressing ecm:") : update.detail;
+        case ScanStage::UpdatingDatabase:
+            return _("Updating regional.db...");
+        case ScanStage::GameFailedVerify:
+            return _("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.detail);
+        case ScanStage::MovingFile:
+            return _("Moving :") + " " + update.detail;
+    }
+    return "";
+}
+
+//*******************************
+// GuiLauncher::applyScanUpdate
+//*******************************
+// called once a frame (loop(), before render()) with whatever app.scans().poll() drained since the last
+// frame. The roster reload is deliberately not per-event (no fine-grained carousel splicing): switchSet()
+// re-running is cheap, and it is the one place duplicates-across-folders and sub-dir rows already get
+// settled correctly, so reusing it here is both simpler and safer than a second code path for the same job.
+void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
+    if (update.progressed) {
+        scanStatusLine.setText(scanStatusText(update), 0);   // 0 = no timeout: stays up while scanning
+    }
+
+    if (!update.lastFailedGamePath.empty()) {
+        notificationLines[1].setText(_("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.lastFailedGamePath),
+                                     DefaultShowingTimeout);
+    }
+
+    if (!update.addedGames.empty() || !update.updatedGames.empty() || !update.removedGameIds.empty())
+        scanRosterChangedSinceReload = true;
+
+    if (update.finished) {
+        string text = _("Scan complete:") + " " + to_string(update.finishedGameCount) + " " + _("games");
+        if (update.finishedFailedCount > 0)
+            text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
+        scanStatusLine.setText(text, DefaultShowingTimeout);
+        scanRosterChangedSinceReload = true;   // sub-dir rows and cross-folder duplicates only settle once done
+    }
+
+    // PS1/USB is the only set a games-directory scan can affect; leave RetroArch/Apps alone, and never
+    // interrupt a scroll animation - reloadGames() repositions the carousel outright.
+    if (scanRosterChangedSinceReload && selection.set == GameSet::PS1 && !carousel.scrolling) {
+        reloadGames();
+    }
+}
+
+//*******************************
 // GuiLauncher::loadAssets
 //*******************************
 // load all assets needed by the screengame i
@@ -159,6 +253,25 @@ void GuiLauncher::loadAssets() {
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
+
+    scanStatusLine.x = 10;
+    scanStatusLine.y = SCREEN_HEIGHT - 30;
+    scanStatusLine.fontEnum = FONT_22_MED;
+    scanStatusLine.textColor = brightWhite;
+    scanStatusLine.text = "";
+    scanStatusLine.timed = true;
+    scanStatusLine.notificationTime = 0;   // nothing to show until the first ScanUpdate arrives
+    scanRosterChangedSinceReload = false;
+
+    fadeAlpha = 255;
+    fadeStart = gui->platform().ticks();
+
+    // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
+    if (gui->input().joystickCount() > gui->input().activePadCount()) {
+        notificationLines[1].setText(
+                _("NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup."),
+                10 * TicksPerSecond);
+    }
 
     staticElements.clear();
     frontElemets.clear();
@@ -384,11 +497,21 @@ void GuiLauncher::render() {
     gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, secColor);
 
     notificationLines.tickTock();
+    scanStatusLine.tickTock();
 
     for (auto &obj : frontElemets)
         obj->render();
 
     gui->text().setShadow(classicShadow);
+
+    if (fadeAlpha > 0) {
+        long elapsed = gui->platform().ticks() - fadeStart;
+        fadeAlpha = elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);
+        renderer.setDrawColor(ableem::Color(0, 0, 0, fadeAlpha));
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.fillRect();
+    }
+
     gui->renderer().present();
 }
 
