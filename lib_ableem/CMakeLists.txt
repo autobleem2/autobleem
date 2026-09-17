@@ -68,6 +68,9 @@ find_package(Threads REQUIRED)
 target_link_libraries(ableem_engine PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
 
 if (ABLEEM_ENABLE_CHD)
+    # third_party/libmamecd is vendored (see its CMakeLists.txt) - CHD support no longer needs the PSC
+    # toolchain sysroot or a system install.
+    add_subdirectory(third_party/libmamecd EXCLUDE_FROM_ALL)
     target_link_libraries(ableem_engine PUBLIC mamecd)
 else()
     target_compile_definitions(ableem_engine PRIVATE ABLEEM_NO_CHD)

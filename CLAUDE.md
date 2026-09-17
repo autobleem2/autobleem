@@ -210,6 +210,13 @@ Still to do, in order:
      opens this menu instead, Power Off is one of its items (behind its own confirm), and bare R2 does
      nothing.
 
+CHD support no longer depends on an external install: **`libmamecd` is vendored** (2026-09-17) under
+`lib_ableem/third_party/libmamecd/` from the sources dropped into `!refactor/libmamecd-master/` - see the
+"libmamecd" bullet under Build for what moved, the two upstream-bug fixes that were needed for a modern
+mingw-w64/UCRT toolchain, and what got trimmed (VS project files, autotools cruft, docs, unused
+encoder/grabbag headers). `AB_ENABLE_CHD` now defaults ON on every host, `make_win.sh` no longer forces it
+OFF, and a full Windows/MinGW rebuild plus `ctest` were verified green with it vendored in.
+
 ## lib_ableem
 
 A portable library (`lib_ableem/`, namespace `ableem`) in two CMake targets, mirrored in `include/ableem/`
@@ -334,18 +341,27 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
-  Run needs `C:msys64Crt64in` on PATH (SDL DLLs). Builds with `-DAB_ENABLE_CHD=OFF`; the `starter` target is
-  skipped on Windows. Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed.
-  The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
+  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs); the `starter` target is skipped on Windows.
+  Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. The x86/Windows/Pi
+  switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
-- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by
-  `lib_ableem/src/engine/cd_image_reader.h` for CHD images and is NOT in the repo. `AB_ENABLE_CHD` defaults
-  to ON for the ARM build and, on a PC, to whether `find_path`/`find_library` can see the library - so a
-  bare `cmake ..` (an editor's CMake integration) works without it. OFF (which also sets
-  `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles out `ChdImageReader` (`.chd` games then scan as
-  "no serial").
-- External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored, all inside lib_ableem:
-  SQLite, nlohmann json + `fifo_map` and miniz (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
+- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is vendored (2026-09-17) under
+  `lib_ableem/third_party/libmamecd/` - an updated libchdr fork for CHD disc images, used only by
+  `lib_ableem/src/engine/cd_image_reader.h` (`ChdImageReader`). It builds from source on every host now (its
+  own `CMakeLists.txt` there builds the libchdr sources plus vendored copies of its three codec deps - FLAC,
+  lzma, zlib - each under `deps/`, all warnings-off like the other vendored code), so `AB_ENABLE_CHD`
+  defaults to ON everywhere and no longer needs the PSC toolchain sysroot or a system install. OFF (which
+  also sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) still compiles out `ChdImageReader` (`.chd` games then
+  scan as "no serial") if it's ever unwanted. Two upstream bugs needed a fix to build with a modern
+  mingw-w64/UCRT toolchain: FLAC's `compat.h` redefines `fseeko`/`ftello` to `fseeko64`/`ftello64` when
+  `HAVE_FSEEKO` isn't set, which collides with UCRT's own `fseeko64` declaration - fixed by defining
+  `HAVE_FSEEKO` for the vendored FLAC target on `MINGW` (its native fseeko/ftello are already correct); and
+  `libchdr_cdrom.c`'s `physical_to_chd_lba` was a plain (non-`static`) C99 `inline` function with no
+  out-of-line definition anywhere, which linked fine only because GCC happened to inline every call - fixed
+  by marking it `static inline` (it is only ever used within that one file).
+- External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
+  SQLite, nlohmann json + `fifo_map`, miniz and libmamecd + FLAC/lzma/zlib (`lib_ableem/third_party/`),
+  `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
   (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
