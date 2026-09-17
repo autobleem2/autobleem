@@ -4,8 +4,9 @@
 #
 # This runs as init= (i.e. as PID 1, before the root filesystem is mounted read-write), because ext4 cannot be
 # shrunk while it is mounted. It is the same trick Raspberry Pi OS uses for its own first-boot expansion
-# (/usr/lib/raspberrypi-sys-mods/init_resize.sh), and it is installed, armed and disarmed by install.sh
-# --shrink-root; nothing else should ever run it.
+# (/usr/lib/raspberrypi-sys-mods/init_resize.sh), and it is installed (to /usr/local/sbin - init= has to
+# name a file inside the root filesystem, the boot partition is not mounted yet), armed and disarmed by
+# install.sh --shrink-root; nothing else should ever run it.
 #
 # The very first thing it does is put the original cmdline.txt back, so that however badly the rest goes the
 # Pi boots normally next time instead of running this again.

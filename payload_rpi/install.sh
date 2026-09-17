@@ -22,6 +22,7 @@ SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() 
 STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, themes/, Games/, Apps/)
 DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
 DRY_RUN=0
+ASSUME_YES=0                    # --yes: answer every confirmation, for unattended runs over ssh
 DO_PACKAGES=1
 DO_BOOT_CONFIG=1
 QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the launcher is the only thing seen
@@ -36,12 +37,13 @@ log()  { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31m[x]\033[0m %s\n' "$*" >&2; exit 1; }
 
-# every command that changes the machine goes through this, so --dry-run is honest
+# every command that changes the machine goes through this, so --dry-run is honest. Commands get no stdin:
+# apt/git/make would otherwise swallow the answer a piped "YES" meant for confirm() (seen over ssh).
 run() {
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would run: %s\n' "$*"
     else
-        "$@"
+        "$@" </dev/null
     fi
 }
 
@@ -49,6 +51,10 @@ confirm() {
     local prompt="$1"
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would ask: %s\n' "$prompt"
+        return 0
+    fi
+    if [ "$ASSUME_YES" -eq 1 ]; then
+        printf '%s [--yes]\n' "$prompt"
         return 0
     fi
     local answer
@@ -72,6 +78,7 @@ Usage: sudo bash install.sh [options]
                        apt: the distribution's package; none: leave RetroArch alone
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
+  --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
   -h, --help           this text
 EOF
@@ -92,6 +99,7 @@ parse_args() {
             --no-quiet-boot)  QUIET_BOOT=0; shift ;;
             --retroarch)      RETROARCH_MODE="${2:?--retroarch needs source, apt or none}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
+            --yes)            ASSUME_YES=1; shift ;;
             --dry-run)        DRY_RUN=1; shift ;;
             -h|--help)        usage; exit 0 ;;
             *)                usage; die "unknown option: $1" ;;
@@ -223,6 +231,10 @@ install_retroarch_source() {
     local stamp=/usr/local/share/autobleem/retroarch.version
 
     log "RetroArch: looking up the latest release"
+    if [ "$DRY_RUN" -eq 1 ] && ! command -v git >/dev/null 2>&1; then
+        printf '    would install git, look up the latest tag on github.com and build it into /usr/local\n'
+        return 0
+    fi
     local tag
     tag="$(git ls-remote --tags --refs https://github.com/libretro/RetroArch.git 2>/dev/null \
             | awk -F/ '{print $NF}' | grep -E '^v[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -V | tail -1)" || true
@@ -264,6 +276,7 @@ install_retroarch_source() {
     fi
     (
         cd "$src" || exit 1
+        exec </dev/null
         ./configure --prefix=/usr/local \
             --disable-x11 --disable-wayland --disable-videocore --disable-vulkan --disable-qt \
             --disable-ffmpeg --disable-jack --disable-oss --disable-pulse --disable-sdl \
@@ -485,16 +498,19 @@ shrink_root() {
     warn "Back up anything you care about first."
     confirm "Shrink $rootdev to ${gib}GiB and reboot now?"
 
-    run install -m 0755 "$SCRIPT_DIR/system/shrink-root-init.sh" "$BOOT_DIR/autobleem-shrink.sh"
+    # init= is resolved (by the initramfs, or the kernel on an image without one) inside the root filesystem
+    # alone - /boot/firmware is a separate FAT partition that is not mounted yet at that point, so a script
+    # placed there is simply "not found" and the Pi boots normally, having done nothing (seen on Trixie).
+    # Raspberry Pi OS keeps its own init_resize.sh under /usr/lib for the same reason.
+    local init_script=/usr/local/sbin/autobleem-shrink-root
+    run install -m 0755 "$SCRIPT_DIR/system/shrink-root-init.sh" "$init_script"
     run cp -n "$BOOT_DIR/cmdline.txt" "$BOOT_DIR/cmdline.txt.autobleem-backup"
 
     # the init script reads these off the kernel command line, restores cmdline.txt from the backup above and
     # reboots - whether it succeeded or not, so a failure never leaves an unbootable card
-    # init= is a path the *kernel* resolves inside the root filesystem, but /boot(/firmware) is the FAT
-    # partition mounted there, so the script has to be named by the path it has once the system is up
     local cmdline
     cmdline="$(tr -d '\n' < "$BOOT_DIR/cmdline.txt")"
-    cmdline="$cmdline ab_shrink_gib=$gib ab_shrink_label=$DATA_LABEL init=$BOOT_DIR/autobleem-shrink.sh"
+    cmdline="$cmdline ab_shrink_gib=$gib ab_shrink_label=$DATA_LABEL init=$init_script"
 
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would write to %s: %s\n' "$BOOT_DIR/cmdline.txt" "$cmdline"
@@ -747,10 +763,10 @@ main() {
     parse_args "$@"
     preflight
     install_packages
-    install_retroarch
-    ensure_data_partition
+    ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data
     create_tree
+    install_retroarch
     download_retroarch_content
     install_payload
     install_service
