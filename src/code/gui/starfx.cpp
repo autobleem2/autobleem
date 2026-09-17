@@ -2,6 +2,7 @@
 // Created by screemer on 2019-07-31.
 //
 
+#include <algorithm>
 #include <cmath>
 #include "starfx.h"
 #include "../gui/gui.h"
@@ -100,10 +101,19 @@ StarFx::StarFx() {
 // StarFx::maybeSpawnComet
 //*******************************
 void StarFx::maybeSpawnComet() {
-    if (comet.active) return;
+    Comet *slot = nullptr;
+    for (Comet &c : comets) {
+        if (!c.active) { slot = &c; break; }
+    }
+    if (!slot) {
+        if ((int) comets.size() >= style.maxComets) return;
+        comets.emplace_back();
+        slot = &comets.back();
+    }
+    Comet &comet = *slot;
 
-    // tried once per frame; ~1 in 800 succeeds, so a comet crosses roughly every 10-15 seconds at 60fps
-    std::uniform_int_distribution<int> chance(0, 799);
+    // tried once per frame; with the default 1 in 800 a comet crosses roughly every 10-15 seconds at 60fps
+    std::uniform_int_distribution<int> chance(0, std::max(1, style.cometOdds) - 1);
     if (chance(rng) != 0) return;
 
     std::uniform_real_distribution<float> unit(0.0f, 1.0f);
@@ -119,39 +129,46 @@ void StarFx::maybeSpawnComet() {
 }
 
 //*******************************
-// StarFx::renderComet
+// StarFx::renderComets
 //*******************************
-void StarFx::renderComet(float dtFrames) {
-    if (!comet.active) return;
+void StarFx::renderComets(float dtFrames) {
+    bool any = false;
+    for (const Comet &c : comets) any = any || c.active;
+    if (!any) return;
 
-    comet.x += comet.vx * dtFrames;
-    comet.y += comet.vy * dtFrames;
-    comet.life += dtFrames;
+    renderer->setBlendMode(ableem::BlendMode::Add);   // additive glow for the trails and heads
 
-    if (comet.life >= comet.maxLife || comet.x > SCREEN_WIDTH + 40 || comet.y > SCREEN_HEIGHT + 40) {
-        comet.active = false;
-        return;
+    for (Comet &comet : comets) {
+        if (!comet.active) continue;
+
+        comet.x += comet.vx * dtFrames;
+        comet.y += comet.vy * dtFrames;
+        comet.life += dtFrames;
+
+        if (comet.life >= comet.maxLife || comet.x > SCREEN_WIDTH + 40 || comet.y > SCREEN_HEIGHT + 40) {
+            comet.active = false;
+            continue;
+        }
+
+        float fade = 1.0f - (comet.life / comet.maxLife);
+
+        const int trailSteps = 6;
+        for (int i = 0; i < trailSteps; i++) {
+            float back = (float) i;
+            ableem::Point a{(int) (comet.x - comet.vx * back), (int) (comet.y - comet.vy * back)};
+            ableem::Point b{(int) (comet.x - comet.vx * (back + 1)), (int) (comet.y - comet.vy * (back + 1))};
+
+            float segFade = fade * (1.0f - (float) i / trailSteps);
+            unsigned char c = (unsigned char) (200.0f * segFade);
+            unsigned char cb = (unsigned char) (255.0f * segFade);
+            renderer->setDrawColor(ableem::Color(c, c, cb, 255));
+            renderer->drawLine(a, b);
+        }
+
+        unsigned char headC = (unsigned char) (255.0f * fade);
+        renderer->setDrawColor(ableem::Color(headC, headC, headC, 255));
+        renderer->fillRect(ableem::Rect((int) comet.x - 1, (int) comet.y - 1, 3, 3));
     }
-
-    float fade = 1.0f - (comet.life / comet.maxLife);
-    renderer->setBlendMode(ableem::BlendMode::Add);   // additive glow for the trail and head
-
-    const int trailSteps = 6;
-    for (int i = 0; i < trailSteps; i++) {
-        float back = (float) i;
-        ableem::Point a{(int) (comet.x - comet.vx * back), (int) (comet.y - comet.vy * back)};
-        ableem::Point b{(int) (comet.x - comet.vx * (back + 1)), (int) (comet.y - comet.vy * (back + 1))};
-
-        float segFade = fade * (1.0f - (float) i / trailSteps);
-        unsigned char c = (unsigned char) (200.0f * segFade);
-        unsigned char cb = (unsigned char) (255.0f * segFade);
-        renderer->setDrawColor(ableem::Color(c, c, cb, 255));
-        renderer->drawLine(a, b);
-    }
-
-    unsigned char headC = (unsigned char) (255.0f * fade);
-    renderer->setDrawColor(ableem::Color(headC, headC, headC, 255));
-    renderer->fillRect(ableem::Rect((int) comet.x - 1, (int) comet.y - 1, 3, 3));
 
     renderer->setBlendMode(ableem::BlendMode::Blend);   // restore what the caller had set for the stars/overlay
 }
@@ -172,7 +189,7 @@ void StarFx::render(unsigned int nowTicks) {
     std::uniform_real_distribution<float> unit(0.0f, 1.0f);
 
     for (Star &s : stars) {
-        s.y += s.speed * dtFrames;
+        s.y += s.speed * style.speedScale * dtFrames;
         if (s.y > SCREEN_HEIGHT + s.size) {
             s.y -= (SCREEN_HEIGHT + s.size);
             s.x = unit(rng) * SCREEN_WIDTH;   // fresh horizontal position each time it recycles to the top
@@ -196,7 +213,8 @@ void StarFx::render(unsigned int nowTicks) {
                 std::vector<ableem::Rect> &rects = buckets[bucketIndex(t, ti, lvl)];
                 if (rects.empty()) continue;
 
-                float brightness = TIERS[t].brightness * (0.55f + 0.45f * lvl / (float) (TWINKLE_LEVELS - 1));
+                float brightness = TIERS[t].brightness * style.brightnessScale *
+                                   (0.55f + 0.45f * lvl / (float) (TWINKLE_LEVELS - 1));
                 const Tint &tint = TINTS[ti];
                 renderer->setDrawColor(ableem::Color(
                         (unsigned char) (tint.r * brightness),
@@ -209,5 +227,5 @@ void StarFx::render(unsigned int nowTicks) {
     }
 
     maybeSpawnComet();
-    renderComet(dtFrames);
+    renderComets(dtFrames);
 }

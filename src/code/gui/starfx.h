@@ -19,8 +19,21 @@
 // - a handful of draw calls for the whole field instead of one per star, which matters on the PSC's weak GPU.
 class StarFx {
 public:
+    //******************
+    // Style
+    //******************
+    // How the field behaves; the defaults are the About screen's calm backdrop. The Surprise game switches to
+    // a faster, dimmer field with more comets - dimmer so the lasers stand out against it - and back again.
+    struct Style {
+        float speedScale = 1.0f;        // multiplies every star's scroll speed
+        float brightnessScale = 1.0f;   // multiplies every star's colour (0..1 makes the field darker)
+        int cometOdds = 800;            // a comet spawn is tried once per frame with a 1-in-this chance
+        int maxComets = 1;              // how many may be on screen at once
+    };
+
     StarFx();
     void render(unsigned int nowTicks);
+    void setStyle(const Style &style) { this->style = style; }
     ableem::Renderer *renderer = nullptr;   // set by the owning screen before the first render()
 
 private:
@@ -49,10 +62,11 @@ private:
 
     std::vector<Star> stars;
     std::vector<std::vector<ableem::Rect>> buckets;   // reused every frame; see the .cpp for the indexing
-    Comet comet;
+    std::vector<Comet> comets;
+    Style style;
     unsigned int lastTicks = 0;
     std::mt19937 rng{std::random_device{}()};
 
     void maybeSpawnComet();
-    void renderComet(float dtFrames);
+    void renderComets(float dtFrames);
 };

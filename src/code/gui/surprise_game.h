@@ -118,6 +118,7 @@ private:
     std::vector<PowerUp> powerUps;
 
     float shipX = 0;
+    int dropsSinceExtraLife = 0;   // power-ups dropped since the last extra life (see maybeDropPowerUp)
     int lives = 3;
     int score = 0;
     int highScore = 0;

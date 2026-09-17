@@ -164,6 +164,7 @@ void GuiAbout::loop() {
                     if (e.button == Button::Start) {
                         if (surpriseMode) {
                             surpriseMode = false;
+                            fx.setStyle(StarFx::Style());   // back to the About screen's calm backdrop
                             if (duckedThemeMusic) app.audio().music.setVolume(128);
                             if (playingFallbackMusic) {
                                 surpriseMusic.halt();
@@ -176,6 +177,14 @@ void GuiAbout::loop() {
                             surpriseMode = true;
                             crossHeld = false;
                             game.reset(ticks);
+                            // a faster, darker field with more comets: the lasers and pickups have to read
+                            // against it, and it should feel like flying rather than drifting
+                            StarFx::Style flying;
+                            flying.speedScale = 2.5f;
+                            flying.brightnessScale = 0.55f;
+                            flying.cometOdds = 150;
+                            flying.maxComets = 3;
+                            fx.setStyle(flying);
                             if (app.audio().music.isPlaying()) {
                                 // something is already playing (the theme's track or a custom one) -
                                 // just duck it to 50% behind the game

@@ -45,6 +45,8 @@ namespace {
 
     const int PowerUpDropPercent = 20;   // chance an exploded alien drops a timed power-up (rapid/spread/power)
     const int ExtraLifeDropPercent = 10; // separate chance it drops an extra life instead
+    const int ExtraLifeEveryNthDrop = 50;   // ...and whatever the dice say, the Nth drop since the last one is a life
+    const float ExtraLifeFallScale = 0.6f;  // a life falls slower than the timed power-ups, so it can be caught
     const unsigned int PowerUpDurationMs = 10000;
 
     const unsigned int LifeLostFreezeMs = 2000;
@@ -64,6 +66,7 @@ void SurpriseGame::reset(unsigned int nowTicks) {
     wave = 1;
     activePowerUp = PowerUpType::None;
     powerUpUntilTicks = 0;
+    dropsSinceExtraLife = 0;
     playerBullets.clear();
     alienBullets.clear();
     powerUps.clear();
@@ -336,6 +339,14 @@ void SurpriseGame::maybeDropPowerUp(float x, float y) {
         return;
     }
 
+    // a bad streak of dice must not go on forever: every ExtraLifeEveryNthDrop-th drop is a life regardless
+    if (type != PowerUpType::ExtraLife && ++dropsSinceExtraLife >= ExtraLifeEveryNthDrop) {
+        type = PowerUpType::ExtraLife;
+    }
+    if (type == PowerUpType::ExtraLife) {
+        dropsSinceExtraLife = 0;
+    }
+
     PowerUp p;
     p.x = x;
     p.y = y;
@@ -351,7 +362,7 @@ void SurpriseGame::updatePowerUps(float dtFrames, unsigned int nowTicks) {
     float shipY = SCREEN_HEIGHT - 90.0f;
     for (PowerUp &p : powerUps) {
         if (!p.alive) continue;
-        p.y += PowerUpFallSpeed * dtFrames;
+        p.y += PowerUpFallSpeed * (p.type == PowerUpType::ExtraLife ? ExtraLifeFallScale : 1.0f) * dtFrames;
         if (p.y > SCREEN_HEIGHT) {
             p.alive = false;
             continue;
@@ -496,6 +507,10 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
                                                                     : sprites.ship;   // ExtraLife: 1UP
         ableem::Rect dst((int) p.x, (int) p.y, PowerUpSize, PowerUpSize);
         renderer.copy(tex, nullptr, &dst);
+        if (p.type == PowerUpType::ExtraLife) {
+            // the ship sprite alone reads as "another ship"; say what it is
+            text.renderText(font, "1UP", (int) p.x + PowerUpSize + 4, (int) p.y + 4, XALIGN_LEFT);
+        }
     }
 
     for (const Bullet &b : playerBullets) {
