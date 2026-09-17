@@ -46,6 +46,8 @@ namespace {
     const int PowerUpDropPercent = 20;   // chance an exploded alien drops one
     const unsigned int PowerUpDurationMs = 10000;
 
+    const unsigned int LifeLostFreezeMs = 2000;
+
     bool overlaps(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh) {
         return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
     }
@@ -68,6 +70,8 @@ void SurpriseGame::reset(unsigned int nowTicks) {
     lastShotTicks = 0;
     hitInvulnUntil = 0;
     nextDiveAtTicks = nowTicks + 2500;
+    freezeUntilTicks = 0;
+    totalFrozenMs = 0;
     spawnWave(nowTicks);
 }
 
@@ -162,7 +166,9 @@ int SurpriseGame::awayFromFormationCount() const {
 // row's own sine sway for X - this is what gives the formation its continuous Warblade-style ripple.
 //*******************************
 float SurpriseGame::restX(const Alien &a, unsigned int nowTicks) const {
-    float t = nowTicks / 1000.0f;
+    // frozen time doesn't count towards the sway phase, or the whole formation would visibly jump ahead by
+    // the frozen duration the instant a "life lost" freeze ends
+    float t = (nowTicks - totalFrozenMs) / 1000.0f;
     return a.baseX + SwayAmplitude * sinf(SwayAngularSpeed * waveSpeedScale * t + a.row * RowPhaseStep);
 }
 
@@ -403,8 +409,17 @@ void SurpriseGame::handleCollisions(unsigned int nowTicks) {
                 lives--;
                 hitInvulnUntil = nowTicks + HitInvulnMs;
                 sounds.playerHit.play();
+                hitThisFrame = true;
                 break;
             }
+        }
+
+        if (hitThisFrame) {
+            // clear every laser on screen and freeze play for a couple of seconds, with a "LIFE LOST" banner
+            playerBullets.clear();
+            alienBullets.clear();
+            freezeUntilTicks = nowTicks + LifeLostFreezeMs;
+            totalFrozenMs += LifeLostFreezeMs;
         }
     }
 
@@ -428,6 +443,7 @@ void SurpriseGame::update(unsigned int nowTicks, bool moveLeft, bool moveRight, 
     float dtFrames = dt / 16.0f;
 
     if (gameOver()) return;
+    if (nowTicks < freezeUntilTicks) return;   // "life lost" hit-stun: hold everything in place
 
     const float shipSpeed = 7.0f;
     if (moveLeft) shipX -= shipSpeed * dtFrames;
@@ -496,6 +512,10 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
                                                             : _("POWER SHOT");
         unsigned int remainingMs = (powerUpUntilTicks > lastTicks) ? (powerUpUntilTicks - lastTicks) : 0;
         text.renderText(font, name + " " + to_string(remainingMs / 1000 + 1) + "s", 0, 70, XALIGN_CENTER);
+    }
+
+    if (!gameOver() && lastTicks < freezeUntilTicks) {
+        text.renderText(font, _("LIFE LOST"), 0, SCREEN_HEIGHT / 2 - 20, XALIGN_CENTER);
     }
 
     if (gameOver()) {

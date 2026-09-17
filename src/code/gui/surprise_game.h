@@ -140,6 +140,12 @@ private:
     unsigned int hitInvulnUntil = 0;
     unsigned int nextDiveAtTicks = 0;
 
+    // losing a life clears every laser on screen and freezes all game logic for a couple of seconds (with
+    // a "LIFE LOST" banner) before play resumes - totalFrozenMs keeps the alien formation's sine sway from
+    // jumping by the frozen duration in a single frame once play resumes
+    unsigned int freezeUntilTicks = 0;
+    unsigned int totalFrozenMs = 0;
+
     std::mt19937 rng{std::random_device{}()};
 
     void spawnWave(unsigned int nowTicks);
