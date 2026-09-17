@@ -44,6 +44,8 @@ using ableem::separator;
 using ableem::IniFile;
 using ableem::ThemeSpec;
 using ableem::ThemeColor;
+using ableem::ClassicTheme;
+using ableem::LauncherTheme;
 using ableem::ConfigFileEditor;
 using ableem::MemcardManager;
 using ableem::SerialScanner;

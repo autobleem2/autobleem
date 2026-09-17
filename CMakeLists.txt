@@ -120,6 +120,8 @@ add_library(ab_core STATIC
         src/code/core/services/system.h
         src/code/core/services/theme.cpp
         src/code/core/services/theme.h
+        src/code/core/services/theme_converter.cpp
+        src/code/core/services/theme_converter.h
         )
 target_link_libraries(ab_core ableem_engine)
 
@@ -130,6 +132,13 @@ option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
 if (AB_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+
+    # theme_convert <themesDir>: the ThemeConverter over every theme folder, for converting payload/themes
+    # or a theme being worked on ahead of the app doing it on first load. A host tool, so it rides on the
+    # tests' switch; it ships nowhere.
+    add_executable(theme_convert tools/theme_convert/main.cpp)
+    target_include_directories(theme_convert PRIVATE src/code)
+    target_link_libraries(theme_convert ab_core)
 endif()
 
 # ab_ui: the classic UI and everything a screen needs - Gui (the window, the theme's assets, the text
