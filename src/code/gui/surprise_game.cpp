@@ -43,7 +43,8 @@ namespace {
     const unsigned int EntranceStaggerMs = 180;   // extra entrance delay per row
     const unsigned int EntranceColStaggerMs = 40; // extra entrance delay per column, for a diagonal cascade
 
-    const int PowerUpDropPercent = 20;   // chance an exploded alien drops one
+    const int PowerUpDropPercent = 20;   // chance an exploded alien drops a timed power-up (rapid/spread/power)
+    const int ExtraLifeDropPercent = 10; // separate chance it drops an extra life instead
     const unsigned int PowerUpDurationMs = 10000;
 
     const unsigned int LifeLostFreezeMs = 2000;
@@ -319,16 +320,26 @@ void SurpriseGame::updateBullets(float dtFrames) {
 // SurpriseGame::maybeDropPowerUp
 //*******************************
 void SurpriseGame::maybeDropPowerUp(float x, float y) {
+    // one roll picks between an extra life (ExtraLifeDropPercent), one of the three timed power-ups
+    // (PowerUpDropPercent), or nothing - so the two chances don't stack into two pickups on one kill.
     uniform_int_distribution<int> chance(0, 99);
-    if (chance(rng) >= PowerUpDropPercent) return;
+    int roll = chance(rng);
 
-    uniform_int_distribution<int> pick(0, 2);
-    static const PowerUpType types[3] = {PowerUpType::Rapid, PowerUpType::Spread, PowerUpType::Power};
+    PowerUpType type;
+    if (roll < ExtraLifeDropPercent) {
+        type = PowerUpType::ExtraLife;
+    } else if (roll < ExtraLifeDropPercent + PowerUpDropPercent) {
+        uniform_int_distribution<int> pick(0, 2);
+        static const PowerUpType types[3] = {PowerUpType::Rapid, PowerUpType::Spread, PowerUpType::Power};
+        type = types[pick(rng)];
+    } else {
+        return;
+    }
 
     PowerUp p;
     p.x = x;
     p.y = y;
-    p.type = types[pick(rng)];
+    p.type = type;
     p.alive = true;
     powerUps.push_back(p);
 }
@@ -346,8 +357,12 @@ void SurpriseGame::updatePowerUps(float dtFrames, unsigned int nowTicks) {
             continue;
         }
         if (!gameOver() && overlaps(p.x, p.y, PowerUpSize, PowerUpSize, shipX, shipY, ShipW, ShipH)) {
-            activePowerUp = p.type;
-            powerUpUntilTicks = nowTicks + PowerUpDurationMs;
+            if (p.type == PowerUpType::ExtraLife) {
+                lives++;
+            } else {
+                activePowerUp = p.type;
+                powerUpUntilTicks = nowTicks + PowerUpDurationMs;
+            }
             p.alive = false;
             sounds.powerup.play();
         }
@@ -477,7 +492,8 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
         if (!p.alive) continue;
         const ableem::Texture &tex = p.type == PowerUpType::Rapid ? sprites.powerupRapid
                                     : p.type == PowerUpType::Spread ? sprites.powerupSpread
-                                                                     : sprites.powerupPower;
+                                    : p.type == PowerUpType::Power ? sprites.powerupPower
+                                                                    : sprites.ship;   // ExtraLife: 1UP
         ableem::Rect dst((int) p.x, (int) p.y, PowerUpSize, PowerUpSize);
         renderer.copy(tex, nullptr, &dst);
     }
