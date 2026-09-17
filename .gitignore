@@ -65,6 +65,7 @@ db/
 #Claude Code local settings
 .claude/settings.local.json
 build_win2/
+build/
 
 # the mocked USB root tools/make_usb.py builds for running the app on a PC
 usb/

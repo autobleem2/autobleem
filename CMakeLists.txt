@@ -5,9 +5,22 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-# CHD image support needs libmamecd which is only available in the PSC toolchain sysroot.
-# switch it off for development builds that do not have the library.
-option(AB_ENABLE_CHD "Enable CHD image support (requires libmamecd)" ON)
+# CHD image support needs libmamecd, which only the PSC toolchain sysroot has. The default follows the host:
+# on for the ARM (console) build, and on a PC only when the header and the library can be found - so a plain
+# `cmake ..` from an editor works without knowing about it. -DAB_ENABLE_CHD=ON/OFF still overrides.
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
+    set(AB_CHD_DEFAULT ON)
+else()
+    find_path(AB_MAMECD_INCLUDE_DIR libmamecd/cdrom.h)
+    find_library(AB_MAMECD_LIBRARY mamecd)
+    if (AB_MAMECD_INCLUDE_DIR AND AB_MAMECD_LIBRARY)
+        set(AB_CHD_DEFAULT ON)
+    else()
+        set(AB_CHD_DEFAULT OFF)
+        message(STATUS "libmamecd not found: CHD support off (.chd games scan as 'no serial')")
+    endif()
+endif()
+option(AB_ENABLE_CHD "Enable CHD image support (requires libmamecd)" ${AB_CHD_DEFAULT})
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" )

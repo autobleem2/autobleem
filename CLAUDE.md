@@ -292,9 +292,11 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   The x86/Windows/Pi switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
 - **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is used only by
-  `lib_ableem/src/engine/cd_image_reader.h` for CHD images and is NOT in the repo. `AB_ENABLE_CHD=OFF`
-  (which also sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles out `ChdImageReader` (`.chd` games
-  then scan as "no serial").
+  `lib_ableem/src/engine/cd_image_reader.h` for CHD images and is NOT in the repo. `AB_ENABLE_CHD` defaults
+  to ON for the ARM build and, on a PC, to whether `find_path`/`find_library` can see the library - so a
+  bare `cmake ..` (an editor's CMake integration) works without it. OFF (which also sets
+  `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles out `ChdImageReader` (`.chd` games then scan as
+  "no serial").
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored, all inside lib_ableem:
   SQLite, nlohmann json + `fifo_map` and miniz (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
