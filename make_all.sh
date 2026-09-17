@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-./make_arm.sh
+./make_psc.sh
 ./make_sys.sh

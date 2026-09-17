@@ -54,7 +54,7 @@ this host yet:
   a content change.
 - **Step 4** - the test harness (step 3, the ARM build, is deferred - no toolchain on this host). doctest
   2.4.11 vendored at `tests/third_party/doctest/doctest.h`, `tests/support/{env_fixture.h,temp_dir.*}`,
-  ctest wiring behind `AB_BUILD_TESTS` (ON for hosts, forced OFF by `PSCtoolchainV8.cmake`), and the first
+  ctest wiring behind `AB_BUILD_TESTS` (ON for hosts, forced OFF by the cross toolchain files), and the first
   suites: `tests/core/test_config.cpp` and `tests/core/test_env_fixture.cpp`. `make_win.sh` runs `ctest`
   after every build. `Theme` was to be tested here too, but it is not in `ab_core` yet.
 - **Step 5** - `core/model/game_set.h` holds `GameSet`, `Ps1SelectState` and `GameSetSelection` (tested in
@@ -152,10 +152,10 @@ Still to do, in order:
    the Pi port). `config.ini`'s `Cfg=` key is still an absolute console path - the Pi installer rewrites it
    per install, since where it points depends on where the data partition was mounted.
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
-4. Set up the Sony ARM toolchain and verify lib_ableem + the app on a console (nothing above has run on real
-   hardware yet - only the Windows/MinGW and Raspberry Pi cross builds have been exercised, and the latter
-   only as a build). This is the next thing to do. A *second* ARM toolchain now exists on this host (the Pi
-   one, below) - it is not the Sony one and does not substitute for it.
+4. ~~Set up the Sony ARM toolchain~~ - done 2026-09-17: `make_psc.sh` builds on the remote server (see Build).
+   `autobleem-gui` and `starter` cross-compile and link cleanly with the Sony GCC 8.2 toolchain. **Still to
+   do: run it on a console** - nothing has run on real hardware yet; the Windows/MinGW build is the only one
+   that has been executed. The Pi toolchain (below) is a different target and does not substitute for it.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
@@ -370,8 +370,10 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   members, so every existing screen file keeps writing `gui->cursor.play()` / `renderer.copy(...)` unchanged -
   only the SDL-specific calls inside each screen needed converting, not every constructor caller. Screens are
   constructed with a `GuiBase&`, in practice always `*gui` (e.g. `GuiConfirm confirm(*gui);`).
-- **CMake**: `add_subdirectory(lib_ableem)` from the root file; `ABLEEM_EMBEDDED_TARGET` is forced on for the
-  ARM build (no cursor grab, keyboard-as-pad off); `ABLEEM_ENABLE_CHD` follows the root `AB_ENABLE_CHD`
+- **CMake**: `add_subdirectory(lib_ableem)` from the root file; `ABLEEM_EMBEDDED_TARGET` is forced on for both
+  ARM builds (no cursor grab, keyboard-as-pad off); the non-MinGW branch does one `find_package(SDL2)` and links
+  the bare names `SDL2 SDL2_image SDL2_mixer SDL2_ttf`, which is why each cross toolchain ships its own
+  `cmake/FindSDL2.cmake` defining those four imported targets; `ABLEEM_ENABLE_CHD` follows the root `AB_ENABLE_CHD`
   (libmamecd is linked by `ableem_engine`); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
   from-scratch smoke test of the ui library alone - texture + font + sound + input, no AutoBleem code involved.
 
@@ -385,8 +387,24 @@ by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GC
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
-- **ARM (real target)**: `make_arm.sh` → `PSCtoolchainV8.cmake` (`armv8-sony-linux-gnueabihf-gcc`, `--static -Os -s`).
-  Requires the toolchain at `/opt/toolchain/armv8-sony-linux-gnueabihf`. Not available on this Windows host yet.
+- **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` → `build_psc/dist/`
+  (`autobleem-gui` + `starter`), built **on the build server over ssh** - the same shape as pcsx-ab's
+  `make_psc.sh`, so the two build side by side there. `ssh psc-build` (a `Host` entry in `~/.ssh/config`, in
+  both the Windows profile and `C:\msys64\home\<you>` - MSYS2's ssh and Git for Windows' ssh have different
+  homes; key `~/.ssh/id_ed25519`). Ubuntu x86_64, 2 cores, Sony's crosstool-NG toolchain at `/opt/toolchain`
+  (GCC 8.2.0, sysroot `/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot` with SDL2 2.0.4 + image/mixer/ttf
+  `.so`s). The distro CMake is 3.10; `~/opt/cmake` (3.31) is what the script uses. The tree is rsynced to
+  `~/autobleem` (minus `usb/`, `db/`, `payload*/`, `!refactor/`, the Pi devkit), built in `~/autobleem/build_psc`
+  with Unix Makefiles `-j2`, and the two binaries come back by tar (rsync refuses NTFS modes). `-k` keeps the
+  remote build dir for an incremental rebuild. Invoke from the MSYS2 UCRT64 shell like `make_win.sh`.
+  `toolchains/psc/cmake/FindSDL2.cmake` defines the four imported SDL2 targets over the sysroot's `.so`s
+  (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic** - the original toolchain file's
+  `--static` was always overwritten by the root CMakeLists' `^arm` branch (`-march=armv8-a+simd -Os -s`), and
+  `rc/autobleem.sh` unpacks `Autobleem/lib/libs.tar.gz` (SDL2, SDL2_mixer) to `/tmp/lib` at boot. First
+  built this way 2026-09-17: GCC 8 warning-free, `Tag_CPU_arch: v8`, NEON, hard-float, and the binary needs
+  at most `GLIBCXX_3.4.22` / `GLIBC_2.7`, which the console's stock libstdc++ 6.0.22 / glibc 2.24 provide
+  (the toolchain's own libstdc++ is 6.0.25 - anything newer than 3.4.22 would fail to load on the console;
+  check with `readelf -V` after adding C++ library features). **Not yet run on a console.**
 - **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/`, then
   `tools/make_rpi_package.sh` for the installable tarball. See the "Raspberry Pi port" section above.
 - **Mac/Linux**: `make_mac.sh`, `make_sys.sh`.
@@ -417,7 +435,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
   (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
-  skips them, and the ARM toolchain file forces that. Every service extracted from a screen from here on
+  skips them, and both cross toolchain files force that. Every service extracted from a screen from here on
   ships with its tests in the same commit - see `docs/refactor-plan.md` section 4.
   - `tests/support/env_fixture.h` - **use it in any test that touches a path.** `ableem::Environment`'s
     setters are static, so without it tests inherit each other's roots and pass or fail by run order.

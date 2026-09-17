@@ -35,8 +35,15 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
 		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv7ve -s -Os")
 	endif()
 
-	include_directories(src/include "/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot/usr/include")
-	link_directories(/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot/usr/lib)
+	# the Sony sysroot is wherever toolchains/psc/PSCtoolchainV8.cmake found the toolchain (AB_PSC_TOOLCHAIN);
+	# the old hard-coded /opt/toolchain/... is only the fallback for a toolchain that is merely on PATH
+	if (CMAKE_SYSROOT)
+		set(_ab_psc_sysroot "${CMAKE_SYSROOT}")
+	else()
+		set(_ab_psc_sysroot "/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot")
+	endif()
+	include_directories(src/include "${_ab_psc_sysroot}/usr/include")
+	link_directories("${_ab_psc_sysroot}/usr/lib")
 
 elseif (AB_TARGET_RPI)
 
@@ -148,8 +155,8 @@ add_library(ab_core STATIC
         )
 target_link_libraries(ab_core ableem_engine)
 
-# ab_core's tests. Host builds only - there is no reason to cross-compile them, and PSCtoolchainV8.cmake
-# switches AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
+# ab_core's tests. Host builds only - there is no reason to cross-compile them, and both cross toolchain files
+# (toolchains/psc, toolchains/rpi) switch AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
 # in the same commit (docs/refactor-plan.md section 4).
 option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
 if (AB_BUILD_TESTS)

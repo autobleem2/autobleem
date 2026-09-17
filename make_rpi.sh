@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cross-compile for a 32-bit Raspberry Pi OS userland, using the Windows-hosted "SysGCC for Raspberry Pi"
-# toolchain at C:\sysGCC\raspberry (not the PSC toolchain - see make_arm.sh for that). The result goes into
+# toolchain at C:\sysGCC\raspberry (not the PSC toolchain - see make_psc.sh for that). The result goes into
 # build_rpi/; tools/make_rpi_package.sh turns it into the installable tarball (see payload_rpi/README.md).
 #
 # Run it the way make_win.sh is run, from the MSYS2 UCRT64 shell. The toolchain file names the compilers by
