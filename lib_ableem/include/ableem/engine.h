@@ -22,4 +22,5 @@
 #include "engine/games_hierarchy.h"
 #include "engine/game_scanner.h"
 #include "engine/retroarch_playlist.h"
+#include "engine/theme_spec.h"
 #include "engine/game_library.h"
