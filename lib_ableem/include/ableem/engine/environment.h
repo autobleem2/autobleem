@@ -23,6 +23,7 @@ struct Environment {
     static void setThemesDir(const std::string &path);          // usb:/themes
     static void setCoversDbDir(const std::string &path);        // where coversU/P/J.db are
     static void setInternalGamesDir(const std::string &path);   // the console's built-in games; default "/gaadata"
+    static void setRetroarchDir(const std::string &path);       // RetroArch's tree; "" (the default) means usb:/retroarch
 
     //*******************************
     // paths
@@ -35,7 +36,7 @@ struct Environment {
     static std::string getPathToMemCardsDir();          // games:/!MemCards
     static std::string getPathToSaveStatesDir();        // games:/!SaveStates
     static std::string getPathToSystemDir();            // usb:/System
-    static std::string getPathToRetroarchDir();         // usb:/retroarch
+    static std::string getPathToRetroarchDir();         // usb:/retroarch unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
     static std::string getPathToRetroarchCoreFile();
     static std::string getPathToRomsDir();              // usb:/roms

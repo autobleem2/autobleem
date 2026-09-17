@@ -15,3 +15,5 @@
 *.DAT binary
 *.rdb binary
 *.gz binary
+*.so binary
+pcsx-ab binary

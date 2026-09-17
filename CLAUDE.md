@@ -222,10 +222,31 @@ OFF, and a full Windows/MinGW rebuild plus `ctest` were verified green with it v
 
 ## Raspberry Pi port (2026-09-17)
 
-A second, *non-PSC* target: AutoBleem as an appliance on **32-bit Raspberry Pi OS Lite**, games on an exFAT
-partition of the SD card that behaves like the console's USB stick. It builds and links; **nothing has run on
-a Pi yet**, and `pcsx-ab` is not ported (PS1 games fall back to RetroArch's `pcsx_rearmed`, which cannot read
-AutoBleem's own save-state slots - "Resume" is therefore a no-op until it is).
+A second, *non-PSC* target: AutoBleem as an appliance on **32-bit Raspberry Pi OS Lite** (Bookworm or
+Trixie), games on an exFAT partition of the SD card that behaves like the console's USB stick. It builds and
+links; **nothing has run on a Pi yet** - the test box will be a Pi 400 (BCM2711, same as a Pi 4) with 32-bit
+Trixie. PS1 games run in **pcsx-ab** as on the console: the Pi build from `E:\Programming\pcsx-rearmed-develop`
+(`AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` copies its `build_rpi/dist/` into
+`payload_rpi/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
+Pi `rc/launch.sh` builds `/tmp/runpcsx` exactly as the console's does (`.pcsx` -> the `!SaveStates` folder,
+`bios` -> `System/Bios`, `plugins` -> `emu/plugins`, `-region 4`, `-load 1` on resume). The BIOS is the user's:
+`System/Bios/romw.bin` + `romJP.bin` (pcsx.cfg's `Bios = SET_BY_PCSX` picks one by serial; HLE without them).
+RetroArch's `pcsx_rearmed` core is only the fallback if the package shipped without pcsx-ab.
+
+**RetroArch on the Pi** lives in `RetroArch/` on the data partition, in RetroArch's own standard tree (`cores`,
+`info`, `system` = the cores' BIOS files, `roms` = the user's other-system games, `saves`, `states`,
+`playlists`, `config`, `assets`, `autoconfig`, `database`, ...) with a generated `retroarch.cfg` whose every
+directory key points in there; the Pi's `rc/launch_rb.sh`/`retroarch.sh` run `retroarch --config` on it, and
+`Env::getPathToRetroarchDir()` is that folder on a Pi (`ableem::Environment::setRetroarchDir()`, set in
+`setupEnvironment()` under `AB_PLATFORM_RPI`, tested in `tests/core/test_env_fixture.cpp`; the console keeps
+`retroarch/`). `install.sh` builds the **latest tagged RetroArch from GitHub on the Pi** (KMS/EGL/GLES, udev,
+ALSA; no X/Wayland/Qt/ffmpeg) because libretro's buildbot has every armhf *core* but no armhf *frontend*;
+`--retroarch apt` uses the distribution's package (1.19 on Trixie), `--retroarch none` leaves it alone. Then it
+downloads all ~130 cores from `buildbot.libretro.com/nightly/linux/armhf/latest/.index-extended` and the
+`info`/`assets`/`autoconfig`/`database-rdb`/`database-cursors`/`cheats`/`overlays`/`shaders_glsl` bundles from
+`assets/frontend/` into that tree (`--no-downloads` skips). Cores are `dlopen`ed off the exFAT partition, which
+works because the fstab entry has no `noexec`. Trixie renamed packages for its 64-bit `time_t` transition
+(`libpng16-16t64`, `libegl-dev`/`libgles-dev`); `pkg_first_available` in `install.sh` tries each name.
 
 - **Toolchain**: `toolchains/rpi/RPitoolchain.cmake` over the Windows-hosted "SysGCC for Raspberry Pi"
   (`C:\sysGCC\raspberry`, gcc 14.2.0, `arm-linux-gnueabihf`, sysroot rsynced from a real Pi). `./make_rpi.sh`
@@ -261,6 +282,10 @@ AutoBleem's own save-state slots - "Resume" is therefore a no-op until it is).
   then finds or creates the exFAT partition, copies `Autobleem/ themes/ Games/ Apps/` onto it as they are, and
   puts the launcher on tty1 via systemd with `getty@tty1` disabled. Documented as `sudo bash install.sh`
   because a package built on Windows loses the executable bit.
+- The installer's data partition is meant to be on the SD card next to the root (the owner's preference);
+  with a root already expanded over the card that is `--shrink-root <GiB>`, an offline shrink at the next
+  boot by `system/shrink-root-init.sh` (disarms itself before touching anything). A USB stick with an exFAT
+  partition labelled `AUTOBLEEM` also works (`--disk /dev/sda`), but is not the intended setup.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key

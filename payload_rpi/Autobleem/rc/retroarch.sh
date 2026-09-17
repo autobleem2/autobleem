@@ -8,10 +8,10 @@ set -uo pipefail
 
 RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
-RA_CONFIG="$DATA_MOUNT/retroarch/retroarch.cfg"
+RA_CONFIG="$DATA_MOUNT/RetroArch/retroarch.cfg"   # RetroArch's standard tree, laid out by install.sh
 
 if ! command -v retroarch >/dev/null 2>&1; then
-    echo "AUTOBLEEM: retroarch is not installed (sudo apt install retroarch)" >&2
+    echo "AUTOBLEEM: retroarch is not installed (re-run install.sh, or sudo apt install retroarch)" >&2
     exit 1
 fi
 

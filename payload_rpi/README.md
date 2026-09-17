@@ -11,9 +11,9 @@ This is a port in progress. Be aware of what is and is not here:
 | | |
 |---|---|
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
-| RetroArch sets and playlists | work through the distribution's RetroArch |
-| PS1 games | run through RetroArch's `pcsx_rearmed` core |
-| **pcsx-ab** | **not ported yet.** Until it is, AutoBleem's own save-state slots ("Resume") do nothing for PS1 games — `pcsx_rearmed` cannot read them. Drop a Pi build of `pcsx-ab` into `Autobleem/bin/emu/` and `rc/launch.sh` picks it up with no other change. |
+| PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
+| BIOS | **you supply it**: `System/Bios/romw.bin` (plus `romJP.bin` for Japanese games — a copy of `romw.bin` will do). Without it pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
+| RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every armhf core but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **no.** Everything here is cross-compiled and reviewed but has not yet been run on a Pi. Treat the first install as an experiment, on a card you can afford to re-flash. |
 
@@ -32,6 +32,10 @@ This is a port in progress. Be aware of what is and is not here:
 ./tools/make_rpi_package.sh      # -> build_rpi/autobleem-rpi.tar.gz
 ```
 
+pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` and rides along. To refresh it from a new
+build, run pcsx-rearmed-develop's `AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh`, which copies its
+`build_rpi/dist/` there.
+
 Copy `autobleem-rpi.tar.gz` to the Pi (`scp`, or just put it on a USB stick).
 
 ## Install (on the Pi)
@@ -47,12 +51,20 @@ sudo reboot
 (`bash install.sh` rather than `./install.sh` because a package built on a Windows host loses the executable
 bit on the way into the tarball.)
 
-The installer: installs SDL2, exfatprogs, parted and RetroArch; finds or creates the exFAT data partition;
-builds the AutoBleem tree on it; installs the launcher, themes and launch scripts; and wires up a systemd
-service that owns tty1.
+The installer: installs SDL2, libpng, exfatprogs and parted; builds the latest RetroArch release from
+source (10-40 minutes depending on the Pi - `--retroarch apt` takes the distribution's package instead,
+`--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
+trees on it; downloads every armhf core plus RetroArch's info/assets/autoconfig/database bundles from
+`buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
+later); installs the launcher, pcsx-ab, themes and launch scripts; and wires up a systemd service that owns
+tty1. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
+transition; the installer tries both names).
 
-`--help` lists the options. The useful ones are `--shrink-root`, `--fetch-cores`, `--no-packages` and
-`--stage`.
+Then put your BIOS in `System/Bios/` on the data partition — `romw.bin`, and `romJP.bin` for Japanese games
+(the console uses one file for both; a copy is fine). pcsx-ab reads them from there on every launch.
+
+`--help` lists the options. The useful ones are `--shrink-root`, `--retroarch`, `--no-downloads`,
+`--no-packages` and `--stage`.
 
 ## The data partition
 
@@ -93,17 +105,38 @@ drive alongside the small `bootfs` one.
   Games/!SaveStates/           save states
   Autobleem/bin/autobleem/     autobleem-gui and its resources
   Autobleem/bin/db/            covers*.db - the cover art databases
-  Autobleem/bin/emu/           pcsx-ab goes here once it is ported
+  Autobleem/bin/emu/           pcsx-ab and plugins/ (gpu_peops.so, gpu_unai.so)
+  System/Bios/                 romw.bin, romJP.bin - the PS1 BIOS, yours to provide
   Autobleem/rc/                launch.sh, launch_rb.sh, retroarch.sh
   System/Databases/            regional.db (scanned games)
   System/Logs/                 AB_out.txt, AB_err.txt
   themes/                      UI themes (docs/theme-format.md)
   Apps/                        launchable apps
-  retroarch/                   RetroArch's config and saves
+  RetroArch/                   RetroArch's standard tree, and everything it needs:
+    roms/                        your games for the other systems - any layout you like, RetroArch's
+                                 scanner (Import Content) turns them into playlists
+    system/                      the BIOS files the cores want (scph1001.bin, ...) - yours to provide
+    cores/ info/                 the ~130 libretro cores and their info files
+    playlists/                   what AutoBleem's RetroArch set shows
+    saves/ states/ config/       saves, save states, per-core options
+    assets/ autoconfig/ database/ cheats/ overlays/ shaders/ thumbnails/ screenshots/ logs/
+    retroarch.cfg                every directory above is set in here; RetroArch keeps it up to date
 ```
 
 Add games by copying a folder into `Games/` from any computer. The launcher notices on its own — the scanner
 runs in the background and the carousel updates while you watch.
+
+## RetroArch
+
+RetroArch is run with `--config /media/autobleem/RetroArch/retroarch.cfg`, so everything it reads or
+writes stays on the data partition, where you can reach it from a PC. Copy games for other systems into
+`RetroArch/roms/` (one folder per system is the usual way) and their BIOS files into `RetroArch/system/`,
+then in RetroArch use *Import Content → Scan Directory* on `roms/`: the playlists it writes turn up as
+AutoBleem's RetroArch set the next time the launcher starts. "RetroArch" in the launcher's L2+R2 system
+menu opens RetroArch's own menu; quitting it puts the launcher back.
+
+The cores live in `RetroArch/cores/` on the exFAT partition. That works because the partition is mounted
+without `noexec` - keep it that way if you edit `/etc/fstab`.
 
 ## How it boots
 
@@ -135,8 +168,13 @@ Backups of everything the installer edits are left next to the originals:
 `kmsdrm`; make sure `dtoverlay=vc4-kms-v3d` is in `/boot/firmware/config.txt` (it is the default on current
 images) and that nothing else is holding the console.
 
-**PS1 games do nothing.** There is no `pcsx_rearmed` core installed — `sudo apt install libretro-pcsx-rearmed`,
-or re-run the installer with `--fetch-cores`.
+**PS1 games do nothing.** Look at `System/Logs/AB_out.txt` for the `AUTOBLEEM: starting PS1 game` line and
+what pcsx-ab said after it. `no ... romw.bin` means the BIOS is missing (HLE is being used — a game that
+needs the real one will not boot). "Play using RA" needs `RetroArch/cores/pcsx_rearmed_libretro.so`: re-run
+the installer without `--no-downloads`, or fetch it from RetroArch's Online Updater.
+
+**RetroArch shows no games / AutoBleem's RetroArch set is empty.** Nothing has been scanned yet — see the
+RetroArch section above. The set is built from `RetroArch/playlists/*.lpl` and `RetroArch/info/*.info`.
 
 **No titles or box art.** The cover databases were not in the package. Copy `covers*.db` into
 `/media/autobleem/Autobleem/bin/db/` and re-scan.

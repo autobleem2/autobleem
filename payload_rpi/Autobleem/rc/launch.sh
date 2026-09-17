@@ -1,24 +1,27 @@
 #!/usr/bin/env bash
 #
-# PS1 launcher for AutoBleem on a Raspberry Pi - the Pi's version of the console's rc/launch.sh.
+# PS1 launcher for AutoBleem on a Raspberry Pi - the Pi's version of the console's rc/launch.sh, running the
+# same emulator: pcsx-ab (the Pi build from pcsx-rearmed-develop's make_rpi.sh, shipped in Autobleem/bin/emu
+# with its GPU plugins). The run directory is put together the way the console's script does it, so pcsx-ab
+# finds everything where it expects: .pcsx -> the game's !SaveStates folder (pcsx.cfg, memory cards, save
+# states), bios -> System/Bios, plugins -> the emu's plugins.
 #
 # LaunchService::launchPcsx passes, in this order:
 #   $1 ssFolder   the game's !SaveStates folder      $6 resume   1 to load the resume state, 0 for a cold boot
 #   $2 cdfile     the .cue/.pbp/.chd to run          $7 aspect   1 widescreen, 0 4:3
 #   $3 lang                                          $8 filter   1 bilinear, 0 nearest
-#   $4 region                                        $9 pad      always "NA"
+#   $4 region     (the console's script ignores it   $9 pad      always "NA"
+#                 and passes -region 4; so does this)
 #   $5 gameFolder the game's own folder
 #
-# pcsx-ab is not ported to the Pi yet. While it is missing this hands the game to RetroArch's pcsx_rearmed
-# core, which plays it but ignores AutoBleem's own save-state slots (they are pcsx-ab's format, not
-# RetroArch's) - so "Resume" will start the game from the beginning. Drop a Pi build of pcsx-ab into
-# Autobleem/bin/emu/ and this script uses it instead, with no other change anywhere.
+# BIOS: pcsx.cfg says "Bios = SET_BY_PCSX", and pcsx-ab resolves that to bios/romw.bin - or bios/romJP.bin
+# for a game whose serial starts with SLP/SCP - so System/Bios needs both (the console copies romw.bin as
+# romJP.bin). Without them pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not.
 set -uo pipefail
 
 SS_FOLDER="${1:-}"
 CD_FILE="${2:-}"
 LANG_ID="${3:-2}"
-REGION="${4:-4}"
 GAME_FOLDER="${5:-}"
 RESUME="${6:-0}"
 ASPECT="${7:-0}"
@@ -27,7 +30,9 @@ FILTER="${8:-0}"
 RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
 EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu"
-RA_DIR="$DATA_MOUNT/retroarch"
+BIOS_DIR="$DATA_MOUNT/System/Bios"
+RA_DIR="$DATA_MOUNT/RetroArch"
+RUN_DIR=/tmp/runpcsx
 
 echo "AUTOBLEEM: starting PS1 game"
 echo "Cmd: $*"
@@ -38,26 +43,30 @@ if [ -f "$GAME_FOLDER/pcsx.cfg" ] && [ -n "$SS_FOLDER" ]; then
 fi
 
 #*******************************
-# pcsx-ab, once it is ported
+# pcsx-ab
 #*******************************
-if [ -x "$EMU_DIR/pcsx-ab" ]; then
-    echo "Using pcsx-ab"
+if [ -f "$EMU_DIR/pcsx-ab" ]; then
+    # the console copies the emulator to /tmp/pcsx and runs it from there; doing the same keeps the two scripts
+    # alike, and makes the exec bit a non-question whatever the data partition's mount options are
+    cp -f "$EMU_DIR/pcsx-ab" /tmp/pcsx
+    chmod +x /tmp/pcsx
 
-    RUN_DIR=/tmp/runpcsx
     rm -rf "$RUN_DIR"
-    mkdir -p "$RUN_DIR"
+    mkdir -p "$RUN_DIR" "$BIOS_DIR"
     cd "$RUN_DIR" || exit 1
 
     ln -s "$SS_FOLDER" "$RUN_DIR/.pcsx"
-    ln -s "$DATA_MOUNT/System/Bios" "$RUN_DIR/bios"
+    ln -s "$BIOS_DIR" "$RUN_DIR/bios"
     ln -s "$EMU_DIR/plugins" "$RUN_DIR/plugins"
+    # the in-game menu's skin, if the emu ships one (the console's package does not)
+    [ -d "$EMU_DIR/skin" ] && ln -s "$EMU_DIR/skin" "$RUN_DIR/skin"
+
+    [ -f "$BIOS_DIR/romw.bin" ] || echo "AUTOBLEEM: no $BIOS_DIR/romw.bin - pcsx-ab will use its HLE BIOS"
 
     if [ "$RESUME" = "0" ]; then
-        "$EMU_DIR/pcsx-ab" -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region "$REGION" \
-            -enter 1 -cdfile "$CD_FILE"
+        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 -cdfile "$CD_FILE"
     else
-        "$EMU_DIR/pcsx-ab" -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region "$REGION" \
-            -enter 1 -load "$RESUME" -cdfile "$CD_FILE"
+        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 -load "$RESUME" -cdfile "$CD_FILE"
     fi
 
     echo FINISHED
@@ -67,17 +76,20 @@ fi
 #*******************************
 # RetroArch fallback
 #*******************************
+# Only if the package somehow shipped without pcsx-ab. pcsx_rearmed plays the game but cannot read
+# AutoBleem's save-state slots, so "Resume" starts from the beginning.
+echo "AUTOBLEEM: no $EMU_DIR/pcsx-ab - falling back to RetroArch" >&2
+
 CORE=""
 for candidate in \
+    "$RA_DIR/cores/pcsx_rearmed_libretro.so" \
     /usr/lib/arm-linux-gnueabihf/libretro/pcsx_rearmed_libretro.so \
-    /usr/lib/libretro/pcsx_rearmed_libretro.so \
-    "$RA_DIR/cores/pcsx_rearmed_libretro.so"; do
+    /usr/lib/libretro/pcsx_rearmed_libretro.so; do
     [ -f "$candidate" ] && { CORE="$candidate"; break; }
 done
 
 if [ -z "$CORE" ]; then
-    echo "AUTOBLEEM: no pcsx_rearmed core and no pcsx-ab - cannot run this game" >&2
-    echo "Install one with: sudo apt install libretro-pcsx-rearmed" >&2
+    echo "AUTOBLEEM: no pcsx_rearmed core either - cannot run this game" >&2
     exit 1
 fi
 

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <ableem/engine/environment.h>
+#include <ableem/engine/filesystem.h>
 #include <string>
 
 //******************
@@ -38,18 +39,22 @@ public:
     void setRegionalDbFile(const std::string &p) { ableem::Environment::setRegionalDbFile(p); }
     void setInternalDbFile(const std::string &p) { ableem::Environment::setInternalDbFile(p); }
     void setInternalGamesDir(const std::string &p) { ableem::Environment::setInternalGamesDir(p); }
+    void setRetroarchDir(const std::string &p) { ableem::Environment::setRetroarchDir(p); }
 
 private:
     struct Roots {
         std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath;
-        std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir;
+        std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir;
     };
 
     static Roots capture() {
         using E = ableem::Environment;
         return Roots{E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(),
                      E::getPathToInternalDBFile(), E::getWorkingPath(), E::getSonyPath(),
-                     E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir()};
+                     E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
+                     // an explicit override is kept as such; a derived one is "" so the derivation survives
+                     E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "retroarch"
+                         ? std::string() : E::getPathToRetroarchDir()};
     }
 
     static void restore(const Roots &r) {
@@ -63,6 +68,7 @@ private:
         E::setThemesDir(r.themesDir);
         E::setCoversDbDir(r.coversDbDir);
         E::setInternalGamesDir(r.internalGamesDir);
+        E::setRetroarchDir(r.retroarchDir);
     }
 
     Roots saved_;

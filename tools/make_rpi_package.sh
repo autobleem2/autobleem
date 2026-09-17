@@ -6,8 +6,9 @@
 #   ./tools/make_rpi_package.sh        # -> build_rpi/autobleem-rpi.tar.gz
 #
 # The package is payload_rpi/ as checked in (install.sh, README.md, system/ for the host-side files, and the
-# data-partition tree: Autobleem/, Games/, Apps/) with the built parts filled in: the binary and its resources
-# in Autobleem/bin/autobleem, the cover databases in Autobleem/bin/db, and payload/themes as themes/.
+# data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu, put there by
+# pcsx-rearmed-develop's make_rpi.sh - Games/, Apps/) with the built parts filled in: the binary and its
+# resources in Autobleem/bin/autobleem, the cover databases in Autobleem/bin/db, and payload/themes as themes/.
 # install.sh then copies Autobleem/ themes/ Games/ Apps/ onto the exFAT partition as they are.
 #
 # Copy the tarball to the Pi, unpack it, and run install.sh from inside it. See payload_rpi/README.md.
@@ -60,7 +61,7 @@ find "$STAGE" -type f -name placeholder -delete
 
 # Best effort: on a Windows build host the executable bit does not stick, which is why install.sh checks for
 # the binary with -f rather than -x, chmods what it deploys itself, and is documented as "sudo bash install.sh".
-chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui" 2>/dev/null || true
+chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui"          "$STAGE/Autobleem/bin/emu/pcsx-ab" 2>/dev/null || true
 
 echo "==> Building $TARBALL"
 rm -f "$TARBALL"

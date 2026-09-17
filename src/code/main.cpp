@@ -59,6 +59,12 @@ static bool setupEnvironment(int argc, char *argv[]) {
         Env::setWorkingPath(usbRoot + sep + "Autobleem/bin/autobleem");
         Env::setThemesDir(usbRoot + sep + "themes");
         Env::setCoversDbDir(usbRoot + sep + "Autobleem/bin/db");
+#ifdef AB_PLATFORM_RPI
+        // the Pi's installer lays RetroArch out under RetroArch/ on the data partition, in RetroArch's own
+        // standard tree (cores, info, system, roms, playlists, ...), and the distribution's RetroArch runs
+        // against it - see payload_rpi/install.sh. The console's is the RetroBoot tree at retroarch/.
+        Env::setRetroarchDir(usbRoot + sep + "RetroArch");
+#endif
     } else {
         // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)
         Env::setThemesDir(Env::getWorkingPath() + sep + "themes");

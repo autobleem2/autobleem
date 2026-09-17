@@ -20,6 +20,7 @@ namespace {
     string themesDir;
     string coversDbDir;
     string internalGamesDir = "/gaadata";
+    string retroarchDir;   // empty: derived from usbRoot
 }
 
 //*******************************
@@ -34,6 +35,7 @@ void Environment::setSonyDataPath(const string &path) { sonyDataPath = path; }
 void Environment::setThemesDir(const string &path) { themesDir = path; }
 void Environment::setCoversDbDir(const string &path) { coversDbDir = path; }
 void Environment::setInternalGamesDir(const string &path) { internalGamesDir = path; }
+void Environment::setRetroarchDir(const string &path) { retroarchDir = path; }
 
 //*******************************
 // Environment:: getters
@@ -46,7 +48,7 @@ string Environment::getPathToGamesDir() { return gamesDir; }
 string Environment::getPathToMemCardsDir() { return gamesDir + sep + MEMCARDS_DIR_NAME; }
 string Environment::getPathToSaveStatesDir() { return gamesDir + sep + SAVESTATES_DIR_NAME; }
 string Environment::getPathToSystemDir() { return usbRoot + sep + "System"; }
-string Environment::getPathToRetroarchDir() { return usbRoot + sep + "retroarch"; }
+string Environment::getPathToRetroarchDir() { return retroarchDir.empty() ? usbRoot + sep + "retroarch" : retroarchDir; }
 string Environment::getPathToRetroarchPlaylistsDir() { return getPathToRetroarchDir() + sep + "playlists"; }
 string Environment::getPathToRetroarchCoreFile() { return getPathToRetroarchDir() + sep + "cores/km_pcsx_rearmed_neon_libretro.so"; }
 string Environment::getPathToRomsDir() { return usbRoot + sep + "roms"; }
