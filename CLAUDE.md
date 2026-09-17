@@ -312,6 +312,14 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 
 ### Smoke test layout (Windows)
 
+**`python tools/make_usb.py usb`** builds this whole tree in `usb/` (git-ignored) from the repo - payload rc
+scripts and themes, `src/resources` + the fresh exe next to the binary, cover DBs (copied from `db/`, or
+empty ones with the real schema), a copy of `internal.db`, and one generated fake PS1 game (a 24-sector
+MODE2 ISO with `SLUS_012.34`, so the scan finds a serial). Re-running refreshes what comes from the repo and
+keeps what the app wrote; `--fresh` wipes it. The `.vscode/` tasks (`build`, `usb (refresh)`, `run`,
+`smoke test`) and the F5 debug config (gdb from MSYS2, `preLaunchTask` = build + usb refresh) run against it;
+`.vscode/` is git-ignored, so re-create it from this description if it is missing.
+
 A fake USB root works for 1-arg mode. Minimum tree (cover DBs in `db/` are 5 KB stubs, fine for UI testing):
 ```
 usb/Autobleem/bin/autobleem/   <- contents of build_win/ (exe + resources)
