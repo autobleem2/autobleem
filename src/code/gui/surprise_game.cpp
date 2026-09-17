@@ -39,12 +39,13 @@ namespace {
     const float SwayAngularSpeed = 1.0f;   // rad/s at wave 1
     const float RowPhaseStep = 0.7f;       // radians of phase offset between adjacent rows
     const float FormationDriftSpeed = 0.05f;   // px per 16ms frame, downward, scaled by waveSpeedScale
+    const float EnemySpeedStepPerFiveWaves = 0.15f;   // dives, shots and the wave itself, every 5th wave
 
     const unsigned int EntranceStaggerMs = 180;   // extra entrance delay per row
     const unsigned int EntranceColStaggerMs = 40; // extra entrance delay per column, for a diagonal cascade
 
     const int PowerUpDropPercent = 20;   // chance an exploded alien drops a timed power-up (rapid/spread/power)
-    const int ExtraLifeDropPercent = 10; // separate chance it drops an extra life instead
+    const int ExtraLifeDropPercent = 2;  // separate chance it drops an extra life instead (10 was a life a wave)
     const int ExtraLifeEveryNthDrop = 50;   // ...and whatever the dice say, the Nth drop since the last one is a life
     const float ExtraLifeFallScale = 0.6f;  // a life falls slower than the timed power-ups, so it can be caught
     const unsigned int PowerUpDurationMs = 10000;
@@ -105,7 +106,11 @@ void SurpriseGame::spawnWave(unsigned int nowTicks) {
         }
     }
     formationY = 0;
+    // 12% quicker each wave, and a further step every fifth wave (5, 10, 15, ...) - the step is what makes
+    // the dives and the shots faster too, which the per-wave ramp deliberately leaves alone
     waveSpeedScale = 1.0f + (wave - 1) * 0.12f;
+    enemySpeedScale = 1.0f + ((wave - 1) / 5) * EnemySpeedStepPerFiveWaves;
+    waveSpeedScale *= enemySpeedScale;
     playerBullets.clear();
     alienBullets.clear();
 }
@@ -223,7 +228,7 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
         if (!a.alive) continue;
 
         if (a.diving) {
-            a.diveT += dtFrames / DiveDurationFrames;
+            a.diveT += dtFrames * enemySpeedScale / DiveDurationFrames;
             if (a.diveT >= 1.0f) {
                 // off the bottom of the screen now - loop back in from the top instead of teleporting
                 // straight back into the formation slot, so it reads as "flying back", not "reappearing"
@@ -310,7 +315,7 @@ void SurpriseGame::updateBullets(float dtFrames) {
     }
     for (Bullet &b : alienBullets) {
         if (!b.alive) continue;
-        b.y += AlienBulletSpeed * dtFrames;
+        b.y += AlienBulletSpeed * enemySpeedScale * dtFrames;
         if (b.y > SCREEN_HEIGHT) b.alive = false;
     }
     playerBullets.erase(remove_if(playerBullets.begin(), playerBullets.end(),

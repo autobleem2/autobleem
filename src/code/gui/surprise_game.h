@@ -132,7 +132,8 @@ private:
     // the formation's continuous Warblade-style weave: each row sways on its own sine phase and the whole
     // wave slowly creeps downward (capped) rather than bouncing off the screen edges as a rigid block
     float formationY = 0;
-    float waveSpeedScale = 1.0f;   // faster sway/descent/dives on later waves
+    float waveSpeedScale = 1.0f;   // faster sway/descent/dive frequency on later waves
+    float enemySpeedScale = 1.0f;  // the every-5th-wave step: dive and shot speed (also folded into the above)
 
     PowerUpType activePowerUp = PowerUpType::None;
     unsigned int powerUpUntilTicks = 0;
