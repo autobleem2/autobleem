@@ -3,6 +3,7 @@
 //
 
 #include "gui_game_manager_menu.h"
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include "gui_game_editor_menu.h"
@@ -17,6 +18,8 @@ void GuiManager::init() {
     useSmallerFont = true;
     GuiMenuBase::init();    // call the base class init()
 
+    // init() runs again after the editor closes and after a delete: the rows are rebuilt, not appended
+    lines.clear();
     psGames.clear();
     psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames());    // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);  // sort by title
@@ -118,6 +121,11 @@ void GuiManager::doSquare_Pressed() {
     app.session().forceScan = true;  // in order for the sub dir hierarchy to be fixed we have to do a rescan
     //menuVisible = false;
     init(); // refresh games list and menu item count
+    if (selected >= (int) psGames.size()) {   // the last game went: the cursor cannot stay past the end
+        selected = psGames.empty() ? 0 : psGames.size() - 1;
+        firstVisibleIndex = std::max(0, selected - maxVisible + 1);
+        lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
+    }
     render();
 }
 

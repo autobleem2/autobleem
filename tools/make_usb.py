@@ -195,6 +195,11 @@ def main():
     if not os.path.exists(os.path.join(databases, 'internal.db')):
         shutil.copy2(os.path.join(REPO, 'src', 'resources', 'internal.db'), databases)
 
+    # the app writes an EmulationStation gamelist here after a scan, and demands a scan at every boot while the
+    # file is missing - the directory has to exist for it to be written at all
+    os.makedirs(os.path.join(usb, 'retroarch', 'retroboot', 'emulationstation', '.emulationstation', 'gamelists', 'psx'),
+                exist_ok=True)
+
     games = os.path.join(usb, 'Games')
     os.makedirs(games, exist_ok=True)
     make_fake_game(games)

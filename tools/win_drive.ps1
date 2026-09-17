@@ -5,6 +5,7 @@
 #
 # usage: powershell -ExecutionPolicy Bypass -File tools\win_drive.ps1 -Usb <fake usb root> [-Sequence "<keys>"] [-InitialWait 8]
 #   Sequence: key names separated by ';' each followed by a wait in seconds, e.g. "x;3;space;6"
+#     "q+o" holds the first key while tapping the last (L1 + Circle = game manager in the classic menu)
 #   key names (see PadMapper translateKeyboardToPad): x o s t = cross circle square triangle,
 #     i j k l = d-pad, space = Start, b = Select, q e 1 2 = L1 R1 L2 R2, esc = power off
 param([Parameter(Mandatory=$true)][string]$Usb, [string]$Sequence = "", [int]$InitialWait = 8)
@@ -32,14 +33,24 @@ public class W {
 $keys = @{ x=@(0x58,0x2D); o=@(0x4F,0x18); s=@(0x53,0x1F); t=@(0x54,0x14); space=@(0x20,0x39); b=@(0x42,0x30)
            q=@(0x51,0x10); e=@(0x45,0x12); '1'=@(0x31,0x02); '2'=@(0x32,0x03); esc=@(0x1B,0x01)
            i=@(0x49,0x17); j=@(0x4A,0x24); k=@(0x4B,0x25); l=@(0x4C,0x26) }
-function Press($h, $name) {
+function KeyDown($h, $name) {
   $k = $keys[$name]; if ($null -eq $k) { "unknown key $name"; return }
-  $vk = [IntPtr]$k[0]; $sc = $k[1]
-  $down = [IntPtr](($sc -shl 16) -bor 1)
-  $up   = [IntPtr](($sc -shl 16) -bor 1 -bor (1 -shl 30) -bor (1 -shl 31))
-  [W]::PostMessage($h, 0x100, $vk, $down) | Out-Null   # WM_KEYDOWN
+  [W]::PostMessage($h, 0x100, [IntPtr]$k[0], [IntPtr](($k[1] -shl 16) -bor 1)) | Out-Null   # WM_KEYDOWN
+}
+function KeyUp($h, $name) {
+  $k = $keys[$name]; if ($null -eq $k) { return }
+  [W]::PostMessage($h, 0x101, [IntPtr]$k[0], [IntPtr](($k[1] -shl 16) -bor 1 -bor (1 -shl 30) -bor (1 -shl 31))) | Out-Null   # WM_KEYUP
+}
+# "q+o": hold every key but the last (L1 is a modifier in the classic menu), tap the last, release
+function Press($h, $chord) {
+  $names = $chord.Split('+')
+  $held = @(); if ($names.Length -gt 1) { $held = $names[0..($names.Length - 2)] }
+  foreach ($n in $held) { KeyDown $h $n; Start-Sleep -Milliseconds 150 }
+  KeyDown $h $names[-1]
   Start-Sleep -Milliseconds 120
-  [W]::PostMessage($h, 0x101, $vk, $up) | Out-Null     # WM_KEYUP
+  KeyUp $h $names[-1]
+  [array]::Reverse($held)
+  foreach ($n in $held) { Start-Sleep -Milliseconds 150; KeyUp $h $n }
 }
 Copy-Item $Exe "$U\Autobleem\bin\autobleem\" -Force
 Set-Location "$U\Autobleem\bin\autobleem"
