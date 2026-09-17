@@ -294,6 +294,9 @@ void GuiLauncher::loop_joyButton_Pressed() {
 
     } else if (e.button == Button::Cross) {
         loop_crossButton_Pressed();
+
+    } else if (e.button == Button::R2) {
+        loop_r2Button_Pressed();
     };
 }
 

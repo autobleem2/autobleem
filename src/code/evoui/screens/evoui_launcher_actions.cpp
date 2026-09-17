@@ -8,11 +8,17 @@
 #include "../../gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
 #include "../../gui/screens/gui_confirm.h"
+#include "../../gui/screens/gui_about.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "../../gui/menus/gui_playlists_menu.h"
 #include "../../gui/menus/gui_game_dir_menu.h"
+#include "../../gui/menus/gui_memcards_menu.h"
+#include "../../gui/menus/gui_game_manager_menu.h"
+#include "../../core/services/environment.h"
+#include "../../core/services/system.h"
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
+#include "evoui_system_menu.h"
 
 #include <algorithm>
 #include <iostream>
@@ -474,6 +480,116 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             } else {
                 state = LauncherScreenState::Games;
             }
+        }
+    }
+}
+
+//*******************************
+// GuiLauncher::loop_r2Button_Pressed
+//*******************************
+// the system menu: everything the classic main menu used to offer, now reached from here (docs/refactor-plan.md
+// Step 4). GuiSystemMenu only picks; every action below is what ClassicMenuScreen used to do for the same item.
+void GuiLauncher::loop_r2Button_Pressed() {
+    app.audio().cursor.play();
+
+    string retroArchLabel = _("RetroArch");
+    string cfgPath = Env::getPathToRetroarchDir() + sep + "retroboot/retroboot.cfg";
+    if (DirEntry::exists(cfgPath)) {
+        IniFile RBcfg;
+        RBcfg.load(cfgPath);
+        if (RBcfg.values["use_emulationstation"] == "1")
+            retroArchLabel = _("EmulationStation");
+    }
+
+    SystemMenuAction action;
+    {
+        GuiSystemMenu systemMenu(*gui);
+        systemMenu.retroArchLabel = retroArchLabel;
+        systemMenu.scanInProgress = app.scans().scanning();
+        systemMenu.show();
+        action = systemMenu.result;
+    }
+
+    switch (action) {
+        case SystemMenuAction::None:
+            break;
+
+        case SystemMenuAction::RescanGames:
+            if (!app.scans().requestScan())
+                notificationLines[1].setText(_("A scan is already in progress"), DefaultShowingTimeout);
+            break;
+
+        case SystemMenuAction::RetroArch: {
+            if (!DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) {   // retroarch is a file!!
+                GuiConfirm confirm(*gui);
+                confirm.label = _("RetroArch is not installed");
+                confirm.show();
+                if (!confirm.result)
+                    break;
+            } else {
+                app.library().exportToRetroArchPlaylist();
+            }
+            app.session().menuOption = MENU_OPTION_RETRO;
+            menuVisible = false;
+            break;
+        }
+
+        case SystemMenuAction::MemoryCards: {
+            GuiMemcards memcardsScreen(*gui);
+            memcardsScreen.show();
+            break;
+        }
+
+        case SystemMenuAction::GameManager: {
+            // it deletes game folders outright - letting the scanner read the same tree at the same time
+            // is asking for trouble, so this is the one item the menu still refuses while scanning() is true
+            if (app.scans().scanning()) {
+                notificationLines[1].setText(_("Can't manage games while a scan is running"), DefaultShowingTimeout);
+                break;
+            }
+            GuiManager managerScreen(*gui);
+            managerScreen.show();
+            if (selection.set == GameSet::PS1)
+                reloadGames();
+            break;
+        }
+
+        case SystemMenuAction::HardwareInfo: {
+            app.audio().close();
+            gui->input().flushPads();
+#ifdef AB_DEBUG_HOST
+            gui->drawText("Small delay to test");
+            gui->platform().delay(2000);
+#endif
+            string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
+            System::runAndWait(cmd, {});
+            gui->input().flushEvents();
+            gui->input().probePads();
+            app.audio().restart();
+            app.audio().playMusic();
+            break;
+        }
+
+        case SystemMenuAction::Options:
+            // same screen, same reload, as the settings icon in the Set overlay
+            loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
+            break;
+
+        case SystemMenuAction::About: {
+            GuiAbout aboutScreen(*gui);
+            aboutScreen.show();
+            break;
+        }
+
+        case SystemMenuAction::PowerOff: {
+            GuiConfirm confirm(*gui);
+            confirm.label = _("Are you sure you want to power off?");
+            confirm.show();
+            if (confirm.result) {
+                gui->drawText(_("POWERING OFF... PLEASE WAIT"));
+                System::powerOff();
+            }
+            break;
         }
     }
 }

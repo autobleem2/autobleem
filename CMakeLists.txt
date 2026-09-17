@@ -250,6 +250,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_launcher.h
         src/code/evoui/screens/evoui_mc_manager.cpp
         src/code/evoui/screens/evoui_mc_manager.h
+        src/code/evoui/screens/evoui_system_menu.cpp
+        src/code/evoui/screens/evoui_system_menu.h
         src/code/evoui/screens/evoui_launcher_actions.cpp
         src/code/evoui/screens/evoui_launcher_input.cpp
         src/code/evoui/screens/evoui_launcher_screen.cpp

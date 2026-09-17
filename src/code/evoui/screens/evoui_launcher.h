@@ -81,6 +81,7 @@ public:
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD();
     void loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
     void loop_crossButtonPressed_STATE_RESUME();
+    void loop_r2Button_Pressed();   // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, ...
 
     // a button is released
     void loop_joyButtonReleased();
