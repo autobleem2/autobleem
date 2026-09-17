@@ -13,40 +13,27 @@ using ableem::Texture;
 //*******************************
 ThemeAssets::ThemeAssets(ableem::Renderer &renderer, Theme &theme, Config &config)
     : renderer_(renderer), theme_(theme), config_(config) {
-    sonyFonts.openAllFonts(Env::getSonyFontPath(), renderer_);
-    themeFonts.openAllFonts(theme_.fontPath(), renderer_);
-}
-
-//*******************************
-// ThemeAssets::loadThemeTexture
-//*******************************
-Texture ThemeAssets::loadThemeTexture(const string &themePath, const string &defaultPath, const string &texname) {
-    Texture tex;
-    if (DirEntry::exists(themePath + theme_.data.values[texname])) {
-        tex = Texture::loadFile(renderer_, themePath + theme_.data.values[texname]);
-    } else {
-        tex = Texture::loadFile(renderer_, defaultPath + theme_.defaults.values[texname]);
-    }
-    return tex;
+    sonyFonts.openAllFonts(Env::getSonyFontPath() + sep + "SST-Medium.ttf", Env::getSonyFontPath() + sep + "SST-Bold.ttf",
+                           renderer_);
 }
 
 //*******************************
 // ThemeAssets::load
 //*******************************
 void ThemeAssets::load() {
-    theme_.load();     // (re)reads theme.ini, falling back to themes/default
-    const string themePath = theme_.loadedPath();
-    const string defaultPath = theme_.defaultsPath();
+    theme_.load();     // (re)reads theme.json, merged over themes/default, every file resolved
+    const ClassicTheme &classic = theme_.classic();
+    const LauncherTheme &launcher = theme_.launcher();
 
     backgroundImg = Texture();  // release the previous theme's textures before loading the new ones
 
-    logoRect.x = atoi(theme_.data.values["lpositionx"].c_str());
-    logoRect.y = atoi(theme_.data.values["lpositiony"].c_str());
-    logoRect.w = atoi(theme_.data.values["lw"].c_str());
-    logoRect.h = atoi(theme_.data.values["lh"].c_str());
+    logoRect.x = classic.logo.x;
+    logoRect.y = classic.logo.y;
+    logoRect.w = classic.logo.w;
+    logoRect.h = classic.logo.h;
 
-    backgroundImg = loadThemeTexture(themePath, defaultPath, "background");
-    logo = loadThemeTexture(themePath, defaultPath, "logo");
+    backgroundImg = Texture::loadFile(renderer_, classic.background);
+    logo = Texture::loadFile(renderer_, classic.logo.file);
     if (config_.inifile.values["jewel"] != "none") {
         if (config_.inifile.values["jewel"] == "default") {
             cdJewel = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/nofilter.png");
@@ -59,26 +46,27 @@ void ThemeAssets::load() {
         cdJewel = Texture();
     }
 
-    buttonTextureMap["O"] = loadThemeTexture(themePath, defaultPath, "circle");
-    buttonTextureMap["X"] = loadThemeTexture(themePath, defaultPath, "cross");
-    buttonTextureMap["T"] = loadThemeTexture(themePath, defaultPath, "triangle");
-    buttonTextureMap["S"] = loadThemeTexture(themePath, defaultPath, "square");
-    buttonTextureMap["Select"] = loadThemeTexture(themePath, defaultPath, "select");
-    buttonTextureMap["Start"] = loadThemeTexture(themePath, defaultPath, "start");
-    buttonTextureMap["L1"] = loadThemeTexture(themePath, defaultPath, "l1");
-    buttonTextureMap["R1"] = loadThemeTexture(themePath, defaultPath, "r1");
-    buttonTextureMap["L2"] = loadThemeTexture(themePath, defaultPath, "l2");
-    buttonTextureMap["R2"] = loadThemeTexture(themePath, defaultPath, "r2");
-    buttonTextureMap["Check"] = loadThemeTexture(themePath, defaultPath, "check");
-    buttonTextureMap["Uncheck"] = loadThemeTexture(themePath, defaultPath, "uncheck");
-    buttonTextureMap["Esc"] = loadThemeTexture(themePath, defaultPath, "esc");
-    buttonTextureMap["Enter"] = loadThemeTexture(themePath, defaultPath, "enter");
-    buttonTextureMap["Tab"] = loadThemeTexture(themePath, defaultPath, "tab");
+    const auto &b = classic.buttons;
+    buttonTextureMap["O"] = Texture::loadFile(renderer_, b.circle);
+    buttonTextureMap["X"] = Texture::loadFile(renderer_, b.cross);
+    buttonTextureMap["T"] = Texture::loadFile(renderer_, b.triangle);
+    buttonTextureMap["S"] = Texture::loadFile(renderer_, b.square);
+    buttonTextureMap["Select"] = Texture::loadFile(renderer_, b.select);
+    buttonTextureMap["Start"] = Texture::loadFile(renderer_, b.start);
+    buttonTextureMap["L1"] = Texture::loadFile(renderer_, b.l1);
+    buttonTextureMap["R1"] = Texture::loadFile(renderer_, b.r1);
+    buttonTextureMap["L2"] = Texture::loadFile(renderer_, b.l2);
+    buttonTextureMap["R2"] = Texture::loadFile(renderer_, b.r2);
+    buttonTextureMap["Check"] = Texture::loadFile(renderer_, b.check);
+    buttonTextureMap["Uncheck"] = Texture::loadFile(renderer_, b.uncheck);
+    buttonTextureMap["Esc"] = Texture::loadFile(renderer_, b.esc);
+    buttonTextureMap["Enter"] = Texture::loadFile(renderer_, b.enter);
+    buttonTextureMap["Tab"] = Texture::loadFile(renderer_, b.tab);
 
-    string fontPath = (themePath + theme_.data.values["font"]);
-    int fontSize = 0;
-    string fontSizeString = theme_.data.values["fsize"];
-    if (fontSizeString != "")
-        fontSize = atoi(fontSizeString.c_str());
-    themeFont = Fonts::openNewSharedCachedFont(fontPath, fontSize, renderer_);
+    themeFont = Fonts::openNewSharedCachedFont(classic.font.file, classic.font.size, renderer_);
+
+    // a theme without launcher fonts (and a default theme without them either) gets the console's own
+    string medium = launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
+    string bold = launcher.fonts.bold.empty() ? Env::getSonyFontPath() + sep + "SST-Bold.ttf" : launcher.fonts.bold;
+    themeFonts.openAllFonts(medium, bold, renderer_);
 }

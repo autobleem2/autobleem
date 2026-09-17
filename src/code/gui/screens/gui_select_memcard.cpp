@@ -33,7 +33,7 @@ void GuiSelectMemcard::init() {
 
 
     }
-    maxVisible = atoi(app.theme().data.values["lines"].c_str());
+    maxVisible = app.theme().classic().menuLines;
     firstVisible = 0;
     lastVisible = firstVisible + maxVisible;
 

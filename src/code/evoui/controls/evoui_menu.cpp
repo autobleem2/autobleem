@@ -8,19 +8,11 @@ using namespace std;
 //*******************************
 // PsMenu::PsMenu
 //*******************************
-PsMenu::PsMenu(string name1, string texPath) : PsObj(name1, "") {
-    path = texPath;
-    loadAssets();
-}
-
-//*******************************
-// PsMenu::loadAssets
-//*******************************
-void PsMenu::loadAssets() {
-    settings = ableem::Texture::loadFile(renderer, path + "/CB/Setting_ICN.png");
-    guide = ableem::Texture::loadFile(renderer, path + "/CB/Manual_ICN.png");
-    memcard = ableem::Texture::loadFile(renderer, path + "/CB/MemoryCard_ICN.png");
-    savestate = ableem::Texture::loadFile(renderer, path + "/CB/Resume.png");
+PsMenu::PsMenu(string name1, const LauncherTheme::MenuIcons &icons) : PsObj(name1, "") {
+    settings = ableem::Texture::loadFile(renderer, icons.settings);
+    guide = ableem::Texture::loadFile(renderer, icons.guide);
+    memcard = ableem::Texture::loadFile(renderer, icons.memcard);
+    savestate = ableem::Texture::loadFile(renderer, icons.resume);
     x = 640 - 118 / 2;
     y = 520;
     oy = y;

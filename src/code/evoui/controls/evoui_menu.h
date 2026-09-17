@@ -6,6 +6,7 @@
 
 #include <ableem/ui/texture.h>
 #include "evoui_obj.h"
+#include "../../core/main.h"
 #include <string>
 
 #define TR_MENUON 0
@@ -39,9 +40,6 @@ public:
     bool foreign = false;
     int direction = 0;
 
-    std::string path;
-
-    void loadAssets();
     void freeAssets();
     void update(long time);
     void render();
@@ -50,5 +48,6 @@ public:
 
     int transition =0;
 
-    PsMenu(std::string name1, std::string texPath = "");
+    // the four icons come from the theme's launcher.menuIcons, already resolved to files
+    PsMenu(std::string name1, const LauncherTheme::MenuIcons &icons);
 };

@@ -51,5 +51,5 @@ private:
 
     bool customMusic = false;    // true when config.ini names a track of the user's own
     int freq = 44100;
-    std::string musicPath;       // the theme's music value, or the custom file name
+    std::string musicPath;       // the theme's music file (resolved), or the custom file name
 };

@@ -45,8 +45,7 @@ void GuiKeyboard::render() {
     // drawRectangle lambda
     //*******************************
     auto drawRectangle = [&] (ableem::Rect& rect) {
-        string fg = app.theme().data.values["text_fg"];
-        renderer.setDrawColor(ableem::Color(gui->text().getR(fg), gui->text().getG(fg), gui->text().getB(fg), 255));
+        renderer.setDrawColor(TextRenderer::toColor(app.theme().classic().textColor, 255));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.drawRect(rect);
         ableem::Rect rectSelection2;
@@ -105,9 +104,8 @@ void GuiKeyboard::render() {
 
                 rectSelection.x = rectSelection.x + ((buttonWidth + 11) * x);
 
-                string bg = app.theme().data.values["key_bg"];
-                renderer.setDrawColor(ableem::Color(gui->text().getR(bg), gui->text().getG(bg), gui->text().getB(bg),
-                                       atoi(app.theme().data.values["keyalpha"].c_str())));
+                const ableem::ThemeFill &key = app.theme().classic().keyboardKey;
+                renderer.setDrawColor(TextRenderer::toColor(key.color, key.alpha));
                 renderer.setBlendMode(ableem::BlendMode::Blend);
                 renderer.fillRect(rectSelection);
 

@@ -27,10 +27,8 @@ public:
                  std::map<std::string, ableem::Texture> &emojis)
         : renderer_(renderer), theme_(theme), themeFont_(themeFont), emojis_(emojis) {}
 
-    // the theme's colours are "r,g,b" strings
-    static unsigned char getR(const std::string &val);
-    static unsigned char getG(const std::string &val);
-    static unsigned char getB(const std::string &val);
+    // a theme colour with an alpha, as the renderer takes it
+    static ableem::Color toColor(const ThemeColor &color, int alpha);
 
     //*******************************
     // Rect and Size routines

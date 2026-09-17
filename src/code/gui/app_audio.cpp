@@ -17,12 +17,12 @@ using namespace std;
 void AppAudio::playMusic() {
     if (config_.inifile.values["nomusic"] == "true") return;
 
-    Theme &theme = theme_;
-    if (theme.data.values["loop"] == "-1") return;
+    const ableem::ThemeMusic &themeMusic = theme_.music();
+    if (themeMusic.none) return;   // a silent theme stays silent, the user's own track included
 
     if (!customMusic) {
-        music = ableem::Music::load(theme.loadedPath() + theme.data.values["music"]);
-        music.play(theme.data.values["loop"] == "1" ? -1 : 0);
+        music = ableem::Music::load(themeMusic.file);
+        music.play(themeMusic.loop ? -1 : 0);
     } else {
         music = ableem::Music::load(Env::getWorkingPath() + sep + "music/" + musicPath);
         music.play(-1);
@@ -40,15 +40,13 @@ void AppAudio::freeMusic() {
 // AppAudio::loadTheme
 //*******************************
 void AppAudio::loadTheme(bool reloadMusic) {
-    Theme &theme = theme_;
-
     if (reloadMusic) {
         freeMusic();
     }
 
     customMusic = false;
     freq = 32000;
-    musicPath = theme.data.values["music"];
+    musicPath = theme_.music().file;
     if (config_.inifile.values["music"] != "--") {
         customMusic = true;
         musicPath = config_.inifile.values["music"];
@@ -63,12 +61,12 @@ void AppAudio::loadTheme(bool reloadMusic) {
         playMusic();
     }
 
-    string sounds = theme.soundPath() + sep;
-    cursor = ableem::Sound::load(sounds + "cursor.wav");
-    cancel = ableem::Sound::load(sounds + "cancel.wav");
-    home_up = ableem::Sound::load(sounds + "home_up.wav");
-    home_down = ableem::Sound::load(sounds + "home_down.wav");
-    resume = ableem::Sound::load(sounds + "resume_new.wav");
+    const ableem::ThemeSounds &sounds = theme_.sounds();
+    cursor = ableem::Sound::load(sounds.cursor);
+    cancel = ableem::Sound::load(sounds.cancel);
+    home_up = ableem::Sound::load(sounds.homeUp);
+    home_down = ableem::Sound::load(sounds.homeDown);
+    resume = ableem::Sound::load(sounds.resume);
 }
 
 //*******************************

@@ -201,8 +201,8 @@ void GuiEditor::render() {
     gui->renderStatus(guiMenu);
 
     ableem::Rect rect;
-    rect.x = atoi(app.theme().data.values["ecoverx"].c_str());
-    rect.y = atoi(app.theme().data.values["ecovery"].c_str());
+    rect.x = app.theme().classic().editorCover.x;
+    rect.y = app.theme().classic().editorCover.y;
     rect.w = 226;
     rect.h = 226;
 

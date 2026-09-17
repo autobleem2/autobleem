@@ -104,9 +104,8 @@ void Gui::finish() {
 // Gui::renderFreeSpace
 //*******************************
 void Gui::renderFreeSpace() {
-    int x = atoi(App::get().theme().data.values["fsposx"].c_str());
-    int y = atoi(App::get().theme().data.values["fsposy"].c_str());
-    text_.renderText(assets_.themeFont, _("Free space") + " : " + System::getAvailableSpace(), x, y);
+    const ableem::ThemePoint &pos = App::get().theme().classic().freeSpaceText;
+    text_.renderText(assets_.themeFont, _("Free space") + " : " + System::getAvailableSpace(), pos.x, pos.y);
 }
 
 //*******************************
@@ -127,8 +126,8 @@ int Gui::renderLogo(bool small) {
         return 0;
     } else {
         Rect rect;
-        rect.x = atoi(App::get().theme().data.values["opscreenx"].c_str());
-        rect.y = atoi(App::get().theme().data.values["opscreeny"].c_str());
+        rect.x = App::get().theme().classic().menuPanel.x;
+        rect.y = App::get().theme().classic().menuPanel.y;
         rect.w = assets_.logoRect.w / 3;
         rect.h = assets_.logoRect.h / 3;
         renderer().copy(assets_.logo, nullptr, &rect);
@@ -140,15 +139,14 @@ int Gui::renderLogo(bool small) {
 // Gui::renderStatus
 //*******************************
 void Gui::renderStatus(const string &text, int posy) {
-    string bg = App::get().theme().data.values["text_bg"];
+    const ableem::ThemeStatusBar &bar = App::get().theme().classic().statusBar;
 
-    renderer().setDrawColor(Color(TextRenderer::getR(bg), TextRenderer::getG(bg), TextRenderer::getB(bg),
-                                  atoi(App::get().theme().data.values["textalpha"].c_str())));
+    renderer().setDrawColor(TextRenderer::toColor(bar.color, bar.alpha));
     renderer().setBlendMode(ableem::BlendMode::Blend);
     Rect rect = text_.getTextRectOfTheme();
     renderer().fillRect(rect);
 
-    int y = atoi(App::get().theme().data.values["ttop"].c_str());
+    int y = bar.textY;
     if (posy!=-1)
         y=posy; // override the bottom status y position.  so far this has never been used.
 
@@ -159,9 +157,8 @@ void Gui::renderStatus(const string &text, int posy) {
 // Gui::renderTextBar
 //*******************************
 void Gui::renderTextBar() {
-    string bg = App::get().theme().data.values["main_bg"];
-    renderer().setDrawColor(Color(TextRenderer::getR(bg), TextRenderer::getG(bg), TextRenderer::getB(bg),
-                                  atoi(App::get().theme().data.values["mainalpha"].c_str())));
+    const ableem::ThemePanel &panel = App::get().theme().classic().menuPanel;
+    renderer().setDrawColor(TextRenderer::toColor(panel.color, panel.alpha));
     renderer().setBlendMode(ableem::BlendMode::Blend);
 
     Rect rect2 = text_.getOpscreenRectOfTheme();

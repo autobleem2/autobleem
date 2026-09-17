@@ -16,18 +16,10 @@ using ableem::Color;
 #define SCREEN_WIDTH  ableem::GuiBase::ScreenWidth
 
 //*******************************
-// TextRenderer::getR / getG / getB
+// TextRenderer::toColor
 //*******************************
-unsigned char TextRenderer::getR(const string &val) {
-    return atoi(Strings::commaSep(val, 0).c_str());
-}
-
-unsigned char TextRenderer::getG(const string &val) {
-    return atoi(Strings::commaSep(val, 1).c_str());
-}
-
-unsigned char TextRenderer::getB(const string &val) {
-    return atoi(Strings::commaSep(val, 2).c_str());
+Color TextRenderer::toColor(const ThemeColor &color, int alpha) {
+    return Color(color.r, color.g, color.b, alpha);
 }
 
 //*******************************
@@ -73,11 +65,12 @@ Rect TextRenderer::getFontTextRect(const ableem::Font &font, const char *text, i
 // TextRenderer::getOpscreenRectOfTheme
 //*******************************
 Rect TextRenderer::getOpscreenRectOfTheme() {
+    const ableem::ThemePanel &panel = theme_.classic().menuPanel;
     Rect rect;
-    rect.x = atoi(theme_.data.values["opscreenx"].c_str());
-    rect.y = atoi(theme_.data.values["opscreeny"].c_str());
-    rect.w = atoi(theme_.data.values["opscreenw"].c_str());
-    rect.h = atoi(theme_.data.values["opscreenh"].c_str());
+    rect.x = panel.x;
+    rect.y = panel.y;
+    rect.w = panel.w;
+    rect.h = panel.h;
 
     return rect;
 }
@@ -86,11 +79,12 @@ Rect TextRenderer::getOpscreenRectOfTheme() {
 // TextRenderer::getTextRectOfTheme
 //*******************************
 Rect TextRenderer::getTextRectOfTheme() {
+    const ableem::ThemeStatusBar &bar = theme_.classic().statusBar;
     Rect rect;
-    rect.x = atoi(theme_.data.values["textx"].c_str());
-    rect.y = atoi(theme_.data.values["texty"].c_str());
-    rect.w = atoi(theme_.data.values["textw"].c_str());
-    rect.h = atoi(theme_.data.values["texth"].c_str());
+    rect.x = bar.x;
+    rect.y = bar.y;
+    rect.w = bar.w;
+    rect.h = bar.h;
 
     return rect;
 }
@@ -361,7 +355,6 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
     if (!font.valid())
         font = themeFont_;
 
-    string fg = theme_.data.values["text_fg"];
     int fontHeight = font.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
@@ -370,7 +363,7 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
     rectSelection.w = opscreen.w - 10 - xoffset;
     rectSelection.h = fontHeight;
 
-    renderer_.setDrawColor(Color(getR(fg), getG(fg), getB(fg), 255));
+    renderer_.setDrawColor(toColor(theme_.classic().textColor, 255));
     renderer_.setBlendMode(ableem::BlendMode::Blend);
     renderer_.drawRect(rectSelection);
 }
@@ -379,7 +372,6 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
 // TextRenderer::renderLabelBox
 //*******************************
 void TextRenderer::renderLabelBox(int line, int yoffset) {
-    string bg = theme_.data.values["label_bg"];
     int fontHeight = themeFont_.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
@@ -388,7 +380,7 @@ void TextRenderer::renderLabelBox(int line, int yoffset) {
     rectSelection.w = opscreen.w - 10;
     rectSelection.h = fontHeight;
 
-    renderer_.setDrawColor(Color(getR(bg), getG(bg), getB(bg), atoi(theme_.data.values["keyalpha"].c_str())));
+    renderer_.setDrawColor(toColor(theme_.classic().labelColor, theme_.classic().keyboardKey.alpha));
     renderer_.setBlendMode(ableem::BlendMode::Blend);
     renderer_.fillRect(rectSelection);
 }

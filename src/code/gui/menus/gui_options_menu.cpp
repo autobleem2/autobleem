@@ -1,6 +1,7 @@
 #include "gui_options_menu.h"
 #include "../../core/services/system.h"
 #include "../../core/services/environment.h"
+#include "../../core/services/theme_converter.h"
 
 using namespace std;
 
@@ -20,7 +21,9 @@ vector<string> GuiOptions::getThemes() {
     string uiThemePath = Env::getPathToThemesDir();
     DirEntries uiThemeFolders = DirEntry::diru_DirsOnly(uiThemePath);
     for (const DirEntry &entry : uiThemeFolders) {
-        if (DirEntry::exists(uiThemePath + sep + entry.name + sep + "theme.ini")) {
+        // a theme.json, or an old-layout folder that Theme::load() will convert when it is picked
+        const string dir = uiThemePath + sep + entry.name;
+        if (DirEntry::exists(dir + sep + "theme.json") || ThemeConverter::needsConversion(dir)) {
             list.push_back(entry.name); // add the theme dir name
         }
     }

@@ -19,8 +19,8 @@ void GuiMcManager::init() {
 
 void GuiMcManager::loadAssets() {
     shared_ptr<Gui> gui(Gui::getInstance());
-    mcGrid = ableem::Texture::loadFile(renderer, app.theme().imagePath() + sep + "MC/Dot_Matrix.png");
-    mcPencil = ableem::Texture::loadFile(renderer, app.theme().imagePath() + sep + "MC/Pencil_Carsor.png");
+    mcGrid = ableem::Texture::loadFile(renderer, app.theme().launcher().memcardManager.grid);
+    mcPencil = ableem::Texture::loadFile(renderer, app.theme().launcher().memcardManager.pencil);
     fontJIS = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "japanese.ttf", 20, renderer);
 
     memcard1.reset(new CardEdit(renderer));

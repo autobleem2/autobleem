@@ -42,12 +42,8 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 ableem::Font Fonts::openSpecificSharedCachedFont(FontType type, int fontSize) {
     auto gui = Gui::getInstance();
 
-    string rootPath = App::get().theme().fontPath();
-    string fontPath;
-    if (type == FONT_MED)
-        fontPath = rootPath + sep + "SST-Medium.ttf";
-    else
-        fontPath = rootPath + sep + "SST-Bold.ttf";
+    const LauncherTheme &launcher = App::get().theme().launcher();
+    string fontPath = (type == FONT_MED) ? launcher.fonts.medium : launcher.fonts.bold;
 
     return openNewSharedCachedFont(fontPath, fontSize, gui->renderer());
 }
@@ -55,11 +51,10 @@ ableem::Font Fonts::openSpecificSharedCachedFont(FontType type, int fontSize) {
 //********************
 // Fonts::openAllFonts
 //********************
-void Fonts::openAllFonts(const std::string &_rootPath, ableem::Renderer &renderer) {
+void Fonts::openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer) {
     fonts.clear();
-    rootPath = _rootPath;
-    medPath = rootPath + sep + "SST-Medium.ttf";
-    boldPath = rootPath + sep + "SST-Bold.ttf";
+    medPath = mediumTtf;
+    boldPath = boldTtf;
 
     for (auto fontInfo : allFontInfos) {
         string path;

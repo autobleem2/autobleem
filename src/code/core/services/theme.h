@@ -1,5 +1,5 @@
 //
-// Theme: the UI theme's ini file and the directories it is read from.
+// Theme: the UI theme's theme.json and the directory it is read from.
 //
 #pragma once
 
@@ -11,45 +11,41 @@
 //******************
 // Theme
 //******************
-// Everything about the current theme that is *not* graphics: which directory it lives in, and the merged
-// theme.ini (the selected theme's values on top of themes/default/theme.ini, so a partial theme still has a
-// value for every key). Owned by App; ThemeAssets only turns the values here into textures and fonts.
+// Everything about the current theme that is *not* graphics: which directory it lives in, and its
+// ThemeSpec - the selected theme's theme.json merged over themes/default/theme.json, so a partial theme
+// still has a value for every key, with every file name resolved to an absolute path (the theme's own
+// file when it has one, the default theme's otherwise). Owned by App; ThemeAssets, AppAudio and the
+// launcher only turn the values here into textures, sounds and fonts.
 //
-// The directory getters fall back to the stock Sony data dir (Env::getSonyPath()) when the theme, or one of
-// its sub-directories, is missing - that is what makes a theme that ships only, say, its own images still
-// work. Nothing here knows the console's real paths: they all come from Env.
+// A theme folder still in the old layout (theme.ini + the console's data tree) is converted in place by
+// ThemeConverter the first time load() meets it. Nothing here knows the console's real paths: they all
+// come from Env.
 class Theme {
 public:
-    // which theme is config.ini's "theme"; a theme with no theme.ini at all is written back there as "default"
+    // which theme is config.ini's "theme"; a folder that is not a theme at all is written back there as "default"
     explicit Theme(Config &config) : config_(config) {}
 
-    // (re)reads themes/default/theme.ini and merges the selected theme's theme.ini over it. If the selected
-    // theme has no theme.ini at all it falls back to "default" and writes that back to config.ini.
+    // (re)reads themes/default/theme.json and merges the selected theme's theme.json over it, converting
+    // either folder from the old layout first. If the selected folder is not a theme it falls back to
+    // "default" and writes that back to config.ini.
     void load();
 
-    std::string path();          // <themes>/<name>, or the Sony data dir
-    std::string imagePath();     // path()/images
-    std::string fontPath();      // path()/font
-    std::string soundPath();     // path()/sounds
+    std::string path();          // <themes>/<name>, or <themes>/default when there is no such folder
 
-    // the merged theme.ini. `data` is what screens read (gui->themeData used to be this same object);
-    // `defaults` is themes/default/theme.ini alone, used when the theme has no file for a texture.
-    IniFile data;
-    IniFile defaults;
+    // the merged, resolved theme. Every file field is an absolute path or "" (no theme has that file).
+    const ThemeSpec &spec() const { return spec_; }
+    const ClassicTheme &classic() const { return spec_.classic; }
+    const LauncherTheme &launcher() const { return spec_.launcher; }
+    const ableem::ThemeSounds &sounds() const { return spec_.sounds; }
+    const ableem::ThemeMusic &music() const { return spec_.music; }
 
-    const std::string &value(const std::string &key) { return data.values[key]; }
-    int intValue(const std::string &key) { return atoi(data.values[key].c_str()); }
-
-    // the directory load() actually read, with a trailing separator. Used to resolve the relative file names
-    // in theme.ini (music, images, font).
+    // the directory load() actually read
     const std::string &loadedPath() const { return loadedPath_; }
-    const std::string &defaultsPath() const { return defaultsPath_; }
 
 private:
     Config &config_;
+    ThemeSpec spec_;
     std::string loadedPath_;
-    std::string defaultsPath_;
 
-    // themes/<name>/<subDir>, falling back to the sony data dir if either is missing
-    std::string themeSubDir(const std::string &subDir);
+    static std::string defaultsPath();
 };
