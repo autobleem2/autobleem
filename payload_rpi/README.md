@@ -86,11 +86,12 @@ partition 2 with GParted, then run the installer.
 sudo bash install.sh --shrink-root 8     # leave the system 8 GiB, give the rest to games
 ```
 
-This cannot be done while the system is running — ext4 will not shrink while mounted — so the installer arms
-a script that runs at the next boot before the root filesystem comes up, resizes everything, and reboots.
-It is the same mechanism Raspberry Pi OS uses for its own first-boot expansion. It restores `cmdline.txt`
-before it touches a single partition, so a failure costs you at worst a half-resized filesystem rather than a
-card that will not boot — but it is still repartitioning. **Back up anything you care about first.**
+This cannot be done while the system is running — ext4 will not shrink while mounted — so the installer puts
+the resize tools into the initramfs and arms a script that runs there at the next boot, before the root
+filesystem is mounted: it resizes everything, formats the new partition, and reboots (you see
+`autobleem-shrink:` lines on the console). It restores `cmdline.txt` before it touches a single partition,
+so a failure costs you at worst a half-resized filesystem rather than a card that will not boot — but it is
+still repartitioning. **Back up anything you care about first.**
 
 However you get there, the result is an exFAT partition labelled `AUTOBLEEM`, mounted at `/media/autobleem`.
 Windows 10 (1903 and later), macOS and Linux all show it when you plug the card in; it appears as a second

@@ -273,7 +273,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   takes its own branch there. Without that the Pi build was getting armv8 code, which would SIGILL on a Pi 2.
 - **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
   Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
-  `autobleem-session.sh` loop that replaces `rc/selection.sh`, `shrink-root-init.sh`), and the data-partition
+  `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces), and the data-partition
   tree exactly as it lands on the exFAT partition - `Autobleem/rc/` (the Pi `launch.sh`/`launch_rb.sh`/
   `retroarch.sh`), `Autobleem/bin/emu/`, `Games/`, `Apps/` (empty dirs kept by `placeholder` files).
   `tools/make_rpi_package.sh` copies that tree, fills in `Autobleem/bin/autobleem` (`build_rpi/autobleem-gui`
@@ -283,9 +283,14 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   puts the launcher on tty1 via systemd with `getty@tty1` disabled. Documented as `sudo bash install.sh`
   because a package built on Windows loses the executable bit.
 - The installer's data partition is meant to be on the SD card next to the root (the owner's preference);
-  with a root already expanded over the card that is `--shrink-root <GiB>`, an offline shrink at the next
-  boot by `system/shrink-root-init.sh` (disarms itself before touching anything). A USB stick with an exFAT
-  partition labelled `AUTOBLEEM` also works (`--disk /dev/sda`), but is not the intended setup.
+  with a root already expanded over the card that is `--shrink-root <GiB>`: an offline shrink at the next
+  boot done **from the initramfs** - `system/shrink-root-hook.sh` packs e2fsck/resize2fs/parted/sfdisk/
+  mkfs.exfat in, `system/shrink-root-premount.sh` is an initramfs-tools `local-premount` script that shrinks
+  the root while it is still unmounted, restoring `cmdline.txt` first; `disarm_shrink()` removes both on the
+  next run. The first attempt used `init=` the way Pi OS's own first-boot resize does, and that cannot work
+  for a shrink: by the time `init=` runs the root is mounted, and `resize2fs` will not shrink a mounted
+  filesystem (Pi OS only ever *grows*, which works online). A USB stick with an exFAT partition labelled
+  `AUTOBLEEM` also works (`--disk /dev/sda`), but is not the intended setup.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key

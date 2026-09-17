@@ -485,9 +485,16 @@ partition_device() {
 # shrink_root
 #*******************************
 # Raspberry Pi OS grows the root filesystem over the whole card on first boot, so on a normal install there is
-# no free space left to put the data partition in. ext4 cannot be shrunk while it is mounted, so the work is
-# done the same way Raspberry Pi OS does its own resize: a script runs as init= before the root filesystem is
-# mounted read-write, then reboots. system/shrink-root-init.sh is that script.
+# no free space left to put the data partition in. ext4 can only be shrunk unmounted, and everything that
+# runs from the root filesystem - init=, systemd, a service - runs with it mounted (Raspberry Pi OS's own
+# init= resize gets away with it because growing works online; shrinking does not). So the work is done in
+# the initramfs, at local-premount, when the root device is known and not yet mounted:
+# system/shrink-root-hook.sh packs e2fsck/resize2fs/parted/sfdisk/mkfs.exfat into the initramfs and
+# system/shrink-root-premount.sh does the shrink, restores cmdline.txt from the backup first and reboots.
+# The two are removed again, and the initramfs rebuilt, by disarm_shrink() once the partition exists.
+SHRINK_HOOK=/etc/initramfs-tools/hooks/autobleem-shrink
+SHRINK_SCRIPT=/etc/initramfs-tools/scripts/local-premount/autobleem-shrink
+
 shrink_root() {
     local gib="$1"
     local rootdev
@@ -498,19 +505,23 @@ shrink_root() {
     warn "Back up anything you care about first."
     confirm "Shrink $rootdev to ${gib}GiB and reboot now?"
 
-    # init= is resolved (by the initramfs, or the kernel on an image without one) inside the root filesystem
-    # alone - /boot/firmware is a separate FAT partition that is not mounted yet at that point, so a script
-    # placed there is simply "not found" and the Pi boots normally, having done nothing (seen on Trixie).
-    # Raspberry Pi OS keeps its own init_resize.sh under /usr/lib for the same reason.
-    local init_script=/usr/local/sbin/autobleem-shrink-root
-    run install -m 0755 "$SCRIPT_DIR/system/shrink-root-init.sh" "$init_script"
+    [ -d /etc/initramfs-tools ] || die "no /etc/initramfs-tools - this image does not boot through an initramfs,
+    and the shrink relies on one. Shrink partition 2 from another machine (GParted) instead."
+
+    run install -m 0755 "$SCRIPT_DIR/system/shrink-root-hook.sh" "$SHRINK_HOOK"
+    run install -m 0755 "$SCRIPT_DIR/system/shrink-root-premount.sh" "$SHRINK_SCRIPT"
+    # the running kernel is the one that boots next; Pi OS's post-update hook copies the result to
+    # /boot/firmware/initramfs<N> itself
+    log "Rebuilding the initramfs for $(uname -r) with the shrink tools in it"
+    run update-initramfs -u -k "$(uname -r)" || die "update-initramfs failed - nothing armed"
+
     run cp -n "$BOOT_DIR/cmdline.txt" "$BOOT_DIR/cmdline.txt.autobleem-backup"
 
-    # the init script reads these off the kernel command line, restores cmdline.txt from the backup above and
-    # reboots - whether it succeeded or not, so a failure never leaves an unbootable card
+    # the premount script reads these off the kernel command line, restores cmdline.txt from the backup above
+    # and reboots - whether it succeeded or not, so a failure never leaves a card that loops into it
     local cmdline
     cmdline="$(tr -d '\n' < "$BOOT_DIR/cmdline.txt")"
-    cmdline="$cmdline ab_shrink_gib=$gib ab_shrink_label=$DATA_LABEL init=$init_script"
+    cmdline="$cmdline ab_shrink_gib=$gib ab_shrink_label=$DATA_LABEL"
 
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would write to %s: %s\n' "$BOOT_DIR/cmdline.txt" "$cmdline"
@@ -518,10 +529,22 @@ shrink_root() {
         printf '%s\n' "$cmdline" > "$BOOT_DIR/cmdline.txt"
     fi
 
-    log "Rebooting to do the shrink. Run this installer again when the Pi comes back up."
+    log "Rebooting to do the shrink (a few minutes - the console shows autobleem-shrink: lines)."
+    log "Run this installer again when the Pi comes back up."
     run sync
     run reboot
     exit 0
+}
+
+#*******************************
+# disarm_shrink
+#*******************************
+# after a shrink (or an abandoned one): take the hook and script out of the initramfs again
+disarm_shrink() {
+    [ -f "$SHRINK_HOOK" ] || [ -f "$SHRINK_SCRIPT" ] || return 0
+    log "Removing the shrink tools from the initramfs"
+    run rm -f "$SHRINK_HOOK" "$SHRINK_SCRIPT"
+    run update-initramfs -u -k "$(uname -r)" || warn "update-initramfs failed - the (inert) shrink script stays in it"
 }
 
 #*******************************
@@ -532,6 +555,7 @@ ensure_data_partition() {
     DATA_DEV="$(existing_data_partition)"
     if [ -n "$DATA_DEV" ]; then
         log "Using the existing $DATA_LABEL partition: $DATA_DEV"
+        disarm_shrink
         return 0
     fi
 
