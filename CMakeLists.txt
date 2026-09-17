@@ -205,6 +205,8 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_two_column_string_menu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
+        src/code/gui/surprise_game.cpp
+        src/code/gui/surprise_game.h
         src/code/gui/text_renderer.cpp
         src/code/gui/text_renderer.h
         src/code/gui/theme_assets.cpp

@@ -12,6 +12,23 @@ void GuiAbout::init() {
     fx.renderer = &renderer;
     font = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "about.ttf", 17, renderer);
     logo = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "ablogo.png");
+
+    string sdir = Env::getWorkingPath() + sep + "surprise_game" + sep;
+    sprites.ship = ableem::Texture::loadFile(renderer, sdir + "ship.png");
+    sprites.enemy1 = ableem::Texture::loadFile(renderer, sdir + "enemy1.png");
+    sprites.enemy2 = ableem::Texture::loadFile(renderer, sdir + "enemy2.png");
+    sprites.ufo = ableem::Texture::loadFile(renderer, sdir + "ufo.png");
+    sprites.laserPlayer = ableem::Texture::loadFile(renderer, sdir + "laser_player.png");
+    sprites.laserEnemy = ableem::Texture::loadFile(renderer, sdir + "laser_enemy.png");
+
+    game.sounds.playerShoot = ableem::Sound::load(sdir + "sfx_player_shoot.ogg");
+    game.sounds.enemyShoot = ableem::Sound::load(sdir + "sfx_enemy_shoot.ogg");
+    game.sounds.explosion = ableem::Sound::load(sdir + "sfx_explosion.ogg");
+    game.sounds.playerHit = ableem::Sound::load(sdir + "sfx_player_hit.ogg");
+    game.sounds.waveClear = ableem::Sound::load(sdir + "sfx_wave_clear.ogg");
+
+    savedHighScore = Strings::toInt(app.config().inifile.values["surprisehighscore"]);
+    game.seedHighScore(savedHighScore);
 }
 
 //*******************************
@@ -19,6 +36,12 @@ void GuiAbout::init() {
 //*******************************
 void GuiAbout::render() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
+
+    if (surpriseMode) {
+        renderSurprise();
+        return;
+    }
+
     vector<string> credits = {app.config().inifile.values["version"], " ",
                               _(".-= Code C++ and shell scripts =-."),
                               "screemer, Axanar, mGGk, nex, genderbent",
@@ -69,7 +92,37 @@ void GuiAbout::render() {
         line++;
     }
 
-    gui->renderStatus("|@O| " + _("Go back") + "|",680);
+    gui->renderStatus("|@O| " + _("Go back") + " |@Start| " + _("Surprise"), 680);
+    renderer.present();
+}
+
+//*******************************
+// GuiAbout::renderSurprise
+//*******************************
+void GuiAbout::renderSurprise() {
+    std::shared_ptr<Gui> gui(Gui::getInstance());
+
+    gui->renderBackground();
+
+    renderer.setDrawColor(ableem::Color(0, 0, 0, 235));
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+
+    ableem::Rect rect2;
+    rect2.x = 0;
+    rect2.y = 0;
+    rect2.w = SCREEN_WIDTH;
+    rect2.h = SCREEN_HEIGHT;
+    renderer.fillRect(rect2);
+
+    fx.render(gui->platform().ticks());
+
+    game.render(renderer, gui->text(), font, sprites);
+
+    if (game.gameOver()) {
+        gui->renderStatus("|@Start| " + _("Go back") + " |@Select| " + _("Restart"), 680);
+    } else {
+        gui->renderStatus("|@Start| " + _("Exit game") + " |@Select| " + _("Restart"), 680);
+    }
     renderer.present();
 }
 
@@ -79,7 +132,22 @@ void GuiAbout::render() {
 void GuiAbout::loop() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
+    surpriseMode = false;
+    crossHeld = false;
     while (menuVisible) {
+        unsigned int ticks = gui->platform().ticks();
+
+        if (surpriseMode) {
+            game.update(ticks, gui->input().dpadLeft(), gui->input().dpadRight());
+            if (crossHeld) game.fire(ticks);
+
+            if (game.currentHighScore() > savedHighScore) {
+                savedHighScore = game.currentHighScore();
+                app.config().inifile.values["surprisehighscore"] = to_string(savedHighScore);
+                app.config().save();
+            }
+        }
+
         render();
         Event e;
         while (gui->input().poll(e)) {
@@ -89,11 +157,32 @@ void GuiAbout::loop() {
             }
             switch (e.type) {
                 case Event::Type::ButtonDown:
-                    if (e.button == Button::Circle) {
+                    if (e.button == Button::Start) {
+                        if (surpriseMode) {
+                            surpriseMode = false;
+                            app.audio().music.setVolume(128);
+                            app.audio().cancel.play();
+                        } else {
+                            surpriseMode = true;
+                            crossHeld = false;
+                            game.reset(ticks);
+                            app.audio().music.setVolume(64);   // duck to 50% behind the game
+                            app.audio().cursor.play();
+                        }
+                    } else if (surpriseMode && e.button == Button::Cross) {
+                        crossHeld = true;
+                        game.fire(ticks);
+                    } else if (surpriseMode && e.button == Button::Select) {
+                        game.reset(ticks);
+                        crossHeld = false;
+                        app.audio().cursor.play();
+                    } else if (!surpriseMode && e.button == Button::Circle) {
                         app.audio().cancel.play();
                         menuVisible = false;
-
-                    };
+                    }
+                    break;
+                case Event::Type::ButtonUp:
+                    if (e.button == Button::Cross) crossHeld = false;
                     break;
                 default:
                     break;

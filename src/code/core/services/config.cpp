@@ -59,6 +59,12 @@ Config::Config()
         aDefaultWasSet = true;
     }
 
+    if (inifile.values["surprisehighscore"]=="")
+    {
+        inifile.values["surprisehighscore"]="0";
+        aDefaultWasSet = true;
+    }
+
     inifile.values["pcsx"]="bleemsync";
 
     if (aDefaultWasSet)

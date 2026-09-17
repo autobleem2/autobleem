@@ -5,6 +5,7 @@
 
 #include "../gui_screen.h"
 #include "../starfx.h"
+#include "../surprise_game.h"
 #include "../gui_font.h"
 #include <ableem/ui/texture.h>
 
@@ -20,4 +21,13 @@ public:
     ableem::Texture logo;
     ableem::Font font;
     using GuiScreen::GuiScreen;
+
+private:
+    // the "Surprise" easter egg: Start swaps the credits for a small shoot-em-up over the same starfield
+    bool surpriseMode = false;
+    bool crossHeld = false;
+    SurpriseGame game;
+    SurpriseSprites sprites;
+    int savedHighScore = 0;   // mirrors config.ini's "surprisehighscore"; written back only when beaten
+    void renderSurprise();
 };
