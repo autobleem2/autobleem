@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.6)
+# 3.12 is what add_compile_definitions() below needs anyway; older minimums draw a deprecation warning
+# from current CMake on every configure.
+cmake_minimum_required(VERSION 3.12)
 project(autobleem-gui)
 
 set(CMAKE_CXX_STANDARD 14)
