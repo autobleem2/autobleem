@@ -128,10 +128,16 @@ int AutoBleem::run() {
     }
 
     while (true) {
+        bool quitRequested = false;
         {
             GuiLauncher launcherScreen(*gui_);
             launcherScreen.show();
+            quitRequested = launcherScreen.quitRequested;
         }
+        if (quitRequested) {   // the window's own close button - see GuiLauncher::loop()'s comment
+            break;
+        }
+
         session_.resumingGui = false;
 
         launcher_.writeSelectionScript();

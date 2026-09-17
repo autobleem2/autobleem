@@ -58,6 +58,9 @@ public:
     unsigned int R1_fastForwardTimeStart = 0;
 
     void loop();
+    // set when the window's own close button fires an SDL Quit event - AutoBleem::run() checks this after
+    // show() returns to actually stop, rather than looping back into a fresh GuiLauncher (see loop()'s comment)
+    bool quitRequested = false;
 
     void loop_joyMoveLeft();
     void loop_joyMoveRight();

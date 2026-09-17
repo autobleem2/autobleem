@@ -86,6 +86,15 @@ void GuiSplash::loop() {
                         alpha = 0;
                     }
                 } else {
+                    // render() ties the background/logo alpha and the music volume to `alpha` for the fade.
+                    // Texture is a shared handle - backgroundImg/logo are the same ones every classic screen
+                    // draws with gui->renderBackground()/renderLogo() - so leaving them at alpha 0 here would
+                    // make every one of those render invisible from now on; the old code never had this
+                    // problem because it always ended a fade at alpha 255, never faded back out. Put both
+                    // back to normal before handing off to the launcher.
+                    gui->assets().backgroundImg.setAlphaMod(255);
+                    gui->assets().logo.setAlphaMod(255);
+                    app.audio().music.setVolume(128);   // SDL_mixer's own max
                     break;
                 }
             }

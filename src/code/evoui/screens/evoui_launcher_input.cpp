@@ -65,9 +65,14 @@ void GuiLauncher::loop() {
         }
 
         while (gui->input().poll(e)) {
-            // this is for pc Only
+            // this is for pc Only - the window's own close button. Closing this screen alone is not enough:
+            // AutoBleem::run() would just show a fresh GuiLauncher again (session().menuOption is nothing
+            // this loop's exit condition checks for), reconstructing the whole screen every frame the
+            // now-gone window still delivers an event for. quitRequested is what tells run() to actually
+            // stop instead.
             if (e.type == Event::Type::Quit) {
                 menuVisible = false;
+                quitRequested = true;
             }
             switch (e.type) {
                 case Event::Type::KeyDown:
