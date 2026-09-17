@@ -1,11 +1,13 @@
 //
-// theme_convert: converts every old-layout theme folder under a themes directory to the theme.json
-// layout, the same way autobleem-gui does on first load (core/services/theme_converter.h).
+// theme_convert: unpacks every <name>.zip under a themes directory and converts every old-layout theme
+// folder there to the theme.json layout, the same way autobleem-gui does on first load
+// (core/services/theme_installer.h, theme_converter.h).
 //
-//     theme_convert <themesDir>        every sub-folder that needs it
-//     theme_convert --one <themeDir>   just that theme
+//     theme_convert <themesDir>        every zip, then every sub-folder that needs it
+//     theme_convert --one <themeDir>   just that theme folder
 //
 #include "core/services/theme_converter.h"
+#include "core/services/theme_installer.h"
 
 #include <iostream>
 
@@ -32,6 +34,8 @@ int main(int argc, char *argv[]) {
     }
 
     int failures = 0;
+    for (const string &name : ThemeInstaller::installZips(themesDir))
+        cout << name << ": installed from zip" << endl;
     for (const DirEntry &entry : DirEntry::diru_DirsOnly(themesDir)) {
         const string dir = themesDir + sep + entry.name;
         if (!ThemeConverter::needsConversion(dir)) {

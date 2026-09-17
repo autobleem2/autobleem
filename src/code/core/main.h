@@ -46,6 +46,7 @@ using ableem::ThemeSpec;
 using ableem::ThemeColor;
 using ableem::ClassicTheme;
 using ableem::LauncherTheme;
+using ableem::ZipArchive;
 using ableem::ConfigFileEditor;
 using ableem::MemcardManager;
 using ableem::SerialScanner;

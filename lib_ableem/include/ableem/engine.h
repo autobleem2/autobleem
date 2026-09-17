@@ -23,4 +23,5 @@
 #include "engine/game_scanner.h"
 #include "engine/retroarch_playlist.h"
 #include "engine/theme_spec.h"
+#include "engine/zip_archive.h"
 #include "engine/game_library.h"

@@ -5,6 +5,7 @@
 #include "theme.h"
 #include "environment.h"
 #include "theme_converter.h"
+#include "theme_installer.h"
 
 #include <iostream>
 
@@ -12,11 +13,6 @@ using namespace std;
 
 namespace {
 const char *THEME_JSON = "theme.json";
-
-// a folder is a theme when it has a theme.json, or the old layout the converter reads
-bool isTheme(const string &dir) {
-    return DirEntry::exists(dir + sep + THEME_JSON) || ThemeConverter::needsConversion(dir);
-}
 } // namespace
 
 //*******************************
@@ -41,11 +37,13 @@ string Theme::path() {
 // Theme::load
 //*******************************
 void Theme::load() {
+    ThemeInstaller::installZips(Env::getPathToThemesDir());   // a dropped <name>.zip becomes <name>/ first
+
     const string defaultsDir = defaultsPath();
     loadedPath_ = path();
 
     cout << "Loading UI theme:" << loadedPath_ << endl;
-    if (!isTheme(loadedPath_)) {
+    if (!ThemeConverter::isThemeFolder(loadedPath_)) {
         loadedPath_ = defaultsDir;
         config_.inifile.values["theme"] = "default";
         config_.save();

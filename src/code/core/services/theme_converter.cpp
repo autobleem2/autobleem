@@ -123,6 +123,13 @@ bool ThemeConverter::needsConversion(const string &themeDir) {
 }
 
 //*******************************
+// ThemeConverter::isThemeFolder
+//*******************************
+bool ThemeConverter::isThemeFolder(const string &themeDir) {
+    return DirEntry::exists(themeDir + sep + THEME_JSON) || needsConversion(themeDir);
+}
+
+//*******************************
 // ThemeConverter::specFromIni
 //*******************************
 ThemeSpec ThemeConverter::specFromIni(const IniFile &ini) {

@@ -98,6 +98,19 @@ themes/<name>/
 
 Colours are `"#rrggbb"`; alphas are 0-255.
 
+## Installing a theme from a zip
+
+Copy `<name>.zip` into the themes directory next to the theme folders. The next time the app looks at the
+themes (at start, or when the Options menu lists them) it unpacks the archive to `<name>/` and deletes
+the zip. The theme's files may be at the archive's root or inside one folder (the usual way a zip is
+made - the folder's own name does not matter, the zip's name is the theme's; `__MACOSX` and other
+dot/underscore folders are ignored). A zip in the old `theme.ini` layout is converted afterwards like any
+folder. A zip that replaces an existing `<name>/` is an update: the folder is replaced. A file that is not
+an archive, or holds no theme, is renamed `<name>.zip.bad` and left alone. Entries with `..` or absolute
+names are refused, and nothing from such an archive is written.
+
+`theme_convert <themesDir>` does the same installs first, then the conversions.
+
 ## Converting an old theme
 
 Before this format a theme was `theme.ini` next to a full copy of the console's `/usr/sony/share/data`

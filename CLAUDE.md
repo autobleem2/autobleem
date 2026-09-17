@@ -159,6 +159,9 @@ Still to do, in order:
    place - `Theme::load()` does it on first contact, `tools/theme_convert` ahead of time - and `payload/themes`
    ships converted (aergb 334 -> 29 files). The stock SonyUI is no longer re-skinned (`rc/selection.sh`), and
    `src/resources/sony/` is just the two SST fonts. Screens read `app.theme().classic()/launcher()/sounds()`.
+   A theme can also be dropped in as `<name>.zip`: `ThemeInstaller` (`core/services/theme_installer.*`)
+   unpacks it to `<name>/` at `Theme::load()` / the Options theme list, over `ableem::ZipArchive` (vendored
+   miniz, read-only, `lib_ableem/third_party/miniz/`).
 
 ## lib_ableem
 
@@ -227,6 +230,9 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `resolveFiles()` (the theme's file if it exists, else the default's). `fileFields()` is the one list every
   file loop uses. Scalars a theme may omit are `Opt<T>`; colours are `ThemeColor` (`#rrggbb`).
   The app's `ThemeConverter` (`core/services/theme_converter.*`) is the only writer besides tests.
+- **`ZipArchive`** (`engine/zip_archive.h`) - `list/extract` of a .zip over vendored miniz (`third_party/miniz/`,
+  built with `MINIZ_NO_TIME` and no write side). Entry names are checked before anything is written: no
+  `..`, no absolute paths, no backslashes. Themes dropped as zips are its only caller.
 
 ### ui
 
@@ -290,7 +296,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (which also sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles out `ChdImageReader` (`.chd` games
   then scan as "no serial").
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads, mamecd. Vendored, all inside lib_ableem:
-  SQLite and nlohmann json + `fifo_map` (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
+  SQLite, nlohmann json + `fifo_map` and miniz (`lib_ableem/third_party/`), `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
   (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
@@ -376,6 +382,7 @@ defaults, which both the services and the screens need.
 | `evoui/card_edit.*` | `CardEdit` | A memory card as the manager shows it: `ableem::MemcardImage` plus its 45 icon frames as textures, kept in step after every edit, and the translated "Free"/"Link Block" titles. |
 | `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `ui`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`). Owned by `App`; read as `app.config().inifile.values["..."]`. |
 | `core/services/theme.*` | `Theme` | The current theme's `theme.json` merged over `themes/default/theme.json` (so every key has a value), every file resolved to the theme's own or the default's. `load()` converts an old-layout folder first (`ThemeConverter`). Owned by `App`; read as `app.theme().classic().menuPanel.x`, `app.theme().launcher().footer`, `app.theme().sounds().cursor`. No platform `#ifdef`s - the paths come from `Env`. |
+| `core/services/theme_installer.*` | `ThemeInstaller` | `<themes>/<name>.zip` -> `<themes>/<name>/` (root files or one folder inside; replaces an existing folder; a non-theme becomes `.zip.bad`). Run by `Theme::load()` and the Options theme list before they look at folders. |
 | `core/services/theme_converter.*` | `ThemeConverter` | `theme.ini` + the PSC data tree -> `theme.json` + role-named files, in place: json first, then the renames, then the deletes. `needsConversion(dir)` is also what makes an old folder count as a theme in the Options menu. `tools/theme_convert` wraps it. |
 | `gui/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
 | `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display()` (re)inits and shows splash or resumes the launcher. |

@@ -2,6 +2,7 @@
 #include "../../core/services/system.h"
 #include "../../core/services/environment.h"
 #include "../../core/services/theme_converter.h"
+#include "../../core/services/theme_installer.h"
 
 using namespace std;
 
@@ -19,11 +20,11 @@ string GuiOptions::getStatusLine() {
 vector<string> GuiOptions::getThemes() {
     vector<string> list;
     string uiThemePath = Env::getPathToThemesDir();
+    ThemeInstaller::installZips(uiThemePath);   // a dropped <name>.zip is listed as <name>
     DirEntries uiThemeFolders = DirEntry::diru_DirsOnly(uiThemePath);
     for (const DirEntry &entry : uiThemeFolders) {
         // a theme.json, or an old-layout folder that Theme::load() will convert when it is picked
-        const string dir = uiThemePath + sep + entry.name;
-        if (DirEntry::exists(dir + sep + "theme.json") || ThemeConverter::needsConversion(dir)) {
+        if (ThemeConverter::isThemeFolder(uiThemePath + sep + entry.name)) {
             list.push_back(entry.name); // add the theme dir name
         }
     }

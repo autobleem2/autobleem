@@ -325,19 +325,10 @@ int DirEntry::rmDir(string path) {
 //*******************************
 // DirEntry::removeDirAndContents
 //*******************************
+// rmDir() reads the directory itself, so dot-files (a macOS zip's "._name" entries, say) go too - diru()
+// skips them, which used to leave the directory behind.
 bool  DirEntry::removeDirAndContents(const std::string path) {
-    // remove the files in the dir
-    auto files = diru_FilesOnly(path);
-    for (auto & file : files)
-        { removeFile(path + sep + file.name); }
-
-    // recursively remove the subdirs
-    auto dirs = diru_DirsOnly(path);
-    for (auto & dir : dirs)
-        { removeDirAndContents(path + sep + dir.name); }
-
-    // remove the passed (now empty) dir
-    return (rmdir(path.c_str()) == 0);
+    return rmDir(path) == 0;
 }
 
 //*******************************

@@ -17,8 +17,9 @@
 // file when it has one, the default theme's otherwise). Owned by App; ThemeAssets, AppAudio and the
 // launcher only turn the values here into textures, sounds and fonts.
 //
-// A theme folder still in the old layout (theme.ini + the console's data tree) is converted in place by
-// ThemeConverter the first time load() meets it. Nothing here knows the console's real paths: they all
+// A theme dropped in as <name>.zip is unpacked to <name>/ by ThemeInstaller, and a theme folder still in the
+// old layout (theme.ini + the console's data tree) is converted in place by ThemeConverter, both the first
+// time load() meets them. Nothing here knows the console's real paths: they all
 // come from Env.
 class Theme {
 public:

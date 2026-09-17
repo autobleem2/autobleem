@@ -29,6 +29,9 @@ public:
     // a folder with no theme.json that has a theme.ini, or launcher images under the old names
     static bool needsConversion(const std::string &themeDir);
 
+    // a folder that is a theme in either layout: theme.json, or needsConversion()
+    static bool isThemeFolder(const std::string &themeDir);
+
     // converts in place. False when theme.json could not be written - the folder is then untouched.
     static bool convert(const std::string &themeDir);
 
