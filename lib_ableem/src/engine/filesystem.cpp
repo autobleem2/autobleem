@@ -62,28 +62,40 @@ bool DirEntry::isPBPFile(std::string path) {
 //*******************************
 // DirEntry::generateM3UForDirectory
 //*******************************
+// <path>/<basename>.m3u listing every disc image in the folder (cue, pbp, chd) when there is more than
+// one - what RetroArch opens for a multi-disc game. basename is the first disc's name however the
+// scanner spells it (a cue's base, or a PBP's / CHD's whole file name), so any image extension is
+// stripped first; earlier versions kept the *last four* characters of a PBP name instead of dropping
+// them, and knew nothing of CHD. Stale .m3u files go first, so a rename does not leave two behind.
 void DirEntry::generateM3UForDirectory(std::string path, std::string basename) {
-    if (DirEntry::isPBPFile(basename)) {
-        basename = basename.substr(basename.length() - 4);
+    string ext = getFileExtension(basename);
+    if (Strings::compareCaseInsensitive(ext, "pbp") || Strings::compareCaseInsensitive(ext, "chd")
+        || Strings::compareCaseInsensitive(ext, "cue") || Strings::compareCaseInsensitive(ext, "bin")
+        || Strings::compareCaseInsensitive(ext, "img")) {
+        basename = getFileNameWithoutExtension(basename);
     }
-    cout << basename << endl;
     vector<string> files;
     DirEntries filesInPath = DirEntry::diru_FilesOnly(path);
     for (const DirEntry &entry:filesInPath) {
-        string ext = DirEntry::getFileExtension(entry.name);
-        if (Strings::compareCaseInsensitive(ext, "pbp")
-            || Strings::compareCaseInsensitive(ext, "cue"))
+        ext = DirEntry::getFileExtension(entry.name);
+        if (Strings::compareCaseInsensitive(ext, "pbp") || Strings::compareCaseInsensitive(ext, "cue")
+            || Strings::compareCaseInsensitive(ext, "chd"))
             files.push_back(entry.name);
     }
-    string m3uName = DirEntry::fixPath(path) + sep + basename + ".m3u";
-    if (files.size() > 1) {
-        ofstream os(m3uName);
-        if (!checkWritable(os, m3uName)) return;
-        for (const string &file:files) {
-            os   << file << endl;
-        }
-        os.close();
+    if (files.size() <= 1) return;
+
+    sort(files.begin(), files.end());
+    for (const DirEntry &entry:filesInPath) {
+        if (Strings::compareCaseInsensitive(DirEntry::getFileExtension(entry.name), "m3u"))
+            removeFile(fixPath(path) + sep + entry.name);
     }
+    string m3uName = DirEntry::fixPath(path) + sep + basename + ".m3u";
+    ofstream os(m3uName);
+    if (!checkWritable(os, m3uName)) return;
+    for (const string &file:files) {
+        os << file << endl;
+    }
+    os.close();
 }
 
 //*******************************
