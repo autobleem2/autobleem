@@ -853,7 +853,12 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
 - The carousel is a bounded row (2026-09-18): exactly the games given, nothing before the first or after the
   last, a scroll past either end refused (`Carousel::canSelectNext/Previous`, checked by the launcher's
   `next/prevCarouselGame`, which also stop a held stick there). It used to repeat a short list to fill the
-  13 slots and wrap around, which showed the same few games over and over.
+  13 slots and wrap around, which showed the same few games over and over. The slots past the ends are
+  not bare, though: **empty boxes** (`PsCarouselGame::emptyBox()`, `Carousel::leftFill/rightFill`) stand
+  in them and scroll with the games - an empty jewel case or an empty big box (`BoxKind`, from the first
+  game in the row, or the set for an empty row: `setGames(games, kind)`), one shared texture per row
+  (`loadPlaceholderTex`: the case/frame over a dark translucent inside), drawn at 55% shade and alpha 150
+  (`PlaceholderShade/Alpha` in `carousel.cpp`). An empty set is a shelf of empty boxes.
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
 - Logging (2026-09-18): `PLOG_INFO/WARNING/ERROR/DEBUG` (plog, vendored header-only under

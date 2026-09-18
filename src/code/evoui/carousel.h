@@ -22,18 +22,27 @@
 // The row is bounded: it holds exactly the games given, the first game has nothing to its left and the
 // last nothing to its right, and a scroll past either end is refused (canSelectNext()/canSelectPrevious()).
 // Until 2026-09-18 a short list was repeated to fill every slot and the row wrapped around, which showed
-// the same few games several times over.
+// the same few games several times over. The slots past either end are not left bare, though: an empty
+// box of the set's kind (`BoxKind`, greyed and see-through) stands in each, and scrolls along with the
+// games - so the shelf runs to the edge of the screen at both ends, and an empty set is a shelf of empty
+// boxes.
 class Carousel {
 public:
     explicit Carousel(ableem::GuiBase &gui) : gui_(gui) {}
 
-    // the games the carousel shows, in display order. Frees the old covers, selects the first game (or
-    // none: `selected` is -1 for an empty list) and places the covers.
-    void setGames(const PsGames &gamesList);
+    // the games the carousel shows, in display order, and the kind of box an empty slot shows when there
+    // is no game to take it from (an empty set). Frees the old covers, selects the first game (or none:
+    // `selected` is -1 for an empty list) and places the covers.
+    void setGames(const PsGames &gamesList, BoxKind kind);
     void freeTextures();
     void initPositions() { positions.initCoverPositions(); }
 
     std::vector<PsCarouselGame> games;
+    // the empty boxes: leftFill[k] stands k+1 places before the first game, rightFill[k] k places after
+    // the last (index games.size() + k). Slots of them each: an empty row needs the middle and a whole
+    // side from one of them.
+    std::vector<PsCarouselGame> leftFill, rightFill;
+    BoxKind boxKind = BoxKind::JewelCase;
     int selected = 0; // index into `games`; -1 when there are none
     bool selectedIsValid() const { return selected >= 0 && selected < static_cast<int>(games.size()); }
     // move the selection one game along; a no-op at either end of the row. The caller checks canSelect*()
@@ -71,11 +80,25 @@ public:
     void render();
 
 private:
-    // the game one along from `id`, -1 past either end of the row
-    int getNextId(int id) const;
-    int getPreviousId(int id) const;
     // when every animation has finished a scroll, settle the covers on their final positions
     void updateVisibility();
+    // the item at a position in the row counted from the first game: a game for 0..size-1, an empty box
+    // before or after (nullptr when further out than the fills reach)
+    PsCarouselGame *itemAt(int index);
+    // the composed empty box, shared by every placeholder; made on first use
+    void loadPlaceholderTexture();
+    // every item: the games, then the empty boxes
+    template <class F> void forEachItem(F f) {
+        for (auto &game : games)
+            f(game);
+        for (auto &box : leftFill)
+            f(box);
+        for (auto &box : rightFill)
+            f(box);
+    }
 
     ableem::GuiBase &gui_;
+    ableem::Texture placeholderTex_; // the empty box of `boxKind`, invalid until a placeholder is shown
+    ableem::Rect placeholderContent_;
+    float placeholderThickness_ = 0.08f;
 };

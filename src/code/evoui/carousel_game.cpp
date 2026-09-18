@@ -226,6 +226,49 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
 }
 
 //*******************************
+// PsCarouselGame::loadPlaceholderTex
+//*******************************
+// The box with nothing in it: where a game's art would be, a dark glass (a translucent near-black, so the
+// background shows through it faintly) under the jewel case, or inside the big-box frame - a square box,
+// the shape ra-cover.png and app-cover.png give a game without art. Carousel draws it greyed and
+// see-through on top of that.
+void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind) {
+    shared_ptr<Gui> gui(Gui::getInstance());
+    Texture renderSurface = Texture::createTarget(renderer, 226, 226);
+    renderer.setTarget(&renderSurface);
+    renderer.setBlendMode(BlendMode::None);
+    renderSurface.setBlendMode(BlendMode::None);
+    renderer.setDrawColor(Color(0, 0, 0, 0));
+    renderer.fillRect();
+    renderSurface.setBlendMode(BlendMode::Blend);
+    renderer.setBlendMode(BlendMode::Blend);
+
+    Rect fullRect(0, 0, 226, 226);
+    const Color glass(12, 12, 16, 150);
+    if (kind == BoxKind::JewelCase) {
+        Rect inside = insetIntoCover(gui->assets().cdJewel.valid() ? Rect(23, 5, 199, 217) : fullRect);
+        renderer.setDrawColor(glass);
+        renderer.fillRect(inside);
+        Rect box = insetIntoCover(fullRect);
+        if (gui->assets().cdJewel.valid())
+            renderer.copy(gui->assets().cdJewel, &fullRect, &box);
+        content = box;
+        thickness = JewelCaseThickness;
+    } else {
+        Rect box = insetIntoCover(fullRect);
+        renderer.setDrawColor(glass);
+        renderer.fillRect(box);
+        if (gui->assets().bigBoxFrame.valid())
+            drawNineSlice(renderer, gui->assets().bigBoxFrame, 7, box);
+        content = box;
+        thickness = BigBoxThickness;
+    }
+    coverPng = renderSurface;
+    renderer.setTarget(nullptr);
+    renderer.setBlendMode(BlendMode::Blend);
+}
+
+//*******************************
 // PsCarouselGame::freeTex
 //*******************************
 void PsCarouselGame::freeTex() {

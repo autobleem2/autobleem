@@ -14,29 +14,51 @@ using namespace std;
 //*******************************
 // Carousel::setGames
 //*******************************
-void Carousel::setGames(const PsGames &gamesList) {
+void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
     freeTextures();
 
-    // copy the gamesList into the carousel - just the games there are, however few
+    // copy the gamesList into the carousel - just the games there are, however few - and the empty boxes
+    // for the slots the games leave bare: the kind of box the games are in (the Lightgun set mixes PS1
+    // games with RetroArch ones - the first game's kind), or `kind` for a row with no game to go by
     games.clear();
     for_each(begin(gamesList), end(gamesList), [&](const PsGamePtr &game) { games.emplace_back(game); });
+    boxKind = games.empty() ? kind : (games.front()->foreign ? BoxKind::BigBox : BoxKind::JewelCase);
+    leftFill.assign(PsCarousel::Slots, PsCarouselGame::emptyBox());
+    rightFill.assign(PsCarousel::Slots, PsCarouselGame::emptyBox());
 
     PLOG_DEBUG << "Setting initial positions";
-    if (games.empty()) {
-        selected = -1;
-    } else {
-        selected = 0;
-        setInitialPositions(0);
-    }
+    selected = games.empty() ? -1 : 0;
+    setInitialPositions(selected);
 }
 
 //*******************************
 // Carousel::freeTextures
 //*******************************
 void Carousel::freeTextures() {
-    for (auto &game : games) {
-        game.freeTex();
-    }
+    forEachItem([](PsCarouselGame &item) { item.freeTex(); });
+    placeholderTex_ = ableem::Texture();
+}
+
+//*******************************
+// Carousel::itemAt / loadPlaceholderTexture
+//*******************************
+PsCarouselGame *Carousel::itemAt(int index) {
+    const int count = static_cast<int>(games.size());
+    if (index >= 0 && index < count)
+        return &games[index];
+    if (index < 0)
+        return -index - 1 < static_cast<int>(leftFill.size()) ? &leftFill[-index - 1] : nullptr;
+    return index - count < static_cast<int>(rightFill.size()) ? &rightFill[index - count] : nullptr;
+}
+
+void Carousel::loadPlaceholderTexture() {
+    if (placeholderTex_.valid())
+        return;
+    PsCarouselGame box = PsCarouselGame::emptyBox();
+    box.loadPlaceholderTex(gui_.renderer(), boxKind);
+    placeholderTex_ = box.coverPng;
+    placeholderContent_ = box.content;
+    placeholderThickness_ = box.thickness;
 }
 
 //*******************************
@@ -53,78 +75,59 @@ void Carousel::selectPrevious() {
 }
 
 //*******************************
-// Carousel::getNextId / getPreviousId
-//*******************************
-// the neighbour of a game in the row; -1 (and its caller stops walking) past either end
-int Carousel::getNextId(int id) const {
-    if (id < 0)
-        return -1;
-    int next = id + 1;
-    return next < static_cast<int>(games.size()) ? next : -1;
-}
-
-int Carousel::getPreviousId(int id) const {
-    if (id < 0)
-        return -1;
-    return id - 1; // -1 before the first game
-}
-
-//*******************************
 // Carousel::setInitialPositions
 //*******************************
-// initialize a table with positions for covers
+// initialize a table with positions for covers: the selected game in the middle slot, its neighbours
+// in the slots either side, and an empty box in every slot the row has no game for (an empty row is
+// placed around index 0, which is then its first empty box)
 void Carousel::setInitialPositions(int selectedIndex) {
-    for (auto &game : games) {
-        game.visible = false;
-        game.wanted = false;
+    forEachItem([](PsCarouselGame &item) {
+        item.visible = false;
+        item.wanted = false;
+    });
+
+    const int middle = games.empty() ? 0 : selectedIndex;
+    for (int slot = 0; slot < PsCarousel::Slots; slot++) {
+        PsCarouselGame *item = itemAt(middle + slot - PsCarousel::MiddleSlot);
+        if (!item)
+            continue;
+        item->current = positions.coverPositions[slot];
+        item->visible = true;
+        item->screenPointIndex = slot;
     }
 
-    games[selectedIndex].visible = true;
-    games[selectedIndex].current = positions.coverPositions[PsCarousel::MiddleSlot];
-    games[selectedIndex].screenPointIndex = PsCarousel::MiddleSlot;
-
-    // SideCovers to the left, as many to the right, or as many as the list has that side: the slots past
-    // the first or the last game stay empty
-    int prev = selectedIndex;
-    for (int slot = PsCarousel::MiddleSlot - 1; slot >= 0; slot--) {
-        prev = getPreviousId(prev);
-        if (prev < 0)
-            break;
-        games[prev].current = positions.coverPositions[slot];
-        games[prev].visible = true;
-        games[prev].screenPointIndex = slot;
+    // the lookahead: the games just past the two ends of the row keep their textures ready
+    for (int i = 1; i <= Lookahead; i++) {
+        PsCarouselGame *before = itemAt(middle - PsCarousel::MiddleSlot - i);
+        PsCarouselGame *after = itemAt(middle + PsCarousel::MiddleSlot + i);
+        if (before && !before->placeholder)
+            before->wanted = true;
+        if (after && !after->placeholder)
+            after->wanted = true;
     }
 
-    int next = selectedIndex;
-    for (int slot = PsCarousel::MiddleSlot + 1; slot < PsCarousel::Slots; slot++) {
-        next = getNextId(next);
-        if (next < 0)
-            break;
-        games[next].current = positions.coverPositions[slot];
-        games[next].visible = true;
-        games[next].screenPointIndex = slot;
-    }
-
-    // the lookahead: `prev` and `next` are the games at the two ends of the row now (or -1 when the row
-    // ended before the slots did, in which case there is nothing further to keep ready)
-    for (int i = 0; i < Lookahead; i++) {
-        prev = getPreviousId(prev);
-        next = getNextId(next);
-        if (prev >= 0)
-            games[prev].wanted = true;
-        if (next >= 0)
-            games[next].wanted = true;
-    }
-
-    for (auto &game : games) {
-        game.actual = game.current;
-        game.destination = game.current;
-        if (game.visible) {
-            game.wanted = true;
-            game.loadTex(gui_.renderer()); // a no-op for a texture already there
-        } else if (!game.wanted) {
-            game.freeTex();
+    bool placeholderShown = false;
+    forEachItem([&](PsCarouselGame &item) {
+        item.actual = item.current;
+        item.destination = item.current;
+        if (item.placeholder) {
+            placeholderShown = placeholderShown || item.visible;
+        } else if (item.visible) {
+            item.wanted = true;
+            item.loadTex(gui_.renderer()); // a no-op for a texture already there
+        } else if (!item.wanted) {
+            item.freeTex();
         }
+    });
+    if (placeholderShown) {
+        loadPlaceholderTexture();
+        forEachItem([&](PsCarouselGame &item) {
+            if (item.placeholder) {
+                item.coverPng = placeholderTex_;
+                item.content = placeholderContent_;
+                item.thickness = placeholderThickness_;
+            }
+        });
     }
 }
 
@@ -148,7 +151,7 @@ bool Carousel::loadOneMissingTexture() {
 void Carousel::scrollLeft(int speed, bool eased) {
     scrolling = true;
     long time = gui_.platform().ticks();
-    for (auto &game : games) {
+    forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
 
@@ -165,7 +168,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
         }
-    }
+    });
 }
 
 //*******************************
@@ -175,7 +178,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
 void Carousel::scrollRight(int speed, bool eased) {
     scrolling = true;
     long time = gui_.platform().ticks();
-    for (auto &game : games) {
+    forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
             if (game.screenPointIndex != static_cast<int>(positions.coverPositions.size()) - 1) {
@@ -191,7 +194,7 @@ void Carousel::scrollRight(int speed, bool eased) {
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
         }
-    }
+    });
 }
 
 //*******************************
@@ -234,11 +237,11 @@ void Carousel::snapMainCover(bool toGamesRow) {
 // update potentially visible covers to save the memory
 void Carousel::updateVisibility() {
     bool allAnimationFinished = true;
-    for (const auto &game : games) {
+    forEachItem([&](const PsCarouselGame &game) {
         if ((game.animationStart != 0) && game.visible) {
             allAnimationFinished = false;
         }
-    }
+    });
 
     if (allAnimationFinished && scrolling) {
         setInitialPositions(selected);
@@ -252,7 +255,7 @@ void Carousel::updateVisibility() {
 // this method runs during the loop to update positions of the covers during animation
 void Carousel::updatePositions() {
     long currentTime = gui_.platform().ticks();
-    for (auto &game : games) {
+    forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             if (game.animationStart != 0) {
                 long position = currentTime - game.animationStart;
@@ -272,7 +275,7 @@ void Carousel::updatePositions() {
                 }
             }
         }
-    }
+    });
     updateVisibility();
 }
 
@@ -284,12 +287,16 @@ namespace {
 // the near edge of a turned cover grows and the far one shrinks
 const float ViewerDistance = 600.0f;
 const float Pi = 3.14159265f;
+// an empty box is drawn this much darker than a cover in its slot, and this see-through
+const float PlaceholderShade = 0.55f;
+const unsigned char PlaceholderAlpha = 150;
 
 // draws one cover as a box standing upright and turned `point.angle` degrees about its vertical axis: the
 // front face as a perspective trapezoid, and the spine on the edge nearer to the viewer. The box is the
 // game's `content` rect of its 226x226 texture (a jewel case fills it, a big box is the art's own shape),
 // turned about that rect's middle, `thickness` of its width deep.
-void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point) {
+void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point,
+                       unsigned char alpha) {
     const ableem::Texture &tex = game.coverPng;
     const ableem::Rect &content = game.content;
     const float width = content.w * point.scale, height = content.h * point.scale;
@@ -315,12 +322,13 @@ void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, c
     ableem::VerticalEdge spineFront = project(nearEdgeIsLeft ? -half : half, 0);
     ableem::VerticalEdge spineBack = project(nearEdgeIsLeft ? -half : half, depth);
     int spineShade = static_cast<int>(point.shade * 0.45f);
-    renderer.copyTrapezoid(tex, &spineSource, spineFront, spineBack, ableem::Color(spineShade, spineShade, spineShade));
+    renderer.copyTrapezoid(tex, &spineSource, spineFront, spineBack,
+                           ableem::Color(spineShade, spineShade, spineShade, alpha));
 
     // the face, a little darker the more it turns away from the light in front of the screen
     int faceShade = static_cast<int>(point.shade * (0.55f + 0.45f * std::fabs(c)));
     renderer.copyTrapezoid(tex, &content, project(-half, 0), project(half, 0),
-                           ableem::Color(faceShade, faceShade, faceShade));
+                           ableem::Color(faceShade, faceShade, faceShade, alpha));
 }
 } // namespace
 
@@ -330,10 +338,10 @@ void Carousel::render() {
 
     // far to near, so that a cover nearer the middle is drawn over the one behind it
     vector<const PsCarouselGame *> visible;
-    for (const auto &game : games) {
-        if (game.visible)
+    forEachItem([&](const PsCarouselGame &game) {
+        if (game.visible && game.coverPng.valid())
             visible.push_back(&game);
-    }
+    });
     auto distanceFromMiddle = [&](const PsCarouselGame *game) {
         return std::fabs(game->actual.x + 226 * game->actual.scale / 2 - screenMiddle);
     };
@@ -344,15 +352,20 @@ void Carousel::render() {
     for (const PsCarouselGame *game : visible) {
         ableem::Texture currentGameTex = game->coverPng;
         PsScreenpoint point = game->actual;
+        // an empty box: darker and see-through, so it reads as the shelf and not as a game
+        const unsigned char alpha = game->placeholder ? PlaceholderAlpha : 255;
+        if (game->placeholder)
+            point.shade = static_cast<int>(point.shade * PlaceholderShade);
 
         if (std::fabs(point.angle) < 0.5f) {
             // facing the viewer: a plain copy, as the selected cover always is
             ableem::Rect coverRect(point.x, point.y, 226 * point.scale, 226 * point.scale);
             ableem::Rect fullRect(0, 0, 226, 226);
             currentGameTex.setColorMod(ableem::Color(point.shade, point.shade, point.shade));
+            currentGameTex.setAlphaMod(alpha);
             renderer.copy(currentGameTex, &fullRect, &coverRect);
         } else {
-            renderTurnedCover(renderer, *game, point);
+            renderTurnedCover(renderer, *game, point, alpha);
         }
     }
 }

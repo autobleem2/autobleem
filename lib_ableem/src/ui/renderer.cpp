@@ -311,9 +311,11 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
 #endif
 
     impl->noteCopy(native, xLast - xFirst);
-    Uint8 modR = 255, modG = 255, modB = 255; // the tint goes on as the texture's colour mod for the strips
+    Uint8 modR = 255, modG = 255, modB = 255, modA = 255; // the tint goes on as the texture's mods for the strips
     SDL_GetTextureColorMod(native, &modR, &modG, &modB);
+    SDL_GetTextureAlphaMod(native, &modA);
     SDL_SetTextureColorMod(native, tint.r, tint.g, tint.b);
+    SDL_SetTextureAlphaMod(native, tint.a);
     for (int x = xFirst; x < xLast; x++) {
         float t0 = std::min(1.0f, std::max(0.0f, (x - left.x) / width));
         float t1 = std::min(1.0f, std::max(0.0f, (x + 1 - left.x) / width));
@@ -340,6 +342,7 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
 #endif
     }
     SDL_SetTextureColorMod(native, modR, modG, modB);
+    SDL_SetTextureAlphaMod(native, modA);
 }
 
 void Renderer::setTarget(Texture *target) {

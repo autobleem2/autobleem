@@ -25,14 +25,25 @@ public:
     float angle = 0.0f; // degrees
 };
 
+// the two kinds of box the carousel draws: a PS1 game's CD jewel case, or the cardboard big box of a
+// RetroArch game or an App. Which one an empty slot shows is the set's kind (Carousel::setGames).
+enum class BoxKind { JewelCase, BigBox };
+
 //******************
 // PsCarouselGame
 //******************
-// With fewer games than PsCarousel::Slots the slots past either end of the row simply stay empty.
-// So more than one PsCarouselGame could be using the same PsGamePtr.
+// One item in the row: a game, or (`placeholder`, a null PsGamePtr) the empty box that stands in a slot
+// past either end of the row so the shelf looks full to the edge of the screen. Placeholders scroll like
+// games and share one texture per BoxKind (Carousel composes it once); they are never selected.
 struct PsCarouselGame : public PsGamePtr {
     PsCarouselGame() = delete;
     explicit PsCarouselGame(const PsGamePtr &game) : PsGamePtr(game) {}
+    static PsCarouselGame emptyBox() {
+        PsCarouselGame item{PsGamePtr()};
+        item.placeholder = true;
+        return item;
+    }
+    bool placeholder = false;
 
     PsScreenpoint current;
     PsScreenpoint destination;
@@ -54,6 +65,9 @@ struct PsCarouselGame : public PsGamePtr {
     float thickness = 0.08f;
 
     void loadTex(ableem::Renderer &renderer);
+    // composes the empty box a placeholder shows: the jewel case or the big-box frame over a dark,
+    // translucent inside, into coverPng/content/thickness like loadTex does for a game
+    void loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind);
     void freeTex();
 };
 

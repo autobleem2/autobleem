@@ -152,7 +152,7 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet i
     // its row name.
     PsGames gamesList = app.gameQuery().gamesFor(selection);
     PLOG_DEBUG << "Games Sorted";
-    carousel.setGames(gamesList);
+    carousel.setGames(gamesList, selection.set == GameSet::PS1 ? BoxKind::JewelCase : BoxKind::BigBox);
 
     if (!noForce) {
         showOptions();
