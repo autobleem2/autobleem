@@ -302,7 +302,7 @@ const float Pi = 3.14159265f;
 
 // draws one cover as a box standing upright and turned `point.angle` degrees about its vertical axis: the
 // front face as a perspective trapezoid, and the spine on the edge nearer to the viewer
-void renderTurnedCover(ableem::Renderer &renderer, ableem::Texture tex, const PsScreenpoint &point) {
+void renderTurnedCover(ableem::Renderer &renderer, const ableem::Texture &tex, const PsScreenpoint &point) {
     const float width = 226 * point.scale, height = width;
     const float cx = point.x + width / 2, cy = point.y + height / 2;
     const float radians = point.angle * Pi / 180.0f;
@@ -326,13 +326,12 @@ void renderTurnedCover(ableem::Renderer &renderer, ableem::Texture tex, const Ps
     ableem::VerticalEdge spineFront = project(nearEdgeIsLeft ? -half : half, 0);
     ableem::VerticalEdge spineBack = project(nearEdgeIsLeft ? -half : half, depth);
     int spineShade = static_cast<int>(point.shade * 0.45f);
-    tex.setColorMod(ableem::Color(spineShade, spineShade, spineShade));
-    renderer.copyTrapezoid(tex, &spineSource, spineFront, spineBack);
+    renderer.copyTrapezoid(tex, &spineSource, spineFront, spineBack, ableem::Color(spineShade, spineShade, spineShade));
 
     // the face, a little darker the more it turns away from the light in front of the screen
     int faceShade = static_cast<int>(point.shade * (0.55f + 0.45f * std::fabs(c)));
-    tex.setColorMod(ableem::Color(faceShade, faceShade, faceShade));
-    renderer.copyTrapezoid(tex, &full, project(-half, 0), project(half, 0));
+    renderer.copyTrapezoid(tex, &full, project(-half, 0), project(half, 0),
+                           ableem::Color(faceShade, faceShade, faceShade));
 }
 } // namespace
 

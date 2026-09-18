@@ -214,7 +214,7 @@ void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
     SDL_RenderCopy(impl->renderer, static_cast<SDL_Texture *>(tex.native()), psrc, pdst);
 }
 
-void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right) {
+void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right, Color tint) {
     Rect s;
     if (src) {
         s = tex.pixelScale() == 1.0f ? *src : scaleRect(*src, tex.pixelScale());
@@ -245,7 +245,68 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
     auto *native = static_cast<SDL_Texture *>(tex.native());
     int xFirst = static_cast<int>(std::floor(left.x));
     int xLast = static_cast<int>(std::ceil(right.x));
+
+#if SDL_VERSION_ATLEAST(2, 0, 18)
+    // one triangle strip: a pair of vertices at the left side, at every whole output column between, and at
+    // the right side, each with its own perspective-correct texture column; the tint rides in the vertex
+    // colours, so no texture state changes and one draw call per trapezoid
+    int texW = 0, texH = 0;
+    SDL_QueryTexture(native, nullptr, nullptr, &texW, &texH);
+    if (texW <= 0 || texH <= 0)
+        return;
+    thread_local std::vector<float> xy, uv;
+    thread_local std::vector<SDL_Color> colors;
+    thread_local std::vector<int> indices;
+    xy.clear();
+    uv.clear();
+    colors.clear();
+    indices.clear();
+    const float v0 = static_cast<float>(s.y) / texH, v1 = static_cast<float>(s.y + s.h) / texH;
+    const SDL_Color color{tint.r, tint.g, tint.b, tint.a};
+    auto addColumn = [&](float x) {
+        float t = std::min(1.0f, std::max(0.0f, (x - left.x) / width));
+        float top = left.top + (right.top - left.top) * t;
+        float bottom = left.bottom + (right.bottom - left.bottom) * t;
+        float u = (s.x + sourceAt(t) * s.w) / texW;
+        xy.push_back(x);
+        xy.push_back(top);
+        xy.push_back(x);
+        xy.push_back(bottom);
+        uv.push_back(u);
+        uv.push_back(v0);
+        uv.push_back(u);
+        uv.push_back(v1);
+        colors.push_back(color);
+        colors.push_back(color);
+    };
+    addColumn(left.x);
+    for (int x = xFirst + 1; x < xLast; x++) {
+        if (x > left.x && x < right.x)
+            addColumn(static_cast<float>(x));
+    }
+    addColumn(right.x);
+    const int columns = static_cast<int>(colors.size() / 2);
+    for (int i = 0; i + 1 < columns; i++) {
+        int a = 2 * i;
+        indices.push_back(a);
+        indices.push_back(a + 1);
+        indices.push_back(a + 2);
+        indices.push_back(a + 1);
+        indices.push_back(a + 3);
+        indices.push_back(a + 2);
+    }
+    impl->noteCopy(native, 1);
+    SDL_SetTextureColorMod(native, 255, 255, 255); // the tint is in the vertices; a mod left on it would double up
+    SDL_RenderGeometryRaw(impl->renderer, native, xy.data(), 2 * sizeof(float), colors.data(), sizeof(SDL_Color),
+                          uv.data(), 2 * sizeof(float), static_cast<int>(colors.size()), indices.data(),
+                          static_cast<int>(indices.size()), sizeof(int));
+    return;
+#endif
+
     impl->noteCopy(native, xLast - xFirst);
+    Uint8 modR = 255, modG = 255, modB = 255; // the tint goes on as the texture's colour mod for the strips
+    SDL_GetTextureColorMod(native, &modR, &modG, &modB);
+    SDL_SetTextureColorMod(native, tint.r, tint.g, tint.b);
     for (int x = xFirst; x < xLast; x++) {
         float t0 = std::min(1.0f, std::max(0.0f, (x - left.x) / width));
         float t1 = std::min(1.0f, std::max(0.0f, (x + 1 - left.x) / width));
@@ -271,6 +332,7 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
         SDL_RenderCopy(impl->renderer, native, &sr, &dr);
 #endif
     }
+    SDL_SetTextureColorMod(native, modR, modG, modB);
 }
 
 void Renderer::setTarget(Texture *target) {
