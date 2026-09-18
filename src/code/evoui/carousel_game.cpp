@@ -196,10 +196,11 @@ void PsCarouselGame::freeTex() {
 // The side covers stand on a shelf that recedes from the middle into the distance: each one a little
 // further out, a little smaller and darker, and turned a little more towards the middle. Being further back,
 // an outer cover is rightly drawn behind its inner neighbour where the two overlap. The step between
-// neighbours shrinks with their size so the row reads as evenly spaced in depth, and ten of them fill the
-// half screen out to its edge.
+// neighbours shrinks with their size so the row reads as evenly spaced in depth; the twelfth is the last one
+// partly on screen and the fourteenth's box is wholly off it (its left edge at -65 for the left side).
 PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
-    const float turn[SideCovers + 1] = {0, 40, 52, 60, 66, 70, 72, 72, 72, 72, 72};
+    static const float turnByDistance[] = {0, 40, 52, 60, 66, 70, 72};
+    const float turn = distance <= 6 ? turnByDistance[distance] : 72.0f;
     const float nearestScale = 0.5f, shrinkPerCover = 0.035f;
     const int nearestOffset = 190, nearestStep = 50;
     const int nearestShade = 255, darkenPerCover = 15;
@@ -219,10 +220,10 @@ PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
     point.y = middleY - boxWidth / 2;
     if (side == 0) {
         point.x = 640 - offset - boxWidth / 2;
-        point.angle = -turn[distance];
+        point.angle = -turn;
     } else {
         point.x = 640 + offset - boxWidth / 2;
-        point.angle = turn[distance];
+        point.angle = turn;
     }
     return point;
 }

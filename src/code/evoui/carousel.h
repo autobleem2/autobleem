@@ -14,7 +14,7 @@
 //******************
 // Carousel
 //******************
-// Was a third of GuiLauncher. PsCarousel::Slots screen positions (ten a side and the selected one in the
+// Was a third of GuiLauncher. PsCarousel::Slots screen positions (SideCovers a side and the selected one in the
 // middle at full size), one game per position; scrolling moves every visible cover one position along and
 // drops the one that falls off the end. Covers are textures loaded when a game becomes visible and freed
 // when it stops being, to keep the number held at once (each 226x226 RGBA) to what the console can spare.

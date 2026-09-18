@@ -53,8 +53,10 @@ struct PsCarouselGame : public PsGamePtr {
 //******************
 class PsCarousel {
 public:
-    // covers on each side of the selected one; the row is 2 * SideCovers + 1 slots, the middle one selected
-    static const int SideCovers = 10;
+    // covers on each side of the selected one; the row is 2 * SideCovers + 1 slots, the middle one selected.
+    // Enough that the outermost slot lies beyond the edge of a 1280-wide screen (see createCoverPoint), so
+    // a cover scrolls into view from the edge instead of popping up in the last visible slot.
+    static const int SideCovers = 14;
     static const int Slots = 2 * SideCovers + 1;
     static const int MiddleSlot = SideCovers;
 
