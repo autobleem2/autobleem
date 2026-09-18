@@ -97,6 +97,16 @@ void ThemeAssets::load() {
         PLOG_INFO << "Language " << config_.inifile.values["language"] << ": every font is " << cjk;
         classicFont = medium = bold = cjk;
     }
+    classicFontFile_ = classicFont;
     themeFont = Fonts::openNewSharedCachedFont(classicFont, classic.font.size, renderer_);
     themeFonts.openAllFonts(medium, bold, renderer_);
+}
+
+//*******************************
+// ThemeAssets::classicFontAtSize
+//*******************************
+ableem::Font ThemeAssets::classicFontAtSize(int size) {
+    if (classicFontFile_.empty())
+        return themeFont;
+    return Fonts::openNewSharedCachedFont(classicFontFile_, size, renderer_);
 }

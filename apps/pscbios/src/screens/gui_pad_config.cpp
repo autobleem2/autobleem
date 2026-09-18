@@ -23,11 +23,31 @@ using ableem::Rect;
 void GuiPadConfig::init() {
     padImage = ableem::Texture::loadFile(renderer, Env::getAppDir() + sep + "DS3.png");
     elements = PadMapping::standardElements();
+    chooseFont();
     if (Joystick::count() == 0) {
         gui->drawText(_("NO GAMEPADS CONNECTED"));
         gui->platform().delay(1000);
     } else {
         openJoystick(0);
+    }
+}
+
+//*******************************
+// GuiPadConfig::chooseFont
+//*******************************
+// This page was laid out for the 2020 tool's 14 px font: the mapping list alone is 26 rows under an 8-row
+// header. A theme's classic font is 20 px or more, which puts the end of the list below the status bar - so
+// the page is drawn in the classic font at the largest size (the theme's at most, 12 at least) that fits every
+// row above the bar.
+void GuiPadConfig::chooseFont() {
+    const int top = 10;
+    const int bottom = gui->text().getTextRectOfTheme().y;
+    const int themeSize = app.theme().classic().font.size;
+    pageFont = gui->assets().themeFont;
+    for (int size = themeSize; size >= 12; size--) {
+        pageFont = gui->assets().classicFontAtSize(size);
+        if (top + PageRows * pageFont.lineHeight() <= bottom)
+            break;
     }
 }
 
@@ -212,7 +232,7 @@ void GuiPadConfig::renderElements() {
     const vector<PadMapping::Element> &list = stage == Stage::Mapping ? elements : finals;
     int row = 8;
     for (const PadMapping::Element &element : list)
-        gui->text().renderTextLine(element.apiName + ":" + element.value, row++, 10);
+        gui->text().renderTextLine(element.apiName + ":" + element.value, row++, 10, XALIGN_LEFT, 0, pageFont);
 }
 
 //*******************************
@@ -231,7 +251,7 @@ void GuiPadConfig::render() {
     gui->renderTextBar();
     const int offset = 10;
     TextRenderer &text = gui->text();
-    text.renderTextLine(_("Gamepad configuration details"), 0, offset, XALIGN_CENTER);
+    text.renderTextLine(_("Gamepad configuration details"), 0, offset, XALIGN_CENTER, 0, pageFont);
 
     if (stage == Stage::Mapping) {
         string moved = PadMapping::detectChange(initialState, joystick.state(), elements);
@@ -240,17 +260,17 @@ void GuiPadConfig::render() {
     }
 
     const ableem::JoystickState &state = joystick.state();
-    text.renderTextLine(joystickTitle(), 1, offset);
+    text.renderTextLine(joystickTitle(), 1, offset, XALIGN_LEFT, 0, pageFont);
     text.renderTextLine(_("Gamepad input configuration:") + " A:" + to_string(state.axes.size()) +
                             "  B:" + to_string(state.buttons.size()) + " D:" + to_string(state.hats.size()),
-                        2, offset);
+                        2, offset, XALIGN_LEFT, 0, pageFont);
     string buttons = _("Buttons:") + " ";
     for (bool pressed : state.buttons)
         buttons += string(pressed ? "1" : "0") + " ";
     buttons += " " + _("Hats:") + " ";
     for (unsigned hat : state.hats)
         buttons += to_string(hat) + " ";
-    text.renderTextLine(buttons, 3, offset);
+    text.renderTextLine(buttons, 3, offset, XALIGN_LEFT, 0, pageFont);
     // the axes as a signed percentage each, fifteen to a row
     string axes;
     int row = 4;
@@ -260,7 +280,7 @@ void GuiPadConfig::render() {
         padded.insert(0, 3 - min<size_t>(3, padded.size()), '0');
         axes += string(i < 9 ? " " : "") + "#" + to_string(i + 1) + ":" + (percent < 0 ? "-" : " ") + padded + " ";
         if ((i + 1) % 15 == 0 || i + 1 == state.axes.size()) {
-            text.renderTextLine(axes, row++, offset);
+            text.renderTextLine(axes, row++, offset, XALIGN_LEFT, 0, pageFont);
             axes.clear();
         }
     }
@@ -270,8 +290,8 @@ void GuiPadConfig::render() {
         text.renderTextLine(
             _("NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default "
               "position."),
-            7, offset, XALIGN_CENTER);
-        text.renderTextLine(_("You can test your controller"), 8, offset, XALIGN_CENTER);
+            7, offset, XALIGN_CENTER, 0, pageFont);
+        text.renderTextLine(_("You can test your controller"), 8, offset, XALIGN_CENTER, 0, pageFont);
         break;
     case Stage::Mapping: {
         renderElements();
@@ -287,14 +307,15 @@ void GuiPadConfig::render() {
             ask = _("Move your sticks to state shown or press (OPEN) if stick position not avaliable.");
             break;
         }
-        text.renderTextLine(ask, 7, offset, XALIGN_CENTER);
-        text.renderTextLine(_("Updating mapping"), 8, offset, XALIGN_CENTER);
+        text.renderTextLine(ask, 7, offset, XALIGN_CENTER, 0, pageFont);
+        text.renderTextLine(_("Updating mapping"), 8, offset, XALIGN_CENTER, 0, pageFont);
         break;
     }
     case Stage::Save:
         renderElements();
-        text.renderTextLine(_("Mapping Complete - press (OPEN) to save. (POWER) to cancel."), 7, offset, XALIGN_CENTER);
-        text.renderTextLine(_("Please test a new mapping"), 8, offset, XALIGN_CENTER);
+        text.renderTextLine(_("Mapping Complete - press (OPEN) to save. (POWER) to cancel."), 7, offset, XALIGN_CENTER,
+                            0, pageFont);
+        text.renderTextLine(_("Please test a new mapping"), 8, offset, XALIGN_CENTER, 0, pageFont);
         break;
     }
 
