@@ -250,6 +250,7 @@ void GuiLauncher::loadAssets() {
     const LauncherTheme &theme = app.theme().launcher();
     if (theme.colors.text.set) fgColor = TextRenderer::toColor(theme.colors.text, 255);
     if (theme.colors.secondary.set) secColor = TextRenderer::toColor(theme.colors.secondary, 255);
+    hintColor = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secColor;
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
@@ -492,9 +493,9 @@ void GuiLauncher::render() {
     menu->render();
 
     auto font24 = gui->assets().themeFonts[FONT_22_MED];
-    gui->text().renderText_WithColor(font24, _("Enter"), 638, 640, secColor);
-    gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, secColor);
-    gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, secColor);
+    gui->text().renderText_WithColor(font24, _("Enter"), 638, 640, hintColor);
+    gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, hintColor);
+    gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, hintColor);
 
     notificationLines.tickTock();
     scanStatusLine.tickTock();

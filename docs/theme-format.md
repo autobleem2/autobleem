@@ -67,7 +67,7 @@ themes/<name>/
                    "memcard": "images/menu_memcard.png", "resume": "images/menu_resume.png" },
     "memcardManager": { "grid": "images/memcard_grid.png", "pencil": "images/memcard_pencil.png" },
     "fonts": { "medium": "font/SST-Medium.ttf", "bold": "font/SST-Bold.ttf" },
-    "colors": { "text": "#ffffff", "secondary": "#646464" }
+    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464" }
   },
   "sounds": { "cursor": "sounds/cursor.wav", "cancel": "sounds/cancel.wav", "homeUp": "sounds/home_up.wav",
               "homeDown": "sounds/home_down.wav", "resume": "sounds/resume_new.wav" }
@@ -96,7 +96,7 @@ themes/<name>/
 | `launcher.menuIcons` | The launcher menu's four icons. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
 | `launcher.fonts` | The launcher's medium and bold ttf. Without them the console's own SST fonts are used. |
-| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. |
+| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). |
 | `sounds` | The five UI sounds. |
 
 Colours are `"#rrggbb"`; alphas are 0-255.

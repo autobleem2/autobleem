@@ -295,6 +295,7 @@ bool ThemeSpec::load(const string &path) {
         if (const json *c = child(*l, "colors")) {
             readColor(*c, "text", launcher.colors.text);
             readColor(*c, "secondary", launcher.colors.secondary);
+            readColor(*c, "hint", launcher.colors.hint);
         }
     }
 
@@ -429,6 +430,7 @@ bool ThemeSpec::save(const string &path) const {
             ordered_json c = ordered_json::object();
             putColor(c, "text", launcher.colors.text);
             putColor(c, "secondary", launcher.colors.secondary);
+            putColor(c, "hint", launcher.colors.hint);
             putObject(l, "colors", c);
         }
         putObject(j, "launcher", l);
@@ -480,6 +482,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(launcher.textShadow, base.launcher.textShadow);
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
+    mergeColor(launcher.colors.hint, base.launcher.colors.hint);
 
     // every file field, in one go
     vector<string *> mine = fileFields();

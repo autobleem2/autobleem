@@ -148,6 +148,7 @@ public:
 
     ableem::Color fgColor { 255, 255, 255, 255 };
     ableem::Color secColor { 100, 100, 100, 255 };
+    ableem::Color hintColor { 100, 100, 100, 255 };   // theme launcher.colors.hint, else secColor
 
     std::vector<std::unique_ptr<PsObj>> staticElements;
     std::vector<std::unique_ptr<PsObj>> frontElemets;

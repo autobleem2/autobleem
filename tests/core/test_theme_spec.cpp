@@ -70,6 +70,7 @@ ThemeSpec fullSpec() {
     l.fonts.medium = "font/SST-Medium.ttf"; l.fonts.bold = "font/SST-Bold.ttf";
     l.colors.text = ThemeColor(255, 255, 255);
     l.colors.secondary = ThemeColor(100, 100, 100);
+    l.colors.hint = ThemeColor(255, 255, 255);
 
     s.sounds.cursor = "sounds/cursor.wav"; s.sounds.cancel = "sounds/cancel.wav";
     s.sounds.homeUp = "sounds/home_up.wav"; s.sounds.homeDown = "sounds/home_down.wav";
@@ -135,6 +136,7 @@ TEST_CASE("a full theme survives a save/load round trip") {
     CHECK(in.launcher.menuIcons.resume == "images/menu_resume.png");
     CHECK(in.launcher.fonts.bold == "font/SST-Bold.ttf");
     CHECK(in.launcher.colors.secondary.toHex() == "#646464");
+    CHECK(in.launcher.colors.hint.toHex() == "#ffffff");
     CHECK(in.sounds.resume == "sounds/resume_new.wav");
 
     // every file field made the trip - the one list in fileFields() is what everything else iterates
@@ -173,6 +175,7 @@ TEST_CASE("a partial theme writes only what it sets and reads back as partial") 
     CHECK(in.launcher.background.empty());
     CHECK(in.launcher.colors.text.set);
     CHECK_FALSE(in.launcher.colors.secondary.set);
+    CHECK_FALSE(in.launcher.colors.hint.set);             // stays unset: the launcher falls back to secondary
     CHECK_FALSE(in.launcher.textShadow.set);              // a theme that says nothing gets the default
     CHECK_FALSE(in.classic.textShadow.set);
 }
@@ -222,7 +225,20 @@ TEST_CASE("mergeOver takes the base's value for everything the theme leaves out"
     CHECK(partial.music.file == "mel.ogg");
     CHECK(partial.launcher.metaPanel == "images/meta_panel.png");
     CHECK(partial.sounds.cursor == "sounds/cursor.wav");
+    CHECK(partial.launcher.colors.hint.toHex() == "#ffffff");   // the base's, like any other colour
     CHECK(partial.referencedFiles().size() == 42);
+}
+
+TEST_CASE("a hint colour the theme and the base both leave out stays unset after the merge") {
+    // the launcher then draws the footer labels in the secondary colour - that fallback is the
+    // screen's, not the spec's, so the spec must not invent a value here
+    ThemeSpec base = fullSpec();
+    base.launcher.colors.hint = ThemeColor();
+    ThemeSpec partial;
+    partial.launcher.colors.secondary = ThemeColor(10, 20, 30);
+    partial.mergeOver(base);
+    CHECK_FALSE(partial.launcher.colors.hint.set);
+    CHECK(partial.launcher.colors.secondary.toHex() == "#0a141e");
 }
 
 TEST_CASE("mergeOver keeps a rect, a colour and an alpha apart: a theme with only the rect inherits the fill") {

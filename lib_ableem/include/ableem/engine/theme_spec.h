@@ -142,7 +142,9 @@ struct LauncherTheme {
     struct MenuIcons { std::string settings, guide, memcard, resume; } menuIcons;   // the launcher's menu row
     struct MemcardManager { std::string grid, pencil; } memcardManager;
     struct Fonts { std::string medium, bold; } fonts;
-    struct Colors { ThemeColor text, secondary; } colors;
+    // hint: the footer's "Enter" / "Cancel" / "Button Guide" labels next to the button icons; unset means
+    // they take the secondary colour (light hint text gets the dark halo like every other light text)
+    struct Colors { ThemeColor text, secondary, hint; } colors;
 };
 
 //******************

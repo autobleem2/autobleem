@@ -65,6 +65,9 @@
     "memcardManager": {
       "grid": "images/memcard_grid.png",
       "pencil": "images/memcard_pencil.png"
+    },
+    "colors": {
+      "hint": "#ffffff"
     }
   }
 }
