@@ -49,6 +49,7 @@ bool GameLibrary::openInternalGames() {
     internalDb->addHistoryColumnIfMissing();
     internalDb->addLastPlayedColumnIfMissing();
     internalDb->addPlayUsingRAColumnIfMissing();
+    internalDb->addLightgunColumnIfMissing();
     return true;
 }
 

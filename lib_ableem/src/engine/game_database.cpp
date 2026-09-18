@@ -153,14 +153,14 @@ static const char DELETE_GAME_ID_FROM_SUBDIR_GAMES_TO_DISPLAY_ON_ROW[] = "DELETE
 
 // used by: reloadInternalGame
 static const char GAMES_DATA_SINGLE_INTERNAL[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, PLAYERS, d.BASENAME,  COUNT(d.GAME_ID) as NUMD, \
-                                     FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
+                                     FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED, LIGHTGUN FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
                                      WHERE g.GAME_ID=?  \
                                      GROUP BY g.GAME_ID HAVING MIN(d.DISC_NUMBER) \
                                      ORDER BY g.GAME_TITLE_STRING asc,d.DISC_NUMBER ASC";
 
 // used by: loadInternalGames
 static const char GAMES_DATA_INTERNAL[] = "SELECT g.GAME_ID, GAME_TITLE_STRING, PUBLISHER_NAME, RELEASE_YEAR, PLAYERS, d.BASENAME,  COUNT(d.GAME_ID) as NUMD, \
-                                     FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
+                                     FAVORITE, PLAY_USING_RA, HISTORY, LAST_PLAYED, LIGHTGUN FROM GAME G JOIN DISC d ON g.GAME_ID=d.GAME_ID \
                                      GROUP BY g.GAME_ID HAVING MIN(d.DISC_NUMBER) \
                                      ORDER BY g.GAME_TITLE_STRING asc,d.DISC_NUMBER ASC";
 
@@ -187,6 +187,10 @@ static const char ADD_PLAY_USING_RA_COLUMN[] = "ALTER TABLE GAME ADD COLUMN PLAY
 
 // used by: addPlayUsingRAColumnIfMissing for the internal.db (USB games don't need it as they use the game.ini to flag favorites)
 static const char UPDATE_PLAY_USING_RA[] = "UPDATE GAME SET PLAY_USING_RA=? WHERE GAME_ID=?";
+
+// used by: addLightgunColumnIfMissing / updateLightgun for the internal.db (USB games keep the flag in Game.ini)
+static const char ADD_LIGHTGUN_COLUMN[] = "ALTER TABLE GAME ADD COLUMN LIGHTGUN INT DEFAULT 0";
+static const char UPDATE_LIGHTGUN[] = "UPDATE GAME SET LIGHTGUN=? WHERE GAME_ID=?";
 
 //*******************************
 // ????.db
@@ -287,6 +291,7 @@ void readGameIni(GameRecord &game) {
         game.hd =       (ini.values["highres"]=="1");
         game.favorite = (ini.values["favorite"] == "1");
         game.play_using_ra = (ini.values["play_using_ra"] == "true");
+        game.lightgun = (ini.values["lightgun"] == "1");
         game.recordName = ini.values["thumbnail_record_name"];
         game.coverPath = ini.values["cached_cover_path"];
         game.snapPath = ini.values["cached_snap_path"];
@@ -331,6 +336,7 @@ void readInternalGameRow(Stmt &stmt, GameRecord &psGame) {
     psGame.play_using_ra = (stmt.colInt(8) != 0);
     psGame.history = stmt.colInt(9);
     psGame.last_played = stmt.colInt(10);
+    psGame.lightgun = (stmt.colInt(11) != 0);
 }
 
 //*******************************
@@ -863,6 +869,24 @@ bool GameDatabase::createSchema() {
 //*******************************
 void GameDatabase::addFavoriteColumnIfMissing() {
     executeCreateStatement(ADD_FAVORITE_COLUMN, "Favorite column" );
+}
+
+//*******************************
+// GameDatabase::updateLightgun
+//*******************************
+bool GameDatabase::updateLightgun(int id, int lightgun) {
+    Stmt stmt(db, UPDATE_LIGHTGUN, "updateLightgun");
+    if (!stmt.ok()) return false;
+    stmt.bind(1, lightgun);
+    stmt.bind(2, id);
+    return stmt.step() == SQLITE_DONE;
+}
+
+//*******************************
+// GameDatabase::addLightgunColumnIfMissing
+//*******************************
+void GameDatabase::addLightgunColumnIfMissing() {
+    executeCreateStatement(ADD_LIGHTGUN_COLUMN, "Lightgun column");
 }
 
 //*******************************

@@ -25,6 +25,7 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
     });
 
     gameQuery_.setRetroArchGames(&retroArch_);
+    gameQuery_.setLightguns(&lightguns_);
 }
 
 //*******************************

@@ -43,6 +43,7 @@ public:
         library.internalGames().createSchema();
         library.internalGames().addFavoriteColumnIfMissing();
         library.internalGames().addPlayUsingRAColumnIfMissing();
+        library.internalGames().addLightgunColumnIfMissing();
         library.internalGames().addHistoryColumnIfMissing();
         library.internalGames().addLastPlayedColumnIfMissing();
     }

@@ -3,6 +3,7 @@
 //
 
 #include "game_query.h"
+#include "lightgun.h"
 #include "config.h"
 #include "../main.h"
 #include "environment.h"
@@ -47,6 +48,27 @@ PsGames GameQueryService::ps1GamesInSubDirRow(int rowIndex, string *rowName) {
         if (find(begin(gameIdsInRow), end(gameIdsInRow), game->gameId) != end(gameIdsInRow))
             games.emplace_back(game);
     }
+    return games;
+}
+
+//*******************************
+// GameQueryService::lightgunGames
+//*******************************
+PsGames GameQueryService::lightgunGames() {
+    PsGames games;
+    if (lightguns_ == nullptr)
+        return games;
+    for (auto &game : allPs1Games(true, showInternalGames())) {
+        if (lightguns_->isLightgun(*game))
+            games.emplace_back(game);
+    }
+    if (retroArch_ != nullptr) {
+        for (auto &game : retroArch_->allGames()) {
+            if (lightguns_->isLightgun(*game))
+                games.emplace_back(game);
+        }
+    }
+    sort(begin(games), end(games), byTitle);
     return games;
 }
 
@@ -180,6 +202,8 @@ PsGames GameQueryService::gamesFor(GameSetSelection &selection) {
         }
     } else if (selection.set == GameSet::RetroArch) {
         games = retroArchGames(selection.raPlaylistName);
+    } else if (selection.set == GameSet::Lightgun) {
+        games = lightgunGames();
     } else if (selection.set == GameSet::Apps) {
         games = apps();
     }

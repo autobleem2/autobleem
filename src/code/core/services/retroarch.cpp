@@ -9,6 +9,7 @@
 #include <ableem/engine/thumbnail_lookup.h>
 
 #include <algorithm>
+#include <set>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -51,6 +52,26 @@ PsGames RetroArchService::gamesInPlaylist(const string &playlistName) {
     if (findPlaylist(playlistName, &index))
         return playlistInfos_[index].psGames;
     return PsGames();
+}
+
+//********************
+// RetroArchService::allGames
+//********************
+// every playlist but Favorites and History (those repeat games the platform playlists hold), one entry
+// per image path
+PsGames RetroArchService::allGames() {
+    ensureLoaded();
+    PsGames games;
+    std::set<string> seen;
+    for (auto &info : playlistInfos_) {
+        if (info.displayName == favoritesDisplayName_ || info.displayName == historyDisplayName_)
+            continue;
+        for (auto &game : info.psGames) {
+            if (seen.insert(game->image_path).second)
+                games.push_back(game);
+        }
+    }
+    return games;
 }
 
 //********************

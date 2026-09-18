@@ -118,8 +118,8 @@ void GameSettingsService::replaceCfgLine(GameSettings &s, const string &property
 // GameSettingsService::setFavorite
 //*******************************
 void GameSettingsService::setFavorite(GameSettings &s, bool on) {
+    s.game->favorite = on;   // the record in hand says what was just written, whichever store it went to
     if (s.internal) {
-        s.game->favorite = on;
         library_.internalGames().updateFavorite(s.game->gameId, s.game->favorite);
     } else {
         s.ini.values["favorite"] = on ? "1" : "0";
@@ -131,13 +131,28 @@ void GameSettingsService::setFavorite(GameSettings &s, bool on) {
 // GameSettingsService::setPlayUsingRa
 //*******************************
 void GameSettingsService::setPlayUsingRa(GameSettings &s, bool on) {
+    s.game->play_using_ra = on;
     if (s.internal) {
-        s.game->play_using_ra = on;
         library_.internalGames().updatePlayUsingRA(s.game->gameId, s.game->play_using_ra);
     } else {
         s.ini.values["play_using_ra"] = on ? "true" : "false";
         saveIni(s);
     }
+}
+
+//*******************************
+// GameSettingsService::setLightgun
+//*******************************
+void GameSettingsService::setLightgun(GameSettings &s, bool on) {
+    s.game->lightgun = on;
+    if (s.internal) {
+        library_.internalGames().updateLightgun(s.game->gameId, on ? 1 : 0);
+    } else {
+        s.ini.values["lightgun"] = on ? "1" : "0";
+        saveIni(s);
+    }
+    if (on && !s.game->play_using_ra)
+        setPlayUsingRa(s, true);
 }
 
 //*******************************

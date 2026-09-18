@@ -37,6 +37,7 @@ struct FakeRetroArch : RetroArchGames {
         return playlist;
     }
     string historyPlaylistName() override { return historyName; }
+    PsGames allGames() override { return playlist; }
 
     void add(const string &title) {
         PsGamePtr game{new PsGame};

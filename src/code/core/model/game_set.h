@@ -6,10 +6,12 @@
 #include <string>
 
 // the carousel's "set". if you add one, also update GuiLauncher::showSetName's setNames and GameSetLast.
-enum class GameSet : int { PS1 = 0, RetroArch = 1, Apps = 2 };
+// Lightgun (2026-09-18, from AutoBleem-NG) is every PS1 and RetroArch game flagged as a light-gun game;
+// the launcher skips it in the Select cycle while it is empty.
+enum class GameSet : int { PS1 = 0, RetroArch = 1, Lightgun = 2, Apps = 3 };
 constexpr GameSet GameSetLast = GameSet::Apps;
 
-// cycles PS1 -> RetroArch -> Apps -> PS1, the order Select steps through the sets in.
+// cycles PS1 -> RetroArch -> Lightgun -> Apps -> PS1, the order Select steps through the sets in.
 inline GameSet nextGameSet(GameSet set) {
     int next = static_cast<int>(set) + 1;
     return next > static_cast<int>(GameSetLast) ? GameSet::PS1 : static_cast<GameSet>(next);

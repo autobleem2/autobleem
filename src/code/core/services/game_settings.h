@@ -65,6 +65,10 @@ public:
     // --- Game.ini for a USB game, internal.db for an internal one ---
     void setFavorite(GameSettings &s, bool on);
     void setPlayUsingRa(GameSettings &s, bool on);
+    // A light-gun game plays in RetroArch's pcsx_rearmed (guncon), so switching it on also switches Play
+    // using RA on; off leaves Play using RA as it is. The editor keeps the Play using RA row locked while
+    // the flag is on. RetroArch games are flagged elsewhere (LightgunService) - they have no Game.ini.
+    void setLightgun(GameSettings &s, bool on);
 
     // --- Game.ini only; a no-op for an internal game ---
     // "Locked" is Automation=0: the user edited the ini, the scanner must not rewrite it. Only flips the

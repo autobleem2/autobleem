@@ -52,6 +52,7 @@ public:
     std::vector<Disc> discs;
     std::string favorite;
     std::string play_using_ra;
+    std::string lightgun;       // "1"/"0", Game.ini Lightgun - kept across scans like favorite
     time_t last_played = 0;
     std::string recordName;  // the rdb's name (GameMetadata::recordName), kept in Game.ini as thumbnail_record_name
     std::string coverPath;   // the thumbnails tree's cover for this game, "" if none - Game.ini cached_cover_path

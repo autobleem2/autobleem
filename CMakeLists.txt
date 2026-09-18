@@ -131,6 +131,7 @@ add_library(ab_core STATIC
         src/code/core/services/game_query.cpp
         src/code/core/services/game_query.h
         src/code/core/services/game_settings.cpp
+        src/code/core/services/lightgun.cpp
         src/code/core/services/game_settings.h
         src/code/core/services/launch.cpp
         src/code/core/services/launch.h

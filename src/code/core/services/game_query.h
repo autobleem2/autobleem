@@ -22,7 +22,11 @@ struct RetroArchGames {
     virtual PsGames gamesInPlaylist(const std::string &playlistName) = 0;
     // the playlist that is already in most-recently-played order, so it must not be re-sorted by title
     virtual std::string historyPlaylistName() = 0;
+    // every game in every playlist except Favorites and History (they repeat the others'), one per image
+    virtual PsGames allGames() = 0;
 };
+
+class LightgunService;
 
 //******************
 // GameQueryService
@@ -39,6 +43,11 @@ public:
     // Handed over by the composition root (App) rather than taken in the constructor, so a test can query
     // the PS1 sets with no RetroArch at all. Null until then: the RetroArch set is simply empty.
     void setRetroArchGames(RetroArchGames *source) { retroArch_ = source; }
+    // same arrangement for the light-gun flags; null means the Lightgun set is empty
+    void setLightguns(LightgunService *lightguns) { lightguns_ = lightguns; }
+
+    // the Lightgun set: every flagged PS1 game (internal ones when shown) and RetroArch game, by title
+    PsGames lightgunGames();
 
     // The whole query for one selection, sorted the way that set is displayed.
     //
@@ -67,4 +76,5 @@ private:
     ableem::GameLibrary &library_;
     Config &config_;
     RetroArchGames *retroArch_ = nullptr;
+    LightgunService *lightguns_ = nullptr;
 };

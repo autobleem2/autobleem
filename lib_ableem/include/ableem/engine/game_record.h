@@ -34,6 +34,7 @@ struct GameRecord {
     // special flags
     bool favorite = false;
     bool play_using_ra = false;
+    bool lightgun = false;  // a light-gun game: launched through RetroArch's pcsx_rearmed (guncon), never pcsx-ab
     int history = 0;        // 0 = not in history list.  1-100 if in the history list
     time_t last_played = 0; // in seconds since 1970
 

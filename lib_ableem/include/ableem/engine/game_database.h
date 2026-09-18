@@ -63,6 +63,7 @@ public:
     bool createSchema();                        // CREATE TABLE IF NOT EXISTS for every table regional.db needs
     void addFavoriteColumnIfMissing();          // internal.db only: the stock schema lacks these four columns
     void addPlayUsingRAColumnIfMissing();
+    void addLightgunColumnIfMissing();     // internal.db: the light-gun flag (USB games keep it in Game.ini)
     void addHistoryColumnIfMissing();
     void addLastPlayedColumnIfMissing();
     bool clearAllTables();
@@ -108,6 +109,7 @@ public:
     bool updateTitle(int id, std::string title);
     bool updateFavorite(int id, int fav);
     bool updatePlayUsingRA(int id, int play_using_ra);
+    bool updateLightgun(int id, int lightgun);
     bool updateHistory(int id, int rank);   // 0 = not in history, 1-100 history from latest game played to oldest
     bool updateDatePlayed(int id, int date_in_seconds);   // seconds since 1970
     bool reloadUsbGame(GameRecord &game);           // re-reads the row game.gameId (regional.db)

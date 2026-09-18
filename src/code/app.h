@@ -13,6 +13,7 @@
 #include "core/services/game_query.h"
 #include "core/services/game_settings.h"
 #include "core/services/launch.h"
+#include "core/services/lightgun.h"
 #include "core/services/memcard.h"
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
@@ -52,6 +53,7 @@ public:
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
     GameSettingsService &gameSettings() { return gameSettings_; }
+    LightgunService &lightguns() { return lightguns_; }
     LaunchService &launcher() { return launcher_; }
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
@@ -78,6 +80,7 @@ protected:
     GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     GameSettingsService gameSettings_{gameLibrary};
+    LightgunService lightguns_{gameLibrary};
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     RetroArchService retroArch_;

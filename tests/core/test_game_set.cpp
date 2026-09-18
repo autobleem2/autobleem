@@ -5,9 +5,10 @@
 
 #include "core/model/game_set.h"
 
-TEST_CASE("nextGameSet cycles the three sets and wraps") {
+TEST_CASE("nextGameSet cycles the four sets and wraps") {
     CHECK(nextGameSet(GameSet::PS1) == GameSet::RetroArch);
-    CHECK(nextGameSet(GameSet::RetroArch) == GameSet::Apps);
+    CHECK(nextGameSet(GameSet::RetroArch) == GameSet::Lightgun);
+    CHECK(nextGameSet(GameSet::Lightgun) == GameSet::Apps);
     CHECK(nextGameSet(GameSet::Apps) == GameSet::PS1);
 }
 
@@ -24,7 +25,8 @@ TEST_CASE("the enum values are the indexes the name tables are keyed by") {
     // the tables are the right length - so the numbering is part of the contract, not an accident.
     CHECK(static_cast<int>(GameSet::PS1) == 0);
     CHECK(static_cast<int>(GameSet::RetroArch) == 1);
-    CHECK(static_cast<int>(GameSet::Apps) == 2);
+    CHECK(static_cast<int>(GameSet::Lightgun) == 2);
+    CHECK(static_cast<int>(GameSet::Apps) == 3);
     CHECK(GameSetLast == GameSet::Apps);
 
     CHECK(static_cast<int>(Ps1SelectState::AllGames) == 0);

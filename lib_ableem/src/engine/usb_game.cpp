@@ -353,6 +353,7 @@ void UsbGame::applyIniValues() {
     // which reset every game's "Play using RA" to false on each scan.)
     favorite = valueOrDefault("favorite", "0", false);
     play_using_ra = valueOrDefault("play_using_ra", "false", false);
+    lightgun = valueOrDefault("lightgun", "0", false);
 
     tmp = valueOrDefault("discs", "");
     if (!tmp.empty()) {
@@ -423,6 +424,7 @@ void UsbGame::saveGameIni(const string &path) {
 
     ini.values["Favorite"] = favorite;
     ini.values["Play_using_ra"] = play_using_ra;
+    ini.values["Lightgun"] = lightgun;
     ini.values["Thumbnail_record_name"] = recordName;
     ini.values["Cached_cover_path"] = coverPath;
     ini.values["Cached_snap_path"] = snapPath;

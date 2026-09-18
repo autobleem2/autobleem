@@ -58,6 +58,7 @@ public:
     // RetroArchGames, for GameQueryService
     PsGames gamesInPlaylist(const std::string &playlistName) override;
     std::string historyPlaylistName() override { return historyDisplayName_; }
+    PsGames allGames() override;
 
     std::string favoritesPlaylistName() const { return favoritesDisplayName_; }
 
