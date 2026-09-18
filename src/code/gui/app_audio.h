@@ -23,8 +23,10 @@ class AppAudio {
 public:
     AppAudio(ableem::Audio &device, Config &config, Theme &theme) : device(device), config_(config), theme_(theme) {}
 
-    // (re)loads the current theme's sound effects. When reloadMusic is true the mixer is also reopened at the
-    // sample rate the track needs and the track is started. Called from Gui::loadAssets.
+    // (re)loads the current theme's sound effects. When reloadMusic is true the music is brought in line with
+    // the theme and config.ini too - but only if something about it changed (the track, its sample rate,
+    // looping, or whether music is on at all): stepping through the Options theme list used to restart the
+    // same track on every step. Called from Gui::loadAssets.
     void loadTheme(bool reloadMusic);
 
     void playMusic();
@@ -52,4 +54,18 @@ private:
     bool customMusic = false;    // true when config.ini names a track of the user's own
     int freq = 44100;
     std::string musicPath;       // the theme's music file (resolved), or the custom file name
+
+    // everything that decides what plays; loadTheme() compares the next one against what is playing
+    struct MusicState {
+        bool custom = false;
+        int freq = 0;
+        std::string path;
+        bool enabled = false;
+        int loops = 0;
+        bool operator==(const MusicState &o) const {
+            return custom == o.custom && freq == o.freq && path == o.path && enabled == o.enabled && loops == o.loops;
+        }
+    };
+    MusicState wantedMusicState() const;
+    MusicState playing_;         // what loadTheme() last started (nothing yet: freq 0)
 };

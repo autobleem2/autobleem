@@ -37,28 +37,33 @@ void AppAudio::freeMusic() {
 }
 
 //*******************************
+// AppAudio::wantedMusicState
+//*******************************
+AppAudio::MusicState AppAudio::wantedMusicState() const {
+    MusicState next;
+    const ableem::ThemeMusic &themeMusic = theme_.music();
+    next.custom = config_.inifile.values["music"] != "--";
+    next.path = next.custom ? config_.inifile.values["music"] : themeMusic.file;
+    next.freq = DirEntry::getFileExtension(next.path) == "ogg" ? 44100 : 32000;
+    next.enabled = config_.inifile.values["nomusic"] != "true" && !themeMusic.none;
+    next.loops = (next.custom || themeMusic.loop) ? -1 : 0;
+    return next;
+}
+
+//*******************************
 // AppAudio::loadTheme
 //*******************************
 void AppAudio::loadTheme(bool reloadMusic) {
-    if (reloadMusic) {
+    MusicState next = wantedMusicState();
+    customMusic = next.custom;
+    freq = next.freq;
+    musicPath = next.path;
+
+    if (reloadMusic && !(next == playing_)) {
         freeMusic();
-    }
-
-    customMusic = false;
-    freq = 32000;
-    musicPath = theme_.music().file;
-    if (config_.inifile.values["music"] != "--") {
-        customMusic = true;
-        musicPath = config_.inifile.values["music"];
-    }
-
-    if (DirEntry::getFileExtension(musicPath) == "ogg") {
-        freq = 44100;
-    }
-
-    if (reloadMusic) {
         restart();
         playMusic();
+        playing_ = next;
     }
 
     const ableem::ThemeSounds &sounds = theme_.sounds();
@@ -83,6 +88,7 @@ void AppAudio::shutdown() {
 
     music.halt();
     music = ableem::Music();
+    playing_ = MusicState();
     cursor = ableem::Sound();
     cancel = ableem::Sound();
     home_down = ableem::Sound();
