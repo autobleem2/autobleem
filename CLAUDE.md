@@ -763,7 +763,10 @@ defaults, which both the services and the screens need.
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
-`default`, `evolution`), bundled Apps, release notes. `payload_rpi/` next to it is the Raspberry Pi installer
+`default`, `evolution`), bundled Apps, release notes. `ab2`'s launcher menu icons (gear, gamepad, memory card,
+the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
+and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
+the 118 slot so it clears the footer bar in the launcher's Games state. `payload_rpi/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
 ## Conventions and gotchas

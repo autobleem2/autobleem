@@ -39,7 +39,9 @@
       "start": "start.png",
       "select": "select.png",
       "l1": "l1.png",
-      "r1": "r1.png"
+      "r1": "r1.png",
+      "check": "on.png",
+      "uncheck": "off.png"
     }
   },
   "launcher": {
