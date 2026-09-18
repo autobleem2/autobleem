@@ -147,11 +147,13 @@ Still to do, in order:
 
 1. ~~Continue the refactor plan - phase B, the service extractions~~ - done (see above); the rule stays: a
    service extracted from a screen ships with its tests in the same commit and moves into `ab_core`.
-2. Centralize the hard-coded paths still in the app (`/media/System/Logs/ver.txt`) in `Env` - the engine side
-   is done, so are the theme loaders (`Theme` asks `Env` for both branches now), the launch scripts and
-   RetroArch paths (`LaunchService`, step 10) and `backup_internal.sh` (`Env::getPathToRCDir()`, done with
-   the Pi port). `config.ini`'s `Cfg=` key is still an absolute console path - the Pi installer rewrites it
-   per install, since where it points depends on where the data partition was mounted.
+2. ~~Centralize the hard-coded paths in `Env`~~ - done (2026-09-18). The engine side, the theme loaders, the
+   launch scripts and RetroArch paths (`LaunchService`) and `backup_internal.sh` went first; the last one,
+   `config.ini`'s `Cfg=` key (the selection script as an absolute console path, which the Pi installer had
+   to rewrite per install), is gone: `LaunchService::selectionScriptFile()` is `<rc>/autobleem_cfg.sh`, and
+   `Config` drops a stale `cfg` key on load. `main.cpp`'s `setupEnvironment()` is the only place left that
+   spells `/media`, `/usr/sony` or `/autobleem`; `RetroArchService::mapPlaylistPath()`'s `/media` is the
+   console playlist *format*, not this machine's layout.
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
 4. ~~Set up the Sony ARM toolchain~~ - done 2026-09-17: `make_psc.sh` builds on the remote server (see Build).
    `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. **Still to
@@ -379,8 +381,8 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
-  is an absolute console path (`/media/Autobleem/rc/autobleem_cfg.sh`) that `writeSelectionScript()` writes
-  and the session wrapper reads back; the installer rewrites it to the real mount point per install.
+  was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
+  selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
 ## lib_ableem
 
@@ -607,8 +609,9 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   games then scan as "no serial"). `make_win.sh` passes `-DAB_ENABLE_CHD=ON` explicitly: a `build_win/`
   configured before the library was vendored had OFF cached, and that silently outlived the default
   becoming ON - `tests/core/test_cd_image.cpp` (over the zstd-compressed `tests/data/test.chd`, NG's
-  fixture) is what noticed. **pcsx-ab** (`E:\Programming\pcsx-rearmed-develop`) still carries the old CHD
-  library and needs the same refresh to *play* a zstd CHD - on the list, not done.
+  fixture) is what noticed. **pcsx-ab** (`E:\Programming\pcsx-rearmed-develop`) got the same refresh the
+  same day (its `8f26911`); the Pi payload binary was rebuilt from it then, the console one
+  (`payload/Autobleem/bin/emu/`, via its `make_psc.sh`) on 2026-09-18 too - both play zstd CHDs.
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
   SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).

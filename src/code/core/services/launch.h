@@ -31,6 +31,10 @@ public:
         : config_(config), session_(session), library_(library), memcards_(memcards), resumePoints_(resumePoints),
           runner_(runner) {}
 
+    // where writeSelectionScript() writes: <rc>/autobleem_cfg.sh, next to the selection.sh (console) or
+    // autobleem-session.sh (Pi) that sources it. Was config.ini's Cfg= key, an absolute console path the
+    // Pi installer had to rewrite per install; the rc dir already comes from the root (2026-09-18)
+    static std::string selectionScriptFile();
     // rc/autobleem_cfg.sh: AB_SELECTION/AB_THEME/AB_PCSX/AB_MIP, so the shell launch scripts see the menu
     // choice and the theme/emulator settings after the GUI exits or before a game starts.
     void writeSelectionScript();

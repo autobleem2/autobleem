@@ -932,15 +932,6 @@ $STAGE_DIR/Autobleem/bin/autobleem
         run mv -f "$app_dest/config.ini.keep" "$app_dest/config.ini"
     fi
 
-    # config.ini's Cfg= names the file LaunchService::writeSelectionScript drops the handover selection into,
-    # and autobleem-session reads back. It ships as the console's own absolute path, which does not exist here.
-    local cfg_path="$DATA_MOUNT/Autobleem/rc/autobleem_cfg.sh"
-    if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would point config.ini Cfg= at %s\n' "$cfg_path"
-    else
-        sed -i "s|^[Cc]fg=.*|Cfg=$cfg_path|" "$app_dest/config.ini"
-    fi
-
     [ -f "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" ] || warn "no pcsx-ab in the package - PS1 games will fall back
     to RetroArch's pcsx_rearmed core (no AutoBleem save states). Build it with pcsx-rearmed-develop/make_rpi.sh."
 

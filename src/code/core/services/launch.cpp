@@ -55,11 +55,18 @@ string LaunchService::raCoreOptionsFile() {
 }
 
 //*******************************
+// LaunchService::selectionScriptFile
+//*******************************
+string LaunchService::selectionScriptFile() {
+    return Env::getPathToRCDir() + sep + "autobleem_cfg.sh";
+}
+
+//*******************************
 // LaunchService::writeSelectionScript
 //*******************************
 void LaunchService::writeSelectionScript() {
     ofstream os;
-    string path = config_.inifile.values["cfg"];
+    string path = selectionScriptFile();
     os.open(path);
     if (!DirEntry::checkWritable(os, path))
         return; // the rc scripts then keep the previous selection

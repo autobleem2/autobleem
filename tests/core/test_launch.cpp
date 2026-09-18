@@ -41,10 +41,11 @@ struct Launching : GameLibraryFixture {
         configure("");
     }
 
-    // Config reads config.ini out of the working path and fills in its defaults; `cfg` is where the
-    // selection script goes, which is not defaulted
+    // Config reads config.ini out of the working path and fills in its defaults; the selection script goes
+    // to <usb root>/Autobleem/rc, which the fixture's root has
     void configure(const string &contents) {
-        tmp.writeFile("config.ini", "Cfg=" + tmp.at("autobleem_cfg.sh") + "\nTheme=aergb\n" + contents);
+        tmp.writeFile("config.ini", "Theme=aergb\n" + contents);
+        tmp.makeSubDir("Autobleem/rc");
         config = std::make_unique<Config>();
         memcards = std::make_unique<MemcardService>(library);
         resumePoints = std::make_unique<ResumePointService>();
@@ -102,7 +103,7 @@ TEST_CASE("writeSelectionScript records the menu choice and the settings the rc 
     lib.service->writeSelectionScript();
 
     // written in text mode, so the line endings are the platform's; the lines are what is asserted
-    string script = lib.tmp.readFile("autobleem_cfg.sh");
+    string script = lib.tmp.readFile("Autobleem/rc/autobleem_cfg.sh");
     CHECK(contains(script, "#!/bin/sh"));
     CHECK(contains(script, "AB_SELECTION=5"));
     CHECK(contains(script, "AB_THEME=aergb"));
@@ -132,8 +133,8 @@ TEST_CASE("PCSX is started through rc/launch.sh with the nine arguments the scri
                                       "NA"});                                    // pad
     CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));               // normalised in place, as always
 
-    CHECK(lib.usbGame()->last_played > 0);                                  // the launch is the "last played" time
-    CHECK(contains(lib.tmp.readFile("autobleem_cfg.sh"), "AB_SELECTION=")); // written before the run
+    CHECK(lib.usbGame()->last_played > 0); // the launch is the "last played" time
+    CHECK(contains(lib.tmp.readFile("Autobleem/rc/autobleem_cfg.sh"), "AB_SELECTION=")); // written before the run
 }
 
 TEST_CASE("the aspect and filter arguments come from config.ini") {
