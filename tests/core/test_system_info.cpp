@@ -60,6 +60,18 @@ TEST_CASE("parseCpuinfo counts processors and keeps the first model name and the
     CHECK(cpu.model == "ARMv7 Processor rev 3 (v7l)");
     CHECK(cpu.hardware == "BCM2711");
 
+    // a 64-bit ARM kernel (the Pi 400's): no model name, no Hardware - the core comes from its part id
+    const string pi64 = "processor\t: 0\nBogoMIPS\t: 108.00\nCPU implementer\t: 0x41\nCPU architecture: 8\n"
+                        "CPU part\t: 0xd08\n\nprocessor\t: 1\nCPU implementer\t: 0x41\nCPU part\t: 0xd08\n\n"
+                        "Revision\t: c03130\nModel\t\t: Raspberry Pi 400 Rev 1.0\n";
+    cpu = SystemInfoService::parseCpuinfo(pi64);
+    CHECK(cpu.cores == 2);
+    CHECK(cpu.model == "ARM Cortex-A72");
+    CHECK(cpu.hardware.empty());
+    CHECK(SystemInfoService::armCoreName("0x41", "0xD04") == "ARM Cortex-A35"); // the console's MT8167
+    CHECK(SystemInfoService::armCoreName("0x41", "0xfff") == "ARM (part 0xfff)");
+    CHECK(SystemInfoService::armCoreName("0x51", "0x801") == "ARM implementer 0x51, part 0x801");
+
     // an x86 kernel: no Hardware line, a colon inside the value
     cpu = SystemInfoService::parseCpuinfo("processor\t: 0\nmodel name\t: Intel(R) Core(TM) i7 CPU @ 2.60GHz\n");
     CHECK(cpu.cores == 1);

@@ -54,11 +54,13 @@ public:
     static Memory parseMeminfo(const std::string &text);
 
     struct Cpu {
-        std::string model;    // "model name" (x86, recent ARM kernels)
+        std::string model;    // "model name" (x86, 32-bit ARM kernels), else the core from its ARM part id
         std::string hardware; // "Hardware" (older ARM kernels: the SoC)
         int cores = 0;        // the "processor" lines
     };
     static Cpu parseCpuinfo(const std::string &text);
+    // "ARM Cortex-A72" for implementer 0x41 part 0xd08 - what a 64-bit ARM kernel's cpuinfo gives instead of a name
+    static std::string armCoreName(const std::string &implementer, const std::string &part);
 
     struct Mount {
         std::string device;

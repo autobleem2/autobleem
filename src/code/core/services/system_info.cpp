@@ -349,6 +349,7 @@ SystemInfoService::Memory SystemInfoService::parseMeminfo(const string &text) {
 // kept), "Hardware" is once at the end on the ARM kernels that have it
 SystemInfoService::Cpu SystemInfoService::parseCpuinfo(const string &text) {
     Cpu cpu;
+    string implementer, part;
     istringstream in(text);
     string line;
     while (getline(in, line)) {
@@ -363,8 +364,41 @@ SystemInfoService::Cpu SystemInfoService::parseCpuinfo(const string &text) {
             cpu.model = value;
         else if (key == "Hardware" && cpu.hardware.empty())
             cpu.hardware = value;
+        else if (key == "CPU implementer" && implementer.empty())
+            implementer = value;
+        else if (key == "CPU part" && part.empty())
+            part = value;
     }
+    // a 64-bit ARM kernel (a Pi 4/400 with the v8 kernel, the console's own) prints neither a model name
+    // nor a Hardware line - only the core's implementer and part ids, which name it well enough
+    if (cpu.model.empty() && !part.empty())
+        cpu.model = armCoreName(implementer, part);
     return cpu;
+}
+
+//*******************************
+// SystemInfoService::armCoreName
+//*******************************
+string SystemInfoService::armCoreName(const string &implementer, const string &part) {
+    struct Core {
+        const char *part;
+        const char *name;
+    };
+    static const Core armCores[] = {{"0xc07", "Cortex-A7"},  {"0xc0f", "Cortex-A15"}, {"0xd03", "Cortex-A53"},
+                                    {"0xd04", "Cortex-A35"}, {"0xd05", "Cortex-A55"}, {"0xd07", "Cortex-A57"},
+                                    {"0xd08", "Cortex-A72"}, {"0xd09", "Cortex-A73"}, {"0xd0a", "Cortex-A75"},
+                                    {"0xd0b", "Cortex-A76"}, {"0xd0d", "Cortex-A77"}, {"0xd41", "Cortex-A78"}};
+    string id = part;
+    lcase(id);
+    if (implementer == "0x41") { // ARM Ltd
+        for (const Core &core : armCores)
+            if (id == core.part)
+                return string("ARM ") + core.name;
+        return "ARM (part " + part + ")";
+    }
+    if (implementer == "0x42" || implementer == "0x43")
+        return "Broadcom/Cavium (part " + part + ")";
+    return "ARM implementer " + implementer + ", part " + part;
 }
 
 //*******************************

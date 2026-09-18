@@ -7,11 +7,13 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 #include "autobleem.h"
 #include "core/main.h"
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/platform_config.h"
+#include "core/services/system_info.h"
 #include "core/version.h"
 #include <ableem/engine/log.h>
 
@@ -49,7 +51,8 @@ static bool setupEnvironment(int argc, char *argv[]) {
         gamesDir = argv[2];
         usbRoot = DirEntry::getDirNameFromPath(gamesDir);
     } else {
-        PLOG_INFO << "USAGE: autobleem-gui /path/dbfilename.db /path/to/games";
+        PLOG_INFO << "USAGE: autobleem-gui /path/to/usb-root [--sysinfo]  |  autobleem-gui /path/dbfilename.db "
+                     "/path/to/games";
         return false;
     }
     Env::setUsbRoot(usbRoot);
@@ -102,9 +105,31 @@ static int runAutobleem(int argc, char *argv[]) {
     atexit(ableem::Platform::shutdownSDL);
     Env::autobleemKernel = DirEntry::exists("/autobleem");
 
+    // "autobleem-gui <root> --sysinfo": what the Hardware Information screen shows, on stdout, no window -
+    // for a bug report, or a machine reached over ssh. Taken out of the arguments before the layout is read.
+    vector<char *> args;
+    bool sysInfoOnly = false;
+    for (int i = 0; i < argc; i++) {
+        if (string(argv[i]) == "--sysinfo")
+            sysInfoOnly = true;
+        else
+            args.push_back(argv[i]);
+    }
+    argc = static_cast<int>(args.size());
+    argv = args.data();
+
     if (!setupEnvironment(argc, argv)) {
         PLOG_ERROR << "AutoBleem " << Version::FULL_VERSION << ": cannot start";
         return EXIT_FAILURE;
+    }
+    if (sysInfoOnly) {
+        // this is the command's output, not a log line
+        for (const InfoSection &section : SystemInfoService().collect()) {
+            cout << "[" << section.title << "]" << endl;
+            for (const InfoRow &row : section.rows)
+                cout << "  " << row.label << ": " << row.value << endl;
+        }
+        return EXIT_SUCCESS;
     }
     // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well
     DirEntry::createDir(Env::getPathToLogsDir());
