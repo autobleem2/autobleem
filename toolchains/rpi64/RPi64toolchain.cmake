@@ -9,7 +9,7 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
-set(_ab_rpi64_root "C:/sysGCC/raspberry64")
+set(_ab_rpi64_root "E:/sysGCC/raspberry64")
 set(_ab_rpi64_sysroot "${_ab_rpi64_root}/aarch64-linux-gnu/sysroot")
 
 set(CMAKE_C_COMPILER   "${_ab_rpi64_root}/bin/aarch64-linux-gnu-gcc.exe")
