@@ -16,6 +16,7 @@ string gamesDir;
 string regionalDbFile;
 string internalDbFile;
 string workingPath;
+string appDir;
 string sonyDataPath;
 string themesDir;
 string coversDbDir;
@@ -39,6 +40,10 @@ void Environment::setRegionalDbFile(const string &path) {
 void Environment::setInternalDbFile(const string &path) {
     internalDbFile = path;
 }
+void Environment::setAppDir(const string &path) {
+    appDir = path;
+}
+
 void Environment::setWorkingPath(const string &path) {
     workingPath = path;
 }
@@ -142,6 +147,20 @@ string Environment::getWorkingPath() {
         return workingPath;
     char temp[PATH_MAX];
     return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+}
+
+//*******************************
+// Environment::getAppDir
+//*******************************
+string Environment::getAppDir() {
+    if (!appDir.empty())
+        return appDir;
+    char temp[PATH_MAX];
+    return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+}
+
+string Environment::getPathToAppLangDir() {
+    return getAppDir() + sep + "lang";
 }
 
 string Environment::getPathToMemcardTemplateDir() {

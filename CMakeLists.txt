@@ -137,6 +137,8 @@ add_library(ab_core STATIC
         src/code/core/services/config.cpp
         src/code/core/services/environment.cpp
         src/code/core/services/environment.h
+        src/code/core/services/environment_setup.cpp
+        src/code/core/services/environment_setup.h
         src/code/core/services/clock.cpp
         src/code/core/services/clock.h
         src/code/core/services/config.h
