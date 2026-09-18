@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+#include <string>
+
 namespace ableem {
 
 class Platform;
@@ -63,6 +65,8 @@ public:
     int height() const;
     // output pixels per logical pixel (1 unless the window is bigger than the canvas)
     float outputScale() const;
+    // the SDL render driver in use ("opengl", "opengles2", "direct3d"; "" without a renderer)
+    std::string driverName() const;
 
     // Frame statistics, on when AB_FRAME_STATS is in the environment (read once, at construction): every
     // 5 s a PLOG_INFO line with the frame time (average and worst), how many frames took over 20 ms, and

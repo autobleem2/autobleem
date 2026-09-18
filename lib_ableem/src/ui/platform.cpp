@@ -125,6 +125,29 @@ std::string Platform::versionString() const {
     return os.str();
 }
 
+std::string Platform::linkedVersion() const {
+    SDL_version linked;
+    SDL_GetVersion(&linked);
+    return std::to_string(linked.major) + "." + std::to_string(linked.minor) + "." + std::to_string(linked.patch);
+}
+
+std::string Platform::videoDriverName() const {
+    const char *name = SDL_GetCurrentVideoDriver();
+    return name ? name : "";
+}
+
+std::string Platform::displayModeString() const {
+    if (!impl->window)
+        return "";
+    SDL_DisplayMode mode;
+    if (SDL_GetWindowDisplayMode(impl->window, &mode) != 0)
+        return "";
+    std::string text = std::to_string(mode.w) + "x" + std::to_string(mode.h);
+    if (mode.refresh_rate > 0)
+        text += " @ " + std::to_string(mode.refresh_rate) + " Hz";
+    return text;
+}
+
 bool Platform::isDevHost() const {
 #ifdef ABLEEM_DEV_HOST
     return true;

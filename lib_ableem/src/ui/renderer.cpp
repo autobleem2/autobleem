@@ -100,6 +100,13 @@ float Renderer::outputScale() const {
     return impl->scale;
 }
 
+std::string Renderer::driverName() const {
+    SDL_RendererInfo info;
+    if (!impl->renderer || SDL_GetRendererInfo(impl->renderer, &info) != 0)
+        return "";
+    return info.name;
+}
+
 Rect Renderer::toOutput(const Rect &r) const {
     if (impl->scale == 1.0f)
         return r;

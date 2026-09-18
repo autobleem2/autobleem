@@ -163,6 +163,8 @@ add_library(ab_core STATIC
         src/code/core/services/scan_service.h
         src/code/core/services/system.cpp
         src/code/core/services/system.h
+        src/code/core/services/system_info.cpp
+        src/code/core/services/system_info.h
         src/code/core/services/theme.cpp
         src/code/core/services/theme.h
         src/code/core/services/theme_converter.cpp
@@ -171,6 +173,10 @@ add_library(ab_core STATIC
         src/code/core/services/theme_installer.h
         )
 target_link_libraries(ab_core ableem_engine)
+if (WIN32)
+    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop
+    target_link_libraries(ab_core iphlpapi ws2_32)
+endif()
 
 # core/version.h: the version, commit and build time, regenerated on every build (see the script). The
 # fallback is what a tree without git tags reports; it used to be config.ini's Version= key.
@@ -216,6 +222,8 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_confirm.h
         src/code/gui/gui_font.cpp
         src/code/gui/gui_font.h
+        src/code/gui/screens/gui_hardware_info.cpp
+        src/code/gui/screens/gui_hardware_info.h
         src/code/gui/screens/gui_keyboard.cpp
         src/code/gui/screens/gui_keyboard.h
         src/code/gui/screens/gui_pad_test.cpp

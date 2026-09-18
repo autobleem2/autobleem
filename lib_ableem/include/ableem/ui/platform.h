@@ -25,6 +25,12 @@ public:
 
     // human readable "compiled against X, linked against Y" style string, for logging
     std::string versionString() const;
+    // the SDL the process is running with, as "2.32.4", the video driver it picked ("x11", "KMSDRM",
+    // "windows", "wayland"; "" without a display) and the window's display mode as "1920x1080 @ 60 Hz" ("" without
+    // a window) - for an information screen
+    std::string linkedVersion() const;
+    std::string videoDriverName() const;
+    std::string displayModeString() const;
 
     // true when running on a development machine rather than the real target (console/RPi image).
     bool isDevHost() const;
