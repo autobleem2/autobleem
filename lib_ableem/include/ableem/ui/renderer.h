@@ -35,6 +35,14 @@ public:
     // src/dst nullptr means "whole texture" / "whole render target"
     void copy(const Texture &tex, const Rect *src = nullptr, const Rect *dst = nullptr);
 
+    // Pseudo-3D: draws `src` (nullptr = the whole texture) into the trapezoid whose vertical sides are `left`
+    // and `right` - what a rectangle standing in 3D and turned about its vertical axis looks like on screen.
+    // Each side's height is taken as its depth cue (the taller side is the nearer one), and the texture's
+    // columns are spread across the width perspective-correctly, so a cover turned 60 degrees does not
+    // "swim". Drawn as one SDL copy per screen column, nothing newer than SDL 2.0.4 is needed. With
+    // left.x > right.x the back of the rectangle is showing and the texture is drawn mirrored.
+    void copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right);
+
     // nullptr switches back to rendering to the screen
     void setTarget(Texture *target);
 

@@ -18,8 +18,6 @@ using ableem::Rect;
 using ableem::Size;
 using ableem::Texture;
 
-#define SLOT_SIZE 120
-
 //*******************************
 // PsCarouselGame::loadTex
 //*******************************
@@ -195,38 +193,36 @@ void PsCarouselGame::freeTex() {
 //*******************************
 // PsCarousel::createCoverPoint
 //*******************************
-PsScreenpoint PsCarousel::createCoverPoint(int x, int shade, int side) {
-    shade = 255;
+// The side covers stand in a row that recedes from the middle: each one a little further out, turned a
+// little more towards it. Offsets are of the box's centre from the screen's centre, in pixels, and were
+// chosen so that the turned covers neither overlap nor leave gaps at half size.
+PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
+    static const int centreOffset[7] = {0, 190, 262, 326, 384, 438, 490};
+    static const float turn[7] = {0.0f, 40.0f, 52.0f, 60.0f, 66.0f, 70.0f, 72.0f};
+    const int boxWidth = static_cast<int>(226 * 0.5f);
+    PsScreenpoint point;
+    point.scale = 0.5f;
+    point.shade = 255;
+    point.y = 100;
     if (side == 0) {
-        PsScreenpoint point;
-        point.x = 405 - SLOT_SIZE * x;
-        point.y = 100;
-        point.scale = 0.5f;
-        point.shade = shade;
-        return point;
+        point.x = 640 - centreOffset[distance] - boxWidth / 2;
+        point.angle = -turn[distance];
     } else {
-        PsScreenpoint point;
-        point.x = 405 + 357 + SLOT_SIZE * x;
-        point.y = 100;
-        point.scale = 0.5f;
-        point.shade = shade;
-        return point;
+        point.x = 640 + centreOffset[distance] - boxWidth / 2;
+        point.angle = turn[distance];
     }
+    return point;
 }
 
 //*******************************
 // PsCarousel::initCoverPositions
 //*******************************
 void PsCarousel::initCoverPositions() {
-    // 405 x 100
     coverPositions.clear();
 
-    coverPositions.push_back(createCoverPoint(5, 40, 0));
-    coverPositions.push_back(createCoverPoint(4, 70, 0));
-    coverPositions.push_back(createCoverPoint(3, 90, 0));
-    coverPositions.push_back(createCoverPoint(2, 100, 0));
-    coverPositions.push_back(createCoverPoint(1, 128, 0));
-    coverPositions.push_back(createCoverPoint(0, 150, 0));
+    for (int distance = 6; distance >= 1; distance--) {
+        coverPositions.push_back(createCoverPoint(distance, 0));
+    }
 
     PsScreenpoint point;
     point.x = 640 - 113;
@@ -235,12 +231,7 @@ void PsCarousel::initCoverPositions() {
     point.shade = 255;
     coverPositions.push_back(point);
 
-    coverPositions.push_back(createCoverPoint(0, 150, 1));
-    coverPositions.push_back(createCoverPoint(1, 128, 1));
-    coverPositions.push_back(createCoverPoint(2, 100, 1));
-    coverPositions.push_back(createCoverPoint(3, 90, 1));
-    coverPositions.push_back(createCoverPoint(4, 70, 1));
-    coverPositions.push_back(createCoverPoint(5, 40, 1));
-
-    // special point to move it up
+    for (int distance = 1; distance <= 6; distance++) {
+        coverPositions.push_back(createCoverPoint(distance, 1));
+    }
 }

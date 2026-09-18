@@ -13,12 +13,16 @@
 //******************
 // PsScreenpoint
 //******************
+// Where a cover is on screen: the top-left of its (unturned) box, its size as a fraction of the 226x226
+// cover texture, its brightness, and how far it is turned about its vertical axis - 0 faces the viewer,
+// negative is a cover left of the middle facing in towards it, positive one on the right.
 class PsScreenpoint {
 public:
     int x = 0;
     int y = 0;
     float scale = 0.0;
     int shade = 0;
+    float angle = 0.0f; // degrees
 };
 
 //******************
@@ -57,5 +61,6 @@ public:
 
     void initCoverPositions();
 
-    PsScreenpoint createCoverPoint(int x, int shade, int side);
+    // the `distance`th cover out from the middle (1..6), on the left (side 0) or the right (side 1)
+    PsScreenpoint createCoverPoint(int distance, int side);
 };

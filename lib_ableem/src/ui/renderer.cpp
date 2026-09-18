@@ -2,6 +2,8 @@
 #include "ableem/ui/platform.h"
 #include "ableem/ui/texture.h"
 #include "sdl_common.h"
+#include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <vector>
 
@@ -121,6 +123,53 @@ void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
         pdst = &sdst;
     }
     SDL_RenderCopy(impl->renderer, static_cast<SDL_Texture *>(tex.native()), psrc, pdst);
+}
+
+void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right) {
+    Rect s;
+    if (src) {
+        s = *src;
+    } else {
+        Size size = tex.size();
+        s = Rect(0, 0, size.w, size.h);
+    }
+    bool mirrored = false;
+    if (left.x > right.x) {
+        std::swap(left, right);
+        mirrored = true;
+    }
+    float width = right.x - left.x;
+    float leftHeight = left.bottom - left.top, rightHeight = right.bottom - right.top;
+    if (width < 1.0f || s.w <= 0 || s.h <= 0 || leftHeight <= 0.0f || rightHeight <= 0.0f)
+        return;
+
+    // perspective-correct texture mapping: 1/depth is linear across the screen, and each side's height is
+    // proportional to 1/depth, so the source column for screen fraction t is t*hR / lerp(hL, hR, t)
+    auto sourceAt = [&](float t) {
+        float u = t * rightHeight / (leftHeight + (rightHeight - leftHeight) * t);
+        return mirrored ? 1.0f - u : u;
+    };
+    auto *native = static_cast<SDL_Texture *>(tex.native());
+    int xFirst = static_cast<int>(std::floor(left.x));
+    int xLast = static_cast<int>(std::ceil(right.x));
+    for (int x = xFirst; x < xLast; x++) {
+        float t0 = std::min(1.0f, std::max(0.0f, (x - left.x) / width));
+        float t1 = std::min(1.0f, std::max(0.0f, (x + 1 - left.x) / width));
+        if (t1 <= t0)
+            continue;
+        float u0 = sourceAt(t0), u1 = sourceAt(t1);
+        if (u0 > u1)
+            std::swap(u0, u1);
+        // the strip of source columns this screen column shows; at least one column wide
+        int c0 = std::min(s.w - 1, static_cast<int>(u0 * s.w));
+        int c1 = std::min(s.w, std::max(c0 + 1, static_cast<int>(std::ceil(u1 * s.w))));
+        float tm = (t0 + t1) * 0.5f;
+        int top = static_cast<int>(std::lround(left.top + (right.top - left.top) * tm));
+        int bottom = static_cast<int>(std::lround(left.bottom + (right.bottom - left.bottom) * tm));
+        SDL_Rect sr{s.x + c0, s.y, c1 - c0, s.h};
+        SDL_Rect dr{x, top, 1, std::max(1, bottom - top)};
+        SDL_RenderCopy(impl->renderer, native, &sr, &dr);
+    }
 }
 
 void Renderer::setTarget(Texture *target) {

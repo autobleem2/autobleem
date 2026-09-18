@@ -4,6 +4,7 @@
 #include "carousel.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <ableem/engine/log.h>
 
@@ -245,6 +246,7 @@ void Carousel::updatePositions() {
                 game.actual.y = game.current.y + (game.destination.y - game.current.y) * delta;
                 game.actual.scale = game.current.scale + (game.destination.scale - game.current.scale) * delta;
                 game.actual.shade = game.current.shade + (game.destination.shade - game.current.shade) * delta;
+                game.actual.angle = game.current.angle + (game.destination.angle - game.current.angle) * delta;
 
                 if (delta > 1.0f) {
                     game.actual = game.destination;
@@ -260,26 +262,79 @@ void Carousel::updatePositions() {
 //*******************************
 // Carousel::render
 //*******************************
+namespace {
+// the pseudo-3D of the side covers: how far the viewer is from the screen, in pixels, which sets how much
+// the near edge of a turned cover grows and the far one shrinks; and how thick a cover is, as a fraction of
+// its width - the visible spine on its near edge
+const float ViewerDistance = 600.0f;
+const float CoverThickness = 0.08f;
+const float Pi = 3.14159265f;
+
+// draws one cover as a box standing upright and turned `point.angle` degrees about its vertical axis: the
+// front face as a perspective trapezoid, and the spine on the edge nearer to the viewer
+void renderTurnedCover(ableem::Renderer &renderer, ableem::Texture tex, const PsScreenpoint &point) {
+    const float width = 226 * point.scale, height = width;
+    const float cx = point.x + width / 2, cy = point.y + height / 2;
+    const float radians = point.angle * Pi / 180.0f;
+    const float c = std::cos(radians), s = std::sin(radians);
+    // a point in the cover's own plane (x along its width from the middle, z its depth away from the
+    // viewer) turned, projected, and given back as the vertical edge it makes on screen
+    auto project = [&](float x, float z) {
+        float worldX = x * c - z * s;
+        float worldZ = x * s + z * c;
+        float k = ViewerDistance / (ViewerDistance + worldZ);
+        return ableem::VerticalEdge(cx + worldX * k, cy - height / 2 * k, cy + height / 2 * k);
+    };
+
+    ableem::Rect full(0, 0, 226, 226);
+    const float half = width / 2;
+    const float depth = width * CoverThickness;
+    // the spine: the near edge is the left one for a cover on the right (turned to face left) and vice
+    // versa; textured with a strip a few pixels in from that edge of the cover, so it takes the case's colour
+    const bool nearEdgeIsLeft = point.angle > 0;
+    ableem::Rect spineSource(nearEdgeIsLeft ? 4 : 226 - 6, 0, 2, 226);
+    ableem::VerticalEdge spineFront = project(nearEdgeIsLeft ? -half : half, 0);
+    ableem::VerticalEdge spineBack = project(nearEdgeIsLeft ? -half : half, depth);
+    int spineShade = static_cast<int>(point.shade * 0.45f);
+    tex.setColorMod(ableem::Color(spineShade, spineShade, spineShade));
+    renderer.copyTrapezoid(tex, &spineSource, spineFront, spineBack);
+
+    // the face, a little darker the more it turns away from the light in front of the screen
+    int faceShade = static_cast<int>(point.shade * (0.55f + 0.45f * std::fabs(c)));
+    tex.setColorMod(ableem::Color(faceShade, faceShade, faceShade));
+    renderer.copyTrapezoid(tex, &full, project(-half, 0), project(half, 0));
+}
+} // namespace
+
 void Carousel::render() {
     ableem::Renderer &renderer = gui_.renderer();
+    const float screenMiddle = renderer.width() / 2.0f;
+
+    // far to near, so that a cover nearer the middle is drawn over the one behind it
+    vector<const PsCarouselGame *> visible;
     for (const auto &game : games) {
-        if (game.visible) {
-            ableem::Texture currentGameTex = game.coverPng;
-            PsScreenpoint point = game.actual;
+        if (game.visible)
+            visible.push_back(&game);
+    }
+    auto distanceFromMiddle = [&](const PsCarouselGame *game) {
+        return std::fabs(game->actual.x + 226 * game->actual.scale / 2 - screenMiddle);
+    };
+    stable_sort(visible.begin(), visible.end(), [&](const PsCarouselGame *a, const PsCarouselGame *b) {
+        return distanceFromMiddle(a) > distanceFromMiddle(b);
+    });
 
-            ableem::Rect coverRect;
-            coverRect.x = point.x;
-            coverRect.y = point.y;
-            coverRect.w = 226 * point.scale;
-            coverRect.h = 226 * point.scale;
+    for (const PsCarouselGame *game : visible) {
+        ableem::Texture currentGameTex = game->coverPng;
+        PsScreenpoint point = game->actual;
 
-            ableem::Rect fullRect;
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.w = 226;
-            fullRect.h = 226;
+        if (std::fabs(point.angle) < 0.5f) {
+            // facing the viewer: a plain copy, as the selected cover always is
+            ableem::Rect coverRect(point.x, point.y, 226 * point.scale, 226 * point.scale);
+            ableem::Rect fullRect(0, 0, 226, 226);
             currentGameTex.setColorMod(ableem::Color(point.shade, point.shade, point.shade));
             renderer.copy(currentGameTex, &fullRect, &coverRect);
+        } else {
+            renderTurnedCover(renderer, currentGameTex, point);
         }
     }
 }

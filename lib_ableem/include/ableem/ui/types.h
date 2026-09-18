@@ -48,6 +48,17 @@ struct Rect {
 };
 
 //******************
+// VerticalEdge
+//******************
+// One vertical side of a trapezoid on screen: where it stands and from where to where it runs (top < bottom).
+// Renderer::copyTrapezoid takes two of them.
+struct VerticalEdge {
+    float x = 0, top = 0, bottom = 0;
+    VerticalEdge() = default;
+    VerticalEdge(float _x, float _top, float _bottom) : x(_x), top(_top), bottom(_bottom) {}
+};
+
+//******************
 // Align
 //******************
 enum class Align { Left, Center, Right };
