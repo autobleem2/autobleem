@@ -13,9 +13,19 @@
 set(WITH_LZMA_ASM OFF CACHE BOOL "" FORCE)   # plain C on every host, the same code path everywhere
 add_subdirectory(deps/lzma-24.05 EXCLUDE_FROM_ALL)
 
-option(ZLIB_BUILD_EXAMPLES "Enable Zlib Examples" OFF)
-add_subdirectory(deps/zlib-1.3.1 EXCLUDE_FROM_ALL)
-set_target_properties(zlibstatic PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# A program that already links a zlib (pcsx-ab: save states, libpng) sets CHDR_SYSTEM_ZLIB and passes its
+# own ZLIB::ZLIB, rather than carrying a second copy of inflate in the same binary.
+option(CHDR_SYSTEM_ZLIB "Link the zlib the enclosing project found (ZLIB::ZLIB) instead of the vendored copy" OFF)
+if (CHDR_SYSTEM_ZLIB)
+    set(_chdr_zlib ZLIB::ZLIB)
+    set(_chdr_zlib_inc "")
+else()
+    option(ZLIB_BUILD_EXAMPLES "Enable Zlib Examples" OFF)
+    add_subdirectory(deps/zlib-1.3.1 EXCLUDE_FROM_ALL)
+    set_target_properties(zlibstatic PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set(_chdr_zlib zlibstatic)
+    set(_chdr_zlib_inc ${CMAKE_CURRENT_SOURCE_DIR}/deps/zlib-1.3.1 ${CMAKE_CURRENT_BINARY_DIR}/deps/zlib-1.3.1)
+endif()
 
 set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
@@ -35,10 +45,7 @@ set(CHDR_SOURCES
 add_library(chdr STATIC ${CHDR_SOURCES})
 target_include_directories(chdr PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # zlib's generated zconf.h lands in its binary dir; the lzma dep exports its own include dir
-target_include_directories(chdr PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/zlib-1.3.1
-        ${CMAKE_CURRENT_BINARY_DIR}/deps/zlib-1.3.1
-        ${CMAKE_CURRENT_SOURCE_DIR}/deps/zstd-1.5.6/lib)
-target_link_libraries(chdr PRIVATE lzma zlibstatic libzstd_static)
+target_include_directories(chdr PRIVATE ${_chdr_zlib_inc} ${CMAKE_CURRENT_SOURCE_DIR}/deps/zstd-1.5.6/lib)
+target_link_libraries(chdr PRIVATE lzma ${_chdr_zlib} libzstd_static)
 
 set_source_files_properties(${CHDR_SOURCES} PROPERTIES COMPILE_FLAGS "-w")
