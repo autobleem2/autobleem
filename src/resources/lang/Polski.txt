@@ -234,6 +234,8 @@ Move Cursor
 Przesuń Kursor
 Moving :
 Przenoszenie :
+Merging discs:
+Łączenie płyt:
 Music:
 Muzyka:
 New Card

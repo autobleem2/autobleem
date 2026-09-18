@@ -234,6 +234,8 @@ Move Cursor
 Desplaçar lo cursor
 Moving :
 Desplaçament :
+Merging discs:
+
 Music:
 Musica :
 New Card

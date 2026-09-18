@@ -316,6 +316,8 @@ Memory Card Manager
 Minneskorthanterare
 Moving :
 Flyttar :
+Merging discs:
+
 Music:
 Musik:
 New GamePad found

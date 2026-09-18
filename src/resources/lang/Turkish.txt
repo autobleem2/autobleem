@@ -278,6 +278,8 @@ Memory Cards
 Hafıza Kartları
 Moving :
 Taşınıyor:
+Merging discs:
+
 New Card
 Yeni Kart
 New GamePad found

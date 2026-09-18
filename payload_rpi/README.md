@@ -103,7 +103,10 @@ drive alongside the small `bootfs` one.
 
 ```
 /media/autobleem/
-  Games/<game name>/           your games - one folder each, .cue+.bin / .pbp / .chd
+  Games/<game name>/           your games - one folder each, .cue+.bin / .pbp / .chd. A multi-disc game is
+                               one folder with every disc in it (plus the .m3u the scan writes); folders named
+                               "Game (Disc 1)", "Game (Disc 2)"... are merged into "Game" by the scan - the
+                               other discs' own Game.ini and save states are deleted in the process
   Games/!MemCards/             memory card sets
   Games/!SaveStates/           save states
   Autobleem/bin/autobleem/     autobleem-gui and its resources

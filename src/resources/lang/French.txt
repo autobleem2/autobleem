@@ -248,6 +248,8 @@ Move Cursor
 Déplacer le curseur
 Moving :
 Déplacement :
+Merging discs:
+
 Music:
 Musique :
 New Card

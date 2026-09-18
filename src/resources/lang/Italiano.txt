@@ -226,6 +226,8 @@ Move Cursor
 Sposta Cursore
 Moving :
 Spostando :
+Merging discs:
+
 Music:
 Musica:
 New Card

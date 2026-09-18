@@ -173,6 +173,8 @@ string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
             return _("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.detail);
         case ScanStage::MovingFile:
             return _("Moving :") + " " + update.detail;
+        case ScanStage::MergingDiscs:
+            return _("Merging discs:") + " " + update.detail;
     }
     return "";
 }

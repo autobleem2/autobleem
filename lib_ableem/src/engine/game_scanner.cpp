@@ -1,5 +1,7 @@
 #include "ableem/engine/game_scanner.h"
 #include "ableem/engine/config_file_editor.h"
+#include "ableem/engine/disc_suffix.h"
+#include "ableem/engine/ini_file.h"
 #include "ableem/engine/ecm_decoder.h"
 #include "ableem/engine/environment.h"
 #include "ableem/engine/filesystem.h"
@@ -10,6 +12,7 @@
 #include "ableem/engine/thumbnail_lookup.h"
 
 #include <algorithm>
+#include <map>
 #include <fstream>
 #include <iostream>
 
@@ -571,6 +574,124 @@ bool GameScanner::hasLooseGameFiles(const string & path) {
     DirEntries fileList = DirEntry::getFilesWithExtension(path, globalFileList, extensions);
 
     return fileList.size() > 0;
+}
+
+//*******************************
+// GameScanner::mergeMultiDiscFolders
+//*******************************
+namespace {
+
+bool isDiscImageFile(const string &name) {
+    string ext = DirEntry::getFileExtension(name);
+    return Strings::compareCaseInsensitive(ext, "chd") || Strings::compareCaseInsensitive(ext, "pbp")
+        || Strings::compareCaseInsensitive(ext, "cue") || Strings::compareCaseInsensitive(ext, "bin")
+        || Strings::compareCaseInsensitive(ext, "img");
+}
+
+const char kGroupKeySep = 31;   // ASCII unit separator
+
+struct DiscFolder {
+    string path;    // the folder, no trailing separator
+    string name;    // its name
+    int disc = 0;
+};
+
+// every game folder under dir, recursively, grouped by parent + base name when its name carries a disc marker
+void collectDiscFolders(const string &dir, map<string, vector<DiscFolder>> &groups) {
+    for (const DirEntry &entry : DirEntry::diru_DirsOnly(dir)) {
+        if (entry.name.empty() || entry.name[0] == '!') continue;   // !SaveStates, !MemCards
+        string path = DirEntry::fixPath(dir) + sep + entry.name;
+        if (DirEntry::thereIsAGameFile(path)) {
+            DiscSuffix parsed = DiscSuffix::parse(entry.name);
+            if (parsed.matched() && !parsed.base.empty()) {
+                DiscFolder folder;
+                folder.path = path;
+                folder.name = entry.name;
+                folder.disc = parsed.disc;
+                // 0x1f keeps "Games/A/Game" and "Games/B/Game" apart without a separator that a name could contain
+                groups[DirEntry::fixPath(dir) + kGroupKeySep + parsed.base].push_back(folder);
+            }
+        } else {
+            collectDiscFolders(path, groups);
+        }
+    }
+}
+
+} // namespace
+
+int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
+    map<string, vector<DiscFolder>> groups;
+    collectDiscFolders(gamesDir, groups);
+
+    int merged = 0;
+    for (auto &kv : groups) {
+        vector<DiscFolder> &group = kv.second;
+        if (group.size() < 2) continue;
+        sort(group.begin(), group.end(), [](const DiscFolder &a, const DiscFolder &b) { return a.disc < b.disc; });
+
+        const DiscFolder &first = group.front();
+        const string parent = kv.first.substr(0, kv.first.find(kGroupKeySep));
+        const string base = kv.first.substr(kv.first.find(kGroupKeySep) + 1);
+        const string target = parent + sep + base;
+        report(ScanStage::MergingDiscs, base);
+
+        if (target != first.path && DirEntry::exists(target)) {
+            cout << "multi-disc merge: " << target << " already exists - leaving " << base << "'s discs as they are" << endl;
+            continue;
+        }
+        if (target != first.path) {
+            if (!DirEntry::renameFile(first.path, target)) {
+                cout << "multi-disc merge: cannot rename " << first.path << " to " << target << " - skipped" << endl;
+                continue;
+            }
+        }
+
+        bool mergedAny = false;
+        for (size_t i = 1; i < group.size(); i++) {
+            const DiscFolder &other = group[i];
+            bool failed = false;
+            for (const DirEntry &e : DirEntry::diru_FilesOnly(other.path)) {
+                if (!isDiscImageFile(e.name)) continue;
+                const string from = other.path + sep + e.name;
+                const string to = target + sep + e.name;
+                if (DirEntry::exists(to)) {
+                    cout << "multi-disc merge: " << to << " already exists - " << other.name << " left as it is" << endl;
+                    failed = true;
+                    break;
+                }
+                if (!DirEntry::renameFile(from, to)) {
+                    cout << "multi-disc merge: cannot move " << from << " to " << to << " - " << other.name << " left as it is" << endl;
+                    failed = true;
+                    break;
+                }
+            }
+            if (failed) continue;
+            DirEntry::removeDirAndContents(other.path);
+            mergedAny = true;
+        }
+
+        if (mergedAny || target != first.path) {
+            // a stale .m3u from the per-disc days; the scan writes the merged folder's own
+            for (const DirEntry &e : DirEntry::diru_FilesOnly(target)) {
+                if (DirEntry::matchExtension(e.name, ".m3u"))
+                    DirEntry::removeFile(target + sep + e.name);
+            }
+            // The first disc's Game.ini is kept - it is the user's settings - but its disc list is now
+            // short, and a title taken from the old folder name still says "(Disc 1)": the scan rebuilds
+            // the list from the folder when the key is gone, and the title is the base name.
+            string iniPath = target + sep + GAME_INI;
+            if (DirEntry::exists(iniPath)) {
+                IniFile ini;
+                ini.load(iniPath);
+                ini.values.erase("discs");
+                if (ini.values["title"] == first.name) ini.values["title"] = base;
+                ini.save(iniPath);
+            }
+            cout << "multi-disc merge: " << group.size() << " folders -> " << target << endl;
+            merged++;
+        }
+    }
+    return merged;
 }
 
 //*******************************

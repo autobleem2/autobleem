@@ -234,6 +234,8 @@ Move Cursor
 Flyt markør
 Moving :
 Flytter:
+Merging discs:
+
 Music:
 Musik:
 New Card

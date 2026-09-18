@@ -226,6 +226,8 @@ Move Cursor
 Presunúť kurzor
 Moving :
 Presúvam:
+Merging discs:
+
 Music:
 Hudba:
 New Card

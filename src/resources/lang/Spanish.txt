@@ -226,6 +226,8 @@ Move Cursor
 Mover Cursor
 Moving :
 Moviendo :
+Merging discs:
+
 Music:
 Musica:
 New Card

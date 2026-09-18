@@ -225,8 +225,9 @@ generator, the year on the meta panel, the per-size bold font cache `Fonts::bold
 wrappers + sorted languages, music not restarting on theme browse, Favorites fallback, rc guards, the
 stock-SonyUI/`.lic`/RetroBoot-patch cleanup), the libchdr refresh, and Phase 1 - `RdbReader`,
 `MetadataLookup`, `ThumbnailLookup` (see lib_ableem/engine below), verified on the Pi 400 with the
-libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`. Next: the multi-disc folder merge,
-pcsx-ab's libchdr refresh, version constants + link gates, lightgun, plog, INI translations, screens.
+libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`, and Phase 2, the multi-disc folder
+merge (`DiscSuffix`, `mergeMultiDiscFolders`). Next: pcsx-ab's libchdr refresh, version constants + link
+gates, lightgun, plog, INI translations, screens.
 
 ## Raspberry Pi port (2026-09-17)
 
@@ -403,6 +404,17 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   requirement; a placeholder byte-identical to `default.png` is removed by the scan once a thumbnail
   exists (`DirEntry::filesAreIdentical`). Titles of *unlocked* games lose their region tag on a rescan
   with an rdb around (`"Persona (USA)"` -> `"Persona"`).
+- **`DiscSuffix::parse`** (`engine/disc_suffix.h`, 2026-09-18) - `"Game (Disc 2)"` / `"(Disk 2)"` / `"(CD 2)"` /
+  `"(CD2)"` / `"Game - Disc 2"` -> `{base, disc}`. **`GameScanner::mergeMultiDiscFolders(gamesDir)`** runs in
+  the scan worker before the tree is read: sibling folders whose names differ only by that marker become one
+  `<base>` folder - the lowest disc's folder is renamed, the other discs' images (chd/pbp/cue/bin/img) are moved
+  in, **their folders are deleted with their Game.ini/pcsx.cfg/save states** (the owner accepted the fork's
+  behaviour), disc 1's Game.ini keeps its settings but loses its `Discs=` key (the scan rebuilds it) and a
+  folder-derived `(Disc 1)` title. A group is skipped when `<base>` already exists as something else or a
+  file would be overwritten. `ScanStage::MergingDiscs` is the status line. pcsx-ab gets the first disc's
+  `.cue` as before (its frontend cannot open an `.m3u`; its disc picker lists the folder); RetroArch gets
+  the `.m3u`. Ported from AutoBleem-NG's `mergeMultiDiscGames`, moved ahead of the scan because our
+  `onGameVerified` events would otherwise have announced the per-disc folders first.
 - **`UsbGame`/`GamesHierarchy`/`GameScanner`** - the scan. `GameScanner::scanGamesDirectory(hierarchy,
   metadata)` then `writeRegionalDatabase(hierarchy, db)`; progress is reported to a `ScanProgressListener`
   (`ScanStage::Scanning/Game/DecompressingEcm/UpdatingDatabase/GameFailedVerify`). The app's listener is

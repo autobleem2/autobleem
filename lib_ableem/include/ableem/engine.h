@@ -21,6 +21,7 @@
 #include "engine/rdb_reader.h"
 #include "engine/metadata_lookup.h"
 #include "engine/thumbnail_lookup.h"
+#include "engine/disc_suffix.h"
 #include "engine/usb_game.h"
 #include "engine/games_hierarchy.h"
 #include "engine/games_fingerprint.h"

@@ -244,6 +244,8 @@ Move Cursor
 Posunout kurzor
 Moving :
 Přesouvání:
+Merging discs:
+
 Music:
 Hudba:
 New Card

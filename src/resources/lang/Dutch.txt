@@ -236,6 +236,8 @@ Move Cursor
 Verplaats cursor
 Moving :
 Verplaatsen:
+Merging discs:
+
 Music:
 Muziek:
 New Card

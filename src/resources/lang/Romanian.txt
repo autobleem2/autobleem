@@ -242,6 +242,8 @@ Move Cursor
 Muta Cursorul
 Moving :
 Se muta:
+Merging discs:
+
 Music:
 Muzica:
 New Card

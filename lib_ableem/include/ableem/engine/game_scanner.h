@@ -23,7 +23,8 @@ enum class ScanStage {
     DecompressingEcm,   // detail: "" at the start, then the decoder's "Decoding ECMed bin (nn%)" messages
     UpdatingDatabase,   // detail: ""
     GameFailedVerify,   // detail: the game's full path
-    MovingFile          // detail: the file being moved into its own game sub-directory
+    MovingFile,         // detail: the file being moved into its own game sub-directory
+    MergingDiscs        // detail: the multi-disc game whose "(Disc n)" folders are being merged into one
 };
 
 //******************
@@ -75,6 +76,13 @@ public:
     // per game), the layout the rest of the scanner expects. reports each move as ScanStage::MovingFile.
     // returns true if anything was moved.
     bool moveLooseGameFilesIntoSubDirs(const std::string &path);
+
+    // "Game (Disc 1)", "Game (Disc 2)", ... sibling folders (see DiscSuffix) become one "Game" folder holding
+    // every disc image, ready for an .m3u: the lowest disc's folder is renamed, the other discs' images
+    // are moved in and their folders - with their Game.ini, pcsx.cfg and save states - are deleted. A group
+    // is skipped when "Game" already exists and is not the first disc, or when a file would be overwritten.
+    // Runs before the scan proper, so what the scan sees is the merged tree. Returns the number of games merged.
+    int mergeMultiDiscFolders(const std::string &gamesDir);
 
 private:
     ScanProgressListener *listener;

@@ -209,6 +209,65 @@ TEST_CASE("a default.png placeholder next to a game is removed once the thumbnai
         CHECK(g->coverPath == fx.tmp.at("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/" + g->title + ".png"));
 }
 
+TEST_CASE("sibling (Disc n) folders are merged into one game before the scan, with an .m3u") {
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Final Fantasy VII (Disc 2)", "SLUS_009.00");
+    test_support::makeFakeGame(fx.gamesDir(), "Final Fantasy VII (Disc 1)", "SLUS_008.99");
+    test_support::makeFakeGame(fx.gamesDir(), "Final Fantasy VII (Disc 3)", "SLUS_009.01");
+    test_support::makeFakeGame(fx.gamesDir(), "Single Disc Game", "SLUS_012.34");
+    // an earlier scan's Game.ini on disc 1, with the disc list of one disc
+    fx.tmp.writeFile("Games/Final Fantasy VII (Disc 1)/Game.ini",
+                     "[Game]\nAutomation=1\nTitle=Final Fantasy VII (Disc 1)\nDiscs=Final Fantasy VII (Disc 1)\nFavorite=1\n");
+
+    ScanUpdate update = fx.runAndPoll();
+    REQUIRE(update.addedGames.size() == 2);   // one merged game, one single-disc one
+
+    string merged = fx.tmp.at("Games/Final Fantasy VII");
+    CHECK(ableem::DirEntry::exists(merged));
+    CHECK_FALSE(ableem::DirEntry::exists(fx.tmp.at("Games/Final Fantasy VII (Disc 1)")));
+    CHECK_FALSE(ableem::DirEntry::exists(fx.tmp.at("Games/Final Fantasy VII (Disc 2)")));
+    CHECK_FALSE(ableem::DirEntry::exists(fx.tmp.at("Games/Final Fantasy VII (Disc 3)")));
+    CHECK(ableem::DirEntry::exists(merged + "/Final Fantasy VII (Disc 1).cue"));
+    CHECK(ableem::DirEntry::exists(merged + "/Final Fantasy VII (Disc 2).bin"));
+    CHECK(ableem::DirEntry::exists(merged + "/Final Fantasy VII (Disc 3).cue"));
+    CHECK(ableem::DirEntry::exists(merged + "/Final Fantasy VII (Disc 1).m3u"));   // named after the first disc, like every multi-disc folder's
+
+    const PsGame *ff = nullptr;
+    for (const auto &g : update.addedGames)
+        if (g->folder.find("Final Fantasy VII") != string::npos) ff = g.get();
+    REQUIRE(ff != nullptr);
+    CHECK(ff->cds == 3);
+    CHECK(ff->title == "Final Fantasy VII");   // the folder-derived "(Disc 1)" title became the base name
+    CHECK(ff->favorite);                       // disc 1's Game.ini survived the merge
+
+    // a second scan finds nothing to merge and changes nothing
+    ScanUpdate second = fx.runAndPoll();
+    CHECK(second.addedGames.empty());
+    CHECK(second.updatedGames.size() == 2);
+}
+
+TEST_CASE("a merge is skipped when the merged folder already exists as something else, or a file would be overwritten") {
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Tekken (Disc 1)", "SLUS_008.99");
+    test_support::makeFakeGame(fx.gamesDir(), "Tekken (Disc 2)", "SLUS_009.00");
+    test_support::makeFakeGame(fx.gamesDir(), "Tekken", "SLUS_009.01");   // a third, unrelated game in the way
+
+    test_support::makeFakeGame(fx.gamesDir(), "Wipeout (Disc 1)", "SLUS_010.00");
+    test_support::makeFakeGame(fx.gamesDir(), "Wipeout (Disc 2)", "SLUS_010.01");
+    // disc 1's folder already holds a copy of disc 2's files: moving them in would overwrite these
+    ableem::DirEntry::copy(fx.tmp.at("Games/Wipeout (Disc 2)/Wipeout (Disc 2).cue"), fx.tmp.at("Games/Wipeout (Disc 1)/Wipeout (Disc 2).cue"));
+    ableem::DirEntry::copy(fx.tmp.at("Games/Wipeout (Disc 2)/Wipeout (Disc 2).bin"), fx.tmp.at("Games/Wipeout (Disc 1)/Wipeout (Disc 2).bin"));
+
+    ScanUpdate update = fx.runAndPoll();
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Tekken (Disc 1)")));
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Tekken (Disc 2)")));
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Tekken")));
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Wipeout")));             // disc 1 was renamed...
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Wipeout (Disc 2)")));    // ...but disc 2 stayed where it was
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Wipeout (Disc 2)/Wipeout (Disc 2).cue")));   // not moved
+    CHECK(update.addedGames.size() == 5);
+}
+
 TEST_CASE("a game folder that disappears is removed from regional.db on the next scan") {
     ScanServiceFixture fx;
     test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");

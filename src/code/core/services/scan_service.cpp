@@ -167,6 +167,13 @@ void ScanService::runScan() {
         GameScanner mover(&listener);
         mover.moveLooseGameFilesIntoSubDirs(gamesDir);
     }
+    {
+        // "(Disc n)" sibling folders become one folder before the tree is read, so the scan below only
+        // ever sees the merged game - and the fingerprint taken after the scan is of the merged tree, so
+        // the watcher does not fire on the merge's own moves
+        GameScanner merger(&listener);
+        merger.mergeMultiDiscFolders(gamesDir);
+    }
 
     GamesHierarchy hierarchy;
     hierarchy.getHierarchy(gamesDir);
