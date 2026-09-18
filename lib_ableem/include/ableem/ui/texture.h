@@ -55,7 +55,11 @@ public:
     static Texture createStreaming(Renderer &renderer, int w, int h);
 
     bool valid() const;
+    // in logical pixels for a render target (what createTarget was asked for), in its own for anything else
     Size size() const;
+    // texture pixels per logical pixel: the renderer's output scale for a render target, 1 for everything
+    // else - Renderer::copy scales a source rect by it, so a target is addressed like the screen
+    float pixelScale() const { return pixelScale_; }
 
     void setBlendMode(BlendMode mode);
     void setColorMod(Color c);
@@ -67,6 +71,7 @@ private:
     friend class Renderer;
     explicit Texture(void *nativeTexture);
     std::shared_ptr<void> handle;
+    float pixelScale_ = 1.0f;
 
 public:
     void *native() const { return handle.get(); }

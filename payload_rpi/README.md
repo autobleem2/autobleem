@@ -58,7 +58,7 @@ trees on it; downloads every armhf core plus RetroArch's info/assets/autoconfig/
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
 later); downloads the BIOS pack (~190 MB, file by file with a SHA-256 check, only what is missing -
 `--no-bios` skips it); installs the launcher, pcsx-ab, themes and launch scripts; wires up a systemd service that owns
-tty1; and sets up a quiet boot at 720p with the AutoBleem logo on screen (plymouth) instead of the kernel
+tty1; and sets up a quiet boot at 1080p with the AutoBleem logo on screen (plymouth) instead of the kernel
 log. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
 transition; the installer tries both names).
 
@@ -67,7 +67,7 @@ games. The installer fills both from the pack (SCPH-5501 and SCPH-5500); to use 
 before running it, or replace them afterwards — a re-run never overwrites them.
 
 `--help` lists the options. The useful ones are `--shrink-root`, `--retroarch`, `--no-downloads`, `--no-bios`,
-`--no-packages`, `--stage`, `--hdmi-mode` (default `1280x720@60`; `none` keeps the screen's preferred mode),
+`--no-packages`, `--stage`, `--hdmi-mode` (default `1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode),
 `--no-boot-splash` and `--no-quiet-boot`.
 
 ## The data partition
@@ -225,9 +225,11 @@ Running as root is deliberate — this is an appliance that needs the DRM device
 power-off call, which is how the console runs it too. If that does not suit your setup, the service file is
 plain systemd and easy to change.
 
-The screen is set to 1280x720 for the whole boot (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...` in
-`cmdline.txt` — with the KMS driver, `hdmi_mode` in `config.txt` does nothing), which is the launcher's own
-resolution, so there is no mode change for the TV to re-sync to when it comes up. The AutoBleem logo is a
+The screen is set to 1920x1080 for the whole boot (`video=HDMI-A-1:1920x1080@60 video=HDMI-A-2:...` in
+`cmdline.txt` — with the KMS driver, `hdmi_mode` in `config.txt` does nothing). The launcher opens its window
+at that mode and draws its 1280x720 layout at 1.5x — covers and text at the screen's own resolution instead of
+being upscaled by the TV — so there is no mode change for the TV to re-sync to when it comes up; on a 720p
+screen use `--hdmi-mode 1280x720@60` and it draws at 1x. The AutoBleem logo is a
 plymouth theme (`/usr/share/plymouth/themes/autobleem/`, packed into the initramfs) that stays up until the
 session script quits it right before starting the launcher — `plymouth-quit.service` is kept out of the boot
 by the service file so it cannot do that earlier. The same logo shows while the Pi shuts down. The

@@ -1,12 +1,14 @@
 #include "ableem/ui/gui_base.h"
+#include <cmath>
 
 namespace ableem {
 
-GuiBase::GuiBase(const std::string &windowTitle, int width, int height)
+GuiBase::GuiBase(const std::string &windowTitle, int width, int height, float outputScale)
     // Platform and Renderer have private constructors reachable only via GuiBase/Platform friendship, hence
     // the `new` here instead of make_unique.
-    : platform_(new Platform(windowTitle, width, height)), renderer_(new Renderer(*platform_)),
-      input_(new Input(*platform_)) {}
+    : platform_(new Platform(windowTitle, width, height, static_cast<int>(std::lround(width * outputScale)),
+                             static_cast<int>(std::lround(height * outputScale)))),
+      renderer_(new Renderer(*platform_)), input_(new Input(*platform_)) {}
 
 // members are destroyed in reverse declaration order: audio_, input_, renderer_, platform_ - which is
 // exactly the order that keeps every object valid while the ones built on top of it are still alive.

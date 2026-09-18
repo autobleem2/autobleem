@@ -1,10 +1,10 @@
-// AutoBleem's plymouth boot screen: splash.png on black, scaled down to fit the screen if it has to be and
-// centred, faded in over the first half second. Nothing else - no spinner, no text - so it reads as the
+// AutoBleem's plymouth boot screen: splash.png on black, scaled to fit the screen (up on a 1080p mode, down
+// on a small one, its aspect kept) and centred, faded in over the first half second. Nothing else - no spinner, no text - so it reads as the
 // launcher's own splash coming up, which is what follows it (autobleem-session quits plymouth with
 // --retain-splash right before starting the launcher, so this frame stays until SDL takes the display).
 //
-// splash.png is the same size as the mode the installer puts on the kernel command line (1280x720), so
-// on a normal install no scaling happens at all.
+// splash.png is 1280x720, the launcher's own canvas; the installer boots the Pi in 1920x1080 by default
+// (--hdmi-mode), where it is drawn at 1.5x - the launcher does the same with its UI.
 
 Window.SetBackgroundTopColor(0, 0, 0);
 Window.SetBackgroundBottomColor(0, 0, 0);
@@ -14,7 +14,7 @@ screen.height = Window.GetHeight();
 
 logo.image = Image("splash.png");
 scale = Math.Min(screen.width / logo.image.GetWidth(), screen.height / logo.image.GetHeight());
-if (scale < 1)
+if (scale != 1)
     logo.image = logo.image.Scale(logo.image.GetWidth() * scale, logo.image.GetHeight() * scale);
 
 logo.sprite = Sprite(logo.image);

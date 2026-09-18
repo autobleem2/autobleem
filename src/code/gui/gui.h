@@ -29,6 +29,7 @@ using namespace std;
 class Gui : public ableem::GuiBase {
 private:
     Gui();
+    static float outputScale();
 
 public:
     // (re)loads the theme's textures and fonts, and its music unless told not to

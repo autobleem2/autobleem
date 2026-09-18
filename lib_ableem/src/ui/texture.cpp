@@ -1,6 +1,7 @@
 #include "ableem/ui/texture.h"
 #include "ableem/ui/renderer.h"
 #include "sdl_common.h"
+#include <cmath>
 #include <iostream>
 #include <ableem/engine/log.h>
 
@@ -41,9 +42,14 @@ Texture Texture::loadMemory(Renderer &renderer, const void *data, unsigned int s
 }
 
 Texture Texture::createTarget(Renderer &renderer, int w, int h) {
+    // allocated in output pixels, so that what is composed into it at a scale above 1 keeps its sharpness
+    float k = renderer.outputScale();
     SDL_Texture *t = SDL_CreateTexture(static_cast<SDL_Renderer *>(renderer.native()), SDL_PIXELFORMAT_RGBA8888,
-                                       SDL_TEXTUREACCESS_TARGET, w, h);
-    return Texture(t);
+                                       SDL_TEXTUREACCESS_TARGET, static_cast<int>(std::lround(w * k)),
+                                       static_cast<int>(std::lround(h * k)));
+    Texture tex(t);
+    tex.pixelScale_ = k;
+    return tex;
 }
 
 Texture Texture::createStreaming(Renderer &renderer, int w, int h) {
@@ -60,6 +66,10 @@ Size Texture::size() const {
     Size s;
     if (handle) {
         SDL_QueryTexture(static_cast<SDL_Texture *>(handle.get()), nullptr, nullptr, &s.w, &s.h);
+        if (pixelScale_ != 1.0f) {
+            s.w = static_cast<int>(std::lround(s.w / pixelScale_));
+            s.h = static_cast<int>(std::lround(s.h / pixelScale_));
+        }
     }
     return s;
 }
@@ -99,8 +109,10 @@ void Texture::setAlphaMod(unsigned char a) {
 }
 
 PixelLock Texture::lock() {
-    Size s = size();
-    return PixelLock(handle.get(), s.w, s.h);
+    int w = 0, h = 0; // texture pixels, whatever the scale (only streaming textures are locked, at scale 1)
+    if (handle)
+        SDL_QueryTexture(static_cast<SDL_Texture *>(handle.get()), nullptr, nullptr, &w, &h);
+    return PixelLock(handle.get(), w, h);
 }
 
 //******************

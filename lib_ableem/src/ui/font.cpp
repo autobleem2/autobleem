@@ -1,6 +1,7 @@
 #include "ableem/ui/font.h"
 #include "ableem/ui/renderer.h"
 #include "sdl_common.h"
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <ableem/engine/log.h>
@@ -30,15 +31,23 @@ Font::Font() : handle(nullptr) {}
 Font::Font(void *fcFont) : handle(fcFont, destroyFont) {}
 
 Font Font::load(Renderer &renderer, const std::string &ttfPath, int pointSize) {
+    float scale = renderer.outputScale();
+    int outputPointSize = static_cast<int>(std::lround(pointSize * scale));
     FC_Font *fc = FC_CreateFont();
-    Uint8 ok = FC_LoadFont(fc, static_cast<SDL_Renderer *>(renderer.native()), ttfPath.c_str(), pointSize,
+    Uint8 ok = FC_LoadFont(fc, static_cast<SDL_Renderer *>(renderer.native()), ttfPath.c_str(), outputPointSize,
                            FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
     if (!ok) {
         PLOG_ERROR << "FAILURE opening font " << ttfPath << " of size " << pointSize;
     } else {
         PLOG_DEBUG << "Opened font " << ttfPath << " of size " << pointSize;
     }
-    return Font(fc);
+    Font font(fc);
+    font.scale_ = scale;
+    return font;
+}
+
+int Font::logical(int outputPixels) const {
+    return scale_ == 1.0f ? outputPixels : static_cast<int>(std::lround(outputPixels / scale_));
 }
 
 bool Font::valid() const {
@@ -50,43 +59,43 @@ Size Font::textSize(const std::string &text) const {
     if (!handle)
         return s;
     // "%s" avoids treating the text itself as a printf format string
-    s.w = FC_GetWidth(static_cast<FC_Font *>(handle.get()), "%s", text.c_str());
-    s.h = FC_GetLineHeight(static_cast<FC_Font *>(handle.get()));
+    s.w = logical(FC_GetWidth(static_cast<FC_Font *>(handle.get()), "%s", text.c_str()));
+    s.h = logical(FC_GetLineHeight(static_cast<FC_Font *>(handle.get())));
     return s;
 }
 
 int Font::lineHeight() const {
     if (!handle)
         return 0;
-    return FC_GetLineHeight(static_cast<FC_Font *>(handle.get()));
+    return logical(FC_GetLineHeight(static_cast<FC_Font *>(handle.get())));
 }
 
 int Font::width(const std::string &text) const {
     if (!handle)
         return 0;
-    return FC_GetWidth(static_cast<FC_Font *>(handle.get()), "%s", text.c_str());
+    return logical(FC_GetWidth(static_cast<FC_Font *>(handle.get()), "%s", text.c_str()));
 }
 
 void Font::draw(Renderer &renderer, int x, int y, const std::string &text) const {
     if (!handle)
         return;
-    FC_Draw(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), static_cast<float>(x),
-            static_cast<float>(y), "%s", text.c_str());
+    FC_Draw(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
+            y * scale_, "%s", text.c_str());
 }
 
 void Font::drawAlign(Renderer &renderer, int x, int y, Align align, const std::string &text) const {
     if (!handle)
         return;
-    FC_DrawAlign(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
-                 static_cast<float>(x), static_cast<float>(y), toFC(align), "%s", text.c_str());
+    FC_DrawAlign(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
+                 y * scale_, toFC(align), "%s", text.c_str());
 }
 
 void Font::drawColor(Renderer &renderer, int x, int y, Color color, const std::string &text) const {
     if (!handle)
         return;
     SDL_Color c{color.r, color.g, color.b, color.a};
-    FC_DrawColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
-                 static_cast<float>(x), static_cast<float>(y), c, "%s", text.c_str());
+    FC_DrawColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
+                 y * scale_, c, "%s", text.c_str());
 }
 
 std::string Font::wrappedText(const std::string &text, int maxWidth) const {
@@ -94,14 +103,15 @@ std::string Font::wrappedText(const std::string &text, int maxWidth) const {
         return text;
     std::vector<char> buffer(text.size() + 256);
     int len = FC_GetWrappedText(static_cast<FC_Font *>(handle.get()), buffer.data(), static_cast<int>(buffer.size()),
-                                static_cast<Uint16>(maxWidth), "%s", text.c_str());
+                                static_cast<Uint16>(maxWidth * scale_), "%s", text.c_str());
     return std::string(buffer.data(), len > 0 ? static_cast<size_t>(len) : 0);
 }
 
 int Font::columnHeight(const std::string &text, int width) const {
     if (!handle)
         return 0;
-    return FC_GetColumnHeight(static_cast<FC_Font *>(handle.get()), static_cast<Uint16>(width), "%s", text.c_str());
+    return logical(FC_GetColumnHeight(static_cast<FC_Font *>(handle.get()), static_cast<Uint16>(width * scale_), "%s",
+                                      text.c_str()));
 }
 
 int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, const std::string &text) const {
@@ -109,9 +119,8 @@ int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, c
         return 0;
     SDL_Color c{color.r, color.g, color.b, color.a};
     FC_Rect r = FC_DrawColumnColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
-                                   static_cast<float>(x), static_cast<float>(y), static_cast<Uint16>(width), c, "%s",
-                                   text.c_str());
-    return r.h;
+                                   x * scale_, y * scale_, static_cast<Uint16>(width * scale_), c, "%s", text.c_str());
+    return logical(static_cast<int>(r.h));
 }
 
 void Font::resetAfterRendererReset(Renderer &renderer, bool deviceLost) {

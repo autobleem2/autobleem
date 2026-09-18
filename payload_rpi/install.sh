@@ -27,7 +27,7 @@ DO_PACKAGES=1
 DO_BOOT_CONFIG=1
 QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the launcher is the only thing seen
 BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem logo) from the initramfs on; needs QUIET_BOOT
-HDMI_MODE="1280x720@60"         # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
+HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack.txt, from github.com/Abdess/retrobios)
@@ -93,8 +93,9 @@ Usage: sudo bash install.sh [options]
   --no-boot-config     do not touch cmdline.txt/config.txt
   --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
   --no-boot-splash     boot quietly but without the AutoBleem logo (no plymouth)
-  --hdmi-mode MODE     the HDMI mode set on the kernel command line for the whole boot (default: 1280x720@60,
-                       the launcher's own resolution; "none" leaves the screen's preferred mode)
+  --hdmi-mode MODE     the HDMI mode set on the kernel command line for the whole boot (default: 1920x1080@60;
+                       the launcher draws its 1280x720 UI at 1.5x on a 1080p screen, covers and text sharp;
+                       1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode)
   --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
                        apt: the distribution's package; none: leave RetroArch alone
   --thumbnails WHAT    boxarts (default): the PS1 covers from thumbnails.libretro.com (~9000 files, ~350 MB,
@@ -1047,9 +1048,9 @@ configure_boot() {
     done
 
     # The HDMI mode for the whole boot. config.txt's hdmi_group/hdmi_mode mean nothing to the KMS driver;
-    # video= on the kernel command line does. The launcher asks SDL for 1280x720 anyway, so booting in it
-    # means plymouth draws at the launcher's resolution and the handover is not a modeset the TV has to
-    # re-sync to. Both ports get it - which one the screen is on is only known at boot - and any earlier
+    # video= on the kernel command line does. The launcher opens its window at the display's mode (its
+    # 1280x720 UI drawn at 1.5x on a 1080p one), so booting in that mode means plymouth draws at the
+    # launcher's resolution and the handover is not a modeset the TV has to re-sync to. Both ports get it - which one the screen is on is only known at boot - and any earlier
     # video=HDMI-A-n: words are replaced, so a re-run with another --hdmi-mode takes effect.
     if [ "$HDMI_MODE" != none ]; then
         local kept=""

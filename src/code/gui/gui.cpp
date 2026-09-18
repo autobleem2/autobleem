@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstring>
+#include <cstdlib>
 #include <cassert>
 #include <ableem/engine/log.h>
 
@@ -20,10 +21,34 @@ using ableem::Rect;
 using ableem::Size;
 using ableem::Texture;
 //********************
+// Gui::outputScale
+//********************
+// How much bigger than the 1280x720 canvas the window is. The console's display is 720p and its SDL is old, so
+// there it is always 1. A Raspberry Pi on a 1080p (or bigger) display gets 1.5: the launcher then draws its
+// covers and text at the display's resolution instead of being upscaled by the TV (see ableem::Renderer). On
+// a dev host AB_OUTPUT_SCALE in the environment tries any scale in a window that size.
+float Gui::outputScale() {
+#if defined(AB_DEBUG_HOST)
+    const char *env = getenv("AB_OUTPUT_SCALE");
+    if (env && atof(env) >= 1.0) {
+        return static_cast<float>(atof(env));
+    }
+#elif defined(AB_PLATFORM_RPI)
+    ableem::Size display = ableem::Platform::desktopDisplaySize();
+    if (display.w >= 1920 && display.h >= 1080) {
+        PLOG_INFO << "Display is " << display.w << "x" << display.h << ", drawing the 1280x720 UI at 1.5x";
+        return 1.5f;
+    }
+#endif
+    return 1.0f;
+}
+
+//********************
 // Gui::Gui
 //********************
 Gui::Gui()
-    : assets_(renderer(), App::get().theme(), App::get().config()),
+    : ableem::GuiBase("AutoBleem", ScreenWidth, ScreenHeight, outputScale()),
+      assets_(renderer(), App::get().theme(), App::get().config()),
       text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     input().probePads();
 }

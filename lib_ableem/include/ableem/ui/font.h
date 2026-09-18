@@ -18,6 +18,9 @@ public:
     Font(const Font &) = default;
     Font &operator=(const Font &) = default;
 
+    // pointSize is in logical pixels: the face is loaded renderer.outputScale() times bigger and drawn at
+    // that size in output pixels, so text is as sharp as the window; every measurement here comes back in
+    // logical pixels
     static Font load(Renderer &renderer, const std::string &ttfPath, int pointSize);
 
     bool valid() const;
@@ -43,6 +46,8 @@ public:
 
 private:
     explicit Font(void *fcFont);
+    float scale_ = 1.0f; // output pixels per logical pixel the face was loaded for
+    int logical(int outputPixels) const;
     std::shared_ptr<void> handle;
 
 public:

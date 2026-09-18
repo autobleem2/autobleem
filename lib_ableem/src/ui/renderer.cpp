@@ -26,11 +26,19 @@ SDL_BlendMode toSDL(BlendMode m) {
 SDL_Rect toSDL(const Rect &r) {
     return SDL_Rect{r.x, r.y, r.w, r.h};
 }
+Rect scaleRect(const Rect &r, float k) {
+    int x0 = static_cast<int>(std::lround(r.x * k));
+    int y0 = static_cast<int>(std::lround(r.y * k));
+    int x1 = static_cast<int>(std::lround((r.x + r.w) * k));
+    int y1 = static_cast<int>(std::lround((r.y + r.h) * k));
+    return Rect(x0, y0, x1 - x0, y1 - y0);
+}
 } // namespace
 
 struct Renderer::Impl {
     SDL_Renderer *renderer = nullptr;
-    int width = 0, height = 0;
+    int width = 0, height = 0; // the logical canvas
+    float scale = 1.0f;        // output pixels per logical pixel
 };
 
 Renderer::Renderer(Platform &platform) : impl(new Impl()) {
@@ -51,7 +59,25 @@ void Renderer::recreate(Platform &platform) {
     if (!impl->renderer) {
         throw std::runtime_error(std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
     }
-    SDL_GetWindowSize(window, &impl->width, &impl->height);
+    int outputWidth = 0, outputHeight = 0;
+    SDL_GetWindowSize(window, &outputWidth, &outputHeight);
+    impl->width = platform.logicalWidth();
+    impl->height = platform.logicalHeight();
+    impl->scale = impl->width > 0 ? static_cast<float>(outputWidth) / impl->width : 1.0f;
+}
+
+float Renderer::outputScale() const {
+    return impl->scale;
+}
+
+Rect Renderer::toOutput(const Rect &r) const {
+    if (impl->scale == 1.0f)
+        return r;
+    int x0 = static_cast<int>(std::lround(r.x * impl->scale));
+    int y0 = static_cast<int>(std::lround(r.y * impl->scale));
+    int x1 = static_cast<int>(std::lround((r.x + r.w) * impl->scale));
+    int y1 = static_cast<int>(std::lround((r.y + r.h) * impl->scale));
+    return Rect(x0, y0, x1 - x0, y1 - y0);
 }
 
 Renderer::~Renderer() {
@@ -83,7 +109,7 @@ void Renderer::setBlendMode(BlendMode mode) {
 }
 
 void Renderer::fillRect(const Rect &r) {
-    SDL_Rect sr = toSDL(r);
+    SDL_Rect sr = toSDL(toOutput(r));
     SDL_RenderFillRect(impl->renderer, &sr);
 }
 
@@ -98,28 +124,31 @@ void Renderer::fillRects(const Rect *rects, int count) {
     thread_local std::vector<SDL_Rect> buffer;
     buffer.resize(count);
     for (int i = 0; i < count; i++)
-        buffer[i] = toSDL(rects[i]);
+        buffer[i] = toSDL(toOutput(rects[i]));
     SDL_RenderFillRects(impl->renderer, buffer.data(), count);
 }
 
 void Renderer::drawRect(const Rect &r) {
-    SDL_Rect sr = toSDL(r);
+    SDL_Rect sr = toSDL(toOutput(r));
     SDL_RenderDrawRect(impl->renderer, &sr);
 }
 
 void Renderer::drawLine(Point a, Point b) {
-    SDL_RenderDrawLine(impl->renderer, a.x, a.y, b.x, b.y);
+    float k = impl->scale;
+    SDL_RenderDrawLine(impl->renderer, static_cast<int>(std::lround(a.x * k)), static_cast<int>(std::lround(a.y * k)),
+                       static_cast<int>(std::lround(b.x * k)), static_cast<int>(std::lround(b.y * k)));
 }
 
 void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
     SDL_Rect ssrc, sdst;
     SDL_Rect *psrc = nullptr, *pdst = nullptr;
     if (src) {
-        ssrc = toSDL(*src);
+        // a render target is addressed in logical pixels like the screen; a loaded image in its own
+        ssrc = toSDL(tex.pixelScale() == 1.0f ? *src : scaleRect(*src, tex.pixelScale()));
         psrc = &ssrc;
     }
     if (dst) {
-        sdst = toSDL(*dst);
+        sdst = toSDL(toOutput(*dst));
         pdst = &sdst;
     }
     SDL_RenderCopy(impl->renderer, static_cast<SDL_Texture *>(tex.native()), psrc, pdst);
@@ -128,11 +157,15 @@ void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
 void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right) {
     Rect s;
     if (src) {
-        s = *src;
+        s = tex.pixelScale() == 1.0f ? *src : scaleRect(*src, tex.pixelScale());
     } else {
         Size size = tex.size();
-        s = Rect(0, 0, size.w, size.h);
+        s = scaleRect(Rect(0, 0, size.w, size.h), tex.pixelScale());
     }
+    // the strips are output columns: the edges go to output pixels first
+    const float k = impl->scale;
+    left = VerticalEdge(left.x * k, left.top * k, left.bottom * k);
+    right = VerticalEdge(right.x * k, right.top * k, right.bottom * k);
     bool mirrored = false;
     if (left.x > right.x) {
         std::swap(left, right);

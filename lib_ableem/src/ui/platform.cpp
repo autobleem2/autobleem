@@ -8,11 +8,33 @@ namespace ableem {
 struct Platform::Impl {
     SDL_Window *window = nullptr;
     std::function<void()> powerOffHandler;
-    std::string windowTitle; // kept for acquireDisplay()
-    int width = 0, height = 0;
+    std::string windowTitle;   // kept for acquireDisplay()
+    int width = 0, height = 0; // the window
+    int logicalWidth = 0, logicalHeight = 0;
 };
 
-Platform::Platform(const std::string &windowTitle, int width, int height) : impl(new Impl()) {
+Size Platform::desktopDisplaySize() {
+    Size s;
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0)
+        return s;
+    SDL_DisplayMode mode;
+    if (SDL_GetDesktopDisplayMode(0, &mode) == 0) {
+        s.w = mode.w;
+        s.h = mode.h;
+    }
+    return s;
+}
+
+int Platform::logicalWidth() const {
+    return impl->logicalWidth;
+}
+int Platform::logicalHeight() const {
+    return impl->logicalHeight;
+}
+
+Platform::Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth,
+                   int outputHeight)
+    : impl(new Impl()) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
     }
@@ -20,10 +42,12 @@ Platform::Platform(const std::string &windowTitle, int width, int height) : impl
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
 
     impl->windowTitle = windowTitle;
-    impl->width = width;
-    impl->height = height;
-    impl->window =
-        SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
+    impl->width = outputWidth;
+    impl->height = outputHeight;
+    impl->logicalWidth = logicalWidth;
+    impl->logicalHeight = logicalHeight;
+    impl->window = SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, outputWidth,
+                                    outputHeight, 0);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }

@@ -486,6 +486,14 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   calls it automatically on the console power button or Esc, so screens never check for that themselves.
   `Platform::shutdownSDL()` must be registered with `atexit()` before the first `GuiBase`/`Gui` is constructed
   (done once, in `main.cpp`) - it runs SDL_Quit() after everything else is destroyed.
+- **Output scale** (2026-09-18): the app draws on a logical 1280x720 canvas; the window may be bigger by
+  `Renderer::outputScale()` (`GuiBase(title, w, h, outputScale)`), and every `Renderer` call maps logical to
+  output pixels (`toOutput()`, edges rounded so neighbours tile; identity at 1). `Texture::createTarget`
+  allocates output pixels and carries `pixelScale()`, which `copy()` applies to a source rect, so a target is
+  addressed like the screen; `Font::load` loads the face `scale` times bigger, draws in output pixels and
+  measures in logical ones. Nothing in the app knows. `Gui::outputScale()` is the policy: a Pi on a >= 1080p
+  display gets 1.5 (`Platform::desktopDisplaySize()`), a dev host reads `AB_OUTPUT_SCALE`, the console is 1.
+  The Pi installer boots in 1920x1080 by default now (`--hdmi-mode`), the plymouth script scales the logo up.
 - **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`,
   and `copyTrapezoid(tex, src, VerticalEdge left, VerticalEdge right)` (2026-09-18): pseudo-3D for the
   carousel - a texture drawn into a trapezoid with vertical sides, one `SDL_RenderCopy` strip per screen

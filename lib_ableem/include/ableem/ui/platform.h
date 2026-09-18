@@ -56,11 +56,19 @@ public:
 
 private:
     friend class GuiBase;
-    Platform(const std::string &windowTitle, int width, int height);
+    // a window of outputWidth x outputHeight pixels showing a logicalWidth x logicalHeight canvas
+    Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth, int outputHeight);
     struct Impl;
     Impl *impl;
 
 public:
+    // the canvas the app draws on (see Renderer); the window may be bigger
+    int logicalWidth() const;
+    int logicalHeight() const;
+    // the size of the display the window will go on, before any window exists (initialises SDL's video
+    // subsystem to ask); {0, 0} if it cannot be told. What GuiBase's outputScale can be decided from.
+    static Size desktopDisplaySize();
+
     // internal: used by Input to invoke the app's power-off handler and by Renderer/Texture/Font/Audio to
     // reach the underlying SDL objects without exposing them in a public header.
     void *nativeWindow() const;

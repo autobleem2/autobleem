@@ -11,6 +11,13 @@ class Texture;
 // Renderer
 //******************
 // Wraps the one SDL_Renderer the app uses. Owned by GuiBase; screens receive a reference.
+//
+// Coordinates are logical: the app draws on a GuiBase::ScreenWidth x ScreenHeight canvas whatever the window
+// is. The window may be bigger by `outputScale()` (a 1920x1080 window for a 1280x720 canvas is 1.5), and
+// every drawing call here maps logical to output pixels, so nothing in the app changes with the window. What
+// gets sharper at a scale above 1: textures loaded from files (drawn from more of their pixels), Fonts (loaded
+// bigger, see Font::load) and render targets (Texture::createTarget allocates output pixels). At scale 1 the
+// mapping is the identity on integers.
 class ABLEEM_API Renderer {
 public:
     Renderer(const Renderer &) = delete;
@@ -46,8 +53,13 @@ public:
     // nullptr switches back to rendering to the screen
     void setTarget(Texture *target);
 
+    // the logical canvas, in the app's coordinates
     int width() const;
     int height() const;
+    // output pixels per logical pixel (1 unless the window is bigger than the canvas)
+    float outputScale() const;
+    // a logical rect in output pixels, edges rounded so that neighbouring rects still tile
+    Rect toOutput(const Rect &r) const;
 
 private:
     friend class Platform;

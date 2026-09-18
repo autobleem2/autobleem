@@ -19,7 +19,10 @@ public:
     static constexpr int ScreenWidth = 1280;
     static constexpr int ScreenHeight = 720;
 
-    explicit GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight);
+    // width x height is the logical canvas; the window is outputScale times bigger (1.5 puts a 1280x720
+    // canvas in a 1920x1080 window) - see Renderer for what that means
+    explicit GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight,
+                     float outputScale = 1.0f);
     virtual ~GuiBase();
 
     Platform &platform() { return *platform_; }
