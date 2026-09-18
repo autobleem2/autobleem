@@ -28,7 +28,7 @@ public:
 //******************
 // PsCarouselGame
 //******************
-// Note that if there are less than 13 games in the gamesList the games are duplicated to fill out the carousel.
+// Note that with fewer games than PsCarousel::Slots the games are duplicated to fill out the carousel.
 // So more than one PsCarouselGame could be using the same PsGamePtr.
 struct PsCarouselGame : public PsGamePtr {
     PsCarouselGame() = delete;
@@ -53,6 +53,11 @@ struct PsCarouselGame : public PsGamePtr {
 //******************
 class PsCarousel {
 public:
+    // covers on each side of the selected one; the row is 2 * SideCovers + 1 slots, the middle one selected
+    static const int SideCovers = 10;
+    static const int Slots = 2 * SideCovers + 1;
+    static const int MiddleSlot = SideCovers;
+
     int activeItem = 0;
     int cycleMax = 0;
     int cycleDuration = 0;
@@ -61,6 +66,6 @@ public:
 
     void initCoverPositions();
 
-    // the `distance`th cover out from the middle (1..6), on the left (side 0) or the right (side 1)
+    // the `distance`th cover out from the middle (1..SideCovers), on the left (side 0) or the right (side 1)
     PsScreenpoint createCoverPoint(int distance, int side);
 };

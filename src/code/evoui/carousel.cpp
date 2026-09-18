@@ -25,9 +25,9 @@ void Carousel::setGames(const PsGames &gamesList) {
 
     // if there are games in the carousel but not enough to fill it, duplicate the games until it is full
     if (games.size() > 0) {
-        if (games.size() < 13) { // if not enough games to fill the carousel
+        if (games.size() < PsCarousel::Slots) { // if not enough games to fill the carousel
             // duplicate the gamesList until the carousel is full
-            while (games.size() < 13) {
+            while (games.size() < PsCarousel::Slots) {
                 for (const auto &game : gamesList)
                     games.emplace_back(game);
             }
@@ -99,12 +99,13 @@ void Carousel::setInitialPositions(int selectedIndex) {
     }
 
     games[selectedIndex].visible = true;
-    games[selectedIndex].current = positions.coverPositions[6];
-    games[selectedIndex].screenPointIndex = 6;
+    games[selectedIndex].current = positions.coverPositions[PsCarousel::MiddleSlot];
+    games[selectedIndex].screenPointIndex = PsCarousel::MiddleSlot;
 
-    // six to the left, six to the right; a game already placed (the list is short and wrapped) keeps its slot
+    // SideCovers to the left, as many to the right; a game already placed (the list is short and wrapped)
+    // keeps its slot
     int prev = selectedIndex;
-    for (int slot = 5; slot >= 0; slot--) {
+    for (int slot = PsCarousel::MiddleSlot - 1; slot >= 0; slot--) {
         prev = getPreviousId(prev);
         if (!games[prev].visible) {
             games[prev].current = positions.coverPositions[slot];
@@ -114,7 +115,7 @@ void Carousel::setInitialPositions(int selectedIndex) {
     }
 
     int next = selectedIndex;
-    for (int slot = 7; slot <= 12; slot++) {
+    for (int slot = PsCarousel::MiddleSlot + 1; slot < PsCarousel::Slots; slot++) {
         next = getNextId(next);
         if (!games[next].visible) {
             games[next].current = positions.coverPositions[slot];

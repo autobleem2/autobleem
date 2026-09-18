@@ -14,12 +14,12 @@
 //******************
 // Carousel
 //******************
-// Was a third of GuiLauncher. Thirteen screen positions (PsCarousel), one game per position and the selected
-// one in the middle at full size; scrolling moves every visible cover one position along and drops the one
-// that falls off the end. Covers are textures loaded when a game becomes visible and freed when it stops
-// being, because thirteen at a time is what the console has memory for.
+// Was a third of GuiLauncher. PsCarousel::Slots screen positions (ten a side and the selected one in the
+// middle at full size), one game per position; scrolling moves every visible cover one position along and
+// drops the one that falls off the end. Covers are textures loaded when a game becomes visible and freed
+// when it stops being, to keep the number held at once (each 226x226 RGBA) to what the console can spare.
 //
-// The duplicated-games rule: with fewer than thirteen games the list is repeated until there are enough to
+// The duplicated-games rule: with fewer games than slots the list is repeated until there are enough to
 // fill every position, so the same PsGamePtr can sit in several PsCarouselGames. `numberOfNonDuplicatedGames`
 // is the real count, for the "Showing: ... (N games)" line.
 class Carousel {

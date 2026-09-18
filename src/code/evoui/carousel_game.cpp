@@ -193,22 +193,35 @@ void PsCarouselGame::freeTex() {
 //*******************************
 // PsCarousel::createCoverPoint
 //*******************************
-// The side covers stand in a row that recedes from the middle: each one a little further out, turned a
-// little more towards it. Offsets are of the box's centre from the screen's centre, in pixels, and were
-// chosen so that the turned covers neither overlap nor leave gaps at half size.
+// The side covers stand on a shelf that recedes from the middle into the distance: each one a little
+// further out, a little smaller and darker, and turned a little more towards the middle. Being further back,
+// an outer cover is rightly drawn behind its inner neighbour where the two overlap. The step between
+// neighbours shrinks with their size so the row reads as evenly spaced in depth, and ten of them fill the
+// half screen out to its edge.
 PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
-    static const int centreOffset[7] = {0, 190, 262, 326, 384, 438, 490};
-    static const float turn[7] = {0.0f, 40.0f, 52.0f, 60.0f, 66.0f, 70.0f, 72.0f};
-    const int boxWidth = static_cast<int>(226 * 0.5f);
+    const float turn[SideCovers + 1] = {0, 40, 52, 60, 66, 70, 72, 72, 72, 72, 72};
+    const float nearestScale = 0.5f, shrinkPerCover = 0.035f;
+    const int nearestOffset = 190, nearestStep = 50;
+    const int nearestShade = 255, darkenPerCover = 15;
+    const int middleY = 100 + static_cast<int>(226 * nearestScale) / 2; // the row's centre line
+
+    float scale = nearestScale;
+    int offset = nearestOffset;
+    for (int d = 2; d <= distance; d++) {
+        scale = nearestScale * (1.0f - shrinkPerCover * (d - 1));
+        offset += static_cast<int>(nearestStep * scale / nearestScale);
+    }
+    const int boxWidth = static_cast<int>(226 * scale);
+
     PsScreenpoint point;
-    point.scale = 0.5f;
-    point.shade = 255;
-    point.y = 100;
+    point.scale = scale;
+    point.shade = nearestShade - darkenPerCover * (distance - 1);
+    point.y = middleY - boxWidth / 2;
     if (side == 0) {
-        point.x = 640 - centreOffset[distance] - boxWidth / 2;
+        point.x = 640 - offset - boxWidth / 2;
         point.angle = -turn[distance];
     } else {
-        point.x = 640 + centreOffset[distance] - boxWidth / 2;
+        point.x = 640 + offset - boxWidth / 2;
         point.angle = turn[distance];
     }
     return point;
@@ -220,7 +233,7 @@ PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
 void PsCarousel::initCoverPositions() {
     coverPositions.clear();
 
-    for (int distance = 6; distance >= 1; distance--) {
+    for (int distance = SideCovers; distance >= 1; distance--) {
         coverPositions.push_back(createCoverPoint(distance, 0));
     }
 
@@ -231,7 +244,7 @@ void PsCarousel::initCoverPositions() {
     point.shade = 255;
     coverPositions.push_back(point);
 
-    for (int distance = 1; distance <= 6; distance++) {
+    for (int distance = 1; distance <= SideCovers; distance++) {
         coverPositions.push_back(createCoverPoint(distance, 1));
     }
 }
