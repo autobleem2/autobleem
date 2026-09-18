@@ -3,6 +3,7 @@
 //
 
 #include "evoui_meta.h"
+#include "../../core/model/timing.h"
 #include "../../core/model/ps_game.h"
 #include "../../core/services/system.h"
 #include "../../app.h"
@@ -266,7 +267,7 @@ void PsMeta::update(long time) {
                 // calculate length for point in time
                 long currentAnim = time - animStarted;
                 long totalAnimTime = animEndTime - animStarted;
-                float position = currentAnim * 1.0f / totalAnimTime * 1.0f;
+                float position = easeOutCubic(currentAnim * 1.0f / totalAnimTime);
                 int newPos = prevPos + ((nextPos - prevPos) * position);
                 y = newPos;
             }

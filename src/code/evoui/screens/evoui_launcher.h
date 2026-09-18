@@ -45,9 +45,11 @@ public:
     void render() override;
 
     // these variables are used by the loop routines
-    long motionStart = 0;
-    long timespeed = 0;
-    int motionDir = 0;
+    long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again
+    int motionDir = 0;    // 0 right (next game), 1 left
+    // a tap that landed while a scroll was running: -1 previous, +1 next, run when the scroll ends,
+    // so a quick second tap is not lost
+    int queuedScroll = 0;
     vector<string> headers;
     vector<string> texts;
     long time = 0;
@@ -103,8 +105,9 @@ public:
     void loop_prevGameFirstLetter();
     void loop_nextGameFirstLetter();
 
-    void nextCarouselGame(int speed);
-    void prevCarouselGame(int speed);
+    // one step of the carousel: `speed` milliseconds, eased for a tap, linear for a held stick
+    void nextCarouselGame(int speed, bool eased = true);
+    void prevCarouselGame(int speed, bool eased = true);
     // the meta panel for the selected game; withSnap=false leaves the snap (a PNG decode) to
     // finishSettleLoads() once the carousel has stopped
     void updateMeta(bool withSnap = true);

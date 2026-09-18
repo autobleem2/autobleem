@@ -3,6 +3,7 @@
 //
 
 #include "evoui_menu.h"
+#include "../../core/model/timing.h"
 using namespace std;
 
 //*******************************
@@ -39,6 +40,7 @@ void PsMenu::update(long time) {
             progress = 1;
         if (progress < 0)
             progress = 0;
+        progress = easeOutCubic(progress);
 
         if (transition == TR_MENUON) {
             y = oy + (progress * (targety - oy));
@@ -93,6 +95,7 @@ void PsMenu::update(long time) {
                     progress = 1;
                 if (progress < 0)
                     progress = 0;
+                progress = easeOutCubic(progress);
 
                 x = ox + progress * ICON_GAP;
 
@@ -127,6 +130,7 @@ void PsMenu::update(long time) {
                     progress = 1;
                 if (progress < 0)
                     progress = 0;
+                progress = easeOutCubic(progress);
 
                 x = ox - progress * ICON_GAP;
 

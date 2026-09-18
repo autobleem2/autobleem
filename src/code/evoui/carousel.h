@@ -54,9 +54,10 @@ public:
     // decodes one wanted-but-missing cover (the nearest first); true if it did. For the launcher's idle
     // frames: one a frame, so the covers just past the ends are ready before the next scroll.
     bool loadOneMissingTexture();
-    // start the scroll animation towards the next / previous game, `speed` milliseconds long
-    void scrollLeft(int speed);
-    void scrollRight(int speed);
+    // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
+    // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next
+    void scrollLeft(int speed, bool eased = true);
+    void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
     void moveMainCover(bool toGamesRow);
     // advances every cover's animation; call once per frame before render()

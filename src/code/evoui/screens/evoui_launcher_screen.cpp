@@ -600,9 +600,9 @@ void GuiLauncher::render() {
 // GuiLauncher::nextCarouselGame
 //*******************************
 // handler of next game
-void GuiLauncher::nextCarouselGame(int speed) {
+void GuiLauncher::nextCarouselGame(int speed, bool eased) {
     app.audio().cursor.play();
-    carousel.scrollLeft(speed);
+    carousel.scrollLeft(speed, eased);
     carousel.selectNext();
     updateMeta(false);
     settleLoadsPending = true;
@@ -612,9 +612,9 @@ void GuiLauncher::nextCarouselGame(int speed) {
 // GuiLauncher::prevCarouselGame
 //*******************************
 // handler of prev game
-void GuiLauncher::prevCarouselGame(int speed) {
+void GuiLauncher::prevCarouselGame(int speed, bool eased) {
     app.audio().cursor.play();
-    carousel.scrollRight(speed);
+    carousel.scrollRight(speed, eased);
     carousel.selectPrevious();
     updateMeta(false);
     settleLoadsPending = true;

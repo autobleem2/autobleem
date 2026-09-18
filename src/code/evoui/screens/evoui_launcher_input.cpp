@@ -6,6 +6,7 @@
 #include "../../gui/gui.h"
 #include "../../gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
+#include "../../core/model/timing.h"
 
 #include <algorithm>
 #include <iostream>
@@ -23,8 +24,8 @@ void GuiLauncher::loop() {
 
     menuVisible = true;
     motionStart = 0;
-    timespeed = 0;
     motionDir = 0;
+    queuedScroll = 0;
 
     while (menuVisible) {
         // get the current translated string values
@@ -50,26 +51,21 @@ void GuiLauncher::loop() {
         applyScanUpdate(app.scans().poll());
         render();
 
-        if (motionStart != 0) {
-            long timePressed = time - motionStart;
-            if (timePressed > 300) {
-                if (time - timespeed > 100) {
-                    if (motionDir == 0) {
-                        if (!carousel.scrolling) {
-                            nextCarouselGame(60);
-                        }
-                    } else {
-                        if (!carousel.scrolling) {
-                            prevCarouselGame(60);
-                        }
-                    }
-                    timespeed = time;
-                }
-                if (timespeed == 0) {
-                    timespeed = time;
-                }
-            } else {
-                timespeed = 0;
+        if (!carousel.scrolling && state == LauncherScreenState::Games) {
+            if (queuedScroll != 0) {
+                // the tap that came in during the last scroll
+                if (queuedScroll > 0)
+                    nextCarouselGame(CarouselScrollDuration);
+                else
+                    prevCarouselGame(CarouselScrollDuration);
+                queuedScroll = 0;
+            } else if (motionStart != 0 && time - motionStart > CarouselHoldDelay) {
+                // the stick is held: the next step starts the moment the last one ends, at one speed, so
+                // the row runs instead of stopping between games
+                if (motionDir == 0)
+                    nextCarouselGame(CarouselHeldScrollDuration, false);
+                else
+                    prevCarouselGame(CarouselHeldScrollDuration, false);
             }
         }
 
@@ -157,8 +153,9 @@ void GuiLauncher::loop_joyMoveLeft() {
         if (!carousel.scrolling) {
             motionStart = time;
             motionDir = 1;
-            carousel.scrolling = true;
-            prevCarouselGame(110);
+            prevCarouselGame(CarouselScrollDuration);
+        } else {
+            queuedScroll = -1;
         }
     } else if (state == LauncherScreenState::Set) {
 
@@ -195,8 +192,9 @@ void GuiLauncher::loop_joyMoveRight() {
         if (!carousel.scrolling) {
             motionStart = time;
             motionDir = 0;
-            carousel.scrolling = true;
-            nextCarouselGame(110);
+            nextCarouselGame(CarouselScrollDuration);
+        } else {
+            queuedScroll = 1;
         }
     } else if (state == LauncherScreenState::Set) {
 

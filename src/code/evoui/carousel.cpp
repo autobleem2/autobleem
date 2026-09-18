@@ -2,6 +2,7 @@
 // Carousel: the row of covers, out of GuiLauncher.
 //
 #include "carousel.h"
+#include "../core/model/timing.h"
 
 #include <algorithm>
 #include <cmath>
@@ -162,7 +163,7 @@ bool Carousel::loadOneMissingTexture() {
 // Carousel::scrollLeft
 //*******************************
 // start scroll animation to next game
-void Carousel::scrollLeft(int speed) {
+void Carousel::scrollLeft(int speed, bool eased) {
     scrolling = true;
     long time = gui_.platform().ticks();
     for (auto &game : games) {
@@ -177,6 +178,7 @@ void Carousel::scrollLeft(int speed) {
             game.destination = positions.coverPositions[nextIndex];
             game.animationDuration = speed;
             game.animationStart = time;
+            game.eased = eased;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -188,7 +190,7 @@ void Carousel::scrollLeft(int speed) {
 // Carousel::scrollRight
 //*******************************
 // start scroll animation to previous game
-void Carousel::scrollRight(int speed) {
+void Carousel::scrollRight(int speed, bool eased) {
     scrolling = true;
     long time = gui_.platform().ticks();
     for (auto &game : games) {
@@ -202,6 +204,7 @@ void Carousel::scrollRight(int speed) {
             game.destination = positions.coverPositions[nextIndex];
             game.animationDuration = speed;
             game.animationStart = time;
+            game.eased = eased;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -234,6 +237,7 @@ void Carousel::moveMainCover(bool toGamesRow) {
         games[selected].destination = toGamesRow ? point1 : point2;
         games[selected].animationStart = time;
         games[selected].animationDuration = 200;
+        games[selected].eased = true;
     }
 }
 
@@ -266,6 +270,8 @@ void Carousel::updatePositions() {
             if (game.animationStart != 0) {
                 long position = currentTime - game.animationStart;
                 float delta = position * 1.0f / game.animationDuration;
+                if (game.eased && delta < 1.0f)
+                    delta = easeOutCubic(delta);
                 game.actual.x = game.current.x + (game.destination.x - game.current.x) * delta;
                 game.actual.y = game.current.y + (game.destination.y - game.current.y) * delta;
                 game.actual.scale = game.current.scale + (game.destination.scale - game.current.scale) * delta;

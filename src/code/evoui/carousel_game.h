@@ -41,6 +41,7 @@ struct PsCarouselGame : public PsGamePtr {
     int nextPointIndex = -1;
     long animationStart = 0;
     long animationDuration = 0;
+    bool eased = true; // easeOutCubic over the animation, or linear (a held stick keeps one speed)
     bool visible = false;
     // keep the texture: visible, or within Carousel::Lookahead games of an end of the row, so that the
     // cover a scroll brings in is already decoded (see Carousel::loadOneMissingTexture)
