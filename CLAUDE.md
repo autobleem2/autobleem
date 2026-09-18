@@ -417,7 +417,7 @@ port targets 32-bit Trixie (and Bookworm).
   flags). Same compiler/sysroot layout as the 32-bit toolchain assumed:
   `aarch64-linux-gnu-{gcc,g++,strip}.exe` in `bin/`, sysroot at `<root>/aarch64-linux-gnu/sysroot` with
   SDL2/SDL2_image/SDL2_mixer/SDL2_ttf/libpng16 runtime `.so`s under `usr/lib/aarch64-linux-gnu`.
-  `./make_rpi64.sh` configures and builds into `build_rpi64/` (`--debug` -> `build_rpi64_dbg/`), mirroring
+  `./make_rpi64.sh` configures and builds into `build_rpi64/` (`--debug` -> `build_rpi64_dbg/`; incremental, `--clean` wipes), mirroring
   `make_rpi.sh` exactly. Target is plain `armv8-a` - every 64-bit-capable Pi (3/4/5/400/Zero 2 W) is that
   core, so there is no armv7-style board split to make.
 - **SDL2 discovery**: `toolchains/rpi64/cmake/FindSDL2.cmake` is the same borrowed-headers-plus-imported-.so
