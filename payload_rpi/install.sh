@@ -998,11 +998,15 @@ install_boot_splash() {
         return 0
     }
 
-    # plymouth starts from the initramfs, so the theme has to be packed into it - for the running kernel,
-    # not "the newest" (the 32-bit image carries several: v6, v7, v7l, v8), the same as the shrink hook.
+    # plymouth starts from the initramfs, so the theme has to be packed into it - into every kernel's, not
+    # just the running one's: the 32-bit image carries one per board (v6 for a Zero/1, v7 for a 2/3, v7l
+    # for a 4, v8 for the 64-bit kernel), each with its own /boot/firmware/initramfs<N>, and a card set up
+    # on one board gets moved to another (a card done on a Pi 400 showed the stock theme on a Pi 3 until
+    # this). A bare "-u" would pick the newest version only. The shrink hook stays on the running kernel on
+    # purpose - it runs at the next boot of this board.
     if [ -d /etc/initramfs-tools ]; then
-        log "Rebuilding the initramfs for $(uname -r) with the boot splash in it"
-        run update-initramfs -u -k "$(uname -r)" \
+        log "Rebuilding the initramfs of every installed kernel with the boot splash in it"
+        run update-initramfs -u -k all \
             || warn "update-initramfs failed - the splash will only show once the root is mounted"
     fi
 }

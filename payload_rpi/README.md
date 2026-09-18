@@ -230,12 +230,16 @@ The screen is set to 1920x1080 for the whole boot (`video=HDMI-A-1:1920x1080@60 
 at that mode and draws its 1280x720 layout at 1.5x — covers and text at the screen's own resolution instead of
 being upscaled by the TV — so there is no mode change for the TV to re-sync to when it comes up; on a 720p
 screen use `--hdmi-mode 1280x720@60` and it draws at 1x. The AutoBleem logo is a
-plymouth theme (`/usr/share/plymouth/themes/autobleem/`, packed into the initramfs) that stays up until the
+plymouth theme (`/usr/share/plymouth/themes/autobleem/`, packed into the initramfs of every installed
+kernel, so the card shows it on whichever Pi it is moved to) that stays up until the
 session script quits it right before starting the launcher — `plymouth-quit.service` is kept out of the boot
 by the service file so it cannot do that earlier. The same logo shows while the Pi shuts down. The
 firmware's rainbow square is turned off in `config.txt` (`disable_splash=1`). `--hdmi-mode`,
 `--no-boot-splash` and `--no-quiet-boot` on the installer undo each of these; `--no-boot-config` leaves the
 boot files alone altogether.
+
+If a card set up before 2026-09-18 shows the stock plymouth theme on another Pi, `sudo update-initramfs -u
+-k all` packs the AutoBleem theme into the other kernels' images too.
 
 ## If something goes wrong
 

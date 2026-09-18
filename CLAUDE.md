@@ -340,9 +340,10 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...`, `--hdmi-mode`; `config.txt`'s `hdmi_mode` is ignored by
   the KMS driver) - the launcher asks SDL for 1280x720 anyway, so plymouth and the launcher share one mode and
   the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_rpi/system/plymouth/`
-  (`splash.png` 1280x720 on black), installed to `/usr/share/plymouth/themes/autobleem` and packed into the
-  running kernel's initramfs (`update-initramfs -u -k $(uname -r)`, like the shrink hook - never bare `-u`,
-  the 32-bit image carries several kernels). `cmdline.txt` gets `splash plymouth.ignore-serial-consoles`,
+  (`splash.png` 1280x720 on black), installed to `/usr/share/plymouth/themes/autobleem` and packed into **every** installed kernel's initramfs
+  (`update-initramfs -u -k all` since 2026-09-18 - the 32-bit image carries one per board, v6/v7/v7l/v8,
+  and a card set up on the Pi 400 showed the stock theme when moved to a Pi 3; the shrink hook stays on the
+  running kernel, `-k $(uname -r)`, it is for this board's next boot - never bare `-u`). `cmdline.txt` gets `splash plymouth.ignore-serial-consoles`,
   `config.txt` gets `disable_splash=1` in its own `[all]` section. The handover: `autobleem.service`
   `Conflicts=plymouth-quit.service` (the display-manager pattern, so systemd does not take the splash down
   when the system is up) and `autobleem-session` runs `plymouth quit --retain-splash` first thing, before
