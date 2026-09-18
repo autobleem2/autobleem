@@ -157,6 +157,17 @@ add_library(ab_core STATIC
         )
 target_link_libraries(ab_core ableem_engine)
 
+# core/version.h: the version, commit and build time, regenerated on every build (see the script). The
+# fallback is what a tree without git tags reports; it used to be config.ini's Version= key.
+set(AB_VERSION_FALLBACK "v2.0.0-pre0")
+add_custom_target(ab_version
+        COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DBINARY_DIR=${CMAKE_BINARY_DIR}
+                -DVERSION_FALLBACK=${AB_VERSION_FALLBACK} -P ${CMAKE_SOURCE_DIR}/cmake/generate_version.cmake
+        BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/core/version.h
+        COMMENT "core/version.h from git")
+add_dependencies(ab_core ab_version)
+target_include_directories(ab_core PUBLIC ${CMAKE_BINARY_DIR}/generated)
+
 # ab_core's tests. Host builds only - there is no reason to cross-compile them, and both cross toolchain files
 # (toolchains/psc, toolchains/rpi) switch AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
 # in the same commit (docs/refactor-plan.md section 4).

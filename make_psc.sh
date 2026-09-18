@@ -41,10 +41,25 @@ fi
 
 # CMAKE_SYSTEM_PROCESSOR comes from the toolchain file ("arm"), which is what selects the root CMakeLists'
 # console branch (armv8 flags, the Sony sysroot, ABLEEM_EMBEDDED_TARGET on, tests off).
+# The tree goes up without .git, so core/version.h (cmake/generate_version.cmake) is told what it is.
+AB_GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+AB_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+AB_GIT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || true)
+AB_GIT_DIRTY=false; git diff-index --quiet HEAD -- 2>/dev/null || AB_GIT_DIRTY=true
+GIT_ENV="AB_GIT_HASH=$AB_GIT_HASH AB_GIT_BRANCH=$AB_GIT_BRANCH AB_GIT_VERSION=$AB_GIT_VERSION AB_GIT_DIRTY=$AB_GIT_DIRTY"
+
 echo "==> configuring and building on $HOST"
 $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE=toolchains/psc/PSCtoolchainV8.cmake -DAB_PSC_TOOLCHAIN=$TOOLCHAIN \
-    && $REMOTE_CMAKE --build build_psc -j $JOBS"
+    && env $GIT_ENV $REMOTE_CMAKE --build build_psc -j $JOBS"
+
+# What the console can load. Its stock glibc is 2.24 and its libstdc++ is 6.0.22 (GLIBCXX_3.4.22), older
+# than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
+# fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
+# with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
+echo "==> checking the binary against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
+$SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/autobleem-gui $TOOLCHAIN" || {
+    echo "    the binary would not load on the console - not fetching it"; exit 1; }
 
 # The console binaries are already stripped (-s is in the console CPU flags), so they come back as they are.
 # tar rather than rsync for the way back: rsync insists on POSIX modes, which NTFS under MSYS2 refuses.

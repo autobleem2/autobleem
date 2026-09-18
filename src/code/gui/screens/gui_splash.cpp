@@ -4,6 +4,7 @@
 
 #include "gui_splash.h"
 #include "../gui.h"
+#include "core/version.h"   // generated into the build tree
 #include "../../core/model/timing.h"
 using namespace std;
 
@@ -36,7 +37,7 @@ void GuiSplash::render() {
     renderer.fillRect(rect);
 
     int y = bar.textY;
-    string splashText = _("AutoBleem")+" " + app.config().inifile.values["version"];
+    string splashText = _("AutoBleem") + " " + Version::VERSION;
     gui->text().renderText(gui->assets().themeFont, splashText, 0, y, XALIGN_CENTER);
 
     renderer.present();

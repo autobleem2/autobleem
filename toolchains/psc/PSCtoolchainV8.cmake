@@ -51,3 +51,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 # The unit tests run on the build host, never on the console - there is no reason to cross-compile them.
 set(AB_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+# FindSDL2.cmake links the sysroot's .so files by absolute path, which is exactly how a build-server path
+# ends up as an RPATH/RUNPATH in the binary; the console loads SDL from /tmp/lib (rc/autobleem.sh) and
+# /usr/lib, never from there. make_psc.sh checks the result with readelf.
+set(CMAKE_SKIP_RPATH TRUE CACHE BOOL "" FORCE)
+set(CMAKE_SKIP_BUILD_RPATH TRUE CACHE BOOL "" FORCE)

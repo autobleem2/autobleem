@@ -12,6 +12,7 @@
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/platform_config.h"
+#include "core/version.h"
 
 using namespace std;
 
@@ -88,6 +89,11 @@ static int runAutobleem(int argc, char *argv[]) {
     // last lines before a crash never reach the file, which is exactly when they are needed.
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
+
+    // the first thing in a log anyone sends in: which build this is
+    cout << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
+         << Env::platformName() << endl;
+    for (int i = 0; i < argc; i++) cout << "  argv[" << i << "] = " << argv[i] << endl;
 
     // SDL_Init/InitSubSystem/TTF_Init/Mix_Init all happen inside ableem::Platform, constructed the first time
     // the Gui singleton is created (inside App's constructor, below). Registering SDL_Quit here (before that

@@ -6,6 +6,7 @@
 #include <string>
 #include "../gui.h"
 #include "../../core/services/environment.h"
+#include "core/version.h"   // generated into the build tree
 
 void GuiAbout::init() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
@@ -47,7 +48,7 @@ void GuiAbout::render() {
         return;
     }
 
-    vector<string> credits = {app.config().inifile.values["version"], " ",
+    vector<string> credits = {string(Version::FULL_VERSION), " ",
                               _(".-= Code C++ and shell scripts =-."),
                               "screemer, Axanar, mGGk, nex, genderbent",
                               _(".-= Graphics =-."),

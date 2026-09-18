@@ -24,6 +24,7 @@ Config::Config()
     inifile.values.erase("delay");
     inifile.values.erase("adv");
     inifile.values.erase("ui");   // the classic UI is gone: the app always shows the EvolutionUI launcher now
+    inifile.values.erase("version");   // the build says what version it is (core/version.h) since 2026-09-18
     save();
 
     bool aDefaultWasSet {false};
