@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -70,8 +70,9 @@ Folder:=Mappe:
 Frameskip:=Frameskip:
 Free=Fri
 Free space=Ledig plads
-Game=Spil
 GAME=SPIL
+Game=Spil
+Game data=
 Game failed to verify:=Spilverificering mislykkedes:
 Game History=Spilhistorik
 Game Manager=Spilbibliotek
@@ -86,8 +87,8 @@ High res:=Høj opløsning:
 HIGH SCORE=HØJESTE SCORE
 In Game=I spillet
 In Retroarch Game=I RetroArch-spil
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne spil
 Language:=Sprog:
 Last Played:=Sidst spillet:
@@ -125,6 +126,7 @@ Please confirm=Bekræft venligst
 Please wait ... deleting=Vent venligst ... sletter
 Please wait ... deleting covers...=Vent venligst ... sletter covers...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=STRØM
 Power Off=Sluk
 POWER SHOT=KRAFTSKUD

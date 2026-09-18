@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -70,8 +70,9 @@ Folder:=Map:
 Frameskip:=Frameskip:
 Free=Vrij
 Free space=Vrije ruimte
-Game=Game
 GAME=GAME
+Game=Game
+Game data=
 Game failed to verify:=Game verificatie mislukt:
 Game History=Game geschiedenis
 Game Manager=Game Manager
@@ -86,8 +87,8 @@ High res:=High res:
 HIGH SCORE=HOOGSTE SCORE
 In Game=In game
 In Retroarch Game=In RetroArch game
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne games
 Language:=Taal:
 Last Played:=Laatst gespeeld:
@@ -125,6 +126,7 @@ Please confirm=Bevestig
 Please wait ... deleting=Even geduld ... verwijderen
 Please wait ... deleting covers...=Even geduld ... covers verwijderen...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=POWER
 Power Off=Uitschakelen
 POWER SHOT=KRACHTSCHOT

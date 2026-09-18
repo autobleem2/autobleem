@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -70,8 +70,9 @@ Folder:=Priečinok:
 Frameskip:=Preskočenie snímok:
 Free=Voľné
 Free space=Voľné miesto
-Game=Hra
 GAME=HRA
+Game=Hra
+Game data=
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game History=História hry
 Game Manager=Správca hier
@@ -86,8 +87,8 @@ High res:=Vysoké rozlíšenie:
 HIGH SCORE=NAJLEPŠIE SKÓRE
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-Internal=Originálne
 INTERNAL=ORIGINÁLNE
+Internal=Originálne
 Internal Games=Originálne hry
 Language:=Jazyk:
 Last Played:=Naposledy hrané:
@@ -125,6 +126,7 @@ Please confirm=Potvrďte prosím
 Please wait ... deleting=Čakajte prosím ... odstraňujem
 Please wait ... deleting covers...=Čakajte prosím... mažem obaly...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=VÝKON
 Power Off=Vypnúť
 POWER SHOT=SILNÁ STRELA

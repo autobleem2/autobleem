@@ -62,7 +62,11 @@ void GuiAbout::render() {
                               "nex(German), Azazel(Polish), gadsby(Turkish), GeekAndy(Dutch), Pardubak(Slovak), SupaSAIAN(Spanish), Mate(Czech)",
                               "Sasha(Italian), Jakejj(BR_Portuguese), jolny(Swedish), StepJefli(Danish), alucard73 / MagnusRC(French), Quenti(Occitan), ",
                               heading(_("RetroArch and emulation cores")),
-                              "genderbent, KMFDManic"," ",
+                              "genderbent, KMFDManic",
+                              heading(_("Ported from AutoBleem-NG")),
+                              "cornelk (AutoBleem-NG), Axanar - lightgun games, RDB metadata, libretro-thumbnails covers, multi-disc merge",
+                              heading(_("Game data")),
+                              "libretro-database (Sony - PlayStation.rdb), libretro-thumbnails", " ",
                               _("Support via Discord:") + " https://discord.gg/AHUS3RM",
                               _("This is free software. It works AS IS and We take no responsibility for any issues or damage."),
                               //_("Download latest:") + " https://github.com/autobleem/AutoBleem"

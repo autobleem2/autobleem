@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -70,8 +70,9 @@ Folder:=Dosar:
 Frameskip:=Frameskip:
 Free=Liber
 Free space=Spatiu liber
-Game=Joc
 GAME=Joc
+Game=Joc
+Game data=
 Game failed to verify:=Verificarea jocului a esuat:
 Game History=Istoric Jocuri
 Game Manager=Manager jocuri
@@ -86,8 +87,8 @@ High res:=High res (rezolutie inalta):
 HIGH SCORE=SCOR MAXIM
 In Game=In joc
 In Retroarch Game=In jocul RetroArch
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Jocuri Interne
 Language:=Limba:
 Last Played:=Ultima data jucat:
@@ -125,6 +126,7 @@ Please confirm=Te rog confirma
 Please wait ... deleting=Asteapta ... se sterge
 Please wait ... deleting covers...=Stergere Cover-uri...Te rog asteapta...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=PORNIRE
 Power Off=Power Off
 POWER SHOT=FOC PUTERNIC

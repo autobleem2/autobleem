@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -70,8 +70,9 @@ Folder:=Dorsièr :
 Frameskip:=Frameskip :
 Free=Liure
 Free space=Espaci liure
-Game=Jòc
 GAME=JÒC
+Game=Jòc
+Game data=
 Game failed to verify:=Verificacion del jòc fracassada :
 Game History=Istoric dels jòcs
 Game Manager=Gestionari de jòcs
@@ -86,8 +87,8 @@ High res:=Nauta resolucion :
 HIGH SCORE=MELHOR MARCA
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-Internal=Intèrna
 INTERNAL=INTÈRNA
+Internal=Intèrna
 Internal Games=Jòcs intèrnes
 Language:=Lenga :
 Last Played:=Darrièra partida :
@@ -125,6 +126,7 @@ Please confirm=Volgatz confirmar
 Please wait ... deleting=Esperatz ... supression en cors
 Please wait ... deleting covers...=Esperatz ... supression de las cobèrturas...
 Plugin:=Extension :
+Ported from AutoBleem-NG=
 POWER=ENERGIA
 Power Off=Atudar
 POWER SHOT=TIR PODEROS

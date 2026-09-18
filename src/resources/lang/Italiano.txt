@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -70,8 +70,9 @@ Folder:=Cartella:
 Frameskip:=Frameskip:
 Free=Libero
 Free space=Spazio libero
-Game=Gioco
 GAME=GIOCO
+Game=Gioco
+Game data=
 Game failed to verify:=Verifica fallita per questi giochi:
 Game History=Cronologia Giochi
 Game Manager=Gestore del gioco
@@ -86,8 +87,8 @@ High res:=Alta risoluzione:
 HIGH SCORE=PUNTEGGIO MIGLIORE
 In Game=Mentre Giochi
 In Retroarch Game=Mentre Giochi - in RetroArch
-Internal=Interno
 INTERNAL=INTERNO
+Internal=Interno
 Internal Games=Giochi Interni
 Language:=Lingua:
 Last Played:=Ultima Partita:
@@ -125,6 +126,7 @@ Please confirm=Prego confermare
 Please wait ... deleting=Attendere prego ... sto cancellando
 Please wait ... deleting covers...=Attendere prego ... cancello le cover...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=POWER
 Power Off=Spegni
 POWER SHOT=COLPO POTENTE

@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 196
+# Untranslated: 7 / Total: 198
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -70,8 +70,9 @@ Folder:=Klasör:
 Frameskip:=Kare Atlama:
 Free=Boş
 Free space=Boş alan
-Game=Oyun
 GAME=OYUN
+Game=Oyun
+Game data=
 Game failed to verify:=Oyun doğrulanamadı:
 Game History=Oyun Geçmişi
 Game Manager=Oyun Yöneticisi
@@ -86,8 +87,8 @@ High res:=Yüksek çözünürlük:
 HIGH SCORE=EN YÜKSEK SKOR
 In Game=Oyun İçinde
 In Retroarch Game=RetroArch Oyununda
-Internal=Dahili
 INTERNAL=DAHILİ
+Internal=Dahili
 Internal Games=Dahili Oyunlar
 Language:=Dil:
 Last Played:=Son Oynanma:
@@ -125,6 +126,7 @@ Please confirm=Lütfen onaylayın
 Please wait ... deleting=Lütfen bekleyin ... siliniyor
 Please wait ... deleting covers...=Lütfen bekleyin ... kapaklar siliniyor...
 Plugin:=Eklenti:
+Ported from AutoBleem-NG=
 POWER=GÜÇ
 Power Off=Kapat
 POWER SHOT=GÜÇLÜ ATIŞ

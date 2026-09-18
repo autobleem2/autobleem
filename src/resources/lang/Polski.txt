@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 196
+# Untranslated: 2 / Total: 198
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -70,8 +70,9 @@ Folder:=Folder:
 Frameskip:=Pomiń klatki:
 Free=Wolne
 Free space=Wolne miejsce
-Game=Gra
 GAME=GRA
+Game=Gra
+Game data=Dane gier
 Game failed to verify:=Nie udało się zweryfikować Gry:
 Game History=Historia Gry
 Game Manager=Menadżer gier
@@ -86,8 +87,8 @@ High res:=Zwiększ Rozdzielczość:
 HIGH SCORE=NAJLEPSZY WYNIK
 In Game=W Grze
 In Retroarch Game=W grze Retroarch
-Internal=Wewnętrzna
 INTERNAL=WEWNĘTRZNA
+Internal=Wewnętrzna
 Internal Games=Wewnętrzne Gry
 Language:=Język:
 Last Played:=Ostatnio Grane:
@@ -125,6 +126,7 @@ Please confirm=Potwierdź
 Please wait ... deleting=Proszę czekać ... usuwanie
 Please wait ... deleting covers...=Proszę czekać... usuwanie okładek...
 Plugin:=Wtyczka:
+Ported from AutoBleem-NG=Przeniesione z AutoBleem-NG
 POWER=Przycisk POWER
 Power Off=Wyłączanie
 POWER SHOT=POTĘŻNY STRZAŁ

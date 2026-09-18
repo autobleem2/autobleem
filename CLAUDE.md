@@ -225,9 +225,14 @@ generator, the year on the meta panel, the per-size bold font cache `Fonts::bold
 wrappers + sorted languages, music not restarting on theme browse, Favorites fallback, rc guards, the
 stock-SonyUI/`.lic`/RetroBoot-patch cleanup), the libchdr refresh, and Phase 1 - `RdbReader`,
 `MetadataLookup`, `ThumbnailLookup` (see lib_ableem/engine below), verified on the Pi 400 with the
-libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`, and Phase 2, the multi-disc folder
-merge (`DiscSuffix`, `mergeMultiDiscFolders`). Next: pcsx-ab's libchdr refresh, version constants + link
-gates, lightgun, plog, INI translations, screens.
+libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, the multi-disc folder merge
+(`DiscSuffix`, `mergeMultiDiscFolders`); pcsx-ab's libchdr refresh (its own repo); `core/version.h` + the
+`make_psc.sh` link gates; Phase 3, lightgun games (`LightgunService`, `GameSet::Lightgun`, the editors);
+plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
+text in `TextRenderer` with the Game Manager's preview pane and the launcher's `launcher.snapPanel`; and
+`docs/menu-options.md` + `docs/translation.md`. **The port is complete** apart from what was left out on
+purpose: the fork's Options-menu paging and "Font" rows, Chinese (no CJK font to ship), its Docker/CI
+pipeline, UPX, clang-tidy, gtest and the RetroBoot-1.2.1 Apps payload.
 
 ## Raspberry Pi port (2026-09-17)
 
@@ -594,14 +599,23 @@ USB stick root = `/media` on the PSC:
 /media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot
 /media/Games/                     user games, one folder per game; !SaveStates/, !MemCards/ sub-dirs
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
-/media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui)
+/media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui), autobleem.log (plog,
+                                  rolling), launch.log / pcsx.log (the launch scripts' and pcsx-ab's), ui_menu.log
+/media/System/lightguns.txt       RetroArch games flagged as light-gun games, one image path per line
+/media/System/Bios|Preferences|Region|UI/   rc/backup.sh's copies of the console's own files, made at boot
 /media/themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/ launchable apps
 /media/retroarch/                 RetroBoot's RetroArch tree: database/rdb/Sony - PlayStation.rdb (game metadata),
                                   thumbnails/Sony - PlayStation/Named_*/ (covers), screenshots/, states/, playlists/
 /gaadata/<id>/                    stock internal games (read-only console storage)
 ```
 
-Boot chain: `rc/autobleem.sh` → unpack libs → `bin/autobleem/run.sh` → `autobleem-gui /media`.
+Boot chain: the exploit payload in `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` runs `Autobleem/start.sh` →
+`rc/boot.sh` (bind-mounts `rc/20-joystick.rules` over `/etc/udev/rules.d` and re-triggers udev, which is what
+lets two pads through one hub; `killsony.sh`; `backup.sh`) → `rc/autobleem.sh` → unpack `libs.tar.gz` (SDL2
+2.0.12 + SDL2_mixer built with the **Wayland** video backend - the console has no X; SDL2_image/ttf are the
+firmware's own 2.0.4, so no SDL API newer than 2.0.4) → `bin/autobleem/run.sh` → `autobleem-gui /media`.
+`/autobleem` existing on the console means the AutoBleem kernel is installed (`Env::autobleemKernel`: a real
+clock, so "Last played" is shown).
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
 or `rc/launch_rb.sh` (RetroArch: file, core). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -

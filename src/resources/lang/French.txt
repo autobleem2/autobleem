@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -70,8 +70,9 @@ Folder:=Dossier:
 Frameskip:=Saut d'images :
 Free=Libre
 Free space=Espace disponible
-Game=Jeu
 GAME=Jeu
+Game=Jeu
+Game data=
 Game failed to verify:=Échec de la vérification du jeu :
 Game History=Historique des jeux
 Game Manager=Gestionnaire de jeux
@@ -86,8 +87,8 @@ High res:=Haute définition:
 HIGH SCORE=MEILLEUR SCORE
 In Game=En cours de jeu
 In Retroarch Game=Dans un jeu RetroArch
-Internal=Interne
 INTERNAL=INTERNE
+Internal=Interne
 Internal Games=Jeux internes
 Language:=Langue :
 Last Played:=Dernière partie :
@@ -125,6 +126,7 @@ Please confirm=Veuillez valider
 Please wait ... deleting=Veuillez patienter ... suppression
 Please wait ... deleting covers...=Veuillez patienter ... suppression des jaquettes...
 Plugin:=Plugin :
+Ported from AutoBleem-NG=
 POWER=ALIMENTATION
 Power Off=Arrêt
 POWER SHOT=TIR PUISSANT

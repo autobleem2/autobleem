@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -70,8 +70,9 @@ Folder:=Kansio:
 Frameskip:=Frameskip:
 Free=Vapaa
 Free space=Vapaa tila
-Game=Peli
 GAME=PELI
+Game=Peli
+Game data=
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game History=Pelihistoria
 Game Manager=Pelien hallinta
@@ -86,8 +87,8 @@ High res:=Korkea resoluutio:
 HIGH SCORE=PARAS TULOS
 In Game=Pelissä
 In Retroarch Game=RetroArch pelissä
-Internal=Sisäinen
 INTERNAL=SISÄINEN
+Internal=Sisäinen
 Internal Games=Sisäiset Pelit
 Language:=Kieli:
 Last Played:=Viimeksi pelattu:
@@ -125,6 +126,7 @@ Please confirm=Ole hyvä ja vahvista
 Please wait ... deleting=Odota hetki ... poistetaan
 Please wait ... deleting covers...=Odota hetki ... poistetaan kannet...
 Plugin:=Liitännäinen:
+Ported from AutoBleem-NG=
 POWER=VIRTA
 Power Off=Sammuta
 POWER SHOT=TEHOLAUKAUS

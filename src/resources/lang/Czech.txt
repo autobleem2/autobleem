@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -70,8 +70,9 @@ Folder:=Složka:
 Frameskip:=Preskočení snímků:
 Free=Volné
 Free space=Volné místo
-Game=Hra
 GAME=HRA
+Game=Hra
+Game data=
 Game failed to verify:=Ověření hry selhalo:
 Game History=Historie her
 Game Manager=Správce her
@@ -86,8 +87,8 @@ High res:=Vysoké rozlišení:
 HIGH SCORE=NEJLEPŠÍ SKÓRE
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-Internal=Interní
 INTERNAL=INTERNÍ
+Internal=Interní
 Internal Games=Interní hry
 Language:=Jazyk:
 Last Played:=Naposledy hráno:
@@ -125,6 +126,7 @@ Please confirm=Potvrďte prosím
 Please wait ... deleting=Prosím čekejte ... mazání
 Please wait ... deleting covers...=Čekejte prosím... mažu obaly...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=NAPÁJENÍ
 Power Off=Vypnout
 POWER SHOT=SILNÁ STŘELA

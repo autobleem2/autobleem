@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 3 / Total: 196
+# Untranslated: 5 / Total: 198
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -70,8 +70,9 @@ Folder:=Mapp:
 Frameskip:=Frameskip:
 Free=Ledigt
 Free space=Ledigt utrymme
-Game=Spel
 GAME=SPEL
+Game=Spel
+Game data=
 Game failed to verify:=Spelverifiering misslyckades:
 Game History=Spelhistorik
 Game Manager=Spelbibliotek
@@ -86,8 +87,8 @@ High res:=Hög upplösning:
 HIGH SCORE=BÄSTA RESULTAT
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interna spel
 Language:=Språk:
 Last Played:=Senast spelad:
@@ -125,6 +126,7 @@ Please confirm=Vänligen bekräfta
 Please wait ... deleting=Vänligen vänta ... raderar
 Please wait ... deleting covers...=Vänligen vänta ... raderar omslag
 Plugin:=Plugin:
+Ported from AutoBleem-NG=
 POWER=STRÖM
 Power Off=Stäng av
 POWER SHOT=KRAFTSKOTT

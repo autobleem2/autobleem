@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 196
+# Untranslated: 0 / Total: 198
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -70,8 +70,9 @@ Folder:=Folder:
 Frameskip:=Frameskip:
 Free=Free
 Free space=Free space
-Game=Game
 GAME=GAME
+Game=Game
+Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
 Game Manager=Game Manager
@@ -86,8 +87,8 @@ High res:=High res:
 HIGH SCORE=HIGH SCORE
 In Game=In Game
 In Retroarch Game=In Retroarch Game
-INTERNAL=INTERNAL
 Internal=Internal
+INTERNAL=INTERNAL
 Internal Games=Internal Games
 Language:=Language:
 Last Played:=Last Played:
@@ -125,6 +126,7 @@ Please confirm=Please confirm
 Please wait ... deleting=Please wait ... deleting
 Please wait ... deleting covers...=Please wait ... deleting covers...
 Plugin:=Plugin:
+Ported from AutoBleem-NG=Ported from AutoBleem-NG
 POWER=POWER
 Power Off=Power Off
 POWER SHOT=POWER SHOT
