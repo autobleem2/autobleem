@@ -141,22 +141,28 @@ void PsMeta::render() {
         gui->text().renderText(nameFont, gameName, x, y + yOffset);
 
         yOffset += 35;
-        // publisher line
-        gui->text().renderText(otherFont, publisher, x, y + yOffset);
+        // publisher line - with the year for a PS1 game (a RetroArch game's "publisher" is its core name)
+        if (!foreign && !year.empty() && year != "0")
+            gui->text().renderText(otherFont, publisher + ", " + year, x, y + yOffset);
+        else
+            gui->text().renderText(otherFont, publisher, x, y + yOffset);
 
-        yOffset += 21;
-        // serial number line
-        gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x, y + yOffset);
+        // the serial/region and last-played lines are a PS1 game's; a RetroArch game or an App has neither
+        if (!foreign) {
+            yOffset += 21;
+            // serial number line
+            gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x, y + yOffset);
 
-        yOffset += 21;
-        // last played line
+            yOffset += 21;
+            // last played line
 #ifdef AB_DEBUG_HOST
-        // the devel system has time
-        gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
-#else
-        if (Env::autobleemKernel)
+            // the devel system has time
             gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+#else
+            if (Env::autobleemKernel)
+                gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
 #endif
+        }
 
         yOffset += 22;
         if (!foreign) {
@@ -226,8 +232,9 @@ void PsMeta::render() {
             }
         } else
         {
-            // retroarch icon
+            // RetroArch game: the RA icon, on the row the serial line left free
             if (!app) {
+                yOffset += 21;
                 ableem::Size s = raTex.size();
                 w = s.w; h = s.h;
                 rect.x = x;
