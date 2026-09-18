@@ -28,6 +28,7 @@ public:
         cout << endl;
         Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
     }
+    bool needsExclusiveDisplay() const override { return false; }   // it draws on the launcher's own window
 };
 } // namespace
 #endif
@@ -70,6 +71,12 @@ void AutoBleem::launchGame() {
     gui_->finish();          // fades the music out and closes the mixer
 
     gui_->input().flushPads();
+    // the emulator needs the whole machine: audio (closed above), the pads (flushed above) and the display.
+    // Without a compositor - a Raspberry Pi on KMS/DRM - our window is the DRM master and pcsx-ab's
+    // SDL_Init(VIDEO) fails while it exists, so the window goes too; display(true) below rebuilds it.
+    if (runner_->needsExclusiveDisplay()) {
+        gui_->releaseDisplay();
+    }
 
     launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
 
@@ -144,12 +151,20 @@ int AutoBleem::run() {
 
         session_.resumingGui = false;
 
+        // the launcher asks for a game with session().startingGame + runningGame (three places in
+        // evoui_launcher_actions/input.cpp); turning that into MENU_OPTION_START used to be the classic
+        // menu screen's job, and went missing with it - nothing launched anywhere until this line
+        if (session_.startingGame && session_.runningGame) {
+            session_.menuOption = MENU_OPTION_START;
+        }
+
         launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_START) {
             scans().setWatching(false);   // the emulator gets the CPU, not the scanner
             launchGame();
             scans().setWatching(true);
+            session_.menuOption = MENU_OPTION_IDLE;
             continue;
         }
 
