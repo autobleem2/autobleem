@@ -23,7 +23,6 @@ using ableem::EXT_BIN;
 using ableem::EXT_IMG;
 using ableem::EXT_CHD;
 using ableem::EXT_CUE;
-using ableem::EXT_LIC;
 
 // in-place string helpers (trim(s) modifies s; the copying versions are Strings::trim(s))
 using ableem::ltrim;

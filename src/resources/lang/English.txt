@@ -10,8 +10,6 @@
 
 .-= Testing =-.
 
-.lic file not found
-
 A scan is already in progress
 
 About

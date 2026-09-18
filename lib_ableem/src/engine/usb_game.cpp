@@ -123,11 +123,6 @@ bool UsbGame::verify(std::vector<std::string> *failureReasons) {
             failureReasons->emplace_back("Cover image file not found");
         result = false;
     }
-    if (!licFound) {
-        if (failureReasons)
-            failureReasons->emplace_back(".lic file not found");
-        result = false;
-    }
     if (!pcsxCfgFound) {
         if (failureReasons)
             failureReasons->emplace_back("pcsx.cfg file not found");
@@ -160,7 +155,6 @@ bool UsbGame::print() {
     cout << "Game.ini found: " << gameIniFound << endl;
     cout << "Game.ini valid: " << gameIniValid << endl;
     cout << "PNG found:" << coverImageFound << endl;
-    cout << "LIC found:" << licFound << endl;
     cout << "pcsx.cfg found: " << pcsxCfgFound << endl;
     cout << "TotalDiscs: " << discs.size() << endl;
     cout << "Favorite: " << favorite << endl;
@@ -266,15 +260,6 @@ void UsbGame::recoverMissingFiles(CoverDatabase &coverDb) {
     }
 
     if (discs.size() > 0) {
-        if (!licFound) {
-            automationUsed = true;
-            cout << "Switching automation no lic" << endl;
-            string source = workingPath + sep + "default.lic";
-            string destination = fullPath + sep  + discs[0].diskName + ".lic";
-            cerr << "SRC:" << source << " DST:" << destination << endl;
-            DirEntry::copy(source, destination);
-            licFound = true;
-        }
         if (!coverImageFound) {
             automationUsed = true;
             cout << "Switching automation no image" << endl;

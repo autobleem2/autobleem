@@ -10,8 +10,6 @@
 .-= Retroboot ja emulaatio ytimet =-.
 .-= Testing =-.
 .-= Testausta =-.
-.lic file not found
-.lic tiedostoa ei löytynyt
 A scan is already in progress
 Skannaus on jo käynnissä
 About

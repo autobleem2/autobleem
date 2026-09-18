@@ -18,7 +18,7 @@ public:
     // walks gamesDir recursively (skipping !SaveStates, !MemCards and dot entries) and records
     // "relpath|size" for every game image file (DirEntry::isAGameFile()) plus .ecm, and "relpath/" for
     // every directory - so a renamed/moved directory is seen as a change even when its contents are not.
-    // Files the app itself writes (Game.ini, pcsx.cfg, .png, .lic, .m3u) are not recorded: editing one must
+    // Files the app itself writes (Game.ini, pcsx.cfg, .png, .m3u) are not recorded: editing one must
     // not trigger a rescan.
     static GamesFingerprint take(const std::string &gamesDir);
 

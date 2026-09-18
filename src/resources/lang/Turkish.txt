@@ -10,8 +10,6 @@
 .-= Retroboot ve çekirdek emülasyonları =-.
 .-= Testing =-.
 .-= Deneme =-.
-.lic file not found
-.lic dosyası bulunamadı
 A scan is already in progress
 Zaten bir tarama devam ediyor
 About

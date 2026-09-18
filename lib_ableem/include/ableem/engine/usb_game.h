@@ -61,7 +61,6 @@ public:
     bool gameIniFound = false;
     bool gameIniValid = false;
     bool coverImageFound = false;
-    bool licFound = false;
     bool automationUsed = false;    // some value was filled in by the scanner rather than read from Game.ini
     ImageType imageType = IMAGE_BIN;
     bool highRes = false;
@@ -71,7 +70,7 @@ public:
     void saveGameIni(const std::string &path);
     void applyIniValues();                      // iniValues -> members (defaults where missing) and the disc list
 
-    // creates whatever is missing (.lic, cover .png, pcsx.cfg, the disc list) using the defaults in
+    // creates whatever is missing (cover .png, pcsx.cfg, the disc list) using the defaults in
     // Environment::getWorkingPath() and the cover database
     void recoverMissingFiles(CoverDatabase &coverDb);
     // every file a launchable game needs is present. the reasons are plain (untranslated) English.

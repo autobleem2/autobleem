@@ -10,8 +10,6 @@
 .-= Retroboot y cores de emulacion =-.
 .-= Testing =-.
 .-= Testers =-.
-.lic file not found
-Archivo .lic no encontrado
 A scan is already in progress
 Ya hay un escaneo en curso
 About

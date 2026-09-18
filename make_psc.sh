@@ -2,7 +2,7 @@
 # Build AutoBleem for the PlayStation Classic on the build server, which has Sony's armv8-sony-linux-gnueabihf
 # toolchain (GCC 8.2.0, crosstool-NG) and the console's sysroot at /opt/toolchain - the toolchain AutoBleem
 # has always been released with. The tree is rsynced up, configured there with
-# toolchains/psc/PSCtoolchainV8.cmake, built, and autobleem-gui + starter come back into build_psc/dist/.
+# toolchains/psc/PSCtoolchainV8.cmake, built, and autobleem-gui comes back into build_psc/dist/.
 # The same shape as pcsx-ab's make_psc.sh, so the two projects build side by side on the same server.
 #
 # Needs a "Host psc-build" entry in ~/.ssh/config (HostName, User, IdentityFile) with key login working -
@@ -51,6 +51,6 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 echo "==> fetching results"
 rm -rf build_psc/dist
 mkdir -p build_psc/dist
-$SSH "cd $REMOTE_DIR/build_psc && tar czf - autobleem-gui starter" | tar xzf - --no-same-permissions -C build_psc/dist
+$SSH "cd $REMOTE_DIR/build_psc && tar czf - autobleem-gui" | tar xzf - --no-same-permissions -C build_psc/dist
 echo "==> build_psc/dist:"
 ls -l build_psc/dist

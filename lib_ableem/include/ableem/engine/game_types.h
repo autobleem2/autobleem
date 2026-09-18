@@ -24,7 +24,6 @@ const char EXT_IMG[] = ".img";
 const char EXT_CHD[] = ".chd";
 //const char EXT_ISO[] = ".iso";
 const char EXT_CUE[] = ".cue";
-const char EXT_LIC[] = ".lic";
 
 // special sub-directories of the games dir that never hold a game
 const char SAVESTATES_DIR_NAME[] = "!SaveStates";

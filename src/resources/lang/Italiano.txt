@@ -10,8 +10,6 @@
 .-= Retroboot e core emulazione =-.
 .-= Testing =-.
 .-= Testing =-.
-.lic file not found
-file .lic non trovato
 A scan is already in progress
 È già in corso una scansione
 About

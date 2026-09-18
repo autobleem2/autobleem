@@ -48,7 +48,7 @@ this host yet:
   `LauncherMenuOption` in `gui_launcher.h`. `PsMenu::selOption` stays an `int` - it is a
   generic index into the icon row that `PsMenu` animates by `++`/`--` - and is compared through
   `selOptionIs()`. `EmuMode` and `MenuOption` were already enums.
-- **Step 2** - `ab_core` exists (`src/code/core/`, links `ableem_engine` only, `starter` links just it).
+- **Step 2** - `ab_core` exists (`src/code/core/`, links `ableem_engine` only).
   It held `main.h`, `environment.*`, `util.*`, `lang.*`, `DebugTimer.*`, `services/config.*` and
   `model/timing.h` at first; on 2026-09-16 the top level was cleared down to `main.h`. It is deliberately small: only files with no `Gui` and no `App::get()` could move without
   a content change.
@@ -153,7 +153,7 @@ Still to do, in order:
    per install, since where it points depends on where the data partition was mounted.
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
 4. ~~Set up the Sony ARM toolchain~~ - done 2026-09-17: `make_psc.sh` builds on the remote server (see Build).
-   `autobleem-gui` and `starter` cross-compile and link cleanly with the Sony GCC 8.2 toolchain. **Still to
+   `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. **Still to
    do: run it on a console** - nothing has run on real hardware yet; the Windows/MinGW build is the only one
    that has been executed. The Pi toolchain (below) is a different target and does not substitute for it.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
@@ -192,8 +192,8 @@ Still to do, in order:
      when nothing was requested directly.
    - **Step 3** - `ClassicMenuScreen`/`gui/scan_progress.*` are deleted; `AutoBleem::run()` goes splash ->
      `GuiLauncher` directly and loops there (`Session::MenuOption` keeps only `IDLE`/`RETRO`/`START`, at
-     their old numeric values - `rc/selection.sh` trimmed to match, `start_autobleem` the fallback for
-     anything but `SEL_RETROARCH`). No more `ui=classic`/EvolutionUI choice (`Config` drops a stale `ui` key
+     their old numeric values - `rc/selection.sh` trimmed to match: RetroArch for `SEL_RETROARCH`, a reboot
+     for anything else). No more `ui=classic`/EvolutionUI choice (`Config` drops a stale `ui` key
      on load). Circle in the launcher's `Games` state is a no-op now - there is nothing left to fall back
      to. `GuiLauncher::loop()` polls the scan once a frame; a new bottom-of-screen line
      (`scanStatusLine`) shows its progress or a "Scan complete" summary, and any roster change reruns the
@@ -331,7 +331,7 @@ A portable library (`lib_ableem/`, namespace `ableem`) in two CMake targets, mir
 and `lib_ableem/src/`:
 - **`ableem_engine`** (`include/ableem/engine/`, umbrella `<ableem/engine.h>`) - no SDL at all: filesystem,
   strings, ini/cfg files, the SQLite game database, cover dbs, disc images, the scanner, RetroArch playlists.
-  `starter` links only this. Vendored code lives in `lib_ableem/third_party/` (sqlite, nlohmann json) and
+  Vendored code lives in `lib_ableem/third_party/` (sqlite, nlohmann json) and
   `src/engine/unecm.c`, all private to the library - the app includes none of them.
 - **`ableem`** (`include/ableem/ui/`, links `ableem_engine`) - owns every SDL/SDL_image/SDL_mixer/SDL_ttf
   call: Platform, Renderer, Texture, Font, Audio, Input, GuiBase, GuiScreen, types.h.
@@ -352,7 +352,6 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   WorkingPath/SonyDataPath/ThemesDir/CoversDbDir/InternalGamesDir`) once; everything else is derived
   (`getPathToMemCardsDir()` = games + `!MemCards`, `getPathToMemcardTemplateDir()` = working + `memcard`, ...).
   The app's `Env` (`src/code/core/services/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
-  `starter` sets the two roots it needs itself.
 - **`DirEntry`/`sep`** (`engine/filesystem.h`) and the string helpers (`engine/strings.h`: in-place `trim/
   lcase/...` free functions, copying `Strings::trim/replaceAll/toInt/...`) are the old `DirEntry.h`, `main.h`
   and `Util` string parts, unchanged in API. The app reaches them as `Strings::`; the process helpers
@@ -440,13 +439,12 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 Five targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), `ab_ui` (`gui/` and `app.*`: Gui, the
 classic screens and menus, AppAudio, the splash and the `App` model; links `ab_core` + `ableem`), `ab_evoui` (`evoui/`: the carousel at the top, `screens/` and `controls/`; links `ab_ui`), `autobleem-gui`
-(`main.cpp`, `autobleem.*`; links `ab_evoui`) and `starter` (small PCSX wrapper used
-by the stock-UI path, links `ab_core` only). **C++14** (the Sony toolchain is GCC 8+). SQLite is
+(`main.cpp`, `autobleem.*`; links `ab_evoui`). **C++14** (the Sony toolchain is GCC 8+). SQLite is
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
 - **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` → `build_psc/dist/`
-  (`autobleem-gui` + `starter`), built **on the build server over ssh** - the same shape as pcsx-ab's
+  (`autobleem-gui`), built **on the build server over ssh** - the same shape as pcsx-ab's
   `make_psc.sh`, so the two build side by side there. `ssh psc-build` (a `Host` entry in `~/.ssh/config`, in
   both the Windows profile and `C:\msys64\home\<you>` - MSYS2's ssh and Git for Windows' ssh have different
   homes; key `~/.ssh/id_ed25519`). Ubuntu x86_64, 2 cores, Sony's crosstool-NG toolchain at `/opt/toolchain`
@@ -469,7 +467,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
-  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs); the `starter` target is skipped on Windows.
+  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs).
   Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. The x86/Windows/Pi
   switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
@@ -562,7 +560,10 @@ or `rc/launch_rb.sh` (RetroArch: file, core). `LaunchService::writeSelectionScri
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
 in practice only ever `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item); starting a
 game and returning from one both loop back into the launcher in-process and never reach it. `selection.sh`
-falls back to relaunching AutoBleem for anything else.
+reboots for anything else (a crash, a missing `autobleem_cfg.sh`), which brings AutoBleem back up. The stock
+SonyUI exit - `starter` mounted over `/usr/sony/bin/pcsx`, USB games linked into `/gaadata` with a `.lic`
+each (`link.sh`/`overmount.sh`/`startsony.sh`) - is gone with it (2026-09-18, as in AutoBleem-NG), and so is
+`.lic` handling in the scanner.
 
 ## Source map (`src/code/`)
 
@@ -612,7 +613,6 @@ defaults, which both the services and the screens need.
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `evoui/screens/evoui_mc_manager.*`, `evoui_app_start.*`, `evoui_btn_guide.*` | | Launcher sub-screens. |
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |
-| `starter.cpp` | separate binary | Wraps `/tmp/pcsx` for the stock SonyUI path; swaps memcard from `Game.ini`. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
 `default`, `evolution`), bundled Apps, release notes. `payload_rpi/` next to it is the Raspberry Pi installer

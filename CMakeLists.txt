@@ -106,7 +106,7 @@ endif()
 
 # ab_core: the app's model and services layer, the first of the three targets in docs/refactor-plan.md.
 # It links ableem_engine and nothing else, so the linker - not a convention - is what keeps it free of SDL and
-# of screens. That is what makes it testable without a window, and it is what `starter` links below.
+# of screens. That is what makes it testable without a window.
 #
 # It starts small on purpose: only files that already have no Gui and no App::get() in them could move here
 # without a content change. theme.*, scanner.* and util_time.* are core-shaped but each still reaches the UI
@@ -281,13 +281,6 @@ add_executable(
         src/code/main.cpp
 )
 
-if (NOT WIN32)
-    # starter wraps /tmp/pcsx on the console for the stock SonyUI path. it is not useful on a Windows dev build.
-    # it links ab_core alone, which is the cheapest standing proof that core pulls in no SDL.
-    add_executable(starter src/code/starter.cpp)
-    target_link_libraries(starter ab_core)
-endif()
-
 target_link_libraries(autobleem-gui
          Threads::Threads
          ab_evoui
@@ -306,7 +299,6 @@ add_custom_command(TARGET autobleem-gui PRE_BUILD
         ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:autobleem-gui>)
 
 
-configure_file(src/resources/default.lic default.lic COPYONLY)
 configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 

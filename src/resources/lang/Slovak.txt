@@ -10,8 +10,6 @@
 .-= Retroboot a jadrá emulácie =-.
 .-= Testing =-.
 .-= Testovanie =-.
-.lic file not found
-.lic súbor sa nepodarilo nájsť
 A scan is already in progress
 Skenovanie už prebieha
 About

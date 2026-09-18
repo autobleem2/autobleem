@@ -10,8 +10,6 @@
 .-= Retroboot i rdzenie =-.
 .-= Testing =-.
 .-= Testerzy =-.
-.lic file not found
-Nie znaleziono pliku .lic
 A scan is already in progress
 Skanowanie jest już w toku
 About

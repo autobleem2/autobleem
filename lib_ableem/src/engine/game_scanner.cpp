@@ -400,10 +400,6 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
 				if (DirEntry::matchExtension(file.name, EXT_PNG)) {
 					game->coverImageFound = true;
 				}
-
-				if (DirEntry::matchExtension(file.name, EXT_LIC)) {
-					game->licFound = true;
-				}
 			}
 
 			cout << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed << endl;
