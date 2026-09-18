@@ -85,13 +85,13 @@ void GameSettingsService::refreshPcsx(GameSettings &s) const {
     ConfigFileEditor processor;
     string path = cfgFolder(s);
     PcsxSettings &p = s.pcsx;
-    p.highres       = atoi  (processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
-    p.speedhack     = atoi  (processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
-    p.clock         = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
-    p.gpu           =        processor.getValue(path, "gpu3");
-    p.frameskip     = atoi  (processor.getValue(path, "frameskip3").c_str());
-    p.dither        = atoi  (processor.getValue(path, "gpu_peops.iUseDither").c_str());
-    p.scanlines     = atoi  (processor.getValue(path, "scanlines").c_str());
+    p.highres = atoi(processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
+    p.speedhack = atoi(processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
+    p.clock = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
+    p.gpu = processor.getValue(path, "gpu3");
+    p.frameskip = atoi(processor.getValue(path, "frameskip3").c_str());
+    p.dither = atoi(processor.getValue(path, "gpu_peops.iUseDither").c_str());
+    p.scanlines = atoi(processor.getValue(path, "scanlines").c_str());
     p.scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
     p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
 }
@@ -118,7 +118,7 @@ void GameSettingsService::replaceCfgLine(GameSettings &s, const string &property
 // GameSettingsService::setFavorite
 //*******************************
 void GameSettingsService::setFavorite(GameSettings &s, bool on) {
-    s.game->favorite = on;   // the record in hand says what was just written, whichever store it went to
+    s.game->favorite = on; // the record in hand says what was just written, whichever store it went to
     if (s.internal) {
         library_.internalGames().updateFavorite(s.game->gameId, s.game->favorite);
     } else {
@@ -164,9 +164,11 @@ void GameSettingsService::setLocked(GameSettings &s, bool on) {
     }
     string &automation = s.ini.values["automation"];
     if (on) {
-        if (automation == "1") automation = "0";
+        if (automation == "1")
+            automation = "0";
     } else {
-        if (automation == "0") automation = "1";
+        if (automation == "0")
+            automation = "1";
     }
     saveIni(s);
 }

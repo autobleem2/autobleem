@@ -17,13 +17,13 @@ using namespace std;
 namespace ableem {
 
 namespace {
-    function<void(const string &)> progressHandler;
+function<void(const string &)> progressHandler;
 
-    void forwardProgress(const char *message) {
-        if (progressHandler)
-            progressHandler(message);
-    }
+void forwardProgress(const char *message) {
+    if (progressHandler)
+        progressHandler(message);
 }
+} // namespace
 
 //*******************************
 // EcmDecoder::setProgressHandler

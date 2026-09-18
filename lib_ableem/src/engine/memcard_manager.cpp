@@ -92,9 +92,12 @@ void MemcardManager::rename(const string &oldName, const string &newName) {
 
     // now go to all game ini's and find out if needs updated
     for (const DirEntry &entry : DirEntry::diru(gamesDir)) {
-        if (!DirEntry::isDirectory(gamesDir + sep + entry.name)) continue;
-        if (entry.name == SAVESTATES_DIR_NAME) continue;
-        if (entry.name == MEMCARDS_DIR_NAME) continue;
+        if (!DirEntry::isDirectory(gamesDir + sep + entry.name))
+            continue;
+        if (entry.name == SAVESTATES_DIR_NAME)
+            continue;
+        if (entry.name == MEMCARDS_DIR_NAME)
+            continue;
 
         string gameIniPath = gamesDir + sep + entry.name + sep + GAME_INI;
         if (DirEntry::exists(gameIniPath)) {

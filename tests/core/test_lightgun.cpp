@@ -22,7 +22,9 @@ using std::vector;
 
 namespace {
 
-bool contains(const string &haystack, const string &needle) { return haystack.find(needle) != string::npos; }
+bool contains(const string &haystack, const string &needle) {
+    return haystack.find(needle) != string::npos;
+}
 
 struct FakeRetroArch : RetroArchGames {
     PsGames games;
@@ -56,7 +58,8 @@ struct Lib : GameLibraryFixture {
     }
     PsGamePtr usbGame(const string &title) {
         for (auto &g : PsGame::fromRecords(library.usbGames().loadUsbGames()))
-            if (g->title == title) return g;
+            if (g->title == title)
+                return g;
         REQUIRE(false);
         return nullptr;
     }
@@ -67,7 +70,8 @@ struct Lib : GameLibraryFixture {
     }
     vector<string> titlesOf(const PsGames &games) {
         vector<string> titles;
-        for (const auto &g : games) titles.push_back(g->title);
+        for (const auto &g : games)
+            titles.push_back(g->title);
         return titles;
     }
     std::unique_ptr<Config> config;
@@ -83,15 +87,15 @@ TEST_CASE("a USB game's light-gun flag round-trips through Game.ini and switches
 
     lib.settings->setLightgun(s, true);
     CHECK(s.game->lightgun);
-    CHECK(s.game->play_using_ra);   // guncon lives in RetroArch's core
+    CHECK(s.game->play_using_ra); // guncon lives in RetroArch's core
     string ini = lib.tmp.readFile("Games/Time Crisis/Game.ini");
     CHECK(contains(ini, "Lightgun=1"));
     CHECK(contains(ini, "Play_using_ra=true"));
-    CHECK(lib.usbGame("Time Crisis")->lightgun);   // the loader reads it back
+    CHECK(lib.usbGame("Time Crisis")->lightgun); // the loader reads it back
 
     lib.settings->setLightgun(s, false);
     CHECK_FALSE(lib.usbGame("Time Crisis")->lightgun);
-    CHECK(lib.usbGame("Time Crisis")->play_using_ra);   // left as it was
+    CHECK(lib.usbGame("Time Crisis")->play_using_ra); // left as it was
 
     LightgunService lightguns(lib.library);
     CHECK_FALSE(lightguns.isLightgun(*lib.usbGame("Time Crisis")));
@@ -140,10 +144,12 @@ TEST_CASE("RetroArch games are listed in System/lightguns.txt by image path; a g
     LightgunService again(lib.library);
     CHECK_FALSE(again.isLightgun(*hotd));
     CHECK_FALSE(again.anyRetroArchLightguns());
-    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/lightguns.txt")));   // empty list: no file
+    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/lightguns.txt"))); // empty list: no file
 
     PsGamePtr app{new PsGame};
-    app->foreign = true; app->app = true; app->image_path = "x";
+    app->foreign = true;
+    app->app = true;
+    app->image_path = "x";
     CHECK_FALSE(again.isLightgun(*app));
 }
 
@@ -167,7 +173,7 @@ TEST_CASE("the Lightgun set is every flagged PS1 and RetroArch game, by title; e
     query.setRetroArchGames(&ra);
     GameSetSelection selection;
     selection.set = GameSet::Lightgun;
-    CHECK(query.gamesFor(selection).empty());   // no LightgunService yet
+    CHECK(query.gamesFor(selection).empty()); // no LightgunService yet
 
     query.setLightguns(&lightguns);
     CHECK(lib.titlesOf(query.gamesFor(selection)) == vector<string>{"Point Blank", "Time Crisis", "Virtua Cop"});

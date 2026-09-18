@@ -16,9 +16,9 @@
 // the services carry no #ifdef for them. A missing file or key falls back to the console's layout, which is
 // also what a fake USB tree on a dev host looks like.
 struct PlatformConfig {
-    std::string retroarchDir = "retroarch";                          // relative to the USB root unless absolute
-    std::string retroarchCore = "cores/km_pcsx_rearmed_neon_libretro.so";   // relative to retroarchDir unless absolute
-    std::vector<std::string> retroarchBinaries{"retroarch"};         // each relative to retroarchDir unless absolute
+    std::string retroarchDir = "retroarch";                               // relative to the USB root unless absolute
+    std::string retroarchCore = "cores/km_pcsx_rearmed_neon_libretro.so"; // relative to retroarchDir unless absolute
+    std::vector<std::string> retroarchBinaries{"retroarch"}; // each relative to retroarchDir unless absolute
 
     // the file for this build's platform, next to the other resources: <resourcesDir>/platform/<name>.ini
     static std::string pathFor(const std::string &resourcesDir, const std::string &platformName);

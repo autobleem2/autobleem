@@ -12,12 +12,12 @@ namespace ableem {
 // RetroArchPlaylistEntry
 //******************
 struct RetroArchPlaylistEntry {
-    std::string path;       // the rom / disc image / .m3u
-    std::string label;      // display name
-    std::string core_path;  // "DETECT" when RetroArch should pick the core
-    std::string core_name;  // "DETECT" likewise
-    std::string crc32;      // "00000000|crc" when unknown
-    std::string db_name;    // the playlist file name (RetroArch uses it to find the matching database)
+    std::string path;      // the rom / disc image / .m3u
+    std::string label;     // display name
+    std::string core_path; // "DETECT" when RetroArch should pick the core
+    std::string core_name; // "DETECT" likewise
+    std::string crc32;     // "00000000|crc" when unknown
+    std::string db_name;   // the playlist file name (RetroArch uses it to find the matching database)
 };
 
 using RetroArchPlaylistEntries = std::vector<RetroArchPlaylistEntry>;
@@ -27,7 +27,7 @@ using RetroArchPlaylistEntries = std::vector<RetroArchPlaylistEntry>;
 //******************
 class RetroArchPlaylist {
 public:
-    static bool isJsonFormat(const std::string &path);   // first non-blank line is "{"
+    static bool isJsonFormat(const std::string &path); // first non-blank line is "{"
 
     // whichever format the file is in. false (and no entries) when the file cannot be opened or is not
     // valid; a JSON item that is not an object is skipped, a missing/non-string field reads as "".

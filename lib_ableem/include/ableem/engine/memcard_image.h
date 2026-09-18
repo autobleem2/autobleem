@@ -18,8 +18,8 @@ namespace ableem {
 class MemcardImage {
 public:
     static const int Slots = 15;
-    static const int Size = 131072;          // a memory card holds 128K
-    static const int IconSize = 16;          // an icon frame is 16x16
+    static const int Size = 131072; // a memory card holds 128K
+    static const int IconSize = 16; // an icon frame is 16x16
     static const int IconFrames = 3;
 
     enum class BlockType { Free = 0, Top = 1, Link = 2, LinkEnd = 3 };
@@ -28,7 +28,7 @@ public:
         uint8_t r = 0, g = 0, b = 0, a = 0;
     };
 
-    MemcardImage();   // all zeroes: load() or a template card first
+    MemcardImage(); // all zeroes: load() or a template card first
 
     // shiftjis.dat, the Shift-JIS -> Unicode table Japanese titles are converted through. Without it every
     // character of a title converts to U+0000, which is what an unconverted card has always shown.
@@ -45,13 +45,15 @@ public:
     // --- slots ---
     bool isUsed(int slot) const { return slotIsUsed_[slot]; }
     bool isFree(int slot) const { return blockType_[slot] == BlockType::Free; }
-    bool isDeleted(int slot) const { return slotIsDeleted_[slot]; }   // freed, but the data still starts with "SC": can be undeleted
+    bool isDeleted(int slot) const {
+        return slotIsDeleted_[slot];
+    } // freed, but the data still starts with "SC": can be undeleted
     bool isTop(int slot) const { return blockType_[slot] == BlockType::Top; }
     bool hasIcon(int slot) const { return slotHasIcon_[slot]; }
     BlockType blockType(int slot) const { return blockType_[slot]; }
-    int nextSlot(int slot) const { return nextSlotMap_[slot]; }    // 0xFF at the end of a save's chain
+    int nextSlot(int slot) const { return nextSlotMap_[slot]; } // 0xFF at the end of a save's chain
 
-    std::string productCode(int slot) const { return productCodes_[slot]; }   // e.g. "BASCUS-94163"
+    std::string productCode(int slot) const { return productCodes_[slot]; } // e.g. "BASCUS-94163"
     std::string gameId(int slot) const { return gameIds_[slot]; }
     // the save's title from its top block, converted from Shift-JIS; "" for a free slot or a link block
     std::string title(int slot) const { return titles_[slot]; }
@@ -61,7 +63,7 @@ public:
 
     void deleteSlot(int slot);
     void undeleteSlot(int slot);
-    void deleteGame(int startSlot);   // the top block and every link block after it
+    void deleteGame(int startSlot); // the top block and every link block after it
 
     // every slot of the save starting at startSlot, in chain order
     std::vector<int> gameSlots(int startSlot) const;
@@ -91,7 +93,7 @@ private:
     void parseGameIds();
     void parseTitles();
     void fixChecksum(int slot);
-    int topSlotOf(int slot) const;   // the top block a link block belongs to, or -1
+    int topSlotOf(int slot) const; // the top block a link block belongs to, or -1
     void ownIconPixels(int slot, int frame, Pixel *out) const;
     std::string shiftJisToUtf8(const std::string &input) const;
 

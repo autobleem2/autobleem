@@ -18,13 +18,13 @@ namespace ableem {
 // ScanStage
 //******************
 enum class ScanStage {
-    Scanning,           // detail: ""
-    Game,               // detail: the game dir name
-    DecompressingEcm,   // detail: "" at the start, then the decoder's "Decoding ECMed bin (nn%)" messages
-    UpdatingDatabase,   // detail: ""
-    GameFailedVerify,   // detail: the game's full path
-    MovingFile,         // detail: the file being moved into its own game sub-directory
-    MergingDiscs        // detail: the multi-disc game whose "(Disc n)" folders are being merged into one
+    Scanning,         // detail: ""
+    Game,             // detail: the game dir name
+    DecompressingEcm, // detail: "" at the start, then the decoder's "Decoding ECMed bin (nn%)" messages
+    UpdatingDatabase, // detail: ""
+    GameFailedVerify, // detail: the game's full path
+    MovingFile,       // detail: the file being moved into its own game sub-directory
+    MergingDiscs      // detail: the multi-disc game whose "(Disc n)" folders are being merged into one
 };
 
 //******************
@@ -53,7 +53,7 @@ public:
     GameScanner(GameScanner const &) = delete;
     GameScanner &operator=(GameScanner const &) = delete;
 
-    UsbGames gamesToAddToDB;            // filled by scanGamesDirectory: every game that verified
+    UsbGames gamesToAddToDB; // filled by scanGamesDirectory: every game that verified
     bool noGamesFoundDuringScan = false;
 
     // metadata supplies title/publisher/year/cover art for games whose Game.ini is missing or incomplete
@@ -62,12 +62,13 @@ public:
     // SUBDIR_ROWS + SUBDIR_GAMES_TO_DISPLAY_ON_ROW, cleared and rewritten in one transaction. This class no
     // longer assigns game ids (a caller doing an incremental scan has to reuse an existing game's id rather
     // than renumber it - see GameDatabase::findGameIdByPath/insertGame), so idByPath supplies them.
-    static void writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &db, const std::map<std::string, int> &idByPath);
+    static void writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &db,
+                                const std::map<std::string, int> &idByPath);
     // autobleem.list in the working path (id,path,sspath one game per line, read by the rc shell scripts)
     static void writeAutobleemList(const UsbGames &games, const std::map<std::string, int> &idByPath);
 
     void repairBrokenCueFiles(const std::string &path);
-    void decompressEcmFiles(const std::string &path);   // every .ecm in the dir becomes a .bin
+    void decompressEcmFiles(const std::string &path); // every .ecm in the dir becomes a .bin
 
     // true when game files (pbp/bin/cue/img/chd) sit directly in the dir instead of in sub-dirs
     static bool hasLooseGameFiles(const std::string &path);

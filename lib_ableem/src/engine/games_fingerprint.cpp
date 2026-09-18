@@ -51,7 +51,8 @@ GamesFingerprint GamesFingerprint::take(const string &gamesDir) {
 bool GamesFingerprint::save(const string &path) const {
     ofstream os;
     os.open(path, ios::binary);
-    if (!DirEntry::checkWritable(os, path)) return false;
+    if (!DirEntry::checkWritable(os, path))
+        return false;
     for (const auto &entry : entries_) {
         os << entry.first << "\t" << entry.second << "\n";
     }
@@ -73,7 +74,7 @@ bool GamesFingerprint::load(const string &path) {
     while (getline(is, line)) {
         size_t tab = line.find('\t');
         if (tab == string::npos)
-            continue;   // malformed line, skip it rather than fail the whole load
+            continue; // malformed line, skip it rather than fail the whole load
         entries_[line.substr(0, tab)] = line.substr(tab + 1);
     }
     return true;

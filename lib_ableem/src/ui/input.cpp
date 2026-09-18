@@ -29,67 +29,128 @@ bool translateKeyboardToPad(SDL_Event &event) {
     int button = -1;
     bool dpad = false;
     switch (event.key.keysym.sym) {
-        case SDLK_x: button = SDL_BTN_CROSS; break;
-        case SDLK_o: button = SDL_BTN_CIRCLE; break;
-        case SDLK_s: button = SDL_BTN_SQUARE; break;
-        case SDLK_t: button = SDL_BTN_TRIANGLE; break;
-        case SDLK_SPACE: button = SDL_BTN_START; break;
-        case SDLK_b: button = SDL_BTN_SELECT; break;
-        case SDLK_q: button = SDL_BTN_L1; break;
-        case SDLK_e: button = SDL_BTN_R1; break;
-        case SDLK_1: button = SDL_BTN_L2; break;
-        case SDLK_2: button = SDL_BTN_R2; break;
-        case SDLK_i: button = SDL_BTN_DUP; dpad = true; break;
-        case SDLK_k: button = SDL_BTN_DDOWN; dpad = true; break;
-        case SDLK_j: button = SDL_BTN_DLEFT; dpad = true; break;
-        case SDLK_l: button = SDL_BTN_DRIGHT; dpad = true; break;
-        default: return false;
+    case SDLK_x:
+        button = SDL_BTN_CROSS;
+        break;
+    case SDLK_o:
+        button = SDL_BTN_CIRCLE;
+        break;
+    case SDLK_s:
+        button = SDL_BTN_SQUARE;
+        break;
+    case SDLK_t:
+        button = SDL_BTN_TRIANGLE;
+        break;
+    case SDLK_SPACE:
+        button = SDL_BTN_START;
+        break;
+    case SDLK_b:
+        button = SDL_BTN_SELECT;
+        break;
+    case SDLK_q:
+        button = SDL_BTN_L1;
+        break;
+    case SDLK_e:
+        button = SDL_BTN_R1;
+        break;
+    case SDLK_1:
+        button = SDL_BTN_L2;
+        break;
+    case SDLK_2:
+        button = SDL_BTN_R2;
+        break;
+    case SDLK_i:
+        button = SDL_BTN_DUP;
+        dpad = true;
+        break;
+    case SDLK_k:
+        button = SDL_BTN_DDOWN;
+        dpad = true;
+        break;
+    case SDLK_j:
+        button = SDL_BTN_DLEFT;
+        dpad = true;
+        break;
+    case SDLK_l:
+        button = SDL_BTN_DRIGHT;
+        dpad = true;
+        break;
+    default:
+        return false;
     }
     event.type = dpad ? (down ? SDL_CONTROLLERHATMOTIONDOWN : SDL_CONTROLLERHATMOTIONUP)
-                       : (down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP);
+                      : (down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP);
     event.cbutton.button = button;
     event.cbutton.state = down ? SDL_PRESSED : SDL_RELEASED;
     return true;
 }
 
 Button toButton(int b) {
-    if (b == SDL_BTN_CROSS) return Button::Cross;
-    if (b == SDL_BTN_CIRCLE) return Button::Circle;
-    if (b == SDL_BTN_SQUARE) return Button::Square;
-    if (b == SDL_BTN_TRIANGLE) return Button::Triangle;
-    if (b == SDL_BTN_START) return Button::Start;
-    if (b == SDL_BTN_SELECT) return Button::Select;
-    if (b == SDL_BTN_L1) return Button::L1;
-    if (b == SDL_BTN_R1) return Button::R1;
-    if (b == SDL_BTN_L2) return Button::L2;
-    if (b == SDL_BTN_R2) return Button::R2;
+    if (b == SDL_BTN_CROSS)
+        return Button::Cross;
+    if (b == SDL_BTN_CIRCLE)
+        return Button::Circle;
+    if (b == SDL_BTN_SQUARE)
+        return Button::Square;
+    if (b == SDL_BTN_TRIANGLE)
+        return Button::Triangle;
+    if (b == SDL_BTN_START)
+        return Button::Start;
+    if (b == SDL_BTN_SELECT)
+        return Button::Select;
+    if (b == SDL_BTN_L1)
+        return Button::L1;
+    if (b == SDL_BTN_R1)
+        return Button::R1;
+    if (b == SDL_BTN_L2)
+        return Button::L2;
+    if (b == SDL_BTN_R2)
+        return Button::R2;
     return Button::None;
 }
 
 Button toDpadButton(int b) {
-    if (b == SDL_BTN_DUP) return Button::DpadUp;
-    if (b == SDL_BTN_DDOWN) return Button::DpadDown;
-    if (b == SDL_BTN_DLEFT) return Button::DpadLeft;
-    if (b == SDL_BTN_DRIGHT) return Button::DpadRight;
+    if (b == SDL_BTN_DUP)
+        return Button::DpadUp;
+    if (b == SDL_BTN_DDOWN)
+        return Button::DpadDown;
+    if (b == SDL_BTN_DLEFT)
+        return Button::DpadLeft;
+    if (b == SDL_BTN_DRIGHT)
+        return Button::DpadRight;
     return Button::None;
 }
 
 Key toKey(SDL_Keycode sym) {
     switch (sym) {
-        case SDLK_ESCAPE: return Key::Escape;
-        case SDLK_RETURN: return Key::Return;
-        case SDLK_UP: return Key::Up;
-        case SDLK_DOWN: return Key::Down;
-        case SDLK_LEFT: return Key::Left;
-        case SDLK_RIGHT: return Key::Right;
-        case SDLK_PAGEUP: return Key::PageUp;
-        case SDLK_PAGEDOWN: return Key::PageDown;
-        case SDLK_HOME: return Key::Home;
-        case SDLK_END: return Key::End;
-        case SDLK_TAB: return Key::Tab;
-        case SDLK_BACKSPACE: return Key::Backspace;
-        case SDLK_DELETE: return Key::Delete;
-        default: return Key::Other;
+    case SDLK_ESCAPE:
+        return Key::Escape;
+    case SDLK_RETURN:
+        return Key::Return;
+    case SDLK_UP:
+        return Key::Up;
+    case SDLK_DOWN:
+        return Key::Down;
+    case SDLK_LEFT:
+        return Key::Left;
+    case SDLK_RIGHT:
+        return Key::Right;
+    case SDLK_PAGEUP:
+        return Key::PageUp;
+    case SDLK_PAGEDOWN:
+        return Key::PageDown;
+    case SDLK_HOME:
+        return Key::Home;
+    case SDLK_END:
+        return Key::End;
+    case SDLK_TAB:
+        return Key::Tab;
+    case SDLK_BACKSPACE:
+        return Key::Backspace;
+    case SDLK_DELETE:
+        return Key::Delete;
+    default:
+        return Key::Other;
     }
 }
 
@@ -112,7 +173,7 @@ struct Pad {
 struct Input::Impl {
     Platform &platform;
     bool keyboardAsPad;
-    bool dpadState[4] = { false, false, false, false };
+    bool dpadState[4] = {false, false, false, false};
     std::vector<std::string> mappingPaths;
     std::string currentMappingPath;
     std::vector<std::unique_ptr<Pad>> pads;
@@ -121,7 +182,8 @@ struct Input::Impl {
 
     void registerPad(int joystickIndex) {
         SDL_Joystick *js = SDL_JoystickOpen(joystickIndex);
-        if (!js) return;
+        if (!js)
+            return;
         SDL_JoystickGUID guid = SDL_JoystickGetGUID(js);
         char guidStr[64];
         SDL_JoystickGetGUIDString(guid, guidStr, sizeof(guidStr));
@@ -130,7 +192,8 @@ struct Input::Impl {
             return;
         }
         SDL_GameController *controller = SDL_GameControllerOpen(joystickIndex);
-        if (!controller) return;
+        if (!controller)
+            return;
 
         std::unique_ptr<Pad> pad(new Pad());
         pad->controller = controller;
@@ -170,7 +233,8 @@ Input::~Input() {
 bool Input::poll(Event &out) {
     out = Event();
     SDL_Event e;
-    if (!SDL_PollEvent(&e)) return false;
+    if (!SDL_PollEvent(&e))
+        return false;
 
     if (e.type == SDL_JOYDEVICEADDED) {
         impl->registerPad(e.jdevice.which);
@@ -192,8 +256,7 @@ bool Input::poll(Event &out) {
         return true;
     }
 
-    if (e.type == SDL_KEYDOWN &&
-        (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE)) {
+    if (e.type == SDL_KEYDOWN && (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE)) {
         impl->platform.invokePowerOffHandler();
         return true; // swallowed: the app decides what powering off means, we just report it happened
     }
@@ -204,44 +267,52 @@ bool Input::poll(Event &out) {
     }
 
     switch (e.type) {
-        case SDL_KEYDOWN:
-            out.type = Event::Type::KeyDown;
-            out.key = toKey(e.key.keysym.sym);
-            return true;
-        case SDL_KEYUP:
-            out.type = Event::Type::KeyUp;
-            out.key = toKey(e.key.keysym.sym);
-            return true;
-        case SDL_TEXTINPUT:
-            out.type = Event::Type::TextInput;
-            out.text = e.text.text;
-            return true;
-        case SDL_CONTROLLERBUTTONDOWN:
-            out.type = Event::Type::ButtonDown;
-            out.button = toButton(e.cbutton.button);
-            return true;
-        case SDL_CONTROLLERBUTTONUP:
-            out.type = Event::Type::ButtonUp;
-            out.button = toButton(e.cbutton.button);
-            return true;
-        case SDL_CONTROLLERHATMOTIONDOWN:
-            if (e.cbutton.button == SDL_BTN_DUP) impl->dpadState[DUP] = true;
-            else if (e.cbutton.button == SDL_BTN_DDOWN) impl->dpadState[DDOWN] = true;
-            else if (e.cbutton.button == SDL_BTN_DLEFT) impl->dpadState[DLEFT] = true;
-            else if (e.cbutton.button == SDL_BTN_DRIGHT) impl->dpadState[DRIGHT] = true;
-            out.type = Event::Type::DpadDown;
-            out.button = toDpadButton(e.cbutton.button);
-            return true;
-        case SDL_CONTROLLERHATMOTIONUP:
-            if (e.cbutton.button == SDL_BTN_DUP) impl->dpadState[DUP] = false;
-            else if (e.cbutton.button == SDL_BTN_DDOWN) impl->dpadState[DDOWN] = false;
-            else if (e.cbutton.button == SDL_BTN_DLEFT) impl->dpadState[DLEFT] = false;
-            else if (e.cbutton.button == SDL_BTN_DRIGHT) impl->dpadState[DRIGHT] = false;
-            out.type = Event::Type::DpadUp;
-            out.button = toDpadButton(e.cbutton.button);
-            return true;
-        default:
-            return true; // event consumed from the queue; nothing translatable in it
+    case SDL_KEYDOWN:
+        out.type = Event::Type::KeyDown;
+        out.key = toKey(e.key.keysym.sym);
+        return true;
+    case SDL_KEYUP:
+        out.type = Event::Type::KeyUp;
+        out.key = toKey(e.key.keysym.sym);
+        return true;
+    case SDL_TEXTINPUT:
+        out.type = Event::Type::TextInput;
+        out.text = e.text.text;
+        return true;
+    case SDL_CONTROLLERBUTTONDOWN:
+        out.type = Event::Type::ButtonDown;
+        out.button = toButton(e.cbutton.button);
+        return true;
+    case SDL_CONTROLLERBUTTONUP:
+        out.type = Event::Type::ButtonUp;
+        out.button = toButton(e.cbutton.button);
+        return true;
+    case SDL_CONTROLLERHATMOTIONDOWN:
+        if (e.cbutton.button == SDL_BTN_DUP)
+            impl->dpadState[DUP] = true;
+        else if (e.cbutton.button == SDL_BTN_DDOWN)
+            impl->dpadState[DDOWN] = true;
+        else if (e.cbutton.button == SDL_BTN_DLEFT)
+            impl->dpadState[DLEFT] = true;
+        else if (e.cbutton.button == SDL_BTN_DRIGHT)
+            impl->dpadState[DRIGHT] = true;
+        out.type = Event::Type::DpadDown;
+        out.button = toDpadButton(e.cbutton.button);
+        return true;
+    case SDL_CONTROLLERHATMOTIONUP:
+        if (e.cbutton.button == SDL_BTN_DUP)
+            impl->dpadState[DUP] = false;
+        else if (e.cbutton.button == SDL_BTN_DDOWN)
+            impl->dpadState[DDOWN] = false;
+        else if (e.cbutton.button == SDL_BTN_DLEFT)
+            impl->dpadState[DLEFT] = false;
+        else if (e.cbutton.button == SDL_BTN_DRIGHT)
+            impl->dpadState[DRIGHT] = false;
+        out.type = Event::Type::DpadUp;
+        out.button = toDpadButton(e.cbutton.button);
+        return true;
+    default:
+        return true; // event consumed from the queue; nothing translatable in it
     }
 }
 
@@ -263,10 +334,18 @@ bool Input::padEventPending() const {
     return n > 0;
 }
 
-bool Input::dpadUp() const { return impl->dpadState[DUP]; }
-bool Input::dpadDown() const { return impl->dpadState[DDOWN]; }
-bool Input::dpadLeft() const { return impl->dpadState[DLEFT]; }
-bool Input::dpadRight() const { return impl->dpadState[DRIGHT]; }
+bool Input::dpadUp() const {
+    return impl->dpadState[DUP];
+}
+bool Input::dpadDown() const {
+    return impl->dpadState[DDOWN];
+}
+bool Input::dpadLeft() const {
+    return impl->dpadState[DLEFT];
+}
+bool Input::dpadRight() const {
+    return impl->dpadState[DRIGHT];
+}
 bool Input::dpadCentered() const {
     return !impl->dpadState[DUP] && !impl->dpadState[DDOWN] && !impl->dpadState[DLEFT] && !impl->dpadState[DRIGHT];
 }
@@ -323,13 +402,17 @@ void Input::flushPads() {
     SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
 }
 
-int Input::activePadCount() const { return (int)impl->pads.size(); }
-int Input::joystickCount() const { return SDL_NumJoysticks(); }
+int Input::activePadCount() const {
+    return (int)impl->pads.size();
+}
+int Input::joystickCount() const {
+    return SDL_NumJoysticks();
+}
 
 std::vector<PadInfo> Input::pads() const {
     std::vector<PadInfo> result;
     for (const auto &pad : impl->pads) {
-        result.push_back(PadInfo{ pad->name, pad->guid, pad->index });
+        result.push_back(PadInfo{pad->name, pad->guid, pad->index});
     }
     return result;
 }

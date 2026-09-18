@@ -29,7 +29,6 @@ void GameScanner::report(ScanStage stage, const string &detail, int done, int to
         listener->onScanProgress(stage, detail, done, total);
 }
 
-
 //*******************************
 // GameScanner::decompressEcmFiles
 //*******************************
@@ -38,13 +37,15 @@ void GameScanner::report(ScanStage stage, const string &detail, int done, int to
 // https://www.lifewire.com/ecm-file-2620956
 // https://en.wikipedia.org/wiki/Error_correction_mode
 //
-void GameScanner::decompressEcmFiles(const string & path) {
-    for (const DirEntry & entry: DirEntry::dir(path)) {
-        if (entry.name[0] == '.') continue;
+void GameScanner::decompressEcmFiles(const string &path) {
+    for (const DirEntry &entry : DirEntry::dir(path)) {
+        if (entry.name[0] == '.')
+            continue;
         if (DirEntry::matchExtension(entry.name, EXT_ECM)) {
             report(ScanStage::DecompressingEcm);
             EcmDecoder::setProgressHandler([this](const string &msg) { report(ScanStage::DecompressingEcm, msg); });
-            if (EcmDecoder::decode(path + sep + entry.name, path + sep + entry.name.substr(0, entry.name.length() - 4))) {
+            if (EcmDecoder::decode(path + sep + entry.name,
+                                   path + sep + entry.name.substr(0, entry.name.length() - 4))) {
                 DirEntry::removeFile(path + sep + entry.name);
             }
         }
@@ -81,7 +82,8 @@ void GameScanner::writeAutobleemList(const UsbGames &games, const map<string, in
     string path = Environment::getWorkingPath() + sep + "autobleem.list";
     ofstream outfile;
     outfile.open(path);
-    if (!DirEntry::checkWritable(outfile, path)) return;   // the db is still updated; the list is only read by the shell scripts
+    if (!DirEntry::checkWritable(outfile, path))
+        return; // the db is still updated; the list is only read by the shell scripts
 
     for (const UsbGamePtr &game : games) {
         auto it = idByPath.find(game->fullPath);
@@ -95,7 +97,6 @@ void GameScanner::writeAutobleemList(const UsbGames &games, const map<string, in
     outfile.close();
 }
 
-
 static const char cue1[] = "FILE \"{binName}\" BINARY\n"
                            "  TRACK 01 MODE2/2352\n"
                            "    INDEX 01 00:00:00\n";
@@ -104,16 +105,16 @@ static const char cue2[] = "FILE \"{binName}\" BINARY\n"
                            "    INDEX 00 00:00:00\n"
                            "    INDEX 01 00:02:00\n";
 
-                                //*******************************
-                                // local routines
-                                // *******************************
+//*******************************
+// local routines
+// *******************************
 
 namespace {
 
 //*******************************
 // repairBinCommaNames
 //*******************************
-void repairBinCommaNames(const string & path) {
+void repairBinCommaNames(const string &path) {
     // TODO: Add support for German diactrics for nex here
     for (DirEntry entry : DirEntry::diru_FilesOnly(path)) {
         if (DirEntry::fixCommaInDirOrFileName(path, &entry)) {
@@ -122,7 +123,7 @@ void repairBinCommaNames(const string & path) {
                 ifstream is(path + sep + entry.name);
                 ofstream os(path + sep + entry.name + ".new");
                 if (!is.is_open() || !DirEntry::checkWritable(os, path + sep + entry.name + ".new")) {
-                    continue;   // leave the original cue alone rather than replacing it with nothing
+                    continue; // leave the original cue alone rather than replacing it with nothing
                 }
                 string line;
                 while (getline(is, line)) {
@@ -149,11 +150,11 @@ void repairBinCommaNames(const string & path) {
 //*******************************
 // repairMissingCue
 //*******************************
-void repairMissingCue(const string & path, const string & folderName) {
+void repairMissingCue(const string &path, const string &folderName) {
     vector<string> binFiles;
     bool hasCue = false;
     DirEntries rootDir = DirEntry::diru_FilesOnly(path);
-    for (const DirEntry & entry : rootDir) {
+    for (const DirEntry &entry : rootDir) {
         if (DirEntry::matchExtension(entry.name, EXT_CUE)) {
             hasCue = true;
         }
@@ -169,11 +170,12 @@ void repairMissingCue(const string & path, const string & folderName) {
         string newCueName = path + sep + folderName + EXT_CUE;
         ofstream os;
         os.open(newCueName);
-        if (!DirEntry::checkWritable(os, newCueName)) return;
+        if (!DirEntry::checkWritable(os, newCueName))
+            return;
         // let's create new one
         bool first = true;
         int track = 1;
-        for (const string & bin : binFiles) {
+        for (const string &bin : binFiles) {
             string cueElement;
             if (first) {
                 cueElement = cue1;
@@ -198,9 +200,9 @@ void repairMissingCue(const string & path, const string & folderName) {
 
 } // namespace
 
-                                //*******************************
-                                // GameScanner
-                                // *******************************
+//*******************************
+// GameScanner
+// *******************************
 
 //*******************************
 // GameScanner::moveFolderIfNeeded
@@ -210,7 +212,7 @@ void GameScanner::moveFolderIfNeeded(const std::string &gameDirName, string game
 
     if (gameDataExists) {
         PLOG_ERROR << "Game: " << gameDirName << " - Moving GameData to 0.5";
-        for (const DirEntry & entryGame : DirEntry::diru(gameDataPath)) {
+        for (const DirEntry &entryGame : DirEntry::diru(gameDataPath)) {
             string newName = path + sep + gameDirName + sep + entryGame.name;
             string oldName = gameDataPath + sep + entryGame.name;
             PLOG_ERROR << "Moving: " << oldName << "  to: " << newName;
@@ -224,7 +226,7 @@ void GameScanner::moveFolderIfNeeded(const std::string &gameDirName, string game
 //*******************************
 // GameScanner::repairBrokenCueFiles
 //*******************************
-void GameScanner::repairBrokenCueFiles(const string & path) {
+void GameScanner::repairBrokenCueFiles(const string &path) {
     vector<string> allBinFiles;
     vector<string> allCues;
     vector<bool> validCue;
@@ -235,7 +237,7 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
     validCue.clear();
     cueTracks.clear();
 
-    for (const DirEntry & entryGame:DirEntry::diru(path)) {
+    for (const DirEntry &entryGame : DirEntry::diru(path)) {
         if (DirEntry::matchExtension(entryGame.name, EXT_CUE)) {
             allCues.push_back(entryGame.name);
         }
@@ -249,7 +251,7 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
         }
     }
 
-    for (const string & cue:allCues) {
+    for (const string &cue : allCues) {
         ifstream cueStream;
 
         cueStream.open(path + sep + cue);
@@ -258,7 +260,8 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
         int bins = 0;
         while (getline(cueStream, line)) {
             line = trim(line);
-            if (line.empty()) continue;
+            if (line.empty())
+                continue;
             if (line.substr(0, 4) == "FILE") {
                 line = line.substr(6, string::npos);
                 line = line.substr(0, line.find('"'));
@@ -284,7 +287,8 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
 
             ofstream os;
             os.open(cuePath);
-            if (!DirEntry::checkWritable(os, cuePath)) continue;
+            if (!DirEntry::checkWritable(os, cuePath))
+                continue;
             // let's create new one
             bool first = true;
             int track = 1;
@@ -322,8 +326,8 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
 // GameScanner::scanGamesDirectory
 //*******************************
 void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLookup &metadata) {
-    gamesToAddToDB.clear();  // clear games list
-    ThumbnailLookup thumbnails;   // this scan's own listing cache of the thumbnails folders
+    gamesToAddToDB.clear();     // clear games list
+    ThumbnailLookup thumbnails; // this scan's own listing cache of the thumbnails folders
 
     report(ScanStage::Scanning);
 
@@ -340,8 +344,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
     string badGameFilePath = Environment::getWorkingPath() + sep + "gamesThatFailedVerifyCheck.txt";
     ofstream badGameFile;
     badGameFile.open(badGameFilePath.c_str(), ios::binary);
-    DirEntry::checkWritable(badGameFile, badGameFilePath);   // diagnostics only, keep going
-
+    DirEntry::checkWritable(badGameFile, badGameFilePath); // diagnostics only, keep going
 
     int totalGames = static_cast<int>(allGames.size());
     int gameIndex = 0;
@@ -370,38 +373,37 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 
         string gameIniPath = game->fullPath + sep + GAME_INI;
 
-        DirEntries fileEntries = DirEntry::diru_FilesOnly(game->fullPath);    // get the list of files once
+        DirEntries fileEntries = DirEntry::diru_FilesOnly(game->fullPath); // get the list of files once
         if (DirEntry::thereIsAGameFile(fileEntries)) {
             ImageType imageType;
             string gameFile;
             tie(imageType, gameFile) = DirEntry::getGameFile(fileEntries);
-			game->imageType = imageType;
-			game->gameDataFound = true;
+            game->imageType = imageType;
+            game->gameDataFound = true;
 
-			if (DirEntry::imageTypeUsesACueFile(imageType))
-			{
-				repairMissingCue(game->fullPath, game->gameDirName);
-				repairBrokenCueFiles(game->fullPath);
-				decompressEcmFiles(game->fullPath);
-			}
+            if (DirEntry::imageTypeUsesACueFile(imageType)) {
+                repairMissingCue(game->fullPath, game->gameDirName);
+                repairBrokenCueFiles(game->fullPath);
+                decompressEcmFiles(game->fullPath);
+            }
 
             // for each file in the game dir
-			for (const DirEntry & file : fileEntries) {
-				if (Strings::compareCaseInsensitive(file.name, GAME_INI)) {
+            for (const DirEntry &file : fileEntries) {
+                if (Strings::compareCaseInsensitive(file.name, GAME_INI)) {
                     game->gameIniFound = true;
-				}
+                }
 
-				if (Strings::compareCaseInsensitive(file.name, PCSX_CFG)) {
-					game->pcsxCfgFound = true;
-				}
+                if (Strings::compareCaseInsensitive(file.name, PCSX_CFG)) {
+                    game->pcsxCfgFound = true;
+                }
 
-				if (DirEntry::matchExtension(file.name, EXT_PNG)) {
-					game->coverImageFound = true;
-				}
-			}
+                if (DirEntry::matchExtension(file.name, EXT_PNG)) {
+                    game->coverImageFound = true;
+                }
+            }
 
-			PLOG_WARNING << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed;
-			game->recoverMissingFiles(metadata);
+            PLOG_WARNING << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed;
+            game->recoverMissingFiles(metadata);
             PLOG_WARNING << "after calling recoverMissingFiles() automationUsed = " << game->automationUsed;
 
             if (game->gameIniFound)
@@ -419,28 +421,29 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
                 game->region = SerialScanner::serialToRegion(game->serial);
             }
 
-            // if there was no ini file before, get the values for the ini, create the cover file if needed, and create/update the game.ini file
-            if ( !game->gameIniFound || game->automationUsed || (game->discs.size()==0) ) {
+            // if there was no ini file before, get the values for the ini, create the cover file if needed, and
+            // create/update the game.ini file
+            if (!game->gameIniFound || game->automationUsed || (game->discs.size() == 0)) {
 
-                if (game->discs.size()==0)
+                if (game->discs.size() == 0)
                     game->recoverMissingFiles(metadata);
 
-				if (!game->serial.empty()) {
-					GameMetadata md;
-					if (metadata.findBySerial(game->serial, md)) {
-						// at this stage we have more data;
+                if (!game->serial.empty()) {
+                    GameMetadata md;
+                    if (metadata.findBySerial(game->serial, md)) {
+                        // at this stage we have more data;
                         if (game->title == "")
-						    game->title = md.title;
+                            game->title = md.title;
                         if (game->publisher == "")
                             game->publisher = md.publisher;
                         if (game->players == 0)
-						    game->players = md.players;
+                            game->players = md.players;
                         if (game->year == 0)
-						    game->year = md.year;
+                            game->year = md.year;
                         game->recordName = md.recordName;
 
-						if (game->discs.size() > 0) {
-							// all recovered :)
+                        if (game->discs.size() > 0) {
+                            // all recovered :)
                             if (!game->coverImageFound && !md.bytes.empty()) {
                                 string newFilename = game->fullPath + sep + game->discs[0].cueName + EXT_PNG;
                                 PLOG_INFO << "Updating cover in scanGamesDirectory()" << newFilename;
@@ -454,16 +457,15 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
                                     game->coverImageFound = true;
                                 }
                             }
-						}
+                        }
 
-						md.clearCover();
-					}
-					else {
-					    if (game->title == "")
-						    game->title = game->gameDirName;
-					}
-				}
-			}
+                        md.clearCover();
+                    } else {
+                        if (game->title == "")
+                            game->title = game->gameDirName;
+                    }
+                }
+            }
             // Where RetroArch's thumbnails tree has this game's cover and screenshot, remembered in
             // Game.ini so the carousel does not search on every load. The rdb's name is the key to the
             // tree; a game scanned before there was an rdb gets it looked up now.
@@ -473,16 +475,17 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
                     game->recordName = md.recordName;
             }
             game->coverPath = thumbnails.findBoxArt(ThumbnailLookup::PlayStationDbName, game->title, game->recordName);
-            game->snapPath = thumbnails.findSnap(ThumbnailLookup::PlayStationDbName, game->title,
-                                                 game->discs.empty() ? "" : game->fullPath + sep + game->discs[0].cueName,
-                                                 game->recordName);
+            game->snapPath = thumbnails.findSnap(
+                ThumbnailLookup::PlayStationDbName, game->title,
+                game->discs.empty() ? "" : game->fullPath + sep + game->discs[0].cueName, game->recordName);
             // Scans before 2026-09 copied default.png next to a game that had no cover, and the carousel
             // takes a PNG next to the game before anything else - so a thumbnail found now would stay
             // hidden behind that placeholder. Take the placeholder away; a real cover is never touched.
             if (!game->coverPath.empty() && !game->discs.empty()) {
                 string gamePng = game->fullPath + sep + game->discs[0].diskName + EXT_PNG;
                 if (DirEntry::filesAreIdentical(gamePng, Environment::getWorkingPath() + sep + "default.png")) {
-                    PLOG_INFO << "Removing the default.png placeholder " << gamePng << " - the thumbnails tree has a cover";
+                    PLOG_INFO << "Removing the default.png placeholder " << gamePng
+                              << " - the thumbnails tree has a cover";
                     DirEntry::removeFile(gamePng);
                     game->coverImageFound = false;
                 }
@@ -490,44 +493,43 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 
             game->saveGameIni(gameIniPath);
             game->loadGameIni(gameIniPath); // the updated iniValues are needed for applyIniValues
-			//game->print();
+                                            // game->print();
 
             vector<string> failureReasons;
-			if (game->verify(&failureReasons)) {
+            if (game->verify(&failureReasons)) {
                 gamesToAddToDB.push_back(game);
 
                 string memcardPath = game->saveStatePath + sep + "memcards/";
-                if (!DirEntry::exists(memcardPath + "card1.mcd"))
-                {
-                    DirEntry::copy(Environment::getPathToMemcardTemplateDir() + sep + "card1.mcd", memcardPath + "card1.mcd");
+                if (!DirEntry::exists(memcardPath + "card1.mcd")) {
+                    DirEntry::copy(Environment::getPathToMemcardTemplateDir() + sep + "card1.mcd",
+                                   memcardPath + "card1.mcd");
                 }
-                if (!DirEntry::exists(memcardPath + sep + "card2.mcd"))
-                {
-                    DirEntry::copy(Environment::getPathToMemcardTemplateDir() + sep + "card1.mcd", memcardPath + "card2.mcd");
+                if (!DirEntry::exists(memcardPath + sep + "card2.mcd")) {
+                    DirEntry::copy(Environment::getPathToMemcardTemplateDir() + sep + "card1.mcd",
+                                   memcardPath + "card2.mcd");
                 }
-                if (!DirEntry::exists(game->saveStatePath + sep + PCSX_CFG))
-                {
-                    DirEntry::copy(Environment::getWorkingPath() + sep + PCSX_CFG, game->saveStatePath + sep + PCSX_CFG);
+                if (!DirEntry::exists(game->saveStatePath + sep + PCSX_CFG)) {
+                    DirEntry::copy(Environment::getWorkingPath() + sep + PCSX_CFG,
+                                   game->saveStatePath + sep + PCSX_CFG);
                 }
                 DirEntry::generateM3UForDirectory(game->fullPath, game->discs[0].cueName);
 
                 if (listener)
                     listener->onGameVerified(*game);
-            }
-            else {
+            } else {
                 report(ScanStage::GameFailedVerify, game->fullPath);
                 if (listener)
                     listener->onGameFailedVerify(game->fullPath);
                 badGameFile << "Game failed to verify: " << game->fullPath << endl;
-                for (const auto & reason : failureReasons)
+                for (const auto &reason : failureReasons)
                     badGameFile << "Reason: " << reason << endl;
 
                 // the game did not pass the verify step and was not added to the DB.
                 // remove the game everywhere in the gamesHierarchy
                 gamesHierarchy.removeGameFromEntireHierarchy(game);
             }
-		}
-	} // end for each game dir
+        }
+    } // end for each game dir
 
     badGameFile.close();
 
@@ -539,7 +541,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
     string path = Environment::getWorkingPath() + sep + "gameHierarchy_afterScanAndRemovingDuplicates.txt";
     ofstream outfile;
     outfile.open(path);
-    DirEntry::checkWritable(outfile, path);   // diagnostics only, keep going
+    DirEntry::checkWritable(outfile, path); // diagnostics only, keep going
     gamesHierarchy.dumpRowGameInfo(outfile, true);
     outfile << endl << endl;
     gamesHierarchy.dumpRowDisplayGameInfo(outfile, true);
@@ -551,16 +553,16 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 //*******************************
 // GameScanner::hasLooseGameFiles
 //*******************************
-bool GameScanner::hasLooseGameFiles(const string & path) {
+bool GameScanner::hasLooseGameFiles(const string &path) {
     vector<string> extensions;
     extensions.push_back("pbp");
     extensions.push_back("bin");
     extensions.push_back("cue");
     extensions.push_back("img");
     extensions.push_back("chd");
-//    extensions.push_back("iso");
+    //    extensions.push_back("iso");
 
-    //Getting all files in UsbGames Dir
+    // Getting all files in UsbGames Dir
     DirEntries globalFileList = DirEntry::diru(path);
     DirEntries fileList = DirEntry::getFilesWithExtension(path, globalFileList, extensions);
 
@@ -574,23 +576,24 @@ namespace {
 
 bool isDiscImageFile(const string &name) {
     string ext = DirEntry::getFileExtension(name);
-    return Strings::compareCaseInsensitive(ext, "chd") || Strings::compareCaseInsensitive(ext, "pbp")
-        || Strings::compareCaseInsensitive(ext, "cue") || Strings::compareCaseInsensitive(ext, "bin")
-        || Strings::compareCaseInsensitive(ext, "img");
+    return Strings::compareCaseInsensitive(ext, "chd") || Strings::compareCaseInsensitive(ext, "pbp") ||
+           Strings::compareCaseInsensitive(ext, "cue") || Strings::compareCaseInsensitive(ext, "bin") ||
+           Strings::compareCaseInsensitive(ext, "img");
 }
 
-const char kGroupKeySep = 31;   // ASCII unit separator
+const char kGroupKeySep = 31; // ASCII unit separator
 
 struct DiscFolder {
-    string path;    // the folder, no trailing separator
-    string name;    // its name
+    string path; // the folder, no trailing separator
+    string name; // its name
     int disc = 0;
 };
 
 // every game folder under dir, recursively, grouped by parent + base name when its name carries a disc marker
 void collectDiscFolders(const string &dir, map<string, vector<DiscFolder>> &groups) {
     for (const DirEntry &entry : DirEntry::diru_DirsOnly(dir)) {
-        if (entry.name.empty() || entry.name[0] == '!') continue;   // !SaveStates, !MemCards
+        if (entry.name.empty() || entry.name[0] == '!')
+            continue; // !SaveStates, !MemCards
         string path = DirEntry::fixPath(dir) + sep + entry.name;
         if (DirEntry::thereIsAGameFile(path)) {
             DiscSuffix parsed = DiscSuffix::parse(entry.name);
@@ -617,7 +620,8 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
     int merged = 0;
     for (auto &kv : groups) {
         vector<DiscFolder> &group = kv.second;
-        if (group.size() < 2) continue;
+        if (group.size() < 2)
+            continue;
         sort(group.begin(), group.end(), [](const DiscFolder &a, const DiscFolder &b) { return a.disc < b.disc; });
 
         const DiscFolder &first = group.front();
@@ -627,7 +631,8 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
         report(ScanStage::MergingDiscs, base);
 
         if (target != first.path && DirEntry::exists(target)) {
-            PLOG_INFO << "multi-disc merge: " << target << " already exists - leaving " << base << "'s discs as they are";
+            PLOG_INFO << "multi-disc merge: " << target << " already exists - leaving " << base
+                      << "'s discs as they are";
             continue;
         }
         if (target != first.path) {
@@ -642,7 +647,8 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
             const DiscFolder &other = group[i];
             bool failed = false;
             for (const DirEntry &e : DirEntry::diru_FilesOnly(other.path)) {
-                if (!isDiscImageFile(e.name)) continue;
+                if (!isDiscImageFile(e.name))
+                    continue;
                 const string from = other.path + sep + e.name;
                 const string to = target + sep + e.name;
                 if (DirEntry::exists(to)) {
@@ -651,12 +657,14 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
                     break;
                 }
                 if (!DirEntry::renameFile(from, to)) {
-                    PLOG_WARNING << "multi-disc merge: cannot move " << from << " to " << to << " - " << other.name << " left as it is";
+                    PLOG_WARNING << "multi-disc merge: cannot move " << from << " to " << to << " - " << other.name
+                                 << " left as it is";
                     failed = true;
                     break;
                 }
             }
-            if (failed) continue;
+            if (failed)
+                continue;
             DirEntry::removeDirAndContents(other.path);
             mergedAny = true;
         }
@@ -675,7 +683,8 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
                 IniFile ini;
                 ini.load(iniPath);
                 ini.values.erase("discs");
-                if (ini.values["title"] == first.name) ini.values["title"] = base;
+                if (ini.values["title"] == first.name)
+                    ini.values["title"] = base;
                 ini.save(iniPath);
             }
             PLOG_INFO << "multi-disc merge: " << group.size() << " folders -> " << target;
@@ -700,7 +709,8 @@ bool GameScanner::moveLooseGameFilesIntoSubDirs(const string &path) {
     for (const auto &entry : fileList) {
         report(ScanStage::MovingFile, entry.name);
         string filenameWE = DirEntry::getFileNameWithoutExtension(entry.name);
-        if (!DirEntry::exists(path + sep + entry.name)) continue;   // already moved (e.g. as another cue's bin)
+        if (!DirEntry::exists(path + sep + entry.name))
+            continue; // already moved (e.g. as another cue's bin)
 
         if (DirEntry::getFileExtension(entry.name) == "cue") {
             vector<string> binList = DirEntry::cueToBinList(path + sep + entry.name);
@@ -726,7 +736,8 @@ bool GameScanner::moveLooseGameFilesIntoSubDirs(const string &path) {
     for (const auto &entry : fileList) {
         report(ScanStage::MovingFile, entry.name);
         string filenameWE = DirEntry::getFileNameWithoutExtension(entry.name);
-        if (!DirEntry::exists(path + sep + entry.name)) continue;
+        if (!DirEntry::exists(path + sep + entry.name))
+            continue;
 
         DirEntry::createDir(path + sep + filenameWE);
         DirEntry::renameFile(path + sep + entry.name, path + sep + filenameWE + sep + entry.name);

@@ -4,7 +4,7 @@
 //
 #pragma once
 
-#include "environment.h"    // for AB_DEBUG_HOST
+#include "environment.h" // for AB_DEBUG_HOST
 
 #include <string>
 #include <vector>
@@ -20,9 +20,9 @@ public:
     // run. This is the only fork/exec in the code base - everything that starts a process goes through here.
     static int runAndWait(const std::string &exe, const std::vector<std::string> &args);
 
-    static std::string execUnixCommand(const char *cmd);   // run a shell command, return its stdout ("" on failure)
+    static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
 
-    static void powerOff();                                // halts the console; exits the app on a debug host
+    static void powerOff(); // halts the console; exits the app on a debug host
 
     // drops the calling thread (not the process) to the OS's lowest scheduling priority - idle-priority
     // where the platform has it (SCHED_IDLE / THREAD_PRIORITY_IDLE: runs at full speed when nothing else
@@ -30,7 +30,7 @@ public:
     // by ScanService's worker thread so a background scan never competes with a running emulator for CPU.
     static void lowerCurrentThreadPriority();
 
-    static std::string getAvailableSpace();                // "N GB / M GB (P%)" for the status bar, from df on /media
+    static std::string getAvailableSpace(); // "N GB / M GB (P%)" for the status bar, from df on /media
 
     static unsigned int getRandomNumber();
     static unsigned int getRandomIndex(unsigned int size); // 0 .. size-1

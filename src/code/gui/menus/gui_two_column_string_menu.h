@@ -2,7 +2,6 @@
 
 #include "gui_menu_base.h"
 
-
 //*******************************
 // struct TwoColumnsOfText
 //*******************************
@@ -26,6 +25,7 @@ public:
     virtual std::string getStatusLine() override { return GuiMenuBase::getStatusLine(); }
 
     virtual void renderLineIndexOnRow(int index, int row) override {
-        gui->text().renderTextLineToColumns(lines[index].line_L, lines[index].line_R, xoffset_L, xoffset_R, row, yoffset, font);
+        gui->text().renderTextLineToColumns(lines[index].line_L, lines[index].line_R, xoffset_L, xoffset_R, row,
+                                            yoffset, font);
     }
 };

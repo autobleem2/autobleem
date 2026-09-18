@@ -13,7 +13,8 @@ std::string TempDir::makeSubDir(const std::string &relative) const {
     std::string level;
     std::istringstream parts(relative);
     while (std::getline(parts, level, separator)) {
-        if (level.empty()) continue;
+        if (level.empty())
+            continue;
         built = built + sep + level;
         DirEntry::createDir(built);
     }

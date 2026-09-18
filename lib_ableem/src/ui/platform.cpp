@@ -8,7 +8,7 @@ namespace ableem {
 struct Platform::Impl {
     SDL_Window *window = nullptr;
     std::function<void()> powerOffHandler;
-    std::string windowTitle;   // kept for acquireDisplay()
+    std::string windowTitle; // kept for acquireDisplay()
     int width = 0, height = 0;
 };
 
@@ -22,8 +22,8 @@ Platform::Platform(const std::string &windowTitle, int width, int height) : impl
     impl->windowTitle = windowTitle;
     impl->width = width;
     impl->height = height;
-    impl->window = SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                     width, height, 0);
+    impl->window =
+        SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }
@@ -76,14 +76,16 @@ bool Platform::isDevHost() const {
 }
 
 void Platform::hideAndGrabCursor() {
-    if (!impl->window) return;
+    if (!impl->window)
+        return;
     SDL_ShowCursor(SDL_DISABLE);
     SDL_SetWindowGrab(impl->window, SDL_TRUE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 void Platform::releaseDisplay() {
-    if (!impl->window) return;
+    if (!impl->window)
+        return;
     SDL_DestroyWindow(impl->window);
     impl->window = nullptr;
     // destroying the window is not enough on KMSDRM: the DRM device stays open (and this process its
@@ -92,12 +94,13 @@ void Platform::releaseDisplay() {
 }
 
 void Platform::acquireDisplay() {
-    if (impl->window) return;
+    if (impl->window)
+        return;
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_InitSubSystem(VIDEO) failed: ") + SDL_GetError());
     }
     impl->window = SDL_CreateWindow(impl->windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                     impl->width, impl->height, 0);
+                                    impl->width, impl->height, 0);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }
@@ -111,7 +114,7 @@ bool Platform::hasDisplay() const {
 }
 
 void Platform::setScaleQuality(int quality) {
-    char buf[2] = { static_cast<char>('0' + quality), 0 };
+    char buf[2] = {static_cast<char>('0' + quality), 0};
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, buf);
 }
 

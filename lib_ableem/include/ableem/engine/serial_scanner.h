@@ -29,7 +29,7 @@ public:
     // md5 of the first 1 MB followed by md5 of the last 1 MB of the file (64 hex chars)
     static std::string serialFromMd5(std::string scanFile);
 
-    static std::string serialToRegion(const std::string &serial);    // "US", "Europe-Aus", "Japan" or ""
+    static std::string serialToRegion(const std::string &serial); // "US", "Europe-Aus", "Japan" or ""
 };
 
 } // namespace ableem

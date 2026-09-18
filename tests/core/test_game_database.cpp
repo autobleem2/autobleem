@@ -26,8 +26,14 @@ TEST_CASE("loadGamePaths returns every game's id and folder") {
 
     bool sawCrash = false, sawSpyro = false;
     for (const auto &p : paths) {
-        if (p.gameId == 1) { CHECK(p.path == lib.tmp.at("Games/Crash Bandicoot")); sawCrash = true; }
-        if (p.gameId == 2) { CHECK(p.path == lib.tmp.at("Games/Spyro")); sawSpyro = true; }
+        if (p.gameId == 1) {
+            CHECK(p.path == lib.tmp.at("Games/Crash Bandicoot"));
+            sawCrash = true;
+        }
+        if (p.gameId == 2) {
+            CHECK(p.path == lib.tmp.at("Games/Spyro"));
+            sawSpyro = true;
+        }
     }
     CHECK(sawCrash);
     CHECK(sawSpyro);
@@ -71,21 +77,21 @@ TEST_CASE("updateGame changes the metadata but keeps the id, path and play histo
     CHECK(games[0].players == 2);
     CHECK(games[0].year == 1998);
     CHECK(games[0].memcard == "OTHER");
-    CHECK(games[0].folder == lib.tmp.at("Games/Crash Bandicoot"));   // updateGame does not touch PATH
-    CHECK(games[0].history == 3);                                    // nor HISTORY
-    CHECK(games[0].last_played == 12345);                            // nor LAST_PLAYED
+    CHECK(games[0].folder == lib.tmp.at("Games/Crash Bandicoot")); // updateGame does not touch PATH
+    CHECK(games[0].history == 3);                                  // nor HISTORY
+    CHECK(games[0].last_played == 12345);                          // nor LAST_PLAYED
 }
 
 TEST_CASE("replaceDiscs swaps a game's disc list for a new one") {
     GameLibraryFixture lib;
-    lib.addUsbGame(1, "Twisted Metal");   // one disc, "Twisted Metal", from the fixture
+    lib.addUsbGame(1, "Twisted Metal"); // one disc, "Twisted Metal", from the fixture
 
     CHECK(lib.library.usbGames().replaceDiscs(1, {"Twisted Metal (Disc 1)", "Twisted Metal (Disc 2)"}));
 
     auto games = lib.library.usbGames().loadUsbGames();
     REQUIRE(games.size() == 1);
     CHECK(games[0].cds == 2);
-    CHECK(games[0].base == "Twisted Metal (Disc 1)");   // the lowest DISC_NUMBER row
+    CHECK(games[0].base == "Twisted Metal (Disc 1)"); // the lowest DISC_NUMBER row
 }
 
 TEST_CASE("clearSubDirTables empties SUBDIR_ROWS without touching GAME") {
@@ -100,5 +106,5 @@ TEST_CASE("clearSubDirTables empties SUBDIR_ROWS without touching GAME") {
     lib.library.usbGames().loadSubDirRows(&rows);
     CHECK(rows.empty());
 
-    CHECK(lib.library.usbGames().countGames() == 1);   // GAME/DISC survive
+    CHECK(lib.library.usbGames().countGames() == 1); // GAME/DISC survive
 }

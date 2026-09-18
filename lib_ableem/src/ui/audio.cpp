@@ -9,8 +9,14 @@ namespace ableem {
 // Sound
 //******************
 namespace {
-void destroyChunk(void *c) { if (c) Mix_FreeChunk(static_cast<Mix_Chunk *>(c)); }
-void destroyMusic(void *m) { if (m) Mix_FreeMusic(static_cast<Mix_Music *>(m)); }
+void destroyChunk(void *c) {
+    if (c)
+        Mix_FreeChunk(static_cast<Mix_Chunk *>(c));
+}
+void destroyMusic(void *m) {
+    if (m)
+        Mix_FreeMusic(static_cast<Mix_Music *>(m));
+}
 } // namespace
 
 Sound::Sound() : handle(nullptr) {}
@@ -24,10 +30,13 @@ Sound Sound::load(const std::string &path) {
     return Sound(c);
 }
 
-bool Sound::valid() const { return handle != nullptr; }
+bool Sound::valid() const {
+    return handle != nullptr;
+}
 
 void Sound::play() const {
-    if (handle) Mix_PlayChannel(-1, static_cast<Mix_Chunk *>(handle.get()), 0);
+    if (handle)
+        Mix_PlayChannel(-1, static_cast<Mix_Chunk *>(handle.get()), 0);
 }
 
 //******************
@@ -44,10 +53,13 @@ Music Music::load(const std::string &path) {
     return Music(m);
 }
 
-bool Music::valid() const { return handle != nullptr; }
+bool Music::valid() const {
+    return handle != nullptr;
+}
 
 void Music::play(int loops) const {
-    if (handle) Mix_PlayMusic(static_cast<Mix_Music *>(handle.get()), loops);
+    if (handle)
+        Mix_PlayMusic(static_cast<Mix_Music *>(handle.get()), loops);
 }
 
 void Music::setVolume(int volume0to128) const {
@@ -74,7 +86,9 @@ struct Audio::Impl {
 };
 
 Audio::Audio() : impl(new Impl()) {}
-Audio::~Audio() { close(); }
+Audio::~Audio() {
+    close();
+}
 
 bool Audio::open(int frequency, int channels, int chunkSize) {
     close(); // matches the original restartAudio(): fully close any previously opened device(s) first
@@ -111,7 +125,9 @@ void Audio::close() {
     impl->open = false;
 }
 
-bool Audio::isOpen() const { return impl->open; }
+bool Audio::isOpen() const {
+    return impl->open;
+}
 
 std::string Audio::driverName() const {
     const char *driver = SDL_GetCurrentAudioDriver();

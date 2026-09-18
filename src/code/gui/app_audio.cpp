@@ -5,7 +5,7 @@
 #include "app_audio.h"
 #include "../core/services/environment.h"
 #include "../core/main.h"
-#include "../core/model/timing.h"   // TicksPerSecond
+#include "../core/model/timing.h" // TicksPerSecond
 
 #include <unistd.h>
 
@@ -15,10 +15,12 @@ using namespace std;
 // AppAudio::playMusic
 //*******************************
 void AppAudio::playMusic() {
-    if (config_.inifile.values["nomusic"] == "true") return;
+    if (config_.inifile.values["nomusic"] == "true")
+        return;
 
     const ableem::ThemeMusic &themeMusic = theme_.music();
-    if (themeMusic.none) return;   // a silent theme stays silent, the user's own track included
+    if (themeMusic.none)
+        return; // a silent theme stays silent, the user's own track included
 
     if (!customMusic) {
         music = ableem::Music::load(themeMusic.file);

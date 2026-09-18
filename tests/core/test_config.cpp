@@ -44,10 +44,9 @@ TEST_CASE("Config keeps what the file already says") {
     EnvFixture env;
     env.setWorkingPath(tmp.path());
 
-    tmp.writeFile("config.ini",
-                  "[General]\n"
-                  "Theme=aergb\n"
-                  "Language=Polish\n");
+    tmp.writeFile("config.ini", "[General]\n"
+                                "Theme=aergb\n"
+                                "Language=Polish\n");
 
     Config config;
 
@@ -72,7 +71,7 @@ TEST_CASE("Config drops the keys older AutoBleem versions wrote") {
                   "Quickmenu=1\n"
                   "Delay=3\n"
                   "Adv=1\n"
-                  "UI=classic\n");   // the classic UI is gone - see Session::MenuOption / GuiLauncher
+                  "UI=classic\n"); // the classic UI is gone - see Session::MenuOption / GuiLauncher
 
     Config config;
 
@@ -116,7 +115,7 @@ TEST_CASE("Config::save round trips through the file") {
 
     Config reloaded;
     CHECK(reloaded.inifile.values["theme"] == "evolution");
-    CHECK(reloaded.inifile.values["showingtimeout"] == "7");   // not overwritten by the default
+    CHECK(reloaded.inifile.values["showingtimeout"] == "7"); // not overwritten by the default
 }
 
 TEST_CASE("Config writes config.ini into the working path, not the current directory") {

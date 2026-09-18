@@ -79,9 +79,7 @@ struct Launching : GameLibraryFixture {
     string ssFile(const PsGamePtr &game, const string &relative) const {
         return game->ssFolder + ableem::sep + relative;
     }
-    string read(const string &fullPath) const {
-        return tmp.readFile(fullPath.substr(tmp.path().size() + 1));
-    }
+    string read(const string &fullPath) const { return tmp.readFile(fullPath.substr(tmp.path().size() + 1)); }
     string rcScript(const string &name) const { return tmp.at("Autobleem/rc/" + name); }
 
     Session session;
@@ -117,25 +115,25 @@ TEST_CASE("writeSelectionScript records the menu choice and the settings the rc 
 TEST_CASE("PCSX is started through rc/launch.sh with the nine arguments the script reads") {
     Launching lib;
     PsGamePtr game = lib.usbGame();
-    game->ssFolder += "/";   // as the database sometimes has it; the script must not get the slash
+    game->ssFolder += "/"; // as the database sometimes has it; the script must not get the slash
 
     lib.service->launch(game, EmuMode::Pcsx, -1);
 
     const FakeProcessRunner::Call &call = lib.runner.only();
     CHECK(call.exe == lib.rcScript("launch.sh"));
     CHECK(call.args == vector<string>{lib.tmp.at("Games/Tekken 3/sstates"),      // ssFolder
-                                      lib.tmp.at("Games/Tekken 3/Tekken 3.cue"),  // cdfile
-                                      "2",                                        // lang (no lang file loaded)
-                                      "2",                                        // region
-                                      lib.tmp.at("Games/Tekken 3"),               // gameFolder
-                                      "0",                                        // resume
-                                      "0",                                        // aspect
-                                      "0",                                        // filter
-                                      "NA"});                                     // pad
-    CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));   // normalised in place, as always
+                                      lib.tmp.at("Games/Tekken 3/Tekken 3.cue"), // cdfile
+                                      "2",                                       // lang (no lang file loaded)
+                                      "2",                                       // region
+                                      lib.tmp.at("Games/Tekken 3"),              // gameFolder
+                                      "0",                                       // resume
+                                      "0",                                       // aspect
+                                      "0",                                       // filter
+                                      "NA"});                                    // pad
+    CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));               // normalised in place, as always
 
-    CHECK(lib.usbGame()->last_played > 0);                            // the launch is the "last played" time
-    CHECK(contains(lib.tmp.readFile("autobleem_cfg.sh"), "AB_SELECTION="));   // written before the run
+    CHECK(lib.usbGame()->last_played > 0);                                  // the launch is the "last played" time
+    CHECK(contains(lib.tmp.readFile("autobleem_cfg.sh"), "AB_SELECTION=")); // written before the run
 }
 
 TEST_CASE("the aspect and filter arguments come from config.ini") {
@@ -267,7 +265,7 @@ TEST_CASE("a playlist entry's launch records nothing: its id is a playlist index
     Launching lib;
     lib.configure("Raconfig=false\n");
     PsGamePtr rom = lib.foreignGame(false);
-    rom->gameId = 1;   // the same number as Tekken 3's row, by coincidence - which is the point
+    rom->gameId = 1; // the same number as Tekken 3's row, by coincidence - which is the point
 
     lib.service->launch(rom, EmuMode::RetroArch, -1);
 
@@ -281,8 +279,8 @@ TEST_CASE("a foreign RetroArch game is its playlist image and its own core") {
 
     lib.service->launch(game, EmuMode::RetroArch, -1);
 
-    CHECK(lib.runner.only().args == vector<string>{"/media/roms/snes/rom.sfc",
-                                                   "/media/retroarch/cores/snes9x_libretro.so"});
+    CHECK(lib.runner.only().args ==
+          vector<string>{"/media/roms/snes/rom.sfc", "/media/retroarch/cores/snes9x_libretro.so"});
 }
 
 TEST_CASE("the game's card1.mcd is RetroArch's .srm for the run, and what RetroArch saved comes back") {
@@ -315,31 +313,29 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
     lib.tmp.writeFile("Games/Tekken 3/pcsx.cfg",
                       "gpu_neon.enhancement_enable = 1\n"
                       "gpu_neon.enhancement_no_main = 0\n"
-                      "psx_clock = 39\n"                    // 0x39 = 57
+                      "psx_clock = 39\n" // 0x39 = 57
                       "gpu_peops.iUseDither = 1\n"
                       "spu_config.iUseInterpolation = 2\n"
                       "scanlines = 1\n"
-                      "scanline_level = 32\n"               // 0x32 = 50 -> opacity 0.5
+                      "scanline_level = 32\n" // 0x32 = 50 -> opacity 0.5
                       "frameskip3 = 1\n");
-    const string coreOptionsBefore =
-        "pcsx_rearmed_neon_enhancement_enable = \"disabled\"\n"
-        "pcsx_rearmed_neon_enhancement_no_main = \"enabled\"\n"
-        "pcsx_rearmed_dithering = \"disabled\"\n"
-        "pcsx_rearmed_psxclock = \"50\"\n"
-        "pcsx_rearmed_spu_interpolation = \"off\"\n"
-        "pcsx_rearmed_frameskip = \"0\"\n"
-        "pcsx_rearmed_show_bios_bootlogo = \"disabled\"\n"
-        "pcsx_rearmed_nocdaudio = \"disabled\"\n";
-    const string raConfigBefore =
-        "input_overlay = \"\"\n"
-        "input_overlay_enable = \"false\"\n"
-        "input_overlay_opacity = \"1.0\"\n"
-        "custom_viewport_width = \"960\"\n"
-        "custom_viewport_height = \"720\"\n"
-        "custom_viewport_x = \"160\"\n"
-        "custom_viewport_y = \"0\"\n"
-        "aspect_ratio_index = \"0\"\n"
-        "video_smooth = \"false\"\n";
+    const string coreOptionsBefore = "pcsx_rearmed_neon_enhancement_enable = \"disabled\"\n"
+                                     "pcsx_rearmed_neon_enhancement_no_main = \"enabled\"\n"
+                                     "pcsx_rearmed_dithering = \"disabled\"\n"
+                                     "pcsx_rearmed_psxclock = \"50\"\n"
+                                     "pcsx_rearmed_spu_interpolation = \"off\"\n"
+                                     "pcsx_rearmed_frameskip = \"0\"\n"
+                                     "pcsx_rearmed_show_bios_bootlogo = \"disabled\"\n"
+                                     "pcsx_rearmed_nocdaudio = \"disabled\"\n";
+    const string raConfigBefore = "input_overlay = \"\"\n"
+                                  "input_overlay_enable = \"false\"\n"
+                                  "input_overlay_opacity = \"1.0\"\n"
+                                  "custom_viewport_width = \"960\"\n"
+                                  "custom_viewport_height = \"720\"\n"
+                                  "custom_viewport_x = \"160\"\n"
+                                  "custom_viewport_y = \"0\"\n"
+                                  "aspect_ratio_index = \"0\"\n"
+                                  "video_smooth = \"false\"\n";
     lib.tmp.writeFile("retroarch/config/retroarch-core-options.cfg", coreOptionsBefore);
     lib.tmp.writeFile("retroarch/retroarch.cfg", raConfigBefore);
 
@@ -369,7 +365,7 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
     CHECK(contains(raConfigInPlay, "custom_viewport_width  = \"1280\""));
     CHECK(contains(raConfigInPlay, "custom_viewport_x  = \"0\""));
     CHECK(contains(raConfigInPlay, "aspect_ratio_index  = \"23\""));
-    CHECK(contains(raConfigInPlay, "video_smooth  = \"true\""));   // mip=false means smooth on; it always has
+    CHECK(contains(raConfigInPlay, "video_smooth  = \"true\"")); // mip=false means smooth on; it always has
 
     // and afterwards both are exactly what they were
     CHECK(lib.tmp.readFile("retroarch/config/retroarch-core-options.cfg") == coreOptionsBefore);
@@ -418,9 +414,9 @@ TEST_CASE("which launcher runs is decided by the game first and the mode second"
     lib.service->launch(usb, EmuMode::Pcsx, -1);
     lib.service->launch(usb, EmuMode::RetroArch, -1);
     PsGamePtr rom = lib.foreignGame(false);
-    lib.service->launch(rom, EmuMode::Pcsx, -1);       // a playlist entry can only go to RetroArch
+    lib.service->launch(rom, EmuMode::Pcsx, -1); // a playlist entry can only go to RetroArch
     PsGamePtr app = lib.foreignGame(true);
-    lib.service->launch(app, EmuMode::Pcsx, -1);       // and an App only to its own script
+    lib.service->launch(app, EmuMode::Pcsx, -1); // and an App only to its own script
 
     REQUIRE(lib.runner.calls.size() == 4);
     CHECK(lib.runner.calls[0].exe == lib.rcScript("launch.sh"));

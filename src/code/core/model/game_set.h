@@ -30,9 +30,9 @@ enum class Ps1SelectState : int { AllGames = 0, InternalOnly, Favorites, History
 struct GameSetSelection {
     GameSet set = GameSet::PS1;
     Ps1SelectState ps1SelectState = Ps1SelectState::AllGames;
-    int gameIndex = 0;                  // index into GuiLauncher::carouselGames
-    int usbGameDirIndex = 0;            // row 0 of the game-dir menu is /Games itself
+    int gameIndex = 0;       // index into GuiLauncher::carouselGames
+    int usbGameDirIndex = 0; // row 0 of the game-dir menu is /Games itself
     std::string usbGameDirName;
-    int raPlaylistIndex = 0;            // row 0 is the first playlist name
+    int raPlaylistIndex = 0; // row 0 is the first playlist name
     std::string raPlaylistName;
 };

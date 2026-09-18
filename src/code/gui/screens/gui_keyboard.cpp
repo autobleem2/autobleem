@@ -17,8 +17,8 @@ vector<string> row3 = {"z", "x", "c", "v", "b", "n", "m", "_", "-", " "};
 
 #define numColumns 10
 #define numRows 4
-#define xlast (numColumns-1)
-#define ylast (numRows-1)
+#define xlast (numColumns - 1)
+#define ylast (numRows - 1)
 #define indentOffset 5
 
 vector<vector<string>> rows = {row0, row1, row2, row3};
@@ -44,7 +44,7 @@ void GuiKeyboard::render() {
     //*******************************
     // drawRectangle lambda
     //*******************************
-    auto drawRectangle = [&] (ableem::Rect& rect) {
+    auto drawRectangle = [&](ableem::Rect &rect) {
         renderer.setDrawColor(TextRenderer::toColor(app.theme().classic().textColor, 255));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.drawRect(rect);
@@ -70,19 +70,20 @@ void GuiKeyboard::render() {
     if (L2_cursor_shift || usingUsbKeyboard) {
         ableem::Rect rectEditbox = gui->text().getFontTextRect(gui->assets().themeFont, displayResult);
         rectEditbox.x = gui->text().align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
-        rectEditbox.y = (1 * rectEditbox.h) + yoffset;  // line 1 (0 == top)
+        rectEditbox.y = (1 * rectEditbox.h) + yoffset; // line 1 (0 == top)
 
         // compute the bounding box around the cursor (#)
         ableem::Size textBeforeCursorSize;
         // get the size of the text before the cursor
         if (cursorIndex > 0) {
-            textBeforeCursorSize = gui->text().getFontTextSize(gui->assets().themeFont, displayResult.substr(0, cursorIndex));
+            textBeforeCursorSize =
+                gui->text().getFontTextSize(gui->assets().themeFont, displayResult.substr(0, cursorIndex));
         }
         // get the cursor size
         ableem::Size cursorSize = gui->text().getFontTextSize(gui->assets().themeFont, "#");
         // bounding box rectangle around the # cursor
-        ableem::Rect cursorRect { rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y,    // x, y position
-                              cursorSize.w, cursorSize.h };                             // w, h
+        ableem::Rect cursorRect{rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y, // x, y position
+                                cursorSize.w, cursorSize.h};                           // w, h
 
         drawRectangle(cursorRect);
     }
@@ -127,14 +128,12 @@ void GuiKeyboard::render() {
     }
 
     if (usingUsbKeyboard) {
-        gui->renderStatus(
-                "|@Tab| " + _("Use Controller") + "  |@Enter| " + _("Confirm") +
-                "  |@Esc| " + _("Cancel") + " |");
+        gui->renderStatus("|@Tab| " + _("Use Controller") + "  |@Enter| " + _("Confirm") + "  |@Esc| " + _("Cancel") +
+                          " |");
     } else {
-        gui->renderStatus(
-                "|@X| " + _("Select") + "  |@T|  " + _("Backspace") + "  |@L1| " + _("Caps") + "  |@L2| " +
-                _("Move Cursor") + "(#)" + " |@S| " + _("Space") +
-                "      |@Start| " + _("Confirm") + "  |@O| " + _("Cancel") + " |");
+        gui->renderStatus("|@X| " + _("Select") + "  |@T|  " + _("Backspace") + "  |@L1| " + _("Caps") + "  |@L2| " +
+                          _("Move Cursor") + "(#)" + " |@S| " + _("Space") + "      |@Start| " + _("Confirm") +
+                          "  |@O| " + _("Cancel") + " |");
     }
     renderer.present();
 }
@@ -235,7 +234,7 @@ void GuiKeyboard::doKbdReturn() {
 //*******************************
 // GuiKeyboard::doKbdTextInput
 //*******************************
-void GuiKeyboard::doKbdTextInput(const std::string& text) {
+void GuiKeyboard::doKbdTextInput(const std::string &text) {
     app.audio().cursor.play();
     result.insert(cursorIndex, text);
     cursorIndex += text.size();
@@ -414,89 +413,89 @@ void GuiKeyboard::loop() {
             }
 
             switch (e.type) {
-                case Event::Type::KeyDown:
-                    if (e.key == Key::Right) {
-                        doKbdRight();
+            case Event::Type::KeyDown:
+                if (e.key == Key::Right) {
+                    doKbdRight();
 
-                    } else if (e.key == Key::Left) {
-                        doKbdLeft();
+                } else if (e.key == Key::Left) {
+                    doKbdLeft();
 
-                    } else if (e.key == Key::Home) {
-                        doKbdHome();
+                } else if (e.key == Key::Home) {
+                    doKbdHome();
 
-                    } else if (e.key == Key::End) {
-                        doKbdEnd();
+                } else if (e.key == Key::End) {
+                    doKbdEnd();
 
-                    } else if (e.key == Key::Backspace) {
-                        doKbdBackspace();
+                } else if (e.key == Key::Backspace) {
+                    doKbdBackspace();
 
-                    } else if (e.key == Key::Delete) {
-                        doKbdDelete();
+                } else if (e.key == Key::Delete) {
+                    doKbdDelete();
 
-                    } else if (e.key == Key::Tab) {
-                        doKbdTab();
+                } else if (e.key == Key::Tab) {
+                    doKbdTab();
 
-                    } else if (e.key == Key::Escape) {
-                        doKbdEscape();
+                } else if (e.key == Key::Escape) {
+                    doKbdEscape();
 
-                    } else if (e.key == Key::Return) {
-                        doKbdReturn();
+                } else if (e.key == Key::Return) {
+                    doKbdReturn();
+                }
+                break;
+
+            case Event::Type::TextInput:
+                doKbdTextInput(e.text);
+                break;
+
+            case Event::Type::ButtonUp:
+                if (e.button == Button::L1) {
+                    doL1_up();
+                } else if (e.button == Button::L2) {
+                    doL2_up();
+                }
+                break;
+
+            case Event::Type::ButtonDown:
+                if (e.button == Button::L1) { // caps shift
+                    doL1_down();
+                } else if (e.button == Button::L2) { // move cursor shift
+                    doL2_down();
+                }
+
+                if (!L2_cursor_shift) {
+                    if (e.button == Button::Triangle) { // delete char on the left
+                        doTriangle();
+                    } else if (e.button == Button::Square) { // insert space
+                        doSquare();
+                    } else if (e.button == Button::Cross) {
+                        doCross();
+                    } else if (e.button == Button::Start) { // Confirm
+                        doStart();
+                    } else if (e.button == Button::Circle) { // Cancel
+                        doCircle();
                     }
-                    break;
+                }
+                break;
 
-                case Event::Type::TextInput:
-                    doKbdTextInput(e.text);
-                    break;
+            case Event::Type::DpadDown:
+            case Event::Type::DpadUp:
+                if (gui->input().dpadRight()) {
+                    doJoyRight();
+                } else if (gui->input().dpadLeft()) {
+                    doJoyLeft();
+                }
 
-                case Event::Type::ButtonUp:
-                    if (e.button == Button::L1) {
-                        doL1_up();
-                    } else if (e.button == Button::L2) {
-                        doL2_up();
+                if (!L2_cursor_shift) {
+                    if (gui->input().dpadDown()) {
+                        doJoyDown();
+                    } else if (gui->input().dpadUp()) {
+                        doJoyUp();
                     }
-                    break;
+                }
 
-                case Event::Type::ButtonDown:
-                    if (e.button == Button::L1) {     // caps shift
-                        doL1_down();
-                    } else if (e.button == Button::L2) {     // move cursor shift
-                        doL2_down();
-                    }
-
-                    if (!L2_cursor_shift) {
-                        if (e.button == Button::Triangle) {   // delete char on the left
-                            doTriangle();
-                        } else if (e.button == Button::Square) {     //insert space
-                            doSquare();
-                        } else if (e.button == Button::Cross) {
-                            doCross();
-                        } else if (e.button == Button::Start) {  // Confirm
-                            doStart();
-                        } else if (e.button == Button::Circle) { // Cancel
-                            doCircle();
-                        }
-                    }
-                    break;
-
-                case Event::Type::DpadDown:
-                case Event::Type::DpadUp:
-                    if (gui->input().dpadRight()) {
-                        doJoyRight();
-                    } else if (gui->input().dpadLeft()) {
-                        doJoyLeft();
-                    }
-
-                    if (!L2_cursor_shift) {
-                        if (gui->input().dpadDown()) {
-                            doJoyDown();
-                        } else if (gui->input().dpadUp()) {
-                            doJoyUp();
-                        }
-                    }
-
-                    break;
-                default:
-                    break;
+                break;
+            default:
+                break;
             }
         }
     }

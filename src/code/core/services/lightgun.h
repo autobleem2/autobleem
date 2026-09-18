@@ -34,13 +34,13 @@ public:
     bool isLightgun(const PsGame &game) const;
 
     // --- the RetroArch list (System/lightguns.txt) ---
-    void setRetroArchLightgun(const PsGame &game, bool on);   // by its image path; saves the file
+    void setRetroArchLightgun(const PsGame &game, bool on); // by its image path; saves the file
     bool anyRetroArchLightguns() const { return !raPaths_.empty(); }
     // re-reads the file, dropping every path that is no longer on disk (a removed game), and saves it
     // when something was dropped
     void reload();
 
-    static std::string lightgunsFile();   // System/lightguns.txt under the USB root
+    static std::string lightgunsFile(); // System/lightguns.txt under the USB root
 
 private:
     void save() const;

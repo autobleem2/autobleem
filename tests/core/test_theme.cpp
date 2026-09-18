@@ -26,29 +26,34 @@ struct Themes {
 
         tmp.makeSubDir("themes/default/images");
         tmp.makeSubDir("themes/default/font");
-        tmp.writeFile("themes/default/theme.json",
-                      "{ \"format\": 1,\n"
-                      "  \"music\": { \"file\": \"4.wav\", \"loop\": true },\n"
-                      "  \"classic\": { \"background\": \"bg.png\", \"logo\": { \"file\": \"logo.png\", \"x\": 1, \"y\": 2, \"w\": 3, \"h\": 4 },\n"
-                      "                \"font\": { \"file\": \"font.ttf\", \"size\": 20 }, \"menuLines\": 12,\n"
-                      "                \"menuPanel\": { \"x\": 30, \"y\": 10, \"w\": 1220, \"h\": 585, \"color\": \"#000000\", \"alpha\": 170 },\n"
-                      "                \"textColor\": \"#ffffff\", \"buttons\": { \"cross\": \"cross.png\", \"l2\": \"l2.png\" } },\n"
-                      "  \"launcher\": { \"background\": \"images/launcher_background.png\", \"metaPanelSlides\": true,\n"
-                      "                 \"fonts\": { \"medium\": \"font/SST-Medium.ttf\", \"bold\": \"font/SST-Bold.ttf\" },\n"
-                      "                 \"colors\": { \"text\": \"#ffffff\", \"secondary\": \"#646464\" } },\n"
-                      "  \"sounds\": { \"cursor\": \"sounds/cursor.wav\" } }\n");
-        for (const char *f : { "4.wav", "bg.png", "logo.png", "font.ttf", "cross.png", "l2.png",
-                               "images/launcher_background.png", "font/SST-Medium.ttf", "font/SST-Bold.ttf" })
+        tmp.writeFile(
+            "themes/default/theme.json",
+            "{ \"format\": 1,\n"
+            "  \"music\": { \"file\": \"4.wav\", \"loop\": true },\n"
+            "  \"classic\": { \"background\": \"bg.png\", \"logo\": { \"file\": \"logo.png\", \"x\": 1, \"y\": 2, "
+            "\"w\": 3, \"h\": 4 },\n"
+            "                \"font\": { \"file\": \"font.ttf\", \"size\": 20 }, \"menuLines\": 12,\n"
+            "                \"menuPanel\": { \"x\": 30, \"y\": 10, \"w\": 1220, \"h\": 585, \"color\": \"#000000\", "
+            "\"alpha\": 170 },\n"
+            "                \"textColor\": \"#ffffff\", \"buttons\": { \"cross\": \"cross.png\", \"l2\": \"l2.png\" } "
+            "},\n"
+            "  \"launcher\": { \"background\": \"images/launcher_background.png\", \"metaPanelSlides\": true,\n"
+            "                 \"fonts\": { \"medium\": \"font/SST-Medium.ttf\", \"bold\": \"font/SST-Bold.ttf\" },\n"
+            "                 \"colors\": { \"text\": \"#ffffff\", \"secondary\": \"#646464\" } },\n"
+            "  \"sounds\": { \"cursor\": \"sounds/cursor.wav\" } }\n");
+        for (const char *f : {"4.wav", "bg.png", "logo.png", "font.ttf", "cross.png", "l2.png",
+                              "images/launcher_background.png", "font/SST-Medium.ttf", "font/SST-Bold.ttf"})
             tmp.writeFile(string("themes/default/") + f, "x");
         // sounds/cursor.wav is named but not there
 
         // aergb overrides a few keys and has some files of its own: its own background and cross, a font
         // it names but does not have, and no launcher images at all
-        tmp.writeFile("themes/aergb/theme.json",
-                      "{ \"classic\": { \"background\": \"aergb.png\", \"font\": { \"file\": \"missing.ttf\", \"size\": 24 },\n"
-                      "                \"menuPanel\": { \"x\": 5, \"y\": 6, \"w\": 7, \"h\": 8 },\n"
-                      "                \"buttons\": { \"cross\": \"x.png\" } },\n"
-                      "  \"launcher\": { \"metaPanelSlides\": false } }\n");
+        tmp.writeFile(
+            "themes/aergb/theme.json",
+            "{ \"classic\": { \"background\": \"aergb.png\", \"font\": { \"file\": \"missing.ttf\", \"size\": 24 },\n"
+            "                \"menuPanel\": { \"x\": 5, \"y\": 6, \"w\": 7, \"h\": 8 },\n"
+            "                \"buttons\": { \"cross\": \"x.png\" } },\n"
+            "  \"launcher\": { \"metaPanelSlides\": false } }\n");
         tmp.writeFile("themes/aergb/aergb.png", "x");
         tmp.writeFile("themes/aergb/x.png", "x");
 
@@ -59,7 +64,7 @@ struct Themes {
         tmp.writeFile("themes/old/images/GR/JP_US_BG.png", "x");
         tmp.writeFile("themes/old/images/GR/Squere_Btn_ICN.png", "x");
 
-        tmp.makeSubDir("themes/bare");   // a theme directory with nothing in it
+        tmp.makeSubDir("themes/bare"); // a theme directory with nothing in it
     }
 
     void configure(const string &themeName) {
@@ -83,13 +88,13 @@ TEST_CASE("a partial theme is merged over the default theme, so every key has a 
     t.theme->load();
 
     const ClassicTheme &c = t.theme->classic();
-    CHECK(int(c.font.size) == 24);                       // the theme's own
+    CHECK(int(c.font.size) == 24); // the theme's own
     CHECK(c.menuPanel.x == 5);
     CHECK(c.menuPanel.h == 8);
     CHECK_FALSE(bool(t.theme->launcher().metaPanelSlides));
-    CHECK(int(c.menuLines) == 12);                       // from default
+    CHECK(int(c.menuLines) == 12); // from default
     CHECK(c.logo.w == 3);
-    CHECK(c.menuPanel.color.toHex() == "#000000");       // a rect of its own, the default's fill
+    CHECK(c.menuPanel.color.toHex() == "#000000"); // a rect of its own, the default's fill
     CHECK(int(c.menuPanel.alpha) == 170);
     CHECK(c.textColor.toHex() == "#ffffff");
     CHECK(t.theme->music().file == t.tmp.at("themes/default/4.wav"));
@@ -104,15 +109,15 @@ TEST_CASE("every file is resolved: the theme's own, else the default theme's, el
     t.theme->load();
 
     const ClassicTheme &c = t.theme->classic();
-    CHECK(c.background == t.tmp.at("themes/aergb/aergb.png"));           // its own
+    CHECK(c.background == t.tmp.at("themes/aergb/aergb.png")); // its own
     CHECK(c.buttons.cross == t.tmp.at("themes/aergb/x.png"));
-    CHECK(c.font.file == t.tmp.at("themes/default/font.ttf"));            // names missing.ttf: the default's file
-    CHECK(c.logo.file == t.tmp.at("themes/default/logo.png"));            // not named: the default's
+    CHECK(c.font.file == t.tmp.at("themes/default/font.ttf")); // names missing.ttf: the default's file
+    CHECK(c.logo.file == t.tmp.at("themes/default/logo.png")); // not named: the default's
     CHECK(c.buttons.l2 == t.tmp.at("themes/default/l2.png"));
     CHECK(t.theme->launcher().background == t.tmp.at("themes/default/images/launcher_background.png"));
     CHECK(t.theme->launcher().fonts.bold == t.tmp.at("themes/default/font/SST-Bold.ttf"));
-    CHECK(t.theme->sounds().cursor.empty());                              // named by default, on disk nowhere
-    CHECK(t.theme->sounds().cancel.empty());                              // named by nobody
+    CHECK(t.theme->sounds().cursor.empty()); // named by default, on disk nowhere
+    CHECK(t.theme->sounds().cancel.empty()); // named by nobody
 }
 
 TEST_CASE("a theme that does not exist at all is the default theme") {
@@ -122,7 +127,7 @@ TEST_CASE("a theme that does not exist at all is the default theme") {
     CHECK(t.theme->path() == t.tmp.at("themes/default"));
     t.theme->load();
     CHECK(t.theme->classic().background == t.tmp.at("themes/default/bg.png"));
-    CHECK(t.config->inifile.values["theme"] == "nosuchtheme");   // the name is kept: the folder may turn up
+    CHECK(t.config->inifile.values["theme"] == "nosuchtheme"); // the name is kept: the folder may turn up
 }
 
 TEST_CASE("a theme directory that is no theme falls back to default and says so in config.ini") {
@@ -134,7 +139,7 @@ TEST_CASE("a theme directory that is no theme falls back to default and says so 
     CHECK(t.theme->loadedPath() == t.tmp.at("themes/default"));
     CHECK(t.theme->classic().background == t.tmp.at("themes/default/bg.png"));
     CHECK(t.config->inifile.values["theme"] == "default");
-    CHECK(t.tmp.readFile("config.ini").find("Theme=default") != string::npos);   // saved, not just in memory
+    CHECK(t.tmp.readFile("config.ini").find("Theme=default") != string::npos); // saved, not just in memory
 }
 
 TEST_CASE("an old-layout theme is converted in place the first time it is loaded") {
@@ -180,5 +185,5 @@ TEST_CASE("load() re-reads: a theme change in config.ini takes effect on the nex
     t.theme->load();
     CHECK(t.theme->classic().background == t.tmp.at("themes/default/bg.png"));
     CHECK(int(t.theme->classic().font.size) == 20);
-    CHECK(bool(t.theme->launcher().metaPanelSlides));   // aergb's false did not linger
+    CHECK(bool(t.theme->launcher().metaPanelSlides)); // aergb's false did not linger
 }

@@ -20,7 +20,7 @@ using GameSubDirRows = std::vector<GameSubDirPtr>;
 //******************
 struct GameSubDir {
     std::string fullPath = "";
-    std::string subDirName = "";    // last part from the path
+    std::string subDirName = ""; // last part from the path
     GameSubDirRows *displayRows;
     unsigned int displayRowIndex = 0;
     unsigned int displayIndentLevel = 0;
@@ -32,15 +32,16 @@ struct GameSubDir {
     UsbGames gamesToDisplay;
 
     GameSubDir(const std::string &_path, int _displayIndentLevel, GameSubDirRows *displayRows);
-    void scanAll();   // recursive scan of the sub directories
+    void scanAll(); // recursive scan of the sub directories
 
     static bool sameGame(const UsbGamePtr &game1, const UsbGamePtr &game2);
-    void makeGamesToDisplayWhileRemovingChildDuplicates(std::ofstream &dupFile);    // recursive
+    void makeGamesToDisplayWhileRemovingChildDuplicates(std::ofstream &dupFile); // recursive
 
     void print(bool plusGames);
 
 private:
-    static void removeGamesInSecondListThatMatchAGameInFirstList(UsbGames &games1, UsbGames &games2, std::ofstream &dupFile);
+    static void removeGamesInSecondListThatMatchAGameInFirstList(UsbGames &games1, UsbGames &games2,
+                                                                 std::ofstream &dupFile);
     static void removeDuplicateGamesLeavingOne(UsbGames &games, std::ofstream &dupFile);
 };
 
@@ -48,11 +49,11 @@ private:
 // GamesHierarchy
 //******************
 struct GamesHierarchy {
-    GameSubDirRows gameSubDirRows;  // these rows are displayed in the select game dir menu
+    GameSubDirRows gameSubDirRows; // these rows are displayed in the select game dir menu
     std::ofstream dupFile;
 
-    GamesHierarchy() { }
-    void getHierarchy(const std::string &_path);   // scans; also dumps gameHierarchy_beforeScan.txt to the working path
+    GamesHierarchy() {}
+    void getHierarchy(const std::string &_path); // scans; also dumps gameHierarchy_beforeScan.txt to the working path
     UsbGames getAllGames();
 
     // autobleem.prev is the list of game folders at the last scan: a difference means a rescan is needed

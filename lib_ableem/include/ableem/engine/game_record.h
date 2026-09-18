@@ -20,16 +20,17 @@ struct GameRecord {
     std::string region;
     int players = 0;
 
-    std::string memcard;    // "SONY" or the name of a !MemCards set
-    std::string folder;     // game folder.  internal example: "/gaadata/8/", USB example: "/media/Games/Racing/007 Racing"
-    std::string ssFolder;   // !SaveStates folder.  ex: "/Games/!SaveStates/8", "/Games/!SaveStates/007 Racing"
+    std::string memcard; // "SONY" or the name of a !MemCards set
+    std::string folder;  // game folder.  internal example: "/gaadata/8/", USB example: "/media/Games/Racing/007 Racing"
+    std::string ssFolder; // !SaveStates folder.  ex: "/Games/!SaveStates/8", "/Games/!SaveStates/007 Racing"
 
-    std::string base;       // file name of the game.  not sure if extension is included.
-                            // code looks for .pbp extension and replaces it with cue.  but elsewhere .png is appended without removing extension.
+    std::string base; // file name of the game.  not sure if extension is included.
+                      // code looks for .pbp extension and replaces it with cue.  but elsewhere .png is appended without
+                      // removing extension.
 
-    bool internal = false;  // one of the console's built-in games (internal.db) rather than a USB game (regional.db)
+    bool internal = false; // one of the console's built-in games (internal.db) rather than a USB game (regional.db)
     bool hd = false;
-    bool locked = false;    // Game.ini "Automation" == 0: the user edited the ini, the scanner must not overwrite it
+    bool locked = false; // Game.ini "Automation" == 0: the user edited the ini, the scanner must not overwrite it
     int cds = 1;
     // special flags
     bool favorite = false;

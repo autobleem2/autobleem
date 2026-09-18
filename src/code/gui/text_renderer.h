@@ -42,8 +42,8 @@ public:
     // the largest size from maxSize down to minSize at which the line fits maxWidth (minSize when none does)
     ableem::Font fittingFont(FontType type, int maxSize, int minSize, const std::string &text, int maxWidth);
     // renderText / renderText_WithColor in the fitting font; returns the height drawn
-    int renderFittedText(FontType type, int maxSize, int minSize, const std::string &text, int x, int y,
-                         int maxWidth, XAlignment xAlign = XALIGN_LEFT);
+    int renderFittedText(FontType type, int maxSize, int minSize, const std::string &text, int x, int y, int maxWidth,
+                         XAlignment xAlign = XALIGN_LEFT);
     int renderFittedText_WithColor(FontType type, int maxSize, int minSize, const std::string &text, int x, int y,
                                    int maxWidth, ableem::Color textColor, XAlignment xAlign = XALIGN_LEFT);
     // a paragraph wrapped to width pixels (no |@X| markers); returns the height drawn
@@ -88,7 +88,7 @@ public:
     ableem::Rect getOpscreenRectOfTheme();
     ableem::Rect getTextRectOfTheme();
 
-    int getCheckIconWidth();    // returns the width of the check icon texture.  used to compute the x position.
+    int getCheckIconWidth(); // returns the width of the check icon texture.  used to compute the x position.
     static int align_xPosition(XAlignment xAlign, int x, int width);
 
     //*******************************
@@ -97,9 +97,9 @@ public:
 
     struct TextOrEmojiTokenInfo {
         std::string tokenString;
-        ableem::Texture emoji;   // valid() only if tokenString is an emoji marker such as "|@X|"
-        ableem::Rect rect;       // position, width, and height of rendered text or emoji texture
-                                 // the x, y position is relative to the upper left corner of the string
+        ableem::Texture emoji; // valid() only if tokenString is an emoji marker such as "|@X|"
+        ableem::Rect rect;     // position, width, and height of rendered text or emoji texture
+                               // the x, y position is relative to the upper left corner of the string
     };
 
     // break up the text into tokens of text or the token of an emoji icon
@@ -110,18 +110,23 @@ public:
         std::vector<TextOrEmojiTokenInfo> tokenInfos;
 
         ableem::Font font;
-        int x = 0, y = 0;        // upper left corner of the string on the display
-        ableem::Size totalSize;  // the total width and height of all the tokens
+        int x = 0, y = 0;       // upper left corner of the string on the display
+        ableem::Size totalSize; // the total width and height of all the tokens
         bool useTextColor = false;
         ableem::Color textColor;
         bool drawBackgroundRect = false;
 
-        AllTextOrEmojiTokenInfo(TextRenderer &_text, ableem::Font _font, const std::string &_string)
-            : text(_text) { getTokenInfo(_font, _string); }
+        AllTextOrEmojiTokenInfo(TextRenderer &_text, ableem::Font _font, const std::string &_string) : text(_text) {
+            getTokenInfo(_font, _string);
+        }
         void getTokenInfo(ableem::Font _font, const std::string &_text);
 
         void compute_xy_relativeOffsets(); // compute x offset, center the y offset of each token to the total height
-        void setTextColor(ableem::Color color) { textColor = color; textColor.a = 255; useTextColor = true; }
+        void setTextColor(ableem::Color color) {
+            textColor = color;
+            textColor.a = 255;
+            useTextColor = true;
+        }
 
         // renders/draws the text and emoji icons at the chosen position on the screen
         void render(int x, int y, XAlignment xAlign = XALIGN_LEFT);
@@ -140,9 +145,9 @@ public:
                              XAlignment xAlign = XALIGN_LEFT, bool background = false);
 
     // returns rectangle height
-    int renderTextLine(const std::string &text, int line, int yoffset = 0,
-                       XAlignment xAlign = XALIGN_LEFT, int xoffset = 0,
-                       ableem::Font font = ableem::Font());   // font will default to themeFont in the cpp
+    int renderTextLine(const std::string &text, int line, int yoffset = 0, XAlignment xAlign = XALIGN_LEFT,
+                       int xoffset = 0,
+                       ableem::Font font = ableem::Font()); // font will default to themeFont in the cpp
 
     int renderTextLineToColumns(const std::string &textLeft, const std::string &textRight, int xLeft, int xRight,
                                 int line, int yoffset = 0, ableem::Font font = ableem::Font());

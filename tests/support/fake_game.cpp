@@ -50,13 +50,13 @@ string bothEndian16(uint16_t v) {
 // whole record even-length)
 string dirRecord(const string &name, uint32_t extent, uint32_t size, bool isDir) {
     string rec;
-    rec += '\x00';                                      // extended attribute length
+    rec += '\x00'; // extended attribute length
     rec += bothEndian32(extent);
     rec += bothEndian32(size);
-    rec.append(7, '\x00');                               // recording date
-    rec += static_cast<char>(isDir ? 0x02 : 0x00);       // flags
-    rec.append(2, '\x00');                               // unit size, gap
-    rec += bothEndian16(1);                              // volume sequence number
+    rec.append(7, '\x00');                         // recording date
+    rec += static_cast<char>(isDir ? 0x02 : 0x00); // flags
+    rec.append(2, '\x00');                         // unit size, gap
+    rec += bothEndian16(1);                        // volume sequence number
     rec += static_cast<char>(static_cast<unsigned char>(name.size()));
     rec += name;
     if (rec.size() % 2 == 0)
@@ -129,16 +129,16 @@ string makeIso(const string &title, const string &serialFile, int sectors = 24) 
     pvd += "CD001";
     pvd += '\x01';
     pvd += '\x00';
-    pvd += ljust("PLAYSTATION", 32, ' ');                    // system identifier
-    pvd += ljust(volumeId, 32, ' ');                         // volume identifier
-    pvd.append(8, '\x00');                                   // unused
-    pvd += bothEndian32(static_cast<uint32_t>(sectors));     // volume space size
-    pvd.append(32, '\x00');                                  // unused
-    pvd += bothEndian16(1);                                  // volume set size
-    pvd += bothEndian16(1);                                  // volume sequence number
-    pvd += bothEndian16(static_cast<uint16_t>(DATA));        // logical block size
-    pvd += bothEndian32(10);                                 // path table size
-    pvd.append(16, '\x00');                                  // the four path table locations (unused, none)
+    pvd += ljust("PLAYSTATION", 32, ' ');                // system identifier
+    pvd += ljust(volumeId, 32, ' ');                     // volume identifier
+    pvd.append(8, '\x00');                               // unused
+    pvd += bothEndian32(static_cast<uint32_t>(sectors)); // volume space size
+    pvd.append(32, '\x00');                              // unused
+    pvd += bothEndian16(1);                              // volume set size
+    pvd += bothEndian16(1);                              // volume sequence number
+    pvd += bothEndian16(static_cast<uint16_t>(DATA));    // logical block size
+    pvd += bothEndian32(10);                             // path table size
+    pvd.append(16, '\x00');                              // the four path table locations (unused, none)
 
     string rootRec = ljust(dirRecord(string(1, '\x00'), rootSector, DATA, true), 34, '\x00');
     pvd += rootRec;
@@ -152,11 +152,16 @@ string makeIso(const string &title, const string &serialFile, int sectors = 24) 
     string image;
     for (int n = 0; n < sectors; n++) {
         string data;
-        if (n == 16) data = pvd;
-        else if (n == 17) data = terminator;
-        else if (n == rootSector) data = root;
-        else if (n == cnfSector) data = systemCnf;
-        else if (n == serialSector) data = "fake";
+        if (n == 16)
+            data = pvd;
+        else if (n == 17)
+            data = terminator;
+        else if (n == rootSector)
+            data = root;
+        else if (n == cnfSector)
+            data = systemCnf;
+        else if (n == serialSector)
+            data = "fake";
         image += rawSector(n, data);
     }
     return image;
@@ -168,7 +173,7 @@ string makeIso(const string &title, const string &serialFile, int sectors = 24) 
 // makeFakeGame
 //*******************************
 void makeFakeGame(const string &gamesDir, const string &title, const string &serialFile) {
-    ableem::DirEntry::createDir(gamesDir);   // a no-op if it already exists
+    ableem::DirEntry::createDir(gamesDir); // a no-op if it already exists
     string folder = gamesDir + ableem::sep + title;
     ableem::DirEntry::createDir(folder);
 

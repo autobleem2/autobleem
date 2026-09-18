@@ -12,11 +12,11 @@
 #include <ableem/engine/log.h>
 
 using namespace std;
-using ableem::Texture;
+using ableem::BlendMode;
+using ableem::Color;
 using ableem::Rect;
 using ableem::Size;
-using ableem::Color;
-using ableem::BlendMode;
+using ableem::Texture;
 
 #define SLOT_SIZE 120
 
@@ -65,7 +65,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     }
                 }
 #endif
-                if (!coverPng.valid()) {   // the placeholder the scanner used to copy next to the game
+                if (!coverPng.valid()) { // the placeholder the scanner used to copy next to the game
                     coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
                 }
             }
@@ -135,8 +135,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     PLOG_WARNING << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name;
                     coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/ra-cover.png");
                 }
-            } else
-            {
+            } else {
                 imagePath = (*this)->image_path;
 
                 if (DirEntry::exists(imagePath)) {
@@ -156,21 +155,19 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             Size s = coverPng.size();
             fullRect.w = s.w;
             fullRect.h = s.h;
-            float aspectRatio = (fullRect.w*1.0f)/(fullRect.h*1.0f);
-            (void)aspectRatio;   // computed but unused, kept to match the original for now
+            float aspectRatio = (fullRect.w * 1.0f) / (fullRect.h * 1.0f);
+            (void)aspectRatio; // computed but unused, kept to match the original for now
             Rect outputRect;
 
             // calculate output rect with aspect ratio
-            int biggerSize = fullRect.w>fullRect.h ? fullRect.w : fullRect.h;
-
+            int biggerSize = fullRect.w > fullRect.h ? fullRect.w : fullRect.h;
 
             outputRect.x = 0;
             outputRect.y = 0;
-            outputRect.h = (226*fullRect.h)/biggerSize;
-            outputRect.w = (226*fullRect.w)/biggerSize;
-            outputRect.x = (226-outputRect.w)/2;
-            outputRect.y = (226-outputRect.h)/2;
-
+            outputRect.h = (226 * fullRect.h) / biggerSize;
+            outputRect.w = (226 * fullRect.w) / biggerSize;
+            outputRect.x = (226 - outputRect.w) / 2;
+            outputRect.y = (226 - outputRect.h) / 2;
 
             renderer.setBlendMode(BlendMode::Add);
             renderer.copy(coverPng, &fullRect, &outputRect);
@@ -221,7 +218,7 @@ PsScreenpoint PsCarousel::createCoverPoint(int x, int shade, int side) {
 // PsCarousel::initCoverPositions
 //*******************************
 void PsCarousel::initCoverPositions() {
-    //405 x 100
+    // 405 x 100
     coverPositions.clear();
 
     coverPositions.push_back(createCoverPoint(5, 40, 0));

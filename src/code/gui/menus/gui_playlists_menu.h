@@ -10,8 +10,9 @@ public:
     GuiPlaylists(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override {
-        for (const string& playlist : playlists) {
-            lines.emplace_back(playlist + " (" + to_string(app.retroArch().gameCount(playlist)) + " " + _("games") + ")");
+        for (const string &playlist : playlists) {
+            lines.emplace_back(playlist + " (" + to_string(app.retroArch().gameCount(playlist)) + " " + _("games") +
+                               ")");
         }
         GuiStringMenu::init();
     }
@@ -24,5 +25,3 @@ public:
 
     std::vector<std::string> playlists;
 };
-
-

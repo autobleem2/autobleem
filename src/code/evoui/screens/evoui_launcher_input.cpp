@@ -19,7 +19,7 @@ using namespace std;
 //*******************************
 void GuiLauncher::loop() {
     PLOG_DEBUG << "Main Loop";
-    powerOffShift = false;  // L2 shift used for power off and selecting game sub dir or RA playlist
+    powerOffShift = false; // L2 shift used for power off and selecting game sub dir or RA playlist
 
     menuVisible = true;
     motionStart = 0;
@@ -29,8 +29,8 @@ void GuiLauncher::loop() {
     while (menuVisible) {
         // get the current translated string values
         headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-        texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
-                 _("Edit Memory Card information"), _("Resume game from saved state point")};
+        texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+                 _("Resume game from saved state point")};
 
         time = gui->platform().ticks();
         for (auto &obj : staticElements) {
@@ -76,50 +76,46 @@ void GuiLauncher::loop() {
                 quitRequested = true;
             }
             switch (e.type) {
-                case Event::Type::KeyDown:
-                    // the power button / Esc case is already handled inside Input::poll (see
-                    // Platform::setPowerOffHandler, wired up once in main.cpp)
-                    break;
-                case Event::Type::DpadDown:  /* Handle Joystick Motion */
-                case Event::Type::DpadUp:
-                    if (powerOffShift)
-                        continue;
-                    if (gui->input().dpadCentered()) {
-                        if (state == LauncherScreenState::Games) {
-                            if (carousel.games.empty()) {
-                                continue;
-                            }
+            case Event::Type::KeyDown:
+                // the power button / Esc case is already handled inside Input::poll (see
+                // Platform::setPowerOffHandler, wired up once in main.cpp)
+                break;
+            case Event::Type::DpadDown: /* Handle Joystick Motion */
+            case Event::Type::DpadUp:
+                if (powerOffShift)
+                    continue;
+                if (gui->input().dpadCentered()) {
+                    if (state == LauncherScreenState::Games) {
+                        if (carousel.games.empty()) {
+                            continue;
                         }
-                        motionStart = 0;
                     }
-                    if (gui->input().dpadLeft()) {
-                        loop_joyMoveLeft();
-                    }
-                    else if (gui->input().dpadRight()) {
-                        loop_joyMoveRight();
-                    }
-                    else if (gui->input().dpadUp()) {
-                        loop_joyMoveUp();
-                    }
-                    else if (gui->input().dpadDown()) {
-                        loop_joyMoveDown();
-                    }
-                    else {
-                        ;
-                    }
-                    break;
+                    motionStart = 0;
+                }
+                if (gui->input().dpadLeft()) {
+                    loop_joyMoveLeft();
+                } else if (gui->input().dpadRight()) {
+                    loop_joyMoveRight();
+                } else if (gui->input().dpadUp()) {
+                    loop_joyMoveUp();
+                } else if (gui->input().dpadDown()) {
+                    loop_joyMoveDown();
+                } else {
+                    ;
+                }
+                break;
 
-                case Event::Type::ButtonDown:
-                    loop_joyButton_Pressed();    // button pressed
-                    break;
-                case Event::Type::ButtonUp:
-                    loop_joyButtonReleased();   // button released
-                    break;
-                default:
-                    break;
+            case Event::Type::ButtonDown:
+                loop_joyButton_Pressed(); // button pressed
+                break;
+            case Event::Type::ButtonUp:
+                loop_joyButtonReleased(); // button released
+                break;
+            default:
+                break;
 
-            }   // switch (e.type)
-        // end while (gui->input().poll(e))
+            } // switch (e.type)
+            // end while (gui->input().poll(e))
         }
 
         { // no event.  see if we're holding down L1 or R1 for fast forward first letter
@@ -137,7 +133,7 @@ void GuiLauncher::loop() {
                 }
             }
         }
-    }   // while (menuVisible)
+    } // while (menuVisible)
 
     freeAssets();
 }
@@ -269,7 +265,6 @@ void GuiLauncher::loop_joyButton_Pressed() {
         }
     }
 
-
     if (e.button == Button::Select) {
         loop_selectButton_Pressed();
     };
@@ -306,7 +301,7 @@ void GuiLauncher::loop_joyButton_Pressed() {
 //*******************************
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
-void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, true is next
+void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, true is next
     app.audio().cursor.play();
 
     if (state == LauncherScreenState::Games) {
@@ -320,11 +315,11 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
 
         // find the index of all the first letters
         map<char, int> firstLetterToIndex;
-        for (int index = 0; index < carousel.games.size() ; ++index) {
+        for (int index = 0; index < carousel.games.size(); ++index) {
             if (carousel.games[index]->title != "") {
                 char firstLetter = toupper(carousel.games[index]->title[0]);
-                if (firstLetterToIndex.find(firstLetter) == firstLetterToIndex.end())   // if letter not in map
-                    firstLetterToIndex[firstLetter] = index;    // add the first letter to the map
+                if (firstLetterToIndex.find(firstLetter) == firstLetterToIndex.end()) // if letter not in map
+                    firstLetterToIndex[firstLetter] = index;                          // add the first letter to the map
             }
         }
 
@@ -335,19 +330,20 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
             char currentLetter = toupper(carousel.games[carousel.selected]->title[0]);
             int nextGame = carousel.selected;
             if (firstLetterToIndex.size() == 1) {
-                nextGame = firstLetterToIndex[currentLetter];   // there is only one first letter in the games
+                nextGame = firstLetterToIndex[currentLetter]; // there is only one first letter in the games
             } else {
                 auto iter = firstLetterToIndex.find(currentLetter);
                 if (next) {
-                    if (firstLetterToIndex.upper_bound(currentLetter) == firstLetterToIndex.end()) // if this is the last letter
-                        nextGame = firstLetterToIndex.begin()->second;  // wrap around to first letter
+                    if (firstLetterToIndex.upper_bound(currentLetter) ==
+                        firstLetterToIndex.end())                      // if this is the last letter
+                        nextGame = firstLetterToIndex.begin()->second; // wrap around to first letter
                     else
-                        nextGame = (++iter)->second;                    // next letter
+                        nextGame = (++iter)->second; // next letter
                 } else {
                     if (iter == firstLetterToIndex.begin())             // if this is the first letter
-                        nextGame = firstLetterToIndex.rbegin()->second;  // wrap around to last letter
+                        nextGame = firstLetterToIndex.rbegin()->second; // wrap around to last letter
                     else
-                        nextGame = (--iter)->second;                    // prev letter
+                        nextGame = (--iter)->second; // prev letter
                 }
             }
 
@@ -355,7 +351,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
                 // we have prev/next game first letter;
                 carousel.selected = nextGame;
                 app.audio().cursor.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
                 carousel.setInitialPositions(carousel.selected);
                 updateMeta();
@@ -363,7 +359,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) {  // false is prev, t
             } else {
                 // no change
                 app.audio().cancel.play();
-                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0,1)),
+                notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
                                              DefaultShowingTimeout, brightWhite, FONT_22_MED);
             }
         }
@@ -381,8 +377,7 @@ void GuiLauncher::loop_prevGameFirstLetter() {
 //*******************************
 // GuiLauncher::loop_nextGameFirstLetter
 //*******************************
-void GuiLauncher::loop_nextGameFirstLetter()
-{
+void GuiLauncher::loop_nextGameFirstLetter() {
     loop_prevNextGameFirstLetter(true);
     R1_fastForwardTimeStart = gui->platform().ticks();
 };
@@ -399,17 +394,16 @@ void GuiLauncher::loop_selectButton_Pressed() {
                 loop_chooseRAPlaylist();
             else
                 return; // if L2 is pressed then Select should only work if current_set is PS1 or RetroArch
-        }
-        else {
+        } else {
             // switch to next Select Mode
             app.audio().cursor.play();
 
             selection.set = nextGameSet(selection.set);
             if (selection.set == GameSet::Lightgun && app.gameQuery().lightgunGames().empty()) {
-                selection.set = nextGameSet(selection.set);   // nothing flagged: the set is not offered
+                selection.set = nextGameSet(selection.set); // nothing flagged: the set is not offered
             }
 
-            switchSet(selection.set,false);
+            switchSet(selection.set, false);
             showSetName();
             if (carousel.selected != -1 && carousel.selectedIsValid()) {
                 updateMeta();
@@ -515,7 +509,6 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_squareButton_Pressed() {
 
-
     if (Env::retroArchInstalled()) {
 
         if (state == LauncherScreenState::Games) {
@@ -544,7 +537,6 @@ void GuiLauncher::loop_squareButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_crossButton_Pressed() {
 
-
     if (state == LauncherScreenState::Games) {
         loop_crossButtonPressed_STATE_GAMES();
 
@@ -553,7 +545,6 @@ void GuiLauncher::loop_crossButton_Pressed() {
 
     } else if (state == LauncherScreenState::Resume) {
         loop_crossButtonPressed_STATE_RESUME();
-
     }
 }
 
@@ -564,14 +555,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
     app.session().resumingGui = false;
     if (selOptionIs(menu->selOption, LauncherMenuOption::ResumeFromSavestate)) {
         loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
-    }
-    else if (selOptionIs(menu->selOption, LauncherMenuOption::EditMemcardInfo)) {
+    } else if (selOptionIs(menu->selOption, LauncherMenuOption::EditMemcardInfo)) {
         loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD();
-    }
-    else if (selOptionIs(menu->selOption, LauncherMenuOption::EditGameSettings)) {
+    } else if (selOptionIs(menu->selOption, LauncherMenuOption::EditGameSettings)) {
         loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();
-    }
-    else if (selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
+    } else if (selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
         loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
     }
 }
@@ -597,8 +585,7 @@ void GuiLauncher::loop_joyButtonReleased() {
 
     if (L1_isPressedForFastForward && (e.button == Button::L1)) {
         L1_isPressedForFastForward = false;
-    }
-    else if (R1_isPressedForFastForward && (e.button == Button::R1)) {
+    } else if (R1_isPressedForFastForward && (e.button == Button::R1)) {
         R1_isPressedForFastForward = false;
     }
 }

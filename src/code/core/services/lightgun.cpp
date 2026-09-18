@@ -29,8 +29,10 @@ string LightgunService::lightgunsFile() {
 // LightgunService::isLightgun
 //*******************************
 bool LightgunService::isLightgun(const PsGame &game) const {
-    if (game.app) return false;
-    if (game.foreign) return raPaths_.count(game.image_path) != 0;
+    if (game.app)
+        return false;
+    if (game.foreign)
+        return raPaths_.count(game.image_path) != 0;
     return game.lightgun;
 }
 
@@ -38,9 +40,11 @@ bool LightgunService::isLightgun(const PsGame &game) const {
 // LightgunService::setRetroArchLightgun
 //*******************************
 void LightgunService::setRetroArchLightgun(const PsGame &game, bool on) {
-    if (!game.foreign || game.app || game.image_path.empty()) return;
+    if (!game.foreign || game.app || game.image_path.empty())
+        return;
     bool changed = on ? raPaths_.insert(game.image_path).second : raPaths_.erase(game.image_path) != 0;
-    if (changed) save();
+    if (changed)
+        save();
 }
 
 //*******************************
@@ -49,15 +53,18 @@ void LightgunService::setRetroArchLightgun(const PsGame &game, bool on) {
 void LightgunService::reload() {
     raPaths_.clear();
     string path = lightgunsFile();
-    if (!DirEntry::exists(path)) return;
+    if (!DirEntry::exists(path))
+        return;
 
     ifstream in(path);
     string line;
     bool dropped = false;
     while (getline(in, line)) {
         line = Strings::trim(line);
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.empty()) continue;
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        if (line.empty())
+            continue;
         if (DirEntry::exists(line)) {
             raPaths_.insert(line);
         } else {
@@ -66,7 +73,8 @@ void LightgunService::reload() {
         }
     }
     in.close();
-    if (dropped) save();
+    if (dropped)
+        save();
 }
 
 //*******************************
@@ -75,10 +83,13 @@ void LightgunService::reload() {
 void LightgunService::save() const {
     string path = lightgunsFile();
     if (raPaths_.empty()) {
-        if (DirEntry::exists(path)) DirEntry::removeFile(path);
+        if (DirEntry::exists(path))
+            DirEntry::removeFile(path);
         return;
     }
     ofstream out(path);
-    if (!DirEntry::checkWritable(out, path)) return;
-    for (const string &p : raPaths_) out << p << '\n';
+    if (!DirEntry::checkWritable(out, path))
+        return;
+    for (const string &p : raPaths_)
+        out << p << '\n';
 }

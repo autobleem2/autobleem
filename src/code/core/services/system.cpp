@@ -31,7 +31,7 @@ string floatToString(float value, int precision) {
     oss << fixed << setprecision(precision) << value;
     return oss.str();
 }
-}
+} // namespace
 #endif
 
 //*******************************
@@ -40,8 +40,7 @@ string floatToString(float value, int precision) {
 // The one way the app powers the console off: the launcher's L2+R2, the classic menu's L2+R2 and the
 // console's power button all come here. sync() first, so the last log lines and any ini just written
 // reach the USB stick before the halt.
-void System::powerOff()
-{
+void System::powerOff() {
 #ifdef AB_DEBUG_HOST
     exit(0);
 #else
@@ -59,9 +58,9 @@ void System::lowerCurrentThreadPriority() {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
 #elif defined(SCHED_IDLE)
     struct sched_param param;
-    param.sched_priority = 0;   // SCHED_IDLE requires 0
+    param.sched_priority = 0; // SCHED_IDLE requires 0
     if (sched_setscheduler(0, SCHED_IDLE, &param) != 0)
-        nice(19);   // SCHED_IDLE refused (needs a capability some setups don't grant) - a plain nice bump instead
+        nice(19); // SCHED_IDLE refused (needs a capability some setups don't grant) - a plain nice bump instead
 #else
     nice(19);
 #endif
@@ -73,17 +72,18 @@ void System::lowerCurrentThreadPriority() {
 /*
  * Return the available space of a usb device
  */
-string System::getAvailableSpace(){
+string System::getAvailableSpace() {
 #ifdef AB_DEBUG_HOST
     return "x86 - does not care about free space - Does not work on mac";
-    #else
+#else
     // execUnixCommand returns "" when df fails or nothing under /media is mounted - Strings::toInt makes that
     // a 0 instead of a thrown exception (this branch had never been compiled before the Pi port)
     int gb = 1024 * 1024;
-    float freeSpace = (float) Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $4}'")) / gb;
-    float totalSpace = (float) Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $2}'")) / gb;
-    int freeSpacePerc = totalSpace > 0 ? (int) ((freeSpace / totalSpace) * 100) : 0;
-    return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) + "%)";
+    float freeSpace = (float)Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $4}'")) / gb;
+    float totalSpace = (float)Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $2}'")) / gb;
+    int freeSpacePerc = totalSpace > 0 ? (int)((freeSpace / totalSpace) * 100) : 0;
+    return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) +
+           "%)";
 #endif
 }
 
@@ -93,14 +93,14 @@ string System::getAvailableSpace(){
 /*
  * Execute a shell command and return output
  */
-string System::execUnixCommand(const char* cmd){
+string System::execUnixCommand(const char *cmd) {
     array<char, 128> buffer;
     string result;
     PLOG_INFO << "Exec:" << cmd;
     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
     if (!pipe) {
         PLOG_WARNING << "popen() failed for: " << cmd;
-        return result;  // never throw: there is no handler anywhere and an abort() takes the whole UI down
+        return result; // never throw: there is no handler anywhere and an abort() takes the whole UI down
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
         result += buffer.data();

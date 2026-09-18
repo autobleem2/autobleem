@@ -24,7 +24,7 @@ void Carousel::setGames(const PsGames &gamesList) {
 
     // if there are games in the carousel but not enough to fill it, duplicate the games until it is full
     if (games.size() > 0) {
-        if (games.size() < 13) {    // if not enough games to fill the carousel
+        if (games.size() < 13) { // if not enough games to fill the carousel
             // duplicate the gamesList until the carousel is full
             while (games.size() < 13) {
                 for (const auto &game : gamesList)

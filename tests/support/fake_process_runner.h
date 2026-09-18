@@ -24,7 +24,8 @@ struct FakeProcessRunner : ProcessRunner {
 
     void run(const std::string &exe, const std::vector<std::string> &args) override {
         calls.push_back(Call{exe, args});
-        if (whileRunning) whileRunning();
+        if (whileRunning)
+            whileRunning();
     }
 
     const Call &only() const {

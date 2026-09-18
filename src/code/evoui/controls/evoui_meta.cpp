@@ -15,11 +15,10 @@ using namespace std;
 //*******************************
 // PsMeta::updateTexts
 //*******************************
-void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt, const string & yearTxt,
-                         const string & serial, const string & region, const string & playersTxt, bool internal,
-                         bool hd, bool locked, int discs, bool favorite, bool play_using_ra, bool foreign, bool app,
-                         const string& last_played,
-                         ableem::Color _textColor) {
+void PsMeta::updateTexts(const string &gameNameTxt, const string &publisherTxt, const string &yearTxt,
+                         const string &serial, const string &region, const string &playersTxt, bool internal, bool hd,
+                         bool locked, int discs, bool favorite, bool play_using_ra, bool foreign, bool app,
+                         const string &last_played, ableem::Color _textColor) {
     this->discs = discs;
     this->internal = internal;
     this->hd = hd;
@@ -40,7 +39,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
 
     if (foreign) {
         trim(publisher);
-        if (publisher=="DETECT")
+        if (publisher == "DETECT")
             publisher = _("Unknown Core (AutoDetect)");
     }
 }
@@ -48,7 +47,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
 //*******************************
 // PsMeta::updateTexts
 //*******************************
-void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
+void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
     string appendText = psGame->players == 1 ? _("Player") : _("Players");
     lightgun = App::get().lightguns().isLightgun(*psGame);
     if (!psGame->foreign) {
@@ -59,31 +58,26 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
             psGame->region = iniFile.values["region"];
         }
         updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
-                    to_string(psGame->players) + " " + appendText,
-                    psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                    psGame->foreign, psGame->app, App::get().clock().displayTime(psGame->last_played),
-                    _textColor);
-    } else
-    {
-        if (psGame->app)
-        {
+                    to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
+                    psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
+                    App::get().clock().displayTime(psGame->last_played), _textColor);
+    } else {
+        if (psGame->app) {
             psGame->serial = "";
             psGame->region = "";
 
             updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
-                        to_string(psGame->players) + " " + appendText,
-                        psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app,  App::get().clock().displayTime(psGame->last_played),
-                        _textColor);
+                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
+                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
+                        App::get().clock().displayTime(psGame->last_played), _textColor);
         } else {
             psGame->serial = "";
             psGame->region = "";
 
             updateTexts(psGame->title, psGame->core_name, to_string(psGame->year), psGame->serial, psGame->region,
-                        to_string(psGame->players) + " " + appendText,
-                        psGame->internal, psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app,  App::get().clock().displayTime(psGame->last_played),
-                        _textColor);
+                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
+                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
+                        App::get().clock().displayTime(psGame->last_played), _textColor);
         }
     }
 }
@@ -91,31 +85,29 @@ void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
 //*******************************
 // PsMeta::destroy
 //*******************************
-void PsMeta::destroy() {
-}
+void PsMeta::destroy() {}
 
 //*******************************
 // PsMeta::render
 //*******************************
 void PsMeta::render() {
-    if (gameName=="")
-    {
+    if (gameName == "") {
         return;
     }
 
     if (!internalOffTex.valid()) {
         string curPath = Env::getWorkingPath() + sep;
-        internalOnTex =  ableem::Texture::loadFile(renderer, curPath + "evoimg/ps1.png");
+        internalOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ps1.png");
         internalOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/usb.png");
-        hdOnTex =        ableem::Texture::loadFile(renderer, curPath + "evoimg/hd.png");
-        hdOffTex =       ableem::Texture::loadFile(renderer, curPath + "evoimg/sd.png");
-        lockOnTex =      ableem::Texture::loadFile(renderer, curPath + "evoimg/lock.png");
-        lockOffTex =     ableem::Texture::loadFile(renderer, curPath + "evoimg/unlock.png");
-        cdTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
-        favoriteTex =    ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
-        raTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
-        lightgunTex =    ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun.png");
-        lightgun2Tex =   ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun2.png");
+        hdOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/hd.png");
+        hdOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/sd.png");
+        lockOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lock.png");
+        lockOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/unlock.png");
+        cdTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
+        favoriteTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
+        raTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
+        lightgunTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun.png");
+        lightgun2Tex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun2.png");
     }
 
     if (visible) {
@@ -143,7 +135,8 @@ void PsMeta::render() {
         if (!foreign) {
             yOffset += 21;
             // serial number line
-            gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x, y + yOffset);
+            gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x,
+                                   y + yOffset);
 
             yOffset += 21;
             // last played line
@@ -162,7 +155,8 @@ void PsMeta::render() {
             gui->text().renderText(otherFont, players, x + 35, y + yOffset);
 
             ableem::Size s = tex.size();
-            w = s.w; h = s.h;
+            w = s.w;
+            h = s.h;
             rect.x = x;
             rect.y = y + yOffset - 2;
             rect.w = w;
@@ -227,13 +221,13 @@ void PsMeta::render() {
                 rect.x = x + xoffset + (spread * spreadCount);
                 renderer.copy(players.rfind("1 ", 0) == 0 ? lightgunTex : lightgun2Tex, &fullRect, &rect);
             }
-        } else
-        {
+        } else {
             // RetroArch game: the RA icon, on the row the serial line left free
             if (!app) {
                 yOffset += 21;
                 ableem::Size s = raTex.size();
-                w = s.w; h = s.h;
+                w = s.w;
+                h = s.h;
                 rect.x = x;
                 rect.y = y + yOffset - 2;
                 rect.w = w;

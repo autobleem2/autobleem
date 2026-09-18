@@ -22,7 +22,8 @@ namespace {
 // the titles in the order the service returned them - what almost every assertion below is about
 vector<string> titlesOf(const PsGames &games) {
     vector<string> titles;
-    for (const auto &game : games) titles.push_back(game->title);
+    for (const auto &game : games)
+        titles.push_back(game->title);
     return titles;
 }
 
@@ -54,7 +55,8 @@ struct ThreeGames : GameLibraryFixture {
         addUsbGame(2, "Crash Bandicoot");
         addUsbGame(3, "Ridge Racer");
         addSubDirRow(0, "Games", 0, 3);
-        for (int id : {1, 2, 3}) putGameInSubDirRow(0, id);
+        for (int id : {1, 2, 3})
+            putGameInSubDirRow(0, id);
 
         addInternalGame(10, "Battle Arena Toshinden");
         addInternalGame(11, "Jumping Flash");
@@ -83,8 +85,7 @@ TEST_CASE("the PS1 all-games set is the USB games, sorted by title") {
     selection.set = GameSet::PS1;
     selection.ps1SelectState = Ps1SelectState::AllGames;
 
-    CHECK(titlesOf(query.gamesFor(selection)) ==
-          vector<string>{"Crash Bandicoot", "Ridge Racer", "Tekken 3"});
+    CHECK(titlesOf(query.gamesFor(selection)) == vector<string>{"Crash Bandicoot", "Ridge Racer", "Tekken 3"});
 }
 
 TEST_CASE("origames=false pushes the internal-games views back to the sub-dir view") {
@@ -125,9 +126,9 @@ TEST_CASE("origames=true mixes the internal games into the all-games set") {
     selection.ps1SelectState = Ps1SelectState::AllGames;
     PsGames games = query.gamesFor(selection);
 
-    CHECK(selection.ps1SelectState == Ps1SelectState::AllGames);   // not pushed off this time
-    CHECK(titlesOf(games) == vector<string>{"Battle Arena Toshinden", "Crash Bandicoot",
-                                            "Jumping Flash", "Ridge Racer", "Tekken 3"});
+    CHECK(selection.ps1SelectState == Ps1SelectState::AllGames); // not pushed off this time
+    CHECK(titlesOf(games) ==
+          vector<string>{"Battle Arena Toshinden", "Crash Bandicoot", "Jumping Flash", "Ridge Racer", "Tekken 3"});
 }
 
 TEST_CASE("the internal-only set is just the built-in games") {
@@ -138,8 +139,7 @@ TEST_CASE("the internal-only set is just the built-in games") {
     GameSetSelection selection;
     selection.ps1SelectState = Ps1SelectState::InternalOnly;
 
-    CHECK(titlesOf(query.gamesFor(selection)) ==
-          vector<string>{"Battle Arena Toshinden", "Jumping Flash"});
+    CHECK(titlesOf(query.gamesFor(selection)) == vector<string>{"Battle Arena Toshinden", "Jumping Flash"});
 }
 
 TEST_CASE("the favorites set is only the games flagged favorite") {
@@ -157,9 +157,9 @@ TEST_CASE("the history set is ordered most recently played first") {
     ThreeGames lib;
     // History is ranked 1..N with 1 the latest game played. These ranks are deliberately not in title
     // order, so that sorting by title instead would give a different answer and fail this test.
-    lib.markHistory(1, 1);   // Tekken 3, the latest
-    lib.markHistory(2, 2);   // Crash Bandicoot
-    lib.markHistory(3, 3);   // Ridge Racer, the oldest
+    lib.markHistory(1, 1); // Tekken 3, the latest
+    lib.markHistory(2, 2); // Crash Bandicoot
+    lib.markHistory(3, 3); // Ridge Racer, the oldest
     ConfigIn cfg(lib.tmp, "Origames=false\n");
     GameQueryService query(lib.library, *cfg);
 
@@ -167,8 +167,7 @@ TEST_CASE("the history set is ordered most recently played first") {
     selection.ps1SelectState = Ps1SelectState::History;
 
     // by history rank, not by title
-    CHECK(titlesOf(query.gamesFor(selection)) ==
-          vector<string>{"Tekken 3", "Crash Bandicoot", "Ridge Racer"});
+    CHECK(titlesOf(query.gamesFor(selection)) == vector<string>{"Tekken 3", "Crash Bandicoot", "Ridge Racer"});
 }
 
 TEST_CASE("a game with no history rank is not in the history set") {
@@ -270,7 +269,7 @@ TEST_CASE("the RetroArch history playlist keeps the order it arrived in") {
     GameQueryService query(lib.library, *cfg);
 
     FakeRetroArch retroArch;
-    retroArch.add("Sonic");           // most recently played
+    retroArch.add("Sonic"); // most recently played
     retroArch.add("Altered Beast");
     query.setRetroArchGames(&retroArch);
 
@@ -285,7 +284,7 @@ TEST_CASE("the RetroArch history playlist keeps the order it arrived in") {
 TEST_CASE("with no RetroArch wired up the set is empty rather than a crash") {
     ThreeGames lib;
     ConfigIn cfg(lib.tmp, "Origames=false\n");
-    GameQueryService query(lib.library, *cfg);   // setRetroArchGames never called
+    GameQueryService query(lib.library, *cfg); // setRetroArchGames never called
 
     GameSetSelection selection;
     selection.set = GameSet::RetroArch;
@@ -300,14 +299,13 @@ TEST_CASE("the Apps set is built from each Apps/<name>/app.ini") {
     GameQueryService query(lib.library, *cfg);
 
     lib.tmp.makeSubDir("Apps/Wifi");
-    lib.tmp.writeFile("Apps/Wifi/app.ini",
-                      "Title=Wifi Setup\n"
-                      "Author=screemer\n"
-                      "Startup=wifi.sh\n"
-                      "Image=icon.png\n"
-                      "Readme=readme.txt\n"
-                      "Kernel=true\n");
-    lib.tmp.makeSubDir("Apps/NotAnApp");   // no app.ini, so it is skipped
+    lib.tmp.writeFile("Apps/Wifi/app.ini", "Title=Wifi Setup\n"
+                                           "Author=screemer\n"
+                                           "Startup=wifi.sh\n"
+                                           "Image=icon.png\n"
+                                           "Readme=readme.txt\n"
+                                           "Kernel=true\n");
+    lib.tmp.makeSubDir("Apps/NotAnApp"); // no app.ini, so it is skipped
 
     PsGames apps = query.apps();
 
@@ -317,7 +315,7 @@ TEST_CASE("the Apps set is built from each Apps/<name>/app.ini") {
     CHECK(apps[0]->startup == "wifi.sh");
     CHECK(apps[0]->kernel);
     CHECK(apps[0]->app);
-    CHECK(apps[0]->foreign);   // no database row, so nothing may treat it as a PS1 game
+    CHECK(apps[0]->foreign); // no database row, so nothing may treat it as a PS1 game
     CHECK(apps[0]->base == lib.tmp.at("Apps/Wifi"));
 }
 

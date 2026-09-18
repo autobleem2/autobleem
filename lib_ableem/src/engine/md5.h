@@ -12,7 +12,7 @@ class Md5 {
 public:
     Md5();
     void update(const unsigned char *data, size_t length);
-    std::string hexDigest();    // finalizes; 32 lower-case hex chars
+    std::string hexDigest(); // finalizes; 32 lower-case hex chars
 
     static std::string ofBytes(const unsigned char *data, size_t length);
 

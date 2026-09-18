@@ -38,8 +38,8 @@ using UsbGames = std::vector<UsbGamePtr>;
 class UsbGame {
 public:
     int folder_id = 0;
-    std::string fullPath;       // "/Games/Sports/Football/NFL Blitz"
-    std::string gameDirName;    // "NFL Blitz"
+    std::string fullPath;    // "/Games/Sports/Football/NFL Blitz"
+    std::string gameDirName; // "NFL Blitz"
     std::string saveStatePath;
     int gameId = 0;
 
@@ -52,11 +52,11 @@ public:
     std::vector<Disc> discs;
     std::string favorite;
     std::string play_using_ra;
-    std::string lightgun;       // "1"/"0", Game.ini Lightgun - kept across scans like favorite
+    std::string lightgun; // "1"/"0", Game.ini Lightgun - kept across scans like favorite
     time_t last_played = 0;
-    std::string recordName;  // the rdb's name (GameMetadata::recordName), kept in Game.ini as thumbnail_record_name
-    std::string coverPath;   // the thumbnails tree's cover for this game, "" if none - Game.ini cached_cover_path
-    std::string snapPath;    // and its screenshot - cached_snap_path
+    std::string recordName; // the rdb's name (GameMetadata::recordName), kept in Game.ini as thumbnail_record_name
+    std::string coverPath;  // the thumbnails tree's cover for this game, "" if none - Game.ini cached_cover_path
+    std::string snapPath;   // and its screenshot - cached_snap_path
 
     std::string memcard;
 
@@ -65,14 +65,14 @@ public:
     bool gameIniFound = false;
     bool gameIniValid = false;
     bool coverImageFound = false;
-    bool automationUsed = false;    // some value was filled in by the scanner rather than read from Game.ini
+    bool automationUsed = false; // some value was filled in by the scanner rather than read from Game.ini
     ImageType imageType = IMAGE_BIN;
     bool highRes = false;
     std::string firstBinPath;
 
-    void loadGameIni(const std::string &path);   // parse + applyIniValues
+    void loadGameIni(const std::string &path); // parse + applyIniValues
     void saveGameIni(const std::string &path);
-    void applyIniValues();                      // iniValues -> members (defaults where missing) and the disc list
+    void applyIniValues(); // iniValues -> members (defaults where missing) and the disc list
 
     // creates whatever is missing (cover .png, pcsx.cfg, the disc list) using the defaults in
     // Environment::getWorkingPath() and the cover database
@@ -80,24 +80,35 @@ public:
     // every file a launchable game needs is present. the reasons are plain (untranslated) English.
     bool verify(std::vector<std::string> *failureReasons = nullptr);
     bool print();
-    bool validateCue(std::string cuePath, std::string path);   // every FILE in the cue exists; records firstBinPath
+    bool validateCue(std::string cuePath, std::string path); // every FILE in the cue exists; records firstBinPath
 
     std::map<std::string, std::string> iniValues;
 
-    static void sortByTitle(UsbGames &games) { std::sort(games.begin(), games.end(),
-                                                         [] (const UsbGamePtr &g1, const UsbGamePtr &g2) { return lessCaseInsensitive(g1->title, g2->title); }); }
-    static void sortByFullPath(UsbGames &games) { std::sort(begin(games), end(games),
-                                                            [] (const UsbGamePtr &g1, const UsbGamePtr &g2) { return lessCaseInsensitive(g1->fullPath, g2->fullPath); }); }
-    static void sortByGameDirName(UsbGames &games) { std::sort(begin(games), end(games),
-                                                            [] (const UsbGamePtr &g1, const UsbGamePtr &g2) { return lessCaseInsensitive(g1->gameDirName, g2->gameDirName); }); }
-    static void sortBySerial(UsbGames &games) { std::sort(begin(games), end(games),
-                                                          [] (const UsbGamePtr &g1, const UsbGamePtr &g2) { return lessCaseInsensitive(g1->serial, g2->serial); }); }
+    static void sortByTitle(UsbGames &games) {
+        std::sort(games.begin(), games.end(),
+                  [](const UsbGamePtr &g1, const UsbGamePtr &g2) { return lessCaseInsensitive(g1->title, g2->title); });
+    }
+    static void sortByFullPath(UsbGames &games) {
+        std::sort(begin(games), end(games), [](const UsbGamePtr &g1, const UsbGamePtr &g2) {
+            return lessCaseInsensitive(g1->fullPath, g2->fullPath);
+        });
+    }
+    static void sortByGameDirName(UsbGames &games) {
+        std::sort(begin(games), end(games), [](const UsbGamePtr &g1, const UsbGamePtr &g2) {
+            return lessCaseInsensitive(g1->gameDirName, g2->gameDirName);
+        });
+    }
+    static void sortBySerial(UsbGames &games) {
+        std::sort(begin(games), end(games), [](const UsbGamePtr &g1, const UsbGamePtr &g2) {
+            return lessCaseInsensitive(g1->serial, g2->serial);
+        });
+    }
 
 private:
     void parseIni(const std::string &path);
     std::string valueOrDefault(std::string name, std::string def, bool setAutomationIfDefaultUsed = true);
 };
 
-void operator += (UsbGames &dest, const UsbGames &src);
+void operator+=(UsbGames &dest, const UsbGames &src);
 
 } // namespace ableem

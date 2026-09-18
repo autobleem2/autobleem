@@ -8,7 +8,8 @@ namespace ableem {
 
 namespace {
 void destroyTexture(void *t) {
-    if (t) SDL_DestroyTexture(static_cast<SDL_Texture *>(t));
+    if (t)
+        SDL_DestroyTexture(static_cast<SDL_Texture *>(t));
 }
 // RGBA8888 pixel format, allocated once and reused (matches the original engine/cardedit.cpp behavior).
 SDL_PixelFormat *rgba8888Format() {
@@ -40,18 +41,20 @@ Texture Texture::loadMemory(Renderer &renderer, const void *data, unsigned int s
 }
 
 Texture Texture::createTarget(Renderer &renderer, int w, int h) {
-    SDL_Texture *t = SDL_CreateTexture(static_cast<SDL_Renderer *>(renderer.native()),
-                                        SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, w, h);
+    SDL_Texture *t = SDL_CreateTexture(static_cast<SDL_Renderer *>(renderer.native()), SDL_PIXELFORMAT_RGBA8888,
+                                       SDL_TEXTUREACCESS_TARGET, w, h);
     return Texture(t);
 }
 
 Texture Texture::createStreaming(Renderer &renderer, int w, int h) {
-    SDL_Texture *t = SDL_CreateTexture(static_cast<SDL_Renderer *>(renderer.native()),
-                                        SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+    SDL_Texture *t = SDL_CreateTexture(static_cast<SDL_Renderer *>(renderer.native()), SDL_PIXELFORMAT_RGBA8888,
+                                       SDL_TEXTUREACCESS_STREAMING, w, h);
     return Texture(t);
 }
 
-bool Texture::valid() const { return handle != nullptr; }
+bool Texture::valid() const {
+    return handle != nullptr;
+}
 
 Size Texture::size() const {
     Size s;
@@ -62,24 +65,36 @@ Size Texture::size() const {
 }
 
 void Texture::setBlendMode(BlendMode mode) {
-    if (!handle) return;
+    if (!handle)
+        return;
     SDL_BlendMode m = SDL_BLENDMODE_BLEND;
     switch (mode) {
-        case BlendMode::None: m = SDL_BLENDMODE_NONE; break;
-        case BlendMode::Add:  m = SDL_BLENDMODE_ADD; break;
-        case BlendMode::Mod:  m = SDL_BLENDMODE_MOD; break;
-        case BlendMode::Blend: default: m = SDL_BLENDMODE_BLEND; break;
+    case BlendMode::None:
+        m = SDL_BLENDMODE_NONE;
+        break;
+    case BlendMode::Add:
+        m = SDL_BLENDMODE_ADD;
+        break;
+    case BlendMode::Mod:
+        m = SDL_BLENDMODE_MOD;
+        break;
+    case BlendMode::Blend:
+    default:
+        m = SDL_BLENDMODE_BLEND;
+        break;
     }
     SDL_SetTextureBlendMode(static_cast<SDL_Texture *>(handle.get()), m);
 }
 
 void Texture::setColorMod(Color c) {
-    if (!handle) return;
+    if (!handle)
+        return;
     SDL_SetTextureColorMod(static_cast<SDL_Texture *>(handle.get()), c.r, c.g, c.b);
 }
 
 void Texture::setAlphaMod(unsigned char a) {
-    if (!handle) return;
+    if (!handle)
+        return;
     SDL_SetTextureAlphaMod(static_cast<SDL_Texture *>(handle.get()), a);
 }
 
@@ -113,7 +128,8 @@ PixelLock::~PixelLock() {
 }
 
 Color PixelLock::get(int x, int y) const {
-    if (!pixels) return Color(0, 0, 0, 0);
+    if (!pixels)
+        return Color(0, 0, 0, 0);
     Uint32 raw = pixels[y * pitchPixels + x];
     Uint8 r, g, b, a;
     SDL_GetRGBA(raw, rgba8888Format(), &r, &g, &b, &a);
@@ -121,7 +137,8 @@ Color PixelLock::get(int x, int y) const {
 }
 
 void PixelLock::set(int x, int y, Color c) {
-    if (!pixels) return;
+    if (!pixels)
+        return;
     pixels[y * pitchPixels + x] = SDL_MapRGBA(rgba8888Format(), c.r, c.g, c.b, c.a);
 }
 

@@ -12,20 +12,20 @@
 //********************
 // GuiSelectMemcard
 //********************
-class GuiSelectMemcard : public GuiScreen  {
+class GuiSelectMemcard : public GuiScreen {
 public:
     void init() override;
     void render() override;
     void loop() override;
 
     std::vector<std::string> cards;
-    int selected=0;
-    int maxVisible=8;
-    int firstVisible=0;
-    int lastVisible=8;
+    int selected = 0;
+    int maxVisible = 8;
+    int firstVisible = 0;
+    int lastVisible = 8;
 
     int listType = MC_CUSTOM;
-    std::string cardSelected="";
+    std::string cardSelected = "";
 
     using GuiScreen::GuiScreen;
 };

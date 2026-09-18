@@ -21,13 +21,15 @@ namespace {
 
 vector<string> titlesOf(const PsGames &games) {
     vector<string> titles;
-    for (const auto &game : games) titles.push_back(game->title);
+    for (const auto &game : games)
+        titles.push_back(game->title);
     return titles;
 }
 
 PsGamePtr findByTitle(const PsGames &games, const string &title) {
     for (const auto &game : games)
-        if (game->title == title) return game;
+        if (game->title == title)
+            return game;
     return PsGamePtr();
 }
 
@@ -52,7 +54,8 @@ struct Catalog : GameLibraryFixture {
     vector<string> historyOrder() { return titlesOf(historySet()); }
     vector<int> historyRanks() {
         vector<int> ranks;
-        for (const auto &game : historySet()) ranks.push_back(game->history);
+        for (const auto &game : historySet())
+            ranks.push_back(game->history);
         return ranks;
     }
 
@@ -90,7 +93,8 @@ TEST_CASE("replaying a game moves it back to the top instead of duplicating it")
     lib.addUsbGame(2, "Crash Bandicoot");
     lib.addUsbGame(3, "Ridge Racer");
     lib.addSubDirRow(0, "Games", 0, 3);
-    for (int id : {1, 2, 3}) lib.putGameInSubDirRow(0, id);
+    for (int id : {1, 2, 3})
+        lib.putGameInSubDirRow(0, id);
 
     lib.play("Tekken 3");
     lib.play("Crash Bandicoot");
@@ -107,7 +111,8 @@ TEST_CASE("the history ranks are 1..N with no gaps and no ties") {
     lib.addUsbGame(2, "Crash Bandicoot");
     lib.addUsbGame(3, "Ridge Racer");
     lib.addSubDirRow(0, "Games", 0, 3);
-    for (int id : {1, 2, 3}) lib.putGameInSubDirRow(0, id);
+    for (int id : {1, 2, 3})
+        lib.putGameInSubDirRow(0, id);
 
     lib.play("Tekken 3");
     lib.play("Crash Bandicoot");
@@ -154,8 +159,8 @@ TEST_CASE("the history stops at HistoryLimit games and the oldest drops off") {
 
     vector<string> history = lib.historyOrder();
     REQUIRE(history.size() == static_cast<size_t>(limit));
-    CHECK(history.front() == "Game " + std::to_string(total));   // the last one played
-    CHECK(history.back() == "Game 004");                          // 001..003 fell off the end
+    CHECK(history.front() == "Game " + std::to_string(total)); // the last one played
+    CHECK(history.back() == "Game 004");                       // 001..003 fell off the end
 }
 
 TEST_CASE("deleting a game removes its row and its folder") {
@@ -180,11 +185,11 @@ TEST_CASE("deleting a game removes its row and its folder") {
 TEST_CASE("a save-state folder shared with another game is not offered for deletion") {
     Catalog lib;
     // both games point at the same !SaveStates folder, which is what a multi-disc set looks like
-    lib.library.usbGames().insertGame(1, "Disc One", "Publisher", 1, 1997,
-                                      lib.tmp.at("Games/Disc One"), lib.tmp.at("Games/shared-ss"), "SONY");
+    lib.library.usbGames().insertGame(1, "Disc One", "Publisher", 1, 1997, lib.tmp.at("Games/Disc One"),
+                                      lib.tmp.at("Games/shared-ss"), "SONY");
     lib.library.usbGames().insertDisc(1, 1, "Disc One");
-    lib.library.usbGames().insertGame(2, "Disc Two", "Publisher", 1, 1997,
-                                      lib.tmp.at("Games/Disc Two"), lib.tmp.at("Games/shared-ss"), "SONY");
+    lib.library.usbGames().insertGame(2, "Disc Two", "Publisher", 1, 1997, lib.tmp.at("Games/Disc Two"),
+                                      lib.tmp.at("Games/shared-ss"), "SONY");
     lib.library.usbGames().insertDisc(2, 1, "Disc Two");
     lib.tmp.makeSubDir("Games/Disc One");
     lib.tmp.makeSubDir("Games/Disc Two");
@@ -198,13 +203,13 @@ TEST_CASE("a save-state folder shared with another game is not offered for delet
 
     auto result = lib.catalog->deleteUsbGame(*discOne);
     CHECK(result.removed);
-    CHECK_FALSE(result.saveStateFolderIsNowUnused);   // Disc Two still uses it
+    CHECK_FALSE(result.saveStateFolderIsNowUnused); // Disc Two still uses it
 
     PsGamePtr discTwo = findByTitle(lib.query->allPs1Games(true, false), "Disc Two");
     REQUIRE(discTwo);
     auto second = lib.catalog->deleteUsbGame(*discTwo);
     CHECK(second.removed);
-    CHECK(second.saveStateFolderIsNowUnused);         // now nothing does
+    CHECK(second.saveStateFolderIsNowUnused); // now nothing does
 }
 
 TEST_CASE("removeSaveStateFolder deletes the folder it is handed") {
@@ -223,8 +228,8 @@ TEST_CASE("flushing covers removes every png under Games, at any depth") {
     lib.tmp.makeSubDir("Games/Racing/Gran Turismo");
     lib.tmp.writeFile("Games/Tekken 3/Tekken 3.png", "cover");
     lib.tmp.writeFile("Games/Racing/Gran Turismo/Gran Turismo.png", "cover");
-    lib.tmp.writeFile("Games/Tekken 3/Game.ini", "[Game]\n");      // left alone
-    lib.tmp.writeFile("Games/Tekken 3/Tekken 3.cue", "cue");       // left alone
+    lib.tmp.writeFile("Games/Tekken 3/Game.ini", "[Game]\n"); // left alone
+    lib.tmp.writeFile("Games/Tekken 3/Tekken 3.cue", "cue");  // left alone
 
     CHECK(lib.catalog->flushAllCovers() == 2);
 

@@ -24,7 +24,7 @@
 // What changed since the last poll() - the launcher applies each field to the carousel and the status
 // line. Every field sits at its default when nothing of that kind happened this poll.
 struct ScanUpdate {
-    bool active = false;   // a scan is running (set true by ScanStarted, false again once Finished is applied)
+    bool active = false; // a scan is running (set true by ScanStarted, false again once Finished is applied)
 
     // the latest progress report, untranslated - the launcher builds the status line's text from these.
     // progressed says whether one arrived this poll at all: stage/detail/done/total all sit at harmless
@@ -35,12 +35,12 @@ struct ScanUpdate {
     int done = 0;
     int total = 0;
 
-    std::vector<int> removedGameIds;   // games gone since the last poll: folder deleted, or failed verify()
-    PsGames addedGames;                // newly discovered games since the last poll
-    PsGames updatedGames;              // existing games whose row was refreshed since the last poll
-    std::string lastFailedGamePath;    // non-empty when a game failed verify() since the last poll
+    std::vector<int> removedGameIds; // games gone since the last poll: folder deleted, or failed verify()
+    PsGames addedGames;              // newly discovered games since the last poll
+    PsGames updatedGames;            // existing games whose row was refreshed since the last poll
+    std::string lastFailedGamePath;  // non-empty when a game failed verify() since the last poll
 
-    bool finished = false;   // a whole scan cycle completed during this poll
+    bool finished = false; // a whole scan cycle completed during this poll
     int finishedGameCount = 0;
     int finishedFailedCount = 0;
 };
@@ -71,8 +71,8 @@ public:
     ScanService(const ScanService &) = delete;
     ScanService &operator=(const ScanService &) = delete;
 
-    void start();   // spawns the worker thread; a no-op if already running
-    void stop();    // signals the worker to stop and joins it; a no-op if not running
+    void start(); // spawns the worker thread; a no-op if already running
+    void stop();  // signals the worker to stop and joins it; a no-op if not running
 
     // true if it took (a scan was not already running); a no-op returning false while scanning() is already
     // true - the caller shows "scan already in progress" instead of queuing another
@@ -125,17 +125,17 @@ private:
         enum class Kind { ScanStarted, Progress, GameVerified, GameFailedVerify, Finished };
         Kind kind = Kind::Progress;
 
-        std::vector<std::string> currentPaths;   // ScanStarted: every game folder this scan found
+        std::vector<std::string> currentPaths; // ScanStarted: every game folder this scan found
 
-        ableem::ScanStage stage = ableem::ScanStage::Scanning;   // Progress
+        ableem::ScanStage stage = ableem::ScanStage::Scanning; // Progress
         std::string detail;
         int done = 0;
         int total = 0;
 
-        ScannedGame game;          // GameVerified
-        std::string failedPath;    // GameFailedVerify
+        ScannedGame game;       // GameVerified
+        std::string failedPath; // GameFailedVerify
 
-        ableem::GamesHierarchy hierarchy;   // Finished
+        ableem::GamesHierarchy hierarchy; // Finished
         ableem::UsbGames gamesToAddToDB;
         ableem::GamesFingerprint fingerprint;
         int failedCount = 0;

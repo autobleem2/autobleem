@@ -25,7 +25,7 @@ public:
     void doKbdTab();
     void doKbdEscape();
     void doKbdReturn();
-    void doKbdTextInput(const std::string& text);
+    void doKbdTextInput(const std::string &text);
 
     void doL1_up();
     void doL2_up();
@@ -45,16 +45,16 @@ public:
     void doJoyUp();
 
     std::shared_ptr<Gui> gui;
-    int selx=0;
-    int sely=0;
-    std::string label="";
-    std::string result="";
+    int selx = 0;
+    int sely = 0;
+    std::string label = "";
+    std::string result = "";
     int cursorIndex = 0;
     bool L1_caps_shift = false;
     bool L2_cursor_shift = false;
-    bool cancelled=true;
+    bool cancelled = true;
     bool usingUsbKeyboard = false;
-    bool displayAsterisksInstead = false;   // this is a password.  display *****
+    bool displayAsterisksInstead = false; // this is a password.  display *****
 
     using GuiScreen::GuiScreen;
 };

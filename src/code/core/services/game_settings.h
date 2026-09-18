@@ -21,7 +21,7 @@ struct PcsxSettings {
     int speedhack = 0;
     int clock = 0;
     int frameskip = 0;
-    int dither = 0;         // read like the others but never shown or written; kept as it was
+    int dither = 0; // read like the others but never shown or written; kept as it was
     int scanlines = 0;
     int scanlineLevel = 0;
     int interpolation = 0;
@@ -86,14 +86,14 @@ public:
     // Each one rewrites the line, then re-reads all the values, so what the caller sees is what the file
     // says (nothing, if the game has no pcsx.cfg). The 0/1 flags are written in decimal, the levels in
     // hex - that is what PCSX reads. Levels are clamped to their ranges here.
-    void setHighres(GameSettings &s, bool on);       // also remembered in the Game.ini as Highres
+    void setHighres(GameSettings &s, bool on); // also remembered in the Game.ini as Highres
     void setSpeedhack(GameSettings &s, bool on);
     void setScanlines(GameSettings &s, bool on);
-    void setScanlineLevel(GameSettings &s, int level);   // 0..100
-    void setClock(GameSettings &s, int clock);           // 0..100
-    void setFrameskip(GameSettings &s, int frames);      // 0..3
-    void setInterpolation(GameSettings &s, int mode);    // 0..3
-    void setGpuPlugin(GameSettings &s, const std::string &plugin);   // USB only: "builtin_gpu" or "gpu_peops.so"
+    void setScanlineLevel(GameSettings &s, int level);             // 0..100
+    void setClock(GameSettings &s, int clock);                     // 0..100
+    void setFrameskip(GameSettings &s, int frames);                // 0..3
+    void setInterpolation(GameSettings &s, int mode);              // 0..3
+    void setGpuPlugin(GameSettings &s, const std::string &plugin); // USB only: "builtin_gpu" or "gpu_peops.so"
 
     static const char *const BuiltinGpu;
     static const char *const PeopsGpu;

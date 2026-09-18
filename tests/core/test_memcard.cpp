@@ -75,9 +75,9 @@ TEST_CASE("setCardForGame records the set in the Game.ini and in the database") 
     PsGamePtr game = lib.game();
     lib.service->setCardForGame(*game, "Fighting");
 
-    CHECK(game->memcard == "Fighting");                        // the record in hand
-    CHECK(lib.service->activeCardName(*game) == "Fighting");   // the Game.ini
-    CHECK(lib.game()->memcard == "Fighting");                  // and the database, re-read
+    CHECK(game->memcard == "Fighting");                      // the record in hand
+    CHECK(lib.service->activeCardName(*game) == "Fighting"); // the Game.ini
+    CHECK(lib.game()->memcard == "Fighting");                // and the database, re-read
 }
 
 TEST_CASE("swapping in does nothing for a game on the stock card") {

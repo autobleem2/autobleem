@@ -20,7 +20,7 @@ namespace ableem {
 //******************
 class Lang {
 public:
-    static const char *const SourceLanguage;   // "English"
+    static const char *const SourceLanguage; // "English"
 
     // loads <langDir>/<languageName>.txt (nothing, for the source language). A missing file leaves every
     // string untranslated, which is what a misspelt language name in config.ini has always done.
@@ -43,8 +43,8 @@ public:
 
 private:
     std::string currentLanguage_ = SourceLanguage;
-    std::map<std::string, std::string> translations_;   // source -> translation
-    std::vector<std::string> untranslated_;             // sources seen with no translation, in order of first use
+    std::map<std::string, std::string> translations_; // source -> translation
+    std::vector<std::string> untranslated_;           // sources seen with no translation, in order of first use
     static Lang *current_;
 };
 

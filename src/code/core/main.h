@@ -6,76 +6,76 @@
 // GuiScreen (gui/gui_screen.h) shares its name with ableem::GuiScreen.
 #include <ableem/engine.h>
 
-using ableem::ImageType;
-using ableem::IMAGE_NO_GAME_FOUND;
 using ableem::IMAGE_BIN;
-using ableem::IMAGE_PBP;
-using ableem::IMAGE_IMG;
 using ableem::IMAGE_CHD;
+using ableem::IMAGE_IMG;
+using ableem::IMAGE_NO_GAME_FOUND;
+using ableem::IMAGE_PBP;
+using ableem::ImageType;
 
+using ableem::EXT_BIN;
+using ableem::EXT_CHD;
+using ableem::EXT_CUE;
+using ableem::EXT_ECM;
+using ableem::EXT_IMG;
+using ableem::EXT_PBP;
+using ableem::EXT_PNG;
 using ableem::GAME_DATA;
 using ableem::GAME_INI;
 using ableem::PCSX_CFG;
-using ableem::EXT_PNG;
-using ableem::EXT_PBP;
-using ableem::EXT_ECM;
-using ableem::EXT_BIN;
-using ableem::EXT_IMG;
-using ableem::EXT_CHD;
-using ableem::EXT_CUE;
 
 // in-place string helpers (trim(s) modifies s; the copying versions are Strings::trim(s))
+using ableem::lcase;
+using ableem::lessCaseInsensitive;
 using ableem::ltrim;
 using ableem::rtrim;
-using ableem::trim;
-using ableem::lcase;
-using ableem::ucase;
 using ableem::toLowerCopy;
 using ableem::toUpperCopy;
-using ableem::lessCaseInsensitive;
+using ableem::trim;
+using ableem::ucase;
 
-using ableem::DirEntry;
 using ableem::DirEntries;
+using ableem::DirEntry;
 using ableem::Sep;
 using ableem::sep;
 using ableem::separator;
 
-using ableem::IniFile;
-using ableem::ThemeSpec;
-using ableem::ThemeColor;
 using ableem::ClassicTheme;
-using ableem::LauncherTheme;
-using ableem::ZipArchive;
 using ableem::ConfigFileEditor;
-using ableem::MemcardManager;
-using ableem::SerialScanner;
-using ableem::IsoDirectory;
-using ableem::IsoDirectoryReader;
+using ableem::CoverDatabase;
+using ableem::Disc;
 using ableem::EcmDecoder;
-using ableem::GameRecord;
-using ableem::GameRecords;
-using ableem::GameMetadata;
 using ableem::GameDatabase;
+using ableem::GameMetadata;
 using ableem::GamePath;
 using ableem::GamePaths;
-using ableem::SubDirRowInfo;
-using ableem::SubDirRowInfos;
-using ableem::SubDirRowGame;
-using ableem::SubDirRowGames;
-using ableem::CoverDatabase;
-using ableem::MetadataLookup;
-using ableem::Disc;
-using ableem::UsbGame;
-using ableem::UsbGamePtr;
-using ableem::UsbGames;
+using ableem::GameRecord;
+using ableem::GameRecords;
+using ableem::GameScanner;
+using ableem::GamesFingerprint;
+using ableem::GamesHierarchy;
 using ableem::GameSubDir;
 using ableem::GameSubDirPtr;
 using ableem::GameSubDirRows;
-using ableem::GamesHierarchy;
-using ableem::GamesFingerprint;
-using ableem::GameScanner;
-using ableem::ScanStage;
+using ableem::IniFile;
+using ableem::IsoDirectory;
+using ableem::IsoDirectoryReader;
+using ableem::LauncherTheme;
+using ableem::MemcardManager;
+using ableem::MetadataLookup;
 using ableem::ScanProgressListener;
+using ableem::ScanStage;
+using ableem::SerialScanner;
+using ableem::SubDirRowGame;
+using ableem::SubDirRowGames;
+using ableem::SubDirRowInfo;
+using ableem::SubDirRowInfos;
+using ableem::ThemeColor;
+using ableem::ThemeSpec;
+using ableem::UsbGame;
+using ableem::UsbGamePtr;
+using ableem::UsbGames;
+using ableem::ZipArchive;
 
 // Translate one UI string: `_("Re/Scan")`. English is the source language, so it is returned unchanged.
 // Strings may contain emoji markers such as |@X| or |@L1|, which TextRenderer replaces with the theme's
@@ -83,5 +83,7 @@ using ableem::ScanProgressListener;
 // none (a unit test) every string is its own translation.
 using ableem::Lang;
 using ableem::MemcardImage;
-using ableem::Strings;   // the copying string helpers: Strings::trim, Strings::toInt, ... (the old System::)
-inline std::string _(const std::string &input) { return ableem::translate(input); }
+using ableem::Strings; // the copying string helpers: Strings::trim, Strings::toInt, ... (the old System::)
+inline std::string _(const std::string &input) {
+    return ableem::translate(input);
+}

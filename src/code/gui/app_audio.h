@@ -51,9 +51,9 @@ private:
     Config &config_;
     Theme &theme_;
 
-    bool customMusic = false;    // true when config.ini names a track of the user's own
+    bool customMusic = false; // true when config.ini names a track of the user's own
     int freq = 44100;
-    std::string musicPath;       // the theme's music file (resolved), or the custom file name
+    std::string musicPath; // the theme's music file (resolved), or the custom file name
 
     // everything that decides what plays; loadTheme() compares the next one against what is playing
     struct MusicState {
@@ -67,5 +67,5 @@ private:
         }
     };
     MusicState wantedMusicState() const;
-    MusicState playing_;         // what loadTheme() last started (nothing yet: freq 0)
+    MusicState playing_; // what loadTheme() last started (nothing yet: freq 0)
 };

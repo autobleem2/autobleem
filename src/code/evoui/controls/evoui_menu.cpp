@@ -35,8 +35,10 @@ void PsMenu::update(long time) {
     if (animationStarted != 0) {
         float progress = time - animationStarted;
         progress = progress / (duration * 1.0f);
-        if (progress > 1) progress = 1;
-        if (progress < 0) progress = 0;
+        if (progress > 1)
+            progress = 1;
+        if (progress < 0)
+            progress = 0;
 
         if (transition == TR_MENUON) {
             y = oy + (progress * (targety - oy));
@@ -87,8 +89,10 @@ void PsMenu::update(long time) {
             if (direction == 0) {
                 float progress = time - animationStarted;
                 progress = progress / (duration * 1.0f);
-                if (progress > 1) progress = 1;
-                if (progress < 0) progress = 0;
+                if (progress > 1)
+                    progress = 1;
+                if (progress < 0)
+                    progress = 0;
 
                 x = ox + progress * ICON_GAP;
 
@@ -100,12 +104,12 @@ void PsMenu::update(long time) {
                 yoff[selOption] = -((newh - 118) / 2);
 
                 if (progress >= 1.0f) {
-                    optionscales[selOption]=1.0;
+                    optionscales[selOption] = 1.0;
                     xoff[selOption] = 0;
                     yoff[selOption] = 0;
 
                     selOption--;
-                    optionscales[selOption]=maxZoom;
+                    optionscales[selOption] = maxZoom;
                     int neww = 118 * optionscales[selOption];
                     int newh = 118 * optionscales[selOption];
 
@@ -119,12 +123,14 @@ void PsMenu::update(long time) {
             } else {
                 float progress = time - animationStarted;
                 progress = progress / (duration * 1.0f);
-                if (progress > 1) progress = 1;
-                if (progress < 0) progress = 0;
+                if (progress > 1)
+                    progress = 1;
+                if (progress < 0)
+                    progress = 0;
 
                 x = ox - progress * ICON_GAP;
 
-                optionscales[selOption] =  1 + progress * (maxZoom - 1);
+                optionscales[selOption] = 1 + progress * (maxZoom - 1);
                 int neww = 118 * optionscales[selOption];
                 int newh = 118 * optionscales[selOption];
 
@@ -132,11 +138,11 @@ void PsMenu::update(long time) {
                 yoff[selOption] = -((newh - 118) / 2);
 
                 if (progress >= 1.0f) {
-                    optionscales[selOption]=1.0;
+                    optionscales[selOption] = 1.0;
                     xoff[selOption] = 0;
                     yoff[selOption] = 0;
                     selOption++;
-                    optionscales[selOption]=maxZoom;
+                    optionscales[selOption] = maxZoom;
                     int neww = 118 * optionscales[selOption];
                     int newh = 118 * optionscales[selOption];
 
@@ -222,7 +228,6 @@ void PsMenu::render() {
 //*******************************
 // PsMenu::setResumePic
 //*******************************
-void PsMenu::setResumePic(string picturePath)
-{
+void PsMenu::setResumePic(string picturePath) {
     resume = ableem::Texture::loadFile(renderer, picturePath);
 }

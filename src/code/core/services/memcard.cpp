@@ -26,7 +26,7 @@ ableem::MemcardManager MemcardService::manager() const {
 //*******************************
 string MemcardService::activeCardName(const PsGame &game) const {
     if (game.internal)
-        return SonyCard;        // the console's built-in games always use its own card
+        return SonyCard; // the console's built-in games always use its own card
 
     IniFile ini;
     ini.load(game.folder + sep + GAME_INI);
@@ -38,7 +38,7 @@ string MemcardService::activeCardName(const PsGame &game) const {
 //*******************************
 void MemcardService::setCardForGame(PsGame &game, const string &name) {
     if (game.foreign)
-        return;     // a RetroArch or App entry has neither a Game.ini nor a database row
+        return; // a RetroArch or App entry has neither a Game.ini nor a database row
 
     game.memcard = name;
 
@@ -78,12 +78,18 @@ void MemcardService::swapOutAfterLaunch(PsGame &game) {
 //*******************************
 // MemcardService:: the sets
 //*******************************
-vector<string> MemcardService::listCards() const { return manager().list(); }
-void MemcardService::createCard(const string &name) { manager().create(name); }
-void MemcardService::removeCard(const string &name) { manager().remove(name); }
+vector<string> MemcardService::listCards() const {
+    return manager().list();
+}
+void MemcardService::createCard(const string &name) {
+    manager().create(name);
+}
+void MemcardService::removeCard(const string &name) {
+    manager().remove(name);
+}
 
 void MemcardService::renameCard(const string &oldName, const string &newName) {
-    manager().rename(oldName, newName);    // also rewrites every Game.ini that named the old set
+    manager().rename(oldName, newName); // also rewrites every Game.ini that named the old set
 }
 
 void MemcardService::storeGameCardsAsSet(const string &gameMemcardsPath, const string &name) {

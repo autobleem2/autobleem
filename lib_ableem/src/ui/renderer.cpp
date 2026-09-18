@@ -10,13 +10,20 @@ namespace ableem {
 namespace {
 SDL_BlendMode toSDL(BlendMode m) {
     switch (m) {
-        case BlendMode::None:  return SDL_BLENDMODE_NONE;
-        case BlendMode::Add:   return SDL_BLENDMODE_ADD;
-        case BlendMode::Mod:   return SDL_BLENDMODE_MOD;
-        case BlendMode::Blend: default: return SDL_BLENDMODE_BLEND;
+    case BlendMode::None:
+        return SDL_BLENDMODE_NONE;
+    case BlendMode::Add:
+        return SDL_BLENDMODE_ADD;
+    case BlendMode::Mod:
+        return SDL_BLENDMODE_MOD;
+    case BlendMode::Blend:
+    default:
+        return SDL_BLENDMODE_BLEND;
     }
 }
-SDL_Rect toSDL(const Rect &r) { return SDL_Rect{ r.x, r.y, r.w, r.h }; }
+SDL_Rect toSDL(const Rect &r) {
+    return SDL_Rect{r.x, r.y, r.w, r.h};
+}
 } // namespace
 
 struct Renderer::Impl {
@@ -52,8 +59,12 @@ Renderer::~Renderer() {
     delete impl;
 }
 
-void Renderer::clear() { SDL_RenderClear(impl->renderer); }
-void Renderer::present() { SDL_RenderPresent(impl->renderer); }
+void Renderer::clear() {
+    SDL_RenderClear(impl->renderer);
+}
+void Renderer::present() {
+    SDL_RenderPresent(impl->renderer);
+}
 
 void Renderer::setDrawColor(Color c) {
     SDL_SetRenderDrawColor(impl->renderer, c.r, c.g, c.b, c.a);
@@ -79,11 +90,13 @@ void Renderer::fillRect() {
 }
 
 void Renderer::fillRects(const Rect *rects, int count) {
-    if (count <= 0) return;
+    if (count <= 0)
+        return;
     // thread_local so repeated calls (once per frame, per color bucket) don't reallocate
     thread_local std::vector<SDL_Rect> buffer;
     buffer.resize(count);
-    for (int i = 0; i < count; i++) buffer[i] = toSDL(rects[i]);
+    for (int i = 0; i < count; i++)
+        buffer[i] = toSDL(rects[i]);
     SDL_RenderFillRects(impl->renderer, buffer.data(), count);
 }
 
@@ -99,8 +112,14 @@ void Renderer::drawLine(Point a, Point b) {
 void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
     SDL_Rect ssrc, sdst;
     SDL_Rect *psrc = nullptr, *pdst = nullptr;
-    if (src) { ssrc = toSDL(*src); psrc = &ssrc; }
-    if (dst) { sdst = toSDL(*dst); pdst = &sdst; }
+    if (src) {
+        ssrc = toSDL(*src);
+        psrc = &ssrc;
+    }
+    if (dst) {
+        sdst = toSDL(*dst);
+        pdst = &sdst;
+    }
     SDL_RenderCopy(impl->renderer, static_cast<SDL_Texture *>(tex.native()), psrc, pdst);
 }
 
@@ -108,9 +127,15 @@ void Renderer::setTarget(Texture *target) {
     SDL_SetRenderTarget(impl->renderer, target ? static_cast<SDL_Texture *>(target->native()) : nullptr);
 }
 
-int Renderer::width() const { return impl->width; }
-int Renderer::height() const { return impl->height; }
+int Renderer::width() const {
+    return impl->width;
+}
+int Renderer::height() const {
+    return impl->height;
+}
 
-void *Renderer::native() const { return impl->renderer; }
+void *Renderer::native() const {
+    return impl->renderer;
+}
 
 } // namespace ableem

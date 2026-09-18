@@ -14,9 +14,11 @@ namespace {
 
 // creates every level of `dir`, like mkdir -p; true if it exists afterwards
 bool createDirs(const string &dir) {
-    if (dir.empty() || DirEntry::isDirectory(dir)) return true;
+    if (dir.empty() || DirEntry::isDirectory(dir))
+        return true;
     size_t slash = dir.find_last_of('/');
-    if (slash != string::npos && slash > 0 && !createDirs(dir.substr(0, slash))) return false;
+    if (slash != string::npos && slash > 0 && !createDirs(dir.substr(0, slash)))
+        return false;
     DirEntry::createDir(dir);
     return DirEntry::isDirectory(dir);
 }
@@ -30,16 +32,21 @@ struct Reader {
         mz_zip_zero_struct(&zip);
         open = mz_zip_reader_init_file(&zip, path.c_str(), 0) != 0;
         if (!open) {
-            PLOG_WARNING << "Not a zip file: " << path << " (" << mz_zip_get_error_string(mz_zip_get_last_error(&zip)) << ")";
+            PLOG_WARNING << "Not a zip file: " << path << " (" << mz_zip_get_error_string(mz_zip_get_last_error(&zip))
+                         << ")";
         }
     }
-    ~Reader() { if (open) mz_zip_reader_end(&zip); }
+    ~Reader() {
+        if (open)
+            mz_zip_reader_end(&zip);
+    }
 
     unsigned count() { return mz_zip_reader_get_num_files(&zip); }
 
     bool name(unsigned i, string &out, bool &isDir) {
         mz_zip_archive_file_stat st;
-        if (!mz_zip_reader_file_stat(&zip, i, &st)) return false;
+        if (!mz_zip_reader_file_stat(&zip, i, &st))
+            return false;
         out = st.m_filename;
         isDir = mz_zip_reader_is_file_a_directory(&zip, i) != 0;
         return true;
@@ -52,15 +59,19 @@ struct Reader {
 // ZipArchive::isSafeName
 //*******************************
 bool ZipArchive::isSafeName(const string &name) {
-    if (name.empty()) return false;
-    if (name[0] == '/' || name.find('\\') != string::npos || name.find(':') != string::npos) return false;
+    if (name.empty())
+        return false;
+    if (name[0] == '/' || name.find('\\') != string::npos || name.find(':') != string::npos)
+        return false;
     // no "." or ".." segment anywhere
     size_t start = 0;
     while (start <= name.size()) {
         size_t end = name.find('/', start);
-        if (end == string::npos) end = name.size();
+        if (end == string::npos)
+            end = name.size();
         string segment = name.substr(start, end - start);
-        if (segment == ".." || segment == ".") return false;
+        if (segment == ".." || segment == ".")
+            return false;
         start = end + 1;
     }
     return true;
@@ -72,12 +83,15 @@ bool ZipArchive::isSafeName(const string &name) {
 bool ZipArchive::list(const string &zipPath, vector<string> &names) {
     names.clear();
     Reader reader(zipPath);
-    if (!reader.open) return false;
+    if (!reader.open)
+        return false;
     for (unsigned i = 0; i < reader.count(); i++) {
         string name;
         bool isDir;
-        if (!reader.name(i, name, isDir)) continue;
-        if (isDir && (name.empty() || name.back() != '/')) name += '/';
+        if (!reader.name(i, name, isDir))
+            continue;
+        if (isDir && (name.empty() || name.back() != '/'))
+            name += '/';
         names.push_back(name);
     }
     return true;
@@ -88,7 +102,8 @@ bool ZipArchive::list(const string &zipPath, vector<string> &names) {
 //*******************************
 bool ZipArchive::extract(const string &zipPath, const string &destDir) {
     Reader reader(zipPath);
-    if (!reader.open) return false;
+    if (!reader.open)
+        return false;
 
     // check every name before writing anything
     for (unsigned i = 0; i < reader.count(); i++) {
@@ -115,7 +130,8 @@ bool ZipArchive::extract(const string &zipPath, const string &destDir) {
         reader.name(i, name, isDir);
         const string target = dest + name;
         if (isDir) {
-            if (!createDirs(DirEntry::removeSeparatorFromEndOfPath(target))) return false;
+            if (!createDirs(DirEntry::removeSeparatorFromEndOfPath(target)))
+                return false;
             continue;
         }
         size_t slash = target.find_last_of('/');

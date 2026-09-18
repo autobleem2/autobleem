@@ -37,7 +37,8 @@ struct CardBytes {
 
     void checksum(int slot) {
         uint8_t x = 0;
-        for (int i = 0; i < 126; i++) x ^= dir(slot)[i];
+        for (int i = 0; i < 126; i++)
+            x ^= dir(slot)[i];
         dir(slot)[127] = x;
     }
 
@@ -49,7 +50,9 @@ struct CardBytes {
             bool last = i + 1 == slots.size();
             d[0] = i == 0 ? 0x51 : (last ? 0x53 : 0x52);
             int size = slots.size() * Block;
-            d[4] = size & 0xFF; d[5] = (size >> 8) & 0xFF; d[6] = (size >> 16) & 0xFF;
+            d[4] = size & 0xFF;
+            d[5] = (size >> 8) & 0xFF;
+            d[6] = (size >> 16) & 0xFF;
             d[8] = last ? 0xFF : slots[i + 1];
             d[9] = last ? 0xFF : 0x00;
             if (i == 0) {
@@ -59,10 +62,12 @@ struct CardBytes {
             checksum(slots[i]);
         }
         uint8_t *b = block(slots[0]);
-        b[0] = 'S'; b[1] = 'C';
+        b[0] = 'S';
+        b[1] = 'C';
         memcpy(b + 4, title.c_str(), title.size());
         // palette entry 1: 15-bit BGR with red = 31 -> bytes 0x1F 0x00
-        b[0x60 + 2] = 0x1F; b[0x60 + 3] = 0x00;
+        b[0x60 + 2] = 0x1F;
+        b[0x60 + 3] = 0x00;
         // frame 0: every pixel index 1 (two pixels per byte)
         memset(b + 0x80, 0x11, 128);
     }
@@ -91,7 +96,8 @@ MemcardImage imageOf(CardBytes &card) {
 bool checksumValid(const MemcardImage &image, int slot) {
     const uint8_t *d = image.bytes() + Frame + slot * Frame;
     uint8_t x = 0;
-    for (int i = 0; i < 126; i++) x ^= d[i];
+    for (int i = 0; i < 126; i++)
+        x ^= d[i];
     return d[127] == x;
 }
 
@@ -123,7 +129,7 @@ TEST_CASE("a save is parsed from its directory frames: kind of block, chain, cod
     CHECK(image.productCode(0) == "BASCUS-941");
     CHECK(image.gameId(0) == "63TEKKEN3");
     CHECK(image.title(0) == "Hello");
-    CHECK(image.title(1) == "");        // a link block has no title of its own
+    CHECK(image.title(1) == ""); // a link block has no title of its own
     CHECK(image.hasIcon(0));
     CHECK_FALSE(image.hasIcon(1));
     CHECK(image.isFree(2));
@@ -136,7 +142,7 @@ TEST_CASE("a save exported from one card imports into the free slots of another,
     MemcardImage from = imageOf(a);
 
     CardBytes b;
-    b.addSave({0}, "Other", "BASCUS-000", "00OTHER");   // slot 0 is taken; the import lands on 1 and 2
+    b.addSave({0}, "Other", "BASCUS-000", "00OTHER"); // slot 0 is taken; the import lands on 1 and 2
     MemcardImage to = imageOf(b);
 
     int size = from.exportSize(0);
@@ -151,7 +157,7 @@ TEST_CASE("a save exported from one card imports into the free slots of another,
     CHECK(to.nextSlot(2) == 0xFF);
     CHECK(to.title(1) == "Hello");
     CHECK(to.productCode(1) == "BASCUS-941");
-    CHECK(to.title(0) == "Other");   // untouched
+    CHECK(to.title(0) == "Other"); // untouched
     CHECK(checksumValid(to, 1));
     CHECK(checksumValid(to, 2));
     CHECK(to.findEmptySlots(1) == vector<int>{3});
@@ -163,7 +169,8 @@ TEST_CASE("a save that does not fit is not imported at all") {
     MemcardImage from = imageOf(a);
 
     CardBytes b;
-    for (int slot = 0; slot < 13; slot++) b.addSave({slot}, "S", "BASCUS-000", "0");   // two slots left
+    for (int slot = 0; slot < 13; slot++)
+        b.addSave({slot}, "S", "BASCUS-000", "0"); // two slots left
     MemcardImage to = imageOf(b);
 
     vector<uint8_t> buffer(from.exportSize(0));
@@ -182,7 +189,7 @@ TEST_CASE("deleting a save frees its blocks but leaves the data, so it can be un
     image.deleteGame(0);
     CHECK(image.isFree(0));
     CHECK(image.isFree(1));
-    CHECK(image.isDeleted(0));       // the block still starts with "SC"
+    CHECK(image.isDeleted(0)); // the block still starts with "SC"
     CHECK_FALSE(image.isUsed(0));
     CHECK(checksumValid(image, 0));
 
@@ -211,22 +218,22 @@ TEST_CASE("icon frames come back as pixels: the save's own, dimmed for a link bl
     MemcardImage::Pixel px[MemcardImage::IconSize * MemcardImage::IconSize];
 
     image.iconPixels(0, 0, px);
-    CHECK(px[0].r == 248);   // palette red 31 * 8
+    CHECK(px[0].r == 248); // palette red 31 * 8
     CHECK(px[0].g == 0);
     CHECK(px[0].a == 255);
     CHECK(px[255].r == 248);
 
-    image.iconPixels(1, 0, px);   // the link block: the top's frame, a third as bright
+    image.iconPixels(1, 0, px); // the link block: the top's frame, a third as bright
     CHECK(px[0].r == 82);
     CHECK(px[0].a == 255);
 
-    image.iconPixels(2, 0, px);   // free
+    image.iconPixels(2, 0, px); // free
     CHECK(px[0].r == 0);
     CHECK(px[0].a == 127);
 
-    image.deleteGame(0);          // deleted: lightened
+    image.deleteGame(0); // deleted: lightened
     image.iconPixels(0, 0, px);
-    CHECK(px[0].r == 251);        // 31 * 4 + 127
+    CHECK(px[0].r == 251); // 31 * 4 + 127
 }
 
 TEST_CASE("a card is written and read back whole; a DexDrive file is read past its header; a short file is refused") {

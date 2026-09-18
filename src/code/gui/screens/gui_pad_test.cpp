@@ -11,21 +11,36 @@ using namespace std;
 namespace {
 string buttonName(ableem::Button b) {
     switch (b) {
-        case ableem::Button::Cross: return "Cross";
-        case ableem::Button::Circle: return "Circle";
-        case ableem::Button::Square: return "Square";
-        case ableem::Button::Triangle: return "Triangle";
-        case ableem::Button::Start: return "Start";
-        case ableem::Button::Select: return "Select";
-        case ableem::Button::L1: return "L1";
-        case ableem::Button::R1: return "R1";
-        case ableem::Button::L2: return "L2";
-        case ableem::Button::R2: return "R2";
-        case ableem::Button::DpadUp: return "DpadUp";
-        case ableem::Button::DpadDown: return "DpadDown";
-        case ableem::Button::DpadLeft: return "DpadLeft";
-        case ableem::Button::DpadRight: return "DpadRight";
-        default: return "None";
+    case ableem::Button::Cross:
+        return "Cross";
+    case ableem::Button::Circle:
+        return "Circle";
+    case ableem::Button::Square:
+        return "Square";
+    case ableem::Button::Triangle:
+        return "Triangle";
+    case ableem::Button::Start:
+        return "Start";
+    case ableem::Button::Select:
+        return "Select";
+    case ableem::Button::L1:
+        return "L1";
+    case ableem::Button::R1:
+        return "R1";
+    case ableem::Button::L2:
+        return "L2";
+    case ableem::Button::R2:
+        return "R2";
+    case ableem::Button::DpadUp:
+        return "DpadUp";
+    case ableem::Button::DpadDown:
+        return "DpadDown";
+    case ableem::Button::DpadLeft:
+        return "DpadLeft";
+    case ableem::Button::DpadRight:
+        return "DpadRight";
+    default:
+        return "None";
     }
 }
 } // namespace
@@ -87,5 +102,5 @@ void GuiPadTest::loop() {
     appendLine("Release all buttons now");
     sleep(3);
     while (gui->input().poll(e))
-        ;   // eat any events in the queue
+        ; // eat any events in the queue
 }

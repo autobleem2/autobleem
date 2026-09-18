@@ -33,7 +33,7 @@ TEST_CASE("the enum values are the indexes the name tables are keyed by") {
     CHECK(static_cast<int>(Ps1SelectState::InternalOnly) == 1);
     CHECK(static_cast<int>(Ps1SelectState::Favorites) == 2);
     CHECK(static_cast<int>(Ps1SelectState::History) == 3);
-    CHECK(static_cast<int>(Ps1SelectState::GamesSubdir) == 4);   // must stay last: left off the L2+Select menu
+    CHECK(static_cast<int>(Ps1SelectState::GamesSubdir) == 4); // must stay last: left off the L2+Select menu
 }
 
 TEST_CASE("a default GameSetSelection opens on all PS1 games") {

@@ -24,8 +24,10 @@ void makeCoversDb(const TempDir &tmp, const string &region, const string &serial
     ableem::GameDatabase db;
     REQUIRE(db.open(tmp.at("db/covers" + region + ".db")));
     REQUIRE(db.execute("CREATE TABLE GAME (ID INTEGER NOT NULL UNIQUE, TITLE TEXT NOT NULL, PUBLISHER TEXT NOT NULL, "
-                       "RELEASE INTEGER NOT NULL, PLAYERS INTEGER NOT NULL, COVER BLOB, PRIMARY KEY(ID))", "create GAME"));
-    REQUIRE(db.execute("CREATE TABLE SERIALS (SERIAL TEXT NOT NULL, GAME INTEGER NOT NULL, PRIMARY KEY(SERIAL))", "create SERIALS"));
+                       "RELEASE INTEGER NOT NULL, PLAYERS INTEGER NOT NULL, COVER BLOB, PRIMARY KEY(ID))",
+                       "create GAME"));
+    REQUIRE(db.execute("CREATE TABLE SERIALS (SERIAL TEXT NOT NULL, GAME INTEGER NOT NULL, PRIMARY KEY(SERIAL))",
+                       "create SERIALS"));
     string insert = "INSERT INTO GAME VALUES (1, '" + title + "', 'Db Publisher', 1999, 2, X'89504E47')";
     REQUIRE(db.execute(insert.c_str(), "insert GAME"));
     insert = "INSERT INTO SERIALS VALUES ('" + serial + "', 1)";
@@ -48,7 +50,7 @@ TEST_CASE("cleanTitle drops every trailing tag group and nothing else") {
     CHECK(MetadataLookup::cleanTitle("Tekken 3 (Europe) (Disc 1)") == "Tekken 3");
     CHECK(MetadataLookup::cleanTitle("Metal Gear Solid (USA) (Disc 2) (Rev 1)") == "Metal Gear Solid");
     CHECK(MetadataLookup::cleanTitle("Puzzle & Action") == "Puzzle & Action");
-    CHECK(MetadataLookup::cleanTitle("Vib-Ribbon (Europe) Special") == "Vib-Ribbon (Europe) Special");   // not trailing
+    CHECK(MetadataLookup::cleanTitle("Vib-Ribbon (Europe) Special") == "Vib-Ribbon (Europe) Special"); // not trailing
     CHECK(MetadataLookup::cleanTitle("") == "");
 }
 
@@ -79,12 +81,12 @@ TEST_CASE("with an rdb the metadata comes from it: cleaned title, region letter,
     CHECK(md.players == 2);
     CHECK(md.serial == "SCES-01237");
     CHECK(md.lastRegion == "P");
-    CHECK(md.bytes.empty());   // no covers db, no PNG
+    CHECK(md.bytes.empty()); // no covers db, no PNG
     CHECK(md.valid);
 
     GameMetadata crash;
     REQUIRE(lookup.findBySerial("SCUS-94900", crash));
-    CHECK(crash.publisher == "Sony Computer Entertainment");   // the trailing "." cleaned like the db's
+    CHECK(crash.publisher == "Sony Computer Entertainment"); // the trailing "." cleaned like the db's
     CHECK(crash.lastRegion == "U");
 
     GameMetadata none;
@@ -127,7 +129,7 @@ TEST_CASE("without an rdb the covers db answers as before; with both, the rdb's 
     MetadataLookup both(tmp.at("db"), makeRdbFile(tmp));
     GameMetadata combined;
     REQUIRE(both.findBySerial("SCES-01237", combined));
-    CHECK(combined.title == "Tekken 3");              // the rdb's
+    CHECK(combined.title == "Tekken 3"); // the rdb's
     CHECK(combined.publisher == "Namco");
-    CHECK(combined.bytes.size() == 4);                // the db's cover still comes along
+    CHECK(combined.bytes.size() == 4); // the db's cover still comes along
 }

@@ -39,5 +39,5 @@ private:
     int previewFor = -1;
     ableem::Texture previewCover;
     ableem::Texture previewSnap;
-    static const int PreviewWidth = 300;   // what the rows leave free on the left
+    static const int PreviewWidth = 300; // what the rows leave free on the left
 };

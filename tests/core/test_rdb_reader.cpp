@@ -36,7 +36,7 @@ void appendRecord(Bytes &out) {
     appendUint16(out, 1997);
     appendString(out, "users");
     out.push_back(2);
-    appendString(out, "crc");        // not a field we keep
+    appendString(out, "crc"); // not a field we keep
     appendBin(out, "crc-bytes");
 }
 
@@ -69,7 +69,7 @@ TEST_CASE("a database with a zero metadata offset is read to the NIL sentinel") 
     CHECK(byName->releaseyear == 1997);
     CHECK(byName->users == 2);
 
-    const RdbReader::Record *bySerial = reader.findBySerial("SLUS-12345");   // prefix of "SLUS-12345-01"
+    const RdbReader::Record *bySerial = reader.findBySerial("SLUS-12345"); // prefix of "SLUS-12345-01"
     REQUIRE(bySerial != nullptr);
     CHECK(bySerial->name == "Puzzle & Action (USA)");
 }
@@ -99,7 +99,7 @@ TEST_CASE("a file that is not an rdb, or is missing, leaves the reader invalid")
 TEST_CASE("findBySerial: a non-digit suffix matches, a digit suffix does not, an exact hit wins") {
     TempDir tmp("rdb");
     Bytes records;
-    appendSimpleRecord(records, "Final Fantasy IX (USA) (Disc 1)", "SLUS-01251GH-F-0");   // Greatest Hits
+    appendSimpleRecord(records, "Final Fantasy IX (USA) (Disc 1)", "SLUS-01251GH-F-0"); // Greatest Hits
     appendSimpleRecord(records, "Other Game", "SLUS-012510");
     appendSimpleRecord(records, "Other Variant", "SLUS-12345-99");
     appendSimpleRecord(records, "Exact", "SLUS-12345");
@@ -112,8 +112,8 @@ TEST_CASE("findBySerial: a non-digit suffix matches, a digit suffix does not, an
     REQUIRE(gh != nullptr);
     CHECK(gh->name == "Final Fantasy IX (USA) (Disc 1)");
 
-    CHECK(reader.findBySerial("SLUS-01252") == nullptr);   // nothing starts with it
-    CHECK(reader.findBySerial("SLUS-0125") == nullptr);    // "SLUS-01251..." continues with a digit
+    CHECK(reader.findBySerial("SLUS-01252") == nullptr); // nothing starts with it
+    CHECK(reader.findBySerial("SLUS-0125") == nullptr);  // "SLUS-01251..." continues with a digit
 
     const RdbReader::Record *exact = reader.findBySerial("SLUS-12345");
     REQUIRE(exact != nullptr);

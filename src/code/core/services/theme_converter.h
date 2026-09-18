@@ -46,9 +46,9 @@ public:
 
     // one launcher image role: the old names tried in order, and the new name
     struct Role {
-        std::vector<std::string> oldNames;   // relative to <theme>/images, first one found wins
-        std::string newName;                 // relative to <theme>/images
-        std::string *(*field)(ThemeSpec &);  // the ThemeSpec field the role names
+        std::vector<std::string> oldNames;  // relative to <theme>/images, first one found wins
+        std::string newName;                // relative to <theme>/images
+        std::string *(*field)(ThemeSpec &); // the ThemeSpec field the role names
     };
     static const std::vector<Role> &launcherRoles();
 };

@@ -15,7 +15,15 @@
 //******************
 // None is also what a cancelled menu (Circle/R2) leaves result at - the caller only acts on the others.
 enum class SystemMenuAction {
-    None, RescanGames, RetroArch, MemoryCards, GameManager, HardwareInfo, Options, About, PowerOff
+    None,
+    RescanGames,
+    RetroArch,
+    MemoryCards,
+    GameManager,
+    HardwareInfo,
+    Options,
+    About,
+    PowerOff
 };
 
 //******************
@@ -30,8 +38,8 @@ public:
     void render();
     void loop();
 
-    std::string retroArchLabel = "RetroArch";   // "RetroArch" or "EmulationStation", per retroboot.cfg
-    bool scanInProgress = false;                // shown as a note on the Re-Scan row, not a disabled state
+    std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
+    bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
 
     SystemMenuAction result = SystemMenuAction::None;
 

@@ -42,7 +42,8 @@ CoverDatabase::~CoverDatabase() {
 //*******************************
 bool CoverDatabase::hasAnyRegion() const {
     for (const auto &db : covers) {
-        if (db != nullptr) return true;
+        if (db != nullptr)
+            return true;
     }
     return false;
 }
@@ -53,7 +54,8 @@ bool CoverDatabase::hasAnyRegion() const {
 bool CoverDatabase::findBySerial(const string &serial, GameMetadata &md) {
     for (int i = 0; i < regionCount; i++) {
         GameDatabase *db = covers[i].get();
-        if (db == nullptr) continue;
+        if (db == nullptr)
+            continue;
 
         if (db->findMetadataBySerial(serial, &md)) {
             md.lastRegion = regionStr[i];
@@ -69,7 +71,8 @@ bool CoverDatabase::findBySerial(const string &serial, GameMetadata &md) {
 bool CoverDatabase::findByTitle(const string &title, GameMetadata &md) {
     for (int i = 0; i < regionCount; i++) {
         GameDatabase *db = covers[i].get();
-        if (db == nullptr) continue;
+        if (db == nullptr)
+            continue;
 
         if (db->findMetadataByTitle(title, &md)) {
             md.lastRegion = regionStr[i];

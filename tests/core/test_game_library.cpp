@@ -21,7 +21,8 @@ std::map<string, string> exportedPaths(GameLibraryFixture &lib) {
     ableem::RetroArchPlaylistEntries entries;
     REQUIRE(ableem::RetroArchPlaylist::load(lib.tmp.at("retroarch/playlists/AutoBleem.lpl"), entries));
     std::map<string, string> paths;
-    for (const auto &e : entries) paths[e.label] = e.path;
+    for (const auto &e : entries)
+        paths[e.label] = e.path;
     return paths;
 }
 
@@ -29,11 +30,11 @@ std::map<string, string> exportedPaths(GameLibraryFixture &lib) {
 
 TEST_CASE("the RetroArch playlist names a cue game's .cue and a PBP's or a CHD's own file") {
     GameLibraryFixture lib;
-    lib.addUsbGame(1, "Cue Game");                       // disc name "Cue Game" -> Cue Game.cue
+    lib.addUsbGame(1, "Cue Game"); // disc name "Cue Game" -> Cue Game.cue
     lib.addUsbGame(2, "Pbp Game");
     lib.library.usbGames().replaceDiscs(2, {"Pbp Game.pbp"});
     lib.addUsbGame(3, "Chd Game");
-    lib.library.usbGames().replaceDiscs(3, {"Chd Game.chd"});   // used to come out as "Chd Game.chd.cue"
+    lib.library.usbGames().replaceDiscs(3, {"Chd Game.chd"}); // used to come out as "Chd Game.chd.cue"
 
     auto paths = exportedPaths(lib);
     REQUIRE(paths.size() == 3);

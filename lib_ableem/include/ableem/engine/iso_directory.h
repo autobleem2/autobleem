@@ -12,9 +12,9 @@ namespace ableem {
 //******************
 class IsoDirectory {
 public:
-    std::string systemName;             // "PLAYSTATION" on a PS1 disc; "UNKNOWN" when the image could not be read
+    std::string systemName; // "PLAYSTATION" on a PS1 disc; "UNKNOWN" when the image could not be read
     std::string volumeName;
-    std::vector<std::string> rootDir;   // every file/dir name found, version suffix (";1") removed
+    std::vector<std::string> rootDir; // every file/dir name found, version suffix (";1") removed
 };
 
 //******************

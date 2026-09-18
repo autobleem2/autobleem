@@ -9,7 +9,7 @@
 #include <vector>
 
 enum {
-    CFG_THEME=0,
+    CFG_THEME = 0,
     CFG_SHOW_ORIGAMES,
     CFG_JEWEL,
     CFG_MUSIC,
@@ -22,19 +22,18 @@ enum {
     CFG_LANG
 };
 #define CFG_LAST CFG_LANG
-#define CFG_SIZE (CFG_LAST+1)
+#define CFG_SIZE (CFG_LAST + 1)
 
 //********************
 // GuiOptions
 //********************
 class GuiOptions : public GuiOptionsMenuBase {
 public:
-    GuiOptions(ableem::GuiBase &_gui)
-        : GuiOptionsMenuBase(_gui) {}
+    GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
-    //void render() override;
-    //void loop() override;
+    // void render() override;
+    // void loop() override;
 
     std::vector<std::string> getThemes();
     std::vector<std::string> getJewels();
@@ -46,23 +45,23 @@ public:
     virtual std::string getTitle() override { return "-=" + _("Configuration") + "=-"; }
     virtual std::string getStatusLine();
 
-    virtual std::string getLineText(const OptionsInfo& info);
-    virtual std::string doPrevNextOption(OptionsInfo& info, bool next);
+    virtual std::string getLineText(const OptionsInfo &info);
+    virtual std::string doPrevNextOption(OptionsInfo &info, bool next);
     virtual std::string doPrevNextOption(bool next) { return GuiOptionsMenuBase::doPrevNextOption(next); }
-    virtual std::string doRandomOption();   // only a few lines will use this.  most will just return.
+    virtual std::string doRandomOption(); // only a few lines will use this.  most will just return.
 
-    virtual std::string doOptionIndex(unsigned int index) override ;
+    virtual std::string doOptionIndex(unsigned int index) override;
 
-    int exitCode=0;
+    int exitCode = 0;
 
     virtual void doCircle_Pressed();
     virtual void doCross_Pressed();
 
-    virtual void doJoyRight();  // move option to the right, may fast forwward
-    virtual void doJoyLeft();   // move option to the left, may fast forwward
+    virtual void doJoyRight(); // move option to the right, may fast forwward
+    virtual void doJoyLeft();  // move option to the left, may fast forwward
 
-    virtual void doKeyRight();  // move option to the right
-    virtual void doKeyLeft();   // move option to the left
+    virtual void doKeyRight(); // move option to the right
+    virtual void doKeyLeft();  // move option to the left
 
     virtual void doEnter() { doCross_Pressed(); }
     virtual void doEscape() { doCircle_Pressed(); }

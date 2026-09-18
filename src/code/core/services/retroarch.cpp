@@ -31,7 +31,8 @@ bool sortByMaxExtensions(const CoreInfoPtr &i, const CoreInfoPtr &j) {
 // The singleton read everything the first time it was asked for, which is after main() has configured
 // Environment. Same here: nothing is read until the first question.
 void RetroArchService::ensureLoaded() {
-    if (loaded_) return;
+    if (loaded_)
+        return;
     loaded_ = true;
     loadCores();
     loadPlaylists();
@@ -41,7 +42,7 @@ void RetroArchService::ensureLoaded() {
 // RetroArchService::escapeName
 //********************
 string RetroArchService::escapeName(const string &title) {
-    return ableem::ThumbnailLookup::escapeName(title);   // one rule for every thumbnail file name
+    return ableem::ThumbnailLookup::escapeName(title); // one rule for every thumbnail file name
 }
 
 //********************
@@ -324,8 +325,8 @@ void RetroArchService::loadPlaylists() {
         } else
             PLOG_WARNING << "Invalid Playlist: " << playlistName;
     }
-    reloadFavorites();  // since it isn't already in the list, reloadFavorites() will add favorites at the end
-    reloadHistory();    // since it isn't already in the list, reloadHistory() will add history at the end
+    reloadFavorites(); // since it isn't already in the list, reloadFavorites() will add favorites at the end
+    reloadHistory();   // since it isn't already in the list, reloadHistory() will add history at the end
 }
 
 //********************
@@ -400,9 +401,11 @@ void RetroArchService::loadCores() {
                     defaultCores_.insert(std::pair<string, CoreInfoPtr>(db, ciPtr));
                     nextDb = true;
                 }
-                if (nextDb) continue;
+                if (nextDb)
+                    continue;
             }
-            if (nextDb) continue;
+            if (nextDb)
+                continue;
         }
 
         auto pos = defaultCores_.find(dbname);
@@ -442,7 +445,8 @@ CoreInfoPtr RetroArchService::parseCoreInfo(const string &file, const string &en
 
     PLOG_INFO << "Parsing ";
     CoreInfoPtr coreInfoPtr{new CoreInfo};
-    coreInfoPtr->core_path = Env::getPathToRetroarchDir() + sep + "cores/" + DirEntry::getFileNameWithoutExtension(entry) + ".so";
+    coreInfoPtr->core_path =
+        Env::getPathToRetroarchDir() + sep + "cores/" + DirEntry::getFileNameWithoutExtension(entry) + ".so";
     coreInfoPtr->extensions.clear();
     PLOG_INFO << "CorePath: " << coreInfoPtr->core_path;
     while (getline(in, line)) {

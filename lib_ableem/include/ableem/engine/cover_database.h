@@ -16,10 +16,11 @@ namespace ableem {
 class CoverDatabase {
 public:
     static const int regionCount = 3;
-    std::unique_ptr<GameDatabase> covers[regionCount];  // U, P, J. nullptr when that region's covers db is not installed
-    std::string regionStr[regionCount];                 // "U", "P", "J"
+    std::unique_ptr<GameDatabase> covers[regionCount]; // U, P, J. nullptr when that region's covers db is not installed
+    std::string regionStr[regionCount];                // "U", "P", "J"
 
-    explicit CoverDatabase(const std::string &coversDir);   // opens <coversDir>/covers<region>.db for every region present
+    explicit CoverDatabase(
+        const std::string &coversDir); // opens <coversDir>/covers<region>.db for every region present
     ~CoverDatabase();
 
     bool hasAnyRegion() const;

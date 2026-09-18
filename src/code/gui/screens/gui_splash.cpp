@@ -4,7 +4,7 @@
 
 #include "gui_splash.h"
 #include "../gui.h"
-#include "core/version.h"   // generated into the build tree
+#include "core/version.h" // generated into the build tree
 #include "../../core/model/timing.h"
 using namespace std;
 
@@ -52,7 +52,7 @@ void GuiSplash::loop() {
     alpha = 0;
     phase = Phase::Settle;
     start = gui->platform().ticks();
-    holdStart = start;   // the settle phase's start
+    holdStart = start; // the settle phase's start
     while (1) {
         Event e;
         while (gui->input().poll(e)) {
@@ -84,7 +84,7 @@ void GuiSplash::loop() {
                 if (gui->platform().ticks() - holdStart >= SplashHoldDuration) {
                     phase = Phase::FadeOut;
                 }
-            } else {   // FadeOut
+            } else { // FadeOut
                 if (alpha > 0) {
                     alpha -= 10;
                     if (alpha < 0) {

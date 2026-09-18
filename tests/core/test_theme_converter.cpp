@@ -15,68 +15,67 @@ using std::string;
 namespace {
 
 // the shipped aergb theme.ini, complete with the dead keys, plus default's extra ones
-const char *FULL_INI =
-    "[Theme]\n"
-    "Music=mel.ogg\n"
-    "Loop=1\n"
-    "\n"
-    "Logo=ab.png\n"
-    "Font=zrnic.ttf\n"
-    "Background=background.jpg\n"
-    "\n"
-    "# button icons\n"
-    "Circle=circle.png\n"
-    "Cross=cross.png\n"
-    "Square=square.png\n"
-    "Triangle=triangle.png\n"
-    "Start=start.png\n"
-    "Select=select.png\n"
-    "L1=l1.png\n"
-    "R1=r1.png\n"
-    "\n"
-    "Iconw=30\n"
-    "Iconh=30\n"
-    "IconRescan=705\n"
-    "IconExit=600\n"
-    "\n"
-    "Lpositionx=520\n"
-    "Lpositiony=0\n"
-    "Lw=240\n"
-    "Lh=180\n"
-    "\n"
-    "Textx=-0\n"
-    "Texty=-670\n"
-    "Textw=1280\n"
-    "Texth=30\n"
-    "\n"
-    "Textalpha=170\n"
-    "Text_fg=255,255,255\n"
-    "Text_bg=0,0,0\n"
-    "Key_bg=120,120,120\n"
-    "Keyalpha=170\n"
-    "Label_bg=180,180,180\n"
-    "\n"
-    "Lspositionx=400\n"
-    "Lspositiony=20\n"
-    "Lsw=240\n"
-    "Lsh=180\n"
-    "\n"
-    "Opscreenx=30\n"
-    "Opscreeny=10\n"
-    "Opscreenw=1220\n"
-    "Opscreenh=530\n"
-    "\n"
-    "Fsize=24\n"
-    "Ttop=662\n"
-    "Maxw=1140\n"
-    "\n"
-    "Fsposx=180\n"
-    "Fsposy=35\n"
-    "\n"
-    "Lines=13\n"
-    "\n"
-    "Ecoverx=95;\n"
-    "Ecovery=130;\n";
+const char *FULL_INI = "[Theme]\n"
+                       "Music=mel.ogg\n"
+                       "Loop=1\n"
+                       "\n"
+                       "Logo=ab.png\n"
+                       "Font=zrnic.ttf\n"
+                       "Background=background.jpg\n"
+                       "\n"
+                       "# button icons\n"
+                       "Circle=circle.png\n"
+                       "Cross=cross.png\n"
+                       "Square=square.png\n"
+                       "Triangle=triangle.png\n"
+                       "Start=start.png\n"
+                       "Select=select.png\n"
+                       "L1=l1.png\n"
+                       "R1=r1.png\n"
+                       "\n"
+                       "Iconw=30\n"
+                       "Iconh=30\n"
+                       "IconRescan=705\n"
+                       "IconExit=600\n"
+                       "\n"
+                       "Lpositionx=520\n"
+                       "Lpositiony=0\n"
+                       "Lw=240\n"
+                       "Lh=180\n"
+                       "\n"
+                       "Textx=-0\n"
+                       "Texty=-670\n"
+                       "Textw=1280\n"
+                       "Texth=30\n"
+                       "\n"
+                       "Textalpha=170\n"
+                       "Text_fg=255,255,255\n"
+                       "Text_bg=0,0,0\n"
+                       "Key_bg=120,120,120\n"
+                       "Keyalpha=170\n"
+                       "Label_bg=180,180,180\n"
+                       "\n"
+                       "Lspositionx=400\n"
+                       "Lspositiony=20\n"
+                       "Lsw=240\n"
+                       "Lsh=180\n"
+                       "\n"
+                       "Opscreenx=30\n"
+                       "Opscreeny=10\n"
+                       "Opscreenw=1220\n"
+                       "Opscreenh=530\n"
+                       "\n"
+                       "Fsize=24\n"
+                       "Ttop=662\n"
+                       "Maxw=1140\n"
+                       "\n"
+                       "Fsposx=180\n"
+                       "Fsposy=35\n"
+                       "\n"
+                       "Lines=13\n"
+                       "\n"
+                       "Ecoverx=95;\n"
+                       "Ecovery=130;\n";
 
 // an old theme folder: theme.ini, the launcher images under their PSC names among the ~300 others,
 // the fonts and sounds, and a credit file at the root
@@ -96,15 +95,16 @@ struct OldTheme {
         tmp.writeFile(name + "/ab.png", "png");
         tmp.writeFile(name + "/background.jpg", "jpg");
         tmp.writeFile(name + "/zrnic.ttf", "ttf");
-        for (const char *b : { "circle", "cross", "square", "triangle", "start", "select", "l1", "r1" })
+        for (const char *b : {"circle", "cross", "square", "triangle", "start", "select", "l1", "r1"})
             tmp.writeFile(name + "/" + b + ".png", "png");
 
-        const char *used[] = { "GR/JP_US_BG.png", "GR/Footer.png", "GR/Acid_C_Btn.png", "BMP_Text/Play_Text.png",
-                               "CB/Function_BG.png", "CB/PlayerOne.png", "GR/arrow.png", "GR/X_Btn_ICN.png",
-                               "GR/Circle_Btn_ICN.png", "GR/Tri_Btn_ICN.png", "CB/Setting_ICN.png",
-                               "CB/Manual_ICN.png", "CB/MemoryCard_ICN.png", "CB/Resume.png",
-                               "MC/Dot_Matrix.png", "MC/Pencil_Carsor.png" };
-        for (const char *f : used) tmp.writeFile(name + "/images/" + f, string("stock ") + f);
+        const char *used[] = {
+            "GR/JP_US_BG.png",       "GR/Footer.png",      "GR/Acid_C_Btn.png",  "BMP_Text/Play_Text.png",
+            "CB/Function_BG.png",    "CB/PlayerOne.png",   "GR/arrow.png",       "GR/X_Btn_ICN.png",
+            "GR/Circle_Btn_ICN.png", "GR/Tri_Btn_ICN.png", "CB/Setting_ICN.png", "CB/Manual_ICN.png",
+            "CB/MemoryCard_ICN.png", "CB/Resume.png",      "MC/Dot_Matrix.png",  "MC/Pencil_Carsor.png"};
+        for (const char *f : used)
+            tmp.writeFile(name + "/images/" + f, string("stock ") + f);
         if (withAbVariants) {
             tmp.writeFile(name + "/images/GR/AB_BG.png", "ab bg");
             tmp.writeFile(name + "/images/GR/Footer_AB.png", "ab footer");
@@ -120,7 +120,8 @@ struct OldTheme {
         tmp.writeFile(name + "/font/SST-Medium.ttf", "ttf");
         tmp.writeFile(name + "/font/SST-Bold.ttf", "ttf");
         tmp.writeFile(name + "/font/SSTJapanese-Bold.ttf", "ttf");
-        for (const char *s : { "cursor", "cancel", "home_up", "home_down", "resume_new", "resume_old", "decide", "end", "error" })
+        for (const char *s :
+             {"cursor", "cancel", "home_up", "home_down", "resume_new", "resume_old", "decide", "end", "error"})
             tmp.writeFile(name + "/sounds/" + s + ".wav", "wav");
     }
 
@@ -153,7 +154,7 @@ TEST_CASE("specFromIni: every live key lands in its typed place, the dead ones a
     CHECK(int(s.classic.menuLines) == 13);
     CHECK(s.classic.menuPanel.set);
     CHECK(s.classic.menuPanel.w == 1220);
-    CHECK_FALSE(s.classic.menuPanel.color.set);     // no Main_bg in this ini: inherits the default's
+    CHECK_FALSE(s.classic.menuPanel.color.set); // no Main_bg in this ini: inherits the default's
     CHECK_FALSE(s.classic.menuPanel.alpha.set);
     CHECK(s.classic.statusBar.set);
     CHECK(s.classic.statusBar.y == -670);
@@ -165,13 +166,13 @@ TEST_CASE("specFromIni: every live key lands in its typed place, the dead ones a
     CHECK(int(s.classic.keyboardKey.alpha) == 170);
     CHECK(s.classic.labelColor.toHex() == "#b4b4b4");
     CHECK(s.classic.freeSpaceText.x == 180);
-    CHECK(s.classic.editorCover.x == 95);            // "95;" the way atoi read it
+    CHECK(s.classic.editorCover.x == 95); // "95;" the way atoi read it
     CHECK(s.classic.editorCover.y == 130);
     CHECK(s.classic.buttons.cross == "cross.png");
     CHECK(s.classic.buttons.r1 == "r1.png");
-    CHECK(s.classic.buttons.l2.empty());             // not in this ini
+    CHECK(s.classic.buttons.l2.empty()); // not in this ini
     CHECK(s.classic.buttons.tab.empty());
-    CHECK(s.launcher.background.empty());            // the ini knows nothing about the launcher
+    CHECK(s.launcher.background.empty()); // the ini knows nothing about the launcher
     CHECK(s.sounds.cursor.empty());
 }
 
@@ -223,7 +224,8 @@ TEST_CASE("convert: theme.json names every used file by role, the rest is gone, 
     CHECK(s.launcher.fonts.medium == "font/SST-Medium.ttf");
     CHECK(s.launcher.fonts.bold == "font/SST-Bold.ttf");
     CHECK(s.sounds.resume == "sounds/resume_new.wav");
-    CHECK(s.referencedFiles().size() == 1 + 3 + 8 + 16 + 2 + 5);   // music, bg/logo/font, 8 buttons, launcher, fonts, sounds
+    CHECK(s.referencedFiles().size() ==
+          1 + 3 + 8 + 16 + 2 + 5); // music, bg/logo/font, 8 buttons, launcher, fonts, sounds
 
     // renamed, with the right content, and the old names gone
     CHECK(tmp.readFile("aergb/images/launcher_background.png") == "stock GR/JP_US_BG.png");
@@ -252,7 +254,8 @@ TEST_CASE("convert: theme.json names every used file by role, the rest is gone, 
 
     // exactly what the new layout says
     std::vector<string> files;
-    for (const DirEntry &e : DirEntry::diru(theme.dir + sep + "images")) files.push_back(e.name);
+    for (const DirEntry &e : DirEntry::diru(theme.dir + sep + "images"))
+        files.push_back(e.name);
     CHECK(files.size() == 16);
     CHECK(DirEntry::diru(theme.dir + sep + "font").size() == 2);
     CHECK(DirEntry::diru(theme.dir + sep + "sounds").size() == 5);
@@ -271,7 +274,7 @@ TEST_CASE("convert: the _AB variants win, and make the meta panel static") {
     CHECK(tmp.readFile("evolution/images/launcher_footer.png") == "ab footer");
     CHECK(tmp.readFile("evolution/images/settings_panel.png") == "ab function");
     CHECK(tmp.readFile("evolution/images/play_button.png") == "stock GR/Acid_C_Btn.png");
-    CHECK_FALSE(theme.has("images/GR"));    // the stock JP_US_BG.png etc. went with the directory
+    CHECK_FALSE(theme.has("images/GR")); // the stock JP_US_BG.png etc. went with the directory
 }
 
 TEST_CASE("convert: a folder with launcher images but no theme.ini is a theme too") {
@@ -289,7 +292,7 @@ TEST_CASE("convert: a folder with launcher images but no theme.ini is a theme to
     CHECK_FALSE(s.classic.logo.set);
     CHECK(s.launcher.metaPanel == "images/meta_panel.png");
     CHECK(theme.has("images/meta_panel.png"));
-    CHECK(theme.has("ab.png"));      // a root file the json does not name is not the converter's business
+    CHECK(theme.has("ab.png")); // a root file the json does not name is not the converter's business
 }
 
 TEST_CASE("convert: colors.ini becomes launcher.colors and is removed") {
@@ -326,7 +329,7 @@ TEST_CASE("convert: a partial theme stays partial, and a launcher image that is 
     CHECK(s.launcher.fonts.bold.empty());
     CHECK(s.sounds.cursor.empty());
     CHECK(DirEntry::exists(tmp.at("mini/images/launcher_background.png")));
-    CHECK_FALSE(DirEntry::exists(tmp.at("mini/font")));    // never there, not created either
+    CHECK_FALSE(DirEntry::exists(tmp.at("mini/font"))); // never there, not created either
 }
 
 TEST_CASE("convert twice: the second run has nothing to do and changes nothing") {
@@ -336,7 +339,7 @@ TEST_CASE("convert twice: the second run has nothing to do and changes nothing")
     string json = tmp.readFile("twice/theme.json");
 
     CHECK_FALSE(ThemeConverter::needsConversion(theme.dir));
-    REQUIRE(ThemeConverter::convert(theme.dir));   // forced anyway: still fine
+    REQUIRE(ThemeConverter::convert(theme.dir)); // forced anyway: still fine
     CHECK(tmp.readFile("twice/theme.json") == json);
     CHECK(theme.has("images/launcher_background.png"));
     CHECK(theme.has("credit.txt"));
@@ -350,6 +353,6 @@ TEST_CASE("a folder that is neither is not a theme") {
 
     tmp.makeSubDir("done");
     tmp.writeFile("done/theme.json", "{}");
-    tmp.writeFile("done/theme.ini", "[Theme]\n");   // a leftover next to a theme.json is not a reason to convert again
+    tmp.writeFile("done/theme.ini", "[Theme]\n"); // a leftover next to a theme.json is not a reason to convert again
     CHECK_FALSE(ThemeConverter::needsConversion(tmp.at("done")));
 }

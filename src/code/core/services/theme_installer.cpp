@@ -34,16 +34,20 @@ string ThemeInstaller::themeName(const string &zipPath) {
 // ThemeInstaller::findThemeRoot
 //*******************************
 string ThemeInstaller::findThemeRoot(const string &dir) {
-    if (ThemeConverter::isThemeFolder(dir)) return dir;
+    if (ThemeConverter::isThemeFolder(dir))
+        return dir;
 
     // one folder inside, the theme's files in it
     string only;
     for (const DirEntry &entry : DirEntry::diru_DirsOnly(dir)) {
-        if (isJunkFolder(entry.name)) continue;
-        if (!only.empty()) return "";   // two candidates: not a theme zip we understand
+        if (isJunkFolder(entry.name))
+            continue;
+        if (!only.empty())
+            return ""; // two candidates: not a theme zip we understand
         only = dir + sep + entry.name;
     }
-    if (!only.empty() && ThemeConverter::isThemeFolder(only)) return only;
+    if (!only.empty() && ThemeConverter::isThemeFolder(only))
+        return only;
     return "";
 }
 
@@ -63,7 +67,7 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
         return false;
     };
 
-    DirEntry::removeDirAndContents(staging);   // a previous run that did not get to the end
+    DirEntry::removeDirAndContents(staging); // a previous run that did not get to the end
     if (!ZipArchive::extract(zipPath, staging))
         return giveUp("could not unpack it");
 
@@ -77,7 +81,8 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
     }
     if (!DirEntry::renameFile(root, dest))
         return giveUp("could not move it into place");
-    if (root != staging) DirEntry::removeDirAndContents(staging);
+    if (root != staging)
+        DirEntry::removeDirAndContents(staging);
 
     DirEntry::removeFile(zipPath);
     PLOG_INFO << "Theme " << name << " installed";
@@ -90,7 +95,8 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
 vector<string> ThemeInstaller::installZips(const string &themesDir) {
     vector<string> installed;
     for (const DirEntry &entry : DirEntry::diru_FilesOnly(themesDir)) {
-        if (!isZipName(entry.name)) continue;
+        if (!isZipName(entry.name))
+            continue;
         if (installZip(themesDir + sep + entry.name, themesDir))
             installed.push_back(themeName(entry.name));
     }

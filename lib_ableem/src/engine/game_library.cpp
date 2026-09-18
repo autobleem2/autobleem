@@ -27,7 +27,8 @@ GameLibrary::~GameLibrary() {
 // GameLibrary::openCoversAndUsbGames
 //*******************************
 bool GameLibrary::openCoversAndUsbGames() {
-    metadata_.reset(new MetadataLookup(Environment::getPathToCoversDBDir(), Environment::getPathToPlayStationRdbFile()));
+    metadata_.reset(
+        new MetadataLookup(Environment::getPathToCoversDBDir(), Environment::getPathToPlayStationRdbFile()));
 
     regionalDb.reset(new GameDatabase());
     if (!regionalDb->open(Environment::getPathToRegionalDBFile())) {
@@ -67,15 +68,15 @@ void GameLibrary::close() {
 //*******************************
 bool GameLibrary::exportToRetroArchPlaylist() {
     GameRecords games = usbGames().loadUsbGames();
-    sort(games.begin(), games.end(), [](const GameRecord &a, const GameRecord &b) {
-        return lessCaseInsensitive(a.title, b.title);
-    });
+    sort(games.begin(), games.end(),
+         [](const GameRecord &a, const GameRecord &b) { return lessCaseInsensitive(a.title, b.title); });
 
     RetroArchPlaylistEntries entries;
     for (const GameRecord &game : games) {
         // a disc's base is the cue name without ".cue", but a PBP's or a CHD's is the whole file name -
         // only a cue game needs the extension put back (a CHD used to come out as "foo.chd.cue", NG's 8ee4fbea)
-        bool singleFileImage = DirEntry::matchExtension(game.base, EXT_PBP) || DirEntry::matchExtension(game.base, EXT_CHD);
+        bool singleFileImage =
+            DirEntry::matchExtension(game.base, EXT_PBP) || DirEntry::matchExtension(game.base, EXT_CHD);
         string gameFile = game.folder + sep + game.base;
         if (!singleFileImage) {
             gameFile += EXT_CUE;
@@ -106,12 +107,14 @@ bool GameLibrary::exportToRetroArchPlaylist() {
 bool GameLibrary::writeEmulationStationGamelist() {
     // EmulationStation comes with RetroBoot, the console's RetroArch bundle. Without it (a Raspberry Pi, or
     // a stick without RetroBoot) there is nobody to read the list, and nowhere to put it.
-    if (!Environment::hasRetroBoot()) return true;
+    if (!Environment::hasRetroBoot())
+        return true;
 
     // this file was used during 0.9.0 testing. it must be removed or ES will use it by mistake.
     DirEntry::removeFile(Environment::getPathToGamesDir() + sep + "gamelist.xml");
 
-    string path = Environment::getPathToRetroarchDir() + sep + "retroboot/emulationstation/.emulationstation/gamelists/psx";
+    string path =
+        Environment::getPathToRetroarchDir() + sep + "retroboot/emulationstation/.emulationstation/gamelists/psx";
     DirEntry::createDir(path);
     string filePath = path + sep + "gamelist.xml";
     DirEntry::removeFile(filePath);
@@ -120,7 +123,8 @@ bool GameLibrary::writeEmulationStationGamelist() {
 
     ofstream xml;
     xml.open(filePath.c_str(), ios::binary);
-    if (!DirEntry::checkWritable(xml, filePath)) return false;
+    if (!DirEntry::checkWritable(xml, filePath))
+        return false;
 
     xml << "<?xml version=\"1.0\"?>" << endl;
     xml << "<gameList>" << endl;

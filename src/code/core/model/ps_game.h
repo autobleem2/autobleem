@@ -38,4 +38,4 @@ public:
 using PsGamePtr = std::shared_ptr<PsGame>;
 using PsGames = std::vector<PsGamePtr>;
 
-void operator += (PsGames &dest, const PsGames &src);
+void operator+=(PsGames &dest, const PsGames &src);

@@ -17,7 +17,7 @@ PsObj::PsObj(string name1, string texPath) : gui(Gui::getInstance()), renderer(g
 //*******************************
 // PsObj::load
 //*******************************
-void PsObj::load(const string & imagePath) {
+void PsObj::load(const string &imagePath) {
     tex = ableem::Texture::loadFile(renderer, imagePath);
     ableem::Size size = tex.size();
     w = size.w;
@@ -30,8 +30,7 @@ void PsObj::load(const string & imagePath) {
 //*******************************
 // PsObj::destroy
 //*******************************
-void PsObj::destroy() {
-}
+void PsObj::destroy() {}
 
 //*******************************
 // PsObj::render

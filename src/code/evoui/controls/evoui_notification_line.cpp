@@ -7,11 +7,13 @@ using namespace std;
 //*******************************
 // NotificationLine::setText
 //*******************************
-void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds, const ableem::Color & _textColor, FontEnum _fontEnum) {
+void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds, const ableem::Color &_textColor,
+                               FontEnum _fontEnum) {
     text = _text;
     timed = (_timeLimitInMilliSeconds != 0);
-    notificationTime = Gui::getInstance()->platform().ticks();  // tick count when setText called
-    if (notificationTime == 0)  // if by chance it's 0.  0 flags that the timeLimit has been reached and to turn off the display
+    notificationTime = Gui::getInstance()->platform().ticks(); // tick count when setText called
+    if (notificationTime ==
+        0) // if by chance it's 0.  0 flags that the timeLimit has been reached and to turn off the display
         ++notificationTime;
     timeLimit = _timeLimitInMilliSeconds;
     textColor = _textColor;
@@ -34,19 +36,22 @@ void NotificationLine::tickTock() {
         if (notificationTime != 0) {
             long currentTimeTicks = gui->platform().ticks();
             if (currentTimeTicks - notificationTime > timeLimit) // if time limit reached
-                notificationTime = 0;   // turn off the display
+                notificationTime = 0;                            // turn off the display
         }
         if (notificationTime != 0)
-            gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER, true);
+            gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER,
+                                             true);
     } else // not timed - keep display on
-        gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER, true);
+        gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER,
+                                         true);
 }
 
 //*******************************
 // NotificationLines::createAndSetDefaults
 //*******************************
-void NotificationLines::createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight, int separationBetweenLines) {
-    for (int line=0; line < count; ++line) {
+void NotificationLines::createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight,
+                                             int separationBetweenLines) {
+    for (int line = 0; line < count; ++line) {
         NotificationLine notificationLine;
         notificationLine.fontEnum = fontEnum;
         notificationLine.textColor = brightWhite;
@@ -63,6 +68,6 @@ void NotificationLines::createAndSetDefaults(int count, int x_start, int y_start
 // NotificationLines::tickTock
 //*******************************
 void NotificationLines::tickTock() {
-    for (auto & line : lines)
+    for (auto &line : lines)
         line.tickTock();
 }

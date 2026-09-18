@@ -12,19 +12,21 @@ namespace ableem {
 //******************
 class MemcardManager {
 public:
-    explicit MemcardManager(const std::string &gamesDir) : gamesDir(gamesDir) { }
+    explicit MemcardManager(const std::string &gamesDir) : gamesDir(gamesDir) {}
 
-    void create(const std::string &name);                           // a fresh set from the blank template cards
+    void create(const std::string &name); // a fresh set from the blank template cards
     void remove(const std::string &name);
-    void rename(const std::string &oldName, const std::string &newName);   // also updates every Game.ini that used it
+    void rename(const std::string &oldName, const std::string &newName); // also updates every Game.ini that used it
     std::vector<std::string> list();
 
-    void backup(const std::string &gameSaveStatePath);              // memcards/ -> backup/ (once)
-    void restore(const std::string &gameSaveStatePath);             // backup/ -> memcards/, then removes backup/
-    void restoreAll(const std::string &saveStatesDir);              // restore() every game folder
-    bool swapIn(const std::string &gameSaveStatePath, const std::string &name);    // false if the set does not exist
-    void swapOut(const std::string &gameSaveStatePath, const std::string &name);   // copies the cards back into the set, then restore()
-    void storeToRepo(const std::string &memcardsPath, const std::string &name);    // copies a game's cards into a (new) set
+    void backup(const std::string &gameSaveStatePath);  // memcards/ -> backup/ (once)
+    void restore(const std::string &gameSaveStatePath); // backup/ -> memcards/, then removes backup/
+    void restoreAll(const std::string &saveStatesDir);  // restore() every game folder
+    bool swapIn(const std::string &gameSaveStatePath, const std::string &name); // false if the set does not exist
+    void swapOut(const std::string &gameSaveStatePath,
+                 const std::string &name); // copies the cards back into the set, then restore()
+    void storeToRepo(const std::string &memcardsPath,
+                     const std::string &name); // copies a game's cards into a (new) set
 
 private:
     std::string gamesDir;

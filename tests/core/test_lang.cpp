@@ -21,7 +21,7 @@ struct LangDir {
     LangDir() : tmp("lang") {
         tmp.makeSubDir("lang");
         tmp.writeFile("lang/Polish.txt", "Re/Scan\nSkanuj\nAbout\nO programie\n|@X| Select\n|@X| Wybierz\n");
-        tmp.writeFile("lang/German.txt", "\xEF\xBB\xBFRe/Scan\nNeu scannen\n");   // with a UTF-8 BOM
+        tmp.writeFile("lang/German.txt", "\xEF\xBB\xBFRe/Scan\nNeu scannen\n"); // with a UTF-8 BOM
         tmp.writeFile("lang/readme.md", "not a language");
     }
     string dir() const { return tmp.at("lang"); }
@@ -48,8 +48,8 @@ TEST_CASE("a loaded language translates the strings its file has and passes the 
     CHECK(lang.currentLanguage() == "Polish");
     CHECK(lang.translate("Re/Scan") == "Skanuj");
     CHECK(lang.translate("About") == "O programie");
-    CHECK(lang.translate("|@X| Select") == "|@X| Wybierz");   // the button markers travel with the string
-    CHECK(lang.translate("Options") == "Options");            // no translation: unchanged
+    CHECK(lang.translate("|@X| Select") == "|@X| Wybierz"); // the button markers travel with the string
+    CHECK(lang.translate("Options") == "Options");          // no translation: unchanged
     CHECK(lang.translate("") == "");
 }
 
@@ -70,7 +70,7 @@ TEST_CASE("a language with no file leaves everything untranslated rather than fa
 
 TEST_CASE("listLanguages is English first, then every other .txt in the directory, alphabetically") {
     LangDir d;
-    d.tmp.writeFile("lang/Czech.txt", "");     // written last, listed first: directory order is not the order
+    d.tmp.writeFile("lang/Czech.txt", ""); // written last, listed first: directory order is not the order
     vector<string> names = ableem::Lang::listLanguages(d.dir());
     REQUIRE(names.size() == 4);
     CHECK(names[0] == "English");
@@ -84,16 +84,16 @@ TEST_CASE("dumpUntranslated writes the strings a translator still has to do, in 
     ableem::Lang lang;
     lang.load(d.dir(), "Polish");
     lang.translate("Options");
-    lang.translate("Re/Scan");    // translated: not listed
+    lang.translate("Re/Scan"); // translated: not listed
     lang.translate("Memory Cards");
-    lang.translate("Options");    // seen again: listed once
+    lang.translate("Options"); // seen again: listed once
 
     REQUIRE(lang.dumpUntranslated(d.tmp.at("todo.txt")));
     string todo = d.tmp.readFile("todo.txt");
     // "English text=" lines under a comment header, ready to fill in
     CHECK(todo.find("Options=") < todo.find("Memory Cards="));
     CHECK(todo.find("Re/Scan") == string::npos);
-    CHECK(todo.find("Options=", todo.find("Options=") + 1) == string::npos);   // once
+    CHECK(todo.find("Options=", todo.find("Options=") + 1) == string::npos); // once
 }
 
 TEST_CASE("the Key=Value layout: comments, the first '=' splits, an empty value is untranslated") {
@@ -101,9 +101,9 @@ TEST_CASE("the Key=Value layout: comments, the first '=' splits, an empty value 
     d.tmp.writeFile("lang/Czech.txt",
                     "\xEF\xBB\xBF# AutoBleem Czech Translation\n# Format: English Text=Translated Text\n\n"
                     "Re/Scan=Znovu skenovat\n"
-                    "Year: =Rok: \n"                          // trailing space on either side is trimmed
-                    "a=b=c=x\n"                               // the first '=' is the delimiter
-                    "Memory Cards=\n"                         // no translation yet
+                    "Year: =Rok: \n"  // trailing space on either side is trimmed
+                    "a=b=c=x\n"       // the first '=' is the delimiter
+                    "Memory Cards=\n" // no translation yet
                     "|@lang|=8\n");
     ableem::Lang lang;
     lang.load(d.dir(), "Czech");

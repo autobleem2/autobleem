@@ -21,18 +21,18 @@ int process_stick_event(SDL_Event *originalEvent) {
     static int lastAxisPos[4];
     int axis = -1;
     switch (originalEvent->caxis.axis) {
-        case SDL_CONTROLLER_AXIS_LEFTX:
-            axis = 0;
-            break;
-        case SDL_CONTROLLER_AXIS_LEFTY:
-            axis = 1;
-            break;
-        case SDL_CONTROLLER_AXIS_RIGHTX:
-            axis = 2;
-            break;
-        case SDL_CONTROLLER_AXIS_RIGHTY:
-            axis = 3;
-            break;
+    case SDL_CONTROLLER_AXIS_LEFTX:
+        axis = 0;
+        break;
+    case SDL_CONTROLLER_AXIS_LEFTY:
+        axis = 1;
+        break;
+    case SDL_CONTROLLER_AXIS_RIGHTX:
+        axis = 2;
+        break;
+    case SDL_CONTROLLER_AXIS_RIGHTY:
+        axis = 3;
+        break;
     }
 
     if (axis != -1) {
@@ -44,23 +44,23 @@ int process_stick_event(SDL_Event *originalEvent) {
         int newEventType;
         if (switch_down_positive || switch_down_negative)
             newEventType = SDL_CONTROLLERBUTTONDOWN;
-        else newEventType = SDL_CONTROLLERBUTTONUP;
+        else
+            newEventType = SDL_CONTROLLERBUTTONUP;
         int newButton = -1;
-        if ((switch_down_positive || switch_up_positive)
-            && (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY ||
-                originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY))
+        if ((switch_down_positive || switch_up_positive) && (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY ||
+                                                             originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY))
             newButton = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
-        else if ((switch_down_negative || switch_up_negative)
-                 && (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY ||
-                     originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY))
+        else if ((switch_down_negative || switch_up_negative) &&
+                 (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTY ||
+                  originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY))
             newButton = SDL_CONTROLLER_BUTTON_DPAD_UP;
-        else if ((switch_down_positive || switch_up_positive)
-                 && (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ||
-                     originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX))
+        else if ((switch_down_positive || switch_up_positive) &&
+                 (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ||
+                  originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX))
             newButton = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
-        else if ((switch_down_negative || switch_up_negative)
-                 && (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ||
-                     originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX))
+        else if ((switch_down_negative || switch_up_negative) &&
+                 (originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_LEFTX ||
+                  originalEvent->caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX))
             newButton = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
         if (newButton != -1) {
             lastAxisPos[axis] = originalEvent->caxis.value;
@@ -71,10 +71,9 @@ int process_stick_event(SDL_Event *originalEvent) {
             goto out;
         }
 
-
         res = EVENT_NONE;
     }
-    out:
+out:
     return res;
 }
 
@@ -89,9 +88,9 @@ int process_trigger_event(SDL_Event *originalEvent, SDL_Event *ev) {
 
     if (trigger != -1) {
         int trigger_down =
-                (originalEvent->caxis.value > TRIGGER_DEADZONE) && (lastTriggerPos[trigger] < TRIGGER_DEADZONE);
+            (originalEvent->caxis.value > TRIGGER_DEADZONE) && (lastTriggerPos[trigger] < TRIGGER_DEADZONE);
         int trigger_up =
-                (originalEvent->caxis.value < TRIGGER_DEADZONE) && (lastTriggerPos[trigger] > TRIGGER_DEADZONE);
+            (originalEvent->caxis.value < TRIGGER_DEADZONE) && (lastTriggerPos[trigger] > TRIGGER_DEADZONE);
         if (trigger_down || trigger_up) {
             ev->type = trigger_down ? SDL_CONTROLLERBUTTONDOWN : SDL_CONTROLLERBUTTONUP;
             ev->cbutton.button = (trigger == TRIGGER_LEFT) ? SDL_BTN_L2 : SDL_BTN_R2;
@@ -101,7 +100,7 @@ int process_trigger_event(SDL_Event *originalEvent, SDL_Event *ev) {
         }
         res = EVENT_NONE;
     }
-    out:
+out:
     return res;
 }
 
@@ -112,7 +111,6 @@ void populate_dpad_event(SDL_Event *ev, SDL_Event *originalEvent, int type, int 
     ev->cbutton.state = (type == SDL_CONTROLLERHATMOTIONDOWN) ? SDL_PRESSED : SDL_RELEASED;
 }
 
-
 int playstation_event_filter(void *data, SDL_Event *originalEvent) {
     static SDL_Event instance;
     SDL_Event *ev = &instance;
@@ -122,18 +120,18 @@ int playstation_event_filter(void *data, SDL_Event *originalEvent) {
     // AutoInit GamecontrollerAPI
     if (originalEvent->type == SDL_WINDOWEVENT) {
         switch (originalEvent->window.event) {
-            case SDL_WINDOWEVENT_SHOWN:
-                SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
-                printf("First event\n");
-                break;
-            case SDL_WINDOWEVENT_CLOSE:
-                SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
-                break;
+        case SDL_WINDOWEVENT_SHOWN:
+            SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+            printf("First event\n");
+            break;
+        case SDL_WINDOWEVENT_CLOSE:
+            SDL_QuitSubSystem(SDL_INIT_GAMECONTROLLER);
+            break;
         }
     } else
         // L2/R2 simulation
-    if (originalEvent->type == SDL_CONTROLLERAXISMOTION) {
-        switch (originalEvent->caxis.axis) {
+        if (originalEvent->type == SDL_CONTROLLERAXISMOTION) {
+            switch (originalEvent->caxis.axis) {
             case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
             case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
                 res = process_trigger_event(originalEvent, ev);
@@ -152,38 +150,32 @@ int playstation_event_filter(void *data, SDL_Event *originalEvent) {
             default:
                 res = EVENT_ORIGINAL;
                 goto out;
+            }
         }
-    }
-    if ((originalEvent->type == SDL_CONTROLLERBUTTONUP) || (originalEvent->type == SDL_CONTROLLERBUTTONDOWN)
-        || (ev->type == SDL_CONTROLLERBUTTONDOWN) || (ev->type == SDL_CONTROLLERBUTTONDOWN)) {
+    if ((originalEvent->type == SDL_CONTROLLERBUTTONUP) || (originalEvent->type == SDL_CONTROLLERBUTTONDOWN) ||
+        (ev->type == SDL_CONTROLLERBUTTONDOWN) || (ev->type == SDL_CONTROLLERBUTTONDOWN)) {
         switch (originalEvent->cbutton.button) {
-            case SDL_CONTROLLER_BUTTON_DPAD_UP:
-            case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-            case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-            case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-                eventType = (originalEvent->type == SDL_CONTROLLERBUTTONDOWN) ? SDL_CONTROLLERHATMOTIONDOWN :
-                            SDL_CONTROLLERHATMOTIONUP;
-                populate_dpad_event(ev, originalEvent, eventType, originalEvent->cbutton.button);
-                res = EVENT_FILTERED;
-                goto out;
-
+        case SDL_CONTROLLER_BUTTON_DPAD_UP:
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+            eventType = (originalEvent->type == SDL_CONTROLLERBUTTONDOWN) ? SDL_CONTROLLERHATMOTIONDOWN
+                                                                          : SDL_CONTROLLERHATMOTIONUP;
+            populate_dpad_event(ev, originalEvent, eventType, originalEvent->cbutton.button);
+            res = EVENT_FILTERED;
+            goto out;
         }
         res = EVENT_ORIGINAL;
     }
 
-    out:
+out:
     switch (res) {
-        case EVENT_NONE:
-            return 0;
-        case EVENT_FILTERED:
-            memcpy(originalEvent, ev, sizeof(SDL_Event));
-            return 1;
-        default:
-            return 1;
+    case EVENT_NONE:
+        return 0;
+    case EVENT_FILTERED:
+        memcpy(originalEvent, ev, sizeof(SDL_Event));
+        return 1;
+    default:
+        return 1;
     }
 }
-
-
-
-
-

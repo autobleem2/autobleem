@@ -7,7 +7,7 @@ bool Env::autobleemKernel = false;
 bool Env::hiddenMenuEnabled = false;
 
 namespace {
-    vector<string> retroArchBinaries_{"retroarch"};
+vector<string> retroArchBinaries_{"retroarch"};
 }
 
 //*******************************
@@ -26,12 +26,17 @@ const char *Env::platformName() {
 //*******************************
 // Env:: RetroArch binaries
 //*******************************
-void Env::setRetroArchBinaries(const vector<string> &paths) { retroArchBinaries_ = paths; }
-const vector<string> &Env::retroArchBinaries() { return retroArchBinaries_; }
+void Env::setRetroArchBinaries(const vector<string> &paths) {
+    retroArchBinaries_ = paths;
+}
+const vector<string> &Env::retroArchBinaries() {
+    return retroArchBinaries_;
+}
 
 bool Env::retroArchInstalled() {
     for (const string &path : retroArchBinaries_) {
-        if (DirEntry::exists(path)) return true;
+        if (DirEntry::exists(path))
+            return true;
     }
     return false;
 }

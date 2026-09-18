@@ -33,14 +33,14 @@ public:
     void initPositions() { positions.initCoverPositions(); }
 
     std::vector<PsCarouselGame> games;
-    int selected = 0;   // index into `games`; -1 when there are none
+    int selected = 0; // index into `games`; -1 when there are none
     bool selectedIsValid() const { return selected >= 0 && selected < static_cast<int>(games.size()); }
     // move the selection one game along, wrapping; the caller starts the matching scroll animation
     void selectNext();
     void selectPrevious();
 
     int numberOfNonDuplicatedGames = 0;
-    bool scrolling = false;   // an animation is in progress; input that would start another waits
+    bool scrolling = false; // an animation is in progress; input that would start another waits
     PsCarousel positions;
 
     // places the covers around `selectedIndex` with no animation, loading and freeing textures to match

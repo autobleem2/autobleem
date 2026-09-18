@@ -19,8 +19,8 @@ public:
 
     void render();
 
-    void setText(const std::string & _text, ableem::Color _textColor);
+    void setText(const std::string &_text, ableem::Color _textColor);
 
-    PsCenterLabel(const std::string & name1, const std::string & texPath = "");
+    PsCenterLabel(const std::string &name1, const std::string &texPath = "");
     ~PsCenterLabel();
 };

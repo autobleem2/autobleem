@@ -42,7 +42,7 @@ static bool setupEnvironment(int argc, char *argv[]) {
         // the two args are the path to the regional.db file and the path to the /Games dir on the usb drive
         regionalDb = argv[1];
 #ifdef AB_ROOT_RELATIVE_LAYOUT
-        internalDb = "internal.db";   // it's in the same dir as the autobleem-gui app you are debugging
+        internalDb = "internal.db"; // it's in the same dir as the autobleem-gui app you are debugging
 #else
         internalDb = "/media/System/Databases/internal.db";
 #endif
@@ -69,7 +69,7 @@ static bool setupEnvironment(int argc, char *argv[]) {
     }
     Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
 #else
-    (void) singleArg;
+    (void)singleArg;
     Env::setSonyDataPath("/usr/sony/share/data");
     Env::setThemesDir("/media/themes");
     Env::setCoversDbDir("../db");
@@ -113,7 +113,8 @@ static int runAutobleem(int argc, char *argv[]) {
     // the first thing in a log anyone sends in: which build this is
     PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
               << Env::platformName();
-    for (int i = 0; i < argc; i++) PLOG_INFO << "  argv[" << i << "] = " << argv[i];
+    for (int i = 0; i < argc; i++)
+        PLOG_INFO << "  argv[" << i << "] = " << argv[i];
 
     AutoBleem app;
     return app.run();

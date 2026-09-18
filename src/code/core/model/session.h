@@ -34,7 +34,7 @@ struct Session {
     PsGamePtr runningGame;
     EmuMode emuMode = EmuMode::Pcsx;
     int resumePoint = -1;
-    bool resumingGui = false;   // true right after a game exits: skip the classic menu and reopen the carousel
+    bool resumingGui = false; // true right after a game exits: skip the classic menu and reopen the carousel
 
     // where the EvolutionUI carousel was, so Start brings it back to the same place.
     // GuiLauncher holds a copy of this and writes it back through GuiLauncher::rememberSelection().

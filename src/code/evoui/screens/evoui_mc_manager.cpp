@@ -37,7 +37,6 @@ void GuiMcManager::loadAssets() {
     pencilColumn = 0;
     pencilRow = 0;
     pencilMemcard = 1;
-
 }
 
 void GuiMcManager::pencilDown() {
@@ -57,7 +56,10 @@ void GuiMcManager::pencilLeft() {
         pencilColumn--;
     } else {
         pencilColumn = 2;
-        if (pencilMemcard == 1) pencilMemcard = 2; else pencilMemcard = 1;
+        if (pencilMemcard == 1)
+            pencilMemcard = 2;
+        else
+            pencilMemcard = 1;
     }
 }
 
@@ -66,10 +68,11 @@ void GuiMcManager::pencilRight() {
         pencilColumn++;
     } else {
         pencilColumn = 0;
-        if (pencilMemcard == 1) pencilMemcard = 2; else pencilMemcard = 1;
+        if (pencilMemcard == 1)
+            pencilMemcard = 2;
+        else
+            pencilMemcard = 1;
     }
-
-
 }
 
 void GuiMcManager::renderPencil(int memcard, int col, int row) {
@@ -85,10 +88,8 @@ void GuiMcManager::renderPencil(int memcard, int col, int row) {
     renderer.copy(mcPencil, nullptr, &pencilPos);
 }
 
-void GuiMcManager::trySave()
-{
-    if (changes)
-    {
+void GuiMcManager::trySave() {
+    if (changes) {
         GuiConfirm confirm(*gui);
         confirm.label = _("Do you want to save memcards data ?");
         confirm.show();
@@ -106,16 +107,11 @@ void GuiMcManager::renderStatic() {
     gui->renderBackground();
     gui->renderTextBar();
     gui->text().renderTextLine("-=" + _("Memory Card Manager") + "=-", 1, 1, XALIGN_CENTER);
-    gui->renderStatus(
-            "|@Start| " + _("Select Right Card") +
-            " | |@Select| " + _("Defragment Card") +
-            "   | " + "|@X| " + _("Reload Cards") +
-            "   | " + "|@T| " + _("Delete") +
-            " | " + "|@S| " + _("Copy") +
-            " | " + "|@O| " + _("Go back") +
-            "|");
+    gui->renderStatus("|@Start| " + _("Select Right Card") + " | |@Select| " + _("Defragment Card") + "   | " +
+                      "|@X| " + _("Reload Cards") + "   | " + "|@T| " + _("Delete") + " | " + "|@S| " + _("Copy") +
+                      " | " + "|@O| " + _("Go back") + "|");
 
-    //Draw dot matrix image
+    // Draw dot matrix image
     ableem::Rect input, output;
     ableem::Size gridSize = mcGrid.size();
     input.w = output.w = gridSize.w;
@@ -127,7 +123,6 @@ void GuiMcManager::renderStatic() {
     output.x = 940;
     output.y = 80;
     renderer.copy(mcGrid, &input, &output);
-
 }
 
 void GuiMcManager::renderMemCardIcons(int memcard) {
@@ -147,7 +142,6 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
         start = xStartMC2;
         currentCard = memcard2.get();
     }
-
 
     for (int i = 0; i < 15; i++) {
         int col = i % 3;
@@ -185,8 +179,6 @@ void GuiMcManager::renderMetaInfo() {
     gui->text().renderTextLine(gameID, 3, 1, XALIGN_CENTER, true);
     gui->text().renderTextLine(pCode, 4, 1, XALIGN_CENTER, true);
 
-
-
     gui->text().renderTextLine(leftCardName, -500, 1, XALIGN_LEFT, true);
     gui->text().renderTextLine(rightCardName, -500, 1, XALIGN_RIGHT, true);
 }
@@ -195,15 +187,14 @@ void GuiMcManager::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     // render static elements
     renderStatic();
-    //Draw Memcard images and meta info
+    // Draw Memcard images and meta info
     renderMemCardIcons(1);
     renderMemCardIcons(2);
     renderMetaInfo();
 
-    //Draw the pencil
+    // Draw the pencil
     renderPencil(pencilMemcard, pencilColumn, pencilRow);
     renderer.present();
-
 }
 
 void GuiMcManager::loop() {
@@ -218,170 +209,161 @@ void GuiMcManager::loop() {
                 menuVisible = false;
             }
             switch (e.type) {
-                case Event::Type::ButtonDown:
-                    if (e.button == Button::Circle) {
-                        app.audio().cancel.play();
-                        trySave();
-                        menuVisible = false;
-                    };
-                    if (e.button == Button::Cross) {
-                        app.audio().cursor.play();
-                        trySave();
-                        memcard1->load(card1path);
-                        memcard2->load(card2path);
-                        changes = false;
-                    };
-                    if (e.button == Button::Select) {
-                        app.audio().cursor.play();
-                        unique_ptr<CardEdit> newCard(new CardEdit(renderer));
-                        CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
-                        int last = 0;
-                        for (int slot = 0; slot < 15; slot++) {
-                            if (!src->image().isTop(slot))
-                            {
-                                continue;
-                            }
-                            int gameSize = src->image().gameSlots(slot).size();
-                            vector<int> destSlots = newCard->image().findEmptySlots(gameSize);
-
-                            if (destSlots.size() > 0)
-                            {
-                                app.audio().cursor.play();
-                                int exportSize = src->image().exportSize(slot);
-                                vector<unsigned char> buffer(exportSize);
-                                src->image().exportGame(slot,buffer.data());
-                                newCard->importGame(buffer.data(),exportSize);
-                                changes = true;
-
-                            }
-                        }
-                        // the compacted card replaces the old one (which is deleted by the unique_ptr)
-                        if (pencilMemcard == 1) {
-                            memcard1 = std::move(newCard);
-                        } else {
-                            memcard2 = std::move(newCard);
-                        }
-                    }
-
-                    if (e.button == Button::Start) {
-                        app.audio().cursor.play();
-                        trySave();
-                        GuiSelectMemcard select(*gui);
-                        select.listType=MC_MANAGER;
-                        select.show();
-                        if (select.selected!=-1)
-                        {
-                            if (select.selected==0) {
-                                rightCardName = rightCardName_ori;
-                                card2path = cardPath_ori;
-                                memcard2->load(card2path);
-                            } else
-                            {
-                                // this is custom
-                                int cardNumCustom=atoi(select.cardSelected.substr(1,1).c_str());
-                                string memcard = select.cardSelected.substr(4);
-                                string cardPath =  Env::getPathToMemCardsDir() + sep + memcard  + "/card" + to_string(cardNumCustom) + ".mcd";
-
-                                rightCardName = select.cardSelected;
-                                card2path = cardPath;
-                                PLOG_DEBUG << "Card:" << cardPath;
-                                memcard2->load(card2path);
-                            }
-                            changes = false;
-                        }
-                    }
-                    if (e.button == Button::Triangle) {
-                        CardEdit *card;
-                        if (pencilMemcard == 1) {
-                            card = memcard1.get();
-                        } else {
-                            card = memcard2.get();
-                        }
-                        int slot = pencilColumn + pencilRow * 3;
-                        if (!card->image().isTop(slot)) {
-                            app.audio().cancel.play();
-                            continue;
-                        }
-                        if (card->image().isFree(slot)) {
-                            app.audio().cursor.play();
-                            continue;
-                        }
-                        app.audio().cursor.play();
-                        card->deleteGame(slot);
-                        changes=true;
-
-
-                    };
-                    if (e.button == Button::Square) {
-                        CardEdit *src, *dest;
-                        if (pencilMemcard == 1) {
-                            src = memcard1.get();
-                            dest = memcard2.get();
-                        } else {
-                            src = memcard2.get();
-                            dest = memcard1.get();
-                        }
-                        int slot = pencilColumn + pencilRow * 3;
+            case Event::Type::ButtonDown:
+                if (e.button == Button::Circle) {
+                    app.audio().cancel.play();
+                    trySave();
+                    menuVisible = false;
+                };
+                if (e.button == Button::Cross) {
+                    app.audio().cursor.play();
+                    trySave();
+                    memcard1->load(card1path);
+                    memcard2->load(card2path);
+                    changes = false;
+                };
+                if (e.button == Button::Select) {
+                    app.audio().cursor.play();
+                    unique_ptr<CardEdit> newCard(new CardEdit(renderer));
+                    CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
+                    int last = 0;
+                    for (int slot = 0; slot < 15; slot++) {
                         if (!src->image().isTop(slot)) {
-                            app.audio().cancel.play();
                             continue;
                         }
-                        if (src->image().isFree(slot)) {
-                            app.audio().cursor.play();
-                            continue;
-                        }
-
                         int gameSize = src->image().gameSlots(slot).size();
-                        vector<int> destSlots = dest->image().findEmptySlots(gameSize);
+                        vector<int> destSlots = newCard->image().findEmptySlots(gameSize);
 
-                        if (destSlots.size() > 0)
-                        {
+                        if (destSlots.size() > 0) {
                             app.audio().cursor.play();
                             int exportSize = src->image().exportSize(slot);
                             vector<unsigned char> buffer(exportSize);
-                            src->image().exportGame(slot,buffer.data());
-                            dest->importGame(buffer.data(),exportSize);
+                            src->image().exportGame(slot, buffer.data());
+                            newCard->importGame(buffer.data(), exportSize);
                             changes = true;
-                        } else
-                        {
-                            app.audio().cancel.play();
                         }
-                    };
-                    break;
+                    }
+                    // the compacted card replaces the old one (which is deleted by the unique_ptr)
+                    if (pencilMemcard == 1) {
+                        memcard1 = std::move(newCard);
+                    } else {
+                        memcard2 = std::move(newCard);
+                    }
+                }
 
-                case Event::Type::DpadDown:  /* Handle Joystick Motion */
-                case Event::Type::DpadUp:
-                    if (gui->input().dpadCentered()) {
+                if (e.button == Button::Start) {
+                    app.audio().cursor.play();
+                    trySave();
+                    GuiSelectMemcard select(*gui);
+                    select.listType = MC_MANAGER;
+                    select.show();
+                    if (select.selected != -1) {
+                        if (select.selected == 0) {
+                            rightCardName = rightCardName_ori;
+                            card2path = cardPath_ori;
+                            memcard2->load(card2path);
+                        } else {
+                            // this is custom
+                            int cardNumCustom = atoi(select.cardSelected.substr(1, 1).c_str());
+                            string memcard = select.cardSelected.substr(4);
+                            string cardPath = Env::getPathToMemCardsDir() + sep + memcard + "/card" +
+                                              to_string(cardNumCustom) + ".mcd";
 
+                            rightCardName = select.cardSelected;
+                            card2path = cardPath;
+                            PLOG_DEBUG << "Card:" << cardPath;
+                            memcard2->load(card2path);
+                        }
+                        changes = false;
                     }
-                    if (gui->input().dpadLeft()) {
+                }
+                if (e.button == Button::Triangle) {
+                    CardEdit *card;
+                    if (pencilMemcard == 1) {
+                        card = memcard1.get();
+                    } else {
+                        card = memcard2.get();
+                    }
+                    int slot = pencilColumn + pencilRow * 3;
+                    if (!card->image().isTop(slot)) {
+                        app.audio().cancel.play();
+                        continue;
+                    }
+                    if (card->image().isFree(slot)) {
                         app.audio().cursor.play();
-                        pencilLeft();
+                        continue;
                     }
-                    if (gui->input().dpadRight()) {
+                    app.audio().cursor.play();
+                    card->deleteGame(slot);
+                    changes = true;
+                };
+                if (e.button == Button::Square) {
+                    CardEdit *src, *dest;
+                    if (pencilMemcard == 1) {
+                        src = memcard1.get();
+                        dest = memcard2.get();
+                    } else {
+                        src = memcard2.get();
+                        dest = memcard1.get();
+                    }
+                    int slot = pencilColumn + pencilRow * 3;
+                    if (!src->image().isTop(slot)) {
+                        app.audio().cancel.play();
+                        continue;
+                    }
+                    if (src->image().isFree(slot)) {
                         app.audio().cursor.play();
-                        pencilRight();
+                        continue;
                     }
-                    if (gui->input().dpadUp()) {
+
+                    int gameSize = src->image().gameSlots(slot).size();
+                    vector<int> destSlots = dest->image().findEmptySlots(gameSize);
+
+                    if (destSlots.size() > 0) {
                         app.audio().cursor.play();
-                        pencilUp();
+                        int exportSize = src->image().exportSize(slot);
+                        vector<unsigned char> buffer(exportSize);
+                        src->image().exportGame(slot, buffer.data());
+                        dest->importGame(buffer.data(), exportSize);
+                        changes = true;
+                    } else {
+                        app.audio().cancel.play();
                     }
-                    if (gui->input().dpadDown()) {
-                        app.audio().cursor.play();
-                        pencilDown();
-                    }
-                    break;
-                default:
-                    break;
+                };
+                break;
+
+            case Event::Type::DpadDown: /* Handle Joystick Motion */
+            case Event::Type::DpadUp:
+                if (gui->input().dpadCentered()) {
+                }
+                if (gui->input().dpadLeft()) {
+                    app.audio().cursor.play();
+                    pencilLeft();
+                }
+                if (gui->input().dpadRight()) {
+                    app.audio().cursor.play();
+                    pencilRight();
+                }
+                if (gui->input().dpadUp()) {
+                    app.audio().cursor.play();
+                    pencilUp();
+                }
+                if (gui->input().dpadDown()) {
+                    app.audio().cursor.play();
+                    pencilDown();
+                }
+                break;
+            default:
+                break;
             }
         }
         counter++;
         if (counter > 5) {
             animFrame++;
-            if (animFrame > 2) animFrame = 0;
+            if (animFrame > 2)
+                animFrame = 0;
             counter = 0;
         }
         render();
     }
 }
-

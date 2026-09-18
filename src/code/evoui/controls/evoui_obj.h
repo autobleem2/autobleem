@@ -30,7 +30,7 @@ public:
 
     PsObj(std::string name1, std::string texPath = "");
 
-    virtual void load(const std::string & imagePath);
+    virtual void load(const std::string &imagePath);
 
     virtual void destroy();
 

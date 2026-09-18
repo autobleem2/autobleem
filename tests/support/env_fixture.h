@@ -54,14 +54,16 @@ private:
     static Roots capture() {
         using E = ableem::Environment;
         return Roots{E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(),
-                     E::getPathToInternalDBFile(), E::getWorkingPath(), E::getSonyPath(),
-                     E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
+                     E::getPathToInternalDBFile(), E::getWorkingPath(), E::getSonyPath(), E::getPathToThemesDir(),
+                     E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
                      // an explicit override is kept as such; a derived one is "" so the derivation survives
                      E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "retroarch"
-                         ? std::string() : E::getPathToRetroarchDir(),
-                     E::getPathToRetroarchCoreFile() == E::getPathToRetroarchDir() + ableem::sep +
-                             "cores/km_pcsx_rearmed_neon_libretro.so"
-                         ? std::string() : E::getPathToRetroarchCoreFile(),
+                         ? std::string()
+                         : E::getPathToRetroarchDir(),
+                     E::getPathToRetroarchCoreFile() ==
+                             E::getPathToRetroarchDir() + ableem::sep + "cores/km_pcsx_rearmed_neon_libretro.so"
+                         ? std::string()
+                         : E::getPathToRetroarchCoreFile(),
                      ::Environment::retroArchBinaries()};
     }
 

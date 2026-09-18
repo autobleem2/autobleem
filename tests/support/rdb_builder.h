@@ -21,13 +21,13 @@ inline void appendU64BE(Bytes &out, uint64_t value) {
         out.push_back(static_cast<unsigned char>((value >> shift) & 0xff));
 }
 
-inline void appendString(Bytes &out, const std::string &value) {   // fixstr: up to 31 bytes
+inline void appendString(Bytes &out, const std::string &value) { // fixstr: up to 31 bytes
     REQUIRE(value.size() < 32u);
     out.push_back(static_cast<unsigned char>(0xa0 | value.size()));
     out.insert(out.end(), value.begin(), value.end());
 }
 
-inline void appendBin(Bytes &out, const std::string &value) {      // bin8 - how the real database stores serials
+inline void appendBin(Bytes &out, const std::string &value) { // bin8 - how the real database stores serials
     out.push_back(0xc4);
     out.push_back(static_cast<unsigned char>(value.size()));
     out.insert(out.end(), value.begin(), value.end());

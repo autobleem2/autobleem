@@ -14,7 +14,7 @@ public:
     void init() override;
 
     virtual std::string getTitle() override { return "-=" + _("Custom Memory Cards") + "=-"; }
-    virtual std::string getStatusLine() override;   // returns the status line at the bottom
+    virtual std::string getStatusLine() override; // returns the status line at the bottom
 
     void doCircle_Pressed() override;
     void doSquare_Pressed() override;

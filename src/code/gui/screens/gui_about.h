@@ -29,7 +29,7 @@ private:
     bool crossHeld = false;
     SurpriseGame game;
     SurpriseSprites sprites;
-    int savedHighScore = 0;   // mirrors config.ini's "surprisehighscore"; written back only when beaten
+    int savedHighScore = 0; // mirrors config.ini's "surprisehighscore"; written back only when beaten
 
     // the game always has some music: the theme's track is ducked to 50% if it was already playing, or -
     // when the theme/config has no music at all (a silent theme, or "nomusic") - this bundled track takes

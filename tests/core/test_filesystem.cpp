@@ -18,7 +18,8 @@ namespace {
 string lines(const TempDir &tmp, const string &relative) {
     string text = tmp.readFile(relative), out;
     for (char c : text) {
-        if (c != 13) out += c;   // CR
+        if (c != 13)
+            out += c; // CR
     }
     return out;
 }

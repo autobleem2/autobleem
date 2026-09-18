@@ -17,7 +17,7 @@ public:
     virtual ~GuiScreen() {}
 
     GuiBase &gui;
-    bool menuVisible = true;    // set this to false to exit the loop() here or your inherited loop()
+    bool menuVisible = true; // set this to false to exit the loop() here or your inherited loop()
 
     virtual void init() {}
     virtual void render() = 0;

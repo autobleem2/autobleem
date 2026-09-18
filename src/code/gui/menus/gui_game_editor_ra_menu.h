@@ -17,8 +17,8 @@ public:
     void init();
     void render();
     void loop();
-    PsGamePtr gameData;         // set by the caller before show()
-    bool changed = false;       // the flag was toggled - the caller reloads a Lightgun set
+    PsGamePtr gameData;   // set by the caller before show()
+    bool changed = false; // the flag was toggled - the caller reloads a Lightgun set
     using GuiScreen::GuiScreen;
     ableem::Texture cover;
 };

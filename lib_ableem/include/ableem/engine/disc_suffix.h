@@ -13,8 +13,8 @@ namespace ableem {
 // The keyword is matched case-insensitively and trailing whitespace is tolerated; base is the name
 // without the marker (and without the whitespace before it). Ported from AutoBleem-NG (engine/disc_suffix).
 struct DiscSuffix {
-    std::string base;   // the game's name without the disc marker
-    int disc = 0;       // the disc number, 0 when there is no marker
+    std::string base; // the game's name without the disc marker
+    int disc = 0;     // the disc number, 0 when there is no marker
 
     bool matched() const { return disc != 0; }
 

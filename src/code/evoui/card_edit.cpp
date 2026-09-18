@@ -61,12 +61,17 @@ void CardEdit::importGame(const uint8_t *buffer, int length) {
 // CardEdit::title
 //*******************************
 string CardEdit::title(int slot) const {
-    if (!image_.isUsed(slot)) return _("Free");
-    if (image_.isDeleted(slot)) return "(" + image_.title(slot) + ")";
+    if (!image_.isUsed(slot))
+        return _("Free");
+    if (image_.isDeleted(slot))
+        return "(" + image_.title(slot) + ")";
     switch (image_.blockType(slot)) {
-        case MemcardImage::BlockType::Link:    return _("Link Block");
-        case MemcardImage::BlockType::LinkEnd: return _("Link end Block");
-        default:                               return image_.title(slot);
+    case MemcardImage::BlockType::Link:
+        return _("Link Block");
+    case MemcardImage::BlockType::LinkEnd:
+        return _("Link end Block");
+    default:
+        return image_.title(slot);
     }
 }
 

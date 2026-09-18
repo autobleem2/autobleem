@@ -60,7 +60,8 @@ inline void initConsoleOnly(plog::Severity maxSeverity = ABLEEM_LOG_LEVEL) {
 // once, after initConsoleOnly(): the rolling file as well. logFile's directory must exist.
 inline void addFile(const std::string &logFile) {
     static plog::RollingFileAppender<Formatter> fileAppender(logFile.c_str(), 1024 * 1024, 3);
-    if (plog::get() != nullptr) plog::get()->addAppender(&fileAppender);
+    if (plog::get() != nullptr)
+        plog::get()->addAppender(&fileAppender);
 }
 
 // both at once
@@ -70,7 +71,8 @@ inline void init(const std::string &logFile, plog::Severity maxSeverity = ABLEEM
 }
 
 inline void setLevel(plog::Severity maxSeverity) {
-    if (plog::get() != nullptr) plog::get()->setMaxSeverity(maxSeverity);
+    if (plog::get() != nullptr)
+        plog::get()->setMaxSeverity(maxSeverity);
 }
 
 } // namespace Log

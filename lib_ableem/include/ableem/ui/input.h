@@ -15,8 +15,21 @@ class Platform;
 // PlayStation-style pad buttons. L2/R2 are reported as buttons (the library turns the analog trigger axes
 // into press/release events for you, as the original PSC event filter did).
 enum class Button {
-    None, Cross, Circle, Square, Triangle, Start, Select, L1, R1, L2, R2,
-    DpadUp, DpadDown, DpadLeft, DpadRight
+    None,
+    Cross,
+    Circle,
+    Square,
+    Triangle,
+    Start,
+    Select,
+    L1,
+    R1,
+    L2,
+    R2,
+    DpadUp,
+    DpadDown,
+    DpadLeft,
+    DpadRight
 };
 
 //******************
@@ -25,7 +38,21 @@ enum class Button {
 // Keyboard keys the app cares about (menus, the on-screen keyboard, dev-host debugging). Anything else comes
 // through as Key::Other.
 enum class Key {
-    Other, Escape, Return, Up, Down, Left, Right, PageUp, PageDown, Home, End, Tab, Backspace, Delete, Sleep
+    Other,
+    Escape,
+    Return,
+    Up,
+    Down,
+    Left,
+    Right,
+    PageUp,
+    PageDown,
+    Home,
+    End,
+    Tab,
+    Backspace,
+    Delete,
+    Sleep
 };
 
 //******************
@@ -33,13 +60,23 @@ enum class Key {
 //******************
 struct Event {
     enum class Type {
-        None, Quit, ButtonDown, ButtonUp, DpadDown, DpadUp, KeyDown, KeyUp, TextInput,
-        PadAdded, PadRemoved, RenderReset
+        None,
+        Quit,
+        ButtonDown,
+        ButtonUp,
+        DpadDown,
+        DpadUp,
+        KeyDown,
+        KeyUp,
+        TextInput,
+        PadAdded,
+        PadRemoved,
+        RenderReset
     };
     Type type = Type::None;
-    Button button = Button::None;  // valid for ButtonDown/Up, DpadDown/Up
-    Key key = Key::Other;          // valid for KeyDown/Up
-    std::string text;              // valid for TextInput (a UTF-8 chunk of typed text)
+    Button button = Button::None; // valid for ButtonDown/Up, DpadDown/Up
+    Key key = Key::Other;         // valid for KeyDown/Up
+    std::string text;             // valid for TextInput (a UTF-8 chunk of typed text)
 };
 
 //******************
@@ -93,8 +130,8 @@ public:
     // puts the PSC event filter back: SDL drops it when its events subsystem is quit, which happens when the
     // video and pad subsystems are both released around an emulator run (GuiBase::acquireDisplay() calls it)
     void reinstallEventFilter();
-    void probePads();  // (re)opens the joystick/game controller subsystem and registers already-connected pads
-    void flushPads();  // closes every open pad (e.g. before handing control to another program)
+    void probePads(); // (re)opens the joystick/game controller subsystem and registers already-connected pads
+    void flushPads(); // closes every open pad (e.g. before handing control to another program)
     int activePadCount() const;
     int joystickCount() const; // SDL_NumJoysticks(), including devices that are not recognized as game controllers
     std::vector<PadInfo> pads() const;

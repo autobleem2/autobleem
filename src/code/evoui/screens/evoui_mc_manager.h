@@ -33,9 +33,10 @@ public:
     void trySave();
 
     bool changes = false;
+
 private:
     int counter = 0;
-    int animFrame=0;
+    int animFrame = 0;
     ableem::Font fontJIS;
     void renderStatic();
     void renderPencil(int memcard, int row, int column);

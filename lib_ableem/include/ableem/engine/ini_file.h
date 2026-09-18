@@ -25,16 +25,16 @@ namespace ableem {
 //
 class IniFile {
 public:
-    std::string section = "";                    // example: "Game" (from [Game] above)
-    std::string path = "";                       // example: "/media/Games/Racing/007 Racing (USA)/Game.ini"
-    std::string entry = "";                      // example: "007 Racing (USA)"
-    std::map<std::string, std::string> values;   // see example data above
+    std::string section = "";                  // example: "Game" (from [Game] above)
+    std::string path = "";                     // example: "/media/Games/Racing/007 Racing (USA)/Game.ini"
+    std::string entry = "";                    // example: "007 Racing (USA)"
+    std::map<std::string, std::string> values; // see example data above
 
-    void load(const std::string &path);          // adds to / overwrites whatever is already in values
-    void reload(const std::string &path);        // clears values first
-    void mergeFrom(const std::string &path);     // load() spelled out: existing keys are overwritten, new ones appended
+    void load(const std::string &path);      // adds to / overwrites whatever is already in values
+    void reload(const std::string &path);    // clears values first
+    void mergeFrom(const std::string &path); // load() spelled out: existing keys are overwritten, new ones appended
 
-    void save(const std::string &path);          // keys are written Capitalized
+    void save(const std::string &path); // keys are written Capitalized
     void print();
 };
 

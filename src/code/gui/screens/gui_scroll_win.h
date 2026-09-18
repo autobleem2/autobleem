@@ -11,17 +11,17 @@
 //********************
 // GuiScrollWin
 //********************
-class GuiScrollWin : public GuiScreen{
+class GuiScrollWin : public GuiScreen {
 public:
-    void init();    // call this from your init()
-    void render();  // call this from your render()
-    //void loop();  // not used in this class.  base GuiScreen::show() will call virtual loop() in your class.
+    void init();   // call this from your init()
+    void render(); // call this from your render()
+    // void loop();  // not used in this class.  base GuiScreen::show() will call virtual loop() in your class.
 
     shared_ptr<Gui> gui;
 
     int maxLines = 18;
     std::vector<std::string> lines;
-    bool alsoLog = false;   // every line shown is also logged
+    bool alsoLog = false; // every line shown is also logged
 
     void appendLine(const std::string str);
 

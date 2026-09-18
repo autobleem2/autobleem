@@ -48,7 +48,7 @@ public:
     Config &config() { return cfg_; }
     Theme &theme() { return theme_; }
     Clock &clock() { return clock_; }
-    AppAudio &audio() { return *audio_; }   // the music/sfx, not gui->audio()'s mixer device
+    AppAudio &audio() { return *audio_; } // the music/sfx, not gui->audio()'s mixer device
     ableem::GameLibrary &library() { return gameLibrary; }
     GameQueryService &gameQuery() { return gameQuery_; }
     GameCatalogService &gameCatalog() { return gameCatalog_; }
@@ -70,14 +70,14 @@ protected:
     // declaration order is construction order: config.ini is read before the Theme that names its
     // directory, and both before the Gui, whose constructor already needs the theme's font path.
     Config cfg_;
-    Lang lang_;   // registered as the one _() consults, before anything can call _()
+    Lang lang_; // registered as the one _() consults, before anything can call _()
     Theme theme_{cfg_};
     Clock clock_{cfg_};
     std::shared_ptr<Gui> gui_;
-    std::unique_ptr<AppAudio> audio_;   // needs the Gui's mixer device, so it is built in the constructor body
+    std::unique_ptr<AppAudio> audio_; // needs the Gui's mixer device, so it is built in the constructor body
     ableem::GameLibrary gameLibrary;
     Session session_;
-    GameQueryService gameQuery_{gameLibrary, cfg_};   // after gameLibrary: it holds a reference
+    GameQueryService gameQuery_{gameLibrary, cfg_}; // after gameLibrary: it holds a reference
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     GameSettingsService gameSettings_{gameLibrary};
     LightgunService lightguns_{gameLibrary};

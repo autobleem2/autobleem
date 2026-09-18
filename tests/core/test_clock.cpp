@@ -55,8 +55,8 @@ TEST_CASE("without a configured format the default one is used, and a passed for
 
 TEST_CASE("a time the console could not have known is shown as nothing") {
     ClockWith c("");
-    CHECK(c.clock->displayTime(0) == "");                           // never played
-    CHECK(c.clock->displayTime(localNoon(1970, 1, 2)) == "");       // the clock was never set: still 1970
-    CHECK(c.clock->displayTime(localNoon(2019, 12, 31)) == "");     // before the cut-off
+    CHECK(c.clock->displayTime(0) == "");                       // never played
+    CHECK(c.clock->displayTime(localNoon(1970, 1, 2)) == "");   // the clock was never set: still 1970
+    CHECK(c.clock->displayTime(localNoon(2019, 12, 31)) == ""); // before the cut-off
     CHECK(c.clock->displayTime(localNoon(2020, 1, 1), "%Y") == "2020");
 }

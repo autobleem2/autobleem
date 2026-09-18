@@ -5,24 +5,21 @@ using namespace std;
 //*******************************
 // void GuiOptionsMenuBase::init()
 //*******************************
-void GuiOptionsMenuBase::init()
-{
+void GuiOptionsMenuBase::init() {
     GuiMenuBase<OptionsInfo>::init();
 }
 
 //*******************************
 // void GuiOptionsMenuBase::getBooleanSymbolText
 //*******************************
-std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo& info, const std::string& value) {
-    if (info.choices[0] == "true")
-    {
+std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo &info, const std::string &value) {
+    if (info.choices[0] == "true") {
         // the boolean is reversed
         if (value == "true")
             return "|@Uncheck|";
         else
             return "|@Check|";
-    }
-    else {
+    } else {
         // boolean is normal
         if (value == "true")
             return "|@Check|";
@@ -34,14 +31,13 @@ std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo& info, co
 //*******************************
 // void GuiOptionsMenuBase::getLineText
 //*******************************
-std::string GuiOptionsMenuBase::getLineText(const OptionsInfo& info) {
+std::string GuiOptionsMenuBase::getLineText(const OptionsInfo &info) {
     std::string temp = app.lang().translate(info.descriptionToTranslate) + " ";
     auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);
-    }
-    else {
-        temp += value;  // append the current text value in the options list
+    } else {
+        temp += value; // append the current text value in the options list
     }
     return temp;
 }
@@ -74,8 +70,8 @@ unsigned int GuiOptionsMenuBase::getChoicesSize() {
 //*******************************
 // void GuiOptionsMenuBase::getCurrentOptionIndex()
 //*******************************
-unsigned int GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo& info, const std::string & current) {
-    const vector<string>& list = info.choices;
+unsigned int GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo &info, const std::string &current) {
+    const vector<string> &list = info.choices;
     // find current position
     int pos = 0;
     for (int i = 0; i < list.size(); i++) {
@@ -91,8 +87,8 @@ unsigned int GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo& info, const 
 //*******************************
 // void GuiOptionsMenuBase::getPrevNextOption()
 //*******************************
-std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo& info, const std::string & current, bool next) {
-    const vector<string>& list = info.choices;
+std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo &info, const std::string &current, bool next) {
+    const vector<string> &list = info.choices;
     // find current position
     int pos = 0;
     for (int i = 0; i < list.size(); i++) {
@@ -108,7 +104,8 @@ std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo& info, const std::
         }
     } else {
         pos--;
-        if (pos < 0) pos = 0;
+        if (pos < 0)
+            pos = 0;
     }
 
     return list[pos];
@@ -117,7 +114,7 @@ std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo& info, const std::
 //*******************************
 // void GuiOptionsMenuBase::doPrevNextOption()
 //*******************************
-string GuiOptionsMenuBase::doPrevNextOption(OptionsInfo& info, bool next) {
+string GuiOptionsMenuBase::doPrevNextOption(OptionsInfo &info, bool next) {
     string nextValue = getPrevNextOption(info, app.config().inifile.values[info.iniKey], next);
     app.config().inifile.values[info.iniKey] = nextValue;
     return nextValue;
@@ -138,15 +135,14 @@ std::string GuiOptionsMenuBase::doPrevNextOption(bool next) {
 //*******************************
 string GuiOptionsMenuBase::doOptionIndex(unsigned int index) {
     if (validSelectedIndex()) {
-        auto & choices = lines[selected].choices;
+        auto &choices = lines[selected].choices;
         if (choices.size() > 0 && index < choices.size()) {
             string nextValue = choices[index];
             app.config().inifile.values[lines[selected].iniKey] = nextValue;
             return nextValue;
         } else
-            return "";  // index is not within range
-    }
-    else
+            return ""; // index is not within range
+    } else
         return "";
 }
 
@@ -162,13 +158,12 @@ string GuiOptionsMenuBase::doFirstOption() {
 //*******************************
 string GuiOptionsMenuBase::doLastOption() {
     if (validSelectedIndex()) {
-        auto & choices = lines[selected].choices;
+        auto &choices = lines[selected].choices;
         if (choices.size() > 0) {
-            return doOptionIndex(choices.size()-1);
+            return doOptionIndex(choices.size() - 1);
         } else
-            return "";  // index is not within range
-    }
-    else
+            return ""; // index is not within range
+    } else
         return "";
 }
 
@@ -192,7 +187,7 @@ int GuiOptionsMenuBase::computeAmountTomoveBy(unsigned int totalSize) {
 // void GuiOptionsMenuBase::doL1_Pressed()
 //*******************************
 void GuiOptionsMenuBase::doL1_Pressed() {
-        do {
+    do {
         int size = getChoicesSize();
         if (size > 0) {
             auto &info = lines[selected];
@@ -203,7 +198,7 @@ void GuiOptionsMenuBase::doL1_Pressed() {
             else
                 doOptionIndex(index);
         }
-    render();
+        render();
     } while (fastForwardUntilAnotherEvent());
 }
 
@@ -222,7 +217,7 @@ void GuiOptionsMenuBase::doR1_Pressed() {
             else
                 doOptionIndex(index);
         }
-    render();
+        render();
     } while (fastForwardUntilAnotherEvent());
 }
 

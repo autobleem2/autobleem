@@ -15,7 +15,7 @@ namespace ableem {
 //*******************************
 MetadataLookup::MetadataLookup(const string &coversDir, const string &rdbFile) : covers_(coversDir) {
     if (DirEntry::exists(rdbFile)) {
-        rdb_.open(rdbFile);   // logs what it found, or why not
+        rdb_.open(rdbFile); // logs what it found, or why not
     } else {
         PLOG_INFO << "rdb: no " << rdbFile << " - game metadata comes from the covers databases only";
     }
@@ -39,18 +39,25 @@ string MetadataLookup::cleanTitle(const string &name) {
 // MetadataLookup::regionLetter
 //*******************************
 string MetadataLookup::regionLetter(const string &rdbRegion, const string &serial) {
-    if (rdbRegion == "Japan") return "J";
-    if (rdbRegion == "USA") return "U";
-    if (rdbRegion == "Europe") return "P";
+    if (rdbRegion == "Japan")
+        return "J";
+    if (rdbRegion == "USA")
+        return "U";
+    if (rdbRegion == "Europe")
+        return "P";
     // the PAL countries the database names individually
-    static const char *const pal[] = {"Australia", "France", "Germany", "Italy", "Spain", "Sweden", "Netherlands",
-                                      "Norway", "Finland", "Denmark", "Portugal", "Russia", "Poland", "Greece", "UK"};
+    static const char *const pal[] = {"Australia", "France",      "Germany", "Italy",   "Spain",
+                                      "Sweden",    "Netherlands", "Norway",  "Finland", "Denmark",
+                                      "Portugal",  "Russia",      "Poland",  "Greece",  "UK"};
     for (const char *r : pal) {
-        if (rdbRegion == r) return "P";
+        if (rdbRegion == r)
+            return "P";
     }
     string fromSerial = SerialScanner::serialToRegion(serial);
-    if (fromSerial == "Japan") return "J";
-    if (fromSerial == "Europe-Aus") return "P";
+    if (fromSerial == "Japan")
+        return "J";
+    if (fromSerial == "Europe-Aus")
+        return "P";
     return "U";
 }
 
@@ -64,7 +71,7 @@ bool MetadataLookup::fromRecord(const RdbReader::Record &rec, const string &seri
     Strings::cleanPublisherString(md.publisher);
     md.year = rec.releaseyear;
     md.players = rec.users > 0 ? rec.users : 1;
-    md.serial = serial.empty() ? rec.serial : serial;   // what the disc says, not the database's suffixed form
+    md.serial = serial.empty() ? rec.serial : serial; // what the disc says, not the database's suffixed form
     md.region = SerialScanner::serialToRegion(md.serial);
     md.lastRegion = regionLetter(rec.region, md.serial);
     md.bytes.clear();

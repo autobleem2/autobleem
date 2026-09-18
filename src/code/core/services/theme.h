@@ -31,7 +31,7 @@ public:
     // "default" and writes that back to config.ini.
     void load();
 
-    std::string path();          // <themes>/<name>, or <themes>/default when there is no such folder
+    std::string path(); // <themes>/<name>, or <themes>/default when there is no such folder
 
     // the merged, resolved theme. Every file field is an absolute path or "" (no theme has that file).
     const ThemeSpec &spec() const { return spec_; }

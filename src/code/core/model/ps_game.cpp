@@ -24,6 +24,6 @@ PsGames PsGame::fromRecords(const ableem::GameRecords &records) {
 //*******************************
 // PsGames += PsGames
 //*******************************
-void operator += (PsGames &dest, const PsGames &src) {
+void operator+=(PsGames &dest, const PsGames &src) {
     copy(begin(src), end(src), back_inserter(dest));
 }

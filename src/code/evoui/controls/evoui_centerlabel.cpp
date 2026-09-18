@@ -9,15 +9,12 @@ using namespace std;
 //*******************************
 // PsCenterLabel::PsCenterLabel
 //*******************************
-PsCenterLabel::PsCenterLabel(const string & name1, const string & texPath) : PsObj(name1, "")
-{
-}
+PsCenterLabel::PsCenterLabel(const string &name1, const string &texPath) : PsObj(name1, "") {}
 
 //*******************************
 // PsCenterLabel::setText
 //*******************************
-void PsCenterLabel::setText(const string & _text, ableem::Color _textColor)
-{
+void PsCenterLabel::setText(const string &_text, ableem::Color _textColor) {
     text = _text;
     textColor = _textColor;
     textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
@@ -29,19 +26,17 @@ void PsCenterLabel::setText(const string & _text, ableem::Color _textColor)
 //*******************************
 // PsCenterLabel::~PsCenterLabel
 //*******************************
-PsCenterLabel::~PsCenterLabel()
-{
-}
+PsCenterLabel::~PsCenterLabel() {}
 
 //*******************************
 // PsCenterLabel::render
 //*******************************
-void PsCenterLabel::render()
-{
+void PsCenterLabel::render() {
     if (visible) {
         // a header or a hint wider than the screen (a long translation) shrinks rather than runs off
         if (textSize.w > SCREEN_WIDTH - 20) {
-            gui->text().renderFittedText_WithColor(FONT_MED, 28, 14, text, x, y, SCREEN_WIDTH - 20, textColor, XALIGN_CENTER);
+            gui->text().renderFittedText_WithColor(FONT_MED, 28, 14, text, x, y, SCREEN_WIDTH - 20, textColor,
+                                                   XALIGN_CENTER);
         } else {
             gui->text().renderText_WithColor(font, text, x, y, textColor, XALIGN_CENTER);
         }

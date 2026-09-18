@@ -22,6 +22,6 @@ public:
 
 private:
     static std::unique_ptr<ProcessRunner> makeProcessRunner();
-    bool openLibrary();                                                   // covers dir + regional.db + internal.db
-    void launchGame();                                                    // the MENU_OPTION_START handling
+    bool openLibrary(); // covers dir + regional.db + internal.db
+    void launchGame();  // the MENU_OPTION_START handling
 };

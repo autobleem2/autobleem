@@ -17,7 +17,6 @@ using namespace std;
 
 const ableem::Color brightWhite = {255, 255, 255, 255};
 
-
 //*******************************
 // GuiLauncher::updateMeta
 //*******************************
@@ -25,22 +24,22 @@ const ableem::Color brightWhite = {255, 255, 255, 255};
 void GuiLauncher::updateMeta() {
     if (carousel.games.empty()) {
         gameName = "";
-        bool internal {false};
-        bool hd {false};
-        bool locked {false};
-        bool discs {0};
-        bool favorite {false};
-        bool play_using_ra {false};
-        bool foreign {false};
-        bool app {false};
-        string last_played {""};
+        bool internal{false};
+        bool hd{false};
+        bool locked{false};
+        bool discs{0};
+        bool favorite{false};
+        bool play_using_ra{false};
+        bool foreign{false};
+        bool app{false};
+        string last_played{""};
         meta->updateTexts(gameName, publisher, year, serial, region, players, internal, hd, locked, discs, favorite,
-                          foreign,play_using_ra, app, last_played, fgColor);
+                          foreign, play_using_ra, app, last_played, fgColor);
         return;
     }
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
-    showOptions();   // a mixed set (Lightgun) changes game type as the carousel moves
+    showOptions(); // a mixed set (Lightgun) changes game type as the carousel moves
     loadSnap();
 }
 
@@ -57,11 +56,13 @@ void GuiLauncher::loadSnap() {
         return;
     }
     const PsGame &game = *carousel.games[carousel.selected];
-    if (snapForGameId == game.gameId && snapForInternal == game.internal && snapTex.valid()) return;
+    if (snapForGameId == game.gameId && snapForInternal == game.internal && snapTex.valid())
+        return;
     snapForGameId = game.gameId;
     snapForInternal = game.internal;
     snapTex = ableem::Texture();
-    if (game.app) return;
+    if (game.app)
+        return;
 
     string path = game.snapPath;
     if (path.empty() || !DirEntry::exists(path)) {
@@ -80,12 +81,14 @@ void GuiLauncher::loadSnap() {
 //*******************************
 void GuiLauncher::renderSnap() {
     const ableem::ThemeRect &panel = app.theme().launcher().snapPanel;
-    if (!panel.set || !snapTex.valid()) return;
+    if (!panel.set || !snapTex.valid())
+        return;
     ableem::Size s = snapTex.size();
-    if (s.w <= 0 || s.h <= 0) return;
+    if (s.w <= 0 || s.h <= 0)
+        return;
     // aspect-fit inside the panel, centred
     ableem::Rect dst;
-    if (s.w * panel.h > s.h * panel.w) {   // wider than the panel
+    if (s.w * panel.h > s.h * panel.w) { // wider than the panel
         dst.w = panel.w;
         dst.h = panel.w * s.h / s.w;
     } else {
@@ -128,7 +131,7 @@ void GuiLauncher::rememberSelection() {
 //*******************************
 // GuiLauncher::switchSet
 //*******************************
-void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newSet is not used.  probably not the intent.
+void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet is not used.  probably not the intent.
     PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
     PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set
@@ -148,17 +151,12 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newS
 // GuiLauncher::showSetName
 //*******************************
 void GuiLauncher::showSetName() {
-    vector<string> setNames = {  "Showing: PS1 games",      // this is a dummy entry. setPS1SubStateNames is used.
-                               _("Showing: Retroarch") + " ",
-                               _("Showing: Lightgun Games") + " ",
-                               _("Showing: Apps") + " "
-    };
-    vector<string> setPS1SubStateNames = {_("Showing: All Games") + " ",
-                                          _("Showing: Internal Games") + " ",
-                                          _("Showing: Favorite Games") + " ",
-                                          _("Showing: Game History") + " ",
-                                          _("Showing: USB Games Directory:") + " "
-    };
+    vector<string> setNames = {"Showing: PS1 games", // this is a dummy entry. setPS1SubStateNames is used.
+                               _("Showing: Retroarch") + " ", _("Showing: Lightgun Games") + " ",
+                               _("Showing: Apps") + " "};
+    vector<string> setPS1SubStateNames = {_("Showing: All Games") + " ", _("Showing: Internal Games") + " ",
+                                          _("Showing: Favorite Games") + " ", _("Showing: Game History") + " ",
+                                          _("Showing: USB Games Directory:") + " "};
     assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
     assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
@@ -220,23 +218,23 @@ void GuiLauncher::reloadGames() {
 // the screen - the same wording SplashScanProgress used to put on the splash for a blocking scan.
 string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
     switch (update.stage) {
-        case ScanStage::Scanning:
-            return _("Scanning...");
-        case ScanStage::Game: {
-            int percent = update.total > 0 ? (update.done * 100 / update.total) : 0;
-            return _("Scanning") + " " + to_string(update.done) + "/" + to_string(update.total) +
-                   " (" + to_string(percent) + "%): " + update.detail;
-        }
-        case ScanStage::DecompressingEcm:
-            return update.detail.empty() ? _("Decompressing ecm:") : update.detail;
-        case ScanStage::UpdatingDatabase:
-            return _("Updating regional.db...");
-        case ScanStage::GameFailedVerify:
-            return _("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.detail);
-        case ScanStage::MovingFile:
-            return _("Moving :") + " " + update.detail;
-        case ScanStage::MergingDiscs:
-            return _("Merging discs:") + " " + update.detail;
+    case ScanStage::Scanning:
+        return _("Scanning...");
+    case ScanStage::Game: {
+        int percent = update.total > 0 ? (update.done * 100 / update.total) : 0;
+        return _("Scanning") + " " + to_string(update.done) + "/" + to_string(update.total) + " (" +
+               to_string(percent) + "%): " + update.detail;
+    }
+    case ScanStage::DecompressingEcm:
+        return update.detail.empty() ? _("Decompressing ecm:") : update.detail;
+    case ScanStage::UpdatingDatabase:
+        return _("Updating regional.db...");
+    case ScanStage::GameFailedVerify:
+        return _("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.detail);
+    case ScanStage::MovingFile:
+        return _("Moving :") + " " + update.detail;
+    case ScanStage::MergingDiscs:
+        return _("Merging discs:") + " " + update.detail;
     }
     return "";
 }
@@ -250,11 +248,12 @@ string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
 // settled correctly, so reusing it here is both simpler and safer than a second code path for the same job.
 void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     if (update.progressed) {
-        scanStatusLine.setText(scanStatusText(update), 0);   // 0 = no timeout: stays up while scanning
+        scanStatusLine.setText(scanStatusText(update), 0); // 0 = no timeout: stays up while scanning
     }
 
     if (!update.lastFailedGamePath.empty()) {
-        notificationLines[1].setText(_("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.lastFailedGamePath),
+        notificationLines[1].setText(_("Game failed to verify:") + " " +
+                                         DirEntry::getFileNameFromPath(update.lastFailedGamePath),
                                      DefaultShowingTimeout);
     }
 
@@ -266,7 +265,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
         scanStatusLine.setText(text, DefaultShowingTimeout);
-        scanRosterChangedSinceReload = true;   // sub-dir rows and cross-folder duplicates only settle once done
+        scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
     }
 
     // PS1/USB is the only set a games-directory scan can affect; leave RetroArch/Apps alone, and never
@@ -292,7 +291,7 @@ void GuiLauncher::loadAssets() {
 
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)
-        selection.ps1SelectState = Ps1SelectState::AllGames;   // see rememberSelection()
+        selection.ps1SelectState = Ps1SelectState::AllGames; // see rememberSelection()
     if (selection.raPlaylistIndex < raPlaylists.size())
         selection.raPlaylistName = raPlaylists[selection.raPlaylistIndex];
     // also into the Session directly: rememberSelection() only runs when a game starts, and leaving the
@@ -312,8 +311,10 @@ void GuiLauncher::loadAssets() {
     }
 
     const LauncherTheme &theme = app.theme().launcher();
-    if (theme.colors.text.set) fgColor = TextRenderer::toColor(theme.colors.text, 255);
-    if (theme.colors.secondary.set) secColor = TextRenderer::toColor(theme.colors.secondary, 255);
+    if (theme.colors.text.set)
+        fgColor = TextRenderer::toColor(theme.colors.text, 255);
+    if (theme.colors.secondary.set)
+        secColor = TextRenderer::toColor(theme.colors.secondary, 255);
     hintColor = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secColor;
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
@@ -325,7 +326,7 @@ void GuiLauncher::loadAssets() {
     scanStatusLine.textColor = brightWhite;
     scanStatusLine.text = "";
     scanStatusLine.timed = true;
-    scanStatusLine.notificationTime = 0;   // nothing to show until the first ScanUpdate arrives
+    scanStatusLine.notificationTime = 0; // nothing to show until the first ScanUpdate arrives
     scanRosterChangedSinceReload = false;
 
     fadeAlpha = 255;
@@ -334,8 +335,8 @@ void GuiLauncher::loadAssets() {
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
     if (gui->input().joystickCount() > gui->input().activePadCount()) {
         notificationLines[1].setText(
-                _("NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup."),
-                10 * TicksPerSecond);
+            _("NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup."),
+            10 * TicksPerSecond);
     }
 
     staticElements.clear();
@@ -359,8 +360,8 @@ void GuiLauncher::loadAssets() {
 
     PLOG_DEBUG << "Loading theme and creating objects";
     staticMeta = !theme.metaPanelSlides;
-    textShadow = !theme.textShadow.set || theme.textShadow;   // a theme has to say no
-    background =addStaticElement(new PsObj("background", theme.background));
+    textShadow = !theme.textShadow.set || theme.textShadow; // a theme has to say no
+    background = addStaticElement(new PsObj("background", theme.background));
     background->x = 0;
     background->y = 0;
     background->visible = true;
@@ -394,18 +395,17 @@ void GuiLauncher::loadAssets() {
     if (carousel.selected != -1 && carousel.selectedIsValid()) {
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
     } else {
-        bool internal {false};
-        bool hd {false};
-        bool locked {false};
-        bool discs {0};
-        bool favorite {false};
-        bool play_using_ra {false};
-        bool foreign {false};
-        bool app {false};
-        string last_played {""};
-        meta->updateTexts(gameName, publisher, year, serial, region, players,
-                          internal, hd, locked, discs, favorite, play_using_ra, foreign, app, last_played,
-                          fgColor);
+        bool internal{false};
+        bool hd{false};
+        bool locked{false};
+        bool discs{0};
+        bool favorite{false};
+        bool play_using_ra{false};
+        bool foreign{false};
+        bool app{false};
+        string last_played{""};
+        meta->updateTexts(gameName, publisher, year, serial, region, players, internal, hd, locked, discs, favorite,
+                          play_using_ra, foreign, app, last_played, fgColor);
     }
 
     arrow = addStaticElement(new PsMoveBtn("arrow", theme.arrow));
@@ -443,7 +443,6 @@ void GuiLauncher::loadAssets() {
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 
-
     sselector = addFrontElement(new PsStateSelector("selector"));
     sselector->font30 = gui->assets().themeFonts[FONT_28_BOLD];
     sselector->font24 = gui->assets().themeFonts[FONT_22_MED];
@@ -468,7 +467,6 @@ void GuiLauncher::loadAssets() {
         }
     }
 
-
     showOptions();
     showSetName();
     updateMeta();
@@ -489,11 +487,20 @@ void GuiLauncher::freeAssets() {
     for (auto &obj : frontElemets) {
         obj->destroy();
     }
-    staticElements.clear();     // deletes the elements
+    staticElements.clear(); // deletes the elements
     frontElemets.clear();
-    settingsBack = nullptr; playButton = nullptr; playText = nullptr; meta = nullptr; background = nullptr;
-    arrow = nullptr; xButton = nullptr; oButton = nullptr; tButton = nullptr; sselector = nullptr;
-    menuHead = nullptr; menuText = nullptr;
+    settingsBack = nullptr;
+    playButton = nullptr;
+    playText = nullptr;
+    meta = nullptr;
+    background = nullptr;
+    arrow = nullptr;
+    xButton = nullptr;
+    oButton = nullptr;
+    tButton = nullptr;
+    sselector = nullptr;
+    menuHead = nullptr;
+    menuText = nullptr;
     for (auto &game : carousel.games) {
         game.freeTex();
     }
@@ -564,7 +571,8 @@ void GuiLauncher::render() {
 
     if (fadeAlpha > 0) {
         long elapsed = gui->platform().ticks() - fadeStart;
-        fadeAlpha = elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);
+        fadeAlpha =
+            elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);
         renderer.setDrawColor(ableem::Color(0, 0, 0, fadeAlpha));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
@@ -653,20 +661,23 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
 // GuiLauncher::showOptions
 //*******************************
 void GuiLauncher::showOptions() {
-    bool enabled[4] = {true, false, false, false};   // an App, or nothing selected: AutoBleem settings only
+    bool enabled[4] = {true, false, false, false}; // an App, or nothing selected: AutoBleem settings only
     if (carousel.selectedIsValid()) {
         const PsGame &game = *carousel.games[carousel.selected];
         if (!game.foreign) {
-            enabled[1] = enabled[2] = enabled[3] = true;   // a PS1 game: editor, memory cards, resume points
+            enabled[1] = enabled[2] = enabled[3] = true; // a PS1 game: editor, memory cards, resume points
         } else if (!game.app) {
-            enabled[1] = true;                             // a RetroArch game: its (light-gun) editor
+            enabled[1] = true; // a RetroArch game: its (light-gun) editor
         }
     }
     bool same = true;
-    for (int i = 0; i < 4; i++) same = same && (menu->enabled[i] == enabled[i]);
-    if (same) return;   // the row is already right - do not disturb an open menu
+    for (int i = 0; i < 4; i++)
+        same = same && (menu->enabled[i] == enabled[i]);
+    if (same)
+        return; // the row is already right - do not disturb an open menu
 
-    for (int i = 0; i < 4; i++) menu->enabled[i] = enabled[i];
+    for (int i = 0; i < 4; i++)
+        menu->enabled[i] = enabled[i];
     menu->selOption = 0;
     menu->x = 640 - 118 / 2;
     menu->ox = menu->x;

@@ -13,8 +13,10 @@ void PsMoveBtn::update(long time) {
     float progress = time - animationStarted;
 
     progress = progress / (duration * 1.0f);
-    if (progress > 1) progress = 1;
-    if (progress < 0) progress = 0;
+    if (progress > 1)
+        progress = 1;
+    if (progress < 0)
+        progress = 0;
 
     if (!up) {
         y = originaly + maxMove * progress;

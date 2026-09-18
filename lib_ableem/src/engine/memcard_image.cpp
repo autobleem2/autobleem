@@ -17,8 +17,12 @@ const int DirectoryBusy = 0x50;
 const int BlockSize = 0x2000;
 const int FrameSize = 0x80;
 
-int dirPosition(int slot) { return FrameSize + slot * FrameSize; }
-int blockPosition(int slot) { return BlockSize + slot * BlockSize; }
+int dirPosition(int slot) {
+    return FrameSize + slot * FrameSize;
+}
+int blockPosition(int slot) {
+    return BlockSize + slot * BlockSize;
+}
 
 } // namespace
 
@@ -48,7 +52,7 @@ bool MemcardImage::load(const string &filename) {
         return false;
     }
     if (f.tellg() == 134976) {
-        f.seekg(3904);  // a DexDrive file: skip its header, the card image follows
+        f.seekg(3904); // a DexDrive file: skip its header, the card image follows
     } else {
         f.seekg(0);
     }
@@ -62,7 +66,8 @@ bool MemcardImage::load(const string &filename) {
 //*******************************
 bool MemcardImage::save(const string &filename) const {
     ofstream f(filename, ios::binary);
-    if (!DirEntry::checkWritable(f, filename)) return false;
+    if (!DirEntry::checkWritable(f, filename))
+        return false;
     f.write(reinterpret_cast<const char *>(card_), Size);
     f.close();
     return f.good();
@@ -81,8 +86,8 @@ void MemcardImage::setBytes(const uint8_t *data) {
 //*******************************
 void MemcardImage::reparse() {
     // order is important here.
-    parseUsed();          // is it used, and which kind of block; also the next-slot map
-    parseDeleted();       // a freed slot whose data is still there can be undeleted
+    parseUsed();    // is it used, and which kind of block; also the next-slot map
+    parseDeleted(); // a freed slot whose data is still there can be undeleted
     parseHasIcon();
     parseProductCodes();
     parseTitles();
@@ -99,9 +104,12 @@ void MemcardImage::parseUsed() {
             slotIsUsed_[i] = true;
             // the low bits say what kind of block
             blockType_[i] = BlockType::Free;
-            if ((card_[pos] & 0x01) == 0x01) blockType_[i] = BlockType::Top;
-            if ((card_[pos] & 0x03) == 0x02) blockType_[i] = BlockType::Link;
-            if ((card_[pos] & 0x03) == 0x03) blockType_[i] = BlockType::LinkEnd;
+            if ((card_[pos] & 0x01) == 0x01)
+                blockType_[i] = BlockType::Top;
+            if ((card_[pos] & 0x03) == 0x02)
+                blockType_[i] = BlockType::Link;
+            if ((card_[pos] & 0x03) == 0x03)
+                blockType_[i] = BlockType::LinkEnd;
         } else {
             slotIsUsed_[i] = false;
             blockType_[i] = BlockType::Free;
@@ -137,10 +145,11 @@ void MemcardImage::parseHasIcon() {
 void MemcardImage::parseProductCodes() {
     for (int i = 0; i < Slots; i++) {
         productCodes_[i] = "";
-        if (!slotIsUsed_[i]) continue;
-        int pos = dirPosition(i) + 12;   // the product code is the 12th byte
+        if (!slotIsUsed_[i])
+            continue;
+        int pos = dirPosition(i) + 12; // the product code is the 12th byte
         for (int n = 0; n < 10 && card_[pos] != 0; n++, pos++) {
-            productCodes_[i] += (char) card_[pos];
+            productCodes_[i] += (char)card_[pos];
         }
     }
 }
@@ -151,10 +160,11 @@ void MemcardImage::parseProductCodes() {
 void MemcardImage::parseGameIds() {
     for (int i = 0; i < Slots; i++) {
         gameIds_[i] = "";
-        if (!slotIsUsed_[i]) continue;
-        int pos = dirPosition(i) + 22;   // the game ID is the 22nd byte
+        if (!slotIsUsed_[i])
+            continue;
+        int pos = dirPosition(i) + 22; // the game ID is the 22nd byte
         while (card_[pos] != 0) {
-            gameIds_[i] += (char) card_[pos];
+            gameIds_[i] += (char)card_[pos];
             pos++;
         }
     }
@@ -179,26 +189,31 @@ void MemcardImage::parseTitles() {
 //*******************************
 string MemcardImage::shiftJisToUtf8(const string &input) const {
     if (convTable_.size() < 25088) {
-        return string(input.length(), '\0');   // no table: what an unconverted card has always shown
+        return string(input.length(), '\0'); // no table: what an unconverted card has always shown
     }
     string output(3 * input.length(), ' '); // ShiftJis won't give 4-byte UTF-8, so at most 3 bytes per input char
     size_t indexInput = 0, indexOutput = 0;
 
     while (indexInput < input.length()) {
-        char arraySection = ((uint8_t) input[indexInput]) >> 4;
+        char arraySection = ((uint8_t)input[indexInput]) >> 4;
 
         size_t arrayOffset;
-        if (arraySection == 0x8) arrayOffset = 0x100;   // these are two-byte shiftjis
-        else if (arraySection == 0x9) arrayOffset = 0x1100;
-        else if (arraySection == 0xE) arrayOffset = 0x2100;
-        else arrayOffset = 0;   // this is one byte shiftjis
+        if (arraySection == 0x8)
+            arrayOffset = 0x100; // these are two-byte shiftjis
+        else if (arraySection == 0x9)
+            arrayOffset = 0x1100;
+        else if (arraySection == 0xE)
+            arrayOffset = 0x2100;
+        else
+            arrayOffset = 0; // this is one byte shiftjis
 
         if (arrayOffset) {
-            arrayOffset += (((uint8_t) input[indexInput]) & 0xf) << 8;
+            arrayOffset += (((uint8_t)input[indexInput]) & 0xf) << 8;
             indexInput++;
-            if (indexInput >= input.length()) break;
+            if (indexInput >= input.length())
+                break;
         }
-        arrayOffset += (uint8_t) input[indexInput++];
+        arrayOffset += (uint8_t)input[indexInput++];
         arrayOffset <<= 1;
 
         uint16_t unicodeValue = (convTable_[arrayOffset] << 8) | convTable_[arrayOffset + 1];
@@ -241,7 +256,7 @@ void MemcardImage::fixChecksum(int slot) {
 void MemcardImage::setProductCode(int slot, const string &code) {
     int pos = dirPosition(slot) + 0x0C;
     for (int i = 0; i < 10; i++) {
-        card_[pos + i] = i < (int) code.size() ? code[i] : 0;
+        card_[pos + i] = i < (int)code.size() ? code[i] : 0;
     }
     fixChecksum(slot);
     reparse();
@@ -249,7 +264,7 @@ void MemcardImage::setProductCode(int slot, const string &code) {
 
 void MemcardImage::setGameId(int slot, const string &id) {
     int pos = dirPosition(slot) + 0x0C + 10;
-    int n = id.size() < 102 ? id.size() : 102;   // the frame has room for 102 characters and the terminator
+    int n = id.size() < 102 ? id.size() : 102; // the frame has room for 102 characters and the terminator
     memcpy(card_ + pos, id.c_str(), n);
     card_[pos + n] = 0;
     fixChecksum(slot);
@@ -292,7 +307,7 @@ vector<int> MemcardImage::gameSlots(int startSlot) const {
         slots.push_back(next);
         current = next;
         if (++iteration == Slots) {
-            break;   // a broken chain that loops
+            break; // a broken chain that loops
         }
     }
     return slots;
@@ -307,7 +322,7 @@ vector<int> MemcardImage::findEmptySlots(int requested) const {
         if (isFree(i)) {
             slots.push_back(i);
         }
-        if ((int) slots.size() == requested) {
+        if ((int)slots.size() == requested) {
             break;
         }
     }
@@ -348,16 +363,16 @@ void MemcardImage::importGame(const uint8_t *buffer, int length) {
     int slotCount = (length - FrameSize) / BlockSize;
     int numberOfBytes = slotCount * BlockSize;
     vector<int> destSlots = findEmptySlots(slotCount);
-    if ((int) destSlots.size() != slotCount) {
+    if ((int)destSlots.size() != slotCount) {
         return;
     }
 
     // the directory frame goes to the first slot, with the size updated
     int dir = dirPosition(destSlots[0]);
     memcpy(card_ + dir, buffer, FrameSize);
-    card_[dir + 4] = (uint8_t) (numberOfBytes & 0xFF);
-    card_[dir + 5] = (uint8_t) ((numberOfBytes & 0xFF00) >> 8);
-    card_[dir + 6] = (uint8_t) ((numberOfBytes & 0xFF0000) >> 16);
+    card_[dir + 4] = (uint8_t)(numberOfBytes & 0xFF);
+    card_[dir + 5] = (uint8_t)((numberOfBytes & 0xFF00) >> 8);
+    card_[dir + 6] = (uint8_t)((numberOfBytes & 0xFF0000) >> 16);
 
     // the blocks
     int n = 0;
@@ -370,7 +385,7 @@ void MemcardImage::importGame(const uint8_t *buffer, int length) {
     for (int i = 0; i < slotCount; i++) {
         int d = dirPosition(destSlots[i]);
         card_[d + 0] = 0x52;
-        card_[d + 8] = (uint8_t) (i + 1 < slotCount ? destSlots[i + 1] : 0);
+        card_[d + 8] = (uint8_t)(i + 1 < slotCount ? destSlots[i + 1] : 0);
         card_[d + 9] = 0x00;
     }
     int last = dirPosition(destSlots.back());
@@ -390,9 +405,11 @@ void MemcardImage::importGame(const uint8_t *buffer, int length) {
 //*******************************
 int MemcardImage::topSlotOf(int slot) const {
     for (int i = 0; i < Slots; i++) {
-        if (!isTop(i)) continue;
+        if (!isTop(i))
+            continue;
         for (int s : gameSlots(i)) {
-            if (s == slot) return i;
+            if (s == slot)
+                return i;
         }
     }
     return -1;
@@ -414,9 +431,9 @@ void MemcardImage::ownIconPixels(int slot, int frame, Pixel *out) const {
         uint8_t green = (((lo >> 5) | 0xF8) ^ 0xF8) + (((hi | 0xFC) ^ 0xFC) << 3);
         uint8_t red = (lo | 0xE0) ^ 0xE0;
         if (slotIsDeleted_[slot]) {
-            palette[p] = Pixel{(uint8_t) (red * 4 + 127), (uint8_t) (green * 4 + 127), (uint8_t) (blue * 4 + 127), 255};
+            palette[p] = Pixel{(uint8_t)(red * 4 + 127), (uint8_t)(green * 4 + 127), (uint8_t)(blue * 4 + 127), 255};
         } else {
-            palette[p] = Pixel{(uint8_t) (red * 8), (uint8_t) (green * 8), (uint8_t) (blue * 8), 255};
+            palette[p] = Pixel{(uint8_t)(red * 8), (uint8_t)(green * 8), (uint8_t)(blue * 8), 255};
         }
     }
 
@@ -444,7 +461,7 @@ void MemcardImage::iconPixels(int slot, int frame, Pixel *out) const {
         // a link block shows its save's first frame, dimmed
         ownIconPixels(top, 0, out);
         for (int i = 0; i < IconSize * IconSize; i++) {
-            out[i] = Pixel{(uint8_t) (out[i].r / 3), (uint8_t) (out[i].g / 3), (uint8_t) (out[i].b / 3), 255};
+            out[i] = Pixel{(uint8_t)(out[i].r / 3), (uint8_t)(out[i].g / 3), (uint8_t)(out[i].b / 3), 255};
         }
         return;
     }

@@ -30,7 +30,7 @@ using CoreInfos = std::vector<CoreInfoPtr>;
 // RAPlaylistInfo
 //********************
 struct RAPlaylistInfo {
-    std::string displayName;    // the .lpl file name without its extension
+    std::string displayName; // the .lpl file name without its extension
     std::string path;
     PsGames psGames;
 
@@ -82,7 +82,7 @@ private:
     // filled in from the playlist it came from (RetroArch leaves them empty), and entries whose game is gone
     // dropped
     void reloadSpecialPlaylist(const std::string &displayName, const std::string &path, bool copyTitle);
-    std::string specialPlaylistPath(const std::string &fileName) const;   // "" when RetroArch has none
+    std::string specialPlaylistPath(const std::string &fileName) const; // "" when RetroArch has none
 
     bool findPlaylist(const std::string &displayName, int *index) const;
     bool isValidPlaylist(const std::string &path) const;
@@ -95,9 +95,9 @@ private:
 
     bool loaded_ = false;
     CoreInfos cores_;
-    std::map<std::string, CoreInfoPtr> defaultCores_;    // database name -> core
-    std::map<std::string, CoreInfoPtr> overrideCores_;   // lower-cased database name -> core, from coreOverride.cfg
-    std::set<std::string> databases_;                    // every database any core's .info lists
+    std::map<std::string, CoreInfoPtr> defaultCores_;  // database name -> core
+    std::map<std::string, CoreInfoPtr> overrideCores_; // lower-cased database name -> core, from coreOverride.cfg
+    std::set<std::string> databases_;                  // every database any core's .info lists
     std::vector<RAPlaylistInfo> playlistInfos_;
     std::string favoritesDisplayName_{"Favorites"};
     std::string historyDisplayName_{"History"};

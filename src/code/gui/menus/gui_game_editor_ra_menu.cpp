@@ -31,13 +31,14 @@ void GuiEditorRA::render() {
     int yoffset = gui->renderLogo(true);
 
     gui->text().renderTextLine("-=" + gameData->title + "=-", line++, yoffset, XALIGN_CENTER);
-    gui->text().renderTextLine(_("File:") + " " + DirEntry::getFileNameFromPath(gameData->image_path), line++, yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine(_("File:") + " " + DirEntry::getFileNameFromPath(gameData->image_path), line++, yoffset,
+                               XALIGN_CENTER);
     gui->text().renderTextLine(_("Core:") + " " + gameData->core_name, line++, yoffset, XALIGN_CENTER);
     line++;
 
     gui->text().renderTextLineOptions(
-            _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
-            OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
+        _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
+        OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
     gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 300);
 
     gui->renderStatus("|@O| " + _("Go back") + "|");
@@ -65,26 +66,26 @@ void GuiEditorRA::loop() {
                 menuVisible = false;
             }
             switch (e.type) {
-                case Event::Type::DpadDown:
-                case Event::Type::DpadUp:
-                    if (gui->input().dpadRight() || gui->input().dpadLeft()) {
-                        app.audio().cursor.play();
-                        bool on = gui->input().dpadRight();
-                        if (on != app.lightguns().isLightgun(*gameData)) {
-                            app.lightguns().setRetroArchLightgun(*gameData, on);
-                            changed = true;
-                        }
-                        render();
+            case Event::Type::DpadDown:
+            case Event::Type::DpadUp:
+                if (gui->input().dpadRight() || gui->input().dpadLeft()) {
+                    app.audio().cursor.play();
+                    bool on = gui->input().dpadRight();
+                    if (on != app.lightguns().isLightgun(*gameData)) {
+                        app.lightguns().setRetroArchLightgun(*gameData, on);
+                        changed = true;
                     }
-                    break;
-                case Event::Type::ButtonDown:
-                    if (e.button == Button::Circle) {
-                        app.audio().cancel.play();
-                        menuVisible = false;
-                    }
-                    break;
-                default:
-                    break;
+                    render();
+                }
+                break;
+            case Event::Type::ButtonDown:
+                if (e.button == Button::Circle) {
+                    app.audio().cancel.play();
+                    menuVisible = false;
+                }
+                break;
+            default:
+                break;
             }
         }
     }

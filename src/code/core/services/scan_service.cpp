@@ -80,7 +80,8 @@ string ScanService::fingerprintFilePath() {
 // ScanService::start
 //*******************************
 void ScanService::start() {
-    if (thread_.joinable()) return;   // already running
+    if (thread_.joinable())
+        return; // already running
     stopping_.store(false);
     thread_ = thread(&ScanService::threadMain, this);
 }
@@ -89,7 +90,8 @@ void ScanService::start() {
 // ScanService::stop
 //*******************************
 void ScanService::stop() {
-    if (!thread_.joinable()) return;
+    if (!thread_.joinable())
+        return;
     stopping_.store(true);
     thread_.join();
     stopping_.store(false);
@@ -99,7 +101,8 @@ void ScanService::stop() {
 // ScanService::requestScan
 //*******************************
 bool ScanService::requestScan() {
-    if (scanning_.load()) return false;
+    if (scanning_.load())
+        return false;
     scanRequested_.store(true);
     return true;
 }
@@ -120,7 +123,7 @@ void ScanService::threadMain() {
     // take CPU time away from a running emulator (or anything else on the system)
     System::lowerCurrentThreadPriority();
 
-    lastScannedFingerprint_.load(fingerprintFilePath());   // false (left empty) if nothing was ever scanned
+    lastScannedFingerprint_.load(fingerprintFilePath()); // false (left empty) if nothing was ever scanned
     lastCheckFingerprint_ = lastScannedFingerprint_;
 
     auto lastWatchCheck = chrono::steady_clock::now() - chrono::milliseconds(ScanWatchInterval);
@@ -137,7 +140,7 @@ void ScanService::threadMain() {
 
         if (shouldScan) {
             runScan();
-            lastWatchCheck = chrono::steady_clock::now();   // don't immediately re-check right after scanning
+            lastWatchCheck = chrono::steady_clock::now(); // don't immediately re-check right after scanning
         } else {
             this_thread::sleep_for(chrono::milliseconds(250));
         }
@@ -218,11 +221,10 @@ void ScanService::applyVerifiedGame(const ScannedGame &game, ScanUpdate &update)
     bool existed = db.findGameIdByPath(game.fullPath + sep, &id);
     if (!existed) {
         id = db.maxGameId() + 1;
-        db.insertGame(id, game.title, game.publisher, game.players, game.year,
-                      game.fullPath + sep, game.saveStatePath + sep, game.memcard);
-    } else {
-        db.updateGame(id, game.title, game.publisher, game.players, game.year,
+        db.insertGame(id, game.title, game.publisher, game.players, game.year, game.fullPath + sep,
                       game.saveStatePath + sep, game.memcard);
+    } else {
+        db.updateGame(id, game.title, game.publisher, game.players, game.year, game.saveStatePath + sep, game.memcard);
     }
     db.replaceDiscs(id, game.discNames);
 
@@ -255,64 +257,65 @@ ScanUpdate ScanService::poll() {
 
     for (WorkerEvent &event : events) {
         switch (event.kind) {
-            case WorkerEvent::Kind::ScanStarted: {
-                update.active = true;
+        case WorkerEvent::Kind::ScanStarted: {
+            update.active = true;
 
-                // currentPaths are bare UsbGame::fullPath values (no trailing separator); PATH always has
-                // one (see applyVerifiedGame) - add it back so the comparison below means what it looks like
-                set<string> current;
-                for (const string &path : event.currentPaths) current.insert(path + sep);
+            // currentPaths are bare UsbGame::fullPath values (no trailing separator); PATH always has
+            // one (see applyVerifiedGame) - add it back so the comparison below means what it looks like
+            set<string> current;
+            for (const string &path : event.currentPaths)
+                current.insert(path + sep);
 
-                for (const GamePath &row : library_.usbGames().loadGamePaths()) {
-                    if (current.find(row.path) == current.end()) {
-                        if (library_.usbGames().deleteGame(row.gameId))
-                            update.removedGameIds.push_back(row.gameId);
-                    }
+            for (const GamePath &row : library_.usbGames().loadGamePaths()) {
+                if (current.find(row.path) == current.end()) {
+                    if (library_.usbGames().deleteGame(row.gameId))
+                        update.removedGameIds.push_back(row.gameId);
                 }
-                break;
             }
+            break;
+        }
 
-            case WorkerEvent::Kind::Progress:
-                update.progressed = true;
-                update.stage = event.stage;
-                update.detail = event.detail;
-                update.done = event.done;
-                update.total = event.total;
-                break;
+        case WorkerEvent::Kind::Progress:
+            update.progressed = true;
+            update.stage = event.stage;
+            update.detail = event.detail;
+            update.done = event.done;
+            update.total = event.total;
+            break;
 
-            case WorkerEvent::Kind::GameVerified:
-                applyVerifiedGame(event.game, update);
-                break;
+        case WorkerEvent::Kind::GameVerified:
+            applyVerifiedGame(event.game, update);
+            break;
 
-            case WorkerEvent::Kind::GameFailedVerify: {
-                int id = 0;
-                if (library_.usbGames().findGameIdByPath(event.failedPath + sep, &id)) {
-                    if (library_.usbGames().deleteGame(id))
-                        update.removedGameIds.push_back(id);
-                }
-                update.lastFailedGamePath = event.failedPath;
-                break;
+        case WorkerEvent::Kind::GameFailedVerify: {
+            int id = 0;
+            if (library_.usbGames().findGameIdByPath(event.failedPath + sep, &id)) {
+                if (library_.usbGames().deleteGame(id))
+                    update.removedGameIds.push_back(id);
             }
+            update.lastFailedGamePath = event.failedPath;
+            break;
+        }
 
-            case WorkerEvent::Kind::Finished: {
-                // writeSubDirRows/writeAutobleemList look games up by UsbGame::fullPath (no trailing
-                // separator) - strip the one loadGamePaths() rows always carry so the keys match
-                map<string, int> idByPath;
-                for (const GamePath &row : library_.usbGames().loadGamePaths())
-                    idByPath[DirEntry::removeSeparatorFromEndOfPath(row.path)] = row.gameId;
+        case WorkerEvent::Kind::Finished: {
+            // writeSubDirRows/writeAutobleemList look games up by UsbGame::fullPath (no trailing
+            // separator) - strip the one loadGamePaths() rows always carry so the keys match
+            map<string, int> idByPath;
+            for (const GamePath &row : library_.usbGames().loadGamePaths())
+                idByPath[DirEntry::removeSeparatorFromEndOfPath(row.path)] = row.gameId;
 
-                GameScanner::writeSubDirRows(event.hierarchy, library_.usbGames(), idByPath);
-                GameScanner::writeAutobleemList(event.gamesToAddToDB, idByPath);
-                library_.writeEmulationStationGamelist();
-                library_.exportToRetroArchPlaylist();
-                event.fingerprint.save(fingerprintFilePath());
+            GameScanner::writeSubDirRows(event.hierarchy, library_.usbGames(), idByPath);
+            GameScanner::writeAutobleemList(event.gamesToAddToDB, idByPath);
+            library_.writeEmulationStationGamelist();
+            library_.exportToRetroArchPlaylist();
+            event.fingerprint.save(fingerprintFilePath());
 
-                update.active = false;
-                update.finished = true;
-                update.finishedGameCount = static_cast<int>(event.gamesToAddToDB.size());
-                update.finishedFailedCount = event.failedCount;
-                break;
-            }
+            update.active = false;
+            update.finished = true;
+            update.finishedGameCount = static_cast<int>(event.gamesToAddToDB.size());
+            update.finishedFailedCount = event.failedCount;
+            break;
+        }
         }
     }
 

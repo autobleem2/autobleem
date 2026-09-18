@@ -7,7 +7,6 @@
 #include "../support/env_fixture.h"
 #include "../support/temp_dir.h"
 
-
 TEST_CASE("EnvFixture puts every root back when it goes out of scope") {
     EnvFixture outer;
     outer.setUsbRoot("/before/usb");

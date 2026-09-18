@@ -68,7 +68,7 @@ TEST_CASE("an exact name is found as png, jpg or jpeg, png first") {
     CHECK(lookup.findThumbnail(kSystem, "", "Named_Boxarts") == "");
     CHECK(lookup.findThumbnail(kSystem, "Foo", "") == "");
 
-    t.touch(t.boxarts + "/Foo_ Bar.png");   // the title's colon is escaped before looking
+    t.touch(t.boxarts + "/Foo_ Bar.png"); // the title's colon is escaped before looking
     CHECK(lookup.findThumbnail(kSystem, "Foo: Bar", "Named_Boxarts") == t.boxarts + "/Foo_ Bar.png");
 }
 
@@ -86,13 +86,13 @@ TEST_CASE("findBoxArt: Named_Boxarts, else Named_Titles, else Named_Snaps") {
 TEST_CASE("trailing tags are peeled one at a time, never the name itself") {
     ThumbTree t;
     ThumbnailLookup lookup;
-    CHECK(lookup.findThumbnail(kSystem, "Persona (USA)", "Named_Boxarts") == "");   // the bare name misses cleanly
+    CHECK(lookup.findThumbnail(kSystem, "Persona (USA)", "Named_Boxarts") == ""); // the bare name misses cleanly
     t.touch(t.boxarts + "/Persona.jpg");
     CHECK(lookup.findThumbnail(kSystem, "Persona (USA)", "Named_Boxarts") == t.boxarts + "/Persona.jpg");
 
     t.touch(t.boxarts + "/Castlevania - Symphony of the Night.jpg");
-    CHECK(lookup.findThumbnail(kSystem, "Castlevania - Symphony of the Night (USA) (Greatest Hits)", "Named_Boxarts")
-          == t.boxarts + "/Castlevania - Symphony of the Night.jpg");
+    CHECK(lookup.findThumbnail(kSystem, "Castlevania - Symphony of the Night (USA) (Greatest Hits)", "Named_Boxarts") ==
+          t.boxarts + "/Castlevania - Symphony of the Night.jpg");
 }
 
 TEST_CASE("the rdb's record name is tried before the title, stripping included") {
@@ -100,11 +100,12 @@ TEST_CASE("the rdb's record name is tried before the title, stripping included")
     ThumbnailLookup lookup;
     t.touch(t.boxarts + "/Metal Gear Solid (USA) (Disc 1).png");
     t.touch(t.boxarts + "/Metal Gear Solid.png");
-    CHECK(lookup.findThumbnail(kSystem, "Metal Gear Solid", "Named_Boxarts", "Metal Gear Solid (USA) (Disc 1)")
-          == t.boxarts + "/Metal Gear Solid (USA) (Disc 1).png");
+    CHECK(lookup.findThumbnail(kSystem, "Metal Gear Solid", "Named_Boxarts", "Metal Gear Solid (USA) (Disc 1)") ==
+          t.boxarts + "/Metal Gear Solid (USA) (Disc 1).png");
 
     t.touch(t.boxarts + "/Persona.jpg");
-    CHECK(lookup.findThumbnail(kSystem, "Revelations - Persona", "Named_Boxarts", "Persona (USA)") == t.boxarts + "/Persona.jpg");
+    CHECK(lookup.findThumbnail(kSystem, "Revelations - Persona", "Named_Boxarts", "Persona (USA)") ==
+          t.boxarts + "/Persona.jpg");
     CHECK(lookup.findBoxArt(kSystem, "Wrong Title", "Persona (USA)") == t.boxarts + "/Persona.jpg");
     CHECK(lookup.findThumbnail(kSystem, "Some Title", "Named_Boxarts", "Some Record (USA)") == "");
 
@@ -124,22 +125,26 @@ TEST_CASE("the fuzzy fallback takes another region's file, prefers shared tags, 
     t.touch(t.boxarts + "/Suikoden (USA) (Rev 1).jpg");
     t.touch(t.boxarts + "/Suikoden (Europe).jpg");
     lookup.clearCache();
-    CHECK(lookup.findThumbnail(kSystem, "Suikoden (USA)", "Named_Boxarts") == t.boxarts + "/Suikoden (USA) (Rev 1).jpg");
+    CHECK(lookup.findThumbnail(kSystem, "Suikoden (USA)", "Named_Boxarts") ==
+          t.boxarts + "/Suikoden (USA) (Rev 1).jpg");
 
     t.touch(t.boxarts + "/Doom 2 - Hell on Earth (USA).jpg");
     lookup.clearCache();
-    CHECK(lookup.findThumbnail(kSystem, "Doom 2 (USA)", "Named_Boxarts") == "");   // "Doom 2 (" matches nothing
+    CHECK(lookup.findThumbnail(kSystem, "Doom 2 (USA)", "Named_Boxarts") == ""); // "Doom 2 (" matches nothing
 
     t.touch(t.boxarts + "/Foo (Japan).jpg");
     t.touch(t.boxarts + "/Foo (Europe).jpg");
     t.touch(t.boxarts + "/Foo (USA).jpg");
     lookup.clearCache();
-    CHECK(lookup.findThumbnail(kSystem, "Foo (Asia)", "Named_Boxarts") == t.boxarts + "/Foo (USA).jpg");   // region tiebreak
-    CHECK(lookup.findThumbnail(kSystem, "Foo (Europe)", "Named_Boxarts") == t.boxarts + "/Foo (Europe).jpg");   // the exact hit first
+    CHECK(lookup.findThumbnail(kSystem, "Foo (Asia)", "Named_Boxarts") ==
+          t.boxarts + "/Foo (USA).jpg"); // region tiebreak
+    CHECK(lookup.findThumbnail(kSystem, "Foo (Europe)", "Named_Boxarts") ==
+          t.boxarts + "/Foo (Europe).jpg"); // the exact hit first
 
     t.touch(t.boxarts + "/Foo_ Bar (USA) (Rev 1).png");
     lookup.clearCache();
-    CHECK(lookup.findThumbnail(kSystem, "Foo: Bar (USA)", "Named_Boxarts") == t.boxarts + "/Foo_ Bar (USA) (Rev 1).png");
+    CHECK(lookup.findThumbnail(kSystem, "Foo: Bar (USA)", "Named_Boxarts") ==
+          t.boxarts + "/Foo_ Bar (USA) (Rev 1).png");
 }
 
 TEST_CASE("the directory listing is cached until clearCache") {
@@ -148,7 +153,8 @@ TEST_CASE("the directory listing is cached until clearCache") {
     t.touch(t.boxarts + "/Bar (Europe).jpg");
     CHECK(lookup.findThumbnail(kSystem, "Bar (USA)", "Named_Boxarts") == t.boxarts + "/Bar (Europe).jpg");
     t.touch(t.boxarts + "/Bar (USA) (Rev 1).jpg");
-    CHECK(lookup.findThumbnail(kSystem, "Bar (USA)", "Named_Boxarts") == t.boxarts + "/Bar (Europe).jpg");   // stale listing
+    CHECK(lookup.findThumbnail(kSystem, "Bar (USA)", "Named_Boxarts") ==
+          t.boxarts + "/Bar (Europe).jpg"); // stale listing
     lookup.clearCache();
     CHECK(lookup.findThumbnail(kSystem, "Bar (USA)", "Named_Boxarts") == t.boxarts + "/Bar (USA) (Rev 1).jpg");
 }
@@ -168,8 +174,8 @@ TEST_CASE("the user's own screenshot wins, newest first, then the save state's p
 
     t.touch(t.screenshots + "/Game-260101-120000.png");
     t.touch(t.screenshots + "/Game-260201-080000.png");
-    t.touch(t.screenshots + "/Game 2-260301-080000.png");   // another game
-    t.touch(t.screenshots + "/Gamer.png");                  // not this one either
+    t.touch(t.screenshots + "/Game 2-260301-080000.png"); // another game
+    t.touch(t.screenshots + "/Gamer.png");                // not this one either
     lookup.clearCache();
     CHECK(lookup.findLocalScreenshot("/x/Game.chd") == t.screenshots + "/Game-260201-080000.png");
     CHECK(lookup.findSnap(kSystem, "Game", "/x/Game.chd") == t.screenshots + "/Game-260201-080000.png");

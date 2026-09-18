@@ -22,20 +22,21 @@ class Fonts {
     std::string medPath;
     std::string boldPath;
     struct FontInfo {
-        FontEnum    fontEnum;
-        int         size;
-        FontType    fontType;
+        FontEnum fontEnum;
+        int size;
+        FontType fontType;
     };
     static FontInfo allFontInfos[];
     std::map<FontEnum, ableem::Font> fonts;
     std::map<FontEnum, FontInfo> fontInfos;
     // the theme's fonts at whatever other sizes were asked for - see atSize()
-    std::map<std::pair<int, int>, ableem::Font> bySize;   // (FontType, size)
+    std::map<std::pair<int, int>, ableem::Font> bySize; // (FontType, size)
     ableem::Renderer *renderer = nullptr;
+
 public:
     Fonts();
     // use operator [] to get or set the shared font
-    ableem::Font & operator [] (FontEnum size) { return fonts[size]; }
+    ableem::Font &operator[](FontEnum size) { return fonts[size]; }
     static ableem::Font openNewSharedCachedFont(const std::string &filename, int fontSize, ableem::Renderer &renderer);
     // The medium or bold font at an arbitrary size, opened once and kept: for text that has to shrink to
     // fit (a long game title - TextRenderer::fittingFont). Opening a font builds its glyph cache, far too
@@ -49,5 +50,8 @@ public:
     // (re)opens every size from these two ttf files - the theme's launcher fonts, or the console's own
     void openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer);
     // drops every font - their glyph textures belong to the renderer, so before the display is released
-    void closeAll() { fonts.clear(); bySize.clear(); }
+    void closeAll() {
+        fonts.clear();
+        bySize.clear();
+    }
 };

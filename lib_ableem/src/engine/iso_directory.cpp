@@ -115,12 +115,12 @@ IsoDirectory IsoDirectoryReader::read(const string &imagePath, int maxLevel, boo
     if (!reader->isOpen()) {
         return emptyDir();
     }
-    reader->selectSector(16);           // primary volume descriptor
+    reader->selectSector(16); // primary volume descriptor
     reader->ffd(8);
     string system = reader->readString(32);
     string volname = reader->readString(32);
     reader->ffd(86);
-    int sector = reader->readDword();   // root directory record: extent location
+    int sector = reader->readDword(); // root directory record: extent location
     reader->selectSector(sector);
     IsoDirectory result;
     result.systemName = trim(system);

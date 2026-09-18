@@ -66,9 +66,11 @@ public:
     PsGames retroArchGames(const std::string &playlistName);
     PsGames apps();
 
-    bool showInternalGames() const;     // config.ini "origames"
+    bool showInternalGames() const; // config.ini "origames"
 
-    static bool byTitle(const PsGamePtr &l, const PsGamePtr &r) { return ableem::lessCaseInsensitive(l->title, r->title); }
+    static bool byTitle(const PsGamePtr &l, const PsGamePtr &r) {
+        return ableem::lessCaseInsensitive(l->title, r->title);
+    }
     // history is numbered 1..N with 1 the most recently played
     static bool byHistory(const PsGamePtr &l, const PsGamePtr &r) { return l->history < r->history; }
 

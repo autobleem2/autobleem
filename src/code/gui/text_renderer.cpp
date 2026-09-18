@@ -10,11 +10,11 @@
 #include <ableem/engine/log.h>
 
 using namespace std;
+using ableem::Color;
 using ableem::Rect;
 using ableem::Size;
-using ableem::Color;
 
-#define SCREEN_WIDTH  ableem::GuiBase::ScreenWidth
+#define SCREEN_WIDTH ableem::GuiBase::ScreenWidth
 
 //*******************************
 // TextRenderer::toColor
@@ -140,15 +140,16 @@ void TextRenderer::AllTextOrEmojiTokenInfo::compute_xy_relativeOffsets() {
 void TextRenderer::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, const string &_text) {
     font = _font;
     if (!font.valid())
-        font = text.themeFont_;   // if font is invalid, default to themeFont
+        font = text.themeFont_; // if font is invalid, default to themeFont
 
     //
     // break up the text into tokens of text and emoji markers
     //
     string line = _text;
-    if (line.empty()) line = " ";
+    if (line.empty())
+        line = " ";
     if (line.back() != '|') {
-        line = line + "|";  // in case a terminating | is needed
+        line = line + "|"; // in case a terminating | is needed
     }
     auto tokenStrings = Strings::getTokens(line, '|');
 
@@ -156,14 +157,15 @@ void TextRenderer::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, con
     // fill the info structures
     //
 
-    for (const auto &tokenString : tokenStrings) {      // for each token string
-        if (tokenString == "") continue;
+    for (const auto &tokenString : tokenStrings) { // for each token string
+        if (tokenString == "")
+            continue;
         TextOrEmojiTokenInfo tokenInfo;
         tokenInfo.tokenString = tokenString;
-        if (tokenString[0] == '@') {    // if emoji marker
+        if (tokenString[0] == '@') { // if emoji marker
             auto it = text.emojis_.find(tokenString.c_str() + 1);
             if (it != text.emojis_.end()) {
-                tokenInfo.emoji = it->second;   // save the texture
+                tokenInfo.emoji = it->second; // save the texture
                 Size s = it->second.size();
                 tokenInfo.rect.x = 0;
                 tokenInfo.rect.y = 0;
@@ -234,8 +236,8 @@ void TextRenderer::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAli
             renderer.copy(tokenInfo.emoji, nullptr, &tempRect);
         } else {
             // the token is text
-            text.drawRun(font, x + tokenInfo.rect.x, y + tokenInfo.rect.y,
-                         useTextColor ? &textColor : nullptr, tokenInfo.tokenString);
+            text.drawRun(font, x + tokenInfo.rect.x, y + tokenInfo.rect.y, useTextColor ? &textColor : nullptr,
+                         tokenInfo.tokenString);
         }
     }
 }
@@ -248,8 +250,7 @@ void TextRenderer::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAli
 void TextRenderer::drawRun(const ableem::Font &font, int x, int y, const Color *color, const string &run) {
     if (shadow_.enabled && (color == nullptr || Shadow::isLight(*color))) {
         // the halo first, so the text itself lands on top of it
-        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0},
-                                         {-1, 1},  {0, 1},  {1, 1},  {2, 2}};
+        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
         for (const auto &offset : offsets)
             font.drawColor(renderer_, x + offset[0], y + offset[1], shadow_.color, run);
     }
@@ -271,7 +272,7 @@ int TextRenderer::renderText(const ableem::Font &font, const string &text, int x
     AllTextOrEmojiTokenInfo allTokenInfo(*this, font, text);
     allTokenInfo.render(x, y, xAlign);
 
-    return allTokenInfo.totalSize.h;    // return the height
+    return allTokenInfo.totalSize.h; // return the height
 }
 
 //*******************************
@@ -279,15 +280,15 @@ int TextRenderer::renderText(const ableem::Font &font, const string &text, int x
 // if background == true it draws a solid grey box around/behind the text
 // this routine does not support emoji icons.  text only.
 //*******************************
-int TextRenderer::renderText_WithColor(const ableem::Font &font, const std::string &text, int x, int y,
-                                       Color textColor, XAlignment xAlign, bool background) {
+int TextRenderer::renderText_WithColor(const ableem::Font &font, const std::string &text, int x, int y, Color textColor,
+                                       XAlignment xAlign, bool background) {
     AllTextOrEmojiTokenInfo allTokenInfo(*this, font, text);
     allTokenInfo.setTextColor(textColor);
     allTokenInfo.drawBackgroundRect = background;
 
     allTokenInfo.render(x, y, xAlign);
 
-    return allTokenInfo.totalSize.h;    // return the height
+    return allTokenInfo.totalSize.h; // return the height
 }
 
 //*******************************
@@ -296,7 +297,7 @@ int TextRenderer::renderText_WithColor(const ableem::Font &font, const std::stri
 int TextRenderer::renderTextLine(const string &text, int line, int yoffset, XAlignment xAlign, int xoffset,
                                  ableem::Font font) {
     if (!font.valid())
-        font = themeFont_;   // default to themeFont
+        font = themeFont_; // default to themeFont
 
     Rect opscreen = getOpscreenRectOfTheme();
     int fontHeight = font.lineHeight();
@@ -314,13 +315,12 @@ int TextRenderer::renderTextLine(const string &text, int line, int yoffset, XAli
 //*******************************
 // TextRenderer::renderTextLineToColumns
 //*******************************
-int TextRenderer::renderTextLineToColumns(const string &textLeft, const string &textRight,
-                                          int xLeft, int xRight,
+int TextRenderer::renderTextLineToColumns(const string &textLeft, const string &textRight, int xLeft, int xRight,
                                           int line, int yoffset, ableem::Font font) {
     renderTextLine(textLeft, line, yoffset, XALIGN_LEFT, xLeft, font);
     int h = renderTextLine(textRight, line, yoffset, XALIGN_LEFT, xRight, font);
 
-    return h;   // rectangle height
+    return h; // rectangle height
 }
 
 //*******************************
@@ -345,7 +345,7 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
     int h = renderTextLine(text, line, yoffset, xAlign, xoffset);
 
     if (button == -1) {
-        return h;   // there is no check/uncheck emoji on this line
+        return h; // there is no check/uncheck emoji on this line
     }
 
     // render the check/uncheck icon on the right side of opscreen
@@ -421,8 +421,10 @@ int TextRenderer::textWidth(const ableem::Font &font, const string &text) {
 // TextRenderer::fittingFont
 //*******************************
 ableem::Font TextRenderer::fittingFont(FontType type, int maxSize, int minSize, const string &text, int maxWidth) {
-    if (fonts_ == nullptr) return themeFont_;
-    if (minSize > maxSize) minSize = maxSize;
+    if (fonts_ == nullptr)
+        return themeFont_;
+    if (minSize > maxSize)
+        minSize = maxSize;
     for (int size = maxSize; size > minSize; size--) {
         ableem::Font &font = fonts_->atSize(type, size);
         if (textWidth(font, text) <= maxWidth)
@@ -442,8 +444,8 @@ int TextRenderer::renderFittedText(FontType type, int maxSize, int minSize, cons
 //*******************************
 // TextRenderer::renderFittedText_WithColor
 //*******************************
-int TextRenderer::renderFittedText_WithColor(FontType type, int maxSize, int minSize, const string &text, int x,
-                                             int y, int maxWidth, ableem::Color textColor, XAlignment xAlign) {
+int TextRenderer::renderFittedText_WithColor(FontType type, int maxSize, int minSize, const string &text, int x, int y,
+                                             int maxWidth, ableem::Color textColor, XAlignment xAlign) {
     return renderText_WithColor(fittingFont(type, maxSize, minSize, text, maxWidth), text, x, y, textColor, xAlign);
 }
 
@@ -464,12 +466,14 @@ int TextRenderer::renderWrappedText(const ableem::Font &font, const string &text
 // TextRenderer::elide
 //*******************************
 string TextRenderer::elide(const ableem::Font &font, const string &text, int maxWidth) {
-    if (font.width(text) <= maxWidth) return text;
+    if (font.width(text) <= maxWidth)
+        return text;
     const string dots = "...";
     string cut = text;
     while (!cut.empty() && font.width(cut + dots) > maxWidth) {
         cut.pop_back();
-        while (!cut.empty() && (static_cast<unsigned char>(cut.back()) & 0xC0) == 0x80) cut.pop_back();   // a whole UTF-8 char
+        while (!cut.empty() && (static_cast<unsigned char>(cut.back()) & 0xC0) == 0x80)
+            cut.pop_back(); // a whole UTF-8 char
     }
     return cut + dots;
 }

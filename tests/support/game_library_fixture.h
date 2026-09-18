@@ -34,7 +34,7 @@ public:
         env.setRegionalDbFile(tmp.at("regional.db"));
         env.setInternalDbFile(tmp.at("internal.db"));
 
-        library.openCoversAndUsbGames();     // creates regional.db's schema itself
+        library.openCoversAndUsbGames(); // creates regional.db's schema itself
 
         // openInternalGames() only ALTERs in the four AutoBleem columns, because the console's own
         // internal.db already has its tables. A brand-new file does not, so create them first and then
@@ -51,8 +51,8 @@ public:
     // A game is only visible to the loaders through a join on DISC, so every game gets one - which is what
     // the scanner does too. Omitting it here would make a game silently invisible rather than fail loudly.
     void addUsbGame(int id, const std::string &title, const std::string &memcard = "SONY") {
-        library.usbGames().insertGame(id, title, "Publisher", 1, 1997,
-                                      tmp.at("Games/" + title), tmp.at("Games/" + title + "/sstates"), memcard);
+        library.usbGames().insertGame(id, title, "Publisher", 1, 1997, tmp.at("Games/" + title),
+                                      tmp.at("Games/" + title + "/sstates"), memcard);
         library.usbGames().insertDisc(id, 1, title);
         tmp.makeSubDir("Games/" + title);
         writeGameIni(title, false);
@@ -68,9 +68,7 @@ public:
     void addSubDirRow(int rowIndex, const std::string &name, int indentLevel, int numGames) {
         library.usbGames().insertSubDirRow(rowIndex, name, indentLevel, numGames);
     }
-    void putGameInSubDirRow(int rowIndex, int gameId) {
-        library.usbGames().insertSubDirRowGame(rowIndex, gameId);
-    }
+    void putGameInSubDirRow(int rowIndex, int gameId) { library.usbGames().insertSubDirRowGame(rowIndex, gameId); }
 
     // A USB game's favorite flag lives in its Game.ini, not in regional.db - the database's own comment
     // says so ("USB games don't need it as they use the game.ini to flag favorites"), and loadUsbGames

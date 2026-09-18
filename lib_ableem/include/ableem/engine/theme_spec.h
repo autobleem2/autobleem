@@ -14,14 +14,17 @@ namespace ableem {
 //******************
 // A scalar a theme may leave out. Reads convert to T; an assignment marks it set. mergeOver() takes the
 // base theme's value for anything not set.
-template<class T>
-struct Opt {
+template <class T> struct Opt {
     T value{};
     bool set = false;
 
     Opt() = default;
-    Opt(const T &v) : value(v), set(true) {}   // NOLINT: implicit on purpose, `spec.menuLines = 13`
-    Opt &operator=(const T &v) { value = v; set = true; return *this; }
+    Opt(const T &v) : value(v), set(true) {} // NOLINT: implicit on purpose, `spec.menuLines = 13`
+    Opt &operator=(const T &v) {
+        value = v;
+        set = true;
+        return *this;
+    }
     operator const T &() const { return value; }
 };
 
@@ -36,8 +39,8 @@ struct ThemeColor {
     ThemeColor() = default;
     ThemeColor(int r_, int g_, int b_) : r(r_), g(g_), b(b_), set(true) {}
 
-    static bool parseHex(const std::string &hex, ThemeColor &out);   // "#rrggbb", case-insensitive
-    static bool parseRgb(const std::string &rgb, ThemeColor &out);   // "255,255,255"
+    static bool parseHex(const std::string &hex, ThemeColor &out); // "#rrggbb", case-insensitive
+    static bool parseRgb(const std::string &rgb, ThemeColor &out); // "255,255,255"
     std::string toHex() const;
 };
 
@@ -70,30 +73,30 @@ struct ThemeMusic {
 //******************
 // Each part of these is optional on its own (the file, the rect, the colour, the alpha), so a theme that
 // gives only a rect still inherits the default's fill. `set` is the rect's flag.
-struct ThemeLogo {                  // the classic logo and where it is drawn
+struct ThemeLogo { // the classic logo and where it is drawn
     std::string file;
     int x = 0, y = 0, w = 0, h = 0;
     bool set = false;
 };
 
-struct ThemeFont {                  // a ttf and a point size
+struct ThemeFont { // a ttf and a point size
     std::string file;
     Opt<int> size;
 };
 
-struct ThemeFill {                  // a translucent fill: colour + alpha
+struct ThemeFill { // a translucent fill: colour + alpha
     ThemeColor color;
     Opt<int> alpha;
 };
 
-struct ThemePanel {                 // a filled rect
+struct ThemePanel { // a filled rect
     int x = 0, y = 0, w = 0, h = 0;
     bool set = false;
     ThemeColor color;
     Opt<int> alpha;
 };
 
-struct ThemeStatusBar : ThemePanel {   // the classic status line: its bar, and the y the text is drawn at
+struct ThemeStatusBar : ThemePanel { // the classic status line: its bar, and the y the text is drawn at
     Opt<int> textY;
 };
 
@@ -106,15 +109,15 @@ struct ClassicTheme {
     std::string background;
     ThemeLogo logo;
     ThemeFont font;
-    Opt<int> menuLines;             // visible rows in the list menus
-    ThemePanel menuPanel;           // the translucent panel behind a menu
+    Opt<int> menuLines;   // visible rows in the list menus
+    ThemePanel menuPanel; // the translucent panel behind a menu
     ThemeStatusBar statusBar;
     ThemeColor textColor;
-    Opt<bool> textShadow;           // false: no dark halo under the classic UI's text (unset counts as true)
-    ThemeFill keyboardKey;          // on-screen keyboard key
-    ThemeColor labelColor;          // label box fill
-    ThemePoint freeSpaceText;       // where "Free space: ..." is drawn
-    ThemePoint editorCover;         // the game editor's cover art
+    Opt<bool> textShadow;     // false: no dark halo under the classic UI's text (unset counts as true)
+    ThemeFill keyboardKey;    // on-screen keyboard key
+    ThemeColor labelColor;    // label box fill
+    ThemePoint freeSpaceText; // where "Free space: ..." is drawn
+    ThemePoint editorCover;   // the game editor's cover art
 
     // the |@X| marker textures, by marker name
     struct Buttons {
@@ -134,18 +137,28 @@ struct LauncherTheme {
     std::string playText;
     std::string settingsPanel;
     std::string metaPanel;
-    Opt<bool> metaPanelSlides;      // false: the meta panel stays put when the menu opens (a static layout)
-    Opt<bool> textShadow;           // false: no dark halo under the launcher's text (unset counts as true)
-    ThemeRect snapPanel;            // where the selected game's screenshot is drawn (aspect-fit); unset: not drawn
+    Opt<bool> metaPanelSlides; // false: the meta panel stays put when the menu opens (a static layout)
+    Opt<bool> textShadow;      // false: no dark halo under the launcher's text (unset counts as true)
+    ThemeRect snapPanel;       // where the selected game's screenshot is drawn (aspect-fit); unset: not drawn
     std::string arrow;
 
-    struct Hints { std::string cross, circle, triangle; } hints;                    // the button hints in the footer
-    struct MenuIcons { std::string settings, guide, memcard, resume; } menuIcons;   // the launcher's menu row
-    struct MemcardManager { std::string grid, pencil; } memcardManager;
-    struct Fonts { std::string medium, bold; } fonts;
+    struct Hints {
+        std::string cross, circle, triangle;
+    } hints; // the button hints in the footer
+    struct MenuIcons {
+        std::string settings, guide, memcard, resume;
+    } menuIcons; // the launcher's menu row
+    struct MemcardManager {
+        std::string grid, pencil;
+    } memcardManager;
+    struct Fonts {
+        std::string medium, bold;
+    } fonts;
     // hint: the footer's "Enter" / "Cancel" / "Button Guide" labels next to the button icons; unset means
     // they take the secondary colour (light hint text gets the dark halo like every other light text)
-    struct Colors { ThemeColor text, secondary, hint; } colors;
+    struct Colors {
+        ThemeColor text, secondary, hint;
+    } colors;
 };
 
 //******************

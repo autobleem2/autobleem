@@ -26,9 +26,10 @@ void IniFile::load(const string &_path) {
     }
 
     while (Strings::getlineRemoveCR(file, iniLine)) {
-        Strings::removeComment(iniLine);   // remove '#' to end of line
+        Strings::removeComment(iniLine); // remove '#' to end of line
         iniLine = trim(iniLine);
-        if (iniLine.length() == 0) continue;    // blank line
+        if (iniLine.length() == 0)
+            continue; // blank line
         if (iniLine[0] == '[') {
             iniLine = ltrim(iniLine);
             iniLine = iniLine.substr(1, iniLine.find(']') - 1);
@@ -43,7 +44,8 @@ void IniFile::load(const string &_path) {
             values[paramName] = paramVal;
         }
 
-        if (file.eof()) break;
+        if (file.eof())
+            break;
     };
     file.close();
 }
@@ -70,7 +72,8 @@ void IniFile::save(const string &_path) {
     PLOG_INFO << "Writing ini file: " << _path;
     ofstream os;
     os.open(_path);
-    if (!DirEntry::checkWritable(os, _path)) return;
+    if (!DirEntry::checkWritable(os, _path))
+        return;
     os << "[" << section << "]" << endl;
     for (map<string, string>::iterator iter = values.begin(); iter != values.end(); ++iter) {
         string k = iter->first;
@@ -94,7 +97,8 @@ void IniFile::print() {
     PLOG_DEBUG << "path = " << path;
     PLOG_DEBUG << "entry = " << entry;
 
-    for (auto &item : values) PLOG_DEBUG << item.first << " = " << item.second;
+    for (auto &item : values)
+        PLOG_DEBUG << item.first << " = " << item.second;
 }
 
 } // namespace ableem

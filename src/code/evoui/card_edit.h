@@ -19,7 +19,7 @@
 // textures follow.
 class CardEdit {
 public:
-    explicit CardEdit(ableem::Renderer &renderer);   // a blank card (the template card1.mcd) to start with
+    explicit CardEdit(ableem::Renderer &renderer); // a blank card (the template card1.mcd) to start with
 
     bool load(const std::string &filename);
     bool save(const std::string &filename) const { return image_.save(filename); }

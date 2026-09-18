@@ -13,17 +13,18 @@
 #include <ableem/engine/log.h>
 
 using namespace std;
+using ableem::Button;
+using ableem::Color;
+using ableem::Event;
 using ableem::Rect;
 using ableem::Size;
-using ableem::Color;
 using ableem::Texture;
-using ableem::Event;
-using ableem::Button;
 //********************
 // Gui::Gui
 //********************
-Gui::Gui() : assets_(renderer(), App::get().theme(), App::get().config()),
-             text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
+Gui::Gui()
+    : assets_(renderer(), App::get().theme(), App::get().config()),
+      text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     input().probePads();
 }
 
@@ -34,7 +35,6 @@ void Gui::splash(const string &message) {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->drawText(message);
 }
-
 
 //*******************************
 // Gui::loadAssets
@@ -88,7 +88,7 @@ void Gui::display(bool resume) {
     PLOG_INFO << platform().versionString();
 
     if (!platform().hasDisplay()) {
-        acquireDisplay();   // released for an emulator - see releaseDisplay()
+        acquireDisplay(); // released for an emulator - see releaseDisplay()
     }
     platform().setScaleQuality(2);
 
@@ -115,10 +115,9 @@ void Gui::finish() {
 // Gui::releaseDisplay
 //*******************************
 void Gui::releaseDisplay() {
-    assets_.unload();          // before the renderer goes: SDL frees the textures with it
+    assets_.unload(); // before the renderer goes: SDL frees the textures with it
     GuiBase::releaseDisplay();
 }
-
 
 //*******************************
 // Gui::renderFreeSpace
@@ -167,8 +166,8 @@ void Gui::renderStatus(const string &text, int posy) {
     renderer().fillRect(rect);
 
     int y = bar.textY;
-    if (posy!=-1)
-        y=posy; // override the bottom status y position.  so far this has never been used.
+    if (posy != -1)
+        y = posy; // override the bottom status y position.  so far this has never been used.
 
     text_.renderText(assets_.themeFont, text, 0, y, XALIGN_CENTER);
 }

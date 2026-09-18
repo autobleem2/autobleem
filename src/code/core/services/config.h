@@ -18,5 +18,5 @@ public:
     IniFile inifile;
 
     Config();
-    void save();    // writes resources/config.ini back out
+    void save(); // writes resources/config.ini back out
 };

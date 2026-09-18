@@ -11,8 +11,8 @@
 #include "gui.h"
 #include "../app.h"
 
-using ableem::Event;
 using ableem::Button;
+using ableem::Event;
 using ableem::Key;
 
 //********************
@@ -25,5 +25,5 @@ public:
 
     std::shared_ptr<Gui> gui;
     ableem::Renderer &renderer;
-    App &app;   // the model: app.library(), app.session(), app.config(), the services
+    App &app; // the model: app.library(), app.session(), app.config(), the services
 };

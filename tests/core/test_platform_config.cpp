@@ -11,11 +11,10 @@
 TEST_CASE("PlatformConfig::load takes the keys from the ini and keeps defaults for the rest") {
     TempDir tmp("platform");
     tmp.makeSubDir("platform");
-    tmp.writeFile("platform/rpi.ini",
-                  "# the Pi\n"
-                  "retroarch_dir=RetroArch\n"
-                  "retroarch_core = cores/pcsx_rearmed_libretro.so\n"
-                  "retroarch_binary=/usr/local/bin/retroarch; /usr/bin/retroarch\n");
+    tmp.writeFile("platform/rpi.ini", "# the Pi\n"
+                                      "retroarch_dir=RetroArch\n"
+                                      "retroarch_core = cores/pcsx_rearmed_libretro.so\n"
+                                      "retroarch_binary=/usr/local/bin/retroarch; /usr/bin/retroarch\n");
 
     PlatformConfig cfg = PlatformConfig::load(PlatformConfig::pathFor(tmp.path(), "rpi"));
     CHECK(cfg.retroarchDir == "RetroArch");
@@ -51,7 +50,7 @@ TEST_CASE("PlatformConfig::apply resolves relative paths against the USB root an
     EnvFixture env;
     env.setUsbRoot("/media");
 
-    PlatformConfig console;   // the defaults
+    PlatformConfig console; // the defaults
     console.apply();
     CHECK(Environment::getPathToRetroarchDir() == "/media/retroarch");
     CHECK(Environment::getPathToRetroarchCoreFile() == "/media/retroarch/cores/km_pcsx_rearmed_neon_libretro.so");
@@ -66,7 +65,7 @@ TEST_CASE("PlatformConfig::apply resolves relative paths against the USB root an
     CHECK(Environment::getPathToRetroarchDir() == "/media/RetroArch");
     CHECK(Environment::getPathToRetroarchPlaylistsDir() == "/media/RetroArch/playlists");
     CHECK(Environment::getPathToRetroarchCoreFile() == "/media/RetroArch/cores/pcsx_rearmed_libretro.so");
-    CHECK(Environment::retroArchBinaries()[0] == "/usr/local/bin/retroarch");   // absolute: stands as is
+    CHECK(Environment::retroArchBinaries()[0] == "/usr/local/bin/retroarch"); // absolute: stands as is
 }
 
 TEST_CASE("Env::retroArchInstalled is true when any candidate binary exists") {
@@ -75,7 +74,7 @@ TEST_CASE("Env::retroArchInstalled is true when any candidate binary exists") {
     env.setUsbRoot(tmp.path());
 
     PlatformConfig cfg;
-    cfg.retroarchBinaries = {"retroarch", "bin/retroarch"};   // both relative to <root>/retroarch
+    cfg.retroarchBinaries = {"retroarch", "bin/retroarch"}; // both relative to <root>/retroarch
     cfg.apply();
     CHECK_FALSE(Environment::retroArchInstalled());
 

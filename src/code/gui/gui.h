@@ -17,7 +17,7 @@
 
 using namespace std;
 
-#define SCREEN_WIDTH  ableem::GuiBase::ScreenWidth
+#define SCREEN_WIDTH ableem::GuiBase::ScreenWidth
 #define SCREEN_HEIGHT ableem::GuiBase::ScreenHeight
 
 //********************
@@ -28,11 +28,9 @@ using namespace std;
 // status bar). Nothing here decides anything: the screens do, and App::run() shows them.
 class Gui : public ableem::GuiBase {
 private:
-
     Gui();
 
 public:
-
     // (re)loads the theme's textures and fonts, and its music unless told not to
     void loadAssets(bool reloadMusic = true);
 
@@ -42,8 +40,7 @@ public:
 
     void finish();
 
-
-    static void splash(const std::string & message);
+    static void splash(const std::string &message);
 
     void criticalException(const std::string &text);
 
@@ -74,13 +71,13 @@ public:
 
     int renderLogo(bool small);
 
-    void renderStatus(const std::string & text, int pos=-1);
+    void renderStatus(const std::string &text, int pos = -1);
 
     void renderTextBar();
 
-    void drawText(const std::string &text, const string &topLine="");
+    void drawText(const std::string &text, const string &topLine = "");
 
 private:
     ThemeAssets assets_;
-    TextRenderer text_;    // after assets_: it holds references to the theme font and the button textures
+    TextRenderer text_; // after assets_: it holds references to the theme font and the button textures
 };

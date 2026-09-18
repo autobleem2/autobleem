@@ -18,7 +18,7 @@ using namespace std;
 //*******************************
 void GuiManager::init() {
     useSmallerFont = true;
-    GuiMenuBase::init();    // call the base class init()
+    GuiMenuBase::init(); // call the base class init()
     // the rows sit to the right of the preview pane: title, then the folder, elided to what is left
     xoffset_L = PreviewWidth;
     xoffset_R = PreviewWidth + 420;
@@ -28,8 +28,8 @@ void GuiManager::init() {
     // init() runs again after the editor closes and after a delete: the rows are rebuilt, not appended
     lines.clear();
     psGames.clear();
-    psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames());    // Create list of games
-    sort(psGames.begin(), psGames.end(), sortByTitle);  // sort by title
+    psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames()); // Create list of games
+    sort(psGames.begin(), psGames.end(), sortByTitle);                      // sort by title
     for (int i = 0; i < psGames.size(); ++i) {
         // left column              right column
         // "title"                  "path"
@@ -37,21 +37,21 @@ void GuiManager::init() {
         path = DirEntry::removeGamesPathFromFrontOfPath(path);
         int panelRight = gui->text().getOpscreenRectOfTheme().x + gui->text().getOpscreenRectOfTheme().w - 20;
         int pathWidth = panelRight - (gui->text().getOpscreenRectOfTheme().x + 10 + xoffset_R);
-        lines.emplace_back(TwoColumnsOfText(gui->text().elide(font, psGames[i]->title, 400), gui->text().elide(font, path, pathWidth)));
+        lines.emplace_back(TwoColumnsOfText(gui->text().elide(font, psGames[i]->title, 400),
+                                            gui->text().elide(font, path, pathWidth)));
     }
 }
 
 //*******************************
 // GuiManager::render
 //*******************************
-void GuiManager::render()
-{
+void GuiManager::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderLogo(true);
 
-    gui->renderFreeSpace();     // this is why this menu's render is special instead of using the base class
+    gui->renderFreeSpace(); // this is why this menu's render is special instead of using the base class
 
     gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
 
@@ -67,7 +67,8 @@ void GuiManager::render()
 // GuiManager::renderPreview
 //*******************************
 void GuiManager::renderPreview() {
-    if (selected < 0 || selected >= static_cast<int>(psGames.size())) return;
+    if (selected < 0 || selected >= static_cast<int>(psGames.size()))
+        return;
     if (previewFor != selected) {
         previewFor = selected;
         const PsGame &game = *psGames[selected];
@@ -75,16 +76,20 @@ void GuiManager::renderPreview() {
         previewSnap = ableem::Texture();
         // the same chain as the carousel's: the PNG next to the game, the cached thumbnail, a fresh look
         string cover = game.folder + sep + game.base + ".png";
-        if (!DirEntry::exists(cover)) cover = game.coverPath;
+        if (!DirEntry::exists(cover))
+            cover = game.coverPath;
         if (cover.empty() || !DirEntry::exists(cover))
-            cover = app.thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName, game.title, game.recordName);
-        if (cover.empty()) cover = Env::getWorkingPath() + sep + "default.png";
+            cover =
+                app.thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName, game.title, game.recordName);
+        if (cover.empty())
+            cover = Env::getWorkingPath() + sep + "default.png";
         previewCover = ableem::Texture::loadFile(renderer, cover);
         string snap = game.snapPath;
         if (snap.empty() || !DirEntry::exists(snap))
             snap = app.thumbnails().findSnap(ableem::ThumbnailLookup::PlayStationDbName, game.title,
                                              game.folder + sep + game.base, game.recordName);
-        if (!snap.empty()) previewSnap = ableem::Texture::loadFile(renderer, snap);
+        if (!snap.empty())
+            previewSnap = ableem::Texture::loadFile(renderer, snap);
     }
 
     // the cover where the editor's is, the screenshot under it, both inside the pane's width
@@ -93,13 +98,15 @@ void GuiManager::renderPreview() {
     rect.y = app.theme().classic().editorCover.y;
     rect.w = 226;
     rect.h = 226;
-    if (previewCover.valid()) renderer.copy(previewCover, nullptr, &rect);
+    if (previewCover.valid())
+        renderer.copy(previewCover, nullptr, &rect);
     if (previewSnap.valid()) {
         ableem::Size s = previewSnap.size();
         ableem::Rect snapRect;
         snapRect.w = 226;
-        snapRect.h = s.w > 0 ? 226 * s.h / s.w : 170;   // aspect-fit to the cover's width
-        if (snapRect.h > 190) snapRect.h = 190;
+        snapRect.h = s.w > 0 ? 226 * s.h / s.w : 170; // aspect-fit to the cover's width
+        if (snapRect.h > 190)
+            snapRect.h = 190;
         snapRect.x = rect.x;
         snapRect.y = rect.y + rect.h + 10;
         renderer.copy(previewSnap, nullptr, &snapRect);
@@ -117,11 +124,8 @@ std::string GuiManager::getTitle() {
 // GuiManager::getStatusLine
 //*******************************
 string GuiManager::getStatusLine() {
-    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) +
-           "    |@L1|/|@R1| " + _("Page") +
-           "   |@X| " + _("Select") +
-           "  |@S| " + _("Delete Game") +
-           "  |@T| " + _("Flush covers") +
+    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L1|/|@R1| " +
+           _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete Game") + "  |@T| " + _("Flush covers") +
            " |@O| " + _("Close") + " |";
 }
 
@@ -130,8 +134,7 @@ string GuiManager::getStatusLine() {
 //*******************************
 void GuiManager::doCircle_Pressed() {
     app.audio().cancel.play();
-    if (changes)
-    {
+    if (changes) {
         app.scans().requestScan();
     }
     menuVisible = false;
@@ -171,10 +174,10 @@ void GuiManager::doSquare_Pressed() {
         PLOG_ERROR << "Failed to delete " << gameName;
         gui->renderStatus(_("Failed to delete") + " " + gameName);
     }
-    app.scans().requestScan();  // in order for the sub dir hierarchy to be fixed we have to do a rescan
-    //menuVisible = false;
-    init(); // refresh games list and menu item count
-    if (selected >= (int) psGames.size()) {   // the last game went: the cursor cannot stay past the end
+    app.scans().requestScan(); // in order for the sub dir hierarchy to be fixed we have to do a rescan
+    // menuVisible = false;
+    init();                                // refresh games list and menu item count
+    if (selected >= (int)psGames.size()) { // the last game went: the cursor cannot stay past the end
         selected = psGames.empty() ? 0 : psGames.size() - 1;
         firstVisibleIndex = std::max(0, selected - maxVisible + 1);
         lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
@@ -192,8 +195,7 @@ void GuiManager::doTriangle_Pressed() {
     confirm.show();
     bool delCovers = confirm.result;
 
-    if (delCovers)
-    {
+    if (delCovers) {
         PLOG_INFO << "Trying to delete covers";
         gui->renderStatus(_("Please wait ... deleting covers..."));
 
@@ -211,15 +213,13 @@ void GuiManager::doTriangle_Pressed() {
 //*******************************
 void GuiManager::doCross_Pressed() {
     app.audio().cursor.play();
-    if (!psGames.empty())
-    {
+    if (!psGames.empty()) {
         string selectedGameFolder = psGames[selected]->folder;
         {
             GuiEditor editor(*gui);
             editor.gameData = psGames[selected];
             editor.show();
-            if (editor.changes)
-            {
+            if (editor.changes) {
                 changes = true;
             }
         }
@@ -229,10 +229,8 @@ void GuiManager::doCross_Pressed() {
 
         init();
         int pos = 0;
-        for (const auto & psGame : psGames)
-        {
-            if (psGame->folder == selectedGameFolder)
-            {
+        for (const auto &psGame : psGames) {
+            if (psGame->folder == selectedGameFolder) {
                 selected = pos;
                 firstVisibleIndex = pos;
                 lastVisibleIndex = firstVisibleIndex + maxVisible - 1;

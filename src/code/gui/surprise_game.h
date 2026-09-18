@@ -32,9 +32,9 @@ struct SurpriseSprites {
     ableem::Texture ship;
     ableem::Texture enemy1;
     ableem::Texture enemy2;
-    ableem::Texture ufo;          // the diving alien
+    ableem::Texture ufo; // the diving alien
     ableem::Texture laserPlayer;
-    ableem::Texture laserEnemy;   // doubles as the "power" (piercing) player shot - a bigger, meaner-looking bolt
+    ableem::Texture laserEnemy; // doubles as the "power" (piercing) player shot - a bigger, meaner-looking bolt
     ableem::Texture powerupRapid;
     ableem::Texture powerupSpread;
     ableem::Texture powerupPower;
@@ -80,30 +80,33 @@ public:
     int currentScore() const { return score; }
     int currentHighScore() const { return highScore; }
     // seeds the in-session high score from Config's saved value; never lowers it. Call once, before reset().
-    void seedHighScore(int hs) { if (hs > highScore) highScore = hs; }
+    void seedHighScore(int hs) {
+        if (hs > highScore)
+            highScore = hs;
+    }
 
 private:
     struct Bullet {
         float x = 0, y = 0;
-        float vx = 0;          // horizontal drift per frame, for the spread shot's angled bolts
-        int pierceLeft = 0;    // extra aliens this bolt can pass through after its first hit (the Power shot)
+        float vx = 0;       // horizontal drift per frame, for the spread shot's angled bolts
+        int pierceLeft = 0; // extra aliens this bolt can pass through after its first hit (the Power shot)
         bool alive = false;
     };
 
     struct Alien {
-        float baseX = 0, baseY = 0;   // formation slot (baseY is also this row's sway/rest position)
-        float x = 0, y = 0;           // current position
+        float baseX = 0, baseY = 0; // formation slot (baseY is also this row's sway/rest position)
+        float x = 0, y = 0;         // current position
         int row = 0;
         bool alive = true;
-        bool diving = false;          // swooping down at the ship along the bezier dive curve
-        bool returning = false;       // looping back in from off the top, into the formation slot
-        float diveT = 0;              // 0..1 progress through the dive curve
+        bool diving = false;    // swooping down at the ship along the bezier dive curve
+        bool returning = false; // looping back in from off the top, into the formation slot
+        float diveT = 0;        // 0..1 progress through the dive curve
         float diveStartX = 0, diveStartY = 0;
         float diveTargetX = 0;
-        float returnT = 0;            // 0..1 progress of the return/entrance flight
+        float returnT = 0; // 0..1 progress of the return/entrance flight
         float returnStartX = 0, returnStartY = 0;
-        unsigned int entranceDelayUntil = 0;   // holds position until this tick, then the return flight starts
-        int kind = 0;                 // 0/1 -> enemy1/enemy2 sprite while in formation
+        unsigned int entranceDelayUntil = 0; // holds position until this tick, then the return flight starts
+        int kind = 0;                        // 0/1 -> enemy1/enemy2 sprite while in formation
     };
 
     struct PowerUp {
@@ -118,7 +121,7 @@ private:
     std::vector<PowerUp> powerUps;
 
     float shipX = 0;
-    int dropsSinceExtraLife = 0;   // power-ups dropped since the last extra life (see maybeDropPowerUp)
+    int dropsSinceExtraLife = 0; // power-ups dropped since the last extra life (see maybeDropPowerUp)
     int lives = 3;
     int score = 0;
     int highScore = 0;
@@ -126,14 +129,15 @@ private:
 
     void bumpScore(int delta) {
         score += delta;
-        if (score > highScore) highScore = score;
+        if (score > highScore)
+            highScore = score;
     }
 
     // the formation's continuous Warblade-style weave: each row sways on its own sine phase and the whole
     // wave slowly creeps downward (capped) rather than bouncing off the screen edges as a rigid block
     float formationY = 0;
-    float waveSpeedScale = 1.0f;   // faster sway/descent/dive frequency on later waves
-    float enemySpeedScale = 1.0f;  // the every-5th-wave step: dive and shot speed (also folded into the above)
+    float waveSpeedScale = 1.0f;  // faster sway/descent/dive frequency on later waves
+    float enemySpeedScale = 1.0f; // the every-5th-wave step: dive and shot speed (also folded into the above)
 
     PowerUpType activePowerUp = PowerUpType::None;
     unsigned int powerUpUntilTicks = 0;
@@ -159,7 +163,7 @@ private:
     void handleCollisions(unsigned int nowTicks);
     void tryFire(unsigned int nowTicks);
     void maybeDropPowerUp(float x, float y);
-    int awayFromFormationCount() const;   // aliens currently diving or returning
+    int awayFromFormationCount() const; // aliens currently diving or returning
     float restX(const Alien &a, unsigned int nowTicks) const;
     float restY(const Alien &a) const;
 };

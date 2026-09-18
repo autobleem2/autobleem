@@ -61,7 +61,8 @@ void LaunchService::writeSelectionScript() {
     ofstream os;
     string path = config_.inifile.values["cfg"];
     os.open(path);
-    if (!DirEntry::checkWritable(os, path)) return;   // the rc scripts then keep the previous selection
+    if (!DirEntry::checkWritable(os, path))
+        return; // the rc scripts then keep the previous selection
     os << "#!/bin/sh" << endl << endl;
     os << "AB_SELECTION=" << session_.menuOption << endl;
     os << "AB_THEME=" << config_.inifile.values["theme"] << endl;
@@ -89,22 +90,22 @@ void LaunchService::launch(PsGamePtr &game, EmuMode mode, int resumePoint) {
     writeSelectionScript();
 
     switch (pathFor(*game, mode)) {
-        case Path::Pcsx:
-            memcards_.swapInForLaunch(*game);
-            resumePoints_.prepareForLaunch(*game, resumePoint);
-            launchPcsx(*game, resumePoint);
-            memcards_.swapOutAfterLaunch(*game);
-            break;
+    case Path::Pcsx:
+        memcards_.swapInForLaunch(*game);
+        resumePoints_.prepareForLaunch(*game, resumePoint);
+        launchPcsx(*game, resumePoint);
+        memcards_.swapOutAfterLaunch(*game);
+        break;
 
-        case Path::RetroArch:
-            raMemcardIn(*game);
-            launchRetroArch(*game);
-            raMemcardOut(*game);
-            break;
+    case Path::RetroArch:
+        raMemcardIn(*game);
+        launchRetroArch(*game);
+        raMemcardOut(*game);
+        break;
 
-        case Path::App:
-            launchApp(*game);
-            break;
+    case Path::App:
+        launchApp(*game);
+        break;
     }
 }
 
@@ -191,7 +192,7 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
     args.push_back(resumePoint != -1 ? "1" : "0");
     args.push_back(aspect);
     args.push_back(filter);
-    args.push_back("NA");   // pad mapping per-game was never wired up; this was always the fallback
+    args.push_back("NA"); // pad mapping per-game was never wired up; this was always the fallback
 
     runner_.run(pcsxLauncherScript(), args);
     cleanupPcsxConfig(game);
@@ -377,8 +378,7 @@ void LaunchService::transferRaConfig(PsGame &game) {
         int speedhack = atoi(processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
         int clock = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
         int dither = atoi(processor.getValue(path, "gpu_peops.iUseDither").c_str());
-        int interpolation = strtol(
-                processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
+        int interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
 
         int scanlines = atoi(processor.getValue(path, "scanlines").c_str());
         int scanline_level = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
@@ -393,11 +393,9 @@ void LaunchService::transferRaConfig(PsGame &game) {
                                     "pcsx_rearmed_neon_enhancement_enable = \"disabled\" ");
 
         if (dither != 0)
-            processor.replaceInFile(coreOptions, "pcsx_rearmed_dithering",
-                                    "pcsx_rearmed_dithering = \"enabled\" ");
+            processor.replaceInFile(coreOptions, "pcsx_rearmed_dithering", "pcsx_rearmed_dithering = \"enabled\" ");
         else
-            processor.replaceInFile(coreOptions, "pcsx_rearmed_dithering",
-                                    "pcsx_rearmed_dithering = \"disabled\" ");
+            processor.replaceInFile(coreOptions, "pcsx_rearmed_dithering", "pcsx_rearmed_dithering = \"disabled\" ");
 
         if (speedhack != 0)
             processor.replaceInFile(coreOptions, "pcsx_rearmed_neon_enhancement_no_main",
@@ -410,8 +408,7 @@ void LaunchService::transferRaConfig(PsGame &game) {
                                 "pcsx_rearmed_psxclock = \"" + to_string(clock) + "\" ");
         processor.replaceInFile(coreOptions, "pcsx_rearmed_show_bios_bootlogo",
                                 "pcsx_rearmed_show_bios_bootlogo  = \"enabled\" ");
-        processor.replaceInFile(coreOptions, "pcsx_rearmed_nocdaudio",
-                                "pcsx_rearmed_nocdaudio  = \"enabled\" ");
+        processor.replaceInFile(coreOptions, "pcsx_rearmed_nocdaudio", "pcsx_rearmed_nocdaudio  = \"enabled\" ");
 
         if (interpolation == 0) {
             processor.replaceInFile(coreOptions, "pcsx_rearmed_spu_interpolation",
@@ -434,10 +431,8 @@ void LaunchService::transferRaConfig(PsGame &game) {
                                 "pcsx_rearmed_frameskip  = \"" + to_string(frameskip) + "\" ");
         if (scanlines == 1) {
             float opacity = scanline_level / 100.0f;
-            processor.replaceInFile(raConfig, "input_overlay",
-                                    "input_overlay  = \":/overlay/scanlines.cfg\" ");
-            processor.replaceInFile(raConfig, "input_overlay_enable",
-                                    "input_overlay_enable  = \"true\" ");
+            processor.replaceInFile(raConfig, "input_overlay", "input_overlay  = \":/overlay/scanlines.cfg\" ");
+            processor.replaceInFile(raConfig, "input_overlay_enable", "input_overlay_enable  = \"true\" ");
             processor.replaceInFile(raConfig, "input_overlay_opacity",
                                     "input_overlay_opacity  = \"" + to_string(opacity) + "\" ");
         }
@@ -446,39 +441,27 @@ void LaunchService::transferRaConfig(PsGame &game) {
     // retroarch.cfg
     ConfigFileEditor processor;
     string aspect = config_.inifile.values["aspect"]; // true - 1280x720 - false 960x720
-    string filter = config_.inifile.values["mip"]; // true - billiner
+    string filter = config_.inifile.values["mip"];    // true - billiner
     if (aspect == "true") {
         // widescreen
-        processor.replaceInFile(raConfig, "custom_viewport_width",
-                                "custom_viewport_width  = \"1280\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_height",
-                                "custom_viewport_height  = \"720\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_x",
-                                "custom_viewport_x  = \"0\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_y",
-                                "custom_viewport_y  = \"0\" ");
-        processor.replaceInFile(raConfig, "aspect_ratio_index",
-                                "aspect_ratio_index  = \"23\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_width", "custom_viewport_width  = \"1280\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_height", "custom_viewport_height  = \"720\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_x", "custom_viewport_x  = \"0\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_y", "custom_viewport_y  = \"0\" ");
+        processor.replaceInFile(raConfig, "aspect_ratio_index", "aspect_ratio_index  = \"23\" ");
     } else {
         // 4:3
-        processor.replaceInFile(raConfig, "custom_viewport_width",
-                                "custom_viewport_width  = \"960\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_height",
-                                "custom_viewport_height  = \"720\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_x",
-                                "custom_viewport_x  = \"160\" ");
-        processor.replaceInFile(raConfig, "custom_viewport_y",
-                                "custom_viewport_y  = \"0\" ");
-        processor.replaceInFile(raConfig, "aspect_ratio_index",
-                                "aspect_ratio_index  = \"0\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_width", "custom_viewport_width  = \"960\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_height", "custom_viewport_height  = \"720\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_x", "custom_viewport_x  = \"160\" ");
+        processor.replaceInFile(raConfig, "custom_viewport_y", "custom_viewport_y  = \"0\" ");
+        processor.replaceInFile(raConfig, "aspect_ratio_index", "aspect_ratio_index  = \"0\" ");
     }
 
     if (filter != "true") {
-        processor.replaceInFile(raConfig, "video_smooth",
-                                "video_smooth  = \"true\" ");
+        processor.replaceInFile(raConfig, "video_smooth", "video_smooth  = \"true\" ");
     } else {
-        processor.replaceInFile(raConfig, "video_smooth",
-                                "video_smooth  = \"false\" ");
+        processor.replaceInFile(raConfig, "video_smooth", "video_smooth  = \"false\" ");
     }
 }
 

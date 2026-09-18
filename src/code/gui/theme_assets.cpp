@@ -13,8 +13,8 @@ using ableem::Texture;
 //*******************************
 ThemeAssets::ThemeAssets(ableem::Renderer &renderer, Theme &theme, Config &config)
     : renderer_(renderer), theme_(theme), config_(config) {
-    sonyFonts.openAllFonts(Env::getSonyFontPath() + sep + "SST-Medium.ttf", Env::getSonyFontPath() + sep + "SST-Bold.ttf",
-                           renderer_);
+    sonyFonts.openAllFonts(Env::getSonyFontPath() + sep + "SST-Medium.ttf",
+                           Env::getSonyFontPath() + sep + "SST-Bold.ttf", renderer_);
 }
 
 //*******************************
@@ -34,11 +34,11 @@ void ThemeAssets::unload() {
 // ThemeAssets::load
 //*******************************
 void ThemeAssets::load() {
-    theme_.load();     // (re)reads theme.json, merged over themes/default, every file resolved
+    theme_.load(); // (re)reads theme.json, merged over themes/default, every file resolved
     const ClassicTheme &classic = theme_.classic();
     const LauncherTheme &launcher = theme_.launcher();
 
-    backgroundImg = Texture();  // release the previous theme's textures before loading the new ones
+    backgroundImg = Texture(); // release the previous theme's textures before loading the new ones
 
     logoRect.x = classic.logo.x;
     logoRect.y = classic.logo.y;
@@ -51,9 +51,8 @@ void ThemeAssets::load() {
         if (config_.inifile.values["jewel"] == "default") {
             cdJewel = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/nofilter.png");
         } else {
-            cdJewel = Texture::loadFile(renderer_,
-                                        Env::getWorkingPath() + sep + "evoimg/frames/" +
-                                        config_.inifile.values["jewel"]);
+            cdJewel = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/frames/" +
+                                                       config_.inifile.values["jewel"]);
         }
     } else {
         cdJewel = Texture();
@@ -78,7 +77,8 @@ void ThemeAssets::load() {
 
     // a theme without launcher fonts (and a default theme without them either) gets the console's own
     string classicFont = classic.font.file;
-    string medium = launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
+    string medium =
+        launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
     string bold = launcher.fonts.bold.empty() ? Env::getSonyFontPath() + sep + "SST-Bold.ttf" : launcher.fonts.bold;
     // ...unless the language needs glyphs no theme font has: then the one CJK font draws everything
     string cjk = Fonts::cjkFontFor(config_.inifile.values["language"]);

@@ -26,7 +26,9 @@ enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
 // the four icons of the settings overlay, in the order PsMenu lays them out. PsMenu::selOption stays a plain
 // index into that row (it also animates the zoom per option), so it is compared through selOptionIs.
 enum class LauncherMenuOption : int { AbSettings = 0, EditGameSettings, EditMemcardInfo, ResumeFromSavestate };
-inline bool selOptionIs(int selOption, LauncherMenuOption option) { return selOption == static_cast<int>(option); }
+inline bool selOptionIs(int selOption, LauncherMenuOption option) {
+    return selOption == static_cast<int>(option);
+}
 
 extern const ableem::Color brightWhite;
 
@@ -97,7 +99,7 @@ public:
     // reaches the sub-screen, not us - and the launcher would come back believing it is still held. Called
     // after every show() that can be reached with a modifier down.
     void forgetHeldModifiers();
-    void loop_prevNextGameFirstLetter(bool next);   // false is prev, true is next
+    void loop_prevNextGameFirstLetter(bool next); // false is prev, true is next
     void loop_prevGameFirstLetter();
     void loop_nextGameFirstLetter();
 
@@ -126,9 +128,9 @@ public:
     NotificationLine scanStatusLine;
     void applyScanUpdate(const ScanUpdate &update);
     std::string scanStatusText(const ScanUpdate &update) const;
-    bool scanRosterChangedSinceReload = false;   // set by applyScanUpdate, cleared once reloadGames() runs
+    bool scanRosterChangedSinceReload = false; // set by applyScanUpdate, cleared once reloadGames() runs
 
-    bool powerOffShift=false;
+    bool powerOffShift = false;
 
     // the row of covers: the games it shows, the selected one, the scroll animation
     Carousel carousel{*gui};
@@ -146,21 +148,27 @@ public:
     PsObj *oButton = nullptr;
     PsObj *tButton = nullptr;
     std::unique_ptr<PsMenu> menu;
-    PsStateSelector * sselector= nullptr;
+    PsStateSelector *sselector = nullptr;
 
-    ableem::Color fgColor { 255, 255, 255, 255 };
-    ableem::Color secColor { 100, 100, 100, 255 };
-    ableem::Color hintColor { 100, 100, 100, 255 };   // theme launcher.colors.hint, else secColor
+    ableem::Color fgColor{255, 255, 255, 255};
+    ableem::Color secColor{100, 100, 100, 255};
+    ableem::Color hintColor{100, 100, 100, 255}; // theme launcher.colors.hint, else secColor
 
     std::vector<std::unique_ptr<PsObj>> staticElements;
     std::vector<std::unique_ptr<PsObj>> frontElemets;
 
     // adds an element to one of the vectors above and returns the non-owning pointer for the shortcut members
-    template <typename T> T *addStaticElement(T *obj) { staticElements.emplace_back(obj); return obj; }
-    template <typename T> T *addFrontElement(T *obj) { frontElemets.emplace_back(obj); return obj; }
+    template <typename T> T *addStaticElement(T *obj) {
+        staticElements.emplace_back(obj);
+        return obj;
+    }
+    template <typename T> T *addFrontElement(T *obj) {
+        frontElemets.emplace_back(obj);
+        return obj;
+    }
 
-    PsCenterLabel * menuHead = nullptr;
-    PsCenterLabel * menuText = nullptr;
+    PsCenterLabel *menuHead = nullptr;
+    PsCenterLabel *menuText = nullptr;
 
     std::string gameName;
     std::string publisher;
@@ -169,8 +177,8 @@ public:
     std::string region;
     std::string players;
 
-    bool staticMeta=false;
-    bool textShadow = true;     // theme launcher.textShadow: the dark halo under this screen's text
+    bool staticMeta = false;
+    bool textShadow = true; // theme launcher.textShadow: the dark halo under this screen's text
     bool gameInfoVisible = true;
 
     // a black overlay fading from fully opaque to transparent over LauncherFadeInDuration, so the launcher

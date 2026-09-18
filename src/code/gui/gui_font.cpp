@@ -9,17 +9,15 @@ using namespace std;
 //********************
 // static Fonts::allFontInfos
 //********************
-Fonts::FontInfo Fonts::allFontInfos[] = {
-        { FONT_15_BOLD, 15, FONT_BOLD },
-        { FONT_20_BOLD, 20, FONT_BOLD},
-        { FONT_22_MED,  22, FONT_MED },
-        { FONT_28_BOLD, 28, FONT_BOLD }
-};
+Fonts::FontInfo Fonts::allFontInfos[] = {{FONT_15_BOLD, 15, FONT_BOLD},
+                                         {FONT_20_BOLD, 20, FONT_BOLD},
+                                         {FONT_22_MED, 22, FONT_MED},
+                                         {FONT_28_BOLD, 28, FONT_BOLD}};
 
 //********************
 // Fonts::Fonts
 //********************
-Fonts::Fonts() { }
+Fonts::Fonts() {}
 
 //********************
 // Fonts::openNewSharedCachedFont
@@ -37,7 +35,8 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 // Fonts::cjkFontFor
 //********************
 std::string Fonts::cjkFontFor(const std::string &language) {
-    if (language.find("Chinese") == std::string::npos) return "";
+    if (language.find("Chinese") == std::string::npos)
+        return "";
     std::string path = Env::getWorkingPath() + sep + "fonts" + sep + "NotoSansSC-Regular.otf";
     return DirEntry::exists(path) ? path : "";
 }
@@ -50,11 +49,11 @@ ableem::Font &Fonts::atSize(FontType type, int fontSize) {
     auto found = bySize.find(key);
     if (found != bySize.end())
         return found->second;
-    for (const auto &fontInfo : allFontInfos) {   // one of the fixed sizes: share it rather than open it again
+    for (const auto &fontInfo : allFontInfos) { // one of the fixed sizes: share it rather than open it again
         if (fontInfo.fontType == type && fontInfo.size == fontSize && fonts.count(fontInfo.fontEnum))
             return bySize[key] = fonts[fontInfo.fontEnum];
     }
-    assert(renderer != nullptr);   // openAllFonts() first
+    assert(renderer != nullptr); // openAllFonts() first
     return bySize[key] = openNewSharedCachedFont(type == FONT_MED ? medPath : boldPath, fontSize, *renderer);
 }
 

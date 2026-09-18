@@ -11,25 +11,22 @@ using namespace std;
 //*******************************
 // GuiConfirm::render
 //*******************************
-void GuiConfirm::render()
-{
+void GuiConfirm::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine("-=" + _("Please confirm") + "=-",0,yoffset, XALIGN_CENTER);
-    gui->text().renderTextLine(label,2,yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine("-=" + _("Please confirm") + "=-", 0, yoffset, XALIGN_CENTER);
+    gui->text().renderTextLine(label, 2, yoffset, XALIGN_CENTER);
 
-
-    gui->renderStatus("|@X| "+_("Confirm")+"  |@O| "+_("Cancel")+" |");
+    gui->renderStatus("|@X| " + _("Confirm") + "  |@O| " + _("Cancel") + " |");
     renderer.present();
 }
 
 //*******************************
 // GuiConfirm::loop
 //*******************************
-void GuiConfirm::loop()
-{
+void GuiConfirm::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     while (menuVisible) {
@@ -41,34 +38,34 @@ void GuiConfirm::loop()
             }
 
             switch (e.type) {
-                case Event::Type::ButtonDown:
-                    if (e.button == Button::Cross) {
-                        app.audio().cursor.play();
-                        result = true;
-                        menuVisible = false;
-                    };
+            case Event::Type::ButtonDown:
+                if (e.button == Button::Cross) {
+                    app.audio().cursor.play();
+                    result = true;
+                    menuVisible = false;
+                };
 
-                    if (e.button == Button::Circle) {
-                        app.audio().cancel.play();
-                        result = false;
-                        menuVisible = false;
-                    };
-                    break;
+                if (e.button == Button::Circle) {
+                    app.audio().cancel.play();
+                    result = false;
+                    menuVisible = false;
+                };
+                break;
 
-                case Event::Type::KeyDown:
-                    if (e.key == Key::Return) {
-                        app.audio().cursor.play();
-                        result = true;
-                        menuVisible = false;
-                    }
-                    if (e.key == Key::Escape) {
-                        app.audio().cancel.play();
-                        result = false;
-                        menuVisible = false;
-                    }
-                    break;
-                default:
-                    break;
+            case Event::Type::KeyDown:
+                if (e.key == Key::Return) {
+                    app.audio().cursor.play();
+                    result = true;
+                    menuVisible = false;
+                }
+                if (e.key == Key::Escape) {
+                    app.audio().cancel.play();
+                    result = false;
+                    menuVisible = false;
+                }
+                break;
+            default:
+                break;
             }
         }
     }

@@ -19,10 +19,11 @@ private:
     std::string buffer;
     int scrolling = 0;
     int totalLines = 0;
-    std::string getStringLine(const std::string& str, int lineNo);
+    std::string getStringLine(const std::string &str, int lineNo);
+
 public:
     bool result = false;
-    void setGame(PsGamePtr game) {this->game=game;};
+    void setGame(PsGamePtr game) { this->game = game; };
     void init();
     void render();
     void loop();
@@ -30,5 +31,4 @@ public:
     using GuiScreen::GuiScreen;
 };
 
-
-#endif //AUTOBLEEM_GUI_GUI_APP_START_H
+#endif // AUTOBLEEM_GUI_GUI_APP_START_H

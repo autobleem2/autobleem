@@ -20,14 +20,15 @@ namespace {
 // "pcsx_rearmed_frameskip_type"), so a replace clobbered its neighbours and the replaces meant for them
 // then found nothing.
 bool lineSetsProperty(const string &lcaseline, const string &lcasepattern) {
-    if (lcaseline.rfind(lcasepattern, 0) != 0) return false;
-    if (lcaseline.size() == lcasepattern.size()) return true;
+    if (lcaseline.rfind(lcasepattern, 0) != 0)
+        return false;
+    if (lcaseline.size() == lcasepattern.size())
+        return true;
     char next = lcaseline[lcasepattern.size()];
     return next == ' ' || next == '\t' || next == '=' || next == '\r';
 }
 
 } // namespace
-
 
 //*******************************
 // ConfigFileEditor::replaceProperty
@@ -97,9 +98,9 @@ string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string prop
             if (lineSetsProperty(lcaseline, lcasepattern)) {
                 string value = line.substr(lcaseline.find("=") + 1);
                 if (!value.empty() && value.back() == '\r') {
-                    value.pop_back();   // remove the trailing /r
+                    value.pop_back(); // remove the trailing /r
                 }
-                trim(value);    // remove leading and trailing spaces
+                trim(value); // remove leading and trailing spaces
                 PLOG_INFO << "  return: '" << value << "'";
                 return value;
             }
@@ -160,10 +161,10 @@ void ConfigFileEditor::replaceInternal(string gamePathInSaveStates, string prope
 //*******************************
 void ConfigFileEditor::replaceUsb(string entry, string gamePath, string property, string newline) {
     string realCfgPath = gamePath + sep + entry + sep + PCSX_CFG;
-    replaceProperty(realCfgPath, property, newline);    // replace in the game dir pcsx.cfg
+    replaceProperty(realCfgPath, property, newline); // replace in the game dir pcsx.cfg
 
     realCfgPath = Environment::getPathToSaveStatesDir() + sep + entry + sep + PCSX_CFG;
-    replaceProperty(realCfgPath, property, newline);    // replace in the !SaveStates/game/pcsx.cfg
+    replaceProperty(realCfgPath, property, newline); // replace in the !SaveStates/game/pcsx.cfg
 
     // replace in the !SaveStates/game/cfg/*.cfg
     replacePropertyInAllCfgsInDir(Environment::getPathToSaveStatesDir() + sep + entry + sep + "cfg", property, newline);
@@ -182,12 +183,10 @@ void ConfigFileEditor::replace(string entry, string gamePath, string property, s
         replaceUsb(entry, DirEntry::getDirNameFromPath(gamePath), property, newline);
 }
 
-
 //*******************************
 // ConfigFileEditor::replaceInFile
 //*******************************
-void ConfigFileEditor::replaceInFile(std::string fullCfgFilePath, std::string property, std::string newline)
-{
+void ConfigFileEditor::replaceInFile(std::string fullCfgFilePath, std::string property, std::string newline) {
     PLOG_INFO << "cfg replaceInFile, '" << fullCfgFilePath << "', '" << property << "'";
     replaceProperty(fullCfgFilePath, property, newline);
 }

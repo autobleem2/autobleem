@@ -24,11 +24,13 @@ public:
         // the counter keeps two TempDirs made in the same test from colliding
         static int counter = 0;
         const char *base = getenv("TMPDIR");
-        if (base == nullptr) base = getenv("TEMP");
-        if (base == nullptr) base = ".";
-        path_ = ableem::DirEntry::removeSeparatorFromEndOfPath(base) + ableem::sep +
-                "ab_test_" + label + "_" + std::to_string(++counter);
-        ableem::DirEntry::removeDirAndContents(path_);   // a previous run that was killed mid-test
+        if (base == nullptr)
+            base = getenv("TEMP");
+        if (base == nullptr)
+            base = ".";
+        path_ = ableem::DirEntry::removeSeparatorFromEndOfPath(base) + ableem::sep + "ab_test_" + label + "_" +
+                std::to_string(++counter);
+        ableem::DirEntry::removeDirAndContents(path_); // a previous run that was killed mid-test
         ableem::DirEntry::createDir(path_);
     }
 

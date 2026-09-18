@@ -42,7 +42,7 @@ void GuiLauncher::loop_chooseGameDir() {
     GuiGameDirMenu guiGameDirMenu(*gui);
 
     // add All Games and Internal Games only if origames is true in the config.ini
-    int offsetToGamesSubDirs {0};
+    int offsetToGamesSubDirs{0};
     bool showInternalGames = app.gameQuery().showInternalGames();
     if (showInternalGames) {
         // show internal is enabled.  show usbgames + internal, and show internal only menu items.
@@ -50,7 +50,8 @@ void GuiLauncher::loop_chooseGameDir() {
         int usbOnly = gamesList.size();
         gamesList += app.gameQuery().internalGames();
         guiGameDirMenu.lines.emplace_back(_("All Games") + " ( " + to_string(gamesList.size()) + ")");
-        guiGameDirMenu.lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) + ")"); // 20 games
+        guiGameDirMenu.lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) +
+                                          ")"); // 20 games
         offsetToGamesSubDirs = 2;
     } else {
         // show internal is disabled.  top game row 0 shows all usb games from /Games down.
@@ -62,23 +63,22 @@ void GuiLauncher::loop_chooseGameDir() {
     for (auto &rowInfo : gameRowInfos) {
         if (top) {
             guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
-                                               _("USB Games") + // display "USB Games" instead of "Games"
-                                               " ( " + to_string(rowInfo.numGames) + ")");
+                                              _("USB Games") + // display "USB Games" instead of "Games"
+                                              " ( " + to_string(rowInfo.numGames) + ")");
             top = false;
         } else {
-            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
-                                               rowInfo.rowName +
-                                               " ( " + to_string(rowInfo.numGames) + ")");
+            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') + rowInfo.rowName + " ( " +
+                                              to_string(rowInfo.numGames) + ")");
         }
     }
 
     // add Favorite Games at the bottom
-    int favoritesIndex = guiGameDirMenu.lines.size();  // favorites is the last line
+    int favoritesIndex = guiGameDirMenu.lines.size(); // favorites is the last line
     PsGames gamesList = app.gameQuery().favorites();
     guiGameDirMenu.lines.emplace_back(_("Favorite Games") + " ( " + to_string(gamesList.size()) + ")");
 
     // add History Games at the bottom
-    int historyIndex = guiGameDirMenu.lines.size();  // history is the last line
+    int historyIndex = guiGameDirMenu.lines.size(); // history is the last line
     gamesList = app.gameQuery().history();
     guiGameDirMenu.lines.emplace_back(_("Game History") + " ( " + to_string(gamesList.size()) + ")");
 
@@ -86,15 +86,14 @@ void GuiLauncher::loop_chooseGameDir() {
     int nextSel = offsetToGamesSubDirs; // set to game dir as default
     if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
         nextSel = offsetToGamesSubDirs + selection.usbGameDirIndex;
-    }
-    else {
+    } else {
         if (selection.ps1SelectState == Ps1SelectState::Favorites)
             nextSel = favoritesIndex; // favorites is the next to the last line
         else if (selection.ps1SelectState == Ps1SelectState::History)
             nextSel = historyIndex; // history is the last line
         else {
             if (showInternalGames)
-                nextSel = static_cast<int>(selection.ps1SelectState);   // AllGames is on row 0, InternalOnly is on row 1
+                nextSel = static_cast<int>(selection.ps1SelectState); // AllGames is on row 0, InternalOnly is on row 1
             else {
                 PLOG_ERROR << "loop_chooseGameDir() called with \"origames\" off and selection.ps1SelectState = "
                            << static_cast<int>(selection.ps1SelectState);
@@ -106,7 +105,7 @@ void GuiLauncher::loop_chooseGameDir() {
 
     // display the menu and return when user made selection or canceled
     guiGameDirMenu.show();
-    forgetHeldModifiers();   // reached with L2 held; its release went to the menu
+    forgetHeldModifiers(); // reached with L2 held; its release went to the menu
     bool cancelled = guiGameDirMenu.cancelled;
 
     // set the select state to the user selection
@@ -127,10 +126,9 @@ void GuiLauncher::loop_chooseGameDir() {
         }
     }
 
-
     if (cancelled)
         return;
-    switchSet(selection.set,true);
+    switchSet(selection.set, true);
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
@@ -159,7 +157,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     // set the selected menu line to be the current playlist
     int nextSel = 0;
     int i = 0;
-    for (string plist:playlists.playlists) {
+    for (string plist : playlists.playlists) {
         if (plist == selection.raPlaylistName) {
             nextSel = i;
             break;
@@ -169,7 +167,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     playlists.selected = nextSel;
 
     playlists.show();
-    forgetHeldModifiers();   // reached with L2 held; its release went to the menu
+    forgetHeldModifiers(); // reached with L2 held; its release went to the menu
     bool cancelled = playlists.cancelled;
     int selected = playlists.selected;
 
@@ -179,7 +177,7 @@ void GuiLauncher::loop_chooseRAPlaylist() {
     selection.raPlaylistIndex = selected;
     selection.raPlaylistName = raPlaylists[selected];
     selection.set = GameSet::RetroArch;
-    switchSet(selection.set,false);
+    switchSet(selection.set, false);
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
@@ -215,22 +213,21 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
     if (selectedIsPs1()) {
         if (selection.set == GameSet::Lightgun)
-            return loop_squareButton_Pressed();     // a light-gun game: RetroArch's core has the guncon
+            return loop_squareButton_Pressed(); // a light-gun game: RetroArch's core has the guncon
         if (app.session().runningGame->internal) {
             if (app.session().runningGame->play_using_ra)
-                return loop_squareButton_Pressed();     // play internal PSX game in RA
+                return loop_squareButton_Pressed(); // play internal PSX game in RA
         } else {
             IniFile gameini;
             gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
             if (gameini.values["play_using_ra"] == "true")
-                return loop_squareButton_Pressed();     // play PSX game in RA
+                return loop_squareButton_Pressed(); // play PSX game in RA
         }
         if (app.config().inifile.values["play_all_psx_with_ra"] == "true")
-            return loop_squareButton_Pressed();     // play PSX game in RA
+            return loop_squareButton_Pressed(); // play PSX game in RA
     }
 
-    if (app.session().runningGame->foreign)
-    {
+    if (app.session().runningGame->foreign) {
         if (!app.session().runningGame->app) {
             app.session().emuMode = EmuMode::RetroArch;
         } else {
@@ -239,14 +236,12 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             appStartScreen.show();
             bool result = appStartScreen.result;
             // Do not run
-            if (!result)
-            {
+            if (!result) {
                 app.session().startingGame = false;
                 menuVisible = true;
-
             }
             app.session().emuMode = EmuMode::Launcher;
-            }
+        }
     }
 }
 
@@ -276,7 +271,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
         carousel.selected = lastGame;
         bool resetCarouselPosition = false;
 
-        switchSet(selection.set,false);
+        switchSet(selection.set, false);
         showSetName();
 
         if (resetCarouselPosition) {
@@ -327,7 +322,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
 
     // a RetroArch game has its own, one-row editor
     if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
-        if (carousel.games[carousel.selected]->app) return;
+        if (carousel.games[carousel.selected]->app)
+            return;
         GuiEditorRA raEditor(*gui);
         raEditor.gameData = carousel.games[carousel.selected];
         raEditor.show();
@@ -427,8 +423,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
     if (carousel.games.empty()) {
         return;
     }
-    if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign)
-    {
+    if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
         return;
     }
 
@@ -455,7 +450,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
 
     app.audio().cursor.play();
     GuiMcManager mcManager(*gui);
-    mcManager.backgroundImg=background->tex;
+    mcManager.backgroundImg = background->tex;
     mcManager.leftCardName = leftCardName;
     mcManager.rightCardName = rightCardName;
     mcManager.card1path = cardPath1;
@@ -512,17 +507,17 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                 app.audio().cancel.play();
             }
         } else {
-            //app.audio().cursor.play();
+            // app.audio().cursor.play();
             app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
             app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
             arrow->visible = true;
             app.audio().resume.play();
-            notificationLines[1].setText(
-                    _("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
-                    DefaultShowingTimeout);
+            notificationLines[1].setText(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
+                                         DefaultShowingTimeout);
 
-            menu->setResumePic(app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
+            menu->setResumePic(
+                app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
 
             if (sselector->operation == OP_LOAD) {
                 state = LauncherScreenState::Set;
@@ -566,85 +561,85 @@ void GuiLauncher::loop_openSystemMenu() {
     forgetHeldModifiers();
 
     switch (action) {
-        case SystemMenuAction::None:
-            break;
+    case SystemMenuAction::None:
+        break;
 
-        case SystemMenuAction::RescanGames:
-            if (!app.scans().requestScan())
-                notificationLines[1].setText(_("A scan is already in progress"), DefaultShowingTimeout);
-            break;
+    case SystemMenuAction::RescanGames:
+        if (!app.scans().requestScan())
+            notificationLines[1].setText(_("A scan is already in progress"), DefaultShowingTimeout);
+        break;
 
-        case SystemMenuAction::RetroArch: {
-            if (!Env::retroArchInstalled()) {
-                GuiConfirm confirm(*gui);
-                confirm.label = _("RetroArch is not installed");
-                confirm.show();
-                if (!confirm.result)
-                    break;
-            } else {
-                app.library().exportToRetroArchPlaylist();
-            }
-            app.session().menuOption = MENU_OPTION_RETRO;
-            menuVisible = false;
-            break;
-        }
-
-        case SystemMenuAction::MemoryCards: {
-            GuiMemcards memcardsScreen(*gui);
-            memcardsScreen.show();
-            break;
-        }
-
-        case SystemMenuAction::GameManager: {
-            // it deletes game folders outright - letting the scanner read the same tree at the same time
-            // is asking for trouble, so this is the one item the menu still refuses while scanning() is true
-            if (app.scans().scanning()) {
-                notificationLines[1].setText(_("Can't manage games while a scan is running"), DefaultShowingTimeout);
-                break;
-            }
-            GuiManager managerScreen(*gui);
-            managerScreen.show();
-            if (selection.set == GameSet::PS1)
-                reloadGames();
-            break;
-        }
-
-        case SystemMenuAction::HardwareInfo: {
-            app.audio().close();
-            gui->input().flushPads();
-#ifdef AB_DEBUG_HOST
-            gui->drawText("Small delay to test");
-            gui->platform().delay(2000);
-#endif
-            string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
-            System::runAndWait(cmd, {});
-            gui->input().flushEvents();
-            gui->input().probePads();
-            app.audio().restart();
-            app.audio().playMusic();
-            break;
-        }
-
-        case SystemMenuAction::Options:
-            // same screen, same reload, as the settings icon in the Set overlay
-            loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
-            break;
-
-        case SystemMenuAction::About: {
-            GuiAbout aboutScreen(*gui);
-            aboutScreen.show();
-            break;
-        }
-
-        case SystemMenuAction::PowerOff: {
+    case SystemMenuAction::RetroArch: {
+        if (!Env::retroArchInstalled()) {
             GuiConfirm confirm(*gui);
-            confirm.label = _("Are you sure you want to power off?");
+            confirm.label = _("RetroArch is not installed");
             confirm.show();
-            if (confirm.result) {
-                gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-                System::powerOff();
-            }
+            if (!confirm.result)
+                break;
+        } else {
+            app.library().exportToRetroArchPlaylist();
+        }
+        app.session().menuOption = MENU_OPTION_RETRO;
+        menuVisible = false;
+        break;
+    }
+
+    case SystemMenuAction::MemoryCards: {
+        GuiMemcards memcardsScreen(*gui);
+        memcardsScreen.show();
+        break;
+    }
+
+    case SystemMenuAction::GameManager: {
+        // it deletes game folders outright - letting the scanner read the same tree at the same time
+        // is asking for trouble, so this is the one item the menu still refuses while scanning() is true
+        if (app.scans().scanning()) {
+            notificationLines[1].setText(_("Can't manage games while a scan is running"), DefaultShowingTimeout);
             break;
         }
+        GuiManager managerScreen(*gui);
+        managerScreen.show();
+        if (selection.set == GameSet::PS1)
+            reloadGames();
+        break;
+    }
+
+    case SystemMenuAction::HardwareInfo: {
+        app.audio().close();
+        gui->input().flushPads();
+#ifdef AB_DEBUG_HOST
+        gui->drawText("Small delay to test");
+        gui->platform().delay(2000);
+#endif
+        string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
+        System::runAndWait(cmd, {});
+        gui->input().flushEvents();
+        gui->input().probePads();
+        app.audio().restart();
+        app.audio().playMusic();
+        break;
+    }
+
+    case SystemMenuAction::Options:
+        // same screen, same reload, as the settings icon in the Set overlay
+        loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
+        break;
+
+    case SystemMenuAction::About: {
+        GuiAbout aboutScreen(*gui);
+        aboutScreen.show();
+        break;
+    }
+
+    case SystemMenuAction::PowerOff: {
+        GuiConfirm confirm(*gui);
+        confirm.label = _("Are you sure you want to power off?");
+        confirm.show();
+        if (confirm.result) {
+            gui->drawText(_("POWERING OFF... PLEASE WAIT"));
+            System::powerOff();
+        }
+        break;
+    }
     }
 }

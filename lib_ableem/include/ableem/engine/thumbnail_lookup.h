@@ -22,7 +22,7 @@ namespace ableem {
 // instance, not to a global, because the scan worker and the launcher each want their own.
 class ThumbnailLookup {
 public:
-    static const char PlayStationDbName[];   // "Sony - PlayStation" - the PS1 pack's folder and .rdb stem
+    static const char PlayStationDbName[]; // "Sony - PlayStation" - the PS1 pack's folder and .rdb stem
 
     // the roots come from Environment (getPathToRetroarchThumbnailsDir/ScreenshotsDir/StatesDir)
     ThumbnailLookup();
@@ -51,7 +51,8 @@ public:
 private:
     const std::vector<std::string> &listDir(const std::string &dir);
     std::string tryWithTagStripping(const std::string &dir, std::string candidate);
-    std::string fuzzyMatch(const std::string &dir, const std::string &bare, const std::vector<std::string> &preferredTags);
+    std::string fuzzyMatch(const std::string &dir, const std::string &bare,
+                           const std::vector<std::string> &preferredTags);
 
     std::string thumbnailsDir_, screenshotsDir_, statesDir_;
     std::unordered_map<std::string, std::vector<std::string>> dirCache_;

@@ -19,7 +19,7 @@ using namespace std;
 //*******************************
 bool GameQueryService::showInternalGames() const {
 #ifdef AB_PLATFORM_RPI
-    return false;   // a Pi has no built-in games, so the option is not offered either (GuiOptions::fill)
+    return false; // a Pi has no built-in games, so the option is not offered either (GuiOptions::fill)
 #else
     return config_.inifile.values["origames"] == "true";
 #endif
@@ -35,7 +35,7 @@ PsGames GameQueryService::ps1GamesInSubDirRow(int rowIndex, string *rowName) {
     SubDirRowInfos rowInfos;
     library_.usbGames().loadSubDirRows(&rowInfos);
     if (rowInfos.empty())
-        return games;   // no games at all
+        return games; // no games at all
     if (rowIndex < 0 || static_cast<size_t>(rowIndex) >= rowInfos.size())
         return games;
 
@@ -98,8 +98,7 @@ PsGames GameQueryService::allPs1Games(bool includeUSB, bool includeInternal) {
 PsGames GameQueryService::favorites() {
     PsGames games;
     PsGames all = allPs1Games(true, showInternalGames());
-    copy_if(begin(all), end(all), back_inserter(games),
-            [](const PsGamePtr &game) { return game->favorite; });
+    copy_if(begin(all), end(all), back_inserter(games), [](const PsGamePtr &game) { return game->favorite; });
     return games;
 }
 
@@ -109,8 +108,7 @@ PsGames GameQueryService::favorites() {
 PsGames GameQueryService::history() {
     PsGames games;
     PsGames all = allPs1Games(true, showInternalGames());
-    copy_if(begin(all), end(all), back_inserter(games),
-            [](const PsGamePtr &game) { return game->history > 0; });
+    copy_if(begin(all), end(all), back_inserter(games), [](const PsGamePtr &game) { return game->history > 0; });
     return games;
 }
 
@@ -185,21 +183,21 @@ PsGames GameQueryService::gamesFor(GameSetSelection &selection) {
         }
 
         switch (selection.ps1SelectState) {
-            case Ps1SelectState::AllGames:
-                games = allPs1Games(true, showInternalGames());
-                break;
-            case Ps1SelectState::InternalOnly:
-                games = internalGames();
-                break;
-            case Ps1SelectState::GamesSubdir:
-                games = ps1GamesInSubDirRow(selection.usbGameDirIndex, &selection.usbGameDirName);
-                break;
-            case Ps1SelectState::Favorites:
-                games = favorites();
-                break;
-            case Ps1SelectState::History:
-                games = history();
-                break;
+        case Ps1SelectState::AllGames:
+            games = allPs1Games(true, showInternalGames());
+            break;
+        case Ps1SelectState::InternalOnly:
+            games = internalGames();
+            break;
+        case Ps1SelectState::GamesSubdir:
+            games = ps1GamesInSubDirRow(selection.usbGameDirIndex, &selection.usbGameDirName);
+            break;
+        case Ps1SelectState::Favorites:
+            games = favorites();
+            break;
+        case Ps1SelectState::History:
+            games = history();
+            break;
         }
     } else if (selection.set == GameSet::RetroArch) {
         games = retroArchGames(selection.raPlaylistName);

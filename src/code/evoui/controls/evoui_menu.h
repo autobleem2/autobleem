@@ -24,15 +24,15 @@ public:
     ableem::Texture resume;
 
     int x = 0, y = 0, oy = 0, ox = 0;
-    int xoff[4] = {0,0,0,0};
-    int yoff[4] = {0,0,0,0};
+    int xoff[4] = {0, 0, 0, 0};
+    int yoff[4] = {0, 0, 0, 0};
 
-    float optionscales[4] = {1.0f,1.0f,1.0f,1.0f};
+    float optionscales[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
     float maxZoom = 1.5;
 
-    int selOption=0;
-    int animationStarted=0;
+    int selOption = 0;
+    int animationStarted = 0;
     int targety = 0;
     int duration = 0;
     bool active = false;
@@ -40,7 +40,13 @@ public:
     // which of the four icons are shown, left to right - always a prefix: settings alone for an App,
     // settings + game editor for a RetroArch game, all four for a PS1 game (GuiLauncher::showOptions)
     bool enabled[4] = {true, true, true, true};
-    int lastEnabled() const { int last = 0; for (int i = 0; i < 4; i++) if (enabled[i]) last = i; return last; }
+    int lastEnabled() const {
+        int last = 0;
+        for (int i = 0; i < 4; i++)
+            if (enabled[i])
+                last = i;
+        return last;
+    }
     int direction = 0;
 
     void freeAssets();
@@ -49,7 +55,7 @@ public:
 
     void setResumePic(std::string picturePath);
 
-    int transition =0;
+    int transition = 0;
 
     // the four icons come from the theme's launcher.menuIcons, already resolved to files
     PsMenu(std::string name1, const LauncherTheme::MenuIcons &icons);

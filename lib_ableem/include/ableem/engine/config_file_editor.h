@@ -22,7 +22,7 @@ public:
     // example gamePath = "/media/Games/!SaveStates/7"
     // example gamePath = "/media/Games/!SaveStates/Driver 2" or
     // example gamePath = "/media/Games/Racing/Driver 2"
-    std::string getValue(std::string gamePath, std::string property);   // from gamePath/pcsx.cfg
+    std::string getValue(std::string gamePath, std::string property); // from gamePath/pcsx.cfg
 
     // example gamePathInSaveStates = "/media/Games/!SaveStates/12"
     void replaceInternal(std::string gamePathInSaveStates, std::string property, std::string newline);

@@ -6,7 +6,9 @@ namespace ableem {
 
 namespace {
 
-bool isSpace(char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+bool isSpace(char c) {
+    return std::isspace(static_cast<unsigned char>(c)) != 0;
+}
 
 // Match `keyword` against the start of `s` case-insensitively. On success,
 // returns the offset past the keyword; on failure, returns 0.

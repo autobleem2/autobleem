@@ -47,12 +47,11 @@ void GameCatalogService::recordGamePlayed(const PsGamePtr &game) {
     copy_if(begin(everything), end(everything), back_inserter(ranked),
             [&](const PsGamePtr &other) { return other->history > 0 && other->gameId != game->gameId; });
 
-    sort(begin(ranked), end(ranked),
-         [](const PsGamePtr &l, const PsGamePtr &r) { return l->history < r->history; });
+    sort(begin(ranked), end(ranked), [](const PsGamePtr &l, const PsGamePtr &r) { return l->history < r->history; });
 
     int rank = 2;
     for (auto &other : ranked) {
-        other->history = rank <= HistoryLimit ? rank++ : 0;   // 0 drops it out of the history
+        other->history = rank <= HistoryLimit ? rank++ : 0; // 0 drops it out of the history
     }
 
     game->history = 1;
@@ -90,9 +89,8 @@ GameCatalogService::DeleteResult GameCatalogService::deleteUsbGame(const PsGame 
     // a !SaveStates folder can be shared between games, so it only becomes deletable once the last game
     // using it is gone
     PsGames remaining = PsGame::fromRecords(library_.usbGames().loadUsbGames());
-    result.saveStateFolderIsNowUnused =
-            none_of(begin(remaining), end(remaining),
-                    [&](const PsGamePtr &other) { return other->ssFolder == game.ssFolder; });
+    result.saveStateFolderIsNowUnused = none_of(
+        begin(remaining), end(remaining), [&](const PsGamePtr &other) { return other->ssFolder == game.ssFolder; });
     return result;
 }
 

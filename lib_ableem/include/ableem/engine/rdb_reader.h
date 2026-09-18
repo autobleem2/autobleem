@@ -22,15 +22,15 @@ namespace ableem {
 class RdbReader {
 public:
     struct Record {
-        std::string name;        // the canonical libretro name, e.g. "Crash Bandicoot (USA)" - also the thumbnail file name
-        std::string region;      // as the database spells it: "USA", "Europe", "Japan", ...
-        std::string serial;      // "SLUS-00593", sometimes with a suffix: "SLUS-01251GH", "SLUS-00594-1"
+        std::string name;   // the canonical libretro name, e.g. "Crash Bandicoot (USA)" - also the thumbnail file name
+        std::string region; // as the database spells it: "USA", "Europe", "Japan", ...
+        std::string serial; // "SLUS-00593", sometimes with a suffix: "SLUS-01251GH", "SLUS-00594-1"
         std::string publisher;
         std::string developer;
         std::string genre;
         int releaseyear = 0;
         int releasemonth = 0;
-        int users = 0;           // players
+        int users = 0; // players
     };
 
     // reads the whole file; false (and isValid() false) for a missing, truncated or malformed one

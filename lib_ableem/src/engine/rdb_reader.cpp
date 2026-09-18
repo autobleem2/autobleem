@@ -43,7 +43,7 @@ constexpr uint8_t FIXARRAY_MASK = 0x90; // 0x90..0x9f
 constexpr uint8_t FIXSTR_MASK = 0xa0;   // 0xa0..0xbf
 
 class Cursor {
-  public:
+public:
     Cursor(const uint8_t *data, size_t size) : p(data), end(data + size) {}
 
     bool eof() const { return p >= end; }
@@ -78,7 +78,7 @@ class Cursor {
         return true;
     }
 
-  private:
+private:
     const uint8_t *p;
     const uint8_t *end;
 };
@@ -363,23 +363,33 @@ bool RdbReader::open(const string &path) {
                 return false;
             }
             bool ok = true;
-            if (key == "name") ok = read_string(c, rec.name);
-            else if (key == "region") ok = read_string(c, rec.region);
-            else if (key == "serial") ok = read_string(c, rec.serial);
-            else if (key == "publisher") ok = read_string(c, rec.publisher);
-            else if (key == "developer") ok = read_string(c, rec.developer);
-            else if (key == "genre") ok = read_string(c, rec.genre);
+            if (key == "name")
+                ok = read_string(c, rec.name);
+            else if (key == "region")
+                ok = read_string(c, rec.region);
+            else if (key == "serial")
+                ok = read_string(c, rec.serial);
+            else if (key == "publisher")
+                ok = read_string(c, rec.publisher);
+            else if (key == "developer")
+                ok = read_string(c, rec.developer);
+            else if (key == "genre")
+                ok = read_string(c, rec.genre);
             else if (key == "releaseyear" || key == "releasemonth" || key == "users") {
                 uint64_t v = 0;
                 ok = read_uint(c, v);
-                if (key == "releaseyear") rec.releaseyear = static_cast<int>(v);
-                else if (key == "releasemonth") rec.releasemonth = static_cast<int>(v);
-                else rec.users = static_cast<int>(v);
+                if (key == "releaseyear")
+                    rec.releaseyear = static_cast<int>(v);
+                else if (key == "releasemonth")
+                    rec.releasemonth = static_cast<int>(v);
+                else
+                    rec.users = static_cast<int>(v);
             } else {
                 ok = skip_value(c);
             }
             if (!ok) {
-                PLOG_INFO << "rdb: bad value for " << key << " at offset " << (buf.size() - c.remaining()) << " in " << path;
+                PLOG_INFO << "rdb: bad value for " << key << " at offset " << (buf.size() - c.remaining()) << " in "
+                          << path;
                 return false;
             }
         }

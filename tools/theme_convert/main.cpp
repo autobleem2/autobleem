@@ -42,7 +42,8 @@ int main(int argc, char *argv[]) {
             cout << entry.name << ": nothing to do" << endl;
             continue;
         }
-        if (!ThemeConverter::convert(dir)) failures++;
+        if (!ThemeConverter::convert(dir))
+            failures++;
     }
     return failures == 0 ? 0 : 1;
 }

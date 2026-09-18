@@ -40,7 +40,7 @@ public:
     ableem::Texture backgroundImg;
     ableem::Texture logo;
     ableem::Texture cdJewel;
-    std::map<std::string, ableem::Texture> buttonTextureMap;   // "X", "O", "Start", "Check", ... -> its texture
+    std::map<std::string, ableem::Texture> buttonTextureMap; // "X", "O", "Start", "Check", ... -> its texture
 
 private:
     // the theme's own file for `texname`, or the default theme's when it has none

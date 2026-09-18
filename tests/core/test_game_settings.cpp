@@ -22,16 +22,15 @@ bool contains(const string &text, const string &piece) {
 }
 
 // A pcsx.cfg with every line the editor reads. The levels are hex: 0x39 = 57, 0x46 = 70.
-const char *const PcsxCfg =
-    "gpu_neon.enhancement_enable = 0\n"
-    "gpu_neon.enhancement_no_main = 0\n"
-    "psx_clock = 39\n"
-    "Gpu3 = builtin_gpu\n"
-    "frameskip3 = 0\n"
-    "gpu_peops.iUseDither = 1\n"
-    "scanlines = 0\n"
-    "scanline_level = 46\n"
-    "spu_config.iUseInterpolation = 1\n";
+const char *const PcsxCfg = "gpu_neon.enhancement_enable = 0\n"
+                            "gpu_neon.enhancement_no_main = 0\n"
+                            "psx_clock = 39\n"
+                            "Gpu3 = builtin_gpu\n"
+                            "frameskip3 = 0\n"
+                            "gpu_peops.iUseDither = 1\n"
+                            "scanlines = 0\n"
+                            "scanline_level = 46\n"
+                            "spu_config.iUseInterpolation = 1\n";
 
 // A library with one USB game and one internal game. The USB game's Game.ini is written by the fixture
 // (Automation=1, Favorite=0) - tests that need more overwrite it.
@@ -76,14 +75,15 @@ struct Editing : GameLibraryFixture {
 
 TEST_CASE("open reads a USB game's Game.ini and its pcsx.cfg") {
     Editing lib;
-    lib.writeGameIni("[Game]\nTitle=Driver 2\nPublisher=Infogrames\nYear=2000\nPlayers=2\nMemcard=SONY\nAutomation=1\n");
+    lib.writeGameIni(
+        "[Game]\nTitle=Driver 2\nPublisher=Infogrames\nYear=2000\nPlayers=2\nMemcard=SONY\nAutomation=1\n");
     lib.tmp.writeFile("Games/Driver 2/pcsx.cfg", PcsxCfg);
 
     GameSettings s = lib.service->open(lib.usbGame());
 
     CHECK_FALSE(s.internal);
     CHECK(s.ini.path == lib.tmp.at("Games/Driver 2/Game.ini"));
-    CHECK(s.ini.entry == "Driver 2");   // the folder name - what ConfigFileEditor keys the !SaveStates copies by
+    CHECK(s.ini.entry == "Driver 2"); // the folder name - what ConfigFileEditor keys the !SaveStates copies by
     CHECK(s.ini.values["title"] == "Driver 2");
     CHECK(s.ini.values["publisher"] == "Infogrames");
     CHECK(s.ini.values["memcard"] == "SONY");
@@ -108,7 +108,7 @@ TEST_CASE("open fills an internal game's ini in from the record, with no file be
     CHECK(s.ini.values["year"] == "1995");
     CHECK(s.ini.values["players"] == "1");
     CHECK(s.ini.values["memcard"] == "SONY");
-    CHECK(s.pcsx.clock == 0);   // no pcsx.cfg under its !SaveStates folder yet
+    CHECK(s.pcsx.clock == 0); // no pcsx.cfg under its !SaveStates folder yet
 }
 
 TEST_CASE("a card set the ini names but which is gone shows as SONY, in memory only") {
@@ -117,7 +117,7 @@ TEST_CASE("a card set the ini names but which is gone shows as SONY, in memory o
 
     GameSettings s = lib.service->open(lib.usbGame());
     CHECK(s.ini.values["memcard"] == "SONY");
-    CHECK(contains(lib.readGameIni(), "Memcard=Gone"));   // the file is not rewritten just for this
+    CHECK(contains(lib.readGameIni(), "Memcard=Gone")); // the file is not rewritten just for this
 
     // ...and a set that does exist is kept
     lib.tmp.makeSubDir("Games/!MemCards/Racing");
@@ -133,7 +133,7 @@ TEST_CASE("a USB game's favorite flag round-trips through its Game.ini") {
     lib.service->setFavorite(s, true);
     CHECK(s.ini.values["favorite"] == "1");
     CHECK(contains(lib.readGameIni(), "Favorite=1"));
-    CHECK(lib.usbGame()->favorite);   // loadUsbGames merges the ini, which is how the Favorites set sees it
+    CHECK(lib.usbGame()->favorite); // loadUsbGames merges the ini, which is how the Favorites set sees it
 
     lib.service->setFavorite(s, false);
     CHECK(contains(lib.readGameIni(), "Favorite=0"));
@@ -153,11 +153,11 @@ TEST_CASE("an internal game's favorite and play-using-RA flags go to internal.db
 
     lib.service->setFavorite(s, true);
     lib.service->setPlayUsingRa(s, true);
-    CHECK(game->favorite);          // the record in hand, which the editor renders from
+    CHECK(game->favorite); // the record in hand, which the editor renders from
     CHECK(game->play_using_ra);
-    CHECK(lib.internalGame()->favorite);      // and the database, re-read
+    CHECK(lib.internalGame()->favorite); // and the database, re-read
     CHECK(lib.internalGame()->play_using_ra);
-    CHECK(s.ini.path == "");        // nothing was written as an ini
+    CHECK(s.ini.path == ""); // nothing was written as an ini
 
     lib.service->setFavorite(s, false);
     CHECK_FALSE(lib.internalGame()->favorite);
@@ -177,14 +177,14 @@ TEST_CASE("play using RA is the strings true/false in a USB game's ini") {
 
 TEST_CASE("locking flips Automation, and only from its opposite value") {
     Editing lib;
-    GameSettings s = lib.service->open(lib.usbGame());   // the fixture's ini says Automation=1
+    GameSettings s = lib.service->open(lib.usbGame()); // the fixture's ini says Automation=1
     REQUIRE(s.ini.values["automation"] == "1");
 
     lib.service->setLocked(s, true);
     CHECK(contains(lib.readGameIni(), "Automation=0"));
     CHECK(lib.usbGame()->locked);
 
-    lib.service->setLocked(s, true);    // already locked: still locked
+    lib.service->setLocked(s, true); // already locked: still locked
     CHECK(contains(lib.readGameIni(), "Automation=0"));
 
     lib.service->setLocked(s, false);
@@ -209,7 +209,7 @@ TEST_CASE("high res is written to every pcsx.cfg copy and remembered in the Game
 
     lib.service->setHighres(s, true);
 
-    CHECK(s.pcsx.highres == 1);   // read back from the file, not assumed
+    CHECK(s.pcsx.highres == 1); // read back from the file, not assumed
     CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "gpu_neon.enhancement_enable = 1"));
     CHECK(contains(lib.tmp.readFile("Games/!SaveStates/Driver 2/pcsx.cfg"), "gpu_neon.enhancement_enable = 1"));
     CHECK(contains(lib.tmp.readFile("Games/!SaveStates/Driver 2/cfg/slot1.cfg"), "gpu_neon.enhancement_enable = 1"));
@@ -234,8 +234,8 @@ TEST_CASE("an internal game's pcsx.cfg is the one under its !SaveStates folder, 
     CHECK(s.pcsx.speedhack == 1);
     CHECK(contains(lib.tmp.readFile("Games/!SaveStates/10/pcsx.cfg"), "gpu_neon.enhancement_enable = 1"));
     CHECK(contains(lib.tmp.readFile("Games/!SaveStates/10/cfg/slot1.cfg"), "gpu_neon.enhancement_no_main = 1"));
-    CHECK(s.ini.values["highres"] == "1");   // kept in the in-memory ini like a USB game's
-    CHECK(s.ini.path == "");                 // but there is no file to save it to
+    CHECK(s.ini.values["highres"] == "1"); // kept in the in-memory ini like a USB game's
+    CHECK(s.ini.path == "");               // but there is no file to save it to
 
     // the USB-only settings do nothing for an internal game
     lib.service->setGpuPlugin(s, GameSettingsService::PeopsGpu);
@@ -306,13 +306,14 @@ TEST_CASE("a pcsx.cfg with CRLF line endings reads clean values") {
 
     GameSettings s = lib.service->open(lib.usbGame());
     CHECK(s.pcsx.clock == 57);
-    CHECK(s.pcsx.gpu == "builtin_gpu");   // no trailing \r
+    CHECK(s.pcsx.gpu == "builtin_gpu"); // no trailing \r
 
     lib.service->setClock(s, 1);
     CHECK(s.pcsx.clock == 1);
     string written = lib.tmp.readFile("Games/Driver 2/pcsx.cfg");
     CHECK(contains(written, "psx_clock = 1"));
-    CHECK(contains(written, "Gpu3 = builtin_gpu\r"));   // untouched lines keep their \r; the rewritten one gets the platform's endl
+    CHECK(contains(
+        written, "Gpu3 = builtin_gpu\r")); // untouched lines keep their \r; the rewritten one gets the platform's endl
 }
 
 TEST_CASE("a pcsx.cfg without the key is left alone, and the value reads as off") {
@@ -322,7 +323,7 @@ TEST_CASE("a pcsx.cfg without the key is left alone, and the value reads as off"
 
     lib.service->setScanlines(s, true);
 
-    CHECK(s.pcsx.scanlines == 0);   // ConfigFileEditor replaces lines, it never adds one
+    CHECK(s.pcsx.scanlines == 0); // ConfigFileEditor replaces lines, it never adds one
     CHECK(lib.tmp.readFile("Games/Driver 2/pcsx.cfg") == "psx_clock = 39\n");
 }
 

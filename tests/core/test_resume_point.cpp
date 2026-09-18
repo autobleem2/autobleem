@@ -68,10 +68,10 @@ TEST_CASE("saving after a run keeps the state, the filename file and the disc no
 
     r.service.saveAfterLaunch(*r.game, 2);
 
-    CHECK(r.exists("sstates/TEKKEN3.002.res"));      // the state, kept for slot 2
-    CHECK(r.exists("filename.txt.res"));             // the shared kept copy
-    CHECK(r.exists("filename.2.txt.res"));           // and slot 2's own
-    CHECK(r.exists("lastcdimg.2.txt"));              // which disc it was playing
+    CHECK(r.exists("sstates/TEKKEN3.002.res")); // the state, kept for slot 2
+    CHECK(r.exists("filename.txt.res"));        // the shared kept copy
+    CHECK(r.exists("filename.2.txt.res"));      // and slot 2's own
+    CHECK(r.exists("lastcdimg.2.txt"));         // which disc it was playing
 
     // what PCSX left is moved, not copied
     CHECK_FALSE(r.exists("sstates/TEKKEN3.000"));
@@ -105,13 +105,13 @@ TEST_CASE("storing the picture makes the slot active and moves the screenshot in
     r.pcsxExitsHavingWritten("TEKKEN3");
     r.service.saveAfterLaunch(*r.game, 1);
 
-    CHECK_FALSE(r.service.slotIsActive(*r.game, 1));   // the state is kept, but no picture yet
+    CHECK_FALSE(r.service.slotIsActive(*r.game, 1)); // the state is kept, but no picture yet
 
     r.service.storePictureForSlot(*r.game, 1);
 
     CHECK(r.service.slotIsActive(*r.game, 1));
     CHECK(r.service.pictureForSlot(*r.game, 1) == r.ss("screenshots/TEKKEN3.1.png.res"));
-    CHECK_FALSE(r.exists("screenshots/TEKKEN3.png"));   // moved, not copied
+    CHECK_FALSE(r.exists("screenshots/TEKKEN3.png")); // moved, not copied
 }
 
 TEST_CASE("slot 0's picture is the one without a number in its name") {
@@ -163,8 +163,8 @@ TEST_CASE("preparing for a launch puts the slot's state back where PCSX will fin
 
     r.service.prepareForLaunch(*r.game, 1);
 
-    CHECK(r.exists("sstates/TEKKEN3.000"));           // PCSX loads this
-    CHECK(r.exists("lastcdimg.1.txt"));               // pointing at the disc image in the game's own folder
+    CHECK(r.exists("sstates/TEKKEN3.000")); // PCSX loads this
+    CHECK(r.exists("lastcdimg.1.txt"));     // pointing at the disc image in the game's own folder
 
     // The note is rewritten to point into this game's folder rather than wherever the state was recorded.
     // Compared by prefix: the file is written in text mode, so the line ending is the platform's.
@@ -195,8 +195,8 @@ TEST_CASE("preparing slot -1 starts from the beginning and restores nothing") {
 
     r.service.prepareForLaunch(*r.game, -1);
 
-    CHECK_FALSE(r.exists("sstates/TEKKEN3.000"));   // nothing put back for PCSX to load
-    CHECK(r.exists("sstates/TEKKEN3.000.res"));     // but the slot itself is untouched
+    CHECK_FALSE(r.exists("sstates/TEKKEN3.000")); // nothing put back for PCSX to load
+    CHECK(r.exists("sstates/TEKKEN3.000.res"));   // but the slot itself is untouched
 }
 
 TEST_CASE("a full save, resume and re-save round trip keeps the slot") {
@@ -222,7 +222,7 @@ TEST_CASE("a foreign entry has no resume points at all") {
     r.game->foreign = true;
     r.pcsxExitsHavingWritten("TEKKEN3");
 
-    CHECK(r.service.exitedCleanly(*r.game));          // nothing writes one, so nothing can be missing
+    CHECK(r.service.exitedCleanly(*r.game)); // nothing writes one, so nothing can be missing
     CHECK(r.service.lastPicture(*r.game) == "");
     CHECK_FALSE(r.service.slotIsActive(*r.game, 0));
 

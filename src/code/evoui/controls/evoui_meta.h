@@ -34,8 +34,8 @@ public:
     ableem::Texture cdTex;
     ableem::Texture favoriteTex;
     ableem::Texture raTex;
-    ableem::Texture lightgunTex;     // one player
-    ableem::Texture lightgun2Tex;    // two or more
+    ableem::Texture lightgunTex;  // one player
+    ableem::Texture lightgun2Tex; // two or more
 
     int nextPos = 0;
     int prevPos = 0;
@@ -48,17 +48,16 @@ public:
     int discs = 1;
     bool favorite = false;
     bool play_using_ra = false;
-    bool lightgun = false;   // set from LightgunService by updateTexts(PsGamePtr)
+    bool lightgun = false; // set from LightgunService by updateTexts(PsGamePtr)
     bool foreign = false;
     bool app = false;
 
-    void updateTexts(const std::string & gameNameTxt, const std::string & publisherTxt,
-                     const std::string & yearTxt, const std::string & serial, const std::string & region,
-                     const std::string & playersTxt, bool internal, bool hd, bool locked, int discs, bool favorite,
-                     bool play_using_ra, bool foreign, bool app, const std::string& last_played,
-                     ableem::Color _textColor);
+    void updateTexts(const std::string &gameNameTxt, const std::string &publisherTxt, const std::string &yearTxt,
+                     const std::string &serial, const std::string &region, const std::string &playersTxt, bool internal,
+                     bool hd, bool locked, int discs, bool favorite, bool play_using_ra, bool foreign, bool app,
+                     const std::string &last_played, ableem::Color _textColor);
 
-    void updateTexts(PsGamePtr & game, ableem::Color _textColor);
+    void updateTexts(PsGamePtr &game, ableem::Color _textColor);
 
     void destroy();
 

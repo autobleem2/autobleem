@@ -14,13 +14,21 @@ using namespace std;
 
 namespace {
 
-string filenameFile(const PsGame &game) { return game.ssFolder + sep + "filename.txt"; }
-string keptFilenameFile(const PsGame &game) { return game.ssFolder + sep + "filename.txt.res"; }
+string filenameFile(const PsGame &game) {
+    return game.ssFolder + sep + "filename.txt";
+}
+string keptFilenameFile(const PsGame &game) {
+    return game.ssFolder + sep + "filename.txt.res";
+}
 string slotFilenameFile(const PsGame &game, int slot) {
     return game.ssFolder + sep + "filename." + to_string(slot) + ".txt.res";
 }
-string statesDir(const PsGame &game) { return game.ssFolder + sep + "sstates"; }
-string shotsDir(const PsGame &game) { return game.ssFolder + sep + "screenshots"; }
+string statesDir(const PsGame &game) {
+    return game.ssFolder + sep + "sstates";
+}
+string shotsDir(const PsGame &game) {
+    return game.ssFolder + sep + "screenshots";
+}
 
 string keptStateFile(const PsGame &game, const string &name, int slot) {
     return statesDir(game) + sep + name + ".00" + to_string(slot) + ".res";
@@ -152,7 +160,7 @@ void ResumePointService::removeSlot(const PsGame &game, int slot) {
 //*******************************
 bool ResumePointService::exitedCleanly(const PsGame &game) const {
     if (game.foreign)
-        return true;    // nothing to write one, so nothing to be missing
+        return true; // nothing to write one, so nothing to be missing
 
     bool clean = DirEntry::exists(filenameFile(game));
     if (!clean) {
@@ -171,7 +179,7 @@ void ResumePointService::prepareForLaunch(const PsGame &game, int slot) {
     removeFilesWithExtensionIn(shotsDir(game), "png");
 
     if (slot == -1)
-        return;         // starting from the beginning
+        return; // starting from the beginning
 
     string path = keptFilenameFile(game);
     if (DirEntry::exists(slotFilenameFile(game, slot)))
@@ -213,7 +221,7 @@ void ResumePointService::prepareForLaunch(const PsGame &game, int slot) {
 // Keeps what the run just wrote as this slot: the state file, the filename file, and the disc image note.
 void ResumePointService::saveAfterLaunch(const PsGame &game, int slot) {
     if (!DirEntry::exists(filenameFile(game)))
-        return;     // the run did not exit cleanly, so there is nothing to keep
+        return; // the run did not exit cleanly, so there is nothing to keep
 
     string name;
     if (readStateName(filenameFile(game), &name)) {

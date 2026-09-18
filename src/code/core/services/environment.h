@@ -35,7 +35,7 @@
 // Every path comes from ableem::Environment, configured once in main() (see setupEnvironment there - that is
 // where the debug-host vs console decisions are made). The app only adds its two runtime flags.
 struct Environment : ableem::Environment {
-    static bool autobleemKernel;        // true if the kernel is the AutoBleem Kernel
+    static bool autobleemKernel; // true if the kernel is the AutoBleem Kernel
     static bool hiddenMenuEnabled;
 
     // the platform this build is for - "psc" (the console), "rpi" or "pc" - which names the

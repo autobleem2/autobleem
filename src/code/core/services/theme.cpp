@@ -38,7 +38,7 @@ string Theme::path() {
 // Theme::load
 //*******************************
 void Theme::load() {
-    ThemeInstaller::installZips(Env::getPathToThemesDir());   // a dropped <name>.zip becomes <name>/ first
+    ThemeInstaller::installZips(Env::getPathToThemesDir()); // a dropped <name>.zip becomes <name>/ first
 
     const string defaultsDir = defaultsPath();
     loadedPath_ = path();
@@ -50,7 +50,8 @@ void Theme::load() {
         config_.save();
     }
 
-    if (ThemeConverter::needsConversion(defaultsDir)) ThemeConverter::convert(defaultsDir);
+    if (ThemeConverter::needsConversion(defaultsDir))
+        ThemeConverter::convert(defaultsDir);
     if (loadedPath_ != defaultsDir && ThemeConverter::needsConversion(loadedPath_))
         ThemeConverter::convert(loadedPath_);
 

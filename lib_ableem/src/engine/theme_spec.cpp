@@ -20,7 +20,7 @@ namespace ableem {
 namespace {
 
 // A workaround to use fifo_map as the json map so keys keep their insertion order; the 'less' compare is ignored
-template<class K, class V, class dummy_compare, class A>
+template <class K, class V, class dummy_compare, class A>
 using fifo_map_workaround = fifo_map<K, V, fifo_map_compare<K>, A>;
 using ordered_json = basic_json<fifo_map_workaround>;
 
@@ -28,19 +28,24 @@ using ordered_json = basic_json<fifo_map_workaround>;
 // reading: each helper sets `out` only when the key is there with the right type
 //*******************************
 const json *child(const json &j, const char *key) {
-    if (!j.is_object()) return nullptr;
+    if (!j.is_object())
+        return nullptr;
     auto it = j.find(key);
     return it == j.end() ? nullptr : &*it;
 }
 
 void readStr(const json &j, const char *key, string &out) {
     const json *v = child(j, key);
-    if (v && v->is_string()) out = v->get<string>();
+    if (v && v->is_string())
+        out = v->get<string>();
 }
 
 void readInt(const json &j, const char *key, int &out, bool &set) {
     const json *v = child(j, key);
-    if (v && v->is_number_integer()) { out = v->get<int>(); set = true; }
+    if (v && v->is_number_integer()) {
+        out = v->get<int>();
+        set = true;
+    }
 }
 
 void readInt(const json &j, const char *key, int &out) {
@@ -54,12 +59,14 @@ void readOptInt(const json &j, const char *key, Opt<int> &out) {
 
 void readOptBool(const json &j, const char *key, Opt<bool> &out) {
     const json *v = child(j, key);
-    if (v && v->is_boolean()) out = v->get<bool>();
+    if (v && v->is_boolean())
+        out = v->get<bool>();
 }
 
 void readColor(const json &j, const char *key, ThemeColor &out) {
     const json *v = child(j, key);
-    if (v && v->is_string()) ThemeColor::parseHex(v->get<string>(), out);
+    if (v && v->is_string())
+        ThemeColor::parseHex(v->get<string>(), out);
 }
 
 // x/y/w/h (set when x is there), colour and alpha, each optional on its own
@@ -89,27 +96,32 @@ ordered_json rectJson(int x, int y, int w, int h) {
 }
 
 void putStr(ordered_json &o, const char *key, const string &s) {
-    if (!s.empty()) o[key] = s;
+    if (!s.empty())
+        o[key] = s;
 }
 
 void putColor(ordered_json &o, const char *key, const ThemeColor &c) {
-    if (c.set) o[key] = c.toHex();
+    if (c.set)
+        o[key] = c.toHex();
 }
 
 void putOptInt(ordered_json &o, const char *key, const Opt<int> &v) {
-    if (v.set) o[key] = v.value;
+    if (v.set)
+        o[key] = v.value;
 }
 
 ordered_json panelJson(const ThemePanel &p) {
     ordered_json o = ordered_json::object();
-    if (p.set) o = rectJson(p.x, p.y, p.w, p.h);
+    if (p.set)
+        o = rectJson(p.x, p.y, p.w, p.h);
     putColor(o, "color", p.color);
     putOptInt(o, "alpha", p.alpha);
     return o;
 }
 
 void putPoint(ordered_json &o, const char *key, const ThemePoint &p) {
-    if (!p.set) return;
+    if (!p.set)
+        return;
     ordered_json pt = ordered_json::object();
     pt["x"] = p.x;
     pt["y"] = p.y;
@@ -118,28 +130,35 @@ void putPoint(ordered_json &o, const char *key, const ThemePoint &p) {
 
 // an object is written only if something in it is set, so an untouched section stays out of the file
 void putObject(ordered_json &o, const char *key, const ordered_json &obj) {
-    if (!obj.empty()) o[key] = obj;
+    if (!obj.empty())
+        o[key] = obj;
 }
 
 //*******************************
 // merging
 //*******************************
 void mergeStr(string &mine, const string &base) {
-    if (mine.empty()) mine = base;
+    if (mine.empty())
+        mine = base;
 }
 
 void mergeColor(ThemeColor &mine, const ThemeColor &base) {
-    if (!mine.set) mine = base;
+    if (!mine.set)
+        mine = base;
 }
 
-template<class T>
-void mergeSet(T &mine, const T &base) {   // anything with a `set` member and nothing else optional in it
-    if (!mine.set) mine = base;
+template <class T>
+void mergeSet(T &mine, const T &base) { // anything with a `set` member and nothing else optional in it
+    if (!mine.set)
+        mine = base;
 }
 
 void mergePanel(ThemePanel &mine, const ThemePanel &base) {
     if (!mine.set) {
-        mine.x = base.x; mine.y = base.y; mine.w = base.w; mine.h = base.h;
+        mine.x = base.x;
+        mine.y = base.y;
+        mine.w = base.w;
+        mine.h = base.h;
         mine.set = base.set;
     }
     mergeColor(mine.color, base.color);
@@ -152,9 +171,11 @@ void mergePanel(ThemePanel &mine, const ThemePanel &base) {
 // ThemeColor::parseHex / parseRgb / toHex
 //*******************************
 bool ThemeColor::parseHex(const string &hex, ThemeColor &out) {
-    if (hex.size() != 7 || hex[0] != '#') return false;
+    if (hex.size() != 7 || hex[0] != '#')
+        return false;
     for (size_t i = 1; i < hex.size(); i++)
-        if (!isxdigit(static_cast<unsigned char>(hex[i]))) return false;
+        if (!isxdigit(static_cast<unsigned char>(hex[i])))
+            return false;
     unsigned int rgb = static_cast<unsigned int>(strtoul(hex.c_str() + 1, nullptr, 16));
     out = ThemeColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
     return true;
@@ -163,8 +184,10 @@ bool ThemeColor::parseHex(const string &hex, ThemeColor &out) {
 bool ThemeColor::parseRgb(const string &rgb, ThemeColor &out) {
     int r, g, b;
     char extra;
-    if (sscanf(rgb.c_str(), " %d , %d , %d %c", &r, &g, &b, &extra) != 3) return false;
-    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) return false;
+    if (sscanf(rgb.c_str(), " %d , %d , %d %c", &r, &g, &b, &extra) != 3)
+        return false;
+    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
+        return false;
     out = ThemeColor(r, g, b);
     return true;
 }
@@ -207,7 +230,8 @@ bool ThemeSpec::load(const string &path) {
         } else {
             readStr(*m, "file", music.file);
             const json *loop = child(*m, "loop");
-            if (loop && loop->is_boolean()) music.loop = loop->get<bool>();
+            if (loop && loop->is_boolean())
+                music.loop = loop->get<bool>();
         }
     }
 
@@ -222,7 +246,8 @@ bool ThemeSpec::load(const string &path) {
             readOptInt(*f, "size", classic.font.size);
         }
         readOptInt(*c, "menuLines", classic.menuLines);
-        if (const json *p = child(*c, "menuPanel")) readPanel(*p, classic.menuPanel);
+        if (const json *p = child(*c, "menuPanel"))
+            readPanel(*p, classic.menuPanel);
         if (const json *s = child(*c, "statusBar")) {
             readPanel(*s, classic.statusBar);
             readOptInt(*s, "textY", classic.statusBar.textY);
@@ -274,7 +299,8 @@ bool ThemeSpec::load(const string &path) {
         readOptBool(*l, "metaPanelSlides", launcher.metaPanelSlides);
         readOptBool(*l, "textShadow", launcher.textShadow);
         if (const json *p = child(*l, "snapPanel"))
-            readRect(*p, launcher.snapPanel.x, launcher.snapPanel.y, launcher.snapPanel.w, launcher.snapPanel.h, launcher.snapPanel.set);
+            readRect(*p, launcher.snapPanel.x, launcher.snapPanel.y, launcher.snapPanel.w, launcher.snapPanel.h,
+                     launcher.snapPanel.set);
         readStr(*l, "arrow", launcher.arrow);
         if (const json *h = child(*l, "hints")) {
             readStr(*h, "cross", launcher.hints.cross);
@@ -358,7 +384,8 @@ bool ThemeSpec::save(const string &path) const {
             putObject(c, "statusBar", s);
         }
         putColor(c, "textColor", classic.textColor);
-        if (classic.textShadow.set) c["textShadow"] = classic.textShadow.value;
+        if (classic.textShadow.set)
+            c["textShadow"] = classic.textShadow.value;
         {
             ordered_json k = ordered_json::object();
             putColor(k, "color", classic.keyboardKey.color);
@@ -399,12 +426,16 @@ bool ThemeSpec::save(const string &path) const {
         putStr(l, "playText", launcher.playText);
         putStr(l, "settingsPanel", launcher.settingsPanel);
         putStr(l, "metaPanel", launcher.metaPanel);
-        if (launcher.metaPanelSlides.set) l["metaPanelSlides"] = launcher.metaPanelSlides.value;
-        if (launcher.textShadow.set) l["textShadow"] = launcher.textShadow.value;
+        if (launcher.metaPanelSlides.set)
+            l["metaPanelSlides"] = launcher.metaPanelSlides.value;
+        if (launcher.textShadow.set)
+            l["textShadow"] = launcher.textShadow.value;
         if (launcher.snapPanel.set) {
             ordered_json p = ordered_json::object();
-            p["x"] = launcher.snapPanel.x; p["y"] = launcher.snapPanel.y;
-            p["w"] = launcher.snapPanel.w; p["h"] = launcher.snapPanel.h;
+            p["x"] = launcher.snapPanel.x;
+            p["y"] = launcher.snapPanel.y;
+            p["w"] = launcher.snapPanel.w;
+            p["h"] = launcher.snapPanel.h;
             l["snapPanel"] = p;
         }
         putStr(l, "arrow", launcher.arrow);
@@ -456,7 +487,8 @@ bool ThemeSpec::save(const string &path) const {
     }
 
     ofstream o(path, ofstream::binary);
-    if (!DirEntry::checkWritable(o, path)) return false;
+    if (!DirEntry::checkWritable(o, path))
+        return false;
     o << setw(2) << j << "\n";
     o.flush();
     o.close();
@@ -469,9 +501,11 @@ bool ThemeSpec::save(const string &path) const {
 void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(music, base.music);
 
-    if (!classic.logo.set) {   // the rect; the file is merged with the other files below
-        classic.logo.x = base.classic.logo.x; classic.logo.y = base.classic.logo.y;
-        classic.logo.w = base.classic.logo.w; classic.logo.h = base.classic.logo.h;
+    if (!classic.logo.set) { // the rect; the file is merged with the other files below
+        classic.logo.x = base.classic.logo.x;
+        classic.logo.y = base.classic.logo.y;
+        classic.logo.w = base.classic.logo.w;
+        classic.logo.h = base.classic.logo.h;
         classic.logo.set = base.classic.logo.set;
     }
     mergeSet(classic.font.size, base.classic.font.size);
@@ -499,7 +533,8 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     vector<const string *> theirs = base.fileFields();
     for (size_t i = 0; i < mine.size(); i++)
         mergeStr(*mine[i], *theirs[i]);
-    if (music.none) music.file = "";   // "music": null inherits no file
+    if (music.none)
+        music.file = ""; // "music": null inherits no file
 }
 
 //*******************************
@@ -526,7 +561,8 @@ void ThemeSpec::resolveFiles(const string &dir, const ThemeSpec &fallback, const
 vector<string> ThemeSpec::referencedFiles() const {
     vector<string> files;
     for (const string *f : fileFields())
-        if (!f->empty()) files.push_back(*f);
+        if (!f->empty())
+            files.push_back(*f);
     return files;
 }
 
@@ -539,15 +575,47 @@ vector<string *> ThemeSpec::fileFields() {
     auto &l = launcher;
     return {
         &music.file,
-        &classic.background, &classic.logo.file, &classic.font.file,
-        &b.cross, &b.circle, &b.square, &b.triangle, &b.start, &b.select, &b.l1, &b.r1, &b.l2, &b.r2,
-        &b.check, &b.uncheck, &b.esc, &b.enter, &b.tab,
-        &l.background, &l.footer, &l.playButton, &l.playText, &l.settingsPanel, &l.metaPanel, &l.arrow,
-        &l.hints.cross, &l.hints.circle, &l.hints.triangle,
-        &l.menuIcons.settings, &l.menuIcons.guide, &l.menuIcons.memcard, &l.menuIcons.resume,
-        &l.memcardManager.grid, &l.memcardManager.pencil,
-        &l.fonts.medium, &l.fonts.bold,
-        &sounds.cursor, &sounds.cancel, &sounds.homeUp, &sounds.homeDown, &sounds.resume,
+        &classic.background,
+        &classic.logo.file,
+        &classic.font.file,
+        &b.cross,
+        &b.circle,
+        &b.square,
+        &b.triangle,
+        &b.start,
+        &b.select,
+        &b.l1,
+        &b.r1,
+        &b.l2,
+        &b.r2,
+        &b.check,
+        &b.uncheck,
+        &b.esc,
+        &b.enter,
+        &b.tab,
+        &l.background,
+        &l.footer,
+        &l.playButton,
+        &l.playText,
+        &l.settingsPanel,
+        &l.metaPanel,
+        &l.arrow,
+        &l.hints.cross,
+        &l.hints.circle,
+        &l.hints.triangle,
+        &l.menuIcons.settings,
+        &l.menuIcons.guide,
+        &l.menuIcons.memcard,
+        &l.menuIcons.resume,
+        &l.memcardManager.grid,
+        &l.memcardManager.pencil,
+        &l.fonts.medium,
+        &l.fonts.bold,
+        &sounds.cursor,
+        &sounds.cancel,
+        &sounds.homeUp,
+        &sounds.homeDown,
+        &sounds.resume,
     };
 }
 

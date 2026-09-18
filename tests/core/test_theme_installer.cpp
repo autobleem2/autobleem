@@ -50,7 +50,7 @@ TEST_CASE("ZipArchive refuses names that would land outside the destination, bef
 
     CHECK_FALSE(ZipArchive::extract(tmp.at("evil.zip"), tmp.at("out")));
     CHECK_FALSE(DirEntry::exists(tmp.at("evil.txt")));
-    CHECK_FALSE(DirEntry::exists(tmp.at("out/theme.json")));   // the good entry was not written either
+    CHECK_FALSE(DirEntry::exists(tmp.at("out/theme.json"))); // the good entry was not written either
     CHECK_FALSE(DirEntry::exists(tmp.at("out")));
 
     CHECK(ZipArchive::isSafeName("a/b.png"));
@@ -89,17 +89,17 @@ TEST_CASE("a flat zip (theme.json at the root) installs as <name>/ and the zip g
     CHECK(DirEntry::exists(tmp.at("themes/Neon/images/launcher_background.png")));
     CHECK_FALSE(DirEntry::exists(tmp.at("themes/Neon.zip")));
     CHECK_FALSE(DirEntry::exists(tmp.at("themes/.Neon.unzip")));
-    CHECK(ThemeInstaller::installZips(tmp.at("themes")).empty());   // nothing left to do
+    CHECK(ThemeInstaller::installZips(tmp.at("themes")).empty()); // nothing left to do
 }
 
 TEST_CASE("a zip with one folder inside installs that folder, under the zip's name, junk folders ignored") {
     TempDir tmp("installer");
     tmp.makeSubDir("themes");
-    tmp.writeFile("themes/retro.zip", ZIP_FIXTURE(NESTED_ZIP));   // holds mytheme/ and __MACOSX/
+    tmp.writeFile("themes/retro.zip", ZIP_FIXTURE(NESTED_ZIP)); // holds mytheme/ and __MACOSX/
 
     REQUIRE(ThemeInstaller::installZip(tmp.at("themes/retro.zip"), tmp.at("themes")));
 
-    CHECK(DirEntry::exists(tmp.at("themes/retro/theme.ini")));      // the old layout is left for the converter
+    CHECK(DirEntry::exists(tmp.at("themes/retro/theme.ini"))); // the old layout is left for the converter
     CHECK(DirEntry::exists(tmp.at("themes/retro/images/GR/JP_US_BG.png")));
     CHECK_FALSE(DirEntry::exists(tmp.at("themes/retro/mytheme")));
     CHECK_FALSE(DirEntry::exists(tmp.at("themes/mytheme")));
@@ -125,20 +125,20 @@ TEST_CASE("a zip that is no theme, or no zip, is renamed .bad and nothing is ins
     TempDir tmp("installer");
     tmp.makeSubDir("themes");
     tmp.writeFile("themes/pics.zip", ZIP_FIXTURE(NOTHEME_ZIP));
-    tmp.writeFile("themes/two.zip", ZIP_FIXTURE(TWO_ZIP));        // two folders, neither is "the" theme
+    tmp.writeFile("themes/two.zip", ZIP_FIXTURE(TWO_ZIP)); // two folders, neither is "the" theme
     tmp.writeFile("themes/text.zip", "not an archive");
     tmp.writeFile("themes/evil.zip", ZIP_FIXTURE(EVIL_ZIP));
 
     CHECK(ThemeInstaller::installZips(tmp.at("themes")).empty());
 
-    for (const char *name : { "pics", "two", "text", "evil" }) {
+    for (const char *name : {"pics", "two", "text", "evil"}) {
         CHECK_FALSE(DirEntry::exists(tmp.at(string("themes/") + name)));
         CHECK_FALSE(DirEntry::exists(tmp.at(string("themes/") + name + ".zip")));
         CHECK(DirEntry::exists(tmp.at(string("themes/") + name + ".zip.bad")));
         CHECK_FALSE(DirEntry::exists(tmp.at(string("themes/.") + name + ".unzip")));
     }
     CHECK_FALSE(DirEntry::exists(tmp.at("evil.txt")));
-    CHECK(ThemeInstaller::installZips(tmp.at("themes")).empty());   // .bad files are not retried
+    CHECK(ThemeInstaller::installZips(tmp.at("themes")).empty()); // .bad files are not retried
 }
 
 TEST_CASE("Theme::load() installs a dropped zip and can then load it, converting it if it is old") {

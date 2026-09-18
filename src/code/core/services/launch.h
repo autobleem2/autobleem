@@ -28,8 +28,8 @@ class LaunchService {
 public:
     LaunchService(Config &config, Session &session, ableem::GameLibrary &library, MemcardService &memcards,
                   ResumePointService &resumePoints, ProcessRunner &runner)
-        : config_(config), session_(session), library_(library), memcards_(memcards),
-          resumePoints_(resumePoints), runner_(runner) {}
+        : config_(config), session_(session), library_(library), memcards_(memcards), resumePoints_(resumePoints),
+          runner_(runner) {}
 
     // rc/autobleem_cfg.sh: AB_SELECTION/AB_THEME/AB_PCSX/AB_MIP, so the shell launch scripts see the menu
     // choice and the theme/emulator settings after the GUI exits or before a game starts.
@@ -42,9 +42,8 @@ public:
     void launch(PsGamePtr &game, EmuMode mode, int resumePoint);
 
     // where the launcher scripts are
-    static std::string pcsxLauncherScript();        // rc/launch.sh
-    static std::string retroArchLauncherScript();   // rc/launch_rb.sh
-
+    static std::string pcsxLauncherScript();      // rc/launch.sh
+    static std::string retroArchLauncherScript(); // rc/launch_rb.sh
 
 private:
     enum class Path { Pcsx, RetroArch, App };
@@ -71,8 +70,8 @@ private:
     void restoreRaConfig();
     void transferRaConfig(PsGame &game);
     static std::string raSavesDir();
-    static std::string raConfigFile();         // retroarch.cfg
-    static std::string raCoreOptionsFile();    // config/retroarch-core-options.cfg
+    static std::string raConfigFile();      // retroarch.cfg
+    static std::string raCoreOptionsFile(); // config/retroarch-core-options.cfg
 
     // --- Apps ---
     void launchApp(PsGame &game);

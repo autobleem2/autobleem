@@ -17,7 +17,6 @@ using namespace std;
 
 namespace ableem {
 
-
 //*******************************
 // UsbGame::validateCue
 //*******************************
@@ -30,7 +29,8 @@ bool UsbGame::validateCue(string cuePath, string path) {
     cueStream.open(cuePath);
     while (getline(cueStream, line)) {
         line = trim(line);
-        if (line.empty()) continue;
+        if (line.empty())
+            continue;
         if (line.substr(0, 4) == "FILE") {
             line = line.substr(6, string::npos);
             line = line.substr(0, line.find('"'));
@@ -169,7 +169,7 @@ bool UsbGame::print() {
         PLOG_INFO << "-------Game Verify OK-------";
     } else {
         PLOG_WARNING << "------Game Verify FAIL------";
-        for (const auto & reason : failureReasons)
+        for (const auto &reason : failureReasons)
             PLOG_INFO << "Reason: " << reason;
     }
 
@@ -187,50 +187,46 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
 
     if (this->imageType == IMAGE_PBP) {
         // disc link
-        string destinationDir = fullPath ;
+        string destinationDir = fullPath;
         string pbpFileName = DirEntry::findFirstFile(EXT_PBP, destinationDir);
         if (pbpFileName != "") {
             if (discs.size() == 0) {
                 automationUsed = false;
                 Disc disc;
-                disc.diskName = pbpFileName;    // the full filename including the .PBP
+                disc.diskName = pbpFileName; // the full filename including the .PBP
                 disc.cueFound = true;
                 disc.cueName = pbpFileName;
                 disc.binVerified = true;
                 discs.push_back(disc);
             }
-        } else
-        {
+        } else {
             automationUsed = true;
             PLOG_INFO << "Switching automation in PBP";
         }
     } else if (this->imageType == IMAGE_CHD) {
         // disc link
-        string destinationDir = fullPath ;
+        string destinationDir = fullPath;
         string chdFileName = DirEntry::findFirstFile(EXT_CHD, destinationDir);
         if (chdFileName != "") {
-            firstBinPath = destinationDir +  sep +chdFileName;
+            firstBinPath = destinationDir + sep + chdFileName;
             if (discs.size() == 0) {
                 vector<string> extensions;
                 extensions.push_back("chd");
                 DirEntries allFiles = DirEntry::diru(destinationDir);
                 DirEntries fileList = DirEntry::getFilesWithExtension(destinationDir, allFiles, extensions);
                 automationUsed = false;
-                for (DirEntry dirEntry:fileList)
-                {
+                for (DirEntry dirEntry : fileList) {
                     Disc disc;
-                    disc.diskName = dirEntry.name;    // the full filename including the .CHD
+                    disc.diskName = dirEntry.name; // the full filename including the .CHD
                     disc.cueFound = true;
                     disc.cueName = dirEntry.name;
                     disc.binVerified = true;
                     discs.push_back(disc);
                 }
-
-
             }
-            if (this->imageType==IMAGE_CHD) imageType = IMAGE_CHD;
-        } else
-        {
+            if (this->imageType == IMAGE_CHD)
+                imageType = IMAGE_CHD;
+        } else {
             automationUsed = true;
             PLOG_INFO << "Switching automation in CHD";
         }
@@ -240,15 +236,15 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
             automationUsed = true;
             PLOG_INFO << "Switching automation no discs";
             // find cue files
-            string destination = fullPath ;
-            for (const DirEntry & entry: DirEntry::diru(destination)) {
+            string destination = fullPath;
+            for (const DirEntry &entry : DirEntry::diru(destination)) {
                 if (DirEntry::matchExtension(entry.name, EXT_CUE)) {
                     Disc disc;
                     string discEntry = entry.name.substr(0, entry.name.size() - 4); // remove .CUE
-                    disc.diskName = discEntry;  // the CUE filename without the .CUE
+                    disc.diskName = discEntry;                                      // the CUE filename without the .CUE
                     disc.cueFound = true;
-                    disc.cueName = discEntry;   // the CUE filename without the .CUE
-                    disc.binVerified = validateCue(destination + sep + entry.name, fullPath );
+                    disc.cueName = discEntry; // the CUE filename without the .CUE
+                    disc.binVerified = validateCue(destination + sep + entry.name, fullPath);
                     discs.push_back(disc);
                 }
             }
@@ -336,12 +332,21 @@ void UsbGame::applyIniValues() {
     string automation = valueOrDefault("automation", "0");
     automationUsed = atoi(automation.c_str());
     tmp = valueOrDefault("players", "1");
-    if (Strings::isInteger(tmp.c_str())) players = atoi(tmp.c_str()); else players = 1;
+    if (Strings::isInteger(tmp.c_str()))
+        players = atoi(tmp.c_str());
+    else
+        players = 1;
     tmp = valueOrDefault("year", "2018");
 
-    if (Strings::isInteger(tmp.c_str())) year = atoi(tmp.c_str()); else year = 2018;
-    tmp = valueOrDefault("highres","0");
-    if (Strings::isInteger(tmp.c_str())) highRes = atoi(tmp.c_str()); else highRes = 0;
+    if (Strings::isInteger(tmp.c_str()))
+        year = atoi(tmp.c_str());
+    else
+        year = 2018;
+    tmp = valueOrDefault("highres", "0");
+    if (Strings::isInteger(tmp.c_str()))
+        highRes = atoi(tmp.c_str());
+    else
+        highRes = 0;
     // what the scanner (or the user, by hand) wrote last time; the scanner decides whether to trust it -
     // a missing one is not an automation event, the image is simply read again
     serial = valueOrDefault("serial", "", false);
@@ -372,14 +377,14 @@ void UsbGame::applyIniValues() {
                 string cueFile = fullPath + sep + disc.diskName + EXT_CUE;
                 bool discCueExists = DirEntry::exists(cueFile);
                 if (discCueExists) {
-                    disc.binVerified = validateCue(cueFile, fullPath );
+                    disc.binVerified = validateCue(cueFile, fullPath);
                     disc.cueFound = true;
                     disc.cueName = disc.diskName;
                 }
                 discs.push_back(disc);
             }
             if (imageType == IMAGE_PBP) {
-                string pbpName = DirEntry::findFirstFile(EXT_PBP, fullPath );
+                string pbpName = DirEntry::findFirstFile(EXT_PBP, fullPath);
                 if (pbpName == disc.diskName) {
                     disc.cueFound = true;
                 } else {
@@ -391,7 +396,7 @@ void UsbGame::applyIniValues() {
                 discs.push_back(disc);
             }
             if (imageType == IMAGE_CHD) {
-                string chdName = DirEntry::findFirstFile(EXT_CHD, fullPath );
+                string chdName = DirEntry::findFirstFile(EXT_CHD, fullPath);
                 disc.cueFound = true;
                 disc.binVerified = true;
                 disc.cueName = disc.diskName;
@@ -467,7 +472,7 @@ void UsbGame::loadGameIni(const string &path) {
 //*******************************
 // UsbGames += UsbGames
 //*******************************
-void operator += (UsbGames &dest, const UsbGames &src) {
+void operator+=(UsbGames &dest, const UsbGames &src) {
     copy(begin(src), end(src), back_inserter(dest));
 }
 

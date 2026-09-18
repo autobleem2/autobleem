@@ -6,7 +6,6 @@
 #include "../../gui/gui_font.h"
 #include "../../core/model/timing.h"
 
-
 //******************
 // NotificationLine
 //******************
@@ -15,13 +14,13 @@ struct NotificationLine {
     int y = 10;
     std::string text;
     bool timed = true;
-    long notificationTime = 0;  // the tick time when setText was called.  this is in milliseconds.
+    long notificationTime = 0; // the tick time when setText was called.  this is in milliseconds.
     long timeLimit = 0; // display ends when current tick - notificationTime > timeLimit.  this is in milliseconds.
-    ableem::Color textColor =  { 255, 255, 255, 255 };  // brightWhite
+    ableem::Color textColor = {255, 255, 255, 255}; // brightWhite
     FontEnum fontEnum = FONT_22_MED;
 
     // timelimit is in milliseconds.  a timeLimit of 0 = no limit.
-    void setText(std::string _text, long _timeLimit, const ableem::Color & _textColor, FontEnum fontEnum);
+    void setText(std::string _text, long _timeLimit, const ableem::Color &_textColor, FontEnum fontEnum);
     void setText(std::string _text, long _timeLimit);
 
     void tickTock();
@@ -32,9 +31,9 @@ struct NotificationLine {
 //******************
 struct NotificationLines {
     std::vector<NotificationLine> lines;
-    NotificationLine & operator [] (int i) { return lines[i]; };
+    NotificationLine &operator[](int i) { return lines[i]; };
 
-    void createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight, int separationBetweenLines);
+    void createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight,
+                              int separationBetweenLines);
     void tickTock();
 };
-

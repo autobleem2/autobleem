@@ -27,8 +27,10 @@ string translate(const string &input) {
 // The string is looked up exactly as given - not trimmed - which is how it has always been: the original
 // called a copying trim and discarded the result.
 string Lang::translate(const string &input) {
-    if (currentLanguage_ == SourceLanguage) return input;
-    if (input.empty()) return "";
+    if (currentLanguage_ == SourceLanguage)
+        return input;
+    if (input.empty())
+        return "";
     string translated = translations_[input];
     if (translated == "") {
         translations_[input] = input;
@@ -45,7 +47,8 @@ void Lang::load(const string &langDir, const string &languageName) {
     translations_.clear();
     untranslated_.clear();
     currentLanguage_ = languageName;
-    if (languageName == SourceLanguage) return;
+    if (languageName == SourceLanguage)
+        return;
 
     string path = langDir + sep + languageName + ".txt";
     ifstream is(path);
@@ -55,9 +58,9 @@ void Lang::load(const string &langDir, const string &languageName) {
     while (std::getline(is, line)) {
         // strip the UTF-8 BOM some editors put on the first line
         if (lineNum == 0 && line.size() >= 3) {
-            unsigned char *p = (unsigned char *) line.c_str();
+            unsigned char *p = (unsigned char *)line.c_str();
             if ((p[0] == 0xEF) && (p[1] == 0xBB) && (p[2] == 0xBF)) {
-                line = (char *) p + 3;
+                line = (char *)p + 3;
             }
         }
         trim(line);
@@ -67,14 +70,17 @@ void Lang::load(const string &langDir, const string &languageName) {
 
     // the layout: a file whose first non-empty line is a comment is Key=Value, anything else the old pairs
     size_t first = 0;
-    while (first < lines.size() && lines[first].empty()) first++;
+    while (first < lines.size() && lines[first].empty())
+        first++;
     bool keyValue = first < lines.size() && lines[first][0] == '#';
 
     if (keyValue) {
         for (const string &l : lines) {
-            if (l.empty() || l[0] == '#') continue;
+            if (l.empty() || l[0] == '#')
+                continue;
             size_t pos = l.find('=');
-            if (pos == string::npos) continue;
+            if (pos == string::npos)
+                continue;
             string key = Strings::trim(l.substr(0, pos));
             string value = Strings::trim(l.substr(pos + 1));
             if (!key.empty() && !value.empty())
@@ -111,7 +117,8 @@ vector<string> Lang::listLanguages(const string &langDir) {
 //*******************************
 bool Lang::dumpUntranslated(const string &path) const {
     ofstream os(path);
-    if (!DirEntry::checkWritable(os, path)) return false;
+    if (!DirEntry::checkWritable(os, path))
+        return false;
     os << "# AutoBleem " << currentLanguage_ << " - strings still to translate" << endl;
     os << "# Format: English Text=Translated Text" << endl << endl;
     for (const string &source : untranslated_) {

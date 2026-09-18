@@ -17,7 +17,7 @@ namespace ableem {
 namespace {
 
 // A workaround to use fifo_map as the json map so keys keep their insertion order; the 'less' compare is ignored
-template<class K, class V, class dummy_compare, class A>
+template <class K, class V, class dummy_compare, class A>
 using fifo_map_workaround = fifo_map<K, V, fifo_map_compare<K>, A>;
 using ordered_json = basic_json<fifo_map_workaround>;
 
@@ -110,11 +110,16 @@ bool RetroArchPlaylist::loadSixLine(const string &path, RetroArchPlaylistEntries
     // true on a stream that failed to open, which would loop forever)
     RetroArchPlaylistEntry entry;
     while (getline(in, entry.path)) {
-        if (!getline(in, entry.label)) break;
-        if (!getline(in, entry.core_path)) break;
-        if (!getline(in, entry.core_name)) break;
-        if (!getline(in, entry.crc32)) break;
-        if (!getline(in, entry.db_name)) break;
+        if (!getline(in, entry.label))
+            break;
+        if (!getline(in, entry.core_path))
+            break;
+        if (!getline(in, entry.core_name))
+            break;
+        if (!getline(in, entry.crc32))
+            break;
+        if (!getline(in, entry.db_name))
+            break;
         entries.push_back(entry);
     }
     return true;
@@ -142,7 +147,8 @@ bool RetroArchPlaylist::save(const string &path, const RetroArchPlaylistEntries 
 
     PLOG_INFO << j.dump();
     ofstream o(path);
-    if (!DirEntry::checkWritable(o, path)) return false;
+    if (!DirEntry::checkWritable(o, path))
+        return false;
     o << setw(2) << j << endl;
     o.flush();
     o.close();

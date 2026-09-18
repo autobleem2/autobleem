@@ -21,20 +21,19 @@ class GameQueryService;
 // Owned by App (App::gameCatalog()).
 class GameCatalogService {
 public:
-    GameCatalogService(ableem::GameLibrary &library, GameQueryService &query)
-            : library_(library), query_(query) {}
+    GameCatalogService(ableem::GameLibrary &library, GameQueryService &query) : library_(library), query_(query) {}
 
     // The history is a ranking, not a timestamp: 1 is the game just played, 2 the one before it, and so on.
     // Anything that would rank past HistoryLimit drops out of the history altogether.
-    static const int HistoryLimit = 100;    // the same limit RetroArch's own history uses
+    static const int HistoryLimit = 100; // the same limit RetroArch's own history uses
     void recordGamePlayed(const PsGamePtr &game);
 
     //******************
     // deleting a game
     //******************
     struct DeleteResult {
-        bool removed = false;                   // the database row and the game folder are both gone
-        bool saveStateFolderIsNowUnused = false;// no remaining game shares the folder, so it may be deleted
+        bool removed = false;                    // the database row and the game folder are both gone
+        bool saveStateFolderIsNowUnused = false; // no remaining game shares the folder, so it may be deleted
         std::string saveStateFolder;
     };
     // Removes the game from regional.db and deletes its folder. The !SaveStates folder is deliberately left

@@ -16,10 +16,10 @@
 //******************
 class PsStateSelector : public PsObj {
 public:
-    int operation=0;
+    int operation = 0;
     void render();
 
-    void loadSaveStateImages(PsGamePtr & game, bool saving);
+    void loadSaveStateImages(PsGamePtr &game, bool saving);
     void cleanSaveStateImages();
 
     void freeImages();

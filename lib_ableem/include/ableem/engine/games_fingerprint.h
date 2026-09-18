@@ -22,7 +22,7 @@ public:
     // not trigger a rescan.
     static GamesFingerprint take(const std::string &gamesDir);
 
-    bool load(const std::string &path);     // false (fingerprint left empty) if the file does not exist/parse
+    bool load(const std::string &path); // false (fingerprint left empty) if the file does not exist/parse
     bool save(const std::string &path) const;
 
     bool operator==(const GamesFingerprint &other) const { return entries_ == other.entries_; }

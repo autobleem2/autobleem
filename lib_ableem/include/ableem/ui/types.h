@@ -4,13 +4,13 @@
 // ABLEEM_API: only meaningful when the library is built as a Windows DLL (ABLEEM_SHARED). On every other
 // platform/configuration it expands to nothing.
 #if defined(_WIN32) && defined(ABLEEM_SHARED)
-    #ifdef ABLEEM_BUILDING
-        #define ABLEEM_API __declspec(dllexport)
-    #else
-        #define ABLEEM_API __declspec(dllimport)
-    #endif
+#ifdef ABLEEM_BUILDING
+#define ABLEEM_API __declspec(dllexport)
 #else
-    #define ABLEEM_API
+#define ABLEEM_API __declspec(dllimport)
+#endif
+#else
+#define ABLEEM_API
 #endif
 
 namespace ableem {
