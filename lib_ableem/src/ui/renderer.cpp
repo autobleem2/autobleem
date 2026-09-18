@@ -2,6 +2,7 @@
 #include "ableem/ui/platform.h"
 #include "ableem/ui/texture.h"
 #include "sdl_common.h"
+#include <ableem/engine/log.h>
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -58,6 +59,10 @@ void Renderer::recreate(Platform &platform) {
     impl->renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!impl->renderer) {
         throw std::runtime_error(std::string("SDL_CreateRenderer failed: ") + SDL_GetError());
+    }
+    SDL_RendererInfo info;
+    if (SDL_GetRendererInfo(impl->renderer, &info) == 0) {
+        PLOG_INFO << "Renderer: " << info.name << ", " << platform.multisampleSamples() << "x MSAA";
     }
     int outputWidth = 0, outputHeight = 0;
     SDL_GetWindowSize(window, &outputWidth, &outputHeight);
@@ -197,11 +202,18 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
         int c0 = std::min(s.w - 1, static_cast<int>(u0 * s.w));
         int c1 = std::min(s.w, std::max(c0 + 1, static_cast<int>(std::ceil(u1 * s.w))));
         float tm = (t0 + t1) * 0.5f;
-        int top = static_cast<int>(std::lround(left.top + (right.top - left.top) * tm));
-        int bottom = static_cast<int>(std::lround(left.bottom + (right.bottom - left.bottom) * tm));
+        float top = left.top + (right.top - left.top) * tm;
+        float bottom = left.bottom + (right.bottom - left.bottom) * tm;
         SDL_Rect sr{s.x + c0, s.y, c1 - c0, s.h};
-        SDL_Rect dr{x, top, 1, std::max(1, bottom - top)};
+#if SDL_VERSION_ATLEAST(2, 0, 10)
+        // the ends placed to a fraction of a pixel, so that a multisampled context can smooth the slope
+        SDL_FRect dr{static_cast<float>(x), top, 1.0f, std::max(1.0f, bottom - top)};
+        SDL_RenderCopyF(impl->renderer, native, &sr, &dr);
+#else
+        int topPixel = static_cast<int>(std::lround(top)), bottomPixel = static_cast<int>(std::lround(bottom));
+        SDL_Rect dr{x, topPixel, 1, std::max(1, bottomPixel - topPixel)};
         SDL_RenderCopy(impl->renderer, native, &sr, &dr);
+#endif
     }
 }
 

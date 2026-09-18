@@ -20,9 +20,11 @@ public:
     static constexpr int ScreenHeight = 720;
 
     // width x height is the logical canvas; the window is outputScale times bigger (1.5 puts a 1280x720
-    // canvas in a 1920x1080 window) - see Renderer for what that means
+    // canvas in a 1920x1080 window) - see Renderer for what that means. multisampleSamples (4, say) asks for
+    // an MSAA GL context, which smooths the edges of everything the renderer draws; 0 does not ask, and a
+    // driver that cannot give one is simply gone without (Platform::multisampleSamples() says which).
     explicit GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight,
-                     float outputScale = 1.0f);
+                     float outputScale = 1.0f, int multisampleSamples = 0);
     virtual ~GuiBase();
 
     Platform &platform() { return *platform_; }

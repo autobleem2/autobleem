@@ -44,10 +44,29 @@ float Gui::outputScale() {
 }
 
 //********************
+// Gui::multisampleSamples
+//********************
+// Anti-aliasing for the carousel's turned covers and everything else the renderer draws: MSAA on the
+// window's GL context, on a Pi and a dev host (AB_MSAA in the environment overrides the default there - 0
+// turns it off). Not on the console: whether its GL driver has it is unknown until the build has run
+// there, and it would cost fill rate on a GPU that has little.
+int Gui::multisampleSamples() {
+#if defined(AB_DEBUG_HOST) || defined(AB_PLATFORM_RPI)
+    const char *env = getenv("AB_MSAA");
+    if (env) {
+        return atoi(env);
+    }
+    return 4;
+#else
+    return 0;
+#endif
+}
+
+//********************
 // Gui::Gui
 //********************
 Gui::Gui()
-    : ableem::GuiBase("AutoBleem", ScreenWidth, ScreenHeight, outputScale()),
+    : ableem::GuiBase("AutoBleem", ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
       assets_(renderer(), App::get().theme(), App::get().config()),
       text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     input().probePads();

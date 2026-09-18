@@ -56,8 +56,10 @@ public:
 
 private:
     friend class GuiBase;
-    // a window of outputWidth x outputHeight pixels showing a logicalWidth x logicalHeight canvas
-    Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth, int outputHeight);
+    // a window of outputWidth x outputHeight pixels showing a logicalWidth x logicalHeight canvas, with
+    // multisampleSamples-x MSAA on its GL context when that is not 0 (see GuiBase)
+    Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth, int outputHeight,
+             int multisampleSamples);
     struct Impl;
     Impl *impl;
 
@@ -68,6 +70,8 @@ public:
     // the size of the display the window will go on, before any window exists (initialises SDL's video
     // subsystem to ask); {0, 0} if it cannot be told. What GuiBase's outputScale can be decided from.
     static Size desktopDisplaySize();
+    // the MSAA the window actually got (0 when it was not asked for or the driver refused it)
+    int multisampleSamples() const;
 
     // internal: used by Input to invoke the app's power-off handler and by Renderer/Texture/Font/Audio to
     // reach the underlying SDL objects without exposing them in a public header.

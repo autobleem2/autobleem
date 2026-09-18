@@ -1,5 +1,6 @@
 #include "ableem/ui/platform.h"
 #include "sdl_common.h"
+#include <ableem/engine/log.h>
 #include <sstream>
 #include <stdexcept>
 
@@ -11,7 +12,39 @@ struct Platform::Impl {
     std::string windowTitle;   // kept for acquireDisplay()
     int width = 0, height = 0; // the window
     int logicalWidth = 0, logicalHeight = 0;
+    int multisampleSamples = 0; // asked for, then what was got
 };
+
+namespace {
+// The renderer SDL will pick is its GL one everywhere this runs (opengl on a PC, opengles2 on a Pi and,
+// presumably, the console), and that renderer draws through the window's GL context - so asking for a
+// multisampled context before the window is created gives every quad the renderer draws, the carousel's
+// cover strips included, real MSAA edges. SDL_WINDOW_OPENGL makes the window come with that context at
+// once instead of being recreated by the renderer later. A driver without MSAA fails the window, and the
+// window is then made again without it.
+SDL_Window *createWindow(const std::string &title, int w, int h, int &samples) {
+    if (samples > 0) {
+#ifdef _WIN32
+        SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // Windows would otherwise take direct3d, which ignores this
+#endif
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
+        SDL_Window *window =
+            SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL);
+        if (window)
+            return window;
+        PLOG_WARNING << "No " << samples << "x multisampled GL window (" << SDL_GetError() << ") - going without";
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+        samples = 0;
+    }
+    return SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, 0);
+}
+} // namespace
+
+int Platform::multisampleSamples() const {
+    return impl->multisampleSamples;
+}
 
 Size Platform::desktopDisplaySize() {
     Size s;
@@ -33,7 +66,7 @@ int Platform::logicalHeight() const {
 }
 
 Platform::Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth,
-                   int outputHeight)
+                   int outputHeight, int multisampleSamples)
     : impl(new Impl()) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
@@ -46,8 +79,8 @@ Platform::Platform(const std::string &windowTitle, int logicalWidth, int logical
     impl->height = outputHeight;
     impl->logicalWidth = logicalWidth;
     impl->logicalHeight = logicalHeight;
-    impl->window = SDL_CreateWindow(windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, outputWidth,
-                                    outputHeight, 0);
+    impl->multisampleSamples = multisampleSamples;
+    impl->window = createWindow(windowTitle, outputWidth, outputHeight, impl->multisampleSamples);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }
@@ -124,8 +157,7 @@ void Platform::acquireDisplay() {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_InitSubSystem(VIDEO) failed: ") + SDL_GetError());
     }
-    impl->window = SDL_CreateWindow(impl->windowTitle.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                    impl->width, impl->height, 0);
+    impl->window = createWindow(impl->windowTitle, impl->width, impl->height, impl->multisampleSamples);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }

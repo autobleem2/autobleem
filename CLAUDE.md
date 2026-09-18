@@ -494,6 +494,14 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   measures in logical ones. Nothing in the app knows. `Gui::outputScale()` is the policy: a Pi on a >= 1080p
   display gets 1.5 (`Platform::desktopDisplaySize()`), a dev host reads `AB_OUTPUT_SCALE`, the console is 1.
   The Pi installer boots in 1920x1080 by default now (`--hdmi-mode`), the plymouth script scales the logo up.
+- **MSAA** (2026-09-18): `GuiBase(..., multisampleSamples)` asks for a multisampled GL context before the
+  window exists (`Platform::createWindow`: `SDL_GL_MULTISAMPLESAMPLES`, `SDL_WINDOW_OPENGL`, Windows also
+  forced onto the "opengl" driver - direct3d would ignore it; a driver that refuses gets a plain window
+  and `Platform::multisampleSamples()` says 0). SDL's GL renderer then rasterises every quad with it, the
+  carousel's cover strips included, which now sit at fractional positions (`SDL_RenderCopyF`, SDL >= 2.0.10;
+  the console's 2.0.4 headers keep the integer path). `Gui::multisampleSamples()`: 4 on a Pi and a dev host,
+  `AB_MSAA` overrides (0 off), the console 0. **Costly on the Pi at 1080p** (idle CPU 17% -> 60%);
+  `docs/perf-plan.md` is the plan for making the frame cheap first and then testing 2x there.
 - **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`,
   and `copyTrapezoid(tex, src, VerticalEdge left, VerticalEdge right)` (2026-09-18): pseudo-3D for the
   carousel - a texture drawn into a trapezoid with vertical sides, one `SDL_RenderCopy` strip per screen

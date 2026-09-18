@@ -46,7 +46,8 @@ public:
     // and `right` - what a rectangle standing in 3D and turned about its vertical axis looks like on screen.
     // Each side's height is taken as its depth cue (the taller side is the nearer one), and the texture's
     // columns are spread across the width perspective-correctly, so a cover turned 60 degrees does not
-    // "swim". Drawn as one SDL copy per screen column, nothing newer than SDL 2.0.4 is needed. With
+    // "swim". Drawn as one SDL copy per output column - to a fraction of a pixel with SDL 2.0.10 or newer,
+    // which is what lets a multisampled window (GuiBase's multisampleSamples) smooth the sloping edges. With
     // left.x > right.x the back of the rectangle is showing and the texture is drawn mirrored.
     void copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge left, VerticalEdge right);
 
