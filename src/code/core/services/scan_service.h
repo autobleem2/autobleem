@@ -1,6 +1,7 @@
 //
 // ScanService: scans the Games directory on a background thread, applying every regional.db write on the
-// main thread as it polls the worker's results. See docs/refactor-plan.md's background-scan section.
+// main thread as it polls the worker's results. CLAUDE.md ("Straight into EvolutionUI, with the scan in the
+// background") is the design note.
 //
 #pragma once
 

@@ -37,7 +37,8 @@ Done on 2026-09-16:
   `Gui` is left with the window/renderer, `assets()`, `text()` and the background/logo/status drawing
   (phase C, 2026-09-16).
 
-The next structural step is planned in `docs/refactor-plan.md`: split `src/code` into `ab_core` (model +
+The next structural step (its plan was `docs/refactor-plan.md`, removed once every step was done - the git
+history has it) was to split `src/code` into `ab_core` (model +
 services, no SDL, unit tested with doctest), `ab_ui` and `ab_evoui`, moving the game queries, settings,
 memcard/savestate and launch logic out of the screens that currently hold them. The list below is folded into
 that plan's phases. Phase A is done apart from step 3 (the ARM build), which is deferred - no toolchain on
@@ -144,8 +145,8 @@ after a RetroArch run (`reloadFavoritesAndHistory()`). `escapeName()` is the box
 
 Still to do, in order:
 
-1. Continue `docs/refactor-plan.md` - phase B, the service extractions (`GameQueryService` first). Each one
-   ships with its tests in the same commit, and pulls its file into `ab_core` as it goes.
+1. ~~Continue the refactor plan - phase B, the service extractions~~ - done (see above); the rule stays: a
+   service extracted from a screen ships with its tests in the same commit and moves into `ab_core`.
 2. Centralize the hard-coded paths still in the app (`/media/System/Logs/ver.txt`) in `Env` - the engine side
    is done, so are the theme loaders (`Theme` asks `Env` for both branches now), the launch scripts and
    RetroArch paths (`LaunchService`, step 10) and `backup_internal.sh` (`Env::getPathToRCDir()`, done with
@@ -501,7 +502,8 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   carousel's cover strips included, which now sit at fractional positions (`SDL_RenderCopyF`, SDL >= 2.0.10;
   the console's 2.0.4 headers keep the integer path). `Gui::multisampleSamples()`: 4 on a Pi and a dev host,
   `AB_MSAA` overrides (0 off), the console 0. Was costly on the Pi at 1080p (idle CPU 17% -> 60%) when
-  a frame was ~3200 copies; **`docs/perf-plan.md`** (steps 0-4 and 6 done 2026-09-18) took that to 85:
+  a frame was ~3200 copies; the launcher performance work of 2026-09-18 (its plan, `docs/perf-plan.md`,
+  was removed once done - the git log has it and the numbers) took that to 85:
   `AB_FRAME_STATS=1` logs frame times and copies every 5 s (`Renderer::present`) and slow
   `Texture::loadFile`s; the launcher defers the snap/resume-picture loads to the frame the carousel
   settles in and keeps `Carousel::Lookahead` covers past each end decoded; every animation is
@@ -624,7 +626,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
   (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
   skips them, and both cross toolchain files force that. Every service extracted from a screen from here on
-  ships with its tests in the same commit - see `docs/refactor-plan.md` section 4.
+  ships with its tests in the same commit (the refactor plan's rule, kept after the plan itself was done).
   - `tests/support/env_fixture.h` - **use it in any test that touches a path.** `ableem::Environment`'s
     setters are static, so without it tests inherit each other's roots and pass or fail by run order.
   - `tests/support/temp_dir.h` - a scratch tree that deletes itself; `makeSubDir`/`writeFile`/`readFile`.

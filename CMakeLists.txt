@@ -118,7 +118,7 @@ if (NOT AB_ENABLE_CHD)
     add_compile_definitions(AB_NO_CHD)
 endif()
 
-# ab_core: the app's model and services layer, the first of the three targets in docs/refactor-plan.md.
+# ab_core: the app's model and services layer, the first of the three targets the 2026-09 refactor split src/code into.
 # It links ableem_engine and nothing else, so the linker - not a convention - is what keeps it free of SDL and
 # of screens. That is what makes it testable without a window.
 #
@@ -185,7 +185,7 @@ target_include_directories(ab_core PUBLIC ${CMAKE_BINARY_DIR}/generated)
 
 # ab_core's tests. Host builds only - there is no reason to cross-compile them, and both cross toolchain files
 # (toolchains/psc, toolchains/rpi) switch AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
-# in the same commit (docs/refactor-plan.md section 4).
+# in the same commit (the refactor's rule, see CLAUDE.md "Tests").
 option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
 if (AB_BUILD_TESTS)
     enable_testing()
