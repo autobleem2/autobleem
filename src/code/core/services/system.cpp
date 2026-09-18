@@ -91,6 +91,34 @@ string System::getAvailableSpace() {
 }
 
 //*******************************
+// System::execUnixCommandLines
+//*******************************
+vector<string> System::execUnixCommandLines(const string &cmd) {
+    vector<string> lines;
+    PLOG_INFO << "Exec:" << cmd;
+    struct PipeCloser {
+        void operator()(FILE *f) const { pclose(f); }
+    };
+    unique_ptr<FILE, PipeCloser> pipe(popen(cmd.c_str(), "r"));
+    if (!pipe) {
+        PLOG_WARNING << "popen() failed for: " << cmd;
+        return lines;
+    }
+    array<char, 512> buffer;
+    string output;
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+        output += buffer.data();
+    istringstream in(output);
+    string line;
+    while (getline(in, line)) {
+        line = Strings::trim(line);
+        if (!line.empty())
+            lines.push_back(line);
+    }
+    return lines;
+}
+
+//*******************************
 // System::execUnixCommand
 //*******************************
 /*

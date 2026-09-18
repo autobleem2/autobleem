@@ -29,6 +29,8 @@ public:
     // "windows", "wayland"; "" without a display) and the window's display mode as "1920x1080 @ 60 Hz" ("" without
     // a window) - for an information screen
     std::string linkedVersion() const;
+    // SDL's name for the OS ("Linux", "Windows", "Mac OS X") - the platform: value of a pad mapping line
+    static std::string osName();
     std::string videoDriverName() const;
     std::string displayModeString() const;
 

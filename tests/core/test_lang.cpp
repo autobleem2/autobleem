@@ -53,6 +53,20 @@ TEST_CASE("a loaded language translates the strings its file has and passes the 
     CHECK(lang.translate("") == "");
 }
 
+TEST_CASE("loadMore adds a second directory's file on top, keeping what the first had") {
+    LangDir d;
+    d.tmp.makeSubDir("tool/lang");
+    d.tmp.writeFile("tool/lang/Polish.txt", "# tool\nAbout=O narzedziu\nScan SSID=Szukaj sieci\n");
+    ableem::Lang lang;
+    lang.load(d.dir(), "Polish");
+    lang.loadMore(d.tmp.at("tool/lang"));
+    CHECK(lang.translate("Re/Scan") == "Skanuj");         // from the first file
+    CHECK(lang.translate("Scan SSID") == "Szukaj sieci"); // from the second
+    CHECK(lang.translate("About") == "O narzedziu");      // the second wins where both have it
+    lang.loadMore(d.tmp.at("tool/nowhere"));              // a missing file changes nothing
+    CHECK(lang.translate("Scan SSID") == "Szukaj sieci");
+}
+
 TEST_CASE("a UTF-8 BOM on the first line is not part of the first string") {
     LangDir d;
     ableem::Lang lang;

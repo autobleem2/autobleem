@@ -25,6 +25,9 @@ public:
     // loads <langDir>/<languageName>.txt (nothing, for the source language). A missing file leaves every
     // string untranslated, which is what a misspelt language name in config.ini has always done.
     void load(const std::string &langDir, const std::string &languageName);
+    // adds <langDir>/<current language>.txt on top of what is loaded - a tool's own translations over the
+    // main GUI's, for the strings the classic screens it shares already have there
+    void loadMore(const std::string &langDir);
 
     std::string translate(const std::string &input);
     const std::string &currentLanguage() const { return currentLanguage_; }

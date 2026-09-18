@@ -47,6 +47,10 @@ void ThemeAssets::load() {
     logoRect.h = classic.logo.h;
 
     backgroundImg = Texture::loadFile(renderer_, classic.background);
+    // drawn at its own size from the top-left corner (the theme's is the screen's); the splash used to be
+    // the only place setting this, which left every program without a splash with no background at all
+    ableem::Size backgroundSize = backgroundImg.size();
+    backgroundRect = ableem::Rect(0, 0, backgroundSize.w, backgroundSize.h);
     logo = Texture::loadFile(renderer_, classic.logo.file);
     bigBoxFrame = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/bigbox.png");
     if (config_.inifile.values["jewel"] != "none") {

@@ -21,6 +21,8 @@ public:
     static int runAndWait(const std::string &exe, const std::vector<std::string> &args);
 
     static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
+    // the same, one entry per non-empty line of stdout, trimmed - for a command that lists things
+    static std::vector<std::string> execUnixCommandLines(const std::string &cmd);
 
     static void powerOff(); // halts the console; exits the app on a debug host
 

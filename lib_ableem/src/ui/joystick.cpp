@@ -18,6 +18,14 @@ std::string guidString(SDL_JoystickGUID guid) {
     SDL_JoystickGetGUIDString(guid, text, sizeof(text));
     return text;
 }
+// the joystick and game controller subsystems, which Input::flushPads() quits before a wizard runs;
+// brought up on demand and never taken down here (Input's own init/quit pairs stay balanced)
+void ensureSubsystems() {
+    if (!SDL_WasInit(SDL_INIT_JOYSTICK))
+        SDL_InitSubSystem(SDL_INIT_JOYSTICK);
+    if (!SDL_WasInit(SDL_INIT_GAMECONTROLLER))
+        SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+}
 } // namespace
 
 Joystick::Joystick() : impl(new Impl) {}
@@ -27,29 +35,35 @@ Joystick::~Joystick() {
 }
 
 int Joystick::count() {
+    ensureSubsystems();
     return SDL_NumJoysticks();
 }
 
 std::string Joystick::nameForIndex(int index) {
+    ensureSubsystems();
     const char *name = SDL_JoystickNameForIndex(index);
     return name ? name : "";
 }
 
 std::string Joystick::guidForIndex(int index) {
+    ensureSubsystems();
     return guidString(SDL_JoystickGetDeviceGUID(index));
 }
 
 bool Joystick::isGameControllerAtIndex(int index) {
+    ensureSubsystems();
     return SDL_IsGameController(index) == SDL_TRUE;
 }
 
 std::string Joystick::controllerNameForIndex(int index) {
+    ensureSubsystems();
     const char *name = SDL_GameControllerNameForIndex(index);
     return name ? name : "";
 }
 
 bool Joystick::open(int index) {
     close();
+    ensureSubsystems();
     if (index < 0 || index >= SDL_NumJoysticks())
         return false;
     impl->joystick = SDL_JoystickOpen(index);

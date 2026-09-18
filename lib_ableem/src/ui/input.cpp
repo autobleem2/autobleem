@@ -389,7 +389,8 @@ bool Input::addMapping(const std::string &line) {
 }
 
 std::string Input::mappingForDeviceIndex(int index) const {
-    char *mapping = SDL_GameControllerMappingForDeviceIndex(index);
+    // by GUID rather than SDL_GameControllerMappingForDeviceIndex: that one is SDL 2.0.6, the console has 2.0.4
+    char *mapping = SDL_GameControllerMappingForGUID(SDL_JoystickGetDeviceGUID(index));
     if (!mapping)
         return "";
     std::string result = mapping;

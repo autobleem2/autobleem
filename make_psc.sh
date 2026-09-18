@@ -30,7 +30,7 @@ export RSYNC_RSH="ssh -o BatchMode=yes"
 echo "==> syncing to $HOST:$REMOTE_DIR"
 rsync -az --delete \
     --exclude '/build_*' --exclude '/.git' --exclude '/.vscode' --exclude '/dist' \
-    --exclude '/usb' --exclude '/db' --exclude '/payload' --exclude '/payload_rpi' --exclude '/!refactor' \
+    --exclude '/usb' --exclude '/db' --exclude '/payload' --exclude '/payload_rpi' --exclude '/!refactor' --exclude '/psctools' \
     --exclude '/toolchains/rpi/sdl2-devkit' \
     --exclude '*.o' --exclude '*.so' --exclude '*.exe' --exclude '*.dll' \
     ./ "$HOST:$REMOTE_DIR/"
@@ -57,21 +57,30 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
-echo "==> checking the binary against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
-$SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/autobleem-gui $TOOLCHAIN" || {
-    echo "    the binary would not load on the console - not fetching it"; exit 1; }
+# the launcher and the console tools under apps/, each where its build leaves it
+BINARIES="autobleem-gui apps/pscbios/pscbios"
+echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
+for bin in $BINARIES; do
+    $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {
+        echo "    $bin would not load on the console - not fetching anything"; exit 1; }
+done
 
 # The console binaries are already stripped (-s is in the console CPU flags), so they come back as they are.
 # tar rather than rsync for the way back: rsync insists on POSIX modes, which NTFS under MSYS2 refuses.
 echo "==> fetching results"
 rm -rf build_psc/dist
 mkdir -p build_psc/dist
-$SSH "cd $REMOTE_DIR/build_psc && tar czf - autobleem-gui" | tar xzf - --no-same-permissions -C build_psc/dist
+$SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES" | tar xzf - --no-same-permissions -C build_psc/dist
 # UPX takes the stripped binary to a third of its size (3.1 MB -> 1 MB on the Pi build); the console
 # unpacks it in memory at start. AB_NO_UPX=1 skips it - a packed binary is no use to gdb.
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
-    upx -q --best --lzma build_psc/dist/autobleem-gui
+    for bin in $BINARIES; do upx -q --best --lzma build_psc/dist/$bin; done
 fi
+# the tools go straight into the payload's Apps folders (with their resources), the launcher stays in
+# dist/ for the release script to pick up
+echo "==> payload/Apps: pscbios"
+cp build_psc/dist/apps/pscbios/pscbios payload/Apps/pscbios/pscbios
+cp -r apps/pscbios/resources/. payload/Apps/pscbios/
 echo "==> build_psc/dist:"
-ls -l build_psc/dist
+find build_psc/dist -type f | xargs ls -l

@@ -154,6 +154,10 @@ def make_cover_db(path):
     db.close()
 
 
+# the console tools under apps/ that are staged into usb/Apps/<tool>/ for a visual test on Windows
+TOOLS = ['pscbios']
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('usb', help='the USB root to create or refresh')
@@ -178,6 +182,20 @@ def main():
     replace_tree(os.path.join(REPO, 'payload', 'themes'), os.path.join(usb, 'themes'))
     if os.path.isdir(os.path.join(REPO, 'payload', 'Apps')):
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
+
+    # the console tools built from apps/: each one's resources plus its Windows exe over the payload's copy,
+    # so that usb/Apps/<tool>/<tool>.exe <usb root> is the visual test of it
+    for tool in TOOLS:
+        src = os.path.join(REPO, 'apps', tool, 'resources')
+        if not os.path.isdir(src):
+            continue
+        dst = os.path.join(usb, 'Apps', tool)
+        copy_tree(src, dst)
+        tool_exe = os.path.join(args.build, 'apps', tool, tool + '.exe')
+        if os.path.exists(tool_exe):
+            shutil.copy2(tool_exe, dst)
+        else:
+            print('note: no', tool_exe, '- build first for the', tool, 'visual test')
 
     db_dir = os.path.join(usb, 'Autobleem', 'bin', 'db')
     os.makedirs(db_dir, exist_ok=True)

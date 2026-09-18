@@ -347,3 +347,9 @@ add_custom_command(TARGET autobleem-gui PRE_BUILD
 configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 
+
+# the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
+# ab_classic; a Raspberry Pi has no PSC kernel to configure or flash, so not there
+if (NOT AB_TARGET_RPI)
+    add_subdirectory(apps/pscbios)
+endif()

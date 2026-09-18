@@ -384,6 +384,24 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
+## Console tools (`apps/`, 2026-09-18)
+
+The two standalone tools the console runs from `Apps/` - **PSC-Bios** (`apps/pscbios/`: WiFi, timezone,
+the gamepad mapping wizard) and **ABFlashKit** (`apps/abflashkit/`: the kernel flasher) - were 2020 forks
+of the old AutoBleem GUI with their own copies of everything (`psctools/` in git history). They are targets
+in this tree now, built on `ab_classic`: each has a `<tool>_core` static library (SDL-free, links `ab_core`,
+tested from `tests/apps/`) and the program on top, its own `CLAUDE.md`, `resources/` (what ships next to
+its binary in `payload/Apps/<tool>/`) and `resources/lang/` (Key=Value, validated by `make_win.sh`; the
+tool loads the main GUI's language file first, then its own on top - `Lang::loadMore`). They draw with the
+main GUI's theme through `AppBase` and read its `config.ini` - `EnvironmentSetup::forTool()` sets the
+working path to the launcher's resources dir and pins `Env::getAppDir()` to the tool's own folder. The
+console-only work is behind an interface with a fake for the dev host (`ConsoleBackend` -> `AbnetBackend` /
+`FakeBackend`), the `ProcessRunner` pattern, so `usb/Apps/<tool>/<tool>.exe <usb root>` runs on Windows for
+a visual test (`tools/make_usb.py` stages it, `tools/win_drive.ps1 -Tool <tool>` drives it). `make_psc.sh`
+builds them next to the launcher, gates them with `check_psc_binary.sh`, packs them and copies each binary
+plus its `resources/` into `payload/Apps/<tool>/`; a Pi does not build them. `tools/format.sh`,
+`tools/lint.sh` and `.clang-tidy` cover `apps/`.
+
 ## lib_ableem
 
 A portable library (`lib_ableem/`, namespace `ableem`) in two CMake targets, mirrored in `include/ableem/`

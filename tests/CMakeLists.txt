@@ -16,14 +16,17 @@ add_library(ab_test_support STATIC support/temp_dir.cpp support/fake_game.cpp)
 target_include_directories(ab_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ab_test_support ableem_engine)
 
-# one executable per suite; add_test per executable so a crash in one does not hide the others
+# one executable per suite; add_test per executable so a crash in one does not hide the others.
+# ab_add_test(<name> <sources...> [LIBS <targets...>]) - the suite links ab_core, plus what LIBS names
+# (a tool's *_core library, for the suites under apps/)
 function(ab_add_test name)
-    add_executable(${name} ${ARGN})
+    cmake_parse_arguments(AB_TEST "" "" "LIBS" ${ARGN})
+    add_executable(${name} ${AB_TEST_UNPARSED_ARGUMENTS})
     # tests include app headers as "core/services/config.h", the way the app will once src/code is a root
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
     # tests/data: checked-in fixtures (the test disc images, see tests/data/generate_test_files.sh)
     target_compile_definitions(${name} PRIVATE AB_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
-    target_link_libraries(${name} doctest_main ab_test_support ab_core)
+    target_link_libraries(${name} doctest_main ab_test_support ab_core ${AB_TEST_LIBS})
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
@@ -59,3 +62,8 @@ ab_add_test(test_theme_installer core/test_theme_installer.cpp)
 ab_add_test(test_theme_spec core/test_theme_spec.cpp)
 ab_add_test(test_zip_writer core/test_zip_writer.cpp)
 ab_add_test(test_harness core/test_env_fixture.cpp)
+
+# the console tools' suites (apps/), linking each tool's SDL-free core
+if (NOT AB_TARGET_RPI)
+    ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
+endif()

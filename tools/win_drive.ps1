@@ -9,7 +9,9 @@
 #     RetroArch, Memory Cards, Game Manager, Power Off among its items; a bare R2 does nothing)
 #   key names (see PadMapper translateKeyboardToPad): x o s t = cross circle square triangle,
 #     i j k l = d-pad, space = Start, b = Select, q e 1 2 = L1 R1 L2 R2, esc = power off
-param([Parameter(Mandatory=$true)][string]$Usb, [string]$Sequence = "", [int]$InitialWait = 8)
+#   -Tool <name>: drive a console tool from usb\Apps\<name>\<name>.exe instead (staged by make_usb.py);
+#     its stdout/stderr go to <usb>\System\Logs\<name>_out.txt / <name>_err.txt
+param([Parameter(Mandatory=$true)][string]$Usb, [string]$Sequence = "", [int]$InitialWait = 8, [string]$Tool = "")
 $U = $Usb
 $S = Split-Path -Parent $U
 $Exe = Join-Path (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) "build_win\autobleem-gui.exe"
@@ -53,9 +55,14 @@ function Press($h, $chord) {
   [array]::Reverse($held)
   foreach ($n in $held) { Start-Sleep -Milliseconds 150; KeyUp $h $n }
 }
-Copy-Item $Exe "$U\Autobleem\bin\autobleem\" -Force
-Set-Location "$U\Autobleem\bin\autobleem"
-$p = Start-Process -FilePath ".\autobleem-gui.exe" -ArgumentList "`"$U`"" -RedirectStandardOutput "$U\System\Logs\AB_out.txt" -RedirectStandardError "$U\System\Logs\AB_err.txt" -PassThru
+if ($Tool -ne "") {
+  Set-Location "$U\Apps\$Tool"
+  $p = Start-Process -FilePath ".\$Tool.exe" -ArgumentList "`"$U`"" -RedirectStandardOutput "$U\System\Logs\${Tool}_out.txt" -RedirectStandardError "$U\System\Logs\${Tool}_err.txt" -PassThru
+} else {
+  Copy-Item $Exe "$U\Autobleem\bin\autobleem\" -Force
+  Set-Location "$U\Autobleem\bin\autobleem"
+  $p = Start-Process -FilePath ".\autobleem-gui.exe" -ArgumentList "`"$U`"" -RedirectStandardOutput "$U\System\Logs\AB_out.txt" -RedirectStandardError "$U\System\Logs\AB_err.txt" -PassThru
+}
 Start-Sleep $InitialWait
 $h = [W]::FindByPid($p.Id)
 "window handle: $h"

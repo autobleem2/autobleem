@@ -131,6 +131,10 @@ std::string Platform::linkedVersion() const {
     return std::to_string(linked.major) + "." + std::to_string(linked.minor) + "." + std::to_string(linked.patch);
 }
 
+std::string Platform::osName() {
+    return SDL_GetPlatform();
+}
+
 std::string Platform::videoDriverName() const {
     const char *name = SDL_GetCurrentVideoDriver();
     return name ? name : "";

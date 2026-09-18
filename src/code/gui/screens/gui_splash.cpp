@@ -14,11 +14,6 @@ using namespace std;
 void GuiSplash::render() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
     gui->assets().backgroundImg.setBlendMode(ableem::BlendMode::Blend);
-    ableem::Size size = gui->assets().backgroundImg.size();
-    gui->assets().backgroundRect.x = 0;
-    gui->assets().backgroundRect.y = 0;
-    gui->assets().backgroundRect.w = size.w;
-    gui->assets().backgroundRect.h = size.h;
 
     renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
     renderer.clear();

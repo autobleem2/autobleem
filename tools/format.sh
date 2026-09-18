@@ -18,7 +18,7 @@ fi
 
 # the sources we own: the app, the library, its example, the tests and the tools
 sources() {
-    find src/code lib_ableem/include lib_ableem/src lib_ableem/examples tests tools \
+    find src/code apps lib_ableem/include lib_ableem/src lib_ableem/examples tests tools \
         \( -path '*/third_party' -o -path '*/__pycache__' \) -prune -o \
         -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.c' \) \
         ! -name 'SDL_FontCache.*' ! -name 'unecm.c' -print

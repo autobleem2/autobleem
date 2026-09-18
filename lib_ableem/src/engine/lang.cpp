@@ -47,10 +47,14 @@ void Lang::load(const string &langDir, const string &languageName) {
     translations_.clear();
     untranslated_.clear();
     currentLanguage_ = languageName;
-    if (languageName == SourceLanguage)
+    loadMore(langDir);
+}
+
+void Lang::loadMore(const string &langDir) {
+    if (currentLanguage_ == SourceLanguage)
         return;
 
-    string path = langDir + sep + languageName + ".txt";
+    string path = langDir + sep + currentLanguage_ + ".txt";
     ifstream is(path);
     string line;
     vector<string> lines;
