@@ -52,6 +52,7 @@ public:
     int queuedScroll = 0;
     vector<string> headers;
     vector<string> texts;
+    string headersLanguage; // the language headers/texts were translated into
     long time = 0;
     ableem::Event e;
     // for prev/next first letter fast forwarding

@@ -28,10 +28,14 @@ void GuiLauncher::loop() {
     queuedScroll = 0;
 
     while (menuVisible) {
-        // get the current translated string values
-        headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-        texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
-                 _("Resume game from saved state point")};
+        // the menu's headers and blurbs in the current language - Options may have changed it on the way
+        // back into this loop, which is the one time they need translating again
+        if (headersLanguage != app.lang().currentLanguage()) {
+            headersLanguage = app.lang().currentLanguage();
+            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+                     _("Resume game from saved state point")};
+        }
 
         time = gui->platform().ticks();
         for (auto &obj : staticElements) {

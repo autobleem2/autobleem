@@ -172,14 +172,26 @@ is half the resolve. Keep 0 on the console. If even 2x is too much at 1080p, the
 transparent-margin trick (2 px of transparent border in the composed cover texture, so the linear filter
 fades the edge in) - it costs nothing per frame and was the plan before MSAA turned out to be two lines.
 
-## 4. Targets (to be filled in from step 0)
+## 4. Results so far (2026-09-18, steps 0-4 and 6 done on the PC; the Pi numbers are next)
 
-| | Pi 400, 1.5x, MSAA off | after step 3+4 | with MSAA 2x |
+Measured with `AB_FRAME_STATS=1` on the Windows build at 1.5x, 4x MSAA, the launcher idle with the
+carousel showing, then five taps a second apart:
+
+| | before | after step 3 (text cache) | after step 4 (RenderGeometry) |
 |---|---|---|---|
-| idle frame, copies | ~6500 | < 200 | same |
-| idle CPU | ~17% (measured, `top`) | < 5% | ? |
-| scroll: dropped frames | 1-3 per scroll (not measured) | 0 | 0 |
-| worst frame during scroll | ? | < 16 ms | < 16 ms |
+| idle frame, copies | 3100-3500 | 1850 | **85** |
+| texture switches per frame | 46 | 55 | 55 |
+| worst frame on a scroll | 221 ms (one `loadFile("")` at 213 ms) | 33 ms | 20-23 ms |
+| frames over 20 ms in 5 s of scrolling | 5 | 1 | 0-1 |
+
+Step 0's first find was not in the plan: `Texture::loadFile("")` - what a game with no resume point hands
+`setResumePic` - went through SDL_image to fail, 13-213 ms on Windows and the "Could not load texture"
+line once a second in the Pi's log. An empty path returns at once now. Steps 1 and 2 are logic (deferred
+loads, lookahead, easing, continuous held-stick motion, queued taps) and measured as the drop in worst
+frame above; step 5 is not needed at 85 copies a frame. Left to do: the Pi measurement and step 7.
+
+Still to check on the Pi: the 85 copies a frame are now ~30 RenderGeometry calls of ~300 vertices each -
+cheap for the CPU, and V3D takes them in one buffer each; the 4x MSAA resolve is the remaining fixed cost.
 
 ## 5. The console
 
