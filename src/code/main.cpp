@@ -11,6 +11,7 @@
 #include "core/main.h"
 #include "core/services/system.h"
 #include "core/services/environment.h"
+#include "core/services/platform_config.h"
 
 using namespace std;
 
@@ -59,14 +60,6 @@ static bool setupEnvironment(int argc, char *argv[]) {
         Env::setWorkingPath(usbRoot + sep + "Autobleem/bin/autobleem");
         Env::setThemesDir(usbRoot + sep + "themes");
         Env::setCoversDbDir(usbRoot + sep + "Autobleem/bin/db");
-#ifdef AB_PLATFORM_RPI
-        // the Pi's installer lays RetroArch out under RetroArch/ on the data partition, in RetroArch's own
-        // standard tree (cores, info, system, roms, playlists, ...), and the distribution's RetroArch runs
-        // against it - see payload_rpi/install.sh. The console's is the RetroBoot tree at retroarch/.
-        Env::setRetroarchDir(usbRoot + sep + "RetroArch");
-        // ...and the exported playlist has to name a core that exists there, not RetroBoot's
-        Env::setRetroarchCoreFile(usbRoot + sep + "RetroArch/cores/pcsx_rearmed_libretro.so");
-#endif
     } else {
         // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)
         Env::setThemesDir(Env::getWorkingPath() + sep + "themes");
@@ -79,6 +72,10 @@ static bool setupEnvironment(int argc, char *argv[]) {
     Env::setThemesDir("/media/themes");
     Env::setCoversDbDir("../db");
 #endif
+
+    // where RetroArch is on this platform: the console's RetroBoot tree, the Pi's RetroArch/ on the data
+    // partition, ... - data in resources/platform/<platform>.ini, not #ifdefs
+    PlatformConfig::load(PlatformConfig::pathFor(Env::getWorkingPath(), Env::platformName())).apply();
     return true;
 }
 

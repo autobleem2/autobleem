@@ -26,6 +26,7 @@ endfunction()
 
 ab_add_test(test_clock core/test_clock.cpp)
 ab_add_test(test_config core/test_config.cpp)
+ab_add_test(test_platform_config core/test_platform_config.cpp)
 ab_add_test(test_game_catalog core/test_game_catalog.cpp)
 ab_add_test(test_game_database core/test_game_database.cpp)
 ab_add_test(test_game_query core/test_game_query.cpp)

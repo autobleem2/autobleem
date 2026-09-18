@@ -136,6 +136,8 @@ add_library(ab_core STATIC
         src/code/core/services/launch.h
         src/code/core/services/memcard.cpp
         src/code/core/services/memcard.h
+        src/code/core/services/platform_config.cpp
+        src/code/core/services/platform_config.h
         src/code/core/services/process_runner.cpp
         src/code/core/services/process_runner.h
         src/code/core/services/resume_point.cpp

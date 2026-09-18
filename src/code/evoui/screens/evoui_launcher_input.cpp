@@ -518,7 +518,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 void GuiLauncher::loop_squareButton_Pressed() {
 
 
-    if (DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) { // retroarch is a file!!
+    if (Env::retroArchInstalled()) {
 
         if (state == LauncherScreenState::Games) {
             if (carousel.games.empty()) {

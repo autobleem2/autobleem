@@ -5,7 +5,9 @@
 
 #include <ableem/engine/environment.h>
 #include <ableem/engine/filesystem.h>
+#include "core/services/environment.h"
 #include <string>
+#include <vector>
 
 //******************
 // EnvFixture
@@ -40,11 +42,13 @@ public:
     void setInternalDbFile(const std::string &p) { ableem::Environment::setInternalDbFile(p); }
     void setInternalGamesDir(const std::string &p) { ableem::Environment::setInternalGamesDir(p); }
     void setRetroarchDir(const std::string &p) { ableem::Environment::setRetroarchDir(p); }
+    void setRetroarchCoreFile(const std::string &p) { ableem::Environment::setRetroarchCoreFile(p); }
 
 private:
     struct Roots {
         std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath;
-        std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir;
+        std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
+        std::vector<std::string> retroArchBinaries;
     };
 
     static Roots capture() {
@@ -54,7 +58,11 @@ private:
                      E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
                      // an explicit override is kept as such; a derived one is "" so the derivation survives
                      E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "retroarch"
-                         ? std::string() : E::getPathToRetroarchDir()};
+                         ? std::string() : E::getPathToRetroarchDir(),
+                     E::getPathToRetroarchCoreFile() == E::getPathToRetroarchDir() + ableem::sep +
+                             "cores/km_pcsx_rearmed_neon_libretro.so"
+                         ? std::string() : E::getPathToRetroarchCoreFile(),
+                     ::Environment::retroArchBinaries()};
     }
 
     static void restore(const Roots &r) {
@@ -69,6 +77,8 @@ private:
         E::setCoversDbDir(r.coversDbDir);
         E::setInternalGamesDir(r.internalGamesDir);
         E::setRetroarchDir(r.retroarchDir);
+        E::setRetroarchCoreFile(r.retroarchCoreFile);
+        ::Environment::setRetroArchBinaries(r.retroArchBinaries);
     }
 
     Roots saved_;

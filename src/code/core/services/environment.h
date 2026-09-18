@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ableem/engine/environment.h>
+#include <string>
+#include <vector>
 
 //*******************************
 // AB_DEBUG_HOST
@@ -35,6 +37,17 @@
 struct Environment : ableem::Environment {
     static bool autobleemKernel;        // true if the kernel is the AutoBleem Kernel
     static bool hiddenMenuEnabled;
+
+    // the platform this build is for - "psc" (the console), "rpi" or "pc" - which names the
+    // resources/platform/<name>.ini that PlatformConfig reads at start. The only place the build macros
+    // decide a path.
+    static const char *platformName();
+
+    // where the RetroArch executable may be (PlatformConfig's retroarch_binary, resolved), and whether one
+    // of them is there - what "RetroArch" in the system menu and Square on a game check
+    static void setRetroArchBinaries(const std::vector<std::string> &paths);
+    static const std::vector<std::string> &retroArchBinaries();
+    static bool retroArchInstalled();
 };
 
 using Env = Environment;

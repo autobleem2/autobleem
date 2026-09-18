@@ -529,7 +529,7 @@ void GuiLauncher::loop_openSystemMenu() {
             break;
 
         case SystemMenuAction::RetroArch: {
-            if (!LaunchService::retroArchInstalled()) {
+            if (!Env::retroArchInstalled()) {
                 GuiConfirm confirm(*gui);
                 confirm.label = _("RetroArch is not installed");
                 confirm.show();

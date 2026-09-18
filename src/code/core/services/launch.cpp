@@ -54,18 +54,6 @@ string LaunchService::raCoreOptionsFile() {
 }
 
 //*******************************
-// LaunchService::retroArchInstalled
-//*******************************
-bool LaunchService::retroArchInstalled() {
-#ifdef AB_PLATFORM_RPI
-    // built from source by the installer, or the distribution's package
-    return DirEntry::exists("/usr/local/bin/retroarch") || DirEntry::exists("/usr/bin/retroarch");
-#else
-    return DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch");   // retroarch is a file!!
-#endif
-}
-
-//*******************************
 // LaunchService::writeSelectionScript
 //*******************************
 void LaunchService::writeSelectionScript() {
