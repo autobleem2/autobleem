@@ -115,11 +115,11 @@ string System::execUnixCommand(const char* cmd){
 // fork + exec the program and wait for it to finish.
 // returns the exit status of the program, or -1 if it could not be started.
 int System::runAndWait(const string &exe, const vector<string> &args) {
-    cout << "CMD line to execute: '" << exe << "'";
+    string line = "CMD line to execute: '" + exe + "'";
     for (const string &arg : args) {
-        cout << " '" << arg << "'";
+        line += " '" + arg + "'";
     }
-    cout << endl;
+    PLOG_INFO << line;
 
 #ifdef _WIN32
     PLOG_INFO << "runAndWait is not supported on Windows";

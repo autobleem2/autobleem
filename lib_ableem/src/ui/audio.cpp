@@ -1,6 +1,7 @@
 #include "ableem/ui/audio.h"
 #include "sdl_common.h"
 #include <iostream>
+#include <ableem/engine/log.h>
 
 namespace ableem {
 
@@ -18,7 +19,7 @@ Sound::Sound(void *chunk) : handle(chunk, destroyChunk) {}
 Sound Sound::load(const std::string &path) {
     Mix_Chunk *c = Mix_LoadWAV(path.c_str());
     if (!c) {
-        std::cout << "Could not load sound: " << path << " (" << Mix_GetError() << ")" << std::endl;
+        PLOG_ERROR << "Could not load sound: " << path << " (" << Mix_GetError() << ")";
     }
     return Sound(c);
 }
@@ -38,7 +39,7 @@ Music::Music(void *m) : handle(m, destroyMusic) {}
 Music Music::load(const std::string &path) {
     Mix_Music *m = Mix_LoadMUS(path.c_str());
     if (!m) {
-        std::cout << "Could not load music: " << path << " (" << Mix_GetError() << ")" << std::endl;
+        PLOG_ERROR << "Could not load music: " << path << " (" << Mix_GetError() << ")";
     }
     return Music(m);
 }
@@ -79,7 +80,7 @@ bool Audio::open(int frequency, int channels, int chunkSize) {
     close(); // matches the original restartAudio(): fully close any previously opened device(s) first
 
     if (Mix_OpenAudio(frequency, MIX_DEFAULT_FORMAT, channels, chunkSize) == -1) {
-        std::cout << "Unable to open audio: " << Mix_GetError() << std::endl;
+        PLOG_ERROR << "Unable to open audio: " << Mix_GetError();
         impl->open = false;
         return false;
     }
@@ -87,9 +88,9 @@ bool Audio::open(int frequency, int channels, int chunkSize) {
 
     const char *driver = SDL_GetCurrentAudioDriver();
     if (driver) {
-        std::cout << "Audio subsystem initialized; driver = " << driver << "." << std::endl;
+        PLOG_INFO << "Audio subsystem initialized; driver = " << driver << ".";
     } else {
-        std::cout << "Audio subsystem not initialized." << std::endl;
+        PLOG_WARNING << "Audio subsystem not initialized.";
     }
     return true;
 }

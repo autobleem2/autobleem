@@ -8,6 +8,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -154,9 +155,9 @@ bool ResumePointService::exitedCleanly(const PsGame &game) const {
         return true;    // nothing to write one, so nothing to be missing
 
     bool clean = DirEntry::exists(filenameFile(game));
-    if (!clean)
-        cout << "ResumePointService: '" << filenameFile(game) << "' not found, previous run did not exit cleanly"
-             << endl;
+    if (!clean) {
+        PLOG_WARNING << "'" << filenameFile(game) << "' not found, previous run did not exit cleanly";
+    }
     return clean;
 }
 

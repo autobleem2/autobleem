@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 using ableem::Rect;
@@ -98,7 +99,7 @@ int TextRenderer::getCheckIconWidth() {
     if (it != emojis_.end()) {
         return it->second.size().w;
     } else {
-        cout << "missing check icon" << endl;
+        PLOG_WARNING << "missing check icon";
         assert(false);
     }
 
@@ -175,7 +176,7 @@ void TextRenderer::AllTextOrEmojiTokenInfo::getTokenInfo(ableem::Font _font, con
                 // add the token info
                 tokenInfos.emplace_back(tokenInfo);
             } else {
-                cout << "emoji not found for " << tokenString << endl;
+                PLOG_WARNING << "emoji not found for " << tokenString;
             }
         } else {
             tokenInfo.rect = text.getFontTextRect(font, tokenString);

@@ -141,7 +141,6 @@ string SerialScanner::readSerialFromImage(ImageType imageType, string path, stri
             string serialFound = "";
             if (!dir.rootDir.empty()) {
                 for (const string & entry:dir.rootDir) {
-                 //   cout << entry << endl;
                     string potentialSerial = normalizeSerial(entry);
                     for (const string & prefix:prefixes) {
                         int pos = potentialSerial.find(prefix.c_str(), 0);

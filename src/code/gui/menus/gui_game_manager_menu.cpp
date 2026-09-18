@@ -9,6 +9,7 @@
 #include "gui_game_editor_menu.h"
 #include "../screens/gui_confirm.h"
 #include "../../app.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -151,7 +152,7 @@ void GuiManager::doSquare_Pressed() {
     bool delGame = confirm.result;
 
     if (delGame) {
-        cout << "Trying to delete " << gameName << endl;
+        PLOG_INFO << "Trying to delete " << gameName;
         gui->renderStatus(_("Please wait ... deleting") + " " + gameName);
         auto result = app.gameCatalog().deleteUsbGame(*game);
         if (result.removed) {
@@ -167,7 +168,7 @@ void GuiManager::doSquare_Pressed() {
             gui->renderStatus(_("Failed to delete") + " " + gameName);
         }
     } else {
-        cout << "Failed to delete " << gameName << endl;
+        PLOG_ERROR << "Failed to delete " << gameName;
         gui->renderStatus(_("Failed to delete") + " " + gameName);
     }
     app.scans().requestScan();  // in order for the sub dir hierarchy to be fixed we have to do a rescan
@@ -193,10 +194,10 @@ void GuiManager::doTriangle_Pressed() {
 
     if (delCovers)
     {
-        cout << "Trying to delete covers" << endl;
+        PLOG_INFO << "Trying to delete covers";
         gui->renderStatus(_("Please wait ... deleting covers..."));
 
-        cout << "Flushed " << app.gameCatalog().flushAllCovers() << " covers" << endl;
+        PLOG_INFO << "Flushed " << app.gameCatalog().flushAllCovers() << " covers";
 
         app.scans().requestScan();
         menuVisible = false;

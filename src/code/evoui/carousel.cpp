@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -32,7 +33,7 @@ void Carousel::setGames(const PsGames &gamesList) {
         }
     }
 
-    cout << "Setting initial positions" << endl;
+    PLOG_DEBUG << "Setting initial positions";
     if (games.empty()) {
         selected = -1;
     } else {

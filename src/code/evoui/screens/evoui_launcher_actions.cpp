@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -95,8 +96,8 @@ void GuiLauncher::loop_chooseGameDir() {
             if (showInternalGames)
                 nextSel = static_cast<int>(selection.ps1SelectState);   // AllGames is on row 0, InternalOnly is on row 1
             else {
-                    cout << "Error: loop_chooseGameDir() called with \"origames\" off and selection.ps1SelectState = " <<
-                    static_cast<int>(selection.ps1SelectState) << endl;
+                PLOG_ERROR << "loop_chooseGameDir() called with \"origames\" off and selection.ps1SelectState = "
+                           << static_cast<int>(selection.ps1SelectState);
             }
         }
     }

@@ -24,9 +24,9 @@ namespace {
 class SplashProcessRunner : public ProcessRunner {
 public:
     void run(const string &exe, const vector<string> &args) override {
-        cout << "would run " << exe;
-        for (const string &arg : args) cout << " '" << arg << "'";
-        cout << endl;
+        string line = "would run " + exe;
+        for (const string &arg : args) line += " '" + arg + "'";
+        PLOG_INFO << line;
         Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
     }
     bool needsExclusiveDisplay() const override { return false; }   // it draws on the launcher's own window

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <ableem/engine/log.h>
 
 namespace ableem {
 
@@ -137,14 +138,14 @@ struct Input::Impl {
         pad->guid = guidStr;
         pad->name = SDL_GameControllerName(controller);
         pad->index = joystickIndex;
-        std::cout << "New GameController: " << pad->name << " GUID: " << pad->guid << std::endl;
+        PLOG_INFO << "New GameController: " << pad->name << " GUID: " << pad->guid;
         pads.push_back(std::move(pad));
     }
 
     void removePad(int joystickInstanceId) {
         for (size_t i = 0; i < pads.size(); i++) {
             if (SDL_JoystickInstanceID(pads[i]->joystick) == joystickInstanceId) {
-                std::cout << "Pad disconnected: " << pads[i]->index << ":" << pads[i]->name << std::endl;
+                PLOG_INFO << "Pad disconnected: " << pads[i]->index << ":" << pads[i]->name;
                 SDL_GameControllerClose(pads[i]->controller);
                 pads.erase(pads.begin() + i);
                 return;
@@ -289,14 +290,14 @@ void Input::probePads() {
     for (const std::string &path : impl->mappingPaths) {
         if (fileExists(path)) {
             int loaded = SDL_GameControllerAddMappingsFromFile(path.c_str());
-            std::cout << "Loaded pad mappings " << loaded << " from " << path << std::endl;
+            PLOG_INFO << "Loaded pad mappings " << loaded << " from " << path;
             mappingsLoaded = true;
             impl->currentMappingPath = path;
             break;
         }
     }
     if (!mappingsLoaded) {
-        std::cout << "Warning: default mapping db in use - no gamecontrollerdb.txt file found" << std::endl;
+        PLOG_WARNING << "default mapping db in use - no gamecontrollerdb.txt file found";
     }
 
     std::string zeroGuid = "00000000000000000000000000000000";

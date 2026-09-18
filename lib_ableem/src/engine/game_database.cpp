@@ -483,7 +483,6 @@ bool GameDatabase::findMetadataBySerial(string serial, GameMetadata *md) {
         readMetadataRow(stmt, md);
         md->serial = serial;
         md->region = SerialScanner::serialToRegion(md->serial);
-        //cout << "findMetadataBySerial: " << "serial " << serial << ", " << md->title << endl;
         return true;
     }
     return false;
@@ -559,10 +558,9 @@ bool GameDatabase::loadSubDirRows(SubDirRowInfos *gameRowInfos) {
         subDirRowInfo.indentLevel = stmt.colInt(2);
         subDirRowInfo.numGames = stmt.colInt(3);
 
-        cout << "SubDirRowInfo: " << string(subDirRowInfo.indentLevel * 2, ' ') << subDirRowInfo.rowName
-                << ", index: " << subDirRowInfo.subDirRowIndex
-                << ", indent: " << subDirRowInfo.indentLevel
-                << ", numGames: " << subDirRowInfo.numGames << endl;
+        PLOG_DEBUG << "SubDirRowInfo: " << string(subDirRowInfo.indentLevel * 2, ' ') << subDirRowInfo.rowName
+                   << ", index: " << subDirRowInfo.subDirRowIndex << ", indent: " << subDirRowInfo.indentLevel
+                   << ", numGames: " << subDirRowInfo.numGames;
 
         gameRowInfos->emplace_back(subDirRowInfo);
     }
@@ -595,7 +593,6 @@ bool GameDatabase::loadGameIdsInSubDirRow(vector<int> *gameIdsInRow, int row) {
     if (!stmt.ok()) return false;
     stmt.bind(1, row);
     while (stmt.row()) {
-        //cout << "GameId in Row: " << row << ", " << gameId << endl;
         gameIdsInRow->emplace_back(stmt.colInt(0));
     }
     return true;

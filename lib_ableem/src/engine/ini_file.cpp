@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "ableem/engine/log.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -89,13 +90,11 @@ void IniFile::save(const string &_path) {
 // IniFile::print
 //*******************************
 void IniFile::print() {
-    cout << "section = " << section << '\n';
-    cout << "path = " << path << '\n';
-    cout << "entry = " << entry << '\n';
+    PLOG_DEBUG << "section = " << section;
+    PLOG_DEBUG << "path = " << path;
+    PLOG_DEBUG << "entry = " << entry;
 
-    for (auto &item : values)
-        cout << item.first << " = " << item.second << '\n';
-    cout << flush;
+    for (auto &item : values) PLOG_DEBUG << item.first << " = " << item.second;
 }
 
 } // namespace ableem

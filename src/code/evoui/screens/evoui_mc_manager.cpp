@@ -10,6 +10,7 @@
 #include "../../gui/screens/gui_confirm.h"
 #include "../../gui/screens/gui_select_memcard.h"
 #include "../../core/services/environment.h"
+#include <ableem/engine/log.h>
 
 void GuiMcManager::init() {
     rightCardName_ori = rightCardName;
@@ -283,7 +284,7 @@ void GuiMcManager::loop() {
 
                                 rightCardName = select.cardSelected;
                                 card2path = cardPath;
-                                cout << "Card:" << cardPath << endl;
+                                PLOG_DEBUG << "Card:" << cardPath;
                                 memcard2->load(card2path);
                             }
                             changes = false;

@@ -1,12 +1,12 @@
-// lib_ableem - engine: the log. plog (vendored, header-only) behind a two-line setup: Log::init() once,
-// after the environment knows where the logs directory is, then PLOG_INFO / PLOG_WARNING / PLOG_ERROR /
-// PLOG_DEBUG anywhere. Every line goes to the console (stdout - what run.sh / autobleem-session tee into
-// AB_out.txt, so nothing an old instruction asks for is lost) and to a rolling file, 1 MB x 3, that does
-// not grow forever on a stick.
+// lib_ableem - engine: the log. plog (vendored, header-only) behind a two-line setup: Log::initConsoleOnly()
+// first thing in main(), Log::addFile() once the environment knows where the logs directory is, then
+// PLOG_INFO / PLOG_WARNING / PLOG_ERROR / PLOG_DEBUG anywhere. Every line goes to the console (stdout - what
+// run.sh / autobleem-session tee into AB_out.txt) and to a rolling file, 1 MB x 3, that does not grow forever
+// on a stick. A PLOG_* before any init is silently dropped, which is why the console comes first.
 //
 //   12:32:13 INFO  [scanGamesDirectory:371] Scanning: /media/Games
 //
-// From AutoBleem-NG's log.h; cout is still the app's older logging and both are fine side by side.
+// From AutoBleem-NG's log.h. This is the only logging in the code base - no cout anywhere.
 #pragma once
 
 #include <iomanip>
@@ -51,17 +51,22 @@ public:
 #endif
 #endif
 
-// once, at start-up. logFile's directory must exist (System/Logs does on every target).
-inline void init(const std::string &logFile, plog::Severity maxSeverity = ABLEEM_LOG_LEVEL) {
-    static plog::RollingFileAppender<Formatter> fileAppender(logFile.c_str(), 1024 * 1024, 3);
-    static plog::ConsoleAppender<Formatter> consoleAppender;
-    plog::init(maxSeverity, &fileAppender).addAppender(&consoleAppender);
-}
-
-// the tests, and a tool that has no logs directory: console only
+// once, first thing: the console. The tests and the tools stop here.
 inline void initConsoleOnly(plog::Severity maxSeverity = ABLEEM_LOG_LEVEL) {
     static plog::ConsoleAppender<Formatter> consoleAppender;
     plog::init(maxSeverity, &consoleAppender);
+}
+
+// once, after initConsoleOnly(): the rolling file as well. logFile's directory must exist.
+inline void addFile(const std::string &logFile) {
+    static plog::RollingFileAppender<Formatter> fileAppender(logFile.c_str(), 1024 * 1024, 3);
+    if (plog::get() != nullptr) plog::get()->addAppender(&fileAppender);
+}
+
+// both at once
+inline void init(const std::string &logFile, plog::Severity maxSeverity = ABLEEM_LOG_LEVEL) {
+    initConsoleOnly(maxSeverity);
+    addFile(logFile);
 }
 
 inline void setLevel(plog::Severity maxSeverity) {

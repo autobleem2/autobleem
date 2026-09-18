@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include "ableem/engine/log.h"
 
@@ -42,15 +43,12 @@ void GameSubDir::scanAll() {
         DirEntry::fixCommaInDirOrFileName(fullPath, &dirEntry);
 
         string path = fullPath + sep + dirEntry.name;
-        //cout << "path: " << path << endl;
         if (DirEntry::thereIsAGameFile(path)) {
             UsbGamePtr game{new UsbGame};
             game->fullPath = path;
             game->gameDirName = dirEntry.name;
             gamesInThisDir.emplace_back(game);
-            //cout << "added game: " << game->pathName << endl;
         } else {
-            //cout << "subdir: " << path << endl;
             GameSubDirPtr subdir(new GameSubDir(path, displayIndentLevel + 1, displayRows));
             displayRows->emplace_back(subdir);
             subdir->scanAll();
@@ -236,17 +234,14 @@ UsbGames GamesHierarchy::getAllGames() {
 bool GamesHierarchy::gamesDoNotMatchAutobleemPrev(const std::string & autobleemPrevPath) {
     auto allGames = getAllGames();
     UsbGame::sortByFullPath(allGames);
-    //cout << "gamesDoNotMatchAutobleemPrev" << endl;
-    for (const auto &g : allGames) cout << g->fullPath << endl;
+    for (const auto &g : allGames) PLOG_DEBUG << g->fullPath;
 
     ifstream prev;
     prev.open(autobleemPrevPath.c_str(), ios::binary);
     for (const auto &game : allGames) {
         string pathInFile;
         getline(prev, pathInFile);
-        //cout << "compare " << pathInFile << " ======== " << game->fullPath << endl;
         if (pathInFile != game->fullPath) {
-            //cout << "compare failed" << endl;
             return true;    // the autobleem.prev file does not match
         }
     }
@@ -263,7 +258,7 @@ void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
 
     UsbGame::sortByFullPath(allGames);
     PLOG_INFO << "writeAutobleemPrev";
-    for (const auto &g : allGames) cout << g->fullPath << endl;
+    for (const auto &g : allGames) PLOG_DEBUG << g->fullPath;
 
     ofstream prev;
     prev.open(autobleemPrevPath.c_str(), ios::binary);
@@ -342,14 +337,18 @@ void GamesHierarchy::dumpRowDisplayGameInfo(ostream &o, bool alsoPrintGames) {
 // GamesHierarchy::printRowGameInfo
 //*******************************
 void GamesHierarchy::printRowGameInfo(bool alsoPrintGames) {
-    dumpRowGameInfo(cout, alsoPrintGames);
+    ostringstream o;
+    dumpRowGameInfo(o, alsoPrintGames);
+    PLOG_DEBUG << o.str();
 }
 
 //*******************************
 // GamesHierarchy::printRowDisplayGameInfo
 //*******************************
 void GamesHierarchy::printRowDisplayGameInfo(bool alsoPrintGames) {
-    dumpRowDisplayGameInfo(cout, alsoPrintGames);
+    ostringstream o;
+    dumpRowDisplayGameInfo(o, alsoPrintGames);
+    PLOG_DEBUG << o.str();
 }
 
 } // namespace ableem

@@ -406,7 +406,6 @@ void UsbGame::applyIniValues() {
 // UsbGame::saveGameIni
 //*******************************
 void UsbGame::saveGameIni(const string &path) {
-    //cout << "Overwritting ini file" << path << endl;
     IniFile ini;
     ini.section = "Game";
     ini.values["title"] = title;

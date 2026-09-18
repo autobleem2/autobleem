@@ -21,7 +21,7 @@ public:
 
     int maxLines = 18;
     std::vector<std::string> lines;
-    bool alsoWriteToCout = false;
+    bool alsoLog = false;   // every line shown is also logged
 
     void appendLine(const std::string str);
 

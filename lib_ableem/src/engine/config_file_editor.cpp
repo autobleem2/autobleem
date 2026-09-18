@@ -33,7 +33,6 @@ bool lineSetsProperty(const string &lcaseline, const string &lcasepattern) {
 // ConfigFileEditor::replaceProperty
 //*******************************
 void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, string newline) {
- //   cout << "cfg replace, '" << fullCfgFilePath << "', '" << property << "' with: '" << newline << "'" << endl;
     if (!DirEntry::exists(fullCfgFilePath)) {
         PLOG_INFO << "  cfg file doesn't exist";
         return;
@@ -83,7 +82,6 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
 // ConfigFileEditor::getValueFromCfgFile
 //*******************************
 string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string property) {
-   // cout << "cfg getValue, '" << fullCfgFilePath << "', '" << property << "'" << endl;
     fstream file(fullCfgFilePath, ios::in);
     vector<string> lines;
     lines.clear();

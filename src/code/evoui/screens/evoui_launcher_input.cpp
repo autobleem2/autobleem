@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ using namespace std;
 // event loop
 //*******************************
 void GuiLauncher::loop() {
-    cout << "Main Loop" << endl;
+    PLOG_DEBUG << "Main Loop";
     powerOffShift = false;  // L2 shift used for power off and selecting game sub dir or RA playlist
 
     menuVisible = true;

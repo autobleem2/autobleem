@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <iostream>
 #include "../core/services/environment.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 using ableem::Texture;
@@ -131,7 +132,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     coverPng = Texture::loadFile(renderer, imagePath);
                 } else {
                     // use default
-                    cout << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name << endl;
+                    PLOG_WARNING << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name;
                     coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/ra-cover.png");
                 }
             } else
@@ -142,7 +143,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     coverPng = Texture::loadFile(renderer, imagePath);
                 } else {
                     // use default
-                    cout << "boxart image NOT found for " << imagePath << endl;
+                    PLOG_WARNING << "boxart image NOT found for " << imagePath;
                     coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/app-cover.png");
                 }
             }

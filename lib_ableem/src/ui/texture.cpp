@@ -2,6 +2,7 @@
 #include "ableem/ui/renderer.h"
 #include "sdl_common.h"
 #include <iostream>
+#include <ableem/engine/log.h>
 
 namespace ableem {
 
@@ -23,7 +24,7 @@ Texture::Texture(void *nativeTexture) : handle(nativeTexture, destroyTexture) {}
 Texture Texture::loadFile(Renderer &renderer, const std::string &path) {
     SDL_Texture *t = IMG_LoadTexture(static_cast<SDL_Renderer *>(renderer.native()), path.c_str());
     if (!t) {
-        std::cout << "Could not load texture: " << path << " (" << IMG_GetError() << ")" << std::endl;
+        PLOG_ERROR << "Could not load texture: " << path << " (" << IMG_GetError() << ")";
     }
     return Texture(t);
 }
@@ -33,7 +34,7 @@ Texture Texture::loadMemory(Renderer &renderer, const void *data, unsigned int s
     // freesrc=1: IMG_LoadTexture_RW closes/frees the RWops for us
     SDL_Texture *t = IMG_LoadTexture_RW(static_cast<SDL_Renderer *>(renderer.native()), rw, 1);
     if (!t) {
-        std::cout << "Could not load texture from memory (" << IMG_GetError() << ")" << std::endl;
+        PLOG_ERROR << "Could not load texture from memory (" << IMG_GetError() << ")";
     }
     return Texture(t);
 }

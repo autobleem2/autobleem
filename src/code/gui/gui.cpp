@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <cstring>
 #include <cassert>
+#include <ableem/engine/log.h>
 
 using namespace std;
 using ableem::Rect;
@@ -84,7 +85,7 @@ void Gui::criticalException(const string &text) {
 // Gui::display
 //*******************************
 void Gui::display(bool resume) {
-    cout << platform().versionString() << endl;
+    PLOG_INFO << platform().versionString();
 
     if (!platform().hasDisplay()) {
         acquireDisplay();   // released for an emulator - see releaseDisplay()

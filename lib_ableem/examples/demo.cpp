@@ -7,6 +7,7 @@
 #include <ableem/ableem.h>
 #include <iostream>
 #include <cstdlib>
+#include <ableem/engine/log.h>
 
 using namespace ableem;
 
@@ -37,12 +38,12 @@ public:
     }
 
     void doCross_Pressed() override {
-        std::cout << "Cross pressed" << std::endl;
+        PLOG_INFO << "Cross pressed";
         sound.play();
     }
 
     void doCircle_Pressed() override {
-        std::cout << "Circle pressed, exiting" << std::endl;
+        PLOG_INFO << "Circle pressed, exiting";
         menuVisible = false;
     }
 
@@ -54,9 +55,10 @@ private:
 
 int main(int argc, char **argv) {
     std::atexit(Platform::shutdownSDL);
+    ableem::Log::initConsoleOnly();
     GuiBase gui("ableem_demo", 800, 480);
     gui.platform().setPowerOffHandler([&]() {
-        std::cout << "power-off / escape requested, exiting" << std::endl;
+        PLOG_INFO << "power-off / escape requested, exiting";
         std::exit(0);
     });
     gui.audio().open();
@@ -65,7 +67,7 @@ int main(int argc, char **argv) {
     Font font = argc > 2 ? Font::load(gui.renderer(), argv[2], 20) : Font();
     Sound sound = argc > 3 ? Sound::load(argv[3]) : Sound();
 
-    std::cout << gui.platform().versionString() << std::endl;
+    PLOG_INFO << gui.platform().versionString();
 
     DemoScreen screen(gui, tex, font, sound);
     screen.show();

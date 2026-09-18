@@ -3,6 +3,7 @@
 #include "sdl_common.h"
 #include <iostream>
 #include <vector>
+#include <ableem/engine/log.h>
 
 namespace ableem {
 
@@ -28,9 +29,9 @@ Font Font::load(Renderer &renderer, const std::string &ttfPath, int pointSize) {
     Uint8 ok = FC_LoadFont(fc, static_cast<SDL_Renderer *>(renderer.native()), ttfPath.c_str(), pointSize,
                             FC_MakeColor(255, 255, 255, 255), TTF_STYLE_NORMAL);
     if (!ok) {
-        std::cout << "FAILURE opening font " << ttfPath << " of size " << pointSize << std::endl;
+        PLOG_ERROR << "FAILURE opening font " << ttfPath << " of size " << pointSize;
     } else {
-        std::cout << "Success opening font " << ttfPath << " of size " << pointSize << std::endl;
+        PLOG_DEBUG << "Opened font " << ttfPath << " of size " << pointSize;
     }
     return Font(fc);
 }

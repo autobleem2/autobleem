@@ -342,17 +342,6 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
     badGameFile.open(badGameFilePath.c_str(), ios::binary);
     DirEntry::checkWritable(badGameFile, badGameFilePath);   // diagnostics only, keep going
 
-#if 0
-    int i = 0;
-    for (auto game : gamesScanned) {
-        cout << i++ << ": ";
-        if (game) {
-            PLOG_INFO << game->pathName << ", " << game->fullPath;
-        } else {
-            PLOG_INFO << "NULL";
-        }
-    }
-#endif
 
     int totalGames = static_cast<int>(allGames.size());
     int gameIndex = 0;
@@ -437,7 +426,6 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
                     game->recoverMissingFiles(metadata);
 
 				if (!game->serial.empty()) {
-					//cout << "Accessing metadata for serial: " << game->serial << endl;
 					GameMetadata md;
 					if (metadata.findBySerial(game->serial, md)) {
 						// at this stage we have more data;

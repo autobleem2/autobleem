@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <ableem/engine/log.h>
 
 #define SECTOR_SIZE 2352
 #ifndef CD_FRAME_SIZE
@@ -27,8 +28,6 @@ using std::string;
 using std::vector;
 using std::ifstream;
 using std::ios;
-using std::cout;
-using std::endl;
 
 
 // Reads a raw 2352-byte-sector disc image (.bin/.img) as 2048-byte data sectors; calibrate() finds the
@@ -107,7 +106,7 @@ public:
                 rev(5);
                 if (str == "CD001")
                 {
-                    cout << "CD001 found in sector:" << curSectorNow << " at pos " << sectorPosNow << endl;
+                    PLOG_DEBUG << "CD001 found in sector:" << curSectorNow << " at pos " << sectorPosNow;
                     offset = (curSectorNow - 16) * SECTOR_SIZE + sectorPosNow - 1;
                     return 0;
                 }
@@ -193,7 +192,7 @@ public:
     virtual int openImage(string imagePath)
     {
         allocateBuffer();
-        cout << "Opening ISO image" << endl;
+        PLOG_DEBUG << "Opening ISO image";
         offset = 0;
         opened = false;
         sectorpos = 0;
@@ -302,7 +301,7 @@ public:
     int openImage(string imagePath) override
     {
         allocateBuffer();
-        cout << "Opening CHD image" << endl;
+        PLOG_DEBUG << "Opening CHD image";
         setOpen(false);
         setOffset(0);
         setSectorpos(0);
@@ -311,7 +310,7 @@ public:
         chd_error err = chd_open(imagePath.c_str(), CHD_OPEN_READ, nullptr, &chd);
         if (err != CHDERR_NONE)
         {
-            cout << "Error opening CHD file: " << chd_error_string(err) << endl;
+            PLOG_ERROR << "Error opening CHD file: " << chd_error_string(err);
             chd = nullptr;
             return -1;
         }
@@ -322,7 +321,7 @@ public:
         // a CD CHD: a raw sector (plus subcode) per unit, a whole number of them per hunk
         if (unitBytes < CD_FRAME_SIZE || hunkBytes == 0 || hunkBytes % unitBytes != 0)
         {
-            cout << "Not a CD CHD (unit " << unitBytes << " bytes, hunk " << hunkBytes << ")" << endl;
+            PLOG_ERROR << "Not a CD CHD (unit " << unitBytes << " bytes, hunk " << hunkBytes << ")";
             closeImage();
             return -1;
         }
@@ -332,15 +331,15 @@ public:
 
         if (!readTrackMetadata() || trackFrames < 1)
         {
-            cout << "CHD has no CD track metadata" << endl;
+            PLOG_ERROR << "CHD has no CD track metadata";
             closeImage();
             return -1;
         }
-        cout << "TOC found - track 0 has " << trackFrames << " frames" << endl;
+        PLOG_DEBUG << "TOC found - track 0 has " << trackFrames << " frames";
 
         if (calibrate(MAX_OFFSET) != 0)
         {
-            cout << "Calibrate failed" << endl;
+            PLOG_ERROR << "Calibrate failed";
             closeImage();
             return -1;
         }

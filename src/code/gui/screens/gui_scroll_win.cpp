@@ -4,6 +4,7 @@
 #include "gui_scroll_win.h"
 #include <string>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -40,6 +41,7 @@ void GuiScrollWin::appendLine(const std::string str) {
         lines[lines.size()-1] = str;    // overwrite the last line
     } else
         lines.emplace_back(str);        // add a line at the end of the existing lines
-    if (alsoWriteToCout)
-        cout << str << endl;
+    if (alsoLog) {
+        PLOG_INFO << str;
+    }
 }

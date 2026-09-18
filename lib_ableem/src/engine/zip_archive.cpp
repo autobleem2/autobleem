@@ -4,6 +4,7 @@
 #include <iostream>
 #include <miniz.h>
 #include "ableem/engine/log.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -28,7 +29,9 @@ struct Reader {
     explicit Reader(const string &path) : zip(), open(false) {
         mz_zip_zero_struct(&zip);
         open = mz_zip_reader_init_file(&zip, path.c_str(), 0) != 0;
-        if (!open) cout << "Not a zip file: " << path << " (" << mz_zip_get_error_string(mz_zip_get_last_error(&zip)) << ")" << endl;
+        if (!open) {
+            PLOG_WARNING << "Not a zip file: " << path << " (" << mz_zip_get_error_string(mz_zip_get_last_error(&zip)) << ")";
+        }
     }
     ~Reader() { if (open) mz_zip_reader_end(&zip); }
 
@@ -121,8 +124,8 @@ bool ZipArchive::extract(const string &zipPath, const string &destDir) {
             return false;
         }
         if (!mz_zip_reader_extract_to_file(&reader.zip, i, target.c_str(), 0)) {
-            cout << "Could not extract " << name << " from " << zipPath << " ("
-                 << mz_zip_get_error_string(mz_zip_get_last_error(&reader.zip)) << ")" << endl;
+            PLOG_ERROR << "Could not extract " << name << " from " << zipPath << " ("
+                       << mz_zip_get_error_string(mz_zip_get_last_error(&reader.zip)) << ")";
             return false;
         }
     }

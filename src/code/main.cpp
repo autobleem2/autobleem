@@ -91,10 +91,9 @@ static int runAutobleem(int argc, char *argv[]) {
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 
-    // the first thing in a log anyone sends in: which build this is
-    cout << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
-         << Env::platformName() << endl;
-    for (int i = 0; i < argc; i++) cout << "  argv[" << i << "] = " << argv[i] << endl;
+    // the console appender first, so a bad command line is reported; the file appender once the environment
+    // knows where the logs directory is
+    ableem::Log::initConsoleOnly();
 
     // SDL_Init/InitSubSystem/TTF_Init/Mix_Init all happen inside ableem::Platform, constructed the first time
     // the Gui singleton is created (inside App's constructor, below). Registering SDL_Quit here (before that
@@ -104,12 +103,17 @@ static int runAutobleem(int argc, char *argv[]) {
     Env::autobleemKernel = DirEntry::exists("/autobleem");
 
     if (!setupEnvironment(argc, argv)) {
+        PLOG_ERROR << "AutoBleem " << Version::FULL_VERSION << ": cannot start";
         return EXIT_FAILURE;
     }
     // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well
     DirEntry::createDir(Env::getPathToLogsDir());
-    ableem::Log::init(Env::getPathToLogsDir() + sep + "autobleem.log");
-    PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, " << Env::platformName();
+    ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
+
+    // the first thing in a log anyone sends in: which build this is
+    PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
+              << Env::platformName();
+    for (int i = 0; i < argc; i++) PLOG_INFO << "  argv[" << i << "] = " << argv[i];
 
     AutoBleem app;
     return app.run();

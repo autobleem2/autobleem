@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 using ableem::MemcardImage;
@@ -21,7 +22,7 @@ CardEdit::CardEdit(ableem::Renderer &renderer) : renderer_(renderer) {
         is.read(reinterpret_cast<char *>(table.data()), table.size());
         image_.setShiftJisTable(std::move(table));
     } else {
-        cout << "shiftjis.dat not found, japanese memory card titles will not be converted" << endl;
+        PLOG_WARNING << "shiftjis.dat not found, japanese memory card titles will not be converted";
     }
 
     for (int slot = 0; slot < MemcardImage::Slots; slot++) {

@@ -11,6 +11,7 @@
 #include <iostream>
 #include "evoui_mc_manager.h"
 #include <cassert>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -128,14 +129,14 @@ void GuiLauncher::rememberSelection() {
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newSet is not used.  probably not the intent.
-    cout << "Switching to Set: " << static_cast<int>(selection.set) << endl;
+    PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
-    cout << "Reloading games list" << endl; // get fresh list of games for this set
+    PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set
     // which games, and in what order, is GameQueryService's question. It may adjust the selection: the PS1
     // sub-set falls back off the internal-games views when origames is off, and the sub-dir view fills in
     // its row name.
     PsGames gamesList = app.gameQuery().gamesFor(selection);
-    cout << "Games Sorted" << endl;
+    PLOG_DEBUG << "Games Sorted";
     carousel.setGames(gamesList);
 
     if (!noForce) {
@@ -280,7 +281,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
-    cout << "Loading playlists" << endl;
+    PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
     if (DirEntry::exists(Env::getPathToRetroarchDir())) {
         raPlaylists = app.retroArch().playlistNames();
@@ -348,7 +349,7 @@ void GuiLauncher::loadAssets() {
     publisher = "";
     year = "";
     players = "";
-    cout << "Last Index" << selection.gameIndex << endl;
+    PLOG_DEBUG << "Last Index " << selection.gameIndex;
     if (selection.gameIndex != 0) {
         carousel.selected = selection.gameIndex;
         carousel.setInitialPositions(carousel.selected);
@@ -356,7 +357,7 @@ void GuiLauncher::loadAssets() {
 
     long time = gui->platform().ticks();
 
-    cout << "Loading theme and creating objects" << endl;
+    PLOG_DEBUG << "Loading theme and creating objects";
     staticMeta = !theme.metaPanelSlides;
     textShadow = !theme.textShadow.set || theme.textShadow;   // a theme has to say no
     background =addStaticElement(new PsObj("background", theme.background));
@@ -449,7 +450,7 @@ void GuiLauncher::loadAssets() {
     sselector->visible = false;
 
     if (app.session().resumingGui) {
-        cout << "Restoring GUI state" << endl;
+        PLOG_INFO << "Restoring GUI state";
         PsGamePtr &game = carousel.games[carousel.selected];
 
         if (app.session().emuMode == EmuMode::Pcsx) {
