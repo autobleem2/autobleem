@@ -315,7 +315,10 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   `Conflicts=plymouth-quit.service` (the display-manager pattern, so systemd does not take the splash down
   when the system is up) and `autobleem-session` runs `plymouth quit --retain-splash` first thing, before
   even checking for the binary - plymouth holds the DRM master, SDL needs it. `--no-boot-splash` skips
-  plymouth, `--no-quiet-boot` implies it. **Not yet run on the Pi.**
+  plymouth, `--no-quiet-boot` implies it. Verified on the Pi 400 the same day: plymouthd comes up from the
+  initramfs (PID ~181, `vc4.ko` is in there - plymouth's initramfs hook pulls the DRM modules in even with
+  `MODULES=dep`), `plymouth-quit.service` stays inactive, `plymouth-quit-wait` finishes in the same second
+  as the session's "boot splash taken down", the CRTC is 1280x720, kernel to launcher ~8 s.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
