@@ -56,8 +56,8 @@ Card
 Kort
 Change MC
 Skift Memory Card
-Change RetroBoot System
-Skift RetroBoot-system
+Change RetroArch Playlist
+Skift RetroArch-system
 Change USB Games Sub-Directory
 Skift USB-spils undermappe
 Clock:
@@ -326,8 +326,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch er ikke installeret
-Run using RetroBoot
-Kør med RetroBoot
+Run using RetroArch
+Kør med RetroArch
 Safely power off the console
 Sluk konsollen sikkert
 Scan complete:
@@ -352,8 +352,8 @@ Select PS1 Game Category
 Vælg PS1-spilkategori
 SELECT RESUME SLOT TO LOAD
 VÆLG SLOT AT INDLÆSE
-Select RetroBoot Platform
-Vælg RetroBoot-platform
+Select RetroArch Playlist
+Vælg RetroArch-platform
 Select Right Card
 Vælg højre kort
 SELECT SLOT TO SAVE STATE

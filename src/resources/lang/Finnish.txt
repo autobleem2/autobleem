@@ -52,8 +52,8 @@ Card
 Kortti
 Change MC
 Muuta MC
-Change RetroBoot System
-Vaihda RetroBoot järjestelmää
+Change RetroArch Playlist
+Vaihda RetroArch järjestelmää
 Change USB Games Sub-Directory
 Vaihda USB Pelien alihakemistoa
 Clock:
@@ -342,8 +342,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch ei ole asennettu
-Run using RetroBoot
-Käynnistä RetroBootilla
+Run using RetroArch
+Käynnistä RetroArchilla
 Safely power off the console
 Sammuta konsoli turvallisesti
 Same as classic menu
@@ -370,8 +370,8 @@ Select PS1 Game Category
 Valitse PS1-peliluokka
 SELECT RESUME SLOT TO LOAD
 VALITSE JATKO-PISTE JONKA HALUAT LADATA
-Select RetroBoot Platform
-Valitse RetroBoot Alusta
+Select RetroArch Playlist
+Valitse RetroArch Alusta
 Select Right Card
 Valitse oikea kortti
 SELECT SLOT TO SAVE STATE

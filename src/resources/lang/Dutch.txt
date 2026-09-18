@@ -58,8 +58,8 @@ Card
 Kaart
 Change MC
 Verander MC
-Change RetroBoot System
-Wijzig RetroBoot systeem
+Change RetroArch Playlist
+Wijzig RetroArch-systeem
 Change USB Games Sub-Directory
 Wijzig USB games submap
 Clock:
@@ -328,8 +328,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch is niet geïnstalleerd
-Run using RetroBoot
-Start met RetroBoot
+Run using RetroArch
+Uitvoeren met RetroArch
 Safely power off the console
 Console veilig uitschakelen
 Scan complete:
@@ -354,8 +354,8 @@ Select PS1 Game Category
 Selecteer PS1 game categorie
 SELECT RESUME SLOT TO LOAD
 SELECTEER SLOT OM TE LADEN
-Select RetroBoot Platform
-Selecteer RetroBoot platform
+Select RetroArch Playlist
+Selecteer RetroArch-platform
 Select Right Card
 Selecteer rechter kaart
 SELECT SLOT TO SAVE STATE

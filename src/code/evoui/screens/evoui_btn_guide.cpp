@@ -31,12 +31,12 @@ void GuiBtnGuide::render() {
     renderTextLineToColumns("",                          "-=" + _("Button Guide") + "=-");
     line++;
     renderTextLineToColumns("|@X| / |@O|",               _("Select or cancel highlighted option"));
-    renderTextLineToColumns("|@S|",                      _("Run using RetroBoot"));
+    renderTextLineToColumns("|@S|",                      _("Run using RetroArch"));
     renderTextLineToColumns("|@R1| / |@L1|",             _("Quick scroll to next letter"));
     renderTextLineToColumns("|@Start|",                  _("Random Game"));
     renderTextLineToColumns("|@Select|",                 _("Next Game Platform"));
     renderTextLineToColumns("|@L2| + |@Select|",         _("Change USB Games Sub-Directory"));
-    renderTextLineToColumns("|@L2| + |@Select|",         _("Change RetroBoot System"));
+    renderTextLineToColumns("|@L2| + |@Select|",         _("Change RetroArch Playlist"));
     line++;
     renderTextLineToColumns("",                          "-=" + _("In Game") + "=-");
     renderTextLineToColumns("|@Select| + |@Start|",          _("Emulator config MENU"));

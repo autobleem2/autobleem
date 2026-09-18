@@ -52,7 +52,7 @@ Card
 
 Change MC
 
-Change RetroBoot System
+Change RetroArch Playlist
 
 Change USB Games Sub-Directory
 
@@ -318,7 +318,7 @@ RetroArch
 
 RetroArch is not installed
 
-Run using RetroBoot
+Run using RetroArch
 
 Safely power off the console
 
@@ -344,7 +344,7 @@ Select PS1 Game Category
 
 SELECT RESUME SLOT TO LOAD
 
-Select RetroBoot Platform
+Select RetroArch Playlist
 
 Select Right Card
 

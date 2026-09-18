@@ -56,8 +56,8 @@ Card
 Carte
 Change MC
 Charger CM
-Change RetroBoot System
-Changer le système RetroBoot
+Change RetroArch Playlist
+Changer le système RetroArch
 Change USB Games Sub-Directory
 Changer le sous-dossier des jeux USB
 Clock:
@@ -344,8 +344,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch n'est pas installé
-Run using RetroBoot
-Lancer avec RetroBoot
+Run using RetroArch
+Exécuter avec RetroArch
 Safely power off the console
 Éteindre la console en toute sécurité
 Scan complete:
@@ -370,8 +370,8 @@ Select PS1 Game Category
 Choisir la catégorie de jeu PS1
 SELECT RESUME SLOT TO LOAD
 Reprenez le jeu à partir du dernier point de reprise que vous avez sauvegardé
-Select RetroBoot Platform
-Choisir la plateforme RetroBoot
+Select RetroArch Playlist
+Sélectionner la plateforme RetroArch
 Select Right Card
 Choisir la carte de droite
 SELECT SLOT TO SAVE STATE

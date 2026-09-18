@@ -54,8 +54,8 @@ Card
 Karta
 Change MC
 Vyměnit Paměťovou kartu
-Change RetroBoot System
-Změnit systém RetroBoot
+Change RetroArch Playlist
+Změnit systém RetroArch
 Change USB Games Sub-Directory
 Změnit podadresář her na USB
 Clock:
@@ -338,8 +338,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch není nainstalovaný
-Run using RetroBoot
-Spustit pomocí RetroBoot
+Run using RetroArch
+Spustit pomocí RetroArch
 Safely power off the console
 Bezpečně vypnout konzoli
 Scan complete:
@@ -364,8 +364,8 @@ Select PS1 Game Category
 Vyberte kategorii her PS1
 SELECT RESUME SLOT TO LOAD
 VYBERTE POZICI, ZE KTERÉ SE NAHRAJE PRERUŠENÁ HRA
-Select RetroBoot Platform
-Vyberte platformu RetroBoot
+Select RetroArch Playlist
+Vybrat platformu RetroArch
 Select Right Card
 Vyberte pravou kartu
 SELECT SLOT TO SAVE STATE

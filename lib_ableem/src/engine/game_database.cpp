@@ -36,14 +36,6 @@ static const char SELECT_TITLE[] = "SELECT SERIAL,TITLE, PUBLISHER, \
                                 WHERE TITLE=?";
 
 //*******************************
-// RELEASE_YEAR is found in both internal.db and regional.db
-// used by GameDatabase::updateYear() which is only called by VerMigration::migrate04_05()
-// VerMigration appears to be no longer used
-//*******************************
-// used by: updateYear
-static const char UPDATE_YEAR[] = "UPDATE GAME SET RELEASE_YEAR=? WHERE GAME_ID=?";
-
-//*******************************
 // regional.db
 //*******************************
 
@@ -377,18 +369,6 @@ int GameDatabase::countGames() {
         return stmt.colInt(0);
     }
     return 0;
-}
-
-//*******************************
-// GameDatabase::updateYear
-// called by VerMigration::migrate04_05()
-//*******************************
-bool GameDatabase::updateYear(int id, int year) {
-    Stmt stmt(db, UPDATE_YEAR, "updateYear");
-    if (!stmt.ok()) return false;
-    stmt.bind(1, year);
-    stmt.bind(2, id);
-    return stmt.step() == SQLITE_DONE;
 }
 
 //*******************************

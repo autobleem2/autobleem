@@ -52,8 +52,8 @@ Card
 Carta
 Change MC
 Cambiar de MC
-Change RetroBoot System
-Cambiar lo sistèma RetroBoot
+Change RetroArch Playlist
+Cambiar lo Sistèma RetroArch
 Change USB Games Sub-Directory
 Cambiar lo josrepertòri dels jòcs USB
 Clock:
@@ -330,8 +330,8 @@ RetroArch is not installed
 RetroArch es pas installat
 RetroBoot Systems
 Sistèmas RetroBoot
-Run using RetroBoot
-Aviar amb RetroBoot
+Run using RetroArch
+Lançar amb RetroArch
 Run using RetroBoot(if installed)
 Lançar amb RetroBoot (s’es installat)
 Safely power off the console
@@ -358,8 +358,8 @@ Select PS1 Game Category
 Causir la categoria de jòc PS1
 SELECT RESUME SLOT TO LOAD
 CAUSISSÈTZ UN PUNT DE REPRESA A CARGAR
-Select RetroBoot Platform
-Causissètz la plataforma RetroBoot
+Select RetroArch Playlist
+Causissètz la plataforma RetroArch
 Select Right Card
 Causissètz la carta que cal
 SELECT SLOT TO SAVE STATE

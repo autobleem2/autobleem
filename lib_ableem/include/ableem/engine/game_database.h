@@ -85,7 +85,6 @@ public:
     bool findMetadataByTitle(std::string title, GameMetadata *md);
 
     int countGames();
-    bool updateYear(int id, int year);
     bool updateMemcard(int id, std::string memcard);
 
     // regional.db incremental scan support (ScanService): the id/path pairs of every GAME row, so a scan can

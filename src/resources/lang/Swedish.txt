@@ -240,8 +240,8 @@ WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
 VARNING: INGA SPEL HITTADES. TRYCK PÅ VALFRI KNAPP.
 Year:
 År:
-Change RetroBoot System
-Byt RetroBoot-system
+Change RetroArch Playlist
+Byt RetroArch-system
 Change USB Games Sub-Directory
 Byt undermapp för USB-spel
 Clock:
@@ -360,8 +360,8 @@ Resume game from saved state point
 Fortsätt spel från befintlig sparpunkt
 Resume point saved to slot
 Sparpunkt lagrad på position
-Run using RetroBoot
-Kör med RetroBoot
+Run using RetroArch
+Kör med RetroArch
 Run using RetroBoot(if installed)
 Kör med RetroBoot(om installerat)
 Safely power off the console
@@ -384,8 +384,8 @@ Scanlines:
 Scanlines:
 Select PS1 Game Category
 Välj PS1-spelkategori
-Select RetroBoot Platform
-Välj RetroBoot-plattform
+Select RetroArch Playlist
+Välj RetroArch-plattform
 Select Right Card
 Välj rätt kort
 Select or cancel highlighted option

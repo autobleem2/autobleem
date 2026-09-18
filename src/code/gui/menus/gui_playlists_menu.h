@@ -16,7 +16,7 @@ public:
         GuiStringMenu::init();
     }
 
-    virtual std::string getTitle() override { return "-=" + _("Select RetroBoot Platform") + "=-"; }
+    virtual std::string getTitle() override { return "-=" + _("Select RetroArch Playlist") + "=-"; }
     virtual std::string getStatusLine() override { return GuiStringMenu::getStatusLine(); }
 
     void doEnter() { doCross_Pressed(); }

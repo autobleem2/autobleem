@@ -54,8 +54,8 @@ Card
 Card
 Change MC
 Schimba MC
-Change RetroBoot System
-Schimba Sistemul RetroBoot
+Change RetroArch Playlist
+Schimbă sistemul RetroArch
 Change USB Games Sub-Directory
 Schimba subdirectorul jocurilor USB
 Clock:
@@ -336,8 +336,8 @@ RetroArch
 RetroArch
 RetroArch is not installed
 RetroArch nu este instalat
-Run using RetroBoot
-Ruleaza folosind RetroBoot
+Run using RetroArch
+Rulează cu RetroArch
 Safely power off the console
 Opreste consola in siguranta
 Scan complete:
@@ -362,8 +362,8 @@ Select PS1 Game Category
 Selecteaza Categoria de Joc PS1
 SELECT RESUME SLOT TO LOAD
 Selecteaza SLOT pentru incarcare
-Select RetroBoot Platform
-Selecteaza Platforma RetroBoot
+Select RetroArch Playlist
+Selectează platforma RetroArch
 Select Right Card
 Selecteaza Cardul din Dreapta
 SELECT SLOT TO SAVE STATE

@@ -563,7 +563,9 @@ game and returning from one both loop back into the launcher in-process and neve
 reboots for anything else (a crash, a missing `autobleem_cfg.sh`), which brings AutoBleem back up. The stock
 SonyUI exit - `starter` mounted over `/usr/sony/bin/pcsx`, USB games linked into `/gaadata` with a `.lic`
 each (`link.sh`/`overmount.sh`/`startsony.sh`) - is gone with it (2026-09-18, as in AutoBleem-NG), and so is
-`.lic` handling in the scanner.
+`.lic` handling in the scanner. RetroBoot's own update hook went the same day: `autobleem.sh` no longer
+runs `retroboot/bin/init.sh` at boot, and the `/tmp/.rbpatching` guards, `rb_patch_background.sh` and
+`rb_monitor.sh` are deleted - an RB_Patch dropped on the stick is not applied by AutoBleem any more.
 
 ## Source map (`src/code/`)
 

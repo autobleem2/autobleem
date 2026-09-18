@@ -52,8 +52,8 @@ Card
 Kart
 Change MC
 MC'yi değiştir
-Change RetroBoot System
-Change RetroBoot System
+Change RetroArch Playlist
+RetroArch Sistemini Değiştir
 Change USB Games Sub-Directory
 USB Oyunları Alt Dizinini Değiştir
 Clock:
@@ -475,8 +475,8 @@ Yeniden Başlat
 RetroArch
 RetroArch is not installed
 RetroArch kurulu değil
-Run using RetroBoot
-RetroBoot kullanarak çalıştırın
+Run using RetroArch
+RetroArch ile Çalıştır
 Same as classic menu
 Klasik menü ile aynı
 Scanline Level:
@@ -514,8 +514,8 @@ RESET
 SİFİRLA
 RESUME
 DEVAM ET
-Select RetroBoot Platform
-RetroBoot Platformu Seçin
+Select RetroArch Playlist
+RetroArch Platformu Seç
 Select Right Card
 Sağ Kartı Seçin
 SELECT SLOT TO SAVE STATE
