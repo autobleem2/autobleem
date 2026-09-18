@@ -6,7 +6,8 @@ inherited from the original theme.
   python tools/make_ab2_icons.py [out dir]      (default: payload/themes/ab2/images)
 
 Files: menu_settings.png (a gear), menu_guide.png (a gamepad - the "Game" item, game parameters),
-menu_memcard.png (a PS1 memory card), menu_resume.png (a frame: PsMenu::render pastes the save
+menu_memcard.png (a PS1 memory card), memcard_pencil.png (the memory card editor's cursor, a stylus with
+its tip at the top-left corner like the pencil it replaces), menu_resume.png (a frame: PsMenu::render pastes the save
 state's picture at (25, 33) 68x52 inside it, so the frame hugs that window and nothing else is drawn), all 118x118; and, one level
 up in the theme folder, on.png / off.png (60x30): the default theme's switch with its green turned to
 the theme's blue.
@@ -147,6 +148,38 @@ def screen_window_clear(im):
     return im
 
 
+# ---------------------------------------------------------------- the memory card editor's cursor
+def stylus(d, col, k):
+    # GuiMcManager::renderPencil draws this at the slot's top-left corner: the tip is at (0, 0) and the
+    # body runs down-right, like the pixel pencil it replaces
+    import math
+    ax, ay = 2 * k, 2 * k        # the tip
+    bx, by = 34 * k, 34 * k      # the end of the body
+    hw = 5 * k                   # half the body's width
+    # the body: a rounded stroke along the diagonal, with the tip as a triangle
+    d.line((10 * k, 10 * k, bx, by), fill=col, width=2 * hw)
+    d.ellipse((bx - hw, by - hw, bx + hw, by + hw), fill=col)
+    d.polygon([(ax, ay), (10 * k + hw * 0.7, 10 * k - hw * 0.7), (10 * k - hw * 0.7, 10 * k + hw * 0.7)], fill=col)
+    # a dark line across the body where the tip starts, and a cap at the end
+    d.line((14 * k + hw * 0.7, 14 * k - hw * 0.7, 14 * k - hw * 0.7, 14 * k + hw * 0.7), fill=(8, 16, 48, 255), width=k)
+    d.line((30 * k + hw * 0.7, 30 * k - hw * 0.7, 30 * k - hw * 0.7, 30 * k + hw * 0.7), fill=(8, 16, 48, 255), width=k)
+
+
+def cursor():
+    size = 42
+    def layer(color, k, blur=0, alpha=255):
+        im = Image.new("RGBA", (size * k, size * k), (0, 0, 0, 0))
+        stylus(ImageDraw.Draw(im), color + (alpha,), k)
+        if blur:
+            im = im.filter(ImageFilter.GaussianBlur(blur * k))
+        return im.resize((size, size), Image.LANCZOS)
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    im.alpha_composite(layer(CYAN, 2, blur=3, alpha=220))
+    im.alpha_composite(layer(CYAN, 2, blur=1, alpha=180))
+    im.alpha_composite(layer(WHITE, 4))
+    return im
+
+
 # ---------------------------------------------------------------- the switch
 def recolour_switch(src, dst, hue):
     """turns the default theme's green switch to the theme's blue: pixels in the green range get their hue
@@ -175,6 +208,7 @@ def main():
     with_glyph(gamepad).save(os.path.join(out, "menu_guide.png"))
     with_glyph(memcard).save(os.path.join(out, "menu_memcard.png"))
     screen_window_clear(with_glyph(screen, scale=1)).save(os.path.join(out, "menu_resume.png"))
+    cursor().save(os.path.join(out, "memcard_pencil.png"))
     theme_dir = os.path.dirname(out.rstrip("/\\")) if os.path.basename(out.rstrip("/\\")) == "images" else out
     default_dir = os.path.join("payload", "themes", "default")
     recolour_switch(os.path.join(default_dir, "on.png"), os.path.join(theme_dir, "on.png"), 150)
