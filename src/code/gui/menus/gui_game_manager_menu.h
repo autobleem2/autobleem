@@ -5,6 +5,7 @@
 
 #include "gui_two_column_string_menu.h"
 #include "../../core/model/ps_game.h"
+#include <ableem/ui/texture.h>
 
 //********************
 // GuiManager
@@ -30,4 +31,13 @@ public:
 
     PsGames psGames;
     static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }
+
+private:
+    // the selected game's cover and screenshot, on the left where the editor puts its cover; loaded when
+    // the selection changes (a Texture dies with this stack object, before any launch)
+    void renderPreview();
+    int previewFor = -1;
+    ableem::Texture previewCover;
+    ableem::Texture previewSnap;
+    static const int PreviewWidth = 300;   // what the rows leave free on the left
 };

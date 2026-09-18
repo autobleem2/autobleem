@@ -83,6 +83,19 @@ std::string Font::wrappedText(const std::string &text, int maxWidth) const {
     return std::string(buffer.data(), len > 0 ? (size_t)len : 0);
 }
 
+int Font::columnHeight(const std::string &text, int width) const {
+    if (!handle) return 0;
+    return FC_GetColumnHeight(static_cast<FC_Font *>(handle.get()), (Uint16)width, "%s", text.c_str());
+}
+
+int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, const std::string &text) const {
+    if (!handle) return 0;
+    SDL_Color c{ color.r, color.g, color.b, color.a };
+    FC_Rect r = FC_DrawColumnColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
+                                   (float)x, (float)y, (Uint16)width, c, "%s", text.c_str());
+    return (int)r.h;
+}
+
 void Font::resetAfterRendererReset(Renderer &renderer, bool deviceLost) {
     if (!handle) return;
     Uint32 evType = deviceLost ? SDL_RENDER_DEVICE_RESET : SDL_RENDER_TARGETS_RESET;

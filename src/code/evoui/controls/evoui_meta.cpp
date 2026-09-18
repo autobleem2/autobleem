@@ -127,20 +127,9 @@ void PsMeta::render() {
         auto otherFont = fonts[FONT_15_BOLD];
 
         int yOffset = 0;
-        // game name line
-        // if the game name goes off the end of the screen use a smaller font
-        int textWidth = nameFont.width(gameName);
-        if (x + textWidth > SCREEN_WIDTH) {
-            int miniMe = 28.0 * ((float)(SCREEN_WIDTH - x) / (float)(textWidth)) + 0.5;
-            nameFont = fonts.boldAtSize(miniMe);
-
-            // if it's still a bit over the right edge go down one more font size
-            textWidth = nameFont.width(gameName);
-            if (x + textWidth > SCREEN_WIDTH) {
-                --miniMe;
-                nameFont = fonts.boldAtSize(miniMe);
-            }
-        }
+        // game name line - a name too long for the screen is drawn in the largest size that fits
+        if (x + nameFont.width(gameName) > SCREEN_WIDTH)
+            nameFont = gui->text().fittingFont(FONT_BOLD, 28, 12, gameName, SCREEN_WIDTH - x);
         gui->text().renderText(nameFont, gameName, x, y + yOffset);
 
         yOffset += 35;

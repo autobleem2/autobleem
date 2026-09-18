@@ -39,6 +39,11 @@ PsCenterLabel::~PsCenterLabel()
 void PsCenterLabel::render()
 {
     if (visible) {
-        gui->text().renderText_WithColor(font, text, x, y, textColor, XALIGN_CENTER);
+        // a header or a hint wider than the screen (a long translation) shrinks rather than runs off
+        if (textSize.w > SCREEN_WIDTH - 20) {
+            gui->text().renderFittedText_WithColor(FONT_MED, 28, 14, text, x, y, SCREEN_WIDTH - 20, textColor, XALIGN_CENTER);
+        } else {
+            gui->text().renderText_WithColor(font, text, x, y, textColor, XALIGN_CENTER);
+        }
     }
 }

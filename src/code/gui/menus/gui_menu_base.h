@@ -57,6 +57,7 @@ public:
 
     int selected = 0;               // the current selected index
     int maxVisible = 8;             // the number of lines that can fit on the display (theme dependent)
+    int selectionBoxXOffset = 0;    // a menu whose rows start to the right of something (a preview pane) sets this
     int firstVisibleIndex = 0;      // current visible range on page
     int lastVisibleIndex = 7;       // current visible range on page
     int firstRow = 2;               // row 0 is the title.  this is the first row of the menu item lines
@@ -155,7 +156,7 @@ void GuiMenuBase<LineDataType>::renderLines() {
 template<typename LineDataType>
 void GuiMenuBase<LineDataType>::renderSelectionBox() {
     if (!getVerticalSize() == 0) {
-        gui->text().renderSelectionBox(selected - firstVisibleIndex + firstRow, yoffset, 0, font);
+        gui->text().renderSelectionBox(selected - firstVisibleIndex + firstRow, yoffset, selectionBoxXOffset, font);
     }
 }
 

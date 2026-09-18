@@ -48,6 +48,7 @@ void Gui::loadAssets(bool reloadMusic) {
     const ableem::Opt<bool> &textShadow = App::get().theme().classic().textShadow;
     shadow.enabled = !textShadow.set || textShadow;
     text_.setShadow(shadow);
+    text_.setFonts(&assets_.themeFonts);
 }
 
 //*******************************

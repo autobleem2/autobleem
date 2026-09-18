@@ -407,3 +407,68 @@ void TextRenderer::renderTextChar(const string &text, int line, int yoffset, int
     int y = (fontHeight * line) + yoffset;
     drawRun(themeFont_, x, y, nullptr, text);
 }
+
+//*******************************
+// TextRenderer::textWidth
+//*******************************
+int TextRenderer::textWidth(const ableem::Font &font, const string &text) {
+    AllTextOrEmojiTokenInfo info(*this, font, text);
+    return info.totalSize.w;
+}
+
+//*******************************
+// TextRenderer::fittingFont
+//*******************************
+ableem::Font TextRenderer::fittingFont(FontType type, int maxSize, int minSize, const string &text, int maxWidth) {
+    if (fonts_ == nullptr) return themeFont_;
+    if (minSize > maxSize) minSize = maxSize;
+    for (int size = maxSize; size > minSize; size--) {
+        ableem::Font &font = fonts_->atSize(type, size);
+        if (textWidth(font, text) <= maxWidth)
+            return font;
+    }
+    return fonts_->atSize(type, minSize);
+}
+
+//*******************************
+// TextRenderer::renderFittedText
+//*******************************
+int TextRenderer::renderFittedText(FontType type, int maxSize, int minSize, const string &text, int x, int y,
+                                   int maxWidth, XAlignment xAlign) {
+    return renderText(fittingFont(type, maxSize, minSize, text, maxWidth), text, x, y, xAlign);
+}
+
+//*******************************
+// TextRenderer::renderFittedText_WithColor
+//*******************************
+int TextRenderer::renderFittedText_WithColor(FontType type, int maxSize, int minSize, const string &text, int x,
+                                             int y, int maxWidth, ableem::Color textColor, XAlignment xAlign) {
+    return renderText_WithColor(fittingFont(type, maxSize, minSize, text, maxWidth), text, x, y, textColor, xAlign);
+}
+
+//*******************************
+// TextRenderer::renderWrappedText
+//*******************************
+int TextRenderer::renderWrappedText(const ableem::Font &font, const string &text, int x, int y, int width,
+                                    ableem::Color textColor) {
+    if (shadow_.enabled && Shadow::isLight(textColor)) {
+        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
+        for (const auto &offset : offsets)
+            font.drawColumn(renderer_, x + offset[0], y + offset[1], width, shadow_.color, text);
+    }
+    return font.drawColumn(renderer_, x, y, width, textColor, text);
+}
+
+//*******************************
+// TextRenderer::elide
+//*******************************
+string TextRenderer::elide(const ableem::Font &font, const string &text, int maxWidth) {
+    if (font.width(text) <= maxWidth) return text;
+    const string dots = "...";
+    string cut = text;
+    while (!cut.empty() && font.width(cut + dots) > maxWidth) {
+        cut.pop_back();
+        while (!cut.empty() && (static_cast<unsigned char>(cut.back()) & 0xC0) == 0x80) cut.pop_back();   // a whole UTF-8 char
+    }
+    return cut + dots;
+}

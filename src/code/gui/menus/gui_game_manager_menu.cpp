@@ -8,6 +8,7 @@
 #include <iostream>
 #include "gui_game_editor_menu.h"
 #include "../screens/gui_confirm.h"
+#include "../../app.h"
 
 using namespace std;
 
@@ -17,6 +18,11 @@ using namespace std;
 void GuiManager::init() {
     useSmallerFont = true;
     GuiMenuBase::init();    // call the base class init()
+    // the rows sit to the right of the preview pane: title, then the folder, elided to what is left
+    xoffset_L = PreviewWidth;
+    xoffset_R = PreviewWidth + 420;
+    selectionBoxXOffset = PreviewWidth;
+    previewFor = -1;
 
     // init() runs again after the editor closes and after a delete: the rows are rebuilt, not appended
     lines.clear();
@@ -28,7 +34,9 @@ void GuiManager::init() {
         // "title"                  "path"
         string path = DirEntry::removeSeparatorFromEndOfPath(psGames[i]->folder);
         path = DirEntry::removeGamesPathFromFrontOfPath(path);
-        lines.emplace_back(TwoColumnsOfText(psGames[i]->title, path));
+        int panelRight = gui->text().getOpscreenRectOfTheme().x + gui->text().getOpscreenRectOfTheme().w - 20;
+        int pathWidth = panelRight - (gui->text().getOpscreenRectOfTheme().x + 10 + xoffset_R);
+        lines.emplace_back(TwoColumnsOfText(gui->text().elide(font, psGames[i]->title, 400), gui->text().elide(font, path, pathWidth)));
     }
 }
 
@@ -48,9 +56,53 @@ void GuiManager::render()
 
     renderLines();
     renderSelectionBox();
+    renderPreview();
 
     gui->renderStatus(getStatusLine());
     renderer.present();
+}
+
+//*******************************
+// GuiManager::renderPreview
+//*******************************
+void GuiManager::renderPreview() {
+    if (selected < 0 || selected >= static_cast<int>(psGames.size())) return;
+    if (previewFor != selected) {
+        previewFor = selected;
+        const PsGame &game = *psGames[selected];
+        previewCover = ableem::Texture();
+        previewSnap = ableem::Texture();
+        // the same chain as the carousel's: the PNG next to the game, the cached thumbnail, a fresh look
+        string cover = game.folder + sep + game.base + ".png";
+        if (!DirEntry::exists(cover)) cover = game.coverPath;
+        if (cover.empty() || !DirEntry::exists(cover))
+            cover = app.thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName, game.title, game.recordName);
+        if (cover.empty()) cover = Env::getWorkingPath() + sep + "default.png";
+        previewCover = ableem::Texture::loadFile(renderer, cover);
+        string snap = game.snapPath;
+        if (snap.empty() || !DirEntry::exists(snap))
+            snap = app.thumbnails().findSnap(ableem::ThumbnailLookup::PlayStationDbName, game.title,
+                                             game.folder + sep + game.base, game.recordName);
+        if (!snap.empty()) previewSnap = ableem::Texture::loadFile(renderer, snap);
+    }
+
+    // the cover where the editor's is, the screenshot under it, both inside the pane's width
+    ableem::Rect rect;
+    rect.x = app.theme().classic().editorCover.x;
+    rect.y = app.theme().classic().editorCover.y;
+    rect.w = 226;
+    rect.h = 226;
+    if (previewCover.valid()) renderer.copy(previewCover, nullptr, &rect);
+    if (previewSnap.valid()) {
+        ableem::Size s = previewSnap.size();
+        ableem::Rect snapRect;
+        snapRect.w = 226;
+        snapRect.h = s.w > 0 ? 226 * s.h / s.w : 170;   // aspect-fit to the cover's width
+        if (snapRect.h > 190) snapRect.h = 190;
+        snapRect.x = rect.x;
+        snapRect.y = rect.y + rect.h + 10;
+        renderer.copy(previewSnap, nullptr, &snapRect);
+    }
 }
 
 //*******************************

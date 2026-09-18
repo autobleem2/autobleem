@@ -34,18 +34,19 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 }
 
 //********************
-// Fonts::boldAtSize
+// Fonts::atSize
 //********************
-ableem::Font &Fonts::boldAtSize(int fontSize) {
-    auto found = boldBySize.find(fontSize);
-    if (found != boldBySize.end())
+ableem::Font &Fonts::atSize(FontType type, int fontSize) {
+    std::pair<int, int> key(type, fontSize);
+    auto found = bySize.find(key);
+    if (found != bySize.end())
         return found->second;
     for (const auto &fontInfo : allFontInfos) {   // one of the fixed sizes: share it rather than open it again
-        if (fontInfo.fontType == FONT_BOLD && fontInfo.size == fontSize && fonts.count(fontInfo.fontEnum))
-            return boldBySize[fontSize] = fonts[fontInfo.fontEnum];
+        if (fontInfo.fontType == type && fontInfo.size == fontSize && fonts.count(fontInfo.fontEnum))
+            return bySize[key] = fonts[fontInfo.fontEnum];
     }
     assert(renderer != nullptr);   // openAllFonts() first
-    return boldBySize[fontSize] = openNewSharedCachedFont(boldPath, fontSize, *renderer);
+    return bySize[key] = openNewSharedCachedFont(type == FONT_MED ? medPath : boldPath, fontSize, *renderer);
 }
 
 //********************
@@ -53,7 +54,7 @@ ableem::Font &Fonts::boldAtSize(int fontSize) {
 //********************
 void Fonts::openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer) {
     fonts.clear();
-    boldBySize.clear();
+    bySize.clear();
     this->renderer = &renderer;
     medPath = mediumTtf;
     boldPath = boldTtf;

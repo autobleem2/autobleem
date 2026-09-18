@@ -32,6 +32,10 @@ public:
 
     // wraps text to fit maxWidth pixels, returning it with '\n' inserted
     std::string wrappedText(const std::string &text, int maxWidth) const;
+    // the height the text takes when wrapped to width pixels
+    int columnHeight(const std::string &text, int width) const;
+    // draws the text wrapped to width pixels, top-left at (x, y); returns the height drawn
+    int drawColumn(Renderer &renderer, int x, int y, int width, Color color, const std::string &text) const;
 
     // must be called after the SDL renderer target or device is reset, which SDL_FontCache needs to know
     // about to keep its glyph cache valid. deviceLost distinguishes a full device reset from a target reset.

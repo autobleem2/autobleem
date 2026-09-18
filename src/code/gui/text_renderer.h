@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../core/services/theme.h"
+#include "gui_font.h"
 
 #include <ableem/ableem.h>
 
@@ -29,6 +30,27 @@ public:
 
     // a theme colour with an alpha, as the renderer takes it
     static ableem::Color toColor(const ThemeColor &color, int alpha);
+
+    // the font set fittingFont() draws from - the theme's launcher fonts; Gui hands it over on every load
+    void setFonts(Fonts *fonts) { fonts_ = fonts; }
+
+    //*******************************
+    // fitted and wrapped text
+    //*******************************
+    // the width of a line with its |@X| markers laid out, in this font
+    int textWidth(const ableem::Font &font, const std::string &text);
+    // the largest size from maxSize down to minSize at which the line fits maxWidth (minSize when none does)
+    ableem::Font fittingFont(FontType type, int maxSize, int minSize, const std::string &text, int maxWidth);
+    // renderText / renderText_WithColor in the fitting font; returns the height drawn
+    int renderFittedText(FontType type, int maxSize, int minSize, const std::string &text, int x, int y,
+                         int maxWidth, XAlignment xAlign = XALIGN_LEFT);
+    int renderFittedText_WithColor(FontType type, int maxSize, int minSize, const std::string &text, int x, int y,
+                                   int maxWidth, ableem::Color textColor, XAlignment xAlign = XALIGN_LEFT);
+    // a paragraph wrapped to width pixels (no |@X| markers); returns the height drawn
+    int renderWrappedText(const ableem::Font &font, const std::string &text, int x, int y, int width,
+                          ableem::Color textColor);
+    // the text if it fits maxWidth in this font, else as much of it as does with "..." on the end
+    std::string elide(const ableem::Font &font, const std::string &text, int maxWidth);
 
     //*******************************
     // Shadow
@@ -139,6 +161,7 @@ private:
     void drawRun(const ableem::Font &font, int x, int y, const ableem::Color *color, const std::string &run);
 
     ableem::Renderer &renderer_;
+    Fonts *fonts_ = nullptr;
     Theme &theme_;
     ableem::Font &themeFont_;
     std::map<std::string, ableem::Texture> &emojis_;
