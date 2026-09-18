@@ -1,8 +1,9 @@
-# Scanning RetroArch's ROMs from AutoBleem - the plan (unparked 2026-09-18)
+# Scanning RetroArch's ROMs from AutoBleem - the plan (complete, parked 2026-09-18)
 
 Written 2026-09-18 morning after the Raspberry Pi got its BIOS pack, parked until real ROMs had been run on
 the Pi through RetroArch's own scanner; revised the same evening once they had (846 ROMs over nine systems,
-Sega and ColecoVision confirmed running) and after the day's launcher work. Not started.
+Sega and ColecoVision confirmed running) and after the day's launcher work. **Parked again by the owner,
+plan complete, no code written** - pick it up at step 1.
 
 ## What it is for
 
