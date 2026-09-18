@@ -190,8 +190,23 @@ line once a second in the Pi's log. An empty path returns at once now. Steps 1 a
 loads, lookahead, easing, continuous held-stick motion, queued taps) and measured as the drop in worst
 frame above; step 5 is not needed at 85 copies a frame. Left to do: the Pi measurement and step 7.
 
-Still to check on the Pi: the 85 copies a frame are now ~30 RenderGeometry calls of ~300 vertices each -
-cheap for the CPU, and V3D takes them in one buffer each; the 4x MSAA resolve is the remaining fixed cost.
+**Step 7, measured on the Pi 400 at 1.5x (1080p) with this build**, the service running idle, 30 s each:
+
+| MSAA | frames / 5 s | avg | worst | over 20 ms |
+|---|---|---|---|---|
+| 0x | 300 | 16 ms | 18 ms | 0 |
+| 2x | 165-285 | 17-30 ms | 35 ms | 15-135 |
+| 4x | 169-280 | 17-29 ms | 34 ms | 20-131 |
+
+Even 2x misses vsync for stretches and drops to 30 fps at 1920x1080 - the resolve is a fixed GPU cost the
+Pi 4's V3D cannot fit into a 16 ms frame with the rest of the launcher. So the Pi runs with MSAA off
+(`Gui::multisampleSamples`, `AB_MSAA` still overrides) and the covers get their smooth edges from the
+fallback: `PsCarouselGame` composes each cover inset by `CoverMargin` (2 px) into a transparent-black
+texture, and the linear filter blends the edge into the margin. Verified on the PC at 1.5x with `AB_MSAA=0`
+(edges smooth at 3x zoom) and on the Pi: 300 frames / 5 s, worst 18-23 ms, ~25% of a core idle
+(`AB_FRAME_STATS=1` is in `/etc/systemd/system/autobleem.service.d/framestats.conf` on the test Pi).
+Where the remaining CPU goes on V3D is draw calls, not copies: the text cache gives every label its own
+texture (55 texture switches a frame); a glyph-run atlas would bring that down if it ever matters.
 
 ## 5. The console
 

@@ -508,7 +508,10 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `easeOutCubic` (`core/model/timing.h`), a held stick chains steps without a pause and a tap during a
   scroll is queued; `TextRenderer` caches every run as a texture (`clearTextCache()` on font reload and
   display release); `copyTrapezoid` is one `SDL_RenderGeometry` call on SDL >= 2.0.18 with the tint in
-  the vertex colours. Step 7, the 2x MSAA measurement on the Pi, is what is left.
+  the vertex colours. Step 7 measured MSAA on the Pi 400 at 1080p: **even 2x drops to 30 fps for
+  stretches**, so a Pi runs with 0 (`Gui::multisampleSamples`; a dev host keeps 4) and the covers' edges
+  are smoothed by `CoverMargin` - each cover composed 2 px inset into a transparent-black texture, which the
+  linear filter blends the edge into. 60 fps solid there, ~25% of a core idle.
 - **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`,
   and `copyTrapezoid(tex, src, VerticalEdge left, VerticalEdge right)` (2026-09-18): pseudo-3D for the
   carousel - a texture drawn into a trapezoid with vertical sides, one `SDL_RenderCopy` strip per screen

@@ -18,6 +18,17 @@ using ableem::Rect;
 using ableem::Size;
 using ableem::Texture;
 
+// The cover is composed into its 226x226 texture inset by this many pixels all round, the margin left
+// transparent: the linear filter then blends the edge into it, which gives a turned cover
+// (Renderer::copyTrapezoid) and the selected one smooth edges without multisampling - which a Pi at
+// 1080p cannot afford. What the theme's layout puts at (0,0,226,226) lands inset by it.
+const int CoverMargin = 2;
+static Rect insetIntoCover(const Rect &r) {
+    const float k = (226.0f - 2 * CoverMargin) / 226.0f;
+    return Rect(CoverMargin + static_cast<int>(r.x * k), CoverMargin + static_cast<int>(r.y * k),
+                static_cast<int>(r.w * k), static_cast<int>(r.h * k));
+}
+
 //*******************************
 // PsCarouselGame::loadTex
 //*******************************
@@ -34,7 +45,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             renderer.setTarget(&renderSurface);
             renderer.setBlendMode(BlendMode::None);
             renderSurface.setBlendMode(BlendMode::None);
-            renderer.setDrawColor(Color(255, 255, 255, 0));
+            renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
             renderer.fillRect();
             renderSurface.setBlendMode(BlendMode::Blend);
             renderer.setBlendMode(BlendMode::Blend);
@@ -92,7 +103,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 }
                 if (coverPng.valid()) {
                     renderer.setBlendMode(BlendMode::Add);
-                    renderer.copy(coverPng, &fullRect, &outputRect);
+                    Rect inset = insetIntoCover(outputRect);
+                    renderer.copy(coverPng, &fullRect, &inset);
                     renderer.setBlendMode(BlendMode::Blend);
                 }
                 coverPng = Texture();
@@ -101,7 +113,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 fullRect.y = 0;
                 fullRect.h = 226, fullRect.w = 226;
                 if (gui->assets().cdJewel.valid()) {
-                    renderer.copy(gui->assets().cdJewel, &fullRect, &fullRect);
+                    Rect inset = insetIntoCover(fullRect);
+                    renderer.copy(gui->assets().cdJewel, &fullRect, &inset);
                 }
                 coverPng = renderSurface;
             }
@@ -116,7 +129,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             renderer.setTarget(&renderSurface);
             renderer.setBlendMode(BlendMode::None);
             renderSurface.setBlendMode(BlendMode::None);
-            renderer.setDrawColor(Color(255, 255, 255, 0));
+            renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
             renderer.fillRect();
             renderSurface.setBlendMode(BlendMode::Blend);
             renderer.setBlendMode(BlendMode::Blend);
@@ -168,7 +181,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             outputRect.y = (226 - outputRect.h) / 2;
 
             renderer.setBlendMode(BlendMode::Add);
-            renderer.copy(coverPng, &fullRect, &outputRect);
+            Rect inset = insetIntoCover(outputRect);
+            renderer.copy(coverPng, &fullRect, &inset);
             renderer.setBlendMode(BlendMode::Blend);
 
             coverPng = Texture();

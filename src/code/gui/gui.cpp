@@ -47,15 +47,19 @@ float Gui::outputScale() {
 // Gui::multisampleSamples
 //********************
 // Anti-aliasing for the carousel's turned covers and everything else the renderer draws: MSAA on the
-// window's GL context, on a Pi and a dev host (AB_MSAA in the environment overrides the default there - 0
-// turns it off). Not on the console: whether its GL driver has it is unknown until the build has run
-// there, and it would cost fill rate on a GPU that has little.
+// window's GL context. 4x on a dev host. None on a Pi: measured on a Pi 400 at 1080p (2026-09-18), even
+// 2x misses vsync and halves the frame rate for stretches, where 0x holds 60 fps with an 18 ms worst
+// frame - the covers get their smooth edges from the transparent margin PsCarouselGame composes them
+// with instead. AB_MSAA in the environment overrides either. Not on the console: whether its GL driver
+// has it is unknown until the build has run there.
 int Gui::multisampleSamples() {
 #if defined(AB_DEBUG_HOST) || defined(AB_PLATFORM_RPI)
     const char *env = getenv("AB_MSAA");
     if (env) {
         return atoi(env);
     }
+#endif
+#if defined(AB_DEBUG_HOST)
     return 4;
 #else
     return 0;

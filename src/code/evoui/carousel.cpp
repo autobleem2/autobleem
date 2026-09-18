@@ -322,7 +322,7 @@ void renderTurnedCover(ableem::Renderer &renderer, const ableem::Texture &tex, c
     // the spine: the near edge is the left one for a cover on the right (turned to face left) and vice
     // versa; textured with a strip a few pixels in from that edge of the cover, so it takes the case's colour
     const bool nearEdgeIsLeft = point.angle > 0;
-    ableem::Rect spineSource(nearEdgeIsLeft ? 4 : 226 - 6, 0, 2, 226);
+    ableem::Rect spineSource(nearEdgeIsLeft ? 5 : 226 - 7, 0, 2, 226); // just inside the case's edge and margin
     ableem::VerticalEdge spineFront = project(nearEdgeIsLeft ? -half : half, 0);
     ableem::VerticalEdge spineBack = project(nearEdgeIsLeft ? -half : half, depth);
     int spineShade = static_cast<int>(point.shade * 0.45f);
