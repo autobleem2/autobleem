@@ -708,7 +708,7 @@ $STAGE_DIR/Autobleem/bin/autobleem
     # cp -r, not -a: exFAT has no owners or modes to preserve (the mount forces them), and cp -a's failure
     # to preserve them is a non-zero exit even though every file was copied
     local d
-    for d in Autobleem themes Games Apps; do
+    for d in Autobleem themes Games Apps RetroArch; do
         [ -d "$STAGE_DIR/$d" ] || continue
         run cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
     done

@@ -23,6 +23,11 @@ TTYVHangup=yes
 Environment=SDL_VIDEODRIVER=kmsdrm
 Environment=SDL_AUDIODRIVER=alsa
 
+# libretro's buildbot cores (pcsx_rearmed's dynarec among them) are marked as needing an executable stack,
+# and glibc 2.41 (Trixie) refuses to dlopen such a library: "cannot enable executable stack as shared
+# object requires". This tunable lets it; every program the session starts inherits it.
+Environment=GLIBC_TUNABLES=glibc.rtld.execstack=2
+
 # a crash should put the launcher back on screen, not drop the user on a black tty
 Restart=always
 RestartSec=2

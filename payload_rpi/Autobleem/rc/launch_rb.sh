@@ -10,6 +10,11 @@
 #      playlist named - RetroArchService resolves it to RetroArch/cores/<name>.so from the core info files.
 set -uo pipefail
 
+# glibc 2.41 will not dlopen a core marked as needing an executable stack (libretro's buildbot cores are)
+# without this; autobleem.service sets it for the whole session, this is for a shell that did not come
+# through it
+export GLIBC_TUNABLES="${GLIBC_TUNABLES:-glibc.rtld.execstack=2}"
+
 GAME_FILE="${1:-}"
 CORE="${2:-}"
 
