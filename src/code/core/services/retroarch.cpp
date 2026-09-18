@@ -428,11 +428,14 @@ void RetroArchService::loadCores() {
         PLOG_INFO << "Mapping DB: " << dbname << "  Core: " << pos->second->name;
     }
 
-    // resources/coreOverride.cfg: "<database name>=<part of a core's display name>", one per line
+    // resources/platform/<platform>.cores.cfg: "<database name>=<part of a core's display name>", one per
+    // line - which core plays a system is platform knowledge, like the paths in <platform>.ini
     overrideCores_.clear();
-    ifstream in(Env::getWorkingPath() + sep + "coreOverride.cfg");
+    ifstream in(Env::getWorkingPath() + sep + "platform" + sep + Env::platformName() + ".cores.cfg");
     string line;
     while (getline(in, line)) {
+        if (line.empty() || line[0] == '#' || line.find('=') == string::npos)
+            continue;
         string db_name = line.substr(0, line.find("="));
         string value = line.substr(line.find("=") + 1);
         PLOG_INFO << "Custom Core Override: " << db_name << "    core: " << value;

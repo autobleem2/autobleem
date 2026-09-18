@@ -6,12 +6,22 @@
 # Run it the way make_win.sh is run, from the MSYS2 UCRT64 shell. The toolchain file names the compilers by
 # absolute path, so C:\sysGCC\raspberry\bin deliberately does NOT go on PATH: its rm.exe/mkdir.exe/make.exe
 # would shadow the MSYS2 ones and break this script.
+#
+#   ./make_rpi.sh            -> build_rpi/autobleem-gui, the shipped binary (-Os, stripped)
+#   ./make_rpi.sh --debug    -> build_rpi_dbg/autobleem-gui, with symbols (-O1 -g) for gdb on the Pi:
+#                               copy it over the installed one, get a core dump, "gdb autobleem-gui core"
 set -e
 cd "$(dirname "$0")"
-rm -rf ./build_rpi
-mkdir -p build_rpi
-cd build_rpi
-cmake -G Ninja -DCMAKE_SYSTEM_PROCESSOR="arm" -DCMAKE_BUILD_TYPE=Release \
+BUILD_DIR=build_rpi
+DEBUG=OFF
+if [ "${1:-}" = "--debug" ]; then
+    BUILD_DIR=build_rpi_dbg
+    DEBUG=ON
+fi
+rm -rf "./$BUILD_DIR"
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+cmake -G Ninja -DCMAKE_SYSTEM_PROCESSOR="arm" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=$DEBUG \
   -DCMAKE_TOOLCHAIN_FILE=../toolchains/rpi/RPitoolchain.cmake ../
 ninja
 cd ..

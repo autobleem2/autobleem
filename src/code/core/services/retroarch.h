@@ -47,7 +47,7 @@ struct RAPlaylistInfo {
 // GameQueryService consumes, so the RetroArch and Apps sets come through the same door as the PS1 ones.
 //
 // Every playlist entry becomes a "foreign" PsGame whose core is resolved here: the entry's own core if the
-// .so exists, else the one resources/coreOverride.cfg names for the entry's database, else the first core
+// .so exists, else the one resources/platform/<platform>.cores.cfg names for its database, else the first core
 // whose .info lists that database. Entries whose core or image cannot be found are dropped.
 //
 // Owned by App (App::retroArch()).
@@ -101,7 +101,7 @@ private:
     bool loaded_ = false;
     CoreInfos cores_;
     std::map<std::string, CoreInfoPtr> defaultCores_;  // database name -> core
-    std::map<std::string, CoreInfoPtr> overrideCores_; // lower-cased database name -> core, from coreOverride.cfg
+    std::map<std::string, CoreInfoPtr> overrideCores_; // lower-cased database name -> core, from <platform>.cores.cfg
     std::set<std::string> databases_;                  // every database any core's .info lists
     std::vector<RAPlaylistInfo> playlistInfos_;
     std::string favoritesDisplayName_{"Favorites"};

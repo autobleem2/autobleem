@@ -24,8 +24,16 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 # Raspberry Pi 2/3/4 running the 32-bit OS - a reasonable generic target for a first port attempt.
 # (Pi Zero/1 are armv6 and would need a different -march; not a goal yet.)
-set(CMAKE_C_FLAGS   "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a -Os -s")
-set(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a -Os -s")
+# AB_RPI_DEBUG (make_rpi.sh --debug): symbols kept and little optimisation, for a backtrace under the Pi's
+# gdb from a core dump; the shipped binary is small and stripped.
+option(AB_RPI_DEBUG "Raspberry Pi build with debug symbols (not stripped, -O1 -g)" OFF)
+if(AB_RPI_DEBUG)
+    set(_ab_rpi_opt "-O1 -g")
+else()
+    set(_ab_rpi_opt "-Os -s")
+endif()
+set(CMAKE_C_FLAGS   "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a ${_ab_rpi_opt}")
+set(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a ${_ab_rpi_opt}")
 
 # Our own FindSDL2.cmake - see the file for why it exists on this toolchain specifically.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")

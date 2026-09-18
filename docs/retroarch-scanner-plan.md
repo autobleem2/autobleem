@@ -21,7 +21,7 @@ the other systems"). This note is so the analysis does not have to be redone.
 - `ableem::RetroArchPlaylist` (`engine/retroarch_playlist.h`) - `.lpl` load/save, JSON and six-line.
 - `RetroArchService` (`core/services/retroarch.cpp`) - parses every `info/*.info` (`corename`,
   `supported_extensions`, `database`), and already picks "the core for a database name" with
-  `resources/coreOverride.cfg` on top (`<database name>=<part of a core's display name>`). That is the
+  `resources/platform/<platform>.cores.cfg` on top (`<database name>=<part of a core's display name>`). That is the
   default-core-per-system table.
 - `ableem::RdbReader` - the rmsgpack parser, indexed by serial and name; a CRC index is a few lines
   (records carry `crc`, `size`, `rom_name`).

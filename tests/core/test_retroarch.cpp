@@ -7,6 +7,7 @@
 #include "../support/string_maker.h"
 #include "../support/temp_dir.h"
 
+#include "core/services/environment.h"
 #include "core/services/retroarch.h"
 
 #include <string>
@@ -23,7 +24,7 @@ namespace {
 struct RetroArchTree {
     RetroArchTree() : tmp("retroarch") {
         env.setUsbRoot(tmp.path());
-        env.setWorkingPath(tmp.path()); // where coreOverride.cfg is looked for
+        env.setWorkingPath(tmp.path()); // where platform/<platform>.cores.cfg is looked for
 
         addCore("snes9x_libretro", "Nintendo - SNES (Snes9x)", "sfc|smc",
                 "Nintendo - Super Nintendo Entertainment System");
@@ -93,6 +94,8 @@ struct RetroArchTree {
     }
 
     string core(const string &file) const { return tmp.at("retroarch/cores/" + file + ".so"); }
+    // this host's platform file, as RetroArchService looks for it
+    static string coresCfg() { return string("platform/") + Env::platformName() + ".cores.cfg"; }
 
     EnvFixture env;
     TempDir tmp;
@@ -189,7 +192,7 @@ TEST_CASE("an .info whose core is not installed takes no part in the mapping") {
                      "display_name = \"Nintendo - SNES (Mesen)\"\n"
                      "supported_extensions = \"sfc|smc|fig|swc\"\n"
                      "database = \"Nintendo - Super Nintendo Entertainment System\"\n");
-    ra.tmp.writeFile("coreOverride.cfg", "Nintendo - Super Nintendo Entertainment System=Mesen\n");
+    ra.tmp.writeFile(ra.coresCfg(), "Nintendo - Super Nintendo Entertainment System=Mesen\n");
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
 
     PsGames games = ra.service.gamesInPlaylist("Nintendo - SNES");
@@ -224,9 +227,9 @@ TEST_CASE("a core the entry names but which is not installed is re-detected") {
     CHECK(games[0]->core_path == ra.core("snes9x_libretro"));
 }
 
-TEST_CASE("resources/coreOverride.cfg picks the core for a database ahead of the .info mapping") {
+TEST_CASE("resources/platform/<platform>.cores.cfg picks the core for a database ahead of the .info mapping") {
     RetroArchTree ra;
-    ra.tmp.writeFile("coreOverride.cfg", "Nintendo - Super Nintendo Entertainment System=bsnes\n");
+    ra.tmp.writeFile(ra.coresCfg(), "# a comment\n\nNintendo - Super Nintendo Entertainment System=bsnes\n");
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
 
     PsGames games = ra.service.gamesInPlaylist("Nintendo - SNES");

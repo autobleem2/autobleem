@@ -54,6 +54,7 @@ CTestTestfile.cmake
 build_arm/
 build_psc/
 build_rpi/
+build_rpi_dbg/
 build_sys/
 build_win/
 db/

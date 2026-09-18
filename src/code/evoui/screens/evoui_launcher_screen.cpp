@@ -286,9 +286,12 @@ void GuiLauncher::loadAssets() {
     if (DirEntry::exists(Env::getPathToRetroarchDir())) {
         raPlaylists = app.retroArch().playlistNames();
     }
-    vector<string> headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    vector<string> texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
-                            _("Edit Memory Card information"), _("Resume game from saved state point")};
+    // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
+    // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
+    // - every return from a RetroArch launch - crashed on headers[0])
+    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+             _("Resume game from saved state point")};
 
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)

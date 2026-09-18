@@ -111,6 +111,38 @@ EXCLUDE_NAMES = {"history.dat", "mameinfo.dat", "cheat.dat"}
 EXCLUDE_SUFFIXES = (".wav", ".dll", ".dylib", ".so")
 
 
+# Files a core wants in system/ that are not BIOS and so not in RetroBIOS: fetched from the core's own
+# repository at a pinned commit. blueMSX will not start without the machine definition
+# (Machines/<machine>/config.ini) of the machine it picks - "COL - ColecoVision" for a .col, "MSX2+" for an
+# MSX cartridge, and so on - and these live in the core's system/bluemsx tree, next to the databases.
+# Where RetroBIOS carries the same file (the ROMs), RetroBIOS's copy wins.
+EXTRA_SOURCES = [
+    {
+        "repo": "libretro/blueMSX-libretro",
+        "ref": "e3086eb5d36d77fa11704cf53dc176686e70127d",  # 2026-09
+        "strip": "system/bluemsx/",
+        "folders": [
+            "system/bluemsx/Machines/MSX/",
+            "system/bluemsx/Machines/MSX2/",
+            "system/bluemsx/Machines/MSX2+/",
+            "system/bluemsx/Machines/MSXturboR/",
+            "system/bluemsx/Machines/MSX - C-BIOS/",
+            "system/bluemsx/Machines/MSX2 - C-BIOS/",
+            "system/bluemsx/Machines/MSX2+ - C-BIOS/",
+            "system/bluemsx/Machines/COL - ColecoVision/",
+            "system/bluemsx/Machines/COL - Spectravideo SVI-603 Coleco/",
+            "system/bluemsx/Machines/SEGA - SG-1000/",
+            "system/bluemsx/Machines/SEGA - SC-3000/",
+            "system/bluemsx/Machines/SEGA - SF-7000/",
+            "system/bluemsx/Machines/SVI - Spectravideo SVI-318/",
+            "system/bluemsx/Machines/SVI - Spectravideo SVI-328/",
+            "system/bluemsx/Machines/SVI - Spectravideo SVI-328 MK2/",
+        ],
+        "why": "blueMSX's machine definitions",
+    },
+]
+
+
 def fetch_json(url, what):
     try:
         with urllib.request.urlopen(url, timeout=60) as resp:
@@ -120,12 +152,16 @@ def fetch_json(url, what):
 
 
 def file_url(entry, ref):
+    if entry.get("url"):
+        return entry["url"]
     if entry.get("release_asset"):
         return RELEASE_BASE.format(asset=urllib.parse.quote(entry["release_asset"], safe=""))
     return RAW_BASE.format(ref=ref) + urllib.parse.quote(entry["repo_path"], safe="/")
 
 
 def system_of(entry):
+    if not entry.get("repo_path"):
+        return None
     parts = entry["repo_path"].split("/")
     return "/".join(parts[1:3]) if parts[0] == "bios" and len(parts) >= 4 else None
 
@@ -153,18 +189,53 @@ def select(manifest, target_cores):
     return kept, dropped
 
 
+def extra_entries(source):
+    """Manifest entries for one EXTRA_SOURCES repository: the tree listing from GitHub's API, then each file
+    downloaded once here to get its SHA-256 (the API only has git's blob id)."""
+    tree = fetch_json(f"https://api.github.com/repos/{source['repo']}/git/trees/{source['ref']}?recursive=1",
+                      source["repo"] + " tree")
+    entries = []
+    for node in tree["tree"]:
+        if node["type"] != "blob" or not node["path"].startswith(tuple(source["folders"])):
+            continue
+        url = (f"https://raw.githubusercontent.com/{source['repo']}/{source['ref']}/"
+               + urllib.parse.quote(node["path"], safe="/"))
+        try:
+            with urllib.request.urlopen(url, timeout=60) as resp:
+                data = resp.read()
+        except Exception as exc:  # noqa: BLE001
+            sys.exit(f"cannot fetch {url}: {exc}")
+        entries.append(({"dest": node["path"][len(source["strip"]):], "size": len(data),
+                         "sha256": hashlib.sha256(data).hexdigest(), "url": url, "repo_path": None,
+                         "cores": None}, source["why"]))
+    if not entries:
+        sys.exit(f"{source['repo']}@{source['ref']}: none of the folders exist any more")
+    return entries
+
+
+def add_extras(kept):
+    """The EXTRA_SOURCES files, after RetroBIOS's: a path RetroBIOS already provides is left to it."""
+    have = {e["dest"] for e, _ in kept}
+    for source in EXTRA_SOURCES:
+        for entry, why in extra_entries(source):
+            if entry["dest"] not in have:
+                kept.append((entry, why))
+                have.add(entry["dest"])
+    return kept
+
+
 def mib(size):
     return size / (1024 * 1024)
 
 
 def print_listing(kept, dropped):
     by_system = defaultdict(list)
-    for entry, _ in kept:
-        by_system[system_of(entry)].append(entry)
+    for entry, why in kept:
+        by_system[system_of(entry) or why].append(entry)
     print(f"In the pack ({len(kept)} files, {mib(sum(e['size'] for e, _ in kept)):.1f} MB):")
     for system in sorted(by_system):
         entries = by_system[system]
-        print(f"  {mib(sum(e['size'] for e in entries)):7.1f} MB {len(entries):4d}  {system}  - {SYSTEMS[system]}")
+        print(f"  {mib(sum(e['size'] for e in entries)):7.1f} MB {len(entries):4d}  {system}  - {SYSTEMS.get(system, 'from the core')}")
     print()
     print("Left out, the biggest first:")
     for entry, why in sorted(dropped, key=lambda item: -item[0]["size"])[:30]:
@@ -176,7 +247,8 @@ def write_manifest(kept, ref, generated, path):
     lines = [
         "# AutoBleem's BIOS pack for the Raspberry Pi: what install.sh downloads into RetroArch/system/.",
         f"# Built by tools/biospack.py from RetroBIOS (github.com/Abdess/retrobios) at {ref},",
-        f"# {generated}. {len(kept)} files, {total} bytes ({mib(total):.0f} MB).",
+        f"# {generated}. {len(kept)} files, {total} bytes ({mib(total):.0f} MB), plus what the cores' own",
+        "# repositories carry in their system/ trees (EXTRA_SOURCES in the script: blueMSX's Machines).",
         "# One file per line: <sha256> <size> <url> <path under system/>. The path may contain spaces.",
         "# The BIOS files themselves are not part of this repository - see NOTICE in the RetroBIOS repository.",
     ]
@@ -231,6 +303,7 @@ def main():
         print("warning: no files under these folders any more: " + ", ".join(unknown), file=sys.stderr)
 
     kept, dropped = select(manifest, targets[TARGET])
+    kept = add_extras(kept)
     if args.list:
         print_listing(kept, dropped)
         return
