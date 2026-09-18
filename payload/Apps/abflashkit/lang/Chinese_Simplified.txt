@@ -1,0 +1,33 @@
+# AutoBleem Chinese_Simplified Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=全部完成 - 屏幕变黑后请重新插拔电源线
+Backup complete=备份完成
+Backup failed=备份失败
+Checking LBOOT for vanilla kernel. Decompressing...=正在检查 LBOOT 中的原版内核。正在解压...
+Creating backup....=正在创建备份....
+Exiting...=正在退出...
+Flash Kernel=刷写内核
+Flashing KERNEL IMAGE=正在刷写内核镜像
+Full backup=完整备份
+Invalid backup or invalid kernel image=备份或内核镜像无效
+No backup found - Recovery locked=未找到备份 - 恢复已锁定
+Non AutoBleem Backup found. Please use valid AB backup=找到的备份不是 AutoBleem 的。请使用有效的 AB 备份
+Overwrite the existing backup?=覆盖现有备份吗？
+Please wait...=请稍候...
+Quit=退出
+Recovery interrupted=恢复已中断
+Recovery Mode On=恢复模式已开启
+Restore Mode=恢复模式
+Set recovery mode and reboot now?=设置恢复模式并立即重启吗？
+Setting recovery mode: off=正在设置恢复模式：关
+Setting recovery mode: on=正在设置恢复模式：开
+Start flashing ?=开始刷写吗？
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT 中不是纯净的 PSC 固件。主机可能会软砖。确定继续吗？
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT 中没有 rootfs1。这可能是 ABFK 1.0a 的备份。确定继续吗？
+This PSC has not been restored to original condition. Unable to flash.=此 PSC 尚未恢复到原始状态。无法刷写。
+Updating payload=正在更新 payload
+Validating backup...   Please wait...=正在验证备份...   请稍候...
+Welcome to ABFlashKit=欢迎使用 ABFlashKit
+Zipping:=正在压缩：

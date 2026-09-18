@@ -1,0 +1,33 @@
+# AutoBleem Dutch Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Klaar - als het scherm zwart wordt, steek de stroomkabel opnieuw in
+Backup complete=Back-up voltooid
+Backup failed=Back-up mislukt
+Checking LBOOT for vanilla kernel. Decompressing...=LBOOT controleren op de originele kernel. Uitpakken...
+Creating backup....=Back-up maken....
+Exiting...=Afsluiten...
+Flash Kernel=Kernel flashen
+Flashing KERNEL IMAGE=KERNEL-IMAGE wordt geflasht
+Full backup=Volledige back-up
+Invalid backup or invalid kernel image=Ongeldige back-up of ongeldige kernel-image
+No backup found - Recovery locked=Geen back-up gevonden - herstel geblokkeerd
+Non AutoBleem Backup found. Please use valid AB backup=Back-up gevonden die niet van AutoBleem is. Gebruik een geldige AB-back-up
+Overwrite the existing backup?=Bestaande back-up overschrijven?
+Please wait...=Even geduld...
+Quit=Afsluiten
+Recovery interrupted=Herstel afgebroken
+Recovery Mode On=Herstelmodus aan
+Restore Mode=Herstelmodus
+Set recovery mode and reboot now?=Herstelmodus instellen en nu herstarten?
+Setting recovery mode: off=Herstelmodus instellen: uit
+Setting recovery mode: on=Herstelmodus instellen: aan
+Start flashing ?=Flashen starten?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT bevat geen SCHONE PSC-firmware. Je console kan SOFTBRICKEN. Weet je het zeker?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT bevat geen rootfs1. Dit is mogelijk een ABFK 1.0a-back-up. Weet je het zeker?
+This PSC has not been restored to original condition. Unable to flash.=Deze PSC is niet in de originele staat teruggezet. Flashen niet mogelijk.
+Updating payload=Payload bijwerken
+Validating backup...   Please wait...=Back-up valideren...   Even geduld...
+Welcome to ABFlashKit=Welkom bij ABFlashKit
+Zipping:=Inpakken:

@@ -1,0 +1,33 @@
+# AutoBleem Finnish Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Valmis - kun näyttö pimenee, kytke virtajohto uudelleen
+Backup complete=Varmuuskopio valmis
+Backup failed=Varmuuskopiointi epäonnistui
+Checking LBOOT for vanilla kernel. Decompressing...=Tarkistetaan LBOOTin alkuperäinen ydin. Puretaan...
+Creating backup....=Luodaan varmuuskopiota....
+Exiting...=Poistutaan...
+Flash Kernel=Flashaa ydin
+Flashing KERNEL IMAGE=Flashataan YDINKUVAA
+Full backup=Täysi varmuuskopio
+Invalid backup or invalid kernel image=Virheellinen varmuuskopio tai ydinkuva
+No backup found - Recovery locked=Varmuuskopiota ei löydy - palautus lukittu
+Non AutoBleem Backup found. Please use valid AB backup=Löytyi varmuuskopio, joka ei ole AutoBleemin. Käytä kelvollista AB-varmuuskopiota
+Overwrite the existing backup?=Korvataanko nykyinen varmuuskopio?
+Please wait...=Odota...
+Quit=Lopeta
+Recovery interrupted=Palautus keskeytettiin
+Recovery Mode On=Palautustila päällä
+Restore Mode=Palautustila
+Set recovery mode and reboot now?=Asetetaanko palautustila ja käynnistetään uudelleen nyt?
+Setting recovery mode: off=Palautustila: pois
+Setting recovery mode: on=Palautustila: päällä
+Start flashing ?=Aloitetaanko flashaus?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT ei sisällä PUHDASTA PSC-laiteohjelmistoa. Konsolisi voi SOFTBRICKAANTUA. Oletko varma?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT ei sisällä rootfs1:tä. Tämä voi olla ABFK 1.0a:n varmuuskopio. Oletko varma?
+This PSC has not been restored to original condition. Unable to flash.=Tätä PSC:tä ei ole palautettu alkuperäiseen tilaan. Flashaus ei onnistu.
+Updating payload=Päivitetään payloadia
+Validating backup...   Please wait...=Tarkistetaan varmuuskopiota...   Odota...
+Welcome to ABFlashKit=Tervetuloa ABFlashKitiin
+Zipping:=Pakataan:

@@ -1,0 +1,33 @@
+# AutoBleem Swedish Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Klart - när skärmen blir svart, sätt i strömkabeln igen
+Backup complete=Säkerhetskopian är klar
+Backup failed=Säkerhetskopieringen misslyckades
+Checking LBOOT for vanilla kernel. Decompressing...=Kontrollerar LBOOT efter originalkärnan. Packar upp...
+Creating backup....=Skapar säkerhetskopia....
+Exiting...=Avslutar...
+Flash Kernel=Flasha kärnan
+Flashing KERNEL IMAGE=Flashar KÄRNAVBILDEN
+Full backup=Fullständig säkerhetskopia
+Invalid backup or invalid kernel image=Ogiltig säkerhetskopia eller kärnavbild
+No backup found - Recovery locked=Ingen säkerhetskopia hittades - återställning låst
+Non AutoBleem Backup found. Please use valid AB backup=En säkerhetskopia som inte är från AutoBleem hittades. Använd en giltig AB-kopia
+Overwrite the existing backup?=Skriv över den befintliga säkerhetskopian?
+Please wait...=Vänta...
+Quit=Avsluta
+Recovery interrupted=Återställningen avbröts
+Recovery Mode On=Återställningsläge på
+Restore Mode=Återställningsläge
+Set recovery mode and reboot now?=Aktivera återställningsläge och starta om nu?
+Setting recovery mode: off=Återställningsläge: av
+Setting recovery mode: on=Återställningsläge: på
+Start flashing ?=Starta flashning?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT innehåller inte REN PSC-firmware. Du riskerar att SOFTBRICKA din konsol. Är du säker?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT innehåller inte rootfs1. Det kan vara en ABFK 1.0a-kopia. Är du säker?
+This PSC has not been restored to original condition. Unable to flash.=Den här PSC:n har inte återställts till originalskick. Kan inte flasha.
+Updating payload=Uppdaterar payload
+Validating backup...   Please wait...=Validerar säkerhetskopian...   Vänta...
+Welcome to ABFlashKit=Välkommen till ABFlashKit
+Zipping:=Packar:

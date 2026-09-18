@@ -1,0 +1,33 @@
+# AutoBleem Portuguese_BR Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Tudo pronto - quando a tela ficar preta, reconecte o cabo de energia
+Backup complete=Backup concluído
+Backup failed=Falha no backup
+Checking LBOOT for vanilla kernel. Decompressing...=Verificando o kernel original no LBOOT. Descompactando...
+Creating backup....=Criando backup....
+Exiting...=Saindo...
+Flash Kernel=Gravar kernel
+Flashing KERNEL IMAGE=Gravando a IMAGEM DO KERNEL
+Full backup=Backup completo
+Invalid backup or invalid kernel image=Backup ou imagem do kernel inválidos
+No backup found - Recovery locked=Nenhum backup encontrado - recuperação bloqueada
+Non AutoBleem Backup found. Please use valid AB backup=Backup que não é do AutoBleem. Use um backup AB válido
+Overwrite the existing backup?=Sobrescrever o backup existente?
+Please wait...=Aguarde...
+Quit=Sair
+Recovery interrupted=Recuperação interrompida
+Recovery Mode On=Modo de recuperação ativado
+Restore Mode=Modo de restauração
+Set recovery mode and reboot now?=Ativar o modo de recuperação e reiniciar agora?
+Setting recovery mode: off=Modo de recuperação: desativado
+Setting recovery mode: on=Modo de recuperação: ativado
+Start flashing ?=Iniciar a gravação?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=O LBOOT não contém um firmware PSC LIMPO. Seu console pode ficar em SOFTBRICK. Continuar?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=O LBOOT não contém rootfs1. Pode ser um backup do ABFK 1.0a. Continuar?
+This PSC has not been restored to original condition. Unable to flash.=Este PSC não foi restaurado ao estado original. Não é possível gravar.
+Updating payload=Atualizando o payload
+Validating backup...   Please wait...=Validando o backup...   Aguarde...
+Welcome to ABFlashKit=Bem-vindo ao ABFlashKit
+Zipping:=Compactando:

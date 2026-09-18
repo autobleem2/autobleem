@@ -1,0 +1,33 @@
+# AutoBleem Turkish Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Tamamlandı - ekran karardığında güç kablosunu yeniden takın
+Backup complete=Yedekleme tamamlandı
+Backup failed=Yedekleme başarısız
+Checking LBOOT for vanilla kernel. Decompressing...=LBOOT'ta orijinal çekirdek denetleniyor. Açılıyor...
+Creating backup....=Yedek oluşturuluyor....
+Exiting...=Çıkılıyor...
+Flash Kernel=Çekirdeği yaz
+Flashing KERNEL IMAGE=ÇEKİRDEK GÖRÜNTÜSÜ yazılıyor
+Full backup=Tam yedek
+Invalid backup or invalid kernel image=Geçersiz yedek veya geçersiz çekirdek görüntüsü
+No backup found - Recovery locked=Yedek bulunamadı - kurtarma kilitli
+Non AutoBleem Backup found. Please use valid AB backup=AutoBleem'e ait olmayan bir yedek bulundu. Geçerli bir AB yedeği kullanın
+Overwrite the existing backup?=Mevcut yedeğin üzerine yazılsın mı?
+Please wait...=Lütfen bekleyin...
+Quit=Çık
+Recovery interrupted=Kurtarma kesildi
+Recovery Mode On=Kurtarma modu açık
+Restore Mode=Geri yükleme modu
+Set recovery mode and reboot now?=Kurtarma modu ayarlanıp şimdi yeniden başlatılsın mı?
+Setting recovery mode: off=Kurtarma modu: kapalı
+Setting recovery mode: on=Kurtarma modu: açık
+Start flashing ?=Yazma başlatılsın mı?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT TEMİZ PSC yazılımı içermiyor. Konsolunuz SOFTBRICK olabilir. Emin misiniz?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT rootfs1 içermiyor. Bu bir ABFK 1.0a yedeği olabilir. Emin misiniz?
+This PSC has not been restored to original condition. Unable to flash.=Bu PSC orijinal durumuna geri yüklenmemiş. Yazma yapılamıyor.
+Updating payload=Payload güncelleniyor
+Validating backup...   Please wait...=Yedek doğrulanıyor...   Lütfen bekleyin...
+Welcome to ABFlashKit=ABFlashKit'e hoş geldiniz
+Zipping:=Sıkıştırılıyor:
