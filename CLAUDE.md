@@ -773,7 +773,9 @@ the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMe
 and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
-its tile. `payload_rpi/` next to it is the Raspberry Pi installer
+its tile. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
+`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_rpi/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
 ## Conventions and gotchas
