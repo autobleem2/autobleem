@@ -101,9 +101,9 @@ Usage: sudo bash install.sh [options]
                        resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
-  --no-bios            do not download the BIOS pack (system/biospack.txt: ~150 MB of console, arcade and
-                       ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and the PS1
-                       BIOS for pcsx-ab into System/Bios)
+  --no-bios            do not download the BIOS pack (system/biospack.txt: ~190 MB of console, computer,
+                       arcade and ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and
+                       the PS1 BIOS for pcsx-ab into System/Bios)
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
   -h, --help           this text
@@ -340,28 +340,62 @@ RA_SUBDIRS="cores info system roms saves states playlists config assets autoconf
 # roms/ gets a folder per system, named the way RetroArch's databases and playlists name them, so that
 # "Import Content -> Scan Directory" on roms/ sorts every game into the matching playlist - which is what
 # AutoBleem's RetroArch set then shows. Any layout works for RetroArch; these are the names that make the
-# scanner's job obvious, and tell the user where a NES or a Mega Drive game goes.
+# scanner's job obvious, and tell the user where a NES or a Mega Drive game goes. Every system here has a
+# core on the armhf buildbot, and the BIOS pack (tools/biospack.py) carries what those cores load.
 RA_ROM_SYSTEMS="Arcade
+SNK - Neo Geo
+SNK - Neo Geo CD
+The 3DO Company - 3DO
 Atari - 2600
+Atari - 5200
 Atari - 7800
+Atari - 8-bit Family
 Atari - Lynx
+Bandai - WonderSwan
 Bandai - WonderSwan Color
+Coleco - ColecoVision
+Magnavox - Odyssey2
+Philips - Videopac+
+Mattel - Intellivision
+GCE - Vectrex
+Fairchild - Channel F
 NEC - PC Engine - TurboGrafx 16
 NEC - PC Engine CD - TurboGrafx-CD
+NEC - PC Engine SuperGrafx
 Nintendo - Game Boy
 Nintendo - Game Boy Color
 Nintendo - Game Boy Advance
 Nintendo - Nintendo Entertainment System
+Nintendo - Family Computer Disk System
 Nintendo - Super Nintendo Entertainment System
-Nintendo - Nintendo 64
 Nintendo - Virtual Boy
+Nintendo - Pokemon Mini
+Sega - SG-1000
 Sega - Master System - Mark III
 Sega - Mega Drive - Genesis
 Sega - Mega-CD - Sega CD
 Sega - 32X
 Sega - Game Gear
+SNK - Neo Geo Pocket
 SNK - Neo Geo Pocket Color
-Sony - PlayStation Portable"
+Commodore - Amiga
+Commodore - CD32
+Commodore - 64
+Commodore - VIC-20
+Commodore - Plus-4
+Amstrad - CPC
+Sinclair - ZX Spectrum
+Sinclair - ZX 81
+Microsoft - MSX
+Microsoft - MSX2
+NEC - PC-88
+NEC - PC-98
+Sharp - X1
+Sharp - X68000
+DOS
+ScummVM
+DOOM
+Wolfenstein 3D"
 
 create_retroarch_tree() {
     log "Creating the RetroArch tree under $RA_ROOT"
@@ -575,7 +609,7 @@ download_thumbnails() {
 # The BIOS files the cores need, into RetroArch/system/. system/biospack.txt (built by tools/biospack.py in
 # the source tree) names every file with its SHA-256, size and URL: a pinned commit of RetroBIOS
 # (github.com/Abdess/retrobios), cut down to the systems with a roms/ folder here plus arcade and ScummVM -
-# the full RetroArch pack is 5.8 GB, this is ~150 MB. A file already there with the right hash is kept, so a
+# the full RetroArch pack is 5.8 GB, this is ~190 MB. A file already there with the right hash is kept, so a
 # re-run only fetches what is missing or damaged; the download lands in a .part next to the target and is
 # renamed once its hash checks out, so a power cut cannot leave a half file that looks whole.
 download_bios_pack() {

@@ -6,8 +6,8 @@ manifest per platform - install/retroarch.json lists every file the RetroArch pa
 SHA-256 and where it is served from, and install/targets/retroarch.json says which cores exist per hardware
 target. The full RetroArch pack is 5.8 GB and the linux-armhf slice of it still 2.6 GB, most of which is not
 BIOS at all: arcade sound-sample zips, the MAME history/mameinfo/cheat text files in triplicate, files for
-cores that have no armhf build. This script keeps what the systems AutoBleem sets up on the Pi need (the
-roms/ folders install.sh creates, arcade, ScummVM) and writes a flat manifest that install.sh's
+cores that have no armhf build. This script keeps what the systems AutoBleem sets up on the Pi need (every
+system install.sh makes a roms/ folder for, arcade, ScummVM, Doom) and writes a flat manifest that install.sh's
 download_bios_pack() fetches file by file with wget and checks with sha256sum - no BIOS file is ever checked
 in here, and the pack is pinned to one RetroBIOS commit so the same manifest comes out every time.
 
@@ -40,13 +40,20 @@ MANIFEST_OUT = os.path.join(os.path.dirname(__file__), "..", "payload_rpi", "sys
 
 # RetroBIOS keeps its files as bios/<Vendor>/<System>/...; these are the folders the pack draws from. The
 # comment says what on the Pi wants the files. A system with a roms/ folder in install.sh but nothing here
-# (Nintendo 64, Virtual Boy, Neo Geo Pocket, ...) simply has no BIOS to ship.
+# (Virtual Boy, Neo Geo Pocket, Vectrex, DOS, ...) simply has no BIOS to ship.
 SYSTEMS = {
+    # consoles and handhelds
     "Sony/PlayStation": "pcsx_rearmed, and pcsx-ab's romw.bin/romJP.bin",
-    "Sony/PlayStation Portable": "ppsspp's font atlas",
+    "3DO Company/3DO": "opera",
     "Atari/2600": "stella (the KidVid tapes are excluded below)",
+    "Atari/5200": "atari800",
     "Atari/7800": "prosystem",
     "Atari/Lynx": "handy, mednafen_lynx",
+    "Coleco/ColecoVision": "bluemsx",
+    "Magnavox/Odyssey2": "o2em",
+    "Philips/Videopac": "o2em",
+    "Philips/Videopac+": "o2em",
+    "Mattel/Intellivision": "freeintv",
     "NEC/PC Engine": "mednafen_pce (the CD system cards)",
     "Nintendo/Game Boy": "gambatte, sameboy, mgba boot ROMs",
     "Nintendo/Game Boy Color": "same",
@@ -55,6 +62,7 @@ SYSTEMS = {
     "Nintendo/SNES": "snes9x, bsnes (the coprocessor ROMs)",
     "Nintendo/Super Game Boy": "snes9x, bsnes",
     "Nintendo/Satellaview": "snes9x, bsnes",
+    "Nintendo/SuFami Turbo": "snes9x, bsnes",
     "Nintendo/Pokemon Mini": "pokemini",
     "Sega/Master System": "genesis_plus_gx, picodrive",
     "Sega/Game Gear": "genesis_plus_gx",
@@ -63,11 +71,32 @@ SYSTEMS = {
     "Sega/32X": "picodrive",
     "SNK/Neo Geo": "fbneo's AES set, neocd's universe BIOS",
     "SNK/Neo Geo CD": "neocd",
+    "Bally/Astrocade": "fbneo",
+    # home computers
+    "Commodore/Amiga": "puae (the Kickstart ROMs, CD32 and CDTV included)",
+    "Commodore/C64": "vice_x64 (JiffyDOS and the alternative kernals; the stock ROMs are built in)",
+    "Commodore/C128": "vice_x64, vice_xvic (same)",
+    "Microsoft/MSX": "fmsx, bluemsx",
+    "Other/bluemsx": "bluemsx",
+    "Other/msx-emu": "bluemsx",
+    "Sinclair/ZX Spectrum": "fuse",
+    "Other/zesarux": "fuse",
+    "Atari/400-800": "atari800",
+    "NEC/PC-98": "np2kai, nekop2",
+    "IBM/PC": "nekop2",
+    "NEC/PC-88": "quasi88",
+    "Sharp/X68000": "px68k",
+    "Sharp/X1": "x1",
+    "Elektronika/BK": "bk",
+    # arcade and engines
     "Arcade/Arcade": "fbneo, fbalpha2012, mame2000/2003/2003_plus: the BIOS sets the games need",
     "Arcade/MAME": "same (the pgm BIOS; the .dat text files are excluded below)",
+    "Arcade/FBNeo": "fceumm's disksys.rom (Famicom Disk System) lives here, and fuse's Spectrum ROMs",
     "Sega/Arcade": "cannonball (OutRun)",
     "Other/ScummVM": "scummvm's engine data and themes",
     "ScummVM/.variants": "scummvm's bundled data",
+    "Id Software/Doom": "prboom's prboom.wad",
+    "Id Software/Wolfenstein 3D": "ecwolf's ecwolf.pk3",
 }
 
 # Cores from the target's list that the pack does not serve. The current-year `mame` core is on the armhf
@@ -75,11 +104,11 @@ SYSTEMS = {
 DROP_CORES = {"mame"}
 
 # Paths (relative to system/) that are out whatever folder they come from. Not BIOS: the arcade sound
-# samples, MAME's history/mameinfo/cheat text, stella's KidVid audio; no core on armhf: the Dreamcast/Naomi
-# and ST-V sets (flycast, kronos).
+# samples, MAME's history/mameinfo/cheat text, stella's KidVid audio, x86 MIDI libraries; no core on
+# armhf: the Dreamcast/Naomi and ST-V sets (flycast, kronos).
 EXCLUDE_PREFIXES = ("fba2012/samples/", "fbneo/samples/", "dc/", "kronos/")
 EXCLUDE_NAMES = {"history.dat", "mameinfo.dat", "cheat.dat"}
-EXCLUDE_SUFFIXES = (".wav",)
+EXCLUDE_SUFFIXES = (".wav", ".dll", ".dylib", ".so")
 
 
 def fetch_json(url, what):

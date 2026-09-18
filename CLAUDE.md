@@ -348,9 +348,14 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   user's own are there. `--no-bios` skips both; `--no-downloads` does not. The manifest is written by
   **`tools/biospack.py`** from [RetroBIOS](https://github.com/Abdess/retrobios) (`install/retroarch.json`
   + `install/targets/retroarch.json`, pinned to one commit in `RETROBIOS_REF`): the `linux-armhf` target's
-  cores minus `mame`, an allow-list of `Vendor/System` folders (the `RA_ROM_SYSTEMS` consoles, arcade, Neo
-  Geo CD, ScummVM) and path excludes (arcade `samples/`, MAME's `history/mameinfo/cheat.dat`, stella's
-  `.wav`, `dc/`, `kronos/`). 312 files, 151 MB, against 5.8 GB for RetroBIOS's whole RetroArch pack.
+  cores minus `mame`, an allow-list of `Vendor/System` folders (everything `RA_ROM_SYSTEMS` has a folder for -
+  consoles, handhelds and the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers - plus arcade, Neo Geo CD,
+  ScummVM, Doom/Wolfenstein engine data) and path excludes (arcade `samples/`, MAME's
+  `history/mameinfo/cheat.dat`, stella's `.wav`, x86 `.dll/.so/.dylib`, `dc/`, `kronos/`). 626 files,
+  189 MB (ScummVM is 94 of them), against 5.8 GB for RetroBIOS's whole RetroArch pack. `RA_ROM_SYSTEMS`
+  names are RetroArch's rdb names (`database/rdb/*.rdb`) so a scan of `roms/` lands in the right playlist;
+  `disksys.rom` (FDS) lives in RetroBIOS's `Arcade/FBNeo` folder, and DOS has a folder but no files (its
+  only "BIOS" entries are x86 MIDI libraries).
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never

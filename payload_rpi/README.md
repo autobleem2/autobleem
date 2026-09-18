@@ -12,7 +12,7 @@ This is a port in progress. Be aware of what is and is not here:
 |---|---|
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
 | PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
-| BIOS | **downloaded by the installer**: a ~150 MB pack (`system/biospack.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py`) into `RetroArch/system/` — the consoles with a `roms/` folder, arcade, Neo Geo CD, ScummVM — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
+| BIOS | **downloaded by the installer**: a ~190 MB pack (`system/biospack.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py`) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
 | RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every armhf core but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **no.** Everything here is cross-compiled and reviewed but has not yet been run on a Pi. Treat the first install as an experiment, on a card you can afford to re-flash. |
@@ -56,7 +56,7 @@ source (10-40 minutes depending on the Pi - `--retroarch apt` takes the distribu
 `--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
 trees on it; downloads every armhf core plus RetroArch's info/assets/autoconfig/database bundles from
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
-later); downloads the BIOS pack (~150 MB, file by file with a SHA-256 check, only what is missing -
+later); downloads the BIOS pack (~190 MB, file by file with a SHA-256 check, only what is missing -
 `--no-bios` skips it); installs the launcher, pcsx-ab, themes and launch scripts; wires up a systemd service that owns
 tty1; and sets up a quiet boot at 720p with the AutoBleem logo on screen (plymouth) instead of the kernel
 log. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
@@ -143,16 +143,76 @@ runs in the background and the carousel updates while you watch.
 ## RetroArch
 
 RetroArch is run with `--config /media/autobleem/RetroArch/retroarch.cfg`, so everything it reads or
-writes stays on the data partition, where you can reach it from a PC. Copy games for other systems into
-the matching `RetroArch/roms/<system>/` folder (they are created for you - NES, SNES, Game Boy, Mega Drive,
-Master System, Game Gear, PC Engine, Neo Geo Pocket, Arcade, ...) - their BIOS files are already in
-`RetroArch/system/` - then in RetroArch use *Import Content → Scan Directory* on `roms/`: the playlists it
-writes turn up as AutoBleem's RetroArch set the next time the launcher starts. "RetroArch" in the L2+R2
-system menu opens RetroArch's own menu; quitting it puts the launcher back. "RetroArch" in the launcher's L2+R2 system
-menu opens RetroArch's own menu; quitting it puts the launcher back.
+writes stays on the data partition, where you can reach it from a PC. "RetroArch" in the launcher's L2+R2
+system menu opens RetroArch's own menu; quitting it puts the launcher back.
 
 The cores live in `RetroArch/cores/` on the exFAT partition. That works because the partition is mounted
 without `noexec` - keep it that way if you edit `/etc/fstab`.
+
+## Games for the other systems
+
+Everything that is not a PlayStation game goes through RetroArch. Three steps: copy the files into the
+right folder, let RetroArch scan them once, come back to the launcher.
+
+**1. Copy the games in.** Either pull the SD card: the `AUTOBLEEM` partition shows up as a drive on
+Windows, macOS or Linux, and the games go into `RetroArch/roms/<system>/`. Or over the network, with the Pi
+running: `scp`/WinSCP/FileZilla to `/media/autobleem/RetroArch/roms/<system>/` (SSH has to be enabled:
+`sudo raspi-config` → Interface Options → SSH). The launcher does not need to be stopped for that.
+
+A folder exists for every system the Pi's cores play; use those names, because RetroArch's scanner names
+its playlists the same way and a game in the right folder always lands in the right playlist. Most cores
+read `.zip`ped ROMs directly, and the scanner identifies a game by its contents, not its file name. The BIOS
+files every one of these systems needs are already in `RetroArch/system/` (the installer's BIOS pack).
+
+| Put them in `RetroArch/roms/...` | Files | Core, and what to know |
+|---|---|---|
+| `Arcade` | one `.zip` per game, exactly as the ROM set names it (+ its `.chd` for CD games) | **fbneo** wants a *current* FBNeo set, **mame2003_plus** a MAME 0.78-based one, **mame2000** a 0.37b5 one; a zip from the wrong set will not start. The BIOS zips (`neogeo.zip`, `qsound.zip`, `pgm.zip`, ...) are in `system/`. For arcade use *Manual Scan* (step 2). |
+| `SNK - Neo Geo` | the same `.zip` sets (MVS/AES) | fbneo |
+| `SNK - Neo Geo CD` | `.cue`+`.bin` or `.chd` | neocd |
+| `The 3DO Company - 3DO` | `.cue`/`.iso`/`.chd` | opera |
+| `Atari - 2600` / `5200` / `7800` / `Lynx` / `8-bit Family` | `.a26` `.bin` / `.a52` / `.a78` / `.lnx` / `.atr` `.xex` `.cas` | stella2014 / atari800 / prosystem / handy / atari800 |
+| `Coleco - ColecoVision`, `Mattel - Intellivision`, `Magnavox - Odyssey2`, `Philips - Videopac+`, `Fairchild - Channel F`, `GCE - Vectrex` | `.col` / `.int` `.bin` / `.bin` / `.bin` / `.bin` `.chf` / `.vec` | bluemsx / freeintv / o2em / o2em / fbneo / vecx |
+| `NEC - PC Engine - TurboGrafx 16`, `... SuperGrafx` | `.pce`, `.sgx` | mednafen_pce (fast), mednafen_supergrafx |
+| `NEC - PC Engine CD - TurboGrafx-CD` | `.cue`+`.bin` or `.chd` | mednafen_pce; the system cards are in `system/` |
+| `Nintendo - Game Boy` / `Game Boy Color` / `Game Boy Advance` | `.gb` / `.gbc` / `.gba` | gambatte, sameboy / mgba |
+| `Nintendo - Nintendo Entertainment System`, `... Family Computer Disk System` | `.nes`, `.fds` | fceumm, nestopia, mesen |
+| `Nintendo - Super Nintendo Entertainment System` | `.sfc` `.smc` | snes9x (snes9x2005 on a slow Pi) |
+| `Nintendo - Virtual Boy`, `Nintendo - Pokemon Mini` | `.vb`, `.min` | mednafen_vb, pokemini |
+| `Sega - SG-1000` / `Master System - Mark III` / `Game Gear` | `.sg` / `.sms` / `.gg` | genesis_plus_gx |
+| `Sega - Mega Drive - Genesis` / `32X` | `.md` `.bin` `.gen` / `.32x` | genesis_plus_gx, picodrive (32X) |
+| `Sega - Mega-CD - Sega CD` | `.cue`+`.bin` or `.chd` | genesis_plus_gx |
+| `SNK - Neo Geo Pocket` / `Color`, `Bandai - WonderSwan` / `Color` | `.ngp` `.ngc`, `.ws` `.wsc` | mednafen_ngp, mednafen_wswan |
+| `Commodore - Amiga` | `.adf` `.adz` `.dms` `.hdf` `.lha` (WHDLoad), `.m3u` for a multi-disk game | puae; the Kickstart ROMs are in `system/`. Use *Manual Scan*. |
+| `Commodore - CD32` | `.cue`+`.bin` or `.chd` | puae |
+| `Commodore - 64` / `VIC-20` / `Plus-4` | `.d64` `.t64` `.prg` `.crt` `.tap`, `.m3u` for multi-disk | vice_x64 / vice_xvic / vice_xplus4 |
+| `Amstrad - CPC` | `.dsk` `.cdt` | cap32 |
+| `Sinclair - ZX Spectrum` / `ZX 81` | `.tzx` `.tap` `.z80` `.sna` `.dsk` / `.p` | fuse / 81 |
+| `Microsoft - MSX` / `MSX2` | `.rom` `.dsk` `.cas` | fmsx or bluemsx |
+| `NEC - PC-88` / `PC-98`, `Sharp - X1` / `X68000` | `.d88` / `.hdi` `.fdi` `.d88`, `.d88` `.2d` / `.dim` `.xdf` `.hdf` | quasi88 / np2kai, x1 / px68k; use *Manual Scan* |
+| `DOS` | one folder per game with its files; a `.bat`/`.exe` to start, or a DOSBox `.conf` | dosbox_core; *Manual Scan* on the `.exe`/`.bat`/`.conf` files, or load one from RetroArch's file browser |
+| `ScummVM` | one folder per game with its data files, plus an empty `<gameid>.scummvm` file in it (`monkey.scummvm`, `sky.scummvm`, ... - the ids ScummVM uses) | scummvm; *Manual Scan* with the `scummvm` extension. The engine data is in `system/scummvm/`. |
+| `DOOM`, `Wolfenstein 3D` | the game's `.wad` (`doom.wad`, `doom2.wad`, ...); the `.wl6`/`.wl1` files in a folder | prboom, ecwolf; `prboom.wad`/`ecwolf.pk3` are in `system/` |
+
+Multi-disc CD games: put every disc in the folder and add a `.m3u` file listing the `.cue`/`.chd` names one
+per line; scan the `.m3u`, not the discs. Save files and save states go to `RetroArch/saves/` and
+`RetroArch/states/`, whatever the system.
+
+**2. Scan once, in RetroArch.** L2+R2 → *RetroArch* opens RetroArch's menu. *Import Content → Scan
+Directory*, go into `roms`, and pick `<Scan This Directory>`: every game whose contents RetroArch's
+databases know gets a playlist entry with the right core. That covers the consoles and handhelds.
+For arcade, computers, DOS and ScummVM - anything the databases do not identify by contents - use
+*Import Content → Manual Scan* instead: *Content Directory* = the system's folder, *System Name* = pick the
+same name from the list, *Default Core* = the core from the table, *File Extensions* if you want to limit
+it (`scummvm` for ScummVM), then *Start Scan*. Scanning a folder again only adds what is new.
+
+A game RetroArch will not start is nearly always the wrong ROM set for the core (arcade) or a missing
+`.m3u`/`.cue`; the log is in `RetroArch/logs/`.
+
+**3. Back to the launcher** - *Main Menu → Quit RetroArch*. The launcher starts again and reads the
+playlists as it comes up. **Select** cycles the sets (PlayStation → RetroArch → Apps), and inside the
+RetroArch set **L2+Select** picks the playlist (system). Cross starts the game in the core the playlist
+names; Favorites and History are RetroArch's own, kept up to date after every session. Playlists copied
+onto the card by hand (or edited from a PC) are picked up the same way, at the next launcher start.
 
 ## How it boots
 
