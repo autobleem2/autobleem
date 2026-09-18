@@ -306,6 +306,8 @@ QuickBoot:
 Rychly start:
 Quit emulation - back to AutoBleem
 Ukončit emuláci - návrat do AutoBleem
+Random
+Náhodně
 Random Game
 Náhodná hra
 RAPID FIRE

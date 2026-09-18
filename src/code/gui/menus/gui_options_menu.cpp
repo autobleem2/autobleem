@@ -9,7 +9,7 @@ using namespace std;
 string GuiOptions::getStatusLine() {
     auto id = lines[selected].id;
     if (id == CFG_THEME || id == CFG_MUSIC)
-        return "|@X| " + _("OK") + "     " + "|@O| " + _("Cancel") + "  " + "|@Start|   " + ("Random") + "|";
+        return "|@X| " + _("OK") + "     " + "|@O| " + _("Cancel") + "  " + "|@Start|   " + _("Random") + "|";
     else
         return "|@X| " + _("OK") + "     " + "|@O| " + _("Cancel") + "|";
 }

@@ -498,6 +498,8 @@ Published by:
 Yayımlayan:
 Quick scroll to next letter
 Sonraki harfe hızlı kaydır
+Random
+Rastgele
 Random Game
 Rastgele Oyun
 RAPID FIRE

@@ -304,6 +304,8 @@ QuickBoot:
 QuickBoot:
 Quit emulation - back to AutoBleem
 Inchide simulare - inapoi la AutoBleem
+Random
+Aleatoriu
 Random Game
 Joc Aleatoriu
 RAPID FIRE

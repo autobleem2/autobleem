@@ -2,6 +2,7 @@
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/strings.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -81,6 +82,9 @@ vector<string> Lang::listLanguages(const string &langDir) {
             languages.push_back(entry.name.substr(0, entry.name.size() - 4));
         }
     }
+    // directory order is whatever the filesystem gives (exFAT: creation order) - the Options row is a
+    // list the user steps through, so keep it alphabetical after the source language
+    std::sort(languages.begin() + 1, languages.end());
     return languages;
 }
 

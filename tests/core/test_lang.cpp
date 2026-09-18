@@ -68,12 +68,15 @@ TEST_CASE("a language with no file leaves everything untranslated rather than fa
     CHECK(lang.translate("Re/Scan") == "Re/Scan");
 }
 
-TEST_CASE("listLanguages is English first, then every other .txt in the directory") {
+TEST_CASE("listLanguages is English first, then every other .txt in the directory, alphabetically") {
     LangDir d;
+    d.tmp.writeFile("lang/Czech.txt", "");     // written last, listed first: directory order is not the order
     vector<string> names = ableem::Lang::listLanguages(d.dir());
-    REQUIRE(names.size() == 3);
+    REQUIRE(names.size() == 4);
     CHECK(names[0] == "English");
-    CHECK(((names[1] == "German" && names[2] == "Polish") || (names[1] == "Polish" && names[2] == "German")));
+    CHECK(names[1] == "Czech");
+    CHECK(names[2] == "German");
+    CHECK(names[3] == "Polish");
 }
 
 TEST_CASE("dumpUntranslated writes the strings a translator still has to do, in order of first use") {

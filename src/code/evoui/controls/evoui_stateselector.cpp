@@ -87,7 +87,7 @@ void PsStateSelector::render()
 
         shared_ptr<Gui> gui(Gui::getInstance());
 
-        gui->text().renderText_WithColor(font30, _(text), 0, 110, brightWhite, XALIGN_CENTER);
+        gui->text().renderText_WithColor(font30, text, 0, 110, brightWhite, XALIGN_CENTER);   // translated above
 
         if (operation==OP_LOAD) {
             gui->text().renderText(font24, "|@T| " + _("Delete") + "     |@X| " + _("Select") + "     |@O| " + _("Cancel") +

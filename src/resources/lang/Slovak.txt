@@ -296,6 +296,8 @@ Quick scroll to next letter
 Rýchlo prejsť na nasledujúci znak
 Quit emulation - back to AutoBleem
 Ukončiť emuláciu - návrat do AutoBleemu
+Random
+Náhodne
 Random Game
 Náhodná hra
 RAPID FIRE

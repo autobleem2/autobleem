@@ -192,6 +192,8 @@ Quick boot
 Snabbstart
 QuickBoot:
 Snabbstart:
+Random
+Slumpmässigt
 Random Game
 Slumpmässigt spel
 RAPID FIRE

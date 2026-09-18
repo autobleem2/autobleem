@@ -296,6 +296,8 @@ Quick scroll to next letter
 Desplazamiento rapido a la siguiente letra
 Quit emulation - back to AutoBleem
 Quitar emulacion - volver a AutoBleem
+Random
+Aleatorio
 Random Game
 Juego Aleatorio
 RAPID FIRE

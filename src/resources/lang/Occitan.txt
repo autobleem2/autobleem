@@ -296,6 +296,8 @@ QuickBoot:
 Aviada rapida :
 Quit emulation - back to AutoBleem
 Quitar l'emulation - tornar a AutoBleem
+Random
+Aleatòri
 Random Game
 Jòc a l'azard
 RAPID FIRE

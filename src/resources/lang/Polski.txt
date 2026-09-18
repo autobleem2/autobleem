@@ -304,6 +304,8 @@ Quick scroll to next letter
 Szybki przeskok do następnej litery
 Quit emulation - back to AutoBleem
 Zakończ emulację - powrót do AutoBleem
+Random
+Losowo
 Random Game
 Losowa Gra
 RAPID FIRE

@@ -314,6 +314,8 @@ QuickBoot:
 Schnellstart:
 Quit emulation - back to AutoBleem
 Emulation beenden - Zurück zu AutoBleem
+Random
+Zufällig
 Random Game
 Zufälliges Spiel
 RAPID FIRE
