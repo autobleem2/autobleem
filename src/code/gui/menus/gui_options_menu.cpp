@@ -1,4 +1,5 @@
 #include "gui_options_menu.h"
+#include <algorithm>
 #include "../../core/services/system.h"
 #include "../../core/services/environment.h"
 #include "../../core/services/theme_converter.h"
@@ -103,8 +104,69 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
                        getTimeoutValues());
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
+    lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
 
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
+}
+
+//*******************************
+// GuiOptions::getFonts
+//*******************************
+vector<string> GuiOptions::getFonts() {
+    vector<string> list{"--"};
+    for (const string &dir : Fonts::userFontDirs(app.theme().path())) {
+        for (const DirEntry &entry : DirEntry::diru_FilesOnly(dir)) {
+            string ext = ableem::toLowerCopy(DirEntry::getFileExtension(entry.name));
+            if ((ext == "ttf" || ext == "otf") && find(list.begin(), list.end(), entry.name) == list.end())
+                list.push_back(entry.name);
+        }
+    }
+    return list;
+}
+
+//*******************************
+// GuiOptions::render
+//*******************************
+void GuiOptions::render() {
+    renderer.clear();
+    gui->renderBackground();
+    gui->renderTextBar();
+    yoffset = gui->renderLogo(true);
+    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
+
+    // the rows go from below the title to the bottom of the panel, spread evenly; a page is as many as
+    // fit at the font's height, and the base's paging (computePagePosition/adjustPageBy) does the rest
+    const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
+    const int fontHeight = font.lineHeight();
+    const int firstLineY = yoffset + fontHeight * firstRow;
+    const int lastLineY = panel.y + panel.h - fontHeight - 4;
+    const int fits = max(1, (lastLineY - firstLineY) / fontHeight + 1);
+    if (maxVisible != fits) {
+        maxVisible = fits;
+        firstRender = true; // the page bounds are for the old count
+    }
+    if (firstRender) {
+        computePagePosition();
+        firstRender = false;
+    }
+    const int count = getVerticalSize();
+    const int visible = count == 0 ? 0 : min(maxVisible, count - max(0, firstVisibleIndex)); // rows drawn
+    int rowSpacing = fontHeight;
+    if (visible > 1)
+        rowSpacing = max(fontHeight, (lastLineY - firstLineY) / (visible - 1));
+
+    for (int i = firstVisibleIndex, row = 0; i <= lastVisibleIndex && i < count; i++, row++) {
+        if (i < 0)
+            continue;
+        const int y = firstLineY + rowSpacing * row;
+        gui->text().renderTextLineOptions(getLineText(lines[i]), -y, 0, XALIGN_LEFT);
+        if (i == selected)
+            gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
+    }
+
+    gui->renderStatus(getStatusLine());
+    renderer.present();
 }
 
 //*******************************
@@ -124,6 +186,8 @@ std::string GuiOptions::getLineText(const OptionsInfo &info) {
     auto value = app.config().inifile.values[info.iniKey];
     if (info.keyIsBoolean) {
         temp += getBooleanSymbolText(info, value);
+    } else if (info.id == CFG_FONT && (value.empty() || value == "--")) {
+        temp += _("Theme Default");
     } else {
         temp += value; // append the current text value in the options list
     }
@@ -148,6 +212,9 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
         app.lang().load(Env::getPathToLangDir(), nextValue);
         gui->loadAssets(false); // the fonts may change with the language (Chinese)
         font = gui->assets().themeFont;
+    } else if (id == CFG_THEME_FONT || id == CFG_FONT) {
+        gui->loadAssets(false); // the classic font follows the choice
+        font = gui->assets().themeFont;
     } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
         gui->loadAssets();
     }
@@ -161,7 +228,7 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
 //*******************************
 string GuiOptions::doRandomOption() {
     int id = lines[selected].id;
-    if (id == CFG_THEME || id == CFG_MUSIC) {
+    if (id == CFG_THEME || id == CFG_MUSIC || id == CFG_FONT) {
         auto &choices = lines[selected].choices;
         unsigned int size = choices.size();
         if (size > 1)
@@ -185,6 +252,9 @@ string GuiOptions::doOptionIndex(unsigned int index) {
             font = gui->assets().themeFont; // get the new font for the menu
         } else if (id == CFG_LANG) {
             app.lang().load(Env::getPathToLangDir(), nextValue);
+            gui->loadAssets(false);
+            font = gui->assets().themeFont;
+        } else if (id == CFG_THEME_FONT || id == CFG_FONT) {
             gui->loadAssets(false);
             font = gui->assets().themeFont;
         } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {

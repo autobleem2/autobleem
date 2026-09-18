@@ -79,6 +79,11 @@ void ThemeAssets::load() {
 
     // a theme without launcher fonts (and a default theme without them either) gets the console's own
     string classicFont = classic.font.file;
+    // ...the user's own font for the classic screens, when Options says so (the launcher's fonts stay)
+    string userFont =
+        Fonts::userFontPath(theme_.path(), config_.inifile.values["themefont"], config_.inifile.values["font"]);
+    if (!userFont.empty())
+        classicFont = userFont;
     string medium =
         launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
     string bold = launcher.fonts.bold.empty() ? Env::getSonyFontPath() + sep + "SST-Bold.ttf" : launcher.fonts.bold;

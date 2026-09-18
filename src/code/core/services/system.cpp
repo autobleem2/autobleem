@@ -76,11 +76,12 @@ string System::getAvailableSpace() {
 #ifdef AB_DEBUG_HOST
     return "x86 - does not care about free space - Does not work on mac";
 #else
-    // execUnixCommand returns "" when df fails or nothing under /media is mounted - Strings::toInt makes that
-    // a 0 instead of a thrown exception (this branch had never been compiled before the Pi port)
+    // the filesystem the USB root (the data partition, on a Pi) is on; execUnixCommand returns "" when df
+    // fails - Strings::toInt makes that a 0 instead of a thrown exception
     int gb = 1024 * 1024;
-    float freeSpace = (float)Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $4}'")) / gb;
-    float totalSpace = (float)Strings::toInt(execUnixCommand("df | grep \"media\" | head -1 | awk '{print $2}'")) / gb;
+    string root = "'" + Env::getUsbRoot() + "'";
+    float freeSpace = (float)Strings::toInt(execUnixCommand("df -P " + root + " | tail -1 | awk '{print $4}'")) / gb;
+    float totalSpace = (float)Strings::toInt(execUnixCommand("df -P " + root + " | tail -1 | awk '{print $2}'")) / gb;
     int freeSpacePerc = totalSpace > 0 ? (int)((freeSpace / totalSpace) * 100) : 0;
     return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) +
            "%)";

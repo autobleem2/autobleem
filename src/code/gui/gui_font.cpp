@@ -77,3 +77,25 @@ void Fonts::openAllFonts(const std::string &mediumTtf, const std::string &boldTt
         fontInfos[fontInfo.fontEnum] = fontInfo;
     }
 }
+
+//*******************************
+// Fonts::userFontDirs
+//*******************************
+vector<string> Fonts::userFontDirs(const string &themeDir) {
+    return {Env::getPathToRetroarchDir() + sep + "fonts", Env::getWorkingPath() + sep + "fonts", themeDir};
+}
+
+//*******************************
+// Fonts::userFontPath
+//*******************************
+string Fonts::userFontPath(const string &themeDir, const string &themeFont, const string &font) {
+    if (themeFont == "true" || font.empty() || font == "--")
+        return "";
+    for (const string &dir : userFontDirs(themeDir)) {
+        string path = dir + sep + font;
+        if (DirEntry::exists(path))
+            return path;
+    }
+    PLOG_WARNING << "Font " << font << " from config.ini is in none of the font folders - using the theme's";
+    return "";
+}

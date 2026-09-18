@@ -408,6 +408,8 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
 
     int x = opscreen.x + opscreen.w - 10 - getCheckIconWidth();
     int y = (fontHeight * line) + yoffset;
+    if (line < 0)
+        y = -line; // an absolute y, as renderTextLine takes it
     if (button == 1) {
         renderText(themeFont_, "|@Check|", x, y);
     } else if (button == 0) {

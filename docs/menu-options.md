@@ -54,8 +54,10 @@ Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Mem
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
 | Showing Timeout | How long the notification lines stay (seconds; 0 = for ever). |
 | Language | Applied at once. |
+| Use Font from Theme / Font | Off, and the classic screens (this menu, the editors, the Game Manager) draw in the font chosen on the next row instead of the theme's: any `.ttf`/`.otf` in `retroarch/fonts`, `resources/fonts` or the theme's own folder. The launcher's fonts are the theme's regardless. Applied at once. |
 
-Cross saves and leaves, Circle leaves without saving, Start picks a random theme or music track.
+The rows spread over the panel; more than fit at the font's size page (Up/Down move through them).
+Cross saves and leaves, Circle leaves without saving, Start picks a random theme, music track or font.
 
 ## PS1 game editor
 

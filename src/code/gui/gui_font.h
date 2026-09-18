@@ -3,6 +3,7 @@
 #include <ableem/ui/renderer.h>
 #include <map>
 #include <string>
+#include <vector>
 
 enum FontEnum {
     FONT_15_BOLD,
@@ -44,6 +45,13 @@ public:
     // SizesOfBoldThemeFont, e520f2c1).
     ableem::Font &atSize(FontType type, int fontSize);
     ableem::Font &boldAtSize(int fontSize) { return atSize(FONT_BOLD, fontSize); }
+
+    // the folders a user-chosen font (config.ini "font") is looked for in, in order: retroarch/fonts, the
+    // resources' fonts, the theme's own folder
+    static std::vector<std::string> userFontDirs(const std::string &themeDir);
+    // the full path of the font named in config.ini when "themefont" is off and one is named and found;
+    // "" otherwise (the theme's font is used then)
+    static std::string userFontPath(const std::string &themeDir, const std::string &themeFont, const std::string &font);
     // A language the theme's fonts cannot draw (Chinese) gets resources/fonts/NotoSansSC-Regular.otf for
     // everything, medium and bold alike; "" for any other language, or when the font is not shipped.
     static std::string cjkFontFor(const std::string &language);

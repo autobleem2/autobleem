@@ -52,6 +52,16 @@ Config::Config() {
         inifile.values["raconfig"] = "true";
         aDefaultWasSet = true;
     }
+    // the classic screens' font: the theme's, unless "themefont" is off and "font" names a .ttf/.otf from
+    // retroarch/fonts, resources/fonts or the theme's own folder (Options -> Font; "--" is the theme's)
+    if (inifile.values["themefont"] == "") {
+        inifile.values["themefont"] = "true";
+        aDefaultWasSet = true;
+    }
+    if (inifile.values["font"] == "") {
+        inifile.values["font"] = "--";
+        aDefaultWasSet = true;
+    }
 
     if (inifile.values["surprisehighscore"] == "") {
         inifile.values["surprisehighscore"] = "0";

@@ -30,7 +30,7 @@ public:
     // by ScanService's worker thread so a background scan never competes with a running emulator for CPU.
     static void lowerCurrentThreadPriority();
 
-    static std::string getAvailableSpace(); // "N GB / M GB (P%)" for the status bar, from df on /media
+    static std::string getAvailableSpace(); // "N GB / M GB (P%)" for the status bar, from df on the USB root
 
     static unsigned int getRandomNumber();
     static unsigned int getRandomIndex(unsigned int size); // 0 .. size-1

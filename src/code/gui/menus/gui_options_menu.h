@@ -19,9 +19,11 @@ enum {
     CFG_RACONFIG,
     CFG_PLAY_ALL_PSX_WITH_RA,
     CFG_SHOWINGTIMEOUT,
-    CFG_LANG
+    CFG_LANG,
+    CFG_THEME_FONT,
+    CFG_FONT
 };
-#define CFG_LAST CFG_LANG
+#define CFG_LAST CFG_FONT
 #define CFG_SIZE (CFG_LAST + 1)
 
 //********************
@@ -32,10 +34,12 @@ public:
     explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
-    // void render() override;
-    // void loop() override;
+    // the rows spread evenly over the panel, as many a page as the font's height allows - not the
+    // theme's menuLines, which was written for the menus that pack their rows
+    void render() override;
 
     std::vector<std::string> getThemes();
+    std::vector<std::string> getFonts(); // "--" (the theme's) and every .ttf/.otf in Fonts::userFontDirs
     std::vector<std::string> getJewels();
     std::vector<std::string> getMusic();
     std::vector<std::string> getTimeoutValues();

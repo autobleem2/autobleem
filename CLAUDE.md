@@ -232,8 +232,10 @@ libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, th
 plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
 text in `TextRenderer` with the Game Manager's preview pane and the launcher's `launcher.snapPanel`; and
 `docs/menu-options.md` + `docs/translation.md`. **The port is complete** apart from what was left out on
-purpose: the fork's Options-menu paging and "Font" rows, its Docker/CI pipeline, UPX, gtest and the
-RetroBoot-1.2.1 Apps payload. Its clang-format/clang-tidy setup came over afterwards (see "Code style" under
+purpose: the fork's Docker/CI pipeline, gtest (doctest does the job) and the RetroBoot-1.2.1 Apps payload.
+Its Options paging and "Font" rows came over on 2026-09-18 (`GuiOptions::render` spreads the rows over the
+panel and pages by what fits at the font's height; `themefont`/`font` in config.ini, `Fonts::userFontPath`
+picks the classic font from `retroarch/fonts`, `resources/fonts` or the theme folder). Its clang-format/clang-tidy setup came over afterwards (see "Code style" under
 Build).
 
 **Chinese (Simplified)** (2026-09-18): `resources/lang/Chinese_Simplified.txt` (the fork's file, completed for
