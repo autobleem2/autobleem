@@ -25,6 +25,7 @@ void EnvironmentSetup::fromRoot(const string &root) {
     Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
 #else
     Env::setSonyDataPath("/usr/sony/share/data");
+    Env::setKernelConfigDir("/etc/autobleem");
 #endif
     applyPlatformConfig();
 }

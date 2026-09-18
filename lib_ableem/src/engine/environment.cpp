@@ -17,6 +17,7 @@ string regionalDbFile;
 string internalDbFile;
 string workingPath;
 string appDir;
+string kernelConfigDir;
 string sonyDataPath;
 string themesDir;
 string coversDbDir;
@@ -42,6 +43,10 @@ void Environment::setInternalDbFile(const string &path) {
 }
 void Environment::setAppDir(const string &path) {
     appDir = path;
+}
+
+void Environment::setKernelConfigDir(const string &path) {
+    kernelConfigDir = path;
 }
 
 void Environment::setWorkingPath(const string &path) {
@@ -161,6 +166,14 @@ string Environment::getAppDir() {
 
 string Environment::getPathToAppLangDir() {
     return getAppDir() + sep + "lang";
+}
+
+string Environment::getPathToKernelConfigDir() {
+    return kernelConfigDir;
+}
+
+string Environment::getPathToGameControllerDb() {
+    return getWorkingPath() + sep + "gamecontrollerdb.txt";
 }
 
 string Environment::getPathToMemcardTemplateDir() {

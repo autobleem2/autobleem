@@ -48,6 +48,11 @@ struct Environment : ableem::Environment {
     static void setRetroArchBinaries(const std::vector<std::string> &paths);
     static const std::vector<std::string> &retroArchBinaries();
     static bool retroArchInstalled();
+
+    // the gamecontrollerdb.txt files SDL's pad mappings come from, first existing wins: the kernel's
+    // (/etc/autobleem on the console - what the pscbios wizard writes when it is there), then the shipped
+    // one in the resources dir (what the wizard writes otherwise)
+    static std::vector<std::string> padMappingFiles();
 };
 
 using Env = Environment;

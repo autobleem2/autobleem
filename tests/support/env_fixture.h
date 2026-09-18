@@ -47,7 +47,7 @@ public:
 
 private:
     struct Roots {
-        std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath, appDir;
+        std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath, appDir, kernelConfigDir;
         std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
         std::vector<std::string> retroArchBinaries;
     };
@@ -55,8 +55,9 @@ private:
     static Roots capture() {
         using E = ableem::Environment;
         return Roots{E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(),
-                     E::getPathToInternalDBFile(), E::getWorkingPath(), E::getAppDir(), E::getSonyPath(),
-                     E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
+                     E::getPathToInternalDBFile(), E::getWorkingPath(), E::getAppDir(), E::getPathToKernelConfigDir(),
+                     E::getSonyPath(), E::getPathToThemesDir(), E::getPathToCoversDBDir(),
+                     E::getPathToInternalGamesDir(),
                      // an explicit override is kept as such; a derived one is "" so the derivation survives
                      E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "retroarch"
                          ? std::string()
@@ -76,6 +77,7 @@ private:
         E::setInternalDbFile(r.internalDbFile);
         E::setWorkingPath(r.workingPath);
         E::setAppDir(r.appDir);
+        E::setKernelConfigDir(r.kernelConfigDir);
         E::setSonyDataPath(r.sonyDataPath);
         E::setThemesDir(r.themesDir);
         E::setCoversDbDir(r.coversDbDir);

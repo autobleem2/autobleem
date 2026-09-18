@@ -43,10 +43,16 @@ TEST_CASE("fromRoot derives every path from the one root") {
     CHECK(Env::getPathToThemesDir() == "/usb/themes");
     CHECK(Env::getPathToCoversDBDir() == "/usb/Autobleem/bin/db");
     CHECK(Env::getPathToRCDir() == "/usb/Autobleem/rc");
+    CHECK(Env::getPathToGameControllerDb() == "/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt");
 #ifdef AB_ROOT_RELATIVE_LAYOUT
     CHECK(Env::getSonyPath() == "/usb/Autobleem/bin/autobleem/sony");
+    CHECK(Env::getPathToKernelConfigDir().empty());
+    CHECK(Env::padMappingFiles() == std::vector<string>{"/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt"});
 #else
     CHECK(Env::getSonyPath() == "/usr/sony/share/data");
+    CHECK(Env::getPathToKernelConfigDir() == "/etc/autobleem");
+    CHECK(Env::padMappingFiles() == std::vector<string>{"/etc/autobleem/gamecontrollerdb.txt",
+                                                        "/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt"});
 #endif
 }
 

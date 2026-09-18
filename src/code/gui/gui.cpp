@@ -75,6 +75,8 @@ Gui::Gui()
     : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
       assets_(renderer(), AppBase::get().theme(), AppBase::get().config()),
       text_(renderer(), AppBase::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
+    // the pad mappings the launcher and the pscbios wizard share; probePads() reads the first that exists
+    input().loadMappings(Env::padMappingFiles());
     input().probePads();
 }
 

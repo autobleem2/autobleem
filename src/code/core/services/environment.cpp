@@ -24,6 +24,17 @@ const char *Env::platformName() {
 }
 
 //*******************************
+// Env::padMappingFiles
+//*******************************
+std::vector<std::string> Env::padMappingFiles() {
+    std::vector<std::string> files;
+    if (!getPathToKernelConfigDir().empty())
+        files.push_back(getPathToKernelConfigDir() + sep + "gamecontrollerdb.txt");
+    files.push_back(getPathToGameControllerDb());
+    return files;
+}
+
+//*******************************
 // Env:: RetroArch binaries
 //*******************************
 void Env::setRetroArchBinaries(const vector<string> &paths) {

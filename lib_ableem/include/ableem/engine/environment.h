@@ -23,6 +23,9 @@ struct Environment {
     // a tool's own folder (usb:/Apps/<tool>, where its run.sh cd's): its lang/, images, payload. Distinct
     // from the working path, which is the main GUI's resources dir the tools share (config.ini, themes).
     static void setAppDir(const std::string &path);
+    // the AutoBleem kernel's own configuration folder on the console (/etc/autobleem: its gamecontrollerdb.txt,
+    // ssid.cfg); "" - the default - where there is no such kernel (a Pi, a dev host)
+    static void setKernelConfigDir(const std::string &path);
     static void setSonyDataPath(const std::string &path);     // the console's own data (fonts): /usr/sony/share/data
     static void setThemesDir(const std::string &path);        // usb:/themes
     static void setCoversDbDir(const std::string &path);      // where coversU/P/J.db are
@@ -59,6 +62,8 @@ struct Environment {
 
     static std::string getWorkingPath();              // the resources dir; the current dir when never set
     static std::string getAppDir();                   // the tool's own folder; the current dir when never set
+    static std::string getPathToKernelConfigDir();    // "" without an AutoBleem kernel
+    static std::string getPathToGameControllerDb();   // working:/gamecontrollerdb.txt - the shipped SDL pad mappings
     static std::string getPathToAppLangDir();         // app:/lang - a tool's own translation files
     static std::string getPathToMemcardTemplateDir(); // working:/memcard - the blank card1.mcd/card2.mcd
     static std::string getPathToLangDir();            // working:/lang - the <Language>.txt translation files
