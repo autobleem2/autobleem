@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -88,16 +88,16 @@ Frameskip:=Saut d'images :
 Free=Libre
 free of=
 Free space=Espace disponible
-GAME=Jeu
 Game=Jeu
+GAME=Jeu
 Game data=
 Game failed to verify:=Échec de la vérification du jeu :
 Game History=Historique des jeux
 Game Manager=Gestionnaire de jeux
 Game manager - Select game=Gestion des jeux - Choisir un jeu
 GAME OVER=PARTIE TERMINÉE
-games=jeux
 Games=
+games=jeux
 GFX Filter:=Filtre graphique:
 Go back=Retour
 Graphics=Graphismes
@@ -184,12 +184,14 @@ Resume point saved to slot=Sauvegarde complétée au point de reprise
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot et cœurs d'émulation
 RetroArch is not installed=RetroArch n'est pas installé
+ROMs=
 Run using RetroArch=Exécuter avec RetroArch
 Safely power off the console=Éteindre la console en toute sécurité
 Scan complete:=Analyse terminée :
 Scanline Level:=Niveau des lignes de balayage :
 Scanlines:=Lignes de balayage :
 Scanning=Analyse en cours
+Scanning ROMs=
 Scanning...=Scan en cours...
 SCORE=SCORE
 Select=Choisir

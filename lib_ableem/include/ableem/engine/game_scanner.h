@@ -24,7 +24,9 @@ enum class ScanStage {
     UpdatingDatabase, // detail: ""
     GameFailedVerify, // detail: the game's full path
     MovingFile,       // detail: the file being moved into its own game sub-directory
-    MergingDiscs      // detail: the multi-disc game whose "(Disc n)" folders are being merged into one
+    MergingDiscs,     // detail: the multi-disc game whose "(Disc n)" folders are being merged into one
+    ScanningRoms      // detail: the RetroArch system whose ROM folder is being read; done/total: its index
+                      // among the folders and their count (RetroArchScanner)
 };
 
 //******************

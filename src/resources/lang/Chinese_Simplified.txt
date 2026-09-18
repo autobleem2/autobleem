@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 44 / Total: 240
+# Untranslated: 46 / Total: 242
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -88,16 +88,16 @@ Frameskip:=跳帧：
 Free=可用
 free of=
 Free space=可用空间
-GAME=游戏
 Game=游戏
+GAME=游戏
 Game data=游戏数据
 Game failed to verify:=游戏验证失败：
 Game History=游戏历史
 Game Manager=游戏管理器
 Game manager - Select game=游戏管理器 - 选择游戏
 GAME OVER=游戏结束
-games=游戏
 Games=
+games=游戏
 GFX Filter:=图像滤镜：
 Go back=返回
 Graphics=图形
@@ -184,12 +184,14 @@ Resume point saved to slot=续玩点已保存到槽位
 RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch 与模拟器核心
 RetroArch is not installed=未安装 RetroArch
+ROMs=
 Run using RetroArch=使用 RetroArch 运行
 Safely power off the console=安全关闭主机
 Scan complete:=扫描完成：
 Scanline Level:=扫描线强度：
 Scanlines:=扫描线：
 Scanning=正在扫描
+Scanning ROMs=
 Scanning...=扫描中...
 SCORE=得分
 Select=选择

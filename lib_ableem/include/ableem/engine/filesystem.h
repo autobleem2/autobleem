@@ -77,6 +77,9 @@ public:
 
     static bool removeFile(const std::string &path);
     static bool renameFile(const std::string &pathFrom, const std::string &pathTo);
+    // renameFile that replaces an existing pathTo, atomically where the OS can (rename(2) does; Windows
+    // needs MoveFileEx) - how a file another program may be reading is rewritten: write next to it, then this
+    static bool replaceFile(const std::string &pathFrom, const std::string &pathTo);
     static bool copyFile(const std::string &pathFrom, const std::string &pathTo);
 
     static std::string removeDotFromExtension(const std::string &ext);

@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -88,16 +88,16 @@ Frameskip:=Preskočení snímků:
 Free=Volné
 free of=
 Free space=Volné místo
-GAME=HRA
 Game=Hra
+GAME=HRA
 Game data=
 Game failed to verify:=Ověření hry selhalo:
 Game History=Historie her
 Game Manager=Správce her
 Game manager - Select game=Správce her - Vybrat hru
 GAME OVER=KONEC HRY
-games=hry
 Games=
+games=hry
 GFX Filter:=Grafický filtr:
 Go back=Zpět
 Graphics=Grafika
@@ -184,12 +184,14 @@ Resume point saved to slot=Bod obnovy uložený na pozici
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot a emulační jádra
 RetroArch is not installed=RetroArch není nainstalovaný
+ROMs=
 Run using RetroArch=Spustit pomocí RetroArch
 Safely power off the console=Bezpečně vypnout konzoli
 Scan complete:=Skenování dokončeno:
 Scanline Level:=Úroveň obrazových řádků:
 Scanlines:=Obrazové řádky:
 Scanning=Skenování
+Scanning ROMs=
 Scanning...=Vyhledávam...
 SCORE=SKÓRE
 Select=Vybrat

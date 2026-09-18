@@ -18,14 +18,6 @@
 
 using namespace std;
 
-namespace {
-
-bool sortByMaxExtensions(const CoreInfoPtr &i, const CoreInfoPtr &j) {
-    return i->extensions.size() > j->extensions.size();
-}
-
-} // namespace
-
 //********************
 // RetroArchService::ensureLoaded
 //********************
@@ -106,6 +98,22 @@ void RetroArchService::reloadFavoritesAndHistory() {
     ensureLoaded();
     reloadFavorites();
     reloadHistory();
+}
+
+//********************
+// RetroArchService::reloadPlaylists
+//********************
+void RetroArchService::reloadPlaylists() {
+    ensureLoaded();
+    playlistInfos_.clear();
+    loadPlaylists();
+}
+
+//********************
+// RetroArchService::coresCfgPath
+//********************
+string RetroArchService::coresCfgPath() {
+    return Env::getWorkingPath() + sep + "platform" + sep + Env::platformName() + ".cores.cfg";
 }
 
 //********************
@@ -338,40 +346,17 @@ void RetroArchService::loadPlaylists() {
 }
 
 //********************
-// RetroArchService::findOverrideCore
-//********************
-bool RetroArchService::findOverrideCore(const PsGame &game, string &core_name, string &core_path) const {
-    string dbName = DirEntry::getFileNameWithoutExtension(game.db_name);
-
-    lcase(dbName);
-    trim(dbName);
-    auto pos = overrideCores_.find(dbName);
-    if (pos == overrideCores_.end()) {
-        core_name = "DETECT";
-        core_path = "DETECT";
-        return false;
-    }
-    core_name = pos->second->name;
-    core_path = pos->second->core_path;
-    return true;
-}
-
-//********************
 // RetroArchService::autoDetectCorePath
 //********************
 bool RetroArchService::autoDetectCorePath(const PsGame &game, string &core_name, string &core_path) const {
-    if (findOverrideCore(game, core_name, core_path)) {
-        return true;
-    }
-    string dbName = DirEntry::getFileNameWithoutExtension(game.db_name);
-    auto pos = defaultCores_.find(dbName);
-    if (pos == defaultCores_.end()) {
+    ableem::CoreInfoPtr core = cores_.coreForDatabase(game.db_name);
+    if (!core) {
         core_name = "DETECT";
         core_path = "DETECT";
         return false;
     }
-    core_name = pos->second->name;
-    core_path = pos->second->core_path;
+    core_name = core->name;
+    core_path = core->core_path;
     return true;
 }
 
@@ -380,128 +365,5 @@ bool RetroArchService::autoDetectCorePath(const PsGame &game, string &core_name,
 //********************
 void RetroArchService::loadCores() {
     PLOG_INFO << "Building core list";
-    if (!DirEntry::exists(Env::getPathToRetroarchDir())) {
-        PLOG_WARNING << "Retroarch Not Found";
-        return;
-    }
-    cores_.clear();
-    databases_.clear();
-    defaultCores_.clear();
-    string infoFolder = Env::getPathToRetroarchDir() + sep + "info/";
-    PLOG_INFO << "Scanning: " << infoFolder;
-    vector<DirEntry> entries = DirEntry::diru_FilesOnly(infoFolder);
-    PLOG_INFO << "Found files:" << entries.size();
-    // only the cores that are actually there: the info bundle describes every core libretro builds, a
-    // few hundred, and a database mapped to one that is not installed would make every game of that
-    // system invalid
-    for (const DirEntry &entry : entries) {
-        if (DirEntry::getFileExtension(entry.name) == "info") {
-            string fullPath = infoFolder + sep + entry.name;
-            CoreInfoPtr info = parseCoreInfo(fullPath, entry.name);
-            if (DirEntry::exists(info->core_path))
-                cores_.push_back(info);
-        }
-    }
-    sort(cores_.begin(), cores_.end(), sortByMaxExtensions); // why not
-
-    // each database gets the first core (most extensions first) whose .info lists it
-    for (const string &dbname : databases_) {
-        bool nextDb = false;
-
-        for (CoreInfoPtr ciPtr : cores_) {
-            for (const string &db : ciPtr->databases) {
-                if (dbname == db) {
-                    defaultCores_.insert(std::pair<string, CoreInfoPtr>(db, ciPtr));
-                    nextDb = true;
-                }
-                if (nextDb)
-                    continue;
-            }
-            if (nextDb)
-                continue;
-        }
-
-        auto pos = defaultCores_.find(dbname);
-        if (pos == defaultCores_.end()) {
-            continue;
-        }
-        PLOG_INFO << "Mapping DB: " << dbname << "  Core: " << pos->second->name;
-    }
-
-    // resources/platform/<platform>.cores.cfg: "<database name>=<part of a core's display name>", one per
-    // line - which core plays a system is platform knowledge, like the paths in <platform>.ini
-    overrideCores_.clear();
-    ifstream in(Env::getWorkingPath() + sep + "platform" + sep + Env::platformName() + ".cores.cfg");
-    string line;
-    while (getline(in, line)) {
-        if (line.empty() || line[0] == '#' || line.find('=') == string::npos)
-            continue;
-        string db_name = line.substr(0, line.find("="));
-        string value = line.substr(line.find("=") + 1);
-        PLOG_INFO << "Custom Core Override: " << db_name << "    core: " << value;
-
-        for (CoreInfoPtr ciPtr : cores_) {
-            if (ciPtr->name.find(value) != string::npos) {
-                lcase(db_name);
-                trim(db_name);
-                overrideCores_.insert(std::pair<string, CoreInfoPtr>(db_name, ciPtr));
-                PLOG_INFO << "Found: " << db_name << "    core: " << ciPtr->name << " " << ciPtr->core_path;
-            }
-        }
-    }
-    in.close();
-}
-
-//********************
-// RetroArchService::parseCoreInfo
-//********************
-CoreInfoPtr RetroArchService::parseCoreInfo(const string &file, const string &entry) {
-    ifstream in(file);
-    string line;
-
-    PLOG_INFO << "Parsing ";
-    CoreInfoPtr coreInfoPtr = std::make_shared<CoreInfo>();
-    coreInfoPtr->core_path =
-        Env::getPathToRetroarchDir() + sep + "cores/" + DirEntry::getFileNameWithoutExtension(entry) + ".so";
-    coreInfoPtr->extensions.clear();
-    PLOG_INFO << "CorePath: " << coreInfoPtr->core_path;
-    while (getline(in, line)) {
-        string lcaseline = line;
-        lcase(lcaseline);
-
-        if (lcaseline.rfind("display_name", 0) == 0) {
-            string value = line.substr(lcaseline.find("=") + 1);
-            value.erase(remove(value.begin(), value.end(), '\"'), value.end());
-            trim(value);
-            coreInfoPtr->name = value;
-            PLOG_INFO << "CoreName: " << coreInfoPtr->name;
-        }
-        if (lcaseline.rfind("supported_extensions", 0) == 0) {
-            string value = line.substr(lcaseline.find("=") + 1);
-            value.erase(remove(value.begin(), value.end(), '\"'), value.end());
-            trim(value);
-
-            coreInfoPtr->extensions.clear();
-            std::stringstream check1(value);
-            string intermediate;
-            while (getline(check1, intermediate, '|')) {
-                coreInfoPtr->extensions.push_back(intermediate);
-            }
-        }
-        if (lcaseline.rfind("database", 0) == 0) {
-            string value = line.substr(lcaseline.find("=") + 1);
-            value.erase(remove(value.begin(), value.end(), '\"'), value.end());
-            trim(value);
-
-            coreInfoPtr->databases.clear();
-            std::stringstream check1(value);
-            string intermediate;
-            while (getline(check1, intermediate, '|')) {
-                coreInfoPtr->databases.push_back(intermediate);
-                databases_.insert(intermediate);
-            }
-        }
-    }
-    in.close();
-    return coreInfoPtr;
+    cores_.load(Env::getPathToRetroarchDir(), coresCfgPath());
 }

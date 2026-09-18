@@ -13,6 +13,7 @@
 #include "core/services/scan_service.h"
 
 #include <ableem/engine/ini_file.h>
+#include <ableem/engine/retroarch_playlist.h>
 #include <ableem/engine/serial_scanner.h>
 
 #include <algorithm>
@@ -357,4 +358,85 @@ TEST_CASE("start/requestScan/poll over the real worker thread finds a game end t
     REQUIRE(total.addedGames.size() == 1);
     CHECK(total.addedGames[0]->title == "Crash Bandicoot");
     CHECK(fx.library.usbGames().countGames() == 1);
+}
+
+//*******************************
+// the RetroArch ROM pass
+//*******************************
+namespace {
+
+// a fake RetroArch install next to the games: the binary (what retroArchInstalled() looks for), one
+// installed core with its .info, and the ROM folders. Pointed at through Env like the platform ini would.
+struct RetroArchOnStick {
+    explicit RetroArchOnStick(ScanServiceFixture &fx) : fx(fx) {
+        fx.tmp.writeFile("retroarch/retroarch", "binary");
+        fx.tmp.writeFile("retroarch/info/nestopia_libretro.info",
+                         "display_name = \"Nintendo - NES / Famicom (Nestopia UE)\"\n"
+                         "supported_extensions = \"nes|fds\"\n"
+                         "database = \"Nintendo - Nintendo Entertainment System\"\n");
+        fx.tmp.writeFile("retroarch/cores/nestopia_libretro.so", "core");
+        fx.tmp.makeSubDir("retroarch/playlists");
+        fx.tmp.makeSubDir("roms/Nintendo - Nintendo Entertainment System");
+        fx.env.setRetroarchDir(fx.tmp.at("retroarch"));
+        fx.env.setRetroarchRomsDir(fx.tmp.at("roms"));
+        fx.env.setRetroArchBinaries({fx.tmp.at("retroarch/retroarch")});
+    }
+    void addRom(const string &name) {
+        fx.tmp.writeFile("roms/Nintendo - Nintendo Entertainment System/" + name, "rom");
+    }
+    string playlist() const { return fx.tmp.at("retroarch/playlists/Nintendo - Nintendo Entertainment System.lpl"); }
+    ScanServiceFixture &fx;
+};
+
+} // namespace
+
+TEST_CASE("without RetroArch the ROM folders are not looked at, whatever is in them") {
+    ScanServiceFixture fx;
+    RetroArchOnStick ra(fx);
+    ra.addRom("A.nes");
+    fx.env.setRetroArchBinaries({}); // RetroArch is optional: no binary, no ROM pass
+    CHECK_FALSE(ScanService::romScanEnabled());
+
+    ScanUpdate update = fx.runAndPoll();
+    CHECK(update.finished);
+    CHECK(update.finishedRomCount == 0);
+    CHECK(update.playlistsWritten.empty());
+    CHECK_FALSE(ableem::DirEntry::exists(ra.playlist()));
+    CHECK(ScanService::fingerprintsMatchDisk()); // the games fingerprint alone decides
+}
+
+TEST_CASE("with RetroArch the scan writes a playlist per ROM folder, reports it, and watches the folders") {
+    ScanServiceFixture fx;
+    RetroArchOnStick ra(fx);
+    ra.addRom("A.nes");
+    CHECK(ScanService::romScanEnabled());
+    CHECK_FALSE(ScanService::fingerprintsMatchDisk());
+
+    ScanUpdate update = fx.runAndPoll();
+    CHECK(update.finished);
+    CHECK(update.finishedRomCount == 1);
+    CHECK(update.playlistsWritten == vector<string>{"Nintendo - Nintendo Entertainment System.lpl"});
+    REQUIRE(ableem::DirEntry::exists(ra.playlist()));
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("roms.fingerprint")));
+    CHECK(ScanService::fingerprintsMatchDisk());
+
+    ableem::RetroArchPlaylistEntries entries;
+    REQUIRE(ableem::RetroArchPlaylist::load(ra.playlist(), entries));
+    REQUIRE(entries.size() == 1);
+    CHECK(entries[0].label == "A");
+    CHECK(entries[0].core_path == fx.tmp.at("retroarch/cores/nestopia_libretro.so"));
+
+    // nothing changed: the next cycle rewrites nothing
+    CHECK_FALSE(fx.svc.checkForChanges());
+    CHECK(fx.runAndPoll().playlistsWritten.empty());
+
+    // a ROM copied in is seen by the watcher (twice in a row, as for the games) and by the startup check
+    ra.addRom("B.nes");
+    CHECK_FALSE(ScanService::fingerprintsMatchDisk());
+    CHECK_FALSE(fx.svc.checkForChanges());
+    CHECK(fx.svc.checkForChanges());
+    ScanUpdate second = fx.runAndPoll();
+    CHECK(second.finishedRomCount == 2);
+    CHECK(second.playlistsWritten.size() == 1);
+    CHECK_FALSE(fx.svc.checkForChanges());
 }

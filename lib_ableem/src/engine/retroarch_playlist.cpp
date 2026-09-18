@@ -22,7 +22,7 @@ using fifo_map_workaround = fifo_map<K, V, fifo_map_compare<K>, A>;
 using ordered_json = basic_json<fifo_map_workaround>;
 
 // read a string field. a missing field or a field that is not a string returns the default.
-string str(const json &item, const char *key, const string &def = "") {
+string str(const ordered_json &item, const char *key, const string &def = "") {
     auto it = item.find(key);
     if (it == item.end() || !it->is_string())
         return def;
@@ -37,50 +37,66 @@ string str(const json &item, const char *key, const string &def = "") {
 bool RetroArchPlaylist::isJsonFormat(const string &path) {
     ifstream in(path, ifstream::binary);
     string line;
-    getline(in, line);
-    trim(line);
-    if (line.empty()) {
-        return false;
+    while (getline(in, line)) {
+        trim(line);
+        if (!line.empty())
+            return line[0] == '{'; // RetroArch pretty-prints, a hand-written one may be a single line
     }
-    return line == "{";
+    return false;
 }
 
 //*******************************
 // RetroArchPlaylist::load
 //*******************************
-bool RetroArchPlaylist::load(const string &path, RetroArchPlaylistEntries &entries) {
+bool RetroArchPlaylist::load(const string &path, RetroArchPlaylistEntries &entries, RetroArchPlaylistHeader *header) {
     if (isJsonFormat(path))
-        return loadJson(path, entries);
+        return loadJson(path, entries, header);
+    if (header)
+        header->clear();
     return loadSixLine(path, entries);
 }
 
 //*******************************
 // RetroArchPlaylist::loadJson
 //*******************************
-bool RetroArchPlaylist::loadJson(const string &path, RetroArchPlaylistEntries &entries) {
+bool RetroArchPlaylist::loadJson(const string &path, RetroArchPlaylistEntries &entries,
+                                 RetroArchPlaylistHeader *header) {
     entries.clear();
+    if (header)
+        header->clear();
     ifstream in(path, ifstream::binary);
     if (!in.is_open()) {
         PLOG_WARNING << "Could not open playlist: " << path;
         return false;
     }
 
-    // a truncated or hand edited playlist must not take the whole UI down (nlohmann throws on bad input)
-    json j;
+    // a truncated or hand edited playlist must not take the whole UI down (nlohmann throws on bad input).
+    // ordered_json so the header fields come back in file order.
+    ordered_json j;
     try {
         in >> j;
     } catch (const json::exception &e) {
         PLOG_INFO << "Playlist " << path << " is not valid JSON: " << e.what();
         return false;
     }
-
-    json array = j.value("items", json::array());
-    if (!array.is_array()) {
-        PLOG_INFO << "Playlist " << path << " has no items array";
+    if (!j.is_object()) {
+        PLOG_INFO << "Playlist " << path << " is not a JSON object";
         return false;
     }
 
-    for (const auto &item : array) {
+    auto itemsIt = j.find("items");
+    if (itemsIt == j.end() || !itemsIt->is_array()) {
+        PLOG_INFO << "Playlist " << path << " has no items array";
+        return false;
+    }
+    if (header) {
+        for (auto it = j.begin(); it != j.end(); ++it) {
+            if (it.key() != "items")
+                header->emplace_back(it.key(), it.value().dump());
+        }
+    }
+
+    for (const auto &item : *itemsIt) {
         if (!item.is_object())
             continue;
         RetroArchPlaylistEntry entry;
@@ -128,9 +144,20 @@ bool RetroArchPlaylist::loadSixLine(const string &path, RetroArchPlaylistEntries
 //*******************************
 // RetroArchPlaylist::save
 //*******************************
-bool RetroArchPlaylist::save(const string &path, const RetroArchPlaylistEntries &entries) {
-    ordered_json j;
+bool RetroArchPlaylist::save(const string &path, const RetroArchPlaylistEntries &entries,
+                             const RetroArchPlaylistHeader &header) {
+    // RetroArch reads "version" first, so it leads whatever else the header holds
+    ordered_json j = ordered_json::object();
     j["version"] = "1.0";
+    for (const auto &field : header) {
+        if (field.first == "items")
+            continue;
+        try {
+            j[field.first] = ordered_json::parse(field.second);
+        } catch (const json::exception &e) {
+            PLOG_WARNING << "Playlist header field " << field.first << " dropped: " << e.what();
+        }
+    }
 
     ordered_json items = ordered_json::array();
     for (const auto &entry : entries) {
@@ -145,7 +172,7 @@ bool RetroArchPlaylist::save(const string &path, const RetroArchPlaylistEntries 
     }
     j["items"] = items;
 
-    PLOG_INFO << j.dump();
+    PLOG_DEBUG << "Writing playlist " << path << " (" << entries.size() << " entries)";
     ofstream o(path);
     if (!DirEntry::checkWritable(o, path))
         return false;

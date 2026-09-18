@@ -44,11 +44,14 @@ public:
     void setInternalGamesDir(const std::string &p) { ableem::Environment::setInternalGamesDir(p); }
     void setRetroarchDir(const std::string &p) { ableem::Environment::setRetroarchDir(p); }
     void setRetroarchCoreFile(const std::string &p) { ableem::Environment::setRetroarchCoreFile(p); }
+    void setRetroarchRomsDir(const std::string &p) { ableem::Environment::setRetroarchRomsDir(p); }
+    void setRetroArchBinaries(const std::vector<std::string> &b) { ::Environment::setRetroArchBinaries(b); }
 
 private:
     struct Roots {
         std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath, appDir, kernelConfigDir;
         std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
+        std::string retroarchRomsDir;
         std::vector<std::string> retroArchBinaries;
     };
 
@@ -66,6 +69,9 @@ private:
                              E::getPathToRetroarchDir() + ableem::sep + "cores/km_pcsx_rearmed_neon_libretro.so"
                          ? std::string()
                          : E::getPathToRetroarchCoreFile(),
+                     E::getPathToRetroarchRomsDir() == E::getPathToUSBRoot() + ableem::sep + "roms"
+                         ? std::string()
+                         : E::getPathToRetroarchRomsDir(),
                      ::Environment::retroArchBinaries()};
     }
 
@@ -84,6 +90,7 @@ private:
         E::setInternalGamesDir(r.internalGamesDir);
         E::setRetroarchDir(r.retroarchDir);
         E::setRetroarchCoreFile(r.retroarchCoreFile);
+        E::setRetroarchRomsDir(r.retroarchRomsDir);
         ::Environment::setRetroArchBinaries(r.retroArchBinaries);
     }
 

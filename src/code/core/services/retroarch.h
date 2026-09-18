@@ -6,25 +6,13 @@
 #include "../model/ps_game.h"
 #include "game_query.h"
 
+#include <ableem/engine/retroarch_cores.h>
+
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
-
-//********************
-// CoreInfo
-//********************
-// one retroarch/info/<core>.info file: what the core is called, what it plays, and the .so it lives in
-struct CoreInfo {
-    std::string name;
-    std::vector<std::string> extensions;
-    std::vector<std::string> databases;
-    std::string core_path;
-};
-
-using CoreInfoPtr = std::shared_ptr<CoreInfo>;
-using CoreInfos = std::vector<CoreInfoPtr>;
 
 //********************
 // RAPlaylistInfo
@@ -48,7 +36,8 @@ struct RAPlaylistInfo {
 //
 // Every playlist entry becomes a "foreign" PsGame whose core is resolved here: the entry's own core if the
 // .so exists, else the one resources/platform/<platform>.cores.cfg names for its database, else the first core
-// whose .info lists that database. Entries whose core or image cannot be found are dropped.
+// whose .info lists that database (ableem::CoreInfoTable holds that mapping). Entries whose core or image
+// cannot be found are dropped.
 //
 // Owned by App (App::retroArch()).
 class RetroArchService : public RetroArchGames {
@@ -68,6 +57,11 @@ public:
 
     // RetroArch may have added or removed favorites and history entries while it ran
     void reloadFavoritesAndHistory();
+    // the background scan rewrote playlists: read them all again (the cores stay as loaded)
+    void reloadPlaylists();
+
+    // the platform's cores.cfg, next to the resources: resources/platform/<platform>.cores.cfg
+    static std::string coresCfgPath();
 
     // a playlist title as RetroArch names the boxart file for it
     static std::string escapeName(const std::string &title);
@@ -95,14 +89,9 @@ private:
     bool isGameValid(const PsGame &game) const;
 
     bool autoDetectCorePath(const PsGame &game, std::string &core_name, std::string &core_path) const;
-    bool findOverrideCore(const PsGame &game, std::string &core_name, std::string &core_path) const;
-    CoreInfoPtr parseCoreInfo(const std::string &file, const std::string &entry);
 
     bool loaded_ = false;
-    CoreInfos cores_;
-    std::map<std::string, CoreInfoPtr> defaultCores_;  // database name -> core
-    std::map<std::string, CoreInfoPtr> overrideCores_; // lower-cased database name -> core, from <platform>.cores.cfg
-    std::set<std::string> databases_;                  // every database any core's .info lists
+    ableem::CoreInfoTable cores_;
     std::vector<RAPlaylistInfo> playlistInfos_;
     std::string favoritesDisplayName_{"Favorites"};
     std::string historyDisplayName_{"History"};

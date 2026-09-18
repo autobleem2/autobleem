@@ -378,9 +378,19 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   unexplained), and blueMSX's `Machines/*/config.ini` in the BIOS pack (`EXTRA_SOURCES` in
   `tools/biospack.py`). `make_rpi.sh --debug` + the PC's cross gdb is how a Pi core dump gets read (gdb on
   the Pi hangs in `snd_pcm_open` on the mapped ALSA device).
-- **Not started, planned in `docs/retroarch-scanner-plan.md`**: scanning `RetroArch/roms/` from
-  `ScanService` (a `RetroArchScanner` writing the `.lpl`s, then rdb identification by CRC). Deliberately
-  parked until real ROMs have been run on the Pi through RetroArch's own scanner.
+- **The ROM scan, step 1 of `docs/retroarch-scanner-plan.md`** (2026-09-18): `ScanService`'s cycle goes on
+  from `Games/` to the RetroArch ROM folders **when RetroArch is detected** - `ScanService::romScanEnabled()`,
+  the binary the platform ini names exists and `retroarch_roms_dir` (a new key: `roms` on the console and
+  PC, `RetroArch/roms` on the Pi -> `Env::getPathToRetroarchRomsDir()`) is a directory; RetroArch is optional
+  on every platform and without it none of this runs. `ableem::RetroArchScanner` (engine, see lib_ableem)
+  writes `<playlists>/<system>.lpl` per `roms/<system>/` folder from the file names alone, merged over what
+  is there; the worker reports `WorkerEvent::Kind::PlaylistsWritten`, `poll()` has `RetroArchService::
+  reloadPlaylists()` re-read them and the launcher refreshes its playlist names and the RetroArch set
+  (`ScanUpdate::playlistsWritten`). `roms.fingerprint` (`GamesFingerprint::takeAllFiles`) is watched next
+  to `games.fingerprint`; `ScanService::fingerprintsMatchDisk()` is the startup check for both. Verified on
+  the PC's fake tree (`tools/make_usb.py` fakes a RetroArch install: stub binary, one `.info`, zipped ROMs);
+  **not yet on the Pi or a console.** Steps 2-5 (rdb identification, box art, UI polish, `UpdateRoms.exe`
+  for the console) are still in the plan.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
@@ -496,8 +506,26 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   serialToRegion`), **`IsoDirectoryReader::read`**, **`EcmDecoder::decode`** (+ `setProgressHandler`, which
   is how unecm.c's percentage messages reach the splash). Private: `cd_image_reader.h` (`CdImageReader`,
   `ChdImageReader` behind `ABLEEM_ENABLE_CHD`), `binary_reader.h`, `md5.*` (replaces `head|md5sum`).
-- **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`.
-  `Gui::exportDBToRetroarch` and `RetroArchService` are the only callers.
+- **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`,
+  plus the `RetroArchPlaylistHeader` (2026-09-18): every top-level field but `items`, as opaque JSON text
+  in file order, so a playlist RetroArch 1.22 wrote (version 1.5, `sort_mode`, `scan_content_dir`, ...)
+  survives a rewrite; `save()` puts `version` first. `GameLibrary::exportToRetroArchPlaylist`,
+  `RetroArchService` and the scanner are the callers.
+- **`CoreInfoTable`** (`engine/retroarch_cores.h`, 2026-09-18) - `<retroarch>/info/*.info` for the cores
+  whose `.so` is installed (`CoreInfo`: display name, extensions, databases, `block_extract`), each database
+  mapped to the first installed core listing it (most extensions first) unless the cores.cfg given to
+  `load()` overrides it. Was `RetroArchService::loadCores`; the service holds one, the scan worker builds
+  its own.
+- **`RetroArchScanner`** (`engine/retroarch_scanner.h`, 2026-09-18) - the offline ROM scan:
+  `scan(Options{romsDir, playlistsDir, targetRomsDir}, systemsFrom(cores))` walks each `roms/<system>/`
+  folder that has a core, one entry per game (a `.cue` hides its bins, an `.m3u` its discs, a `.ccd` its
+  image; a `.zip` for a core without `block_extract` is opened - one ROM inside is `zip#rom` named after
+  the zip with the ROM's CRC from the central directory, several are one entry each, none is skipped; an
+  arcade core gets the zip whole), label = the file's stem, and merges into the existing playlist: entries
+  outside the folder stay, an entry whose file is still there is kept exactly (RetroArch's own label/CRC),
+  the vanished go, the new join, sorted by label; `.tmp` + `DirEntry::replaceFile`, only when something
+  changed. `targetRomsDir` is what the playlists name (the console's `/media/roms` when a PC writes them -
+  the plan's step 5); `""` = `romsDir`. `AutoBleem`, `Applications` and `content_*` are never written.
 - **`ThemeSpec`** (`engine/theme_spec.h`) - a theme as a typed struct (`music`, `classic`, `launcher`, `sounds`)
   with `load/save` of theme.json (never throws), `mergeOver(base)` for a partial theme over the default, and
   `resolveFiles()` (the theme's file if it exists, else the default's). `fileFields()` is the one list every
@@ -775,10 +803,10 @@ defaults, which both the services and the screens need.
 | `app_base.*` | `AppBase` | The model of any program drawn with the classic UI: `Config`, `Lang`, `Theme`, `Clock`, the `Gui` singleton (whose window title it sets - `Gui::setWindowTitle` before the first `getInstance()`) and `AppAudio`. Top of `ab_classic`; every `GuiScreen`'s `app` member is one. `AppBase::get()` for the non-screens (Gui, Theme, AppAudio, Fonts). |
 | `app.*` | `App : AppBase` | AutoBleem's model on top of it: the `GameLibrary`, the `Session`, every service (including `ScanService`, `app.scans()`). Top of `ab_ui`. `App::get()` is a `static_cast` of `AppBase::get()`; a game-aware screen declares its own `App &app = App::get();` over `GuiScreen`'s `AppBase &app` (the seven that do: the two game editors, Game Manager, memory cards, playlists, select-memcard, `GuiLauncher`). |
 | `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
-| `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread and returns a `ScanUpdate` (added/updated/removed games, progress, finished). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce, checked every `ScanWatchInterval` when nothing was requested directly. Owned by `App` (`app.scans()`). |
+| `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`, and - with RetroArch detected, `romScanEnabled()` - `ableem::RetroArchScanner` over the ROM folders with its own `CoreInfoTable`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread, has `RetroArchService` reload rewritten playlists, and returns a `ScanUpdate` (added/updated/removed games, `playlistsWritten`, progress, finished with the game and ROM counts). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce over both `games.fingerprint` and `roms.fingerprint`, checked every `ScanWatchInterval` when nothing was requested directly; `fingerprintsMatchDisk()` is the startup check. Owned by `App` (`app.scans()`, constructed with `&retroArch_`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags, the `AB_DEBUG_HOST` macro, `platformName()` (`"psc"`/`"rpi"`/`"pc"` - the one place the build macros decide a path), `retroArchInstalled()` and `padMappingFiles()` (the `gamecontrollerdb.txt` list `Gui`'s constructor hands `Input::loadMappings()` - the kernel's `/etc/autobleem` one on the console, then the shipped one in the resources dir; **loaded since 2026-09-18** - until then nothing called `loadMappings` and the pscbios wizard's output was never read). All path getters live in the library (`getPathToKernelConfigDir()` is `""` off the console); extend `ableem::Environment` instead of adding new literal paths. |
-| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platformName>.ini` (`psc.ini`, `rpi.ini`, `pc.ini`) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. Add per-platform paths here, never as `#ifdef AB_PLATFORM_RPI` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
+| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pc.ini`) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. Add per-platform paths here, never as `#ifdef AB_PLATFORM_RPI` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
 | `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is `English text=Translated text` lines under a `#` header (since 2026-09-18; the old pairs-of-lines layout is still read when the first line is not a comment). **`tools/lang_tools.py`** keeps them in step: `extract` (English.txt from every `_("...")`), `update [--remove-obsolete]`, `validate` (run by `make_win.sh`), `compare <Lang>`, `convert`, `merge <dir>`. A key cannot contain `=` - decorate at render time (`".-= " + _("Testing") + " =-."`). Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
@@ -808,7 +836,7 @@ defaults, which both the services and the screens need.
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
 | `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
-| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), core detection from `info/*.info` + `platform/<platform>.cores.cfg`, Favorites/History. Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
+| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), the core for an entry from its `ableem::CoreInfoTable` (`info/*.info` + `platform/<platform>.cores.cfg`, `coresCfgPath()`), Favorites/History, `reloadPlaylists()` after the scan rewrote them. Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `evoui/screens/evoui_mc_manager.*`, `evoui_app_start.*`, `evoui_btn_guide.*` | | Launcher sub-screens. |
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |

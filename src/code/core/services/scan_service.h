@@ -19,6 +19,8 @@
 #include <thread>
 #include <vector>
 
+class RetroArchService;
+
 //******************
 // ScanUpdate
 //******************
@@ -41,9 +43,15 @@ struct ScanUpdate {
     PsGames updatedGames;            // existing games whose row was refreshed since the last poll
     std::string lastFailedGamePath;  // non-empty when a game failed verify() since the last poll
 
+    // the ROM pass rewrote RetroArch playlists since the last poll (their file names, "<system>.lpl") -
+    // RetroArchService has been told to reload them by the time poll() returns; the launcher re-reads
+    // the playlist names and the set it is showing
+    std::vector<std::string> playlistsWritten;
+
     bool finished = false; // a whole scan cycle completed during this poll
     int finishedGameCount = 0;
     int finishedFailedCount = 0;
+    int finishedRomCount = 0; // games in the RetroArch ROM folders, every system together (0 without RetroArch)
 };
 
 //******************
@@ -60,6 +68,12 @@ struct ScanUpdate {
 // still landing on the USB stick does not trigger a scan mid-copy). setWatching(false) turns that off
 // (during a game launch, say) without stopping the thread; requestScan() still works while not watching.
 //
+// When RetroArch is there (romScanEnabled(): its binary and its ROM folders exist - RetroArch is optional
+// on every platform, and without it none of this runs) the same cycle goes on to the ROM folders:
+// ableem::RetroArchScanner writes a playlist per system from the file names, the worker reports which
+// ones changed (WorkerEvent::Kind::PlaylistsWritten) and poll() has the service reload them. The ROM
+// folders have a fingerprint of their own (roms.fingerprint), watched the same way.
+//
 // The worker runs at the OS's lowest scheduling priority (System::lowerCurrentThreadPriority(), the first
 // thing threadMain() does) so a scan - which nothing is waiting on - never takes CPU time away from a
 // running emulator or anything else on the system.
@@ -67,7 +81,9 @@ struct ScanUpdate {
 // Owned by App (App::scans()).
 class ScanService {
 public:
-    explicit ScanService(ableem::GameLibrary &library) : library_(library) {}
+    // retroArch is told to reload its playlists when the ROM pass rewrote any (nullptr: nobody to tell)
+    explicit ScanService(ableem::GameLibrary &library, RetroArchService *retroArch = nullptr)
+        : library_(library), retroArch_(retroArch) {}
     ~ScanService();
     ScanService(const ScanService &) = delete;
     ScanService &operator=(const ScanService &) = delete;
@@ -93,10 +109,16 @@ public:
     bool checkForChanges();
     void runScan();
 
-    // <working>/games.fingerprint - where the fingerprint of the last completed scan is kept. Public so
-    // AutoBleem::run() can apply the same "does the disk match what we last scanned" test at startup,
-    // before start() has even been called, to decide whether to requestScan() right away.
+    // <working>/games.fingerprint and roms.fingerprint - where the fingerprints of the last completed scan
+    // are kept. fingerprintsMatchDisk() is the "does the disk match what we last scanned" test, for
+    // AutoBleem::run() to apply at startup, before start() has even been called, to decide whether to
+    // requestScan() right away.
     static std::string fingerprintFilePath();
+    static std::string romsFingerprintFilePath();
+    static bool fingerprintsMatchDisk();
+
+    // RetroArch is installed and has ROM folders to scan - see the class comment
+    static bool romScanEnabled();
 
 private:
     //******************
@@ -123,7 +145,7 @@ private:
     // one thing the worker wants the main thread to know about, tagged by kind; only the fields that kind
     // uses are meaningful, the rest sit at their default. See ScanService::poll().
     struct WorkerEvent {
-        enum class Kind { ScanStarted, Progress, GameVerified, GameFailedVerify, Finished };
+        enum class Kind { ScanStarted, Progress, GameVerified, GameFailedVerify, PlaylistsWritten, Finished };
         Kind kind = Kind::Progress;
 
         std::vector<std::string> currentPaths; // ScanStarted: every game folder this scan found
@@ -136,10 +158,14 @@ private:
         ScannedGame game;       // GameVerified
         std::string failedPath; // GameFailedVerify
 
+        std::vector<std::string> playlists; // PlaylistsWritten: the "<system>.lpl" files that changed
+
         ableem::GamesHierarchy hierarchy; // Finished
         ableem::UsbGames gamesToAddToDB;
         ableem::GamesFingerprint fingerprint;
+        ableem::GamesFingerprint romsFingerprint;
         int failedCount = 0;
+        int romCount = 0;
     };
 
     class Listener;
@@ -148,8 +174,11 @@ private:
     void pushEvent(WorkerEvent event);
     void threadMain();
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
+    // the ROM pass: every playlist a system folder yields, merged over what is there. Returns the game count.
+    int scanRetroArchRoms(Listener &listener, std::vector<std::string> &playlistsWritten);
 
     ableem::GameLibrary &library_;
+    RetroArchService *retroArch_ = nullptr;
 
     std::thread thread_;
     std::atomic<bool> stopping_{false};
@@ -163,4 +192,6 @@ private:
     // worker-thread-only state for the watcher's debounce - see checkForChanges()
     ableem::GamesFingerprint lastScannedFingerprint_;
     ableem::GamesFingerprint lastCheckFingerprint_;
+    ableem::GamesFingerprint lastScannedRomsFingerprint_;
+    ableem::GamesFingerprint lastCheckRomsFingerprint_;
 };

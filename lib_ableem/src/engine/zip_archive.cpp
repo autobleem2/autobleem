@@ -44,11 +44,24 @@ struct Reader {
     unsigned count() { return mz_zip_reader_get_num_files(&zip); }
 
     bool name(unsigned i, string &out, bool &isDir) {
+        ZipEntry entry;
+        if (!stat(i, entry))
+            return false;
+        out = entry.name;
+        isDir = entry.isDir;
+        return true;
+    }
+
+    bool stat(unsigned i, ZipEntry &entry) {
         mz_zip_archive_file_stat st;
         if (!mz_zip_reader_file_stat(&zip, i, &st))
             return false;
-        out = st.m_filename;
-        isDir = mz_zip_reader_is_file_a_directory(&zip, i) != 0;
+        entry.name = st.m_filename;
+        entry.isDir = mz_zip_reader_is_file_a_directory(&zip, i) != 0;
+        if (entry.isDir && (entry.name.empty() || entry.name.back() != '/'))
+            entry.name += '/';
+        entry.crc = st.m_crc32;
+        entry.size = st.m_uncomp_size;
         return true;
     }
 };
@@ -90,9 +103,23 @@ bool ZipArchive::list(const string &zipPath, vector<string> &names) {
         bool isDir;
         if (!reader.name(i, name, isDir))
             continue;
-        if (isDir && (name.empty() || name.back() != '/'))
-            name += '/';
         names.push_back(name);
+    }
+    return true;
+}
+
+//*******************************
+// ZipArchive::listEntries
+//*******************************
+bool ZipArchive::listEntries(const string &zipPath, vector<ZipEntry> &entries) {
+    entries.clear();
+    Reader reader(zipPath);
+    if (!reader.open)
+        return false;
+    for (unsigned i = 0; i < reader.count(); i++) {
+        ZipEntry entry;
+        if (reader.stat(i, entry))
+            entries.push_back(entry);
     }
     return true;
 }

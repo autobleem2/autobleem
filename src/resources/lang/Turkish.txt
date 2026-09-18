@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 240
+# Untranslated: 53 / Total: 242
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -88,16 +88,16 @@ Frameskip:=Kare Atlama:
 Free=Boş
 free of=
 Free space=Boş alan
-GAME=OYUN
 Game=Oyun
+GAME=OYUN
 Game data=
 Game failed to verify:=Oyun doğrulanamadı:
 Game History=Oyun Geçmişi
 Game Manager=Oyun Yöneticisi
 Game manager - Select game=Oyun yöneticisi - Oyun seçin
 GAME OVER=OYUN BİTTİ
-games=oyun
 Games=
+games=oyun
 GFX Filter:=GFX Filtresi:
 Go back=Geri dön
 Graphics=Grafik
@@ -184,12 +184,14 @@ Resume point saved to slot=Devam noktası slota kaydedildi
 RetroArch=RetroArch is not installed
 RetroArch and emulation cores=Retroboot ve çekirdek emülasyonları
 RetroArch is not installed=RetroArch yüklü değil
+ROMs=
 Run using RetroArch=RetroArch ile Çalıştır
 Safely power off the console=Konsolu güvenle kapat
 Scan complete:=Tarama tamamlandı:
 Scanline Level:=Tarama Satırı Seviyesi:
 Scanlines:=Scanning...
 Scanning=Taranıyor
+Scanning ROMs=
 Scanning...=Taranıyor...
 SCORE=SKOR
 Select=Seç

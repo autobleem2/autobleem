@@ -22,6 +22,10 @@ public:
     // not trigger a rescan.
     static GamesFingerprint take(const std::string &gamesDir);
 
+    // the same over a tree of anything - RetroArch's ROM folders, where every file is a game (or hides
+    // one): every file is recorded, only dot entries are skipped. An empty fingerprint for a missing dir.
+    static GamesFingerprint takeAllFiles(const std::string &dir);
+
     bool load(const std::string &path); // false (fingerprint left empty) if the file does not exist/parse
     bool save(const std::string &path) const;
 

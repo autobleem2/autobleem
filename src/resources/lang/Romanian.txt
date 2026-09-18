@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -88,16 +88,16 @@ Frameskip:=Frameskip:
 Free=Liber
 free of=
 Free space=Spatiu liber
-GAME=Joc
 Game=Joc
+GAME=Joc
 Game data=
 Game failed to verify:=Verificarea jocului a esuat:
 Game History=Istoric Jocuri
 Game Manager=Manager jocuri
 Game manager - Select game=Manager jocuri - selecteaza joc
 GAME OVER=JOC TERMINAT
-games=Jocuri
 Games=
+games=Jocuri
 GFX Filter:=Filtru GFX:
 Go back=Inapoi
 Graphics=Grafica
@@ -184,12 +184,14 @@ Resume point saved to slot=Continua de la puntul salvat in slotul
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot si nuclee de emulare
 RetroArch is not installed=RetroArch nu este instalat
+ROMs=
 Run using RetroArch=Rulează cu RetroArch
 Safely power off the console=Opreste consola in siguranta
 Scan complete:=Scanare finalizata:
 Scanline Level:=Nivel ScanLine:
 Scanlines:=Scanlines:
 Scanning=Scanare
+Scanning ROMs=
 Scanning...=Scanez...
 SCORE=SCOR
 Select=Selecteaza

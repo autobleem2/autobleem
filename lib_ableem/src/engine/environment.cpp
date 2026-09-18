@@ -24,6 +24,7 @@ string coversDbDir;
 string internalGamesDir = "/gaadata";
 string retroarchDir;      // empty: derived from usbRoot
 string retroarchCoreFile; // empty: RetroBoot's pcsx_rearmed_neon core under the retroarch dir
+string retroarchRomsDir;  // empty: usb:/roms, RetroBoot's layout
 } // namespace
 
 //*******************************
@@ -69,6 +70,9 @@ void Environment::setRetroarchDir(const string &path) {
 }
 void Environment::setRetroarchCoreFile(const string &path) {
     retroarchCoreFile = path;
+}
+void Environment::setRetroarchRomsDir(const string &path) {
+    retroarchRomsDir = path;
 }
 
 //*******************************
@@ -129,8 +133,8 @@ string Environment::getPathToRetroarchCoreFile() {
 bool Environment::hasRetroBoot() {
     return DirEntry::exists(getPathToRetroarchDir() + sep + "retroboot");
 }
-string Environment::getPathToRomsDir() {
-    return usbRoot + sep + "roms";
+string Environment::getPathToRetroarchRomsDir() {
+    return retroarchRomsDir.empty() ? usbRoot + sep + "roms" : retroarchRomsDir;
 }
 string Environment::getPathToRegionalDBFile() {
     return regionalDbFile;

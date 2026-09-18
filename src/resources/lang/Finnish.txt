@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -88,16 +88,16 @@ Frameskip:=Frameskip:
 Free=Vapaa
 free of=
 Free space=Vapaa tila
-GAME=PELI
 Game=Peli
+GAME=PELI
 Game data=
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game History=Pelihistoria
 Game Manager=Pelien hallinta
 Game manager - Select game=Pelien hallinta - Valitse peli
 GAME OVER=PELI PÄÄTTYI
-games=pelit
 Games=
+games=pelit
 GFX Filter:=GFX-Suodatin:
 Go back=Mene takaisin
 Graphics=Grafiikat
@@ -184,12 +184,14 @@ Resume point saved to slot=Jatko-piste tallennettu paikkaan
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot ja emulaatio ytimet
 RetroArch is not installed=RetroArch ei ole asennettu
+ROMs=
 Run using RetroArch=Käynnistä RetroArchilla
 Safely power off the console=Sammuta konsoli turvallisesti
 Scan complete:=Skannaus valmis:
 Scanline Level:=Skannaustaso:
 Scanlines:=Skannauslinjat:
 Scanning=Skannataan
+Scanning ROMs=
 Scanning...=Skannataan:
 SCORE=PISTEET
 Select=Valitse

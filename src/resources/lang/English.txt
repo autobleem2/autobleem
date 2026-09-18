@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 240
+# Untranslated: 0 / Total: 242
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Free
 free of=free of
 Free space=Free space
-GAME=GAME
 Game=Game
+GAME=GAME
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
@@ -184,12 +184,14 @@ Resume point saved to slot=Resume point saved to slot
 RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch and emulation cores
 RetroArch is not installed=RetroArch is not installed
+ROMs=ROMs
 Run using RetroArch=Run using RetroArch
 Safely power off the console=Safely power off the console
 Scan complete:=Scan complete:
 Scanline Level:=Scanline Level:
 Scanlines:=Scanlines:
 Scanning=Scanning
+Scanning ROMs=Scanning ROMs
 Scanning...=Scanning...
 SCORE=SCORE
 Select=Select

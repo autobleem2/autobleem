@@ -131,9 +131,7 @@ int AutoBleem::run() {
     // the same triggers the classic menu's forceScan prompt used to check, minus autobleem.prev (a
     // GamesFingerprint now stands in for it - see ScanService); moving loose game files into their own
     // sub-directories is ScanService's worker's job now, the first thing runScan() does.
-    GamesFingerprint storedFingerprint;
-    bool fingerprintOnDiskMatches = storedFingerprint.load(scans().fingerprintFilePath()) &&
-                                    storedFingerprint == GamesFingerprint::take(pathToGamesDir);
+    bool fingerprintOnDiskMatches = ScanService::fingerprintsMatchDisk();
     // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
     // cost a full scan on every boot (it did, on the Pi)
     bool gamelistXmlExists =

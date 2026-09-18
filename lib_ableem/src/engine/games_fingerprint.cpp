@@ -15,10 +15,12 @@ namespace {
 // walk
 //*******************************
 // path is the directory being visited, relPath is its path relative to the scan root ("" at the root, no
-// trailing separator otherwise)
-void walk(const string &path, const string &relPath, map<string, string> &entries) {
+// trailing separator otherwise). allFiles records every file rather than the game images only.
+void walk(const string &path, const string &relPath, map<string, string> &entries, bool allFiles) {
     for (const DirEntry &entry : DirEntry::diru(path)) {
         if (entry.name == SAVESTATES_DIR_NAME || entry.name == MEMCARDS_DIR_NAME)
+            continue;
+        if (allFiles && (entry.name.empty() || entry.name[0] == '.'))
             continue;
 
         string childRel = relPath.empty() ? entry.name : relPath + "/" + entry.name;
@@ -26,8 +28,8 @@ void walk(const string &path, const string &relPath, map<string, string> &entrie
 
         if (entry.isDir) {
             entries[childRel + "/"] = "";
-            walk(childPath, childRel, entries);
-        } else if (DirEntry::isAGameFile(entry.name) || DirEntry::matchExtension(entry.name, EXT_ECM)) {
+            walk(childPath, childRel, entries, allFiles);
+        } else if (allFiles || DirEntry::isAGameFile(entry.name) || DirEntry::matchExtension(entry.name, EXT_ECM)) {
             long long size = DirEntry::fileSize(childPath);
             entries[childRel] = to_string(size);
         }
@@ -41,7 +43,16 @@ void walk(const string &path, const string &relPath, map<string, string> &entrie
 //*******************************
 GamesFingerprint GamesFingerprint::take(const string &gamesDir) {
     GamesFingerprint fp;
-    walk(DirEntry::removeSeparatorFromEndOfPath(gamesDir), "", fp.entries_);
+    walk(DirEntry::removeSeparatorFromEndOfPath(gamesDir), "", fp.entries_, false);
+    return fp;
+}
+
+//*******************************
+// GamesFingerprint::takeAllFiles
+//*******************************
+GamesFingerprint GamesFingerprint::takeAllFiles(const string &dir) {
+    GamesFingerprint fp;
+    walk(DirEntry::removeSeparatorFromEndOfPath(dir), "", fp.entries_, true);
     return fp;
 }
 

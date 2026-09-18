@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 44 / Total: 240
+# Untranslated: 44 / Total: 242
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -88,16 +88,16 @@ Frameskip:=Pomiń klatki:
 Free=Wolne
 free of=
 Free space=Wolne miejsce
-GAME=GRA
 Game=Gra
+GAME=GRA
 Game data=Dane gier
 Game failed to verify:=Nie udało się zweryfikować Gry:
 Game History=Historia Gry
 Game Manager=Menadżer gier
 Game manager - Select game=Manadżer gier - Wybierz grę
 GAME OVER=KONIEC GRY
-games=gry
 Games=
+games=gry
 GFX Filter:=Filtr grafiki:
 Go back=Powrót
 Graphics=Grafika
@@ -184,12 +184,14 @@ Resume point saved to slot=Zapisano punkt wznowienia do slotu
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot i rdzenie
 RetroArch is not installed=RetroArch jest nie zainstalowany
+ROMs=ROMy
 Run using RetroArch=Uruchom za pomocą RetroArch
 Safely power off the console=Bezpiecznie wyłącz konsolę
 Scan complete:=Skanowanie zakończone:
 Scanline Level:=Intensywność linii:
 Scanlines:=Linie:
 Scanning=Skanowanie
+Scanning ROMs=Skanowanie ROMów
 Scanning...=Skanuję...
 SCORE=WYNIK
 Select=Wybierz

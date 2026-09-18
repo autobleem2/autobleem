@@ -12,6 +12,12 @@
 #include <iostream>
 #include <algorithm>
 #include "ableem/engine/log.h"
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 using namespace std;
 
@@ -407,6 +413,17 @@ bool DirEntry::removeFile(const string &path) {
 //*******************************
 bool DirEntry::renameFile(const std::string &pathFrom, const std::string &pathTo) {
     return rename(pathFrom.c_str(), pathTo.c_str()) == 0;
+}
+
+//*******************************
+// DirEntry::replaceFile
+//*******************************
+bool DirEntry::replaceFile(const std::string &pathFrom, const std::string &pathTo) {
+#ifdef _WIN32
+    return MoveFileExA(pathFrom.c_str(), pathTo.c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
+#else
+    return rename(pathFrom.c_str(), pathTo.c_str()) == 0;
+#endif
 }
 
 //*******************************

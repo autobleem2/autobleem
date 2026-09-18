@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -88,16 +88,16 @@ Frameskip:=Frameskip:
 Free=Vrij
 free of=
 Free space=Vrije ruimte
-GAME=GAME
 Game=Game
+GAME=GAME
 Game data=
 Game failed to verify:=Game verificatie mislukt:
 Game History=Game geschiedenis
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Selecteer game
 GAME OVER=GAME OVER
-games=games
 Games=
+games=games
 GFX Filter:=GFX Filter:
 Go back=Ga terug
 Graphics=Graphics
@@ -184,12 +184,14 @@ Resume point saved to slot=Hervattingspunt opgeslagen naar slot
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot en emulatiekernen
 RetroArch is not installed=RetroArch is niet geïnstalleerd
+ROMs=
 Run using RetroArch=Uitvoeren met RetroArch
 Safely power off the console=Console veilig uitschakelen
 Scan complete:=Scan voltooid:
 Scanline Level:=Scanline niveau:
 Scanlines:=Scanlines:
 Scanning=Scannen
+Scanning ROMs=
 Scanning...=Scannen...
 SCORE=SCORE
 Select=Selecteer

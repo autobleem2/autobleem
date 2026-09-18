@@ -58,7 +58,7 @@ protected:
     ResumePointService resumePoints_;
     RetroArchService retroArch_;
     ableem::ThumbnailLookup thumbnails_;
-    ScanService scans_{gameLibrary};
+    ScanService scans_{gameLibrary, &retroArch_};
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 };

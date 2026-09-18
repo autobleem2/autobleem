@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -88,16 +88,16 @@ Frameskip:=Pular frame:
 Free=Livre
 free of=
 Free space=Espaço livre
-GAME=JOGO
 Game=Jogo
+GAME=JOGO
 Game data=
 Game failed to verify:=Falha ao verificar o jogo:
 Game History=Histórico de Jogos
 Game Manager=Gerenciador de Jogos
 Game manager - Select game=Gerenciador de Jogos - Selecionar jogo
 GAME OVER=FIM DE JOGO
-games=jogos
 Games=
+games=jogos
 GFX Filter:=Filtro GFX:
 Go back=Voltar
 Graphics=Gráficos
@@ -184,12 +184,14 @@ Resume point saved to slot=Jogo salvo no slot
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e núcleos de emulação
 RetroArch is not installed=RetroArch não está instalado
+ROMs=
 Run using RetroArch=Executar com RetroArch
 Safely power off the console=Desligue o console com segurança
 Scan complete:=Varredura concluída:
 Scanline Level:=Nível Scanline:
 Scanlines:=Scanlines:
 Scanning=Varredura
+Scanning ROMs=
 Scanning...=Escaneando...
 SCORE=PONTUAÇÃO
 Select=Selecionar

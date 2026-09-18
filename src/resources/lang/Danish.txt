@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -88,16 +88,16 @@ Frameskip:=Frameskip:
 Free=Fri
 free of=
 Free space=Ledig plads
-GAME=SPIL
 Game=Spil
+GAME=SPIL
 Game data=
 Game failed to verify:=Spilverificering mislykkedes:
 Game History=Spilhistorik
 Game Manager=Spilbibliotek
 Game manager - Select game=Spilbibliotek - Vælg spil
 GAME OVER=SPILLET SLUT
-games=spil
 Games=
+games=spil
 GFX Filter:=Grafik Filter:
 Go back=Tilbage
 Graphics=Grafik
@@ -184,12 +184,14 @@ Resume point saved to slot=Genoptagelsespunkt gemt til slot
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot og emulatorkerner
 RetroArch is not installed=RetroArch er ikke installeret
+ROMs=
 Run using RetroArch=Kør med RetroArch
 Safely power off the console=Sluk konsollen sikkert
 Scan complete:=Scanning fuldført:
 Scanline Level:=Scanline-niveau:
 Scanlines:=Scanlines:
 Scanning=Scanner
+Scanning ROMs=
 Scanning...=Scanner...
 SCORE=POINT
 Select=Vælg

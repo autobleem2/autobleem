@@ -5,9 +5,12 @@
 
 The layout is CLAUDE.md's "Smoke test layout": the payload's rc scripts and themes, src/resources next to the
 binary, the cover DBs, a copy of internal.db, and one fake PS1 game (a generated bin/cue whose ISO holds a
-SLUS_012.34 file, so the scanner finds a serial). Everything that comes from the repo is refreshed on every
-run - the exe, resources, themes, rc scripts - and everything the app writes stays (Games/, System/,
-regional.db, memcards, save states) unless --fresh wipes the whole tree first.
+SLUS_012.34 file, so the scanner finds a serial). A fake RetroArch install too - a stub binary (what makes
+the app treat RetroArch as present), one fake core with an .info naming three systems, and a few tiny zipped
+ROMs in roms/<system>/ - so the background scan's ROM pass has something to write playlists for. Everything
+that comes from the repo is refreshed on every run - the exe, resources, themes, rc scripts - and everything
+the app writes stays (Games/, System/, regional.db, memcards, save states, the playlists) unless --fresh
+wipes the whole tree first.
 
 The .vscode tasks call it after every build; tools/win_drive.ps1 and the debugger run against it.
 """
@@ -17,6 +20,7 @@ import shutil
 import sqlite3
 import struct
 import sys
+import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -157,6 +161,44 @@ def make_cover_db(path):
 # the console tools under apps/ that are staged into usb/Apps/<tool>/ for a visual test on Windows
 TOOLS = ['pscbios', 'abflashkit']
 
+# the fake RetroArch: one core that "plays" three systems, and a couple of ROMs per system. The names are
+# real no-intro names so the thumbnail lookup has something to match once a thumbnail pack is dropped in.
+FAKE_SYSTEMS = {
+    'Nintendo - Nintendo Entertainment System': ('nes', ['Adventures of Lolo (USA)', 'Arkanoid (USA)',
+                                                         'Battletoads (USA)']),
+    'Nintendo - Super Nintendo Entertainment System': ('sfc', ['Chrono Trigger (USA)', 'EarthBound (USA)']),
+    'Sega - Mega Drive - Genesis': ('md', ['Sonic The Hedgehog (USA, Europe)', 'Streets of Rage 2 (USA)']),
+}
+
+
+def make_fake_retroarch(usb):
+    """retroarch/ with a stub binary, the fake core + .info, and roms/<system>/<game>.zip (one ROM inside)"""
+    ra = os.path.join(usb, 'retroarch')
+    for d in ('cores', 'info', 'playlists'):
+        os.makedirs(os.path.join(ra, d), exist_ok=True)
+    binary = os.path.join(ra, 'retroarch')
+    if not os.path.exists(binary):
+        with open(binary, 'w') as f:
+            f.write('#!/bin/sh\n# a stand-in: Env::retroArchInstalled() only asks whether the file exists\n')
+    with open(os.path.join(ra, 'cores', 'fake_libretro.so'), 'wb') as f:
+        f.write(b'not a core')
+    extensions = '|'.join(sorted({ext for ext, _ in FAKE_SYSTEMS.values()}))
+    with open(os.path.join(ra, 'info', 'fake_libretro.info'), 'w', encoding='utf-8') as f:
+        f.write('display_name = "Fake core"\n')
+        f.write('supported_extensions = "%s"\n' % extensions)
+        f.write('database = "%s"\n' % '|'.join(FAKE_SYSTEMS))
+
+    roms = os.path.join(usb, 'roms')
+    for system, (ext, games) in FAKE_SYSTEMS.items():
+        folder = os.path.join(roms, system)
+        os.makedirs(folder, exist_ok=True)
+        for game in games:
+            path = os.path.join(folder, game + '.zip')
+            if os.path.exists(path):
+                continue
+            with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
+                z.writestr('%s.%s' % (game, ext), b'fake rom ' + game.encode('utf-8'))
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -221,6 +263,7 @@ def main():
     games = os.path.join(usb, 'Games')
     os.makedirs(games, exist_ok=True)
     make_fake_game(games)
+    make_fake_retroarch(usb)
 
     print('usb root ready:', usb)
     print('run:  cd "%s" && autobleem-gui.exe "%s"   (C:\\msys64\\ucrt64\\bin on PATH for the SDL DLLs)' % (app, usb))

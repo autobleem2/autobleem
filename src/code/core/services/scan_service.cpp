@@ -1,8 +1,12 @@
 #include "scan_service.h"
 #include "environment.h"
+#include "retroarch.h"
 #include "system.h"
 #include "../main.h"
 #include "../model/timing.h"
+
+#include <ableem/engine/retroarch_cores.h>
+#include <ableem/engine/retroarch_scanner.h>
 
 #include <chrono>
 #include <iostream>
@@ -78,6 +82,34 @@ string ScanService::fingerprintFilePath() {
 }
 
 //*******************************
+// ScanService::romsFingerprintFilePath
+//*******************************
+string ScanService::romsFingerprintFilePath() {
+    return Env::getWorkingPath() + sep + "roms.fingerprint";
+}
+
+//*******************************
+// ScanService::romScanEnabled
+//*******************************
+bool ScanService::romScanEnabled() {
+    return Env::retroArchInstalled() && DirEntry::isDirectory(Env::getPathToRetroarchRomsDir());
+}
+
+//*******************************
+// ScanService::fingerprintsMatchDisk
+//*******************************
+bool ScanService::fingerprintsMatchDisk() {
+    GamesFingerprint stored;
+    if (!stored.load(fingerprintFilePath()) || stored != GamesFingerprint::take(Env::getPathToGamesDir()))
+        return false;
+    if (!romScanEnabled())
+        return true;
+    GamesFingerprint storedRoms;
+    return storedRoms.load(romsFingerprintFilePath()) &&
+           storedRoms == GamesFingerprint::takeAllFiles(Env::getPathToRetroarchRomsDir());
+}
+
+//*******************************
 // ScanService::start
 //*******************************
 void ScanService::start() {
@@ -126,6 +158,8 @@ void ScanService::threadMain() {
 
     lastScannedFingerprint_.load(fingerprintFilePath()); // false (left empty) if nothing was ever scanned
     lastCheckFingerprint_ = lastScannedFingerprint_;
+    lastScannedRomsFingerprint_.load(romsFingerprintFilePath());
+    lastCheckRomsFingerprint_ = lastScannedRomsFingerprint_;
 
     auto lastWatchCheck = chrono::steady_clock::now() - chrono::milliseconds(ScanWatchInterval);
     while (!stopping_.load()) {
@@ -156,7 +190,40 @@ bool ScanService::checkForChanges() {
     bool changedFromScanned = !(fresh == lastScannedFingerprint_);
     bool stableSinceLastCheck = (fresh == lastCheckFingerprint_);
     lastCheckFingerprint_ = fresh;
+
+    // the ROM folders, the same way; a change in either tree runs the whole cycle, once both are still
+    if (romScanEnabled()) {
+        GamesFingerprint freshRoms = GamesFingerprint::takeAllFiles(Env::getPathToRetroarchRomsDir());
+        bool romsChanged = !(freshRoms == lastScannedRomsFingerprint_);
+        bool romsStable = (freshRoms == lastCheckRomsFingerprint_);
+        lastCheckRomsFingerprint_ = freshRoms;
+        if (!stableSinceLastCheck || !romsStable)
+            return false;
+        return changedFromScanned || romsChanged;
+    }
     return changedFromScanned && stableSinceLastCheck;
+}
+
+//*******************************
+// ScanService::scanRetroArchRoms
+//*******************************
+// The worker's own CoreInfoTable, not RetroArchService's: the service belongs to the main thread, and the
+// .info files are a few hundred small reads. The system table is what the service would answer - the same
+// .info mapping under the same platform cores.cfg.
+int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlistsWritten) {
+    ableem::CoreInfoTable cores;
+    cores.load(Env::getPathToRetroarchDir(), RetroArchService::coresCfgPath());
+
+    ableem::RetroArchScanner::Options options;
+    options.romsDir = Env::getPathToRetroarchRomsDir();
+    options.playlistsDir = Env::getPathToRetroarchPlaylistsDir();
+    ableem::RetroArchScanner scanner(&listener);
+    ableem::RetroArchScanResult result = scanner.scan(options, ableem::RetroArchScanner::systemsFrom(cores));
+    playlistsWritten = result.playlistsWritten;
+    PLOG_INFO << "RetroArch ROM scan: " << result.systemsScanned << " systems, " << result.gamesFound << " games, "
+              << result.playlistsWritten.size() << " playlists written, " << result.unknownFolders.size()
+              << " folders with no core";
+    return result.gamesFound;
 }
 
 //*******************************
@@ -198,12 +265,31 @@ void ScanService::runScan() {
     lastScannedFingerprint_ = fp;
     lastCheckFingerprint_ = fp;
 
+    // the other systems' ROMs, when RetroArch is there to play them
+    int romCount = 0;
+    GamesFingerprint romsFp;
+    if (romScanEnabled()) {
+        vector<string> playlistsWritten;
+        romCount = scanRetroArchRoms(listener, playlistsWritten);
+        if (!playlistsWritten.empty()) {
+            WorkerEvent written;
+            written.kind = WorkerEvent::Kind::PlaylistsWritten;
+            written.playlists = playlistsWritten;
+            pushEvent(std::move(written));
+        }
+        romsFp = GamesFingerprint::takeAllFiles(Env::getPathToRetroarchRomsDir());
+    }
+    lastScannedRomsFingerprint_ = romsFp;
+    lastCheckRomsFingerprint_ = romsFp;
+
     WorkerEvent finished;
     finished.kind = WorkerEvent::Kind::Finished;
     finished.hierarchy = std::move(hierarchy);
     finished.gamesToAddToDB = scanner.gamesToAddToDB;
     finished.fingerprint = fp;
+    finished.romsFingerprint = romsFp;
     finished.failedCount = listener.failedCount;
+    finished.romCount = romCount;
     pushEvent(std::move(finished));
 
     scanning_.store(false);
@@ -298,6 +384,13 @@ ScanUpdate ScanService::poll() {
             break;
         }
 
+        case WorkerEvent::Kind::PlaylistsWritten:
+            if (retroArch_)
+                retroArch_->reloadPlaylists();
+            update.playlistsWritten.insert(update.playlistsWritten.end(), event.playlists.begin(),
+                                           event.playlists.end());
+            break;
+
         case WorkerEvent::Kind::Finished: {
             // writeSubDirRows/writeAutobleemList look games up by UsbGame::fullPath (no trailing
             // separator) - strip the one loadGamePaths() rows always carry so the keys match
@@ -310,11 +403,13 @@ ScanUpdate ScanService::poll() {
             library_.writeEmulationStationGamelist();
             library_.exportToRetroArchPlaylist();
             event.fingerprint.save(fingerprintFilePath());
+            event.romsFingerprint.save(romsFingerprintFilePath());
 
             update.active = false;
             update.finished = true;
             update.finishedGameCount = static_cast<int>(event.gamesToAddToDB.size());
             update.finishedFailedCount = event.failedCount;
+            update.finishedRomCount = event.romCount;
             break;
         }
         }

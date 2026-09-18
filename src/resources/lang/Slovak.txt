@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -88,16 +88,16 @@ Frameskip:=Preskočenie snímok:
 Free=Voľné
 free of=
 Free space=Voľné miesto
-GAME=HRA
 Game=Hra
+GAME=HRA
 Game data=
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game History=História hry
 Game Manager=Správca hier
 Game manager - Select game=Správca hry - Vybrať hru
 GAME OVER=KONIEC HRY
-games=hry
 Games=
+games=hry
 GFX Filter:=Grafický filter:
 Go back=Späť
 Graphics=Grafika
@@ -184,12 +184,14 @@ Resume point saved to slot=Bod obnovy uložený na pozíciu
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot a jadrá emulácie
 RetroArch is not installed=RetroArch nie je nainštalovaný
+ROMs=
 Run using RetroArch=Spustiť cez RetroArch
 Safely power off the console=Bezpečne vypnúť konzolu
 Scan complete:=Skenovanie dokončené:
 Scanline Level:=Úroveň obrazových riadkov:
 Scanlines:=Obrazové riadky:
 Scanning=Skenovanie
+Scanning ROMs=
 Scanning...=Vyhľadávam...
 SCORE=SKÓRE
 Select=Vybrať

@@ -197,11 +197,18 @@ void GuiLauncher::showSetName() {
 // folder removed while the scanner watched, or merged into another) the first game of the set - or none -
 // is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
+    // a library game is the same game by id; a playlist game's id is only its position in the playlist,
+    // which a rewrite may have moved - its image path is what names it
     int keepGameId = -1;
     bool keepInternal = false;
+    bool keepForeign = false;
+    string keepImagePath;
     if (carousel.selectedIsValid()) {
-        keepGameId = carousel.games[carousel.selected]->gameId;
-        keepInternal = carousel.games[carousel.selected]->internal;
+        const PsGame &current = *carousel.games[carousel.selected];
+        keepGameId = current.gameId;
+        keepInternal = current.internal;
+        keepForeign = current.foreign;
+        keepImagePath = current.image_path;
     }
 
     switchSet(selection.set, false);
@@ -209,7 +216,10 @@ void GuiLauncher::reloadGames() {
     bool kept = false;
     if (keepGameId != -1) {
         for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
-            if (carousel.games[i]->gameId == keepGameId && carousel.games[i]->internal == keepInternal) {
+            const PsGame &game = *carousel.games[i];
+            bool same = keepForeign ? (game.foreign && game.image_path == keepImagePath)
+                                    : (!game.foreign && game.gameId == keepGameId && game.internal == keepInternal);
+            if (same) {
                 carousel.selected = i;
                 kept = true;
                 break;
@@ -264,6 +274,8 @@ string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
         return _("Moving :") + " " + update.detail;
     case ScanStage::MergingDiscs:
         return _("Merging discs:") + " " + update.detail;
+    case ScanStage::ScanningRoms:
+        return _("Scanning ROMs") + " " + to_string(update.done) + "/" + to_string(update.total) + ": " + update.detail;
     }
     return "";
 }
@@ -293,15 +305,53 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         string text = _("Scan complete:") + " " + to_string(update.finishedGameCount) + " " + _("games");
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
+        if (update.finishedRomCount > 0)
+            text += ", " + to_string(update.finishedRomCount) + " " + _("ROMs");
         scanStatusLine.setText(text, DefaultShowingTimeout);
         scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
     }
 
-    // PS1/USB is the only set a games-directory scan can affect; leave RetroArch/Apps alone, and never
-    // interrupt a scroll animation - reloadGames() repositions the carousel outright.
-    if (scanRosterChangedSinceReload && selection.set == GameSet::PS1 && !carousel.scrolling) {
+    // the ROM pass rewrote playlists (the service has re-read them by now): the playlist names may have
+    // changed - a first ROM in a folder makes a playlist, the last one going empties it - and so may the
+    // set on screen
+    if (!update.playlistsWritten.empty()) {
+        refreshPlaylistNames();
+        if (selection.set == GameSet::RetroArch)
+            scanRosterChangedSinceReload = true;
+    }
+
+    // a games-directory scan affects the PS1 set, a ROM pass the RetroArch one; leave the rest alone, and
+    // never interrupt a scroll animation - reloadGames() repositions the carousel outright.
+    bool setAffected = selection.set == GameSet::PS1 || selection.set == GameSet::RetroArch;
+    if (scanRosterChangedSinceReload && setAffected && !carousel.scrolling) {
         reloadGames();
     }
+}
+
+//*******************************
+// GuiLauncher::refreshPlaylistNames
+//*******************************
+// raPlaylists as RetroArchService lists them now, keeping the selected playlist by name where it still
+// exists (its index may have moved), else the first one
+void GuiLauncher::refreshPlaylistNames() {
+    raPlaylists.clear();
+    if (DirEntry::exists(Env::getPathToRetroarchDir()))
+        raPlaylists = app.retroArch().playlistNames();
+
+    auto pick = [&](GameSetSelection &sel) {
+        auto it = find(raPlaylists.begin(), raPlaylists.end(), sel.raPlaylistName);
+        if (it != raPlaylists.end()) {
+            sel.raPlaylistIndex = static_cast<int>(it - raPlaylists.begin());
+        } else if (!raPlaylists.empty()) {
+            sel.raPlaylistIndex = 0;
+            sel.raPlaylistName = raPlaylists[0];
+        } else {
+            sel.raPlaylistIndex = 0;
+            sel.raPlaylistName = "";
+        }
+    };
+    pick(selection);
+    pick(app.session().launcher);
 }
 
 //*******************************

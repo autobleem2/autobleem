@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 240
+# Untranslated: 51 / Total: 242
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -88,16 +88,16 @@ Frameskip:=Frameskip :
 Free=Liure
 free of=
 Free space=Espaci liure
-GAME=JÒC
 Game=Jòc
+GAME=JÒC
 Game data=
 Game failed to verify:=Verificacion del jòc fracassada :
 Game History=Istoric dels jòcs
 Game Manager=Gestionari de jòcs
 Game manager - Select game=Gestionari de jòcs - Causir un jòc
 GAME OVER=PARTIDA ACABADA
-games=jòcs
 Games=
+games=jòcs
 GFX Filter:=Filtre GFX :
 Go back=Tornar
 Graphics=Grafics
@@ -184,12 +184,14 @@ Resume point saved to slot=Punt de reprisa salvagardat al lòc
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e còrs d'emulacion
 RetroArch is not installed=RetroArch es pas installat
+ROMs=
 Run using RetroArch=Lançar amb RetroArch
 Safely power off the console=Atudar la consòla en tota seguretat
 Scan complete:=Escandalhatge acabat :
 Scanline Level:=Nivèl d'escansion
 Scanlines:=Linhas d'escansion :
 Scanning=Escandalhatge
+Scanning ROMs=
 Scanning...=Analisi...
 SCORE=MARCA
 Select=Causir

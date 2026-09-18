@@ -151,8 +151,11 @@ without `noexec` - keep it that way if you edit `/etc/fstab`.
 
 ## Games for the other systems
 
-Everything that is not a PlayStation game goes through RetroArch. Three steps: copy the files into the
-right folder, let RetroArch scan them once, come back to the launcher.
+Everything that is not a PlayStation game goes through RetroArch. Copy the files into the right folder
+and wait: the launcher's own scan sees them within a few seconds of the copy settling, writes the system's
+playlist and the games appear in the RetroArch set (the line at the bottom of the screen says "Scanning
+ROMs" while it runs). RetroArch's own scanner is still there for what the launcher's cannot do yet -
+naming a game after its database entry rather than its file - see step 2.
 
 **1. Copy the games in.** Either pull the SD card: the `AUTOBLEEM` partition shows up as a drive on
 Windows, macOS or Linux, and the games go into `RetroArch/roms/<system>/`. Or over the network, with the Pi
@@ -197,22 +200,27 @@ Multi-disc CD games: put every disc in the folder and add a `.m3u` file listing 
 per line; scan the `.m3u`, not the discs. Save files and save states go to `RetroArch/saves/` and
 `RetroArch/states/`, whatever the system.
 
-**2. Scan once, in RetroArch.** L2+R2 → *RetroArch* opens RetroArch's menu. *Import Content → Scan
-Directory*, go into `roms`, and pick `<Scan This Directory>`: every game whose contents RetroArch's
-databases know gets a playlist entry with the right core. That covers the consoles and handhelds.
-For arcade, computers, DOS and ScummVM - anything the databases do not identify by contents - use
-*Import Content → Manual Scan* instead: *Content Directory* = the system's folder, *System Name* = pick the
-same name from the list, *Default Core* = the core from the table, *File Extensions* if you want to limit
-it (`scummvm` for ScummVM), then *Start Scan*. Scanning a folder again only adds what is new.
+**2. The scan.** The launcher does it: every file in `roms/<system>/` that the system's core plays becomes
+an entry named after the file (`Adventures of Lolo (USA).zip` → "Adventures of Lolo (USA)"), a `.cue` or
+`.m3u` stands for the discs it lists, a zipped ROM is opened for its CRC, an arcade `.zip` goes in whole.
+A playlist RetroArch wrote is kept and added to, never replaced, and anything you put in a playlist by
+hand that points outside `roms/` stays. Only the folders named as above are scanned; a folder no
+installed core plays is skipped (the log says which).
+
+To have the games named as RetroArch's databases know them (and their covers found under those names),
+run RetroArch's scanner over a folder once: L2+R2 → *RetroArch* → *Import Content → Scan Directory*, go
+into `roms`, pick `<Scan This Directory>`. The launcher keeps what it identified. For arcade, computers, DOS
+and ScummVM - anything the databases do not identify by contents - *Import Content → Manual Scan* does the
+same with *Content Directory* = the system's folder, *System Name* = the same name from the list, *Default
+Core* = the core from the table, *File Extensions* if you want to limit it (`scummvm` for ScummVM).
 
 A game RetroArch will not start is nearly always the wrong ROM set for the core (arcade) or a missing
 `.m3u`/`.cue`; the log is in `RetroArch/logs/`.
 
-**3. Back to the launcher** - *Main Menu → Quit RetroArch*. The launcher starts again and reads the
-playlists as it comes up. **Select** cycles the sets (PlayStation → RetroArch → Apps), and inside the
+**3. In the launcher** - **Select** cycles the sets (PlayStation → RetroArch → Apps), and inside the
 RetroArch set **L2+Select** picks the playlist (system). Cross starts the game in the core the playlist
 names; Favorites and History are RetroArch's own, kept up to date after every session. Playlists copied
-onto the card by hand (or edited from a PC) are picked up the same way, at the next launcher start.
+onto the card by hand (or edited from a PC) are picked up at the next launcher start.
 
 ## How it boots
 

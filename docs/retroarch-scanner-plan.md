@@ -1,9 +1,14 @@
-# Scanning RetroArch's ROMs from AutoBleem - the plan (complete, parked 2026-09-18)
+# Scanning RetroArch's ROMs from AutoBleem - the plan (step 1 done 2026-09-18, 2-5 to go)
 
 Written 2026-09-18 morning after the Raspberry Pi got its BIOS pack, parked until real ROMs had been run on
 the Pi through RetroArch's own scanner; revised the same evening once they had (846 ROMs over nine systems,
-Sega and ColecoVision confirmed running) and after the day's launcher work. **Parked again by the owner,
-plan complete, no code written** - pick it up at step 1.
+Sega and ColecoVision confirmed running) and after the day's launcher work. **Step 1 is in** (the same
+evening, see its "Done" note); pick it up at step 2.
+
+**RetroArch is optional on every platform** (the owner, 2026-09-18): none of this runs unless RetroArch is
+detected - `ScanService::romScanEnabled()` = `Env::retroArchInstalled()` (the binary the platform ini
+names exists) and the ROM folders exist. A stick or a Pi without RetroArch never sees a ROM pass, a
+`roms.fingerprint` or a playlist write.
 
 ## What it is for
 
@@ -85,6 +90,35 @@ PC, `RetroArch/roms` on the Pi) - `Environment::getPathToRetroarchRomsDir()`.
 Tests: a temp tree with a few systems (a zip with one entry, a cue+bin pair, an m3u, an arcade zip, a
 stray `.txt`), an existing playlist with a foreign entry and a stale one, and the merged result checked
 field by field.
+
+**Done 2026-09-18** (`tests/core/test_retroarch_scanner.cpp`, plus two cases in `test_scan_service.cpp`).
+What differs from the text above:
+
+- The `.info` parsing and the database->core mapping left `RetroArchService` for the engine as
+  `ableem::CoreInfoTable` (`engine/retroarch_cores.h`, `block_extract` read too); the service keeps one, the
+  scan worker builds its own (the service belongs to the main thread). `RetroArchScanner::systemsFrom()`
+  turns it into the system table.
+- `RetroArchScanner::Options{romsDir, playlistsDir, targetRomsDir}` - `targetRomsDir` is the step-5 knob
+  (the prefix the playlists name), `""` = `romsDir`; an existing entry counts as "ours" under either.
+- Archives are always candidates, whatever the core's extension list says: a `.zip` for a core without
+  `block_extract` is opened (`ZipArchive::listEntries`, CRCs from the central directory - so step 1 already
+  writes the ROM's CRC for zipped games), one accepted ROM inside = `zip#rom` named after the zip, several =
+  one entry each named after the ROM, none = skipped; a `.7z` goes in whole (miniz cannot look inside).
+  `.ccd` hides its `.img`/`.sub` next to the cue/m3u rules.
+- `RetroArchPlaylist` keeps the header (`RetroArchPlaylistHeader`, every top-level field but `items` as
+  opaque JSON text, `version` first on save; a six-line file has none and comes back as JSON 1.0). Checked
+  against a hand-written copy of what RetroArch 1.22 wrote on the Pi (15 header fields).
+- A playlist is rewritten only when the merge changed something (`DirEntry::replaceFile` over a `.tmp` -
+  `MoveFileEx` on Windows, `rename` elsewhere); an unreadable one is left alone; a folder that yields
+  nothing and had no playlist gets none. The merged list is sorted by label, case-insensitively.
+- `GamesFingerprint::takeAllFiles()` over the ROM folders -> `roms.fingerprint`; `checkForChanges()` waits
+  for both trees to be still, `ScanService::fingerprintsMatchDisk()` is the startup check for both.
+- The launcher: `ScanStage::ScanningRoms` on the status line ("Scanning ROMs 2/9: <system>"), the ROM
+  count in the "Scan complete" line, and `ScanUpdate::playlistsWritten` -> `GuiLauncher::
+  refreshPlaylistNames()` + a `reloadGames()` of the RetroArch set (a playlist game is re-found by its
+  image path, its id being only its position).
+- `tools/make_usb.py` fakes a RetroArch install (stub binary, `fake_libretro.info` for three systems,
+  zipped ROMs) so the PC smoke test runs the pass. Verified there; **not yet on the Pi or a console.**
 
 ### 2. Identification by database (offline where the `.rdb`s are)
 

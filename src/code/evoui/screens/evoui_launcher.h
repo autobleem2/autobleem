@@ -203,6 +203,7 @@ public:
     using GuiScreen::GuiScreen;
 
     std::vector<std::string> raPlaylists;
+    void refreshPlaylistNames(); // after the scan rewrote playlists
 
     LauncherScreenState state = LauncherScreenState::Games;
     void switchState(LauncherScreenState state, int time);
