@@ -500,8 +500,15 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   and `Platform::multisampleSamples()` says 0). SDL's GL renderer then rasterises every quad with it, the
   carousel's cover strips included, which now sit at fractional positions (`SDL_RenderCopyF`, SDL >= 2.0.10;
   the console's 2.0.4 headers keep the integer path). `Gui::multisampleSamples()`: 4 on a Pi and a dev host,
-  `AB_MSAA` overrides (0 off), the console 0. **Costly on the Pi at 1080p** (idle CPU 17% -> 60%);
-  `docs/perf-plan.md` is the plan for making the frame cheap first and then testing 2x there.
+  `AB_MSAA` overrides (0 off), the console 0. Was costly on the Pi at 1080p (idle CPU 17% -> 60%) when
+  a frame was ~3200 copies; **`docs/perf-plan.md`** (steps 0-4 and 6 done 2026-09-18) took that to 85:
+  `AB_FRAME_STATS=1` logs frame times and copies every 5 s (`Renderer::present`) and slow
+  `Texture::loadFile`s; the launcher defers the snap/resume-picture loads to the frame the carousel
+  settles in and keeps `Carousel::Lookahead` covers past each end decoded; every animation is
+  `easeOutCubic` (`core/model/timing.h`), a held stick chains steps without a pause and a tap during a
+  scroll is queued; `TextRenderer` caches every run as a texture (`clearTextCache()` on font reload and
+  display release); `copyTrapezoid` is one `SDL_RenderGeometry` call on SDL >= 2.0.18 with the tint in
+  the vertex colours. Step 7, the 2x MSAA measurement on the Pi, is what is left.
 - **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`,
   and `copyTrapezoid(tex, src, VerticalEdge left, VerticalEdge right)` (2026-09-18): pseudo-3D for the
   carousel - a texture drawn into a trapezoid with vertical sides, one `SDL_RenderCopy` strip per screen
