@@ -129,13 +129,13 @@ void PsMeta::render() {
         int textWidth = nameFont.width(gameName);
         if (x + textWidth > SCREEN_WIDTH) {
             int miniMe = 28.0 * ((float)(SCREEN_WIDTH - x) / (float)(textWidth)) + 0.5;
-            nameFont = Fonts::openSpecificSharedCachedFont(FONT_BOLD, miniMe);
+            nameFont = fonts.boldAtSize(miniMe);
 
             // if it's still a bit over the right edge go down one more font size
             textWidth = nameFont.width(gameName);
             if (x + textWidth > SCREEN_WIDTH) {
                 --miniMe;
-                nameFont = Fonts::openSpecificSharedCachedFont(FONT_BOLD, miniMe);
+                nameFont = fonts.boldAtSize(miniMe);
             }
         }
         gui->text().renderText(nameFont, gameName, x, y + yOffset);

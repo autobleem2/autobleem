@@ -3,8 +3,6 @@
 #include "../core/services/system.h"
 #include <cassert>
 #include "../core/main.h"
-#include "gui.h"
-#include "../app.h"
 
 using namespace std;
 
@@ -36,16 +34,18 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 }
 
 //********************
-// Fonts::openSpecificSharedCachedFont
-// low level open shared font.  filename is the full path to the ttf file.  fontSize is the font point size.
+// Fonts::boldAtSize
 //********************
-ableem::Font Fonts::openSpecificSharedCachedFont(FontType type, int fontSize) {
-    auto gui = Gui::getInstance();
-
-    const LauncherTheme &launcher = App::get().theme().launcher();
-    string fontPath = (type == FONT_MED) ? launcher.fonts.medium : launcher.fonts.bold;
-
-    return openNewSharedCachedFont(fontPath, fontSize, gui->renderer());
+ableem::Font &Fonts::boldAtSize(int fontSize) {
+    auto found = boldBySize.find(fontSize);
+    if (found != boldBySize.end())
+        return found->second;
+    for (const auto &fontInfo : allFontInfos) {   // one of the fixed sizes: share it rather than open it again
+        if (fontInfo.fontType == FONT_BOLD && fontInfo.size == fontSize && fonts.count(fontInfo.fontEnum))
+            return boldBySize[fontSize] = fonts[fontInfo.fontEnum];
+    }
+    assert(renderer != nullptr);   // openAllFonts() first
+    return boldBySize[fontSize] = openNewSharedCachedFont(boldPath, fontSize, *renderer);
 }
 
 //********************
@@ -53,6 +53,8 @@ ableem::Font Fonts::openSpecificSharedCachedFont(FontType type, int fontSize) {
 //********************
 void Fonts::openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer) {
     fonts.clear();
+    boldBySize.clear();
+    this->renderer = &renderer;
     medPath = mediumTtf;
     boldPath = boldTtf;
 
