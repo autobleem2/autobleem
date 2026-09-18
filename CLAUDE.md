@@ -217,6 +217,17 @@ CHD support no longer depends on an external install: a CHD library is vendored 
 2026-09-17, replaced by upstream **libchdr with zstd** on 2026-09-18 - see the "libchdr" bullet under
 Build). `AB_ENABLE_CHD` defaults ON on every host.
 
+**AutoBleem-NG port** (2026-09-18, plan in `~/.claude/plans/there-is-a-project-tingly-pixel.md`): the public
+fork `github.com/AutoBleem-NG/autobleem` is 122 commits past the snapshot this repo started from (its
+`924a02cb`, 2021-03-14, is byte-identical to our `src/code`). Done so far, one commit each: the Phase 0 bug
+fixes (`play_us_ra` typo, locked games keeping their serial, CHD exported as `.chd.cue`, the `.m3u`
+generator, the year on the meta panel, the per-size bold font cache `Fonts::boldAtSize`, translation
+wrappers + sorted languages, music not restarting on theme browse, Favorites fallback, rc guards, the
+stock-SonyUI/`.lic`/RetroBoot-patch cleanup), the libchdr refresh, and Phase 1 - `RdbReader`,
+`MetadataLookup`, `ThumbnailLookup` (see lib_ableem/engine below), verified on the Pi 400 with the
+libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`. Next: the multi-disc folder merge,
+pcsx-ab's libchdr refresh, version constants + link gates, lightgun, plog, INI translations, screens.
+
 ## Raspberry Pi port (2026-09-17)
 
 A second, *non-PSC* target: AutoBleem as an appliance on **32-bit Raspberry Pi OS Lite** (Bookworm or
@@ -368,11 +379,32 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `GameRecord`s (`engine/game_record.h`); the app's `PsGame : ableem::GameRecord` adds the launcher-only fields
   and `PsGame::fromRecords()` wraps `loadUsbGames()`/`loadInternalGames()` results. `reloadUsbGame(*game)`
   refreshes one. Schema notes in `lib_ableem/src/engine/database_tables.txt`.
-- **`CoverDatabase(coversDir)`** - the three regional covers dbs; `findBySerial/findByTitle(.., GameMetadata&)`
-  (was `Metadata::lookupBy*` reaching into `gui->coverdb`). `Gui::coverdb` still points at the one instance
-  owned by `runAutobleem()`.
+- **`MetadataLookup(coversDir, rdbFile)`** (`engine/metadata_lookup.h`, 2026-09-18) - where a game's title,
+  publisher, year and players come from: RetroArch's `Sony - PlayStation.rdb` (`Environment::
+  getPathToPlayStationRdbFile()`, `<retroarch>/database/rdb/` on both targets' standard tree) through
+  **`RdbReader`** (`engine/rdb_reader.h`: the whole `.rdb` in memory, rmsgpack, indexed by serial and name,
+  `findBySerial` also takes a suffixed serial like `SLUS-01251GH`), else the three covers dbs through
+  **`CoverDatabase`** - and the covers db is still asked for its PNG when the rdb answered, so a stick with
+  no thumbnails keeps its art. `GameMetadata::recordName` is the rdb's name (`"Crash Bandicoot (USA)"`),
+  `title` has the trailing tags stripped, `lastRegion` ("U"/"P"/"J", what pcsx.cfg's region is set from)
+  comes from the rdb's region, PAL countries included. `GameLibrary::metadata()` owns the launcher's; the
+  scan worker has its own (sqlite handles are per thread). Ported from AutoBleem-NG.
+- **`ThumbnailLookup`** (`engine/thumbnail_lookup.h`, 2026-09-18) - where a cover/title screen/snap is in
+  `<retroarch>/thumbnails/<db name>/Named_Boxarts|Titles|Snaps/`, and the user's own screenshots and save-state
+  pictures: the rdb's record name first, then the title, each with trailing ` (...)` tags peeled one at a
+  time, then a fuzzy `"<bare name> ("` match scored by shared tags and region. Listings are cached per
+  instance (`DirEntry::listNames` - no stat per entry, Named_Boxarts is ~9000 files) - the scan makes its
+  own, `App::thumbnails()` is the launcher's, cleared when a game returns. `escapeName()` is the one file
+  name rule (`RetroArchService::escapeName` delegates). The scanner resolves every game's cover and snap
+  and caches them in Game.ini (`Thumbnail_record_name`, `Cached_cover_path`, `Cached_snap_path`, read back
+  onto `GameRecord::recordName/coverPath/snapPath`); the carousel's PS1 chain is the PNG next to the game
+  -> the cached path while its file exists -> a fresh lookup (internal games) -> `default.png` drawn at
+  draw time. **No `default.png` is copied next to a game any more** and a cover is not a verify()
+  requirement; a placeholder byte-identical to `default.png` is removed by the scan once a thumbnail
+  exists (`DirEntry::filesAreIdentical`). Titles of *unlocked* games lose their region tag on a rescan
+  with an rdb around (`"Persona (USA)"` -> `"Persona"`).
 - **`UsbGame`/`GamesHierarchy`/`GameScanner`** - the scan. `GameScanner::scanGamesDirectory(hierarchy,
-  coverDb)` then `writeRegionalDatabase(hierarchy, db)`; progress is reported to a `ScanProgressListener`
+  metadata)` then `writeRegionalDatabase(hierarchy, db)`; progress is reported to a `ScanProgressListener`
   (`ScanStage::Scanning/Game/DecompressingEcm/UpdatingDatabase/GameFailedVerify`). The app's listener is
   `SplashScanProgress` (`gui/scan_progress.*`): `Gui::splash(_(...))` per stage, and the 3 s pause after a
   failed verify. `AutoBleem::rescan` constructs the `GameScanner` with one.
@@ -547,7 +579,9 @@ USB stick root = `/media` on the PSC:
 /media/Games/                     user games, one folder per game; !SaveStates/, !MemCards/ sub-dirs
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
 /media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui)
-/media/themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/retroarch/ RetroBoot; /media/Apps/ launchable apps
+/media/themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/ launchable apps
+/media/retroarch/                 RetroBoot's RetroArch tree: database/rdb/Sony - PlayStation.rdb (game metadata),
+                                  thumbnails/Sony - PlayStation/Named_*/ (covers), screenshots/, states/, playlists/
 /gaadata/<id>/                    stock internal games (read-only console storage)
 ```
 

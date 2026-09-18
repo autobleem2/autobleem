@@ -121,6 +121,10 @@ drive alongside the small `bootfs` one.
                                  ...), named as RetroArch's playlists are; the scanner (Import Content ->
                                  Scan Directory -> roms) turns them into playlists
     system/                      the BIOS files the cores want (scph1001.bin, ...) - yours to provide
+    database/rdb/                libretro-database - "Sony - PlayStation.rdb" is where the launcher takes a
+                                 game's title, publisher, year and players from (the covers*.db is the fallback)
+    thumbnails/Sony - PlayStation/Named_Boxarts/   the launcher's PS1 covers (install.sh --thumbnails; a game's
+                                 own <name>.png next to it still wins), Named_Titles/ and Named_Snaps/ with "all"
     cores/ info/                 the ~130 libretro cores and their info files
     playlists/                   what AutoBleem's RetroArch set shows
     saves/ states/ config/       saves, save states, per-core options
