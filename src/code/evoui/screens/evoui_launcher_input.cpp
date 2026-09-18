@@ -39,6 +39,14 @@ void GuiLauncher::loop() {
 
         menu->update(time);
         carousel.updatePositions();
+        if (!carousel.scrolling) {
+            // the frame the carousel rests in does the loads a scroll put off; the idle frames after it
+            // get the covers just past the ends of the row decoded, one a frame
+            if (settleLoadsPending)
+                finishSettleLoads();
+            else
+                carousel.loadOneMissingTexture();
+        }
         applyScanUpdate(app.scans().poll());
         render();
 

@@ -96,6 +96,7 @@ int Carousel::getPreviousId(int id) const {
 void Carousel::setInitialPositions(int selectedIndex) {
     for (auto &game : games) {
         game.visible = false;
+        game.wanted = false;
     }
 
     games[selectedIndex].visible = true;
@@ -124,15 +125,37 @@ void Carousel::setInitialPositions(int selectedIndex) {
         }
     }
 
+    // the lookahead: `prev` and `next` are the games at the two ends of the row now
+    for (int i = 0; i < Lookahead; i++) {
+        prev = getPreviousId(prev);
+        next = getNextId(next);
+        games[prev].wanted = true;
+        games[next].wanted = true;
+    }
+
     for (auto &game : games) {
         game.actual = game.current;
         game.destination = game.current;
         if (game.visible) {
-            game.loadTex(gui_.renderer());
-        } else {
+            game.wanted = true;
+            game.loadTex(gui_.renderer()); // a no-op for a texture already there
+        } else if (!game.wanted) {
             game.freeTex();
         }
     }
+}
+
+//*******************************
+// Carousel::loadOneMissingTexture
+//*******************************
+bool Carousel::loadOneMissingTexture() {
+    for (auto &game : games) {
+        if (game.wanted && !game.coverPng.valid()) {
+            game.loadTex(gui_.renderer());
+            return true;
+        }
+    }
+    return false;
 }
 
 //*******************************

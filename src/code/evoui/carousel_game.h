@@ -42,6 +42,9 @@ struct PsCarouselGame : public PsGamePtr {
     long animationStart = 0;
     long animationDuration = 0;
     bool visible = false;
+    // keep the texture: visible, or within Carousel::Lookahead games of an end of the row, so that the
+    // cover a scroll brings in is already decoded (see Carousel::loadOneMissingTexture)
+    bool wanted = false;
     ableem::Texture coverPng;
 
     void loadTex(ableem::Renderer &renderer);

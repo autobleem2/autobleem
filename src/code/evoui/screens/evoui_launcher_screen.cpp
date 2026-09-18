@@ -22,7 +22,7 @@ const ableem::Color brightWhite = {255, 255, 255, 255};
 // GuiLauncher::updateMeta
 //*******************************
 // just update metadata section to be visible on the screen
-void GuiLauncher::updateMeta() {
+void GuiLauncher::updateMeta(bool withSnap) {
     if (carousel.games.empty()) {
         gameName = "";
         bool internal{false};
@@ -41,7 +41,18 @@ void GuiLauncher::updateMeta() {
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
     showOptions(); // a mixed set (Lightgun) changes game type as the carousel moves
+    if (withSnap)
+        loadSnap();
+}
+
+//*******************************
+// GuiLauncher::finishSettleLoads
+//*******************************
+void GuiLauncher::finishSettleLoads() {
+    settleLoadsPending = false;
     loadSnap();
+    if (carousel.selectedIsValid())
+        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
 }
 
 //*******************************
@@ -593,9 +604,8 @@ void GuiLauncher::nextCarouselGame(int speed) {
     app.audio().cursor.play();
     carousel.scrollLeft(speed);
     carousel.selectNext();
-    updateMeta();
-    if (carousel.selectedIsValid())
-        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
+    updateMeta(false);
+    settleLoadsPending = true;
 }
 
 //*******************************
@@ -606,9 +616,8 @@ void GuiLauncher::prevCarouselGame(int speed) {
     app.audio().cursor.play();
     carousel.scrollRight(speed);
     carousel.selectPrevious();
-    updateMeta();
-    if (carousel.selectedIsValid())
-        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
+    updateMeta(false);
+    settleLoadsPending = true;
 }
 
 //*******************************

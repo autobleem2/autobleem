@@ -105,7 +105,13 @@ public:
 
     void nextCarouselGame(int speed);
     void prevCarouselGame(int speed);
-    void updateMeta();
+    // the meta panel for the selected game; withSnap=false leaves the snap (a PNG decode) to
+    // finishSettleLoads() once the carousel has stopped
+    void updateMeta(bool withSnap = true);
+    // the loads a scroll defers to the frame the carousel comes to rest in: the snap and the resume
+    // picture, both PNG decodes off the SD card that used to cost the scroll its first frame
+    bool settleLoadsPending = false;
+    void finishSettleLoads();
     void loadAssets();
     void freeAssets();
 
