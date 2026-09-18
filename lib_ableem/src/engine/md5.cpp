@@ -1,4 +1,6 @@
-#include "md5.h"
+#include "ableem/engine/md5.h"
+
+#include <fstream>
 
 #include <cstring>
 
@@ -127,6 +129,21 @@ std::string Md5::hexDigest() {
 std::string Md5::ofBytes(const unsigned char *data, size_t length) {
     Md5 md5;
     md5.update(data, length);
+    return md5.hexDigest();
+}
+
+std::string Md5::ofString(const std::string &text) {
+    return ofBytes(reinterpret_cast<const unsigned char *>(text.data()), text.size());
+}
+
+std::string Md5::ofFile(const std::string &path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in)
+        return "";
+    Md5 md5;
+    char buffer[64 * 1024];
+    while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0)
+        md5.update(reinterpret_cast<const unsigned char *>(buffer), static_cast<size_t>(in.gcount()));
     return md5.hexDigest();
 }
 

@@ -235,6 +235,8 @@ add_library(ab_classic STATIC
         src/code/gui/screens/gui_keyboard.h
         src/code/gui/screens/gui_splash.cpp
         src/code/gui/screens/gui_splash.h
+        src/code/gui/screens/gui_text_page.cpp
+        src/code/gui/screens/gui_text_page.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
         src/code/gui/surprise_game.cpp

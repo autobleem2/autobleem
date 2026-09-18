@@ -483,8 +483,14 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   file loop uses. Scalars a theme may omit are `Opt<T>`; colours are `ThemeColor` (`#rrggbb`).
   The app's `ThemeConverter` (`core/services/theme_converter.*`) is the only writer besides tests.
 - **`ZipArchive`** (`engine/zip_archive.h`) - `list/extract` of a .zip over vendored miniz (`third_party/miniz/`,
-  built with `MINIZ_NO_TIME` and no write side). Entry names are checked before anything is written: no
-  `..`, no absolute paths, no backslashes. Themes dropped as zips are its only caller.
+  built with `MINIZ_NO_TIME`). Entry names are checked before anything is written: no
+  `..`, no absolute paths, no backslashes. Themes dropped as zips are its only caller. **`ZipWriter`**
+  (`engine/zip_writer.h`, 2026-09-18) is the write side: `open/addFile(path, name)/addBytes/close`, files
+  streamed through miniz's read callback with 64-bit offsets, so a partition image of any size goes in
+  without being read into memory - for abflashkit's `LBOOT.EPB`. The entry size is given up front on
+  purpose: it is what keeps the archive plain zip (no zip64), which is what the console's recovery reads.
+- **`Md5`** (`engine/md5.h`, public since 2026-09-18) - RFC 1321: `ofBytes/ofString/ofFile` (streamed) and
+  the incremental `update/hexDigest`. `SerialScanner::serialFromMd5` and abflashkit's kernel check use it.
 
 ### ui
 
@@ -534,6 +540,13 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   themed .ttf path, just building `ableem::Font`s now instead of `FC_Font_Shared`s.
 - **`Sound`/`Music`/`Audio`** - `Sound::play()` replaces `Mix_PlayChannel(-1, chunk, 0)`; `Audio::close()` is
   the old "close until `Mix_QuerySpec` fails" loop, now one call (`gui->audio().close()`).
+- **`Joystick`** (`ui/joystick.h`, 2026-09-18) - one device by index opened *raw*, for a pad-mapping wizard:
+  `count/nameForIndex/guidForIndex/isGameControllerAtIndex`, `open(i)`, `update()` into `state()` (every
+  axis, button and hat as SDL's joystick API reports them, hats as `HatUp|...` masks) and `controllerState()`
+  (the 15 standard buttons and 6 axes through the mapping, when it has one). `Input::addMapping(line)`,
+  `mappingForDeviceIndex(i)` and `currentMappingPath()` are its companions; `Input::setPowerKeyAsKey(true)`
+  makes the power button/Esc arrive as `Key::Sleep` instead of calling the power-off handler (a wizard uses
+  it as "cancel"); `Key::Reset`/`Key::Open` are the console's other front buttons (AUDIOPLAY/EJECT scancodes).
 - **`Input`** - one `poll(Event&)` replaces `SDL_PollEvent` + `PadMapper` + `gui/abl.c`'s PSC event filter
   (still there, moved to `lib_ableem/src/ui/psc_event_filter.c`, wired up by `Input`'s constructor). `Event::Type`
   is `Quit/ButtonDown/ButtonUp/DpadDown/DpadUp/KeyDown/KeyUp/TextInput/PadAdded/PadRemoved/RenderReset`;
@@ -760,7 +773,7 @@ defaults, which both the services and the screens need.
 | `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's menu-panel/status-bar rects, `toColor()`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
 | `gui/gui_screen.h` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. Carries `gui`, `renderer` and `app` (an `AppBase &` - see `app_base.*`). |
 | `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
-| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's L2+R2 system menu or its sub-screens: About (`credits` settable by the caller, AutoBleem's by default - a tool shows its own), Confirm dialog, on-screen Keyboard, memcard select. `gui/starfx.*` is the star field the About screen draws. (`GuiScrollWin`/`GuiPadTest` were deleted on 2026-09-18 - nothing had shown them since the classic menu went.) |
+| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's L2+R2 system menu or its sub-screens: About (`credits` settable by the caller, AutoBleem's by default - a tool shows its own), Confirm dialog, on-screen Keyboard, memcard select, `GuiTextPage` (a titled page of static `lines`, Circle back - a tool's instructions). `gui/starfx.*` is the star field the About screen draws. (`GuiScrollWin`/`GuiPadTest` were deleted on 2026-09-18 - nothing had shown them since the classic menu went.) |
 | `gui/screens/gui_hardware_info.*` | `GuiHardwareInfo` | The Hardware Information screen (2026-09-18) for a machine without the PSC-Bios app: `SystemInfoService`'s sections plus a "Display and input" one only the running program can fill (render driver + MSAA, video driver, display mode, canvas/scale, audio driver, SDL version, the pads by name - `Platform::linkedVersion/videoDriverName/displayModeString`, `Renderer::driverName`, `Input::pads`). Classic layout, rows paged like Options, re-read every second, Up/Down a row, L1/R1/Left/Right a page, Circle back. `autobleem-gui <root> --sysinfo` prints the same sections (minus the display/input one) to stdout and exits - for bug reports and for checking the Linux branch over ssh; verified on the Pi 400 (64-bit kernel: no `model name` in cpuinfo, the core comes from `armCoreName()`'s part-id table). The system menu's item runs `Apps/pscbios/run.sh` on the console when it exists and shows this screen otherwise (always, under `AB_ROOT_RELATIVE_LAYOUT`). |
 | `core/services/system_info.*` | `SystemInfoService` | What that screen shows, SDL-free: `collect()` = `system()` (os-release/uname, hostname, uptime, load; the registry on Windows), `hardware()` (device-tree model, cpuinfo, cpufreq, thermal_zone0, meminfo), `storage()` (the data root first, then every block filesystem in `/proc/mounts` - or the fixed/removable drives - with `statvfs`/`GetDiskFreeSpaceEx`), `network()` (IPv4 per interface, `getifaddrs`/`GetAdaptersAddresses` - ab_core links `iphlpapi ws2_32` on Windows), `software()` (version, build, platform, roots, RetroArch). The parsers and formatters are static and tested (`tests/core/test_system_info.cpp`). |
 | `gui/gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |

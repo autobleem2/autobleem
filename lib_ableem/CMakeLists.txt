@@ -43,12 +43,12 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/retroarch_playlist.cpp
         src/engine/theme_spec.cpp
         src/engine/zip_archive.cpp
+        src/engine/zip_writer.cpp
         src/engine/game_library.cpp
         src/engine/md5.cpp
         src/engine/unecm.c
         src/engine/cd_image_reader.h
         src/engine/binary_reader.h
-        src/engine/md5.h
         third_party/sqlite/sqlite3ab.c
         third_party/miniz/miniz.c
         )
@@ -62,12 +62,13 @@ target_include_directories(ableem_engine
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/miniz
         )
 
-# the vendored sqlite and miniz amalgamations are not ours to keep warning-free. miniz is read-only zip
-# support for themes dropped as archives; time stamps and the write side are compiled out.
+# the vendored sqlite and miniz amalgamations are not ours to keep warning-free. miniz reads the zips
+# themes are dropped as (ZipArchive) and writes the console's recovery backup (ZipWriter, for abflashkit);
+# time stamps are compiled out.
 set_source_files_properties(third_party/sqlite/sqlite3ab.c PROPERTIES COMPILE_FLAGS "-w")
 set_source_files_properties(third_party/miniz/miniz.c PROPERTIES COMPILE_FLAGS "-w")
-set_source_files_properties(third_party/miniz/miniz.c src/engine/zip_archive.cpp PROPERTIES
-        COMPILE_DEFINITIONS "MINIZ_NO_TIME;MINIZ_NO_ARCHIVE_WRITING_APIS")
+set_source_files_properties(third_party/miniz/miniz.c src/engine/zip_archive.cpp src/engine/zip_writer.cpp PROPERTIES
+        COMPILE_DEFINITIONS "MINIZ_NO_TIME")
 
 find_package(Threads REQUIRED)
 target_link_libraries(ableem_engine PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
@@ -96,6 +97,7 @@ add_library(ableem ${ABLEEM_LIB_KIND}
         src/ui/font.cpp
         src/ui/audio.cpp
         src/ui/input.cpp
+        src/ui/joystick.cpp
         src/ui/gui_base.cpp
         src/ui/gui_screen.cpp
         src/ui/SDL_FontCache.c

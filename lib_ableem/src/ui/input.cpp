@@ -121,7 +121,14 @@ Button toDpadButton(int b) {
     return Button::None;
 }
 
-Key toKey(SDL_Keycode sym) {
+// the console's front buttons come in as keyboard scancodes with no keycode of their own
+Key toKey(SDL_Scancode scancode, SDL_Keycode sym) {
+    if (scancode == SDL_SCANCODE_SLEEP)
+        return Key::Sleep;
+    if (scancode == SDL_SCANCODE_AUDIOPLAY)
+        return Key::Reset;
+    if (scancode == SDL_SCANCODE_EJECT)
+        return Key::Open;
     switch (sym) {
     case SDLK_ESCAPE:
         return Key::Escape;
@@ -173,6 +180,7 @@ struct Pad {
 struct Input::Impl {
     Platform &platform;
     bool keyboardAsPad;
+    bool powerKeyAsKey = false;
     bool dpadState[4] = {false, false, false, false};
     std::vector<std::string> mappingPaths;
     std::string currentMappingPath;
@@ -257,6 +265,11 @@ bool Input::poll(Event &out) {
     }
 
     if (e.type == SDL_KEYDOWN && (e.key.keysym.scancode == SDL_SCANCODE_SLEEP || e.key.keysym.sym == SDLK_ESCAPE)) {
+        if (impl->powerKeyAsKey) {
+            out.type = Event::Type::KeyDown;
+            out.key = Key::Sleep;
+            return true;
+        }
         impl->platform.invokePowerOffHandler();
         return true; // swallowed: the app decides what powering off means, we just report it happened
     }
@@ -269,11 +282,11 @@ bool Input::poll(Event &out) {
     switch (e.type) {
     case SDL_KEYDOWN:
         out.type = Event::Type::KeyDown;
-        out.key = toKey(e.key.keysym.sym);
+        out.key = toKey(e.key.keysym.scancode, e.key.keysym.sym);
         return true;
     case SDL_KEYUP:
         out.type = Event::Type::KeyUp;
-        out.key = toKey(e.key.keysym.sym);
+        out.key = toKey(e.key.keysym.scancode, e.key.keysym.sym);
         return true;
     case SDL_TEXTINPUT:
         out.type = Event::Type::TextInput;
@@ -354,8 +367,34 @@ void Input::setKeyboardAsPad(bool enabled) {
     impl->keyboardAsPad = enabled;
 }
 
+void Input::setPowerKeyAsKey(bool enabled) {
+    impl->powerKeyAsKey = enabled;
+}
+
 void Input::loadMappings(const std::vector<std::string> &gameControllerDbPaths) {
     impl->mappingPaths = gameControllerDbPaths;
+}
+
+std::string Input::currentMappingPath() const {
+    return impl->currentMappingPath;
+}
+
+bool Input::addMapping(const std::string &line) {
+    int result = SDL_GameControllerAddMapping(line.c_str());
+    if (result < 0) {
+        PLOG_WARNING << "SDL refused the pad mapping: " << SDL_GetError();
+        return false;
+    }
+    return true;
+}
+
+std::string Input::mappingForDeviceIndex(int index) const {
+    char *mapping = SDL_GameControllerMappingForDeviceIndex(index);
+    if (!mapping)
+        return "";
+    std::string result = mapping;
+    SDL_free(mapping);
+    return result;
 }
 
 void Input::probePads() {

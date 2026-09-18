@@ -52,7 +52,9 @@ enum class Key {
     Tab,
     Backspace,
     Delete,
-    Sleep
+    Sleep, // the console's power button (SDL_SCANCODE_SLEEP) - only seen with setPowerKeyAsKey(true)
+    Reset, // the console's reset button (SDL_SCANCODE_AUDIOPLAY)
+    Open   // the console's open (eject) button (SDL_SCANCODE_EJECT)
 };
 
 //******************
@@ -126,7 +128,19 @@ public:
     // app is usable without a real controller. On by default on dev hosts, off elsewhere.
     void setKeyboardAsPad(bool enabled);
 
+    // the power button / Esc: normally poll() calls the power-off handler and swallows it; with this on it
+    // comes through as a KeyDown of Key::Sleep instead (a screen that uses it as "cancel", like a pad
+    // mapping wizard, turns it on for its own duration)
+    void setPowerKeyAsKey(bool enabled);
+
     void loadMappings(const std::vector<std::string> &gameControllerDbPaths);
+    // the gamecontrollerdb.txt probePads() loaded, "" when none of the paths existed
+    std::string currentMappingPath() const;
+    // a gamecontrollerdb line ("guid,name,a:b0,...,platform:Linux") added to SDL's table now; false when
+    // SDL refuses it. What a pad mapping wizard does with its result before saving it
+    bool addMapping(const std::string &line);
+    // SDL's current mapping line for the joystick at `index` ("" when it has none)
+    std::string mappingForDeviceIndex(int index) const;
     // puts the PSC event filter back: SDL drops it when its events subsystem is quit, which happens when the
     // video and pad subsystems are both released around an emulator run (GuiBase::acquireDisplay() calls it)
     void reinstallEventFilter();

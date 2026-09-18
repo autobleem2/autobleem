@@ -10,5 +10,6 @@
 #include "ui/font.h"
 #include "ui/audio.h"
 #include "ui/input.h"
+#include "ui/joystick.h"
 #include "ui/gui_base.h"
 #include "ui/gui_screen.h"
