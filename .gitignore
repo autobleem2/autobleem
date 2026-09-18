@@ -76,3 +76,4 @@ usb/
 # the PS1 BIOS images (System/Bios on the Pi) - never committed
 bios/
 __pycache__/
+__pycache__/
