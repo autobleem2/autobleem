@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gui_string_menu.h"
+#include "../../app.h"
 #include <vector>
 #include <string>
 
@@ -9,6 +10,7 @@
 //********************
 class GuiMemcards : public GuiStringMenu {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     explicit GuiMemcards(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override;

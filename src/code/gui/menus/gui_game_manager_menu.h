@@ -4,6 +4,7 @@
 #pragma once
 
 #include "gui_two_column_string_menu.h"
+#include "../../app.h"
 #include "../../core/model/ps_game.h"
 #include <ableem/ui/texture.h>
 
@@ -12,6 +13,7 @@
 //********************
 class GuiManager : public GuiTwoColumnStringMenu {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     explicit GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;

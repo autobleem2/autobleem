@@ -104,6 +104,7 @@ void AutoBleem::launchGame() {
     thumbnails().clearCache();
 
     gui_->display(true);
+    session_.resumingGui = true; // the launcher fades back in over the game that just ended
 }
 
 //*******************************

@@ -7,13 +7,11 @@
 #include <ableem/ableem.h>
 #include <string>
 #include <memory>
-#include "../core/model/ps_game.h"
 #include "../core/services/system.h"
 #include "gui_font.h"
 #include "text_renderer.h"
 #include "theme_assets.h"
 #include "../core/services/environment.h"
-#include "../core/model/session.h"
 
 using namespace std;
 
@@ -25,14 +23,18 @@ using namespace std;
 //********************
 // All SDL access lives in lib_ableem; Gui derives from ableem::GuiBase (window/renderer/input/audio) and adds
 // the theme's assets, the text renderer, and the few drawing helpers that combine the two (background, logo,
-// status bar). Nothing here decides anything: the screens do, and App::run() shows them.
+// status bar). Nothing here decides anything: the screens do, and the program's run() shows them.
 class Gui : public ableem::GuiBase {
 private:
     Gui();
     static float outputScale();
     static int multisampleSamples();
+    static std::string windowTitle_;
 
 public:
+    // the window's title: the program's name. Set by AppBase before the first getInstance() - it cannot
+    // change once the window exists
+    static void setWindowTitle(const std::string &title) { windowTitle_ = title; }
     // (re)loads the theme's textures and fonts, and its music unless told not to
     void loadAssets(bool reloadMusic = true);
 
@@ -54,8 +56,6 @@ public:
         static std::shared_ptr<Gui> s{new Gui};
         return s;
     }
-
-    static bool sortByTitle(const PsGamePtr &i, const PsGamePtr &j) { return lessCaseInsensitive(i->title, j->title); }
 
     // the theme's textures and fonts
     ThemeAssets &assets() { return assets_; }

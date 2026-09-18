@@ -7,24 +7,10 @@
 
 using namespace std;
 
-App *App::instance = nullptr;
-
 //*******************************
 // App::App
 //*******************************
-App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
-    instance = this;
-    Lang::setCurrent(&lang_);
-    lang_.load(Env::getPathToLangDir(), cfg_.inifile.values["language"]);
-
-    gui_ = Gui::getInstance();
-    audio_ = std::make_unique<AppAudio>(gui_->audio(), cfg_, theme_);
-
-    gui_->platform().setPowerOffHandler([this]() {
-        gui_->drawText(_("POWERING OFF... PLEASE WAIT"));
-        System::powerOff();
-    });
-
+App::App(std::unique_ptr<ProcessRunner> runner) : AppBase("AutoBleem"), runner_(std::move(runner)) {
     gameQuery_.setRetroArchGames(&retroArch_);
     gameQuery_.setLightguns(&lightguns_);
 }
@@ -32,14 +18,4 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
 //*******************************
 // App::~App
 //*******************************
-App::~App() {
-    Lang::setCurrent(nullptr);
-    instance = nullptr;
-}
-
-//*******************************
-// App::get
-//*******************************
-App &App::get() {
-    return *instance;
-}
+App::~App() = default;

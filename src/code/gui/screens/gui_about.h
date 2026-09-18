@@ -10,6 +10,9 @@
 #include <ableem/ui/texture.h>
 #include <ableem/ui/audio.h>
 
+#include <string>
+#include <vector>
+
 //********************
 // GuiAbout
 //********************
@@ -22,6 +25,9 @@ public:
     ableem::Texture logo;
     ableem::Font font;
     using GuiScreen::GuiScreen;
+    // the lines under the logo; AutoBleem's credits when the caller leaves it empty (a tool sets its own)
+    std::vector<std::string> credits;
+    static std::vector<std::string> autobleemCredits();
 
 private:
     // the "Surprise" easter egg: Start swaps the credits for a small shoot-em-up over the same starfield

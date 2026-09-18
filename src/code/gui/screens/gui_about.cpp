@@ -35,21 +35,17 @@ void GuiAbout::init() {
 
     savedHighScore = Strings::toInt(app.config().inifile.values["surprisehighscore"]);
     game.seedHighScore(savedHighScore);
+
+    if (credits.empty())
+        credits = autobleemCredits();
 }
 
 //*******************************
-// GuiAbout::render
+// GuiAbout::autobleemCredits
 //*******************************
-void GuiAbout::render() {
-    std::shared_ptr<Gui> gui(Gui::getInstance());
-
-    if (surpriseMode) {
-        renderSurprise();
-        return;
-    }
-
+vector<string> GuiAbout::autobleemCredits() {
     auto heading = [](const string &text) { return ".-= " + text + " =-."; }; // the decoration is not translated
-    vector<string> credits = {
+    return {
         string(Version::FULL_VERSION),
         " ",
         heading(_("Code C++ and shell scripts")),
@@ -76,6 +72,18 @@ void GuiAbout::render() {
         _("This is free software. It works AS IS and We take no responsibility for any issues or damage."),
         //_("Download latest:") + " https://github.com/autobleem/AutoBleem"
     };
+}
+
+//*******************************
+// GuiAbout::render
+//*******************************
+void GuiAbout::render() {
+    std::shared_ptr<Gui> gui(Gui::getInstance());
+
+    if (surpriseMode) {
+        renderSurprise();
+        return;
+    }
 
     gui->renderBackground();
 

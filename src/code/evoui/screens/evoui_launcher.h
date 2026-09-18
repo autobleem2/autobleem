@@ -5,6 +5,7 @@
 
 #include "../controls/evoui_notification_line.h"
 #include "../../gui/gui_screen.h"
+#include "../../app.h"
 #include "../../core/services/scan_service.h"
 #include "../controls/evoui_obj.h"
 #include "../controls/evoui_settings_back.h"
@@ -40,6 +41,7 @@ extern const ableem::Color brightWhite;
 // launcher_actions.cpp (what Cross does: start the game, open the editors and choosers, reconcile after).
 class GuiLauncher : public GuiScreen {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
     ~GuiLauncher() override;
     void render() override;

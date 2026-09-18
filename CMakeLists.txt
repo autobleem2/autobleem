@@ -205,52 +205,34 @@ if (AB_BUILD_TESTS)
     target_link_libraries(theme_convert ab_core)
 endif()
 
-# ab_ui: the classic UI and everything a screen needs - Gui (the window, the theme's assets, the text
-# renderer), the classic screens and menus, Theme, AppAudio, the Scanner's splash listener, the memory-card
-# editor, and App itself, which is the model every screen holds as `app`. Links ab_core and ableem. Nothing
-# in here knows the EvolutionUI launcher exists.
-add_library(ab_ui STATIC
-        src/code/app.cpp
-        src/code/app.h
+# ab_classic: the classic UI as a library any program can draw with - Gui (the window, the theme's assets,
+# the text renderer), AppBase (config.ini, the language, the theme, the clock, the UI audio: the model
+# every classic screen holds as `app`), the screens that need nothing but that model (splash, confirm,
+# keyboard, about, hardware information) and the list-menu framework. Links ab_core and ableem. The console
+# tools under apps/ link this and nothing above it; nothing in here knows a game exists.
+add_library(ab_classic STATIC
+        src/code/app_base.cpp
+        src/code/app_base.h
         src/code/gui/app_audio.cpp
         src/code/gui/app_audio.h
         src/code/gui/gui.cpp
         src/code/gui/gui.h
+        src/code/gui/gui_font.cpp
+        src/code/gui/gui_font.h
+        src/code/gui/gui_screen.h
+        src/code/gui/menus/gui_menu_base.h
+        src/code/gui/menus/gui_string_menu.h
+        src/code/gui/menus/gui_two_column_string_menu.h
         src/code/gui/screens/gui_about.cpp
         src/code/gui/screens/gui_about.h
         src/code/gui/screens/gui_confirm.cpp
         src/code/gui/screens/gui_confirm.h
-        src/code/gui/gui_font.cpp
-        src/code/gui/gui_font.h
         src/code/gui/screens/gui_hardware_info.cpp
         src/code/gui/screens/gui_hardware_info.h
         src/code/gui/screens/gui_keyboard.cpp
         src/code/gui/screens/gui_keyboard.h
-        src/code/gui/screens/gui_pad_test.cpp
-        src/code/gui/screens/gui_pad_test.h
-        src/code/gui/gui_screen.h
-        src/code/gui/screens/gui_scroll_win.cpp
-        src/code/gui/screens/gui_scroll_win.h
-        src/code/gui/screens/gui_select_memcard.cpp
-        src/code/gui/screens/gui_select_memcard.h
         src/code/gui/screens/gui_splash.cpp
         src/code/gui/screens/gui_splash.h
-        src/code/gui/menus/gui_game_dir_menu.h
-        src/code/gui/menus/gui_game_editor_menu.cpp
-        src/code/gui/menus/gui_game_editor_ra_menu.cpp
-        src/code/gui/menus/gui_game_editor_menu.h
-        src/code/gui/menus/gui_game_manager_menu.cpp
-        src/code/gui/menus/gui_game_manager_menu.h
-        src/code/gui/menus/gui_memcards_menu.cpp
-        src/code/gui/menus/gui_memcards_menu.h
-        src/code/gui/menus/gui_menu_base.h
-        src/code/gui/menus/gui_options_menu.cpp
-        src/code/gui/menus/gui_options_menu.h
-        src/code/gui/menus/gui_options_menu_base.cpp
-        src/code/gui/menus/gui_options_menu_base.h
-        src/code/gui/menus/gui_playlists_menu.h
-        src/code/gui/menus/gui_string_menu.h
-        src/code/gui/menus/gui_two_column_string_menu.h
         src/code/gui/starfx.cpp
         src/code/gui/starfx.h
         src/code/gui/surprise_game.cpp
@@ -260,7 +242,31 @@ add_library(ab_ui STATIC
         src/code/gui/theme_assets.cpp
         src/code/gui/theme_assets.h
 )
-target_link_libraries(ab_ui ab_core ableem)
+target_link_libraries(ab_classic ab_core ableem)
+
+# ab_ui: AutoBleem's model on top of the classic UI - App (the game library, the session, every game
+# service) and the classic screens that edit games, memory cards and the options. Links ab_classic. Nothing
+# in here knows the EvolutionUI launcher exists.
+add_library(ab_ui STATIC
+        src/code/app.cpp
+        src/code/app.h
+        src/code/gui/screens/gui_select_memcard.cpp
+        src/code/gui/screens/gui_select_memcard.h
+        src/code/gui/menus/gui_game_dir_menu.h
+        src/code/gui/menus/gui_game_editor_menu.cpp
+        src/code/gui/menus/gui_game_editor_ra_menu.cpp
+        src/code/gui/menus/gui_game_editor_menu.h
+        src/code/gui/menus/gui_game_manager_menu.cpp
+        src/code/gui/menus/gui_game_manager_menu.h
+        src/code/gui/menus/gui_memcards_menu.cpp
+        src/code/gui/menus/gui_memcards_menu.h
+        src/code/gui/menus/gui_options_menu.cpp
+        src/code/gui/menus/gui_options_menu.h
+        src/code/gui/menus/gui_options_menu_base.cpp
+        src/code/gui/menus/gui_options_menu_base.h
+        src/code/gui/menus/gui_playlists_menu.h
+)
+target_link_libraries(ab_ui ab_classic)
 
 # ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
 # sub-screens, and under controls/ the PsObj family of animated elements it is built from.

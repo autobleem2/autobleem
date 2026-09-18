@@ -9,7 +9,7 @@
 // none of those files need to touch how they reach the Gui/renderer - only their SDL-specific calls change.
 #include <ableem/ui/gui_screen.h>
 #include "gui.h"
-#include "../app.h"
+#include "../app_base.h"
 
 using ableem::Button;
 using ableem::Event;
@@ -21,9 +21,11 @@ using ableem::Key;
 class GuiScreen : public ableem::GuiScreen {
 public:
     explicit GuiScreen(ableem::GuiBase &_gui)
-        : ableem::GuiScreen(_gui), gui(Gui::getInstance()), renderer(_gui.renderer()), app(App::get()) {}
+        : ableem::GuiScreen(_gui), gui(Gui::getInstance()), renderer(_gui.renderer()), app(AppBase::get()) {}
 
     std::shared_ptr<Gui> gui;
     ableem::Renderer &renderer;
-    App &app; // the model: app.library(), app.session(), app.config(), the services
+    // the model every classic screen has: app.config(), app.theme(), app.audio(), app.lang(). A screen
+    // that needs AutoBleem's game model declares its own `App &app = App::get();` over this one (ab_ui)
+    AppBase &app;
 };

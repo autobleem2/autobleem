@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../gui_screen.h"
+#include "../../app.h"
 #include "../../core/main.h"
 #include "../../core/model/ps_game.h"
 #include "../../core/services/game_settings.h"
@@ -15,6 +16,7 @@
 // Game.ini and pcsx.cfg is GameSettingsService's, this only renders `settings` and steps it with the d-pad.
 class GuiEditor : public GuiScreen {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
     void render() override;
     void loop() override;

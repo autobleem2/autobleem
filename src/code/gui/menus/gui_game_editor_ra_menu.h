@@ -3,6 +3,7 @@
 //
 #pragma once
 #include "../gui_screen.h"
+#include "../../app.h"
 #include "../../core/main.h"
 #include "../../core/model/ps_game.h"
 
@@ -14,6 +15,7 @@
 // toggle it, Circle leaves. From AutoBleem-NG's gui_gameEditorMenu_RA.
 class GuiEditorRA : public GuiScreen {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
     void render() override;
     void loop() override;

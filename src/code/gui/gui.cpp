@@ -4,7 +4,7 @@
 
 #include "gui.h"
 #include "screens/gui_splash.h"
-#include "../app.h"
+#include "../app_base.h"
 #include <unistd.h>
 #include <iostream>
 #include <iomanip>
@@ -69,10 +69,12 @@ int Gui::multisampleSamples() {
 //********************
 // Gui::Gui
 //********************
+string Gui::windowTitle_ = "AutoBleem";
+
 Gui::Gui()
-    : ableem::GuiBase("AutoBleem", ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
-      assets_(renderer(), App::get().theme(), App::get().config()),
-      text_(renderer(), App::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
+    : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
+      assets_(renderer(), AppBase::get().theme(), AppBase::get().config()),
+      text_(renderer(), AppBase::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     input().probePads();
 }
 
@@ -90,12 +92,12 @@ void Gui::splash(const string &message) {
 void Gui::loadAssets(bool reloadMusic) {
     text_.clearTextCache(); // keyed on the font handles about to be replaced
     assets_.load();
-    App::get().audio().loadTheme(reloadMusic);
+    AppBase::get().audio().loadTheme(reloadMusic);
 
     // the classic screens' text halo, on unless the theme says otherwise; the launcher sets its own
     // around its frame and puts this one back
     TextRenderer::Shadow shadow;
-    const ableem::Opt<bool> &textShadow = App::get().theme().classic().textShadow;
+    const ableem::Opt<bool> &textShadow = AppBase::get().theme().classic().textShadow;
     shadow.enabled = !textShadow.set || textShadow;
     text_.setShadow(shadow);
     text_.setFonts(&assets_.themeFonts);
@@ -147,8 +149,6 @@ void Gui::display(bool resume) {
         GuiSplash splashScreen(*this);
         splashScreen.show();
         hideMouseCursor();
-    } else {
-        App::get().session().resumingGui = true;
     }
 }
 
@@ -156,7 +156,7 @@ void Gui::display(bool resume) {
 // Gui::finish
 //*******************************
 void Gui::finish() {
-    App::get().audio().shutdown();
+    AppBase::get().audio().shutdown();
     assets_.backgroundImg = Texture();
 }
 
@@ -173,7 +173,7 @@ void Gui::releaseDisplay() {
 // Gui::renderFreeSpace
 //*******************************
 void Gui::renderFreeSpace() {
-    const ableem::ThemePoint &pos = App::get().theme().classic().freeSpaceText;
+    const ableem::ThemePoint &pos = AppBase::get().theme().classic().freeSpaceText;
     text_.renderText(assets_.themeFont, _("Free space") + " : " + System::getAvailableSpace(), pos.x, pos.y);
 }
 
@@ -195,8 +195,8 @@ int Gui::renderLogo(bool small) {
         return 0;
     } else {
         Rect rect;
-        rect.x = App::get().theme().classic().menuPanel.x;
-        rect.y = App::get().theme().classic().menuPanel.y;
+        rect.x = AppBase::get().theme().classic().menuPanel.x;
+        rect.y = AppBase::get().theme().classic().menuPanel.y;
         rect.w = assets_.logoRect.w / 3;
         rect.h = assets_.logoRect.h / 3;
         renderer().copy(assets_.logo, nullptr, &rect);
@@ -208,7 +208,7 @@ int Gui::renderLogo(bool small) {
 // Gui::renderStatus
 //*******************************
 void Gui::renderStatus(const string &text, int posy) {
-    const ableem::ThemeStatusBar &bar = App::get().theme().classic().statusBar;
+    const ableem::ThemeStatusBar &bar = AppBase::get().theme().classic().statusBar;
 
     renderer().setDrawColor(TextRenderer::toColor(bar.color, bar.alpha));
     renderer().setBlendMode(ableem::BlendMode::Blend);
@@ -226,7 +226,7 @@ void Gui::renderStatus(const string &text, int posy) {
 // Gui::renderTextBar
 //*******************************
 void Gui::renderTextBar() {
-    const ableem::ThemePanel &panel = App::get().theme().classic().menuPanel;
+    const ableem::ThemePanel &panel = AppBase::get().theme().classic().menuPanel;
     renderer().setDrawColor(TextRenderer::toColor(panel.color, panel.alpha));
     renderer().setBlendMode(ableem::BlendMode::Blend);
 

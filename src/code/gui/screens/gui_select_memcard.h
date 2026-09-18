@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "../gui_screen.h"
+#include "../../app.h"
 
 #define MC_CUSTOM 0
 #define MC_MANAGER 1
@@ -14,6 +15,7 @@
 //********************
 class GuiSelectMemcard : public GuiScreen {
 public:
+    App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
     void render() override;
     void loop() override;
