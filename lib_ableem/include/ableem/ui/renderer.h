@@ -59,6 +59,13 @@ public:
     int height() const;
     // output pixels per logical pixel (1 unless the window is bigger than the canvas)
     float outputScale() const;
+
+    // Frame statistics, on when AB_FRAME_STATS is in the environment (read once, at construction): every
+    // 5 s a PLOG_INFO line with the frame time (average and worst), how many frames took over 20 ms, and
+    // the copies and texture switches per frame. copies() is what present() will report for the frame in
+    // progress; Font adds its glyphs through countCopies() since it draws past this class.
+    static bool statsEnabled();
+    void countCopies(int n);
     // a logical rect in output pixels, edges rounded so that neighbouring rects still tile
     Rect toOutput(const Rect &r) const;
 

@@ -24,6 +24,25 @@ Texture::Texture() : handle(nullptr) {}
 Texture::Texture(void *nativeTexture) : handle(nativeTexture, destroyTexture) {}
 
 Texture Texture::loadFile(Renderer &renderer, const std::string &path) {
+    // "no picture" is a legitimate answer callers pass straight on (a game with no resume point, no
+    // snap): not an error, and not worth the trip through SDL_image - which on Windows took up to 200 ms
+    // to fail on an empty name
+    if (path.empty())
+        return Texture();
+    // with frame statistics on, a load slow enough to cost a frame says so - the launcher's scroll
+    // stutter came from loads like these on its main thread
+    struct SlowLoadReport {
+        const std::string &path;
+        unsigned int start = Renderer::statsEnabled() ? SDL_GetTicks() : 0;
+        ~SlowLoadReport() {
+            if (start != 0) {
+                unsigned int ms = SDL_GetTicks() - start;
+                if (ms >= 5) {
+                    PLOG_INFO << "Texture::loadFile took " << ms << " ms: " << path;
+                }
+            }
+        }
+    } report{path};
     SDL_Texture *t = IMG_LoadTexture(static_cast<SDL_Renderer *>(renderer.native()), path.c_str());
     if (!t) {
         PLOG_ERROR << "Could not load texture: " << path << " (" << IMG_GetError() << ")";

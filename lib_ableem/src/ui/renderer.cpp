@@ -5,6 +5,7 @@
 #include <ableem/engine/log.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <stdexcept>
 #include <vector>
 
@@ -40,7 +41,31 @@ struct Renderer::Impl {
     SDL_Renderer *renderer = nullptr;
     int width = 0, height = 0; // the logical canvas
     float scale = 1.0f;        // output pixels per logical pixel
+
+    // frame statistics (see Renderer::statsEnabled)
+    struct Stats {
+        const void *lastTexture = nullptr;
+        long copies = 0, switches = 0; // this frame
+        long frames = 0, slowFrames = 0, sumMs = 0, maxMs = 0, sumCopies = 0, sumSwitches = 0;
+        unsigned int lastPresent = 0, lastReport = 0;
+    } stats;
+    void noteCopy(const void *texture, int n) {
+        stats.copies += n;
+        if (texture != stats.lastTexture) {
+            stats.switches++;
+            stats.lastTexture = texture;
+        }
+    }
 };
+
+bool Renderer::statsEnabled() {
+    static const bool enabled = getenv("AB_FRAME_STATS") != nullptr;
+    return enabled;
+}
+
+void Renderer::countCopies(int n) {
+    impl->stats.copies += n;
+}
 
 Renderer::Renderer(Platform &platform) : impl(new Impl()) {
     recreate(platform);
@@ -97,6 +122,33 @@ void Renderer::clear() {
 }
 void Renderer::present() {
     SDL_RenderPresent(impl->renderer);
+    if (!statsEnabled())
+        return;
+    Impl::Stats &st = impl->stats;
+    unsigned int now = SDL_GetTicks();
+    if (st.lastPresent != 0) {
+        long ms = static_cast<long>(now - st.lastPresent);
+        st.frames++;
+        st.sumMs += ms;
+        st.maxMs = std::max(st.maxMs, ms);
+        if (ms > 20)
+            st.slowFrames++;
+        st.sumCopies += st.copies;
+        st.sumSwitches += st.switches;
+    }
+    st.lastPresent = now;
+    st.copies = 0;
+    st.switches = 0;
+    st.lastTexture = nullptr;
+    if (st.lastReport == 0)
+        st.lastReport = now;
+    if (now - st.lastReport >= 5000 && st.frames > 0) {
+        PLOG_INFO << "Frames: " << st.frames << " in " << (now - st.lastReport) << " ms, avg " << (st.sumMs / st.frames)
+                  << " ms, worst " << st.maxMs << " ms, " << st.slowFrames << " over 20 ms; per frame "
+                  << (st.sumCopies / st.frames) << " copies, " << (st.sumSwitches / st.frames) << " texture switches";
+        st.frames = st.slowFrames = st.sumMs = st.maxMs = st.sumCopies = st.sumSwitches = 0;
+        st.lastReport = now;
+    }
 }
 
 void Renderer::setDrawColor(Color c) {
@@ -114,6 +166,7 @@ void Renderer::setBlendMode(BlendMode mode) {
 }
 
 void Renderer::fillRect(const Rect &r) {
+    impl->noteCopy(nullptr, 1);
     SDL_Rect sr = toSDL(toOutput(r));
     SDL_RenderFillRect(impl->renderer, &sr);
 }
@@ -125,6 +178,7 @@ void Renderer::fillRect() {
 void Renderer::fillRects(const Rect *rects, int count) {
     if (count <= 0)
         return;
+    impl->noteCopy(nullptr, count);
     // thread_local so repeated calls (once per frame, per color bucket) don't reallocate
     thread_local std::vector<SDL_Rect> buffer;
     buffer.resize(count);
@@ -156,6 +210,7 @@ void Renderer::copy(const Texture &tex, const Rect *src, const Rect *dst) {
         sdst = toSDL(toOutput(*dst));
         pdst = &sdst;
     }
+    impl->noteCopy(tex.native(), 1);
     SDL_RenderCopy(impl->renderer, static_cast<SDL_Texture *>(tex.native()), psrc, pdst);
 }
 
@@ -190,6 +245,7 @@ void Renderer::copyTrapezoid(const Texture &tex, const Rect *src, VerticalEdge l
     auto *native = static_cast<SDL_Texture *>(tex.native());
     int xFirst = static_cast<int>(std::floor(left.x));
     int xLast = static_cast<int>(std::ceil(right.x));
+    impl->noteCopy(native, xLast - xFirst);
     for (int x = xFirst; x < xLast; x++) {
         float t0 = std::min(1.0f, std::max(0.0f, (x - left.x) / width));
         float t1 = std::min(1.0f, std::max(0.0f, (x + 1 - left.x) / width));

@@ -79,6 +79,7 @@ int Font::width(const std::string &text) const {
 void Font::draw(Renderer &renderer, int x, int y, const std::string &text) const {
     if (!handle)
         return;
+    renderer.countCopies(static_cast<int>(text.size()));
     FC_Draw(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
             y * scale_, "%s", text.c_str());
 }
@@ -86,6 +87,7 @@ void Font::draw(Renderer &renderer, int x, int y, const std::string &text) const
 void Font::drawAlign(Renderer &renderer, int x, int y, Align align, const std::string &text) const {
     if (!handle)
         return;
+    renderer.countCopies(static_cast<int>(text.size()));
     FC_DrawAlign(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
                  y * scale_, toFC(align), "%s", text.c_str());
 }
@@ -93,6 +95,7 @@ void Font::drawAlign(Renderer &renderer, int x, int y, Align align, const std::s
 void Font::drawColor(Renderer &renderer, int x, int y, Color color, const std::string &text) const {
     if (!handle)
         return;
+    renderer.countCopies(static_cast<int>(text.size()));
     SDL_Color c{color.r, color.g, color.b, color.a};
     FC_DrawColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), x * scale_,
                  y * scale_, c, "%s", text.c_str());
@@ -117,6 +120,7 @@ int Font::columnHeight(const std::string &text, int width) const {
 int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, const std::string &text) const {
     if (!handle)
         return 0;
+    renderer.countCopies(static_cast<int>(text.size()));
     SDL_Color c{color.r, color.g, color.b, color.a};
     FC_Rect r = FC_DrawColumnColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
                                    x * scale_, y * scale_, static_cast<Uint16>(width * scale_), c, "%s", text.c_str());
