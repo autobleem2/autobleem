@@ -66,4 +66,5 @@ ab_add_test(test_harness core/test_env_fixture.cpp)
 # the console tools' suites (apps/), linking each tool's SDL-free core
 if (NOT AB_TARGET_RPI)
     ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
+    ab_add_test(test_abflashkit_core apps/test_abflashkit_core.cpp LIBS abflashkit_core)
 endif()

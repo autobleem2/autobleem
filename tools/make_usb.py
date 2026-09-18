@@ -155,7 +155,7 @@ def make_cover_db(path):
 
 
 # the console tools under apps/ that are staged into usb/Apps/<tool>/ for a visual test on Windows
-TOOLS = ['pscbios']
+TOOLS = ['pscbios', 'abflashkit']
 
 
 def main():

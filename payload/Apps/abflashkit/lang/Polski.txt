@@ -1,0 +1,33 @@
+# AutoBleem Polski Translation
+# Format: English Text=Translated Text
+# Untranslated: 25 / Total: 29
+
+All done - when the screen goes black replace power cord=
+Backup complete=
+Backup failed=
+Checking LBOOT for vanilla kernel. Decompressing...=
+Creating backup....=
+Exiting...=
+Flash Kernel=Wypal kernel
+Flashing KERNEL IMAGE=
+Full backup=Wykonaj kopię
+Invalid backup or invalid kernel image=
+No backup found - Recovery locked=
+Non AutoBleem Backup found. Please use valid AB backup=
+Overwrite the existing backup?=
+Please wait...=
+Quit=Koniec
+Recovery interrupted=
+Recovery Mode On=
+Restore Mode=Przywróć z kopii
+Set recovery mode and reboot now?=
+Setting recovery mode: off=
+Setting recovery mode: on=
+Start flashing ?=
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=
+This PSC has not been restored to original condition. Unable to flash.=
+Updating payload=
+Validating backup...   Please wait...=
+Welcome to ABFlashKit=
+Zipping:=

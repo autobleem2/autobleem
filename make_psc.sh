@@ -58,7 +58,7 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
 # the launcher and the console tools under apps/, each where its build leaves it
-BINARIES="autobleem-gui apps/pscbios/pscbios"
+BINARIES="autobleem-gui apps/pscbios/pscbios apps/abflashkit/abflashkit"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
     $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {
@@ -79,8 +79,10 @@ if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
 fi
 # the tools go straight into the payload's Apps folders (with their resources), the launcher stays in
 # dist/ for the release script to pick up
-echo "==> payload/Apps: pscbios"
-cp build_psc/dist/apps/pscbios/pscbios payload/Apps/pscbios/pscbios
-cp -r apps/pscbios/resources/. payload/Apps/pscbios/
+echo "==> payload/Apps: pscbios, abflashkit"
+for tool in pscbios abflashkit; do
+    cp build_psc/dist/apps/$tool/$tool payload/Apps/$tool/$tool
+    cp -r apps/$tool/resources/. payload/Apps/$tool/
+done
 echo "==> build_psc/dist:"
 find build_psc/dist -type f | xargs ls -l

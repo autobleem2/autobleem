@@ -10,6 +10,7 @@
 #include <ableem/engine/zip_writer.h>
 
 #include <algorithm>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -69,4 +70,25 @@ TEST_CASE("Md5 of a file streams and matches the string digest") {
     tmp.writeFile("big.bin", big);
     CHECK(ableem::Md5::ofFile(tmp.at("big.bin")) == ableem::Md5::ofString(big));
     CHECK(ableem::Md5::ofFile(tmp.at("absent.bin")).empty());
+}
+
+// the console's LBOOT.EPB is a zip with a 4 KB trailer after it; miniz's backward scan for the end record
+// had a signed/unsigned slip that lost it when the zip itself was small (patched in third_party/miniz)
+TEST_CASE("a zip with 4 KB of trailing data (a recovery trailer) still lists") {
+    TempDir tmp("zip_trailer");
+    tmp.writeFile("a.bin", "AAAA");
+    string zipPath = tmp.at("t.zip");
+    {
+        ableem::ZipWriter writer;
+        REQUIRE(writer.open(zipPath));
+        CHECK(writer.addFile(tmp.at("a.bin"), "a.bin"));
+        CHECK(writer.close());
+    }
+    {
+        std::ofstream out(zipPath, std::ios::binary | std::ios::app);
+        out << string(4096, 'x');
+    }
+    vector<string> names;
+    CHECK(ableem::ZipArchive::list(zipPath, names));
+    CHECK(names.size() == 1);
 }

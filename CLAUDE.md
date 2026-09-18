@@ -164,7 +164,9 @@ Still to do, in order:
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
    place - `Theme::load()` does it on first contact, `tools/theme_convert` ahead of time - and `payload/themes`
    ships converted (aergb 334 -> 29 files). The stock SonyUI is no longer re-skinned (`rc/selection.sh`), and
-   `src/resources/sony/` is just the two SST fonts. Screens read `app.theme().classic()/launcher()/sounds()`.
+   `src/resources/sony/` is just the two SST fonts. **The console tools are in the tree** (2026-09-18,
+   `apps/`, see "Console tools"): pscbios and abflashkit build with the launcher, draw with its theme and
+   run on Windows against fakes; `psctools/` (the 2020 sources) is deleted, the import commit has them. Screens read `app.theme().classic()/launcher()/sounds()`.
    A theme can also be dropped in as `<name>.zip`: `ThemeInstaller` (`core/services/theme_installer.*`)
    unpacks it to `<name>/` at `Theme::load()` / the Options theme list, over `ableem::ZipArchive` (vendored
    miniz, read-only, `lib_ableem/third_party/miniz/`).
@@ -809,6 +811,8 @@ defaults, which both the services and the screens need.
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `evoui/screens/evoui_mc_manager.*`, `evoui_app_start.*`, `evoui_btn_guide.*` | | Launcher sub-screens. |
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |
+
+| `apps/pscbios/`, `apps/abflashkit/` | `PscBios`, `AbFlashKit` | The console tools (see "Console tools"), each with its own CLAUDE.md, a `<tool>_core` library and a program on `ab_classic`. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
 `default`, `evolution`), bundled Apps, release notes. `ab2`'s launcher menu icons (gear, gamepad, memory card,

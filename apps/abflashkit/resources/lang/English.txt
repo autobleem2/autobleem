@@ -1,0 +1,33 @@
+# AutoBleem English Translation
+# Format: English Text=Translated Text
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=All done - when the screen goes black replace power cord
+Backup complete=Backup complete
+Backup failed=Backup failed
+Checking LBOOT for vanilla kernel. Decompressing...=Checking LBOOT for vanilla kernel. Decompressing...
+Creating backup....=Creating backup....
+Exiting...=Exiting...
+Flash Kernel=Flash Kernel
+Flashing KERNEL IMAGE=Flashing KERNEL IMAGE
+Full backup=Full backup
+Invalid backup or invalid kernel image=Invalid backup or invalid kernel image
+No backup found - Recovery locked=No backup found - Recovery locked
+Non AutoBleem Backup found. Please use valid AB backup=Non AutoBleem Backup found. Please use valid AB backup
+Overwrite the existing backup?=Overwrite the existing backup?
+Please wait...=Please wait...
+Quit=Quit
+Recovery interrupted=Recovery interrupted
+Recovery Mode On=Recovery Mode On
+Restore Mode=Restore Mode
+Set recovery mode and reboot now?=Set recovery mode and reboot now?
+Setting recovery mode: off=Setting recovery mode: off
+Setting recovery mode: on=Setting recovery mode: on
+Start flashing ?=Start flashing ?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?
+This PSC has not been restored to original condition. Unable to flash.=This PSC has not been restored to original condition. Unable to flash.
+Updating payload=Updating payload
+Validating backup...   Please wait...=Validating backup...   Please wait...
+Welcome to ABFlashKit=Welcome to ABFlashKit
+Zipping:=Zipping:

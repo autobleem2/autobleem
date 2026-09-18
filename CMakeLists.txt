@@ -352,4 +352,5 @@ configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 # ab_classic; a Raspberry Pi has no PSC kernel to configure or flash, so not there
 if (NOT AB_TARGET_RPI)
     add_subdirectory(apps/pscbios)
+    add_subdirectory(apps/abflashkit)
 endif()
