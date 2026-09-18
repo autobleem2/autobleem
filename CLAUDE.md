@@ -223,9 +223,20 @@ OFF, and a full Windows/MinGW rebuild plus `ctest` were verified green with it v
 ## Raspberry Pi port (2026-09-17)
 
 A second, *non-PSC* target: AutoBleem as an appliance on **32-bit Raspberry Pi OS Lite** (Bookworm or
-Trixie), games on an exFAT partition of the SD card that behaves like the console's USB stick. It builds and
-links; **nothing has run on a Pi yet** - the test box will be a Pi 400 (BCM2711, same as a Pi 4) with 32-bit
-Trixie. PS1 games run in **pcsx-ab** as on the console: the Pi build from `E:\Programming\pcsx-rearmed-develop`
+Trixie), games on an exFAT partition of the SD card that behaves like the console's USB stick. **Running on
+hardware since 2026-09-18**: a Pi 400 (BCM2711, same as a Pi 4) with 32-bit Trixie at 192.168.68.144 - the
+installer shrank its root to 16 GB, built RetroArch 1.22.2 from source, downloaded 109 cores; the launcher
+boots into the carousel with sound over HDMI and starts games in pcsx-ab. What that first session fixed, in
+order (each its own commit): the `init=` shrink that could never work (now an initramfs `local-premount`
+script), a `YES` swallowed by apt, `cp -a` failing on exFAT, an empty unit file after a power cut (atomic
+writes now), ALSA defaulting to the DualShock's USB audio (`autobleem-session` writes `/etc/asound.conf` for
+the connected HDMI), the splash gone before the TV synced (`SplashSettleDuration`), **no game launching on
+any platform** since the classic menu's removal (`startingGame` -> `MENU_OPTION_START` lives in
+`AutoBleem::run()` now), the launcher's window being the DRM master (`Gui::releaseDisplay()` around a
+launch - see "Conventions"), and pcsx-ab's `fclose(NULL)` in its console-only cpu-temperature watcher.
+Things to know when working on the Pi over ssh: `plink -pw` from `C:\Program Files\PuTTY` (the harness
+will not install ssh keys), `sudo -S` with the password on stdin, the journal is not persistent, and the
+launcher's logs are `System/Logs/AB_out.txt`/`AB_err.txt` on the partition. PS1 games run in **pcsx-ab** as on the console: the Pi build from `E:\Programming\pcsx-rearmed-develop`
 (`AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` copies its `build_rpi/dist/` into
 `payload_rpi/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
 Pi `rc/launch.sh` builds `/tmp/runpcsx` exactly as the console's does (`.pcsx` -> the `!SaveStates` folder,
@@ -591,6 +602,15 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
 
 ## Conventions and gotchas
 
+- **A game launch gives the display up.** `AutoBleem::launchGame()` closes the audio, flushes the pads and,
+  when the `ProcessRunner` says `needsExclusiveDisplay()` (the fork runner does, the dev host's splash runner
+  does not), calls `Gui::releaseDisplay()`: every texture and font is dropped (`ThemeAssets::unload()`,
+  `Fonts::closeAll()`), then the renderer and the window go (`GuiBase::releaseDisplay()` - SDL's video
+  subsystem is quit, which is what drops the KMS/DRM master on a Pi). `Gui::display(true)` afterwards finds
+  no window, acquires one and reloads the assets. So: **never keep an `ableem::Texture` or `Font` in an
+  object that outlives a launch** other than `ThemeAssets` - SDL frees them with the renderer and the handle
+  would free them again. Screens are stack objects that die before the launch, which is what makes this
+  safe.
 - The one remaining singleton is `Gui` (`static shared_ptr<Gui> getInstance()`).
   `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are non-owning pointers; the objects are `unique_ptr`s in
   `runAutobleem()` (main.cpp). `GuiLauncher`'s named `PsObj*` members are non-owning shortcuts into
