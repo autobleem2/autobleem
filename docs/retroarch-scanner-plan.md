@@ -17,7 +17,7 @@ And it has to do that on **all three targets**:
 | ROMs | `/media/roms/<system>/` (RetroBoot's, what the old playlists point at) | `RetroArch/roms/<system>/` (a folder per rdb name, made by `install.sh`) | `usb/roms/<system>/` |
 | `.rdb` databases | shipped by RetroBoot (`database/rdb/`) | downloaded by the installer | whatever `make_usb.py` copies |
 | thumbnails | none unless the user adds them | PS1 mirrored by the installer, others only if fetched | none |
-| network | **maybe** - the AutoBleem kernel and a USB adapter, or nothing at all | usually | yes |
+| network | **maybe** - the AutoBleem kernel and a USB adapter, or nothing at all; else `UpdateRoms.exe` on a PC (step 5) | usually | yes |
 | SDL / tools | 2.0.12, busybox, no `wget` to rely on | 2.32, `wget` and `curl` | `curl.exe` |
 
 So the scanner's core must work **fully offline from the file names alone**, with identification by
@@ -54,8 +54,8 @@ and "how to fetch" differences stay **data** in `resources/platform/<platform>.i
 
 ## The work
 
-Four steps, each its own commit with tests (`tests/core/`), in this order. 1 alone is the feature; 2-4 make
-it good.
+Five steps, each its own commit with tests (`tests/core/`), in this order. 1 alone is the feature; 2-4 make
+it good; 5 is the console's way to 2-3 without a network of its own.
 
 ### 1. `ableem::RetroArchScanner` - the offline scan
 
@@ -122,6 +122,34 @@ console that does have network is not left without step 2.
   Drive - Genesis... 99 games").
 - The Game Manager's per-game preview works for RetroArch games (it already reads the thumbnails tree).
 - `payload_rpi/README.md`'s "Games for the other systems" shrinks to "copy them in, wait for the line".
+
+### 5. `UpdateRoms.exe` - the console's online path, from a PC
+
+The PlayStation Classic's USB stick spends its life being plugged into a PC to get games copied on. So
+the steps that want a network run **there**: a small Windows program shipped in the stick's root
+(`payload/UpdateRoms.exe`, built by `make_win.sh` next to the launcher, like `tools/theme_convert` - links
+`ableem_engine` + `ab_core`, no SDL, `-static` so it runs on any Windows without MSYS2), which, run from
+the stick, does for the RetroArch folders exactly what the console's scan would do with a network:
+
+- finds the stick's root from its own location (the drive it sits on), reads the same
+  `resources/platform/psc.ini`, `info/` and `cores.cfg` the console would, so its idea of systems and
+  cores is the console's;
+- step 1's scan and step 2's identification, writing the playlists **with the console's paths**
+  (`/media/roms/...`, never `E:oms\...`) - `RetroArchScanner` takes the target's root prefix as a
+  parameter for exactly this, and its tests cover a Windows source tree mapped to a `/media` target;
+- step 3's downloads with the PC's network: thumbnails for every entry, `database-rdb.zip` when
+  `database/rdb/` is empty - `download_command` from the ini is `curl.exe` (in every Windows since 10);
+- prints what it did, one line per system, and waits for a key when started by double-click.
+
+Nothing on the console changes: it boots, its scan sees the playlists and the thumbnails already there
+(they are ordinary files under `retroarch/`), and its own offline pass has nothing left to do. The same
+program on a Pi's SD card in a PC reader does the same for `RetroArch/roms/` (it reads `rpi.ini` when
+the card's tree says it is a Pi - `Autobleem/rc/launch_rb.sh`'s Pi header, or simpler, a `platform=`
+line the installer writes into `config.ini`). A Linux/macOS build of the same tool is `make_sys.sh`'s
+business if anyone asks.
+
+Not in scope for it: PS1 games (the console's own scan does those, and it needs no network), themes,
+anything that touches the console's databases.
 
 ## Caveats to keep in view
 
