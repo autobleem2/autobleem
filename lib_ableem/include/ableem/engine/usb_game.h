@@ -14,7 +14,7 @@
 
 namespace ableem {
 
-class CoverDatabase;
+class MetadataLookup;
 
 //******************
 // Disc
@@ -72,7 +72,7 @@ public:
 
     // creates whatever is missing (cover .png, pcsx.cfg, the disc list) using the defaults in
     // Environment::getWorkingPath() and the cover database
-    void recoverMissingFiles(CoverDatabase &coverDb);
+    void recoverMissingFiles(MetadataLookup &metadata);
     // every file a launchable game needs is present. the reasons are plain (untranslated) English.
     bool verify(std::vector<std::string> *failureReasons = nullptr);
     bool print();

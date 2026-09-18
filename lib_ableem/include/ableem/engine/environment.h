@@ -39,6 +39,8 @@ struct Environment {
     static std::string getPathToSystemDir();            // usb:/System
     static std::string getPathToRetroarchDir();         // usb:/retroarch unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
+    static std::string getPathToRetroarchRdbDir();      // <retroarch>/database/rdb - libretro-database's .rdb files
+    static std::string getPathToPlayStationRdbFile();  // "Sony - PlayStation.rdb" in there, what MetadataLookup reads
     static std::string getPathToRetroarchCoreFile();
     static bool hasRetroBoot();                         // usb:/retroarch/retroboot exists - the console's RetroArch bundle
     static std::string getPathToRomsDir();              // usb:/roms

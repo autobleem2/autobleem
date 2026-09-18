@@ -177,9 +177,10 @@ void ScanService::runScan() {
         started.currentPaths.push_back(game->fullPath);
     pushEvent(std::move(started));
 
-    CoverDatabase coverDb(Env::getPathToCoversDBDir());   // this thread's own connection - never regional.db
+    // this thread's own sqlite connection and rdb - never regional.db
+    MetadataLookup metadata(Env::getPathToCoversDBDir(), Env::getPathToPlayStationRdbFile());
     GameScanner scanner(&listener);
-    scanner.scanGamesDirectory(hierarchy, coverDb);
+    scanner.scanGamesDirectory(hierarchy, metadata);
 
     GamesFingerprint fp = GamesFingerprint::take(gamesDir);
     lastScannedFingerprint_ = fp;

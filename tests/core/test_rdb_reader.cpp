@@ -5,45 +5,19 @@
 //
 #include "doctest/doctest.h"
 
+#include "../support/rdb_builder.h"
 #include "../support/temp_dir.h"
 
 #include <ableem/engine/rdb_reader.h>
 
-#include <cstdint>
-#include <fstream>
 #include <string>
-#include <vector>
 
 using ableem::RdbReader;
 using std::string;
-using std::vector;
 
 namespace {
 
-typedef vector<unsigned char> Bytes;
-
-void appendU64BE(Bytes &out, uint64_t value) {
-    for (int shift = 56; shift >= 0; shift -= 8)
-        out.push_back(static_cast<unsigned char>((value >> shift) & 0xff));
-}
-
-void appendString(Bytes &out, const string &value) {   // fixstr: up to 31 bytes
-    REQUIRE(value.size() < 32u);
-    out.push_back(static_cast<unsigned char>(0xa0 | value.size()));
-    out.insert(out.end(), value.begin(), value.end());
-}
-
-void appendBin(Bytes &out, const string &value) {      // bin8 - how the real database stores serials
-    out.push_back(0xc4);
-    out.push_back(static_cast<unsigned char>(value.size()));
-    out.insert(out.end(), value.begin(), value.end());
-}
-
-void appendUint16(Bytes &out, unsigned value) {
-    out.push_back(0xcd);
-    out.push_back(static_cast<unsigned char>((value >> 8) & 0xff));
-    out.push_back(static_cast<unsigned char>(value & 0xff));
-}
+using namespace test_support;
 
 // a full record, with an unknown key the reader has to skip over
 void appendRecord(Bytes &out) {
@@ -63,7 +37,7 @@ void appendRecord(Bytes &out) {
     appendString(out, "users");
     out.push_back(2);
     appendString(out, "crc");        // not a field we keep
-    appendBin(out, "\x12\x34\x56\x78");
+    appendBin(out, "crc-bytes");
 }
 
 void appendSimpleRecord(Bytes &out, const string &name, const string &serial) {
@@ -72,24 +46,6 @@ void appendSimpleRecord(Bytes &out, const string &name, const string &serial) {
     appendString(out, name);
     appendString(out, "serial");
     appendString(out, serial);
-}
-
-Bytes makeRdb(uint64_t metadataOffset, const Bytes &records, const Bytes &metadata = Bytes()) {
-    Bytes out;
-    const unsigned char magic[] = {'R', 'A', 'R', 'C', 'H', 'D', 'B', '\0'};
-    out.insert(out.end(), magic, magic + sizeof(magic));
-    appendU64BE(out, metadataOffset);
-    out.insert(out.end(), records.begin(), records.end());
-    out.insert(out.end(), metadata.begin(), metadata.end());
-    return out;
-}
-
-string writeRdb(const TempDir &tmp, const string &name, const Bytes &data) {
-    string path = tmp.at(name);
-    std::ofstream out(path, std::ios::binary);
-    out.write(reinterpret_cast<const char *>(data.data()), data.size());
-    REQUIRE(out.good());
-    return path;
 }
 
 } // namespace

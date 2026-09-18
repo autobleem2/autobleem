@@ -372,6 +372,13 @@ int GameDatabase::countGames() {
 }
 
 //*******************************
+// GameDatabase::execute
+//*******************************
+bool GameDatabase::execute(const char *sql, const string &what) {
+    return executeStatement(sql, "", what);
+}
+
+//*******************************
 // GameDatabase::updateMemcard
 //*******************************
 bool GameDatabase::updateMemcard(int id, string memcard) {

@@ -1,6 +1,6 @@
 #include "ableem/engine/usb_game.h"
 #include "ableem/engine/config_file_editor.h"
-#include "ableem/engine/cover_database.h"
+#include "ableem/engine/metadata_lookup.h"
 #include "ableem/engine/environment.h"
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/game_metadata.h"
@@ -183,7 +183,7 @@ bool UsbGame::print() {
 //*******************************
 // UsbGame::recoverMissingFiles
 //*******************************
-void UsbGame::recoverMissingFiles(CoverDatabase &coverDb) {
+void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
     string workingPath = Environment::getWorkingPath();
 
     GameMetadata md;
@@ -273,7 +273,7 @@ void UsbGame::recoverMissingFiles(CoverDatabase &coverDb) {
             string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
 
-                if (coverDb.findBySerial(serial, md)) {
+                if (metadata.findBySerial(serial, md)) {
                     metadataLoaded = true;
                     cout << "Updating cover in recoverMissingFiles()" << destination << endl;
                     ofstream pngFile;
@@ -306,7 +306,7 @@ void UsbGame::recoverMissingFiles(CoverDatabase &coverDb) {
         if (!metadataLoaded) {
             string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
             if (serial != "") {
-                metadataLoaded = coverDb.findBySerial(serial, md);
+                metadataLoaded = metadata.findBySerial(serial, md);
             }
         }
 

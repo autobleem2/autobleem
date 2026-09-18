@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 
-#include "cover_database.h"
+#include "metadata_lookup.h"
 #include "game_database.h"
 #include "games_hierarchy.h"
 #include "usb_game.h"
@@ -55,8 +55,8 @@ public:
     UsbGames gamesToAddToDB;            // filled by scanGamesDirectory: every game that verified
     bool noGamesFoundDuringScan = false;
 
-    // coverDb supplies title/publisher/year/cover art for games whose Game.ini is missing or incomplete
-    void scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDatabase &coverDb);
+    // metadata supplies title/publisher/year/cover art for games whose Game.ini is missing or incomplete
+    void scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLookup &metadata);
 
     // SUBDIR_ROWS + SUBDIR_GAMES_TO_DISPLAY_ON_ROW, cleared and rewritten in one transaction. This class no
     // longer assigns game ids (a caller doing an incremental scan has to reuse an existing game's id rather

@@ -33,6 +33,7 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/game_database.cpp
         src/engine/cover_database.cpp
         src/engine/rdb_reader.cpp
+        src/engine/metadata_lookup.cpp
         src/engine/usb_game.cpp
         src/engine/games_hierarchy.cpp
         src/engine/games_fingerprint.cpp

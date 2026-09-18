@@ -1,4 +1,4 @@
-// lib_ableem - engine: what the cover databases know about a game (see CoverDatabase::findBySerial).
+// lib_ableem - engine: what the metadata sources know about a game (see MetadataLookup::findBySerial).
 #pragma once
 
 #include <string>
@@ -12,6 +12,7 @@ namespace ableem {
 class GameMetadata {
 public:
     std::string title;
+    std::string recordName;     // the libretro-database name ("Crash Bandicoot (USA)") when the rdb answered - a thumbnail's file name; else ""
     std::string publisher;
     int year = 0;
     std::string serial;

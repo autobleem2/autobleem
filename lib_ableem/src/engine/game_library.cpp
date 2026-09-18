@@ -27,7 +27,7 @@ GameLibrary::~GameLibrary() {
 // GameLibrary::openCoversAndUsbGames
 //*******************************
 bool GameLibrary::openCoversAndUsbGames() {
-    coverDb.reset(new CoverDatabase(Environment::getPathToCoversDBDir()));
+    metadata_.reset(new MetadataLookup(Environment::getPathToCoversDBDir(), Environment::getPathToPlayStationRdbFile()));
 
     regionalDb.reset(new GameDatabase());
     if (!regionalDb->open(Environment::getPathToRegionalDBFile())) {
@@ -58,7 +58,7 @@ bool GameLibrary::openInternalGames() {
 void GameLibrary::close() {
     internalDb.reset();
     regionalDb.reset();
-    coverDb.reset();
+    metadata_.reset();
 }
 
 //*******************************

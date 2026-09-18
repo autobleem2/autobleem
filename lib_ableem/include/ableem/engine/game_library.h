@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include "cover_database.h"
+#include "metadata_lookup.h"
 #include "game_database.h"
 #include "game_record.h"
 
@@ -27,13 +27,14 @@ public:
 
     // split in two (rather than one open()) because the application needs to run a shell hook between them
     // (importing internal.db from the console) - see the "Importing internal games" step in App::openLibrary.
-    bool openCoversAndUsbGames();   // CoverDatabase + regional.db (creates the schema if missing)
+    bool openCoversAndUsbGames();   // MetadataLookup (the rdb + the covers dbs) + regional.db (creates the schema if missing)
     bool openInternalGames();       // internal.db (adds the favorite/history/last_played/play_using_ra columns if missing)
     void close();                   // safe to call more than once; also runs at destruction
 
     GameDatabase &usbGames() { return *regionalDb; }
     GameDatabase &internalGames() { return *internalDb; }
-    CoverDatabase &covers() { return *coverDb; }
+    MetadataLookup &metadata() { return *metadata_; }
+    CoverDatabase &covers() { return metadata_->covers(); }
 
     // internal games live in internal.db, USB games in regional.db - every call site that used to branch on
     // game.internal to pick one of "gui->db"/"gui->internalDB" can use this instead.
@@ -59,7 +60,7 @@ public:
     bool writeEmulationStationGamelist();
 
 private:
-    std::unique_ptr<CoverDatabase> coverDb;
+    std::unique_ptr<MetadataLookup> metadata_;
     std::unique_ptr<GameDatabase> regionalDb;
     std::unique_ptr<GameDatabase> internalDb;
 };

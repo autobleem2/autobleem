@@ -4,6 +4,7 @@
 #include "ableem/engine/environment.h"
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/game_metadata.h"
+#include "ableem/engine/metadata_lookup.h"
 #include "ableem/engine/serial_scanner.h"
 #include "ableem/engine/strings.h"
 
@@ -315,7 +316,7 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
 //*******************************
 // GameScanner::scanGamesDirectory
 //*******************************
-void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDatabase &coverDb) {
+void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLookup &metadata) {
     gamesToAddToDB.clear();  // clear games list
 
     report(ScanStage::Scanning);
@@ -403,7 +404,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
 			}
 
 			cout << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed << endl;
-			game->recoverMissingFiles(coverDb);
+			game->recoverMissingFiles(metadata);
             cout << "after calling recoverMissingFiles() automationUsed = " << game->automationUsed << endl;
 
             if (game->gameIniFound)
@@ -425,12 +426,12 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
             if ( !game->gameIniFound || game->automationUsed || (game->discs.size()==0) ) {
 
                 if (game->discs.size()==0)
-                    game->recoverMissingFiles(coverDb);
+                    game->recoverMissingFiles(metadata);
 
 				if (!game->serial.empty()) {
 					//cout << "Accessing metadata for serial: " << game->serial << endl;
 					GameMetadata md;
-					if (coverDb.findBySerial(game->serial, md)) {
+					if (metadata.findBySerial(game->serial, md)) {
 						// at this stage we have more data;
                         if (game->title == "")
 						    game->title = md.title;

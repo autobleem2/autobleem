@@ -115,6 +115,10 @@ public:
 
     bool deleteGame(int id);                        // from every table, in one transaction
 
+    // runs one statement that returns no rows (a CREATE, an INSERT); false with a line on stderr when it
+    // fails. For building a database from scratch - the test fixtures' covers db - not for queries.
+    bool execute(const char *sql, const std::string &what);
+
 private:
     sqlite3 *db = nullptr;
     bool deleteGameIdFromOneTable(int id, const char *sql);

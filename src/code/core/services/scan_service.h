@@ -49,7 +49,7 @@ struct ScanUpdate {
 // ScanService
 //******************
 // Owns one worker thread that does every bit of scanning filesystem work (fingerprinting, moving loose game
-// files, walking the hierarchy, GameScanner::scanGamesDirectory with its own CoverDatabase connection) and
+// files, walking the hierarchy, GameScanner::scanGamesDirectory with its own MetadataLookup) and
 // hands results back through a mutex-protected queue. It never touches regional.db, Lang, Gui or App - the
 // main thread does every database write, from poll(), using the GameLibrary connection App already owns.
 //

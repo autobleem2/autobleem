@@ -19,6 +19,7 @@
 #include "engine/game_database.h"
 #include "engine/cover_database.h"
 #include "engine/rdb_reader.h"
+#include "engine/metadata_lookup.h"
 #include "engine/usb_game.h"
 #include "engine/games_hierarchy.h"
 #include "engine/games_fingerprint.h"

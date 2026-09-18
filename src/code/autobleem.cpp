@@ -110,9 +110,10 @@ int AutoBleem::run() {
         return EXIT_FAILURE;
     }
 
-    if (!gameLibrary.covers().hasAnyRegion()) {
+    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
-        // every game would otherwise scan in with no title/cover
+        // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
+        // is the other source, so a stick with that tree but no covers*.db is fine.
         gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
     }
 

@@ -63,6 +63,7 @@ using ableem::SubDirRowInfos;
 using ableem::SubDirRowGame;
 using ableem::SubDirRowGames;
 using ableem::CoverDatabase;
+using ableem::MetadataLookup;
 using ableem::Disc;
 using ableem::UsbGame;
 using ableem::UsbGamePtr;
