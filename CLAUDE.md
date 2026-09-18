@@ -358,6 +358,9 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   only "BIOS" entries are x86 MIDI libraries).
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
+- **Not started, planned in `docs/retroarch-scanner-plan.md`**: scanning `RetroArch/roms/` from
+  `ScanService` (a `RetroArchScanner` writing the `.lpl`s, then rdb identification by CRC). Deliberately
+  parked until real ROMs have been run on the Pi through RetroArch's own scanner.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
