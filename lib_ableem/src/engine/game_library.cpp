@@ -72,17 +72,15 @@ bool GameLibrary::exportToRetroArchPlaylist() {
 
     RetroArchPlaylistEntries entries;
     for (const GameRecord &game : games) {
+        // a disc's base is the cue name without ".cue", but a PBP's or a CHD's is the whole file name -
+        // only a cue game needs the extension put back (a CHD used to come out as "foo.chd.cue", NG's 8ee4fbea)
+        bool singleFileImage = DirEntry::matchExtension(game.base, EXT_PBP) || DirEntry::matchExtension(game.base, EXT_CHD);
         string gameFile = game.folder + sep + game.base;
-        if (!DirEntry::matchExtension(game.base, ".pbp")) {
-            gameFile += ".cue";
+        if (!singleFileImage) {
+            gameFile += EXT_CUE;
         }
 
-        string base;
-        if (DirEntry::isPBPFile(game.base)) {
-            base = game.base.substr(0, game.base.length() - 4);
-        } else {
-            base = game.base;
-        }
+        string base = singleFileImage ? game.base.substr(0, game.base.length() - 4) : game.base;
         if (DirEntry::exists(game.folder + sep + base + ".m3u")) {
             gameFile = game.folder + sep + base + ".m3u";
         }
