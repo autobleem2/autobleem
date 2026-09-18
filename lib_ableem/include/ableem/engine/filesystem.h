@@ -67,6 +67,7 @@ public:
     // PSC has no battery-backed clock, so a file's stored modification time cannot be trusted to stay put
     // across a reboot (see Clock's comment) - GamesFingerprint uses this instead to notice a changed game.
     static long long fileSize(const std::string &path);
+    static bool filesAreIdentical(const std::string &a, const std::string &b);   // same size and bytes; false if either is missing
     static bool createDir(const std::string &name);
     static int rmDir(std::string path);                 // recursive; 0 on success
     static bool removeDirAndContents(const std::string path);

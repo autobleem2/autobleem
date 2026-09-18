@@ -70,8 +70,6 @@ Controller and system information
 Informácie o ovládači a systéme
 Copy
 Kopírovať
-Cover image file not found
-Nie je možné nájsť obal hry.
 Cover Style:
 Štýl obalu:
 Create, rename or manage memory card sets

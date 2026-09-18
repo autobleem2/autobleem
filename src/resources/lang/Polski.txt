@@ -70,8 +70,6 @@ Controller and system information
 Informacje o kontrolerze i systemie
 Copy
 Kopiuj
-Cover image file not found
-Nie znaleziono pliku obrazu okładki
 Cover Style:
 Styl Okładek:
 Create, rename or manage memory card sets

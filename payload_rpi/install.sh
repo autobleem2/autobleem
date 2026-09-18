@@ -30,6 +30,7 @@ BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem 
 HDMI_MODE="1280x720@60"         # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
+THUMBNAILS=boxarts              # --thumbnails: boxarts (the PS1 covers, ~350 MB) | all (+ title screens, snaps) | none
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
 
 #*******************************
@@ -95,6 +96,8 @@ Usage: sudo bash install.sh [options]
                        the launcher's own resolution; "none" leaves the screen's preferred mode)
   --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
                        apt: the distribution's package; none: leave RetroArch alone
+  --thumbnails WHAT    boxarts (default): the PS1 covers from thumbnails.libretro.com (~9000 files, ~350 MB,
+                       resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
@@ -120,6 +123,7 @@ parse_args() {
             --hdmi-mode)      HDMI_MODE="${2:?--hdmi-mode needs a mode such as 1280x720@60, or none}"; shift 2 ;;
             --retroarch)      RETROARCH_MODE="${2:?--retroarch needs source, apt or none}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
+            --thumbnails)     THUMBNAILS="${2:?--thumbnails needs boxarts, all or none}"; shift 2 ;;
             --yes)            ASSUME_YES=1; shift ;;
             --dry-run)        DRY_RUN=1; shift ;;
             -h|--help)        usage; exit 0 ;;
@@ -525,6 +529,39 @@ download_retroarch_content() {
         run rm -f "$tmp/$bundle.zip"
     done
     run rm -rf "$tmp"
+    download_thumbnails
+}
+
+#*******************************
+# download_thumbnails
+#*******************************
+# The launcher's covers: libretro-thumbnails' "Sony - PlayStation" pack, named after the games in the
+# rdb downloaded above, so a game the scanner identifies gets its box art from here (the covers*.db in
+# Autobleem/bin/db, when present, is the fallback). thumbnailpacks.libretro.com's zips are gone, and the
+# GitHub mirror is one 1.5 GB archive of all three folders, so this mirrors the per-file listing at
+# thumbnails.libretro.com instead: ~9000 files, wget -r skips what is already there (re-runs resume).
+download_thumbnails() {
+    case "$THUMBNAILS" in
+        none) log "skipping the thumbnails (--thumbnails none)"; return 0 ;;
+        boxarts) local dirs="Named_Boxarts" ;;
+        all) local dirs="Named_Boxarts Named_Titles Named_Snaps" ;;
+        *) die "--thumbnails takes boxarts, all or none (got '$THUMBNAILS')" ;;
+    esac
+    local system="Sony - PlayStation"
+    local dir
+    for dir in $dirs; do
+        local dest="$RA_ROOT/thumbnails/$system/$dir"
+        log "RetroArch: thumbnails.libretro.com/$system/$dir -> $dest (a while: one file at a time)"
+        run mkdir -p "$dest"
+        # -np: never up; -nH --cut-dirs=2: drop the host and the two path parts, so a file lands straight in
+        # $dest; -nc: keep files already there; -A: the images only, not the index pages
+        if ! run wget -q -r -np -nH --cut-dirs=2 -nc -A png,jpg -P "$dest" \
+                "https://thumbnails.libretro.com/${system// /%20}/$dir/"; then
+            warn "thumbnails: the $dir download stopped early - run the installer again to resume it"
+        fi
+    done
+    # wget leaves the directory index pages behind when it cannot delete them
+    run find "$RA_ROOT/thumbnails" -name 'index.html*' -delete
 }
 
 #*******************************

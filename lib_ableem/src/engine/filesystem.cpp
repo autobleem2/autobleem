@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <dirent.h>
 #include <libgen.h>
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -252,6 +253,22 @@ DirEntries DirEntry::diru(string path) {
     }
     sort(result.begin(), result.end(), DirEntry::sortDirEntryByName);
     return result;
+}
+
+//*******************************
+// DirEntry::filesAreIdentical
+//*******************************
+bool DirEntry::filesAreIdentical(const string &a, const string &b) {
+    if (!exists(a) || !exists(b) || fileSize(a) != fileSize(b)) return false;
+    ifstream fa(a, ios::binary), fb(b, ios::binary);
+    if (!fa.is_open() || !fb.is_open()) return false;
+    char bufA[4096], bufB[4096];
+    while (fa && fb) {
+        fa.read(bufA, sizeof(bufA));
+        fb.read(bufB, sizeof(bufB));
+        if (fa.gcount() != fb.gcount() || memcmp(bufA, bufB, static_cast<size_t>(fa.gcount())) != 0) return false;
+    }
+    return true;
 }
 
 //*******************************

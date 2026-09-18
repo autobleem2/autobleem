@@ -118,11 +118,6 @@ bool UsbGame::verify(std::vector<std::string> *failureReasons) {
             failureReasons->emplace_back("Game.ini file not valid");
         result = false;
     }
-    if (!coverImageFound) {
-        if (failureReasons)
-            failureReasons->emplace_back("Cover image file not found");
-        result = false;
-    }
     if (!pcsxCfgFound) {
         if (failureReasons)
             failureReasons->emplace_back("pcsx.cfg file not found");
@@ -259,22 +254,18 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
         }
     }
 
-    if (discs.size() > 0) {
-        if (!coverImageFound) {
-            automationUsed = true;
-            cout << "Switching automation no image" << endl;
-            string source = workingPath + sep + "default.png";
-            string destination = fullPath + sep + discs[0].diskName + ".png";
-            cerr << "SRC:" << source << " DST:" << destination << endl;
-            DirEntry::copy(source, destination);
-            // maybe we can do better ?
-            cout << "getting serial from Image File" << endl;
-         
-            string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
-            if (serial != "") {
-
-                if (metadata.findBySerial(serial, md)) {
-                    metadataLoaded = true;
+    // The cover: the covers db's PNG written next to the game when it has one. Nothing is written
+    // otherwise - the carousel finds the cover in RetroArch's thumbnails tree, or draws default.png -
+    // where a copy of default.png used to be made, which then hid the thumbnail for good.
+    if (discs.size() > 0 && !coverImageFound) {
+        automationUsed = true;
+        cout << "Switching automation no image" << endl;
+        string destination = fullPath + sep + discs[0].diskName + ".png";
+        string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
+        if (serial != "") {
+            if (metadata.findBySerial(serial, md)) {
+                metadataLoaded = true;
+                if (!md.bytes.empty()) {
                     cout << "Updating cover in recoverMissingFiles()" << destination << endl;
                     ofstream pngFile;
                     pngFile.open(destination, ios::binary);
@@ -285,11 +276,9 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
                         automationUsed = false;
                         coverImageFound = true;
                     }
-                };
-                md.clearCover();
-
+                }
             }
-            coverImageFound = true;
+            md.clearCover();
         }
     }
 

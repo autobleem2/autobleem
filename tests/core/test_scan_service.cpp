@@ -188,6 +188,27 @@ TEST_CASE("with a RetroArch tree the scan takes the title from the rdb and cache
     CHECK(ini.values["cached_snap_path"] == game.snapPath);
 }
 
+TEST_CASE("a default.png placeholder next to a game is removed once the thumbnails tree has a cover; a real cover stays") {
+    ScanServiceFixture fx;
+    fx.env.setRetroarchDir(fx.tmp.makeSubDir("retroarch"));
+    fx.tmp.writeFile("default.png", "placeholder png bytes");   // the working path's default cover
+    fx.tmp.makeSubDir("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts");
+    fx.tmp.writeFile("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/Crash Bandicoot.png", "png");
+    fx.tmp.writeFile("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/Spyro.png", "png");
+
+    test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");
+    fx.tmp.writeFile("Games/Crash Bandicoot/Crash Bandicoot.png", "placeholder png bytes");   // an old scan's copy
+    test_support::makeFakeGame(fx.gamesDir(), "Spyro", "SLUS_012.35");
+    fx.tmp.writeFile("Games/Spyro/Spyro.png", "the user's own cover");
+
+    ScanUpdate update = fx.runAndPoll();
+    REQUIRE(update.addedGames.size() == 2);
+    CHECK_FALSE(ableem::DirEntry::exists(fx.tmp.at("Games/Crash Bandicoot/Crash Bandicoot.png")));
+    CHECK(ableem::DirEntry::exists(fx.tmp.at("Games/Spyro/Spyro.png")));
+    for (const auto &g : update.addedGames)
+        CHECK(g->coverPath == fx.tmp.at("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/" + g->title + ".png"));
+}
+
 TEST_CASE("a game folder that disappears is removed from regional.db on the next scan") {
     ScanServiceFixture fx;
     test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");

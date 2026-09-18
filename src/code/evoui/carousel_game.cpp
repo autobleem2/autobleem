@@ -64,6 +64,9 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     }
                 }
 #endif
+                if (!coverPng.valid()) {   // the placeholder the scanner used to copy next to the game
+                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
+                }
             }
 
             if (coverPng.valid()) {

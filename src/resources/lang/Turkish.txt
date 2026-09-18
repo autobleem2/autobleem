@@ -72,8 +72,6 @@ Controller and system information
 Kontrolcü ve sistem bilgisi
 Copy
 Kopyala
-Cover image file not found
-Kapak resmi dosyası bulunamadı
 Cover Style:
 Kapak Stili:
 Create, rename or manage memory card sets

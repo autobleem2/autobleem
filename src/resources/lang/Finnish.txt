@@ -72,8 +72,6 @@ Controller and system information
 Ohjaimen ja järjestelmän tiedot
 Copy
 Kopioi
-Cover image file not found
-Kansikuva tiedostoa ei löytynyt
 Cover Style:
 Kannen tyyli:
 Create, rename or manage memory card sets

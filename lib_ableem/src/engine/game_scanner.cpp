@@ -482,6 +482,17 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
             game->snapPath = thumbnails.findSnap(ThumbnailLookup::PlayStationDbName, game->title,
                                                  game->discs.empty() ? "" : game->fullPath + sep + game->discs[0].cueName,
                                                  game->recordName);
+            // Scans before 2026-09 copied default.png next to a game that had no cover, and the carousel
+            // takes a PNG next to the game before anything else - so a thumbnail found now would stay
+            // hidden behind that placeholder. Take the placeholder away; a real cover is never touched.
+            if (!game->coverPath.empty() && !game->discs.empty()) {
+                string gamePng = game->fullPath + sep + game->discs[0].diskName + EXT_PNG;
+                if (DirEntry::filesAreIdentical(gamePng, Environment::getWorkingPath() + sep + "default.png")) {
+                    cout << "Removing the default.png placeholder " << gamePng << " - the thumbnails tree has a cover" << endl;
+                    DirEntry::removeFile(gamePng);
+                    game->coverImageFound = false;
+                }
+            }
 
             game->saveGameIni(gameIniPath);
             game->loadGameIni(gameIniPath); // the updated iniValues are needed for applyIniValues

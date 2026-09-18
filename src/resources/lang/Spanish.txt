@@ -70,8 +70,6 @@ Controller and system information
 Información del mando y del sistema
 Copy
 Copiar
-Cover image file not found
-Caratula no encontrada
 Cover Style:
 Estilo de Caratulas:
 Create, rename or manage memory card sets
