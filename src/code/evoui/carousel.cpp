@@ -17,23 +17,9 @@ using namespace std;
 void Carousel::setGames(const PsGames &gamesList) {
     freeTextures();
 
-    // copy the gamesList into the carousel
+    // copy the gamesList into the carousel - just the games there are, however few
     games.clear();
     for_each(begin(gamesList), end(gamesList), [&](const PsGamePtr &game) { games.emplace_back(game); });
-
-    // save the actual number of (non-duplicated) games for the "showing" display
-    numberOfNonDuplicatedGames = games.size();
-
-    // if there are games in the carousel but not enough to fill it, duplicate the games until it is full
-    if (games.size() > 0) {
-        if (games.size() < PsCarousel::Slots) { // if not enough games to fill the carousel
-            // duplicate the gamesList until the carousel is full
-            while (games.size() < PsCarousel::Slots) {
-                for (const auto &game : gamesList)
-                    games.emplace_back(game);
-            }
-        }
-    }
 
     PLOG_DEBUG << "Setting initial positions";
     if (games.empty()) {
@@ -57,37 +43,30 @@ void Carousel::freeTextures() {
 // Carousel::selectNext / selectPrevious
 //*******************************
 void Carousel::selectNext() {
-    selected++;
-    if (selected >= static_cast<int>(games.size())) {
-        selected = 0;
-    }
+    if (canSelectNext())
+        selected++;
 }
 
 void Carousel::selectPrevious() {
-    selected--;
-    if (selected < 0) {
-        selected = games.size() - 1;
-    }
+    if (canSelectPrevious())
+        selected--;
 }
 
 //*******************************
 // Carousel::getNextId / getPreviousId
 //*******************************
-// just small method to get next / prev game
+// the neighbour of a game in the row; -1 (and its caller stops walking) past either end
 int Carousel::getNextId(int id) const {
+    if (id < 0)
+        return -1;
     int next = id + 1;
-    if (next >= static_cast<int>(games.size())) {
-        return 0;
-    }
-    return next;
+    return next < static_cast<int>(games.size()) ? next : -1;
 }
 
 int Carousel::getPreviousId(int id) const {
-    int prev = id - 1;
-    if (prev < 0) {
-        return games.size() - 1;
-    }
-    return prev;
+    if (id < 0)
+        return -1;
+    return id - 1; // -1 before the first game
 }
 
 //*******************************
@@ -104,34 +83,37 @@ void Carousel::setInitialPositions(int selectedIndex) {
     games[selectedIndex].current = positions.coverPositions[PsCarousel::MiddleSlot];
     games[selectedIndex].screenPointIndex = PsCarousel::MiddleSlot;
 
-    // SideCovers to the left, as many to the right; a game already placed (the list is short and wrapped)
-    // keeps its slot
+    // SideCovers to the left, as many to the right, or as many as the list has that side: the slots past
+    // the first or the last game stay empty
     int prev = selectedIndex;
     for (int slot = PsCarousel::MiddleSlot - 1; slot >= 0; slot--) {
         prev = getPreviousId(prev);
-        if (!games[prev].visible) {
-            games[prev].current = positions.coverPositions[slot];
-            games[prev].visible = true;
-            games[prev].screenPointIndex = slot;
-        }
+        if (prev < 0)
+            break;
+        games[prev].current = positions.coverPositions[slot];
+        games[prev].visible = true;
+        games[prev].screenPointIndex = slot;
     }
 
     int next = selectedIndex;
     for (int slot = PsCarousel::MiddleSlot + 1; slot < PsCarousel::Slots; slot++) {
         next = getNextId(next);
-        if (!games[next].visible) {
-            games[next].current = positions.coverPositions[slot];
-            games[next].visible = true;
-            games[next].screenPointIndex = slot;
-        }
+        if (next < 0)
+            break;
+        games[next].current = positions.coverPositions[slot];
+        games[next].visible = true;
+        games[next].screenPointIndex = slot;
     }
 
-    // the lookahead: `prev` and `next` are the games at the two ends of the row now
+    // the lookahead: `prev` and `next` are the games at the two ends of the row now (or -1 when the row
+    // ended before the slots did, in which case there is nothing further to keep ready)
     for (int i = 0; i < Lookahead; i++) {
         prev = getPreviousId(prev);
         next = getNextId(next);
-        games[prev].wanted = true;
-        games[next].wanted = true;
+        if (prev >= 0)
+            games[prev].wanted = true;
+        if (next >= 0)
+            games[next].wanted = true;
     }
 
     for (auto &game : games) {
@@ -213,32 +195,37 @@ void Carousel::scrollRight(int speed, bool eased) {
 }
 
 //*******************************
-// Carousel::moveMainCover
+// Carousel::moveMainCover / snapMainCover
 //*******************************
+namespace {
+// where the selected cover sits: in the row (the Games state), or raised above the game menu
+PsScreenpoint mainCoverPoint(bool toGamesRow) {
+    PsScreenpoint point;
+    point.x = 640 - 113;
+    point.y = toGamesRow ? 180 : 90;
+    point.scale = 1;
+    point.shade = toGamesRow ? 255 : 220;
+    return point;
+}
+} // namespace
+
 void Carousel::moveMainCover(bool toGamesRow) {
-    if (selected == -1) {
+    if (!selectedIsValid())
         return;
-    }
-    PsScreenpoint point1;
-    point1.x = 640 - 113;
-    point1.y = 180;
-    point1.scale = 1;
-    point1.shade = 255;
+    games[selected].destination = mainCoverPoint(toGamesRow);
+    games[selected].animationStart = gui_.platform().ticks();
+    games[selected].animationDuration = 200;
+    games[selected].eased = true;
+}
 
-    PsScreenpoint point2;
-    point2.x = 640 - 113;
-    point2.y = 90;
-    point2.scale = 1;
-    point2.shade = 220;
-
-    long time = gui_.platform().ticks();
-
-    if (selectedIsValid()) {
-        games[selected].destination = toGamesRow ? point1 : point2;
-        games[selected].animationStart = time;
-        games[selected].animationDuration = 200;
-        games[selected].eased = true;
-    }
+void Carousel::snapMainCover(bool toGamesRow) {
+    if (!selectedIsValid())
+        return;
+    PsScreenpoint point = mainCoverPoint(toGamesRow);
+    games[selected].destination = point;
+    games[selected].actual = point;
+    games[selected].current = point;
+    games[selected].animationStart = 0;
 }
 
 //*******************************

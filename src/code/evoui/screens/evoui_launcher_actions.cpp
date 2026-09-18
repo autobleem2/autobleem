@@ -9,6 +9,7 @@
 #include "../../gui/menus/gui_options_menu.h"
 #include "../../gui/screens/gui_confirm.h"
 #include "../../gui/screens/gui_about.h"
+#include "../../gui/screens/gui_hardware_info.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "../../gui/menus/gui_game_editor_ra_menu.h"
 #include "../../gui/menus/gui_playlists_menu.h"
@@ -372,18 +373,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         carousel.setInitialPositions(carousel.selected);
         updateMeta();
         menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
-
-        PsScreenpoint point2;
-        point2.x = 640 - 113;
-        point2.y = 90;
-        point2.scale = 1;
-        point2.shade = 220;
-
-        carousel.games[carousel.selected].destination = point2;
-        carousel.games[carousel.selected].actual = point2;
-        carousel.games[carousel.selected].current = point2;
+        carousel.snapMainCover(false); // the menu is still open: the cover goes straight back above it
     }
-    // fix to put back cover on top position
 }
 
 //*******************************
@@ -607,14 +598,23 @@ void GuiLauncher::loop_openSystemMenu() {
     }
 
     case SystemMenuAction::HardwareInfo: {
+        // the console runs the PSC-Bios app from the Apps folder (it also sets up the pads and wifi
+        // there); a Pi or a PC has no such app, and a console without it installed gets the same
+        // built-in screen instead of nothing
+        string pscBios = Env::getPathToAppsDir() + sep + "pscbios" + sep + "run.sh";
+#ifdef AB_ROOT_RELATIVE_LAYOUT
+        const bool runPscBios = false;
+#else
+        const bool runPscBios = DirEntry::exists(pscBios);
+#endif
+        if (!runPscBios) {
+            GuiHardwareInfo infoScreen(*gui);
+            infoScreen.show();
+            break;
+        }
         app.audio().close();
         gui->input().flushPads();
-#ifdef AB_DEBUG_HOST
-        gui->drawText("Small delay to test");
-        gui->platform().delay(2000);
-#endif
-        string cmd = Env::getPathToAppsDir() + sep + "pscbios/run.sh";
-        System::runAndWait(cmd, {});
+        System::runAndWait(pscBios, {});
         gui->input().flushEvents();
         gui->input().probePads();
         app.audio().restart();

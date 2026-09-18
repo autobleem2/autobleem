@@ -28,7 +28,7 @@ public:
 //******************
 // PsCarouselGame
 //******************
-// Note that with fewer games than PsCarousel::Slots the games are duplicated to fill out the carousel.
+// With fewer games than PsCarousel::Slots the slots past either end of the row simply stay empty.
 // So more than one PsCarouselGame could be using the same PsGamePtr.
 struct PsCarouselGame : public PsGamePtr {
     PsCarouselGame() = delete;

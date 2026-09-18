@@ -172,7 +172,7 @@ void GuiLauncher::showSetName() {
     assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
     assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
-    string numGames = " (" + to_string(carousel.numberOfNonDuplicatedGames) + " " + _("games") + ")";
+    string numGames = " (" + to_string(carousel.games.size()) + " " + _("games") + ")";
 
     long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
 
@@ -193,6 +193,9 @@ void GuiLauncher::showSetName() {
 //*******************************
 // GuiLauncher::reloadGames
 //*******************************
+// re-runs the current set's query and re-selects the highlighted game by id. When that game is gone (its
+// folder removed while the scanner watched, or merged into another) the first game of the set - or none -
+// is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
     int keepGameId = -1;
     bool keepInternal = false;
@@ -203,16 +206,30 @@ void GuiLauncher::reloadGames() {
 
     switchSet(selection.set, false);
 
+    bool kept = false;
     if (keepGameId != -1) {
         for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
             if (carousel.games[i]->gameId == keepGameId && carousel.games[i]->internal == keepInternal) {
                 carousel.selected = i;
+                kept = true;
                 break;
             }
         }
     }
     if (carousel.selectedIsValid()) {
         carousel.setInitialPositions(carousel.selected);
+    }
+
+    if (!kept && state == LauncherScreenState::Resume) {
+        // the picker was showing the slots of a game that no longer exists: close it as Circle does
+        sselector->visible = false;
+        arrow->visible = true;
+        sselector->cleanSaveStateImages();
+        state = LauncherScreenState::Set;
+    }
+    if (state != LauncherScreenState::Games) {
+        // setInitialPositions put the selected cover in the row; with the menu open it belongs above it
+        carousel.snapMainCover(false);
     }
 
     showSetName();
@@ -601,6 +618,10 @@ void GuiLauncher::render() {
 //*******************************
 // handler of next game
 void GuiLauncher::nextCarouselGame(int speed, bool eased) {
+    if (!carousel.canSelectNext()) {
+        motionStart = 0; // a held stick stops at the end of the row rather than retrying every frame
+        return;
+    }
     app.audio().cursor.play();
     carousel.scrollLeft(speed, eased);
     carousel.selectNext();
@@ -613,6 +634,10 @@ void GuiLauncher::nextCarouselGame(int speed, bool eased) {
 //*******************************
 // handler of prev game
 void GuiLauncher::prevCarouselGame(int speed, bool eased) {
+    if (!carousel.canSelectPrevious()) {
+        motionStart = 0;
+        return;
+    }
     app.audio().cursor.play();
     carousel.scrollRight(speed, eased);
     carousel.selectPrevious();
