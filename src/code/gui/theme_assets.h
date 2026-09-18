@@ -40,6 +40,9 @@ public:
     ableem::Texture backgroundImg;
     ableem::Texture logo;
     ableem::Texture cdJewel;
+    // the edge of a printed cardboard box, a 9-slice (evoimg/bigbox.png, see tools/make_bigbox_frame.py):
+    // what a RetroArch game's or an App's cover is composed into, where a PS1 game gets the jewel case
+    ableem::Texture bigBoxFrame;
     std::map<std::string, ableem::Texture> buttonTextureMap; // "X", "O", "Start", "Check", ... -> its texture
 
 private:

@@ -29,6 +29,30 @@ static Rect insetIntoCover(const Rect &r) {
                 static_cast<int>(r.w * k), static_cast<int>(r.h * k));
 }
 
+// How thick the two kinds of box are, as a fraction of their width - the spine the carousel shows on a
+// turned cover. A CD jewel case is thin; a cardboard big box (NES, SNES, PC) is a good quarter of its
+// width deep, and that depth is most of what makes it read as a box.
+const float JewelCaseThickness = 0.08f;
+const float BigBoxThickness = 0.22f;
+
+// bigbox.png as a 9-slice over `dst`: the corners as they are, the edges stretched, the middle (which is
+// transparent in the frame) stretched too so a frame with a tint or gloss in it would still work
+static void drawNineSlice(ableem::Renderer &renderer, const Texture &frame, int border, const Rect &dst) {
+    const Size size = frame.size();
+    const int sx[4] = {0, border, size.w - border, size.w};
+    const int sy[4] = {0, border, size.h - border, size.h};
+    const int dx[4] = {dst.x, dst.x + border, dst.x + dst.w - border, dst.x + dst.w};
+    const int dy[4] = {dst.y, dst.y + border, dst.y + dst.h - border, dst.y + dst.h};
+    for (int row = 0; row < 3; row++) {
+        for (int col = 0; col < 3; col++) {
+            Rect src(sx[col], sy[row], sx[col + 1] - sx[col], sy[row + 1] - sy[row]);
+            Rect out(dx[col], dy[row], dx[col + 1] - dx[col], dy[row + 1] - dy[row]);
+            if (out.w > 0 && out.h > 0)
+                renderer.copy(frame, &src, &out);
+        }
+    }
+}
+
 //*******************************
 // PsCarouselGame::loadTex
 //*******************************
@@ -116,6 +140,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                     Rect inset = insetIntoCover(fullRect);
                     renderer.copy(gui->assets().cdJewel, &fullRect, &inset);
                 }
+                content = insetIntoCover(fullRect);
+                thickness = JewelCaseThickness;
                 coverPng = renderSurface;
             }
             renderer.setTarget(nullptr);
@@ -166,24 +192,26 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             Size s = coverPng.size();
             fullRect.w = s.w;
             fullRect.h = s.h;
-            float aspectRatio = (fullRect.w * 1.0f) / (fullRect.h * 1.0f);
-            (void)aspectRatio; // computed but unused, kept to match the original for now
             Rect outputRect;
 
-            // calculate output rect with aspect ratio
+            // a big box: the art's own shape - a tall NES box, a wide SNES one - as large as fits, centred
             int biggerSize = fullRect.w > fullRect.h ? fullRect.w : fullRect.h;
-
-            outputRect.x = 0;
-            outputRect.y = 0;
+            if (biggerSize <= 0)
+                biggerSize = 1;
             outputRect.h = (226 * fullRect.h) / biggerSize;
             outputRect.w = (226 * fullRect.w) / biggerSize;
             outputRect.x = (226 - outputRect.w) / 2;
             outputRect.y = (226 - outputRect.h) / 2;
+            Rect box = insetIntoCover(outputRect);
 
             renderer.setBlendMode(BlendMode::Add);
-            Rect inset = insetIntoCover(outputRect);
-            renderer.copy(coverPng, &fullRect, &inset);
+            renderer.copy(coverPng, &fullRect, &box);
             renderer.setBlendMode(BlendMode::Blend);
+            if (gui->assets().bigBoxFrame.valid()) {
+                drawNineSlice(renderer, gui->assets().bigBoxFrame, 7, box);
+            }
+            content = box;
+            thickness = BigBoxThickness;
 
             coverPng = Texture();
             fullRect.x = 0;

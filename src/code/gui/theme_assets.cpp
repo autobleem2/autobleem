@@ -27,6 +27,7 @@ void ThemeAssets::unload() {
     backgroundImg = Texture();
     logo = Texture();
     cdJewel = Texture();
+    bigBoxFrame = Texture();
     buttonTextureMap.clear();
 }
 
@@ -47,6 +48,7 @@ void ThemeAssets::load() {
 
     backgroundImg = Texture::loadFile(renderer_, classic.background);
     logo = Texture::loadFile(renderer_, classic.logo.file);
+    bigBoxFrame = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/bigbox.png");
     if (config_.inifile.values["jewel"] != "none") {
         if (config_.inifile.values["jewel"] == "default") {
             cdJewel = Texture::loadFile(renderer_, Env::getWorkingPath() + sep + "evoimg/nofilter.png");

@@ -47,6 +47,11 @@ struct PsCarouselGame : public PsGamePtr {
     // cover a scroll brings in is already decoded (see Carousel::loadOneMissingTexture)
     bool wanted = false;
     ableem::Texture coverPng;
+    // where in the 226x226 texture the box actually is - a jewel case fills it (less the margin), a big
+    // box is the art's own shape, tall or wide, centred - and how thick that box is as a fraction of its
+    // width: what Carousel draws the turned cover and its spine from
+    ableem::Rect content = ableem::Rect(0, 0, 226, 226);
+    float thickness = 0.08f;
 
     void loadTex(ableem::Renderer &renderer);
     void freeTex();

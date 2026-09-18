@@ -294,17 +294,20 @@ void Carousel::updatePositions() {
 //*******************************
 namespace {
 // the pseudo-3D of the side covers: how far the viewer is from the screen, in pixels, which sets how much
-// the near edge of a turned cover grows and the far one shrinks; and how thick a cover is, as a fraction of
-// its width - the visible spine on its near edge
+// the near edge of a turned cover grows and the far one shrinks
 const float ViewerDistance = 600.0f;
-const float CoverThickness = 0.08f;
 const float Pi = 3.14159265f;
 
 // draws one cover as a box standing upright and turned `point.angle` degrees about its vertical axis: the
-// front face as a perspective trapezoid, and the spine on the edge nearer to the viewer
-void renderTurnedCover(ableem::Renderer &renderer, const ableem::Texture &tex, const PsScreenpoint &point) {
-    const float width = 226 * point.scale, height = width;
-    const float cx = point.x + width / 2, cy = point.y + height / 2;
+// front face as a perspective trapezoid, and the spine on the edge nearer to the viewer. The box is the
+// game's `content` rect of its 226x226 texture (a jewel case fills it, a big box is the art's own shape),
+// turned about that rect's middle, `thickness` of its width deep.
+void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point) {
+    const ableem::Texture &tex = game.coverPng;
+    const ableem::Rect &content = game.content;
+    const float width = content.w * point.scale, height = content.h * point.scale;
+    const float cx = point.x + (content.x + content.w / 2.0f) * point.scale;
+    const float cy = point.y + (content.y + content.h / 2.0f) * point.scale;
     const float radians = point.angle * Pi / 180.0f;
     const float c = std::cos(radians), s = std::sin(radians);
     // a point in the cover's own plane (x along its width from the middle, z its depth away from the
@@ -316,13 +319,12 @@ void renderTurnedCover(ableem::Renderer &renderer, const ableem::Texture &tex, c
         return ableem::VerticalEdge(cx + worldX * k, cy - height / 2 * k, cy + height / 2 * k);
     };
 
-    ableem::Rect full(0, 0, 226, 226);
     const float half = width / 2;
-    const float depth = width * CoverThickness;
+    const float depth = width * game.thickness;
     // the spine: the near edge is the left one for a cover on the right (turned to face left) and vice
-    // versa; textured with a strip a few pixels in from that edge of the cover, so it takes the case's colour
+    // versa; textured with a strip a few pixels in from that edge of the box, so it takes the box's colour
     const bool nearEdgeIsLeft = point.angle > 0;
-    ableem::Rect spineSource(nearEdgeIsLeft ? 5 : 226 - 7, 0, 2, 226); // just inside the case's edge and margin
+    ableem::Rect spineSource(nearEdgeIsLeft ? content.x + 3 : content.x + content.w - 5, content.y, 2, content.h);
     ableem::VerticalEdge spineFront = project(nearEdgeIsLeft ? -half : half, 0);
     ableem::VerticalEdge spineBack = project(nearEdgeIsLeft ? -half : half, depth);
     int spineShade = static_cast<int>(point.shade * 0.45f);
@@ -330,7 +332,7 @@ void renderTurnedCover(ableem::Renderer &renderer, const ableem::Texture &tex, c
 
     // the face, a little darker the more it turns away from the light in front of the screen
     int faceShade = static_cast<int>(point.shade * (0.55f + 0.45f * std::fabs(c)));
-    renderer.copyTrapezoid(tex, &full, project(-half, 0), project(half, 0),
+    renderer.copyTrapezoid(tex, &content, project(-half, 0), project(half, 0),
                            ableem::Color(faceShade, faceShade, faceShade));
 }
 } // namespace
@@ -363,7 +365,7 @@ void Carousel::render() {
             currentGameTex.setColorMod(ableem::Color(point.shade, point.shade, point.shade));
             renderer.copy(currentGameTex, &fullRect, &coverRect);
         } else {
-            renderTurnedCover(renderer, currentGameTex, point);
+            renderTurnedCover(renderer, *game, point);
         }
     }
 }
