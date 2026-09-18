@@ -1,8 +1,11 @@
 # AutoBleem on a Raspberry Pi
 
-Turns a Raspberry Pi running **Raspberry Pi OS Lite (32-bit)** into an AutoBleem machine: it boots straight
-into the launcher with no desktop, and its games live on an exFAT partition you can plug into a Windows, Mac
-or Linux machine and drop games onto — the same way the PlayStation Classic's USB stick works.
+Turns a Raspberry Pi running **Raspberry Pi OS Lite**, 32-bit (armhf) or 64-bit (arm64), into an AutoBleem
+machine: it boots straight into the launcher with no desktop, and its games live on an exFAT partition you
+can plug into a Windows, Mac or Linux machine and drop games onto — the same way the PlayStation Classic's
+USB stick works. The two architectures build and install the same way; pick the tarball for the OS you
+flashed (`autobleem-rpi.tar.gz` for 32-bit, `autobleem-rpi-arm64.tar.gz` for 64-bit) - `install.sh` detects
+which it is running on and downloads the matching RetroArch cores.
 
 ## Status
 
@@ -13,30 +16,38 @@ This is a port in progress. Be aware of what is and is not here:
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
 | PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
 | BIOS | **downloaded by the installer**: a ~190 MB pack (`system/biospack.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py`) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
-| RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every armhf core but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
+| RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **no.** Everything here is cross-compiled and reviewed but has not yet been run on a Pi. Treat the first install as an experiment, on a card you can afford to re-flash. |
 
 ## What you need
 
-- A Raspberry Pi 2, 3, 4 or Zero 2 W. The build targets `armv7-a` with NEON, so the original Pi 1 and Zero
-  (armv6) are **not** supported.
-- **32-bit** Raspberry Pi OS Lite. The binary is `arm-linux-gnueabihf`; a 64-bit image will refuse to install
-  it (the installer checks and says so).
+- **32-bit**: a Raspberry Pi 2, 3, 4 or Zero 2 W. The build targets `armv7-a` with NEON, so the original Pi 1
+  and Zero (armv6) are **not** supported. Flash **32-bit** Raspberry Pi OS Lite; the binary is
+  `arm-linux-gnueabihf`.
+- **64-bit**: a Raspberry Pi 3, 4, 5, 400 or Zero 2 W. The build targets `armv8-a`. Flash **64-bit**
+  Raspberry Pi OS Lite; the binary is `aarch64-linux-gnu`. pcsx-ab has no aarch64 dynarec in this fork, so PS1
+  games run through its C interpreter on 64-bit — correct, but slower per clock than the 32-bit build's NEON
+  dynarec.
+- Either way: the installer checks `dpkg --print-architecture` against the package and refuses a mismatch.
 - An SD card with room for your games, a keyboard for the first login, and a USB gamepad.
 
 ## Build the package (on the PC)
 
 ```bash
-./make_rpi.sh                    # cross-compiles with toolchains/rpi/RPitoolchain.cmake
-./tools/make_rpi_package.sh      # -> build_rpi/autobleem-rpi.tar.gz
+./make_rpi.sh                          # 32-bit: cross-compiles with toolchains/rpi/RPitoolchain.cmake
+./tools/make_rpi_package.sh --arch armhf     # -> build_rpi/autobleem-rpi.tar.gz
+
+./make_rpi64.sh                        # 64-bit: cross-compiles with toolchains/rpi64/RPi64toolchain.cmake
+./tools/make_rpi_package.sh --arch arm64     # -> build_rpi64/autobleem-rpi-arm64.tar.gz
 ```
 
-pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` and rides along. To refresh it from a new
-build, run pcsx-rearmed-develop's `AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh`, which copies its
-`build_rpi/dist/` there.
+pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` (32-bit) and `payload_rpi/Autobleem/bin/emu-arm64/`
+(64-bit) and rides along. To refresh it from a new build, run pcsx-rearmed-develop's
+`AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` (32-bit) or `./make_rpi64.sh` (64-bit), which copies its
+`build_rpi/dist/` or `build_rpi64/dist/` there.
 
-Copy `autobleem-rpi.tar.gz` to the Pi (`scp`, or just put it on a USB stick).
+Copy the tarball for your Pi's architecture over (`scp`, or just put it on a USB stick).
 
 ## Install (on the Pi)
 
@@ -54,7 +65,7 @@ bit on the way into the tarball.)
 The installer: installs SDL2, libpng, exfatprogs and parted; builds the latest RetroArch release from
 source (10-40 minutes depending on the Pi - `--retroarch apt` takes the distribution's package instead,
 `--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
-trees on it; downloads every armhf core plus RetroArch's info/assets/autoconfig/database bundles from
+trees on it; downloads every core for the Pi's architecture plus RetroArch's info/assets/autoconfig/database bundles from
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
 later); downloads the BIOS pack (~190 MB, file by file with a SHA-256 check, only what is missing -
 `--no-bios` skips it); installs the launcher, pcsx-ab, themes and launch scripts; wires up a systemd service that owns

@@ -1,25 +1,35 @@
 #!/usr/bin/env bash
 #
-# Package the Raspberry Pi cross build into the tarball payload_rpi/install.sh expects.
+# Package a Raspberry Pi cross build into the tarball payload_rpi/install.sh expects.
 #
-#   ./make_rpi.sh                      # cross-compile first (toolchains/rpi/RPitoolchain.cmake)
+#   ./make_rpi.sh                      # 32-bit cross-compile (toolchains/rpi/RPitoolchain.cmake)
 #   ./tools/make_rpi_package.sh        # -> build_rpi/autobleem-rpi.tar.gz
+#
+#   ./make_rpi64.sh                    # 64-bit cross-compile (toolchains/rpi64/RPi64toolchain.cmake)
+#   ./tools/make_rpi_package.sh --arch arm64
+#                                      # -> build_rpi64/autobleem-rpi-arm64.tar.gz
+#
 #   ./tools/make_rpi_package.sh --push [user@host]
 #                                      # ...and scp it to the Pi's home (default: $AB_PI_HOST, else
 #                                      # pi@raspberrypi.local), the way make_psc.sh talks to its build server
 #
 # The package is payload_rpi/ as checked in (install.sh, README.md, system/ for the host-side files, and the
-# data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu, put there by
-# pcsx-rearmed-develop's make_rpi.sh - Games/, Apps/) with the built parts filled in: the binary and its
-# resources in Autobleem/bin/autobleem, the cover databases in Autobleem/bin/db, and payload/themes as themes/.
-# install.sh then copies Autobleem/ themes/ Games/ Apps/ onto the exFAT partition as they are.
+# data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu (armhf) or bin/emu-arm64
+# (arm64), put there by pcsx-rearmed-develop's make_rpi.sh/make_rpi64.sh - Games/, Apps/) with the built
+# parts filled in: the binary and its resources in Autobleem/bin/autobleem, the cover databases in
+# Autobleem/bin/db, and payload/themes as themes/. install.sh then copies Autobleem/ themes/ Games/ Apps/
+# onto the exFAT partition as they are - the same install.sh serves both architectures, detecting which at
+# runtime (dpkg --print-architecture).
 #
 # Copy the tarball to the Pi, unpack it, and run install.sh from inside it. See payload_rpi/README.md.
 set -euo pipefail
 
+ARCH=armhf
 PUSH_TO=""
 while [ $# -gt 0 ]; do
     case "$1" in
+        --arch)
+            ARCH="${2:?--arch needs armhf or arm64}"; shift 2 ;;
         --push)
             PUSH_TO="${AB_PI_HOST:-pi@raspberrypi.local}"
             if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then PUSH_TO="$2"; shift; fi
@@ -28,32 +38,50 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+case "$ARCH" in
+    armhf) BUILD_SUBDIR=build_rpi;   TARBALL_SUFFIX="";        EMU_SRC_SUBDIR=emu ;;
+    arm64) BUILD_SUBDIR=build_rpi64; TARBALL_SUFFIX="-arm64";  EMU_SRC_SUBDIR=emu-arm64 ;;
+    *) echo "--arch takes armhf or arm64 (got '$ARCH')" >&2; exit 2 ;;
+esac
+
 cd "$(dirname "$0")/.."
 REPO="$PWD"
 PAYLOAD="$REPO/payload_rpi"
-BUILD_DIR="$REPO/build_rpi"
+BUILD_DIR="$REPO/$BUILD_SUBDIR"
 STAGE="$BUILD_DIR/package/autobleem-rpi"
-TARBALL="$BUILD_DIR/autobleem-rpi.tar.gz"
+TARBALL="$BUILD_DIR/autobleem-rpi${TARBALL_SUFFIX}.tar.gz"
+MAKE_SCRIPT="./make_rpi.sh"
+[ "$ARCH" = arm64 ] && MAKE_SCRIPT="./make_rpi64.sh"
 
 [ -f "$BUILD_DIR/autobleem-gui" ] || {
-    echo "no $BUILD_DIR/autobleem-gui - run ./make_rpi.sh first" >&2
+    echo "no $BUILD_DIR/autobleem-gui - run $MAKE_SCRIPT first" >&2
     exit 1
 }
 
-echo "==> Staging into $STAGE"
+echo "==> Staging into $STAGE ($ARCH)"
 rm -rf "$BUILD_DIR/package"
 mkdir -p "$STAGE"
 
 # the checked-in payload: installer, README, system/ and the data-partition tree
 cp -a "$PAYLOAD/." "$STAGE/"
 
+# the arch-specific pcsx-ab tree lives at Autobleem/bin/emu (armhf) or emu-arm64 (arm64) in the checked-in
+# payload; the staged tree always uses emu/ on the device, so an arm64 package replaces emu/ with emu-arm64's
+# contents.
+if [ "$ARCH" = arm64 ]; then
+    rm -rf "$STAGE/Autobleem/bin/emu"
+    mv "$STAGE/Autobleem/bin/emu-arm64" "$STAGE/Autobleem/bin/emu"
+else
+    rm -rf "$STAGE/Autobleem/bin/emu-arm64"
+fi
+
 # the app: the freshly cross-compiled binary plus the resources tree it reads at runtime. The resources come
-# from the repo rather than from build_rpi, which also holds the object files and CMake's own scratch.
+# from the repo rather than from $BUILD_DIR, which also holds the object files and CMake's own scratch.
 APP="$STAGE/Autobleem/bin/autobleem"
 mkdir -p "$APP" "$STAGE/Autobleem/bin/db" "$STAGE/themes"
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/"
 # packed with UPX (3.1 MB -> 1 MB; unpacked in memory at start, verified on the Pi 400) unless AB_NO_UPX=1 -
-# a packed binary is no use to gdb, and make_rpi.sh --debug's build is never packaged anyway
+# a packed binary is no use to gdb, and make_rpi.sh/make_rpi64.sh --debug's build is never packaged anyway
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing autobleem-gui with upx"
     upx -q --best --lzma "$APP/autobleem-gui"
@@ -96,7 +124,7 @@ if [ -n "$PUSH_TO" ]; then
   On the Pi ($PUSH_TO), stop the launcher first if it is installed already:
 
     sudo systemctl stop autobleem
-    rm -rf autobleem-rpi && tar xzf autobleem-rpi.tar.gz && cd autobleem-rpi
+    rm -rf autobleem-rpi && tar xzf $(basename "$TARBALL") && cd autobleem-rpi
     sudo bash install.sh --retroarch none --no-downloads --yes   # a re-install over a working Pi
     sudo reboot
 
@@ -105,9 +133,9 @@ USAGE
 fi
 cat <<USAGE
 
-  On the Pi (32-bit Raspberry Pi OS Lite):
+  On the Pi ($ARCH Raspberry Pi OS Lite):
 
-    tar xzf autobleem-rpi.tar.gz
+    tar xzf $(basename "$TARBALL")
     cd autobleem-rpi
     sudo bash install.sh --dry-run  # see what it would do
     sudo bash install.sh

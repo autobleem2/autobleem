@@ -92,8 +92,9 @@ endif()
 find_package(Threads REQUIRED)
 
 # lib_ableem: the portable SDL2 wrapper (own SDL discovery, own demo). autobleem-gui links it and does not
-# touch SDL directly at all - see CLAUDE.md.
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
+# touch SDL directly at all - see CLAUDE.md. aarch64 (the 64-bit Pi) is an embedded target too, it just
+# doesn't match "^arm" the way 32-bit ARM and the PSC's armv8-a do.
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
 endif()
 

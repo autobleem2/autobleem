@@ -387,6 +387,58 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
+### Raspberry Pi 64-bit (2026-09-18)
+
+A second Pi architecture, alongside the 32-bit port above, not a separate app target: `AB_PLATFORM_RPI` and
+`AB_TARGET_RPI` do not branch on word size, so every application-level behaviour (no internal games,
+root-relative layout, install-tree paths) is identical on both. Only the toolchain, three build-system
+files, and the checked-in pcsx-ab binary differ. **Unrun on hardware** - the owner has no 64-bit Pi OS card
+imaged yet and no aarch64 toolchain installed on this host; everything below is written to the same pattern
+as the working 32-bit port but not yet build- or boot-tested. Targets 64-bit **Trixie**, same as the 32-bit
+port targets 32-bit Trixie (and Bookworm).
+
+- **Toolchain**: `toolchains/rpi64/RPi64toolchain.cmake`, over "SysGCC for Raspberry Pi (64-bit)" at
+  `C:\sysGCC\raspberry64` (`aarch64-linux-gnu-{gcc,g++}.exe`, sysroot
+  `C:\sysGCC\raspberry64\aarch64-linux-gnu\sysroot`) - not yet installed on this host, so those paths are an
+  assumption pending confirmation against the vendor's actual layout once it's installed. `./make_rpi64.sh`
+  configures and builds into `build_rpi64/` (`--debug` -> `build_rpi64_dbg/`), mirroring `make_rpi.sh`
+  exactly. Target is plain `armv8-a` - every 64-bit-capable Pi (3/4/5/400/Zero 2 W) is that core, so there is
+  no armv7-style board split to make.
+- **SDL2 discovery**: `toolchains/rpi64/cmake/FindSDL2.cmake` is the same borrowed-headers-plus-imported-.so
+  trick as the 32-bit module, and *reuses* `toolchains/rpi/sdl2-devkit/include` by relative path rather than
+  keeping a second copy - the public SDL2 headers are pure C and arch-independent. Only the library
+  directory differs: the sysroot's `usr/lib/aarch64-linux-gnu` instead of `usr/lib/arm-linux-gnueabihf`.
+- Root `CMakeLists.txt`'s `ABLEEM_EMBEDDED_TARGET` switch matched `CMAKE_SYSTEM_PROCESSOR MATCHES "^arm"`,
+  which `aarch64` does not match - fixed to also check `STREQUAL "aarch64"` so cursor-grab/keyboard-as-pad
+  are disabled on a 64-bit Pi the same as everywhere else embedded. No other CMakeLists.txt change was
+  needed: the PSC's `^arm`-and-`NOT AB_TARGET_RPI` branch and the Pi's own `elseif (AB_TARGET_RPI)` branch
+  both already keyed off `AB_TARGET_RPI` rather than the processor string.
+- **pcsx-ab has no aarch64 dynarec** in this fork (verified: no repo-authored aarch64 anywhere in
+  `pcsx-rearmed-develop`, and Ari64's dynarec/NEON GPU-GTE assembly is 32-bit-ARM-only) - PS1 games on a
+  64-bit Pi run through its C interpreter, like the PC build, not the NEON dynarec the 32-bit Pi gets. Still
+  correct, just slower per clock. `pcsx-rearmed-develop`'s `CMakeLists.txt:35-39` sets `_pcsxab_is_arm` from
+  `CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM)"`, which is deliberately **not** extended to aarch64 for this
+  reason - folding aarch64 into that branch would try to build 32-bit ARM assembly with the 64-bit compiler.
+  Its own `toolchains/rpi64/RPi64toolchain.cmake` and `make_rpi64.sh` (mirroring the 32-bit ones there) build
+  it as a plain aarch64 Linux target instead, `PCSXAB_GLES`/dynarec left off.
+- **Package**: one `payload_rpi/` tree still serves both architectures - `install.sh` reads
+  `dpkg --print-architecture` (`armhf` or `arm64`) into `$ARCH`/`$RA_ARCH` instead of hard-failing on
+  anything but armhf, and uses `$RA_ARCH` for the `buildbot.libretro.com/nightly/linux/<arch>/latest` cores
+  URL - libretro's buildbot has both. Only the emulator binaries are architecture-specific, so pcsx-ab (with
+  its `plugins/`) is checked in twice: `payload_rpi/Autobleem/bin/emu/` (armhf, as before) and
+  `payload_rpi/Autobleem/bin/emu-arm64/` (empty, `placeholder`-only until a 64-bit pcsx-ab is built and
+  committed). `tools/make_rpi_package.sh --arch armhf|arm64` (armhf is the default, unchanged output name)
+  picks the matching `build_rpi`/`build_rpi64` source directory and, for `arm64`, moves `emu-arm64/`'s
+  contents over `emu/` while staging so the on-device path stays `Autobleem/bin/emu/pcsx-ab` either way; the
+  tarball is named `autobleem-rpi.tar.gz` (armhf) or `autobleem-rpi-arm64.tar.gz` (arm64) so the two never
+  collide on the Pi's home directory during `--push`.
+- **Not done**: no 64-bit sysroot/toolchain installed to actually build against yet (owner's decision:
+  install "SysGCC for Raspberry Pi (64-bit)" from sysprogs.com, matching how the 32-bit one was obtained);
+  no 64-bit pcsx-ab build (needs `pcsx-rearmed-develop`'s own `make_rpi64.sh`, same pattern); no boot-splash
+  initramfs testing (the 64-bit image is one kernel, not the 32-bit image's per-board v6/v7/v7l/v8 set, so
+  `update-initramfs -u -k all` should need no board-split reasoning there - unverified); nothing run on
+  hardware.
+
 ## Console tools (`apps/`, 2026-09-18)
 
 The two standalone tools the console runs from `Apps/` - **PSC-Bios** (`apps/pscbios/`: WiFi, timezone,
