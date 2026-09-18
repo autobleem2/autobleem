@@ -117,6 +117,9 @@ public:
     static std::string romsFingerprintFilePath();
     static bool fingerprintsMatchDisk();
 
+    // resources/platform/roms_folders.cfg - the ROM folders not named as their database is ("Arcade")
+    static std::string romsFolderAliasesPath();
+
     // RetroArch is installed and has ROM folders to scan - see the class comment
     static bool romScanEnabled();
 

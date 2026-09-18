@@ -89,6 +89,13 @@ string ScanService::romsFingerprintFilePath() {
 }
 
 //*******************************
+// ScanService::romsFolderAliasesPath
+//*******************************
+string ScanService::romsFolderAliasesPath() {
+    return Env::getWorkingPath() + sep + "platform" + sep + "roms_folders.cfg";
+}
+
+//*******************************
 // ScanService::romScanEnabled
 //*******************************
 bool ScanService::romScanEnabled() {
@@ -217,6 +224,7 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
     ableem::RetroArchScanner::Options options;
     options.romsDir = Env::getPathToRetroarchRomsDir();
     options.playlistsDir = Env::getPathToRetroarchPlaylistsDir();
+    options.folderAliases = ableem::RetroArchScanner::loadFolderAliases(romsFolderAliasesPath());
     ableem::RetroArchScanner scanner(&listener);
     ableem::RetroArchScanResult result = scanner.scan(options, ableem::RetroArchScanner::systemsFrom(cores));
     playlistsWritten = result.playlistsWritten;

@@ -100,11 +100,19 @@ What differs from the text above:
   turns it into the system table.
 - `RetroArchScanner::Options{romsDir, playlistsDir, targetRomsDir}` - `targetRomsDir` is the step-5 knob
   (the prefix the playlists name), `""` = `romsDir`; an existing entry counts as "ours" under either.
-- Archives are always candidates, whatever the core's extension list says: a `.zip` for a core without
-  `block_extract` is opened (`ZipArchive::listEntries`, CRCs from the central directory - so step 1 already
-  writes the ROM's CRC for zipped games), one accepted ROM inside = `zip#rom` named after the zip, several =
+- Archives are always candidates, whatever the core's extension list says: a `.zip` for a core that does
+  not read archives itself is opened (`ZipArchive::listEntries`, CRCs from the central directory - so step
+  1 already writes the ROM's CRC for zipped games, and it is the CRC RetroArch's scanner records: Adventures
+  of Lolo came out `D9C4CBF7` both ways), one accepted ROM inside = `zip#rom` named after the zip, several =
   one entry each named after the ROM, none = skipped; a `.7z` goes in whole (miniz cannot look inside).
-  `.ccd` hides its `.img`/`.sub` next to the cue/m3u rules.
+  **"Reads archives itself" is `zip` among the core's `supported_extensions`** (`RetroArchSystem::
+  readsArchives()`): no `.info` in the current libretro bundle says `block_extract` at all - fbneo is
+  `zip|7z|cue|ccd` - so that flag is only honoured in addition. `.ccd` hides its `.img`/`.sub` next to the
+  cue/m3u rules.
+- **Folder aliases**: the Pi's `roms/Arcade/` (and `SNK - Neo Geo/`) feed `FBNeo - Arcade Games.lpl`, as
+  RetroArch's own scanner files them - `resources/platform/roms_folders.cfg` (`<folder>=<database>`),
+  `RetroArchScanner::Options::folderAliases`; two folders may share one playlist, each pass treats the
+  other's entries as foreign.
 - `RetroArchPlaylist` keeps the header (`RetroArchPlaylistHeader`, every top-level field but `items` as
   opaque JSON text, `version` first on save; a six-line file has none and comes back as JSON 1.0). Checked
   against a hand-written copy of what RetroArch 1.22 wrote on the Pi (15 header fields).
@@ -118,7 +126,14 @@ What differs from the text above:
   refreshPlaylistNames()` + a `reloadGames()` of the RetroArch set (a playlist game is re-found by its
   image path, its id being only its position).
 - `tools/make_usb.py` fakes a RetroArch install (stub binary, `fake_libretro.info` for three systems,
-  zipped ROMs) so the PC smoke test runs the pass. Verified there; **not yet on the Pi or a console.**
+  zipped ROMs) so the PC smoke test runs the pass.
+- **Verified on the Pi 400** (2026-09-18 evening, 848 ROMs over 9 populated folders, 54 folders in all,
+  the pass takes ~1 s): the first run left the 7 RetroArch-written playlists byte-identical and rewrote
+  only Genesis (added `Bubsy II (USA, Europe).gen`, which RetroArch's scanner had skipped) and Arcade
+  (added `neogeo.zip` - the BIOS set, **a wart step 2 removes** by keeping only sets the FBNeo rdb knows).
+  Deleting the NES playlist, moving a SNES ROM out and copying a NES ROM in were all picked up in one
+  cycle 17 s later (NES rebuilt from the files, SNES minus one, the copy in as `zip#rom`); putting them
+  back rewrote both again with no `.tmp` left behind, the 1.5 header intact. **Not yet on a console.**
 
 ### 2. Identification by database (offline where the `.rdb`s are)
 

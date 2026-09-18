@@ -93,6 +93,40 @@ bool sameEntry(const RetroArchPlaylistEntry &a, const RetroArchPlaylistEntry &b)
 } // namespace
 
 //*******************************
+// RetroArchSystem::readsArchives
+//*******************************
+bool RetroArchSystem::readsArchives() const {
+    if (blockExtract)
+        return true;
+    for (const string &ext : extensions) {
+        if (toLowerCopy(ext) == "zip")
+            return true;
+    }
+    return false;
+}
+
+//*******************************
+// RetroArchScanner::loadFolderAliases
+//*******************************
+map<string, string> RetroArchScanner::loadFolderAliases(const string &cfgPath) {
+    map<string, string> aliases;
+    ifstream in(cfgPath);
+    string line;
+    while (getline(in, line)) {
+        trim(line);
+        if (line.empty() || line[0] == '#' || line.find('=') == string::npos)
+            continue;
+        string folder = line.substr(0, line.find('='));
+        string db = line.substr(line.find('=') + 1);
+        trim(folder);
+        trim(db);
+        if (!folder.empty() && !db.empty())
+            aliases[folder] = db;
+    }
+    return aliases;
+}
+
+//*******************************
 // RetroArchScanner::systemsFrom
 //*******************************
 RetroArchSystems RetroArchScanner::systemsFrom(const CoreInfoTable &cores) {
@@ -186,7 +220,7 @@ RetroArchPlaylistEntries RetroArchScanner::scanFolder(const string &folder, cons
         if (!accepts(rel) || hidden.count(toLowerCopy(rel)))
             continue;
         const string target = targetFolder + "/" + rel;
-        if (extensionOf(rel) == "zip" && !system.blockExtract) {
+        if (extensionOf(rel) == "zip" && !system.readsArchives()) {
             // the core cannot read archives: RetroArch extracts the ROM inside and names the entry
             // "archive#rom" - the archive's CRC table gives the ROM's CRC for free
             vector<ZipEntry> inside;
@@ -276,16 +310,18 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
 
     DirEntries folders = DirEntry::diru_DirsOnly(romsDir);
     sort(folders.begin(), folders.end(), DirEntry::sortDirEntryByName);
-    vector<string> known;
+    vector<pair<string, string>> known; // folder name, database name
     for (const DirEntry &folder : folders) {
         if (folder.name.empty() || folder.name[0] == '.')
             continue;
-        if (isReservedPlaylist(folder.name) || byName.find(folder.name) == byName.end()) {
-            PLOG_INFO << "No core plays a system called '" << folder.name << "' - folder skipped";
+        auto alias = options.folderAliases.find(folder.name);
+        const string dbName = alias == options.folderAliases.end() ? folder.name : alias->second;
+        if (isReservedPlaylist(dbName) || byName.find(dbName) == byName.end()) {
+            PLOG_INFO << "No core plays a system called '" << dbName << "' - folder " << folder.name << " skipped";
             result.unknownFolders.push_back(folder.name);
             continue;
         }
-        known.push_back(folder.name);
+        known.emplace_back(folder.name, dbName);
     }
     if (known.empty())
         return result;
@@ -296,17 +332,20 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
     }
 
     int index = 0;
-    for (const string &name : known) {
+    for (const auto &folderAndDb : known) {
+        const string &name = folderAndDb.first;
+        const RetroArchSystem &system = *byName[folderAndDb.second];
         index++;
         if (listener_)
             listener_->onScanProgress(ScanStage::ScanningRoms, name, index, static_cast<int>(known.size()));
 
-        const RetroArchSystem &system = *byName[name];
         const string sourceFolder = romsDir + sep + name;
         const string targetFolder = targetRomsDir + "/" + name;
         RetroArchPlaylistEntries fresh = scanFolder(sourceFolder, targetFolder, system);
 
-        const string playlistPath = playlistsDir + sep + name + ".lpl";
+        // two folders may feed one playlist (Arcade and SNK - Neo Geo both into FBNeo's): each pass sees
+        // the other's entries as foreign and leaves them, so the file is read fresh every time
+        const string playlistPath = playlistsDir + sep + system.name + ".lpl";
         RetroArchPlaylistEntries existing;
         RetroArchPlaylistHeader header;
         const bool hadPlaylist = DirEntry::exists(playlistPath);
@@ -338,9 +377,12 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
             DirEntry::removeFile(tempPath);
             continue;
         }
-        PLOG_INFO << "Playlist " << name << ".lpl: " << merged.size() << " entries (" << ours
-                  << " from the ROM folder)";
-        result.playlistsWritten.push_back(name + ".lpl");
+        PLOG_INFO << "Playlist " << system.name << ".lpl: " << merged.size() << " entries (" << ours << " from " << name
+                  << ")";
+        const string written = system.name + ".lpl";
+        if (find(result.playlistsWritten.begin(), result.playlistsWritten.end(), written) ==
+            result.playlistsWritten.end())
+            result.playlistsWritten.push_back(written);
     }
     return result;
 }

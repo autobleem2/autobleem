@@ -66,13 +66,13 @@ RetroArchSystem cdSystem() {
     return sega;
 }
 
+// as fbneo's .info really reads: "zip" among the extensions, no block_extract line
 RetroArchSystem arcadeSystem() {
     RetroArchSystem fbneo;
     fbneo.name = "FBNeo - Arcade Games";
     fbneo.coreName = "Arcade (FinalBurn Neo)";
     fbneo.corePath = "/media/retroarch/cores/fbneo_libretro.so";
-    fbneo.extensions = {"zip", "7z"};
-    fbneo.blockExtract = true;
+    fbneo.extensions = {"zip", "7z", "cue", "ccd"};
     return fbneo;
 }
 
@@ -336,6 +336,42 @@ TEST_CASE("scanFolder: a core that reads archives itself gets the zip whole") {
     CHECK(entries[0].label == "mslug");
     CHECK(entries[0].crc32 == "00000000|crc");
     CHECK(entries[1].path == "/r/arcade/neogeo.zip");
+
+    // block_extract alone says the same
+    RetroArchSystem flagged = nesSystem();
+    flagged.blockExtract = true;
+    CHECK(flagged.readsArchives());
+    CHECK_FALSE(nesSystem().readsArchives());
+    CHECK(arcadeSystem().readsArchives());
+}
+
+TEST_CASE("scan: an aliased folder feeds its database's playlist; two folders may share one") {
+    RomsTree t;
+    t.addCore("fbneo_libretro", "Arcade (FinalBurn Neo)", "zip|7z|cue|ccd", "FBNeo - Arcade Games");
+    t.tmp.writeFile("roms/Arcade/mslug.zip", "set");
+    t.tmp.writeFile("roms/SNK - Neo Geo/aof.zip", "set");
+    t.tmp.writeFile("aliases.cfg", "# folders\nArcade = FBNeo - Arcade Games\nSNK - Neo Geo=FBNeo - Arcade Games\n");
+    t.options.folderAliases = RetroArchScanner::loadFolderAliases(t.tmp.at("aliases.cfg"));
+    REQUIRE(t.options.folderAliases.size() == 2);
+    CHECK(RetroArchScanner::loadFolderAliases(t.tmp.at("missing.cfg")).empty());
+    RetroArchSystems systems = RetroArchScanner::systemsFrom(t.cores());
+
+    RetroArchScanner scanner;
+    RetroArchScanResult result = scanner.scan(t.options, systems);
+    CHECK(result.systemsScanned == 2);
+    CHECK(result.gamesFound == 2);
+    CHECK(result.playlistsWritten == vector<string>{"FBNeo - Arcade Games.lpl"});
+    CHECK(result.unknownFolders.empty());
+    RetroArchPlaylistEntries entries = t.loadPlaylist("FBNeo - Arcade Games");
+    CHECK(labelsOf(entries) == vector<string>{"aof", "mslug"});
+    CHECK(entries[0].path == t.tmp.at("roms/SNK - Neo Geo/aof.zip"));
+    CHECK(entries[1].path == t.tmp.at("roms/Arcade/mslug.zip"));
+    CHECK(scanner.scan(t.options, systems).playlistsWritten.empty());
+
+    // a set gone from one folder is dropped by that folder's pass, the other folder's entries untouched
+    DirEntry::removeFile(t.tmp.at("roms/Arcade/mslug.zip"));
+    CHECK(scanner.scan(t.options, systems).playlistsWritten.size() == 1);
+    CHECK(labelsOf(t.loadPlaylist("FBNeo - Arcade Games")) == vector<string>{"aof"});
 }
 
 //*******************************
@@ -396,7 +432,7 @@ TEST_CASE("merge: sorted by label ignoring case, stable") {
 TEST_CASE("scan: a playlist per known folder, an unknown folder reported, nothing written for an empty one") {
     RomsTree t;
     t.addCore("nestopia_libretro", "Nintendo - NES / Famicom (Nestopia UE)", "nes|fds", NES);
-    t.addCore("fbneo_libretro", "Arcade (FinalBurn Neo)", "zip|7z", "FBNeo - Arcade Games", true);
+    t.addCore("fbneo_libretro", "Arcade (FinalBurn Neo)", "zip|7z", "FBNeo - Arcade Games");
     t.tmp.makeSubDir(string("roms/") + NES);
     t.tmp.makeSubDir("roms/FBNeo - Arcade Games");
     t.tmp.makeSubDir("roms/Sony - PlayStation"); // no core plays it

@@ -169,7 +169,7 @@ files every one of these systems needs are already in `RetroArch/system/` (the i
 
 | Put them in `RetroArch/roms/...` | Files | Core, and what to know |
 |---|---|---|
-| `Arcade` | one `.zip` per game, exactly as the ROM set names it (+ its `.chd` for CD games) | **fbneo** wants a *current* FBNeo set, **mame2003_plus** a MAME 0.78-based one, **mame2000** a 0.37b5 one; a zip from the wrong set will not start. The BIOS zips (`neogeo.zip`, `qsound.zip`, `pgm.zip`, ...) are in `system/`. For arcade use *Manual Scan* (step 2). |
+| `Arcade` | one `.zip` per game, exactly as the ROM set names it (+ its `.chd` for CD games) | **fbneo** wants a *current* FBNeo set, **mame2003_plus** a MAME 0.78-based one, **mame2000** a 0.37b5 one; a zip from the wrong set will not start. The BIOS zips (`neogeo.zip`, `qsound.zip`, `pgm.zip`, ...) are in `system/`; one put next to the games is listed as a game until you remove it. Both folders land in the `FBNeo - Arcade Games` playlist. |
 | `SNK - Neo Geo` | the same `.zip` sets (MVS/AES) | fbneo |
 | `SNK - Neo Geo CD` | `.cue`+`.bin` or `.chd` | neocd |
 | `The 3DO Company - 3DO` | `.cue`/`.iso`/`.chd` | opera |

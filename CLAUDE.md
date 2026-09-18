@@ -387,10 +387,13 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   is there; the worker reports `WorkerEvent::Kind::PlaylistsWritten`, `poll()` has `RetroArchService::
   reloadPlaylists()` re-read them and the launcher refreshes its playlist names and the RetroArch set
   (`ScanUpdate::playlistsWritten`). `roms.fingerprint` (`GamesFingerprint::takeAllFiles`) is watched next
-  to `games.fingerprint`; `ScanService::fingerprintsMatchDisk()` is the startup check for both. Verified on
-  the PC's fake tree (`tools/make_usb.py` fakes a RetroArch install: stub binary, one `.info`, zipped ROMs);
-  **not yet on the Pi or a console.** Steps 2-5 (rdb identification, box art, UI polish, `UpdateRoms.exe`
-  for the console) are still in the plan.
+  to `games.fingerprint`; `ScanService::fingerprintsMatchDisk()` is the startup check for both.
+  `resources/platform/roms_folders.cfg` names the folders that are not named as their database is
+  (`Arcade` and `SNK - Neo Geo` -> `FBNeo - Arcade Games`). Verified on the PC's fake tree (`tools/make_usb.py`
+  fakes a RetroArch install: stub binary, one `.info`, zipped ROMs) and **on the Pi 400** over its 848
+  ROMs - RetroArch's own playlists survive byte for byte, a copy/delete lands in the carousel 17 s later;
+  **not yet on a console.** Steps 2-5 (rdb identification - which also drops `neogeo.zip` from the
+  arcade list -, box art, UI polish, `UpdateRoms.exe` for the console) are still in the plan.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
@@ -519,9 +522,11 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 - **`RetroArchScanner`** (`engine/retroarch_scanner.h`, 2026-09-18) - the offline ROM scan:
   `scan(Options{romsDir, playlistsDir, targetRomsDir}, systemsFrom(cores))` walks each `roms/<system>/`
   folder that has a core, one entry per game (a `.cue` hides its bins, an `.m3u` its discs, a `.ccd` its
-  image; a `.zip` for a core without `block_extract` is opened - one ROM inside is `zip#rom` named after
-  the zip with the ROM's CRC from the central directory, several are one entry each, none is skipped; an
-  arcade core gets the zip whole), label = the file's stem, and merges into the existing playlist: entries
+  image; a `.zip` for a core that does not read archives itself - `zip` among its extensions, or
+  `block_extract` - is opened: one ROM inside is `zip#rom` named after the zip with the ROM's CRC from the
+  central directory, several are one entry each, none is skipped; an arcade core gets the zip whole),
+  label = the file's stem, and merges into the existing playlist (`Options::folderAliases` sends a folder
+  named otherwise to its database's playlist): entries
   outside the folder stay, an entry whose file is still there is kept exactly (RetroArch's own label/CRC),
   the vanished go, the new join, sorted by label; `.tmp` + `DirEntry::replaceFile`, only when something
   changed. `targetRomsDir` is what the playlists name (the console's `/media/roms` when a PC writes them -
