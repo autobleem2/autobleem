@@ -26,6 +26,9 @@ public:
 
     // (re)loads theme.ini and everything below for the theme it names; the previous textures are released first
     void load();
+    // drops every texture and font: they belong to the renderer and must be gone before Gui::releaseDisplay()
+    // destroys it. load() brings them back once the display is acquired again.
+    void unload();
 
     Fonts themeFonts;
     Fonts sonyFonts;

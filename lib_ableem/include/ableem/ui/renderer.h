@@ -47,6 +47,12 @@ private:
     friend class Texture;
     friend class Font;
     explicit Renderer(Platform &platform);
+    // the display hand-off (GuiBase::releaseDisplay()/acquireDisplay()): destroy the SDL renderer while
+    // keeping this object - everything holds a reference to it - and make a new one on the new window.
+    // Every Texture and Font made with the old renderer must be gone before release(): SDL frees them with
+    // the renderer, and a handle destroyed later would free them twice.
+    void release();
+    void recreate(Platform &platform);
     struct Impl;
     Impl *impl;
 

@@ -85,6 +85,9 @@ void Gui::criticalException(const string &text) {
 void Gui::display(bool resume) {
     cout << platform().versionString() << endl;
 
+    if (!platform().hasDisplay()) {
+        acquireDisplay();   // released for an emulator - see releaseDisplay()
+    }
     platform().setScaleQuality(2);
 
     loadAssets();
@@ -104,6 +107,14 @@ void Gui::display(bool resume) {
 void Gui::finish() {
     App::get().audio().shutdown();
     assets_.backgroundImg = Texture();
+}
+
+//*******************************
+// Gui::releaseDisplay
+//*******************************
+void Gui::releaseDisplay() {
+    assets_.unload();          // before the renderer goes: SDL frees the textures with it
+    GuiBase::releaseDisplay();
 }
 
 

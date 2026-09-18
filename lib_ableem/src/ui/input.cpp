@@ -154,6 +154,10 @@ struct Input::Impl {
 };
 
 Input::Input(Platform &platform) : impl(new Impl(platform)) {
+    reinstallEventFilter();
+}
+
+void Input::reinstallEventFilter() {
     SDL_SetEventFilter(&playstation_event_filter, nullptr);
 }
 

@@ -38,4 +38,6 @@ public:
     static ableem::Font openSpecificSharedCachedFont(FontType type, int fontSize);
     // (re)opens every size from these two ttf files - the theme's launcher fonts, or the console's own
     void openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer);
+    // drops every font - their glyph textures belong to the renderer, so before the display is released
+    void closeAll() { fonts.clear(); }
 };

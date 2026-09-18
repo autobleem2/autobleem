@@ -35,6 +35,17 @@ public:
     // 0/1/2 forwarded to the SDL_HINT_RENDER_SCALE_QUALITY hint
     void setScaleQuality(int quality);
 
+    // Give the display up and take it back. On a bare KMS/DRM system (a Raspberry Pi with no compositor)
+    // the window *is* the DRM master and only one process can hold it: an emulator started while the
+    // window exists cannot open the display at all. releaseDisplay() destroys the window and quits SDL's
+    // video subsystem (which is what actually drops the DRM master); acquireDisplay() brings both back with
+    // the same title and size. The Renderer must be released before and recreated after - GuiBase does
+    // the whole sequence, see GuiBase::releaseDisplay()/acquireDisplay(). hasDisplay() tells which state
+    // it is in. No-ops when already in the requested state.
+    void releaseDisplay();
+    void acquireDisplay();
+    bool hasDisplay() const;
+
     // called by Input::poll() when the console power button or Esc is seen. the app is expected to show a
     // message and actually power off/exit; the library has no policy of its own here.
     void setPowerOffHandler(std::function<void()> handler);

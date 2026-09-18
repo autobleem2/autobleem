@@ -27,6 +27,13 @@ public:
     Input &input() { return *input_; }
     Audio &audio() { return audio_; }
 
+    // Hand the display to another program and take it back afterwards - see Platform::releaseDisplay().
+    // The caller must have dropped every Texture and Font before releaseDisplay() (they die with the
+    // renderer) and reloads them after acquireDisplay(). The Platform, Renderer and Input objects stay,
+    // so references to them held all over the app remain valid.
+    void releaseDisplay();
+    void acquireDisplay();
+
 private:
     // order matters: platform must outlive renderer, both must outlive input/audio use of them
     std::unique_ptr<Platform> platform_;

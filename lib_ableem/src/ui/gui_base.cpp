@@ -15,4 +15,15 @@ GuiBase::~GuiBase() {
     // exactly the order that keeps every object valid while the ones built on top of it are still alive.
 }
 
+void GuiBase::releaseDisplay() {
+    renderer_->release();
+    platform_->releaseDisplay();
+}
+
+void GuiBase::acquireDisplay() {
+    platform_->acquireDisplay();
+    renderer_->recreate(*platform_);
+    input_->reinstallEventFilter();
+}
+
 } // namespace ableem

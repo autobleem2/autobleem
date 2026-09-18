@@ -25,6 +25,18 @@ struct Renderer::Impl {
 };
 
 Renderer::Renderer(Platform &platform) : impl(new Impl()) {
+    recreate(platform);
+}
+
+void Renderer::release() {
+    if (impl->renderer) {
+        SDL_DestroyRenderer(impl->renderer);
+        impl->renderer = nullptr;
+    }
+}
+
+void Renderer::recreate(Platform &platform) {
+    release();
     SDL_Window *window = static_cast<SDL_Window *>(platform.nativeWindow());
     impl->renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!impl->renderer) {

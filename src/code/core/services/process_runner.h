@@ -16,6 +16,11 @@ public:
 
     // runs `exe` with `args` and does not return until it has exited
     virtual void run(const std::string &exe, const std::vector<std::string> &args) = 0;
+
+    // true when what run() starts needs the display for itself - the launcher then gives up its window
+    // (and the DRM master with it) before run() and rebuilds it after, see Gui::releaseDisplay(). The one
+    // runner that draws *on* the launcher's window instead (the dev host's splash) answers false.
+    virtual bool needsExclusiveDisplay() const { return true; }
 };
 
 //******************

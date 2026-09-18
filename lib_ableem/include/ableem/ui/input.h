@@ -90,6 +90,9 @@ public:
     void setKeyboardAsPad(bool enabled);
 
     void loadMappings(const std::vector<std::string> &gameControllerDbPaths);
+    // puts the PSC event filter back: SDL drops it when its events subsystem is quit, which happens when the
+    // video and pad subsystems are both released around an emulator run (GuiBase::acquireDisplay() calls it)
+    void reinstallEventFilter();
     void probePads();  // (re)opens the joystick/game controller subsystem and registers already-connected pads
     void flushPads();  // closes every open pad (e.g. before handing control to another program)
     int activePadCount() const;

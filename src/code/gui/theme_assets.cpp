@@ -20,6 +20,19 @@ ThemeAssets::ThemeAssets(ableem::Renderer &renderer, Theme &theme, Config &confi
 //*******************************
 // ThemeAssets::load
 //*******************************
+void ThemeAssets::unload() {
+    themeFonts.closeAll();
+    sonyFonts.closeAll();
+    themeFont = ableem::Font();
+    backgroundImg = Texture();
+    logo = Texture();
+    cdJewel = Texture();
+    buttonTextureMap.clear();
+}
+
+//*******************************
+// ThemeAssets::load
+//*******************************
 void ThemeAssets::load() {
     theme_.load();     // (re)reads theme.json, merged over themes/default, every file resolved
     const ClassicTheme &classic = theme_.classic();
