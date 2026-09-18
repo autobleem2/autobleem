@@ -248,9 +248,11 @@ RetroArch's `pcsx_rearmed` core is only the fallback if the package shipped with
 `info`, `system` = the cores' BIOS files, `roms` = the user's other-system games, `saves`, `states`,
 `playlists`, `config`, `assets`, `autoconfig`, `database`, ...) with a generated `retroarch.cfg` whose every
 directory key points in there; the Pi's `rc/launch_rb.sh`/`retroarch.sh` run `retroarch --config` on it, and
-`Env::getPathToRetroarchDir()` is that folder on a Pi (`ableem::Environment::setRetroarchDir()`, set in
-`setupEnvironment()` under `AB_PLATFORM_RPI`, tested in `tests/core/test_env_fixture.cpp`; the console keeps
-`retroarch/`). `install.sh` builds the **latest tagged RetroArch from GitHub on the Pi** (KMS/EGL/GLES, udev,
+`Env::getPathToRetroarchDir()` is that folder on a Pi - **from `resources/platform/rpi.ini`** (`PlatformConfig`,
+see the source map), which also names the Pi's PS1 core and where the `retroarch` binary may be; the
+console's `psc.ini` keeps `retroarch/` and RetroBoot's core and binary. `roms/` gets a folder per system
+named as RetroArch's playlists are, so *Import Content -> Scan Directory* on it lands in the set.
+`install.sh` builds the **latest tagged RetroArch from GitHub on the Pi** (KMS/EGL/GLES, udev,
 ALSA; no X/Wayland/Qt/ffmpeg) because libretro's buildbot has every armhf *core* but no armhf *frontend*;
 `--retroarch apt` uses the distribution's package (1.19 on Trixie), `--retroarch none` leaves it alone. Then it
 downloads all ~130 cores from `buildbot.libretro.com/nightly/linux/armhf/latest/.index-extended` and the
@@ -562,7 +564,8 @@ defaults, which both the services and the screens need.
 | `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread and returns a `ScanUpdate` (added/updated/removed games, progress, finished). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce, checked every `ScanWatchInterval` when nothing was requested directly. Owned by `App` (`app.scans()`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
-| `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags and the `AB_DEBUG_HOST` macro. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
+| `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags, the `AB_DEBUG_HOST` macro, `platformName()` (`"psc"`/`"rpi"`/`"pc"` - the one place the build macros decide a path) and `retroArchInstalled()`. All path getters live in the library; extend `ableem::Environment` instead of adding new literal paths. |
+| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platformName>.ini` (`psc.ini`, `rpi.ini`, `pc.ini`) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. Add per-platform paths here, never as `#ifdef AB_PLATFORM_RPI` in the services. Tested in `tests/core/test_platform_config.cpp`. |
 | `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is pairs of lines, source then translation. Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
