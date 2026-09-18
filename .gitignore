@@ -68,7 +68,10 @@ db/
 #Claude Code local settings
 .claude/settings.local.json
 build_win2/
-build/
+# anchored to the root: an unanchored "build/" also matches lib_ableem/third_party/libchdr/deps/zstd-1.5.6/build/,
+# which is vendored *source* (zstd's own CMakeLists.txt lives there), not a build output directory - it was
+# silently missing from every fresh clone until this line was anchored (2026-09-18).
+/build/
 
 # the mocked USB root tools/make_usb.py builds for running the app on a PC
 usb/
