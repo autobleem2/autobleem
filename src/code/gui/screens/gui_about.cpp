@@ -48,19 +48,20 @@ void GuiAbout::render() {
         return;
     }
 
+    auto heading = [](const string &text) { return ".-= " + text + " =-."; };   // the decoration is not translated
     vector<string> credits = {string(Version::FULL_VERSION), " ",
-                              _(".-= Code C++ and shell scripts =-."),
+                              heading(_("Code C++ and shell scripts")),
                               "screemer, Axanar, mGGk, nex, genderbent",
-                              _(".-= Graphics =-."),
+                              heading(_("Graphics")),
                               "KaonashiFTW, GeekAndy, rubixcube6, NewbornfromHell",
-                              _(".-= Testing =-."),
+                              heading(_("Testing")),
                               "MagnusRC, xboxiso, Azazel, Solidius, SupaSAIAN, Kingherb, saptis",
-                              _(".-= Database maintenance =-."),
+                              heading(_("Database maintenance")),
                               "Screemer,Kingherb",
-                              _(".-= Localization support =-."),
+                              heading(_("Localization support")),
                               "nex(German), Azazel(Polish), gadsby(Turkish), GeekAndy(Dutch), Pardubak(Slovak), SupaSAIAN(Spanish), Mate(Czech)",
                               "Sasha(Italian), Jakejj(BR_Portuguese), jolny(Swedish), StepJefli(Danish), alucard73 / MagnusRC(French), Quenti(Occitan), ",
-                              _(".-= Retroboot and emulation cores =-."),
+                              heading(_("RetroArch and emulation cores")),
                               "genderbent, KMFDManic"," ",
                               _("Support via Discord:") + " https://discord.gg/AHUS3RM",
                               _("This is free software. It works AS IS and We take no responsibility for any issues or damage."),

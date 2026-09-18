@@ -1,446 +1,200 @@
-'Tenchu' theme by Kevzombie
-'Tenchu' Theme af Kevzombie
-.-= Code C++ and shell scripts =-.
-.-= Kode C++ og shell scripts =-.
-.-= Database maintenance =-.
-.-= Database vedligeholdelse =-.
-.-= Graphics =-.
-.-= Grafik =-.
-.-= Localization support =-.
-.-= Oversættelse =-.
-.-= Retroboot and emulation cores =-.
-.-= Retroboot og emulatorkerner =-.
-.-= Testing =-.
-.-= Test =-.
-A scan is already in progress
-En scanning er allerede i gang
-About
-Om
-About
-Om
-About AutoBleem
-Om AutoBleem
-Advanced
-Advanceret
-Advanced:
-Advanceret:
-All Games
-Alle spil
-Are you sure you want to delete
-Er du sikker på, du vil slette
-Are you sure you want to flush all covers?
-Er du sikker på, at du vil rydde alle covers?
-Are you sure you want to power off?
-Er du sikker på, at du vil slukke?
-Are you sure?
-Er du sikker?
-AutoBleem
-AutoBleem
-AutoBleem resume points not available in RetroArch.
-AutoBleem-genoptagelsespunkter er ikke tilgængelige i RetroArch.
-AutoBleem Theme:
-AutoBleem Tema:
-Background Music:
-Baggrundsmusik:
-Backspace
-Backspace
-Button Guide
-Knapguide
-Can't manage games while a scan is running
-Kan ikke administrere spil mens en scanning kører
-Cancel
-Annuller
-Caps
-Caps
-Card
-Kort
-Change MC
-Skift Memory Card
-Change RetroArch Playlist
-Skift RetroArch-system
-Change USB Games Sub-Directory
-Skift USB-spils undermappe
-Clock:
-Ur:
-Close
-Luk
-Code: AutoBleem Team
-Af: AutoBleem Team
-Configuration
-Konfiguration
-CONFIGURED
-KONFIGURERET
-Confirm
-Bekræft
-Controller and system information
-Controller- og systeminformation
-Copy
-Kopiér
-Cover Style:
-Cover-stil:
-Create, rename or manage memory card sets
-Opret, omdøb eller administrer memory card-sæt
-Custom
-Custom
-Custom Memory Cards
-Custom Memory Cards
-Customize AutoBleem settings
-Tilpas AutoBleem-indstillinger
-Decompressing ecm:
-Dekomprimerer ecm:
-Defragment Card
-Defragmenter kort
-Delete
-Slet
-Delete !SaveState folder for game
-Slet !SaveState-mappen for spillet
-Delete card
-Slet kort
-Delete Game
-Slet spil
-Delete games, flush covers
-Slet spil, ryd covers
-Do you want to save memcards data ?
-Vil du gemme memory card-data?
-Download latest:
-Aktuelle version:
-Edit game parameters
-Rediger spilparametre
-Edit Memory Card information
-Rediger memory card-information
-EmulationStation
-EmulationStation
-Emulator config MENU
-Emulator-konfigurationsmenu
-Enter
-Enter
-Enter new card name
-Indtast nyt kort navn
-Enter new game name
-Indtast nyt spilnavn
-Enter new name for card
-Indtast nyt navn for kort
-Enter new name for memory card
-Indtast nyt navn for memory kort
-Entry
-Post
-Exit game
-Afslut spil
-Exit to
-Afslut til
-Exit to EvoUI
-Afslut til EvoUI
-failed
-mislykkedes
-Failed to delete
-Sletning mislykkedes
-Favorite Games
-Favoritspil
-Favorite:
-Favorit:
-Final score
-Slutresultat
-Flush covers
-Ryd covers
-Folder:
-Mappe:
-Frameskip:
-Frameskip:
-Free
-Fri
-Free space
-Ledig plads
-GAME
-SPIL
-Game
-Spil
-Game failed to verify:
-Spilverificering mislykkedes:
-Game History
-Spilhistorik
-Game Manager
-Spilbibliotek
-Game manager - Select game
-Spilbibliotek - Vælg spil
-GAME OVER
-SPILLET SLUT
-Game:
-Spil:
-games
-spil
-Games changed. Press
-Spil skiftet. Tryk
-games scanned
-spil scannet
-GFX Filter:
-Grafik Filter:
-Go back
-Tilbage
-Hardware Information
-Hardwareinformation
-Hi/Lo Res
-Høj/Lav opløsning
-High res:
-Høj opløsning:
-HIGH SCORE
-HØJESTE SCORE
-Hold
-Vent
-In Game
-I spillet
-In Retroarch Game
-I RetroArch-spil
-INTERNAL
-INTERN
-Internal
-Intern
-Internal
-Intern
-Internal Games
-Interne spil
-Language:
-Sprog:
-Last Played:
-Sidst spillet:
-LIFE LOST
-LIV MISTET
-Link Block
-Link Blok
-Link end Block
-Link Slut Blok
-LIVES
-LIV
-Loading ... Please Wait ...
-Indlæser ... Vent venligst ...
-Lock
-Lås
-Lock data:
-Lås data:
-Look for new, changed or removed games
-Søg efter nye, ændrede eller fjernede spil
-MEMORY CARD
-MEMORY CARD
-Memory Card Manager
-Memory Card-manager
-Memory Card:
-Memory Card:
-Memory Cards
-Memory Kort
-Menu
-Menu
-Menu Theme:
-Menu Tema:
-Move Cursor
-Flyt markør
-Moving :
-Flytter:
-Merging discs:
+# AutoBleem Danish Translation
+# Format: English Text=Translated Text
+# Untranslated: 3 / Total: 196
 
-Music:
-Musik:
-New Card
-Nyt kort
-New GamePad found
-Ny controller fundet
-Next Game Platform
-Næste spilplatform
-NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
-BEMÆRK: Mindst én tilsluttet controller genkendes ikke. Brug siden Hardwareinformation til at konfigurere den.
-OK
-OK
-OOPS! Game crashed. Resume point not available.
-OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
-Open Retroarch Menu
-Åbn RetroArch-menu
-Options
-Indstillinger
-Original
-Original
-Page
-Side
-PCSX Version:
-PCSX Version:
-Play all PSX games with RA:
-Spil alle PSX-spil med RA:
-Play using RA:
-Spil med RA:
-Player
-Spiller
-Players
-Spillere
-Please confirm
-Bekræft venligst
-PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
-TILSLUT VENLIGST CONTROLLER TIL PLAYSTATION CLASSIC
-Please wait ... deleting
-Vent venligst ... sletter
-Please wait ... deleting covers...
-Vent venligst ... sletter covers...
-Plugin:
-Plugin:
-POWER
-STRØM
-Power Off
-Sluk
-POWER SHOT
-KRAFTSKUD
-POWERING OFF... PLEASE WAIT
-SLUKKER... VENT VENLIGST
-Published by:
-Udgivet af:
-Quick boot
-Hurtigstart
-Quick scroll to next letter
-Hurtig scroll til næste bogstav
-QuickBoot:
-Hurtigstart:
-Quit emulation - back to AutoBleem
-Afslut emulering - tilbage til AutoBleem
-Random
-Tilfældigt
-Random Game
-Tilfældigt spil
-RAPID FIRE
-HURTIGSKUD
-Re-Scan Games
-Genscan spil
-Re/Scan
-Gen/Scan
-ReadMe file not found
-ReadMe-fil ikke fundet
-Region:
-Region:
-Reload Cards
-Genindlæs kort
-Rename
-Omdøb
-RESET
-NULSTIL
-Restart
-Genstart
-RESUME
-GENOPTAG
-Resume game from saved state point
-Genoptag spil fra gemt punkt
-Resume point saved to slot
-Genoptagelsespunkt gemt til slot
-RetroArch
-RetroArch
-RetroArch is not installed
-RetroArch er ikke installeret
-Run using RetroArch
-Kør med RetroArch
-Safely power off the console
-Sluk konsollen sikkert
-Scan complete:
-Scanning fuldført:
-Scanline Level:
-Scanline-niveau:
-Scanlines:
-Scanlines:
-Scanning
-Scanner
-Scanning...
-Scanner...
-SCORE
-POINT
-Select
-Vælg
-Select memory card
-Vælg Memory card
-Select or cancel highlighted option
-Vælg eller annuller markeret valgmulighed
-Select PS1 Game Category
-Vælg PS1-spilkategori
-SELECT RESUME SLOT TO LOAD
-VÆLG SLOT AT INDLÆSE
-Select RetroArch Playlist
-Vælg RetroArch-platform
-Select Right Card
-Vælg højre kort
-SELECT SLOT TO SAVE STATE
-VÆLG SLOT FOR AT GEMME
-Serial:
-Serienummer:
-SETTINGS
-INDSTILLINGER
-Share MC
-Del MC
-Show Internal Games:
-Vis interne spil:
-Show RetroArch:
-Vis RetroArch:
-Showing Timeout (0 = no timeout):
-Vis timeout (0 = ingen timeout):
-Showing: All Games
-Viser: Alle spil
-Showing: Apps
-Viser: Apps
-Showing: Favorite Games
-Viser: Favoritspil
-Showing: Game History
-Viser: Spilhistorik
-Showing: Internal Games
-Viser: Interne spil
-Showing: Retroarch
-Viser: Retroarch
-Showing: USB Games Directory:
-Viser: USB-spilmappe:
-Slot
-Slot
-Space
-Space
-SpeedHack:
-SpeedHack:
-SPREAD SHOT
-SPREDNINGSSKUD
-Spu Interpolation:
-SPU-interpolation:
-Support via Discord:
-Support Discord:
-Surprise
-Overraskelse
-SYSTEM
-SYSTEM
-System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
-Systemmenu (Genscan, RetroArch, Memory Cards, Sluk, ...)
-This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
-Dette er gratis open source software. Det virker som det er og vi tager ikke ansvaret for problemer eller skader.
-This is free software. It works AS IS and We take no responsibility for any issues or damage.
-Dette er gratis software. Det fungerer SOM DET ER, og vi påtager os intet ansvar for problemer eller skader.
-to scan
-til scanning
-Total:
-Total:
-Unknown Core (AutoDetect)
-Ukendt kerne (Autodetekt)
-Update RA Config:
-Opdater RA-konfiguration:
-Updating regional.db...
-Opdaterer regional.db...
-Upgrading AutoBleem - Please wait...
-Opgraderer AutoBleem - Vent venligst...
-USB Games
-USB-spil
-Use Controller
-Brug controller
-WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
-ADVARSEL: INGEN COVER DB FUNDET. TRYK PÅ EN TAST.
-WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
-ADVARSEL: INGEN SPIL FUNDET. TRYK PÅ EN TAST.
-WAVE
-BØLGE
-Widescreen:
-Widescreen:
-Year:
-År:
-﻿Automatic PlayStation Classic USB launcher
-Automatisk PlayStation Classic USB launcher
-Showing: Lightgun Games
-Viser: Lightgun-spil
-Lightgun Game:
-Lightgun-spil:
-File:
-
-Core:
-
+A scan is already in progress=En scanning er allerede i gang
+About=Om
+About AutoBleem=Om AutoBleem
+All Games=Alle spil
+Are you sure you want to delete=Er du sikker på, du vil slette
+Are you sure you want to flush all covers?=Er du sikker på, at du vil rydde alle covers?
+Are you sure you want to power off?=Er du sikker på, at du vil slukke?
+Are you sure?=Er du sikker?
+AutoBleem=AutoBleem
+AutoBleem resume points not available in RetroArch.=AutoBleem-genoptagelsespunkter er ikke tilgængelige i RetroArch.
+AutoBleem Theme:=AutoBleem Tema:
+Background Music:=Baggrundsmusik:
+Backspace=Backspace
+Button Guide=Knapguide
+Can't manage games while a scan is running=Kan ikke administrere spil mens en scanning kører
+Cancel=Annuller
+Caps=Caps
+Card=Kort
+Change MC=Skift Memory Card
+Change RetroArch Playlist=Skift RetroArch-system
+Change USB Games Sub-Directory=Skift USB-spils undermappe
+Clock:=Ur:
+Close=Luk
+Code C++ and shell scripts=Kode C++ og shell scripts
+Configuration=Konfiguration
+CONFIGURED=KONFIGURERET
+Confirm=Bekræft
+Controller and system information=Controller- og systeminformation
+Copy=Kopiér
+Core:=
+Cover Style:=Cover-stil:
+Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
+Custom=Custom
+Custom Memory Cards=Custom Memory Cards
+Customize AutoBleem settings=Tilpas AutoBleem-indstillinger
+Database maintenance=Database vedligeholdelse
+Decompressing ecm:=Dekomprimerer ecm:
+Defragment Card=Defragmenter kort
+Delete=Slet
+Delete !SaveState folder for game=Slet !SaveState-mappen for spillet
+Delete card=Slet kort
+Delete Game=Slet spil
+Delete games, flush covers=Slet spil, ryd covers
+Do you want to save memcards data ?=Vil du gemme memory card-data?
+Edit game parameters=Rediger spilparametre
+Edit Memory Card information=Rediger memory card-information
+EmulationStation=EmulationStation
+Emulator config MENU=Emulator-konfigurationsmenu
+Enter=Enter
+Enter new card name=Indtast nyt kort navn
+Enter new game name=Indtast nyt spilnavn
+Enter new name for card=Indtast nyt navn for kort
+Enter new name for memory card=Indtast nyt navn for memory kort
+Entry=Post
+Exit game=Afslut spil
+Exit to=Afslut til
+Exit to EvoUI=Afslut til EvoUI
+failed=mislykkedes
+Failed to delete=Sletning mislykkedes
+Favorite Games=Favoritspil
+Favorite:=Favorit:
+File:=
+Final score=Slutresultat
+Flush covers=Ryd covers
+Folder:=Mappe:
+Frameskip:=Frameskip:
+Free=Fri
+Free space=Ledig plads
+Game=Spil
+GAME=SPIL
+Game failed to verify:=Spilverificering mislykkedes:
+Game History=Spilhistorik
+Game Manager=Spilbibliotek
+Game manager - Select game=Spilbibliotek - Vælg spil
+GAME OVER=SPILLET SLUT
+games=spil
+GFX Filter:=Grafik Filter:
+Go back=Tilbage
+Graphics=Grafik
+Hardware Information=Hardwareinformation
+High res:=Høj opløsning:
+HIGH SCORE=HØJESTE SCORE
+In Game=I spillet
+In Retroarch Game=I RetroArch-spil
+Internal=Intern
+INTERNAL=INTERN
+Internal Games=Interne spil
+Language:=Sprog:
+Last Played:=Sidst spillet:
+LIFE LOST=LIV MISTET
+Lightgun Game:=Lightgun-spil:
+Link Block=Link Blok
+Link end Block=Link Slut Blok
+LIVES=LIV
+Loading ... Please Wait ...=Indlæser ... Vent venligst ...
+Localization support=Oversættelse
+Lock data:=Lås data:
+Look for new, changed or removed games=Søg efter nye, ændrede eller fjernede spil
+MEMORY CARD=MEMORY CARD
+Memory Card Manager=Memory Card-manager
+Memory Card:=Memory Card:
+Memory Cards=Memory Kort
+Merging discs:=
+Move Cursor=Flyt markør
+Moving :=Flytter:
+Music:=Musik:
+New Card=Nyt kort
+New GamePad found=Ny controller fundet
+Next Game Platform=Næste spilplatform
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=BEMÆRK: Mindst én tilsluttet controller genkendes ikke. Brug siden Hardwareinformation til at konfigurere den.
+OK=OK
+OOPS! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
+Open Retroarch Menu=Åbn RetroArch-menu
+Options=Indstillinger
+Page=Side
+Play all PSX games with RA:=Spil alle PSX-spil med RA:
+Play using RA:=Spil med RA:
+Player=Spiller
+Players=Spillere
+Please confirm=Bekræft venligst
+Please wait ... deleting=Vent venligst ... sletter
+Please wait ... deleting covers...=Vent venligst ... sletter covers...
+Plugin:=Plugin:
+POWER=STRØM
+Power Off=Sluk
+POWER SHOT=KRAFTSKUD
+POWERING OFF... PLEASE WAIT=SLUKKER... VENT VENLIGST
+Published by:=Udgivet af:
+Quick scroll to next letter=Hurtig scroll til næste bogstav
+Quit emulation - back to AutoBleem=Afslut emulering - tilbage til AutoBleem
+Random=Tilfældigt
+Random Game=Tilfældigt spil
+RAPID FIRE=HURTIGSKUD
+Re-Scan Games=Genscan spil
+ReadMe file not found=ReadMe-fil ikke fundet
+Region:=Region:
+Reload Cards=Genindlæs kort
+Rename=Omdøb
+RESET=NULSTIL
+Restart=Genstart
+RESUME=GENOPTAG
+Resume game from saved state point=Genoptag spil fra gemt punkt
+Resume point saved to slot=Genoptagelsespunkt gemt til slot
+RetroArch=RetroArch
+RetroArch and emulation cores=Retroboot og emulatorkerner
+RetroArch is not installed=RetroArch er ikke installeret
+Run using RetroArch=Kør med RetroArch
+Safely power off the console=Sluk konsollen sikkert
+Scan complete:=Scanning fuldført:
+Scanline Level:=Scanline-niveau:
+Scanlines:=Scanlines:
+Scanning=Scanner
+Scanning...=Scanner...
+SCORE=POINT
+Select=Vælg
+Select memory card=Vælg Memory card
+Select or cancel highlighted option=Vælg eller annuller markeret valgmulighed
+Select PS1 Game Category=Vælg PS1-spilkategori
+SELECT RESUME SLOT TO LOAD=VÆLG SLOT AT INDLÆSE
+Select RetroArch Playlist=Vælg RetroArch-platform
+Select Right Card=Vælg højre kort
+SELECT SLOT TO SAVE STATE=VÆLG SLOT FOR AT GEMME
+Serial:=Serienummer:
+SETTINGS=INDSTILLINGER
+Share MC=Del MC
+Show Internal Games:=Vis interne spil:
+Showing Timeout (0 for no timeout):=Vis timeout (0 ingen timeout):
+Showing: All Games=Viser: Alle spil
+Showing: Apps=Viser: Apps
+Showing: Favorite Games=Viser: Favoritspil
+Showing: Game History=Viser: Spilhistorik
+Showing: Internal Games=Viser: Interne spil
+Showing: Lightgun Games=Viser: Lightgun-spil
+Showing: Retroarch=Viser: Retroarch
+Showing: USB Games Directory:=Viser: USB-spilmappe:
+Slot=Slot
+Space=Space
+SpeedHack:=SpeedHack:
+SPREAD SHOT=SPREDNINGSSKUD
+Spu Interpolation:=SPU-interpolation:
+Support via Discord:=Support Discord:
+Surprise=Overraskelse
+SYSTEM=SYSTEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)=Systemmenu (Genscan, RetroArch, Memory Cards, Sluk, ...)
+Testing=Test
+This is free software. It works AS IS and We take no responsibility for any issues or damage.=Dette er gratis software. Det fungerer SOM DET ER, og vi påtager os intet ansvar for problemer eller skader.
+Unknown Core (AutoDetect)=Ukendt kerne (Autodetekt)
+Update RA Config:=Opdater RA-konfiguration:
+Updating regional.db...=Opdaterer regional.db...
+USB Games=USB-spil
+Use Controller=Brug controller
+WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ADVARSEL: INGEN COVER DB FUNDET. TRYK PÅ EN TAST.
+WAVE=BØLGE
+Widescreen:=Widescreen:
+Year:=År:
+|@lang|=da

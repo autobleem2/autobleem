@@ -1,462 +1,200 @@
-.-= Code C++ and shell scripts =-.
-.-= Kod C++ och Shell-skript =-.
-.-= Database maintenance =-.
-.-= Databas-underhåll =-.
-.-= Graphics =-.
-.-= Grafik =-.
-.-= Localization support =-.
-.-= Lokaliseringshjälp =-.
-.-= Retroboot and emulation cores =-.
-.-= Retroboot och emuleringskärnor =-.
-.-= Testing =-.
-.-= Testning =-.
-A scan is already in progress
-En skanning pågår redan
-About
-Om
-About
-Om
-About AutoBleem
-Om AutoBleem
-Advanced
-Avancerat
-Advanced:
-Avancerat:
-All Games
-Alla spel
-Are you sure you want to delete
-Är du säker på att du vill radera
-Are you sure you want to flush all covers?
-Är du säker på att du vill nollställa alla omslag?
-Are you sure you want to power off?
-Är du säker på att du vill stänga av?
-Are you sure?
-Är du säker?
-AutoBleem
-AutoBleem
-AutoBleem Theme:
-AutoBleem-tema:
-AutoBleem resume points not available in RetroArch.
-AutoBleems spar-punkter är inte tillgängliga i RetroArch.
-Background Music:
-Bakgrundsmusik:
-Backspace
-Backsteg
-Button Guide
-Knappguide
-Can't manage games while a scan is running
-Kan inte hantera spel medan en skanning pågår
-Cancel
-Avbryt
-Caps
-Caps
-Card
-CONFIGURED
-KONFIGURERAT
-Kort
-Change MC
-Byt minneskort
-Close
-Stäng
-Configuration
-Konfiguration
-CONFIGURED
-KONFIGURERAD
-Confirm
-Bekräfta
-Controller and system information
-Information om handkontroll och system
-Create, rename or manage memory card sets
-Skapa, byt namn på eller hantera minneskortsuppsättningar
-Custom
-Anpassad
-Custom Memory Cards
-Anpassade minneskort
-Delete
-Radera
-Delete card
-Radera kort
-Delete games, flush covers
-Ta bort spel, rensa omslag
-Download latest:
-Hämta senaste version:
-EmulationStation
-EmulationStation
-Enter new card name
-Ange namn på nytt kort
-Enter new game name
-Ange namn på nytt spel
-Enter new name for card
-Ange nytt namn för kort
-Enter new name for memory card
-Ange nytt namn för minneskort
-Exit game
-Avsluta spel
-Exit to
-Avsluta till
-failed
-misslyckades
-Favorite Games
-Favoritspel
-Final score
-Slutresultat
-Folder:
-Mapp:
-Free space
-Ledigt utrymme
-Game
-Spel
-Game failed to verify:
-Spelverifiering misslyckades:
-Game History
-Spelhistorik
-Game Manager
-Spelbibliotek
-Game manager - Select game
-Spelbibliotek - Välj spel
-GAME OVER
-SPELET ÄR SLUT
-Game:
-Spel:
-Games changed. Press
-Spelen förändrade. Tryck
-games scanned
-spel scannade
-GFX Filter:
-Grafikfilter:
-Go back
-Tillbaka
-Hardware Information
-Hårdvaruinformation
-High res:
-Hög upplösning:
-HIGH SCORE
-BÄSTA RESULTAT
-Hold
-Vänta
-Internal
-Intern
-Internal
-Intern
-Internal Games
-Interna spel
-Language:
-Språk:
-Last Played:
-Senast spelad:
-LIFE LOST
-LIV FÖRLORAT
-LIVES
-LIV
-Loading ... Please Wait ...
-Laddar ... Vänligen vänta ...
-Lock data:
-Lås data:
-Look for new, changed or removed games
-Sök efter nya, ändrade eller borttagna spel
-Memory Card:
-Minneskort:
-Memory Cards
-Minneskort
-Menu
-Meny
-Move Cursor
-Flytta markör
-New Card
-Nytt kort
-Next Game Platform
-Nästa spelplattform
-NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
-OBS: Minst en ansluten handkontroll känns inte igen. Ställ in den på sidan Hårdvaruinformation.
-Options
-Alternativ
-Original
-Original
-Page
-Sida
-Play all PSX games with RA:
-Spela alla PSX-spel med RA:
-Play using RA:
-Spela med RA:
-Players
-Spelare
-Please confirm
-Vänligen bekräfta
-PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
-VÄNLIGEN ANSLUT HANDKONTROLL TILL PLAYSTATION CLASSIC
-POWER SHOT
-KRAFTSKOTT
-Published by:
-Utgivet av:
-Quick boot
-Snabbstart
-QuickBoot:
-Snabbstart:
-Random
-Slumpmässigt
-Random Game
-Slumpmässigt spel
-RAPID FIRE
-SNABBELD
-Re-Scan Games
-Skanna om spel
-Re/Scan
-Re/Scan
-ReadMe file not found
-ReadMe-filen hittades inte
-Rename
-Byt namn
-RESET
-ÅTERSTÄLL
-RetroArch
-RetroArch
-RetroArch is not installed
-RetroArch är inte installerat
-Scanning...
-Scannar...
-Select
-Välj
-Select memory card
-Välj minneskort
-Share MC
-Dela minneskort
-Show RetroArch:
-Visa RetroArch:
-Space
-Mellanslag
-Support via Discord:
-Support via Discord:
-This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
-Detta är gratis Open Source-mjukvara. Den tillhandahålls i befintligt skick och vi tar inget ansvar för eventuella problem eller skada som kan uppstå.
-to scan
-till scanning
-Total:
-Total:
-Updating regional.db...
-Uppdaterar regional.db...
-WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
-VARNING: INGEN COVER DB HITTADES. TRYCK PÅ VALFRI KNAPP.
-WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
-VARNING: INGA SPEL HITTADES. TRYCK PÅ VALFRI KNAPP.
-Year:
-År:
-Change RetroArch Playlist
-Byt RetroArch-system
-Change USB Games Sub-Directory
-Byt undermapp för USB-spel
-Clock:
-Klocka:
-Configuration saved - Press |@X| to continue
-Konfiguration sparad - Tryck |@X| för att fortsätta
-Copy
-Kopiera
-Cover Style:
-Omslagsstil:
-Customize AutoBleem settings
-Anpassa AutoBleem-inställningar
-DPAD - Same as classic menu
-DPAD - samma som Classic-menyn
-Decompressing ecm:
-Avkomprimerar ecm:
-Defragment Card
-Avfragmentera kort
-Delete !SaveState folder for game
-Radera !SaveState mapp för spel
-Delete Game
-Radera spel
-Do you want to save memcards data ?
-Vill du spara minneskortsdata?
-Edit Memory Card information
-Redigera minneskortsinformation
-Edit game parameters
-Redigera spelparametrar
-Emulator config MENU
-Emulator-inställningsmeny
-Enter
-Mata in
-Entry
-Inmatning
-Exit to EvoUI
-Avsluta till EvoUI
-Failed to delete
-Kunde inte radera
-Favorite:
-Favorit:
-Flush covers
-Nollställ omslag
-Frameskip:
-Frameskip:
-Free
-Ledigt
-GAME
-SPEL
-Games
-Spel
-Games filter
-Spelfilter
-IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
-I BOOT-MENY FÖR ATT STÄNGA AV KONSOLLEN (SÄKER AVSTÄNGNING !!!)
-INTERNAL
-INTERN
-In Game
-I spel
-In Retroarch Game
-I RetroArch-spel
-Internal Games:
-Interna spel:
-Is your dpad analogue?
-Är din DPAD analog?
-Link Block
-Länkblock
-Link end Block
-Slutblock länk
-MEMORY CARD
-MINNESKORT
-Memory Card Manager
-Minneskorthanterare
-Moving :
-Flyttar :
-Merging discs:
+# AutoBleem Swedish Translation
+# Format: English Text=Translated Text
+# Untranslated: 3 / Total: 196
 
-Music:
-Musik:
-New GamePad found
-Ny gamepad hittad
-OK
-OK
-OOPS! Game crashed. Resume point not available.
-Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
-Open Retroarch Menu
-Öppna RetroArch-meny
-POWER
-STRÖM
-POWERING OFF... PLEASE WAIT
-STÄNGER AV... VÄNLIGEN VÄNTA
-Player
-Spelare
-Please wait ... deleting
-Vänligen vänta ... raderar
-Please wait ... deleting covers...
-Vänligen vänta ... raderar omslag
-Plugin:
-Plugin:
-Power Off
-Stäng av
-Press a key for
-Tryck på en knapp för att
-Quick scroll to next letter
-Snabbscrolla till nästa bokstav
-QuickBoot Init:
-QuickBoot-initiering:
-Quit emulation - back to AutoBleem
-Avsluta emulation - tillbaka till AutoBleem
-RESUME
-FORTSÄTT
-Region:
-Region:
-Reload Cards
-Ladda om kort
-Restart
-Starta om
-Resume game from saved state point
-Fortsätt spel från befintlig sparpunkt
-Resume point saved to slot
-Sparpunkt lagrad på position
-Run using RetroArch
-Kör med RetroArch
-Run using RetroBoot(if installed)
-Kör med RetroBoot(om installerat)
-Safely power off the console
-Stäng av konsolen säkert
-Scan complete:
-Skanning klar:
-Scanning
-Skannar
-SCORE
-POÄNG
-SELECT RESUME SLOT TO LOAD
-VÄLJ SPARPUNKT ATT LADDA
-SELECT SLOT TO SAVE STATE
-VÄLJ SPARPUNKT ATT SPARA TILL
-SETTINGS
-INSTÄLLNINGAR
-Scanline Level:
-Scanline-nivå:
-Scanlines:
-Scanlines:
-Select PS1 Game Category
-Välj PS1-spelkategori
-Select RetroArch Playlist
-Välj RetroArch-plattform
-Select Right Card
-Välj rätt kort
-Select or cancel highlighted option
-Välj eller avbryt aktuellt alternativ
-Serial:
-Serial:
-Show Internal Games:
-Visa interna spel:
-Showing Timeout (0 = no timeout):
-Visningstimeout (0 = ingen timeout):
-Showing: All Games
-Visar: Alla spel
-Showing: All games
-Visar: alla spel
-Showing: Apps
-Visar: Appar
-Showing: Favorite Games
-Visar: Favoritspel
-Showing: Favorite games
-Visar: favoritspel
-Showing: Game History
-Visar: Spelhistorik
-Showing: Internal Games
-Visar: Interna spel
-Showing: Internal games
-Visar: interna spel
-Showing: Retroarch
-Visar: RetroArch
-Showing: USB Games Directory:
-Visar: USB-spel i mapp:
-Slot
-Plats
-SpeedHack:
-SpeedHack:
-SPREAD SHOT
-SPRIDNINGSSKOTT
-Spu Interpolation:
-SPU-Interpolation:
-Starting EvolutionUI
-Startar EvolutionUI
-Surprise
-Överraskning
-SYSTEM
-SYSTEM
-System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
-Systemmeny (Skanning, RetroArch, Minneskort, Avstängning, ...)
-This is free software. It works AS IS and We take no responsibility for any issues or damage.
-Detta är fri programvara. Den fungerar I BEFINTLIGT SKICK och vi tar inget ansvar för problem eller skador.
-UI:
-UI:
-Unknown Core (AutoDetect)
-Okänd kärna (AutoDetect)
-Update RA Config:
-Uppdatera RA-konfiguration:
-Use Controller
-Använd handkontroll
-WAVE
-VÅG
-Widescreen:
-Widescreen:
-games
-spel
-USB Games
-USB-spel
-Showing: Lightgun Games
-Visar: Lightgun-spel
-Lightgun Game:
-Lightgun-spel:
-File:
-
-Core:
-
+A scan is already in progress=En skanning pågår redan
+About=Om
+About AutoBleem=Om AutoBleem
+All Games=Alla spel
+Are you sure you want to delete=Är du säker på att du vill radera
+Are you sure you want to flush all covers?=Är du säker på att du vill nollställa alla omslag?
+Are you sure you want to power off?=Är du säker på att du vill stänga av?
+Are you sure?=Är du säker?
+AutoBleem=AutoBleem
+AutoBleem resume points not available in RetroArch.=AutoBleems spar-punkter är inte tillgängliga i RetroArch.
+AutoBleem Theme:=AutoBleem-tema:
+Background Music:=Bakgrundsmusik:
+Backspace=Backsteg
+Button Guide=Knappguide
+Can't manage games while a scan is running=Kan inte hantera spel medan en skanning pågår
+Cancel=Avbryt
+Caps=Caps
+Card=CONFIGURED
+Change MC=Byt minneskort
+Change RetroArch Playlist=Byt RetroArch-system
+Change USB Games Sub-Directory=Byt undermapp för USB-spel
+Clock:=Klocka:
+Close=Stäng
+Code C++ and shell scripts=Kod C++ och Shell-skript
+Configuration=Konfiguration
+CONFIGURED=KONFIGURERAD
+Confirm=Bekräfta
+Controller and system information=Information om handkontroll och system
+Copy=Kopiera
+Core:=
+Cover Style:=Omslagsstil:
+Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
+Custom=Anpassad
+Custom Memory Cards=Anpassade minneskort
+Customize AutoBleem settings=Anpassa AutoBleem-inställningar
+Database maintenance=Databas-underhåll
+Decompressing ecm:=Avkomprimerar ecm:
+Defragment Card=Avfragmentera kort
+Delete=Radera
+Delete !SaveState folder for game=Radera !SaveState mapp för spel
+Delete card=Radera kort
+Delete Game=Radera spel
+Delete games, flush covers=Ta bort spel, rensa omslag
+Do you want to save memcards data ?=Vill du spara minneskortsdata?
+Edit game parameters=Redigera spelparametrar
+Edit Memory Card information=Redigera minneskortsinformation
+EmulationStation=EmulationStation
+Emulator config MENU=Emulator-inställningsmeny
+Enter=Mata in
+Enter new card name=Ange namn på nytt kort
+Enter new game name=Ange namn på nytt spel
+Enter new name for card=Ange nytt namn för kort
+Enter new name for memory card=Ange nytt namn för minneskort
+Entry=Inmatning
+Exit game=Avsluta spel
+Exit to=Avsluta till
+Exit to EvoUI=Avsluta till EvoUI
+failed=misslyckades
+Failed to delete=Kunde inte radera
+Favorite Games=Favoritspel
+Favorite:=Favorit:
+File:=
+Final score=Slutresultat
+Flush covers=Nollställ omslag
+Folder:=Mapp:
+Frameskip:=Frameskip:
+Free=Ledigt
+Free space=Ledigt utrymme
+Game=Spel
+GAME=SPEL
+Game failed to verify:=Spelverifiering misslyckades:
+Game History=Spelhistorik
+Game Manager=Spelbibliotek
+Game manager - Select game=Spelbibliotek - Välj spel
+GAME OVER=SPELET ÄR SLUT
+games=spel
+GFX Filter:=Grafikfilter:
+Go back=Tillbaka
+Graphics=Grafik
+Hardware Information=Hårdvaruinformation
+High res:=Hög upplösning:
+HIGH SCORE=BÄSTA RESULTAT
+In Game=I spel
+In Retroarch Game=I RetroArch-spel
+Internal=Intern
+INTERNAL=INTERN
+Internal Games=Interna spel
+Language:=Språk:
+Last Played:=Senast spelad:
+LIFE LOST=LIV FÖRLORAT
+Lightgun Game:=Lightgun-spel:
+Link Block=Länkblock
+Link end Block=Slutblock länk
+LIVES=LIV
+Loading ... Please Wait ...=Laddar ... Vänligen vänta ...
+Localization support=Lokaliseringshjälp
+Lock data:=Lås data:
+Look for new, changed or removed games=Sök efter nya, ändrade eller borttagna spel
+MEMORY CARD=MINNESKORT
+Memory Card Manager=Minneskorthanterare
+Memory Card:=Minneskort:
+Memory Cards=Minneskort
+Merging discs:=
+Move Cursor=Flytta markör
+Moving :=Flyttar :
+Music:=Musik:
+New Card=Nytt kort
+New GamePad found=Ny gamepad hittad
+Next Game Platform=Nästa spelplattform
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=OBS: Minst en ansluten handkontroll känns inte igen. Ställ in den på sidan Hårdvaruinformation.
+OK=OK
+OOPS! Game crashed. Resume point not available.=Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
+Open Retroarch Menu=Öppna RetroArch-meny
+Options=Alternativ
+Page=Sida
+Play all PSX games with RA:=Spela alla PSX-spel med RA:
+Play using RA:=Spela med RA:
+Player=Spelare
+Players=Spelare
+Please confirm=Vänligen bekräfta
+Please wait ... deleting=Vänligen vänta ... raderar
+Please wait ... deleting covers...=Vänligen vänta ... raderar omslag
+Plugin:=Plugin:
+POWER=STRÖM
+Power Off=Stäng av
+POWER SHOT=KRAFTSKOTT
+POWERING OFF... PLEASE WAIT=STÄNGER AV... VÄNLIGEN VÄNTA
+Published by:=Utgivet av:
+Quick scroll to next letter=Snabbscrolla till nästa bokstav
+Quit emulation - back to AutoBleem=Avsluta emulation - tillbaka till AutoBleem
+Random=Slumpmässigt
+Random Game=Slumpmässigt spel
+RAPID FIRE=SNABBELD
+Re-Scan Games=Skanna om spel
+ReadMe file not found=ReadMe-filen hittades inte
+Region:=Region:
+Reload Cards=Ladda om kort
+Rename=Byt namn
+RESET=ÅTERSTÄLL
+Restart=Starta om
+RESUME=FORTSÄTT
+Resume game from saved state point=Fortsätt spel från befintlig sparpunkt
+Resume point saved to slot=Sparpunkt lagrad på position
+RetroArch=RetroArch
+RetroArch and emulation cores=Retroboot och emuleringskärnor
+RetroArch is not installed=RetroArch är inte installerat
+Run using RetroArch=Kör med RetroArch
+Safely power off the console=Stäng av konsolen säkert
+Scan complete:=Skanning klar:
+Scanline Level:=Scanline-nivå:
+Scanlines:=Scanlines:
+Scanning=Skannar
+Scanning...=Scannar...
+SCORE=POÄNG
+Select=Välj
+Select memory card=Välj minneskort
+Select or cancel highlighted option=Välj eller avbryt aktuellt alternativ
+Select PS1 Game Category=Välj PS1-spelkategori
+SELECT RESUME SLOT TO LOAD=VÄLJ SPARPUNKT ATT LADDA
+Select RetroArch Playlist=Välj RetroArch-plattform
+Select Right Card=Välj rätt kort
+SELECT SLOT TO SAVE STATE=VÄLJ SPARPUNKT ATT SPARA TILL
+Serial:=Serial:
+SETTINGS=INSTÄLLNINGAR
+Share MC=Dela minneskort
+Show Internal Games:=Visa interna spel:
+Showing Timeout (0 for no timeout):=Visningstimeout (0 ingen timeout):
+Showing: All Games=Visar: Alla spel
+Showing: Apps=Visar: Appar
+Showing: Favorite Games=Visar: Favoritspel
+Showing: Game History=Visar: Spelhistorik
+Showing: Internal Games=Visar: Interna spel
+Showing: Lightgun Games=Visar: Lightgun-spel
+Showing: Retroarch=Visar: RetroArch
+Showing: USB Games Directory:=Visar: USB-spel i mapp:
+Slot=Plats
+Space=Mellanslag
+SpeedHack:=SpeedHack:
+SPREAD SHOT=SPRIDNINGSSKOTT
+Spu Interpolation:=SPU-Interpolation:
+Support via Discord:=Support via Discord:
+Surprise=Överraskning
+SYSTEM=SYSTEM
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)=Systemmeny (Skanning, RetroArch, Minneskort, Avstängning, ...)
+Testing=Testning
+This is free software. It works AS IS and We take no responsibility for any issues or damage.=Detta är fri programvara. Den fungerar I BEFINTLIGT SKICK och vi tar inget ansvar för problem eller skador.
+Unknown Core (AutoDetect)=Okänd kärna (AutoDetect)
+Update RA Config:=Uppdatera RA-konfiguration:
+Updating regional.db...=Uppdaterar regional.db...
+USB Games=USB-spel
+Use Controller=Använd handkontroll
+WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=VARNING: INGEN COVER DB HITTADES. TRYCK PÅ VALFRI KNAPP.
+WAVE=VÅG
+Widescreen:=Widescreen:
+Year:=År:
+|@lang|=sv

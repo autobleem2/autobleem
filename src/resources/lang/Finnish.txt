@@ -1,460 +1,200 @@
-.-= Code C++ and shell scripts =-.
-.-= Ohjelmoi C++ ja shell scriptejä =-.
-.-= Database maintenance =-.
-.-= Tietokannan ylläpito =-.
-.-= Graphics =-.
-.-= Grafiikat
-.-= Localization support =-.
-.-= Lokalisointituki =-.
-.-= Retroboot and emulation cores =-.
-.-= Retroboot ja emulaatio ytimet =-.
-.-= Testing =-.
-.-= Testausta =-.
-A scan is already in progress
-Skannaus on jo käynnissä
-About
-Tietoja
-About AutoBleem
-Tietoja AutoBleemistä
-Advanced
-Lisäasetukset
-All Games
-Kaikki pelit
-Are you sure you want to delete
-Haluatko varmasti poistaa
-Are you sure you want to flush all covers?
-Haluatko varmasti tyhjentää kaikki kannet?
-Are you sure you want to power off?
-Haluatko varmasti sammuttaa laitteen?
-Are you sure?
-Oletko varma?
-AutoBleem
-AutoBleem
-AutoBleem resume points not available in RetroArch.
-AutoBleem-jatkamispisteet eivät ole saatavilla RetroArchissa.
-AutoBleem Theme:
-AutoBleem Teema:
-Background Music:
-Taustamusiikki:
-Backspace
-Askelpalautin
-Bin file failed to verify
-Bin tiedoston varmistus epäonnistui
-Button Guide
-Painikeopas
-Can't manage games while a scan is running
-Pelejä ei voi hallita skannauksen aikana
-Cancel
-Peruuta
-Caps
-Caps
-Card
-Kortti
-Change MC
-Muuta MC
-Change RetroArch Playlist
-Vaihda RetroArch järjestelmää
-Change USB Games Sub-Directory
-Vaihda USB Pelien alihakemistoa
-Clock:
-Kello:
-Close
-Sulje
-Configuration
-Kokoonpano
-Configuration saved - Press |@X| to continue
-Kokoonpano tallennettu - Paina |@X| jatkaaksesi
-CONFIGURED
-MÄÄRITETTY
-Confirm
-Varmista
-Controller and system information
-Ohjaimen ja järjestelmän tiedot
-Copy
-Kopioi
-Cover Style:
-Kannen tyyli:
-Create, rename or manage memory card sets
-Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
-Cue file not found
-Cue tiedostoa ei löytynyt
-Custom
-Mukautettu
-Custom Memory Cards
-Mukautetut muistikortit
-Customize AutoBleem settings
-Muokkaa AutoBleemin asetuksia
-Decompressing ecm:
-Puretaan ecm:
-Defragment Card
-Eheytä kortti
-Delete
-Poista
-Delete !SaveState folder for game
-Poista pelin !SaveState kansio
-Delete card
-Poista kortti
-Delete Game
-Poista peli
-Delete games, flush covers
-Poista pelejä, tyhjennä kansikuvat
-Do you want to save memcards data ?
-Haluatko tallentaa muistikorttien datan?
-Download latest:
-Lataa uusin:
-DPAD
-DPAD
-Edit game parameters
-Muokkaa pelin parametrejä
-Edit Memory Card information
-Muokkaa muistikortin
-EmulationStation
-EmulationStation
-Emulator config MENU
-Emulaattorin konfigurointivalikko
-Enter
-Enter
-Enter new card name
-Kirjoita uudsi kortin nimi
-Enter new game name
-Kirjoita uusi pelin nimi
-Enter new name for card
-Kirjoita uusi nimi kortille
-Enter new name for memory card
-Kirjoita uusi nimi muistikortille
-Entry
-Merkintä
-Exit game
-Lopeta peli
-Exit to
-Poistu kohteeseen
-Exit to EvoUI
-Poistu EvoUI:hin
-failed
-epäonnistui
-Failed to delete
-Poisto epäonnistui
-Favorite Games
-Suosikkipelit
-Favorite:
-Suosikki:
-Final score
-Lopullinen pisteet
-Flush covers
-Tyhjennä kannet
-Folder:
-Kansio:
-Frameskip:
-Frameskip:
-Free
-Vapaa
-Free space
-Vapaa tila
-Game
-Peli
-GAME
-PELI
-Game failed to verify:
-Pelin varmistus epäonnistui:
-Game file not found
-Peli tiedostoa ei löytynyt
-Game History
-Pelihistoria
-Game Manager
-Pelien hallinta
-Game manager - Select game
-Pelien hallinta - Valitse peli
-GAME OVER
-PELI PÄÄTTYI
-Game.ini file not found
-Game.ini tiedostoa ei löytynyt
-Game.ini file not valid
-Game.ini tiedosto ei kelpaa
-Game:
-Peli:
-games
-pelit
-Games
-Pelit
-Games changed. Press
-Pelit muuttuivat. Paina
-Games filter
-Pelisuodatin
-games scanned
-pelejä skannattu
-GFX Filter:
-GFX-Suodatin:
-Go back
-Mene takaisin
-Hardware Information
-Laitteistotiedot
-High res:
-Korkea resoluutio:
-HIGH SCORE
-PARAS TULOS
-Hold
-Pidä
-In Boot Menu: Safe Power Off The Console
-Bootmenussa: Sammuta konsolisi turvallisesti
-In Game
-Pelissä
-In Retroarch Game
-RetroArch pelissä
-Internal
-Sisäinen
-INTERNAL
-SISÄINEN
-Internal Games
-Sisäiset Pelit
-Is your dpad analogue?
-Onko sinun dpadisi analooginen?
-Language:
-Kieli:
-Last Played:
-Viimeksi pelattu:
-LIFE LOST
-ELÄMÄ MENETETTY
-Link Block
-Linkki Esto
-Link end Block
-Linkin päätylohko
-LIVES
-ELÄMÄT
-Loading ... Please Wait ...
-Ladataan ... Odota hetki ...
-Lock data:
-Lukitse data:
-Look for new, changed or removed games
-Etsi uusia, muuttuneita tai poistettuja pelejä
-MEMORY CARD
-MUISTIKORTTI
-Memory Card Manager
-Muistikortin hallinta
-Memory Card:
-Muistikortti:
-Memory Cards
-Muistikortti
-Menu
-Valikko
-Move Cursor
-Siirrä kohdistinta
-Moving :
-Liikuta :
-Merging discs:
+# AutoBleem Finnish Translation
+# Format: English Text=Translated Text
+# Untranslated: 3 / Total: 196
 
-Music:
-Musiikki:
-New Card
-Uusi kortti
-New GamePad found
-Uusi peliohjain löytyi:
-Next Game Platform
-Seuraava pelialusta
-No disc name
-Ei levyn nimeä
-No discs
-Ei levyjä
-NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
-HUOMIO: Vähintään yhtä liitettyä ohjainta ei tunnistettu. Määritä se Laitteistotiedot-sivulla.
-OK
-OK
-OOPS! Game crashed. Resume point not available.
-HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
-Open Retroarch Menu
-Avaa RetroArch valikko
-Options
-Vaihtoehdot
-Original
-Alkuperäinen
-Page
-Sivu
-pcsx.cfg file not found
-pcsx.cfg tiedostoa ei löytynyt
-Play all PSX games with RA:
-Pelaa kaikki PSX-pelit RA:lla:
-Play using RA:
-Pelaa RA:lla:
-Player
-Pelaaja
-Players
-Pelaajat
-Please confirm
-Ole hyvä ja vahvista
-PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
-OLE HYVÄ JA YHDISTÄ PELIOHJAIN PLAYSTATION CLASSIC KONSOLIIN
-Please wait ... deleting
-Odota hetki ... poistetaan
-Please wait ... deleting covers...
-Odota hetki ... poistetaan kannet...
-Plugin:
-Liitännäinen:
-POWER
-VIRTA
-Power Off
-Sammuta
-POWER SHOT
-TEHOLAUKAUS
-POWERING OFF... PLEASE WAIT
-SAMMUTETAAN... ODOTA HETKI
-Press a key for
-Paina a näppäintä
-Published by:
-Julkaissut:
-Quick boot
-Nopea käynnistys
-Quick scroll to next letter
-Selaa nopeasti seuraavaan kirjaimeen
-QuickBoot Init:
-Nopea Käynnistys Init:
-QuickBoot:
-Nopea käynnistys:
-Quit emulation - back to AutoBleem
-Poistu emulaatiosta - takaisin AutoBleem:iin
-Random
-Satunnainen
-Random Game
-Satunnainen peli
-RAPID FIRE
-PIKATULI
-Re-Scan Games
-Skannaa pelit uudelleen
-Re/Scan
-Uudelleen skannaa/Skannaa
-ReadMe file not found
-ReadMe tiedosto ei löytynyt
-Region:
-Alue:
-Reload Cards
-Lataa kortit uudelleen
-Rename
-Nimeä uudelleen
-RESET
-NOLLAUS
-Restart
-Käynnistä uudelleen
-RESUME
-JATKA
-Resume game from saved state point
-Jatka peliä jatko-pisteestä
-Resume point saved to slot
-Jatko-piste tallennettu paikkaan
-RetroArch
-RetroArch
-RetroArch is not installed
-RetroArch ei ole asennettu
-Run using RetroArch
-Käynnistä RetroArchilla
-Safely power off the console
-Sammuta konsoli turvallisesti
-Same as classic menu
-Sama kuin classic valikko
-Scan complete:
-Skannaus valmis:
-Scanline Level:
-Skannaustaso:
-Scanlines:
-Skannauslinjat:
-Scanning
-Skannataan
-Scanning...
-Skannataan:
-SCORE
-PISTEET
-Select
-Valitse
-Select memory card
-Valitse muistikortti
-Select or cancel highlighted option
-Valitse tai peruuta korostettu vaihtoehto
-Select PS1 Game Category
-Valitse PS1-peliluokka
-SELECT RESUME SLOT TO LOAD
-VALITSE JATKO-PISTE JONKA HALUAT LADATA
-Select RetroArch Playlist
-Valitse RetroArch Alusta
-Select Right Card
-Valitse oikea kortti
-SELECT SLOT TO SAVE STATE
-VALITSE PAIKKA JATKO-PISTEELLE
-Serial:
-Sarja:
-SETTINGS
-ASETUKSET
-Share MC
-Jaa MC
-Show Internal Games:
-Näytä Sisäiset Pelit:
-Showing Timeout (0 = no timeout):
-Näytetään: aikakatkaisu (0 = ei aikakatkaisua)
-Showing: All Games
-Näytetään: Kaikki Pelit
-Showing: Apps
-Näytetään: Sovellukset
-Showing: Favorite Games
-Näytetään: Suosikkipelit
-Showing: Game History
-Näytetään: Pelihistoria
-Showing: Internal Games
-Näytetään: Sisäiset Pelit
-Showing: Retroarch
-Näytetään: RetroArch
-Showing: USB Games Directory:
-Näytetään: USB Pelien Kansio:
-Slot
-Paikka
-Space
-Väli
-SpeedHack:
-Nopeuden Muutin:
-SPREAD SHOT
-HAJALAUKAUS
-Spu Interpolation:
-SPU-interpolointi:
-Starting EvolutionUI
-Käynnistetään EvolutionUI
-Support via Discord:
-Tuki Discordin kautta:
-Surprise
-Yllätys
-SYSTEM
-JÄRJESTELMÄ
-System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
-Järjestelmävalikko (Skannaus, RetroArch, Muistikortit, Sammutus, ...)
-This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
-Tämä on ilmainen ja avoimen lähdekoodin ohjelmisto. Se toimii sellaisena kuin SE ON. Emme ota vastuuta mistään ongelmista tai vaurioista.
-This is free software. It works AS IS and We take no responsibility for any issues or damage.
-Tämä on ilmainen ohjelmisto. Se toimii SELLAISENAAN, emmekä ota vastuuta ongelmista tai vahingoista.
-to scan
-skannata
-Total:
-Yhteensä:
-UI:
-UI:
-Unknown Core (AutoDetect)
-Tuntematon ydin (Automaattisesti havaittu)
-Update RA Config:
-Päivitä RA Konfiguraatio:
-Updating regional.db...
-Päivitetään regional.db...
-USB Games
-USB Pelit
-Use Controller
-Käytä ohjainta
-WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
-VAROITUS: COVER DB EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
-WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
-VAROITUS: PELEJÄ EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
-WAVE
-AALTO
-Widescreen:
-Laajakuva:
-Year:
-Vuosi:
-Showing: Lightgun Games
-Näytetään: Lightgun-pelit
-Lightgun Game:
-Lightgun-peli:
-File:
-
-Core:
-
+A scan is already in progress=Skannaus on jo käynnissä
+About=Tietoja
+About AutoBleem=Tietoja AutoBleemistä
+All Games=Kaikki pelit
+Are you sure you want to delete=Haluatko varmasti poistaa
+Are you sure you want to flush all covers?=Haluatko varmasti tyhjentää kaikki kannet?
+Are you sure you want to power off?=Haluatko varmasti sammuttaa laitteen?
+Are you sure?=Oletko varma?
+AutoBleem=AutoBleem
+AutoBleem resume points not available in RetroArch.=AutoBleem-jatkamispisteet eivät ole saatavilla RetroArchissa.
+AutoBleem Theme:=AutoBleem Teema:
+Background Music:=Taustamusiikki:
+Backspace=Askelpalautin
+Button Guide=Painikeopas
+Can't manage games while a scan is running=Pelejä ei voi hallita skannauksen aikana
+Cancel=Peruuta
+Caps=Caps
+Card=Kortti
+Change MC=Muuta MC
+Change RetroArch Playlist=Vaihda RetroArch järjestelmää
+Change USB Games Sub-Directory=Vaihda USB Pelien alihakemistoa
+Clock:=Kello:
+Close=Sulje
+Code C++ and shell scripts=Ohjelmoi C++ ja shell scriptejä
+Configuration=Kokoonpano
+CONFIGURED=MÄÄRITETTY
+Confirm=Varmista
+Controller and system information=Ohjaimen ja järjestelmän tiedot
+Copy=Kopioi
+Core:=
+Cover Style:=Kannen tyyli:
+Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
+Custom=Mukautettu
+Custom Memory Cards=Mukautetut muistikortit
+Customize AutoBleem settings=Muokkaa AutoBleemin asetuksia
+Database maintenance=Tietokannan ylläpito
+Decompressing ecm:=Puretaan ecm:
+Defragment Card=Eheytä kortti
+Delete=Poista
+Delete !SaveState folder for game=Poista pelin !SaveState kansio
+Delete card=Poista kortti
+Delete Game=Poista peli
+Delete games, flush covers=Poista pelejä, tyhjennä kansikuvat
+Do you want to save memcards data ?=Haluatko tallentaa muistikorttien datan?
+Edit game parameters=Muokkaa pelin parametrejä
+Edit Memory Card information=Muokkaa muistikortin
+EmulationStation=EmulationStation
+Emulator config MENU=Emulaattorin konfigurointivalikko
+Enter=Enter
+Enter new card name=Kirjoita uudsi kortin nimi
+Enter new game name=Kirjoita uusi pelin nimi
+Enter new name for card=Kirjoita uusi nimi kortille
+Enter new name for memory card=Kirjoita uusi nimi muistikortille
+Entry=Merkintä
+Exit game=Lopeta peli
+Exit to=Poistu kohteeseen
+Exit to EvoUI=Poistu EvoUI:hin
+failed=epäonnistui
+Failed to delete=Poisto epäonnistui
+Favorite Games=Suosikkipelit
+Favorite:=Suosikki:
+File:=
+Final score=Lopullinen pisteet
+Flush covers=Tyhjennä kannet
+Folder:=Kansio:
+Frameskip:=Frameskip:
+Free=Vapaa
+Free space=Vapaa tila
+Game=Peli
+GAME=PELI
+Game failed to verify:=Pelin varmistus epäonnistui:
+Game History=Pelihistoria
+Game Manager=Pelien hallinta
+Game manager - Select game=Pelien hallinta - Valitse peli
+GAME OVER=PELI PÄÄTTYI
+games=pelit
+GFX Filter:=GFX-Suodatin:
+Go back=Mene takaisin
+Graphics=Grafiikat
+Hardware Information=Laitteistotiedot
+High res:=Korkea resoluutio:
+HIGH SCORE=PARAS TULOS
+In Game=Pelissä
+In Retroarch Game=RetroArch pelissä
+Internal=Sisäinen
+INTERNAL=SISÄINEN
+Internal Games=Sisäiset Pelit
+Language:=Kieli:
+Last Played:=Viimeksi pelattu:
+LIFE LOST=ELÄMÄ MENETETTY
+Lightgun Game:=Lightgun-peli:
+Link Block=Linkki Esto
+Link end Block=Linkin päätylohko
+LIVES=ELÄMÄT
+Loading ... Please Wait ...=Ladataan ... Odota hetki ...
+Localization support=Lokalisointituki
+Lock data:=Lukitse data:
+Look for new, changed or removed games=Etsi uusia, muuttuneita tai poistettuja pelejä
+MEMORY CARD=MUISTIKORTTI
+Memory Card Manager=Muistikortin hallinta
+Memory Card:=Muistikortti:
+Memory Cards=Muistikortti
+Merging discs:=
+Move Cursor=Siirrä kohdistinta
+Moving :=Liikuta :
+Music:=Musiikki:
+New Card=Uusi kortti
+New GamePad found=Uusi peliohjain löytyi:
+Next Game Platform=Seuraava pelialusta
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=HUOMIO: Vähintään yhtä liitettyä ohjainta ei tunnistettu. Määritä se Laitteistotiedot-sivulla.
+OK=OK
+OOPS! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
+Open Retroarch Menu=Avaa RetroArch valikko
+Options=Vaihtoehdot
+Page=Sivu
+Play all PSX games with RA:=Pelaa kaikki PSX-pelit RA:lla:
+Play using RA:=Pelaa RA:lla:
+Player=Pelaaja
+Players=Pelaajat
+Please confirm=Ole hyvä ja vahvista
+Please wait ... deleting=Odota hetki ... poistetaan
+Please wait ... deleting covers...=Odota hetki ... poistetaan kannet...
+Plugin:=Liitännäinen:
+POWER=VIRTA
+Power Off=Sammuta
+POWER SHOT=TEHOLAUKAUS
+POWERING OFF... PLEASE WAIT=SAMMUTETAAN... ODOTA HETKI
+Published by:=Julkaissut:
+Quick scroll to next letter=Selaa nopeasti seuraavaan kirjaimeen
+Quit emulation - back to AutoBleem=Poistu emulaatiosta - takaisin AutoBleem:iin
+Random=Satunnainen
+Random Game=Satunnainen peli
+RAPID FIRE=PIKATULI
+Re-Scan Games=Skannaa pelit uudelleen
+ReadMe file not found=ReadMe tiedosto ei löytynyt
+Region:=Alue:
+Reload Cards=Lataa kortit uudelleen
+Rename=Nimeä uudelleen
+RESET=NOLLAUS
+Restart=Käynnistä uudelleen
+RESUME=JATKA
+Resume game from saved state point=Jatka peliä jatko-pisteestä
+Resume point saved to slot=Jatko-piste tallennettu paikkaan
+RetroArch=RetroArch
+RetroArch and emulation cores=Retroboot ja emulaatio ytimet
+RetroArch is not installed=RetroArch ei ole asennettu
+Run using RetroArch=Käynnistä RetroArchilla
+Safely power off the console=Sammuta konsoli turvallisesti
+Scan complete:=Skannaus valmis:
+Scanline Level:=Skannaustaso:
+Scanlines:=Skannauslinjat:
+Scanning=Skannataan
+Scanning...=Skannataan:
+SCORE=PISTEET
+Select=Valitse
+Select memory card=Valitse muistikortti
+Select or cancel highlighted option=Valitse tai peruuta korostettu vaihtoehto
+Select PS1 Game Category=Valitse PS1-peliluokka
+SELECT RESUME SLOT TO LOAD=VALITSE JATKO-PISTE JONKA HALUAT LADATA
+Select RetroArch Playlist=Valitse RetroArch Alusta
+Select Right Card=Valitse oikea kortti
+SELECT SLOT TO SAVE STATE=VALITSE PAIKKA JATKO-PISTEELLE
+Serial:=Sarja:
+SETTINGS=ASETUKSET
+Share MC=Jaa MC
+Show Internal Games:=Näytä Sisäiset Pelit:
+Showing Timeout (0 for no timeout):=Näytetään: aikakatkaisu (0 ei aikakatkaisua)
+Showing: All Games=Näytetään: Kaikki Pelit
+Showing: Apps=Näytetään: Sovellukset
+Showing: Favorite Games=Näytetään: Suosikkipelit
+Showing: Game History=Näytetään: Pelihistoria
+Showing: Internal Games=Näytetään: Sisäiset Pelit
+Showing: Lightgun Games=Näytetään: Lightgun-pelit
+Showing: Retroarch=Näytetään: RetroArch
+Showing: USB Games Directory:=Näytetään: USB Pelien Kansio:
+Slot=Paikka
+Space=Väli
+SpeedHack:=Nopeuden Muutin:
+SPREAD SHOT=HAJALAUKAUS
+Spu Interpolation:=SPU-interpolointi:
+Support via Discord:=Tuki Discordin kautta:
+Surprise=Yllätys
+SYSTEM=JÄRJESTELMÄ
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)=Järjestelmävalikko (Skannaus, RetroArch, Muistikortit, Sammutus, ...)
+Testing=Testausta
+This is free software. It works AS IS and We take no responsibility for any issues or damage.=Tämä on ilmainen ohjelmisto. Se toimii SELLAISENAAN, emmekä ota vastuuta ongelmista tai vahingoista.
+Unknown Core (AutoDetect)=Tuntematon ydin (Automaattisesti havaittu)
+Update RA Config:=Päivitä RA Konfiguraatio:
+Updating regional.db...=Päivitetään regional.db...
+USB Games=USB Pelit
+Use Controller=Käytä ohjainta
+WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=VAROITUS: COVER DB EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
+WAVE=AALTO
+Widescreen:=Laajakuva:
+Year:=Vuosi:
+|@lang|=fi

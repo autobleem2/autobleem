@@ -13,3 +13,6 @@ ninja
 
 # the suite is fast and catches a broken ab_core before the app is ever started
 ctest --output-on-failure
+
+# every language file has every _("...") key and nothing malformed (tools/lang_tools.py update fixes the former)
+python ../tools/lang_tools.py validate

@@ -64,8 +64,26 @@ void Lang::load(const string &langDir, const string &languageName) {
         lines.push_back(line);
         ++lineNum;
     }
-    for (size_t i = 0; i + 1 < lines.size(); i += 2) {
-        translations_[lines[i]] = lines[i + 1];
+
+    // the layout: a file whose first non-empty line is a comment is Key=Value, anything else the old pairs
+    size_t first = 0;
+    while (first < lines.size() && lines[first].empty()) first++;
+    bool keyValue = first < lines.size() && lines[first][0] == '#';
+
+    if (keyValue) {
+        for (const string &l : lines) {
+            if (l.empty() || l[0] == '#') continue;
+            size_t pos = l.find('=');
+            if (pos == string::npos) continue;
+            string key = Strings::trim(l.substr(0, pos));
+            string value = Strings::trim(l.substr(pos + 1));
+            if (!key.empty() && !value.empty())
+                translations_[key] = value;
+        }
+    } else {
+        for (size_t i = 0; i + 1 < lines.size(); i += 2) {
+            translations_[lines[i]] = lines[i + 1];
+        }
     }
 }
 
@@ -94,8 +112,10 @@ vector<string> Lang::listLanguages(const string &langDir) {
 bool Lang::dumpUntranslated(const string &path) const {
     ofstream os(path);
     if (!DirEntry::checkWritable(os, path)) return false;
+    os << "# AutoBleem " << currentLanguage_ << " - strings still to translate" << endl;
+    os << "# Format: English Text=Translated Text" << endl << endl;
     for (const string &source : untranslated_) {
-        os << source << endl << source << endl;
+        os << source << "=" << endl;
     }
     os.flush();
     return true;

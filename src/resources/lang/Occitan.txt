@@ -1,462 +1,200 @@
-.-= Code C++ and shell scripts =-.
-.-= Còdi C++ e scripts shell =-.
-.-= Database maintenance =-.
-.-= Mantenença de la basa de donadas =-.
-.-= Graphics =-.
-.-= Grafics =-.
-.-= Localization support =-.
-.-= Assisténcia localizacion =-.
-.-= Retroboot and emulation cores =-.
-.-= Retroboot e còrs d'emulacion =-.
-.-= Testing =-.
-.-= Ensag =-.
-A scan is already in progress
-Un escandalhatge es ja en cors
-About
-A prepaus
-About AutoBleem
-A prepaus d'AutoBleem
-Advanced
-Avançat
-Advanced:
-Paramètres avançats :
-All Games
-Totes los jòcs
-Are you sure you want to delete
-Sètz segur que volètz suprimir
-Are you sure you want to flush all covers?
-Volètz vertadièrament suprimir totas las cobèrturas ?
-Are you sure you want to power off?
-Sètz segur que volètz atudar la consòla?
-Are you sure?
-O volètz vertadièrament ?
-AutoBleem
-AutoBleem
-AutoBleem resume points not available in RetroArch.
-Punt de represa AutoBleem pas disponible dins RetroArch.
-AutoBleem Theme:
-Tèma AutoBleem :
-Background Music:
-Musica de fons :
-Backspace
-Retorn arrièr
-Button Guide
-Guida dels botons
-Can't manage games while a scan is running
-Impossible de gerir los jòcs pendent un escandalhatge
-Cancel
-Anullar
-Caps
-Maj.
-Card
-Carta
-Change MC
-Cambiar de MC
-Change RetroArch Playlist
-Cambiar lo Sistèma RetroArch
-Change USB Games Sub-Directory
-Cambiar lo josrepertòri dels jòcs USB
-Clock:
-Frequéncia :
-Close
-Barrar
-Configuration
-Configuracion
-Configuration saved - Press |@X| to continue
-Configuracion salvagarda - Quichatz |@X| per contunhar
-CONFIGURED
-CONFIGURAT
-Confirm
-Confirmar
-Controller and system information
-Entresenhas sul contrarotlador e lo sistèma
-Copy
-Copiar
-Cover Style:
-Estil cobèrtura :
-Create, rename or manage memory card sets
-Crear, renomenar o gerir de jòcs de cartas memòria
-Custom
-Personalizada
-Custom Memory Cards
-Cartas memòria personalizadas
-Customize AutoBleem settings
-Personalizar los paramètres AutoBleem
-Decompressing ecm:
-Descompression de l'ecm :
-Defragment Card
-Desfragmentar la carta
-Delete
-Suprimir
-Delete !SaveState folder for game
-Suprimir lo dossièr !SaveStates del jòc
-Delete card
-Suprimir la carta
-Delete Game
-Suprimir lo jòc
-Delete games, flush covers
-Suprimir de jòcs, voidar las cobèrtas
-Do you want to save memcards data ?
-Volètz salvagarda las donadas memcards ?
-Download latest:
-Darrièra version :
-DPAD - Same as classic menu
-DPAD - Coma lo menú classic
-Edit game parameters
-Modificar los paramètres del jòc
-Edit Memory Card information
-Modificar las informacions de la carta memòria
-EmulationStation
-EmulationStation
-Emulator config MENU
-Menú config de l'emulator
-Enter
-Dintrar
-Enter new card name
-Picatz un nòu nom per la carta
-Enter new game name
-Picatz un nòu nom pel jòc
-Enter new name for card
-Picatz un nòu nom per la carta
-Enter new name for memory card
-Picatz un nòu nom per la carta memòria
-Entry
-Entrada
-Exit game
-Sortir del jòc
-Exit to
-Sortir cap a
-Exit to EvoUI
-Sortir cap a EvoUI
-failed
-fracassats
-Failed to delete
-Fracasset·z de suprimir
-Favorite Games
-Jòcs favorits
-Favorite:
-Favorits :
-Final score
-Marca finala
-Flush covers
-Suprimir las cobèrturas
-Folder:
-Dorsièr :
-Frameskip:
-Frameskip :
-Free
-Liure
-Free space
-Espaci liure
-Game
-Jòc
-GAME
-JÒC
-Game failed to verify:
-Verificacion del jòc fracassada :
-Game History
-Istoric dels jòcs
-Game Manager
-Gestionari de jòcs
-Game manager - Select game
-Gestionari de jòcs - Causir un jòc
-GAME OVER
-PARTIDA ACABADA
-Game:
-Jòc :
-games
-jòcs
-Games changed. Press
-Jòcs cambiats. Quichatz
-Games filter
-Filtre jòcs
-games scanned
-jòcs trobats
-GFX Filter:
-Filtre GFX :
-Go back
-Tornar
-Hardware Information
-Entresenhas de material
-High res:
-Nauta resolucion :
-HIGH SCORE
-MELHOR MARCA
-Hold
-Manténer
-IN BOOT MENU TO POWER OFF THE CONSOLE (SAFE POWER OFF !!!)
-AL MENÚ D'AVIADA PER ATUDAR LA CONSÒLA (EXTINCION SEGURA !!!)
-In Game
-Jòcs intèrnes
-In Retroarch Game
-Dins un jòc RetroArch
-Internal
-Intèrna
-INTERNAL
-INTÈRNA
-Internal Games
-Jòcs intèrnes
-Internal Games:
-Jòcs intèrnes :
-Is your dpad analogue?
-Es vòstre dpad analòg ?
-Language:
-Lenga :
-Last Played:
-Darrièra partida :
-LIFE LOST
-VIDA PERDUDA
-Link Block
+# AutoBleem Occitan Translation
+# Format: English Text=Translated Text
+# Untranslated: 3 / Total: 196
 
-Link end Block
-
-LIVES
-VIDAS
-Loading ... Please Wait ...
-Cargament ... Esperatz ...
-Lock data:
-Verrolhar las donadas :
-Look for new, changed or removed games
-Cercar de jòcs novèls, modificats o suprimits
-MEMORY CARD
-CARTA MEMÒRIA
-Memory Card Manager
-Gestionari de carta memòria
-Memory Card:
-Carta memòria :
-Memory Cards
-Cartas memòria
-Menu
-Menú
-Menu Theme:
-Tèma del menú :
-Move Cursor
-Desplaçar lo cursor
-Moving :
-Desplaçament :
-Merging discs:
-
-Music:
-Musica :
-New Card
-Nòva carta
-New GamePad found
-Nòva maneta trobada
-Next Game Platform
-Plataforma de jòcs seguenta
-NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
-AVÍS : Al mens un contrarotlador connectat es pas reconegut. Configuratz-lo dins la pagina Entresenhas de material.
-OK
-OK
-OOPS! Game crashed. Resume point not available.
-Ops ! Lo jòc a agut un problèma. Lo punt de represa es pas disponible.
-Open Retroarch Menu
-Dobrir lo menú RetroArch
-Options
-Opcions
-Original
-Originals
-Page
-Pagina
-Play all PSX games with RA:
-Jogar a totes los jòcs PSX amb RA :
-Play using RA:
-Jogar amb RA :
-Player
-Jogaire
-Players
-Jogaires
-Please confirm
-Volgatz confirmar
-PLEASE CONNECT GAMEPAD TO PLAYSTATION CLASSIC
-VOLGATZ CONNECTAR UNA MANETA A LA CONSÒLA
-Please wait ... deleting
-Esperatz ... supression en cors
-Please wait ... deleting covers...
-Esperatz ... supression de las cobèrturas...
-Plugin:
-Extension :
-POWER
-ENERGIA
-Power Off
-Atudar
-POWER SHOT
-TIR PODEROS
-POWERING OFF... PLEASE WAIT
-EXTINCION... ESPERATZ
-Press a key for
-Quichatz un boton per
-Published by:
-Editat per : 
-Quick boot
-Aviada rapida
-Quick scroll to next letter
-Davalada rapida fins a la letra seguenta
-QuickBoot Init:
-Init aviada rapida :
-QuickBoot:
-Aviada rapida :
-Quit emulation - back to AutoBleem
-Quitar l'emulation - tornar a AutoBleem
-Random
-Aleatòri
-Random Game
-Jòc a l'azard
-RAPID FIRE
-TIR RAPID
-Re-Scan Games
-Tornar escandalhar los jòcs
-Re/Scan
-Re/Scan
-ReadMe file not found
-Fichièr ReadMe pas trobat
-Region:
-Region :
-Reload Cards
-Recargar las cartas
-Rename
-Renomenar
-RESET
-REINICIALIZAR
-Restart
-Tornar aviar
-RESUME
-REPRENDRE
-Resume game from saved state point
-Reprendre lo jòc a un punt de represa salvagardat
-Resume point saved to slot
-Punt de reprisa salvagardat al lòc
-RetroArch
-RetroArch
-RetroArch is not installed
-RetroArch es pas installat
-RetroBoot Systems
-Sistèmas RetroBoot
-Run using RetroArch
-Lançar amb RetroArch
-Run using RetroBoot(if installed)
-Lançar amb RetroBoot (s’es installat)
-Safely power off the console
-Atudar la consòla en tota seguretat
-Scan complete:
-Escandalhatge acabat :
-Scanline Level:
-Nivèl d'escansion
-Scanlines:
-Linhas d'escansion :
-Scanning
-Escandalhatge
-Scanning...
-Analisi...
-SCORE
-MARCA
-Select
-Causir
-Select memory card
-Causir una carta memòria
-Select or cancel highlighted option
-Activar o desactivar las opcions subrelinhadas
-Select PS1 Game Category
-Causir la categoria de jòc PS1
-SELECT RESUME SLOT TO LOAD
-CAUSISSÈTZ UN PUNT DE REPRESA A CARGAR
-Select RetroArch Playlist
-Causissètz la plataforma RetroArch
-Select Right Card
-Causissètz la carta que cal
-SELECT SLOT TO SAVE STATE
-CAUSISSÈTZ UN LÒC PER SALVAGARDAR L'ESTAT
-Serial:
-Numèro de seria :
-SETTINGS
-PARAMÈTRES
-Share MC
-Partejar MC
-Show Internal Games:
-Afichar los jòcs intèrnes :
-Show RetroArch:
-Mostrar RetroArch :
-Showing Timeout (0 = no timeout):
-Afichatge Timeout (0 = cap de timeout) :
-Showing:
-Afichatge :
-Showing: All Games
-Afichatge : Totes los jòcs
-Showing: All games
-Afichatge : totes los jòcs
-Showing: Apps
-Afichatge : Aplicacions
-Showing: Favorite Games
-Afichatge : Jòcs favorits
-Showing: Favorite games
-Afichatge : jòcs favorits
-Showing: Game History
-Afichatge : Istoric dels jòcs
-Showing: Internal Games
-Afichatge : Jòcs intèrnes
-Showing: Internal games
-Afichatge : jòcs intèrnes
-Showing: Retroarch
-Afichatge : Retroarch
-Showing: USB games
-Afichatge : jòcs USB
-Showing: USB Games Directory:
-Afichatge : Repertòri de jòcs USB :
-Slot
-Lòc
-Space
-Espaci
-SpeedHack:
-Hack velocitat :
-SPREAD SHOT
-TIR ESPARPALHAT
-Spu Interpolation:
-Interpolacion Spu :
-Starting EvolutionUI
-Aviada d'EvolutionUI
-Support via Discord:
-Sosten via Discord :
-Surprise
-Susprisa
-SYSTEM
-SISTÈMA
-System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
-Menú sistèma (Escandalhatge, RetroArch, Cartas memòria, Atudament, ...)
-This is free and open source software. It works AS IS and We take no responsibility for any issues or damage.
-Aqueste logicial es gratuit e open source. Es provesit coma aquò e cap de responsabilitat es pas nòstra.
-This is free software. It works AS IS and We take no responsibility for any issues or damage.
-Aquò es un logicial liure. Fonciona TAL COMA ES e prenèm pas cap de responsabilitat pels problèmas o dòmatges.
-to scan
-per analizar
-Total:
-Total :
-UI:
-UI :
-Unknown Core (AutoDetect)
-Còr desconegut (AutoDetect)
-Update RA Config:
-Metre a jorn la configuracion RA :
-Updating regional.db...
-Actualizacion de regional.db...
-USB Games
-Jòcs USB
-Use Controller
-Utilizar lo contrarotlador
-WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
-ATENCION : CAP DE COBÈRTURA PAS TROBADA. QUICHATZ UN BOTON
-WARNING: NO GAMES FOUND. PRESS ANY BUTTON.
-ATENCION : CAP DE JÒC PAS TROBAT. QUICHATZ UN BOTON
-WAVE
-ONDADA
-Widescreen:
-Grand ecran :
-Year:
-Annada :
-Showing: Lightgun Games
-Afichatge : Jòcs Lightgun
-Lightgun Game:
-Jòc Lightgun:
-File:
-
-Core:
-
+A scan is already in progress=Un escandalhatge es ja en cors
+About=A prepaus
+About AutoBleem=A prepaus d'AutoBleem
+All Games=Totes los jòcs
+Are you sure you want to delete=Sètz segur que volètz suprimir
+Are you sure you want to flush all covers?=Volètz vertadièrament suprimir totas las cobèrturas ?
+Are you sure you want to power off?=Sètz segur que volètz atudar la consòla?
+Are you sure?=O volètz vertadièrament ?
+AutoBleem=AutoBleem
+AutoBleem resume points not available in RetroArch.=Punt de represa AutoBleem pas disponible dins RetroArch.
+AutoBleem Theme:=Tèma AutoBleem :
+Background Music:=Musica de fons :
+Backspace=Retorn arrièr
+Button Guide=Guida dels botons
+Can't manage games while a scan is running=Impossible de gerir los jòcs pendent un escandalhatge
+Cancel=Anullar
+Caps=Maj.
+Card=Carta
+Change MC=Cambiar de MC
+Change RetroArch Playlist=Cambiar lo Sistèma RetroArch
+Change USB Games Sub-Directory=Cambiar lo josrepertòri dels jòcs USB
+Clock:=Frequéncia :
+Close=Barrar
+Code C++ and shell scripts=Còdi C++ e scripts shell
+Configuration=Configuracion
+CONFIGURED=CONFIGURAT
+Confirm=Confirmar
+Controller and system information=Entresenhas sul contrarotlador e lo sistèma
+Copy=Copiar
+Core:=
+Cover Style:=Estil cobèrtura :
+Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
+Custom=Personalizada
+Custom Memory Cards=Cartas memòria personalizadas
+Customize AutoBleem settings=Personalizar los paramètres AutoBleem
+Database maintenance=Mantenença de la basa de donadas
+Decompressing ecm:=Descompression de l'ecm :
+Defragment Card=Desfragmentar la carta
+Delete=Suprimir
+Delete !SaveState folder for game=Suprimir lo dossièr !SaveStates del jòc
+Delete card=Suprimir la carta
+Delete Game=Suprimir lo jòc
+Delete games, flush covers=Suprimir de jòcs, voidar las cobèrtas
+Do you want to save memcards data ?=Volètz salvagarda las donadas memcards ?
+Edit game parameters=Modificar los paramètres del jòc
+Edit Memory Card information=Modificar las informacions de la carta memòria
+EmulationStation=EmulationStation
+Emulator config MENU=Menú config de l'emulator
+Enter=Dintrar
+Enter new card name=Picatz un nòu nom per la carta
+Enter new game name=Picatz un nòu nom pel jòc
+Enter new name for card=Picatz un nòu nom per la carta
+Enter new name for memory card=Picatz un nòu nom per la carta memòria
+Entry=Entrada
+Exit game=Sortir del jòc
+Exit to=Sortir cap a
+Exit to EvoUI=Sortir cap a EvoUI
+failed=fracassats
+Failed to delete=Fracasset·z de suprimir
+Favorite Games=Jòcs favorits
+Favorite:=Favorits :
+File:=
+Final score=Marca finala
+Flush covers=Suprimir las cobèrturas
+Folder:=Dorsièr :
+Frameskip:=Frameskip :
+Free=Liure
+Free space=Espaci liure
+Game=Jòc
+GAME=JÒC
+Game failed to verify:=Verificacion del jòc fracassada :
+Game History=Istoric dels jòcs
+Game Manager=Gestionari de jòcs
+Game manager - Select game=Gestionari de jòcs - Causir un jòc
+GAME OVER=PARTIDA ACABADA
+games=jòcs
+GFX Filter:=Filtre GFX :
+Go back=Tornar
+Graphics=Grafics
+Hardware Information=Entresenhas de material
+High res:=Nauta resolucion :
+HIGH SCORE=MELHOR MARCA
+In Game=Jòcs intèrnes
+In Retroarch Game=Dins un jòc RetroArch
+Internal=Intèrna
+INTERNAL=INTÈRNA
+Internal Games=Jòcs intèrnes
+Language:=Lenga :
+Last Played:=Darrièra partida :
+LIFE LOST=VIDA PERDUDA
+Lightgun Game:=Jòc Lightgun:
+Link Block=Link end Block
+Link end Block=Fin de blòc ligat
+LIVES=VIDAS
+Loading ... Please Wait ...=Cargament ... Esperatz ...
+Localization support=Assisténcia localizacion
+Lock data:=Verrolhar las donadas :
+Look for new, changed or removed games=Cercar de jòcs novèls, modificats o suprimits
+MEMORY CARD=CARTA MEMÒRIA
+Memory Card Manager=Gestionari de carta memòria
+Memory Card:=Carta memòria :
+Memory Cards=Cartas memòria
+Merging discs:=
+Move Cursor=Desplaçar lo cursor
+Moving :=Desplaçament :
+Music:=Musica :
+New Card=Nòva carta
+New GamePad found=Nòva maneta trobada
+Next Game Platform=Plataforma de jòcs seguenta
+NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=AVÍS : Al mens un contrarotlador connectat es pas reconegut. Configuratz-lo dins la pagina Entresenhas de material.
+OK=OK
+OOPS! Game crashed. Resume point not available.=Ops ! Lo jòc a agut un problèma. Lo punt de represa es pas disponible.
+Open Retroarch Menu=Dobrir lo menú RetroArch
+Options=Opcions
+Page=Pagina
+Play all PSX games with RA:=Jogar a totes los jòcs PSX amb RA :
+Play using RA:=Jogar amb RA :
+Player=Jogaire
+Players=Jogaires
+Please confirm=Volgatz confirmar
+Please wait ... deleting=Esperatz ... supression en cors
+Please wait ... deleting covers...=Esperatz ... supression de las cobèrturas...
+Plugin:=Extension :
+POWER=ENERGIA
+Power Off=Atudar
+POWER SHOT=TIR PODEROS
+POWERING OFF... PLEASE WAIT=EXTINCION... ESPERATZ
+Published by:=Editat per :
+Quick scroll to next letter=Davalada rapida fins a la letra seguenta
+Quit emulation - back to AutoBleem=Quitar l'emulation - tornar a AutoBleem
+Random=Aleatòri
+Random Game=Jòc a l'azard
+RAPID FIRE=TIR RAPID
+Re-Scan Games=Tornar escandalhar los jòcs
+ReadMe file not found=Fichièr ReadMe pas trobat
+Region:=Region :
+Reload Cards=Recargar las cartas
+Rename=Renomenar
+RESET=REINICIALIZAR
+Restart=Tornar aviar
+RESUME=REPRENDRE
+Resume game from saved state point=Reprendre lo jòc a un punt de represa salvagardat
+Resume point saved to slot=Punt de reprisa salvagardat al lòc
+RetroArch=RetroArch
+RetroArch and emulation cores=Retroboot e còrs d'emulacion
+RetroArch is not installed=RetroArch es pas installat
+Run using RetroArch=Lançar amb RetroArch
+Safely power off the console=Atudar la consòla en tota seguretat
+Scan complete:=Escandalhatge acabat :
+Scanline Level:=Nivèl d'escansion
+Scanlines:=Linhas d'escansion :
+Scanning=Escandalhatge
+Scanning...=Analisi...
+SCORE=MARCA
+Select=Causir
+Select memory card=Causir una carta memòria
+Select or cancel highlighted option=Activar o desactivar las opcions subrelinhadas
+Select PS1 Game Category=Causir la categoria de jòc PS1
+SELECT RESUME SLOT TO LOAD=CAUSISSÈTZ UN PUNT DE REPRESA A CARGAR
+Select RetroArch Playlist=Causissètz la plataforma RetroArch
+Select Right Card=Causissètz la carta que cal
+SELECT SLOT TO SAVE STATE=CAUSISSÈTZ UN LÒC PER SALVAGARDAR L'ESTAT
+Serial:=Numèro de seria :
+SETTINGS=PARAMÈTRES
+Share MC=Partejar MC
+Show Internal Games:=Afichar los jòcs intèrnes :
+Showing Timeout (0 for no timeout):=Afichatge Timeout (0 cap de timeout) :
+Showing: All Games=Afichatge : Totes los jòcs
+Showing: Apps=Afichatge : Aplicacions
+Showing: Favorite Games=Afichatge : Jòcs favorits
+Showing: Game History=Afichatge : Istoric dels jòcs
+Showing: Internal Games=Afichatge : Jòcs intèrnes
+Showing: Lightgun Games=Afichatge : Jòcs Lightgun
+Showing: Retroarch=Afichatge : Retroarch
+Showing: USB Games Directory:=Afichatge : Repertòri de jòcs USB :
+Slot=Lòc
+Space=Espaci
+SpeedHack:=Hack velocitat :
+SPREAD SHOT=TIR ESPARPALHAT
+Spu Interpolation:=Interpolacion Spu :
+Support via Discord:=Sosten via Discord :
+Surprise=Susprisa
+SYSTEM=SISTÈMA
+System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)=Menú sistèma (Escandalhatge, RetroArch, Cartas memòria, Atudament, ...)
+Testing=Ensag
+This is free software. It works AS IS and We take no responsibility for any issues or damage.=Aquò es un logicial liure. Fonciona TAL COMA ES e prenèm pas cap de responsabilitat pels problèmas o dòmatges.
+Unknown Core (AutoDetect)=Còr desconegut (AutoDetect)
+Update RA Config:=Metre a jorn la configuracion RA :
+Updating regional.db...=Actualizacion de regional.db...
+USB Games=Jòcs USB
+Use Controller=Utilizar lo contrarotlador
+WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ATENCION : CAP DE COBÈRTURA PAS TROBADA. QUICHATZ UN BOTON
+WAVE=ONDADA
+Widescreen:=Grand ecran :
+Year:=Annada :
+|@lang|=oc

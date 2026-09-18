@@ -90,10 +90,32 @@ TEST_CASE("dumpUntranslated writes the strings a translator still has to do, in 
 
     REQUIRE(lang.dumpUntranslated(d.tmp.at("todo.txt")));
     string todo = d.tmp.readFile("todo.txt");
-    // pairs of lines, translation left equal to the source; the line ending is the platform's
-    CHECK(todo.find("Options") < todo.find("Memory Cards"));
+    // "English text=" lines under a comment header, ready to fill in
+    CHECK(todo.find("Options=") < todo.find("Memory Cards="));
     CHECK(todo.find("Re/Scan") == string::npos);
-    CHECK(todo.find("Options", todo.find("Options") + 1) != string::npos);   // twice: source, then translation
+    CHECK(todo.find("Options=", todo.find("Options=") + 1) == string::npos);   // once
+}
+
+TEST_CASE("the Key=Value layout: comments, the first '=' splits, an empty value is untranslated") {
+    LangDir d;
+    d.tmp.writeFile("lang/Czech.txt",
+                    "\xEF\xBB\xBF# AutoBleem Czech Translation\n# Format: English Text=Translated Text\n\n"
+                    "Re/Scan=Znovu skenovat\n"
+                    "Year: =Rok: \n"                          // trailing space on either side is trimmed
+                    "a=b=c=x\n"                               // the first '=' is the delimiter
+                    "Memory Cards=\n"                         // no translation yet
+                    "|@lang|=8\n");
+    ableem::Lang lang;
+    lang.load(d.dir(), "Czech");
+    CHECK(lang.translate("Re/Scan") == "Znovu skenovat");
+    CHECK(lang.translate("Year:") == "Rok:");
+    CHECK(lang.translate("a") == "b=c=x");
+    CHECK(lang.translate("Memory Cards") == "Memory Cards");
+    CHECK(lang.translate("|@lang|") == "8");
+
+    // the old pairs layout is still read: its first line is a string, not a comment
+    lang.load(d.dir(), "Polish");
+    CHECK(lang.translate("Re/Scan") == "Skanuj");
 }
 
 TEST_CASE("the app's _() goes through the registered Lang, and through none is the identity") {

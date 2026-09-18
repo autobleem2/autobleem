@@ -1,9 +1,12 @@
 // lib_ableem - engine: gettext-style UI string translation from a directory of <Language>.txt files.
 //
-// A language file is pairs of lines: the source string, then its translation, then the next pair. A UTF-8
-// BOM on the first line is tolerated. English is the source language, so loading it loads nothing and every
-// string is returned as it is. A string with no translation is passed through unchanged and remembered, so
-// dumpUntranslated() can write a file listing what a translator still has to do.
+// A language file is "English text=Translated text", one per line, with "#" comment lines (the first is a
+// header naming the language; tools/lang_tools.py keeps the files in step with the source and counts
+// what is untranslated). The older layout - pairs of lines, the source string then its translation - is
+// still read when the first line is not a comment, so a file someone kept from before 2026-09 works. A
+// UTF-8 BOM on the first line is tolerated. English is the source language, so loading it loads nothing
+// and every string is returned as it is. A string with no translation (or an empty one) is passed through
+// unchanged and remembered, so dumpUntranslated() can write a file listing what a translator still has to do.
 #pragma once
 
 #include <map>
@@ -29,8 +32,8 @@ public:
     // "English" first, then every other <Name>.txt in the directory, as names without the extension
     static std::vector<std::string> listLanguages(const std::string &langDir);
 
-    // writes every string seen since load() with no translation, as source/translation pairs with the
-    // translation left equal to the source, ready to edit. false when the file cannot be written.
+    // writes every string seen since load() with no translation, as "English text=" lines ready to fill
+    // in. false when the file cannot be written.
     bool dumpUntranslated(const std::string &path) const;
 
     // The instance translate() below consults. The application registers the one it owns; with none
