@@ -127,19 +127,29 @@ console that does have network is not left without step 2.
 
 The PlayStation Classic's USB stick spends its life being plugged into a PC to get games copied on. So
 the steps that want a network run **there**: a small Windows program shipped in the stick's root
-(`payload/UpdateRoms.exe`, built by `make_win.sh` next to the launcher, like `tools/theme_convert` - links
-`ableem_engine` + `ab_core`, no SDL, `-static` so it runs on any Windows without MSYS2), which, run from
+(`payload/UpdateRoms.exe`, built by `make_win.sh` next to the launcher - links `ableem_engine` + `ab_core`
+and, for its window, `ableem`; everything `-static` so it runs on any Windows without MSYS2), which, run from
 the stick, does for the RetroArch folders exactly what the console's scan would do with a network:
 
 - finds the stick's root from its own location (the drive it sits on), reads the same
   `resources/platform/psc.ini`, `info/` and `cores.cfg` the console would, so its idea of systems and
   cores is the console's;
 - step 1's scan and step 2's identification, writing the playlists **with the console's paths**
-  (`/media/roms/...`, never `E:oms\...`) - `RetroArchScanner` takes the target's root prefix as a
+  (`/media/roms/...`, never `E:
+oms\...`) - `RetroArchScanner` takes the target's root prefix as a
   parameter for exactly this, and its tests cover a Windows source tree mapped to a `/media` target;
 - step 3's downloads with the PC's network: thumbnails for every entry, `database-rdb.zip` when
   `database/rdb/` is empty - `download_command` from the ini is `curl.exe` (in every Windows since 10);
-- prints what it did, one line per system, and waits for a key when started by double-click.
+- shows a **small window** while it works, not a console: built on `lib_ableem`'s ui half (SDL2 linked
+  statically - MSYS2 ships the `.a`s - so the exe is still one file, ~3 MB), so it has the launcher's
+  logo, font and colours for free. One screen: the AutoBleem logo, a line saying which system it is on
+  ("Nintendo - Nintendo Entertainment System - 37 of 99"), a progress bar over the whole run (files
+  scanned + downloads pending), a scrolling log underneath (one line per system: "99 games, 91
+  identified, 12 covers fetched"; a warning line for a folder it does not know), and a Close button
+  when it is done - plus a summary of what changed. The scan runs on a worker thread reporting through
+  `ScanProgressListener` (the same interface the console's `ScanService` uses) and the main thread draws
+  at 30 fps, exactly `ScanService`'s pattern. `--quiet` runs it without the window for scripts, printing
+  the same log lines.
 
 Nothing on the console changes: it boots, its scan sees the playlists and the thumbnails already there
 (they are ordinary files under `retroarch/`), and its own offline pass has nothing left to do. The same
