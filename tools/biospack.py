@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""Build payload_rpi/system/biospack.txt, the BIOS pack the Raspberry Pi installer downloads.
+"""Build payload_rpi/system/biospack.txt (or biospack-arm64.txt), the BIOS pack install.sh downloads.
 
 The files come from RetroBIOS (github.com/Abdess/retrobios), a source-verified BIOS collection with a
 manifest per platform - install/retroarch.json lists every file the RetroArch pack carries, with its size,
-SHA-256 and where it is served from, and install/targets/retroarch.json says which cores exist per hardware
-target. The full RetroArch pack is 5.8 GB and the linux-armhf slice of it still 2.6 GB, most of which is not
-BIOS at all: arcade sound-sample zips, the MAME history/mameinfo/cheat text files in triplicate, files for
-cores that have no armhf build. This script keeps what the systems AutoBleem sets up on the Pi need (every
-system install.sh makes a roms/ folder for, arcade, ScummVM, Doom) and writes a flat manifest that install.sh's
+SHA-256 and where it is served from. Which cores exist for the target picks which of those files matter:
+for armhf, RetroBIOS's own install/targets/retroarch.json has a "linux-armhf" list. It has no matching
+64-bit Linux target (only android-arm64-v8a, osx-arm64, ios-arm64 - none of them our target), so --arch
+arm64 reads the real core list straight from buildbot.libretro.com/nightly/linux/aarch64/latest instead -
+what install.sh itself downloads cores from, so "which cores exist" is never in question. The full RetroArch
+pack is 5.8 GB and even one architecture's slice of it mostly not BIOS at all: arcade sound-sample zips, the
+MAME history/mameinfo/cheat text files in triplicate, files for cores that have no build on that
+architecture. This script keeps what the systems AutoBleem sets up on the Pi need (every system install.sh
+makes a roms/ folder for, arcade, ScummVM, Doom) and writes a flat manifest that install.sh's
 download_bios_pack() fetches file by file with wget and checks with sha256sum - no BIOS file is ever checked
 in here, and the pack is pinned to one RetroBIOS commit so the same manifest comes out every time.
 
-    python tools/biospack.py                 # rewrite payload_rpi/system/biospack.txt from the pinned commit
+    python tools/biospack.py                 # rewrite payload_rpi/system/biospack.txt (armhf) from the pinned commit
+    python tools/biospack.py --arch arm64    # rewrite payload_rpi/system/biospack-arm64.txt
     python tools/biospack.py --ref main      # try RetroBIOS's current main (then update RETROBIOS_REF)
     python tools/biospack.py --list          # print what is in and out, per system, and stop
+    python tools/biospack.py --arch arm64 --list
     python tools/biospack.py --check DIR     # verify a RetroArch/system/ folder against the manifest
 
 Only the standard library is needed.
@@ -34,9 +40,17 @@ RETROBIOS_REF = "73be130e651eed55b305e92654eaeffa61d9d2c1"  # 2026-09-14
 
 RAW_BASE = "https://raw.githubusercontent.com/Abdess/retrobios/{ref}/"
 RELEASE_BASE = "https://github.com/Abdess/retrobios/releases/download/large-files/{asset}"
-TARGET = "linux-armhf"  # buildbot.libretro.com/nightly/linux/armhf - the cores install.sh downloads
+RETROBIOS_TARGET = "linux-armhf"  # RetroBIOS's own per-target core list - armhf only, see ARCHES below
 
-MANIFEST_OUT = os.path.join(os.path.dirname(__file__), "..", "payload_rpi", "system", "biospack.txt")
+# buildbot.libretro.com's directory name for each architecture (not the same as Debian's - arm64 is
+# "aarch64" there) and the manifest file install.sh looks for on that architecture.
+BUILDBOT_INDEX = "https://buildbot.libretro.com/nightly/linux/{buildbot_arch}/latest/.index-extended"
+ARCHES = {
+    "armhf": {"buildbot_arch": "armhf", "manifest_name": "biospack.txt"},
+    "arm64": {"buildbot_arch": "aarch64", "manifest_name": "biospack-arm64.txt"},
+}
+
+MANIFEST_DIR = os.path.join(os.path.dirname(__file__), "..", "payload_rpi", "system")
 
 # RetroBIOS keeps its files as bios/<Vendor>/<System>/...; these are the folders the pack draws from. The
 # comment says what on the Pi wants the files. A system with a roms/ folder in install.sh but nothing here
@@ -171,7 +185,26 @@ def excluded(dest):
     return dest.startswith(EXCLUDE_PREFIXES) or name in EXCLUDE_NAMES or dest.endswith(EXCLUDE_SUFFIXES)
 
 
-def select(manifest, target_cores):
+def buildbot_cores(buildbot_arch):
+    """The core names actually built for this architecture, straight from the buildbot's own nightly
+    listing - what install.sh's download_retroarch_content() itself downloads from. Used instead of
+    RetroBIOS's targets/retroarch.json for an architecture RetroBIOS has no matching entry for (arm64:
+    it only lists android-arm64-v8a/osx-arm64/ios-arm64, none of them this target)."""
+    url = BUILDBOT_INDEX.format(buildbot_arch=buildbot_arch)
+    try:
+        with urllib.request.urlopen(url, timeout=60) as resp:
+            text = resp.read().decode("utf-8", "replace")
+    except Exception as exc:  # noqa: BLE001
+        sys.exit(f"cannot fetch the buildbot core list from {url}: {exc}")
+    suffix = "_libretro.so.zip"
+    cores = {line.split()[-1][: -len(suffix)]
+             for line in text.splitlines() if line.strip().endswith(suffix)}
+    if not cores:
+        sys.exit(f"no cores found at {url} - has buildbot.libretro.com's layout changed?")
+    return cores
+
+
+def select(manifest, target_cores, arch_label):
     """The pack: (kept, dropped) lists of manifest entries, each with a 'why' for --list."""
     cores = set(target_cores) - DROP_CORES
     kept, dropped = [], []
@@ -180,7 +213,7 @@ def select(manifest, target_cores):
         if system not in SYSTEMS:
             dropped.append((entry, "system not in the pack"))
         elif entry["cores"] is not None and not set(entry["cores"]) & cores:
-            dropped.append((entry, "no core for it on " + TARGET))
+            dropped.append((entry, "no core for it on " + arch_label))
         elif excluded(entry["dest"]):
             dropped.append((entry, "excluded path"))
         else:
@@ -284,25 +317,36 @@ def check_dir(manifest_path, directory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--arch", choices=sorted(ARCHES), default="armhf",
+                         help="which Pi architecture's core list to build the pack for (default: armhf)")
     parser.add_argument("--ref", default=RETROBIOS_REF, help="RetroBIOS commit or branch to read (default: the pinned one)")
-    parser.add_argument("--out", default=os.path.normpath(MANIFEST_OUT), help="where to write the manifest")
+    parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_rpi/system/"
+                         "biospack.txt for armhf, biospack-arm64.txt for arm64)")
     parser.add_argument("--list", action="store_true", help="print the selection and change nothing")
     parser.add_argument("--check", metavar="DIR", help="verify a RetroArch/system/ folder against the manifest")
     args = parser.parse_args()
+    if args.out is None:
+        args.out = os.path.normpath(os.path.join(MANIFEST_DIR, ARCHES[args.arch]["manifest_name"]))
 
     if args.check:
         sys.exit(0 if check_dir(args.out, args.check) else 1)
 
     base = RAW_BASE.format(ref=args.ref)
     manifest = fetch_json(base + "install/retroarch.json", "manifest")
-    targets = fetch_json(base + "install/targets/retroarch.json", "targets")
-    if TARGET not in targets:
-        sys.exit(f"RetroBIOS has no '{TARGET}' target any more; targets: {', '.join(sorted(targets))}")
+    if args.arch == "armhf":
+        targets = fetch_json(base + "install/targets/retroarch.json", "targets")
+        if RETROBIOS_TARGET not in targets:
+            sys.exit(f"RetroBIOS has no '{RETROBIOS_TARGET}' target any more; targets: {', '.join(sorted(targets))}")
+        target_cores, arch_label = targets[RETROBIOS_TARGET], RETROBIOS_TARGET
+    else:
+        buildbot_arch = ARCHES[args.arch]["buildbot_arch"]
+        target_cores = buildbot_cores(buildbot_arch)
+        arch_label = f"the {buildbot_arch} buildbot"
     unknown = sorted(s for s in SYSTEMS if not any(system_of(e) == s for e in manifest["files"]))
     if unknown:
         print("warning: no files under these folders any more: " + ", ".join(unknown), file=sys.stderr)
 
-    kept, dropped = select(manifest, targets[TARGET])
+    kept, dropped = select(manifest, target_cores, arch_label)
     kept = add_extras(kept)
     if args.list:
         print_listing(kept, dropped)
