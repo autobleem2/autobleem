@@ -42,20 +42,6 @@ if [ -f "$GAME_FOLDER/pcsx.cfg" ] && [ -n "$SS_FOLDER" ]; then
     cp -f "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg"
 fi
 
-# Enhanced resolution: the NEON GPU renders every game at twice the PlayStation's resolution (320x240 games
-# at 640x480, hi-res ones at 1280x960) before the picture is scaled to the screen - real extra detail, not
-# an upscale. Off in AutoBleem's pcsx.cfg template because the console cannot afford it; a Pi 4/400 can,
-# for most games. Applied to the copy pcsx-ab reads, so the game's own pcsx.cfg is left as AutoBleem
-# wrote it. Set to 0 here if a game turns out too heavy (pcsx-ab's "Switch Renderer" hotkey toggles it
-# in-game too); ENHANCED_SPEED_HACK=1 adds the "speed hack" variant (skips some rendering; faster, glitchy).
-ENHANCED_RESOLUTION=1
-ENHANCED_SPEED_HACK=0
-if [ -f "$SS_FOLDER/pcsx.cfg" ]; then
-    sed -i -e "s/^gpu_neon\.enhancement_enable = .*/gpu_neon.enhancement_enable = $ENHANCED_RESOLUTION/" \
-           -e "s/^gpu_neon\.enhancement_no_main = .*/gpu_neon.enhancement_no_main = $ENHANCED_SPEED_HACK/" \
-           "$SS_FOLDER/pcsx.cfg"
-fi
-
 #*******************************
 # pcsx-ab
 #*******************************
