@@ -82,6 +82,7 @@ public:
     void loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD();
+    void reloadFavoritesAfterRemoval();
     void loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
     void loop_crossButtonPressed_STATE_RESUME();
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -

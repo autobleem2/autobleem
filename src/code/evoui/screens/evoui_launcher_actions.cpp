@@ -337,9 +337,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             app.library().reload(*carousel.games[carousel.selected]);
             if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::Favorites &&
                 editor.settings.ini.values["favorite"] == "0") {
-                app.session().launcher.set = GameSet::PS1;
-                app.session().launcher.ps1SelectState = Ps1SelectState::Favorites;
-                loadAssets();   // reload - one less favorite game in display
+                reloadFavoritesAfterRemoval();
             }
         } else {
             if (editor.changes) {
@@ -348,9 +346,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             app.library().reload(*carousel.games[carousel.selected]);
             if (selection.set == GameSet::PS1 && selection.ps1SelectState == Ps1SelectState::Favorites &&
                 editor.gameData->favorite == false) {
-                app.session().launcher.set = GameSet::PS1;
-                app.session().launcher.ps1SelectState = Ps1SelectState::Favorites;
-                loadAssets();   // reload - one less favorite game in display
+                reloadFavoritesAfterRemoval();
             }
         }
     }
@@ -372,6 +368,22 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         carousel.games[carousel.selected].current = point2;
     }
     // fix to put back cover on top position
+}
+
+//*******************************
+// GuiLauncher::reloadFavoritesAfterRemoval
+//*******************************
+// The Favorites set is showing and the editor just took the selected game out of it: reload with one
+// game fewer - and when it was the last one, show every PS1 game instead of an empty carousel the user
+// could not leave (AutoBleem-NG's 3cc3ff87).
+void GuiLauncher::reloadFavoritesAfterRemoval() {
+    app.session().launcher.set = GameSet::PS1;
+    app.session().launcher.ps1SelectState = Ps1SelectState::Favorites;
+    loadAssets();
+    if (carousel.games.empty()) {
+        app.session().launcher.ps1SelectState = Ps1SelectState::AllGames;
+        loadAssets();
+    }
 }
 
 //*******************************
