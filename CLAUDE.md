@@ -341,6 +341,18 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   initramfs (PID ~181, `vc4.ko` is in there - plymouth's initramfs hook pulls the DRM modules in even with
   `MODULES=dep`), `plymouth-quit.service` stays inactive, `plymouth-quit-wait` finishes in the same second
   as the session's "boot splash taken down", the CRTC is 1280x720, kernel to launcher ~8 s.
+- **BIOS pack** (2026-09-18): `install.sh`'s `download_bios_pack()` fetches `system/biospack.txt` into
+  `RetroArch/system/` - one line per file, `<sha256> <size> <url> <path>`, wget + `sha256sum` per file, a
+  `.part` renamed once the hash checks out, files already right are skipped (so a re-run only repairs) - and
+  `install_ps1_bios()` copies SCPH-5501/5500 to `System/Bios/romw.bin`/`romJP.bin` for pcsx-ab unless the
+  user's own are there. `--no-bios` skips both; `--no-downloads` does not. The manifest is written by
+  **`tools/biospack.py`** from [RetroBIOS](https://github.com/Abdess/retrobios) (`install/retroarch.json`
+  + `install/targets/retroarch.json`, pinned to one commit in `RETROBIOS_REF`): the `linux-armhf` target's
+  cores minus `mame`, an allow-list of `Vendor/System` folders (the `RA_ROM_SYSTEMS` consoles, arcade, Neo
+  Geo CD, ScummVM) and path excludes (arcade `samples/`, MAME's `history/mameinfo/cheat.dat`, stella's
+  `.wav`, `dc/`, `kronos/`). 312 files, 151 MB, against 5.8 GB for RetroBIOS's whole RetroArch pack.
+  `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
+  repository** - only their hashes and URLs.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key

@@ -30,6 +30,7 @@ BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem 
 HDMI_MODE="1280x720@60"         # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
+DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack.txt, from github.com/Abdess/retrobios)
 THUMBNAILS=boxarts              # --thumbnails: boxarts (the PS1 covers, ~350 MB) | all (+ title screens, snaps) | none
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
 
@@ -100,6 +101,9 @@ Usage: sudo bash install.sh [options]
                        resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
+  --no-bios            do not download the BIOS pack (system/biospack.txt: ~150 MB of console, arcade and
+                       ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and the PS1
+                       BIOS for pcsx-ab into System/Bios)
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
   -h, --help           this text
@@ -123,6 +127,7 @@ parse_args() {
             --hdmi-mode)      HDMI_MODE="${2:?--hdmi-mode needs a mode such as 1280x720@60, or none}"; shift 2 ;;
             --retroarch)      RETROARCH_MODE="${2:?--retroarch needs source, apt or none}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
+            --no-bios)        DO_BIOS=0; shift ;;
             --thumbnails)     THUMBNAILS="${2:?--thumbnails needs boxarts, all or none}"; shift 2 ;;
             --yes)            ASSUME_YES=1; shift ;;
             --dry-run)        DRY_RUN=1; shift ;;
@@ -565,6 +570,76 @@ download_thumbnails() {
 }
 
 #*******************************
+# download_bios_pack
+#*******************************
+# The BIOS files the cores need, into RetroArch/system/. system/biospack.txt (built by tools/biospack.py in
+# the source tree) names every file with its SHA-256, size and URL: a pinned commit of RetroBIOS
+# (github.com/Abdess/retrobios), cut down to the systems with a roms/ folder here plus arcade and ScummVM -
+# the full RetroArch pack is 5.8 GB, this is ~150 MB. A file already there with the right hash is kept, so a
+# re-run only fetches what is missing or damaged; the download lands in a .part next to the target and is
+# renamed once its hash checks out, so a power cut cannot leave a half file that looks whole.
+download_bios_pack() {
+    [ "$DO_BIOS" -eq 1 ] || { log "skipping the BIOS pack (--no-bios)"; return 0; }
+    local manifest="$SCRIPT_DIR/system/biospack.txt"
+    [ -f "$manifest" ] || { warn "no system/biospack.txt in the package - no BIOS files installed"; return 0; }
+
+    local total
+    total="$(grep -c '^[0-9a-f]' "$manifest")"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would download the %s BIOS files of %s into %s/system\n' "$total" "$(basename "$manifest")" "$RA_ROOT"
+        printf '    would copy scph5501.bin/scph5500.bin to %s/System/Bios as romw.bin/romJP.bin if not there\n' "$DATA_MOUNT"
+        return 0
+    fi
+    log "BIOS pack: $total files into $RA_ROOT/system (only what is missing)"
+    local sha size url dest target count=0 fetched=0 failed=0
+    while read -r sha size url dest; do
+        [ -n "$dest" ] || continue
+        count=$((count + 1))
+        printf '\r    [%3d/%3d] %-50.50s' "$count" "$total" "$dest"
+        target="$RA_ROOT/system/$dest"
+        if [ -f "$target" ] && [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$sha" ]; then
+            continue
+        fi
+        mkdir -p "$(dirname "$target")"
+        if wget -q -O "$target.part" "$url" \
+           && [ "$(sha256sum "$target.part" | cut -d' ' -f1)" = "$sha" ]; then
+            mv -f "$target.part" "$target"
+            fetched=$((fetched + 1))
+        else
+            rm -f "$target.part"
+            failed=$((failed + 1))
+        fi
+    done < <(grep '^[0-9a-f]' "$manifest")
+    printf '\n'
+    log "BIOS pack: $fetched downloaded, $((count - fetched - failed)) already there"
+    [ "$failed" -eq 0 ] || warn "$failed BIOS files did not download or did not match their hash - run the installer again"
+    sync
+    install_ps1_bios
+}
+
+#*******************************
+# install_ps1_bios
+#*******************************
+# pcsx-ab does not look in RetroArch's system/: rc/launch.sh gives it System/Bios, where it wants romw.bin
+# for every game and romJP.bin for a Japanese one (the console's names - see the launch script). The pack's
+# SCPH-5501 (NTSC-U, v3.0) and SCPH-5500 (NTSC-J, v3.0) fill the two names when the user has not put their
+# own there. Only copies: the originals stay in system/ for pcsx_rearmed.
+install_ps1_bios() {
+    local bios_dir="$DATA_MOUNT/System/Bios" pair name src
+    for pair in romw.bin:scph5501.bin romJP.bin:scph5500.bin; do
+        name="${pair%%:*}"; src="$RA_ROOT/system/${pair#*:}"
+        if [ -f "$bios_dir/$name" ]; then
+            log "Keeping the existing $bios_dir/$name"
+        elif [ -f "$src" ]; then
+            log "PS1 BIOS for pcsx-ab: $(basename "$src") -> $bios_dir/$name"
+            run cp "$src" "$bios_dir/$name"
+        else
+            warn "no $src - pcsx-ab has no $name and will use its HLE BIOS"
+        fi
+    done
+}
+
+#*******************************
 # existing_data_partition
 #*******************************
 # echoes the device of the exFAT partition labelled $DATA_LABEL, if there already is one
@@ -977,10 +1052,10 @@ summary() {
     cat <<EOF
 
   Games go in      $DATA_MOUNT/Games/<game name>/      (one folder per game, .cue+.bin / .pbp / .chd)
-  BIOS goes in     $DATA_MOUNT/System/Bios/            (romw.bin, plus romJP.bin for Japanese games - a copy
-                                                       of romw.bin will do. Without them pcsx-ab uses HLE.)
+  BIOS             $DATA_MOUNT/System/Bios/            romw.bin (+ romJP.bin for Japanese games) for pcsx-ab -
+                                                       filled from the BIOS pack unless you put your own there
   RetroArch        $DATA_MOUNT/RetroArch/    roms/<system>/ for its games (a folder per system is there),
-                                              system/ for the cores' BIOS files, then cores/ info/ saves/
+                                              system/ the cores' BIOS files (the pack is there), cores/ info/ saves/
                                               states/ playlists/ ... the standard layout. After copying games
                                               in: RetroArch -> Import Content -> Scan Directory -> roms
   Logs             $DATA_MOUNT/System/Logs/
@@ -1017,6 +1092,7 @@ main() {
     create_tree
     install_retroarch
     download_retroarch_content
+    download_bios_pack
     install_payload
     install_service
     install_boot_splash
