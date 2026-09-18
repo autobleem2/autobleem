@@ -79,9 +79,11 @@ string System::getAvailableSpace() {
     // the filesystem the USB root (the data partition, on a Pi) is on; execUnixCommand returns "" when df
     // fails - Strings::toInt makes that a 0 instead of a thrown exception
     int gb = 1024 * 1024;
-    string root = "'" + Env::getUsbRoot() + "'";
-    float freeSpace = (float)Strings::toInt(execUnixCommand("df -P " + root + " | tail -1 | awk '{print $4}'")) / gb;
-    float totalSpace = (float)Strings::toInt(execUnixCommand("df -P " + root + " | tail -1 | awk '{print $2}'")) / gb;
+    string root = "'" + Env::getPathToUSBRoot() + "'";
+    string freeCmd = "df -P " + root + " | tail -1 | awk '{print $4}'";
+    string totalCmd = "df -P " + root + " | tail -1 | awk '{print $2}'";
+    float freeSpace = (float)Strings::toInt(execUnixCommand(freeCmd.c_str())) / gb;
+    float totalSpace = (float)Strings::toInt(execUnixCommand(totalCmd.c_str())) / gb;
     int freeSpacePerc = totalSpace > 0 ? (int)((freeSpace / totalSpace) * 100) : 0;
     return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) +
            "%)";
