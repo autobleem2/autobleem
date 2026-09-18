@@ -14,6 +14,10 @@
 // scan directly (milliseconds) - see ScanService::checkForChanges()
 #define ScanWatchInterval (10 * TicksPerSecond)
 
+// GuiSplash::loop(): how long the screen stays black after the window comes up before the splash fades in,
+// milliseconds. A TV takes a moment to lock onto the freshly set HDMI mode at boot - on the Pi 400 the
+// whole fade-in/hold went by before the picture appeared - so the splash waits for it.
+#define SplashSettleDuration (1500)
 // GuiSplash::loop(): how long the fully-faded-in splash holds before fading back out, milliseconds
 #define SplashHoldDuration (2 * TicksPerSecond)
 // GuiLauncher: how long the launcher takes to fade in from black when it is first shown, milliseconds

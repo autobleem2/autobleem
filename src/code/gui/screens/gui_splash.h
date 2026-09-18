@@ -18,8 +18,8 @@ public:
 
     // fade in, hold at full brightness for SplashHoldDuration, fade back out, then loop() returns and the
     // launcher takes over (its own fade-in - see GuiLauncher - picks up where this leaves off)
-    enum class Phase { FadeIn, Hold, FadeOut };
-    Phase phase = Phase::FadeIn;
+    enum class Phase { Settle, FadeIn, Hold, FadeOut };
+    Phase phase = Phase::Settle;
     long holdStart = 0;
 
     using GuiScreen::GuiScreen;

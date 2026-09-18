@@ -49,8 +49,9 @@ void GuiSplash::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
 
     alpha = 0;
-    phase = Phase::FadeIn;
+    phase = Phase::Settle;
     start = gui->platform().ticks();
+    holdStart = start;   // the settle phase's start
     while (1) {
         Event e;
         while (gui->input().poll(e)) {
@@ -63,7 +64,12 @@ void GuiSplash::loop() {
         int current = gui->platform().ticks();
         int time = current - start;
         if (time > 2) {
-            if (phase == Phase::FadeIn) {
+            if (phase == Phase::Settle) {
+                // black frames until the display has had time to sync - see SplashSettleDuration
+                if (gui->platform().ticks() - holdStart >= SplashSettleDuration) {
+                    phase = Phase::FadeIn;
+                }
+            } else if (phase == Phase::FadeIn) {
                 if (alpha < 255) {
                     alpha += 10;
                     if (alpha > 255) {
