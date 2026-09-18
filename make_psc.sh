@@ -67,5 +67,11 @@ echo "==> fetching results"
 rm -rf build_psc/dist
 mkdir -p build_psc/dist
 $SSH "cd $REMOTE_DIR/build_psc && tar czf - autobleem-gui" | tar xzf - --no-same-permissions -C build_psc/dist
+# UPX takes the stripped binary to a third of its size (3.1 MB -> 1 MB on the Pi build); the console
+# unpacks it in memory at start. AB_NO_UPX=1 skips it - a packed binary is no use to gdb.
+if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
+    echo "==> packing with upx"
+    upx -q --best --lzma build_psc/dist/autobleem-gui
+fi
 echo "==> build_psc/dist:"
 ls -l build_psc/dist

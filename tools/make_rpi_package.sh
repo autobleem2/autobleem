@@ -38,6 +38,12 @@ cp -a "$PAYLOAD/." "$STAGE/"
 APP="$STAGE/Autobleem/bin/autobleem"
 mkdir -p "$APP" "$STAGE/Autobleem/bin/db" "$STAGE/themes"
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/"
+# packed with UPX (3.1 MB -> 1 MB; unpacked in memory at start, verified on the Pi 400) unless AB_NO_UPX=1 -
+# a packed binary is no use to gdb, and make_rpi.sh --debug's build is never packaged anyway
+if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
+    echo "==> packing autobleem-gui with upx"
+    upx -q --best --lzma "$APP/autobleem-gui"
+fi
 cp -a "$REPO/src/resources/." "$APP/"
 
 # internal.db is the PlayStation Classic's own game list. A Pi has no built-in games (AB_PLATFORM_RPI) and
