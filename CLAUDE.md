@@ -231,8 +231,9 @@ libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, th
 plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
 text in `TextRenderer` with the Game Manager's preview pane and the launcher's `launcher.snapPanel`; and
 `docs/menu-options.md` + `docs/translation.md`. **The port is complete** apart from what was left out on
-purpose: the fork's Options-menu paging and "Font" rows, its Docker/CI pipeline, UPX, clang-tidy, gtest and
-the RetroBoot-1.2.1 Apps payload.
+purpose: the fork's Options-menu paging and "Font" rows, its Docker/CI pipeline, UPX, gtest and the
+RetroBoot-1.2.1 Apps payload. Its clang-format/clang-tidy setup came over afterwards (see "Code style" under
+Build).
 
 **Chinese (Simplified)** (2026-09-18): `resources/lang/Chinese_Simplified.txt` (the fork's file, completed for
 our keys) plus a CJK font the fork never shipped - `resources/fonts/NotoSansSC-Regular.otf` (8 MB, Noto CJK
@@ -546,6 +547,21 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
+- **Code style** (2026-09-18, from AutoBleem-NG): `.clang-format` at the root (LLVM, 4-space indent, 120
+  columns, includes left alone; two choices of our own - `AccessModifierOffset: -4` so `public:` sits at the
+  class's column, and `AllowShortFunctionsOnASingleLine: Inline` so a banner-commented function keeps its
+  body on its own lines). **`tools/format.sh`** formats every source we own (`--check` is what `make_win.sh`
+  runs last, and fails the build on an unformatted file - so run `tools/format.sh` before building); the
+  vendored trees carry a `DisableFormat: true`. The whole tree was reformatted in one commit, listed in
+  `.git-blame-ignore-revs` (`git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone).
+  `.clang-tidy` is the fork's Chromium-derived check set (bugprone-*, google-explicit-constructor /
+  readability-casting / default-arguments, the modernize-* fix-its); **`tools/lint.sh`** runs it over every
+  .cpp with `build_win/compile_commands.json` and reports each finding once (`--fix` applies the fix-its
+  file by file - not through `run-clang-tidy -fix`, which on Windows sees a header included as `../x.h`
+  and as `x.h` as two files and applies the same edit twice); `cmake -DAB_ENABLE_CLANG_TIDY=ON` runs it
+  during a build. The tree is clean today; keep it so. Both tools come from MSYS2's
+  `mingw-w64-ucrt-x86_64-clang-tools-extra` (clang 22); the scripts find them without PATH changes.
+  A deliberately implicit conversion gets a `// NOLINT` with its reason (`ThemeSpec`'s `Opt<T>`).
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
   (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
   skips them, and both cross toolchain files force that. Every service extracted from a screen from here on
@@ -719,11 +735,14 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
 - Logging (2026-09-18): `PLOG_INFO/WARNING/ERROR/DEBUG` (plog, vendored header-only under
-  `lib_ableem/third_party/plog`, behind `<ableem/engine/log.h>` - `ableem::Log::init(file)` once in
-  `main()`, `initConsoleOnly()` in the tests' main). Every line goes to stdout *and* to
-  `System/Logs/autobleem.log`, rolling 1 MB x 3, as `HH:MM:SS LEVEL [function:line] message`; the first
-  line is the build (`Version::FULL_VERSION`). The engine and the core services are converted; the
-  screens still `cout`, which is fine side by side - console `stdout`/`stderr` still go to
+  `lib_ableem/third_party/plog`, behind `<ableem/engine/log.h>`). `main()` calls
+  `ableem::Log::initConsoleOnly()` first thing - a `PLOG_*` before any init is silently dropped, which is
+  how a bad command line's USAGE line used to vanish - and `Log::addFile()` once the logs directory is
+  known; the tests' main stops at `initConsoleOnly()`. Every line goes to stdout *and* to
+  `System/Logs/autobleem.log`, rolling 1 MB x 3, as `HH:MM:SS LEVEL [function:line] message`; the file's
+  first line is the build (`Version::FULL_VERSION`). **There is no `cout` anywhere** - the screens, the ui
+  library and the demo log the same way (diagnostic chatter is `PLOG_DEBUG`, off in release builds);
+  `tools/theme_convert`'s `cout` is that CLI's output, not a log. Console `stdout`/`stderr` still go to
   `System/Logs/AB_*.txt` and are unit-buffered so the last lines survive a crash. A `PLOG_*` inside an
   unbraced `if` wants braces (the macro is itself an if/else; `-Wdangling-else` says so).
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
@@ -738,6 +757,9 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
   library's prefix: `gui_*` in `gui/`, `evoui_*` in `evoui/`. Class names did not change with the files
   (`PsObj`, `GuiLauncher`, `GuiManager`, ...).
 - Match existing style: 4-space indent, `//***` banner comments above functions, `using namespace std;` in .cpp.
+  clang-format settles the rest (`tools/format.sh`); `override` on every overrider, `explicit` on every
+  single-argument constructor, `static_cast` not C casts, `= default` for a trivial special member,
+  `make_unique`/`make_shared` over `reset(new ...)` - clang-tidy (`tools/lint.sh`) flags each of these.
 
 ## Git
 

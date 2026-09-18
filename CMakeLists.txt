@@ -96,6 +96,20 @@ find_package(Threads REQUIRED)
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm")
     set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
 endif()
+
+# clang-tidy (.clang-tidy at the root) on every C++ file as it compiles. Off by default: tools/lint.sh runs
+# the same checks over the tree in one go, which is the usual way; this is for a build that must be clean.
+# C++ only, so the vendored C (sqlite, miniz, libchdr and its codecs) is never analysed.
+option(AB_ENABLE_CLANG_TIDY "Run clang-tidy on every C++ file during the build" OFF)
+if (AB_ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (CLANG_TIDY_EXE)
+        message(STATUS "clang-tidy: ${CLANG_TIDY_EXE}")
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
+    else()
+        message(WARNING "AB_ENABLE_CLANG_TIDY is on but clang-tidy was not found")
+    endif()
+endif()
 set(ABLEEM_ENABLE_CHD ${AB_ENABLE_CHD} CACHE BOOL "" FORCE)
 add_subdirectory(lib_ableem)
 
