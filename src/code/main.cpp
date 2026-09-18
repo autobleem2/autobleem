@@ -64,6 +64,8 @@ static bool setupEnvironment(int argc, char *argv[]) {
         // standard tree (cores, info, system, roms, playlists, ...), and the distribution's RetroArch runs
         // against it - see payload_rpi/install.sh. The console's is the RetroBoot tree at retroarch/.
         Env::setRetroarchDir(usbRoot + sep + "RetroArch");
+        // ...and the exported playlist has to name a core that exists there, not RetroBoot's
+        Env::setRetroarchCoreFile(usbRoot + sep + "RetroArch/cores/pcsx_rearmed_libretro.so");
 #endif
     } else {
         // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)

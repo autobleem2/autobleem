@@ -316,11 +316,43 @@ install_retroarch_source() {
 RA_SUBDIRS="cores info system roms saves states playlists config assets autoconfig database/rdb database/cursors
             cheats overlays shaders filters/video filters/audio thumbnails screenshots records logs downloads"
 
+# roms/ gets a folder per system, named the way RetroArch's databases and playlists name them, so that
+# "Import Content -> Scan Directory" on roms/ sorts every game into the matching playlist - which is what
+# AutoBleem's RetroArch set then shows. Any layout works for RetroArch; these are the names that make the
+# scanner's job obvious, and tell the user where a NES or a Mega Drive game goes.
+RA_ROM_SYSTEMS="Arcade
+Atari - 2600
+Atari - 7800
+Atari - Lynx
+Bandai - WonderSwan Color
+NEC - PC Engine - TurboGrafx 16
+NEC - PC Engine CD - TurboGrafx-CD
+Nintendo - Game Boy
+Nintendo - Game Boy Color
+Nintendo - Game Boy Advance
+Nintendo - Nintendo Entertainment System
+Nintendo - Super Nintendo Entertainment System
+Nintendo - Nintendo 64
+Nintendo - Virtual Boy
+Sega - Master System - Mark III
+Sega - Mega Drive - Genesis
+Sega - Mega-CD - Sega CD
+Sega - 32X
+Sega - Game Gear
+SNK - Neo Geo Pocket Color
+Sony - PlayStation Portable"
+
 create_retroarch_tree() {
     log "Creating the RetroArch tree under $RA_ROOT"
     local d
     for d in $RA_SUBDIRS; do
         run mkdir -p "$RA_ROOT/$d"
+    done
+    log "Creating the roms/ folders (one per system, named as RetroArch's playlists are)"
+    printf '%s
+' "$RA_ROM_SYSTEMS" | while IFS= read -r d; do
+        [ -n "$d" ] || continue
+        run mkdir -p "$RA_ROOT/roms/$d"
     done
 }
 
@@ -773,8 +805,10 @@ summary() {
   Games go in      $DATA_MOUNT/Games/<game name>/      (one folder per game, .cue+.bin / .pbp / .chd)
   BIOS goes in     $DATA_MOUNT/System/Bios/            (romw.bin, plus romJP.bin for Japanese games - a copy
                                                        of romw.bin will do. Without them pcsx-ab uses HLE.)
-  RetroArch        $DATA_MOUNT/RetroArch/    roms/ for its games, system/ for the cores' BIOS files,
-                                              cores/ info/ saves/ states/ playlists/ ... the standard layout
+  RetroArch        $DATA_MOUNT/RetroArch/    roms/<system>/ for its games (a folder per system is there),
+                                              system/ for the cores' BIOS files, then cores/ info/ saves/
+                                              states/ playlists/ ... the standard layout. After copying games
+                                              in: RetroArch -> Import Content -> Scan Directory -> roms
   Logs             $DATA_MOUNT/System/Logs/
   Themes           $DATA_MOUNT/themes/
 

@@ -114,8 +114,10 @@ drive alongside the small `bootfs` one.
   themes/                      UI themes (docs/theme-format.md)
   Apps/                        launchable apps
   RetroArch/                   RetroArch's standard tree, and everything it needs:
-    roms/                        your games for the other systems - any layout you like, RetroArch's
-                                 scanner (Import Content) turns them into playlists
+    roms/<system>/               your games for the other systems: a folder per system is already there
+                                 ("Nintendo - Nintendo Entertainment System", "Sega - Mega Drive - Genesis",
+                                 ...), named as RetroArch's playlists are; the scanner (Import Content ->
+                                 Scan Directory -> roms) turns them into playlists
     system/                      the BIOS files the cores want (scph1001.bin, ...) - yours to provide
     cores/ info/                 the ~130 libretro cores and their info files
     playlists/                   what AutoBleem's RetroArch set shows
@@ -131,9 +133,11 @@ runs in the background and the carousel updates while you watch.
 
 RetroArch is run with `--config /media/autobleem/RetroArch/retroarch.cfg`, so everything it reads or
 writes stays on the data partition, where you can reach it from a PC. Copy games for other systems into
-`RetroArch/roms/` (one folder per system is the usual way) and their BIOS files into `RetroArch/system/`,
-then in RetroArch use *Import Content → Scan Directory* on `roms/`: the playlists it writes turn up as
-AutoBleem's RetroArch set the next time the launcher starts. "RetroArch" in the launcher's L2+R2 system
+the matching `RetroArch/roms/<system>/` folder (they are created for you - NES, SNES, Game Boy, Mega Drive,
+Master System, Game Gear, PC Engine, Neo Geo Pocket, Arcade, ...) and their BIOS files into
+`RetroArch/system/`, then in RetroArch use *Import Content → Scan Directory* on `roms/`: the playlists it
+writes turn up as AutoBleem's RetroArch set the next time the launcher starts. "RetroArch" in the L2+R2
+system menu opens RetroArch's own menu; quitting it puts the launcher back. "RetroArch" in the launcher's L2+R2 system
 menu opens RetroArch's own menu; quitting it puts the launcher back.
 
 The cores live in `RetroArch/cores/` on the exFAT partition. That works because the partition is mounted

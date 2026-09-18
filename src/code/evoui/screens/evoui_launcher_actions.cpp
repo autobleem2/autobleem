@@ -16,6 +16,7 @@
 #include "../../gui/menus/gui_game_manager_menu.h"
 #include "../../core/services/environment.h"
 #include "../../core/services/system.h"
+#include "../../core/services/launch.h"
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
@@ -528,7 +529,7 @@ void GuiLauncher::loop_openSystemMenu() {
             break;
 
         case SystemMenuAction::RetroArch: {
-            if (!DirEntry::exists(Env::getPathToRetroarchDir() + sep + "retroarch")) {   // retroarch is a file!!
+            if (!LaunchService::retroArchInstalled()) {
                 GuiConfirm confirm(*gui);
                 confirm.label = _("RetroArch is not installed");
                 confirm.show();

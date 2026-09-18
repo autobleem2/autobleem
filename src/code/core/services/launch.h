@@ -45,6 +45,10 @@ public:
     static std::string pcsxLauncherScript();        // rc/launch.sh
     static std::string retroArchLauncherScript();   // rc/launch_rb.sh
 
+    // whether "RetroArch" in the system menu has anything to hand over to: RetroBoot's binary inside the
+    // RetroArch dir on the console, the distribution's retroarch on a Raspberry Pi (rc/retroarch.sh runs it)
+    static bool retroArchInstalled();
+
 private:
     enum class Path { Pcsx, RetroArch, App };
     static Path pathFor(const PsGame &game, EmuMode mode);

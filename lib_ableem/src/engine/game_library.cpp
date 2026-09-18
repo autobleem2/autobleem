@@ -105,6 +105,10 @@ bool GameLibrary::exportToRetroArchPlaylist() {
 // /Games/gamelist.xml is for EmulationStation to find the PS1 cover files
 //*******************************
 bool GameLibrary::writeEmulationStationGamelist() {
+    // EmulationStation comes with RetroBoot, the console's RetroArch bundle. Without it (a Raspberry Pi, or
+    // a stick without RetroBoot) there is nobody to read the list, and nowhere to put it.
+    if (!Environment::hasRetroBoot()) return true;
+
     // this file was used during 0.9.0 testing. it must be removed or ES will use it by mistake.
     DirEntry::removeFile(Environment::getPathToGamesDir() + sep + "gamelist.xml");
 

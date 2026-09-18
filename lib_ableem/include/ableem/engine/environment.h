@@ -24,6 +24,7 @@ struct Environment {
     static void setCoversDbDir(const std::string &path);        // where coversU/P/J.db are
     static void setInternalGamesDir(const std::string &path);   // the console's built-in games; default "/gaadata"
     static void setRetroarchDir(const std::string &path);       // RetroArch's tree; "" (the default) means usb:/retroarch
+    static void setRetroarchCoreFile(const std::string &path);  // the PS1 core the exported playlist names; "" = RetroBoot's
 
     //*******************************
     // paths
@@ -39,6 +40,7 @@ struct Environment {
     static std::string getPathToRetroarchDir();         // usb:/retroarch unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
     static std::string getPathToRetroarchCoreFile();
+    static bool hasRetroBoot();                         // usb:/retroarch/retroboot exists - the console's RetroArch bundle
     static std::string getPathToRomsDir();              // usb:/roms
     static std::string getPathToRegionalDBFile();       // includes the "regional.db" filename
     static std::string getPathToInternalDBFile();       // includes the "internal.db" filename

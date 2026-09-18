@@ -127,7 +127,9 @@ int AutoBleem::run() {
     GamesFingerprint storedFingerprint;
     bool fingerprintOnDiskMatches = storedFingerprint.load(scans().fingerprintFilePath()) &&
             storedFingerprint == GamesFingerprint::take(pathToGamesDir);
-    bool gamelistXmlExists = DirEntry::exists(Env::getPathToRetroarchDir() + sep +
+    // RetroBoot's EmulationStation reads this list; without RetroBoot nobody does, and its absence must not
+    // cost a full scan on every boot (it did, on the Pi)
+    bool gamelistXmlExists = !Env::hasRetroBoot() || DirEntry::exists(Env::getPathToRetroarchDir() + sep +
             "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
