@@ -17,3 +17,6 @@
 *.gz binary
 *.so binary
 pcsx-ab binary
+*.bin binary
+*.iso binary
+*.chd binary

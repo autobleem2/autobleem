@@ -7,7 +7,7 @@
 option(ABLEEM_SHARED "Build lib_ableem as a shared library instead of static" OFF)
 option(ABLEEM_BUILD_DEMO "Build the ableem_demo example executable" ON)
 option(ABLEEM_EMBEDDED_TARGET "Building for an embedded target (PSC/RPi): no cursor grab, no keyboard-as-pad" OFF)
-option(ABLEEM_ENABLE_CHD "CHD disc image support (needs libmamecd from the PSC toolchain sysroot)" ON)
+option(ABLEEM_ENABLE_CHD "CHD disc image support (builds the vendored libchdr)" ON)
 
 if (ABLEEM_SHARED)
     set(ABLEEM_LIB_KIND SHARED)
@@ -68,10 +68,9 @@ find_package(Threads REQUIRED)
 target_link_libraries(ableem_engine PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
 
 if (ABLEEM_ENABLE_CHD)
-    # third_party/libmamecd is vendored (see its CMakeLists.txt) - CHD support no longer needs the PSC
-    # toolchain sysroot or a system install.
-    add_subdirectory(third_party/libmamecd EXCLUDE_FROM_ALL)
-    target_link_libraries(ableem_engine PUBLIC mamecd)
+    # third_party/libchdr is vendored (see its CMakeLists.txt) - CHD support needs no system install.
+    add_subdirectory(third_party/libchdr EXCLUDE_FROM_ALL)
+    target_link_libraries(ableem_engine PRIVATE chdr)
 else()
     target_compile_definitions(ableem_engine PRIVATE ABLEEM_NO_CHD)
 endif()

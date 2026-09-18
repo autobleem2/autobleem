@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-# CHD image support (libmamecd) is vendored under lib_ableem/third_party/libmamecd and built from source
-# for every host, so it no longer needs the PSC toolchain sysroot or a system install. -DAB_ENABLE_CHD=OFF
-# still compiles it out (.chd games then scan as "no serial") if it's ever unwanted.
-option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libmamecd)" ON)
+# CHD image support (libchdr) is vendored under lib_ableem/third_party/libchdr and built from source for
+# every host, so it needs no toolchain sysroot or system install. -DAB_ENABLE_CHD=OFF still compiles it
+# out (.chd games then scan as "no serial") if it's ever unwanted.
+option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libchdr)" ON)
 
 # The Raspberry Pi port (payload_rpi/). A Pi is a real target like the console - it forks the emulators - but
 # its files live on the exFAT data partition it is given on the command line and it has no built-in games.

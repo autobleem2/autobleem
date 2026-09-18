@@ -20,10 +20,13 @@ function(ab_add_test name)
     add_executable(${name} ${ARGN})
     # tests include app headers as "core/services/config.h", the way the app will once src/code is a root
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+    # tests/data: checked-in fixtures (the test disc images, see tests/data/generate_test_files.sh)
+    target_compile_definitions(${name} PRIVATE AB_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
     target_link_libraries(${name} doctest_main ab_test_support ab_core)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+ab_add_test(test_cd_image core/test_cd_image.cpp)
 ab_add_test(test_clock core/test_clock.cpp)
 ab_add_test(test_config core/test_config.cpp)
 ab_add_test(test_platform_config core/test_platform_config.cpp)

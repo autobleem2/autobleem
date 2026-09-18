@@ -213,12 +213,9 @@ Still to do, in order:
      opens this menu instead, Power Off is one of its items (behind its own confirm), and bare R2 does
      nothing.
 
-CHD support no longer depends on an external install: **`libmamecd` is vendored** (2026-09-17) under
-`lib_ableem/third_party/libmamecd/` from the sources dropped into `!refactor/libmamecd-master/` - see the
-"libmamecd" bullet under Build for what moved, the two upstream-bug fixes that were needed for a modern
-mingw-w64/UCRT toolchain, and what got trimmed (VS project files, autotools cruft, docs, unused
-encoder/grabbag headers). `AB_ENABLE_CHD` now defaults ON on every host, `make_win.sh` no longer forces it
-OFF, and a full Windows/MinGW rebuild plus `ctest` were verified green with it vendored in.
+CHD support no longer depends on an external install: a CHD library is vendored (libmamecd on
+2026-09-17, replaced by upstream **libchdr with zstd** on 2026-09-18 - see the "libchdr" bullet under
+Build). `AB_ENABLE_CHD` defaults ON on every host.
 
 ## Raspberry Pi port (2026-09-17)
 
@@ -431,7 +428,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   ARM builds (no cursor grab, keyboard-as-pad off); the non-MinGW branch does one `find_package(SDL2)` and links
   the bare names `SDL2 SDL2_image SDL2_mixer SDL2_ttf`, which is why each cross toolchain ships its own
   `cmake/FindSDL2.cmake` defining those four imported targets; `ABLEEM_ENABLE_CHD` follows the root `AB_ENABLE_CHD`
-  (libmamecd is linked by `ableem_engine`); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
+  (libchdr is linked by `ableem_engine`); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
   from-scratch smoke test of the ui library alone - texture + font + sound + input, no AutoBleem code involved.
 
 ## Build
@@ -471,22 +468,22 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. The x86/Windows/Pi
   switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
   `__x86_64__` directly.
-- **`libmamecd`** (`#include <libmamecd/cdrom.h>`, link `mamecd`) is vendored (2026-09-17) under
-  `lib_ableem/third_party/libmamecd/` - an updated libchdr fork for CHD disc images, used only by
-  `lib_ableem/src/engine/cd_image_reader.h` (`ChdImageReader`). It builds from source on every host now (its
-  own `CMakeLists.txt` there builds the libchdr sources plus vendored copies of its three codec deps - FLAC,
-  lzma, zlib - each under `deps/`, all warnings-off like the other vendored code), so `AB_ENABLE_CHD`
-  defaults to ON everywhere and no longer needs the PSC toolchain sysroot or a system install. OFF (which
-  also sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) still compiles out `ChdImageReader` (`.chd` games then
-  scan as "no serial") if it's ever unwanted. Two upstream bugs needed a fix to build with a modern
-  mingw-w64/UCRT toolchain: FLAC's `compat.h` redefines `fseeko`/`ftello` to `fseeko64`/`ftello64` when
-  `HAVE_FSEEKO` isn't set, which collides with UCRT's own `fseeko64` declaration - fixed by defining
-  `HAVE_FSEEKO` for the vendored FLAC target on `MINGW` (its native fseeko/ftello are already correct); and
-  `libchdr_cdrom.c`'s `physical_to_chd_lba` was a plain (non-`static`) C99 `inline` function with no
-  out-of-line definition anywhere, which linked fine only because GCC happened to inline every call - fixed
-  by marking it `static inline` (it is only ever used within that one file).
+- **`libchdr`** (`#include <libchdr/chd.h>`, link `chdr`) is vendored under `lib_ableem/third_party/libchdr/` -
+  upstream libchdr at `8bba774` (2025-06-08), the snapshot AutoBleem-NG bundles, replacing the older libmamecd
+  fork on 2026-09-18 because chdman's default **zstd** codec was missing there (a fresh CHD would not open).
+  Used only by `lib_ableem/src/engine/cd_image_reader.h` (`ChdImageReader`), which now reads hunks with
+  `chd_read` and takes track 0's length from `CDROM_TRACK_METADATA(2)` - upstream has no `cdrom_*` layer.
+  Builds from source on every host (its own `CMakeLists.txt` there builds the libchdr sources - FLAC is the
+  header-only dr_flac - plus vendored LZMA SDK 24.05, zlib 1.3.1 and zstd 1.5.6 under `deps/`, each trimmed
+  to what its CMake build needs, all warnings-off like the other vendored code). `AB_ENABLE_CHD` defaults
+  ON; OFF (which sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles `ChdImageReader` out (`.chd`
+  games then scan as "no serial"). `make_win.sh` passes `-DAB_ENABLE_CHD=ON` explicitly: a `build_win/`
+  configured before the library was vendored had OFF cached, and that silently outlived the default
+  becoming ON - `tests/core/test_cd_image.cpp` (over the zstd-compressed `tests/data/test.chd`, NG's
+  fixture) is what noticed. **pcsx-ab** (`E:\Programming\pcsx-rearmed-develop`) still carries the old CHD
+  library and needs the same refresh to *play* a zstd CHD - on the list, not done.
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
-  SQLite, nlohmann json + `fifo_map`, miniz and libmamecd + FLAC/lzma/zlib (`lib_ableem/third_party/`),
+  SQLite, nlohmann json + `fifo_map`, miniz and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`

@@ -6,15 +6,17 @@
 #include <fstream>
 #include <iostream>
 #ifndef ABLEEM_NO_CHD
-#include <libmamecd/cdrom.h>
+#include <libchdr/chd.h>
+#include <libchdr/cdrom.h>
 #endif
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #define SECTOR_SIZE 2352
-#ifdef ABLEEM_NO_CHD
-#define CD_FRAME_SIZE 2352   // normally provided by libmamecd/cdrom.h
+#ifndef CD_FRAME_SIZE
+#define CD_FRAME_SIZE 2352   // one raw sector (libchdr/cdrom.h defines the same when CHD is compiled in)
 #endif
 #define DATA_SIZE 2048
 #define MAX_OFFSET 500
@@ -223,12 +225,57 @@ public:
 };
 
 #ifndef ABLEEM_NO_CHD
+// A CHD (MAME's compressed disc image) read through libchdr's hunk interface. A CD CHD stores every
+// sector as one "unit" of unitbytes (2352 raw bytes + 96 of subcode, 2448) and packs a whole number of
+// them into each hunk; the first track starts at unit 0, and CDROM_TRACK_METADATA(2) says how long it is
+// and what mode it is in. Track 0 is all the ISO reader ever wants (SYSTEM.CNF lives on it), so that
+// is all this reads: hunk by hunk into a cache, one unit out of it per selectSector(), and the base
+// class's calibrate() then finds the 2048 data bytes inside the raw sector the way it does for a .bin.
+// (The earlier libmamecd fork did the same through its cdrom_* layer; upstream libchdr has none.)
 class ChdImageReader : public CdImageReader
 {
 private:
-    chd_file *inputchd = NULL;
-    cdrom_file *cdrom_chd = NULL;
-    const cdrom_toc *toc = NULL;
+    chd_file *chd = nullptr;
+    vector<uint8_t> hunk;                            // the decompressed hunk currently cached
+    vector<uint8_t> unit;                            // one raw sector out of it
+    uint32_t cachedHunk = static_cast<uint32_t>(-1);
+    uint32_t hunkBytes = 0;
+    uint32_t unitBytes = 0;
+    uint32_t unitsPerHunk = 0;
+    uint32_t trackFrames = 0;                        // sectors on track 0
+
+    // CDROM_TRACK_METADATA2 first (it carries pregap/postgap too), else the older CDROM_TRACK_METADATA
+    bool readTrackMetadata()
+    {
+        char metadata[256];
+        uint32_t metalen = 0;
+        int tracknum = 0, frames = 0, pregap = 0, postgap = 0;
+        char type[32], subtype[32], pgtype[32], pgsub[32];
+
+        if (chd_get_metadata(chd, CDROM_TRACK_METADATA2_TAG, 0, metadata, sizeof(metadata), &metalen, nullptr, nullptr) == CHDERR_NONE
+            && sscanf(metadata, CDROM_TRACK_METADATA2_FORMAT, &tracknum, type, subtype, &frames, &pregap, pgtype, pgsub, &postgap) >= 4) {
+            trackFrames = frames;
+            return true;
+        }
+        if (chd_get_metadata(chd, CDROM_TRACK_METADATA_TAG, 0, metadata, sizeof(metadata), &metalen, nullptr, nullptr) == CHDERR_NONE
+            && sscanf(metadata, CDROM_TRACK_METADATA_FORMAT, &tracknum, type, subtype, &frames) >= 4) {
+            trackFrames = frames;
+            return true;
+        }
+        return false;
+    }
+
+    bool readUnit(uint32_t unitNum, uint8_t *out)
+    {
+        uint32_t hunkNum = unitNum / unitsPerHunk;
+        if (hunkNum != cachedHunk) {
+            if (chd_read(chd, hunkNum, hunk.data()) != CHDERR_NONE)
+                return false;
+            cachedHunk = hunkNum;
+        }
+        memcpy(out, hunk.data() + (unitNum % unitsPerHunk) * unitBytes, unitBytes);
+        return true;
+    }
 
 public:
     ~ChdImageReader() override { closeImage(); }
@@ -236,58 +283,65 @@ public:
     void closeImage() override
     {
         setOpen(false);
-        if (cdrom_chd != NULL)
+        if (chd != nullptr)
         {
-            cdrom_close(cdrom_chd);
-            cdrom_chd = NULL;
+            chd_close(chd);
+            chd = nullptr;
         }
-        if (inputchd != NULL)
-        {
-            chd_close(inputchd);
-            inputchd = NULL;
-        }
+        hunk.clear();
+        cachedHunk = static_cast<uint32_t>(-1);
     }
 
     bool endStream() override
     {
-        if (getCurrentSector() > toc->tracks[0].frames)
-            setCurrentSector(toc->tracks[0].frames - 1);
-        return (getCurrentSector() == toc->tracks[0].frames - 1) && (getSectorPos() >= 2048);
+        if (getCurrentSector() > static_cast<int>(trackFrames))
+            setCurrentSector(trackFrames - 1);
+        return (getCurrentSector() == static_cast<int>(trackFrames) - 1) && (getSectorPos() >= DATA_SIZE);
     }
+
     int openImage(string imagePath) override
     {
         allocateBuffer();
         cout << "Opening CHD image" << endl;
         setOpen(false);
+        setOffset(0);
         setSectorpos(0);
         setCurrentSector(0);
-        chd_error err;
 
-        err = chd_open(imagePath.c_str(), CHD_OPEN_READ, NULL, &inputchd);
+        chd_error err = chd_open(imagePath.c_str(), CHD_OPEN_READ, nullptr, &chd);
         if (err != CHDERR_NONE)
         {
-            cout << "Error opening CHD file" << endl;
+            cout << "Error opening CHD file: " << chd_error_string(err) << endl;
+            chd = nullptr;
             return -1;
         }
 
-        cdrom_chd = cdrom_open(inputchd);
-        if (cdrom_chd == NULL)
+        const chd_header *header = chd_get_header(chd);
+        hunkBytes = header->hunkbytes;
+        unitBytes = header->unitbytes;
+        // a CD CHD: a raw sector (plus subcode) per unit, a whole number of them per hunk
+        if (unitBytes < CD_FRAME_SIZE || hunkBytes == 0 || hunkBytes % unitBytes != 0)
         {
-            cout << "Error opening CDROM file" << endl;
+            cout << "Not a CD CHD (unit " << unitBytes << " bytes, hunk " << hunkBytes << ")" << endl;
+            closeImage();
             return -1;
         }
+        unitsPerHunk = hunkBytes / unitBytes;
+        hunk.assign(hunkBytes, 0);
+        unit.assign(unitBytes, 0);
 
-        toc = cdrom_get_toc(cdrom_chd);
-
-        cout << "TOC found and read - checking for at least one track" << endl;
-        if (toc->numtrks < 1)
+        if (!readTrackMetadata() || trackFrames < 1)
         {
-            cout << "Image has no tracks" << endl;
+            cout << "CHD has no CD track metadata" << endl;
+            closeImage();
             return -1;
         }
+        cout << "TOC found - track 0 has " << trackFrames << " frames" << endl;
+
         if (calibrate(MAX_OFFSET) != 0)
         {
             cout << "Calibrate failed" << endl;
+            closeImage();
             return -1;
         }
         setOpen(true);
@@ -296,10 +350,16 @@ public:
 
     void selectSector(int sectorNum) override
     {
-        char * buff = getBuffer();
-        char tempbuff[CD_FRAME_SIZE];
-        cdrom_read_data(cdrom_chd, cdrom_get_track_start(cdrom_chd, 0) + sectorNum, (void*)tempbuff, toc->tracks[0].trktype);
-        memcpy(buff, tempbuff+getOffset(),DATA_SIZE);
+        char *buff = getBuffer();
+        // calibrate()'s offset is where the data starts inside the raw sector (24 for MODE2, 16 for
+        // MODE1); the .bin reader applies it to a byte stream, where one that spills into the next
+        // sector is fine - here a unit is all there is
+        uint32_t offset = static_cast<uint32_t>(getOffset() < 0 ? 0 : getOffset());
+        if (offset + DATA_SIZE > unitBytes) offset = 0;
+        if (sectorNum >= 0 && readUnit(static_cast<uint32_t>(sectorNum), unit.data()))
+            memcpy(buff, unit.data() + offset, DATA_SIZE);
+        else
+            memset(buff, 0, DATA_SIZE);
         setSectorpos(0);
         setCurrentSector(sectorNum);
     }
