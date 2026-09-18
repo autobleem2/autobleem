@@ -72,6 +72,11 @@ public:
     // a playlist title as RetroArch names the boxart file for it
     static std::string escapeName(const std::string &title);
 
+    // a path from a playlist, as this machine sees it: a console playlist says /media/..., which is the
+    // USB root there; on a dev host that prefix is mapped onto the fake USB tree, and a path that already
+    // starts with the USB root (a Pi writes its real mount point, /media/autobleem/...) is left alone
+    static std::string mapPlaylistPath(const std::string &path, const std::string &usbRoot);
+
 private:
     void ensureLoaded();
     void loadCores();

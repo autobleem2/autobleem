@@ -177,12 +177,8 @@ PsGames RetroArchService::readGamesFromPlaylistFile(const string &path) {
         game->db_name = entry.db_name;
         game->image_path = entry.path;
 
-        // RetroArch writes absolute /media paths. On the console the USB root is /media, so this is the
-        // identity; on a dev host it is what makes the playlist point into the fake USB tree.
-        if (game->image_path.substr(0, 6) == "/media")
-            game->image_path.replace(0, 6, usbRoot);
-        if (game->core_path.substr(0, 6) == "/media")
-            game->core_path.replace(0, 6, usbRoot);
+        game->image_path = mapPlaylistPath(entry.path, usbRoot);
+        game->core_path = mapPlaylistPath(entry.core_path, usbRoot);
 
         if ((game->core_path == "DETECT") || (game->core_name == "DETECT")) {
             autoDetectCorePath(*game, game->core_name, game->core_path);
@@ -198,6 +194,17 @@ PsGames RetroArchService::readGamesFromPlaylistFile(const string &path) {
     }
     PLOG_INFO << "Games found: " << psGames.size();
     return psGames;
+}
+
+//********************
+// RetroArchService::mapPlaylistPath
+//********************
+string RetroArchService::mapPlaylistPath(const string &path, const string &usbRoot) {
+    if (path.rfind("/media", 0) != 0 || usbRoot == "/media")
+        return path;
+    if (path.rfind(usbRoot + "/", 0) == 0 || path == usbRoot)
+        return path;
+    return usbRoot + path.substr(6);
 }
 
 //********************
@@ -384,10 +391,15 @@ void RetroArchService::loadCores() {
     PLOG_INFO << "Scanning: " << infoFolder;
     vector<DirEntry> entries = DirEntry::diru_FilesOnly(infoFolder);
     PLOG_INFO << "Found files:" << entries.size();
+    // only the cores that are actually there: the info bundle describes every core libretro builds, a
+    // few hundred, and a database mapped to one that is not installed would make every game of that
+    // system invalid
     for (const DirEntry &entry : entries) {
         if (DirEntry::getFileExtension(entry.name) == "info") {
             string fullPath = infoFolder + sep + entry.name;
-            cores_.push_back(parseCoreInfo(fullPath, entry.name));
+            CoreInfoPtr info = parseCoreInfo(fullPath, entry.name);
+            if (DirEntry::exists(info->core_path))
+                cores_.push_back(info);
         }
     }
     sort(cores_.begin(), cores_.end(), sortByMaxExtensions); // why not

@@ -182,6 +182,38 @@ TEST_CASE("a DETECT entry gets the core whose .info lists the playlist's databas
     CHECK(atari[0]->core_path == ra.core("stella_libretro"));
 }
 
+TEST_CASE("an .info whose core is not installed takes no part in the mapping") {
+    RetroArchTree ra;
+    // the info bundle describes every core there is; this one would win on extensions, but its .so is missing
+    ra.tmp.writeFile("retroarch/info/mesen_libretro.info",
+                     "display_name = \"Nintendo - SNES (Mesen)\"\n"
+                     "supported_extensions = \"sfc|smc|fig|swc\"\n"
+                     "database = \"Nintendo - Super Nintendo Entertainment System\"\n");
+    ra.tmp.writeFile("coreOverride.cfg", "Nintendo - Super Nintendo Entertainment System=Mesen\n");
+    ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
+
+    PsGames games = ra.service.gamesInPlaylist("Nintendo - SNES");
+    REQUIRE(games.size() == 1);
+    CHECK(games[0]->core_path == ra.core("snes9x_libretro"));
+}
+
+TEST_CASE("a playlist path is mapped onto the USB root only when it is not there already") {
+    // the console: the USB root is /media, a playlist path is what it is
+    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "/media") == "/media/roms/x.sfc");
+    // a dev host: a console playlist's /media is the fake USB tree
+    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "C:/usb") == "C:/usb/roms/x.sfc");
+    CHECK(RetroArchService::mapPlaylistPath("/media/retroarch/cores/a.so", "/home/me/usb") ==
+          "/home/me/usb/retroarch/cores/a.so");
+    // a Pi: the USB root is /media/autobleem and RetroArch writes its real mount point - no double prefix
+    CHECK(RetroArchService::mapPlaylistPath("/media/autobleem/RetroArch/roms/x.sfc", "/media/autobleem") ==
+          "/media/autobleem/RetroArch/roms/x.sfc");
+    // a console playlist carried onto a Pi still maps
+    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "/media/autobleem") == "/media/autobleem/roms/x.sfc");
+    // not a /media path: untouched (DETECT, a Windows path)
+    CHECK(RetroArchService::mapPlaylistPath("DETECT", "/media/autobleem") == "DETECT");
+    CHECK(RetroArchService::mapPlaylistPath("C:/usb/roms/x.sfc", "C:/usb") == "C:/usb/roms/x.sfc");
+}
+
 TEST_CASE("a core the entry names but which is not installed is re-detected") {
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES",
