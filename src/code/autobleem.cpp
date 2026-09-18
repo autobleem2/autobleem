@@ -98,6 +98,9 @@ void AutoBleem::launchGame() {
     // remove all events if something left
     gui_->input().flushEvents();
 
+    // RetroArch may have saved a screenshot or an auto save state just now: forget the listings
+    thumbnails().clearCache();
+
     gui_->display(true);
 }
 

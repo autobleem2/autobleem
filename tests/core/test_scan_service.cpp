@@ -7,6 +7,7 @@
 
 #include "../support/fake_game.h"
 #include "../support/game_library_fixture.h"
+#include "../support/rdb_builder.h"
 #include "../support/string_maker.h"
 
 #include "core/services/scan_service.h"
@@ -154,6 +155,37 @@ TEST_CASE("a locked game keeps the serial its Game.ini holds; an unlocked one is
     CHECK(iniValue("Crash Bandicoot", "serial") == "SCUS-94900");
     CHECK(iniValue("Crash Bandicoot", "region") == ableem::SerialScanner::serialToRegion("SCUS-94900"));  // derived, not left blank
     CHECK(iniValue("Spyro", "serial") == "SLUS-01235");
+}
+
+TEST_CASE("with a RetroArch tree the scan takes the title from the rdb and caches the thumbnail paths") {
+    ScanServiceFixture fx;
+    fx.env.setRetroarchDir(fx.tmp.makeSubDir("retroarch"));
+    fx.tmp.makeSubDir("retroarch/database/rdb");
+    test_support::Bytes records;
+    test_support::appendGameRecord(records, "Crash Bandicoot (USA)", "SLUS-01234", "USA", "SCEA", 1996, 1);
+    records.push_back(0xc0);
+    test_support::writeRdb(fx.tmp, "retroarch/database/rdb/Sony - PlayStation.rdb", test_support::makeRdb(0, records));
+    fx.tmp.makeSubDir("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts");
+    fx.tmp.writeFile("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/Crash Bandicoot (USA).png", "png");
+    fx.tmp.makeSubDir("retroarch/thumbnails/Sony - PlayStation/Named_Snaps");
+    fx.tmp.writeFile("retroarch/thumbnails/Sony - PlayStation/Named_Snaps/Crash Bandicoot (USA).png", "png");
+
+    test_support::makeFakeGame(fx.gamesDir(), "crash", "SLUS_012.34");   // folder name is not the title
+    ScanUpdate update = fx.runAndPoll();
+    REQUIRE(update.addedGames.size() == 1);
+    const PsGame &game = *update.addedGames[0];
+    CHECK(game.title == "Crash Bandicoot");            // the rdb's, without its "(USA)"
+    CHECK(game.publisher == "SCEA");
+    CHECK(game.year == 1996);
+    CHECK(game.recordName == "Crash Bandicoot (USA)");
+    CHECK(game.coverPath == fx.tmp.at("retroarch/thumbnails/Sony - PlayStation/Named_Boxarts/Crash Bandicoot (USA).png"));
+    CHECK(game.snapPath == fx.tmp.at("retroarch/thumbnails/Sony - PlayStation/Named_Snaps/Crash Bandicoot (USA).png"));
+
+    ableem::IniFile ini;
+    ini.load(fx.tmp.at("Games/crash/Game.ini"));
+    CHECK(ini.values["thumbnail_record_name"] == "Crash Bandicoot (USA)");
+    CHECK(ini.values["cached_cover_path"] == game.coverPath);
+    CHECK(ini.values["cached_snap_path"] == game.snapPath);
 }
 
 TEST_CASE("a game folder that disappears is removed from regional.db on the next scan") {

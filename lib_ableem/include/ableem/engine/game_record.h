@@ -36,6 +36,13 @@ struct GameRecord {
     bool play_using_ra = false;
     int history = 0;        // 0 = not in history list.  1-100 if in the history list
     time_t last_played = 0; // in seconds since 1970
+
+    // What the scanner found in RetroArch's thumbnails tree, cached in Game.ini (thumbnail_record_name,
+    // cached_cover_path, cached_snap_path) so the carousel does not have to search on every load; "" when
+    // nothing was found or the game is internal. A cached path is only trusted while the file exists.
+    std::string recordName; // the rdb's name for this game, what its thumbnail file is called
+    std::string coverPath;
+    std::string snapPath;
 };
 
 using GameRecords = std::vector<GameRecord>;

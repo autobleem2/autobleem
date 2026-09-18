@@ -287,6 +287,9 @@ void readGameIni(GameRecord &game) {
         game.hd =       (ini.values["highres"]=="1");
         game.favorite = (ini.values["favorite"] == "1");
         game.play_using_ra = (ini.values["play_using_ra"] == "true");
+        game.recordName = ini.values["thumbnail_record_name"];
+        game.coverPath = ini.values["cached_cover_path"];
+        game.snapPath = ini.values["cached_snap_path"];
     }
 }
 

@@ -7,6 +7,7 @@
 #include "ableem/engine/metadata_lookup.h"
 #include "ableem/engine/serial_scanner.h"
 #include "ableem/engine/strings.h"
+#include "ableem/engine/thumbnail_lookup.h"
 
 #include <algorithm>
 #include <fstream>
@@ -318,6 +319,7 @@ void GameScanner::repairBrokenCueFiles(const string & path) {
 //*******************************
 void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLookup &metadata) {
     gamesToAddToDB.clear();  // clear games list
+    ThumbnailLookup thumbnails;   // this scan's own listing cache of the thumbnails folders
 
     report(ScanStage::Scanning);
 
@@ -441,10 +443,11 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 						    game->players = md.players;
                         if (game->year == 0)
 						    game->year = md.year;
+                        game->recordName = md.recordName;
 
 						if (game->discs.size() > 0) {
 							// all recovered :)
-                            if (!game->coverImageFound) {
+                            if (!game->coverImageFound && !md.bytes.empty()) {
                                 string newFilename = game->fullPath + sep + game->discs[0].cueName + EXT_PNG;
                                 cout << "Updating cover in scanGamesDirectory()" << newFilename << endl;
                                 ofstream pngFile;
@@ -467,6 +470,19 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 					}
 				}
 			}
+            // Where RetroArch's thumbnails tree has this game's cover and screenshot, remembered in
+            // Game.ini so the carousel does not search on every load. The rdb's name is the key to the
+            // tree; a game scanned before there was an rdb gets it looked up now.
+            if (game->recordName.empty() && !game->serial.empty() && metadata.hasRdb()) {
+                GameMetadata md;
+                if (metadata.findBySerial(game->serial, md))
+                    game->recordName = md.recordName;
+            }
+            game->coverPath = thumbnails.findBoxArt(ThumbnailLookup::PlayStationDbName, game->title, game->recordName);
+            game->snapPath = thumbnails.findSnap(ThumbnailLookup::PlayStationDbName, game->title,
+                                                 game->discs.empty() ? "" : game->fullPath + sep + game->discs[0].cueName,
+                                                 game->recordName);
+
             game->saveGameIni(gameIniPath);
             game->loadGameIni(gameIniPath); // the updated iniValues are needed for applyIniValues
 			//game->print();

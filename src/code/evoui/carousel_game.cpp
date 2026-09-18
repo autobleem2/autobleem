@@ -40,9 +40,19 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             renderSurface.setBlendMode(BlendMode::Blend);
             renderer.setBlendMode(BlendMode::Blend);
 
+            // the user's (or the covers db's) PNG next to the game, else what the scan found in
+            // RetroArch's thumbnails tree (while that file is still there), else a look in the tree now -
+            // an internal game, or a game scanned before the tree existed
             string imagePath = (*this)->folder + sep + (*this)->base + ".png";
             renderer.setTarget(nullptr);
-            if (DirEntry::exists(imagePath)) {
+            if (!DirEntry::exists(imagePath)) {
+                imagePath = (*this)->coverPath;
+                if (imagePath.empty() || !DirEntry::exists(imagePath)) {
+                    imagePath = App::get().thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName,
+                                                                   (*this)->title, (*this)->recordName);
+                }
+            }
+            if (!imagePath.empty()) {
                 coverPng = Texture::loadFile(renderer, imagePath);
             } else {
                 coverPng = Texture();
@@ -112,26 +122,13 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             renderer.setTarget(nullptr);
             string imagePath;
             if (!(*this)->app) {
-                auto makeBoxArtPath = [&] (const string& boxartDir) -> string
-                        { return Env::getPathToRetroarchDir() + sep + "thumbnails" + sep +
-                        DirEntry::getFileNameWithoutExtension((*this)->db_name) + sep +
-                        boxartDir + sep + RetroArchService::escapeName((*this)->title) + ".png";
-                        };
-
-                imagePath = makeBoxArtPath("Named_Boxarts");
-                string imagePath2 = makeBoxArtPath("Named_Titles");
-                string imagePath3 = makeBoxArtPath("Named_Snaps");
-                if (DirEntry::exists(imagePath)) {
-                    coverPng = Texture::loadFile(renderer, imagePath);
-                } else if (DirEntry::exists(imagePath2)) {
-                    imagePath = imagePath2;
-                    coverPng = Texture::loadFile(renderer, imagePath);
-                } else if (DirEntry::exists(imagePath3)) {
-                    imagePath = imagePath3;
+                // Named_Boxarts, Titles, Snaps - png or jpg, tags stripped, fuzzy on the region
+                imagePath = App::get().thumbnails().findBoxArt((*this)->db_name, (*this)->title);
+                if (!imagePath.empty()) {
                     coverPng = Texture::loadFile(renderer, imagePath);
                 } else {
                     // use default
-                    cout << "boxart image NOT found for " << imagePath << endl;
+                    cout << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name << endl;
                     coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/ra-cover.png");
                 }
             } else

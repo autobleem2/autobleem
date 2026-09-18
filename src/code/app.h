@@ -17,6 +17,8 @@
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
 #include "core/services/scan_service.h"
+
+#include <ableem/engine/thumbnail_lookup.h>
 #include "core/services/clock.h"
 #include "core/services/theme.h"
 #include "gui/app_audio.h"
@@ -54,6 +56,8 @@ public:
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
     RetroArchService &retroArch() { return retroArch_; }
+    // where covers and screenshots are in RetroArch's thumbnails tree; the launcher's own listing cache
+    ableem::ThumbnailLookup &thumbnails() { return thumbnails_; }
     ScanService &scans() { return scans_; }
     Lang &lang() { return lang_; }
     Session &session() { return session_; }
@@ -77,6 +81,7 @@ protected:
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     RetroArchService retroArch_;
+    ableem::ThumbnailLookup thumbnails_;
     ScanService scans_{gameLibrary};
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};

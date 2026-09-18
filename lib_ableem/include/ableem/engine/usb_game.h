@@ -53,6 +53,9 @@ public:
     std::string favorite;
     std::string play_using_ra;
     time_t last_played = 0;
+    std::string recordName;  // the rdb's name (GameMetadata::recordName), kept in Game.ini as thumbnail_record_name
+    std::string coverPath;   // the thumbnails tree's cover for this game, "" if none - Game.ini cached_cover_path
+    std::string snapPath;    // and its screenshot - cached_snap_path
 
     std::string memcard;
 

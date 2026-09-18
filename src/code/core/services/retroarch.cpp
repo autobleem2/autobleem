@@ -6,6 +6,7 @@
 #include "../main.h"
 
 #include <ableem/engine/retroarch_playlist.h>
+#include <ableem/engine/thumbnail_lookup.h>
 
 #include <algorithm>
 #include <fstream>
@@ -38,7 +39,7 @@ void RetroArchService::ensureLoaded() {
 // RetroArchService::escapeName
 //********************
 string RetroArchService::escapeName(const string &title) {
-    return DirEntry::replaceTheseCharsWithThisChar(title, "&*/:`<>?\\|", '_');
+    return ableem::ThumbnailLookup::escapeName(title);   // one rule for every thumbnail file name
 }
 
 //********************

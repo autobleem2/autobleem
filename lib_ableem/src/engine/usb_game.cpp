@@ -356,6 +356,9 @@ void UsbGame::applyIniValues() {
     // a missing one is not an automation event, the image is simply read again
     serial = valueOrDefault("serial", "", false);
     region = valueOrDefault("region", "", false);
+    recordName = valueOrDefault("thumbnail_record_name", "", false);
+    coverPath = valueOrDefault("cached_cover_path", "", false);
+    snapPath = valueOrDefault("cached_snap_path", "", false);
     // favorite and play_using_ra are newer fields that older Game.ini files lack, so a missing one must
     // not set automationUsed. (The key was misspelt "play_us_ra" here until 2026-09 - the fork's d80f67b7 -
     // which reset every game's "Play using RA" to false on each scan.)
@@ -431,6 +434,9 @@ void UsbGame::saveGameIni(const string &path) {
 
     ini.values["Favorite"] = favorite;
     ini.values["Play_using_ra"] = play_using_ra;
+    ini.values["Thumbnail_record_name"] = recordName;
+    ini.values["Cached_cover_path"] = coverPath;
+    ini.values["Cached_snap_path"] = snapPath;
 
     stringstream ss;
     for (int i = 0; i < discs.size(); i++) {
