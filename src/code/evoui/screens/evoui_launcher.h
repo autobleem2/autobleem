@@ -189,4 +189,10 @@ public:
     void showOptions();
     // the selected game as the emulator sees it: a PS1 game, even from the Lightgun set
     bool selectedIsPs1() const;
+    // the selected game's screenshot in the theme's launcher.snapPanel, when the theme has one
+    void loadSnap();
+    void renderSnap();
+    ableem::Texture snapTex;
+    int snapForGameId = -1;
+    bool snapForInternal = false;
 };

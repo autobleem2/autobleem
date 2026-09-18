@@ -136,6 +136,7 @@ struct LauncherTheme {
     std::string metaPanel;
     Opt<bool> metaPanelSlides;      // false: the meta panel stays put when the menu opens (a static layout)
     Opt<bool> textShadow;           // false: no dark halo under the launcher's text (unset counts as true)
+    ThemeRect snapPanel;            // where the selected game's screenshot is drawn (aspect-fit); unset: not drawn
     std::string arrow;
 
     struct Hints { std::string cross, circle, triangle; } hints;                    // the button hints in the footer

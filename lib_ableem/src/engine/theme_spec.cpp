@@ -273,6 +273,8 @@ bool ThemeSpec::load(const string &path) {
         readStr(*l, "metaPanel", launcher.metaPanel);
         readOptBool(*l, "metaPanelSlides", launcher.metaPanelSlides);
         readOptBool(*l, "textShadow", launcher.textShadow);
+        if (const json *p = child(*l, "snapPanel"))
+            readRect(*p, launcher.snapPanel.x, launcher.snapPanel.y, launcher.snapPanel.w, launcher.snapPanel.h, launcher.snapPanel.set);
         readStr(*l, "arrow", launcher.arrow);
         if (const json *h = child(*l, "hints")) {
             readStr(*h, "cross", launcher.hints.cross);
@@ -399,6 +401,12 @@ bool ThemeSpec::save(const string &path) const {
         putStr(l, "metaPanel", launcher.metaPanel);
         if (launcher.metaPanelSlides.set) l["metaPanelSlides"] = launcher.metaPanelSlides.value;
         if (launcher.textShadow.set) l["textShadow"] = launcher.textShadow.value;
+        if (launcher.snapPanel.set) {
+            ordered_json p = ordered_json::object();
+            p["x"] = launcher.snapPanel.x; p["y"] = launcher.snapPanel.y;
+            p["w"] = launcher.snapPanel.w; p["h"] = launcher.snapPanel.h;
+            l["snapPanel"] = p;
+        }
         putStr(l, "arrow", launcher.arrow);
         {
             ordered_json h = ordered_json::object();
@@ -481,6 +489,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
 
     mergeSet(launcher.metaPanelSlides, base.launcher.metaPanelSlides);
     mergeSet(launcher.textShadow, base.launcher.textShadow);
+    mergeSet(launcher.snapPanel, base.launcher.snapPanel);
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
     mergeColor(launcher.colors.hint, base.launcher.colors.hint);

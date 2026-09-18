@@ -40,6 +40,60 @@ void GuiLauncher::updateMeta() {
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
     showOptions();   // a mixed set (Lightgun) changes game type as the carousel moves
+    loadSnap();
+}
+
+//*******************************
+// GuiLauncher::loadSnap
+//*******************************
+// the selected game's screenshot: the path the scan cached while its file exists, else a look in the
+// thumbnails tree (a RetroArch game, an internal game). Only when the theme draws it.
+void GuiLauncher::loadSnap() {
+    const ableem::ThemeRect &panel = app.theme().launcher().snapPanel;
+    if (!panel.set || !carousel.selectedIsValid()) {
+        snapTex = ableem::Texture();
+        snapForGameId = -1;
+        return;
+    }
+    const PsGame &game = *carousel.games[carousel.selected];
+    if (snapForGameId == game.gameId && snapForInternal == game.internal && snapTex.valid()) return;
+    snapForGameId = game.gameId;
+    snapForInternal = game.internal;
+    snapTex = ableem::Texture();
+    if (game.app) return;
+
+    string path = game.snapPath;
+    if (path.empty() || !DirEntry::exists(path)) {
+        if (game.foreign)
+            path = app.thumbnails().findSnap(game.db_name, game.title, game.image_path);
+        else
+            path = app.thumbnails().findSnap(ableem::ThumbnailLookup::PlayStationDbName, game.title,
+                                             game.folder + sep + game.base, game.recordName);
+    }
+    if (!path.empty())
+        snapTex = ableem::Texture::loadFile(renderer, path);
+}
+
+//*******************************
+// GuiLauncher::renderSnap
+//*******************************
+void GuiLauncher::renderSnap() {
+    const ableem::ThemeRect &panel = app.theme().launcher().snapPanel;
+    if (!panel.set || !snapTex.valid()) return;
+    ableem::Size s = snapTex.size();
+    if (s.w <= 0 || s.h <= 0) return;
+    // aspect-fit inside the panel, centred
+    ableem::Rect dst;
+    if (s.w * panel.h > s.h * panel.w) {   // wider than the panel
+        dst.w = panel.w;
+        dst.h = panel.w * s.h / s.w;
+    } else {
+        dst.h = panel.h;
+        dst.w = panel.h * s.w / s.h;
+    }
+    dst.x = panel.x + (panel.w - dst.w) / 2;
+    dst.y = panel.y + (panel.h - dst.h) / 2;
+    renderer.copy(snapTex, nullptr, &dst);
 }
 
 //*******************************
@@ -490,6 +544,7 @@ void GuiLauncher::render() {
         obj->render();
     }
     carousel.render();
+    renderSnap();
 
     menu->render();
 

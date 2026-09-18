@@ -92,6 +92,7 @@ themes/<name>/
 | `classic.editorCover` | Where the game editor draws the cover. |
 | `classic.buttons` | One image per `\|@X\|` marker in UI strings: `cross circle square triangle start select l1 r1 l2 r2 check uncheck esc enter tab`. |
 | `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). `textShadow: false` drops the dark halo drawn under the launcher's text (it is what keeps white text readable on a light background; on by default). |
+| `launcher.snapPanel` | `{ "x", "y", "w", "h" }`: where the selected game's screenshot (RetroArch's thumbnails `Named_Snaps`, or the user's own from `retroarch/screenshots`) is drawn, aspect-fit inside the rect. Leave it out and no screenshot is drawn. |
 | `launcher.hints` | The cross/circle/triangle icons in the footer. |
 | `launcher.menuIcons` | The launcher menu's four icons. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |

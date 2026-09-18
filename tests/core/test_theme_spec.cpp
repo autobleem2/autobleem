@@ -71,6 +71,7 @@ ThemeSpec fullSpec() {
     l.colors.text = ThemeColor(255, 255, 255);
     l.colors.secondary = ThemeColor(100, 100, 100);
     l.colors.hint = ThemeColor(255, 255, 255);
+    l.snapPanel.x = 260; l.snapPanel.y = 225; l.snapPanel.w = 240; l.snapPanel.h = 180; l.snapPanel.set = true;
 
     s.sounds.cursor = "sounds/cursor.wav"; s.sounds.cancel = "sounds/cancel.wav";
     s.sounds.homeUp = "sounds/home_up.wav"; s.sounds.homeDown = "sounds/home_down.wav";
@@ -137,6 +138,8 @@ TEST_CASE("a full theme survives a save/load round trip") {
     CHECK(in.launcher.fonts.bold == "font/SST-Bold.ttf");
     CHECK(in.launcher.colors.secondary.toHex() == "#646464");
     CHECK(in.launcher.colors.hint.toHex() == "#ffffff");
+    CHECK(in.launcher.snapPanel.set);
+    CHECK(in.launcher.snapPanel.w == 240);
     CHECK(in.sounds.resume == "sounds/resume_new.wav");
 
     // every file field made the trip - the one list in fileFields() is what everything else iterates
@@ -176,6 +179,7 @@ TEST_CASE("a partial theme writes only what it sets and reads back as partial") 
     CHECK(in.launcher.colors.text.set);
     CHECK_FALSE(in.launcher.colors.secondary.set);
     CHECK_FALSE(in.launcher.colors.hint.set);             // stays unset: the launcher falls back to secondary
+    CHECK_FALSE(in.launcher.snapPanel.set);               // no pane unless a theme asks
     CHECK_FALSE(in.launcher.textShadow.set);              // a theme that says nothing gets the default
     CHECK_FALSE(in.classic.textShadow.set);
 }
