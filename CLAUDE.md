@@ -358,6 +358,15 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   only "BIOS" entries are x86 MIDI libraries).
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
+- **Other systems run** (2026-09-18): ROMs in `RetroArch/roms/<system>/`, scanned by RetroArch's own Import
+  Content (guide: `payload_rpi/README.md`, "Games for the other systems"), launched from the RetroArch set
+  in-process like pcsx. What that took: `RetroArchService::mapPlaylistPath()` (no double `/media` prefix on a
+  Pi), only installed cores in the database->core table, the `showOptions()` null deref on a fresh screen
+  with a foreign game (the launcher used to die on the way back and be restarted with the splash),
+  `platform/<platform>.cores.cfg` (Genesis Plus GX over picodrive, whose Cyclone core segfaults on the Pi -
+  unexplained), and blueMSX's `Machines/*/config.ini` in the BIOS pack (`EXTRA_SOURCES` in
+  `tools/biospack.py`). `make_rpi.sh --debug` + the PC's cross gdb is how a Pi core dump gets read (gdb on
+  the Pi hangs in `snd_pcm_open` on the mapped ALSA device).
 - **Not started, planned in `docs/retroarch-scanner-plan.md`**: scanning `RetroArch/roms/` from
   `ScanService` (a `RetroArchScanner` writing the `.lpl`s, then rdb identification by CRC). Deliberately
   parked until real ROMs have been run on the Pi through RetroArch's own scanner.
