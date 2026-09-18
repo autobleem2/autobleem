@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -144,7 +145,7 @@ PsGames GameQueryService::apps() {
         IniFile file;
         file.load(appIni);
 
-        PsGamePtr game{new PsGame};
+        PsGamePtr game = std::make_shared<PsGame>();
         game->gameId = 0;
         game->year = 0;
         game->players = 0;

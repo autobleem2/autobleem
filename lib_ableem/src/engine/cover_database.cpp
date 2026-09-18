@@ -2,6 +2,7 @@
 #include "ableem/engine/filesystem.h"
 
 #include <iostream>
+#include <memory>
 #include "ableem/engine/log.h"
 
 using namespace std;
@@ -19,7 +20,7 @@ CoverDatabase::CoverDatabase(const string &coversDir) {
     for (int i = 0; i < regionCount; i++) {
         auto filename = coversDir + sep + "covers" + regionStr[i] + ".db";
         if (DirEntry::exists(filename)) {
-            covers[i].reset(new GameDatabase());
+            covers[i] = std::make_unique<GameDatabase>();
             if (!covers[i]->open(filename)) {
                 PLOG_WARNING << "failed to open database " << filename;
                 covers[i].reset();
@@ -33,9 +34,7 @@ CoverDatabase::CoverDatabase(const string &coversDir) {
 //*******************************
 // CoverDatabase::~CoverDatabase
 //*******************************
-CoverDatabase::~CoverDatabase() {
-    // the unique_ptrs close and delete the databases
-}
+CoverDatabase::~CoverDatabase() = default; // the unique_ptrs close and delete the databases
 
 //*******************************
 // CoverDatabase::hasAnyRegion

@@ -70,38 +70,38 @@ int Font::width(const std::string &text) const {
 void Font::draw(Renderer &renderer, int x, int y, const std::string &text) const {
     if (!handle)
         return;
-    FC_Draw(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), (float)x, (float)y,
-            "%s", text.c_str());
+    FC_Draw(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), static_cast<float>(x),
+            static_cast<float>(y), "%s", text.c_str());
 }
 
 void Font::drawAlign(Renderer &renderer, int x, int y, Align align, const std::string &text) const {
     if (!handle)
         return;
-    FC_DrawAlign(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), (float)x,
-                 (float)y, toFC(align), "%s", text.c_str());
+    FC_DrawAlign(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
+                 static_cast<float>(x), static_cast<float>(y), toFC(align), "%s", text.c_str());
 }
 
 void Font::drawColor(Renderer &renderer, int x, int y, Color color, const std::string &text) const {
     if (!handle)
         return;
     SDL_Color c{color.r, color.g, color.b, color.a};
-    FC_DrawColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()), (float)x,
-                 (float)y, c, "%s", text.c_str());
+    FC_DrawColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
+                 static_cast<float>(x), static_cast<float>(y), c, "%s", text.c_str());
 }
 
 std::string Font::wrappedText(const std::string &text, int maxWidth) const {
     if (!handle)
         return text;
     std::vector<char> buffer(text.size() + 256);
-    int len = FC_GetWrappedText(static_cast<FC_Font *>(handle.get()), buffer.data(), (int)buffer.size(),
-                                (Uint16)maxWidth, "%s", text.c_str());
-    return std::string(buffer.data(), len > 0 ? (size_t)len : 0);
+    int len = FC_GetWrappedText(static_cast<FC_Font *>(handle.get()), buffer.data(), static_cast<int>(buffer.size()),
+                                static_cast<Uint16>(maxWidth), "%s", text.c_str());
+    return std::string(buffer.data(), len > 0 ? static_cast<size_t>(len) : 0);
 }
 
 int Font::columnHeight(const std::string &text, int width) const {
     if (!handle)
         return 0;
-    return FC_GetColumnHeight(static_cast<FC_Font *>(handle.get()), (Uint16)width, "%s", text.c_str());
+    return FC_GetColumnHeight(static_cast<FC_Font *>(handle.get()), static_cast<Uint16>(width), "%s", text.c_str());
 }
 
 int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, const std::string &text) const {
@@ -109,8 +109,9 @@ int Font::drawColumn(Renderer &renderer, int x, int y, int width, Color color, c
         return 0;
     SDL_Color c{color.r, color.g, color.b, color.a};
     FC_Rect r = FC_DrawColumnColor(static_cast<FC_Font *>(handle.get()), static_cast<SDL_Renderer *>(renderer.native()),
-                                   (float)x, (float)y, (Uint16)width, c, "%s", text.c_str());
-    return (int)r.h;
+                                   static_cast<float>(x), static_cast<float>(y), static_cast<Uint16>(width), c, "%s",
+                                   text.c_str());
+    return r.h;
 }
 
 void Font::resetAfterRendererReset(Renderer &renderer, bool deviceLost) {

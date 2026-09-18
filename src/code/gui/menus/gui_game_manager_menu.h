@@ -12,22 +12,22 @@
 //********************
 class GuiManager : public GuiTwoColumnStringMenu {
 public:
-    GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
+    explicit GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;
     void render() override;
 
-    virtual std::string getTitle() override;
+    std::string getTitle() override;
     std::string getStatusLine() override;
 
-    virtual void doCircle_Pressed() override;
-    virtual void doSquare_Pressed() override;
-    virtual void doTriangle_Pressed() override;
-    virtual void doCross_Pressed() override;
+    void doCircle_Pressed() override;
+    void doSquare_Pressed() override;
+    void doTriangle_Pressed() override;
+    void doCross_Pressed() override;
 
-    virtual void doEnter() override { doCross_Pressed(); }
-    virtual void doEscape() override { doCircle_Pressed(); }
-    virtual void doDelete() override { doSquare_Pressed(); }
+    void doEnter() override { doCross_Pressed(); }
+    void doEscape() override { doCircle_Pressed(); }
+    void doDelete() override { doSquare_Pressed(); }
 
     PsGames psGames;
     static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }

@@ -9,6 +9,7 @@
 #include <ableem/engine/thumbnail_lookup.h>
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <fstream>
 #include <iostream>
@@ -156,7 +157,7 @@ PsGames RetroArchService::readGamesFromPlaylistFile(const string &path) {
     const string usbRoot = Env::getPathToUSBRoot();
     int id = 0;
     for (const auto &entry : entries) {
-        PsGamePtr game{new PsGame};
+        PsGamePtr game = std::make_shared<PsGame>();
         game->gameId = id++;
         game->title = entry.label;
         game->publisher = "";
@@ -444,7 +445,7 @@ CoreInfoPtr RetroArchService::parseCoreInfo(const string &file, const string &en
     string line;
 
     PLOG_INFO << "Parsing ";
-    CoreInfoPtr coreInfoPtr{new CoreInfo};
+    CoreInfoPtr coreInfoPtr = std::make_shared<CoreInfo>();
     coreInfoPtr->core_path =
         Env::getPathToRetroarchDir() + sep + "cores/" + DirEntry::getFileNameWithoutExtension(entry) + ".so";
     coreInfoPtr->extensions.clear();

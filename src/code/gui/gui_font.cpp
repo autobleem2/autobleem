@@ -17,7 +17,7 @@ Fonts::FontInfo Fonts::allFontInfos[] = {{FONT_15_BOLD, 15, FONT_BOLD},
 //********************
 // Fonts::Fonts
 //********************
-Fonts::Fonts() {}
+Fonts::Fonts() = default;
 
 //********************
 // Fonts::openNewSharedCachedFont

@@ -13,8 +13,8 @@ using namespace std;
 // PsStateSelector::cleanSaveStateImages
 //*******************************
 void PsStateSelector::cleanSaveStateImages() {
-    for (int i = 0; i < 4; i++)
-        slotImg[i] = ableem::Texture();
+    for (auto &i : slotImg)
+        i = ableem::Texture();
 }
 
 //*******************************

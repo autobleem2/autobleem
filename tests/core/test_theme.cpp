@@ -69,8 +69,8 @@ struct Themes {
 
     void configure(const string &themeName) {
         tmp.writeFile("config.ini", "Theme=" + themeName + "\n");
-        config.reset(new Config);
-        theme.reset(new Theme(*config));
+        config = std::make_unique<Config>();
+        theme = std::make_unique<Theme>(*config);
     }
 
     EnvFixture env;

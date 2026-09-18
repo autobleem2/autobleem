@@ -53,7 +53,7 @@ using GamePaths = std::vector<GamePath>;
 //******************
 class GameDatabase {
 public:
-    GameDatabase() {}
+    GameDatabase() = default;
     ~GameDatabase(); // closes
     GameDatabase(const GameDatabase &) = delete;
     GameDatabase &operator=(const GameDatabase &) = delete;

@@ -30,15 +30,14 @@ void GuiManager::init() {
     psGames.clear();
     psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames()); // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);                      // sort by title
-    for (int i = 0; i < psGames.size(); ++i) {
+    for (auto &psGame : psGames) {
         // left column              right column
         // "title"                  "path"
-        string path = DirEntry::removeSeparatorFromEndOfPath(psGames[i]->folder);
+        string path = DirEntry::removeSeparatorFromEndOfPath(psGame->folder);
         path = DirEntry::removeGamesPathFromFrontOfPath(path);
         int panelRight = gui->text().getOpscreenRectOfTheme().x + gui->text().getOpscreenRectOfTheme().w - 20;
         int pathWidth = panelRight - (gui->text().getOpscreenRectOfTheme().x + 10 + xoffset_R);
-        lines.emplace_back(TwoColumnsOfText(gui->text().elide(font, psGames[i]->title, 400),
-                                            gui->text().elide(font, path, pathWidth)));
+        lines.emplace_back(gui->text().elide(font, psGame->title, 400), gui->text().elide(font, path, pathWidth));
     }
 }
 
@@ -176,8 +175,8 @@ void GuiManager::doSquare_Pressed() {
     }
     app.scans().requestScan(); // in order for the sub dir hierarchy to be fixed we have to do a rescan
     // menuVisible = false;
-    init();                                // refresh games list and menu item count
-    if (selected >= (int)psGames.size()) { // the last game went: the cursor cannot stay past the end
+    init();                                             // refresh games list and menu item count
+    if (selected >= static_cast<int>(psGames.size())) { // the last game went: the cursor cannot stay past the end
         selected = psGames.empty() ? 0 : psGames.size() - 1;
         firstVisibleIndex = std::max(0, selected - maxVisible + 1);
         lastVisibleIndex = firstVisibleIndex + maxVisible - 1;

@@ -29,7 +29,7 @@ enum {
 //********************
 class GuiOptions : public GuiOptionsMenuBase {
 public:
-    GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
+    explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
     // void render() override;
@@ -42,27 +42,27 @@ public:
 
     void fill();
 
-    virtual std::string getTitle() override { return "-=" + _("Configuration") + "=-"; }
-    virtual std::string getStatusLine();
+    std::string getTitle() override { return "-=" + _("Configuration") + "=-"; }
+    std::string getStatusLine() override;
 
-    virtual std::string getLineText(const OptionsInfo &info);
-    virtual std::string doPrevNextOption(OptionsInfo &info, bool next);
-    virtual std::string doPrevNextOption(bool next) { return GuiOptionsMenuBase::doPrevNextOption(next); }
-    virtual std::string doRandomOption(); // only a few lines will use this.  most will just return.
+    std::string getLineText(const OptionsInfo &info) override;
+    std::string doPrevNextOption(OptionsInfo &info, bool next) override;
+    std::string doPrevNextOption(bool next) override { return GuiOptionsMenuBase::doPrevNextOption(next); }
+    std::string doRandomOption() override; // only a few lines will use this.  most will just return.
 
-    virtual std::string doOptionIndex(unsigned int index) override;
+    std::string doOptionIndex(unsigned int index) override;
 
     int exitCode = 0;
 
-    virtual void doCircle_Pressed();
-    virtual void doCross_Pressed();
+    void doCircle_Pressed() override;
+    void doCross_Pressed() override;
 
-    virtual void doJoyRight(); // move option to the right, may fast forwward
-    virtual void doJoyLeft();  // move option to the left, may fast forwward
+    void doJoyRight() override; // move option to the right, may fast forwward
+    void doJoyLeft() override;  // move option to the left, may fast forwward
 
-    virtual void doKeyRight(); // move option to the right
-    virtual void doKeyLeft();  // move option to the left
+    void doKeyRight() override; // move option to the right
+    void doKeyLeft() override;  // move option to the left
 
-    virtual void doEnter() { doCross_Pressed(); }
-    virtual void doEscape() { doCircle_Pressed(); }
+    void doEnter() override { doCross_Pressed(); }
+    void doEscape() override { doCircle_Pressed(); }
 };

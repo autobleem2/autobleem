@@ -41,7 +41,7 @@ struct Editing : GameLibraryFixture {
         putGameInSubDirRow(0, 1);
         addInternalGame(10, "Jumping Flash");
         tmp.makeSubDir("Games/!MemCards");
-        service.reset(new GameSettingsService(library));
+        service = std::make_unique<GameSettingsService>(library);
     }
 
     PsGamePtr usbGame() {

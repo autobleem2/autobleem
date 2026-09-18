@@ -16,15 +16,15 @@ struct TwoColumnsOfText {
 //*******************************
 class GuiTwoColumnStringMenu : public GuiMenuBase<TwoColumnsOfText> {
 public:
-    GuiTwoColumnStringMenu(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
+    explicit GuiTwoColumnStringMenu(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
 
     int xoffset_L = 0;
     int xoffset_R = 500;
 
-    virtual std::string getTitle() override { return GuiMenuBase::getTitle(); }
-    virtual std::string getStatusLine() override { return GuiMenuBase::getStatusLine(); }
+    std::string getTitle() override { return GuiMenuBase::getTitle(); }
+    std::string getStatusLine() override { return GuiMenuBase::getStatusLine(); }
 
-    virtual void renderLineIndexOnRow(int index, int row) override {
+    void renderLineIndexOnRow(int index, int row) override {
         gui->text().renderTextLineToColumns(lines[index].line_L, lines[index].line_R, xoffset_L, xoffset_R, row,
                                             yoffset, font);
     }

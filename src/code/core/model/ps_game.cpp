@@ -3,6 +3,8 @@
 //
 
 #include "ps_game.h"
+
+#include <memory>
 #include "../main.h"
 
 using namespace std;
@@ -14,7 +16,7 @@ PsGames PsGame::fromRecords(const ableem::GameRecords &records) {
     PsGames games;
     games.reserve(records.size());
     for (const auto &record : records) {
-        PsGamePtr game{new PsGame};
+        PsGamePtr game = std::make_shared<PsGame>();
         static_cast<ableem::GameRecord &>(*game) = record;
         games.push_back(game);
     }

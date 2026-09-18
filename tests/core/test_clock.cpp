@@ -20,8 +20,8 @@ struct ClockWith {
     explicit ClockWith(const string &configIni) : tmp("clock") {
         env.setWorkingPath(tmp.path());
         tmp.writeFile("config.ini", configIni);
-        config.reset(new Config);
-        clock.reset(new Clock(*config));
+        config = std::make_unique<Config>();
+        clock = std::make_unique<Clock>(*config);
     }
     EnvFixture env;
     TempDir tmp;

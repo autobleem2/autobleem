@@ -32,7 +32,7 @@ struct FakeRetroArch : RetroArchGames {
     string historyPlaylistName() override { return "History"; }
     PsGames allGames() override { return games; }
     PsGamePtr add(const string &title, const string &imagePath) {
-        PsGamePtr game{new PsGame};
+        PsGamePtr game = std::make_shared<PsGame>();
         game->title = title;
         game->foreign = true;
         game->image_path = imagePath;
@@ -53,8 +53,8 @@ struct Lib : GameLibraryFixture {
         tmp.makeSubDir("Games/!MemCards");
         ableem::Environment::setWorkingPath(tmp.path());
         tmp.writeFile("config.ini", "Origames=true\n");
-        config.reset(new Config);
-        settings.reset(new GameSettingsService(library));
+        config = std::make_unique<Config>();
+        settings = std::make_unique<GameSettingsService>(library);
     }
     PsGamePtr usbGame(const string &title) {
         for (auto &g : PsGame::fromRecords(library.usbGames().loadUsbGames()))
@@ -146,7 +146,7 @@ TEST_CASE("RetroArch games are listed in System/lightguns.txt by image path; a g
     CHECK_FALSE(again.anyRetroArchLightguns());
     CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/lightguns.txt"))); // empty list: no file
 
-    PsGamePtr app{new PsGame};
+    PsGamePtr app = std::make_shared<PsGame>();
     app->foreign = true;
     app->app = true;
     app->image_path = "x";

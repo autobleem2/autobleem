@@ -26,9 +26,9 @@ bool createDirs(const string &dir) {
 // a reader over one file, closed on the way out
 struct Reader {
     mz_zip_archive zip;
-    bool open;
+    bool open = false;
 
-    explicit Reader(const string &path) : zip(), open(false) {
+    explicit Reader(const string &path) : zip() {
         mz_zip_zero_struct(&zip);
         open = mz_zip_reader_init_file(&zip, path.c_str(), 0) != 0;
         if (!open) {

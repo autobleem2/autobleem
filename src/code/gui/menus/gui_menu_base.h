@@ -10,10 +10,10 @@
 //*******************************
 template <typename LineDataType> class GuiMenuBase : public GuiScreen {
 public:
-    GuiMenuBase(ableem::GuiBase &_gui) : GuiScreen(_gui) {}
+    explicit GuiMenuBase(ableem::GuiBase &_gui) : GuiScreen(_gui) {}
 
-    virtual void init();
-    virtual void render();
+    void init() override;
+    void render() override;
 
     virtual std::string getTitle();
     virtual std::string getStatusLine(); // returns the status line at the bottom.  cross, circle, etc icons.
@@ -25,28 +25,28 @@ public:
     void renderSelectionBox();
 
     // controller dpad/joystick pressed
-    virtual void doJoyDown(); // move down one line, may fast forwward
-    virtual void doJoyUp();   // move up one line, may fast forwward
+    void doJoyDown() override; // move down one line, may fast forwward
+    void doJoyUp() override;   // move up one line, may fast forwward
 
     // controller button pressed
-    virtual void doCircle_Pressed(); // default = leave menu.  cancel = true.
-    virtual void doCross_Pressed();  // default = leave menu.  cancel = false.
+    void doCircle_Pressed() override; // default = leave menu.  cancel = true.
+    void doCross_Pressed() override;  // default = leave menu.  cancel = false.
 
     // horizontal lists of choices like the options menu will probably override these virtuals
-    virtual void doL1_Pressed() { doPageUp(); }   // default = page up
-    virtual void doR1_Pressed() { doPageDown(); } // default = page down
-    virtual void doL2_Pressed() { doHome(); }     // default = home
-    virtual void doR2_Pressed() { doEnd(); }      // default = end
+    void doL1_Pressed() override { doPageUp(); }   // default = page up
+    void doR1_Pressed() override { doPageDown(); } // default = page down
+    void doL2_Pressed() override { doHome(); }     // default = home
+    void doR2_Pressed() override { doEnd(); }      // default = end
 
     // keyboard
-    virtual void doKeyDown();                       // move down one line
-    virtual void doKeyUp();                         // move up one line
-    virtual void doEnter() { doCross_Pressed(); }   // default = doCross
-    virtual void doEscape() { doCircle_Pressed(); } // default = doCircle
-    virtual void doPageDown();
-    virtual void doPageUp();
-    virtual void doHome();
-    virtual void doEnd();
+    void doKeyDown() override;                       // move down one line
+    void doKeyUp() override;                         // move up one line
+    void doEnter() override { doCross_Pressed(); }   // default = doCross
+    void doEscape() override { doCircle_Pressed(); } // default = doCircle
+    void doPageDown() override;
+    void doPageUp() override;
+    void doHome() override;
+    void doEnd() override;
 
     ableem::Font font;
     bool useSmallerFont = false; // useful for 2 column menu with long strings
@@ -87,7 +87,7 @@ template <typename LineDataType> void GuiMenuBase<LineDataType>::init() {
         font = gui->assets().themeFonts[FONT_15_BOLD]; // use a smaller font
         // compute the larger number of rows we can now display
         int themeFontSize = app.theme().classic().font.size;
-        maxVisible = (((float)themeFontSize) / ((float)15)) * ((float)maxVisible);
+        maxVisible = static_cast<int>(static_cast<float>(themeFontSize) / 15.0f * static_cast<float>(maxVisible));
         lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
     }
 }

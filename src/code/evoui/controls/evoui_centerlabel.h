@@ -17,10 +17,10 @@ public:
     ableem::Color textColor;
     ableem::Size textSize;
 
-    void render();
+    void render() override;
 
     void setText(const std::string &_text, ableem::Color _textColor);
 
-    PsCenterLabel(const std::string &name1, const std::string &texPath = "");
-    ~PsCenterLabel();
+    explicit PsCenterLabel(const std::string &name1, const std::string &texPath = "");
+    ~PsCenterLabel() override;
 };

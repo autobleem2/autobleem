@@ -38,9 +38,9 @@ struct Catalog : GameLibraryFixture {
     Catalog() {
         ableem::Environment::setWorkingPath(tmp.path());
         tmp.writeFile("config.ini", "Origames=true\n");
-        config.reset(new Config);
-        query.reset(new GameQueryService(library, *config));
-        catalog.reset(new GameCatalogService(library, *query));
+        config = std::make_unique<Config>();
+        query = std::make_unique<GameQueryService>(library, *config);
+        catalog = std::make_unique<GameCatalogService>(library, *query);
     }
 
     // The history set as the carousel shows it. query->history() only filters - gamesFor() is what applies

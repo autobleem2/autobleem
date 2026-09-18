@@ -58,9 +58,9 @@ void Lang::load(const string &langDir, const string &languageName) {
     while (std::getline(is, line)) {
         // strip the UTF-8 BOM some editors put on the first line
         if (lineNum == 0 && line.size() >= 3) {
-            unsigned char *p = (unsigned char *)line.c_str();
+            const unsigned char *p = reinterpret_cast<const unsigned char *>(line.c_str());
             if ((p[0] == 0xEF) && (p[1] == 0xBB) && (p[2] == 0xBF)) {
-                line = (char *)p + 3;
+                line = line.substr(3);
             }
         }
         trim(line);

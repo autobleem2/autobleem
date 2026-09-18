@@ -11,6 +11,7 @@
 #include <iostream>
 #include "evoui_mc_manager.h"
 #include <cassert>
+#include <memory>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -27,7 +28,7 @@ void GuiLauncher::updateMeta() {
         bool internal{false};
         bool hd{false};
         bool locked{false};
-        bool discs{0};
+        bool discs{false};
         bool favorite{false};
         bool play_using_ra{false};
         bool foreign{false};
@@ -398,7 +399,7 @@ void GuiLauncher::loadAssets() {
         bool internal{false};
         bool hd{false};
         bool locked{false};
-        bool discs{0};
+        bool discs{false};
         bool favorite{false};
         bool play_using_ra{false};
         bool foreign{false};
@@ -429,7 +430,7 @@ void GuiLauncher::loadAssets() {
     tButton->y = 640;
     tButton->visible = true;
 
-    menu.reset(new PsMenu("menu", theme.menuIcons));
+    menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
     menuHead = addStaticElement(new PsCenterLabel("header"));
     menuHead->font = gui->assets().themeFonts[FONT_28_BOLD];

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <ableem/engine/log.h>
 
@@ -235,7 +236,7 @@ void ScanService::applyVerifiedGame(const ScannedGame &game, ScanUpdate &update)
         return;
     }
 
-    PsGamePtr psGame{new PsGame};
+    PsGamePtr psGame = std::make_shared<PsGame>();
     static_cast<GameRecord &>(*psGame) = record;
     if (existed)
         update.updatedGames.push_back(psGame);

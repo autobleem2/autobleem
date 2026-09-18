@@ -15,7 +15,7 @@ class PsZoomBtn : public PsObj {
     float zoomStep = 0.0002f;
     bool up = true;
 
-    void update(long time);
+    void update(long time) override;
 
     using PsObj::PsObj;
 };

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <iostream>
 #include "ableem/engine/log.h"
@@ -43,12 +44,12 @@ void GameSubDir::scanAll() {
 
         string path = fullPath + sep + dirEntry.name;
         if (DirEntry::thereIsAGameFile(path)) {
-            UsbGamePtr game{new UsbGame};
+            UsbGamePtr game = std::make_shared<UsbGame>();
             game->fullPath = path;
             game->gameDirName = dirEntry.name;
             gamesInThisDir.emplace_back(game);
         } else {
-            GameSubDirPtr subdir(new GameSubDir(path, displayIndentLevel + 1, displayRows));
+            GameSubDirPtr subdir = std::make_shared<GameSubDir>(path, displayIndentLevel + 1, displayRows);
             displayRows->emplace_back(subdir);
             subdir->scanAll();
 
@@ -169,7 +170,7 @@ void GameSubDir::print(bool plusGames) {
 void GamesHierarchy::getHierarchy(const std::string &path) {
     gameSubDirRows.clear(); // clear any previous scan
 
-    GameSubDirPtr top(new GameSubDir(path, 0, &gameSubDirRows));
+    GameSubDirPtr top = std::make_shared<GameSubDir>(path, 0, &gameSubDirRows);
     gameSubDirRows.emplace_back(top);
     top->scanAll();
 

@@ -11,6 +11,7 @@
 #include <ableem/engine/environment.h>
 #include <ableem/engine/filesystem.h>
 
+#include <memory>
 #include <string>
 
 using std::string;
@@ -25,7 +26,7 @@ struct Resume {
         tmp.makeSubDir("Games/!SaveStates/Tekken 3/sstates");
         tmp.makeSubDir("Games/!SaveStates/Tekken 3/screenshots");
 
-        game.reset(new PsGame);
+        game = std::make_shared<PsGame>();
         game->gameId = 1;
         game->title = "Tekken 3";
         game->folder = tmp.at("Games/Tekken 3");

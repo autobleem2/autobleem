@@ -26,7 +26,7 @@ void PsCenterLabel::setText(const string &_text, ableem::Color _textColor) {
 //*******************************
 // PsCenterLabel::~PsCenterLabel
 //*******************************
-PsCenterLabel::~PsCenterLabel() {}
+PsCenterLabel::~PsCenterLabel() = default;
 
 //*******************************
 // PsCenterLabel::render

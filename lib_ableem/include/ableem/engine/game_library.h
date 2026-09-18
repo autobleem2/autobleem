@@ -20,7 +20,7 @@ namespace ableem {
 //******************
 class GameLibrary {
 public:
-    GameLibrary() {}
+    GameLibrary() = default;
     ~GameLibrary();
     GameLibrary(const GameLibrary &) = delete;
     GameLibrary &operator=(const GameLibrary &) = delete;

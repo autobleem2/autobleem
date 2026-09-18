@@ -4,6 +4,7 @@
 
 #include "evoui_mc_manager.h"
 
+#include <memory>
 #include <string>
 #include <iostream>
 #include "../../gui/gui.h"
@@ -24,8 +25,8 @@ void GuiMcManager::loadAssets() {
     mcPencil = ableem::Texture::loadFile(renderer, app.theme().launcher().memcardManager.pencil);
     fontJIS = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "japanese.ttf", 20, renderer);
 
-    memcard1.reset(new CardEdit(renderer));
-    memcard2.reset(new CardEdit(renderer));
+    memcard1 = std::make_unique<CardEdit>(renderer);
+    memcard2 = std::make_unique<CardEdit>(renderer);
 
     memcard1->load(card1path);
     memcard2->load(card2path);
@@ -224,7 +225,7 @@ void GuiMcManager::loop() {
                 };
                 if (e.button == Button::Select) {
                     app.audio().cursor.play();
-                    unique_ptr<CardEdit> newCard(new CardEdit(renderer));
+                    unique_ptr<CardEdit> newCard = std::make_unique<CardEdit>(renderer);
                     CardEdit *src = (pencilMemcard == 1) ? memcard1.get() : memcard2.get();
                     int last = 0;
                     for (int slot = 0; slot < 15; slot++) {

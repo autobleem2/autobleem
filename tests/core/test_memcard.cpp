@@ -32,7 +32,7 @@ struct Cards : GameLibraryFixture {
         ableem::Environment::setWorkingPath(tmp.path());
 
         tmp.makeSubDir("Games/!MemCards");
-        service.reset(new MemcardService(library));
+        service = std::make_unique<MemcardService>(library);
     }
 
     // the game as the database hands it back, which is what the service is given in production

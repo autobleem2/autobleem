@@ -41,7 +41,7 @@ struct FakeRetroArch : RetroArchGames {
     PsGames allGames() override { return playlist; }
 
     void add(const string &title) {
-        PsGamePtr game{new PsGame};
+        PsGamePtr game = std::make_shared<PsGame>();
         game->title = title;
         game->foreign = true;
         playlist.push_back(game);
@@ -68,7 +68,7 @@ struct ConfigIn {
     ConfigIn(const TempDir &tmp, const string &contents) {
         ableem::Environment::setWorkingPath(tmp.path());
         tmp.writeFile("config.ini", contents);
-        config.reset(new Config);
+        config = std::make_unique<Config>();
     }
     Config &operator*() { return *config; }
     std::unique_ptr<Config> config;

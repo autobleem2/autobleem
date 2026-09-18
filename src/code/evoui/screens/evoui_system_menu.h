@@ -34,9 +34,9 @@ enum class SystemMenuAction {
 // the reload/close logic every one of these needs afterwards.
 class GuiSystemMenu : public GuiScreen {
 public:
-    void init();
-    void render();
-    void loop();
+    void init() override;
+    void render() override;
+    void loop() override;
 
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state

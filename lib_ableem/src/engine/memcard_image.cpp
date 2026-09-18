@@ -149,7 +149,7 @@ void MemcardImage::parseProductCodes() {
             continue;
         int pos = dirPosition(i) + 12; // the product code is the 12th byte
         for (int n = 0; n < 10 && card_[pos] != 0; n++, pos++) {
-            productCodes_[i] += (char)card_[pos];
+            productCodes_[i] += static_cast<char>(card_[pos]);
         }
     }
 }
@@ -164,7 +164,7 @@ void MemcardImage::parseGameIds() {
             continue;
         int pos = dirPosition(i) + 22; // the game ID is the 22nd byte
         while (card_[pos] != 0) {
-            gameIds_[i] += (char)card_[pos];
+            gameIds_[i] += static_cast<char>(card_[pos]);
             pos++;
         }
     }
@@ -195,7 +195,7 @@ string MemcardImage::shiftJisToUtf8(const string &input) const {
     size_t indexInput = 0, indexOutput = 0;
 
     while (indexInput < input.length()) {
-        char arraySection = ((uint8_t)input[indexInput]) >> 4;
+        char arraySection = (static_cast<uint8_t>(input[indexInput])) >> 4;
 
         size_t arrayOffset;
         if (arraySection == 0x8)
@@ -208,12 +208,12 @@ string MemcardImage::shiftJisToUtf8(const string &input) const {
             arrayOffset = 0; // this is one byte shiftjis
 
         if (arrayOffset) {
-            arrayOffset += (((uint8_t)input[indexInput]) & 0xf) << 8;
+            arrayOffset += ((static_cast<uint8_t>(input[indexInput])) & 0xf) << 8;
             indexInput++;
             if (indexInput >= input.length())
                 break;
         }
-        arrayOffset += (uint8_t)input[indexInput++];
+        arrayOffset += static_cast<uint8_t>(input[indexInput++]);
         arrayOffset <<= 1;
 
         uint16_t unicodeValue = (convTable_[arrayOffset] << 8) | convTable_[arrayOffset + 1];
@@ -256,7 +256,7 @@ void MemcardImage::fixChecksum(int slot) {
 void MemcardImage::setProductCode(int slot, const string &code) {
     int pos = dirPosition(slot) + 0x0C;
     for (int i = 0; i < 10; i++) {
-        card_[pos + i] = i < (int)code.size() ? code[i] : 0;
+        card_[pos + i] = i < static_cast<int>(code.size()) ? code[i] : 0;
     }
     fixChecksum(slot);
     reparse();
@@ -322,7 +322,7 @@ vector<int> MemcardImage::findEmptySlots(int requested) const {
         if (isFree(i)) {
             slots.push_back(i);
         }
-        if ((int)slots.size() == requested) {
+        if (static_cast<int>(slots.size()) == requested) {
             break;
         }
     }
@@ -363,16 +363,16 @@ void MemcardImage::importGame(const uint8_t *buffer, int length) {
     int slotCount = (length - FrameSize) / BlockSize;
     int numberOfBytes = slotCount * BlockSize;
     vector<int> destSlots = findEmptySlots(slotCount);
-    if ((int)destSlots.size() != slotCount) {
+    if (static_cast<int>(destSlots.size()) != slotCount) {
         return;
     }
 
     // the directory frame goes to the first slot, with the size updated
     int dir = dirPosition(destSlots[0]);
     memcpy(card_ + dir, buffer, FrameSize);
-    card_[dir + 4] = (uint8_t)(numberOfBytes & 0xFF);
-    card_[dir + 5] = (uint8_t)((numberOfBytes & 0xFF00) >> 8);
-    card_[dir + 6] = (uint8_t)((numberOfBytes & 0xFF0000) >> 16);
+    card_[dir + 4] = static_cast<uint8_t>(numberOfBytes & 0xFF);
+    card_[dir + 5] = static_cast<uint8_t>((numberOfBytes & 0xFF00) >> 8);
+    card_[dir + 6] = static_cast<uint8_t>((numberOfBytes & 0xFF0000) >> 16);
 
     // the blocks
     int n = 0;
@@ -385,7 +385,7 @@ void MemcardImage::importGame(const uint8_t *buffer, int length) {
     for (int i = 0; i < slotCount; i++) {
         int d = dirPosition(destSlots[i]);
         card_[d + 0] = 0x52;
-        card_[d + 8] = (uint8_t)(i + 1 < slotCount ? destSlots[i + 1] : 0);
+        card_[d + 8] = static_cast<uint8_t>(i + 1 < slotCount ? destSlots[i + 1] : 0);
         card_[d + 9] = 0x00;
     }
     int last = dirPosition(destSlots.back());
@@ -431,9 +431,11 @@ void MemcardImage::ownIconPixels(int slot, int frame, Pixel *out) const {
         uint8_t green = (((lo >> 5) | 0xF8) ^ 0xF8) + (((hi | 0xFC) ^ 0xFC) << 3);
         uint8_t red = (lo | 0xE0) ^ 0xE0;
         if (slotIsDeleted_[slot]) {
-            palette[p] = Pixel{(uint8_t)(red * 4 + 127), (uint8_t)(green * 4 + 127), (uint8_t)(blue * 4 + 127), 255};
+            palette[p] = Pixel{static_cast<uint8_t>(red * 4 + 127), static_cast<uint8_t>(green * 4 + 127),
+                               static_cast<uint8_t>(blue * 4 + 127), 255};
         } else {
-            palette[p] = Pixel{(uint8_t)(red * 8), (uint8_t)(green * 8), (uint8_t)(blue * 8), 255};
+            palette[p] = Pixel{static_cast<uint8_t>(red * 8), static_cast<uint8_t>(green * 8),
+                               static_cast<uint8_t>(blue * 8), 255};
         }
     }
 
@@ -461,7 +463,8 @@ void MemcardImage::iconPixels(int slot, int frame, Pixel *out) const {
         // a link block shows its save's first frame, dimmed
         ownIconPixels(top, 0, out);
         for (int i = 0; i < IconSize * IconSize; i++) {
-            out[i] = Pixel{(uint8_t)(out[i].r / 3), (uint8_t)(out[i].g / 3), (uint8_t)(out[i].b / 3), 255};
+            out[i] = Pixel{static_cast<uint8_t>(out[i].r / 3), static_cast<uint8_t>(out[i].g / 3),
+                           static_cast<uint8_t>(out[i].b / 3), 255};
         }
         return;
     }

@@ -17,7 +17,7 @@ public:
     bool up = false;
     int animationStarted = 0;
 
-    void update(long time);
+    void update(long time) override;
 
     using PsObj::PsObj;
 };

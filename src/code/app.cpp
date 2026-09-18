@@ -2,6 +2,7 @@
 #include "core/services/system.h"
 
 #include <iostream>
+#include <memory>
 #include <utility>
 
 using namespace std;
@@ -17,7 +18,7 @@ App::App(std::unique_ptr<ProcessRunner> runner) : runner_(std::move(runner)) {
     lang_.load(Env::getPathToLangDir(), cfg_.inifile.values["language"]);
 
     gui_ = Gui::getInstance();
-    audio_.reset(new AppAudio(gui_->audio(), cfg_, theme_));
+    audio_ = std::make_unique<AppAudio>(gui_->audio(), cfg_, theme_);
 
     gui_->platform().setPowerOffHandler([this]() {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT"));

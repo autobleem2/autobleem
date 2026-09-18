@@ -12,9 +12,9 @@
 //********************
 class GuiKeyboard : public GuiScreen {
 public:
-    virtual void render();
-    virtual void loop();
-    virtual void init();
+    void render() override;
+    void loop() override;
+    void init() override;
 
     void doKbdRight();
     void doKbdLeft();
@@ -39,10 +39,10 @@ public:
 
     void doStart();
 
-    void doJoyRight();
-    void doJoyLeft();
-    void doJoyDown();
-    void doJoyUp();
+    void doJoyRight() override;
+    void doJoyLeft() override;
+    void doJoyDown() override;
+    void doJoyUp() override;
 
     std::shared_ptr<Gui> gui;
     int selx = 0;

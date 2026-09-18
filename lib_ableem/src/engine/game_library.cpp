@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
@@ -27,10 +28,10 @@ GameLibrary::~GameLibrary() {
 // GameLibrary::openCoversAndUsbGames
 //*******************************
 bool GameLibrary::openCoversAndUsbGames() {
-    metadata_.reset(
-        new MetadataLookup(Environment::getPathToCoversDBDir(), Environment::getPathToPlayStationRdbFile()));
+    metadata_ = std::make_unique<MetadataLookup>(Environment::getPathToCoversDBDir(),
+                                                 Environment::getPathToPlayStationRdbFile());
 
-    regionalDb.reset(new GameDatabase());
+    regionalDb = std::make_unique<GameDatabase>();
     if (!regionalDb->open(Environment::getPathToRegionalDBFile())) {
         return false;
     }
@@ -42,7 +43,7 @@ bool GameLibrary::openCoversAndUsbGames() {
 // GameLibrary::openInternalGames
 //*******************************
 bool GameLibrary::openInternalGames() {
-    internalDb.reset(new GameDatabase());
+    internalDb = std::make_unique<GameDatabase>();
     if (!internalDb->open(Environment::getPathToInternalDBFile())) {
         return false;
     }

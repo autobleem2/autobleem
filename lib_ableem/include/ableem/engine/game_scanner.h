@@ -32,10 +32,10 @@ enum class ScanStage {
 //******************
 class ScanProgressListener {
 public:
-    virtual ~ScanProgressListener() {}
+    virtual ~ScanProgressListener() = default;
     // done/total are both 0 except during ScanStage::Game, where they are this game's 1-based index and the
     // total game count - everything a progress display needs to show "n/total (nn%)".
-    virtual void onScanProgress(ScanStage stage, const std::string &detail, int done = 0, int total = 0) = 0;
+    virtual void onScanProgress(ScanStage stage, const std::string &detail, int done, int total) = 0;
     // called right after a game passes verify(), so a caller can add it to a database/UI immediately instead
     // of waiting for the whole scan to finish. game is only valid for the duration of the call.
     virtual void onGameVerified(const UsbGame &game) {}

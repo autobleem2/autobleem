@@ -346,7 +346,7 @@ void UsbGame::applyIniValues() {
     if (Strings::isInteger(tmp.c_str()))
         highRes = atoi(tmp.c_str());
     else
-        highRes = 0;
+        highRes = false;
     // what the scanner (or the user, by hand) wrote last time; the scanner decides whether to trust it -
     // a missing one is not an automation event, the image is simply read again
     serial = valueOrDefault("serial", "", false);
@@ -370,9 +370,9 @@ void UsbGame::applyIniValues() {
             s = Strings::unescapeCommas(s);
             strings.push_back(s);
         }
-        for (int i = 0; i < strings.size(); i++) {
+        for (const string &name : strings) {
             Disc disc;
-            disc.diskName = strings[i];
+            disc.diskName = name;
             if (DirEntry::imageTypeUsesACueFile(imageType)) {
                 string cueFile = fullPath + sep + disc.diskName + EXT_CUE;
                 bool discCueExists = DirEntry::exists(cueFile);

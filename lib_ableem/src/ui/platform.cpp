@@ -62,8 +62,9 @@ std::string Platform::versionString() const {
     SDL_VERSION(&compiled);
     SDL_GetVersion(&linked);
     std::ostringstream os;
-    os << "compiled against SDL " << (int)compiled.major << "." << (int)compiled.minor << "." << (int)compiled.patch
-       << ", linked against SDL " << (int)linked.major << "." << (int)linked.minor << "." << (int)linked.patch;
+    os << "compiled against SDL " << static_cast<int>(compiled.major) << "." << static_cast<int>(compiled.minor) << "."
+       << static_cast<int>(compiled.patch) << ", linked against SDL " << static_cast<int>(linked.major) << "."
+       << static_cast<int>(linked.minor) << "." << static_cast<int>(linked.patch);
     return os.str();
 }
 

@@ -24,9 +24,9 @@ private:
 public:
     bool result = false;
     void setGame(PsGamePtr game) { this->game = game; };
-    void init();
-    void render();
-    void loop();
+    void init() override;
+    void render() override;
+    void loop() override;
 
     using GuiScreen::GuiScreen;
 };

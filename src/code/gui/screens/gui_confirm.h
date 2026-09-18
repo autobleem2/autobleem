@@ -11,8 +11,8 @@
 //********************
 class GuiConfirm : public GuiScreen {
 public:
-    void render();
-    void loop();
+    void render() override;
+    void loop() override;
 
     std::string label = "";
     bool result = false;

@@ -45,10 +45,10 @@ struct Launching : GameLibraryFixture {
     // selection script goes, which is not defaulted
     void configure(const string &contents) {
         tmp.writeFile("config.ini", "Cfg=" + tmp.at("autobleem_cfg.sh") + "\nTheme=aergb\n" + contents);
-        config.reset(new Config);
-        memcards.reset(new MemcardService(library));
-        resumePoints.reset(new ResumePointService);
-        service.reset(new LaunchService(*config, session, library, *memcards, *resumePoints, runner));
+        config = std::make_unique<Config>();
+        memcards = std::make_unique<MemcardService>(library);
+        resumePoints = std::make_unique<ResumePointService>();
+        service = std::make_unique<LaunchService>(*config, session, library, *memcards, *resumePoints, runner);
     }
 
     PsGamePtr usbGame() {
@@ -65,7 +65,7 @@ struct Launching : GameLibraryFixture {
 
     // a RetroArch playlist entry or an App: not one of ours, so no memory cards and no pcsx.cfg
     PsGamePtr foreignGame(bool app) {
-        PsGamePtr game(new PsGame);
+        PsGamePtr game = std::make_shared<PsGame>();
         game->foreign = true;
         game->app = app;
         game->title = app ? "Some App" : "Some ROM";

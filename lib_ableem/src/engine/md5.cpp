@@ -41,8 +41,8 @@ Md5::Md5() {
 void Md5::transform(const unsigned char block[64]) {
     uint32_t M[16];
     for (int i = 0; i < 16; i++) {
-        M[i] = (uint32_t)block[i * 4] | ((uint32_t)block[i * 4 + 1] << 8) | ((uint32_t)block[i * 4 + 2] << 16) |
-               ((uint32_t)block[i * 4 + 3] << 24);
+        M[i] = static_cast<uint32_t>(block[i * 4]) | (static_cast<uint32_t>(block[i * 4 + 1]) << 8) |
+               (static_cast<uint32_t>(block[i * 4 + 2]) << 16) | (static_cast<uint32_t>(block[i * 4 + 3]) << 24);
     }
     uint32_t a = state[0], b = state[1], c = state[2], d = state[3];
     for (uint32_t i = 0; i < 64; i++) {
@@ -76,7 +76,7 @@ void Md5::transform(const unsigned char block[64]) {
 // Md5::update
 //*******************************
 void Md5::update(const unsigned char *data, size_t length) {
-    bitCount += (uint64_t)length * 8;
+    bitCount += static_cast<uint64_t>(length) * 8;
     while (length > 0) {
         size_t take = 64 - bufferLen;
         if (take > length)
@@ -105,15 +105,15 @@ std::string Md5::hexDigest() {
     }
     unsigned char lengthBytes[8];
     for (int i = 0; i < 8; i++) {
-        lengthBytes[i] = (unsigned char)(bits >> (8 * i));
+        lengthBytes[i] = static_cast<unsigned char>(bits >> (8 * i));
     }
     update(lengthBytes, 8);
 
     static const char hex[] = "0123456789abcdef";
     std::string out;
-    for (int i = 0; i < 4; i++) {
+    for (unsigned int word : state) {
         for (int j = 0; j < 4; j++) {
-            unsigned char byte = (unsigned char)(state[i] >> (8 * j));
+            unsigned char byte = static_cast<unsigned char>(word >> (8 * j));
             out += hex[byte >> 4];
             out += hex[byte & 0x0f];
         }

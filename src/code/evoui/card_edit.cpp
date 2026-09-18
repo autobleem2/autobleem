@@ -25,9 +25,9 @@ CardEdit::CardEdit(ableem::Renderer &renderer) : renderer_(renderer) {
         PLOG_WARNING << "shiftjis.dat not found, japanese memory card titles will not be converted";
     }
 
-    for (int slot = 0; slot < MemcardImage::Slots; slot++) {
-        for (int frame = 0; frame < MemcardImage::IconFrames; frame++) {
-            icons_[slot][frame] = Texture::createStreaming(renderer_, MemcardImage::IconSize, MemcardImage::IconSize);
+    for (auto &icon : icons_) {
+        for (auto &frame : icon) {
+            frame = Texture::createStreaming(renderer_, MemcardImage::IconSize, MemcardImage::IconSize);
         }
     }
 

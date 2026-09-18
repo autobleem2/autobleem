@@ -87,13 +87,13 @@ void GameSettingsService::refreshPcsx(GameSettings &s) const {
     PcsxSettings &p = s.pcsx;
     p.highres = atoi(processor.getValue(path, "gpu_neon.enhancement_enable").c_str());
     p.speedhack = atoi(processor.getValue(path, "gpu_neon.enhancement_no_main").c_str());
-    p.clock = strtol(processor.getValue(path, "psx_clock").c_str(), NULL, 16);
+    p.clock = strtol(processor.getValue(path, "psx_clock").c_str(), nullptr, 16);
     p.gpu = processor.getValue(path, "gpu3");
     p.frameskip = atoi(processor.getValue(path, "frameskip3").c_str());
     p.dither = atoi(processor.getValue(path, "gpu_peops.iUseDither").c_str());
     p.scanlines = atoi(processor.getValue(path, "scanlines").c_str());
-    p.scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), NULL, 16);
-    p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), NULL, 16);
+    p.scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), nullptr, 16);
+    p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), nullptr, 16);
 }
 
 //*******************************

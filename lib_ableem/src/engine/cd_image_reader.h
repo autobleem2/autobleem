@@ -41,7 +41,7 @@ private:
     bool opened = false;
 
 public:
-    virtual ~CdImageReader() {}
+    virtual ~CdImageReader() = default;
 
     void setOffset(int off) { offset = off; }
     int getOffset() { return offset; }

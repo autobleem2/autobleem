@@ -217,9 +217,9 @@ DirEntries DirEntry::dir(string path) {
     path = fixPath(removeSeparatorFromEndOfPath(path));
     DirEntries result;
     DIR *dir = opendir(path.c_str());
-    if (dir != NULL) {
+    if (dir != nullptr) {
         struct dirent *entry = readdir(dir);
-        while (entry != NULL) {
+        while (entry != nullptr) {
             // note: d_type is not a bool and is not available on every platform. use stat like diru() does.
             DirEntry obj(entry->d_name, isDirectory(path + sep + entry->d_name));
             result.push_back(obj);
@@ -239,9 +239,9 @@ DirEntries DirEntry::diru(string path) {
     path = fixPath(removeSeparatorFromEndOfPath(path));
     DirEntries result;
     DIR *dir = opendir(path.c_str());
-    if (dir != NULL) {
+    if (dir != nullptr) {
         struct dirent *entry = readdir(dir);
-        while (entry != NULL) {
+        while (entry != nullptr) {
             DirEntry obj(entry->d_name, isDirectory(path + sep + entry->d_name));
             if (entry->d_name[0] != '.') {
                 result.push_back(obj);
@@ -280,8 +280,8 @@ bool DirEntry::filesAreIdentical(const string &a, const string &b) {
 vector<string> DirEntry::listNames(const string &path) {
     vector<string> names;
     DIR *dir = opendir(fixPath(removeSeparatorFromEndOfPath(path)).c_str());
-    if (dir != NULL) {
-        for (struct dirent *entry = readdir(dir); entry != NULL; entry = readdir(dir)) {
+    if (dir != nullptr) {
+        for (struct dirent *entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
             if (entry->d_name[0] == '.')
                 continue;
 #ifdef DT_DIR

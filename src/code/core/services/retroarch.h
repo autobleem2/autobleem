@@ -53,7 +53,7 @@ struct RAPlaylistInfo {
 // Owned by App (App::retroArch()).
 class RetroArchService : public RetroArchGames {
 public:
-    RetroArchService() {}
+    RetroArchService() = default;
 
     // RetroArchGames, for GameQueryService
     PsGames gamesInPlaylist(const std::string &playlistName) override;

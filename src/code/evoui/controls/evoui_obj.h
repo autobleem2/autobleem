@@ -14,7 +14,7 @@
 //******************
 class PsObj {
 public:
-    virtual ~PsObj() {}
+    virtual ~PsObj() = default;
 
     std::shared_ptr<Gui> gui;
     ableem::Renderer &renderer;
@@ -28,7 +28,7 @@ public:
     bool visible = false;
     long lastTime = 0;
 
-    PsObj(std::string name1, std::string texPath = "");
+    explicit PsObj(std::string name1, std::string texPath = "");
 
     virtual void load(const std::string &imagePath);
 

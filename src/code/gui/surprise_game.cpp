@@ -98,7 +98,7 @@ void SurpriseGame::spawnWave(unsigned int nowTicks) {
             a.returning = true;
             a.returnT = 0;
             a.returnStartX = a.baseX;
-            a.returnStartY = -(float)AlienH - r * 30.0f;
+            a.returnStartY = -static_cast<float>(AlienH) - r * 30.0f;
             a.entranceDelayUntil = nowTicks + r * EntranceStaggerMs + c * EntranceColStaggerMs;
             a.x = a.returnStartX;
             a.y = a.returnStartY;
@@ -206,12 +206,12 @@ void SurpriseGame::maybeStartDive(unsigned int nowTicks) {
     vector<int> candidates;
     for (size_t i = 0; i < aliens.size(); i++) {
         if (aliens[i].alive && !aliens[i].diving && !aliens[i].returning)
-            candidates.push_back((int)i);
+            candidates.push_back(static_cast<int>(i));
     }
     if (candidates.empty())
         return;
 
-    uniform_int_distribution<int> pick(0, (int)candidates.size() - 1);
+    uniform_int_distribution<int> pick(0, static_cast<int>(candidates.size()) - 1);
     Alien &a = aliens[candidates[pick(rng)]];
     a.diving = true;
     a.diveT = 0;
@@ -220,7 +220,7 @@ void SurpriseGame::maybeStartDive(unsigned int nowTicks) {
     a.diveTargetX = shipX + ShipW / 2.0f;
 
     uniform_int_distribution<int> nextDelay(1400, 3200);
-    nextDiveAtTicks = nowTicks + (unsigned int)(nextDelay(rng) / waveSpeedScale);
+    nextDiveAtTicks = nowTicks + static_cast<unsigned int>(nextDelay(rng) / waveSpeedScale);
 }
 
 //*******************************
@@ -253,7 +253,7 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
                 a.returning = true;
                 a.returnT = 0;
                 a.returnStartX = a.baseX;
-                a.returnStartY = -(float)AlienH;
+                a.returnStartY = -static_cast<float>(AlienH);
                 a.entranceDelayUntil = 0;
                 a.x = a.returnStartX;
                 a.y = a.returnStartY;
@@ -299,8 +299,7 @@ void SurpriseGame::updateAliens(float dtFrames, unsigned int nowTicks) {
     // always look like they come from the front rank
     if (!gameOver()) {
         uniform_int_distribution<int> chance(0, 219);
-        for (size_t i = 0; i < aliens.size(); i++) {
-            Alien &a = aliens[i];
+        for (auto &a : aliens) {
             if (!a.alive || a.diving || a.returning)
                 continue;
             bool blocked = false;
@@ -522,7 +521,7 @@ void SurpriseGame::update(unsigned int nowTicks, bool moveLeft, bool moveRight, 
         shipX -= shipSpeed * dtFrames;
     if (moveRight)
         shipX += shipSpeed * dtFrames;
-    shipX = max(10.0f, min((float)SCREEN_WIDTH - 10.0f - ShipW, shipX));
+    shipX = max(10.0f, min(static_cast<float>(SCREEN_WIDTH) - 10.0f - ShipW, shipX));
 
     updateAliens(dtFrames, nowTicks);
     updateBullets(dtFrames);
@@ -545,7 +544,7 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
         if (!a.alive)
             continue;
         const ableem::Texture &tex = a.diving ? sprites.ufo : (a.kind == 0 ? sprites.enemy1 : sprites.enemy2);
-        ableem::Rect dst((int)a.x, (int)a.y, AlienW, AlienH);
+        ableem::Rect dst(static_cast<int>(a.x), static_cast<int>(a.y), AlienW, AlienH);
         renderer.copy(tex, nullptr, &dst);
     }
 
@@ -556,11 +555,12 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
                                      : p.type == PowerUpType::Spread ? sprites.powerupSpread
                                      : p.type == PowerUpType::Power  ? sprites.powerupPower
                                                                      : sprites.ship; // ExtraLife: 1UP
-        ableem::Rect dst((int)p.x, (int)p.y, PowerUpSize, PowerUpSize);
+        ableem::Rect dst(static_cast<int>(p.x), static_cast<int>(p.y), PowerUpSize, PowerUpSize);
         renderer.copy(tex, nullptr, &dst);
         if (p.type == PowerUpType::ExtraLife) {
             // the ship sprite alone reads as "another ship"; say what it is
-            text.renderText(font, "1UP", (int)p.x + PowerUpSize + 4, (int)p.y + 4, XALIGN_LEFT);
+            text.renderText(font, "1UP", static_cast<int>(p.x) + PowerUpSize + 4, static_cast<int>(p.y) + 4,
+                            XALIGN_LEFT);
         }
     }
 
@@ -568,20 +568,20 @@ void SurpriseGame::render(ableem::Renderer &renderer, TextRenderer &text, const 
         if (!b.alive)
             continue;
         const ableem::Texture &tex = b.pierceLeft > 0 ? sprites.laserEnemy : sprites.laserPlayer;
-        ableem::Rect dst((int)b.x, (int)b.y, LaserW, LaserH);
+        ableem::Rect dst(static_cast<int>(b.x), static_cast<int>(b.y), LaserW, LaserH);
         renderer.copy(tex, nullptr, &dst);
     }
     for (const Bullet &b : alienBullets) {
         if (!b.alive)
             continue;
-        ableem::Rect dst((int)b.x, (int)b.y, LaserW, LaserH);
+        ableem::Rect dst(static_cast<int>(b.x), static_cast<int>(b.y), LaserW, LaserH);
         renderer.copy(sprites.laserEnemy, nullptr, &dst);
     }
 
     // blink the ship while briefly invulnerable after a hit, instead of drawing it solid
     bool blinkHidden = lastTicks < hitInvulnUntil && ((lastTicks / 100) % 2 == 0);
     if (!gameOver() && !blinkHidden) {
-        ableem::Rect dst((int)shipX, (int)shipY, ShipW, ShipH);
+        ableem::Rect dst(static_cast<int>(shipX), static_cast<int>(shipY), ShipW, ShipH);
         renderer.copy(sprites.ship, nullptr, &dst);
     }
 

@@ -53,7 +53,7 @@ void GuiSplash::loop() {
     phase = Phase::Settle;
     start = gui->platform().ticks();
     holdStart = start; // the settle phase's start
-    while (1) {
+    while (true) {
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit)

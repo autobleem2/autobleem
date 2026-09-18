@@ -40,9 +40,9 @@ extern const ableem::Color brightWhite;
 // launcher_actions.cpp (what Cross does: start the game, open the editors and choosers, reconcile after).
 class GuiLauncher : public GuiScreen {
 public:
-    void init();
-    ~GuiLauncher();
-    void render();
+    void init() override;
+    ~GuiLauncher() override;
+    void render() override;
 
     // these variables are used by the loop routines
     long motionStart = 0;
@@ -59,7 +59,7 @@ public:
     bool R1_isPressedForFastForward = false;
     unsigned int R1_fastForwardTimeStart = 0;
 
-    void loop();
+    void loop() override;
     // set when the window's own close button fires an SDL Quit event - AutoBleem::run() checks this after
     // show() returns to actually stop, rather than looping back into a fresh GuiLauncher (see loop()'s comment)
     bool quitRequested = false;

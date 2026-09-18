@@ -195,7 +195,7 @@ struct Input::Impl {
         if (!controller)
             return;
 
-        std::unique_ptr<Pad> pad(new Pad());
+        std::unique_ptr<Pad> pad = std::make_unique<Pad>();
         pad->controller = controller;
         pad->joystick = SDL_GameControllerGetJoystick(controller);
         pad->guid = guidStr;
@@ -403,7 +403,7 @@ void Input::flushPads() {
 }
 
 int Input::activePadCount() const {
-    return (int)impl->pads.size();
+    return static_cast<int>(impl->pads.size());
 }
 int Input::joystickCount() const {
     return SDL_NumJoysticks();

@@ -16,9 +16,9 @@
 class GuiAbout : public GuiScreen {
 public:
     StarFx fx;
-    void init();
-    void render();
-    void loop();
+    void init() override;
+    void render() override;
+    void loop() override;
     ableem::Texture logo;
     ableem::Font font;
     using GuiScreen::GuiScreen;

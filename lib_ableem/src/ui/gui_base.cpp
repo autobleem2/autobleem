@@ -8,10 +8,9 @@ GuiBase::GuiBase(const std::string &windowTitle, int width, int height)
     : platform_(new Platform(windowTitle, width, height)), renderer_(new Renderer(*platform_)),
       input_(new Input(*platform_)) {}
 
-GuiBase::~GuiBase() {
-    // members are destroyed in reverse declaration order: audio_, input_, renderer_, platform_ - which is
-    // exactly the order that keeps every object valid while the ones built on top of it are still alive.
-}
+// members are destroyed in reverse declaration order: audio_, input_, renderer_, platform_ - which is
+// exactly the order that keeps every object valid while the ones built on top of it are still alive.
+GuiBase::~GuiBase() = default;
 
 void GuiBase::releaseDisplay() {
     renderer_->release();

@@ -86,8 +86,8 @@ StarFx::StarFx() {
             s.driftAmount = 0.5f + unit(rng) * (1.3f + t * 0.4f); // nearer stars sway a bit more
             s.twinklePhase = twoPi(rng);
             s.twinkleSpeed = 0.02f + unit(rng) * 0.08f;
-            s.tier = (unsigned char)t;
-            s.tint = (unsigned char)pickTint(rng);
+            s.tier = static_cast<unsigned char>(t);
+            s.tint = static_cast<unsigned char>(pickTint(rng));
 
             stars.push_back(s);
         }
@@ -108,7 +108,7 @@ void StarFx::maybeSpawnComet() {
         }
     }
     if (!slot) {
-        if ((int)comets.size() >= style.maxComets)
+        if (static_cast<int>(comets.size()) >= style.maxComets)
             return;
         comets.emplace_back();
         slot = &comets.back();
@@ -161,20 +161,21 @@ void StarFx::renderComets(float dtFrames) {
 
         const int trailSteps = 6;
         for (int i = 0; i < trailSteps; i++) {
-            float back = (float)i;
-            ableem::Point a{(int)(comet.x - comet.vx * back), (int)(comet.y - comet.vy * back)};
-            ableem::Point b{(int)(comet.x - comet.vx * (back + 1)), (int)(comet.y - comet.vy * (back + 1))};
+            float back = static_cast<float>(i);
+            ableem::Point a{static_cast<int>(comet.x - comet.vx * back), static_cast<int>(comet.y - comet.vy * back)};
+            ableem::Point b{static_cast<int>(comet.x - comet.vx * (back + 1)),
+                            static_cast<int>(comet.y - comet.vy * (back + 1))};
 
-            float segFade = fade * (1.0f - (float)i / trailSteps);
-            unsigned char c = (unsigned char)(200.0f * segFade);
-            unsigned char cb = (unsigned char)(255.0f * segFade);
+            float segFade = fade * (1.0f - static_cast<float>(i) / trailSteps);
+            unsigned char c = static_cast<unsigned char>(200.0f * segFade);
+            unsigned char cb = static_cast<unsigned char>(255.0f * segFade);
             renderer->setDrawColor(ableem::Color(c, c, cb, 255));
             renderer->drawLine(a, b);
         }
 
-        unsigned char headC = (unsigned char)(255.0f * fade);
+        unsigned char headC = static_cast<unsigned char>(255.0f * fade);
         renderer->setDrawColor(ableem::Color(headC, headC, headC, 255));
-        renderer->fillRect(ableem::Rect((int)comet.x - 1, (int)comet.y - 1, 3, 3));
+        renderer->fillRect(ableem::Rect(static_cast<int>(comet.x) - 1, static_cast<int>(comet.y) - 1, 3, 3));
     }
 
     renderer->setBlendMode(ableem::BlendMode::Blend); // restore what the caller had set for the stars/overlay
@@ -207,15 +208,15 @@ void StarFx::render(unsigned int nowTicks) {
         s.twinklePhase += s.twinkleSpeed * dtFrames;
 
         float twinkle = 0.55f + 0.45f * (0.5f + 0.5f * sinf(s.twinklePhase)); // 0.55 .. 1.0
-        int level = (int)(twinkle * (TWINKLE_LEVELS - 1) + 0.5f);
+        int level = static_cast<int>(twinkle * (TWINKLE_LEVELS - 1) + 0.5f);
         if (level < 0)
             level = 0;
         if (level >= TWINKLE_LEVELS)
             level = TWINKLE_LEVELS - 1;
 
         float drawX = s.x + sinf(s.driftPhase) * s.driftAmount;
-        buckets[bucketIndex(s.tier, s.tint, level)].emplace_back((int)drawX, (int)s.y, (int)s.size + 1,
-                                                                 (int)s.size + 1);
+        buckets[bucketIndex(s.tier, s.tint, level)].emplace_back(
+            static_cast<int>(drawX), static_cast<int>(s.y), static_cast<int>(s.size) + 1, static_cast<int>(s.size) + 1);
     }
 
     for (int t = 0; t < TIER_COUNT; t++) {
@@ -225,13 +226,13 @@ void StarFx::render(unsigned int nowTicks) {
                 if (rects.empty())
                     continue;
 
-                float brightness =
-                    TIERS[t].brightness * style.brightnessScale * (0.55f + 0.45f * lvl / (float)(TWINKLE_LEVELS - 1));
+                float brightness = TIERS[t].brightness * style.brightnessScale *
+                                   (0.55f + 0.45f * lvl / static_cast<float>(TWINKLE_LEVELS - 1));
                 const Tint &tint = TINTS[ti];
-                renderer->setDrawColor(ableem::Color((unsigned char)(tint.r * brightness),
-                                                     (unsigned char)(tint.g * brightness),
-                                                     (unsigned char)(tint.b * brightness), 255));
-                renderer->fillRects(rects.data(), (int)rects.size());
+                renderer->setDrawColor(ableem::Color(static_cast<unsigned char>(tint.r * brightness),
+                                                     static_cast<unsigned char>(tint.g * brightness),
+                                                     static_cast<unsigned char>(tint.b * brightness), 255));
+                renderer->fillRects(rects.data(), static_cast<int>(rects.size()));
             }
         }
     }

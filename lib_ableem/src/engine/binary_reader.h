@@ -8,16 +8,16 @@ namespace ableem {
 
 inline unsigned char readByte(std::ifstream &stream) {
     unsigned char c = 0;
-    stream.read((char *)&c, 1);
+    stream.read(reinterpret_cast<char *>(&c), 1);
     return c;
 }
 
 inline unsigned long readUint32LE(std::ifstream &stream) {
     unsigned long res = 0;
-    res += (unsigned long)readByte(stream);
-    res += (unsigned long)readByte(stream) << 8;
-    res += (unsigned long)readByte(stream) << 16;
-    res += (unsigned long)readByte(stream) << 24;
+    res += static_cast<unsigned long>(readByte(stream));
+    res += static_cast<unsigned long>(readByte(stream)) << 8;
+    res += static_cast<unsigned long>(readByte(stream)) << 16;
+    res += static_cast<unsigned long>(readByte(stream)) << 24;
     return res;
 }
 

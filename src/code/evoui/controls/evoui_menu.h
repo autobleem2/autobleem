@@ -50,8 +50,8 @@ public:
     int direction = 0;
 
     void freeAssets();
-    void update(long time);
-    void render();
+    void update(long time) override;
+    void render() override;
 
     void setResumePic(std::string picturePath);
 

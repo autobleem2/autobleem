@@ -102,13 +102,13 @@ IsoDirectory IsoDirectoryReader::read(const string &imagePath, int maxLevel, boo
     unique_ptr<CdImageReader> reader;
 
     if (!isChd) {
-        reader.reset(new CdImageReader());
+        reader = std::make_unique<CdImageReader>();
     } else {
 #ifdef ABLEEM_NO_CHD
         PLOG_WARNING << "CHD support not compiled in, skipping " << imagePath;
         return emptyDir();
 #else
-        reader.reset(new ChdImageReader());
+        reader = std::make_unique<ChdImageReader>();
 #endif
     }
     reader->openImage(imagePath);

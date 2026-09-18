@@ -25,7 +25,7 @@ template <class T> struct Opt {
         set = true;
         return *this;
     }
-    operator const T &() const { return value; }
+    operator const T &() const { return value; } // NOLINT: implicit on purpose, `int n = spec.menuLines`
 };
 
 //******************

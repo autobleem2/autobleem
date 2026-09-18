@@ -12,8 +12,9 @@ struct OptionsInfo {
     bool keyIsBoolean;                  // if it's false/true we substitute the switch icons
     std::vector<std::string> choices;
 
-    OptionsInfo(int _id = 0, std::string _descriptionToTranslate = std::string(), std::string _iniKey = std::string(),
-                bool _keyIsBoolean = false, const std::vector<std::string> &_choices = std::vector<std::string>())
+    explicit OptionsInfo(int _id = 0, std::string _descriptionToTranslate = std::string(),
+                         std::string _iniKey = std::string(), bool _keyIsBoolean = false,
+                         const std::vector<std::string> &_choices = std::vector<std::string>())
         : id(_id), descriptionToTranslate(_descriptionToTranslate), iniKey(_iniKey), keyIsBoolean(_keyIsBoolean),
           choices(_choices) {}
 };
@@ -23,13 +24,13 @@ struct OptionsInfo {
 //*******************************
 class GuiOptionsMenuBase : public GuiMenuBase<OptionsInfo> {
 public:
-    GuiOptionsMenuBase(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
-    virtual void init();
+    explicit GuiOptionsMenuBase(ableem::GuiBase &_gui) : GuiMenuBase(_gui) {}
+    void init() override;
 
     virtual std::string getBooleanSymbolText(const OptionsInfo &info, const std::string &value);
     virtual std::string getLineText(const OptionsInfo &info);
 
-    virtual void renderLineIndexOnRow(int index, int row);
+    void renderLineIndexOnRow(int index, int row) override;
 
     bool validSelectedIndex(); // returns true if the selected line index is a valid index
     unsigned int
@@ -46,12 +47,12 @@ public:
     virtual std::string doLastOption();
 
     int computeAmountTomoveBy(unsigned int totalSize);
-    virtual void doL1_Pressed();
-    virtual void doR1_Pressed();
-    virtual void doStart_Pressed();
+    void doL1_Pressed() override;
+    void doR1_Pressed() override;
+    void doStart_Pressed() override;
 
-    virtual void doL2_Pressed() { doFirstOption(); }
-    virtual void doR2_Pressed() { doLastOption(); }
-    virtual void doHome() { doFirstOption(); }
-    virtual void doEnd() { doLastOption(); }
+    void doL2_Pressed() override { doFirstOption(); }
+    void doR2_Pressed() override { doLastOption(); }
+    void doHome() override { doFirstOption(); }
+    void doEnd() override { doLastOption(); }
 };

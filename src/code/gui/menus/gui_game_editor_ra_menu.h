@@ -14,9 +14,9 @@
 // toggle it, Circle leaves. From AutoBleem-NG's gui_gameEditorMenu_RA.
 class GuiEditorRA : public GuiScreen {
 public:
-    void init();
-    void render();
-    void loop();
+    void init() override;
+    void render() override;
+    void loop() override;
     PsGamePtr gameData;   // set by the caller before show()
     bool changed = false; // the flag was toggled - the caller reloads a Lightgun set
     using GuiScreen::GuiScreen;

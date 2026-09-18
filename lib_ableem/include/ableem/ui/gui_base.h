@@ -19,7 +19,7 @@ public:
     static constexpr int ScreenWidth = 1280;
     static constexpr int ScreenHeight = 720;
 
-    GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight);
+    explicit GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight);
     virtual ~GuiBase();
 
     Platform &platform() { return *platform_; }

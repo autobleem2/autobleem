@@ -75,9 +75,9 @@ void IniFile::save(const string &_path) {
     if (!DirEntry::checkWritable(os, _path))
         return;
     os << "[" << section << "]" << endl;
-    for (map<string, string>::iterator iter = values.begin(); iter != values.end(); ++iter) {
-        string k = iter->first;
-        string v = iter->second;
+    for (auto &item : values) {
+        string k = item.first;
+        string v = item.second;
         k = lcase(k);
         if (k == "publisher")
             Strings::cleanPublisherString(v);

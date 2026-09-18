@@ -691,12 +691,12 @@ FC_Rect FC_DefaultRenderCallback(FC_Image* src, FC_Rect* srcrect, FC_Target* des
         if(xscale < 0)
         {
             xscale = -xscale;
-            flip = (SDL_RendererFlip) ((int)flip | (int)SDL_FLIP_HORIZONTAL);
+            flip = (SDL_RendererFlip) ((int)flip | SDL_FLIP_HORIZONTAL);
         }
         if(yscale < 0)
         {
             yscale = -yscale;
-            flip = (SDL_RendererFlip) ((int)flip | (int)SDL_FLIP_VERTICAL);
+            flip = (SDL_RendererFlip) ((int)flip | SDL_FLIP_VERTICAL);
         }
 
         SDL_Rect r = *srcrect;

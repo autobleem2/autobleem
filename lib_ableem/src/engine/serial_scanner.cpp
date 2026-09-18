@@ -199,21 +199,21 @@ string SerialScanner::serialFromMd5(string scanFile) {
         return "";
     }
     is.seekg(0, ios::end);
-    size_t fileSize = (size_t)is.tellg();
+    size_t fileSize = static_cast<size_t>(is.tellg());
     vector<unsigned char> buffer;
 
     // md5 of the first 1 MB ("head -c 1M")
     size_t headLen = fileSize < oneMb ? fileSize : oneMb;
     buffer.resize(headLen);
     is.seekg(0, ios::beg);
-    is.read((char *)buffer.data(), headLen);
+    is.read(reinterpret_cast<char *>(buffer.data()), headLen);
     string head = Md5::ofBytes(buffer.data(), headLen);
 
     // md5 of the last 1 MB ("tail -c 1M")
     size_t tailLen = headLen;
     buffer.resize(tailLen);
     is.seekg(fileSize - tailLen, ios::beg);
-    is.read((char *)buffer.data(), tailLen);
+    is.read(reinterpret_cast<char *>(buffer.data()), tailLen);
     string tail = Md5::ofBytes(buffer.data(), tailLen);
 
     return head + tail;

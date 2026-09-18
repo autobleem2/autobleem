@@ -7,7 +7,7 @@
 //*******************************
 class GuiPlaylists : public GuiStringMenu {
 public:
-    GuiPlaylists(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
+    explicit GuiPlaylists(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override {
         for (const string &playlist : playlists) {
@@ -17,11 +17,11 @@ public:
         GuiStringMenu::init();
     }
 
-    virtual std::string getTitle() override { return "-=" + _("Select RetroArch Playlist") + "=-"; }
-    virtual std::string getStatusLine() override { return GuiStringMenu::getStatusLine(); }
+    std::string getTitle() override { return "-=" + _("Select RetroArch Playlist") + "=-"; }
+    std::string getStatusLine() override { return GuiStringMenu::getStatusLine(); }
 
-    void doEnter() { doCross_Pressed(); }
-    void doEscape() { doCircle_Pressed(); }
+    void doEnter() override { doCross_Pressed(); }
+    void doEscape() override { doCircle_Pressed(); }
 
     std::vector<std::string> playlists;
 };

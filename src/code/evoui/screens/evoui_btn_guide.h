@@ -12,9 +12,9 @@
 //******************
 class GuiBtnGuide : public GuiScreen {
 public:
-    void render();
+    void render() override;
 
-    void loop();
+    void loop() override;
 
     ableem::Texture backgroundImg;
 

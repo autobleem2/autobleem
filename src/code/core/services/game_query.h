@@ -18,7 +18,7 @@ class Config;
 //******************
 // The RetroArch half of the query: RetroArchService implements it, and the tests pass a stub.
 struct RetroArchGames {
-    virtual ~RetroArchGames() {}
+    virtual ~RetroArchGames() = default;
     virtual PsGames gamesInPlaylist(const std::string &playlistName) = 0;
     // the playlist that is already in most-recently-played order, so it must not be re-sorted by title
     virtual std::string historyPlaylistName() = 0;

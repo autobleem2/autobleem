@@ -14,7 +14,7 @@ namespace ableem {
 class ABLEEM_API GuiScreen {
 public:
     explicit GuiScreen(GuiBase &_gui) : gui(_gui) {}
-    virtual ~GuiScreen() {}
+    virtual ~GuiScreen() = default;
 
     GuiBase &gui;
     bool menuVisible = true; // set this to false to exit the loop() here or your inherited loop()

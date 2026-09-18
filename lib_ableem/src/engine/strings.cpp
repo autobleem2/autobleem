@@ -67,7 +67,7 @@ int Strings::toInt(const string &s, int def) {
     if (end == start || errno == ERANGE || value > INT_MAX || value < INT_MIN) {
         return def;
     }
-    return (int)value;
+    return static_cast<int>(value);
 }
 
 //*******************************
@@ -104,7 +104,7 @@ string Strings::commaSep(const string &s, int pos) {
             v.push_back(s.substr(i, s.length()));
         }
     }
-    if (pos < (int)v.size()) {
+    if (pos < static_cast<int>(v.size())) {
         return v[pos];
     }
     return "";

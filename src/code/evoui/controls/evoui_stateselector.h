@@ -17,7 +17,7 @@
 class PsStateSelector : public PsObj {
 public:
     int operation = 0;
-    void render();
+    void render() override;
 
     void loadSaveStateImages(PsGamePtr &game, bool saving);
     void cleanSaveStateImages();

@@ -12,7 +12,7 @@
 //******************
 class ProcessRunner {
 public:
-    virtual ~ProcessRunner() {}
+    virtual ~ProcessRunner() = default;
 
     // runs `exe` with `args` and does not return until it has exited
     virtual void run(const std::string &exe, const std::vector<std::string> &args) = 0;
