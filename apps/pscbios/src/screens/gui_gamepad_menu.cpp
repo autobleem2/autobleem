@@ -42,7 +42,7 @@ void GuiGamepadMenu::render() {
     text.renderTextLine(_("Game controller DB:") + " " + (mappingFile.empty() ? _("SDL's built-in") : mappingFile), 6,
                         yoffset);
     text.renderTextLine(_("Game controller information:"), 7, yoffset);
-    text.renderTextLine("   " + _("Game Controllers number: ") + to_string(gui->input().activePadCount()) + "/" +
+    text.renderTextLine("   " + _("Game Controllers number:") + " " + to_string(gui->input().activePadCount()) + "/" +
                             to_string(joysticks),
                         8, yoffset);
     for (int i = 0; i < joysticks; i++) {

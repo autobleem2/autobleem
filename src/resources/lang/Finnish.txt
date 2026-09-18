@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Vapaa
 free of=
 Free space=Vapaa tila
-Game=Peli
 GAME=PELI
+Game=Peli
 Game data=
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game History=Pelihistoria
@@ -108,8 +108,8 @@ HIGH SCORE=PARAS TULOS
 Hostname=
 In Game=Pelissä
 In Retroarch Game=RetroArch pelissä
-INTERNAL=SISÄINEN
 Internal=Sisäinen
+INTERNAL=SISÄINEN
 Internal Games=Sisäiset Pelit
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Liikuta :
 Music:=Musiikki:
 Network=
 New Card=Uusi kortti
-New GamePad found=Uusi peliohjain löytyi:
 Next Game Platform=Seuraava pelialusta
 None=
 Not connected=

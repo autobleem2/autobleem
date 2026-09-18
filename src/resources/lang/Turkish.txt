@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 241
+# Untranslated: 51 / Total: 240
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -88,8 +88,8 @@ Frameskip:=Kare Atlama:
 Free=Boş
 free of=
 Free space=Boş alan
-Game=Oyun
 GAME=OYUN
+Game=Oyun
 Game data=
 Game failed to verify:=Oyun doğrulanamadı:
 Game History=Oyun Geçmişi
@@ -108,8 +108,8 @@ HIGH SCORE=EN YÜKSEK SKOR
 Hostname=
 In Game=Oyun İçinde
 In Retroarch Game=RetroArch Oyununda
-INTERNAL=DAHILİ
 Internal=Dahili
+INTERNAL=DAHILİ
 Internal Games=Dahili Oyunlar
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Taşınıyor:
 Music:=Müzik:
 Network=
 New Card=Yeni Kart
-New GamePad found=Yeni oyun kolu bulundu
 Next Game Platform=Sonraki Oyun Platformu
 None=
 Not connected=

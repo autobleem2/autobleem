@@ -241,7 +241,7 @@ void GuiPadConfig::render() {
 
     const ableem::JoystickState &state = joystick.state();
     text.renderTextLine(joystickTitle(), 1, offset);
-    text.renderTextLine(_("Gamepad input configuration: ") + "A:" + to_string(state.axes.size()) +
+    text.renderTextLine(_("Gamepad input configuration:") + " A:" + to_string(state.axes.size()) +
                             "  B:" + to_string(state.buttons.size()) + " D:" + to_string(state.hats.size()),
                         2, offset);
     string buttons = _("Buttons:") + " ";

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -88,8 +88,8 @@ Frameskip:=Frameskip :
 Free=Liure
 free of=
 Free space=Espaci liure
-Game=Jòc
 GAME=JÒC
+Game=Jòc
 Game data=
 Game failed to verify:=Verificacion del jòc fracassada :
 Game History=Istoric dels jòcs
@@ -108,8 +108,8 @@ HIGH SCORE=MELHOR MARCA
 Hostname=
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-INTERNAL=INTÈRNA
 Internal=Intèrna
+INTERNAL=INTÈRNA
 Internal Games=Jòcs intèrnes
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Desplaçament :
 Music:=Musica :
 Network=
 New Card=Nòva carta
-New GamePad found=Nòva maneta trobada
 Next Game Platform=Plataforma de jòcs seguenta
 None=
 Not connected=

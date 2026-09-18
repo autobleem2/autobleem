@@ -1,0 +1,33 @@
+# AutoBleem Occitan Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Acabat - quand l'ecran ven negre, rebrancatz lo cable d'alimentacion
+Backup complete=Salvament acabat
+Backup failed=Fracàs del salvament
+Checking LBOOT for vanilla kernel. Decompressing...=Verificacion del nucli d'origina dins LBOOT. Descompression...
+Creating backup....=Creacion del salvament....
+Exiting...=Tampadura...
+Flash Kernel=Flashar lo nucli
+Flashing KERNEL IMAGE=Flashatge de l'IMATGE DEL NUCLI
+Full backup=Salvament complet
+Invalid backup or invalid kernel image=Salvament o imatge del nucli invalid
+No backup found - Recovery locked=Cap de salvament trobat - restauracion verrolhada
+Non AutoBleem Backup found. Please use valid AB backup=Salvament pas AutoBleem trobat. Utilizatz un salvament AB valid
+Overwrite the existing backup?=Espotir lo salvament existent ?
+Please wait...=Esperatz...
+Quit=Quitar
+Recovery interrupted=Restauracion interrompuda
+Recovery Mode On=Mòde restauracion activat
+Restore Mode=Mòde restauracion
+Set recovery mode and reboot now?=Activar lo mòde restauracion e reaviar ara ?
+Setting recovery mode: off=Mòde restauracion : desactivat
+Setting recovery mode: on=Mòde restauracion : activat
+Start flashing ?=Aviar lo flashatge ?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT conten pas un firmware PSC PROPRE. Riscatz de SOFTBRICKAR vòstra consòla. Contunhar ?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT conten pas de rootfs1. Es benlèu un salvament ABFK 1.0a. Contunhar ?
+This PSC has not been restored to original condition. Unable to flash.=Aquesta PSC es pas estada remesa dins son estat d'origina. Flashatge impossible.
+Updating payload=Mesa a jorn del payload
+Validating backup...   Please wait...=Verificacion del salvament...   Esperatz...
+Welcome to ABFlashKit=Benvenguda dins ABFlashKit
+Zipping:=Compression :

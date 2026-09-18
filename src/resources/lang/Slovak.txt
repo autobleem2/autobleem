@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -88,8 +88,8 @@ Frameskip:=Preskočenie snímok:
 Free=Voľné
 free of=
 Free space=Voľné miesto
-Game=Hra
 GAME=HRA
+Game=Hra
 Game data=
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game History=História hry
@@ -108,8 +108,8 @@ HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-INTERNAL=ORIGINÁLNE
 Internal=Originálne
+INTERNAL=ORIGINÁLNE
 Internal Games=Originálne hry
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Presúvam:
 Music:=Hudba:
 Network=
 New Card=Nová karta
-New GamePad found=Nájdený nový Gamepad
 Next Game Platform=Nasledujúca hracia platforma
 None=
 Not connected=

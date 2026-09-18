@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 241
+# Untranslated: 0 / Total: 240
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Free
 free of=free of
 Free space=Free space
-Game=Game
 GAME=GAME
+Game=Game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
@@ -138,7 +138,6 @@ Moving :=Moving :
 Music:=Music:
 Network=Network
 New Card=New Card
-New GamePad found=New GamePad found
 Next Game Platform=Next Game Platform
 None=None
 Not connected=Not connected

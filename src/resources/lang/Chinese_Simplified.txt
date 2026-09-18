@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 44 / Total: 241
+# Untranslated: 44 / Total: 240
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -88,8 +88,8 @@ Frameskip:=跳帧：
 Free=可用
 free of=
 Free space=可用空间
-Game=游戏
 GAME=游戏
+Game=游戏
 Game data=游戏数据
 Game failed to verify:=游戏验证失败：
 Game History=游戏历史
@@ -108,8 +108,8 @@ HIGH SCORE=最高分
 Hostname=
 In Game=游戏中
 In Retroarch Game=RetroArch 游戏中
-INTERNAL=内置
 Internal=内置
+INTERNAL=内置
 Internal Games=内置游戏
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=正在移动：
 Music:=音乐：
 Network=
 New Card=新建卡
-New GamePad found=发现新手柄
 Next Game Platform=下一个游戏平台
 None=
 Not connected=

@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -88,8 +88,8 @@ Frameskip:=Preskočení snímků:
 Free=Volné
 free of=
 Free space=Volné místo
-Game=Hra
 GAME=HRA
+Game=Hra
 Game data=
 Game failed to verify:=Ověření hry selhalo:
 Game History=Historie her
@@ -108,8 +108,8 @@ HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-INTERNAL=INTERNÍ
 Internal=Interní
+INTERNAL=INTERNÍ
 Internal Games=Interní hry
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Přesouvání:
 Music:=Hudba:
 Network=
 New Card=Nová karta
-New GamePad found=Nalezen nový Gamepad
 Next Game Platform=Další platforma her
 None=
 Not connected=

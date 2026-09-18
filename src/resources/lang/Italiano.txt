@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Libero
 free of=
 Free space=Spazio libero
-Game=Gioco
 GAME=GIOCO
+Game=Gioco
 Game data=
 Game failed to verify:=Verifica fallita per questi giochi:
 Game History=Cronologia Giochi
@@ -108,8 +108,8 @@ HIGH SCORE=PUNTEGGIO MIGLIORE
 Hostname=
 In Game=Mentre Giochi
 In Retroarch Game=Mentre Giochi - in RetroArch
-INTERNAL=INTERNO
 Internal=Interno
+INTERNAL=INTERNO
 Internal Games=Giochi Interni
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Spostando :
 Music:=Musica:
 Network=
 New Card=Nuova Card
-New GamePad found=Trovato nuovo GamePad
 Next Game Platform=Prossima Piattaforma di Gioco
 None=
 Not connected=

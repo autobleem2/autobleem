@@ -28,18 +28,21 @@ SOURCE = 'English'
 
 
 def extract_strings(src_dir: Path) -> set:
-    """every _("...") in the C++ sources, comment lines skipped"""
-    pattern = re.compile(r'_\("([^"]+)"\)')
+    """every _("...") in the C++ sources: a literal, or adjacent literals the way clang-format splits a long
+    one ("..." "..."), joined; a _( inside another identifier (runLines_("x")) is not one; comments skipped"""
+    call = re.compile(r'(?<![A-Za-z0-9_])_\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)')
+    literal = re.compile(r'"((?:[^"\\]|\\.)*)"')
     strings = set()
     for ext in ('*.cpp', '*.h'):
         for path in src_dir.rglob(ext):
+            lines = []
             for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
-                if line.lstrip().startswith('//'):
-                    continue
                 cut = line.find('//')
-                if cut != -1:
-                    line = line[:cut]
-                strings.update(pattern.findall(line))
+                lines.append(line if cut == -1 else line[:cut])
+            for pieces in call.findall('\n'.join(lines)):
+                text = ''.join(literal.findall(pieces)).replace('\\"', '"')
+                if text:
+                    strings.add(text)
     return strings
 
 

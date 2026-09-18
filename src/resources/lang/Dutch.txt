@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Vrij
 free of=
 Free space=Vrije ruimte
-Game=Game
 GAME=GAME
+Game=Game
 Game data=
 Game failed to verify:=Game verificatie mislukt:
 Game History=Game geschiedenis
@@ -108,8 +108,8 @@ HIGH SCORE=HOOGSTE SCORE
 Hostname=
 In Game=In game
 In Retroarch Game=In RetroArch game
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interne games
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Verplaatsen:
 Music:=Muziek:
 Network=
 New Card=Nieuwe Kaart
-New GamePad found=Nieuwe controller gevonden
 Next Game Platform=Volgende game platform
 None=
 Not connected=

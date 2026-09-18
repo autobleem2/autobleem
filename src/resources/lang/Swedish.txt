@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Ledigt
 free of=
 Free space=Ledigt utrymme
-Game=Spel
 GAME=SPEL
+Game=Spel
 Game data=
 Game failed to verify:=Spelverifiering misslyckades:
 Game History=Spelhistorik
@@ -108,8 +108,8 @@ HIGH SCORE=BÄSTA RESULTAT
 Hostname=
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interna spel
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Flyttar :
 Music:=Musik:
 Network=
 New Card=Nytt kort
-New GamePad found=Ny gamepad hittad
 Next Game Platform=Nästa spelplattform
 None=
 Not connected=

@@ -1,12 +1,15 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 94
+# Untranslated: 0 / Total: 102
 
  - Mapping (Available):= - Mapping (Available):
  - Mapping (Not found)= - Mapping (Not found)
+1. Using a micro USB charging cable connect the controller to one of available USB FRONT port of the console=1. Using a micro USB charging cable connect the controller to one of available USB FRONT port of the console
 2. When the leds on the controller will start to blink press the PlayStation Home button=2. When the leds on the controller will start to blink press the PlayStation Home button
 3. The controller should be recognized as normal wired PS3 compatible controller=3. The controller should be recognized as normal wired PS3 compatible controller
 4. Disconnect charging cable from the console and press PlayStation Home button again=4. Disconnect charging cable from the console and press PlayStation Home button again
+5. After 1-5 seconds controller will auto pair to AutoBleem and show player number LED (similar as paired to PS3)=5. After 1-5 seconds controller will auto pair to AutoBleem and show player number LED (similar as paired to PS3)
+6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure
 About=About
 Active=Active
 Bluetooth controller pairing=Bluetooth controller pairing
@@ -35,13 +38,14 @@ Found=Found
 Game controller DB:=Game controller DB:
 Game Controller information:=Game Controller information:
 Game controller information:=Game controller information:
-Game Controllers number: =Game Controllers number: 
+Game Controllers number:=Game Controllers number:
 Gamepad configuration changed.=Gamepad configuration changed.
 Gamepad configuration changed. Mapping interrupted.=Gamepad configuration changed. Mapping interrupted.
 Gamepad configuration details=Gamepad configuration details
-Gamepad input configuration: =Gamepad input configuration: 
+Gamepad input configuration:=Gamepad input configuration:
 Gamepad Support Configuration=Gamepad Support Configuration
 Hats:=Hats:
+In AutoBleem DualShock/SixAxis type controller are automatically paired if you have a compatible BlueTooth dongle and an AutoBleem Kernel installed.=In AutoBleem DualShock/SixAxis type controller are automatically paired if you have a compatible BlueTooth dongle and an AutoBleem Kernel installed.
 Interface details:=Interface details:
 IP Address:=IP Address:
 IP configuration:=IP configuration:
@@ -59,6 +63,11 @@ No networks found=No networks found
 Not active=Not active
 Not found=Not found
 NOTE 1: After pairing in BlueTool controller is automatically mapped until you unpair it=NOTE 1: After pairing in BlueTool controller is automatically mapped until you unpair it
+NOTE 1:Genuine SONY DualShock3 and Sixaxis are supported. Also SHANWAN produced clones should work.=NOTE 1:Genuine SONY DualShock3 and Sixaxis are supported. Also SHANWAN produced clones should work.
+NOTE 2: In case you pair the controller back to PS3 or other console you have to follow this procedure again.=NOTE 2: In case you pair the controller back to PS3 or other console you have to follow this procedure again.
+NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.
+NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem
+NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.
 Password:=Password:
 Playstation Classic Hardware Information=Playstation Classic Hardware Information
 Please test a new mapping=Please test a new mapping
@@ -82,7 +91,6 @@ Support via Discord:=Support via Discord:
 Testing=Testing
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=This is free software. It works AS IS and We take no responsibility for any issues or damage.
 This section of hardware configuration is not available yet.=This section of hardware configuration is not available yet.
-timedatectl list-timezones=timedatectl list-timezones
 Timezone:=Timezone:
 To pair a controller of this kind please follow the procedure=To pair a controller of this kind please follow the procedure
 Until then please use BlueTool by DanTheMan (Included in the package)=Until then please use BlueTool by DanTheMan (Included in the package)

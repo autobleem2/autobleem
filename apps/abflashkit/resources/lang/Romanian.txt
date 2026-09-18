@@ -1,0 +1,33 @@
+# AutoBleem Romanian Translation - abflashkit
+# Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
+# Untranslated: 0 / Total: 29
+
+All done - when the screen goes black replace power cord=Gata - când ecranul devine negru, reconectați cablul de alimentare
+Backup complete=Backup finalizat
+Backup failed=Backup eșuat
+Checking LBOOT for vanilla kernel. Decompressing...=Se verifică kernelul original din LBOOT. Se dezarhivează...
+Creating backup....=Se creează backupul....
+Exiting...=Se închide...
+Flash Kernel=Scrie kernelul
+Flashing KERNEL IMAGE=Se scrie IMAGINEA KERNELULUI
+Full backup=Backup complet
+Invalid backup or invalid kernel image=Backup sau imagine de kernel invalidă
+No backup found - Recovery locked=Nu s-a găsit niciun backup - recuperare blocată
+Non AutoBleem Backup found. Please use valid AB backup=S-a găsit un backup care nu este AutoBleem. Folosiți un backup AB valid
+Overwrite the existing backup?=Suprascrieți backupul existent?
+Please wait...=Vă rugăm așteptați...
+Quit=Ieșire
+Recovery interrupted=Recuperare întreruptă
+Recovery Mode On=Mod recuperare activat
+Restore Mode=Mod restaurare
+Set recovery mode and reboot now?=Activați modul recuperare și reporniți acum?
+Setting recovery mode: off=Mod recuperare: dezactivat
+Setting recovery mode: on=Mod recuperare: activat
+Start flashing ?=Începeți scrierea?
+The LBOOT does not contain CLEAN PSC firmware. You may SOFTBRICK your console. Are you sure?=LBOOT nu conține un firmware PSC CURAT. Consola poate ajunge SOFTBRICK. Sunteți sigur?
+The LBOOT does not contain rootfs1. This may be ABFK1.0a backup. Are you sure?=LBOOT nu conține rootfs1. Poate fi un backup ABFK 1.0a. Sunteți sigur?
+This PSC has not been restored to original condition. Unable to flash.=Acest PSC nu a fost readus la starea originală. Nu se poate scrie.
+Updating payload=Se actualizează payload-ul
+Validating backup...   Please wait...=Se validează backupul...   Vă rugăm așteptați...
+Welcome to ABFlashKit=Bine ați venit în ABFlashKit
+Zipping:=Se arhivează:

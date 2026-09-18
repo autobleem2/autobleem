@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 49 / Total: 241
+# Untranslated: 49 / Total: 240
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -88,8 +88,8 @@ Frameskip:=Frameskip:
 Free=Liber
 free of=
 Free space=Spatiu liber
-Game=Joc
 GAME=Joc
+Game=Joc
 Game data=
 Game failed to verify:=Verificarea jocului a esuat:
 Game History=Istoric Jocuri
@@ -108,8 +108,8 @@ HIGH SCORE=SCOR MAXIM
 Hostname=
 In Game=In joc
 In Retroarch Game=In jocul RetroArch
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Jocuri Interne
 Kernel=
 Keyboard=
@@ -138,7 +138,6 @@ Moving :=Se muta:
 Music:=Muzica:
 Network=
 New Card=Card Nou
-New GamePad found=Un nou GamePad a fost gasit
 Next Game Platform=Platforma Urmatoare de Jocuri
 None=
 Not connected=

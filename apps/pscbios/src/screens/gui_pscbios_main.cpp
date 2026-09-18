@@ -81,7 +81,7 @@ void GuiPscBiosMain::render() {
 
     const int joysticks = ableem::Joystick::count();
     text.renderTextLine(_("Game Controller information:"), controllerLine, offset);
-    text.renderTextLine("   " + _("Game Controllers number: ") + to_string(gui->input().activePadCount()) + "/" +
+    text.renderTextLine("   " + _("Game Controllers number:") + " " + to_string(gui->input().activePadCount()) + "/" +
                             to_string(joysticks),
                         controllerLine + 1, offset);
     for (int i = 0; i < joysticks && i < 4; i++) {
