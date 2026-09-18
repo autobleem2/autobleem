@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <miniz.h>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -91,17 +92,17 @@ bool ZipArchive::extract(const string &zipPath, const string &destDir) {
         string name;
         bool isDir;
         if (!reader.name(i, name, isDir)) {
-            cout << "Zip entry " << i << " of " << zipPath << " is unreadable" << endl;
+            PLOG_INFO << "Zip entry " << i << " of " << zipPath << " is unreadable";
             return false;
         }
         if (!isSafeName(name)) {
-            cout << "Refusing zip entry '" << name << "' in " << zipPath << endl;
+            PLOG_INFO << "Refusing zip entry '" << name << "' in " << zipPath;
             return false;
         }
     }
 
     if (!createDirs(destDir)) {
-        cout << "Could not create " << destDir << endl;
+        PLOG_WARNING << "Could not create " << destDir;
         return false;
     }
     const string dest = destDir + sep;
@@ -116,7 +117,7 @@ bool ZipArchive::extract(const string &zipPath, const string &destDir) {
         }
         size_t slash = target.find_last_of('/');
         if (slash != string::npos && !createDirs(target.substr(0, slash))) {
-            cout << "Could not create the directory for " << target << endl;
+            PLOG_WARNING << "Could not create the directory for " << target;
             return false;
         }
         if (!mz_zip_reader_extract_to_file(&reader.zip, i, target.c_str(), 0)) {

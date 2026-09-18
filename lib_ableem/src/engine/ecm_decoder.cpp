@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 extern "C" {
 void eccedc_init(void);
@@ -36,7 +37,7 @@ void EcmDecoder::setProgressHandler(function<void(const string &)> handler) {
 // EcmDecoder::decode
 //*******************************
 bool EcmDecoder::decode(const string &input, string output) {
-    cout << "Unpacking: " << input << " to " << output << endl;
+    PLOG_INFO << "Unpacking: " << input << " to " << output;
     if (!DirEntry::matchExtension(output, EXT_BIN)) {
         output = output + ".bin";
     }

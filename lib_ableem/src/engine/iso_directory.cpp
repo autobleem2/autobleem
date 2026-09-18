@@ -5,6 +5,7 @@
 #include <memory>
 #include <fstream>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -104,7 +105,7 @@ IsoDirectory IsoDirectoryReader::read(const string &imagePath, int maxLevel, boo
         reader.reset(new CdImageReader());
     } else {
 #ifdef ABLEEM_NO_CHD
-        cout << "CHD support not compiled in, skipping " << imagePath << endl;
+        PLOG_WARNING << "CHD support not compiled in, skipping " << imagePath;
         return emptyDir();
 #else
         reader.reset(new ChdImageReader());

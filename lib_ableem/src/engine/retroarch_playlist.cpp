@@ -7,6 +7,7 @@
 #include <iostream>
 #include <json.h>
 #include <fifo_map.h>
+#include "ableem/engine/log.h"
 
 using namespace std;
 using namespace nlohmann;
@@ -60,7 +61,7 @@ bool RetroArchPlaylist::loadJson(const string &path, RetroArchPlaylistEntries &e
     entries.clear();
     ifstream in(path, ifstream::binary);
     if (!in.is_open()) {
-        cout << "Could not open playlist: " << path << endl;
+        PLOG_WARNING << "Could not open playlist: " << path;
         return false;
     }
 
@@ -69,13 +70,13 @@ bool RetroArchPlaylist::loadJson(const string &path, RetroArchPlaylistEntries &e
     try {
         in >> j;
     } catch (const json::exception &e) {
-        cout << "Playlist " << path << " is not valid JSON: " << e.what() << endl;
+        PLOG_INFO << "Playlist " << path << " is not valid JSON: " << e.what();
         return false;
     }
 
     json array = j.value("items", json::array());
     if (!array.is_array()) {
-        cout << "Playlist " << path << " has no items array" << endl;
+        PLOG_INFO << "Playlist " << path << " has no items array";
         return false;
     }
 
@@ -101,7 +102,7 @@ bool RetroArchPlaylist::loadSixLine(const string &path, RetroArchPlaylistEntries
     entries.clear();
     ifstream in(path, ifstream::binary);
     if (!in.is_open()) {
-        cout << "Could not open playlist: " << path << endl;
+        PLOG_WARNING << "Could not open playlist: " << path;
         return false;
     }
 
@@ -139,7 +140,7 @@ bool RetroArchPlaylist::save(const string &path, const RetroArchPlaylistEntries 
     }
     j["items"] = items;
 
-    cout << j.dump() << endl;
+    PLOG_INFO << j.dump();
     ofstream o(path);
     if (!DirEntry::checkWritable(o, path)) return false;
     o << setw(2) << j << endl;

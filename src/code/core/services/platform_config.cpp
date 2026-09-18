@@ -6,6 +6,7 @@
 #include "../main.h"
 #include <iostream>
 #include <map>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -47,12 +48,12 @@ vector<string> PlatformConfig::splitList(const string &value) {
 PlatformConfig PlatformConfig::load(const string &iniPath) {
     PlatformConfig cfg;
     if (!DirEntry::exists(iniPath)) {
-        cout << "No platform config " << iniPath << " - using the console's layout" << endl;
+        PLOG_INFO << "No platform config " << iniPath << " - using the console's layout";
         return cfg;
     }
     IniFile ini;
     ini.load(iniPath);   // keys are lower-cased on load, but keep the whitespace before '=': trim them here
-    cout << "Platform config: " << iniPath << endl;
+    PLOG_INFO << "Platform config: " << iniPath;
 
     map<string, string> values;
     for (const auto &kv : ini.values) values[Strings::trim(kv.first)] = Strings::trim(kv.second);

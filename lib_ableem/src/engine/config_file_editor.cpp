@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -34,7 +35,7 @@ bool lineSetsProperty(const string &lcaseline, const string &lcasepattern) {
 void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, string newline) {
  //   cout << "cfg replace, '" << fullCfgFilePath << "', '" << property << "' with: '" << newline << "'" << endl;
     if (!DirEntry::exists(fullCfgFilePath)) {
-        cout << "  cfg file doesn't exist" << endl;
+        PLOG_INFO << "  cfg file doesn't exist";
         return;
     }
     // do not store if file not updated (one less iocall on filesystem)
@@ -59,7 +60,7 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
 
             if (lineSetsProperty(lcaseline, lcasepattern)) {
                 fileUpdated = true;
-                cout << "  new line: '" << newline << "'" << endl;
+                PLOG_INFO << "  new line: '" << newline << "'";
                 lines.push_back(newline);
             } else {
                 lines.push_back(line);
@@ -101,13 +102,13 @@ string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string prop
                     value.pop_back();   // remove the trailing /r
                 }
                 trim(value);    // remove leading and trailing spaces
-                cout << "  return: '" << value << "'" << endl;
+                PLOG_INFO << "  return: '" << value << "'";
                 return value;
             }
         }
         file.close();
     }
-    cout << "  return: ''" << endl;
+    PLOG_INFO << "  return: ''";
     return "";
 }
 
@@ -120,8 +121,8 @@ string ConfigFileEditor::getValueFromCfgFile(string fullCfgFilePath, string prop
 string ConfigFileEditor::getValue(string gamePath, string property) {
     string fullCfgFilePath = gamePath + sep + PCSX_CFG;
     if (!DirEntry::exists(fullCfgFilePath)) {
-        cout << "  cfg file doesn't exist" << endl;
-        cout << "  return: ''" << endl;
+        PLOG_INFO << "  cfg file doesn't exist";
+        PLOG_INFO << "  return: ''";
         return "";
     }
 
@@ -134,7 +135,7 @@ string ConfigFileEditor::getValue(string gamePath, string property) {
 // example pathToCfgDir = "/media/Games/!SaveStates/Driver 2/cfg"
 //*******************************
 void ConfigFileEditor::replacePropertyInAllCfgsInDir(string pathToCfgDir, string property, string newline) {
-    cout << "cfg replaceInAllCfg, '" << pathToCfgDir << "', '" << property << "'" << endl;
+    PLOG_INFO << "cfg replaceInAllCfg, '" << pathToCfgDir << "', '" << property << "'";
     for (const DirEntry &cfgEntry : DirEntry::diru_FilesOnly(pathToCfgDir)) {
         if (DirEntry::matchExtension(cfgEntry.name, ".cfg")) {
             string fullCfgFilePath = pathToCfgDir + sep + cfgEntry.name;
@@ -189,7 +190,7 @@ void ConfigFileEditor::replace(string entry, string gamePath, string property, s
 //*******************************
 void ConfigFileEditor::replaceInFile(std::string fullCfgFilePath, std::string property, std::string newline)
 {
-    cout << "cfg replaceInFile, '" << fullCfgFilePath << "', '" << property << "'" << endl;
+    PLOG_INFO << "cfg replaceInFile, '" << fullCfgFilePath << "', '" << property << "'";
     replaceProperty(fullCfgFilePath, property, newline);
 }
 

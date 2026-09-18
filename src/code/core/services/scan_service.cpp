@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -228,7 +229,7 @@ void ScanService::applyVerifiedGame(const ScannedGame &game, ScanUpdate &update)
     GameRecord record;
     record.gameId = id;
     if (!db.reloadUsbGame(record)) {
-        cout << "ScanService: could not reload game id " << id << " (" << game.fullPath << ") after writing it" << endl;
+        PLOG_WARNING << "ScanService: could not reload game id " << id << " (" << game.fullPath << ") after writing it";
         return;
     }
 

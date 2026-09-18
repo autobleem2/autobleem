@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -77,11 +78,11 @@ GameCatalogService::DeleteResult GameCatalogService::deleteUsbGame(const PsGame 
     result.saveStateFolder = game.ssFolder;
 
     if (!library_.usbGames().deleteGame(game.gameId)) {
-        cout << "Failed to delete game " << game.gameId << " from the database" << endl;
+        PLOG_WARNING << "Failed to delete game " << game.gameId << " from the database";
         return result;
     }
     if (!DirEntry::removeDirAndContents(game.folder)) {
-        cout << "Failed to delete directory " << game.folder << endl;
+        PLOG_WARNING << "Failed to delete directory " << game.folder;
         return result;
     }
     result.removed = true;

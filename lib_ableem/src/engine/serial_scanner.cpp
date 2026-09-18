@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -52,7 +53,7 @@ string SerialScanner::normalizeSerial(string serial) {
 string SerialScanner::readSerial(ImageType imageType, string path, string firstBinPath)
 {
     string serial = readSerialFromImage(imageType,path,firstBinPath);
-    std::cout <<serial<<endl;
+    PLOG_INFO << serial;
     if (serial.empty())
     {
         serial = readSerialByWorkaround(imageType,path,firstBinPath);
@@ -64,7 +65,7 @@ string SerialScanner::readSerial(ImageType imageType, string path, string firstB
 // SerialScanner::readSerialFromImage
 //*******************************
 string SerialScanner::readSerialFromImage(ImageType imageType, string path, string firstBinPath) {
-    std::cout << imageType << "   " << path << "   " << firstBinPath << endl;
+    PLOG_INFO << imageType << "   " << path << "   " << firstBinPath;
     if (imageType == IMAGE_PBP) {
         string destinationDir = path ;
         string pbpFileName = DirEntry::findFirstFile(EXT_PBP, destinationDir);
@@ -72,7 +73,7 @@ string SerialScanner::readSerialFromImage(ImageType imageType, string path, stri
             ifstream is;
             is.open(destinationDir + sep + pbpFileName, ios::binary);
             if (!is.is_open()) {
-                cout << "Cannot open PBP: " << destinationDir + sep + pbpFileName << endl;
+                PLOG_WARNING << "Cannot open PBP: " << destinationDir + sep + pbpFileName;
                 return "";
             }
 
@@ -146,7 +147,7 @@ string SerialScanner::readSerialFromImage(ImageType imageType, string path, stri
                         int pos = potentialSerial.find(prefix.c_str(), 0);
                         if (pos == 0) {
                             serialFound = potentialSerial;
-                            cout << "Serial number: " << serialFound << endl;
+                            PLOG_INFO << "Serial number: " << serialFound;
                             return serialFound;
                         }
                     }
@@ -156,7 +157,7 @@ string SerialScanner::readSerialFromImage(ImageType imageType, string path, stri
                     int pos = volume.find(prefix.c_str(), 0);
                     if (pos == 0) {
                         serialFound = volume;
-                        cout << "Serial number: " << serialFound << endl;
+                        PLOG_INFO << "Serial number: " << serialFound;
                         return serialFound;
                     }
                 }

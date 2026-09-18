@@ -6,6 +6,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -323,21 +324,21 @@ bool RdbReader::open(const string &path) {
 
     vector<uint8_t> buf;
     if (!slurp(path, buf)) {
-        cout << "rdb: cannot read " << path << endl;
+        PLOG_WARNING << "rdb: cannot read " << path;
         return false;
     }
 
     // Header: 8 bytes "RARCHDB\0" + 8-byte big-endian metadata offset.
     // Some databases use a zero metadata offset; in that case records run to EOF.
     if (buf.size() < 16 || memcmp(buf.data(), "RARCHDB\0", 8) != 0) {
-        cout << "rdb: bad magic in " << path << endl;
+        PLOG_INFO << "rdb: bad magic in " << path;
         return false;
     }
     uint64_t metadata_offset = 0;
     for (int i = 0; i < 8; i++)
         metadata_offset = (metadata_offset << 8) | buf[8 + i];
     if ((metadata_offset != 0 && metadata_offset < 16) || metadata_offset > buf.size()) {
-        cout << "rdb: invalid metadata offset in " << path << endl;
+        PLOG_WARNING << "rdb: invalid metadata offset in " << path;
         return false;
     }
     const size_t record_end = metadata_offset == 0 ? buf.size() : static_cast<size_t>(metadata_offset);
@@ -348,7 +349,7 @@ bool RdbReader::open(const string &path) {
         uint32_t nentries = 0;
         bool sentinel = false;
         if (!read_map_header(c, nentries, sentinel)) {
-            cout << "rdb: malformed record header at offset " << (buf.size() - c.remaining()) << " in " << path << endl;
+            PLOG_INFO << "rdb: malformed record header at offset " << (buf.size() - c.remaining()) << " in " << path;
             return false;
         }
         if (sentinel)
@@ -358,7 +359,7 @@ bool RdbReader::open(const string &path) {
         for (uint32_t i = 0; i < nentries; i++) {
             string key;
             if (!read_string(c, key)) {
-                cout << "rdb: bad key at offset " << (buf.size() - c.remaining()) << " in " << path << endl;
+                PLOG_INFO << "rdb: bad key at offset " << (buf.size() - c.remaining()) << " in " << path;
                 return false;
             }
             bool ok = true;
@@ -378,7 +379,7 @@ bool RdbReader::open(const string &path) {
                 ok = skip_value(c);
             }
             if (!ok) {
-                cout << "rdb: bad value for " << key << " at offset " << (buf.size() - c.remaining()) << " in " << path << endl;
+                PLOG_INFO << "rdb: bad value for " << key << " at offset " << (buf.size() - c.remaining()) << " in " << path;
                 return false;
             }
         }
@@ -393,7 +394,7 @@ bool RdbReader::open(const string &path) {
     }
 
     valid_ = true;
-    cout << "rdb: loaded " << records_.size() << " records from " << path << endl;
+    PLOG_INFO << "rdb: loaded " << records_.size() << " records from " << path;
     return true;
 }
 

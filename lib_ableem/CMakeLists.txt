@@ -55,6 +55,7 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
 
 target_include_directories(ableem_engine
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/plog   # header-only; <ableem/engine/log.h> includes it, so every user needs it
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sqlite
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/nlohmann
@@ -70,6 +71,8 @@ set_source_files_properties(third_party/miniz/miniz.c src/engine/zip_archive.cpp
 
 find_package(Threads REQUIRED)
 target_link_libraries(ableem_engine PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
+# plog's strings are wchar_t on Windows unless told otherwise; the log is UTF-8 everywhere
+target_compile_definitions(ableem_engine PUBLIC PLOG_CHAR_IS_UTF8=1)
 
 if (ABLEEM_ENABLE_CHD)
     # third_party/libchdr is vendored (see its CMakeLists.txt) - CHD support needs no system install.

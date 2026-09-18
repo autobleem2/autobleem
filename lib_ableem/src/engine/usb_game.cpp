@@ -11,6 +11,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -91,7 +92,7 @@ bool UsbGame::verify(std::vector<std::string> *failureReasons) {
             result = false;
         }
         if (!discs[i].cueFound) {
-            cout << i << discs[i].diskName << discs[i].cueFound << endl;
+            PLOG_INFO << i << discs[i].diskName << discs[i].cueFound;
             if (failureReasons)
                 failureReasons->emplace_back("Cue file not found");
             result = false;
@@ -125,7 +126,7 @@ bool UsbGame::verify(std::vector<std::string> *failureReasons) {
     }
 
     if (!result) {
-        cerr << "Game: " << title << " Validation Failed" << endl;
+        PLOG_ERROR << "Game: " << title << " Validation Failed";
     }
 
     return result;
@@ -135,41 +136,41 @@ bool UsbGame::verify(std::vector<std::string> *failureReasons) {
 // UsbGame::print
 //*******************************
 bool UsbGame::print() {
-    cout << "-------------------" << endl;
-    cout << "Printing game data:" << endl;
-    cout << "-----------------" << endl;
-    cout << "AUTOMATION: " << automationUsed << endl;
-    cout << "Game folder id: " << folder_id << endl;
-    cout << "Game: " << title << endl;
-    cout << "Players: " << players << endl;
-    cout << "Publisher: " << publisher << endl;
-    cout << "Year: " << year << endl;
-    cout << "Serial: " << serial << endl;
-    cout << "Region: " << region << endl;
-    cout << "GameData found: " << gameDataFound << endl;
-    cout << "Game.ini found: " << gameIniFound << endl;
-    cout << "Game.ini valid: " << gameIniValid << endl;
-    cout << "PNG found:" << coverImageFound << endl;
-    cout << "pcsx.cfg found: " << pcsxCfgFound << endl;
-    cout << "TotalDiscs: " << discs.size() << endl;
-    cout << "Favorite: " << favorite << endl;
-    cout << "Play Using RA: " << play_using_ra << endl;
-    cout << "Last Played: " << last_played << endl;
+    PLOG_INFO << "-------------------";
+    PLOG_INFO << "Printing game data:";
+    PLOG_INFO << "-----------------";
+    PLOG_INFO << "AUTOMATION: " << automationUsed;
+    PLOG_INFO << "Game folder id: " << folder_id;
+    PLOG_INFO << "Game: " << title;
+    PLOG_INFO << "Players: " << players;
+    PLOG_INFO << "Publisher: " << publisher;
+    PLOG_INFO << "Year: " << year;
+    PLOG_INFO << "Serial: " << serial;
+    PLOG_INFO << "Region: " << region;
+    PLOG_INFO << "GameData found: " << gameDataFound;
+    PLOG_INFO << "Game.ini found: " << gameIniFound;
+    PLOG_INFO << "Game.ini valid: " << gameIniValid;
+    PLOG_INFO << "PNG found:" << coverImageFound;
+    PLOG_INFO << "pcsx.cfg found: " << pcsxCfgFound;
+    PLOG_INFO << "TotalDiscs: " << discs.size();
+    PLOG_INFO << "Favorite: " << favorite;
+    PLOG_INFO << "Play Using RA: " << play_using_ra;
+    PLOG_INFO << "Last Played: " << last_played;
 
     for (int i = 0; i < discs.size(); i++) {
-        cout << "  Disc:" << i + 1 << "  " << discs[i].diskName << endl;
-        cout << "  CUE found: " << discs[i].cueFound << endl;
-        cout << "  BIN correct: " << discs[i].binVerified << endl;
+        PLOG_INFO << "  Disc:" << i + 1 << "  " << discs[i].diskName;
+        PLOG_INFO << "  CUE found: " << discs[i].cueFound;
+        PLOG_INFO << "  BIN correct: " << discs[i].binVerified;
     }
 
     vector<string> failureReasons;
     bool result = verify(&failureReasons);
     if (result) {
-        cout << "-------Game Verify OK-------" << endl;
+        PLOG_INFO << "-------Game Verify OK-------";
     } else {
-        cout << "------Game Verify FAIL------" << endl;
+        PLOG_WARNING << "------Game Verify FAIL------";
         for (const auto & reason : failureReasons)
-            cout << "Reason: " << reason << endl;
+            PLOG_INFO << "Reason: " << reason;
     }
 
     return result;
@@ -201,7 +202,7 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
         } else
         {
             automationUsed = true;
-            cout << "Switching automation in PBP" << endl;
+            PLOG_INFO << "Switching automation in PBP";
         }
     } else if (this->imageType == IMAGE_CHD) {
         // disc link
@@ -231,13 +232,13 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
         } else
         {
             automationUsed = true;
-            cout << "Switching automation in CHD" << endl;
+            PLOG_INFO << "Switching automation in CHD";
         }
     }
     if (DirEntry::imageTypeUsesACueFile(this->imageType)) {
         if (discs.size() == 0) {
             automationUsed = true;
-            cout << "Switching automation no discs" << endl;
+            PLOG_INFO << "Switching automation no discs";
             // find cue files
             string destination = fullPath ;
             for (const DirEntry & entry: DirEntry::diru(destination)) {
@@ -259,14 +260,14 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
     // where a copy of default.png used to be made, which then hid the thumbnail for good.
     if (discs.size() > 0 && !coverImageFound) {
         automationUsed = true;
-        cout << "Switching automation no image" << endl;
+        PLOG_INFO << "Switching automation no image";
         string destination = fullPath + sep + discs[0].diskName + ".png";
         string serial = SerialScanner::readSerial(imageType, fullPath, firstBinPath);
         if (serial != "") {
             if (metadata.findBySerial(serial, md)) {
                 metadataLoaded = true;
                 if (!md.bytes.empty()) {
-                    cout << "Updating cover in recoverMissingFiles()" << destination << endl;
+                    PLOG_WARNING << "Updating cover in recoverMissingFiles()" << destination;
                     ofstream pngFile;
                     pngFile.open(destination, ios::binary);
                     if (DirEntry::checkWritable(pngFile, destination)) {
@@ -284,10 +285,10 @@ void UsbGame::recoverMissingFiles(MetadataLookup &metadata) {
 
     if (!pcsxCfgFound) {
         automationUsed = true;
-        cout << "Switching automation no pcsx" << endl;
+        PLOG_INFO << "Switching automation no pcsx";
         string source = workingPath + sep + PCSX_CFG;
         string destination = fullPath + sep + PCSX_CFG;
-        cerr << "SRC:" << source << " DST:" << destination << endl;
+        PLOG_ERROR << "SRC:" << source << " DST:" << destination;
 
         int region = 0;
         bool japan = false;

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <set>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -43,16 +44,18 @@ string strOf(const IniFile &ini, const string &key) {
 
 void colorOf(const IniFile &ini, const string &key, ThemeColor &out) {
     if (!has(ini, key)) return;
-    if (!ThemeColor::parseRgb(ini.values.at(key), out))
-        cout << "theme.ini: " << key << "=" << ini.values.at(key) << " is not r,g,b - ignored" << endl;
+    if (!ThemeColor::parseRgb(ini.values.at(key), out)) {
+        PLOG_INFO << "theme.ini: " << key << "=" << ini.values.at(key) << " is not r,g,b - ignored";
+    }
 }
 
 // an ini rect: the four keys together or not at all
 bool rectOf(const IniFile &ini, const string &x, const string &y, const string &w, const string &h,
             int &ox, int &oy, int &ow, int &oh) {
     if (!hasAll(ini, {x, y, w, h})) {
-        if (has(ini, x) || has(ini, y) || has(ini, w) || has(ini, h))
-            cout << "theme.ini: " << x << "/" << y << "/" << w << "/" << h << " incomplete - ignored" << endl;
+        if (has(ini, x) || has(ini, y) || has(ini, w) || has(ini, h)) {
+            PLOG_INFO << "theme.ini: " << x << "/" << y << "/" << w << "/" << h << " incomplete - ignored";
+        }
         return false;
     }
     ox = intOf(ini, x); oy = intOf(ini, y); ow = intOf(ini, w); oh = intOf(ini, h);
@@ -248,12 +251,12 @@ ThemeSpec ThemeConverter::specFor(const string &themeDir) {
 // ThemeConverter::convert
 //*******************************
 bool ThemeConverter::convert(const string &themeDir) {
-    cout << "Converting theme folder to theme.json: " << themeDir << endl;
+    PLOG_INFO << "Converting theme folder to theme.json: " << themeDir;
     ThemeSpec spec = specFor(themeDir);
 
     // 1. theme.json first: from here on the folder is readable by the new code whatever happens next
     if (!spec.save(themeDir + sep + THEME_JSON)) {
-        cout << "Theme not converted, could not write " << THEME_JSON << endl;
+        PLOG_WARNING << "Theme not converted, could not write " << THEME_JSON;
         return false;
     }
 
@@ -263,8 +266,9 @@ bool ThemeConverter::convert(const string &themeDir) {
         if (DirEntry::exists(images + role.newName)) continue;
         for (const string &oldName : role.oldNames) {
             if (!DirEntry::exists(images + oldName)) continue;
-            if (!DirEntry::renameFile(images + oldName, images + role.newName))
-                cout << "Could not rename " << images + oldName << " to " << role.newName << endl;
+            if (!DirEntry::renameFile(images + oldName, images + role.newName)) {
+                PLOG_WARNING << "Could not rename " << images + oldName << " to " << role.newName;
+            }
             break;
         }
     }
@@ -286,6 +290,6 @@ bool ThemeConverter::convert(const string &themeDir) {
         }
         removeEmptyDirs(dir);
     }
-    cout << "Theme converted: " << keep.size() << " files kept, " << removed << " removed" << endl;
+    PLOG_INFO << "Theme converted: " << keep.size() << " files kept, " << removed << " removed";
     return true;
 }

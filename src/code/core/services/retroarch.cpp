@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -123,13 +124,13 @@ bool RetroArchService::findPlaylist(const string &displayName, int *index) const
 bool RetroArchService::isValidPlaylist(const string &path) const {
     // check file extension
     if (toLowerCopy(DirEntry::getFileExtension(path)) != "lpl") {
-        cout << "Extension is not .lpl" << endl;
+        PLOG_INFO << "Extension is not .lpl";
         return false;
     }
     // check if not empty
     std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
     if (in.tellg() <= 0) {
-        cout << "Playlist looks like empty file" << endl;
+        PLOG_INFO << "Playlist looks like empty file";
         return false;
     }
     return true;
@@ -143,11 +144,11 @@ bool RetroArchService::isValidPlaylist(const string &path) const {
 // host, and the six-line one skipped an entry whose core could not be detected where the JSON one let
 // isGameValid drop it a few lines later. One copy now, and the same result for both formats.
 PsGames RetroArchService::readGamesFromPlaylistFile(const string &path) {
-    cout << "Parsing Playlist: " << path << endl;
+    PLOG_INFO << "Parsing Playlist: " << path;
     PsGames psGames;
     ableem::RetroArchPlaylistEntries entries;
     if (!ableem::RetroArchPlaylist::load(path, entries)) {
-        cout << "Games found: 0" << endl;
+        PLOG_INFO << "Games found: 0";
         return psGames;
     }
 
@@ -190,10 +191,10 @@ PsGames RetroArchService::readGamesFromPlaylistFile(const string &path) {
         if (isGameValid(*game)) {
             psGames.emplace_back(game);
         } else {
-            cout << "Game invalid: title = '" << game->title << "'" << endl;
+            PLOG_WARNING << "Game invalid: title = '" << game->title << "'";
         }
     }
-    cout << "Games found: " << psGames.size() << endl;
+    PLOG_INFO << "Games found: " << psGames.size();
     return psGames;
 }
 
@@ -290,13 +291,13 @@ void RetroArchService::reloadSpecialPlaylist(const string &displayName, const st
 //********************
 void RetroArchService::loadPlaylists() {
     string path = Env::getPathToRetroarchPlaylistsDir();
-    cout << "Checking playlists path" << path << endl;
+    PLOG_INFO << "Checking playlists path" << path;
 
     if (!DirEntry::exists(path))
         return;
 
     vector<DirEntry> entries = DirEntry::diru_FilesOnly(path);
-    cout << "Total Playlists:" << entries.size() << endl;
+    PLOG_INFO << "Total Playlists:" << entries.size();
     vector<string> playlistNames;
     for (const DirEntry &entry : entries) {
         // AutoBleem's own export and the Apps list are not RetroArch platforms
@@ -311,7 +312,7 @@ void RetroArchService::loadPlaylists() {
     sort(begin(playlistNames), end(playlistNames));
 
     for (auto &playlistName : playlistNames) {
-        cout << "Playlist: " << playlistName << endl;
+        PLOG_INFO << "Playlist: " << playlistName;
         string playlistPath = Env::getPathToRetroarchPlaylistsDir() + sep + playlistName;
         if (isValidPlaylist(playlistPath)) {
             PsGames games = readGamesFromPlaylistFile(playlistPath);
@@ -319,9 +320,9 @@ void RetroArchService::loadPlaylists() {
             if (games.size() > 0)
                 playlistInfos_.emplace_back(nameOnly, playlistPath, games);
             else
-                cout << "Playlist has no games: " << playlistName << endl;
+                PLOG_INFO << "Playlist has no games: " << playlistName;
         } else
-            cout << "Invalid Playlist: " << playlistName << endl;
+            PLOG_WARNING << "Invalid Playlist: " << playlistName;
     }
     reloadFavorites();  // since it isn't already in the list, reloadFavorites() will add favorites at the end
     reloadHistory();    // since it isn't already in the list, reloadHistory() will add history at the end
@@ -369,18 +370,18 @@ bool RetroArchService::autoDetectCorePath(const PsGame &game, string &core_name,
 // RetroArchService::loadCores
 //********************
 void RetroArchService::loadCores() {
-    cout << "Building core list" << endl;
+    PLOG_INFO << "Building core list";
     if (!DirEntry::exists(Env::getPathToRetroarchDir())) {
-        cout << "Retroarch Not Found" << endl;
+        PLOG_WARNING << "Retroarch Not Found";
         return;
     }
     cores_.clear();
     databases_.clear();
     defaultCores_.clear();
     string infoFolder = Env::getPathToRetroarchDir() + sep + "info/";
-    cout << "Scanning: " << infoFolder << endl;
+    PLOG_INFO << "Scanning: " << infoFolder;
     vector<DirEntry> entries = DirEntry::diru_FilesOnly(infoFolder);
-    cout << "Found files:" << entries.size() << endl;
+    PLOG_INFO << "Found files:" << entries.size();
     for (const DirEntry &entry : entries) {
         if (DirEntry::getFileExtension(entry.name) == "info") {
             string fullPath = infoFolder + sep + entry.name;
@@ -408,7 +409,7 @@ void RetroArchService::loadCores() {
         if (pos == defaultCores_.end()) {
             continue;
         }
-        cout << "Mapping DB: " << dbname << "  Core: " << pos->second->name << endl;
+        PLOG_INFO << "Mapping DB: " << dbname << "  Core: " << pos->second->name;
     }
 
     // resources/coreOverride.cfg: "<database name>=<part of a core's display name>", one per line
@@ -418,14 +419,14 @@ void RetroArchService::loadCores() {
     while (getline(in, line)) {
         string db_name = line.substr(0, line.find("="));
         string value = line.substr(line.find("=") + 1);
-        cout << "Custom Core Override: " << db_name << "    core: " << value << endl;
+        PLOG_INFO << "Custom Core Override: " << db_name << "    core: " << value;
 
         for (CoreInfoPtr ciPtr : cores_) {
             if (ciPtr->name.find(value) != string::npos) {
                 lcase(db_name);
                 trim(db_name);
                 overrideCores_.insert(std::pair<string, CoreInfoPtr>(db_name, ciPtr));
-                cout << "Found: " << db_name << "    core: " << ciPtr->name << " " << ciPtr->core_path << endl;
+                PLOG_INFO << "Found: " << db_name << "    core: " << ciPtr->name << " " << ciPtr->core_path;
             }
         }
     }
@@ -439,11 +440,11 @@ CoreInfoPtr RetroArchService::parseCoreInfo(const string &file, const string &en
     ifstream in(file);
     string line;
 
-    cout << "Parsing " << endl;
+    PLOG_INFO << "Parsing ";
     CoreInfoPtr coreInfoPtr{new CoreInfo};
     coreInfoPtr->core_path = Env::getPathToRetroarchDir() + sep + "cores/" + DirEntry::getFileNameWithoutExtension(entry) + ".so";
     coreInfoPtr->extensions.clear();
-    cout << "CorePath: " << coreInfoPtr->core_path << endl;
+    PLOG_INFO << "CorePath: " << coreInfoPtr->core_path;
     while (getline(in, line)) {
         string lcaseline = line;
         lcase(lcaseline);
@@ -453,7 +454,7 @@ CoreInfoPtr RetroArchService::parseCoreInfo(const string &file, const string &en
             value.erase(remove(value.begin(), value.end(), '\"'), value.end());
             trim(value);
             coreInfoPtr->name = value;
-            cout << "CoreName: " << coreInfoPtr->name << endl;
+            PLOG_INFO << "CoreName: " << coreInfoPtr->name;
         }
         if (lcaseline.rfind("supported_extensions", 0) == 0) {
             string value = line.substr(lcaseline.find("=") + 1);

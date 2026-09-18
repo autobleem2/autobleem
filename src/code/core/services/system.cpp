@@ -13,6 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <ableem/engine/log.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -95,10 +96,10 @@ string System::getAvailableSpace(){
 string System::execUnixCommand(const char* cmd){
     array<char, 128> buffer;
     string result;
-    cout << "Exec:" << cmd << endl;
+    PLOG_INFO << "Exec:" << cmd;
     unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
     if (!pipe) {
-        cout << "popen() failed for: " << cmd << endl;
+        PLOG_WARNING << "popen() failed for: " << cmd;
         return result;  // never throw: there is no handler anywhere and an abort() takes the whole UI down
     }
     while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
@@ -121,7 +122,7 @@ int System::runAndWait(const string &exe, const vector<string> &args) {
     cout << endl;
 
 #ifdef _WIN32
-    cout << "runAndWait is not supported on Windows" << endl;
+    PLOG_INFO << "runAndWait is not supported on Windows";
     return -1;
 #else
     // argv[0] is the program itself, then the args, then a null terminator
@@ -134,7 +135,7 @@ int System::runAndWait(const string &exe, const vector<string> &args) {
 
     pid_t pid = fork();
     if (pid == -1) {
-        cout << "fork() failed: " << strerror(errno) << endl;
+        PLOG_WARNING << "fork() failed: " << strerror(errno);
         return -1;
     }
     if (pid == 0) {
@@ -145,18 +146,18 @@ int System::runAndWait(const string &exe, const vector<string> &args) {
 
     int status = 0;
     if (waitpid(pid, &status, 0) == -1) {
-        cout << "waitpid() failed: " << strerror(errno) << endl;
+        PLOG_WARNING << "waitpid() failed: " << strerror(errno);
         return -1;
     }
     if (WIFEXITED(status)) {
         int exitCode = WEXITSTATUS(status);
         if (exitCode == 127) {
-            cout << "could not start: " << exe << endl;
+            PLOG_WARNING << "could not start: " << exe;
         }
         return exitCode;
     }
     if (WIFSIGNALED(status)) {
-        cout << exe << " was killed by signal " << WTERMSIG(status) << endl;
+        PLOG_INFO << exe << " was killed by signal " << WTERMSIG(status);
     }
     return -1;
 #endif

@@ -531,7 +531,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   fixture) is what noticed. **pcsx-ab** (`E:\Programming\pcsx-rearmed-develop`) still carries the old CHD
   library and needs the same refresh to *play* a zstd CHD - on the list, not done.
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
-  SQLite, nlohmann json + `fifo_map`, miniz and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
+  SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
@@ -697,8 +697,14 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
   `PsCarouselGame`s (see `Carousel::setGames` and the comment in `carousel.h`).
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
-- Console `stdout`/`stderr` go to `/media/System/Logs/AB_*.txt`; `cout` is the logging mechanism and is
-  unit-buffered so the last lines survive a crash.
+- Logging (2026-09-18): `PLOG_INFO/WARNING/ERROR/DEBUG` (plog, vendored header-only under
+  `lib_ableem/third_party/plog`, behind `<ableem/engine/log.h>` - `ableem::Log::init(file)` once in
+  `main()`, `initConsoleOnly()` in the tests' main). Every line goes to stdout *and* to
+  `System/Logs/autobleem.log`, rolling 1 MB x 3, as `HH:MM:SS LEVEL [function:line] message`; the first
+  line is the build (`Version::FULL_VERSION`). The engine and the core services are converted; the
+  screens still `cout`, which is fine side by side - console `stdout`/`stderr` still go to
+  `System/Logs/AB_*.txt` and are unit-buffered so the last lines survive a crash. A `PLOG_*` inside an
+  unbraced `if` wants braces (the macro is itself an if/else; `-Wdangling-else` says so).
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
   (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it.
 - Scripts that edit sources from Python must pass `encoding='utf-8'` (CLAUDE.md got mangled once).

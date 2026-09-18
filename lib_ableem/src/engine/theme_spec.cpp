@@ -10,6 +10,7 @@
 #include <iostream>
 #include <json.h>
 #include <fifo_map.h>
+#include "ableem/engine/log.h"
 
 using namespace std;
 using namespace nlohmann;
@@ -180,7 +181,7 @@ string ThemeColor::toHex() const {
 bool ThemeSpec::load(const string &path) {
     ifstream in(path, ifstream::binary);
     if (!in.is_open()) {
-        cout << "Could not open theme file: " << path << endl;
+        PLOG_WARNING << "Could not open theme file: " << path;
         return false;
     }
 
@@ -189,11 +190,11 @@ bool ThemeSpec::load(const string &path) {
     try {
         in >> j;
     } catch (const json::exception &e) {
-        cout << "Theme " << path << " is not valid JSON: " << e.what() << endl;
+        PLOG_INFO << "Theme " << path << " is not valid JSON: " << e.what();
         return false;
     }
     if (!j.is_object()) {
-        cout << "Theme " << path << " is not a JSON object" << endl;
+        PLOG_INFO << "Theme " << path << " is not a JSON object";
         return false;
     }
 

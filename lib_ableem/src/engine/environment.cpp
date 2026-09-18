@@ -50,6 +50,7 @@ string Environment::getPathToGamesDir() { return gamesDir; }
 string Environment::getPathToMemCardsDir() { return gamesDir + sep + MEMCARDS_DIR_NAME; }
 string Environment::getPathToSaveStatesDir() { return gamesDir + sep + SAVESTATES_DIR_NAME; }
 string Environment::getPathToSystemDir() { return usbRoot + sep + "System"; }
+string Environment::getPathToLogsDir() { return getPathToSystemDir() + sep + "Logs"; }
 string Environment::getPathToRetroarchDir() { return retroarchDir.empty() ? usbRoot + sep + "retroarch" : retroarchDir; }
 string Environment::getPathToRetroarchPlaylistsDir() { return getPathToRetroarchDir() + sep + "playlists"; }
 string Environment::getPathToRetroarchRdbDir() { return getPathToRetroarchDir() + sep + "database" + sep + "rdb"; }

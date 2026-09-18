@@ -6,6 +6,7 @@
 #include "theme_converter.h"
 
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -53,10 +54,10 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
     const string name = themeName(zipPath);
     const string dest = themesDir + sep + name;
     const string staging = themesDir + sep + "." + name + ".unzip";
-    cout << "Installing theme from " << zipPath << endl;
+    PLOG_INFO << "Installing theme from " << zipPath;
 
     auto giveUp = [&](const string &why) {
-        cout << "Theme " << name << " not installed: " << why << endl;
+        PLOG_INFO << "Theme " << name << " not installed: " << why;
         DirEntry::removeDirAndContents(staging);
         DirEntry::renameFile(zipPath, zipPath + ".bad");
         return false;
@@ -71,7 +72,7 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
         return giveUp("no theme.json or theme.ini in it");
 
     if (DirEntry::exists(dest)) {
-        cout << "Replacing theme folder " << dest << endl;
+        PLOG_INFO << "Replacing theme folder " << dest;
         DirEntry::removeDirAndContents(dest);
     }
     if (!DirEntry::renameFile(root, dest))
@@ -79,7 +80,7 @@ bool ThemeInstaller::installZip(const string &zipPath, const string &themesDir) 
     if (root != staging) DirEntry::removeDirAndContents(staging);
 
     DirEntry::removeFile(zipPath);
-    cout << "Theme " << name << " installed" << endl;
+    PLOG_INFO << "Theme " << name << " installed";
     return true;
 }
 

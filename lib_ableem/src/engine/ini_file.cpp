@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -19,7 +20,7 @@ void IniFile::load(const string &_path) {
     file.open(path);
 
     if (!file.good()) {
-        cout << "Error opening ini file: " << path << endl;
+        PLOG_WARNING << "Error opening ini file: " << path;
         return;
     }
 
@@ -65,7 +66,7 @@ void IniFile::mergeFrom(const string &_path) {
 // IniFile::save
 //*******************************
 void IniFile::save(const string &_path) {
-    cout << "Writing ini file: " << _path << endl;
+    PLOG_INFO << "Writing ini file: " << _path;
     ofstream os;
     os.open(_path);
     if (!DirEntry::checkWritable(os, _path)) return;

@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -60,7 +61,7 @@ void LightgunService::reload() {
         if (DirEntry::exists(line)) {
             raPaths_.insert(line);
         } else {
-            cout << "lightguns.txt: " << line << " is gone - dropped" << endl;
+            PLOG_WARNING << "lightguns.txt: " << line << " is gone - dropped";
             dropped = true;
         }
     }

@@ -8,6 +8,7 @@
 #include "theme_installer.h"
 
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -42,7 +43,7 @@ void Theme::load() {
     const string defaultsDir = defaultsPath();
     loadedPath_ = path();
 
-    cout << "Loading UI theme:" << loadedPath_ << endl;
+    PLOG_INFO << "Loading UI theme:" << loadedPath_;
     if (!ThemeConverter::isThemeFolder(loadedPath_)) {
         loadedPath_ = defaultsDir;
         config_.inifile.values["theme"] = "default";

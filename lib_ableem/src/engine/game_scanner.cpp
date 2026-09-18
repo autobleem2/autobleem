@@ -15,6 +15,7 @@
 #include <map>
 #include <fstream>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -64,7 +65,7 @@ void GameScanner::writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &
         for (auto &game : row->gamesToDisplay) {
             auto it = idByPath.find(game->fullPath);
             if (it == idByPath.end()) {
-                cout << "writeSubDirRows: no database id for " << game->fullPath << ", skipping" << endl;
+                PLOG_WARNING << "writeSubDirRows: no database id for " << game->fullPath << ", skipping";
                 continue;
             }
             db.insertSubDirRowGame(row->displayRowIndex, it->second);
@@ -208,11 +209,11 @@ void GameScanner::moveFolderIfNeeded(const std::string &gameDirName, string game
     bool gameDataExists = DirEntry::exists(gameDataPath);
 
     if (gameDataExists) {
-        cerr << "Game: " << gameDirName << " - Moving GameData to 0.5" << endl;
+        PLOG_ERROR << "Game: " << gameDirName << " - Moving GameData to 0.5";
         for (const DirEntry & entryGame : DirEntry::diru(gameDataPath)) {
             string newName = path + sep + gameDirName + sep + entryGame.name;
             string oldName = gameDataPath + sep + entryGame.name;
-            cerr << "Moving: " << oldName << "  to: " << newName << endl;
+            PLOG_ERROR << "Moving: " << oldName << "  to: " << newName;
             DirEntry::renameFile(oldName, newName);
         }
     }
@@ -345,10 +346,11 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
     int i = 0;
     for (auto game : gamesScanned) {
         cout << i++ << ": ";
-        if (game)
-            cout << game->pathName << ", " << game->fullPath << endl;
-        else
-            cout << "NULL" << endl;
+        if (game) {
+            PLOG_INFO << game->pathName << ", " << game->fullPath;
+        } else {
+            PLOG_INFO << "NULL";
+        }
     }
 #endif
 
@@ -357,10 +359,11 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
     for (UsbGamePtr game : allGames) {
         gameIndex++;
         int i = 0;
-        if (game)
-            cout << i++ << ": "<< game->gameDirName << ", " << game->fullPath << endl;
-        else
-            cout << i++ << ": "<< "NULL" << endl;
+        if (game) {
+            PLOG_INFO << i++ << ": " << game->gameDirName << ", " << game->fullPath;
+        } else {
+            PLOG_INFO << i++ << ": NULL";
+        }
         repairBinCommaNames(game->fullPath);
 
         string saveStateDir = Environment::getPathToSaveStatesDir() + sep + game->gameDirName;
@@ -408,9 +411,9 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 				}
 			}
 
-			cout << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed << endl;
+			PLOG_WARNING << "before calling recoverMissingFiles() automationUsed = " << game->automationUsed;
 			game->recoverMissingFiles(metadata);
-            cout << "after calling recoverMissingFiles() automationUsed = " << game->automationUsed << endl;
+            PLOG_WARNING << "after calling recoverMissingFiles() automationUsed = " << game->automationUsed;
 
             if (game->gameIniFound)
                 game->loadGameIni(gameIniPath); // read it in now in case we need to create or update the serial/region
@@ -452,7 +455,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 							// all recovered :)
                             if (!game->coverImageFound && !md.bytes.empty()) {
                                 string newFilename = game->fullPath + sep + game->discs[0].cueName + EXT_PNG;
-                                cout << "Updating cover in scanGamesDirectory()" << newFilename << endl;
+                                PLOG_INFO << "Updating cover in scanGamesDirectory()" << newFilename;
                                 ofstream pngFile;
                                 pngFile.open(newFilename, ios::binary);
                                 if (DirEntry::checkWritable(pngFile, newFilename)) {
@@ -491,7 +494,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
             if (!game->coverPath.empty() && !game->discs.empty()) {
                 string gamePng = game->fullPath + sep + game->discs[0].diskName + EXT_PNG;
                 if (DirEntry::filesAreIdentical(gamePng, Environment::getWorkingPath() + sep + "default.png")) {
-                    cout << "Removing the default.png placeholder " << gamePng << " - the thumbnails tree has a cover" << endl;
+                    PLOG_INFO << "Removing the default.png placeholder " << gamePng << " - the thumbnails tree has a cover";
                     DirEntry::removeFile(gamePng);
                     game->coverImageFound = false;
                 }
@@ -636,12 +639,12 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
         report(ScanStage::MergingDiscs, base);
 
         if (target != first.path && DirEntry::exists(target)) {
-            cout << "multi-disc merge: " << target << " already exists - leaving " << base << "'s discs as they are" << endl;
+            PLOG_INFO << "multi-disc merge: " << target << " already exists - leaving " << base << "'s discs as they are";
             continue;
         }
         if (target != first.path) {
             if (!DirEntry::renameFile(first.path, target)) {
-                cout << "multi-disc merge: cannot rename " << first.path << " to " << target << " - skipped" << endl;
+                PLOG_WARNING << "multi-disc merge: cannot rename " << first.path << " to " << target << " - skipped";
                 continue;
             }
         }
@@ -655,12 +658,12 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
                 const string from = other.path + sep + e.name;
                 const string to = target + sep + e.name;
                 if (DirEntry::exists(to)) {
-                    cout << "multi-disc merge: " << to << " already exists - " << other.name << " left as it is" << endl;
+                    PLOG_INFO << "multi-disc merge: " << to << " already exists - " << other.name << " left as it is";
                     failed = true;
                     break;
                 }
                 if (!DirEntry::renameFile(from, to)) {
-                    cout << "multi-disc merge: cannot move " << from << " to " << to << " - " << other.name << " left as it is" << endl;
+                    PLOG_WARNING << "multi-disc merge: cannot move " << from << " to " << to << " - " << other.name << " left as it is";
                     failed = true;
                     break;
                 }
@@ -687,7 +690,7 @@ int GameScanner::mergeMultiDiscFolders(const string &gamesDir) {
                 if (ini.values["title"] == first.name) ini.values["title"] = base;
                 ini.save(iniPath);
             }
-            cout << "multi-disc merge: " << group.size() << " folders -> " << target << endl;
+            PLOG_INFO << "multi-disc merge: " << group.size() << " folders -> " << target;
             merged++;
         }
     }

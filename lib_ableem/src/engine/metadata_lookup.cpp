@@ -4,6 +4,7 @@
 #include "ableem/engine/strings.h"
 
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -16,7 +17,7 @@ MetadataLookup::MetadataLookup(const string &coversDir, const string &rdbFile) :
     if (DirEntry::exists(rdbFile)) {
         rdb_.open(rdbFile);   // logs what it found, or why not
     } else {
-        cout << "rdb: no " << rdbFile << " - game metadata comes from the covers databases only" << endl;
+        PLOG_INFO << "rdb: no " << rdbFile << " - game metadata comes from the covers databases only";
     }
 }
 

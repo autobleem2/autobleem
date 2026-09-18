@@ -2,6 +2,7 @@
 #include "ableem/engine/filesystem.h"
 
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -20,11 +21,11 @@ CoverDatabase::CoverDatabase(const string &coversDir) {
         if (DirEntry::exists(filename)) {
             covers[i].reset(new GameDatabase());
             if (!covers[i]->open(filename)) {
-                cout << "failed to open database " << filename << endl;
+                PLOG_WARNING << "failed to open database " << filename;
                 covers[i].reset();
             }
         } else {
-            cout << "database file " << filename << " not found" << endl;
+            PLOG_WARNING << "database file " << filename << " not found";
         }
     }
 }

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -117,7 +118,7 @@ PsGames GameQueryService::history() {
 // GameQueryService::retroArchGames
 //*******************************
 PsGames GameQueryService::retroArchGames(const string &playlistName) {
-    cout << "Getting RA games for playlist: " << playlistName << endl;
+    PLOG_INFO << "Getting RA games for playlist: " << playlistName;
     if (playlistName.empty() || retroArch_ == nullptr)
         return PsGames();
     return retroArch_->gamesInPlaylist(playlistName);
@@ -135,10 +136,10 @@ PsGames GameQueryService::apps() {
     if (!DirEntry::exists(appPath))
         return games;
 
-    cout << "Scanning apps in: " << appPath << endl;
+    PLOG_INFO << "Scanning apps in: " << appPath;
     for (auto &dir : DirEntry::diru_DirsOnly(appPath)) {
         string appIni = appPath + sep + dir.name + sep + "app.ini";
-        cout << "AppIni: " << appIni << endl;
+        PLOG_INFO << "AppIni: " << appIni;
         if (!DirEntry::exists(appIni))
             continue;
 

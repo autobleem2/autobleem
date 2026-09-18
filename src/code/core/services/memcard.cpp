@@ -8,6 +8,7 @@
 #include "../main.h"
 
 #include <iostream>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -60,7 +61,7 @@ void MemcardService::swapInForLaunch(PsGame &game) {
     // both together so they agree.
     if (!manager().swapIn(game.ssFolder, game.memcard)) {
         // the set is gone: fall back to the stock card rather than run on whatever is there
-        cout << "Memory card set " << game.memcard << " could not be swapped in, falling back to SONY" << endl;
+        PLOG_WARNING << "Memory card set " << game.memcard << " could not be swapped in, falling back to SONY";
         setCardForGame(game, SonyCard);
     }
 }

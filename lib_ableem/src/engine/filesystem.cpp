@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -418,7 +419,7 @@ bool DirEntry::copyFile(const std::string& pathFrom, const std::string& pathTo) 
 bool DirEntry::checkWritable(const ofstream &os, const string &path) {
     if (os.is_open())
         return true;
-    cout << "ERROR: cannot write file: " << path << " (" << strerror(errno) << ")" << endl;
+    PLOG_WARNING << "ERROR: cannot write file: " << path << " (" << strerror(errno) << ")";
     return false;
 }
 
@@ -528,7 +529,7 @@ vector<string> DirEntry::cueToBinList(string cueFile) {
 
     ifstream is(cueFile);
     if (!is.is_open()) {
-        cout << "Error opening cue file: " << cueFile << endl;
+        PLOG_WARNING << "Error opening cue file: " << cueFile;
         return binList;
     }
 
@@ -566,7 +567,7 @@ DirEntry::getFilesWithExtension(const string &path, const DirEntries &entries, c
 // DirEntry::print
 //*******************************
 void DirEntry::print() const {
-    cout << (isDir ? "Dir: " : "File: ") << name << std::endl;
+    PLOG_INFO << (isDir ? "Dir: " : "File: ") << name;
 }
 
 //*******************************

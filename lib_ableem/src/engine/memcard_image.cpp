@@ -4,6 +4,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -39,11 +40,11 @@ MemcardImage::MemcardImage() {
 bool MemcardImage::load(const string &filename) {
     ifstream f(filename, ifstream::ate | ifstream::binary);
     if (!f.is_open()) {
-        cout << "Cannot open memory card: " << filename << endl;
+        PLOG_WARNING << "Cannot open memory card: " << filename;
         return false;
     }
     if (f.tellg() < Size) {
-        cout << "Memory card file is too small: " << filename << endl;
+        PLOG_INFO << "Memory card file is too small: " << filename;
         return false;
     }
     if (f.tellg() == 134976) {

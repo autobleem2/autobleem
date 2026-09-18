@@ -7,6 +7,7 @@
 # Run with:  ctest --test-dir build_win --output-on-failure    (make_win.sh does this after a build)
 
 add_library(doctest_main STATIC doctest_main.cpp)
+target_link_libraries(doctest_main ableem_engine)
 target_include_directories(doctest_main PUBLIC third_party)
 
 # the support pieces every test links: EnvFixture (Environment's setters are global), TempDir and

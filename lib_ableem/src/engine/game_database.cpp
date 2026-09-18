@@ -9,6 +9,7 @@
 #include <sqlite3ab.h>
 #include <iostream>
 #include <vector>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -242,8 +243,8 @@ public:
     Stmt(sqlite3 *db, const char *sql, const char *caller) {
         int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
         if (rc != SQLITE_OK) {
-            cerr << "Failed: db::" << caller << ", " << sqlite3_errmsg(db) << endl;
-            cerr << "  sql: " << sql << endl;
+            PLOG_ERROR << "Failed: db::" << caller << ", " << sqlite3_errmsg(db);
+            PLOG_ERROR << "  sql: " << sql;
             stmt = nullptr;
         }
     }
@@ -579,7 +580,7 @@ bool GameDatabase::loadSubDirRowGames(SubDirRowGames *gameRowGames) {
         gameRowGame.rowIndex = stmt.colInt(0);
         gameRowGame.gameId = stmt.colInt(1);
 
-        cout << "GameRowGame: " << gameRowGame.rowIndex << ", " << gameRowGame.gameId << endl;
+        PLOG_INFO << "GameRowGame: " << gameRowGame.rowIndex << ", " << gameRowGame.gameId;
 
         gameRowGames->emplace_back(gameRowGame);
     }
@@ -759,11 +760,11 @@ bool GameDatabase::clearSubDirTables() {
 //*******************************
 bool GameDatabase::executeCreateStatement(const char *sql, const string &name) {
     char *errorReport = nullptr;
-    cout << "Creating " << name << " (if not exists)" << endl;
+    PLOG_INFO << "Creating " << name << " (if not exists)";
     int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errorReport);
     if (rc != SQLITE_OK) {
-        cerr << "Failed: db:: executeCreateStatement, " << sql << ", " << name << endl;
-        cerr << "Failed to create " << name << "  table/column  " << (errorReport ? errorReport : sqlite3_errmsg(db)) << endl;
+        PLOG_ERROR << "Failed: db:: executeCreateStatement, " << sql << ", " << name;
+        PLOG_ERROR << "Failed to create " << name << "  table/column  " << (errorReport ? errorReport : sqlite3_errmsg(db));
         sqlite3_free(errorReport);
         return false;
     }
@@ -775,11 +776,11 @@ bool GameDatabase::executeCreateStatement(const char *sql, const string &name) {
 //*******************************
 bool GameDatabase::executeStatement(const char *sql, const string &outMsg, const string &errorMsg) {
     char *errorReport = nullptr;
-    cout << outMsg << endl;
+    PLOG_INFO << outMsg;
     int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errorReport);
     if (rc != SQLITE_OK) {
-        cerr << "Failed: db:: executeStatement, " << sql << ", " << outMsg<< ", " << errorMsg << endl;
-        cerr << errorMsg << (errorReport ? errorReport : sqlite3_errmsg(db)) << endl;
+        PLOG_ERROR << "Failed: db:: executeStatement, " << sql << ", " << outMsg<< ", " << errorMsg;
+        PLOG_ERROR << errorMsg << (errorReport ? errorReport : sqlite3_errmsg(db));
         sqlite3_free(errorReport);
         return false;
     }
@@ -793,13 +794,13 @@ bool GameDatabase::open(const string &fileName) {
     close();   // in case open is called twice
     int rc = sqlite3_open(fileName.c_str(), &db);
     if (rc != SQLITE_OK) {
-        cerr << "Failed: db:: connect, " << fileName << endl;
-        cout << "Cannot open database: " << (db ? sqlite3_errmsg(db) : "out of memory") << endl;
+        PLOG_ERROR << "Failed: db:: connect, " << fileName;
+        PLOG_WARNING << "Cannot open database: " << (db ? sqlite3_errmsg(db) : "out of memory");
         sqlite3_close(db);  // sqlite3_open allocates a handle even on failure
         db = nullptr;
         return false;
     }
-    cout << "Connected to DB " << fileName << endl;
+    PLOG_INFO << "Connected to DB " << fileName;
     return true;
 }
 
@@ -808,7 +809,7 @@ bool GameDatabase::open(const string &fileName) {
 //*******************************
 void GameDatabase::close() {
     if (db != nullptr) {
-        cout << "Disconnecting DBs" << endl;
+        PLOG_INFO << "Disconnecting DBs";
         sqlite3_db_cacheflush(db);
         sqlite3_close(db);
         db = nullptr;

@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -54,7 +55,7 @@ bool AutoBleem::openLibrary() {
 
 #ifndef AB_PLATFORM_RPI
     // if the /System/Databases/internal.db doesn't exist make a copy from the PSC
-    cout << "Importing internal games from PSC to USB" << endl;
+    PLOG_INFO << "Importing internal games from PSC to USB";
     System::execUnixCommand((Env::getPathToRCDir() + sep + "backup_internal.sh").c_str());
 #endif
 
@@ -67,7 +68,7 @@ bool AutoBleem::openLibrary() {
 // AutoBleem::launchGame
 //*******************************
 void AutoBleem::launchGame() {
-    cout << "Starting game" << endl;
+    PLOG_INFO << "Starting game";
     gui_->finish();          // fades the music out and closes the mixer
 
     gui_->input().flushPads();

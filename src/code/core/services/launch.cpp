@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -133,7 +134,7 @@ string LaunchService::raBaseNameFor(const PsGame &game) {
 //*******************************
 // args, as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad
 void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
-    cout << "calling LaunchService::launchPcsx()" << endl;
+    PLOG_INFO << "calling LaunchService::launchPcsx()";
 
     library_.updateDatePlayed(game, time(nullptr));
 
@@ -224,7 +225,7 @@ void LaunchService::cleanupPcsxConfig(PsGame &game) {
 //*******************************
 // args, as rc/launch_rb.sh reads them: file, core
 void LaunchService::launchRetroArch(PsGame &game) {
-    cout << "calling LaunchService::launchRetroArch()" << endl;
+    PLOG_INFO << "calling LaunchService::launchRetroArch()";
 
     // one of our own games: a playlist entry's gameId is only its index in the playlist, and would name
     // some unrelated row in regional.db
@@ -234,10 +235,10 @@ void LaunchService::launchRetroArch(PsGame &game) {
 
     string gameFile = "";
 
-    cout << "Starting RetroArch Emu" << endl;
+    PLOG_INFO << "Starting RetroArch Emu";
 
     if (game.foreign) {
-        cout << "RA FOREIGN MODE" << endl;
+        PLOG_INFO << "RA FOREIGN MODE";
     }
 
     if (!game.foreign) {
@@ -266,7 +267,7 @@ void LaunchService::launchRetroArch(PsGame &game) {
     } else {
         gpu = "NONE";
     }
-    cout << "Using GPU plugin: " << gpu << endl;
+    PLOG_INFO << "Using GPU plugin: " << gpu;
 
     string RACore = RaNeonCore;
     if (gpu != PcsxNeonGpu) {
@@ -485,13 +486,13 @@ void LaunchService::transferRaConfig(PsGame &game) {
 // LaunchService::launchApp
 //*******************************
 void LaunchService::launchApp(PsGame &game) {
-    cout << "calling LaunchService::launchApp()" << endl;
-    cout << "Starting External App" << endl;
+    PLOG_INFO << "calling LaunchService::launchApp()";
+    PLOG_INFO << "Starting External App";
 
     library_.updateDatePlayed(game, time(nullptr));
 
     if (game.foreign) {
-        cout << "FOREIGN MODE" << endl;
+        PLOG_INFO << "FOREIGN MODE";
     }
 
     string link = game.base + sep + game.startup;

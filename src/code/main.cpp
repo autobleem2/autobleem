@@ -13,6 +13,7 @@
 #include "core/services/environment.h"
 #include "core/services/platform_config.h"
 #include "core/version.h"
+#include <ableem/engine/log.h>
 
 using namespace std;
 
@@ -48,7 +49,7 @@ static bool setupEnvironment(int argc, char *argv[]) {
         gamesDir = argv[2];
         usbRoot = DirEntry::getDirNameFromPath(gamesDir);
     } else {
-        cout << "USAGE: autobleem-gui /path/dbfilename.db /path/to/games" << endl;
+        PLOG_INFO << "USAGE: autobleem-gui /path/dbfilename.db /path/to/games";
         return false;
     }
     Env::setUsbRoot(usbRoot);
@@ -105,6 +106,10 @@ static int runAutobleem(int argc, char *argv[]) {
     if (!setupEnvironment(argc, argv)) {
         return EXIT_FAILURE;
     }
+    // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well
+    DirEntry::createDir(Env::getPathToLogsDir());
+    ableem::Log::init(Env::getPathToLogsDir() + sep + "autobleem.log");
+    PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, " << Env::platformName();
 
     AutoBleem app;
     return app.run();
@@ -117,9 +122,9 @@ int main(int argc, char *argv[]) {
     try {
         return runAutobleem(argc, argv);
     } catch (const std::exception &e) {
-        cerr << "FATAL: unhandled exception: " << e.what() << endl;
+        PLOG_ERROR << "FATAL: unhandled exception: " << e.what();
     } catch (...) {
-        cerr << "FATAL: unhandled exception of unknown type" << endl;
+        PLOG_ERROR << "FATAL: unhandled exception of unknown type";
     }
     return EXIT_FAILURE;
 }

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include "ableem/engine/log.h"
 
 using namespace std;
 
@@ -61,7 +62,7 @@ void GameSubDir::scanAll() {
                 childrenDirs.emplace_back(subdir);
             }
             else {
-                cout << subdir->subDirName << " FAILED TO ADD" << endl;
+                PLOG_WARNING << subdir->subDirName << " FAILED TO ADD";
             }
         }
     }
@@ -88,7 +89,7 @@ bool GameSubDir::sameGame(const UsbGamePtr &game1, const UsbGamePtr &game2) {
 void GameSubDir::removeGamesInSecondListThatMatchAGameInFirstList(UsbGames &parentGames, UsbGames &childGames, std::ofstream &dupFile) {
     for (auto &parentGame : parentGames) {
         auto it = remove_if(begin(childGames), end(childGames), [&parentGame, &dupFile] (UsbGamePtr &childGame) {
-            cout << "compare " << parentGame->title << " with " << childGame->title << endl;
+            PLOG_INFO << "compare " << parentGame->title << " with " << childGame->title;
             if (sameGame(parentGame, childGame)) {
                 dupFile << "removed duplicate child game: " << childGame->fullPath << endl;
                 dupFile << endl;
@@ -151,10 +152,10 @@ void GameSubDir::makeGamesToDisplayWhileRemovingChildDuplicates(ofstream &dupFil
 //*******************************
 void GameSubDir::print(bool plusGames) {
     string indent(displayIndentLevel * 2, ' ');
-    cout << displayRowIndex << ": " << indent << fullPath << ", " << subDirName << " (" << gamesInThisDir.size() << " games)" << endl;
+    PLOG_INFO << displayRowIndex << ": " << indent << fullPath << ", " << subDirName << " (" << gamesInThisDir.size() << " games)";
     if (plusGames) {
         for (auto & game : gamesInThisDir)
-            cout << indent << " " << game->gameDirName << endl;
+            PLOG_INFO << indent << " " << game->gameDirName;
     }
     for (auto & child : childrenDirs)
         child->print(plusGames);
@@ -261,7 +262,7 @@ void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
     auto allGames = getAllGames();
 
     UsbGame::sortByFullPath(allGames);
-    cout << "writeAutobleemPrev" << endl;
+    PLOG_INFO << "writeAutobleemPrev";
     for (const auto &g : allGames) cout << g->fullPath << endl;
 
     ofstream prev;
@@ -280,7 +281,7 @@ void GamesHierarchy::writeAutobleemPrev(const std::string & autobleemPrevPath) {
 void GamesHierarchy::removeGameFromEntireHierarchy(UsbGamePtr &game) {
     // the game did not pass the verify step and was not added to the DB.
     // remove the game everywhere in the gamesHierarchy
-    cout << "game: " << game->title << " did not pass verify() test" << endl;
+    PLOG_INFO << "game: " << game->title << " did not pass verify() test";
     // remove the game everywhere in the gamesHierarchy
     for (auto &row : gameSubDirRows) {
         auto it = remove_if(begin(row->gamesInThisDir), end(row->gamesInThisDir),
