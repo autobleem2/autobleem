@@ -265,14 +265,15 @@ void GuiLauncher::loop_joyButton_Pressed() {
         app.audio().cursor.play();
         powerOffShift = true;
     }
+    if (e.button == Button::R2) {
+        r2Held = true;
+    }
 
-    if (powerOffShift) {
-        if (e.button == Button::R2) {
-            // was a direct power off; L2+R2 opens the system menu instead now, Power Off among its items -
-            // one accidental R2 while reaching for L2 no longer shuts the console down on the spot
-            loop_openSystemMenu();
-            return;
-        }
+    if (powerOffShift && r2Held && (e.button == Button::L2 || e.button == Button::R2)) {
+        // L2+R2, in either order, opens the system menu (was a direct power off; Power Off is one of the
+        // menu's items now, so one accidental R2 while reaching for L2 no longer shuts the console down)
+        loop_openSystemMenu();
+        return;
     }
 
     if (e.button == Button::Select) {
@@ -579,6 +580,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
 //*******************************
 void GuiLauncher::forgetHeldModifiers() {
     powerOffShift = false;
+    r2Held = false;
     L1_isPressedForFastForward = false;
     R1_isPressedForFastForward = false;
 }
@@ -591,6 +593,9 @@ void GuiLauncher::loop_joyButtonReleased() {
     if (e.button == Button::L2) {
         app.audio().cursor.play();
         powerOffShift = false;
+    }
+    if (e.button == Button::R2) {
+        r2Held = false;
     }
 
     if (L1_isPressedForFastForward && (e.button == Button::L1)) {

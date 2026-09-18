@@ -312,6 +312,10 @@ bool ThemeSpec::load(const string &path) {
             readStr(*m, "guide", launcher.menuIcons.guide);
             readStr(*m, "memcard", launcher.menuIcons.memcard);
             readStr(*m, "resume", launcher.menuIcons.resume);
+            if (const json *p = child(*m, "resumePicture"))
+                readRect(*p, launcher.menuIcons.resumePicture.x, launcher.menuIcons.resumePicture.y,
+                         launcher.menuIcons.resumePicture.w, launcher.menuIcons.resumePicture.h,
+                         launcher.menuIcons.resumePicture.set);
         }
         if (const json *m = child(*l, "memcardManager")) {
             readStr(*m, "grid", launcher.memcardManager.grid);
@@ -452,6 +456,14 @@ bool ThemeSpec::save(const string &path) const {
             putStr(m, "guide", launcher.menuIcons.guide);
             putStr(m, "memcard", launcher.menuIcons.memcard);
             putStr(m, "resume", launcher.menuIcons.resume);
+            if (launcher.menuIcons.resumePicture.set) {
+                ordered_json p = ordered_json::object();
+                p["x"] = launcher.menuIcons.resumePicture.x;
+                p["y"] = launcher.menuIcons.resumePicture.y;
+                p["w"] = launcher.menuIcons.resumePicture.w;
+                p["h"] = launcher.menuIcons.resumePicture.h;
+                m["resumePicture"] = p;
+            }
             putObject(l, "menuIcons", m);
         }
         {
@@ -524,6 +536,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(launcher.metaPanelSlides, base.launcher.metaPanelSlides);
     mergeSet(launcher.textShadow, base.launcher.textShadow);
     mergeSet(launcher.snapPanel, base.launcher.snapPanel);
+    mergeSet(launcher.menuIcons.resumePicture, base.launcher.menuIcons.resumePicture);
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
     mergeColor(launcher.colors.hint, base.launcher.colors.hint);

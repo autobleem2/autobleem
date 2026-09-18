@@ -142,6 +142,8 @@ public:
 
     bool powerOffShift = false;
 
+    bool r2Held = false; // with L2 held too the system menu opens, whichever was pressed first
+
     // the row of covers: the games it shows, the selected one, the scroll animation
     Carousel carousel{*gui};
 

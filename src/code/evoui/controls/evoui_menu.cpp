@@ -14,6 +14,9 @@ PsMenu::PsMenu(string name1, const LauncherTheme::MenuIcons &icons) : PsObj(name
     guide = ableem::Texture::loadFile(renderer, icons.guide);
     memcard = ableem::Texture::loadFile(renderer, icons.memcard);
     savestate = ableem::Texture::loadFile(renderer, icons.resume);
+    if (icons.resumePicture.set)
+        resumePicture =
+            ableem::Rect(icons.resumePicture.x, icons.resumePicture.y, icons.resumePicture.w, icons.resumePicture.h);
     x = 640 - 118 / 2;
     y = 520;
     oy = y;
@@ -220,10 +223,10 @@ void PsMenu::render() {
             ableem::Size s = resume.size();
             input.h = s.h;
             input.w = s.w;
-            output.x = x + 130 * 3 + 25 * optionscales[3] + xoff[3];
-            output.y = y + yoff[3] + 33 * optionscales[3];
-            output.w = 68 * optionscales[3];
-            output.h = 52 * optionscales[3];
+            output.x = x + 130 * 3 + resumePicture.x * optionscales[3] + xoff[3];
+            output.y = y + yoff[3] + resumePicture.y * optionscales[3];
+            output.w = resumePicture.w * optionscales[3];
+            output.h = resumePicture.h * optionscales[3];
             renderer.copy(resume, &input, &output);
         }
     }

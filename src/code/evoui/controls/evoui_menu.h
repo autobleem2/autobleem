@@ -22,6 +22,8 @@ public:
     ableem::Texture memcard;
     ableem::Texture savestate;
     ableem::Texture resume;
+    // where `resume` is pasted on the resume icon, in the icon's pixels (theme launcher.menuIcons.resumePicture)
+    ableem::Rect resumePicture{25, 33, 68, 52};
 
     int x = 0, y = 0, oy = 0, ox = 0;
     int xoff[4] = {0, 0, 0, 0};

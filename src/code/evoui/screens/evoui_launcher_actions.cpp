@@ -552,6 +552,8 @@ void GuiLauncher::loop_openSystemMenu() {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
         systemMenu.scanInProgress = app.scans().scanning();
+        if (background != nullptr)
+            systemMenu.background = background->tex;
         systemMenu.show();
         action = systemMenu.result;
     }

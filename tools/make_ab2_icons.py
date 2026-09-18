@@ -8,7 +8,8 @@ inherited from the original theme.
 Files: menu_settings.png (a gear), menu_guide.png (a gamepad - the "Game" item, game parameters),
 menu_memcard.png (a PS1 memory card), memcard_pencil.png (the memory card editor's cursor, a stylus with
 its tip at the top-left corner like the pencil it replaces), menu_resume.png (a frame: PsMenu::render pastes the save
-state's picture at (25, 33) 68x52 inside it, so the frame hugs that window and nothing else is drawn), all 118x118; and, one level
+state's picture inside it where theme.json's launcher.menuIcons.resumePicture says - centred on the tile here -
+so the frame hugs that window and nothing else is drawn), all 118x118; and, one level
 up in the theme folder, on.png / off.png (60x30): the default theme's switch with its green turned to
 the theme's blue.
 """
@@ -20,6 +21,9 @@ SIZE = 118
 # the tile is smaller than the 118x118 slot the launcher gives it - a full-size one covered the option's
 # label when the selected icon zooms, and crowded the row
 TILE_LEFT, TILE_TOP, TILE_RIGHT, TILE_BOTTOM = 17, 6, 100, 90
+# where the launcher pastes the save state's picture on the resume icon (theme.json's
+# launcher.menuIcons.resumePicture) - centred on the tile; the frame is drawn around it
+RESUME_X, RESUME_Y, RESUME_W, RESUME_H = 25, 22, 68, 52
 # the tile sits high in its slot: in the launcher's Games state the row stands at y=520 with the footer
 # bar at 620, and a tile reaching the slot's bottom went under the bar
 GLYPH_SCALE = 0.8  # the glyphs, drawn for the full slot, shrink to the tile and move up to its middle
@@ -136,15 +140,16 @@ def memcard(d, col, k):
 
 
 def screen(d, col, k):
-    # just a frame around the save state's picture, which the launcher draws at (25, 33) 68x52: the
-    # outline hugs that window with a 2 px border, nothing else, so the picture fills it
-    d.rounded_rectangle((22 * k, 30 * k, 95 * k, 87 * k), radius=4 * k, outline=col, width=3 * k)
+    # just a frame around the save state's picture: the outline hugs that window with a 2 px border,
+    # nothing else, so the picture fills it
+    d.rounded_rectangle(((RESUME_X - 3) * k, (RESUME_Y - 3) * k, (RESUME_X + RESUME_W + 2) * k,
+                         (RESUME_Y + RESUME_H + 2) * k), radius=4 * k, outline=col, width=3 * k)
 
 
 def screen_window_clear(im):
     # the picture goes here; the tile shows through, darker, when there is none
     d = ImageDraw.Draw(im)
-    d.rectangle((25, 33, 25 + 68 - 1, 33 + 52 - 1), fill=(6, 12, 36, 235))
+    d.rectangle((RESUME_X, RESUME_Y, RESUME_X + RESUME_W - 1, RESUME_Y + RESUME_H - 1), fill=(6, 12, 36, 235))
     return im
 
 

@@ -29,9 +29,13 @@ enum class SystemMenuAction {
 //******************
 // GuiSystemMenu
 //******************
-// A dumb picker: it knows nothing about what each item does. The caller (GuiLauncher) fills retroArchLabel
-// and scanInProgress in before show(), then reads result back and runs the action itself - it already owns
-// the reload/close logic every one of these needs afterwards.
+// A dumb picker: it knows nothing about what each item does. The caller (GuiLauncher) fills retroArchLabel,
+// scanInProgress and background in before show(), then reads result back and runs the action itself - it
+// already owns the reload/close logic every one of these needs afterwards.
+//
+// The look: a panel over the launcher's dimmed background, in the launcher's fonts and colours, as tall
+// as its rows need - more rows than the screen has room for scroll, with a marker at the edge they are
+// beyond - and the launcher's button hints in its footer.
 class GuiSystemMenu : public GuiScreen {
 public:
     void init() override;
@@ -40,6 +44,7 @@ public:
 
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
+    ableem::Texture background;               // the launcher's background, drawn dimmed under the panel
 
     SystemMenuAction result = SystemMenuAction::None;
 
@@ -53,4 +58,10 @@ private:
     };
     std::vector<Item> items;
     int selected = 0;
+    int firstVisible = 0; // the first row on screen, when there are more than fit
+    int visibleRows() const;
+    void moveSelection(int step);
+
+    ableem::Color textColor, secondaryColor, hintColor;
+    ableem::Texture crossIcon, circleIcon;
 };
