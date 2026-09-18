@@ -47,6 +47,20 @@ run() {
     fi
 }
 
+# write_file TARGET < content: atomically (temp file in the same directory, then rename) and synced, so a
+# power cut right after the installer - the Pi 400 has no power button - cannot leave a truncated file
+# behind. It did once: an empty autobleem.service, which systemd treats as masked.
+write_file() {
+    local target="$1"
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would write %s\n' "$target"
+        cat > /dev/null
+        return 0
+    fi
+    local tmp="$target.autobleem-tmp"
+    cat > "$tmp" && sync "$tmp" 2>/dev/null; mv -f "$tmp" "$target" && sync
+}
+
 confirm() {
     local prompt="$1"
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -322,11 +336,7 @@ write_retroarch_config() {
         return 0
     fi
     log "Writing $cfg"
-    if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would write %s with every directory under %s\n' "$cfg" "$RA_ROOT"
-        return 0
-    fi
-    cat > "$cfg" <<EOF
+    write_file "$cfg" <<EOF
 # Written by AutoBleem's installer. RetroArch keeps this file up to date itself; AutoBleem edits a few
 # display keys around each launch. Every directory lives under $RA_ROOT.
 libretro_directory = "$RA_ROOT/cores"
@@ -391,6 +401,8 @@ download_retroarch_content() {
             [ -n "$zip" ] || continue
             count=$((count + 1))
             printf '\r    [%3d/%3d] %-50s' "$count" "$total" "$zip"
+            # a re-run keeps the cores it has; RetroArch's Online Updater is the way to refresh them
+            [ -f "$RA_ROOT/cores/${zip%.zip}" ] && continue
             if wget -q -O "$tmp/$zip" "$cores_url/$zip" && unzip -oq "$tmp/$zip" -d "$RA_ROOT/cores"; then
                 rm -f "$tmp/$zip"
             else
@@ -406,6 +418,10 @@ download_retroarch_content() {
     for bundle in info:info assets:assets autoconfig:autoconfig database-rdb:database/rdb \
                   database-cursors:database/cursors cheats:cheats overlays:overlays shaders_glsl:shaders; do
         dest="${bundle#*:}"; bundle="${bundle%%:*}"
+        if [ -n "$(ls -A "$RA_ROOT/$dest" 2>/dev/null)" ]; then
+            log "RetroArch: $dest/ already has content - keeping it"
+            continue
+        fi
         log "RetroArch: $bundle -> $RA_ROOT/$dest"
         if run wget -q -O "$tmp/$bundle.zip" "$base/assets/frontend/$bundle.zip"; then
             run unzip -oq "$tmp/$bundle.zip" -d "$RA_ROOT/$dest" || warn "could not unpack $bundle.zip"
@@ -526,7 +542,7 @@ shrink_root() {
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would write to %s: %s\n' "$BOOT_DIR/cmdline.txt" "$cmdline"
     else
-        printf '%s\n' "$cmdline" > "$BOOT_DIR/cmdline.txt"
+        printf '%s\n' "$cmdline" | write_file "$BOOT_DIR/cmdline.txt"
     fi
 
     log "Rebooting to do the shrink (a few minutes - the console shows autobleem-shrink: lines)."
@@ -657,10 +673,12 @@ $STAGE_DIR/Autobleem/bin/autobleem
     fi
 
     log "Installing the AutoBleem tree"
+    # cp -r, not -a: exFAT has no owners or modes to preserve (the mount forces them), and cp -a's failure
+    # to preserve them is a non-zero exit even though every file was copied
     local d
     for d in Autobleem themes Games Apps; do
         [ -d "$STAGE_DIR/$d" ] || continue
-        run cp -a "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
+        run cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
     done
 
     # exFAT has no permission bits of its own - the mount's umask=000 already makes everything 0777 - so a
@@ -700,12 +718,8 @@ install_service() {
 
     run install -m 0755 "$SCRIPT_DIR/system/autobleem-session.sh" /usr/local/bin/autobleem-session
 
-    if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would write /etc/systemd/system/autobleem.service (root=%s)\n' "$DATA_MOUNT"
-    else
-        sed "s|@DATA_MOUNT@|$DATA_MOUNT|g" "$SCRIPT_DIR/system/autobleem.service" \
-            > /etc/systemd/system/autobleem.service
-    fi
+    sed "s|@DATA_MOUNT@|$DATA_MOUNT|g" "$SCRIPT_DIR/system/autobleem.service" \
+        | write_file /etc/systemd/system/autobleem.service
 
     # tty1 is the launcher's screen; a getty there would fight it for the terminal and the keyboard.
     # tty2..tty6 are untouched, so Alt+F2 still gives a login prompt if the launcher ever fails to start.
@@ -745,7 +759,7 @@ configure_boot() {
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would write to %s: %s\n' "$BOOT_DIR/cmdline.txt" "$cmdline"
     else
-        printf '%s\n' "$cmdline" > "$BOOT_DIR/cmdline.txt"
+        printf '%s\n' "$cmdline" | write_file "$BOOT_DIR/cmdline.txt"
     fi
 }
 
@@ -774,6 +788,9 @@ summary() {
   Alt+F2 gives you a login prompt if the launcher ever fails to come up. Enabling SSH before you reboot is a
   good idea: sudo raspi-config -> Interface Options -> SSH.
 
+  Power the Pi off from the launcher's L2+R2 menu (Power Off) or with "sudo poweroff", not by pulling the
+  plug: an unclean shutdown can leave freshly written files empty.
+
 EOF
     if [ "$DRY_RUN" -eq 1 ]; then
         warn "this was a --dry-run: nothing above was actually changed"
@@ -795,6 +812,7 @@ main() {
     install_payload
     install_service
     configure_boot
+    sync
     summary
 }
 
