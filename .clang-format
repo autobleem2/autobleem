@@ -1,0 +1,11 @@
+# AutoBleem C++ code style: LLVM with 4-space indents and 120 columns, as AutoBleem-NG's (its
+# autobleem/.clang-format), plus two choices of our own - access modifiers at the class's column (every
+# header here writes "public:" that way) and no top-level function collapsed onto one line (each carries
+# a //*** banner). tools/format.sh [--check] runs it over the tree; make_win.sh runs the check.
+# Requires clang-format 20 or newer (MSYS2: mingw-w64-ucrt-x86_64-clang-tools-extra).
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+SortIncludes: false
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: Inline

@@ -16,3 +16,6 @@ ctest --output-on-failure
 
 # every language file has every _("...") key and nothing malformed (tools/lang_tools.py update fixes the former)
 python ../tools/lang_tools.py validate
+
+# every source is clang-formatted (tools/format.sh rewrites the ones that are not)
+bash ../tools/format.sh --check
