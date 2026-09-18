@@ -51,6 +51,8 @@ public:
     bool lightgun = false; // set from LightgunService by updateTexts(PsGamePtr)
     bool foreign = false;
     bool app = false;
+    std::string coreName;      // a RetroArch game's core, shown under the publisher when there is one
+    bool playersKnown = false; // the players line is drawn for a RetroArch game only when the database said
 
     void updateTexts(const std::string &gameNameTxt, const std::string &publisherTxt, const std::string &yearTxt,
                      const std::string &serial, const std::string &region, const std::string &playersTxt, bool internal,

@@ -21,6 +21,7 @@ struct RAPlaylistInfo {
     std::string displayName; // the .lpl file name without its extension
     std::string path;
     PsGames psGames;
+    bool metadataLoaded = false; // see RetroArchService::ensureMetadata
 
     RAPlaylistInfo(const std::string &_displayName, const std::string &_path, const PsGames &games)
         : displayName(_displayName), path(_path), psGames(games) {}
@@ -37,7 +38,9 @@ struct RAPlaylistInfo {
 // Every playlist entry becomes a "foreign" PsGame whose core is resolved here: the entry's own core if the
 // .so exists, else the one resources/platform/<platform>.cores.cfg names for its database, else the first core
 // whose .info lists that database (ableem::CoreInfoTable holds that mapping). Entries whose core or image
-// cannot be found are dropped.
+// cannot be found are dropped. A game's publisher, year and player count come from the system's .rdb
+// (<retroarch>/database/rdb/<playlist name>.rdb) by its label, read the first time the playlist is asked
+// for and then dropped again - the launcher shows one playlist at a time and a database is megabytes.
 //
 // Owned by App (App::retroArch()).
 class RetroArchService : public RetroArchGames {
@@ -84,6 +87,7 @@ private:
     std::string specialPlaylistPath(const std::string &fileName) const; // "" when RetroArch has none
 
     bool findPlaylist(const std::string &displayName, int *index) const;
+    void ensureMetadata(RAPlaylistInfo &info);
     bool isValidPlaylist(const std::string &path) const;
     PsGames readGamesFromPlaylistFile(const std::string &path);
     bool isGameValid(const PsGame &game) const;

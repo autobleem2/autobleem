@@ -12,6 +12,13 @@
 // A folder is normally named as the database (= the playlist) is; Options::folderAliases maps the ones
 // that are not ("Arcade" -> "FBNeo - Arcade Games"). Two folders may feed one playlist that way.
 //
+// With the system's .rdb at hand (Options::rdbDir, libretro-database's files) every entry is identified
+// before the merge: a zipped ROM by the CRC the archive records, a loose file by its CRC (read once, up to
+// Options::maxCrcBytes - CD images are never hashed), an arcade set by its archive name against the
+// database's rom_name. A hit gives the entry the database's name - exactly what libretro-thumbnails names
+// the box art - and an identified name replaces an unidentified one an earlier scan left in the playlist.
+// No database, or no hit, keeps the file's stem. Nothing is dropped for not being in the database.
+//
 // An existing playlist is merged, never replaced: entries that point outside the system's ROM folder
 // (the user's own additions) stay as they are; an entry under it whose file is still there is kept
 // exactly (RetroArch's scanner may have identified it - its label and CRC are better than ours); a
@@ -20,8 +27,11 @@
 // content actually changed.
 #pragma once
 
+#include "rdb_reader.h"
 #include "retroarch_cores.h"
 #include "retroarch_playlist.h"
+
+#include <cstdint>
 
 #include <map>
 #include <string>
@@ -48,11 +58,26 @@ struct RetroArchSystem {
 using RetroArchSystems = std::vector<RetroArchSystem>;
 
 //******************
+// ScannedRom
+//******************
+// one entry a folder scan yields, with what the identification pass needs to know about it
+struct ScannedRom {
+    RetroArchPlaylistEntry entry;
+    std::string sourcePath;    // the file on this machine (the archive, for an archive member)
+    uint32_t crc = 0;          // the ROM's CRC when known (an archive member's, from the central directory)
+    bool wholeArchive = false; // an archive handed to the core as it is (an arcade set)
+    bool identified = false;   // the label is the database's name
+};
+
+using ScannedRoms = std::vector<ScannedRom>;
+
+//******************
 // RetroArchScanResult
 //******************
 struct RetroArchScanResult {
     int systemsScanned = 0;
     int gamesFound = 0;                        // entries under the ROM folders, over every system
+    int gamesIdentified = 0;                   // of those, the ones a database named
     std::vector<std::string> playlistsWritten; // "<system>.lpl" for every playlist whose content changed
     std::vector<std::string> unknownFolders;   // <roms>/<x> with no system in the table for it
 };
@@ -70,6 +95,10 @@ public:
         std::string targetRomsDir;
         // folder name -> database name, for the folders not named as their database is
         std::map<std::string, std::string> folderAliases;
+        // where <database>.rdb files are; "" = no identification
+        std::string rdbDir;
+        // a loose file bigger than this is not hashed (a CD image: its entry keeps the file's name)
+        uint64_t maxCrcBytes = 64 * 1024 * 1024;
     };
 
     explicit RetroArchScanner(ScanProgressListener *listener = nullptr) : listener_(listener) {}
@@ -87,15 +116,17 @@ public:
     static std::map<std::string, std::string> loadFolderAliases(const std::string &cfgPath);
 
     // the entries one folder yields - paths under targetFolder, sorted by path. Public for the tests.
-    static RetroArchPlaylistEntries scanFolder(const std::string &folder, const std::string &targetFolder,
-                                               const RetroArchSystem &system);
+    static ScannedRoms scanFolder(const std::string &folder, const std::string &targetFolder,
+                                  const RetroArchSystem &system);
+
+    // names every entry the database knows - see the header comment; returns how many it named
+    static int identify(ScannedRoms &roms, const RdbReader &rdb, uint64_t maxCrcBytes);
 
     // the merge of an existing playlist with a fresh scan of its folder - see the header comment.
     // sourceFolder is the folder on this machine, targetFolder what the playlist names it; an existing
     // entry under either is "ours".
-    static RetroArchPlaylistEntries merge(const RetroArchPlaylistEntries &existing,
-                                          const RetroArchPlaylistEntries &fresh, const std::string &sourceFolder,
-                                          const std::string &targetFolder);
+    static RetroArchPlaylistEntries merge(const RetroArchPlaylistEntries &existing, const ScannedRoms &fresh,
+                                          const std::string &sourceFolder, const std::string &targetFolder);
 
     // "archive.zip#entry" -> "archive.zip"; a plain path unchanged
     static std::string filePart(const std::string &path);

@@ -35,6 +35,8 @@ void PsMeta::updateTexts(const string &gameNameTxt, const string &publisherTxt, 
     this->foreign = foreign;
     this->app = app;
     this->last_played = last_played;
+    coreName = "";
+    playersKnown = false;
     textColor = _textColor;
     textColor.a = 255; // if you're rendering with a different color you need this or it will be transparent
 
@@ -75,10 +77,16 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             psGame->serial = "";
             psGame->region = "";
 
-            updateTexts(psGame->title, psGame->core_name, to_string(psGame->year), psGame->serial, psGame->region,
-                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
-                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
-                        App::get().clock().displayTime(psGame->last_played), _textColor);
+            // the publisher line is the core's name unless the database gave the game a publisher; the
+            // core then gets a line of its own
+            const bool hasPublisher = !psGame->publisher.empty();
+            updateTexts(psGame->title, hasPublisher ? psGame->publisher : psGame->core_name, to_string(psGame->year),
+                        psGame->serial, psGame->region, to_string(psGame->players) + " " + appendText, psGame->internal,
+                        psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
+                        psGame->foreign, psGame->app, App::get().clock().displayTime(psGame->last_played), _textColor);
+            if (hasPublisher)
+                coreName = psGame->core_name;
+            playersKnown = psGame->players > 0;
         }
     }
 }
@@ -126,11 +134,16 @@ void PsMeta::render() {
         gui->text().renderText(nameFont, gameName, x, y + yOffset);
 
         yOffset += 35;
-        // publisher line - with the year for a PS1 game (a RetroArch game's "publisher" is its core name)
-        if (!foreign && !year.empty() && year != "0")
+        // publisher line - with the year when known (a RetroArch game the database does not know shows its
+        // core name here instead)
+        if (!year.empty() && year != "0")
             gui->text().renderText(otherFont, publisher + ", " + year, x, y + yOffset);
         else
             gui->text().renderText(otherFont, publisher, x, y + yOffset);
+        if (!coreName.empty()) {
+            yOffset += 21;
+            gui->text().renderText(otherFont, coreName, x, y + yOffset);
+        }
 
         // the serial/region and last-played lines are a PS1 game's; a RetroArch game or an App has neither
         if (!foreign) {
@@ -223,8 +236,13 @@ void PsMeta::render() {
                 renderer.copy(players.rfind("1 ", 0) == 0 ? lightgunTex : lightgun2Tex, &fullRect, &rect);
             }
         } else {
-            // RetroArch game: the RA icon, on the row the serial line left free
+            // RetroArch game: the players line when the database knows, then the RA icon on the row the
+            // serial line left free
             if (!app) {
+                if (playersKnown) {
+                    gui->text().renderText(otherFont, players, x, y + yOffset);
+                    yOffset += 21;
+                }
                 yOffset += 21;
                 ableem::Size s = raTex.size();
                 w = s.w;

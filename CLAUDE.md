@@ -392,8 +392,14 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   (`Arcade` and `SNK - Neo Geo` -> `FBNeo - Arcade Games`). Verified on the PC's fake tree (`tools/make_usb.py`
   fakes a RetroArch install: stub binary, one `.info`, zipped ROMs) and **on the Pi 400** over its 848
   ROMs - RetroArch's own playlists survive byte for byte, a copy/delete lands in the carousel 17 s later;
-  **not yet on a console.** Steps 2-5 (rdb identification - which also drops `neogeo.zip` from the
-  arcade list -, box art, UI polish, `UpdateRoms.exe` for the console) are still in the plan.
+  **not yet on a console.** **Step 2** (2026-09-19): with `<retroarch>/database/rdb/<system>.rdb` there,
+  the worker names every ROM the database knows before the merge (`RetroArchScanner::identify` - a zip
+  member by the CRC the archive records, a loose file by hashing it up to 64 MB, an arcade set by
+  `rom_name`; a miss keeps the file's name, nothing is dropped) and an identified name replaces an
+  unidentified one an earlier scan wrote. `RetroArchService::ensureMetadata()` then reads the same rdb
+  once per playlist for publisher/year/players, which the meta panel shows for a RetroArch game the
+  database knows. On the Pi: 679 of 848 named in ~2 s. Steps 3-5 (box art, UI polish, `UpdateRoms.exe`
+  for the console) are still in the plan.
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
@@ -468,7 +474,8 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   publisher, year and players come from: RetroArch's `Sony - PlayStation.rdb` (`Environment::
   getPathToPlayStationRdbFile()`, `<retroarch>/database/rdb/` on both targets' standard tree) through
   **`RdbReader`** (`engine/rdb_reader.h`: the whole `.rdb` in memory, rmsgpack, indexed by serial and name,
-  `findBySerial` also takes a suffixed serial like `SLUS-01251GH`), else the three covers dbs through
+  `findBySerial` also takes a suffixed serial like `SLUS-01251GH`; since 2026-09-19 also `crc`, `size`,
+  `rom_name` with `findByCrc`/`findByRomName` for the other systems' databases), else the three covers dbs through
   **`CoverDatabase`** - and the covers db is still asked for its PNG when the rdb answered, so a stick with
   no thumbnails keeps its art. `GameMetadata::recordName` is the rdb's name (`"Crash Bandicoot (USA)"`),
   `title` has the trailing tags stripped, `lastRegion` ("U"/"P"/"J", what pcsx.cfg's region is set from)
@@ -519,7 +526,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   mapped to the first installed core listing it (most extensions first) unless the cores.cfg given to
   `load()` overrides it. Was `RetroArchService::loadCores`; the service holds one, the scan worker builds
   its own.
-- **`RetroArchScanner`** (`engine/retroarch_scanner.h`, 2026-09-18) - the offline ROM scan:
+- **`RetroArchScanner`** (`engine/retroarch_scanner.h`, 2026-09-18) - the ROM scan:
   `scan(Options{romsDir, playlistsDir, targetRomsDir}, systemsFrom(cores))` walks each `roms/<system>/`
   folder that has a core, one entry per game (a `.cue` hides its bins, an `.m3u` its discs, a `.ccd` its
   image; a `.zip` for a core that does not read archives itself - `zip` among its extensions, or
@@ -531,6 +538,10 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   the vanished go, the new join, sorted by label; `.tmp` + `DirEntry::replaceFile`, only when something
   changed. `targetRomsDir` is what the playlists name (the console's `/media/roms` when a PC writes them -
   the plan's step 5); `""` = `romsDir`. `AutoBleem`, `Applications` and `content_*` are never written.
+  With `Options::rdbDir` (2026-09-19) each folder's `ScannedRoms` go through `identify()` first: the
+  system's `.rdb` names a zip member by CRC, a loose file by `Crc32::ofFile` (up to `maxCrcBytes`), an
+  arcade set (`wholeArchive`) by `rom_name`; the label becomes the record's name and, in the merge, an
+  identified entry replaces an existing one for the same ROM whose label differs.
 - **`ThemeSpec`** (`engine/theme_spec.h`) - a theme as a typed struct (`music`, `classic`, `launcher`, `sounds`)
   with `load/save` of theme.json (never throws), `mergeOver(base)` for a partial theme over the default, and
   `resolveFiles()` (the theme's file if it exists, else the default's). `fileFields()` is the one list every
@@ -545,6 +556,9 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   purpose: it is what keeps the archive plain zip (no zip64), which is what the console's recovery reads.
 - **`Md5`** (`engine/md5.h`, public since 2026-09-18) - RFC 1321: `ofBytes/ofString/ofFile` (streamed) and
   the incremental `update/hexDigest`. `SerialScanner::serialFromMd5` and abflashkit's kernel check use it.
+- **`Crc32`** (`engine/crc32.h`, 2026-09-19) - `ofFile(path, crc, maxBytes)` streamed over miniz's
+  `mz_crc32` (false, no read at all, over the cap), `ofBytes`, and `playlistText()` (`"%08X|crc"`). What
+  the ROM scanner identifies a loose file by.
 
 ### ui
 
@@ -834,14 +848,14 @@ defaults, which both the services and the screens need.
 | `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, L2+R2 among them), and the actions (what Cross does per state and menu icon, and L2+R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running; a highlighted game that vanished (folder pulled, or merged by the scan) falls back to the set's first game, closes a resume-slot picker that was showing its slots, and keeps the cover raised while the game menu is open (`Carousel::snapMainCover`). |
 | `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The L2+R2 overlay (either order - `powerOffShift` + `r2Held`, 2026-09-18): Re-Scan Games, RetroArch/EmulationStation, Memory Cards, Game Manager, Hardware Information (PSC-Bios on the console, `GuiHardwareInfo` elsewhere), Options, About, Power Off - everything the classic main menu used to offer, Power Off included (no more direct L2+R2 shutdown). A dumb picker: a panel over the launcher's dimmed background (`background` texture handed in by the launcher), launcher fonts and theme colours, the panel as tall as its rows need and scrolling with edge markers when more than fit, the launcher's X/O hint icons in its footer; Up/Down + wrap, Cross/Circle - it returns a `SystemMenuAction` and `GuiLauncher::loop_openSystemMenu()` runs it. |
 | `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | **Two kinds of box** (2026-09-18): a PS1 game is the art in the theme's jewel case (`cdJewel`, thin - `JewelCaseThickness` 8%); a RetroArch game or an App is a **big box** - the art at its own aspect (tall NES, wide SNES) with `evoimg/bigbox.png` laid over it as a 9-slice (`drawNineSlice`, 7 px border; `tools/make_bigbox_frame.py` draws the file, replace it with real artwork any time) and `BigBoxThickness` 22% deep. `PsCarouselGame::content` is where the box is in the 226x226 texture and `thickness` its depth; `renderTurnedCover` turns the box about *that* rect and puts the spine on its edge, so a tall box no longer has its spine floating in the transparent part of the texture. The row of covers: `games` (exactly the set's games, a bounded row - see "Conventions"), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. **Cover flow** since 2026-09-18: `PsScreenpoint::angle` (degrees about the vertical axis, negative = left of the middle, facing in) is interpolated like x/y/scale; `PsCarousel::createCoverPoint(distance, side)` lays out the `PsCarousel::SideCovers` (14 - enough that the outermost slot is off a 1280-wide screen, so a cover scrolls in from the edge rather than popping up) slots a side as a shelf receding from the middle: the nearest at half size 190 px out, each further one 3.5% smaller, 15 shades darker, a step (50 px, scaled with the cover) further out and turned more (40..72°) - the shrinking is what makes an inner cover drawn over an outer one read as being in front of it; `render()` draws far-to-near, the selected cover as a plain copy and every turned one via `renderTurnedCover()` - front face through `Renderer::copyTrapezoid`, plus a spine (`CoverThickness` = 8% of the width, textured with a strip from the cover's near edge, darker) and a Lambert-ish darkening with the turn. `ViewerDistance` (600 px) is the perspective strength. |
-| `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. |
+| `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. `PsMeta` shows a RetroArch game the database knows as title / "publisher, year" / core / "n Players" (2026-09-19); one it does not know as title / core, as before. |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
 | `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
 | `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
-| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), the core for an entry from its `ableem::CoreInfoTable` (`info/*.info` + `platform/<platform>.cores.cfg`, `coresCfgPath()`), Favorites/History, `reloadPlaylists()` after the scan rewrote them. Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
+| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), the core for an entry from its `ableem::CoreInfoTable` (`info/*.info` + `platform/<platform>.cores.cfg`, `coresCfgPath()`), Favorites/History, `reloadPlaylists()` after the scan rewrote them, and `ensureMetadata()` - publisher/year/players from `<rdb dir>/<playlist>.rdb` by label, read once per playlist on first use and dropped again (Favorites/History copy from the source playlist). Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `evoui/screens/evoui_mc_manager.*`, `evoui_app_start.*`, `evoui_btn_guide.*` | | Launcher sub-screens. |
 | `evoui/controls/evoui_notification_line.*` | `NotificationLines` | The two timed text lines at the top of the launcher. |

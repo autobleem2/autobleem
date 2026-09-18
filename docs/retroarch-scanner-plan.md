@@ -1,9 +1,9 @@
-# Scanning RetroArch's ROMs from AutoBleem - the plan (step 1 done 2026-09-18, 2-5 to go)
+# Scanning RetroArch's ROMs from AutoBleem - the plan (steps 1-2 done 2026-09-18/19, 3-5 to go)
 
 Written 2026-09-18 morning after the Raspberry Pi got its BIOS pack, parked until real ROMs had been run on
 the Pi through RetroArch's own scanner; revised the same evening once they had (846 ROMs over nine systems,
-Sega and ColecoVision confirmed running) and after the day's launcher work. **Step 1 is in** (the same
-evening, see its "Done" note); pick it up at step 2.
+Sega and ColecoVision confirmed running) and after the day's launcher work. **Steps 1 and 2 are in**
+(that evening and the next night, see their "Done" notes); pick it up at step 3.
 
 **RetroArch is optional on every platform** (the owner, 2026-09-18): none of this runs unless RetroArch is
 detected - `ScanService::romScanEnabled()` = `Env::retroArchInstalled()` (the binary the platform ini
@@ -145,6 +145,33 @@ rather than CRC. CD systems (PC Engine CD, Neo Geo CD, Sega CD, 3DO): keep the f
 formats differ per system and are not worth it yet.
 
 This works on the console too when RetroBoot's rdbs are there, and costs nothing when they are not.
+
+**Done 2026-09-19.** What differs from the text above:
+
+- `RdbReader` reads `crc` (4-byte binary, an integer accepted too), `size` and `rom_name`;
+  `findByCrc`/`findByRomName`. `ableem::Crc32` (`engine/crc32.h`, over miniz) hashes a loose file
+  streamed, with a cap - `Options::maxCrcBytes`, 64 MB - so a CD image is never read; a zip member's CRC
+  comes from the central directory as before.
+- `RetroArchScanner::identify()` runs on each folder's `ScannedRoms` before the merge when
+  `Options::rdbDir` names the databases (`ScanService` passes `Env::getPathToRetroarchRdbDir()`): a
+  member or loose file by CRC, an arcade set (`wholeArchive`) by `rom_name` - **not** by the archive's
+  CRC, which is the reference set's and a repacked one would miss. A hit sets the label to the record's
+  `name`; a miss keeps the stem, nothing is dropped. The merge rule grew one clause: an identified entry
+  replaces an existing entry for the same ROM (full path, member included) whose label differs - so a
+  file-name label from an earlier scan or a hand-written one is corrected, while RetroArch's own identified
+  entries (same name) stay untouched.
+- CD systems are simply the size cap; no serial logic.
+- **Metadata**: `RetroArchService::ensureMetadata()` opens `<rdb dir>/<playlist>.rdb` the first time a
+  playlist is asked for, fills publisher/year/players by `findByName(label)` and drops the reader
+  (Favorites/History copy from the source playlist). The meta panel shows "publisher, year", then the
+  core on its own line, then "n Players" for a RetroArch game the database knows; a game it does not
+  know looks as before (the core's name).
+- **On the Pi 400**: 679 of 848 named in ~2 s for all 54 folders (the 30k-record NES rdb included) -
+  NES/SNES/Genesis/Odyssey2 100%, Intellivision 127/131, 7800 70/86, ColecoVision 63/141, Atari 5200
+  0/71: the misses are dumps the databases do not have, they keep their file names. `neogeo.zip` is
+  "Neo Geo" now (it is a record in the FBNeo rdb, not a BIOS flag - the plan's "step 2 drops it" was
+  wrong; it stays listed, honestly named). The 8 rewritten playlists are RetroArch's with the renamed
+  labels, headers intact.
 
 ### 3. Box art - offline first, online when there is a network
 

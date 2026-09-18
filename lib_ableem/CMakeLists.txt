@@ -42,6 +42,7 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/game_scanner.cpp
         src/engine/retroarch_playlist.cpp
         src/engine/retroarch_cores.cpp
+        src/engine/crc32.cpp
         src/engine/retroarch_scanner.cpp
         src/engine/theme_spec.cpp
         src/engine/zip_archive.cpp
@@ -69,8 +70,8 @@ target_include_directories(ableem_engine
 # time stamps are compiled out.
 set_source_files_properties(third_party/sqlite/sqlite3ab.c PROPERTIES COMPILE_FLAGS "-w")
 set_source_files_properties(third_party/miniz/miniz.c PROPERTIES COMPILE_FLAGS "-w")
-set_source_files_properties(third_party/miniz/miniz.c src/engine/zip_archive.cpp src/engine/zip_writer.cpp PROPERTIES
-        COMPILE_DEFINITIONS "MINIZ_NO_TIME")
+set_source_files_properties(third_party/miniz/miniz.c src/engine/zip_archive.cpp src/engine/zip_writer.cpp
+        src/engine/crc32.cpp PROPERTIES COMPILE_DEFINITIONS "MINIZ_NO_TIME")
 
 find_package(Threads REQUIRED)
 target_link_libraries(ableem_engine PUBLIC Threads::Threads ${CMAKE_DL_LIBS})

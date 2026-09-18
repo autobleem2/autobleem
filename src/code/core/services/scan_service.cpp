@@ -225,12 +225,13 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
     options.romsDir = Env::getPathToRetroarchRomsDir();
     options.playlistsDir = Env::getPathToRetroarchPlaylistsDir();
     options.folderAliases = ableem::RetroArchScanner::loadFolderAliases(romsFolderAliasesPath());
+    options.rdbDir = Env::getPathToRetroarchRdbDir(); // a missing one just means nothing gets identified
     ableem::RetroArchScanner scanner(&listener);
     ableem::RetroArchScanResult result = scanner.scan(options, ableem::RetroArchScanner::systemsFrom(cores));
     playlistsWritten = result.playlistsWritten;
-    PLOG_INFO << "RetroArch ROM scan: " << result.systemsScanned << " systems, " << result.gamesFound << " games, "
-              << result.playlistsWritten.size() << " playlists written, " << result.unknownFolders.size()
-              << " folders with no core";
+    PLOG_INFO << "RetroArch ROM scan: " << result.systemsScanned << " systems, " << result.gamesFound << " games ("
+              << result.gamesIdentified << " named by a database), " << result.playlistsWritten.size()
+              << " playlists written, " << result.unknownFolders.size() << " folders with no core";
     return result.gamesFound;
 }
 

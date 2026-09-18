@@ -4,6 +4,7 @@
 #include "doctest/doctest.h"
 
 #include "../support/env_fixture.h"
+#include "../support/rdb_builder.h"
 #include "../support/string_maker.h"
 #include "../support/temp_dir.h"
 
@@ -325,4 +326,42 @@ TEST_CASE("reloadFavoritesAndHistory picks up what RetroArch changed while it ra
 TEST_CASE("escapeName is how RetroArch names a boxart file after a title") {
     CHECK(RetroArchService::escapeName("Star Wars: Episode I / Racer?") == "Star Wars_ Episode I _ Racer_");
     CHECK(RetroArchService::escapeName("Plain") == "Plain");
+}
+
+TEST_CASE("a playlist's games get publisher, year and players from the system's .rdb by name, once, and "
+          "Favorites copy them") {
+    RetroArchTree ra;
+    ra.writePlaylist("Nintendo - Super Nintendo Entertainment System",
+                     {ra.snes("Chrono Trigger.sfc", "Chrono Trigger (USA)"), ra.snes("Earthbound.sfc", "Earthbound")});
+    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+                     RetroArchTree::json({RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger (USA)")}));
+    test_support::Bytes records;
+    test_support::appendRomRecord(records, "Chrono Trigger (USA)", "Chrono Trigger (USA).sfc", 0x2D206BF7u, "Square",
+                                  1995, 1);
+    records.push_back(0xc0);
+    ra.tmp.makeSubDir("retroarch/database/rdb");
+    test_support::writeRdb(ra.tmp, "retroarch/database/rdb/Nintendo - Super Nintendo Entertainment System.rdb",
+                           test_support::makeRdb(0, records));
+
+    PsGames games = ra.service.gamesInPlaylist("Nintendo - Super Nintendo Entertainment System");
+    REQUIRE(games.size() == 2);
+    CHECK(games[0]->title == "Chrono Trigger (USA)");
+    CHECK(games[0]->publisher == "Square");
+    CHECK(games[0]->year == 1995);
+    CHECK(games[0]->players == 1);
+    CHECK(games[1]->publisher == ""); // "Earthbound" is not a name the database has
+    CHECK(games[1]->year == 0);
+
+    PsGames favorites = ra.service.gamesInPlaylist("Favorites");
+    REQUIRE(favorites.size() == 1);
+    CHECK(favorites[0]->publisher == "Square");
+    CHECK(favorites[0]->year == 1995);
+
+    // no database for a playlist: nothing happens, nothing is asked again
+    ra.writePlaylist("Atari - 2600", {RetroArchTree::Entry{"/media/roms/atari/Pitfall.a26", "Pitfall", "DETECT",
+                                                           "DETECT", "Atari - 2600.lpl"}});
+    RetroArchService fresh;
+    PsGames atari = fresh.gamesInPlaylist("Atari - 2600");
+    REQUIRE(atari.size() == 1);
+    CHECK(atari[0]->publisher == "");
 }

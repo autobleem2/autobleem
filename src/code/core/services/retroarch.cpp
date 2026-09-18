@@ -5,6 +5,7 @@
 #include "environment.h"
 #include "../main.h"
 
+#include <ableem/engine/rdb_reader.h>
 #include <ableem/engine/retroarch_playlist.h>
 #include <ableem/engine/thumbnail_lookup.h>
 
@@ -44,9 +45,43 @@ string RetroArchService::escapeName(const string &title) {
 PsGames RetroArchService::gamesInPlaylist(const string &playlistName) {
     ensureLoaded();
     int index;
-    if (findPlaylist(playlistName, &index))
+    if (findPlaylist(playlistName, &index)) {
+        ensureMetadata(playlistInfos_[index]);
         return playlistInfos_[index].psGames;
+    }
     return PsGames();
+}
+
+//********************
+// RetroArchService::ensureMetadata
+//********************
+// The playlist's games are named as the database names them once the ROM scan has identified them, so a
+// lookup by name gives their publisher, year and player count. Favorites and History copy theirs from the
+// playlist the game came from (reloadSpecialPlaylist) and never come here with anything to read.
+void RetroArchService::ensureMetadata(RAPlaylistInfo &info) {
+    if (info.metadataLoaded)
+        return;
+    info.metadataLoaded = true;
+    if (info.displayName == favoritesDisplayName_ || info.displayName == historyDisplayName_)
+        return;
+    const string rdbPath = Env::getPathToRetroarchRdbDir() + sep + info.displayName + ".rdb";
+    if (!DirEntry::exists(rdbPath))
+        return;
+    ableem::RdbReader rdb;
+    if (!rdb.open(rdbPath))
+        return;
+    int found = 0;
+    for (PsGamePtr &game : info.psGames) {
+        const ableem::RdbReader::Record *record = rdb.findByName(game->title);
+        if (!record)
+            continue;
+        game->publisher = record->publisher;
+        game->year = record->releaseyear;
+        game->players = record->users;
+        found++;
+    }
+    PLOG_INFO << "Metadata for " << info.displayName << ": " << found << " of " << info.psGames.size()
+              << " games in the database";
 }
 
 //********************
@@ -61,6 +96,7 @@ PsGames RetroArchService::allGames() {
     for (auto &info : playlistInfos_) {
         if (info.displayName == favoritesDisplayName_ || info.displayName == historyDisplayName_)
             continue;
+        ensureMetadata(info);
         for (auto &game : info.psGames) {
             if (seen.insert(game->image_path).second)
                 games.push_back(game);
@@ -272,14 +308,18 @@ void RetroArchService::reloadSpecialPlaylist(const string &displayName, const st
 
     // find the original game in the playlists and copy the title and db_name to the entry for the same game
     for (auto &game : games) {
-        for (auto const &info : playlistInfos_) {
+        for (auto &info : playlistInfos_) {
             if (info.displayName != displayName) {
                 auto it = find_if(begin(info.psGames), end(info.psGames),
                                   [&](const PsGamePtr &original) { return original->image_path == game->image_path; });
                 if (it != end(info.psGames)) {
+                    ensureMetadata(info); // the source playlist's database, if it has not been read yet
                     if (copyTitle)
                         game->title = (*it)->title;
                     game->db_name = (*it)->db_name;
+                    game->publisher = (*it)->publisher;
+                    game->year = (*it)->year;
+                    game->players = (*it)->players;
                     break;
                 }
             }

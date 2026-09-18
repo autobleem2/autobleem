@@ -36,7 +36,7 @@ void appendRecord(Bytes &out) {
     appendUint16(out, 1997);
     appendString(out, "users");
     out.push_back(2);
-    appendString(out, "crc"); // not a field we keep
+    appendString(out, "crc"); // a 9-byte "crc" is not a CRC, but the reader must get past it
     appendBin(out, "crc-bytes");
 }
 
@@ -118,4 +118,43 @@ TEST_CASE("findBySerial: a non-digit suffix matches, a digit suffix does not, an
     const RdbReader::Record *exact = reader.findBySerial("SLUS-12345");
     REQUIRE(exact != nullptr);
     CHECK(exact->name == "Exact");
+}
+
+TEST_CASE("a cartridge record: crc (4-byte binary) and rom_name are indexed, an integer crc is read too") {
+    TempDir tmp("rdb");
+    Bytes records;
+    appendRomRecord(records, "Adventures of Lolo (USA)", "Adventures of Lolo (USA).nes", 0xD9C4CBF7u, "HAL Laboratory",
+                    1989, 1);
+    appendRomRecord(records, "Metal Slug (NGM-2510)", "mslug.zip", 0x0AC09D00u, "Nazca", 1996, 2);
+    records.push_back(0x82); // an integer crc, as a hand-made database might spell it
+    appendString(records, "name");
+    appendString(records, "Int Crc Game");
+    appendString(records, "crc");
+    records.push_back(0xce); // uint32
+    records.insert(records.end(), {0x12, 0x34, 0x56, 0x78});
+    records.push_back(0xc0);
+    string path = writeRdb(tmp, "Nintendo - Nintendo Entertainment System.rdb", makeRdb(0, records));
+
+    RdbReader rdb;
+    REQUIRE(rdb.open(path));
+    CHECK(rdb.size() == 3);
+
+    const RdbReader::Record *lolo = rdb.findByCrc(0xD9C4CBF7u);
+    REQUIRE(lolo);
+    CHECK(lolo->name == "Adventures of Lolo (USA)");
+    CHECK(lolo->romName == "Adventures of Lolo (USA).nes");
+    CHECK(lolo->publisher == "HAL Laboratory");
+    CHECK(lolo->releaseyear == 1989);
+    CHECK(lolo->users == 1);
+
+    const RdbReader::Record *mslug = rdb.findByRomName("mslug.zip");
+    REQUIRE(mslug);
+    CHECK(mslug->name == "Metal Slug (NGM-2510)");
+    CHECK(mslug->crc == 0x0AC09D00u);
+
+    REQUIRE(rdb.findByCrc(0x12345678u));
+    CHECK(rdb.findByCrc(0x12345678u)->name == "Int Crc Game");
+    CHECK(rdb.findByCrc(0) == nullptr);
+    CHECK(rdb.findByCrc(1) == nullptr);
+    CHECK(rdb.findByRomName("nope.zip") == nullptr);
 }

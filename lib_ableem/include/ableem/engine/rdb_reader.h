@@ -1,6 +1,7 @@
 // lib_ableem - engine: RetroArch's libretro-database files (.rdb), read whole into memory and indexed by
-// serial and by name. "Sony - PlayStation.rdb" is what the scanner takes a game's title, publisher, year
-// and player count from when a RetroArch tree is around; the covers*.db lookups are the fallback.
+// serial, by name, by CRC and by ROM file name. "Sony - PlayStation.rdb" is what the scanner takes a game's
+// title, publisher, year and player count from when a RetroArch tree is around (the covers*.db lookups are
+// the fallback); the other systems' databases are what the ROM scanner identifies a file by.
 #pragma once
 
 #include <cstddef>
@@ -30,7 +31,10 @@ public:
         std::string genre;
         int releaseyear = 0;
         int releasemonth = 0;
-        int users = 0; // players
+        int users = 0;       // players
+        uint32_t crc = 0;    // of the ROM (a cartridge image, or an arcade set's whole archive); 0 = none
+        uint64_t size = 0;   // its size in bytes; 0 = none
+        std::string romName; // "Adventures of Lolo (USA).nes", an arcade set's "mslug.zip"
     };
 
     // reads the whole file; false (and isValid() false) for a missing, truncated or malformed one
@@ -43,11 +47,16 @@ public:
     const Record *findBySerial(const std::string &serial) const;
     // exact only
     const Record *findByName(const std::string &name) const;
+    // the first record with this CRC (nullptr for 0); the first with this rom_name, exact
+    const Record *findByCrc(uint32_t crc) const;
+    const Record *findByRomName(const std::string &romName) const;
 
 private:
     std::vector<Record> records_;
     std::unordered_map<std::string, size_t> bySerial_;
     std::unordered_map<std::string, size_t> byName_;
+    std::unordered_map<uint32_t, size_t> byCrc_;
+    std::unordered_map<std::string, size_t> byRomName_;
     bool valid_ = false;
 };
 

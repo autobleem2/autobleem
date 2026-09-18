@@ -201,18 +201,18 @@ per line; scan the `.m3u`, not the discs. Save files and save states go to `Retr
 `RetroArch/states/`, whatever the system.
 
 **2. The scan.** The launcher does it: every file in `roms/<system>/` that the system's core plays becomes
-an entry named after the file (`Adventures of Lolo (USA).zip` → "Adventures of Lolo (USA)"), a `.cue` or
-`.m3u` stands for the discs it lists, a zipped ROM is opened for its CRC, an arcade `.zip` goes in whole.
-A playlist RetroArch wrote is kept and added to, never replaced, and anything you put in a playlist by
-hand that points outside `roms/` stays. Only the folders named as above are scanned; a folder no
-installed core plays is skipped (the log says which).
+an entry, a `.cue` or `.m3u` stands for the discs it lists, an arcade `.zip` goes in whole. Each game is
+looked up in RetroArch's database for its system (`RetroArch/database/rdb/`, installed with everything
+else) by the CRC of its ROM - an arcade set by its archive's name - and takes the database's name
+("Adventures of Lolo (USA)"), which is also what its box art is filed under, plus its publisher, year and
+player count for the launcher's panel. A game the database does not know keeps its file name and is
+listed all the same. A playlist RetroArch wrote is kept and added to, never replaced, and anything you put
+in a playlist by hand that points outside `roms/` stays. Only the folders named as above are scanned; a
+folder no installed core plays is skipped (the log says which).
 
-To have the games named as RetroArch's databases know them (and their covers found under those names),
-run RetroArch's scanner over a folder once: L2+R2 → *RetroArch* → *Import Content → Scan Directory*, go
-into `roms`, pick `<Scan This Directory>`. The launcher keeps what it identified. For arcade, computers, DOS
-and ScummVM - anything the databases do not identify by contents - *Import Content → Manual Scan* does the
-same with *Content Directory* = the system's folder, *System Name* = the same name from the list, *Default
-Core* = the core from the table, *File Extensions* if you want to limit it (`scummvm` for ScummVM).
+RetroArch's own scanner (*Import Content → Scan Directory* or *Manual Scan*) is still there and the two
+agree: the launcher keeps what RetroArch identified. It is the way to add things the launcher's scan does
+not cover - a DOS game's `.bat`, a ScummVM folder.
 
 A game RetroArch will not start is nearly always the wrong ROM set for the core (arcade) or a missing
 `.m3u`/`.cue`; the log is in `RetroArch/logs/`.

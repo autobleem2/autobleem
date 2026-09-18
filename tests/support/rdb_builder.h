@@ -57,6 +57,27 @@ inline void appendGameRecord(Bytes &out, const std::string &name, const std::str
     out.push_back(static_cast<unsigned char>(users));
 }
 
+// a game record as the cartridge databases have them: rom_name, a 4-byte big-endian crc, size
+inline void appendRomRecord(Bytes &out, const std::string &name, const std::string &romName, uint32_t crc,
+                            const std::string &publisher = "", unsigned year = 0, unsigned users = 0) {
+    out.push_back(0x86); // fixmap, 6 entries
+    appendString(out, "name");
+    appendString(out, name);
+    appendString(out, "rom_name");
+    appendString(out, romName);
+    appendString(out, "crc");
+    std::string crcBytes;
+    for (int shift = 24; shift >= 0; shift -= 8)
+        crcBytes += static_cast<char>((crc >> shift) & 0xff);
+    appendBin(out, crcBytes);
+    appendString(out, "publisher");
+    appendString(out, publisher);
+    appendString(out, "releaseyear");
+    appendUint16(out, year);
+    appendString(out, "users");
+    out.push_back(static_cast<unsigned char>(users));
+}
+
 inline Bytes makeRdb(uint64_t metadataOffset, const Bytes &records, const Bytes &metadata = Bytes()) {
     Bytes out;
     const unsigned char magic[] = {'R', 'A', 'R', 'C', 'H', 'D', 'B', '\0'};

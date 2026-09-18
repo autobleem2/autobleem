@@ -48,6 +48,7 @@ public:
 
     bool eof() const { return p >= end; }
     size_t remaining() const { return end > p ? static_cast<size_t>(end - p) : 0; }
+    uint8_t peek() const { return remaining() ? *p : 0; }
 
     bool read_u8(uint8_t &out) {
         if (remaining() < 1)
@@ -320,6 +321,8 @@ bool RdbReader::open(const string &path) {
     records_.clear();
     bySerial_.clear();
     byName_.clear();
+    byCrc_.clear();
+    byRomName_.clear();
     valid_ = false;
 
     vector<uint8_t> buf;
@@ -375,7 +378,28 @@ bool RdbReader::open(const string &path) {
                 ok = read_string(c, rec.developer);
             else if (key == "genre")
                 ok = read_string(c, rec.genre);
-            else if (key == "releaseyear" || key == "releasemonth" || key == "users") {
+            else if (key == "rom_name")
+                ok = read_string(c, rec.romName);
+            else if (key == "crc") {
+                // a 4-byte big-endian binary in the database; an integer is accepted too
+                const uint8_t type = c.peek();
+                if ((type & 0xe0) == FIXSTR_MASK || type == MPF_BIN8 || type == MPF_STR8 || type == MPF_BIN16 ||
+                    type == MPF_STR16 || type == MPF_BIN32 || type == MPF_STR32) {
+                    string bytes;
+                    ok = read_string(c, bytes);
+                    rec.crc = 0;
+                    for (unsigned char ch : bytes)
+                        rec.crc = (rec.crc << 8) | ch;
+                } else {
+                    uint64_t v = 0;
+                    ok = read_uint(c, v);
+                    rec.crc = static_cast<uint32_t>(v);
+                }
+            } else if (key == "size") {
+                uint64_t v = 0;
+                ok = read_uint(c, v);
+                rec.size = v;
+            } else if (key == "releaseyear" || key == "releasemonth" || key == "users") {
                 uint64_t v = 0;
                 ok = read_uint(c, v);
                 if (key == "releaseyear")
@@ -401,6 +425,10 @@ bool RdbReader::open(const string &path) {
             bySerial_.emplace(r.serial, idx);
         if (!r.name.empty())
             byName_.emplace(r.name, idx);
+        if (r.crc != 0)
+            byCrc_.emplace(r.crc, idx);
+        if (!r.romName.empty())
+            byRomName_.emplace(r.romName, idx);
     }
 
     valid_ = true;
@@ -437,6 +465,28 @@ const RdbReader::Record *RdbReader::findBySerial(const string &serial) const {
 const RdbReader::Record *RdbReader::findByName(const string &name) const {
     auto it = byName_.find(name);
     if (it == byName_.end())
+        return nullptr;
+    return &records_[it->second];
+}
+
+//*******************************
+// RdbReader::findByCrc
+//*******************************
+const RdbReader::Record *RdbReader::findByCrc(uint32_t crc) const {
+    if (crc == 0)
+        return nullptr;
+    auto it = byCrc_.find(crc);
+    if (it == byCrc_.end())
+        return nullptr;
+    return &records_[it->second];
+}
+
+//*******************************
+// RdbReader::findByRomName
+//*******************************
+const RdbReader::Record *RdbReader::findByRomName(const string &romName) const {
+    auto it = byRomName_.find(romName);
+    if (it == byRomName_.end())
         return nullptr;
     return &records_[it->second];
 }

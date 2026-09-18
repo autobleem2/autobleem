@@ -5,9 +5,11 @@
 #include "doctest/doctest.h"
 
 #include "../support/env_fixture.h"
+#include "../support/rdb_builder.h"
 #include "../support/string_maker.h"
 #include "../support/temp_dir.h"
 
+#include <ableem/engine/crc32.h>
 #include <ableem/engine/filesystem.h>
 #include <ableem/engine/game_scanner.h>
 #include <ableem/engine/retroarch_cores.h>
@@ -23,6 +25,7 @@
 
 using ableem::CoreInfoPtr;
 using ableem::CoreInfoTable;
+using ableem::Crc32;
 using ableem::DirEntry;
 using ableem::RetroArchPlaylist;
 using ableem::RetroArchPlaylistEntries;
@@ -32,6 +35,8 @@ using ableem::RetroArchScanner;
 using ableem::RetroArchScanResult;
 using ableem::RetroArchSystem;
 using ableem::RetroArchSystems;
+using ableem::ScannedRom;
+using ableem::ScannedRoms;
 using ableem::ScanStage;
 using ableem::ZipWriter;
 using std::string;
@@ -91,6 +96,24 @@ string jsonPath(const string &path) {
         if (c == '\\' || c == '"')
             out += '\\';
         out += c;
+    }
+    return out;
+}
+
+// the playlist entries of a folder scan, and the reverse for a merge() test that starts from entries
+RetroArchPlaylistEntries entriesOf(const ableem::ScannedRoms &roms) {
+    RetroArchPlaylistEntries out;
+    for (const auto &r : roms)
+        out.push_back(r.entry);
+    return out;
+}
+ableem::ScannedRoms scanned(const RetroArchPlaylistEntries &entries, bool identified = false) {
+    ableem::ScannedRoms out;
+    for (const auto &e : entries) {
+        ableem::ScannedRom r;
+        r.entry = e;
+        r.identified = identified;
+        out.push_back(r);
     }
     return out;
 }
@@ -255,7 +278,8 @@ TEST_CASE("scanFolder: a zip with one ROM is 'zip#rom' named after the zip, with
     tmp.makeSubDir("nes");
     writeZip(tmp.at("nes/Adventures of Lolo (USA).zip"), {{"Adventures of Lolo (USA).nes", "rom"}});
 
-    RetroArchPlaylistEntries entries = RetroArchScanner::scanFolder(tmp.at("nes"), "/media/roms/nes", nesSystem());
+    RetroArchPlaylistEntries entries =
+        entriesOf(RetroArchScanner::scanFolder(tmp.at("nes"), "/media/roms/nes", nesSystem()));
     REQUIRE(entries.size() == 1);
     CHECK(entries[0].path == "/media/roms/nes/Adventures of Lolo (USA).zip#Adventures of Lolo (USA).nes");
     CHECK(entries[0].label == "Adventures of Lolo (USA)");
@@ -273,7 +297,8 @@ TEST_CASE("scanFolder: a pack of several ROMs is several games named after each;
     writeZip(tmp.at("nes/bios.zip"), {{"disksys.rom", "rom"}}); // .rom is not an NES extension
     tmp.writeFile("nes/broken.zip", "this is not a zip");
 
-    RetroArchPlaylistEntries entries = RetroArchScanner::scanFolder(tmp.at("nes"), tmp.at("nes"), nesSystem());
+    RetroArchPlaylistEntries entries =
+        entriesOf(RetroArchScanner::scanFolder(tmp.at("nes"), tmp.at("nes"), nesSystem()));
     REQUIRE(entries.size() == 2);
     CHECK(entries[0].path == tmp.at("nes/pack.zip") + "#Alpha (USA).nes");
     CHECK(entries[0].label == "Alpha (USA)");
@@ -291,7 +316,8 @@ TEST_CASE("scanFolder: a loose ROM is a plain entry; other files are ignored; su
     tmp.writeFile("nes/.hidden.nes", "rom");
     tmp.writeFile("nes/Homebrew/Micro Mages.nes", "rom");
 
-    RetroArchPlaylistEntries entries = RetroArchScanner::scanFolder(tmp.at("nes"), "/media/roms/nes", nesSystem());
+    RetroArchPlaylistEntries entries =
+        entriesOf(RetroArchScanner::scanFolder(tmp.at("nes"), "/media/roms/nes", nesSystem()));
     REQUIRE(entries.size() == 2);
     CHECK(entries[0].path == "/media/roms/nes/Homebrew/Micro Mages.nes");
     CHECK(entries[0].label == "Micro Mages");
@@ -317,7 +343,7 @@ TEST_CASE("scanFolder: a cue hides its bins, an m3u hides its discs, a ccd hides
     tmp.writeFile("cd/Popful Mail (USA).sub", "sub");
     tmp.writeFile("cd/Loose Track.bin", "a lone bin is a game of its own");
 
-    RetroArchPlaylistEntries entries = RetroArchScanner::scanFolder(tmp.at("cd"), "/r/cd", cdSystem());
+    RetroArchPlaylistEntries entries = entriesOf(RetroArchScanner::scanFolder(tmp.at("cd"), "/r/cd", cdSystem()));
     CHECK(labelsOf(entries) == vector<string>{"Loose Track", "Lunar (USA)", "Popful Mail (USA)", "Sonic CD (USA)"});
     CHECK(findByLabel(entries, "Lunar (USA)")->path == "/r/cd/Lunar (USA).m3u");
     CHECK(findByLabel(entries, "Sonic CD (USA)")->path == "/r/cd/Sonic CD (USA).cue");
@@ -330,7 +356,8 @@ TEST_CASE("scanFolder: a core that reads archives itself gets the zip whole") {
     writeZip(tmp.at("arcade/mslug.zip"), {{"201-c1.c1", "rom"}, {"201-c2.c2", "rom"}});
     tmp.writeFile("arcade/neogeo.zip", "not even a zip - the core is the one to complain");
 
-    RetroArchPlaylistEntries entries = RetroArchScanner::scanFolder(tmp.at("arcade"), "/r/arcade", arcadeSystem());
+    RetroArchPlaylistEntries entries =
+        entriesOf(RetroArchScanner::scanFolder(tmp.at("arcade"), "/r/arcade", arcadeSystem()));
     REQUIRE(entries.size() == 2);
     CHECK(entries[0].path == "/r/arcade/mslug.zip");
     CHECK(entries[0].label == "mslug");
@@ -409,7 +436,7 @@ TEST_CASE("merge: foreign entries stay, a vanished file's entry goes, an existin
         entry(target + "/New.nes", "New"),
     };
 
-    RetroArchPlaylistEntries merged = RetroArchScanner::merge(existing, fresh, source, target);
+    RetroArchPlaylistEntries merged = RetroArchScanner::merge(existing, scanned(fresh), source, target);
     CHECK(labelsOf(merged) == vector<string>{"Elsewhere", "Identified (USA)", "Kept As Written", "New"});
     CHECK(findByLabel(merged, "Kept As Written")->crc32 == "AAAAAAAA|crc");
 }
@@ -422,7 +449,7 @@ TEST_CASE("merge: sorted by label ignoring case, stable") {
         e.label = label;
         fresh.push_back(e);
     }
-    RetroArchPlaylistEntries merged = RetroArchScanner::merge({}, fresh, "/r/x", "/r/x");
+    RetroArchPlaylistEntries merged = RetroArchScanner::merge({}, scanned(fresh), "/r/x", "/r/x");
     CHECK(labelsOf(merged) == vector<string>{"Alpha", "alpha", "beta", "gamma"});
 }
 
@@ -637,4 +664,187 @@ TEST_CASE("RetroArchPlaylist: save() puts the loaded header back, version first;
     REQUIRE(RetroArchPlaylist::load(tmp.at("six.lpl"), entries, &again));
     CHECK(entries.size() == 1);
     CHECK(again.empty());
+}
+
+//*******************************
+// identification by database
+//*******************************
+namespace {
+
+// crc32("rom") and crc32("other rom"), the bytes writeZip and the loose files below hold
+const uint32_t CrcRom = 0x79520FA1u;
+const uint32_t CrcOtherRom = 0x089A93F8u;
+
+// the NES and arcade databases a test writes into <dir>: Lolo by CRC, Metal Slug by rom_name
+string writeNesRdb(const TempDir &tmp, const string &dir) {
+    test_support::Bytes records;
+    test_support::appendRomRecord(records, "Adventures of Lolo (USA)", "Adventures of Lolo (USA).nes", CrcRom,
+                                  "HAL Laboratory", 1989, 1);
+    test_support::appendRomRecord(records, "Battletoads (USA)", "Battletoads (USA).nes", CrcOtherRom, "Tradewest", 1991,
+                                  2);
+    records.push_back(0xc0);
+    tmp.makeSubDir(dir);
+    return test_support::writeRdb(tmp, dir + "/" + NES + ".rdb", test_support::makeRdb(0, records));
+}
+string writeArcadeRdb(const TempDir &tmp, const string &dir) {
+    test_support::Bytes records;
+    test_support::appendRomRecord(records, "Metal Slug (NGM-2510)", "mslug.zip", 0x0AC09D00u, "Nazca", 1996, 2);
+    records.push_back(0xc0);
+    tmp.makeSubDir(dir);
+    return test_support::writeRdb(tmp, dir + "/FBNeo - Arcade Games.rdb", test_support::makeRdb(0, records));
+}
+
+} // namespace
+
+TEST_CASE("Crc32::ofFile streams a file, refuses one over the limit, spells a CRC as a playlist does") {
+    TempDir tmp("crc");
+    tmp.writeFile("a.bin", "rom");
+    uint32_t crc = 1;
+    CHECK(Crc32::ofFile(tmp.at("a.bin"), crc));
+    CHECK(crc == CrcRom);
+    CHECK(Crc32::ofFile(tmp.at("a.bin"), crc, 3));
+    CHECK_FALSE(Crc32::ofFile(tmp.at("a.bin"), crc, 2));
+    CHECK(crc == 0);
+    CHECK_FALSE(Crc32::ofFile(tmp.at("missing.bin"), crc));
+    CHECK(Crc32::ofBytes("other rom") == CrcOtherRom);
+    CHECK(Crc32::playlistText(CrcRom) == "79520FA1|crc");
+    CHECK(Crc32::playlistText(0) == "00000000|crc");
+}
+
+TEST_CASE("identify: a zipped ROM by the archive's CRC, a loose one by hashing it, a miss keeps the file's name") {
+    TempDir tmp("identify");
+    tmp.makeSubDir("nes");
+    writeZip(tmp.at("nes/lolo.zip"), {{"lolo.nes", "rom"}});     // the database knows this CRC
+    tmp.writeFile("nes/toads.nes", "other rom");                 // and this one, hashed from the file
+    tmp.writeFile("nes/Homebrew Thing (World).nes", "unknown!"); // not in the database
+    ableem::RdbReader rdb;
+    REQUIRE(rdb.open(writeNesRdb(tmp, "rdb")));
+
+    ScannedRoms roms = RetroArchScanner::scanFolder(tmp.at("nes"), "/r/nes", nesSystem());
+    REQUIRE(roms.size() == 3);
+    CHECK(RetroArchScanner::identify(roms, rdb, 0) == 2);
+
+    const ScannedRom &homebrew = roms[0];
+    CHECK_FALSE(homebrew.identified);
+    CHECK(homebrew.entry.label == "Homebrew Thing (World)");
+    CHECK(homebrew.entry.crc32 == Crc32::playlistText(Crc32::ofBytes("unknown!"))); // hashed all the same
+
+    const ScannedRom &lolo = roms[1];
+    CHECK(lolo.identified);
+    CHECK(lolo.entry.label == "Adventures of Lolo (USA)");
+    CHECK(lolo.entry.path == "/r/nes/lolo.zip#lolo.nes");
+    CHECK(lolo.entry.crc32 == "79520FA1|crc");
+
+    const ScannedRom &toads = roms[2];
+    CHECK(toads.identified);
+    CHECK(toads.entry.label == "Battletoads (USA)");
+    CHECK(toads.entry.crc32 == "089A93F8|crc");
+}
+
+TEST_CASE("identify: a loose file over the size limit is not hashed and keeps its name") {
+    TempDir tmp("identify");
+    tmp.makeSubDir("nes");
+    tmp.writeFile("nes/toads.nes", "other rom"); // 9 bytes
+    ableem::RdbReader rdb;
+    REQUIRE(rdb.open(writeNesRdb(tmp, "rdb")));
+
+    ScannedRoms roms = RetroArchScanner::scanFolder(tmp.at("nes"), "/r/nes", nesSystem());
+    CHECK(RetroArchScanner::identify(roms, rdb, 8) == 0);
+    CHECK(roms[0].entry.label == "toads");
+    CHECK(roms[0].entry.crc32 == "00000000|crc");
+}
+
+TEST_CASE("identify: an arcade set by its archive's name, whatever its bytes") {
+    TempDir tmp("identify");
+    tmp.makeSubDir("arcade");
+    tmp.writeFile("arcade/mslug.zip", "a repacked set, not the reference bytes");
+    tmp.writeFile("arcade/neogeo.zip", "bios");
+    ableem::RdbReader rdb;
+    REQUIRE(rdb.open(writeArcadeRdb(tmp, "rdb")));
+
+    ScannedRoms roms = RetroArchScanner::scanFolder(tmp.at("arcade"), "/r/arcade", arcadeSystem());
+    REQUIRE(roms.size() == 2);
+    CHECK(roms[0].wholeArchive);
+    CHECK(RetroArchScanner::identify(roms, rdb, 0) == 1);
+    CHECK(roms[0].entry.label == "Metal Slug (NGM-2510)");
+    CHECK(roms[0].entry.crc32 == "00000000|crc"); // the archive is not hashed
+    CHECK(roms[1].entry.label == "neogeo");
+}
+
+TEST_CASE("merge: a database name replaces an existing unidentified label for the same ROM, and only that") {
+    TempDir tmp("merge");
+    tmp.makeSubDir("roms/nes");
+    writeZip(tmp.at("roms/nes/pack.zip"), {{"a.nes", "rom"}, {"b.nes", "other rom"}});
+    tmp.writeFile("roms/nes/Kept.nes", "rom");
+    const string source = tmp.at("roms/nes");
+    const string target = "/media/roms/nes";
+
+    auto entry = [](const string &path, const string &label, const string &crc = "00000000|crc") {
+        RetroArchPlaylistEntry e;
+        e.path = path;
+        e.label = label;
+        e.core_path = "DETECT";
+        e.core_name = "DETECT";
+        e.crc32 = crc;
+        e.db_name = "Nintendo - Nintendo Entertainment System.lpl";
+        return e;
+    };
+    RetroArchPlaylistEntries existing = {
+        entry(target + "/pack.zip#a.nes", "a"),                          // an earlier file-name scan
+        entry(target + "/pack.zip#b.nes", "Battletoads (USA)", "X|crc"), // RetroArch's own, already named
+        entry(target + "/Kept.nes", "Kept"),                             // ours: nothing to say about it
+    };
+    ScannedRoms fresh = scanned(
+        {
+            entry(target + "/pack.zip#a.nes", "Adventures of Lolo (USA)", "79520FA1|crc"),
+            entry(target + "/pack.zip#b.nes", "Battletoads (USA)", "089A93F8|crc"),
+        },
+        true);
+    fresh.push_back(scanned({entry(target + "/Kept.nes", "Kept")})[0]);
+
+    RetroArchPlaylistEntries merged = RetroArchScanner::merge(existing, fresh, source, target);
+    CHECK(labelsOf(merged) == vector<string>{"Adventures of Lolo (USA)", "Battletoads (USA)", "Kept"});
+    CHECK(merged[0].crc32 == "79520FA1|crc"); // the replacement is ours, whole
+    CHECK(merged[1].crc32 == "X|crc");        // the same name: RetroArch's entry stays as it was
+    CHECK(merged[1].core_path == "DETECT");
+}
+
+TEST_CASE("scan: with the databases in place the playlists carry their names; a system without one keeps the "
+          "file names, and a name an earlier scan wrote is corrected") {
+    RomsTree t;
+    t.addCore("nestopia_libretro", "Nintendo - NES / Famicom (Nestopia UE)", "nes|fds", NES);
+    t.addCore("snes9x_libretro", "Nintendo - SNES / SFC (Snes9x)", "sfc|smc",
+              "Nintendo - Super Nintendo Entertainment System");
+    t.addCore("fbneo_libretro", "Arcade (FinalBurn Neo)", "zip|7z", "FBNeo - Arcade Games");
+    writeNesRdb(t.tmp, "retroarch/database/rdb");
+    writeArcadeRdb(t.tmp, "retroarch/database/rdb"); // no SNES database
+    t.options.rdbDir = t.tmp.at("retroarch/database/rdb");
+    t.options.folderAliases = {{"Arcade", "FBNeo - Arcade Games"}};
+    const string nes = string("roms/") + NES;
+    t.tmp.makeSubDir(nes);
+    writeZip(t.tmp.at(nes + "/lolo.zip"), {{"lolo.nes", "rom"}});
+    t.tmp.writeFile("roms/Nintendo - Super Nintendo Entertainment System/Chrono Trigger (USA).sfc", "rom");
+    t.tmp.writeFile("roms/Arcade/mslug.zip", "set");
+    RetroArchSystems systems = RetroArchScanner::systemsFrom(t.cores());
+
+    // a first scan without databases, as a stick before its rdb pack would have it
+    RetroArchScanner::Options blind = t.options;
+    blind.rdbDir = "";
+    RetroArchScanner scanner;
+    RetroArchScanResult first = scanner.scan(blind, systems);
+    CHECK(first.gamesFound == 3);
+    CHECK(first.gamesIdentified == 0);
+    CHECK(labelsOf(t.loadPlaylist(NES)) == vector<string>{"lolo"});
+
+    RetroArchScanResult second = scanner.scan(t.options, systems);
+    CHECK(second.gamesFound == 3);
+    CHECK(second.gamesIdentified == 2);
+    CHECK(second.playlistsWritten == vector<string>{"FBNeo - Arcade Games.lpl", string(NES) + ".lpl"});
+    CHECK(labelsOf(t.loadPlaylist(NES)) == vector<string>{"Adventures of Lolo (USA)"});
+    CHECK(labelsOf(t.loadPlaylist("FBNeo - Arcade Games")) == vector<string>{"Metal Slug (NGM-2510)"});
+    // the SNES folder comes after the NES one: its games must not be looked up in the NES database
+    CHECK(labelsOf(t.loadPlaylist("Nintendo - Super Nintendo Entertainment System")) ==
+          vector<string>{"Chrono Trigger (USA)"});
+
+    CHECK(scanner.scan(t.options, systems).playlistsWritten.empty());
 }
