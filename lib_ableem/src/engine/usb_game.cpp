@@ -367,9 +367,11 @@ void UsbGame::applyIniValues() {
     if (Strings::isInteger(tmp.c_str())) year = atoi(tmp.c_str()); else year = 2018;
     tmp = valueOrDefault("highres","0");
     if (Strings::isInteger(tmp.c_str())) highRes = atoi(tmp.c_str()); else highRes = 0;
-    favorite = valueOrDefault("favorite", "0", false);  // favorite is a new field that didn't exist before so
-    play_using_ra = valueOrDefault("play_us_ra", "false", false);  // favorite is a new field that didn't exist before so
-    // don't set automationUsed if it doesn't exist
+    // favorite and play_using_ra are newer fields that older Game.ini files lack, so a missing one must
+    // not set automationUsed. (The key was misspelt "play_us_ra" here until 2026-09 - the fork's d80f67b7 -
+    // which reset every game's "Play using RA" to false on each scan.)
+    favorite = valueOrDefault("favorite", "0", false);
+    play_using_ra = valueOrDefault("play_using_ra", "false", false);
 
     tmp = valueOrDefault("discs", "");
     if (!tmp.empty()) {

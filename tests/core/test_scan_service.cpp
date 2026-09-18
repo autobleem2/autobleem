@@ -11,6 +11,8 @@
 
 #include "core/services/scan_service.h"
 
+#include <ableem/engine/ini_file.h>
+
 #include <algorithm>
 #include <chrono>
 #include <string>
@@ -92,6 +94,32 @@ TEST_CASE("rescanning an unchanged game updates its row in place - same id, no d
     REQUIRE(games.size() == 1);
     CHECK(games[0].history == 1);        // history survives a rescan
     CHECK(games[0].last_played == 999);  // so does last_played
+}
+
+TEST_CASE("the Game.ini flags the editor writes survive a rescan") {
+    // Favorite and Play_using_ra are read back from Game.ini on every scan and written out again;
+    // a misspelt key in that read-back (play_us_ra) used to reset Play using RA to false each time
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");
+    REQUIRE(fx.runAndPoll().addedGames.size() == 1);
+
+    string iniPath = fx.tmp.at("Games/Crash Bandicoot/Game.ini");
+    ableem::IniFile ini;
+    ini.load(iniPath);
+    REQUIRE_FALSE(ini.values.empty());
+    ini.values["favorite"] = "1";
+    ini.values["play_using_ra"] = "true";
+    ini.save(iniPath);
+
+    ScanUpdate second = fx.runAndPoll();
+    REQUIRE(second.updatedGames.size() == 1);
+    CHECK(second.updatedGames[0]->favorite);
+    CHECK(second.updatedGames[0]->play_using_ra);
+
+    ini.values.clear();
+    ini.load(iniPath);
+    CHECK(ini.values["favorite"] == "1");
+    CHECK(ini.values["play_using_ra"] == "true");
 }
 
 TEST_CASE("a game folder that disappears is removed from regional.db on the next scan") {
