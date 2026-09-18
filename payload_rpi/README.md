@@ -7,6 +7,9 @@ USB stick works. The two architectures build and install the same way; pick the 
 flashed (`autobleem-rpi.tar.gz` for 32-bit, `autobleem-rpi-arm64.tar.gz` for 64-bit) - `install.sh` detects
 which it is running on and downloads the matching RetroArch cores.
 
+Starting from a blank SD card? `docs/pi-install-guide.md` walks through flashing the OS, first boot and
+running the installer, start to finish. This page is the fuller reference once you're there.
+
 ## Status
 
 This is a port in progress. Be aware of what is and is not here:
