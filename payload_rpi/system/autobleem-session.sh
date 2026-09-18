@@ -17,6 +17,40 @@ SEL_RETROARCH=4
 
 mkdir -p "$LOG_DIR"
 
+#*******************************
+# hdmi_audio
+#*******************************
+# ALSA's "default" device is card 0, and on a Pi with a DualShock 4 plugged in that is the pad's own USB
+# audio (its headphone jack) - everything went silent the first time. Point ALSA at the HDMI output the
+# screen is on instead, system-wide, for everything started from here: autobleem-gui and pcsx-ab (SDL ->
+# ALSA "default") and RetroArch (its alsa driver). Re-done on every start: the screen may move ports.
+hdmi_audio() {
+    local card="" conn
+    for conn in /sys/class/drm/card*-HDMI-A-1 /sys/class/drm/card*-HDMI-A-2; do
+        [ -f "$conn/status" ] || continue
+        if [ "$(cat "$conn/status")" = connected ]; then
+            case "$conn" in
+                *HDMI-A-1) card=vc4hdmi0 ;;
+                *HDMI-A-2) card=vc4hdmi1 ;;
+            esac
+            break
+        fi
+    done
+    # no connector reports a screen (or a driver without the status file): the first HDMI card ALSA lists
+    if [ -z "$card" ] || ! grep -q "\[$card" /proc/asound/cards; then
+        card="$(awk '/vc4hdmi/ { gsub(/[^a-z0-9]/, "", $2); print $2; exit }' /proc/asound/cards)"
+    fi
+    [ -n "$card" ] || { echo "autobleem-session: no HDMI audio card - leaving ALSA's default alone"; return 0; }
+
+    # "!" because alsa.conf declares these as integers; the name form needs the redefinition
+    local conf
+    conf="$(printf 'defaults.pcm.!card "%s"\ndefaults.ctl.!card "%s"' "$card" "$card")"
+    if [ "$(cat /etc/asound.conf 2>/dev/null)" != "$conf" ]; then
+        printf '%s\n' "$conf" > /etc/asound.conf.autobleem-tmp && mv -f /etc/asound.conf.autobleem-tmp /etc/asound.conf
+        echo "autobleem-session: audio -> $card"
+    fi
+}
+
 [ -x "$APP_DIR/autobleem-gui" ] || {
     echo "autobleem-session: no autobleem-gui in $APP_DIR" >&2
     exit 1
@@ -26,6 +60,7 @@ mkdir -p "$LOG_DIR"
 # AB_out.txt/AB_err.txt are what every AutoBleem instruction in the wild asks people for, so write them too.
 while true; do
     cd "$APP_DIR" || exit 1
+    hdmi_audio
 
     # stdbuf keeps the tee'd copy as unbuffered as the app makes its own stdout, so a crash does not eat the
     # last lines - the same reason main.cpp sets ios::unitbuf
