@@ -659,8 +659,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (GCC 8.2.0, sysroot `/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot` with SDL2 2.0.4 + image/mixer/ttf
   `.so`s). The distro CMake is 3.10; `~/opt/cmake` (3.31) is what the script uses. The tree is rsynced to
   `~/autobleem` (minus `usb/`, `db/`, `payload*/`, `!refactor/`, the Pi devkit), built in `~/autobleem/build_psc`
-  with Unix Makefiles `-j2`, and the two binaries come back by tar (rsync refuses NTFS modes). `-k` keeps the
-  remote build dir for an incremental rebuild. Invoke from the MSYS2 UCRT64 shell like `make_win.sh`.
+  with Unix Makefiles `-j2`, and the two binaries come back by tar (rsync refuses NTFS modes). **Incremental
+  by default** (2026-09-19, the owner's request - every build used to start from nothing): the remote
+  build dir is kept and rsync sends only what changed; `--clean` wipes it first (`-k` is the old spelling
+  of the default). Invoke from the MSYS2 UCRT64 shell like `make_win.sh`.
   `toolchains/psc/cmake/FindSDL2.cmake` defines the four imported SDL2 targets over the sysroot's `.so`s
   (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic** - the original toolchain file's
   `--static` was always overwritten by the root CMakeLists' `^arm` branch (`-march=armv8-a+simd -Os -s`), and
@@ -674,7 +676,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`. **Not yet
   run on a console.**
 - **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/`, then
-  `tools/make_rpi_package.sh` for the installable tarball. See the "Raspberry Pi port" section above.
+  `tools/make_rpi_package.sh` for the installable tarball. Incremental since 2026-09-19 (it used to
+  `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into `build_rpi_dbg/`. See the
+  "Raspberry Pi port" section above. All three build scripts are incremental now; `make_win.sh`'s time is
+  mostly `ctest`.
 - **Mac/Linux**: `make_mac.sh`, `make_sys.sh`.
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.

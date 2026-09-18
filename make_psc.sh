@@ -10,8 +10,9 @@
 # different homes (C:/msys64/home/<you> vs C:/Users/<you>), so the entry and the key go in both. The server
 # side needs CMake >= 3.16, which is in ~/opt/cmake there (the distro's is 3.10).
 #
-#   ./make_psc.sh            full rebuild on the server
-#   ./make_psc.sh -k         keep the remote build dir, rebuild what changed
+#   ./make_psc.sh            rebuild what changed (the remote build dir is kept; rsync only sends changes)
+#   ./make_psc.sh --clean    wipe the remote build dir first, a full rebuild
+#   ./make_psc.sh -k         the old spelling of the default, still accepted
 #   AB_PSC_HOST=other-host ./make_psc.sh
 set -e
 cd "$(dirname "$0")"
@@ -35,7 +36,7 @@ rsync -az --delete \
     --exclude '*.o' --exclude '*.so' --exclude '*.exe' --exclude '*.dll' \
     ./ "$HOST:$REMOTE_DIR/"
 
-if [ "${1:-}" != "-k" ]; then
+if [ "${1:-}" = "--clean" ]; then
     $SSH "rm -rf $REMOTE_DIR/build_psc"
 fi
 
