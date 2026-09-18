@@ -4,6 +4,9 @@
 #
 #   ./make_rpi.sh                      # cross-compile first (toolchains/rpi/RPitoolchain.cmake)
 #   ./tools/make_rpi_package.sh        # -> build_rpi/autobleem-rpi.tar.gz
+#   ./tools/make_rpi_package.sh --push [user@host]
+#                                      # ...and scp it to the Pi's home (default: $AB_PI_HOST, else
+#                                      # pi@raspberrypi.local), the way make_psc.sh talks to its build server
 #
 # The package is payload_rpi/ as checked in (install.sh, README.md, system/ for the host-side files, and the
 # data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu, put there by
@@ -13,6 +16,17 @@
 #
 # Copy the tarball to the Pi, unpack it, and run install.sh from inside it. See payload_rpi/README.md.
 set -euo pipefail
+
+PUSH_TO=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --push)
+            PUSH_TO="${AB_PI_HOST:-pi@raspberrypi.local}"
+            if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then PUSH_TO="$2"; shift; fi
+            shift ;;
+        *) echo "unknown option: $1" >&2; exit 2 ;;
+    esac
+done
 
 cd "$(dirname "$0")/.."
 REPO="$PWD"
@@ -74,6 +88,21 @@ rm -f "$TARBALL"
 tar -czf "$TARBALL" -C "$BUILD_DIR/package" autobleem-rpi
 
 echo "==> Done: $TARBALL ($(du -h "$TARBALL" | cut -f1))"
+if [ -n "$PUSH_TO" ]; then
+    echo "==> pushing to $PUSH_TO:~/"
+    scp "$TARBALL" "$PUSH_TO:~/"
+    cat <<USAGE
+
+  On the Pi ($PUSH_TO), stop the launcher first if it is installed already:
+
+    sudo systemctl stop autobleem
+    rm -rf autobleem-rpi && tar xzf autobleem-rpi.tar.gz && cd autobleem-rpi
+    sudo bash install.sh --retroarch none --no-downloads --yes   # a re-install over a working Pi
+    sudo reboot
+
+USAGE
+    exit 0
+fi
 cat <<USAGE
 
   On the Pi (32-bit Raspberry Pi OS Lite):
