@@ -9,7 +9,11 @@
 
 SEL_RETROARCH=4
 
-source ./autobleem_cfg.sh
+# autobleem_cfg.sh is what the GUI writes on its way out (LaunchService::writeSelectionScript). After a
+# crash, or a first boot where it never ran, the file is not there - then there is no selection, and the
+# unset variable would make the test below a shell error instead of the AutoBleem relaunch it means.
+AB_SELECTION=0
+[ -f ./autobleem_cfg.sh ] && . ./autobleem_cfg.sh
 echo Selection: $AB_SELECTION
 echo MipMap: $AB_MIP
 
@@ -39,7 +43,7 @@ select_pcsx
 # not a copy of the console's data tree, so the stock SonyUI is not re-skinned any more.
 
 
-if [ $AB_SELECTION -eq $SEL_RETROARCH ]
+if [ "$AB_SELECTION" -eq "$SEL_RETROARCH" ]
 then
 	 start_retroarch
 else
