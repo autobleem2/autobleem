@@ -34,6 +34,15 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 }
 
 //********************
+// Fonts::cjkFontFor
+//********************
+std::string Fonts::cjkFontFor(const std::string &language) {
+    if (language.find("Chinese") == std::string::npos) return "";
+    std::string path = Env::getWorkingPath() + sep + "fonts" + sep + "NotoSansSC-Regular.otf";
+    return DirEntry::exists(path) ? path : "";
+}
+
+//********************
 // Fonts::atSize
 //********************
 ableem::Font &Fonts::atSize(FontType type, int fontSize) {

@@ -29,7 +29,9 @@ python tools/lang_tools.py validate         # what make_win.sh runs: format, dup
 
 To add a language, copy `English.txt` to `<Language>.txt`, translate the values, and it appears in Options
 under that name. The file is UTF-8; a font that lacks the language's glyphs shows boxes (the theme's font is
-the one drawing the classic screens - `classic.font` in its `theme.json`).
+the one drawing the classic screens - `classic.font` in its `theme.json`). Chinese is the exception: for a
+language whose name contains `Chinese`, every screen is drawn with the bundled `fonts/NotoSansSC-Regular.otf`
+instead of the theme's fonts, since no theme font carries the CJK glyphs.
 
 Before 2026-09 the files were pairs of lines (the English, then the translation); such a file is still read.
 `python tools/lang_tools.py convert FILE` turns it into the layout above.

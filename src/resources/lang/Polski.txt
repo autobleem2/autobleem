@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 198
+# Untranslated: 0 / Total: 198
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie

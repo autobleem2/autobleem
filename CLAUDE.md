@@ -231,8 +231,15 @@ libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, th
 plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
 text in `TextRenderer` with the Game Manager's preview pane and the launcher's `launcher.snapPanel`; and
 `docs/menu-options.md` + `docs/translation.md`. **The port is complete** apart from what was left out on
-purpose: the fork's Options-menu paging and "Font" rows, Chinese (no CJK font to ship), its Docker/CI
-pipeline, UPX, clang-tidy, gtest and the RetroBoot-1.2.1 Apps payload.
+purpose: the fork's Options-menu paging and "Font" rows, its Docker/CI pipeline, UPX, clang-tidy, gtest and
+the RetroBoot-1.2.1 Apps payload.
+
+**Chinese (Simplified)** (2026-09-18): `resources/lang/Chinese_Simplified.txt` (the fork's file, completed for
+our keys) plus a CJK font the fork never shipped - `resources/fonts/NotoSansSC-Regular.otf` (8 MB, Noto CJK
+SC subset, SIL OFL; `OFL.txt` next to it). `Fonts::cjkFontFor(language)` names it for a language whose name
+contains "Chinese" (and it exists), and `ThemeAssets::load()` then uses it as *every* font - the theme's
+classic font and the launcher's medium/bold pair - because no theme font has the glyphs. A language change
+in Options calls `gui->loadAssets(false)` so the swap happens live, both ways. Themes are untouched.
 
 ## Raspberry Pi port (2026-09-17)
 

@@ -142,6 +142,8 @@ string GuiOptions::doPrevNextOption(OptionsInfo& info, bool next) {
         font = gui->assets().themeFont;  // get the new font for the menu
     } else if (id == CFG_LANG) {
         app.lang().load(Env::getPathToLangDir(), nextValue);
+        gui->loadAssets(false);            // the fonts may change with the language (Chinese)
+        font = gui->assets().themeFont;
     } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
         gui->loadAssets();
     }
@@ -179,6 +181,8 @@ string GuiOptions::doOptionIndex(unsigned int index) {
             font = gui->assets().themeFont;  // get the new font for the menu
         } else if (id == CFG_LANG) {
             app.lang().load(Env::getPathToLangDir(), nextValue);
+            gui->loadAssets(false);
+            font = gui->assets().themeFont;
         } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
             gui->loadAssets();
         }

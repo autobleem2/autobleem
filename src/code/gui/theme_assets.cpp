@@ -76,10 +76,16 @@ void ThemeAssets::load() {
     buttonTextureMap["Enter"] = Texture::loadFile(renderer_, b.enter);
     buttonTextureMap["Tab"] = Texture::loadFile(renderer_, b.tab);
 
-    themeFont = Fonts::openNewSharedCachedFont(classic.font.file, classic.font.size, renderer_);
-
     // a theme without launcher fonts (and a default theme without them either) gets the console's own
+    string classicFont = classic.font.file;
     string medium = launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
     string bold = launcher.fonts.bold.empty() ? Env::getSonyFontPath() + sep + "SST-Bold.ttf" : launcher.fonts.bold;
+    // ...unless the language needs glyphs no theme font has: then the one CJK font draws everything
+    string cjk = Fonts::cjkFontFor(config_.inifile.values["language"]);
+    if (!cjk.empty()) {
+        PLOG_INFO << "Language " << config_.inifile.values["language"] << ": every font is " << cjk;
+        classicFont = medium = bold = cjk;
+    }
+    themeFont = Fonts::openNewSharedCachedFont(classicFont, classic.font.size, renderer_);
     themeFonts.openAllFonts(medium, bold, renderer_);
 }

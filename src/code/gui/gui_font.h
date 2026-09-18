@@ -43,6 +43,9 @@ public:
     // SizesOfBoldThemeFont, e520f2c1).
     ableem::Font &atSize(FontType type, int fontSize);
     ableem::Font &boldAtSize(int fontSize) { return atSize(FONT_BOLD, fontSize); }
+    // A language the theme's fonts cannot draw (Chinese) gets resources/fonts/NotoSansSC-Regular.otf for
+    // everything, medium and bold alike; "" for any other language, or when the font is not shipped.
+    static std::string cjkFontFor(const std::string &language);
     // (re)opens every size from these two ttf files - the theme's launcher fonts, or the console's own
     void openAllFonts(const std::string &mediumTtf, const std::string &boldTtf, ableem::Renderer &renderer);
     // drops every font - their glyph textures belong to the renderer, so before the display is released
