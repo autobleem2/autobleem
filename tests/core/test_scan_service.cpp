@@ -12,6 +12,7 @@
 #include "core/services/scan_service.h"
 
 #include <ableem/engine/ini_file.h>
+#include <ableem/engine/serial_scanner.h>
 
 #include <algorithm>
 #include <chrono>
@@ -120,6 +121,39 @@ TEST_CASE("the Game.ini flags the editor writes survive a rescan") {
     ini.load(iniPath);
     CHECK(ini.values["favorite"] == "1");
     CHECK(ini.values["play_using_ra"] == "true");
+}
+
+TEST_CASE("a locked game keeps the serial its Game.ini holds; an unlocked one is read from the image") {
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");
+    test_support::makeFakeGame(fx.gamesDir(), "Spyro", "SLUS_012.35");
+    REQUIRE(fx.runAndPoll().addedGames.size() == 2);
+
+    auto setSerial = [&](const string &game, const string &automation, const string &serial) {
+        string iniPath = fx.tmp.at("Games/" + game + "/Game.ini");
+        ableem::IniFile ini;
+        ini.load(iniPath);
+        REQUIRE(ini.values["serial"] != serial);
+        ini.values["automation"] = automation;
+        ini.values["serial"] = serial;
+        ini.values["region"] = "";
+        ini.save(iniPath);
+    };
+    setSerial("Crash Bandicoot", "0", "SCUS-94900");   // locked: the user's serial is the truth
+    setSerial("Spyro", "1", "SCUS-94901");             // unlocked: the image is
+
+    fx.runAndPoll();
+
+    // regional.db holds no serial for a USB game - Game.ini is where it lives (the meta panel reads it
+    // from there), so that is what the scan must have left right
+    auto iniValue = [&](const string &game, const string &key) {
+        ableem::IniFile ini;
+        ini.load(fx.tmp.at("Games/" + game + "/Game.ini"));
+        return ini.values[key];
+    };
+    CHECK(iniValue("Crash Bandicoot", "serial") == "SCUS-94900");
+    CHECK(iniValue("Crash Bandicoot", "region") == ableem::SerialScanner::serialToRegion("SCUS-94900"));  // derived, not left blank
+    CHECK(iniValue("Spyro", "serial") == "SLUS-01235");
 }
 
 TEST_CASE("a game folder that disappears is removed from regional.db on the next scan") {

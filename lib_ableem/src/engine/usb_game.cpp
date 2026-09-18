@@ -367,6 +367,10 @@ void UsbGame::applyIniValues() {
     if (Strings::isInteger(tmp.c_str())) year = atoi(tmp.c_str()); else year = 2018;
     tmp = valueOrDefault("highres","0");
     if (Strings::isInteger(tmp.c_str())) highRes = atoi(tmp.c_str()); else highRes = 0;
+    // what the scanner (or the user, by hand) wrote last time; the scanner decides whether to trust it -
+    // a missing one is not an automation event, the image is simply read again
+    serial = valueOrDefault("serial", "", false);
+    region = valueOrDefault("region", "", false);
     // favorite and play_using_ra are newer fields that older Game.ini files lack, so a missing one must
     // not set automationUsed. (The key was misspelt "play_us_ra" here until 2026-09 - the fork's d80f67b7 -
     // which reset every game's "Play using RA" to false on each scan.)

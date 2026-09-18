@@ -413,10 +413,17 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, CoverDataba
             if (game->gameIniFound)
                 game->loadGameIni(gameIniPath); // read it in now in case we need to create or update the serial/region
 
-            game->serial = SerialScanner::readSerial(game->imageType, game->fullPath + sep, game->firstBinPath);
-            game->region = SerialScanner::serialToRegion(game->serial);
-            //cout << "serial: " << game->serial << ", region: " << game->region << ", " << game->title <<endl;
-            //cout << "Last Played: " << Strings::timeToDisplayTimeString(game->last_played) << endl;
+            // A locked game (automation=0 in its Game.ini) keeps the serial the ini holds - the user may
+            // have set it by hand, and an image the reader cannot open (an odd dump, a CHD codec we lack)
+            // must not blank it on every scan. Every other game, and a locked one whose ini has no
+            // serial, is read from the image as before. (AutoBleem-NG's a3819874.)
+            bool keepIniSerial = game->gameIniFound && !game->automationUsed && !game->serial.empty();
+            if (!keepIniSerial) {
+                game->serial = SerialScanner::readSerial(game->imageType, game->fullPath + sep, game->firstBinPath);
+                game->region = SerialScanner::serialToRegion(game->serial);
+            } else if (game->region.empty()) {
+                game->region = SerialScanner::serialToRegion(game->serial);
+            }
 
             // if there was no ini file before, get the values for the ini, create the cover file if needed, and create/update the game.ini file
             if ( !game->gameIniFound || game->automationUsed || (game->discs.size()==0) ) {
