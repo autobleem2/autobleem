@@ -97,7 +97,10 @@ string System::execUnixCommand(const char *cmd) {
     array<char, 128> buffer;
     string result;
     PLOG_INFO << "Exec:" << cmd;
-    unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    struct PipeCloser {
+        void operator()(FILE *f) const { pclose(f); }
+    }; // not decltype(&pclose): its nonnull attribute is lost on the template argument (GCC 14 warns)
+    unique_ptr<FILE, PipeCloser> pipe(popen(cmd, "r"));
     if (!pipe) {
         PLOG_WARNING << "popen() failed for: " << cmd;
         return result; // never throw: there is no handler anywhere and an abort() takes the whole UI down
