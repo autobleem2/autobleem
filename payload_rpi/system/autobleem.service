@@ -2,8 +2,12 @@
 Description=AutoBleem launcher
 # the launcher is useless before its games partition is there, and it owns tty1 instead of a login prompt
 RequiresMountsFor=@DATA_MOUNT@
-After=systemd-user-sessions.service sound.target
-Conflicts=getty@tty1.service
+After=systemd-user-sessions.service sound.target plymouth-start.service plymouth-quit.service
+# plymouth-quit.service would take the boot splash down (and put the text console back) as soon as the
+# system is up, a second or two before the launcher has the display. Keeping it out of the boot lets
+# autobleem-session quit plymouth itself, right before starting the launcher and with the logo left on
+# screen - the same arrangement a display manager uses. Without plymouth installed this is a no-op.
+Conflicts=getty@tty1.service plymouth-quit.service
 
 [Service]
 Type=simple

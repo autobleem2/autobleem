@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=AutoBleem
+Description=The AutoBleem logo while the Raspberry Pi boots and shuts down
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/autobleem
+ScriptFile=/usr/share/plymouth/themes/autobleem/autobleem.script

@@ -286,7 +286,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   takes its own branch there. Without that the Pi build was getting armv8 code, which would SIGILL on a Pi 2.
 - **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
   Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
-  `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces), and the data-partition
+  `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces, the plymouth theme), and the data-partition
   tree exactly as it lands on the exFAT partition - `Autobleem/rc/` (the Pi `launch.sh`/`launch_rb.sh`/
   `retroarch.sh`), `Autobleem/bin/emu/`, `Games/`, `Apps/` (empty dirs kept by `placeholder` files).
   `tools/make_rpi_package.sh` copies that tree, fills in `Autobleem/bin/autobleem` (`build_rpi/autobleem-gui`
@@ -304,6 +304,18 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   for a shrink: by the time `init=` runs the root is mounted, and `resize2fs` will not shrink a mounted
   filesystem (Pi OS only ever *grows*, which works online). A USB stick with an exFAT partition labelled
   `AUTOBLEEM` also works (`--disk /dev/sda`), but is not the intended setup.
+- **Boot screen** (2026-09-18): the installer sets the KMS mode for the whole boot on the kernel command line
+  (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...`, `--hdmi-mode`; `config.txt`'s `hdmi_mode` is ignored by
+  the KMS driver) - the launcher asks SDL for 1280x720 anyway, so plymouth and the launcher share one mode and
+  the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_rpi/system/plymouth/`
+  (`splash.png` 1280x720 on black), installed to `/usr/share/plymouth/themes/autobleem` and packed into the
+  running kernel's initramfs (`update-initramfs -u -k $(uname -r)`, like the shrink hook - never bare `-u`,
+  the 32-bit image carries several kernels). `cmdline.txt` gets `splash plymouth.ignore-serial-consoles`,
+  `config.txt` gets `disable_splash=1` in its own `[all]` section. The handover: `autobleem.service`
+  `Conflicts=plymouth-quit.service` (the display-manager pattern, so systemd does not take the splash down
+  when the system is up) and `autobleem-session` runs `plymouth quit --retain-splash` first thing, before
+  even checking for the binary - plymouth holds the DRM master, SDL needs it. `--no-boot-splash` skips
+  plymouth, `--no-quiet-boot` implies it. **Not yet run on the Pi.**
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key

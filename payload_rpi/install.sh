@@ -26,6 +26,8 @@ ASSUME_YES=0                    # --yes: answer every confirmation, for unattend
 DO_PACKAGES=1
 DO_BOOT_CONFIG=1
 QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the launcher is the only thing seen
+BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem logo) from the initramfs on; needs QUIET_BOOT
+HDMI_MODE="1280x720@60"         # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
@@ -87,7 +89,10 @@ Usage: sudo bash install.sh [options]
                        REPARTITIONS THE CARD. Needs a reboot to do the work offline. Back up first.
   --no-packages        skip apt - assume SDL2/RetroArch/exfatprogs are already installed
   --no-boot-config     do not touch cmdline.txt/config.txt
-  --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting
+  --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
+  --no-boot-splash     boot quietly but without the AutoBleem logo (no plymouth)
+  --hdmi-mode MODE     the HDMI mode set on the kernel command line for the whole boot (default: 1280x720@60,
+                       the launcher's own resolution; "none" leaves the screen's preferred mode)
   --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
                        apt: the distribution's package; none: leave RetroArch alone
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
@@ -110,7 +115,9 @@ parse_args() {
             --shrink-root)    SHRINK_ROOT_GIB="${2:?--shrink-root needs a size in GiB}"; shift 2 ;;
             --no-packages)    DO_PACKAGES=0; shift ;;
             --no-boot-config) DO_BOOT_CONFIG=0; shift ;;
-            --no-quiet-boot)  QUIET_BOOT=0; shift ;;
+            --no-quiet-boot)  QUIET_BOOT=0; BOOT_SPLASH=0; shift ;;
+            --no-boot-splash) BOOT_SPLASH=0; shift ;;
+            --hdmi-mode)      HDMI_MODE="${2:?--hdmi-mode needs a mode such as 1280x720@60, or none}"; shift 2 ;;
             --retroarch)      RETROARCH_MODE="${2:?--retroarch needs source, apt or none}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
             --yes)            ASSUME_YES=1; shift ;;
@@ -204,6 +211,11 @@ install_packages() {
         libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
         "$(pkg_first_available libpng16-16t64 libpng16-16)" zlib1g \
         exfatprogs parted alsa-utils wget unzip ca-certificates
+
+    # the boot splash. Lite ships without plymouth; the "script" plugin the theme uses is in the core package.
+    if [ "$BOOT_SPLASH" -eq 1 ]; then
+        run apt-get install -y plymouth || warn "plymouth did not install - there will be no boot splash"
+    fi
 }
 
 #*******************************
@@ -814,6 +826,50 @@ install_service() {
 }
 
 #*******************************
+# install_boot_splash
+#*******************************
+# The AutoBleem logo instead of a black screen (or the kernel log) between the firmware and the launcher:
+# a plymouth theme (system/plymouth/, the "script" plugin - the one Raspberry Pi OS's own "pix" theme uses)
+# started from the initramfs. autobleem-session quits it, keeping the last frame on screen, right before it
+# starts the launcher - see the service file for why plymouth-quit.service is kept out of the way. The same
+# theme shows on the way down, when Power Off in the L2+R2 menu halts the Pi.
+PLYMOUTH_THEME_DIR=/usr/share/plymouth/themes/autobleem
+
+install_boot_splash() {
+    [ "$DO_BOOT_CONFIG" -eq 1 ] || return 0
+    [ "$BOOT_SPLASH" -eq 1 ] || { log "skipping the boot splash (--no-boot-splash / --no-quiet-boot)"; return 0; }
+
+    local src="$SCRIPT_DIR/system/plymouth"
+    if [ ! -f "$src/splash.png" ]; then
+        warn "no system/plymouth/splash.png in the package - no boot splash"
+        BOOT_SPLASH=0
+        return 0
+    fi
+    if ! command -v plymouth-set-default-theme >/dev/null 2>&1; then
+        warn "plymouth is not installed - no boot splash (re-run without --no-packages, or apt-get install plymouth)"
+        BOOT_SPLASH=0
+        return 0
+    fi
+
+    log "Installing the boot splash"
+    run install -d -m 0755 "$PLYMOUTH_THEME_DIR"
+    run install -m 0644 "$src/autobleem.plymouth" "$src/autobleem.script" "$src/splash.png" "$PLYMOUTH_THEME_DIR/"
+    run plymouth-set-default-theme autobleem || {
+        warn "plymouth-set-default-theme failed - no boot splash"
+        BOOT_SPLASH=0
+        return 0
+    }
+
+    # plymouth starts from the initramfs, so the theme has to be packed into it - for the running kernel,
+    # not "the newest" (the 32-bit image carries several: v6, v7, v7l, v8), the same as the shrink hook.
+    if [ -d /etc/initramfs-tools ]; then
+        log "Rebuilding the initramfs for $(uname -r) with the boot splash in it"
+        run update-initramfs -u -k "$(uname -r)" \
+            || warn "update-initramfs failed - the splash will only show once the root is mounted"
+    fi
+}
+
+#*******************************
 # configure_boot
 #*******************************
 configure_boot() {
@@ -830,6 +886,11 @@ configure_boot() {
     if [ "$QUIET_BOOT" -eq 1 ]; then
         extra="$extra quiet loglevel=3 logo.nologo vt.global_cursor_default=0"
     fi
+    # Debian's plymouth only comes up for "splash"; ignore-serial-consoles keeps it graphical on the HDMI
+    # screen instead of dropping to text because cmdline.txt also names console=serial0.
+    if [ "$BOOT_SPLASH" -eq 1 ]; then
+        extra="$extra splash plymouth.ignore-serial-consoles"
+    fi
 
     local word
     for word in $extra; do
@@ -839,10 +900,35 @@ configure_boot() {
         esac
     done
 
+    # The HDMI mode for the whole boot. config.txt's hdmi_group/hdmi_mode mean nothing to the KMS driver;
+    # video= on the kernel command line does. The launcher asks SDL for 1280x720 anyway, so booting in it
+    # means plymouth draws at the launcher's resolution and the handover is not a modeset the TV has to
+    # re-sync to. Both ports get it - which one the screen is on is only known at boot - and any earlier
+    # video=HDMI-A-n: words are replaced, so a re-run with another --hdmi-mode takes effect.
+    if [ "$HDMI_MODE" != none ]; then
+        local kept=""
+        for word in $cmdline; do
+            case "$word" in
+                video=HDMI-A-[12]:*) ;;
+                *) kept="$kept${kept:+ }$word" ;;
+            esac
+        done
+        cmdline="$kept video=HDMI-A-1:$HDMI_MODE video=HDMI-A-2:$HDMI_MODE"
+    fi
+
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would write to %s: %s\n' "$BOOT_DIR/cmdline.txt" "$cmdline"
     else
         printf '%s\n' "$cmdline" | write_file "$BOOT_DIR/cmdline.txt"
+    fi
+
+    # The firmware's rainbow square is config.txt's business, not the kernel's. Appended in its own [all]
+    # section, so it applies whatever [model] filter the file happens to end under.
+    if [ "$QUIET_BOOT" -eq 1 ] && [ -f "$BOOT_DIR/config.txt" ] && ! grep -q '^disable_splash=' "$BOOT_DIR/config.txt"; then
+        log "Configuring $BOOT_DIR/config.txt (disable_splash=1)"
+        run cp -n "$BOOT_DIR/config.txt" "$BOOT_DIR/config.txt.autobleem-backup"
+        { cat "$BOOT_DIR/config.txt"; printf '\n[all]\n# AutoBleem: no rainbow square from the firmware\ndisable_splash=1\n'; } \
+            | write_file "$BOOT_DIR/config.txt"
     fi
 }
 
@@ -896,6 +982,7 @@ main() {
     download_retroarch_content
     install_payload
     install_service
+    install_boot_splash
     configure_boot
     sync
     summary

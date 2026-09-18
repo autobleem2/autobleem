@@ -56,15 +56,17 @@ source (10-40 minutes depending on the Pi - `--retroarch apt` takes the distribu
 `--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
 trees on it; downloads every armhf core plus RetroArch's info/assets/autoconfig/database bundles from
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
-later); installs the launcher, pcsx-ab, themes and launch scripts; and wires up a systemd service that owns
-tty1. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
+later); installs the launcher, pcsx-ab, themes and launch scripts; wires up a systemd service that owns
+tty1; and sets up a quiet boot at 720p with the AutoBleem logo on screen (plymouth) instead of the kernel
+log. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
 transition; the installer tries both names).
 
 Then put your BIOS in `System/Bios/` on the data partition — `romw.bin`, and `romJP.bin` for Japanese games
 (the console uses one file for both; a copy is fine). pcsx-ab reads them from there on every launch.
 
 `--help` lists the options. The useful ones are `--shrink-root`, `--retroarch`, `--no-downloads`,
-`--no-packages` and `--stage`.
+`--no-packages`, `--stage`, `--hdmi-mode` (default `1280x720@60`; `none` keeps the screen's preferred mode),
+`--no-boot-splash` and `--no-quiet-boot`.
 
 ## The data partition
 
@@ -154,6 +156,16 @@ Running as root is deliberate — this is an appliance that needs the DRM device
 power-off call, which is how the console runs it too. If that does not suit your setup, the service file is
 plain systemd and easy to change.
 
+The screen is set to 1280x720 for the whole boot (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...` in
+`cmdline.txt` — with the KMS driver, `hdmi_mode` in `config.txt` does nothing), which is the launcher's own
+resolution, so there is no mode change for the TV to re-sync to when it comes up. The AutoBleem logo is a
+plymouth theme (`/usr/share/plymouth/themes/autobleem/`, packed into the initramfs) that stays up until the
+session script quits it right before starting the launcher — `plymouth-quit.service` is kept out of the boot
+by the service file so it cannot do that earlier. The same logo shows while the Pi shuts down. The
+firmware's rainbow square is turned off in `config.txt` (`disable_splash=1`). `--hdmi-mode`,
+`--no-boot-splash` and `--no-quiet-boot` on the installer undo each of these; `--no-boot-config` leaves the
+boot files alone altogether.
+
 ## If something goes wrong
 
 The installer leaves `getty` on tty2–tty6, so **Alt+F2 gives you a login prompt** even when the launcher has
@@ -167,7 +179,10 @@ sudo systemctl enable --now getty@tty1
 ```
 
 Backups of everything the installer edits are left next to the originals:
-`cmdline.txt.autobleem-backup`, `/etc/fstab.autobleem-backup`.
+`cmdline.txt.autobleem-backup`, `config.txt.autobleem-backup`, `/etc/fstab.autobleem-backup`.
+
+**Logo on screen but no launcher.** plymouth was not quit — check `journalctl -u autobleem`; the session
+script quits it before anything else, so the service itself did not start. Esc shows plymouth's details view.
 
 **Black screen, no launcher.** Usually SDL cannot get the display. Check `journalctl -u autobleem` for
 `kmsdrm`; make sure `dtoverlay=vc4-kms-v3d` is in `/boot/firmware/config.txt` (it is the default on current

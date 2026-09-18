@@ -1,0 +1,42 @@
+// AutoBleem's plymouth boot screen: splash.png on black, scaled down to fit the screen if it has to be and
+// centred, faded in over the first half second. Nothing else - no spinner, no text - so it reads as the
+// launcher's own splash coming up, which is what follows it (autobleem-session quits plymouth with
+// --retain-splash right before starting the launcher, so this frame stays until SDL takes the display).
+//
+// splash.png is the same size as the mode the installer puts on the kernel command line (1280x720), so
+// on a normal install no scaling happens at all.
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+screen.width = Window.GetWidth();
+screen.height = Window.GetHeight();
+
+logo.image = Image("splash.png");
+scale = Math.Min(screen.width / logo.image.GetWidth(), screen.height / logo.image.GetHeight());
+if (scale < 1)
+    logo.image = logo.image.Scale(logo.image.GetWidth() * scale, logo.image.GetHeight() * scale);
+
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX((screen.width - logo.image.GetWidth()) / 2);
+logo.sprite.SetY((screen.height - logo.image.GetHeight()) / 2);
+logo.sprite.SetOpacity(0);
+
+// the refresh function runs about 50 times a second
+fade.frames = 25;
+fade.frame = 0;
+
+fun refresh_callback()
+{
+    if (fade.frame < fade.frames) {
+        fade.frame++;
+        logo.sprite.SetOpacity(fade.frame / fade.frames);
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+// a disk check or an fsck message would otherwise land on top of the logo; the details view (Esc) still has it
+fun message_callback(text) { }
+Plymouth.SetMessageFunction(message_callback);
+fun display_normal_callback() { }
+Plymouth.SetDisplayNormalFunction(display_normal_callback);

@@ -51,6 +51,24 @@ hdmi_audio() {
     fi
 }
 
+#*******************************
+# boot_splash_down
+#*******************************
+# The boot splash (plymouth, the AutoBleem logo - see install.sh's install_boot_splash) holds the DRM
+# device while it runs, and SDL needs to be the DRM master to draw, so it has to go before the launcher
+# starts. --retain-splash leaves its last frame on the screen until SDL's first modeset, so what the user
+# sees is the logo, then the launcher's own splash, and no text console in between. The service file keeps
+# plymouth-quit.service from doing this earlier. Done before the binary check too: a session that bails out
+# would otherwise leave the logo up forever with no way to tell what went wrong.
+boot_splash_down() {
+    command -v plymouth >/dev/null 2>&1 || return 0
+    plymouth --ping 2>/dev/null || return 0
+    plymouth quit --retain-splash
+    echo "autobleem-session: boot splash taken down"
+}
+
+boot_splash_down
+
 [ -x "$APP_DIR/autobleem-gui" ] || {
     echo "autobleem-session: no autobleem-gui in $APP_DIR" >&2
     exit 1
