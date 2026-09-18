@@ -53,6 +53,9 @@ string Environment::getPathToSystemDir() { return usbRoot + sep + "System"; }
 string Environment::getPathToRetroarchDir() { return retroarchDir.empty() ? usbRoot + sep + "retroarch" : retroarchDir; }
 string Environment::getPathToRetroarchPlaylistsDir() { return getPathToRetroarchDir() + sep + "playlists"; }
 string Environment::getPathToRetroarchRdbDir() { return getPathToRetroarchDir() + sep + "database" + sep + "rdb"; }
+string Environment::getPathToRetroarchThumbnailsDir() { return getPathToRetroarchDir() + sep + "thumbnails"; }
+string Environment::getPathToRetroarchScreenshotsDir() { return getPathToRetroarchDir() + sep + "screenshots"; }
+string Environment::getPathToRetroarchStatesDir() { return getPathToRetroarchDir() + sep + "states"; }
 string Environment::getPathToPlayStationRdbFile() { return getPathToRetroarchRdbDir() + sep + "Sony - PlayStation.rdb"; }
 string Environment::getPathToRetroarchCoreFile() {
     return retroarchCoreFile.empty() ? getPathToRetroarchDir() + sep + "cores/km_pcsx_rearmed_neon_libretro.so"

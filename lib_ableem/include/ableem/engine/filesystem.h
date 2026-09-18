@@ -53,6 +53,11 @@ public:
     static DirEntries diru(std::string path);  // returns directory contents except . and ..
     static DirEntries diru_DirsOnly(std::string path);  // diru but only returns directories
     static DirEntries diru_FilesOnly(std::string path);  // diru but only returns files
+    // Every name in the directory except dot files and what the OS already knows to be a subdirectory -
+    // no stat() per entry, which is what makes diru() take tens of seconds on a USB stick for the ~8000
+    // files of a thumbnails folder. On exFAT/FAT the kind is often unknown, so a subdirectory may be
+    // listed; callers filter by extension anyway. Unsorted.
+    static std::vector<std::string> listNames(const std::string &path);
 
     static bool copy(const std::string &source, const std::string &dest);
     // logs when an output file could not be opened. returns false in that case so the caller can bail out.

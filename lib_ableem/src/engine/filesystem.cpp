@@ -255,6 +255,25 @@ DirEntries DirEntry::diru(string path) {
 }
 
 //*******************************
+// DirEntry::listNames
+//*******************************
+vector<string> DirEntry::listNames(const string &path) {
+    vector<string> names;
+    DIR *dir = opendir(fixPath(removeSeparatorFromEndOfPath(path)).c_str());
+    if (dir != NULL) {
+        for (struct dirent *entry = readdir(dir); entry != NULL; entry = readdir(dir)) {
+            if (entry->d_name[0] == '.') continue;
+#ifdef DT_DIR
+            if (entry->d_type == DT_DIR) continue;
+#endif
+            names.push_back(entry->d_name);
+        }
+        closedir(dir);
+    }
+    return names;
+}
+
+//*******************************
 // DirEntry::diru_DirsOnly
 //*******************************
 DirEntries DirEntry::diru_DirsOnly(string path) {
