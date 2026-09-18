@@ -5,6 +5,7 @@
 #include "../core/services/system.h"
 
 #include <cassert>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <ableem/engine/log.h>
@@ -248,16 +249,69 @@ void TextRenderer::AllTextOrEmojiTokenInfo::render(int x, int y, XAlignment xAli
 // text is light
 //*******************************
 void TextRenderer::drawRun(const ableem::Font &font, int x, int y, const Color *color, const string &run) {
-    if (shadow_.enabled && (color == nullptr || Shadow::isLight(*color))) {
-        // the halo first, so the text itself lands on top of it
-        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
-        for (const auto &offset : offsets)
-            font.drawColor(renderer_, x + offset[0], y + offset[1], shadow_.color, run);
+    if (!font.valid() || run.empty())
+        return;
+    const bool halo = shadow_.enabled && (color == nullptr || Shadow::isLight(*color));
+    const CachedRun &cached = cachedRun(font, color, halo, run);
+    if (!cached.tex.valid())
+        return;
+    Size size = cached.tex.size();
+    Rect dst(x - cached.pad, y - cached.pad, size.w, size.h);
+    renderer_.copy(cached.tex, nullptr, &dst);
+}
+
+//*******************************
+// TextRenderer::cachedRun
+//*******************************
+const TextRenderer::CachedRun &TextRenderer::cachedRun(const ableem::Font &font, const Color *color, bool halo,
+                                                       const string &run) {
+    // the key: which font, which colour (or the font's own), whether the halo is under it, and the text
+    char head[64];
+    snprintf(head, sizeof(head), "%p|%08x|%08x|", font.native(),
+             color ? (color->r << 24 | color->g << 16 | color->b << 8 | color->a) : 0xffffffffu,
+             halo ? (shadow_.color.r << 24 | shadow_.color.g << 16 | shadow_.color.b << 8 | shadow_.color.a) : 0u);
+    string key = head + run;
+    auto found = runCache_.find(key);
+    if (found != runCache_.end())
+        return found->second;
+
+    // a screen's worth is a few dozen; a runaway (a clock, say) is cut off by starting over
+    if (runCache_.size() > 512)
+        runCache_.clear();
+
+    CachedRun entry;
+    entry.pad = halo ? 3 : 0;
+    Size text = font.textSize(run);
+    if (text.w > 0 && text.h > 0) {
+        entry.tex = ableem::Texture::createTarget(renderer_, text.w + 2 * entry.pad, text.h + 2 * entry.pad);
+        entry.tex.setBlendMode(ableem::BlendMode::Blend);
+        renderer_.setTarget(&entry.tex);
+        renderer_.setBlendMode(ableem::BlendMode::None);
+        renderer_.setDrawColor(Color(0, 0, 0, 0)); // transparent, and dark where the edges blend into it
+        renderer_.fillRect();
+        renderer_.setBlendMode(ableem::BlendMode::Blend);
+        const int x = entry.pad, y = entry.pad;
+        if (halo) {
+            // the halo first, so the text itself lands on top of it
+            static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0},
+                                             {-1, 1},  {0, 1},  {1, 1},  {2, 2}};
+            for (const auto &offset : offsets)
+                font.drawColor(renderer_, x + offset[0], y + offset[1], shadow_.color, run);
+        }
+        if (color != nullptr)
+            font.drawColor(renderer_, x, y, *color, run);
+        else
+            font.drawAlign(renderer_, x, y, ableem::Align::Left, run);
+        renderer_.setTarget(nullptr);
     }
-    if (color != nullptr)
-        font.drawColor(renderer_, x, y, *color, run);
-    else
-        font.drawAlign(renderer_, x, y, ableem::Align::Left, run);
+    return runCache_.emplace(key, entry).first->second;
+}
+
+//*******************************
+// TextRenderer::clearTextCache
+//*******************************
+void TextRenderer::clearTextCache() {
+    runCache_.clear();
 }
 
 //*******************************

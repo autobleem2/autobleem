@@ -84,6 +84,7 @@ void Gui::splash(const string &message) {
 // Gui::loadAssets
 //*******************************
 void Gui::loadAssets(bool reloadMusic) {
+    text_.clearTextCache(); // keyed on the font handles about to be replaced
     assets_.load();
     App::get().audio().loadTheme(reloadMusic);
 
@@ -159,6 +160,7 @@ void Gui::finish() {
 // Gui::releaseDisplay
 //*******************************
 void Gui::releaseDisplay() {
+    text_.clearTextCache();
     assets_.unload(); // before the renderer goes: SDL frees the textures with it
     GuiBase::releaseDisplay();
 }

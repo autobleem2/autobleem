@@ -70,6 +70,12 @@ public:
     void setShadow(const Shadow &shadow) { shadow_ = shadow; }
     const Shadow &shadow() const { return shadow_; }
 
+    // Every run of text drawn through here is kept as a texture (the halo and the text composed once) and
+    // copied thereafter, so a frame costs one copy per label instead of ten passes of one copy per glyph.
+    // Gui drops the cache whenever the fonts go - a theme or language load, the display given up for an
+    // emulator - since the entries are keyed on the font handles and hold textures of the renderer.
+    void clearTextCache();
+
     //*******************************
     // Rect and Size routines
     //*******************************
@@ -164,6 +170,14 @@ public:
 private:
     // one run of text at (x, y), in `color` or the font's own if null, with the halo under it
     void drawRun(const ableem::Font &font, int x, int y, const ableem::Color *color, const std::string &run);
+
+    struct CachedRun {
+        ableem::Texture tex;
+        int pad = 0; // the margin around the text the halo needs, drawn that much up and left of (x, y)
+    };
+    // the run's texture, composed on first use; invalid when the run has no size
+    const CachedRun &cachedRun(const ableem::Font &font, const ableem::Color *color, bool halo, const std::string &run);
+    std::map<std::string, CachedRun> runCache_;
 
     ableem::Renderer &renderer_;
     Fonts *fonts_ = nullptr;
