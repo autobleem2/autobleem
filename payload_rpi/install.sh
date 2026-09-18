@@ -394,10 +394,60 @@ recording_output_directory = "$RA_ROOT/records"
 recording_config_directory = "$RA_ROOT/records"
 rgui_config_directory = "$RA_ROOT/config"
 core_options_path = "$RA_ROOT/config/retroarch-core-options.cfg"
+global_core_options = "true"
 log_dir = "$RA_ROOT/logs"
 video_fullscreen = "true"
 input_autodetect_enable = "true"
 menu_show_core_updater = "true"
+EOF
+}
+
+#*******************************
+# set_cfg_key
+#*******************************
+# sets `key = "value"` in a RetroArch-style cfg: replaces the line when the key is there (RetroArch writes
+# every key back on exit, defaults included), appends it otherwise. Everything else in the file - the user's
+# settings - is kept.
+set_cfg_key() {
+    local file="$1" key="$2" value="$3"
+    [ -f "$file" ] || return 0
+    grep -q "^$key = \"$value\"" "$file" && return 0
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would set %s = "%s" in %s
+' "$key" "$value" "$file"
+        return 0
+    fi
+    if grep -q "^$key = " "$file"; then
+        sed -i "s|^$key = .*|$key = \"$value\"|" "$file"
+    else
+        printf '%s = "%s"
+' "$key" "$value" >> "$file"
+    fi
+    log "Set $key = \"$value\" in $(basename "$file")"
+}
+
+#*******************************
+# write_retroarch_core_options
+#*******************************
+# The core options AutoBleem edits around each launch (LaunchService::transferRaConfig - the game editor's
+# High-res and Speed hack for pcsx_rearmed) live in this one global file, so retroarch.cfg says
+# global_core_options = true: with RetroArch's default of per-core .opt files the global one would be
+# ignored the moment RetroArch saved its own. Only written when missing; RetroArch keeps it up to date.
+# pad types: pcsx_rearmed defaults to a digital PS1 pad, which makes every analog stick a d-pad.
+write_retroarch_core_options() {
+    set_cfg_key "$RA_ROOT/retroarch.cfg" global_core_options true
+
+    local opt="$RA_ROOT/config/retroarch-core-options.cfg"
+    if [ -s "$opt" ]; then   # -s: an empty one (AutoBleem's config transfer touches it) counts as missing
+        log "Keeping the existing $opt"
+        return 0
+    fi
+    log "Writing $opt"
+    write_file "$opt" <<EOF
+pcsx_rearmed_pad1type = "dualshock"
+pcsx_rearmed_pad2type = "dualshock"
+pcsx_rearmed_neon_enhancement_enable = "disabled"
+pcsx_rearmed_neon_enhancement_no_main = "disabled"
 EOF
 }
 
@@ -681,6 +731,7 @@ create_tree() {
     RA_ROOT="$DATA_MOUNT/RetroArch"
     create_retroarch_tree
     write_retroarch_config
+    write_retroarch_core_options
 }
 
 #*******************************
