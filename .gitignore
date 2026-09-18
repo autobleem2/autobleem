@@ -71,3 +71,6 @@ build/
 
 # the mocked USB root tools/make_usb.py builds for running the app on a PC
 usb/
+
+# the PS1 BIOS images (System/Bios on the Pi) - never committed
+bios/
