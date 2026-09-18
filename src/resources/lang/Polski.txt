@@ -438,3 +438,11 @@ Widescreen:
 Pełny ekran:
 Year:
 Rok:
+Showing: Lightgun Games
+Wyświetla: Gry Lightgun
+Lightgun Game:
+Gra Lightgun:
+File:
+Plik:
+Core:
+Rdzeń:

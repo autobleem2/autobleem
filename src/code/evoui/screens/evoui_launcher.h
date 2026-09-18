@@ -83,6 +83,7 @@ public:
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();
     void loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD();
     void reloadFavoritesAfterRemoval();
+    void reloadLightgunSetAfterEdit();
     void loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
     void loop_crossButtonPressed_STATE_RESUME();
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -
@@ -183,6 +184,9 @@ public:
 
     LauncherScreenState state = LauncherScreenState::Games;
     void switchState(LauncherScreenState state, int time);
-    void forceSettingsOnly();
-    void showAllOptions();
+    // the options row for the selected game: every icon for a PS1 game, settings + game editor for a
+    // RetroArch game, settings alone for an App or an empty carousel (was forceSettingsOnly/showAllOptions)
+    void showOptions();
+    // the selected game as the emulator sees it: a PS1 game, even from the Lightgun set
+    bool selectedIsPs1() const;
 };

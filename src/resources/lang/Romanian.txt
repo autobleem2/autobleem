@@ -458,3 +458,11 @@ Widescreen:
 WideScreen:
 Year:
 An:
+Showing: Lightgun Games
+Se arata: Jocuri Lightgun
+Lightgun Game:
+Joc Lightgun:
+File:
+
+Core:
+

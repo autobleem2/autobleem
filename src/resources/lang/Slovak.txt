@@ -430,3 +430,11 @@ Widescreen:
 Širokouhlý obraz:
 Year:
 Rok:
+Showing: Lightgun Games
+Zobrazujem: Hry Lightgun
+Lightgun Game:
+Hra Lightgun:
+File:
+
+Core:
+

@@ -436,3 +436,11 @@ Year:
 År:
 ﻿Automatic PlayStation Classic USB launcher
 Automatisk PlayStation Classic USB launcher
+Showing: Lightgun Games
+Viser: Lightgun-spil
+Lightgun Game:
+Lightgun-spil:
+File:
+
+Core:
+

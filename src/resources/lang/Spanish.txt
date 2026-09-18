@@ -430,3 +430,11 @@ Widescreen:
 Widescreen:
 Year:
 Año:
+Showing: Lightgun Games
+Mostrando: Juegos de Pistola
+Lightgun Game:
+Juego de Pistola:
+File:
+
+Core:
+

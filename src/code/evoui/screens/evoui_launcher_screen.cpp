@@ -39,6 +39,14 @@ void GuiLauncher::updateMeta() {
     }
     if (carousel.selectedIsValid())
         meta->updateTexts(carousel.games[carousel.selected], fgColor);
+    showOptions();   // a mixed set (Lightgun) changes game type as the carousel moves
+}
+
+//*******************************
+// GuiLauncher::selectedIsPs1
+//*******************************
+bool GuiLauncher::selectedIsPs1() const {
+    return carousel.selectedIsValid() && !carousel.games[carousel.selected]->foreign;
 }
 
 //*******************************
@@ -77,9 +85,7 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newS
     carousel.setGames(gamesList);
 
     if (!noForce) {
-        if ((selection.set == GameSet::RetroArch) || (selection.set == GameSet::Apps)) {
-            forceSettingsOnly();
-        }
+        showOptions();
     }
 }
 
@@ -89,6 +95,7 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) {     // Warning: newS
 void GuiLauncher::showSetName() {
     vector<string> setNames = {  "Showing: PS1 games",      // this is a dummy entry. setPS1SubStateNames is used.
                                _("Showing: Retroarch") + " ",
+                               _("Showing: Lightgun Games") + " ",
                                _("Showing: Apps") + " "
     };
     vector<string> setPS1SubStateNames = {_("Showing: All Games") + " ",
@@ -407,15 +414,7 @@ void GuiLauncher::loadAssets() {
     }
 
 
-    //switchSet(selection.set,false);
-    if ((selection.set == GameSet::RetroArch) || (selection.set == GameSet::Apps)) {
-        forceSettingsOnly();
-    } else {
-        if (menu->foreign) {
-            showAllOptions();
-        }
-    }
-
+    showOptions();
     showSetName();
     updateMeta();
 
@@ -595,10 +594,23 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
 }
 
 //*******************************
-// GuiLauncher::forceSettingsOnly
+// GuiLauncher::showOptions
 //*******************************
-void GuiLauncher::forceSettingsOnly() {
-    menu->foreign = true;
+void GuiLauncher::showOptions() {
+    bool enabled[4] = {true, false, false, false};   // an App, or nothing selected: AutoBleem settings only
+    if (carousel.selectedIsValid()) {
+        const PsGame &game = *carousel.games[carousel.selected];
+        if (!game.foreign) {
+            enabled[1] = enabled[2] = enabled[3] = true;   // a PS1 game: editor, memory cards, resume points
+        } else if (!game.app) {
+            enabled[1] = true;                             // a RetroArch game: its (light-gun) editor
+        }
+    }
+    bool same = true;
+    for (int i = 0; i < 4; i++) same = same && (menu->enabled[i] == enabled[i]);
+    if (same) return;   // the row is already right - do not disturb an open menu
+
+    for (int i = 0; i < 4; i++) menu->enabled[i] = enabled[i];
     menu->selOption = 0;
     menu->x = 640 - 118 / 2;
     menu->ox = menu->x;
@@ -606,23 +618,9 @@ void GuiLauncher::forceSettingsOnly() {
     menu->xoff[1] = 0;
     menu->xoff[2] = 0;
     menu->xoff[3] = 0;
-
     menu->direction = 0;
     menu->duration = 100;
     menu->animationStarted = 0;
-}
-
-//*******************************
-// GuiLauncher::showAllOptions
-//*******************************
-void GuiLauncher::showAllOptions() {
-    menu->foreign = false;
-    menu->selOption = 0;
-    menu->x = 640 - 118 / 2;
-    menu->ox = menu->x;
-    menu->xoff[0] = 0;
-    menu->xoff[1] = 0;
-    menu->xoff[2] = 0;
-    menu->xoff[3] = 0;
-    menu->animationStarted = 0;
+    menuHead->setText(headers[0], fgColor);
+    menuText->setText(texts[0], fgColor);
 }

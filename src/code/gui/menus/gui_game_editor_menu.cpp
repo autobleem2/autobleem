@@ -13,17 +13,18 @@ using namespace std;
 
 #define OPT_FIRST           5
 #define OPT_FAVORITE        5
-#define OPT_PLAY_USING_RA   6
-#define OPT_LOCK            7
-#define OPT_HIGHRES         8
-#define OPT_SPEEDHACK       9
-#define OPT_SCANLINES       10
-#define OPT_SCANLINELV      11
-#define OPT_CLOCK_PSX       12
-#define OPT_FRAMESKIP       13
-#define OPT_PLUGIN          14
-#define OPT_INTERPOLATION   15
-#define OPT_LAST            15
+#define OPT_LIGHTGUN        6
+#define OPT_PLAY_USING_RA   7
+#define OPT_LOCK            8
+#define OPT_HIGHRES         9
+#define OPT_SPEEDHACK       10
+#define OPT_SCANLINES       11
+#define OPT_SCANLINELV      12
+#define OPT_CLOCK_PSX       13
+#define OPT_FRAMESKIP       14
+#define OPT_PLUGIN          15
+#define OPT_INTERPOLATION   16
+#define OPT_LAST            16
 
 //*******************************
 // GuiEditor::processOptionChange
@@ -39,7 +40,12 @@ void GuiEditor::processOptionChange(bool direction) {
             svc.setFavorite(settings, direction);
             break;
 
+        case OPT_LIGHTGUN:
+            svc.setLightgun(settings, direction);   // on also switches Play using RA on
+            break;
+
         case OPT_PLAY_USING_RA:
+            if (gameData->lightgun) break;   // a light-gun game plays in RetroArch, full stop
             svc.setPlayUsingRa(settings, direction);
             break;
 
@@ -143,7 +149,11 @@ void GuiEditor::render() {
                     OPT_FAVORITE, yoffset, XALIGN_LEFT, 300);
     }
 
-    if (gameData->internal) {
+    gui->text().renderTextLineOptions(
+            _("Lightgun Game:") + (gameData->lightgun ? string("|@Check|") : string("|@Uncheck|")),
+            OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
+
+    if (gameData->internal || gameData->lightgun) {
         gui->text().renderTextLineOptions(
                 _("Play using RA:") + (gameData->play_using_ra ? string("|@Check|") : string("|@Uncheck|")),
                 OPT_PLAY_USING_RA, yoffset, XALIGN_LEFT, 300);

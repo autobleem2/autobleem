@@ -456,3 +456,11 @@ Widescreen:
 Tela Larga:
 Year:
 Ano:
+Showing: Lightgun Games
+Mostrando: Jogos Lightgun
+Lightgun Game:
+Jogo Lightgun:
+File:
+
+Core:
+

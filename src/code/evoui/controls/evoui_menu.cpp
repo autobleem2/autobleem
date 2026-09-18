@@ -167,7 +167,7 @@ void PsMenu::render() {
 
     renderer.copy(settings, &input, &output);
 
-    if (!foreign) {
+    if (enabled[1]) {
         w = 118 * optionscales[1];
         h = 118 * optionscales[1];
 
@@ -179,8 +179,9 @@ void PsMenu::render() {
         output.h = h;
 
         renderer.copy(guide, &input, &output);
+    }
 
-
+    if (enabled[2]) {
         w = 118 * optionscales[2];
         h = 118 * optionscales[2];
         input.x = 0, input.y = 0;
@@ -191,7 +192,9 @@ void PsMenu::render() {
         output.h = h;
 
         renderer.copy(memcard, &input, &output);
+    }
 
+    if (enabled[3]) {
         w = 118 * optionscales[3];
         h = 118 * optionscales[3];
         input.x = 0, input.y = 0;

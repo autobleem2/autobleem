@@ -37,7 +37,10 @@ public:
     int duration = 0;
     bool active = false;
 
-    bool foreign = false;
+    // which of the four icons are shown, left to right - always a prefix: settings alone for an App,
+    // settings + game editor for a RetroArch game, all four for a PS1 game (GuiLauncher::showOptions)
+    bool enabled[4] = {true, true, true, true};
+    int lastEnabled() const { int last = 0; for (int i = 0; i < 4; i++) if (enabled[i]) last = i; return last; }
     int direction = 0;
 
     void freeAssets();

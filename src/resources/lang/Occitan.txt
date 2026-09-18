@@ -452,3 +452,11 @@ Widescreen:
 Grand ecran :
 Year:
 Annada :
+Showing: Lightgun Games
+Afichatge : Jòcs Lightgun
+Lightgun Game:
+Jòc Lightgun:
+File:
+
+Core:
+

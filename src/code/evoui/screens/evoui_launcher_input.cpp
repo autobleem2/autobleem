@@ -157,7 +157,7 @@ void GuiLauncher::loop_joyMoveLeft() {
         }
     } else if (state == LauncherScreenState::Set) {
 
-        if (!menu->foreign) {
+        if (menu->lastEnabled() > 0) {
             if (!selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
                 if (menu->animationStarted == 0) {
                     app.audio().cursor.play();
@@ -195,8 +195,8 @@ void GuiLauncher::loop_joyMoveRight() {
         }
     } else if (state == LauncherScreenState::Set) {
 
-        if (!menu->foreign) {
-            if (!selOptionIs(menu->selOption, LauncherMenuOption::ResumeFromSavestate)) {
+        if (menu->lastEnabled() > 0) {
+            if (menu->selOption < menu->lastEnabled()) {
                 if (menu->animationStarted == 0) {
                     app.audio().cursor.play();
                     menu->transition = TR_OPTION;
@@ -403,12 +403,9 @@ void GuiLauncher::loop_selectButton_Pressed() {
             // switch to next Select Mode
             app.audio().cursor.play();
 
-            GameSet previousSet = selection.set;
             selection.set = nextGameSet(selection.set);
-            if (previousSet == GameSet::Apps) {
-                showAllOptions();
-                menuHead->setText(headers[0], fgColor);
-                menuText->setText(texts[0], fgColor);
+            if (selection.set == GameSet::Lightgun && app.gameQuery().lightgunGames().empty()) {
+                selection.set = nextGameSet(selection.set);   // nothing flagged: the set is not offered
             }
 
             switchSet(selection.set,false);

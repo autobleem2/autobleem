@@ -665,4 +665,11 @@ Year:
 Use Controller
 Kumanda Kullan
 Yıl:
+Showing: Lightgun Games
+Gösteriliyor: Lightgun Oyunları
+Lightgun Game:
+Lightgun Oyunu:
+File:
+
+Core:
 

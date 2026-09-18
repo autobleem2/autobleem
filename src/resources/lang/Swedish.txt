@@ -452,3 +452,11 @@ games
 spel
 USB Games
 USB-spel
+Showing: Lightgun Games
+Visar: Lightgun-spel
+Lightgun Game:
+Lightgun-spel:
+File:
+
+Core:
+

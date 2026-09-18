@@ -462,3 +462,11 @@ Year:
 Année:
 ﻿Automatic PlayStation Classic USB launcher
 Launcher USB Automatique PlayStation Classic
+Showing: Lightgun Games
+Affichage : Jeux Lightgun
+Lightgun Game:
+Jeu Lightgun:
+File:
+
+Core:
+

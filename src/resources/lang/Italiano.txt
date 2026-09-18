@@ -430,3 +430,11 @@ Widescreen:
 Widescreen:
 Year:
 Anno:
+Showing: Lightgun Games
+Sto mostrando: Giochi Lightgun
+Lightgun Game:
+Gioco Lightgun:
+File:
+
+Core:
+

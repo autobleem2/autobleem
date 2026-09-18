@@ -10,6 +10,7 @@
 #include "../../gui/screens/gui_confirm.h"
 #include "../../gui/screens/gui_about.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
+#include "../../gui/menus/gui_game_editor_ra_menu.h"
 #include "../../gui/menus/gui_playlists_menu.h"
 #include "../../gui/menus/gui_game_dir_menu.h"
 #include "../../gui/menus/gui_memcards_menu.h"
@@ -205,13 +206,15 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     rememberSelection();
     menuVisible = false;
 
-    if (selection.set == GameSet::PS1)
+    if (selectedIsPs1())
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
 
     app.session().emuMode = EmuMode::Pcsx;
 
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
-    if (selection.set == GameSet::PS1) {
+    if (selectedIsPs1()) {
+        if (selection.set == GameSet::Lightgun)
+            return loop_squareButton_Pressed();     // a light-gun game: RetroArch's core has the guncon
         if (app.session().runningGame->internal) {
             if (app.session().runningGame->play_using_ra)
                 return loop_squareButton_Pressed();     // play internal PSX game in RA
@@ -320,12 +323,28 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
     }
 
     app.audio().cursor.play();
+
+    // a RetroArch game has its own, one-row editor
+    if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
+        if (carousel.games[carousel.selected]->app) return;
+        GuiEditorRA raEditor(*gui);
+        raEditor.gameData = carousel.games[carousel.selected];
+        raEditor.show();
+        if (raEditor.changed && selection.set == GameSet::Lightgun)
+            reloadLightgunSetAfterEdit();
+        return;
+    }
+
     GuiEditor editor(*gui);
     if (carousel.selectedIsValid()) {
         editor.gameData = carousel.games[carousel.selected];
     }
 
     editor.show();
+    if (selection.set == GameSet::Lightgun) {
+        reloadLightgunSetAfterEdit();
+        return;
+    }
 
     if (carousel.selectedIsValid()) {
         if (!carousel.games[carousel.selected]->internal) {
@@ -368,6 +387,20 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         carousel.games[carousel.selected].current = point2;
     }
     // fix to put back cover on top position
+}
+
+//*******************************
+// GuiLauncher::reloadLightgunSetAfterEdit
+//*******************************
+// the Lightgun set is showing and an editor may have taken the selected game out of it: reload, and
+// when nothing is left, show every PS1 game instead of an empty carousel
+void GuiLauncher::reloadLightgunSetAfterEdit() {
+    reloadGames();
+    if (carousel.games.empty()) {
+        app.session().launcher.set = GameSet::PS1;
+        app.session().launcher.ps1SelectState = Ps1SelectState::AllGames;
+        loadAssets();
+    }
 }
 
 //*******************************

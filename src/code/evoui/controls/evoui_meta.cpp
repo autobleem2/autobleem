@@ -50,6 +50,7 @@ void PsMeta::updateTexts(const string & gameNameTxt, const string & publisherTxt
 //*******************************
 void PsMeta::updateTexts(PsGamePtr & psGame, ableem::Color _textColor) {
     string appendText = psGame->players == 1 ? _("Player") : _("Players");
+    lightgun = App::get().lightguns().isLightgun(*psGame);
     if (!psGame->foreign) {
         if (psGame->serial == "") {
             IniFile iniFile;
@@ -113,6 +114,8 @@ void PsMeta::render() {
         cdTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
         favoriteTex =    ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
         raTex =          ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
+        lightgunTex =    ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun.png");
+        lightgun2Tex =   ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun2.png");
     }
 
     if (visible) {
@@ -230,6 +233,11 @@ void PsMeta::render() {
                 rect.x = x + xoffset + (spread * spreadCount);
                 renderer.copy(raTex, &fullRect, &rect);
             }
+            if (lightgun) {
+                ++spreadCount;
+                rect.x = x + xoffset + (spread * spreadCount);
+                renderer.copy(players.rfind("1 ", 0) == 0 ? lightgunTex : lightgun2Tex, &fullRect, &rect);
+            }
         } else
         {
             // RetroArch game: the RA icon, on the row the serial line left free
@@ -247,6 +255,15 @@ void PsMeta::render() {
                 fullRect.w = w;
                 fullRect.h = h;
                 renderer.copy(raTex, &fullRect, &rect);
+
+                if (lightgun) {
+                    rect.x += 40;
+                    rect.w = 30;
+                    rect.h = 30;
+                    fullRect.w = 30;
+                    fullRect.h = 30;
+                    renderer.copy(lightgunTex, &fullRect, &rect);
+                }
             }
         }
     }

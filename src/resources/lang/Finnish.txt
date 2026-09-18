@@ -450,3 +450,11 @@ Widescreen:
 Laajakuva:
 Year:
 Vuosi:
+Showing: Lightgun Games
+Näytetään: Lightgun-pelit
+Lightgun Game:
+Lightgun-peli:
+File:
+
+Core:
+
