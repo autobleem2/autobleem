@@ -5,6 +5,7 @@
 #include "environment.h"
 #include "../main.h"
 
+#include <ableem/engine/game_scanner.h>
 #include <ableem/engine/log.h>
 #include <ableem/engine/thumbnail_lookup.h>
 #include <ableem/engine/zip_archive.h>
@@ -201,6 +202,46 @@ int OnlineAssets::ensureDatabases(const string &rdbDir) {
     have = countRdbs();
     PLOG_INFO << "Databases in " << rdbDir << ": " << have;
     return have;
+}
+
+//*******************************
+// OnlineAssets::fetchMissingBoxArt
+//*******************************
+int OnlineAssets::fetchMissingBoxArt(const vector<ableem::RetroArchScanResult::Game> &games,
+                                     const string &thumbnailsDir, ableem::ScanProgressListener *listener,
+                                     const function<bool()> &shouldStop, int *missing) {
+    if (missing)
+        *missing = 0;
+    ableem::ThumbnailLookup thumbnails;
+    vector<const ableem::RetroArchScanResult::Game *> wanted;
+    for (const auto &game : games) {
+        if (thumbnails.findBoxArt(game.database, game.label).empty())
+            wanted.push_back(&game);
+    }
+    if (wanted.empty() || !probe())
+        return 0;
+
+    int fetched = 0, notOnServer = 0, index = 0;
+    for (const auto *game : wanted) {
+        index++;
+        if (listener)
+            listener->onScanProgress(ableem::ScanStage::FetchingBoxArt, game->label, index,
+                                     static_cast<int>(wanted.size()));
+        BoxArt outcome = fetchBoxArt(thumbnailsDir, game->database, game->label);
+        if (outcome == BoxArt::Fetched)
+            fetched++;
+        else if (outcome == BoxArt::Missing)
+            notOnServer++;
+        else if (outcome == BoxArt::Failed && !online_)
+            break; // the network went
+        if (shouldStop && shouldStop())
+            break;
+    }
+    PLOG_INFO << "Box art: " << fetched << " fetched, " << notOnServer << " not on the server, of " << wanted.size()
+              << " games without one";
+    if (missing)
+        *missing = notOnServer;
+    return fetched;
 }
 
 //*******************************

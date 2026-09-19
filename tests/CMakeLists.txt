@@ -70,3 +70,6 @@ if (NOT AB_TARGET_RPI)
     ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
     ab_add_test(test_abflashkit_core apps/test_abflashkit_core.cpp LIBS abflashkit_core)
 endif()
+# UpdateRoms is a host program, and the tests are host-only too (the target is defined after this
+# directory; CMake resolves the name at generate time)
+ab_add_test(test_updateroms_core apps/test_updateroms_core.cpp LIBS updateroms_core)

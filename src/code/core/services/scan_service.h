@@ -200,10 +200,6 @@ private:
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
     // the ROM pass: every playlist a system folder yields, merged over what is there. Returns the game count.
     int scanRetroArchRoms(Listener &listener, std::vector<std::string> &playlistsWritten);
-    // the box art pass over the games the ROM pass listed; returns how many covers were fetched
-    int fetchBoxArt(Listener &listener, OnlineAssets &online,
-                    const std::vector<ableem::RetroArchScanResult::Game> &games);
-
     ableem::GameLibrary &library_;
     RetroArchService *retroArch_ = nullptr;
 

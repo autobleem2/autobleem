@@ -357,3 +357,9 @@ if (NOT AB_TARGET_RPI)
     add_subdirectory(apps/pscbios)
     add_subdirectory(apps/abflashkit)
 endif()
+
+# UpdateRoms: the PC-side ROM scanner for a stick in a card reader - a dev-host program only (the
+# targets have the launcher's own scan)
+if (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    add_subdirectory(apps/updateroms)
+endif()
