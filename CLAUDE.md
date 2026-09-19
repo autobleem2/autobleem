@@ -496,9 +496,19 @@ address in use - `http://212.71.244.78:9090/`) and 443 (HTTPS for `autobleem.ret
 record exists; TLS-ALPN-01, so the host's nginx keeps port 80). `tools/repo_publish.sh <release|image|
 retroarch|db|assets|index>` rsyncs over ssh (or `--local` on the server) and reruns `tools/repo_index.py`
 there, which writes `releases/latest.json`, `rpi/retroarch/latest.json`, `rpi-imager/os_list.json` and the
-ab2-styled `index.html`. `AB_REPO_URL` is the base URL everything generated starts with - flip it when
-the domain is up. Holds the cover databases and the `933bd2f` images so far; the prebuilt RetroArch and
-the installer's `--retroarch prebuilt` are the plan's next steps.
+ab2-styled `index.html` plus `rpi-install.html` (the Pi manual: which image for which Pi, the setup, games).
+`AB_REPO_URL` is the base URL everything generated starts with - flip it when the domain is up. Retention
+is the indexer's: a pre-release replaces the previous one, only the newest RetroArch build is kept, stable
+releases stay; the page shows the latest release, the one pre-release and the newest image set. Holds the
+cover databases, the `933bd2f` images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
+cross-builds it in the Docker image (a `retroarch` stage after `psc` with the foreign-arch dev packages;
+same configure as the installer's source build, no FLAC - its soname differs between Bookworm and Trixie;
+`retroarch.version`/`retroarch.depends` under `usr/local/share/autobleem`), and **`install.sh --retroarch
+prebuilt` is the default** (`--repo`, `autobleem.txt` `repo=`; falls back to the source build when the
+repository is unreachable). Verified on the Pi 400 the same day: installed in a couple of minutes, plays a
+NES game. **No image build until the domain exists** - an image bakes the repository URL into its
+installer. What is left of the plan: CI publishing on a tag, the Imager repo URL in the README, and
+(optional) a Pi package without the cover databases.
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same

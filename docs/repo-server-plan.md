@@ -99,7 +99,8 @@ Each step is its own feature branch and commit (gitflow), each proven before the
 not set up yet, so the base URL is the direct address for now - `AB_REPO_URL`): the page and the Pi manual,
 the assets, the three cover databases, the `933bd2f` image set, and RetroArch v1.22.2 for both
 architectures - cross-built in the image, installed on the Pi 400 (Trixie) by `install.sh --retroarch
-prebuilt` in a couple of minutes, every library resolving. Steps 5-7 are open. **No image is to be built
+prebuilt` in a couple of minutes, every library resolving, and **playing a NES game from the carousel**
+(the owner, on the TV). Steps 5-7 are open. **No image is to be built
 until the domain exists** (the owner's rule: an image bakes the repository's URL into its installer).
 
 ### Step 1 - the server (S) - done
