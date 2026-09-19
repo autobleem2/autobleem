@@ -507,7 +507,10 @@ server's stale rsync tree once regenerated the page without the manual link). Th
 `releases/<tag>/` (the five packages, `SHA256SUMS`, `release.json`) with `releases/latest.json` (newest
 stable) and `unstable.json` (the one pre-release), `rpi-imager/os_list.json` + `images/<v>/` (Raspberry Pi
 Imager's "Add repository" URL - `<repo>/rpi-imager/os_list.json` - with the `rpi_imager_repo.json`
-placeholders filled in), `rpi/retroarch/<tag>/` + `latest.json`, `db/` (the three cover databases),
+placeholders filled in), `rpi/retroarch/<tag>/` + `latest.json`, **`psc/retroarch/<tag>/` + `latest.json`** (2026-09-20: the
+console's RetroArch from `github.com/autobleem/retroarch-psc` - its `make publish` runs `repo_publish.sh
+psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroArch version>-<build>`,
+`psc_version_key` orders it, the newest kept as for the Pi builds), `db/` (the three cover databases),
 `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay.
