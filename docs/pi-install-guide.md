@@ -19,8 +19,13 @@ actual 64-bit Pi hardware yet** - there is no 64-bit Pi OS card to test it on at
 - The tarball for your Pi's architecture, built from this repo:
   `./make_rpi.sh && ./tools/make_rpi_package.sh --arch armhf` -> `build_rpi/autobleem-rpi.tar.gz` (32-bit), or
   `./make_rpi64.sh && ./tools/make_rpi_package.sh --arch arm64` -> `build_rpi64/autobleem-rpi-arm64.tar.gz` (64-bit).
-- A network the Pi and your PC both reach (for `scp`ing the tarball over and, later, adding games).
+- A network the Pi and your PC both reach (for copying the tarball over and, later, adding games).
 - A USB gamepad, for once it is running. A keyboard is only needed if you skip the SSH setup below.
+- An SSH client. **Windows 10/11** has one built in (`ssh`/`scp` from PowerShell, no install needed) -
+  that's what this guide uses; if yours is missing it or you'd rather not use a terminal,
+  [WinSCP](https://winscp.net/) does the file copy in step 3 by drag-and-drop instead, and
+  [PuTTY](https://www.putty.org/) covers the SSH session in step 2. **macOS/Linux** already has `ssh`/`scp`
+  in the Terminal - nothing to install.
 
 ## 1. Flash Raspberry Pi OS Lite
 
@@ -50,21 +55,32 @@ architecture` or the wrong `dpkg --print-architecture`), so get this right befor
 
 1. Put the card in the Pi and power it on. First boot resizes the filesystem and can take a minute or two
    longer than normal - give it a couple of minutes before trying to connect.
-2. From your PC:
+2. Connect over SSH:
+
+   **Windows** (PowerShell) or **macOS/Linux** (Terminal) - same command either way:
    ```bash
    ssh <username>@<hostname>.local        # e.g. ssh pi@autobleem.local
    ```
    If `.local` (mDNS) does not resolve on your network, find the Pi's IP from your router's client list
-   instead and `ssh <username>@<ip>`.
+   instead and `ssh <username>@<ip>`. First connection asks to confirm the host key - type `yes`.
+
+   **Windows without a terminal**: open [PuTTY](https://www.putty.org/), enter the hostname or IP as
+   "Host Name", leave the port at 22, click Open, and log in with the username/password you set in the
+   Imager.
 
 ## 3. Copy the tarball over
 
-From your PC, in the directory with the tarball:
+**Windows** (PowerShell) or **macOS/Linux** (Terminal), from the directory with the tarball - same command
+either way:
 
 ```bash
 scp autobleem-rpi.tar.gz <username>@<hostname>.local:~/          # 32-bit
 scp autobleem-rpi-arm64.tar.gz <username>@<hostname>.local:~/    # 64-bit
 ```
+
+**Windows without a terminal**: open [WinSCP](https://winscp.net/), "New Session" with the same
+hostname/username/password as step 2 (SCP or SFTP protocol, port 22), connect, and drag the tarball from
+your PC's file pane on the left into the Pi's home directory on the right.
 
 ## 4. Run the installer
 
