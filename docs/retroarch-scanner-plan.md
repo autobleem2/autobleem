@@ -287,8 +287,10 @@ anything that touches the console's databases.
 
 ## What is left (2026-09-19)
 
-- The console has never run any of this: steps 1-3 are verified on the Pi 400 and the PC, step 5 on the
-  PC's fake tree. `/media/roms` on the console is from the old playlists, not from hardware.
+- ~~The console has never run any of this~~ - 2026-09-19: a stick whose playlists `UpdateRoms.exe` wrote
+  on the PC (step 5, the offline scan) ran on the owner's console; the RetroArch set and launches work as
+  expected. Steps 1-3 (the launcher's own scan of `roms/`) are verified on the Pi 400 and the PC; on the
+  console they are the same code over `/media/roms`, exercised there only through the playlists it read.
 - `neogeo.zip` next to the arcade sets is listed as "Neo Geo" (it is an FBNeo database record); the BIOS
   belongs in `system/`, which the Pi README says.
 

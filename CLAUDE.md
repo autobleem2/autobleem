@@ -159,8 +159,11 @@ Still to do, in order:
    `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. Superseded on
    2026-09-19 by the Docker image's Stretch/gcc-6 toolchain (see "CI" under Build), and **that build has run
    on a console**: the launcher came up on the owner's PSC (stock kernel, a FAT32 stick) with every cover in
-   place, PS1 and RetroArch alike. Sound, a PS1 launch through the new pcsx-ab and the console tools are
-   still to be exercised there.
+   place, PS1 and RetroArch alike. **The full console pass happened on 2026-09-19** (a stick made in a
+   Claude Desktop session, the owner at the console): sound, a PS1 launch through the new pcsx-ab and back,
+   the RetroArch set with playlists the offline ROM scan wrote on the PC (`UpdateRoms.exe` - the console
+   itself never fetches), and both console tools from the system menu - all as expected. The console is
+   no longer the untested target.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
@@ -427,8 +430,9 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   yes, for network-guaranteed platforms only.
   **Step 5** (2026-09-19): `apps/updateroms/` - `UpdateRoms.exe`, run from the stick in a PC, does the
   same scan with the PC's network and the target's paths (`usb_root` in the platform inis); see its
-  CLAUDE.md. **The plan is complete**; what is left is listed at the end of the plan doc (nothing of this
-  has run on a console).
+  CLAUDE.md. **The plan is complete**; what is left is listed at the end of the plan doc. On a console
+  (2026-09-19): the RetroArch set from playlists `UpdateRoms.exe` wrote on the PC works as expected; the
+  console's own scan stays offline by design (no `download_command` in `psc.ini`).
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
