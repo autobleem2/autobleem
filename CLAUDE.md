@@ -494,26 +494,48 @@ URLs (double-click it, or App Options -> Content Repository -> Use custom file, 
 makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
-**The download repository** (2026-09-19, plan in `docs/repo-server-plan.md`): the build server serves
-`/home/claude/autobleem-repo` through a Caddy container (`docker/repo/`): **`https://autobleem.retromenele.pl/`**
-(443, a Let's Encrypt certificate Caddy obtained by TLS-ALPN-01 once the owner's `A` record existed on
-2026-09-19 - the host's nginx keeps port 80) and the same tree on 9090 as plain HTTP
-(`http://212.71.244.78:9090/`). `tools/repo_publish.sh <release|image|
-retroarch|db|assets|index>` rsyncs over ssh (or `--local` on the server) and reruns `tools/repo_index.py`
-there, which writes `releases/latest.json`, `rpi/retroarch/latest.json`, `rpi-imager/os_list.json` and the
-ab2-styled `index.html` plus `rpi-install.html` (the Pi manual: which image for which Pi, the setup, games).
-`AB_REPO_URL` is the base URL everything generated starts with (the domain since 2026-09-19). Retention
-is the indexer's: a pre-release replaces the previous one, only the newest RetroArch build is kept, stable
-releases stay; the page shows the latest release, the one pre-release and the newest image set. Holds the
-cover databases, the `933bd2f` images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
+**The download repository** (2026-09-19, plan in `docs/repo-server-plan.md`): **`https://autobleem.retromenele.pl/`**,
+the build server's `/home/claude/autobleem-repo` served by a Caddy container (`docker/repo/`) on 443 (a
+Let's Encrypt certificate Caddy obtained by TLS-ALPN-01 once the owner's `A` record existed - the host's
+nginx keeps port 80, and no root was needed; Caddy renews it) and on 9090 as plain HTTP
+(`http://212.71.244.78:9090/`, the same tree). Read-only to the world; publishing is `tools/repo_publish.sh
+<release|image|retroarch|db|assets|index> ...` - rsync over `ssh psc-build` (or `--local` on the server),
+`.sha256` sidecars, then `tools/repo_index.py` rerun on the server from `<repo>/.tools/` (uploaded with every
+publish, but only when its `INDEX_VERSION` is at least the published one's - a `--local` run from the
+server's stale rsync tree once regenerated the page without the manual link). The tree:
+`releases/<tag>/` (the five packages, `SHA256SUMS`, `release.json`) with `releases/latest.json` (newest
+stable) and `unstable.json` (the one pre-release), `rpi-imager/os_list.json` + `images/<v>/` (Raspberry Pi
+Imager's "Add repository" URL - `<repo>/rpi-imager/os_list.json` - with the `rpi_imager_repo.json`
+placeholders filled in), `rpi/retroarch/<tag>/` + `latest.json`, `db/` (the three cover databases),
+`assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
+releases stay.
+
+**The web pages are generated, not stored**: `tools/repo_index.py` holds `PAGE_CSS` and renders
+`index.html` (the landing page: the latest stable release, the one pre-release in its own panel marked as a
+development build, the newest image set even when pre-release, the RetroArch builds, the cover databases)
+and `rpi-install.html` (the Pi manual: `RPI_MODELS` - which image for which Pi, 32-bit recommended because
+pcsx-ab's dynarec is ARM32-only, 64-bit for the bigger core set; requirements; Imager steps; what the first
+boot does; where games go - files dropped straight into `Games/` are sorted into folders by the scan;
+options and updates). Styled after the **ab2 theme** at the owner's request: its `abback2.jpg` (the
+AutoBleem 2 logo is painted into it; `ab.png` is blank) as the hero, the navy/cyan palette, Selawik Light -
+staged as `assets/` from `payload/themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
+emblem cut out for the favicon and Imager's icon, checked in because MSYS2's python has no Pillow). To
+change the pages: edit the render functions, bump `INDEX_VERSION`, `tools/repo_publish.sh index`.
+`AB_REPO_URL` is the base URL everything generated starts with.
+
+It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
 cross-builds it in the Docker image (a `retroarch` stage after `psc` with the foreign-arch dev packages;
 same configure as the installer's source build, no FLAC - its soname differs between Bookworm and Trixie;
 `retroarch.version`/`retroarch.depends` under `usr/local/share/autobleem`), and **`install.sh --retroarch
 prebuilt` is the default** (`--repo`, `autobleem.txt` `repo=`; falls back to the source build when the
 repository is unreachable). Verified on the Pi 400 the same day: installed in a couple of minutes, plays a
-NES game. The domain exists now, so images can be built again (an image bakes the repository URL into
-its installer - that is why the owner held them back until then). What is left of the plan: CI publishing on a tag, the Imager repo URL in the README, and
-(optional) a Pi package without the cover databases.
+NES game. Images are built on the Pi 400 from packages the server built (`docker/run.sh ci/build.sh rpi
+rpi64`, fetched by the Pi over HTTPS); an image bakes the repository URL into its installer, which is why
+the owner held image builds back until the domain existed. What is left of the plan: CI publishing on a
+tag (the owner does not want a pre-release published from the server yet), the Imager repo URL in the
+README, the cores as one tarball per architecture (step 8, the owner's idea), and (optional) a Pi package
+without the cover databases.
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
