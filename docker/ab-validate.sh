@@ -136,6 +136,12 @@ case "$check" in
         echo "  SDL2 video backends: $backends"
         [[ " $backends " == *" wayland "* ]] || { echo "FAIL: no wayland backend in libSDL2" >&2; exit 1; }
         [[ " $backends " != *" x11 "* ]] || { echo "FAIL: x11 backend in libSDL2" >&2; exit 1; }
+        # ...and its audio backends: ALSA is the console's sound, and a broken libasound.so in the sysroot
+        # once made SDL's configure drop it without a word
+        audio="$(strings -a /opt/psc/sdl2/lib/libSDL2-2.0.so.0 | grep -xE 'alsa|pulseaudio|oss|disk|dummy' | sort -u | tr '
+' ' ')"
+        echo "  SDL2 audio backends: $audio"
+        [[ " $audio " == *" alsa "* ]] || { echo "FAIL: no alsa backend in libSDL2" >&2; exit 1; }
         ;;
 
     *)

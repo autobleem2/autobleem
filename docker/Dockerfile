@@ -215,10 +215,14 @@ RUN mkdir -p /opt/psc/sysroot/usr/arm-linux-gnueabihf && \
 # in the sysroot's), which ld only prefixes with the sysroot when it thinks the script lives inside it.
 # AutoBleem-NG solved that by pointing the *host's* /usr/arm-linux-gnueabihf at the sysroot - which is
 # where Bookworm's cross libc for the Pi build lives in this image. Rewritten to bare names instead (the
-# crosstool-NG form): ld then searches its -L paths, all of which are ours.
+# crosstool-NG form): ld then searches its -L paths, all of which are ours. Only a real linker script is
+# touched - a regular text file: most .so here are symlinks to ELF libraries, and an ELF library's bytes
+# can contain "INPUT" too; sed -i on one of those once replaced libasound.so with a truncated copy, which
+# is how SDL2's ALSA check failed silently and the console lost its sound.
 RUN for dir in /opt/psc/gcc-6/usr/arm-linux-gnueabihf/lib /opt/psc/sysroot/usr/lib/arm-linux-gnueabihf; do \
         for f in "$dir"/*.so; do \
-            [ -f "$f" ] && ! file -b "$f" | grep -q ELF && grep -qa 'GROUP\|INPUT' "$f" || continue; \
+            [ -f "$f" ] && [ ! -L "$f" ] && file -b "$f" | grep -qE 'ASCII text|linker script' \
+                && grep -qa 'GROUP\|INPUT' "$f" || continue; \
             sed -i -e 's|/usr/arm-linux-gnueabihf/lib/||g' -e 's|/usr/lib/arm-linux-gnueabihf/||g' \
                    -e 's|/lib/arm-linux-gnueabihf/||g' "$f"; \
         done; \
