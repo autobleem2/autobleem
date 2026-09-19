@@ -5,7 +5,7 @@ Run on the server over the repository directory after every publish (tools/repo_
 
     repo_index.py /home/claude/autobleem-repo --base-url https://autobleem.retromenele.pl
 
-Reads what is there (docs/repo-server-plan.md has the layout) and writes:
+Reads what is there (CLAUDE.md, "The download repository", has the layout) and writes:
 
     releases/<tag>/release.json        the packages of that release: name, size, sha256, url
     releases/latest.json               the newest stable release's release.json

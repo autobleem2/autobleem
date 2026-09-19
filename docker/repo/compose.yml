@@ -1,4 +1,4 @@
-# The download repository on the build server - https://autobleem.retromenele.pl (docs/repo-server-plan.md):
+# The download repository on the build server - https://autobleem.retromenele.pl (CLAUDE.md, "The download repository"):
 # a Caddy container serving the plain directory REPO_DIR (default /home/claude/autobleem-repo), read-only.
 #
 #   443  HTTPS for autobleem.retromenele.pl - Caddy obtains and renews the Let's Encrypt certificate itself
