@@ -10,9 +10,10 @@ AutoBleem2 build on top. Cross-platform (Windows/Linux), stdlib only.
     python tools/install_autobleem.py --drive F:\\ --execute --stage clean
     python tools/install_autobleem.py --drive F:\\ --execute --with-retroboot
 
-Three stages (--stage), 'all' (the default) runs clean then install:
+Four stages (--stage), 'all' (the default) runs clean, games, then install:
   analyze   report what's on the drive; changes nothing
   clean     remove old AutoBleem elements + macOS junk (see CLEAN NOTES below)
+  games     strip every PS1 game folder under Games/ down to its disc images (see GAMES NOTES below)
   install   copy a fresh AutoBleem2 payload onto the drive (does not clean first)
 
 CLEAN NOTES - removed, because rc/backup.sh and backup_internal.sh regenerate every one of these
@@ -28,7 +29,16 @@ from the console's own /gaadata and /data at the next boot (see payload/Autoblee
                                                PS1 playlists, only the per-system ROM ones)
   retroarch/playlists/Sony - PlayStation.lpl  a stale PS1 playlist not written by AutoBleem2 at all
                                                (--remove-retroarch-tree removes the whole tree instead)
-Left alone: Games/, themes/, roms/, the rest of retroarch/ (RetroBoot's own tree, boot-critical), the
+GAMES NOTES - the 'games' stage leaves each game folder under Games/ with nothing but its disc images
+(.cue/.bin/.img/.chd/.pbp/.ecm/.m3u/.ccd/.sub/.iso/.mds/.mdf/.toc), so AutoBleem2's first scan builds
+everything else afresh: Game.ini and pcsx.cfg (the old versions' keys and paths are not AutoBleem2's),
+the .lic files of the removed stock-SonyUI path, cover .png files the old scan copied next to the image
+(--keep-covers keeps them - a .png you put there yourself is honoured as the game's cover), readme files
+and other strays. Sub-directories of games (Games/RPG/<game>/) are walked the same way. Games/!MemCards
+(your memory card sets) and Games/!SaveStates (save states, per-game settings) are yours and are kept;
+--purge-saves removes them too for a truly clean slate. --keep-game-metadata skips the stage in 'all'.
+
+Left alone: themes/, roms/, the rest of retroarch/ (RetroBoot's own tree, boot-critical), the
 boot-exploit payload folder (a bare UUID-named directory - required to boot at all), and anything else
 not recognized as AutoBleem's own (reported, never touched).
 
@@ -522,6 +532,89 @@ def stage_clean(root: Path, opts, dry_run: bool):
 
 
 # --------------------------------------------------------------------------------------------------
+# games: the PS1 game folders down to their disc images
+# --------------------------------------------------------------------------------------------------
+
+# what a game folder is made of - everything else in it is the scan's (or an old version's) and is rebuilt
+DISC_IMAGE_EXTS = {'.cue', '.bin', '.img', '.chd', '.pbp', '.ecm', '.m3u', '.ccd', '.sub', '.iso', '.mds', '.mdf', '.toc'}
+
+
+def stage_games(root: Path, opts, dry_run: bool):
+    games = find_ci(root, 'Games')
+    if games is None or not games.is_dir():
+        print('[skip] no Games/ folder on the drive')
+        return {}
+
+    stats = {}
+
+    def remove(p: Path, category: str, reason: str):
+        size = path_size(p)
+        c = stats.setdefault(category, [0, 0])
+        c[0] += 1
+        c[1] += size
+        if dry_run:
+            print(f'[DRYRUN] would remove ({category}): {p.relative_to(root)}  -- {reason}')
+        else:
+            print(f'removing ({category}): {p.relative_to(root)}')
+            try:
+                remove_path(p)
+            except OSError as e:
+                print(f'  WARNING: failed to remove {p}: {e}', file=sys.stderr)
+
+    keep_exts = set(DISC_IMAGE_EXTS)
+    if opts.keep_covers:
+        keep_exts.add('.png')
+
+    def clean_tree(d: Path, depth: int):
+        try:
+            entries = sorted(d.iterdir(), key=lambda x: x.name.lower())
+        except OSError as e:
+            print(f'  WARNING: cannot list {d}: {e}', file=sys.stderr)
+            return
+        files = [e for e in entries if e.is_file()]
+        dirs = [e for e in entries if e.is_dir()]
+        if any(f.suffix.lower() in DISC_IMAGE_EXTS for f in files):
+            # a game folder: the images stay, nothing else does
+            for f in files:
+                if f.suffix.lower() not in keep_exts:
+                    remove(f, 'game metadata', 'rebuilt by the scan')
+            for sub in dirs:
+                remove(sub, 'game metadata', 'nothing but disc images belongs in a game folder')
+        else:
+            # a sub-directory of games (or an empty folder): strays go, the game folders inside are done in turn
+            for f in files:
+                remove(f, 'stray file', 'not a disc image, not a game folder')
+            for sub in dirs:
+                clean_tree(sub, depth + 1)
+
+    for entry in sorted(games.iterdir(), key=lambda x: x.name.lower()):
+        if entry.name.startswith('!'):
+            if opts.purge_saves:
+                remove(entry, 'saves', '--purge-saves')
+            else:
+                print(f'[keep] Games/{entry.name} (your saves and memory cards; --purge-saves removes it)')
+            continue
+        if entry.is_file():
+            remove(entry, 'stray file', 'the scan keeps nothing at the top of Games/')
+            continue
+        clean_tree(entry, 1)
+
+    print()
+    print('=== games summary ===')
+    total_count = total_bytes = 0
+    for category, (count, size) in stats.items():
+        print(f'{category:<28} {count:>6} item(s)   {human(size):>10}')
+        total_count += count
+        total_bytes += size
+    print('-' * 55)
+    print(f'{"TOTAL":<28} {total_count:>6} item(s)   {human(total_bytes):>10}')
+    if dry_run:
+        print()
+        print('Dry run only - nothing was deleted.')
+    return stats
+
+
+# --------------------------------------------------------------------------------------------------
 # install
 # --------------------------------------------------------------------------------------------------
 
@@ -716,7 +809,10 @@ def parse_args(argv):
     mode.add_argument('--dry-run', action='store_true', help='preview only, changes nothing')
     mode.add_argument('--execute', action='store_true', help='actually modify the drive')
     p.add_argument('--yes', action='store_true', help='skip the "are you sure" confirmation (still needs --execute)')
-    p.add_argument('--stage', choices=['analyze', 'clean', 'install', 'all'], default='all')
+    p.add_argument('--stage', choices=['analyze', 'clean', 'games', 'install', 'all'], default='all')
+    p.add_argument('--keep-game-metadata', action='store_true', help="skip the 'games' stage in 'all' (leave Game.ini, pcsx.cfg, covers... in the game folders)")
+    p.add_argument('--keep-covers', action='store_true', help="the 'games' stage keeps .png files next to the images (your own covers)")
+    p.add_argument('--purge-saves', action='store_true', help="the 'games' stage also removes Games/!SaveStates and Games/!MemCards (save states, memory cards)")
 
     p.add_argument('--keep-apps', action='store_true', help='leave all of Apps/ as-is, including pscbios/abflashkit')
     p.add_argument('--remove-all-apps', action='store_true', help='delete the whole old Apps/ folder, not just pscbios/abflashkit')
@@ -783,6 +879,10 @@ def main(argv=None):
 
     if opts.stage in ('clean', 'all'):
         stage_clean(root, opts, dry_run)
+        print()
+
+    if opts.stage == 'games' or (opts.stage == 'all' and not opts.keep_game_metadata):
+        stage_games(root, opts, dry_run)
         print()
 
     if opts.stage in ('install', 'all'):
