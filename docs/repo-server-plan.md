@@ -27,9 +27,10 @@ build server serves and that anything with `wget`/`curl` can read:
   212.71.244.78). The `claude` user is in the `docker` group and has no sudo. nginx is already on the
   host's port 80 for other sites (`autobleem.tk`, `q3.retromenele.pl`, a GitLab proxy) - **port 80 is not
   ours** and nothing here touches the host's nginx.
-- **The owner maps `autobleem.retromenele.pl` to the server's port 9090** (`retromenele.pl` is on
-  Netlify; the mapping and any TLS termination are on that side, not in this repo). Our side is plain
-  HTTP on 9090, no certificates, no root.
+- **`autobleem.retromenele.pl` is a DNS `A` record to the server** (`retromenele.pl`'s DNS is on Netlify;
+  the record is the only thing on that side). Ports 443 and 9090 are free and reachable from the Internet
+  (checked with a throwaway container on 2026-09-19). Docker's daemon does the port binding, so a
+  container of the `claude` user can own 443 without sudo.
 - The self-hosted runner is a container (`docker/runner/compose.yml`, `autobleem-runner`, up) talking to
   the host's Docker; `ci/build.sh` writes packages to `~/autobleem/dist/<target>/`
   (`autobleem-psc-<v>.zip`, `autobleem-rpi.tar.gz`, `autobleem-rpi-arm64.tar.gz`, `autobleem-win-<v>.zip`,
@@ -40,10 +41,16 @@ build server serves and that anything with `wget`/`curl` can read:
 
 ## Decisions
 
-- **Server**: `nginx:alpine` in a container, port 9090, `autoindex on`, serving a bind-mounted directory
-  **`/home/claude/autobleem-repo`** (the runner container gets the same directory mounted, so a CI job
-  publishes by copying a file). No upload endpoint of any kind - publishing is `rsync` over ssh (from the
-  PC or the Pi) or a copy inside the runner. Read-only to the world, no PHP, no listing of dotfiles.
+- **Server**: **Caddy** in a container (`caddy:2`), serving a bind-mounted directory
+  **`/home/claude/autobleem-repo`** with `file_server browse` on two listeners: **443, HTTPS** for
+  `autobleem.retromenele.pl` with a Let's Encrypt certificate Caddy obtains and renews itself through the
+  **TLS-ALPN-01** challenge (it runs over 443, so the host's nginx on 80 is not in the way -
+  `disable_http_challenge`), and **9090, plain HTTP**, the direct `http://212.71.244.78:9090` fallback.
+  Not nginx: Caddy is the one that does certificates without root or port 80. The runner container gets
+  the same directory mounted, so a CI job publishes by copying a file. No upload endpoint of any kind -
+  publishing is `rsync` over ssh (from the PC or the Pi) or a copy inside the runner. Read-only to the
+  world, no listing of dotfiles. What this cannot give is an `http://` -> `https://` redirect for the
+  domain (that is port 80): three lines in the host's nginx if the owner ever wants it, not needed.
 - **One tree, one naming rule**: every artefact that can have several versions lives in a versioned
   folder with a `.sha256` next to it and a `latest.json` (machine) / `latest` symlink (human) at the
   parent. Consumers pin a version or read `latest.json`; nothing parses directory listings.
@@ -54,7 +61,7 @@ build server serves and that anything with `wget`/`curl` can read:
   sets; `tools/repo_publish.sh --prune` deletes older ones (and never anything under `db/` or `releases/`).
 - **The repo's base URL is data, not code**: `AB_REPO_URL` (default `https://autobleem.retromenele.pl`)
   in `ci/`, `--repo URL` in `install.sh`, `repo=` in `autobleem.txt`, so a mirror or a LAN copy for testing
-  is one setting. The direct `http://212.71.244.78:9090` is the fallback while the mapping is being set up.
+  is one setting. The direct `http://212.71.244.78:9090` is the fallback while the DNS record is on its way.
 
 ## Layout
 
@@ -84,18 +91,16 @@ Each step is its own feature branch and commit (gitflow), each proven before the
 
 ### Step 1 - the server (S)
 
-`docker/repo/compose.yml` (`nginx:alpine`, `9090:80`, `./nginx.conf` and `/home/claude/autobleem-repo`
-read-only mounted) and `docker/repo/nginx.conf`: `autoindex on; autoindex_exact_size off;
-autoindex_localtime on;`, `sendfile on`, `types` so `.json` is `application/json`, `.img.xz`/`.tar.gz`/
-`.zip` are `application/octet-stream`, `location ~ /\.` denied, `add_header Cache-Control` short on
+`docker/repo/compose.yml` (`caddy:2`, ports `443:443` and `9090:9090`, `./Caddyfile`, the repo directory
+read-only at `/srv/repo`, named volumes for `/data` and `/config` so the certificate survives a
+recreate) and `docker/repo/Caddyfile`: one site `autobleem.retromenele.pl` with
+`tls { issuer acme { disable_http_challenge } }` (TLS-ALPN-01 only - port 80 is the host's nginx), one
+`http://:9090`, both `root * /srv/repo` + `file_server browse` with `hide .*`, `Cache-Control` short on
 `*.json` and `index.html`, long on the versioned folders. `docker compose up -d` on the server as `claude`.
-Prove: `curl -sI http://212.71.244.78:9090/` from the PC, then the owner's mapping, then
-`https://autobleem.retromenele.pl/`. The runner compose gets the same bind mount (`/home/claude/
-autobleem-repo` at the same path inside).
-
-**Check with the mapping in place**: a 900 MB image downloads whole through the domain (a proxying front
-can have body or time limits a plain DNS record would not). If it does not, the images' links on the
-landing page use the direct `http://212.71.244.78:9090` address and everything else stays on the domain.
+Prove: `curl -sI http://212.71.244.78:9090/` from the PC at once; `https://autobleem.retromenele.pl/`
+once the `A` record resolves (Caddy fetches the certificate on the first request for the name - `docker
+compose logs` shows the ACME exchange). The runner compose gets the same bind mount
+(`/home/claude/autobleem-repo` at the same path inside).
 
 ### Step 2 - publish + index tools (S)
 
@@ -174,7 +179,7 @@ install depend on the repo for its covers.
 
 ## Out of scope
 
-- TLS, DNS, the domain mapping: the owner's, on the Netlify side.
+- DNS: the owner's, on the Netlify side (one `A` record).
 - Mirroring libretro's cores, assets, thumbnails or RetroBIOS: they stay at their sources; the installer
   and the launcher's `OnlineAssets` keep their URLs.
 - An "update available" check in the launcher, and the fast in-place Pi update (IDEAS.md): both would read
@@ -183,8 +188,7 @@ install depend on the repo for its covers.
 
 ## Open questions for the owner
 
-1. The Netlify mapping: a proxy rewrite, or a DNS record straight to the server? (A DNS record needs TLS
-   on the server, which 9090 does not have; a proxy carries every download through Netlify's bandwidth.
-   Either way the plan is the same; only step 1's check differs.)
+1. ~~Proxy or DNS record?~~ Settled 2026-09-19: an `A` record, HTTPS from Caddy on 443 (the owner did
+   not want to lose HTTPS, and a Netlify proxy would carry every image download through Netlify).
 2. Step 7 - a Pi package that needs the repo for its covers, or the self-contained 306 MB one?
 3. Retention: three release image sets (5.4 GB) on 22 GB free - or fewer?
