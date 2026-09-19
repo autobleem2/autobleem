@@ -8,7 +8,6 @@
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
-#   tools/repo_publish.sh --prune 3 index                                      ... and keep only 3 image sets
 #
 # The files go over ssh (rsync to $REPO_HOST, "psc-build" in ~/.ssh/config, into $REPO_DIR) with a .sha256
 # next to each; then tools/repo_index.py runs on the server over the whole tree (it is uploaded as
@@ -16,14 +15,14 @@
 # machine - what a CI job on the server does, with $REPO_DIR bind-mounted.
 #
 # AB_REPO_URL is what the generated urls start with (default: the server's direct address until the domain
-# is set up). Nothing here deletes anything except --prune, and that only under rpi-imager/images.
+# is set up). Retention is the index script's: a pre-release replaces the previous pre-release (releases and
+# image sets), only the newest RetroArch build is kept, stable releases stay.
 set -euo pipefail
 
 REPO_HOST="${REPO_HOST:-psc-build}"
 REPO_DIR="${REPO_DIR:-/home/claude/autobleem-repo}"
 AB_REPO_URL="${AB_REPO_URL:-http://212.71.244.78:9090}"
 LOCAL=0
-PRUNE=""
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
@@ -31,7 +30,6 @@ usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-
 while [ $# -gt 0 ]; do
     case "$1" in
         --local) LOCAL=1; shift ;;
-        --prune) PRUNE="${2:?--prune needs a count}"; shift 2 ;;
         -h|--help) usage ;;
         *) break ;;
     esac
@@ -79,11 +77,6 @@ remote_index() {
     cat <<EOF
 set -e
 cd "$REPO_DIR"
-if [ -n "$PRUNE" ] && [ -d rpi-imager/images ]; then
-    ls -1 rpi-imager/images | sort -V | head -n -"$PRUNE" | while read -r old; do
-        echo "pruning rpi-imager/images/\$old"; rm -rf "rpi-imager/images/\$old"
-    done
-fi
 if [ -f assets/icon.png ]; then mkdir -p rpi-imager && cp assets/icon.png rpi-imager/icon.png; fi
 python3 .tools/repo_index.py . --base-url "$AB_REPO_URL"
 EOF

@@ -8,14 +8,20 @@ Run on the server over the repository directory after every publish (tools/repo_
 Reads what is there (docs/repo-server-plan.md has the layout) and writes:
 
     releases/<tag>/release.json        the packages of that release: name, size, sha256, url
-    releases/latest.json               the newest release's release.json, plus "prerelease"
+    releases/latest.json               the newest stable release's release.json
+    releases/unstable.json             the one pre-release kept, same shape
     rpi/retroarch/latest.json          the newest RetroArch build per architecture
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
 
 Every file's sha256 comes from its `<name>.sha256` sidecar (sha256sum format) when there is one, else it
-is computed and the sidecar written. Nothing is deleted here; tools/repo_publish.sh --prune does that.
+is computed and the sidecar written.
+
+Retention (the owner's rule, 2026-09-19): pre-release builds are not kept - a new one replaces the previous
+one, in releases/ and in rpi-imager/images/ alike. The page shows the latest stable release and that one
+pre-release (its own panel, marked as a development build; unstable.json for machines), and the newest
+image set even when it is a pre-release. Of the RetroArch builds only the newest version is kept.
 """
 
 import argparse
@@ -24,6 +30,7 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 from datetime import datetime, timezone
 
@@ -106,6 +113,18 @@ def write_json(path, data):
         f.write("\n")
 
 
+def prune(folders, keep, what):
+    """Delete the folders not in `keep` (a list of version folders), saying which."""
+    for folder in folders:
+        if folder not in keep and os.path.isdir(folder):
+            print("pruning %s %s" % (what, os.path.basename(folder)))
+            shutil.rmtree(folder)
+
+
+def newest_of(versions):
+    return sorted(versions, key=version_key)[-1] if versions else None
+
+
 def human(size):
     for unit in ("B", "KB", "MB", "GB"):
         if size < 1024 or unit == "GB":
@@ -149,9 +168,19 @@ def index_releases(repo, base_url):
             }
             write_json(os.path.join(folder, "release.json"), release)
             releases.append(release)
-    if releases:
-        write_json(os.path.join(root, "latest.json"), releases[-1])
-    return releases
+    # one pre-release at most: the newest; every stable release stays
+    stable = [r for r in releases if not r["prerelease"]]
+    pre = [r for r in releases if r["prerelease"]]
+    if len(pre) > 1:
+        prune([os.path.join(root, r["version"]) for r in pre[:-1]], [], "pre-release")
+        pre = pre[-1:]
+    for name, which in (("latest.json", stable), ("unstable.json", pre)):
+        path = os.path.join(root, name)
+        if which:
+            write_json(path, which[-1])
+        elif os.path.isfile(path):
+            os.remove(path)
+    return stable + pre
 
 
 #*******************************
@@ -170,7 +199,9 @@ def index_retroarch(repo, base_url):
                 if m:
                     builds.setdefault(tag, {})[m.group("arch")] = file_entry(repo, base_url, path)
     if builds:
-        newest = sorted(builds, key=version_key)[-1]
+        newest = newest_of(builds)
+        prune([os.path.join(root, t) for t in builds if t != newest], [], "RetroArch build")
+        builds = {newest: builds[newest]}
         latest = {"version": newest}
         latest.update(builds[newest])
         write_json(os.path.join(root, "latest.json"), latest)
@@ -194,7 +225,14 @@ def index_images(repo, base_url):
                     versions.setdefault(version, {})[m.group("arch")] = file_entry(repo, base_url, path)
     if not versions:
         return versions
-    newest = sorted(versions, key=version_key)[-1]
+    # one pre-release image set at most, the newest; Imager gets the newest stable set, else that one
+    pre = [v for v in versions if is_prerelease(v)]
+    stable = [v for v in versions if not is_prerelease(v)]
+    if len(pre) > 1:
+        keep = newest_of(pre)
+        prune([os.path.join(root, v) for v in pre if v != keep], [], "pre-release image set")
+        versions = {v: f for v, f in versions.items() if v == keep or v in stable}
+    newest = newest_of(stable) or newest_of(versions)
     # make_rpi_image.sh's rpi_imager_repo.json for that version, with the placeholders filled in
     template = os.path.join(root, newest, "rpi_imager_repo.json")
     if os.path.isfile(template):
@@ -284,24 +322,35 @@ def render_index(base_url, releases, builds, images, dbs):
                "<a href=\"/releases/\">browse</a> the tree for older versions. Machine-readable: "
                "<a href=\"/releases/latest.json\">releases/latest.json</a>.</p></div>")
 
-    if releases:
-        latest = releases[-1]
-        out.append("<div class=\"panel\"><h2>Latest release <small>%s%s &middot; %s</small></h2>" % (
-            e(latest["version"]), " (pre-release)" if latest["prerelease"] else "", e(latest["date"])))
+    # the latest stable release and, in its own panel, the one pre-release that is kept
+    stable = [r for r in releases if not r["prerelease"]]
+    pre = [r for r in releases if r["prerelease"]]
+    if not stable and not pre:
+        out.append("<div class=\"panel\"><h2>Releases</h2><p>Nothing published yet.</p></div>")
+    for title, which, note in (("Latest release", stable, ""),
+                               ("Pre-release", pre, " &middot; a development build, not a release")):
+        if not which:
+            continue
+        latest = which[-1]
+        out.append("<div class=\"panel\"><h2>%s <small>%s &middot; %s%s</small></h2>" % (
+            title, e(latest["version"]), e(latest["date"]), note))
         out.append("<table><tr><th>Target</th><th>File</th><th></th></tr>")
-        for kind, _, title in PACKAGE_KINDS:
+        for kind, _, kind_title in PACKAGE_KINDS:
             f = latest["files"].get(kind)
             if f:
-                out.append(row(title, f))
+                out.append(row(kind_title, f))
         out.append("</table>")
-        if len(releases) > 1:
+        if len(which) > 1:
             out.append("<p class=\"older\">Older: %s</p>" % ", ".join(
-                "<a href=\"/releases/%s/\">%s</a>" % (e(r["version"]), e(r["version"])) for r in reversed(releases[:-1])))
+                "<a href=\"/releases/%s/\">%s</a>" % (e(r["version"]), e(r["version"])) for r in reversed(which[:-1])))
         out.append("</div>")
 
+    # the newest stable image set, else the one pre-release set (the owner wants that one on the page)
     if images:
-        newest = sorted(images, key=version_key)[-1]
-        out.append("<div class=\"panel\"><h2>Raspberry Pi images <small>%s</small></h2>" % e(newest))
+        stable_images = {v: f for v, f in images.items() if not is_prerelease(v)}
+        newest = newest_of(stable_images) or newest_of(images)
+        out.append("<div class=\"panel\"><h2>Raspberry Pi images <small>%s%s</small></h2>" % (
+            e(newest), " (pre-release)" if is_prerelease(newest) else ""))
         out.append("<p>Flash with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>: "
                    "<em>Use custom</em> with a downloaded file, or add this repository under "
                    "<em>App Options &rarr; Content Repository</em>: <code>%s/rpi-imager/os_list.json</code>. "
@@ -315,7 +364,7 @@ def render_index(base_url, releases, builds, images, dbs):
         out.append("</table></div>")
 
     if builds:
-        newest = sorted(builds, key=version_key)[-1]
+        newest = newest_of(builds)
         out.append("<div class=\"panel\"><h2>RetroArch for the Pi installer <small>%s</small></h2>" % e(newest))
         out.append("<p>What <code>install.sh --retroarch prebuilt</code> downloads instead of building from source "
                    "(<a href=\"/rpi/retroarch/latest.json\">latest.json</a>).</p><table>")
