@@ -1,0 +1,38 @@
+# AutoBleem first-boot options.
+#
+# This file sits on the small FAT boot partition of the card, next to config.txt, so it can be edited from
+# any Windows/macOS/Linux machine before the first boot. autobleem-firstboot reads it once, on the boot that
+# installs AutoBleem, and turns each key into an install.sh option (see payload_rpi/README.md). A key that
+# is missing or commented out keeps its default. Lines starting with # are comments.
+#
+# WiFi is not set here. Either use Raspberry Pi Imager's OS customisation when flashing (it writes the
+# network-config file next to this one), or edit that network-config file yourself - it has a commented
+# WiFi example. With neither, the first boot asks for a WiFi network on the screen.
+
+# Size of the Linux system partition, in GiB. Everything else on the card becomes the AUTOBLEEM games
+# partition (exFAT - plug the card into a PC and drop games on it). 8 is plenty: RetroArch is built from
+# source there. 0 leaves the partition as it is.
+root_gib=8
+
+# HDMI mode for the whole boot. The launcher draws its 1280x720 UI at 1.5x on a 1080p screen.
+# 1280x720@60 for a 720p screen; none keeps the screen's preferred mode.
+#hdmi_mode=1920x1080@60
+
+# RetroArch - optional. AutoBleem plays PlayStation games on its own; RetroArch adds the other systems (NES,
+# SNES, Mega Drive, arcade, ...) at the cost of a 10-40 minute build and close to a GB of downloads. Left
+# unset, the first boot asks on the screen (no answer within a minute = yes). Set it to skip the question:
+#   source - latest release, built on the Pi | apt - the distribution's package | none - PS1-only AutoBleem
+#retroarch=source
+
+# PS1 box art. The launcher fetches each game's cover from thumbnails.libretro.com when it scans the
+# game, so nothing needs mirroring: none (default) | boxarts (the whole set, ~350 MB, for covers offline) |
+# all (title screens and snaps too)
+#thumbnails=none
+
+# The BIOS pack (RetroArch/system, and the PS1 BIOS for pcsx-ab): yes | no. Without RetroArch only the two
+# PS1 files are fetched.
+#bios=yes
+
+# RetroArch cores, core info, menu assets, databases from buildbot.libretro.com (a few hundred MB): yes | no.
+# Ignored (no) without RetroArch.
+#downloads=yes

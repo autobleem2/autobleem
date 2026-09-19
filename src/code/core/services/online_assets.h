@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ableem/engine/retroarch_scanner.h>
+#include <ableem/engine/usb_game.h>
 
 #include <cstdint>
 #include <functional>
@@ -61,13 +62,29 @@ public:
     // already or was found missing before
     BoxArt fetchBoxArt(const std::string &thumbnailsDir, const std::string &dbName, const std::string &label);
 
-    // the box art of every game in `games` without one on disk (this instance's own ThumbnailLookup says,
-    // fuzzy fallback included), reported as ScanStage::FetchingBoxArt per game; the pass ends when the
-    // network goes or shouldStop() says so. Returns how many covers arrived; `missing` counts the
-    // server's misses.
+    // one cover to ask for: <thumbnailsDir>/<database>/Named_Boxarts/<label>.png
+    struct BoxArtRequest {
+        std::string database;
+        std::string label;
+    };
+    // called for each cover that arrived, with the file it went to
+    using OnFetched = std::function<void(const BoxArtRequest &, const std::string &path)>;
+
+    // the box art of every request without one on disk (this instance's own ThumbnailLookup says, fuzzy
+    // fallback included), reported as ScanStage::FetchingBoxArt per game; the pass ends when the network
+    // goes or shouldStop() says so. Returns how many covers arrived; `missing` counts the server's misses.
+    int fetchMissingBoxArt(const std::vector<BoxArtRequest> &requests, const std::string &thumbnailsDir,
+                           ableem::ScanProgressListener *listener, const std::function<bool()> &shouldStop,
+                           int *missing = nullptr, const OnFetched &onFetched = OnFetched());
+    // the same for the ROM scan's games: database + label as the playlist has them
     int fetchMissingBoxArt(const std::vector<ableem::RetroArchScanResult::Game> &games,
                            const std::string &thumbnailsDir, ableem::ScanProgressListener *listener,
                            const std::function<bool()> &shouldStop, int *missing = nullptr);
+    // The PS1 games the scan left without a cover - no PNG next to the game (the user's, or the covers
+    // db's) and nothing in the thumbnails tree - as requests against "Sony - PlayStation", named by the
+    // rdb's record name when the scan found one (that is how libretro-thumbnails names its files) and by
+    // the title otherwise, a best effort the server's miss list keeps cheap.
+    static std::vector<BoxArtRequest> ps1Requests(const std::vector<ableem::UsbGamePtr> &games);
 
     static std::string boxArtUrl(const std::string &baseUrl, const std::string &dbName, const std::string &label);
     static std::string boxArtPath(const std::string &thumbnailsDir, const std::string &dbName,

@@ -5,20 +5,31 @@ Description=AutoBleem first-boot setup (image-injected install)
 # the marker file exists (install.sh already ran once, successfully) skips this unit for free, without
 # even starting the script - systemd logs the skip and that's it.
 ConditionPathExists=!/opt/autobleem-image/.done
-# After multi-user.target, not before it: Raspberry Pi Imager's own customisation (hostname, user, WiFi,
-# SSH - cloud-init or firstrun.sh, whichever this image's init_format is) runs earlier in the boot
-# sequence, and this unit is meant to run after it has had its shot, not race it. Wants=/After=
-# network-online.target is a best-effort wait for network - not required, since install.sh already
-# degrades gracefully offline (see its own apt/wget failure handling) and a Pi with no network on this
-# boot simply gets retried on the next one (see autobleem-firstboot.sh's attempt counter).
-After=multi-user.target network-online.target
+# After multi-user.target, not before it: the base image's own first-boot work runs earlier - cloud-init
+# (cloud-final.service: Raspberry Pi Imager's hostname/user/WiFi/SSH presets, this image's init_format is
+# cloudinit-rpi) and the user-creation wizard (userconfig.service, on tty8) when there were no presets.
+# This unit is meant to run after both have had their turn, not race them; After= on a unit that is not
+# active is a no-op. network-online.target is only a best-effort wait: the script asks for WiFi itself when
+# there is still no network, so a Pi with none configured is not stuck.
+After=multi-user.target network-online.target cloud-final.service userconfig.service
 Wants=network-online.target
+# The first boot is watched and answered on the screen. It runs on its own virtual terminal, tty8 - the
+# same way Raspberry Pi OS's own user-creation wizard (userconfig.service) does - and the script switches
+# the screen to it (chvt) and back to tty1 when it is done without rebooting. Not tty1 with
+# Conflicts=getty@tty1.service: both start jobs sit in the same boot transaction, and systemd resolves that
+# conflict by silently dropping the job that is only Wanted - this one. It never ran at all that way (first
+# boot of the second image, 2026-09-19). tty8 has no getty (logind's autovt covers tty2-6 only).
 
 [Service]
 Type=oneshot
 ExecStart=/opt/autobleem-image/autobleem-firstboot.sh
-StandardOutput=journal
-StandardError=journal
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty8
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
 
 [Install]
 WantedBy=multi-user.target

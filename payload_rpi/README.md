@@ -19,10 +19,10 @@ This is a port in progress. Be aware of what is and is not here:
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
 | PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
 | BIOS | **downloaded by the installer**: a ~190 MB (armhf) or ~230 MB (arm64) pack (`system/biospack.txt` / `biospack-arm64.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py --arch armhf\|arm64`, one manifest per architecture's actual core list) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
-| RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
+| RetroArch | **optional** - the image's first boot asks, `install.sh --retroarch none` is a PS1-only AutoBleem (the launcher hides its RetroArch set and menu items when none is installed). When wanted: the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **yes**, on a Pi 400 (32-bit) since 2026-09-18: boots, scans, plays PS1 games and the other-systems RetroArch set, sound over HDMI. The 64-bit build compiles and packages cleanly but has not yet been run on a 64-bit Pi OS card. |
-| Flashing with Raspberry Pi Imager | `tools/make_rpi_image.sh` builds a flashable `.img.xz` with the install already staged to run on first/second boot - see "Flashing with Raspberry Pi Imager" below. **Not yet run on real hardware** - the manual tarball + `install.sh` flow above is the proven path. |
+| Flashing with Raspberry Pi Imager | `tools/make_rpi_image.sh` builds a flashable `.img.xz` whose first boot installs AutoBleem on the screen, asking for WiFi if it has none - see "Flashing with Raspberry Pi Imager" below. The build is verified on the Pi 400 for both architectures and the first image has booted once (which is what shaped the current first-boot flow); **the reworked first boot has not yet been through a fresh card end to end** - the manual tarball + `install.sh` flow above is the proven path. |
 
 ## What you need
 
@@ -81,21 +81,23 @@ pcsx-ab reads its BIOS from `System/Bios/` on the data partition — `romw.bin`,
 games. The installer fills both from the pack (SCPH-5501 and SCPH-5500); to use your own, put them there
 before running it, or replace them afterwards — a re-run never overwrites them.
 
-`--help` lists the options. The useful ones are `--shrink-root`, `--retroarch`, `--no-downloads`, `--no-bios`,
-`--no-packages`, `--stage`, `--hdmi-mode` (default `1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode),
-`--no-boot-splash` and `--no-quiet-boot`.
+`--help` lists the options. The useful ones are `--shrink-root` / `--grow-root` (see "The data partition"),
+`--retroarch`, `--no-downloads`, `--no-bios`, `--no-packages`, `--stage`, `--hdmi-mode` (default
+`1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode), `--no-boot-splash`
+and `--no-quiet-boot`.
 
 ## Flashing with Raspberry Pi Imager
 
-**Not yet run on real hardware** - built and reviewed the same way the rest of this port started (see the
-"Status" table above). The tarball + `install.sh` flow above is the proven path; this is a second, more
-convenient way to get to the same place, for someone who would rather flash a card once and have it finish
-setting itself up than run an installer over ssh.
+A second way to get to the same place as the tarball + `install.sh` flow above: flash one card, boot it,
+answer at most two questions (which WiFi; RetroArch or PS1-only), and watch AutoBleem install itself on the screen. The manual flow
+above remains the fully proven path - see the "Status" table for how far this one has been exercised.
 
 `tools/make_rpi_image.sh` takes an official Raspberry Pi OS Lite image (downloaded automatically, or your
-own with `--base`) and injects an AutoBleem package plus a first-boot service - nothing else about the base
-image is touched, so Raspberry Pi Imager's own OS customisation (hostname, user/password, WiFi, SSH, locale)
-keeps working exactly as it does for a stock image:
+own with `--base`) and injects an AutoBleem package plus a first-boot service. The only other changes to the
+base image are on its boot partition: `cmdline.txt` loses the word `resize` (see "The data partition" -
+this is what keeps the root from swallowing the whole card), and `autobleem.txt` is added. cloud-init's
+`user-data`/`network-config` stay exactly as the base image ships them, so Raspberry Pi Imager's own OS
+customisation lands on top of them as on a stock image.
 
 ```bash
 ./make_rpi.sh   && ./tools/make_rpi_package.sh --arch armhf     # -> build_rpi/autobleem-rpi.tar.gz
@@ -109,28 +111,69 @@ sudo ./tools/make_rpi_image.sh --arch arm64 --package /path/to/autobleem-rpi-arm
 Each run downloads that architecture's current "latest" Raspberry Pi OS Lite image (sha256-verified against
 its published checksum), loop-mounts it, drops the package into `/opt/autobleem-image/` on its root
 filesystem alongside `autobleem-firstboot.service` (enabled by hand-crafting the same symlink `systemctl
-enable` would - no chroot, no qemu, nothing from the base image is ever executed at build time), and
-recompresses it to `<out>/autobleem-rpi-image-<arch>.img.xz`. `--dry-run` prints what it would do without
-downloading, mounting or needing root; `--help` lists every option (`--base`, `--work`, `--out`, `--keep-raw`).
+enable` would - no chroot, no qemu, nothing from the base image is ever executed at build time), edits the
+boot partition as above, and recompresses it to `<out>/autobleem-<version>-rpi-<arch>.img.xz` - the version is
+the package's `VERSION` file, which `tools/make_rpi_package.sh` writes from the build's own `version.h`
+(`v2.0.0` for a clean tree at that tag, `v2.0.0-pre0-ad109aa` otherwise; `--version` overrides). `--dry-run`
+prints what it would do without downloading, mounting or needing root; `--help` lists every option
+(`--base`, `--work`, `--out`, `--keep-raw`, `--version`).
 
-On first boot, once Raspberry Pi Imager's own customisation has had its turn, `autobleem-firstboot.service`
-runs `install.sh --yes` with its normal defaults (packages, RetroArch built from source, downloads, BIOS
-pack, boot splash - the same slow first-run work a manual install does). If there's no working network yet,
-it simply tries again on the next boot (up to 20 attempts) rather than failing outright - see
-`payload_rpi/system/autobleem-firstboot.sh`. Once it succeeds, it deletes the staged package, disables
-itself, and reboots once more so the boot splash and HDMI mode (which only take full effect on the boot
-after `install.sh` sets them) are in place from then on.
+### What the first boot does
 
-Each run also writes/updates `<out>/rpi_imager_repo.json` - a copy of the checked-in
-`tools/rpi_imager_repo.json` template with this run's real `extract_size`/`extract_sha256`/
-`image_download_size`/`image_download_sha256`/`release_date` filled in for whichever architecture was just
-built (running it for both architectures into the same `--out` directory fills in both, without clobbering
-the other's entry). It is **not** ready to publish as-is: `url` (wherever you end up hosting the `.img.xz` -
-this repo has no publishing pipeline for that yet), `icon`, and, if wanted, a `devices` filter all still need
-filling in by hand - the template's own `"//"` field spells out why each was left as a placeholder rather
-than guessed. Point Raspberry Pi Imager at the filled-in file via "Use custom" -> a local JSON (or a hosted
-one via `--repo`) to get the OS customisation screen (hostname/WiFi/SSH/user) along with the flash; pointing
-it straight at the `.img.xz` file works too, just without that screen.
+The base image boots as usual: cloud-init applies whatever Raspberry Pi Imager was told (user, hostname,
+WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout and a user on the screen. Then
+`autobleem-firstboot.service` takes over the screen and keyboard (tty1) and:
+
+1. waits for the network. **No network?** It asks: it lists the WiFi networks it can see, you pick one and
+   type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`, or `s`
+   to skip - it asks again on the next boot). It also sets the WiFi country first, because Raspberry Pi OS
+   keeps WiFi blocked (`rfkill`) until one is set.
+2. waits for the clock to sync (NTP) - `apt` distrusts a clock that is days off, and a Pi has no battery clock.
+3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
+   its own; RetroArch adds the other systems at the cost of a 10-40 minute build and close to a GB of
+   downloads. `n` gives a lean PS1-only install: no build, no cores, only the two PS1 BIOS files out of the
+   pack; the launcher hides its RetroArch set and menu items when no RetroArch is
+   installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
+   alone gets the full install. RetroArch can be added later by running `install.sh` again.
+4. runs `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
+   screen: packages, `--grow-root` (the root partition grows from the base image's ~3 GB to `root_gib`, the
+   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source if wanted, cores, BIOS.
+   Box art is not mirrored: the launcher fetches each game's cover when it scans it (see below). The same
+   output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
+5. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
+   mode only take full effect on the boot after `install.sh` sets them. On failure it says so, gives the
+   login prompt back, and tries again on the next boot (up to 20 times, then it gives up and leaves a note).
+
+`journalctl -u autobleem-firstboot` shows the script's own log lines; `systemctl status autobleem-firstboot`
+whether it is still going.
+
+### Setting things up before the first boot
+
+Everything is on the small FAT boot partition, editable from any PC after flashing:
+
+- **WiFi** - two routes, both belonging to the base image rather than to AutoBleem:
+  - Raspberry Pi Imager's OS customisation screen when flashing (user, hostname, WiFi, SSH, locale). Imager
+    only offers that screen for images it has metadata for, which a file picked through "Use custom" does
+    not have. `tools/rpi_imager_local_manifest.py` writes that metadata for your local image:
+    ```bash
+    python tools/rpi_imager_local_manifest.py --repo build_rpi_image/rpi_imager_repo.json \
+        --arm64 build_rpi_image/autobleem-v2.0.0-pre0-ad109aa-rpi-arm64.img.xz -o build_rpi_image/os_list_local.rpi-imager-manifest
+    ```
+    then double-click the `.rpi-imager-manifest` file (or Imager: App Options -> Content Repository -> Use
+    custom file, or `rpi-imager --repo <file>`): the AutoBleem image appears in the OS list *with* the
+    customisation screen. Without `--repo` the sizes and hashes are computed from the image file (a minute).
+  - or edit `network-config` on the boot partition by hand - it is cloud-init's netplan-style file and has a
+    commented WiFi example (`wifis: wlan0: access-points:` and `regulatory-domain`).
+- **`autobleem.txt`** - AutoBleem's own first-boot options, one `key=value` per line, documented in the file:
+  `root_gib` (default 8), `hdmi_mode`, `retroarch` (source/apt/none - unset means the first boot asks),
+  `thumbnails` (none/boxarts/all), `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
+
+`tools/make_rpi_image.sh` also writes `<out>/rpi_imager_repo.json` - the checked-in `tools/rpi_imager_repo.json`
+template with this run's real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/
+`release_date` filled in for whichever architecture was just built (running it for both architectures into
+the same `--out` directory fills in both). That file is the input for the local manifest above, and the
+starting point for a hosted one: `url` (wherever you host the `.img.xz`), `icon` and an optional `devices`
+filter are left as placeholders on purpose - the template's own `"//"` field says why.
 
 ## The data partition
 
@@ -138,10 +181,13 @@ This is the only fiddly part. Raspberry Pi OS grows its root filesystem over the
 boot, so on a normal install there is no free space left for a games partition. Pick one of these:
 
 **1. Stop the card being expanded in the first place (easiest, do it before the first boot).**
-After flashing, open the small FAT partition on your PC and edit `cmdline.txt`: delete the
-`init=/usr/lib/raspberrypi-sys-mods/firstboot` (older images: `init=/usr/lib/raspi-config/init_resize.sh`)
-part, keep the rest of the line intact — it must stay a single line. Boot the Pi; the root filesystem stays
-image-sized and everything else on the card is free space the installer will happily use.
+After flashing, open the small FAT partition on your PC and edit `cmdline.txt`: delete the word `resize`
+(Raspberry Pi OS Trixie - it is what the initramfs keys on; older images had an
+`init=/usr/lib/raspberrypi-sys-mods/firstboot` or `init=/usr/lib/raspi-config/init_resize.sh` part instead),
+keep the rest of the line intact — it must stay a single line. Boot the Pi; the root filesystem stays
+image-sized (about 3 GB, too small for the RetroArch build), so run the installer with `--grow-root 8`: it
+grows the root to 8 GiB in place, and everything after it on the card is free space for the games partition.
+This is exactly what the flashable image below does for you.
 
 **2. Shrink the root filesystem from another computer.** Put the card in a Linux machine and shrink
 partition 2 with GParted, then run the installer.

@@ -22,7 +22,8 @@
 #   ./make_rpi64.sh && ./tools/make_rpi_package.sh --arch arm64   # -> build_rpi64/autobleem-rpi-arm64.tar.gz
 # then copy the tarball to this host and point --package at it.
 #
-# Output: <out>/autobleem-rpi-image-<arch>.img.xz, plus <out>/rpi_imager_repo.json (a copy of
+# Output: <out>/autobleem-<version>-rpi-<arch>.img.xz (the version is the package's VERSION file, written by
+# tools/make_rpi_package.sh from the build's version.h; --version overrides it), plus <out>/rpi_imager_repo.json (a copy of
 # tools/rpi_imager_repo.json with this run's size/hash fields filled in - see that file and
 # payload_rpi/README.md's "Flashing with Raspberry Pi Imager" section for what still needs filling in by
 # hand: where you host the .img.xz, an icon, and the device-tag list).
@@ -40,6 +41,7 @@ BASE_IMG=""              # --base: a URL or local .img.xz; default is the archit
 WORK_DIR=""              # --work: scratch space (downloaded/decompressed image, loop mount point)
 OUT_DIR=""               # --out: where the finished .img.xz and repo.json land (default: same as WORK_DIR)
 KEEP_RAW=0               # --keep-raw: don't delete the decompressed .img after recompressing
+VERSION=""               # --version: what to name the image after; default: the package's VERSION file
 DRY_RUN=0
 
 #*******************************
@@ -70,6 +72,8 @@ Usage: sudo ./tools/make_rpi_image.sh --arch armhf|arm64 --package PATH [options
                        (default: ./build_rpi_image)
   --out DIR            where the finished .img.xz and repo.json land (default: same as --work)
   --keep-raw           keep the decompressed .img after recompressing (default: deleted to save space)
+  --version V          name the image autobleem-V-rpi-<arch>.img.xz (default: the VERSION file inside the
+                       package, which tools/make_rpi_package.sh writes from the build's version.h)
   --dry-run            print what would happen and change nothing (no download, no mount, no root needed)
   -h, --help           this text
 
@@ -89,6 +93,7 @@ parse_args() {
             --work)     WORK_DIR="${2:?--work needs a directory}"; shift 2 ;;
             --out)      OUT_DIR="${2:?--out needs a directory}"; shift 2 ;;
             --keep-raw) KEEP_RAW=1; shift ;;
+            --version)  VERSION="${2:?--version needs a value}"; shift 2 ;;
             --dry-run)  DRY_RUN=1; shift ;;
             -h|--help)  usage; exit 0 ;;
             *)          usage; die "unknown option: $1" ;;
@@ -136,6 +141,16 @@ preflight() {
 
     log "Architecture: $ARCH"
     log "Package: $PACKAGE"
+    if [ -z "$VERSION" ]; then
+        # the top-level entry of the tarball is autobleem-rpi/ (tools/make_rpi_package.sh)
+        VERSION="$(tar -xzOf "$PACKAGE" autobleem-rpi/VERSION 2>/dev/null | head -1 | tr -d '[:space:]')"
+    fi
+    if [ -n "$VERSION" ]; then
+        log "Version: $VERSION"
+    else
+        warn "the package has no VERSION file and no --version was given - the image will be named without one"
+    fi
+    OUT_IMG="$OUT_DIR/autobleem-${VERSION:+$VERSION-}rpi-$ARCH.img.xz"
     log "Work directory: $WORK_DIR"
     log "Output directory: $OUT_DIR"
     run mkdir -p "$WORK_DIR" "$OUT_DIR"
@@ -232,11 +247,13 @@ decompress_base_image() {
 #*******************************
 # mount_image / unmount_image
 #*******************************
-# only the root (ext4) partition is mounted - the payload goes under /opt on the root filesystem, not the
-# FAT boot partition (see docs/rpi-image-and-update-plan.md: boot is small and shared with the
-# kernel/firmware, and the injected tree is tens of MB, not worth the risk of crowding it).
+# Both partitions are mounted: the payload goes under /opt on the root filesystem (the FAT boot partition
+# is small and shared with the kernel/firmware - see docs/rpi-image-and-update-plan.md), and the boot
+# partition gets two small edits: cmdline.txt loses the word "resize" (see inject_boot_files) and gains
+# autobleem.txt (the first-boot options, editable from any PC).
 LOOP_DEV=""
 ROOT_MNT=""
+BOOT_MNT=""
 
 mount_image() {
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -248,21 +265,27 @@ mount_image() {
     udevadm settle
     [ -b "${LOOP_DEV}p2" ] || die "no ${LOOP_DEV}p2 - is this really a Raspberry Pi OS image (boot + root)?"
     ROOT_MNT="$WORK_DIR/root-mnt"
-    mkdir -p "$ROOT_MNT"
+    BOOT_MNT="$WORK_DIR/boot-mnt"
+    mkdir -p "$ROOT_MNT" "$BOOT_MNT"
     mount "${LOOP_DEV}p2" "$ROOT_MNT"
+    mount "${LOOP_DEV}p1" "$BOOT_MNT"
 }
 
 unmount_image() {
     [ "$DRY_RUN" -eq 1 ] && return 0
-    if [ -n "$ROOT_MNT" ] && mountpoint -q "$ROOT_MNT" 2>/dev/null; then
-        sync
-        umount "$ROOT_MNT" || warn "umount $ROOT_MNT failed"
-    fi
+    local m
+    for m in "$BOOT_MNT" "$ROOT_MNT"; do
+        if [ -n "$m" ] && mountpoint -q "$m" 2>/dev/null; then
+            sync
+            umount "$m" || warn "umount $m failed"
+        fi
+    done
     if [ -n "$LOOP_DEV" ]; then
         losetup -d "$LOOP_DEV" 2>/dev/null || warn "losetup -d $LOOP_DEV failed"
     fi
     LOOP_DEV=""
     ROOT_MNT=""
+    BOOT_MNT=""
 }
 
 # unmount/detach on any exit (success, error, or an interrupted run) so a failed build never leaves a loop
@@ -281,8 +304,8 @@ inject_payload() {
     local image_dir="$ROOT_MNT/opt/autobleem-image"
     mkdir -p "$image_dir"
     cp "$PACKAGE" "$image_dir/autobleem-rpi.tar.gz"
-    install -m 0755 "$SCRIPT_DIR/../payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
-    install -m 0644 "$SCRIPT_DIR/../payload_rpi/system/autobleem-firstboot.service" \
+    install -m 0755 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
+    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" \
         "$ROOT_MNT/etc/systemd/system/autobleem-firstboot.service"
 
     # "systemctl enable" for a plain WantedBy=multi-user.target unit is just this symlink - done by hand
@@ -295,10 +318,36 @@ inject_payload() {
 }
 
 #*******************************
+# inject_boot_files
+#*******************************
+# Two edits on the FAT boot partition. cmdline.txt loses the word "resize": that is what the base image's
+# initramfs keys on to grow the root partition over the whole card on the first boot
+# (/usr/share/initramfs-tools/scripts/local-premount/resize_early, and set_partuuid next to it), and a
+# root that fills the card leaves install.sh no room for the exFAT data partition - instead install.sh
+# grows the root to a bounded size itself (--grow-root, from autobleem.txt's root_gib) and takes the rest.
+# Nothing else on the partition is touched: cloud-init's user-data/network-config/meta-data stay exactly as
+# the base image ships them, so Raspberry Pi Imager's OS customisation still lands on top of them.
+inject_boot_files() {
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would drop "resize" from cmdline.txt and add autobleem.txt on the boot partition\n'
+        return 0
+    fi
+    log "Editing the boot partition: cmdline.txt without 'resize', plus autobleem.txt"
+    local cmdline="$BOOT_MNT/cmdline.txt" kept="" word
+    [ -f "$cmdline" ] || die "no cmdline.txt on the boot partition - not a Raspberry Pi OS image?"
+    for word in $(tr -d '\n' <"$cmdline"); do
+        [ "$word" = resize ] && continue
+        kept="$kept${kept:+ }$word"
+    done
+    printf '%s\n' "$kept" >"$cmdline"
+    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
+}
+
+#*******************************
 # finalize_image
 #*******************************
 finalize_image() {
-    local out_img="$OUT_DIR/autobleem-rpi-image-$ARCH.img.xz"
+    local out_img="$OUT_IMG"
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would recompress %s -> %s and hash both\n' "$RAW_IMG" "$out_img"
         EXTRACT_SIZE=0; EXTRACT_SHA256="0"; DOWNLOAD_SIZE=0; DOWNLOAD_SHA256="0"
@@ -336,8 +385,8 @@ update_repo_json() {
 
     ARCH="$ARCH" EXTRACT_SIZE="$EXTRACT_SIZE" EXTRACT_SHA256="$EXTRACT_SHA256" \
     DOWNLOAD_SIZE="$DOWNLOAD_SIZE" DOWNLOAD_SHA256="$DOWNLOAD_SHA256" \
-    RELEASE_DATE="$BASE_RELEASE_DATE" OUT_JSON="$out_json" python3 - <<'PYEOF'
-import json, os
+    RELEASE_DATE="$BASE_RELEASE_DATE" VERSION="$VERSION" OUT_JSON="$out_json" python3 - <<'PYEOF'
+import json, os, re
 
 path = os.environ["OUT_JSON"]
 arch = os.environ["ARCH"]
@@ -354,6 +403,10 @@ for entry in data["os_list"]:
         entry["image_download_sha256"] = os.environ["DOWNLOAD_SHA256"]
         if os.environ["RELEASE_DATE"]:
             entry["release_date"] = os.environ["RELEASE_DATE"]
+        if os.environ["VERSION"]:
+            # the version goes in the description Imager shows under the name; a rerun replaces, not appends
+            base = re.sub(r" AutoBleem [^ ]+\.$", "", entry.get("description", "").rstrip())
+            entry["description"] = f"{base} AutoBleem {os.environ['VERSION']}."
         break
 else:
     raise SystemExit(f"no os_list entry named {name!r} in {path}")
@@ -396,6 +449,7 @@ main() {
     decompress_base_image
     mount_image
     inject_payload
+    inject_boot_files
     unmount_image
     finalize_image
     update_repo_json

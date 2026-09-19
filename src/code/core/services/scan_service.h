@@ -200,6 +200,8 @@ private:
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
     // the ROM pass: every playlist a system folder yields, merged over what is there. Returns the game count.
     int scanRetroArchRoms(Listener &listener, std::vector<std::string> &playlistsWritten);
+    // the PS1 covers the scan did not find, from libretro's server - where the platform goes online at all
+    void fetchMissingPs1BoxArt(Listener &listener, const std::vector<ableem::UsbGamePtr> &games);
     ableem::GameLibrary &library_;
     RetroArchService *retroArch_ = nullptr;
 

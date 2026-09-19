@@ -23,6 +23,7 @@ DATA_LABEL="AUTOBLEEM"          # the exFAT partition's label - also how the REA
 DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
 SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() (opt-in, it is destructive)
+GROW_ROOT_GIB=""                # --grow-root: grow a still-small root to this size first, see grow_root()
 STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, themes/, Games/, Apps/)
 DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
 DRY_RUN=0
@@ -35,7 +36,8 @@ HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, 
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
-THUMBNAILS=boxarts              # --thumbnails: boxarts (the PS1 covers, ~350 MB) | all (+ title screens, snaps) | none
+THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
+                                # PS1 set, ~350 MB, for covers offline) | all (+ title screens, snaps)
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
 
 #*******************************
@@ -93,6 +95,11 @@ Usage: sudo bash install.sh [options]
   --stage DIR          the payload tree to install from (default: this directory)
   --shrink-root GIB    shrink the root filesystem to GIB and use the freed space for the data partition.
                        REPARTITIONS THE CARD. Needs a reboot to do the work offline. Back up first.
+  --grow-root GIB      the opposite case - a root filesystem that was never expanded (an image built by
+                       tools/make_rpi_image.sh, or a card whose cmdline.txt lost the word "resize" before
+                       the first boot): grow it to GIB, online, and leave the rest for the data partition.
+                       Capped so at least 2 GiB stay free for the data partition; a no-op when the root is
+                       already that big.
   --no-packages        skip apt - assume SDL2/RetroArch/exfatprogs are already installed
   --no-boot-config     do not touch cmdline.txt/config.txt
   --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
@@ -102,8 +109,10 @@ Usage: sudo bash install.sh [options]
                        1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode)
   --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
                        apt: the distribution's package; none: leave RetroArch alone
-  --thumbnails WHAT    boxarts (default): the PS1 covers from thumbnails.libretro.com (~9000 files, ~350 MB,
-                       resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
+  --thumbnails WHAT    none (default): the launcher fetches a game's cover from thumbnails.libretro.com when
+                       it scans the game, so nothing is mirrored here; boxarts: the whole PS1 set (~9000
+                       files, ~350 MB, resumable, four streams) for covers offline; all: title screens and
+                       snaps too (~3x)
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
   --no-bios            do not download the BIOS pack (system/biospack.txt or biospack-arm64.txt: ~190-230 MB
@@ -125,6 +134,7 @@ parse_args() {
             --mount)          DATA_MOUNT="${2:?--mount needs a path}"; shift 2 ;;
             --stage)          STAGE_DIR="${2:?--stage needs a directory}"; shift 2 ;;
             --shrink-root)    SHRINK_ROOT_GIB="${2:?--shrink-root needs a size in GiB}"; shift 2 ;;
+            --grow-root)      GROW_ROOT_GIB="${2:?--grow-root needs a size in GiB}"; shift 2 ;;
             --no-packages)    DO_PACKAGES=0; shift ;;
             --no-boot-config) DO_BOOT_CONFIG=0; shift ;;
             --no-quiet-boot)  QUIET_BOOT=0; BOOT_SPLASH=0; shift ;;
@@ -546,7 +556,7 @@ download_retroarch_content() {
         while read -r _date _crc zip; do
             [ -n "$zip" ] || continue
             count=$((count + 1))
-            printf '\r    [%3d/%3d] %-50s' "$count" "$total" "$zip"
+            printf '\r    [%3d/%3d] %3d%% %-50s' "$count" "$total" "$((count * 100 / total))" "$zip"
             # a re-run keeps the cores it has; RetroArch's Online Updater is the way to refresh them
             [ -f "$RA_ROOT/cores/${zip%.zip}" ] && continue
             if wget -q -O "$tmp/$zip" "$cores_url/$zip" && unzip -oq "$tmp/$zip" -d "$RA_ROOT/cores"; then
@@ -577,7 +587,6 @@ download_retroarch_content() {
         run rm -f "$tmp/$bundle.zip"
     done
     run rm -rf "$tmp"
-    download_thumbnails
 }
 
 #*******************************
@@ -587,7 +596,8 @@ download_retroarch_content() {
 # rdb downloaded above, so a game the scanner identifies gets its box art from here (the covers*.db in
 # Autobleem/bin/db, when present, is the fallback). thumbnailpacks.libretro.com's zips are gone, and the
 # GitHub mirror is one 1.5 GB archive of all three folders, so this mirrors the per-file listing at
-# thumbnails.libretro.com instead: ~9000 files, wget -r skips what is already there (re-runs resume).
+# thumbnails.libretro.com instead: ~9000 files, only the ones not already there (re-runs resume), four
+# connections at a time, with a running [n/total] percentage on the screen.
 download_thumbnails() {
     case "$THUMBNAILS" in
         none) log "skipping the thumbnails (--thumbnails none)"; return 0 ;;
@@ -596,20 +606,71 @@ download_thumbnails() {
         *) die "--thumbnails takes boxarts, all or none (got '$THUMBNAILS')" ;;
     esac
     local system="Sony - PlayStation"
+    local base="https://thumbnails.libretro.com/${system// /%20}"
+    local tmp=/tmp/autobleem-thumbs
+    run mkdir -p "$tmp"
     local dir
     for dir in $dirs; do
         local dest="$RA_ROOT/thumbnails/$system/$dir"
-        log "RetroArch: thumbnails.libretro.com/$system/$dir -> $dest (a while: one file at a time)"
         run mkdir -p "$dest"
-        # -np: never up; -nH --cut-dirs=2: drop the host and the two path parts, so a file lands straight in
-        # $dest; -nc: keep files already there; -A: the images only, not the index pages
-        if ! run wget -q -r -np -nH --cut-dirs=2 -nc -A png,jpg -P "$dest" \
-                "https://thumbnails.libretro.com/${system// /%20}/$dir/"; then
-            warn "thumbnails: the $dir download stopped early - run the installer again to resume it"
+        if [ "$DRY_RUN" -eq 1 ]; then
+            printf '    would list %s/%s/ and download the files not yet in %s, 4 at a time, with a counter\n' "$base" "$dir" "$dest"
+            continue
         fi
+        # The directory listing first, so the total is known and the screen can show a percentage - this
+        # is the longest download of the install (~9000 files for the box arts) and used to be a silent
+        # recursive wget. The hrefs are percent-encoded; the local file names are the decoded form, which
+        # is what wget -r wrote before and what the launcher's ThumbnailLookup matches against.
+        log "RetroArch: thumbnails.libretro.com/$system/$dir - listing"
+        if ! wget -q -O "$tmp/index.html" "$base/$dir/"; then
+            warn "thumbnails: cannot fetch the $dir listing - run the installer again later to get them"
+            continue
+        fi
+        grep -oE 'href="[^"]+\.(png|jpg)"' "$tmp/index.html" | sed 's/^href="//; s/"$//' | sort -u >"$tmp/all.txt"
+        local total present=0
+        total="$(grep -c . "$tmp/all.txt")"
+        if [ "$total" -eq 0 ]; then
+            warn "thumbnails: the $dir listing has no images - the site's layout may have changed"
+            continue
+        fi
+        : >"$tmp/todo.txt"
+        local href name
+        while IFS= read -r href; do
+            name="$(printf '%b' "${href//%/\\x}")"
+            if [ -s "$dest/$name" ]; then
+                present=$((present + 1))
+            else
+                printf '%s/%s/%s\n' "$base" "$dir" "$href" >>"$tmp/todo.txt"
+            fi
+        done <"$tmp/all.txt"
+        local todo=$((total - present))
+        if [ "$todo" -eq 0 ]; then
+            log "RetroArch: $dir - all $total files already there"
+            continue
+        fi
+        log "RetroArch: $dir - $todo of $total files to download into $dest ($present already there)"
+        # four wget streams, each on one kept-alive connection over its share of the list; every finished
+        # file is one -nv line, which the awk turns into the running counter (a 404 counts as done too -
+        # it is reported at the end, not retried)
+        rm -f "$tmp"/todo.part.*
+        split -n l/4 -d "$tmp/todo.txt" "$tmp/todo.part."
+        local part
+        {
+            for part in "$tmp"/todo.part.*; do
+                [ -s "$part" ] || continue
+                wget -nv -nc -P "$dest" -i "$part" 2>&1 &
+            done
+            wait
+        } | awk -v total="$total" -v done0="$present" '
+            # one result line per file: "<date> URL:... [size] -> file" on success, "<date> ERROR 404: ..."
+            # on failure (preceded by a bare URL line, not counted), "already there" for a -nc skip; each
+            # wget also ends with a FINISHED/Total/Downloaded summary, not counted either
+            function show() { printf "\r    [%5d/%5d] %3d%%", done0 + n, total, (done0 + n) * 100 / total; fflush() }
+            / URL:/ || /already there/ { n++; show() }
+            / ERROR / { n++; err++; show() }
+            END { printf "\n"; if (err) printf "    %d files did not download - run the installer again to retry them\n", err }'
     done
-    # wget leaves the directory index pages behind when it cannot delete them
-    run find "$RA_ROOT/thumbnails" -name 'index.html*' -delete
+    run rm -rf "$tmp"
 }
 
 #*******************************
@@ -630,8 +691,18 @@ download_bios_pack() {
     local manifest="$SCRIPT_DIR/system/$manifest_name"
     [ -f "$manifest" ] || { warn "no system/$manifest_name in the package - no BIOS files installed"; return 0; }
 
+    # --retroarch none is a PS1-only AutoBleem: nothing reads RetroArch/system but pcsx-ab's two files
+    # (install_ps1_bios), so the rest of the ~200 MB pack is not fetched. Same manifest, filtered by name.
+    local entries
+    if [ "$RETROARCH_MODE" = none ]; then
+        # the last field is the destination under RetroArch/system - the PS1 files sit at its top level
+        entries="$(grep '^[0-9a-f]' "$manifest" | awk '$4 == "scph5501.bin" || $4 == "scph5500.bin"')"
+        log "BIOS pack: PS1-only (--retroarch none) - just the two files pcsx-ab needs"
+    else
+        entries="$(grep '^[0-9a-f]' "$manifest")"
+    fi
     local total
-    total="$(grep -c '^[0-9a-f]' "$manifest")"
+    total="$(echo "$entries" | grep -c .)"
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would download the %s BIOS files of %s into %s/system\n' "$total" "$(basename "$manifest")" "$RA_ROOT"
         printf '    would copy scph5501.bin/scph5500.bin to %s/System/Bios as romw.bin/romJP.bin if not there\n' "$DATA_MOUNT"
@@ -642,7 +713,7 @@ download_bios_pack() {
     while read -r sha size url dest; do
         [ -n "$dest" ] || continue
         count=$((count + 1))
-        printf '\r    [%3d/%3d] %-50.50s' "$count" "$total" "$dest"
+        printf '\r    [%3d/%3d] %3d%% %-50.50s' "$count" "$total" "$((count * 100 / total))" "$dest"
         target="$RA_ROOT/system/$dest"
         if [ -f "$target" ] && [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$sha" ]; then
             continue
@@ -656,7 +727,7 @@ download_bios_pack() {
             rm -f "$target.part"
             failed=$((failed + 1))
         fi
-    done < <(grep '^[0-9a-f]' "$manifest")
+    done < <(echo "$entries")
     printf '\n'
     log "BIOS pack: $fetched downloaded, $((count - fetched - failed)) already there"
     [ "$failed" -eq 0 ] || warn "$failed BIOS files did not download or did not match their hash - run the installer again"
@@ -718,7 +789,14 @@ create_data_partition() {
     log "Creating a ${DATA_LABEL} partition on $DISK (${start}MiB - ${end}MiB)"
     confirm "This writes a new partition table entry to $DISK. Continue?"
 
-    run parted -s "$DISK" mkpart primary "${start}MiB" "${end}MiB"
+    # parted prints the disk's size rounded to whole MiB, so a free span that runs to the end of the disk
+    # ends at a value that can be a fraction past the last sector - and "mkpart ... 120580MiB" is then
+    # "outside of the device" (seen on the first image's first boot, a 117.8 GB card). 100% is parted's own
+    # way of saying "to the end", so a span that reaches the disk's end asks for that instead.
+    local disk_end end_arg="${end}MiB"
+    disk_end="$(parted -ms "$DISK" unit MiB print 2>/dev/null | awk -F: -v d="$DISK" '$1 == d { print $2 + 0 }')"
+    [ -n "$disk_end" ] && [ "$end" -ge "$disk_end" ] && end_arg="100%"
+    run parted -s "$DISK" mkpart primary "${start}MiB" "$end_arg"
     run partprobe "$DISK"
     run udevadm settle
 
@@ -817,6 +895,70 @@ disarm_shrink() {
 }
 
 #*******************************
+# grow_root
+#*******************************
+# The image tools/make_rpi_image.sh builds keeps the root filesystem at the base image's size (its
+# cmdline.txt has no "resize", so the initramfs never grows the partition over the whole card) - that is
+# what leaves room for the data partition. But a 3 GB root is too small for what install.sh puts on it
+# (RetroArch built from source alone wants a couple of GB), so the root is grown here first, online, to a
+# bounded size, and ensure_data_partition then takes the rest. sfdisk rewrites the partition's size in
+# place (--no-reread: the disk is in use, the kernel is told separately with partx), and resize2fs grows
+# ext4 while mounted - both are what growpart does, minus the "to the very end" it insists on.
+grow_root() {
+    local gib="$1"
+    local rootdev rootname diskname partnum start_s size_s disk_s target_s max_s target_mib
+    rootdev="$(findmnt -no SOURCE /)"
+    rootname="$(basename "$rootdev")"
+    diskname="$(basename "$DISK")"
+    [ -r "/sys/class/block/$rootname/partition" ] || die "cannot tell which partition $rootdev is"
+    partnum="$(cat "/sys/class/block/$rootname/partition")"
+    # sysfs sizes are in 512-byte sectors whatever the device says
+    start_s="$(cat "/sys/class/block/$rootname/start")"
+    size_s="$(cat "/sys/class/block/$rootname/size")"
+    disk_s="$(cat "/sys/block/$diskname/size")"
+
+    target_s=$((gib * 1024 * 1024 * 2))
+    max_s=$((disk_s - start_s - MIN_DATA_MIB * 2048))
+    if [ "$target_s" -gt "$max_s" ]; then
+        warn "the card is too small for a ${gib} GiB root plus a ${MIN_DATA_MIB} MiB data partition - growing the root to $((max_s / 2048)) MiB instead"
+        target_s=$max_s
+    fi
+    if [ "$target_s" -le "$size_s" ]; then
+        log "Root partition is already $((size_s / 2048)) MiB - not growing it"
+        return 0
+    fi
+    target_mib=$((target_s / 2048))
+    log "Growing $rootdev from $((size_s / 2048)) MiB to ${target_mib} MiB (the rest of $DISK is for the data partition)"
+    confirm "Grow partition $partnum of $DISK to ${target_mib} MiB?"
+
+    # ",SIZE" keeps the start and sets the new size; the disk is in use, so no re-read, and --force past
+    # sfdisk's own "device is mounted" refusal
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would run: echo ",%sMiB" | sfdisk --no-reread --force -N %s %s\n' "$target_mib" "$partnum" "$DISK"
+    else
+        echo ",${target_mib}MiB" | sfdisk --no-reread --force -N "$partnum" "$DISK" \
+            || die "sfdisk could not resize partition $partnum of $DISK"
+    fi
+    # tell the kernel about the new size of a partition that is mounted (BLKPG_RESIZE_PARTITION)
+    run partx -u --nr "$partnum" "$DISK" || run partprobe "$DISK" || true
+    run udevadm settle
+    run resize2fs "$rootdev" || die "resize2fs $rootdev failed - the partition is grown but the filesystem is not"
+    log "Root filesystem grown"
+}
+
+# --grow-root, before apt starts filling a root that is still the base image's size (a fresh Lite root has
+# a few hundred MB free - not enough for the packages, let alone the RetroArch build). Pointless once the
+# data partition exists: it sits right after the root, there is nothing to grow into.
+maybe_grow_root() {
+    [ -n "$GROW_ROOT_GIB" ] || return 0
+    if [ -n "$(existing_data_partition)" ]; then
+        log "A $DATA_LABEL partition already exists - ignoring --grow-root"
+        return 0
+    fi
+    grow_root "$GROW_ROOT_GIB"
+}
+
+#*******************************
 # ensure_data_partition
 #*******************************
 # sets DATA_DEV to the exFAT partition to use, creating it if that is possible without destroying anything.
@@ -853,8 +995,9 @@ ensure_data_partition() {
       * sudo bash install.sh --shrink-root 8     shrink the root filesystem to 8GiB and use the rest here.
                                               Repartitions the card on the next boot - back up first.
       * shrink partition 2 from another machine (GParted), then re-run this installer.
-      * re-flash, and before the first boot delete the 'init=...firstboot' part of cmdline.txt on the FAT
-        partition so the root filesystem is never expanded. Everything left over is then free space."
+      * re-flash, and before the first boot delete the word 'resize' from cmdline.txt on the FAT partition
+        so the root filesystem is never expanded (Raspberry Pi OS Trixie; older images used init=...firstboot).
+        Then run this installer with --grow-root 8: the root grows to 8 GiB and the rest is the data partition."
 }
 
 #*******************************
@@ -1128,12 +1271,14 @@ EOF
 main() {
     parse_args "$@"
     preflight
+    maybe_grow_root             # --grow-root: the root must have room before apt fills it
     install_packages
     ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data
     create_tree
     install_retroarch
     download_retroarch_content
+    download_thumbnails         # the launcher's PS1 box art - wanted with or without RetroArch
     download_bios_pack
     install_payload
     install_service
