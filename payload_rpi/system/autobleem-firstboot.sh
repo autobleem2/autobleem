@@ -359,15 +359,54 @@ fi
 
 ask_retroarch
 
-if [ ! -d "$UNPACK_DIR" ]; then
-    log "Unpacking $PACKAGE"
+# The package is staged on the root filesystem, and until install.sh has grown the root that filesystem is
+# the base image's size - a fresh Lite root has a few hundred MB free, less than the package unpacks to
+# (the cover databases alone are ~290 MB). So the root is grown *before* the tarball is extracted: only
+# install.sh itself comes out first, and runs with --grow-only (a no-op once the root is that big, so a
+# retry is harmless). The first armhf flash died here with "No space left on device".
+EXTRACTED_MARKER="$UNPACK_DIR/.extracted"
+if [ -d "$UNPACK_DIR" ] && [ ! -f "$EXTRACTED_MARKER" ]; then
+    log "Removing a partly unpacked $UNPACK_DIR from an earlier attempt"
+    rm -rf "$UNPACK_DIR"
+fi
+if [ ! -f "$EXTRACTED_MARKER" ]; then
     mkdir -p "$IMAGE_DIR"
-    if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR"; then
-        warn "extract failed - will retry next boot"
+    if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR" autobleem-rpi/install.sh; then
+        warn "cannot extract install.sh from $PACKAGE - will retry next boot"
         sleep 3
         give_tty_back
         exit 1
     fi
+    root_gib="${OPT[root_gib]:-8}"
+    if [ "$root_gib" != 0 ] && [ "$root_gib" != none ]; then
+        log "Growing the root filesystem to ${root_gib} GiB before unpacking"
+        if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only 2>&1 | tee -a "$INSTALL_LOG"; then
+            warn "could not grow the root filesystem - will retry next boot. Log: $INSTALL_LOG"
+            sleep 5
+            give_tty_back
+            exit 1
+        fi
+    fi
+    # gzip's trailer carries the unpacked size, so this costs no decompression pass
+    unpacked_bytes="$(gzip -l "$PACKAGE" 2>/dev/null | awk 'NR == 2 { print $2 }')"
+    need_mib="$(( ${unpacked_bytes:-0} / 1048576 + 64 ))"
+    free_mib="$(df -Pm "$IMAGE_DIR" | awk 'NR == 2 { print $4 }')"
+    if [ "$free_mib" -lt "$need_mib" ]; then
+        warn "only ${free_mib} MiB free on the root filesystem, the package needs ${need_mib} MiB to unpack - will retry next boot"
+        note_in_data_logs "autobleem-firstboot: only ${free_mib} MiB free under $IMAGE_DIR, need ${need_mib} MiB (root_gib=$root_gib in $OPTIONS_FILE)"
+        sleep 5
+        give_tty_back
+        exit 1
+    fi
+    log "Unpacking $PACKAGE (${need_mib} MiB)"
+    if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR"; then
+        warn "extract failed - will retry next boot"
+        rm -rf "$UNPACK_DIR"
+        sleep 3
+        give_tty_back
+        exit 1
+    fi
+    touch "$EXTRACTED_MARKER"
 fi
 
 INSTALLER="$UNPACK_DIR/install.sh"

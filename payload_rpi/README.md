@@ -139,9 +139,11 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    pack; the launcher hides its RetroArch set and menu items when no RetroArch is
    installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
    alone gets the full install. RetroArch can be added later by running `install.sh` again.
-4. runs `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
-   screen: packages, `--grow-root` (the root partition grows from the base image's ~3 GB to `root_gib`, the
-   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source if wanted, cores, BIOS.
+4. grows the root partition first (`install.sh --grow-root <root_gib> --grow-only`: from the base image's
+   ~3 GB to `root_gib`, the rest of the card becomes the `AUTOBLEEM` partition) - the package unpacks to
+   over 300 MB and a fresh root has less free than that - then unpacks the package and runs
+   `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
+   screen: packages, RetroArch built from source if wanted, cores, BIOS.
    Box art is not mirrored: the launcher fetches each game's cover when it scans it (see below). The same
    output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
 5. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
