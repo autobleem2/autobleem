@@ -6,6 +6,8 @@
 #                                                                              -> rpi-imager/images/<version>/
 #   tools/repo_publish.sh retroarch v1.22.2 retroarch-v1.22.2-armhf.tar.gz     -> rpi/retroarch/v1.22.2/
 #   tools/repo_publish.sh cores armhf build_cores/dist/cores-armhf-*.tar.gz    -> rpi/cores/armhf/
+#   tools/repo_publish.sh psc-retroarch v1.22.2-1 dist/release/retroarch-psc-v1.22.2-1.zip dist/release/manifest.json
+#                                                                              -> psc/retroarch/v1.22.2-1/ (the retroarch-psc repo's `make publish`)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
@@ -17,7 +19,8 @@
 #
 # AB_REPO_URL is what the generated urls start with (default: the domain; http://212.71.244.78:9090 is the
 # same tree without TLS). Retention is the index script's: a pre-release replaces the previous pre-release
-# (releases and image sets), only the newest RetroArch build and cores tarball are kept, stable releases stay.
+# (releases and image sets), only the newest RetroArch build (Pi and PSC alike) and cores tarball are kept, stable
+# releases stay.
 set -euo pipefail
 
 REPO_HOST="${REPO_HOST:-psc-build}"
@@ -44,6 +47,7 @@ case "$KIND" in
     image)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi-imager/images/$VERSION" ;;
     retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/retroarch/$VERSION" ;;
     cores)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/cores/$VERSION" ;;
+    psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;
     index)     DEST="" ;;

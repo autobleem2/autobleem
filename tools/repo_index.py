@@ -11,6 +11,7 @@ Reads what is there (docs/repo-server-plan.md has the layout) and writes:
     releases/latest.json               the newest stable release's release.json
     releases/unstable.json             the one pre-release kept, same shape
     rpi/retroarch/latest.json          the newest RetroArch build per architecture
+    psc/retroarch/latest.json          the newest RetroArch build for the PlayStation Classic (psc/retroarch/<tag>/)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
@@ -37,7 +38,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 8
+INDEX_VERSION = 9
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -50,6 +51,8 @@ PACKAGE_KINDS = [
 IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-rpi-(?P<arch>armhf|arm64)\.img\.xz$")
 RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64)\.tar\.gz$")
 CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz$")
+# the console build's tag is the RetroArch version plus a build number (github.com/autobleem/retroarch-psc)
+PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 
 
 # version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
@@ -231,6 +234,44 @@ def index_retroarch(repo, base_url):
 
 
 #*******************************
+# RetroArch for the PlayStation Classic
+#*******************************
+def psc_version_key(tag):
+    """v1.22.2-3 -> ((1, 22, 2), 3): the RetroArch version, then our build number."""
+    m = re.match(r"^v?(\d+)\.(\d+)\.(\d+)-(\d+)$", tag)
+    if not m:
+        return ((0, 0, 0), 0, tag)
+    return (tuple(int(x) for x in m.groups()[:3]), int(m.group(4)), tag)
+
+
+def index_psc_retroarch(repo, base_url):
+    """psc/retroarch/<tag>/retroarch-psc-<tag>.zip + manifest.json (from the retroarch-psc repository's
+    `make package-retroarch`) - the newest kept, the rest deleted, latest.json = the newest."""
+    root = os.path.join(repo, "psc", "retroarch")
+    builds = {}  # tag -> {"zip": entry, "manifest": url}
+    if os.path.isdir(root):
+        for tag in os.listdir(root):
+            folder = os.path.join(root, tag)
+            if not os.path.isdir(folder):
+                continue
+            for path in data_files(folder):
+                m = PSC_RETROARCH_RE.match(os.path.basename(path))
+                if m and m.group("tag") == tag:
+                    builds[tag] = {"zip": file_entry(repo, base_url, path)}
+                    manifest = os.path.join(folder, "manifest.json")
+                    if os.path.isfile(manifest):
+                        builds[tag]["manifest"] = base_url + "/psc/retroarch/%s/manifest.json" % tag
+    if builds:
+        newest = sorted(builds, key=psc_version_key)[-1]
+        prune([os.path.join(root, t) for t in builds if t != newest], [], "PSC RetroArch build")
+        builds = {newest: builds[newest]}
+        latest = {"version": newest}
+        latest.update(builds[newest])
+        write_json(os.path.join(root, "latest.json"), latest)
+    return builds
+
+
+#*******************************
 # cores tarballs
 #*******************************
 def index_cores(repo, base_url):
@@ -357,7 +398,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
 
-def render_index(base_url, releases, builds, cores, images, dbs):
+def render_index(base_url, releases, builds, cores, images, dbs, psc_builds):
     e = html.escape
 
     def row(label, f, cls="dl"):
@@ -429,6 +470,17 @@ def render_index(base_url, releases, builds, cores, images, dbs):
             f = builds[newest].get(arch)
             if f:
                 out.append(row(arch, f))
+        out.append("</table></div>")
+
+    if psc_builds:
+        newest = sorted(psc_builds, key=psc_version_key)[-1]
+        b = psc_builds[newest]
+        out.append("<div class=\"panel\"><h2>RetroArch for the PlayStation Classic <small>%s</small></h2>" % e(newest))
+        out.append("<p>Built for the console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches, "
+                   "and it loads RetroBoot's xz-compressed cores as they are. What the PC installer puts under "
+                   "<code>retroarch/</code> on the stick (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s).</p><table>"
+                   % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if b.get("manifest") else ""))
+        out.append(row("retroarch + docs", b["zip"]))
         out.append("</table></div>")
 
     if cores:
@@ -590,16 +642,17 @@ def main():
     releases = index_releases(repo, base_url)
     builds = index_retroarch(repo, base_url)
     cores = index_cores(repo, base_url)
+    psc_builds = index_psc_retroarch(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d image sets, %d databases" % (
-        repo, len(releases), len(builds), len(cores), len(images), len(dbs)))
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %d image sets, %d databases" % (
+        repo, len(releases), len(builds), len(cores), len(psc_builds), len(images), len(dbs)))
 
 
 if __name__ == "__main__":
