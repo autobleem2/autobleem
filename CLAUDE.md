@@ -485,6 +485,16 @@ URLs (double-click it, or App Options -> Content Repository -> Use custom file, 
 makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
+**Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
+`cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
+run and bakes in the **real cover databases** (the PC checkout's `db/` holds 16 KB stubs, so a package made
+on the PC ships no covers) - both Pi packages in ~2 min incremental. `~/autobleem` there is an rsync tree
+(from the MSYS2 shell, *including* `payload*/`; pass `AB_GIT_*` for the version); its clock ran ~5 min behind
+the PC, which made rsync'd files "future" and ninja loop ("manifest 'build.ninja' still dirty") - `touch` the
+`-newermt now` files. The images themselves are built on the Pi 400 (loop mounts need root; the server has no
+sudo), packages streamed server -> PC -> Pi, `--work/--out` on the data partition (the 8 GB root is too
+small - the script checks free space first since it ran out once).
+
 **What has run for real** (2026-09-19, Pi 400 as the build host over ssh, then as the target): the image
 build itself for both architectures (download, verify, mount, inject, recompress; the *output* re-mounted
 and its contents checked; a second run fills the other architecture's JSON entry alongside); two build-script
