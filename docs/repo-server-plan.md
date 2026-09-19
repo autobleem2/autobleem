@@ -66,7 +66,7 @@ build server serves and that anything with `wget`/`curl` can read:
   rare).
 - **The repo's base URL is data, not code**: `AB_REPO_URL` (default `https://autobleem.retromenele.pl`)
   in `ci/`, `--repo URL` in `install.sh`, `repo=` in `autobleem.txt`, so a mirror or a LAN copy for testing
-  is one setting. The direct `http://212.71.244.78:9090` is the fallback while the DNS record is on its way.
+  is one setting. `http://212.71.244.78:9090` is the same tree without TLS.
 
 ## Layout
 
@@ -95,13 +95,13 @@ autobleem-repo/
 
 Each step is its own feature branch and commit (gitflow), each proven before the next.
 
-**Status 2026-09-19:** steps 1-4 are done and live at `http://212.71.244.78:9090/` (the DNS record is
-not set up yet, so the base URL is the direct address for now - `AB_REPO_URL`): the page and the Pi manual,
+**Status 2026-09-19:** steps 1-4 are done and live at `https://autobleem.retromenele.pl/` (the `A` record
+went in that evening; Caddy had its certificate seconds after a restart reset its retry backoff): the page and the Pi manual,
 the assets, the three cover databases, the `933bd2f` image set, and RetroArch v1.22.2 for both
 architectures - cross-built in the image, installed on the Pi 400 (Trixie) by `install.sh --retroarch
 prebuilt` in a couple of minutes, every library resolving, and **playing a NES game from the carousel**
-(the owner, on the TV). Steps 5-7 are open. **No image is to be built
-until the domain exists** (the owner's rule: an image bakes the repository's URL into its installer).
+(the owner, on the TV). Steps 5-7 are open. Images can be built again now that the domain exists (the
+owner held them back until then: an image bakes the repository's URL into its installer).
 
 ### Step 1 - the server (S) - done
 

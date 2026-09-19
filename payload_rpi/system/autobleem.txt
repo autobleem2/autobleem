@@ -27,7 +27,7 @@ root_gib=8
 #retroarch=prebuilt
 
 # AutoBleem's download site (the prebuilt RetroArch). Only for a mirror or a copy on your own network.
-#repo=http://212.71.244.78:9090
+#repo=https://autobleem.retromenele.pl
 
 # PS1 box art. The launcher fetches each game's cover from thumbnails.libretro.com when it scans the
 # game, so nothing needs mirroring: none (default) | boxarts (the whole set, ~350 MB, for covers offline) |
