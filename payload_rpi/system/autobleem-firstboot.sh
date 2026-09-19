@@ -3,8 +3,8 @@
 # Runs once per boot, via autobleem-firstboot.service (WantedBy=multi-user.target), on a card written from
 # an image tools/make_rpi_image.sh built - until AutoBleem's own install.sh has completed successfully once.
 #
-# The service hands this script tty1 (the screen and keyboard), so the first boot is something the user
-# watches and can answer, not a silent background job: it waits for network, and when there is none it asks
+# The service hands this script a virtual terminal (tty8, switched onto the screen here), so the first boot
+# is something the user watches and can answer, not a silent background job: it waits for network, and when there is none it asks
 # for a WiFi network and password right here (the first real boot of the image had no network, install.sh
 # failed at apt and nobody could tell why without ssh - which needs the network). Then it runs install.sh
 # with the options from autobleem.txt on the boot partition, and reboots once that has succeeded.
@@ -41,10 +41,13 @@ disarm() {
     systemctl disable "$SELF_SERVICE" >/dev/null 2>&1 || true
 }
 
-# Conflicts=getty@tty1.service stopped the login prompt when this unit started; a run that ends without a
-# reboot gives it back, so the screen is a login prompt again, not a dead console
+# The unit runs on tty8 (see the service file); the screen is switched to it here, and back to tty1 - the
+# login prompt, untouched all along - by a run that ends without a reboot.
+show_our_tty() {
+    chvt 8 >/dev/null 2>&1 || true
+}
 give_tty_back() {
-    systemctl start getty@tty1.service >/dev/null 2>&1 || true
+    chvt 1 >/dev/null 2>&1 || true
 }
 
 # best-effort note in System/Logs, once the data partition exists to hold one
@@ -307,6 +310,7 @@ ensure_network() {
 #*******************************
 # main
 #*******************************
+show_our_tty
 clear 2>/dev/null || true
 printf '\n\033[1m  AutoBleem - first boot setup\033[0m\n\n'
 

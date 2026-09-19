@@ -13,10 +13,12 @@ ConditionPathExists=!/opt/autobleem-image/.done
 # there is still no network, so a Pi with none configured is not stuck.
 After=multi-user.target network-online.target cloud-final.service userconfig.service
 Wants=network-online.target
-# the first boot is watched and answered on the screen: this unit takes tty1 (the keyboard and the HDMI
-# console) from the login prompt while it runs. The script starts getty@tty1 again on the way out when it
-# does not reboot, so a failed run leaves a login prompt, not a dead console.
-Conflicts=getty@tty1.service
+# The first boot is watched and answered on the screen. It runs on its own virtual terminal, tty8 - the
+# same way Raspberry Pi OS's own user-creation wizard (userconfig.service) does - and the script switches
+# the screen to it (chvt) and back to tty1 when it is done without rebooting. Not tty1 with
+# Conflicts=getty@tty1.service: both start jobs sit in the same boot transaction, and systemd resolves that
+# conflict by silently dropping the job that is only Wanted - this one. It never ran at all that way (first
+# boot of the second image, 2026-09-19). tty8 has no getty (logind's autovt covers tty2-6 only).
 
 [Service]
 Type=oneshot
@@ -24,9 +26,10 @@ ExecStart=/opt/autobleem-image/autobleem-firstboot.sh
 StandardInput=tty
 StandardOutput=tty
 StandardError=tty
-TTYPath=/dev/tty1
+TTYPath=/dev/tty8
 TTYReset=yes
 TTYVHangup=yes
+TTYVTDisallocate=yes
 
 [Install]
 WantedBy=multi-user.target
