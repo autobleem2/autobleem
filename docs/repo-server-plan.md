@@ -204,6 +204,20 @@ image's staged package drops to ~16 MB and the first boot needs no extra root gr
 zip keeps its databases (a console has no network). Not done until the owner says so - it makes a Pi
 install depend on the repo for its covers.
 
+### Step 8 - the cores as one tarball per architecture (S) - the owner's idea, 2026-09-19
+
+`download_retroarch_content()` makes ~130 requests to `buildbot.libretro.com` (one zip per core) plus the
+seven bundles, on every install, and gets whatever the nightly has that day. Instead: `ci/build_cores.sh
+<armhf|arm64>` (in the image or on the server, no compiling - it downloads the same things once) packs
+`cores/*.so` + `info/` and the `assets/autoconfig/database-rdb/database-cursors/cheats/overlays/
+shaders_glsl` bundles as `rpi/cores/<arch>/cores-<arch>-<YYYYMMDD>.tar.gz` (~300 MB armhf, more for
+arm64 with its 222 cores) with a `CORES` manifest (name, size, sha256 of each `.so`) and publishes it
+(`tools/repo_publish.sh cores <arch> <date> ...`; newest kept, like RetroArch). `install.sh`'s
+`download_retroarch_content` fetches `rpi/cores/latest.json`, downloads the one tarball (`.part`, sha256)
+and unpacks it into `RetroArch/`, falling back to the per-core buildbot download when the repository is
+unreachable. A `cores.yml` workflow refreshes it monthly next to `retroarch.yml`. The set is then a known
+quantity per release - a core that breaks on the Pi (picodrive's Cyclone) can be left out at the source.
+
 ## Out of scope
 
 - DNS: the owner's, on the Netlify side (one `A` record).
