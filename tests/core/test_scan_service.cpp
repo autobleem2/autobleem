@@ -17,6 +17,7 @@
 #include <ableem/engine/serial_scanner.h>
 
 #include <algorithm>
+#include <fstream>
 #include <chrono>
 #include <string>
 #include <thread>
@@ -439,4 +440,48 @@ TEST_CASE("with RetroArch the scan writes a playlist per ROM folder, reports it,
     CHECK(second.finishedRomCount == 2);
     CHECK(second.playlistsWritten.size() == 1);
     CHECK_FALSE(fx.svc.checkForChanges());
+}
+
+TEST_CASE("the online pass fetches the box art of a ROM without one, once, and the launcher is told") {
+    ScanServiceFixture fx;
+    RetroArchOnStick ra(fx);
+    ra.addRom("A.nes");
+    fx.tmp.makeSubDir("retroarch/thumbnails");
+    fx.tmp.writeFile("retroarch/database/rdb/Atari - 2600.rdb", "RARCHDB"); // databases are there: no bundle fetch
+
+    // a fake network: the probe page and the one cover, served into the file the command names
+    vector<string> commands;
+    auto runner = [&commands](const string &commandLine) {
+        commands.push_back(commandLine);
+        size_t sp = commandLine.find(' ');
+        size_t sp2 = commandLine.find(' ', sp + 1);
+        string url = commandLine.substr(sp + 1, sp2 - sp - 1);
+        string out = commandLine.substr(sp2 + 1);
+        string expected = OnlineAssets::boxArtUrl("http://thumbs", "Nintendo - Nintendo Entertainment System", "A");
+        if (url != "http://thumbs/" && url != expected)
+            return 22;
+        std::ofstream o(out, std::ios::binary);
+        o << "png";
+        return 0;
+    };
+    OnlineAssets::Config online;
+    online.downloadCommand = "fetch %u %o";
+    online.thumbnailsBaseUrl = "http://thumbs";
+
+    // off: nothing is fetched, nothing is run
+    fx.svc.setOnline(false, online, runner);
+    ScanUpdate first = fx.runAndPoll();
+    CHECK(first.boxArtFetched == 0);
+    CHECK(commands.empty());
+
+    fx.svc.setOnline(true, online, runner);
+    ScanUpdate second = fx.runAndPoll();
+    CHECK(second.boxArtFetched == 1);
+    CHECK(ableem::DirEntry::exists(
+        fx.tmp.at("retroarch/thumbnails/Nintendo - Nintendo Entertainment System/Named_Boxarts/A.png")));
+
+    size_t before = commands.size();
+    ScanUpdate third = fx.runAndPoll();
+    CHECK(third.boxArtFetched == 0);
+    CHECK(commands.size() == before); // the cover is there: no probe, no fetch
 }

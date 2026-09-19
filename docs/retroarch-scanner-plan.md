@@ -1,9 +1,9 @@
-# Scanning RetroArch's ROMs from AutoBleem - the plan (steps 1-2 done 2026-09-18/19, 3-5 to go)
+# Scanning RetroArch's ROMs from AutoBleem - the plan (steps 1-3 done 2026-09-18/19, 4-5 to go)
 
 Written 2026-09-18 morning after the Raspberry Pi got its BIOS pack, parked until real ROMs had been run on
 the Pi through RetroArch's own scanner; revised the same evening once they had (846 ROMs over nine systems,
-Sega and ColecoVision confirmed running) and after the day's launcher work. **Steps 1 and 2 are in**
-(that evening and the next night, see their "Done" notes); pick it up at step 3.
+Sega and ColecoVision confirmed running) and after the day's launcher work. **Steps 1 to 3 are in**
+(that evening and the next night, see their "Done" notes); pick it up at step 4.
 
 **RetroArch is optional on every platform** (the owner, 2026-09-18): none of this runs unless RetroArch is
 detected - `ScanService::romScanEnabled()` = `Env::retroArchInstalled()` (the binary the platform ini
@@ -192,6 +192,28 @@ and an adapter gets covers.
 Also the `.rdb`s themselves, the same way, when `database/rdb/` is empty and the network is there:
 `buildbot.libretro.com/assets/frontend/database-rdb.zip` is 40 MB, unpacked with `ZipArchive` - so a
 console that does have network is not left without step 2.
+
+**Done 2026-09-19** (`core/services/online_assets.*`, `tests/core/test_online_assets.cpp`). As planned,
+with these particulars:
+
+- `OnlineAssets` runs the platform ini's `download_command` through `std::system` from the scan worker
+  (`curl -sfL -m 20 -o "%o" "%u"` on the PC and the Pi - curl's `-m` is the timeout, the app has none of
+  its own; empty on the console). Into a `.part` renamed on success, so a cut-off fetch leaves nothing.
+- Gate: config.ini `online=true` (default; Options row "Fetch box art online", shown only where the ini
+  has a command) **and** a command **and** one probe per cycle (`<thumbnails base>/`), and only when there
+  is something to fetch - a Pi with every cover on disk makes no request at all. `ScanService::setOnline()`
+  is fed by `App::applyOnlineSetting()` at start and after Options.
+- Order in `scanRetroArchRoms()`: `ensureDatabases()` (the bundle, when `database/rdb/` has no `.rdb`;
+  `rdb/*.rdb` inside, unpacked into `database/`) -> the ROM scan with identification -> `fetchBoxArt()`
+  over `RetroArchScanResult::games` (every entry under the ROM folders, with its final label) for the
+  ones the worker's own `ThumbnailLookup` finds nothing for (fuzzy fallback included).
+- A server miss is remembered in `<thumbnails>/<system>/Named_Boxarts/.autobleem-missing.txt` (one
+  escaped name per line; delete it to retry) after a re-probe confirmed the server is up; the network
+  dropping mid-pass ends the pass without marking anything. `ScanUpdate::boxArtFetched` ->
+  `app.thumbnails().clearCache()` + a reload of the RetroArch set; `ScanStage::FetchingBoxArt` on the
+  status line.
+- **On the Pi 400**: 67 games without a cover, 36 fetched (the arcade sets under their rdb names among
+  them), 31 not on the server, ~1 min for the pass; a second scan makes no request.
 
 ### 4. What the user sees
 

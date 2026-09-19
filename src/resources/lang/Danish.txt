@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -79,6 +79,8 @@ failed=mislykkedes
 Failed to delete=Sletning mislykkedes
 Favorite Games=Favoritspil
 Favorite:=Favorit:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Slutresultat
 Flush covers=Ryd covers
@@ -96,8 +98,8 @@ Game History=Spilhistorik
 Game Manager=Spilbibliotek
 Game manager - Select game=Spilbibliotek - Vælg spil
 GAME OVER=SPILLET SLUT
-Games=
 games=spil
+Games=
 GFX Filter:=Grafik Filter:
 Go back=Tilbage
 Graphics=Grafik
@@ -108,8 +110,8 @@ HIGH SCORE=HØJESTE SCORE
 Hostname=
 In Game=I spillet
 In Retroarch Game=I RetroArch-spil
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne spil
 Kernel=
 Keyboard=

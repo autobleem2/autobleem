@@ -53,6 +53,12 @@ Config::Config() {
         inifile.values["raconfig"] = "true";
         aDefaultWasSet = true;
     }
+    // the scan may fetch missing box art (and the databases) from libretro's servers, where the platform
+    // has a download_command and the server answers; Options -> "Fetch box art online"
+    if (inifile.values["online"] == "") {
+        inifile.values["online"] = "true";
+        aDefaultWasSet = true;
+    }
     // the classic screens' font: the theme's, unless "themefont" is off and "font" names a .ttf/.otf from
     // retroarch/fonts, resources/fonts or the theme's own folder (Options -> Font; "--" is the theme's)
     if (inifile.values["themefont"] == "") {

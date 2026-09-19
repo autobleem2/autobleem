@@ -52,6 +52,7 @@ Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Mem
 | Widescreen, GFX Filter | pcsx-ab's display settings for every game. |
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
+| Fetch box art online | Whether the scan fetches missing covers (and RetroArch's databases, when there are none) from libretro's servers. Only on a platform that can (a Pi, a PC); one probe per scan decides whether there is a network, and a cover the server does not have is not asked for again. |
 | Showing Timeout | How long the notification lines stay (seconds; 0 = for ever). |
 | Language | Applied at once. |
 | Use Font from Theme / Font | Off, and the classic screens (this menu, the editors, the Game Manager) draw in the font chosen on the next row instead of the theme's: any `.ttf`/`.otf` in `retroarch/fonts`, `resources/fonts` or the theme's own folder. The launcher's fonts are the theme's regardless. Applied at once. |

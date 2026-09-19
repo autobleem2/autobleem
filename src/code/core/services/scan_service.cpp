@@ -7,6 +7,7 @@
 
 #include <ableem/engine/retroarch_cores.h>
 #include <ableem/engine/retroarch_scanner.h>
+#include <ableem/engine/thumbnail_lookup.h>
 
 #include <chrono>
 #include <iostream>
@@ -100,6 +101,16 @@ string ScanService::romsFolderAliasesPath() {
 //*******************************
 bool ScanService::romScanEnabled() {
     return Env::retroArchInstalled() && DirEntry::isDirectory(Env::getPathToRetroarchRomsDir());
+}
+
+//*******************************
+// ScanService::setOnline
+//*******************************
+void ScanService::setOnline(bool enabled, const OnlineAssets::Config &config, OnlineAssets::CommandRunner runner) {
+    lock_guard<mutex> lock(onlineMutex_);
+    onlineEnabled_ = enabled && !config.downloadCommand.empty();
+    onlineConfig_ = config;
+    onlineRunner_ = std::move(runner);
 }
 
 //*******************************
@@ -218,6 +229,17 @@ bool ScanService::checkForChanges() {
 // .info files are a few hundred small reads. The system table is what the service would answer - the same
 // .info mapping under the same platform cores.cfg.
 int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlistsWritten) {
+    // the online pass, when it is on and the network is there: the databases first, so the scan below
+    // can name the games, the box art after it (fetchBoxArt), for the names it settled on
+    unique_ptr<OnlineAssets> online;
+    {
+        lock_guard<mutex> lock(onlineMutex_);
+        if (onlineEnabled_)
+            online = make_unique<OnlineAssets>(onlineConfig_, onlineRunner_);
+    }
+    if (online)
+        online->ensureDatabases(Env::getPathToRetroarchRdbDir());
+
     ableem::CoreInfoTable cores;
     cores.load(Env::getPathToRetroarchDir(), RetroArchService::coresCfgPath());
 
@@ -232,7 +254,55 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
     PLOG_INFO << "RetroArch ROM scan: " << result.systemsScanned << " systems, " << result.gamesFound << " games ("
               << result.gamesIdentified << " named by a database), " << result.playlistsWritten.size()
               << " playlists written, " << result.unknownFolders.size() << " folders with no core";
+
+    if (online && !result.games.empty()) {
+        int fetched = fetchBoxArt(listener, *online, result.games);
+        if (fetched > 0) {
+            WorkerEvent event;
+            event.kind = WorkerEvent::Kind::BoxArtFetched;
+            event.boxArtFetched = fetched;
+            pushEvent(std::move(event));
+        }
+    }
     return result.gamesFound;
+}
+
+//*******************************
+// ScanService::fetchBoxArt
+//*******************************
+// One request per game without a cover on disk (this thread's own ThumbnailLookup says, with the fuzzy
+// fallback: a cover under a slightly different name is a cover). A server miss is remembered by
+// OnlineAssets, so a game whose box art libretro simply does not have costs one request ever; the network
+// going away mid-pass ends the pass.
+int ScanService::fetchBoxArt(Listener &listener, OnlineAssets &online,
+                             const vector<ableem::RetroArchScanResult::Game> &games) {
+    ableem::ThumbnailLookup thumbnails;
+    vector<const ableem::RetroArchScanResult::Game *> wanted;
+    for (const auto &game : games) {
+        if (thumbnails.findBoxArt(game.database, game.label).empty())
+            wanted.push_back(&game);
+    }
+    if (wanted.empty() || !online.probe())
+        return 0;
+
+    const string thumbnailsDir = Env::getPathToRetroarchThumbnailsDir();
+    int fetched = 0, missing = 0, index = 0;
+    for (const auto *game : wanted) {
+        index++;
+        listener.onScanProgress(ScanStage::FetchingBoxArt, game->label, index, static_cast<int>(wanted.size()));
+        OnlineAssets::BoxArt outcome = online.fetchBoxArt(thumbnailsDir, game->database, game->label);
+        if (outcome == OnlineAssets::BoxArt::Fetched)
+            fetched++;
+        else if (outcome == OnlineAssets::BoxArt::Missing)
+            missing++;
+        else if (outcome == OnlineAssets::BoxArt::Failed && !online.online())
+            break; // the network went
+        if (stopping_.load())
+            break;
+    }
+    PLOG_INFO << "Box art: " << fetched << " fetched, " << missing << " not on the server, of " << wanted.size()
+              << " games without one";
+    return fetched;
 }
 
 //*******************************
@@ -398,6 +468,10 @@ ScanUpdate ScanService::poll() {
                 retroArch_->reloadPlaylists();
             update.playlistsWritten.insert(update.playlistsWritten.end(), event.playlists.begin(),
                                            event.playlists.end());
+            break;
+
+        case WorkerEvent::Kind::BoxArtFetched:
+            update.boxArtFetched += event.boxArtFetched;
             break;
 
         case WorkerEvent::Kind::Finished: {

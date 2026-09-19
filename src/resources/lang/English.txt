@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 242
+# Untranslated: 0 / Total: 244
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -79,6 +79,8 @@ failed=failed
 Failed to delete=Failed to delete
 Favorite Games=Favorite Games
 Favorite:=Favorite:
+Fetch box art online:=Fetch box art online:
+Fetching box art=Fetching box art
 File:=File:
 Final score=Final score
 Flush covers=Flush covers
@@ -88,8 +90,8 @@ Frameskip:=Frameskip:
 Free=Free
 free of=free of
 Free space=Free space
-Game=Game
 GAME=GAME
+Game=Game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
@@ -108,8 +110,8 @@ HIGH SCORE=HIGH SCORE
 Hostname=Hostname
 In Game=In Game
 In Retroarch Game=In Retroarch Game
-Internal=Internal
 INTERNAL=INTERNAL
+Internal=Internal
 Internal Games=Internal Games
 Kernel=Kernel
 Keyboard=Keyboard

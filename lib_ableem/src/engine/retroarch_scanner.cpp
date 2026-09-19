@@ -424,8 +424,10 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
         int ours = 0;
         for (const RetroArchPlaylistEntry &entry : merged) {
             const string file = filePart(entry.path);
-            if (startsWith(file, targetFolder + "/") || startsWith(file, sourceFolder + "/"))
+            if (startsWith(file, targetFolder + "/") || startsWith(file, sourceFolder + "/")) {
                 ours++;
+                result.games.push_back({system.name, entry.label});
+            }
         }
         result.systemsScanned++;
         result.gamesFound += ours;

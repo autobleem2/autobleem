@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -79,6 +79,8 @@ failed=esuate
 Failed to delete=Stergere esuata
 Favorite Games=Jocuri Favorite
 Favorite:=Setari preferate:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Scor final
 Flush covers=Sterge cover-urile
@@ -96,8 +98,8 @@ Game History=Istoric Jocuri
 Game Manager=Manager jocuri
 Game manager - Select game=Manager jocuri - selecteaza joc
 GAME OVER=JOC TERMINAT
-Games=
 games=Jocuri
+Games=
 GFX Filter:=Filtru GFX:
 Go back=Inapoi
 Graphics=Grafica
@@ -108,8 +110,8 @@ HIGH SCORE=SCOR MAXIM
 Hostname=
 In Game=In joc
 In Retroarch Game=In jocul RetroArch
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Jocuri Interne
 Kernel=
 Keyboard=

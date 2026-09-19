@@ -8,7 +8,8 @@ bool Env::hiddenMenuEnabled = false;
 
 namespace {
 vector<string> retroArchBinaries_{"retroarch"};
-}
+string downloadCommand_;
+} // namespace
 
 //*******************************
 // Env::platformName
@@ -39,6 +40,16 @@ std::vector<std::string> Env::padMappingFiles() {
 //*******************************
 void Env::setRetroArchBinaries(const vector<string> &paths) {
     retroArchBinaries_ = paths;
+}
+
+//*******************************
+// Env::setDownloadCommand / downloadCommand
+//*******************************
+void Env::setDownloadCommand(const string &command) {
+    downloadCommand_ = command;
+}
+const string &Env::downloadCommand() {
+    return downloadCommand_;
 }
 const vector<string> &Env::retroArchBinaries() {
     return retroArchBinaries_;

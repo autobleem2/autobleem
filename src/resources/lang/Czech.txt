@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -79,6 +79,8 @@ failed=selhalo
 Failed to delete=Smazání selhalo
 Favorite Games=Oblíbené hry
 Favorite:=Oblíbené:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Konečné skóre
 Flush covers=Smazat obaly
@@ -96,8 +98,8 @@ Game History=Historie her
 Game Manager=Správce her
 Game manager - Select game=Správce her - Vybrat hru
 GAME OVER=KONEC HRY
-Games=
 games=hry
+Games=
 GFX Filter:=Grafický filtr:
 Go back=Zpět
 Graphics=Grafika
@@ -108,8 +110,8 @@ HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-Internal=Interní
 INTERNAL=INTERNÍ
+Internal=Interní
 Internal Games=Interní hry
 Kernel=
 Keyboard=

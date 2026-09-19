@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -79,6 +79,8 @@ failed=epäonnistui
 Failed to delete=Poisto epäonnistui
 Favorite Games=Suosikkipelit
 Favorite:=Suosikki:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Lopullinen pisteet
 Flush covers=Tyhjennä kannet
@@ -96,8 +98,8 @@ Game History=Pelihistoria
 Game Manager=Pelien hallinta
 Game manager - Select game=Pelien hallinta - Valitse peli
 GAME OVER=PELI PÄÄTTYI
-Games=
 games=pelit
+Games=
 GFX Filter:=GFX-Suodatin:
 Go back=Mene takaisin
 Graphics=Grafiikat
@@ -108,8 +110,8 @@ HIGH SCORE=PARAS TULOS
 Hostname=
 In Game=Pelissä
 In Retroarch Game=RetroArch pelissä
-Internal=Sisäinen
 INTERNAL=SISÄINEN
+Internal=Sisäinen
 Internal Games=Sisäiset Pelit
 Kernel=
 Keyboard=

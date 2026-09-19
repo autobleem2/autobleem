@@ -276,6 +276,9 @@ string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
         return _("Merging discs:") + " " + update.detail;
     case ScanStage::ScanningRoms:
         return _("Scanning ROMs") + " " + to_string(update.done) + "/" + to_string(update.total) + ": " + update.detail;
+    case ScanStage::FetchingBoxArt:
+        return _("Fetching box art") + " " + to_string(update.done) + "/" + to_string(update.total) + ": " +
+               update.detail;
     }
     return "";
 }
@@ -316,6 +319,14 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // set on screen
     if (!update.playlistsWritten.empty()) {
         refreshPlaylistNames();
+        if (selection.set == GameSet::RetroArch)
+            scanRosterChangedSinceReload = true;
+    }
+
+    // covers arrived from the server: the lookup's directory listings are stale, and the RetroArch set's
+    // carousel has covers to pick up (reloadGames() re-creates its textures)
+    if (update.boxArtFetched > 0) {
+        app.thumbnails().clearCache();
         if (selection.set == GameSet::RetroArch)
             scanRosterChangedSinceReload = true;
     }

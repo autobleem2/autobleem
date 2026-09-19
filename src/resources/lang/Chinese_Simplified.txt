@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 46 / Total: 242
+# Untranslated: 48 / Total: 244
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -79,6 +79,8 @@ failed=失败
 Failed to delete=删除失败
 Favorite Games=收藏游戏
 Favorite:=收藏：
+Fetch box art online:=
+Fetching box art=
 File:=文件：
 Final score=最终得分
 Flush covers=清除封面
@@ -96,8 +98,8 @@ Game History=游戏历史
 Game Manager=游戏管理器
 Game manager - Select game=游戏管理器 - 选择游戏
 GAME OVER=游戏结束
-Games=
 games=游戏
+Games=
 GFX Filter:=图像滤镜：
 Go back=返回
 Graphics=图形
@@ -108,8 +110,8 @@ HIGH SCORE=最高分
 Hostname=
 In Game=游戏中
 In Retroarch Game=RetroArch 游戏中
-Internal=内置
 INTERNAL=内置
+Internal=内置
 Internal Games=内置游戏
 Kernel=
 Keyboard=

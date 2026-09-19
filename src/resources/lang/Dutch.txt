@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -79,6 +79,8 @@ failed=mislukt
 Failed to delete=Verwijderen mislukt
 Favorite Games=Favoriete games
 Favorite:=Favoriet:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Eindscore
 Flush covers=Covers wissen
@@ -96,8 +98,8 @@ Game History=Game geschiedenis
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Selecteer game
 GAME OVER=GAME OVER
-Games=
 games=games
+Games=
 GFX Filter:=GFX Filter:
 Go back=Ga terug
 Graphics=Graphics
@@ -108,8 +110,8 @@ HIGH SCORE=HOOGSTE SCORE
 Hostname=
 In Game=In game
 In Retroarch Game=In RetroArch game
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne games
 Kernel=
 Keyboard=

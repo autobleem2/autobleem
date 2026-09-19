@@ -75,9 +75,14 @@ using ScannedRoms = std::vector<ScannedRom>;
 // RetroArchScanResult
 //******************
 struct RetroArchScanResult {
+    struct Game {
+        std::string database; // the playlist's stem = the thumbnails folder
+        std::string label;
+    };
     int systemsScanned = 0;
     int gamesFound = 0;                        // entries under the ROM folders, over every system
     int gamesIdentified = 0;                   // of those, the ones a database named
+    std::vector<Game> games;                   // the entries under the ROM folders, as the playlists have them
     std::vector<std::string> playlistsWritten; // "<system>.lpl" for every playlist whose content changed
     std::vector<std::string> unknownFolders;   // <roms>/<x> with no system in the table for it
 };

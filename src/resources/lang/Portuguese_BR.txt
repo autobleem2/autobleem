@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -79,6 +79,8 @@ failed=falharam
 Failed to delete=Falha ao excluir
 Favorite Games=Jogos Favoritos
 Favorite:=Favorito:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Pontuação final
 Flush covers=Atualizar capas
@@ -96,8 +98,8 @@ Game History=Histórico de Jogos
 Game Manager=Gerenciador de Jogos
 Game manager - Select game=Gerenciador de Jogos - Selecionar jogo
 GAME OVER=FIM DE JOGO
-Games=
 games=jogos
+Games=
 GFX Filter:=Filtro GFX:
 Go back=Voltar
 Graphics=Gráficos
@@ -108,8 +110,8 @@ HIGH SCORE=MELHOR PONTUAÇÃO
 Hostname=
 In Game=Em Jogo
 In Retroarch Game=No jogo RetroArch
-Internal=Interno
 INTERNAL=INTERNO
+Internal=Interno
 Internal Games=Jogos Internos
 Kernel=
 Keyboard=

@@ -164,6 +164,8 @@ add_library(ab_core STATIC
         src/code/core/services/retroarch.h
         src/code/core/services/scan_service.cpp
         src/code/core/services/scan_service.h
+        src/code/core/services/online_assets.cpp
+        src/code/core/services/online_assets.h
         src/code/core/services/system.cpp
         src/code/core/services/system.h
         src/code/core/services/system_info.cpp

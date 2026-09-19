@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -79,6 +79,8 @@ failed=zlyhalo
 Failed to delete=Nepodarilo sa odstrániť
 Favorite Games=Obľúbené hry
 Favorite:=Obľúbené
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Konečné skóre
 Flush covers=Zmazané obaly
@@ -96,8 +98,8 @@ Game History=História hry
 Game Manager=Správca hier
 Game manager - Select game=Správca hry - Vybrať hru
 GAME OVER=KONIEC HRY
-Games=
 games=hry
+Games=
 GFX Filter:=Grafický filter:
 Go back=Späť
 Graphics=Grafika
@@ -108,8 +110,8 @@ HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-Internal=Originálne
 INTERNAL=ORIGINÁLNE
+Internal=Originálne
 Internal Games=Originálne hry
 Kernel=
 Keyboard=

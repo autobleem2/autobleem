@@ -261,6 +261,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
     bool exitCode = option.exitCode;
 
     if (exitCode == 0) {
+        app.applyOnlineSetting(); // "Fetch box art online" may have changed
         freeAssets();
         loadAssets();
         app.session().resumingGui = false;

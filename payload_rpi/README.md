@@ -224,6 +224,11 @@ listed all the same. A playlist RetroArch wrote is kept and added to, never repl
 in a playlist by hand that points outside `roms/` stays. Only the folders named as above are scanned; a
 folder no installed core plays is skipped (the log says which).
 
+A game whose cover is not in `RetroArch/thumbnails/` is fetched from libretro's thumbnail server after
+the scan when the Pi is online (Options → "Fetch box art online", on by default); covers the server does
+not have are remembered and not asked for again. Without a network nothing happens beyond one quick check
+per scan.
+
 RetroArch's own scanner (*Import Content → Scan Directory* or *Manual Scan*) is still there and the two
 agree: the launcher keeps what RetroArch identified. It is the way to add things the launcher's scan does
 not cover - a DOS game's `.bat`, a ScummVM folder.

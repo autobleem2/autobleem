@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -79,6 +79,8 @@ failed=misslyckades
 Failed to delete=Kunde inte radera
 Favorite Games=Favoritspel
 Favorite:=Favorit:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Slutresultat
 Flush covers=Nollställ omslag
@@ -96,8 +98,8 @@ Game History=Spelhistorik
 Game Manager=Spelbibliotek
 Game manager - Select game=Spelbibliotek - Välj spel
 GAME OVER=SPELET ÄR SLUT
-Games=
 games=spel
+Games=
 GFX Filter:=Grafikfilter:
 Go back=Tillbaka
 Graphics=Grafik
@@ -108,8 +110,8 @@ HIGH SCORE=BÄSTA RESULTAT
 Hostname=
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interna spel
 Kernel=
 Keyboard=

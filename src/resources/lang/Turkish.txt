@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 53 / Total: 242
+# Untranslated: 55 / Total: 244
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -79,6 +79,8 @@ failed=başarısız
 Failed to delete=Silme başarısız oldu
 Favorite Games=Favori Oyunlar
 Favorite:=Favori:
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Son skor
 Flush covers=Kapakları temizle
@@ -96,8 +98,8 @@ Game History=Oyun Geçmişi
 Game Manager=Oyun Yöneticisi
 Game manager - Select game=Oyun yöneticisi - Oyun seçin
 GAME OVER=OYUN BİTTİ
-Games=
 games=oyun
+Games=
 GFX Filter:=GFX Filtresi:
 Go back=Geri dön
 Graphics=Grafik
@@ -108,8 +110,8 @@ HIGH SCORE=EN YÜKSEK SKOR
 Hostname=
 In Game=Oyun İçinde
 In Retroarch Game=RetroArch Oyununda
-Internal=Dahili
 INTERNAL=DAHILİ
+Internal=Dahili
 Internal Games=Dahili Oyunlar
 Kernel=
 Keyboard=

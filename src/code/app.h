@@ -45,6 +45,9 @@ public:
     // where covers and screenshots are in RetroArch's thumbnails tree; the launcher's own listing cache
     ableem::ThumbnailLookup &thumbnails() { return thumbnails_; }
     ScanService &scans() { return scans_; }
+    // hands the scan config.ini's "online" and the platform's download command - at start, and again
+    // whenever Options may have changed the setting
+    void applyOnlineSetting();
     Session &session() { return session_; }
 
 protected:

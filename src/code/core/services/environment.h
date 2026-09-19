@@ -49,6 +49,11 @@ struct Environment : ableem::Environment {
     static const std::vector<std::string> &retroArchBinaries();
     static bool retroArchInstalled();
 
+    // PlatformConfig's download_command: how this platform fetches a URL to a file (%u, %o), "" when it
+    // cannot - what OnlineAssets runs
+    static void setDownloadCommand(const std::string &command);
+    static const std::string &downloadCommand();
+
     // the gamecontrollerdb.txt files SDL's pad mappings come from, first existing wins: the kernel's
     // (/etc/autobleem on the console - what the pscbios wizard writes when it is there), then the shipped
     // one in the resources dir (what the wizard writes otherwise)

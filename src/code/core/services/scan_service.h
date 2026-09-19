@@ -6,6 +6,9 @@
 #pragma once
 
 #include "../model/ps_game.h"
+#include "online_assets.h"
+
+#include <ableem/engine/retroarch_scanner.h>
 
 #include <ableem/engine/game_library.h>
 #include <ableem/engine/game_scanner.h>
@@ -47,6 +50,8 @@ struct ScanUpdate {
     // RetroArchService has been told to reload them by the time poll() returns; the launcher re-reads
     // the playlist names and the set it is showing
     std::vector<std::string> playlistsWritten;
+
+    int boxArtFetched = 0; // covers the online pass brought in since the last poll (the launcher reloads them)
 
     bool finished = false; // a whole scan cycle completed during this poll
     int finishedGameCount = 0;
@@ -123,6 +128,13 @@ public:
     // RetroArch is installed and has ROM folders to scan - see the class comment
     static bool romScanEnabled();
 
+    // the online pass (OnlineAssets): the databases bundle before the ROM scan when there are none, the
+    // box art of every ROM without one after it. Off until enabled with a command to fetch with; the
+    // launcher sets it from config.ini's "online" and Env::downloadCommand() at start and after Options.
+    // runner is for the tests (OnlineAssets::CommandRunner), std::system otherwise.
+    void setOnline(bool enabled, const OnlineAssets::Config &config,
+                   OnlineAssets::CommandRunner runner = OnlineAssets::CommandRunner());
+
 private:
     //******************
     // ScannedGame
@@ -148,7 +160,15 @@ private:
     // one thing the worker wants the main thread to know about, tagged by kind; only the fields that kind
     // uses are meaningful, the rest sit at their default. See ScanService::poll().
     struct WorkerEvent {
-        enum class Kind { ScanStarted, Progress, GameVerified, GameFailedVerify, PlaylistsWritten, Finished };
+        enum class Kind {
+            ScanStarted,
+            Progress,
+            GameVerified,
+            GameFailedVerify,
+            PlaylistsWritten,
+            BoxArtFetched,
+            Finished
+        };
         Kind kind = Kind::Progress;
 
         std::vector<std::string> currentPaths; // ScanStarted: every game folder this scan found
@@ -162,6 +182,7 @@ private:
         std::string failedPath; // GameFailedVerify
 
         std::vector<std::string> playlists; // PlaylistsWritten: the "<system>.lpl" files that changed
+        int boxArtFetched = 0;              // BoxArtFetched
 
         ableem::GamesHierarchy hierarchy; // Finished
         ableem::UsbGames gamesToAddToDB;
@@ -179,9 +200,18 @@ private:
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
     // the ROM pass: every playlist a system folder yields, merged over what is there. Returns the game count.
     int scanRetroArchRoms(Listener &listener, std::vector<std::string> &playlistsWritten);
+    // the box art pass over the games the ROM pass listed; returns how many covers were fetched
+    int fetchBoxArt(Listener &listener, OnlineAssets &online,
+                    const std::vector<ableem::RetroArchScanResult::Game> &games);
 
     ableem::GameLibrary &library_;
     RetroArchService *retroArch_ = nullptr;
+
+    // what setOnline() gave, read by the worker at the start of each cycle
+    std::mutex onlineMutex_;
+    bool onlineEnabled_ = false;
+    OnlineAssets::Config onlineConfig_;
+    OnlineAssets::CommandRunner onlineRunner_;
 
     std::thread thread_;
     std::atomic<bool> stopping_{false};

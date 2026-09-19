@@ -1,4 +1,5 @@
 #include "app.h"
+#include "core/services/environment.h"
 #include "core/services/system.h"
 
 #include <iostream>
@@ -19,3 +20,12 @@ App::App(std::unique_ptr<ProcessRunner> runner) : AppBase("AutoBleem"), runner_(
 // App::~App
 //*******************************
 App::~App() = default;
+
+//*******************************
+// App::applyOnlineSetting
+//*******************************
+void App::applyOnlineSetting() {
+    OnlineAssets::Config online;
+    online.downloadCommand = Env::downloadCommand();
+    scans_.setOnline(cfg_.inifile.values["online"] == "true", online);
+}

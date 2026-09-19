@@ -142,6 +142,7 @@ int AutoBleem::run() {
 
     gui_->display(false);
 
+    applyOnlineSetting();
     scans().start();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();

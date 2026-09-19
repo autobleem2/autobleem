@@ -20,6 +20,7 @@ struct PlatformConfig {
     std::string retroarchCore = "cores/km_pcsx_rearmed_neon_libretro.so"; // relative to retroarchDir unless absolute
     std::vector<std::string> retroarchBinaries{"retroarch"}; // each relative to retroarchDir unless absolute
     std::string retroarchRomsDir = "roms"; // the other systems' ROM folders; relative to the USB root unless absolute
+    std::string downloadCommand; // fetches %u to %o, with its own timeout; "" = this platform cannot (the console)
 
     // the file for this build's platform, next to the other resources: <resourcesDir>/platform/<name>.ini
     static std::string pathFor(const std::string &resourcesDir, const std::string &platformName);

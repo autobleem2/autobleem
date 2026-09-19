@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 51 / Total: 242
+# Untranslated: 53 / Total: 244
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -79,6 +79,8 @@ failed=fracassats
 Failed to delete=Fracasset·z de suprimir
 Favorite Games=Jòcs favorits
 Favorite:=Favorits :
+Fetch box art online:=
+Fetching box art=
 File:=
 Final score=Marca finala
 Flush covers=Suprimir las cobèrturas
@@ -96,8 +98,8 @@ Game History=Istoric dels jòcs
 Game Manager=Gestionari de jòcs
 Game manager - Select game=Gestionari de jòcs - Causir un jòc
 GAME OVER=PARTIDA ACABADA
-Games=
 games=jòcs
+Games=
 GFX Filter:=Filtre GFX :
 Go back=Tornar
 Graphics=Grafics
@@ -108,8 +110,8 @@ HIGH SCORE=MELHOR MARCA
 Hostname=
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-Internal=Intèrna
 INTERNAL=INTÈRNA
+Internal=Intèrna
 Internal Games=Jòcs intèrnes
 Kernel=
 Keyboard=
