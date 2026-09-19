@@ -37,7 +37,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 7
+INDEX_VERSION = 8
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -52,13 +52,25 @@ RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64
 CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz$")
 
 
+# version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
+# (v2.0.0-pre0-933bd2f, v2.0.0-pre0-1ba1e84) differ only by a commit hash, which has no order - the one
+# published later is the newer one
+PUBLISHED_AT = {}
+
+
 def version_key(tag):
-    """v2.0.0-pre0-933bd2f -> sortable; a tag with a suffix sorts before the same version without one."""
+    """v2.0.0-pre0-933bd2f -> sortable; a tag with a suffix sorts before the same version without one;
+    a trailing commit hash is ignored and the publish time decides instead."""
     m = re.match(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-(.*))?$", tag)
     if not m:
-        return (0, 0, 0, 0, tag)
+        return (0, 0, 0, 0, tag, PUBLISHED_AT.get(tag, 0))
     major, minor, patch, suffix = m.groups()
-    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, suffix or "")
+    label = re.sub(r"-[0-9a-f]{7,40}$", "", suffix or "")
+    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, label, PUBLISHED_AT.get(tag, 0))
+
+
+def note_published(folder):
+    PUBLISHED_AT[os.path.basename(folder)] = os.path.getmtime(folder)
 
 
 def is_prerelease(tag):
@@ -146,6 +158,9 @@ def index_releases(repo, base_url):
     root = os.path.join(repo, "releases")
     releases = []
     if os.path.isdir(root):
+        for tag in os.listdir(root):
+            if os.path.isdir(os.path.join(root, tag)):
+                note_published(os.path.join(root, tag))
         for tag in sorted(os.listdir(root), key=version_key):
             folder = os.path.join(root, tag)
             if not os.path.isdir(folder) or not tag.startswith("v"):
@@ -200,6 +215,7 @@ def index_retroarch(repo, base_url):
             folder = os.path.join(root, tag)
             if not os.path.isdir(folder):
                 continue
+            note_published(folder)
             for path in data_files(folder):
                 m = RETROARCH_RE.match(os.path.basename(path))
                 if m:
@@ -256,6 +272,7 @@ def index_images(repo, base_url):
             folder = os.path.join(root, version)
             if not os.path.isdir(folder):
                 continue
+            note_published(folder)
             for path in data_files(folder):
                 m = IMAGE_RE.match(os.path.basename(path))
                 if m:
