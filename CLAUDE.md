@@ -463,16 +463,19 @@ silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh`
 install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
 pack shrinks to `scph5501.bin`/`scph5500.bin`.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
-`After=multi-user.target cloud-final.service userconfig.service`, `Conflicts=getty@tty1.service`,
-`StandardInput/Output=tty` on `/dev/tty1`) **owns the screen and keyboard for the first boot**, the way
-`autobleem.service` does later: the whole install is watched, not a silent journal-only job. The script
+`After=multi-user.target cloud-final.service userconfig.service`, `StandardInput/Output=tty` on
+**`/dev/tty8`**, its own VT, switched to with `chvt 8` and back with `chvt 1`) **owns the screen and keyboard
+for the first boot**, the way `autobleem.service` does later: the whole install is watched, not a silent
+journal-only job. It deliberately does *not* `Conflicts=getty@tty1.service`: a `Wants=`-pulled unit whose
+`Conflicts=` target is in the same boot transaction gets its job silently dropped (that first version never
+ran at all - nothing in the journal, `ConditionResult=no` never evaluated). The script
 waits up to 40 s for network; **with none it asks** - `rfkill unblock` + the WiFi country (default from
 `cmdline.txt`'s `cfg80211.ieee80211_regdom=`, else the locale; Raspberry Pi OS keeps WiFi soft-blocked
 until one is set, `raspi-config nonint do_wifi_country`), an `nmcli` scan listed by signal, pick / hidden
 SSID / "I plugged in Ethernet" / skip, password, `nmcli device wifi connect`, then a real fetch check -
 then waits for NTP (`timedatectl ... NTPSynchronized`), then runs `install.sh --yes` + the `autobleem.txt`
-options, output on tty1 and tee'd to `/var/log/autobleem-firstboot-install.log`. Failure or a skipped
-network question gives `getty@tty1` back and retries on the next boot (a counter caps it at 20, then it
+options, output on tty8 and tee'd to `/var/log/autobleem-firstboot-install.log`. Failure or a skipped
+network question switches back to tty1 (the login prompt) and retries on the next boot (a counter caps it at 20, then it
 disables itself and leaves a note); success deletes the staged package, disables the unit and reboots once
 more (boot splash and HDMI mode take effect on the boot after `install.sh` sets them). WiFi presets are not
 an AutoBleem key on purpose - Imager's screen and the boot partition's own `network-config` already are
@@ -504,11 +507,16 @@ URL and the `.sha256` check failed). **The first real boot of the first image** 
 presets) is what shaped the first-boot script above: the wizard asked for a keyboard layout, WiFi stayed
 rfkill-blocked with no country set, `autobleem-firstboot` ran `install.sh --yes` silently in the background
 with no network and died at `apt-get install` (`Temporary failure resolving 'deb.debian.org'`), leaving a
-login prompt and no clue on screen - hence tty1 ownership, the WiFi prompt, the NTP wait; and the root had
+login prompt and no clue on screen - hence the script's own VT, the WiFi prompt, the NTP wait; and the root had
 been grown over the whole card - hence the `resize` removal and `--grow-root`. `--grow-root`'s partition
-mechanics were proven on a mounted loop-device filesystem on the Pi; the rebuilt image is the next thing to
-flash. **Still to verify on hardware:** the interactive WiFi prompt end to end, a first boot with Imager's
-presets via the local manifest, `--grow-root` on a real card, and the whole install-then-reboot handoff.
+mechanics were proven on a mounted loop-device filesystem on the Pi. **The second flash** (arm64, via the
+local manifest with Imager's presets) went end to end: cloud-init applied the presets, the firstboot script
+took the screen on tty8, asked the RetroArch question, grew the root 2400 -> 8192 MiB, made the 110 GB exFAT
+data partition, built RetroArch, fetched cores + BIOS, rebooted into the launcher. Both `933bd2f` images
+(armhf and arm64, from the server's Docker packages) were then built on the Pi, re-mounted and checked, and
+sit in `build_rpi_image/` on the PC with a two-entry `os_list_local.rpi-imager-manifest`. **Still to verify
+on hardware:** the interactive WiFi prompt end to end (a flash without presets), and the armhf image's first
+boot at all.
 
 ### Raspberry Pi 64-bit (2026-09-18)
 
