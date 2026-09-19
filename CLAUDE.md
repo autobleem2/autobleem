@@ -424,6 +424,34 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
+**Flashable image for Raspberry Pi Imager** (2026-09-19, plan at `docs/rpi-image-and-update-plan.md`,
+implemented so far: **built and reviewed, not yet run on real hardware**). A second way to get AutoBleem
+onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh` takes an official Raspberry
+Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi Foundation's stable "latest"
+redirect, sha256-verified against its published checksum, or a local `--base`), loop-mounts it and injects
+an AutoBleem package plus `payload_rpi/system/autobleem-firstboot.{service,sh}` onto its root filesystem
+under `/opt/autobleem-image/` - **injection only**, deliberately: no chroot, no qemu, no package
+pre-install, nothing from the base image is ever executed at build time (`systemctl enable`'s effect is
+one hand-crafted symlink instead), so the same mechanism works for either architecture from either
+architecture's build host. Raspberry Pi Imager's own OS customisation (hostname, user, WiFi, SSH - cloud-init
+or firstrun.sh, whichever the base image's `init_format` is) is never touched by this, so it keeps working
+unmodified. `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/
+autobleem-image/.done`, ordered `After=multi-user.target` so it runs after that customisation has had its
+turn) runs `install.sh --yes` with its normal defaults on first boot; a Pi with no working network yet
+simply gets retried on the next boot (a counter caps it at 20 attempts, then it disables itself and leaves a
+note), which is the "first or second boot" story the idea in `docs/IDEAS.md` was scoped around. On success
+it deletes the staged package, disables itself and reboots once more, since the boot splash and HDMI mode
+only take full effect on the boot after `install.sh` sets them. `tools/rpi_imager_repo.json` is the checked-in
+template for Imager's "Use custom" -> local JSON / `--repo` metadata format; `make_rpi_image.sh` writes a
+filled-in copy (real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/
+`release_date`) to its output directory per architecture built, but deliberately leaves `url` (this repo has
+no publishing pipeline yet for hosting the `.img.xz`), `icon` and a `devices` filter as placeholders rather
+than guessed values - see the template's own `"//"` field. `payload_rpi/README.md`'s "Flashing with
+Raspberry Pi Imager" section has the walkthrough. **Still to do:** actually build and flash an image on the
+build host this project already uses over ssh (`docs`/CLAUDE.md's Pi 400 access), and verify Imager's own
+customisation and the first/second-boot handoff on real hardware - nothing here has run yet, same caveat as
+the 64-bit Pi port below when it landed.
+
 ### Raspberry Pi 64-bit (2026-09-18)
 
 A second Pi architecture, alongside the 32-bit port above, not a separate app target: `AB_PLATFORM_RPI` and

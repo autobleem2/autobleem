@@ -21,7 +21,8 @@ This is a port in progress. Be aware of what is and is not here:
 | BIOS | **downloaded by the installer**: a ~190 MB (armhf) or ~230 MB (arm64) pack (`system/biospack.txt` / `biospack-arm64.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py --arch armhf\|arm64`, one manifest per architecture's actual core list) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
 | RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
-| Tested on real hardware | **no.** Everything here is cross-compiled and reviewed but has not yet been run on a Pi. Treat the first install as an experiment, on a card you can afford to re-flash. |
+| Tested on real hardware | **yes**, on a Pi 400 (32-bit) since 2026-09-18: boots, scans, plays PS1 games and the other-systems RetroArch set, sound over HDMI. The 64-bit build compiles and packages cleanly but has not yet been run on a 64-bit Pi OS card. |
+| Flashing with Raspberry Pi Imager | `tools/make_rpi_image.sh` builds a flashable `.img.xz` with the install already staged to run on first/second boot - see "Flashing with Raspberry Pi Imager" below. **Not yet run on real hardware** - the manual tarball + `install.sh` flow above is the proven path. |
 
 ## What you need
 
@@ -83,6 +84,53 @@ before running it, or replace them afterwards — a re-run never overwrites them
 `--help` lists the options. The useful ones are `--shrink-root`, `--retroarch`, `--no-downloads`, `--no-bios`,
 `--no-packages`, `--stage`, `--hdmi-mode` (default `1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode),
 `--no-boot-splash` and `--no-quiet-boot`.
+
+## Flashing with Raspberry Pi Imager
+
+**Not yet run on real hardware** - built and reviewed the same way the rest of this port started (see the
+"Status" table above). The tarball + `install.sh` flow above is the proven path; this is a second, more
+convenient way to get to the same place, for someone who would rather flash a card once and have it finish
+setting itself up than run an installer over ssh.
+
+`tools/make_rpi_image.sh` takes an official Raspberry Pi OS Lite image (downloaded automatically, or your
+own with `--base`) and injects an AutoBleem package plus a first-boot service - nothing else about the base
+image is touched, so Raspberry Pi Imager's own OS customisation (hostname, user/password, WiFi, SSH, locale)
+keeps working exactly as it does for a stock image:
+
+```bash
+./make_rpi.sh   && ./tools/make_rpi_package.sh --arch armhf     # -> build_rpi/autobleem-rpi.tar.gz
+./make_rpi64.sh && ./tools/make_rpi_package.sh --arch arm64     # -> build_rpi64/autobleem-rpi-arm64.tar.gz
+
+# on a Linux host with root (losetup/mount) - the two tarballs above, copied over, are the only inputs:
+sudo ./tools/make_rpi_image.sh --arch armhf --package /path/to/autobleem-rpi.tar.gz
+sudo ./tools/make_rpi_image.sh --arch arm64 --package /path/to/autobleem-rpi-arm64.tar.gz
+```
+
+Each run downloads that architecture's current "latest" Raspberry Pi OS Lite image (sha256-verified against
+its published checksum), loop-mounts it, drops the package into `/opt/autobleem-image/` on its root
+filesystem alongside `autobleem-firstboot.service` (enabled by hand-crafting the same symlink `systemctl
+enable` would - no chroot, no qemu, nothing from the base image is ever executed at build time), and
+recompresses it to `<out>/autobleem-rpi-image-<arch>.img.xz`. `--dry-run` prints what it would do without
+downloading, mounting or needing root; `--help` lists every option (`--base`, `--work`, `--out`, `--keep-raw`).
+
+On first boot, once Raspberry Pi Imager's own customisation has had its turn, `autobleem-firstboot.service`
+runs `install.sh --yes` with its normal defaults (packages, RetroArch built from source, downloads, BIOS
+pack, boot splash - the same slow first-run work a manual install does). If there's no working network yet,
+it simply tries again on the next boot (up to 20 attempts) rather than failing outright - see
+`payload_rpi/system/autobleem-firstboot.sh`. Once it succeeds, it deletes the staged package, disables
+itself, and reboots once more so the boot splash and HDMI mode (which only take full effect on the boot
+after `install.sh` sets them) are in place from then on.
+
+Each run also writes/updates `<out>/rpi_imager_repo.json` - a copy of the checked-in
+`tools/rpi_imager_repo.json` template with this run's real `extract_size`/`extract_sha256`/
+`image_download_size`/`image_download_sha256`/`release_date` filled in for whichever architecture was just
+built (running it for both architectures into the same `--out` directory fills in both, without clobbering
+the other's entry). It is **not** ready to publish as-is: `url` (wherever you end up hosting the `.img.xz` -
+this repo has no publishing pipeline for that yet), `icon`, and, if wanted, a `devices` filter all still need
+filling in by hand - the template's own `"//"` field spells out why each was left as a placeholder rather
+than guessed. Point Raspberry Pi Imager at the filled-in file via "Use custom" -> a local JSON (or a hosted
+one via `--repo`) to get the OS customisation screen (hostname/WiFi/SSH/user) along with the flash; pointing
+it straight at the `.img.xz` file works too, just without that screen.
 
 ## The data partition
 
