@@ -201,6 +201,15 @@ plan above had not accounted for, all now in the implementation:
    `create_local_json.py` output) from the build's `rpi_imager_repo.json`, so a locally built image gets
    the user/WiFi/SSH screen.
 
+**The first armhf flash (2026-09-19, no presets)** got through the WiFi prompt (country, scan, password,
+connected) and died unpacking the package: "No space left on device". The 306 MB tarball sits on the
+still image-sized root and unpacks to 327 MB (the cover databases) *before* `install.sh --grow-root` could
+run; the arm64 flash had just enough free to get away with it. Since then the firstboot script extracts
+only `install.sh` first, runs it with `--grow-root N --grow-only` (a new flag: preflight + grow, then
+stop), checks the free space against the tarball's unpacked size (`gzip -l`), and only then unpacks the
+rest - behind an `.extracted` marker, so a half-unpacked tree from a failed attempt is removed rather
+than run on the retry (it used to skip the extraction whenever the directory existed).
+
 Still to verify on hardware after this: the interactive WiFi prompt end to end, a first boot with Imager
 presets through the local manifest, `--grow-root` on a real card, and the install-then-reboot handoff.
 

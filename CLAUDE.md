@@ -516,9 +516,14 @@ local manifest with Imager's presets) went end to end: cloud-init applied the pr
 took the screen on tty8, asked the RetroArch question, grew the root 2400 -> 8192 MiB, made the 110 GB exFAT
 data partition, built RetroArch, fetched cores + BIOS, rebooted into the launcher. Both `933bd2f` images
 (armhf and arm64, from the server's Docker packages) were then built on the Pi, re-mounted and checked, and
-sit in `build_rpi_image/` on the PC with a two-entry `os_list_local.rpi-imager-manifest`. **Still to verify
-on hardware:** the interactive WiFi prompt end to end (a flash without presets), and the armhf image's first
-boot at all.
+sit in `build_rpi_image/` on the PC with a two-entry `os_list_local.rpi-imager-manifest`. **The first armhf flash** (2026-09-19, no presets) answered the WiFi question - the prompt works - and then
+died unpacking the package: the 306 MB tarball is staged on the still image-sized root and unpacks to 327 MB
+(290 MB of cover databases), *before* `--grow-root` had run; arm64 had just enough free to get away with it.
+`autobleem-firstboot.sh` now extracts `install.sh` alone, runs it with `--grow-root N --grow-only` (preflight +
+grow, then stop - a no-op on a retry), checks the free space against `gzip -l`'s unpacked size, and only
+then unpacks the rest, behind an `.extracted` marker (a half-unpacked tree from a failed attempt is removed,
+not run). **Still to verify on hardware:** that fix on an armhf first boot (the image needs rebuilding
+on the Pi 400 first), the multi-kernel armhf boot splash, `--grow-root` from the firstboot script.
 
 ### Raspberry Pi 64-bit (2026-09-18)
 

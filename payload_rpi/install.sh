@@ -24,6 +24,7 @@ DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
 SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() (opt-in, it is destructive)
 GROW_ROOT_GIB=""                # --grow-root: grow a still-small root to this size first, see grow_root()
+GROW_ONLY=0                     # --grow-only: stop right after the root is grown (the first-boot script's use)
 STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, themes/, Games/, Apps/)
 DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
 DRY_RUN=0
@@ -100,6 +101,8 @@ Usage: sudo bash install.sh [options]
                        the first boot): grow it to GIB, online, and leave the rest for the data partition.
                        Capped so at least 2 GiB stay free for the data partition; a no-op when the root is
                        already that big.
+  --grow-only          do only that and stop - for a root too small to even unpack the package on
+                       (autobleem-firstboot.sh runs this before extracting the tarball, then the full install)
   --no-packages        skip apt - assume SDL2/RetroArch/exfatprogs are already installed
   --no-boot-config     do not touch cmdline.txt/config.txt
   --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
@@ -135,6 +138,7 @@ parse_args() {
             --stage)          STAGE_DIR="${2:?--stage needs a directory}"; shift 2 ;;
             --shrink-root)    SHRINK_ROOT_GIB="${2:?--shrink-root needs a size in GiB}"; shift 2 ;;
             --grow-root)      GROW_ROOT_GIB="${2:?--grow-root needs a size in GiB}"; shift 2 ;;
+            --grow-only)      GROW_ONLY=1; shift ;;
             --no-packages)    DO_PACKAGES=0; shift ;;
             --no-boot-config) DO_BOOT_CONFIG=0; shift ;;
             --no-quiet-boot)  QUIET_BOOT=0; BOOT_SPLASH=0; shift ;;
@@ -1272,6 +1276,11 @@ main() {
     parse_args "$@"
     preflight
     maybe_grow_root             # --grow-root: the root must have room before apt fills it
+    if [ "$GROW_ONLY" -eq 1 ]; then
+        [ -n "$GROW_ROOT_GIB" ] || die "--grow-only needs --grow-root GIB"
+        log "--grow-only: stopping here"
+        exit 0
+    fi
     install_packages
     ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data
