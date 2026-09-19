@@ -160,10 +160,11 @@ Still to do, in order:
    2026-09-19 by the Docker image's Stretch/gcc-6 toolchain (see "CI" under Build), and **that build has run
    on a console**: the launcher came up on the owner's PSC (stock kernel, a FAT32 stick) with every cover in
    place, PS1 and RetroArch alike. **The full console pass happened on 2026-09-19** (a stick made in a
-   Claude Desktop session, the owner at the console): sound, a PS1 launch through the new pcsx-ab and back,
-   the RetroArch set with playlists the offline ROM scan wrote on the PC (`UpdateRoms.exe` - the console
-   itself never fetches), and both console tools from the system menu - all as expected. The console is
-   no longer the untested target.
+   Claude Desktop session, the owner at the console): after the two fixes noted under Build, sound (ALSA),
+   a PS1 launch through the image's pcsx-ab and back, a Mega Drive game in RetroArch (RetroBoot 1.2) with
+   the RetroArch set from playlists the offline ROM scan wrote on the PC (`UpdateRoms.exe` - the console
+   itself never fetches), and both console tools (pscbios, abflashkit) from the system menu - all as
+   expected. The console is no longer the untested target.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
