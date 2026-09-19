@@ -607,6 +607,12 @@ EOF
 download_retroarch_content() {
     [ "$DO_DOWNLOADS" -eq 1 ] || { log "skipping the RetroArch cores and assets (--no-downloads)"; return 0; }
 
+    # one tarball from AutoBleem's download repository first (ci/build_cores.sh packs the same cores and
+    # bundles); the per-core download from buildbot below is the fallback, and what a re-run uses to fill in
+    if download_cores_tarball; then
+        return 0
+    fi
+
     local base=https://buildbot.libretro.com
     local cores_url="$base/nightly/linux/$RA_ARCH/latest"
     local tmp=/tmp/autobleem-ra
@@ -659,6 +665,59 @@ download_retroarch_content() {
         run rm -f "$tmp/$bundle.zip"
     done
     run rm -rf "$tmp"
+}
+
+#*******************************
+# download_cores_tarball
+#*******************************
+# <repo>/rpi/cores/latest.json names, per architecture, a tarball of every core plus the info/assets/
+# autoconfig/database/cheats/overlays/shaders bundles, laid out as the RetroArch tree - one download and one
+# unpack into RetroArch/ instead of ~130 requests. Only for a RetroArch/ that has no cores yet: a Pi that
+# already has some keeps them (RetroArch's Online Updater is the way to refresh), and the buildbot loop fills
+# in what is missing. Returns 1 whenever the buildbot path should run instead.
+download_cores_tarball() {
+    local latest="$DATA_MOUNT/.autobleem-tmp/cores-latest.json"
+    local url sha date
+    if [ -n "$(ls -A "$RA_ROOT/cores" 2>/dev/null)" ]; then
+        return 1
+    fi
+    command -v python3 >/dev/null 2>&1 || return 1
+    mkdir -p "$(dirname "$latest")"
+    log "RetroArch: asking $REPO_URL for the cores of $ARCH"
+    if ! wget -q -O "$latest" "$REPO_URL/rpi/cores/latest.json"; then
+        warn "cannot reach $REPO_URL/rpi/cores/latest.json - downloading the cores one by one instead"
+        return 1
+    fi
+    read -r url sha date < <(python3 - "$latest" "$ARCH" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+a = d.get(sys.argv[2]) or {}
+print(a.get("url", ""), a.get("sha256", ""), a.get("date", ""))
+PY
+    )
+    [ -n "$url" ] || { warn "the repository has no cores tarball for $ARCH"; return 1; }
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would download %s, check its sha256 and unpack it into %s\n' "$url" "$RA_ROOT"
+        return 0
+    fi
+    # on the data partition, not /tmp: the tarball is several hundred MB and the root is small
+    local tarball="$DATA_MOUNT/.autobleem-tmp/cores.tar.gz"
+    log "RetroArch: downloading the cores and assets of $date ($url)"
+    if ! wget -q --show-progress -O "$tarball.part" "$url" \
+       || [ "$(sha256sum "$tarball.part" | cut -d' ' -f1)" != "$sha" ]; then
+        warn "the download failed or its sha256 does not match - downloading the cores one by one instead"
+        rm -f "$tarball.part"
+        return 1
+    fi
+    mv -f "$tarball.part" "$tarball"
+    log "RetroArch: unpacking into $RA_ROOT"
+    if ! tar -xzf "$tarball" -C "$RA_ROOT" --no-same-owner --no-same-permissions; then
+        warn "could not unpack the cores tarball - downloading the cores one by one instead"
+        rm -f "$tarball"
+        return 1
+    fi
+    rm -rf "$DATA_MOUNT/.autobleem-tmp"
+    log "RetroArch: $(ls "$RA_ROOT/cores" | grep -c '_libretro\.so$') cores installed"
 }
 
 #*******************************
@@ -1162,10 +1221,40 @@ $STAGE_DIR/Autobleem/bin/autobleem
     [ -f "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" ] || warn "no pcsx-ab in the package - PS1 games will fall back
     to RetroArch's pcsx_rearmed core (no AutoBleem save states). Build it with pcsx-rearmed-develop/make_rpi.sh."
 
-    if ! ls "$STAGE_DIR/Autobleem/bin/db"/covers*.db >/dev/null 2>&1; then
-        warn "no cover databases in the package - AutoBleem will warn about this on every start, and scanned
-    games will have no title or cover art. Copy covers*.db into $DATA_MOUNT/Autobleem/bin/db/ and re-scan."
-    fi
+    install_cover_databases
+}
+
+#*******************************
+# install_cover_databases
+#*******************************
+# The three cover databases are 290 MB the package leaves out since 2026-09-19 (tools/make_rpi_package.sh
+# --with-covers puts them back); they come from the download repository's db/ instead, each checked against
+# its .sha256 there. Ones already on the data partition (a re-install, or a package that had them) are
+# kept. Without them the launcher still works: a game's title comes from the rdb and its cover from
+# thumbnails.libretro.com when online - the databases are the offline fallback.
+install_cover_databases() {
+    local db_dir="$DATA_MOUNT/Autobleem/bin/db" name url sha missing=0
+    mkdir -p "$db_dir"
+    for name in coversU.db coversP.db coversJ.db; do
+        [ -f "$db_dir/$name" ] && continue
+        # not behind --no-downloads: that flag is about RetroArch's cores, these are the launcher's own
+        url="$REPO_URL/db/$name"
+        if [ "$DRY_RUN" -eq 1 ]; then
+            printf '    would download %s into %s\n' "$url" "$db_dir"
+            continue
+        fi
+        log "Cover database: downloading $name"
+        sha="$(wget -q -O - "$url.sha256" 2>/dev/null | cut -d' ' -f1)"
+        if wget -q --show-progress -O "$db_dir/$name.part" "$url" \
+           && { [ -z "$sha" ] || [ "$(sha256sum "$db_dir/$name.part" | cut -d' ' -f1)" = "$sha" ]; }; then
+            mv -f "$db_dir/$name.part" "$db_dir/$name"
+        else
+            rm -f "$db_dir/$name.part"
+            missing=$((missing + 1))
+        fi
+    done
+    [ "$missing" -eq 0 ] || warn "$missing cover database(s) missing - titles and covers still come from the rdb and
+    thumbnails.libretro.com while online; re-run the installer for the offline fallback, or copy covers*.db into $db_dir/"
 }
 
 #*******************************

@@ -42,6 +42,7 @@ WORK_DIR=""              # --work: scratch space (downloaded/decompressed image,
 OUT_DIR=""               # --out: where the finished .img.xz and repo.json land (default: same as WORK_DIR)
 KEEP_RAW=0               # --keep-raw: don't delete the decompressed .img after recompressing
 VERSION=""               # --version: what to name the image after; default: the package's VERSION file
+REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: where tools/repo_publish.sh image puts it
 DRY_RUN=0
 
 #*******************************
@@ -72,6 +73,9 @@ Usage: sudo ./tools/make_rpi_image.sh --arch armhf|arm64 --package PATH [options
                        (default: ./build_rpi_image)
   --out DIR            where the finished .img.xz and repo.json land (default: same as --work)
   --keep-raw           keep the decompressed .img after recompressing (default: deleted to save space)
+  --repo URL           the download repository the image will be published to - what the Imager JSON's
+                       url and icon fields point at (default: AB_REPO_URL or AutoBleem's; the JSON is
+                       laid out as tools/repo_publish.sh image puts things: rpi-imager/images/<version>/)
   --version V          name the image autobleem-V-rpi-<arch>.img.xz (default: the VERSION file inside the
                        package, which tools/make_rpi_package.sh writes from the build's version.h)
   --dry-run            print what would happen and change nothing (no download, no mount, no root needed)
@@ -94,6 +98,7 @@ parse_args() {
             --out)      OUT_DIR="${2:?--out needs a directory}"; shift 2 ;;
             --keep-raw) KEEP_RAW=1; shift ;;
             --version)  VERSION="${2:?--version needs a value}"; shift 2 ;;
+            --repo)     REPO_URL="${2:?--repo needs a URL}"; shift 2 ;;
             --dry-run)  DRY_RUN=1; shift ;;
             -h|--help)  usage; exit 0 ;;
             *)          usage; die "unknown option: $1" ;;
@@ -408,7 +413,9 @@ update_repo_json() {
 
     ARCH="$ARCH" EXTRACT_SIZE="$EXTRACT_SIZE" EXTRACT_SHA256="$EXTRACT_SHA256" \
     DOWNLOAD_SIZE="$DOWNLOAD_SIZE" DOWNLOAD_SHA256="$DOWNLOAD_SHA256" \
-    RELEASE_DATE="$BASE_RELEASE_DATE" VERSION="$VERSION" OUT_JSON="$out_json" python3 - <<'PYEOF'
+    RELEASE_DATE="$BASE_RELEASE_DATE" VERSION="$VERSION" OUT_JSON="$out_json" \
+    IMAGE_URL="$REPO_URL/rpi-imager/images/${VERSION:-unversioned}/$(basename "$OUT_IMG")" \
+    ICON_URL="$REPO_URL/rpi-imager/icon.png" python3 - <<'PYEOF'
 import json, os, re
 
 path = os.environ["OUT_JSON"]
@@ -424,6 +431,10 @@ for entry in data["os_list"]:
         entry["extract_sha256"] = os.environ["EXTRACT_SHA256"]
         entry["image_download_size"] = int(os.environ["DOWNLOAD_SIZE"])
         entry["image_download_sha256"] = os.environ["DOWNLOAD_SHA256"]
+        # where tools/repo_publish.sh image will put it (repo_index.py fills these in again from what it
+        # finds, so a different --repo at publish time still ends up right)
+        entry["url"] = os.environ["IMAGE_URL"]
+        entry["icon"] = os.environ["ICON_URL"]
         if os.environ["RELEASE_DATE"]:
             entry["release_date"] = os.environ["RELEASE_DATE"]
         if os.environ["VERSION"]:

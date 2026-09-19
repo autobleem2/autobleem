@@ -11,6 +11,7 @@ Reads what is there (docs/repo-server-plan.md has the layout) and writes:
     releases/latest.json               the newest stable release's release.json
     releases/unstable.json             the one pre-release kept, same shape
     rpi/retroarch/latest.json          the newest RetroArch build per architecture
+    rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
@@ -36,7 +37,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 6
+INDEX_VERSION = 8
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -48,15 +49,28 @@ PACKAGE_KINDS = [
 ]
 IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-rpi-(?P<arch>armhf|arm64)\.img\.xz$")
 RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64)\.tar\.gz$")
+CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz$")
+
+
+# version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
+# (v2.0.0-pre0-933bd2f, v2.0.0-pre0-1ba1e84) differ only by a commit hash, which has no order - the one
+# published later is the newer one
+PUBLISHED_AT = {}
 
 
 def version_key(tag):
-    """v2.0.0-pre0-933bd2f -> sortable; a tag with a suffix sorts before the same version without one."""
+    """v2.0.0-pre0-933bd2f -> sortable; a tag with a suffix sorts before the same version without one;
+    a trailing commit hash is ignored and the publish time decides instead."""
     m = re.match(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-(.*))?$", tag)
     if not m:
-        return (0, 0, 0, 0, tag)
+        return (0, 0, 0, 0, tag, PUBLISHED_AT.get(tag, 0))
     major, minor, patch, suffix = m.groups()
-    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, suffix or "")
+    label = re.sub(r"-[0-9a-f]{7,40}$", "", suffix or "")
+    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, label, PUBLISHED_AT.get(tag, 0))
+
+
+def note_published(folder):
+    PUBLISHED_AT[os.path.basename(folder)] = os.path.getmtime(folder)
 
 
 def is_prerelease(tag):
@@ -144,6 +158,9 @@ def index_releases(repo, base_url):
     root = os.path.join(repo, "releases")
     releases = []
     if os.path.isdir(root):
+        for tag in os.listdir(root):
+            if os.path.isdir(os.path.join(root, tag)):
+                note_published(os.path.join(root, tag))
         for tag in sorted(os.listdir(root), key=version_key):
             folder = os.path.join(root, tag)
             if not os.path.isdir(folder) or not tag.startswith("v"):
@@ -198,6 +215,7 @@ def index_retroarch(repo, base_url):
             folder = os.path.join(root, tag)
             if not os.path.isdir(folder):
                 continue
+            note_published(folder)
             for path in data_files(folder):
                 m = RETROARCH_RE.match(os.path.basename(path))
                 if m:
@@ -213,6 +231,37 @@ def index_retroarch(repo, base_url):
 
 
 #*******************************
+# cores tarballs
+#*******************************
+def index_cores(repo, base_url):
+    """rpi/cores/<arch>/cores-<arch>-<date>.tar.gz - the newest per architecture, the rest deleted."""
+    root = os.path.join(repo, "rpi", "cores")
+    latest = {}
+    for arch in ("armhf", "arm64"):
+        folder = os.path.join(root, arch)
+        dated = {}
+        for path in data_files(folder):
+            m = CORES_RE.match(os.path.basename(path))
+            if m and m.group("arch") == arch:
+                dated[m.group("date")] = path
+        if not dated:
+            continue
+        newest = max(dated)
+        for date, path in dated.items():
+            if date != newest:
+                print("pruning cores tarball %s" % os.path.basename(path))
+                os.remove(path)
+                if os.path.isfile(path + ".sha256"):
+                    os.remove(path + ".sha256")
+        entry = file_entry(repo, base_url, dated[newest])
+        entry["date"] = newest
+        latest[arch] = entry
+    if latest:
+        write_json(os.path.join(root, "latest.json"), latest)
+    return latest
+
+
+#*******************************
 # Raspberry Pi images
 #*******************************
 def index_images(repo, base_url):
@@ -223,6 +272,7 @@ def index_images(repo, base_url):
             folder = os.path.join(root, version)
             if not os.path.isdir(folder):
                 continue
+            note_published(folder)
             for path in data_files(folder):
                 m = IMAGE_RE.match(os.path.basename(path))
                 if m:
@@ -307,7 +357,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
 
-def render_index(base_url, releases, builds, images, dbs):
+def render_index(base_url, releases, builds, cores, images, dbs):
     e = html.escape
 
     def row(label, f, cls="dl"):
@@ -379,6 +429,17 @@ def render_index(base_url, releases, builds, images, dbs):
             f = builds[newest].get(arch)
             if f:
                 out.append(row(arch, f))
+        out.append("</table></div>")
+
+    if cores:
+        out.append("<div class=\"panel\"><h2>RetroArch cores for the Pi installer</h2>"
+                   "<p>Every core libretro's buildbot has for the architecture, with the info, assets, autoconfig, "
+                   "database, cheats, overlays and shaders bundles - one download instead of ~130 "
+                   "(<a href=\"/rpi/cores/latest.json\">latest.json</a>).</p><table>")
+        for arch in ("armhf", "arm64"):
+            f = cores.get(arch)
+            if f:
+                out.append(row("%s, %s-%s-%s" % (arch, f["date"][:4], f["date"][4:6], f["date"][6:]), f))
         out.append("</table></div>")
 
     if dbs:
@@ -528,16 +589,17 @@ def main():
 
     releases = index_releases(repo, base_url)
     builds = index_retroarch(repo, base_url)
+    cores = index_cores(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, images, dbs)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d image sets, %d databases" % (
-        repo, len(releases), len(builds), len(images), len(dbs)))
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d image sets, %d databases" % (
+        repo, len(releases), len(builds), len(cores), len(images), len(dbs)))
 
 
 if __name__ == "__main__":

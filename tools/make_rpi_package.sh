@@ -9,6 +9,7 @@
 #   ./tools/make_rpi_package.sh --arch arm64
 #                                      # -> build_rpi64/autobleem-rpi-arm64.tar.gz
 #
+#   ./tools/make_rpi_package.sh --with-covers   # the cover databases inside (290 MB) instead of fetched
 #   ./tools/make_rpi_package.sh --push [user@host]
 #                                      # ...and scp it to the Pi's home (default: $AB_PI_HOST, else
 #                                      # pi@raspberrypi.local), the way make_psc.sh talks to its build server
@@ -26,10 +27,13 @@ set -euo pipefail
 
 ARCH=armhf
 PUSH_TO=""
+COVERS_IN_PACKAGE=0   # --with-covers: the 290 MB of cover databases inside (the installer fetches them otherwise)
 while [ $# -gt 0 ]; do
     case "$1" in
         --arch)
             ARCH="${2:?--arch needs armhf or arm64}"; shift 2 ;;
+        --with-covers)
+            COVERS_IN_PACKAGE=1; shift ;;
         --push)
             PUSH_TO="${AB_PI_HOST:-pi@raspberrypi.local}"
             if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then PUSH_TO="$2"; shift; fi
@@ -116,11 +120,15 @@ fi
 # themes: the converted theme.json layout, the same ones the console's payload ships
 cp -a "$REPO/payload/themes/." "$STAGE/themes/"
 
-# cover art databases: the Docker image's copy (AB_COVERS_DB_DIR, see docker/), else the checkout's db/ -
-# git-ignored, so a clean checkout has only stubs (or nothing); the installer says so on the Pi rather
-# than failing.
+# cover art databases: not in the package by default since 2026-09-19 - they are 290 MB of the 306, and
+# install.sh downloads them from the download repository (docs/repo-server-plan.md, step 7; a Pi needs
+# the network for its install anyway). --with-covers puts them in: the Docker image's copy
+# (AB_COVERS_DB_DIR, see docker/), else the checkout's db/ - git-ignored, so a clean checkout has only
+# stubs (or nothing); the installer says so on the Pi rather than failing.
 COVERS="${AB_COVERS_DB_DIR:-$REPO/db}"
-if ls "$COVERS"/covers*.db >/dev/null 2>&1; then
+if [ "$COVERS_IN_PACKAGE" -eq 0 ]; then
+    echo "    (cover databases left out - install.sh fetches them; --with-covers includes them)"
+elif ls "$COVERS"/covers*.db >/dev/null 2>&1; then
     cp -a "$COVERS"/covers*.db "$STAGE/Autobleem/bin/db/"
 else
     echo "    (no db/covers*.db to include - scanned games will have no titles or covers)"

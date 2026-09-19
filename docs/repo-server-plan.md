@@ -72,7 +72,7 @@ build server serves and that anything with `wget`/`curl` can read:
 
 ```
 autobleem-repo/
-  index.html                         generated (tools/repo_index.py)
+  index.html, rpi-install.html      generated (tools/repo_index.py); assets/ for them (hero, font, icon)
   releases/
     latest.json                      the newest stable release: {"version": "v2.0.0", "date": ..., "files": {"psc": {"url","sha256","size"}, "rpi", "rpi64", "win", "updateroms"}}
     unstable.json                    the one pre-release kept, same shape
@@ -87,91 +87,34 @@ autobleem-repo/
       v1.22.2/
         retroarch-v1.22.2-armhf.tar.gz   a `make DESTDIR=... install` of /usr/local + DEPENDS (runtime packages)
         retroarch-v1.22.2-arm64.tar.gz
+    cores/
+      latest.json                    {"armhf": {"url","sha256","date"}, "arm64": {...}}
+      armhf/cores-armhf-<YYYYMMDD>.tar.gz   every core + info/assets/autoconfig/database/cheats/overlays/shaders,
+      arm64/cores-arm64-<YYYYMMDD>.tar.gz   laid out as the RetroArch tree, plus cores.manifest; newest kept
   db/
-    coversU.db coversP.db coversJ.db + .sha256   the cover databases, unchanged since 2020
+    coversU.db coversP.db coversJ.db + .sha256   the cover databases, unchanged since 2020 - what a Pi
+                                     install fetches (the Pi package leaves them out since step 7)
 ```
 
 ## Steps
 
-Each step is its own feature branch and commit (gitflow), each proven before the next.
+Each step is its own feature branch and commit (gitflow), each proven before the next. **Done steps are
+removed from here** (the owner's rule); what they built is described in CLAUDE.md's "The download
+repository" paragraphs and in the tools' own headers:
 
-**Status 2026-09-19:** steps 1-4 are done and live at `https://autobleem.retromenele.pl/` (the `A` record
-went in that evening; Caddy had its certificate seconds after a restart reset its retry backoff): the page and the Pi manual,
-the assets, the three cover databases, the `933bd2f` image set, and RetroArch v1.22.2 for both
-architectures - cross-built in the image, installed on the Pi 400 (Trixie) by `install.sh --retroarch
-prebuilt` in a couple of minutes, every library resolving, and **playing a NES game from the carousel**
-(the owner, on the TV). Steps 5-7 are open. Images can be built again now that the domain exists (the
-owner held them back until then: an image bakes the repository's URL into its installer).
-
-### Step 1 - the server (S) - done
-
-`docker/repo/compose.yml` (`caddy:2`, ports `443:443` and `9090:9090`, `./Caddyfile`, the repo directory
-read-only at `/srv/repo`, named volumes for `/data` and `/config` so the certificate survives a
-recreate) and `docker/repo/Caddyfile`: one site `autobleem.retromenele.pl` with
-`tls { issuer acme { disable_http_challenge } }` (TLS-ALPN-01 only - port 80 is the host's nginx), one
-`http://:9090`, both `root * /srv/repo` + `file_server browse` with `hide .*`, `Cache-Control` short on
-`*.json` and `index.html`, long on the versioned folders. `docker compose up -d` on the server as `claude`.
-Prove: `curl -sI http://212.71.244.78:9090/` from the PC at once; `https://autobleem.retromenele.pl/`
-once the `A` record resolves (Caddy fetches the certificate on the first request for the name - `docker
-compose logs` shows the ACME exchange). The runner compose gets the same bind mount
-(`/home/claude/autobleem-repo` at the same path inside).
-
-### Step 2 - publish + index tools (S) - done
-
-Landing page styled after the ab2 theme (its background with the logo as the hero, the navy/cyan palette,
-Selawik Light), assets staged from `payload/themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png`
-is the emblem cut out for the favicon and Imager). `tools/repo_index.py` runs on the server from
-`<repo>/.tools/`.
-
-`tools/repo_publish.sh <kind> <files...>` - `kind` is `release <version>`, `image <version>`, `retroarch
-<version>`, `db` - rsyncs over `ssh psc-build` into the right folder, writes the `.sha256` sidecars, then
-runs `tools/repo_index.py` on the server (python3 is there) to regenerate `latest.json`s and
-`index.html`. Run from the PC (MSYS2), from the Pi (the images), or on the server itself (`--local`, what
-the CI job does). `--prune` for the image retention. Prove: publish the current `db/` (the real cover DBs
-from the Docker image's `/opt/autobleem/db`) and the two `933bd2f` images from the Pi.
-
-### Step 3 - prebuilt RetroArch (M) - done
-
-The cross build worked first time: RetroArch's `qb` configure takes `CROSS_COMPILE` and
-`PKG_CONFIG_LIBDIR`. FLAC is disabled (its soname differs between Bookworm and Trixie); the `DEPENDS`
-list is derived with `objdump -p` + `dpkg -S` (asked for both `/usr/lib/<triplet>/` and `/lib/<triplet>/`
-- dpkg knows glibc and liblzma by the latter on a merged-usr system). The build-deps are a `retroarch`
-stage after `psc` in the Dockerfile, so adding them rebuilt no toolchain. What the installer turned up:
-`pkg_first_available` used `apt-cache show`, which succeeds silently for a virtual name (`libasound2` on
-Trixie is only Provided by `libasound2t64`) - it checks for an installation candidate now.
-
-`ci/build_retroarch.sh <armhf|arm64> [tag]` **inside the Docker image**, cross-compiled - the image already
-has `crossbuild-essential-armhf/-arm64` and the multiarch SDL2 dev packages; it gains the rest of
-`install.sh`'s build-dep list as `:armhf`/`:arm64` (`libasound2-dev libudev-dev libusb-1.0-0-dev libgbm-dev
-libdrm-dev libegl-dev libgles-dev libfreetype-dev zlib1g-dev libxml2-dev libflac-dev`). Same `./configure`
-flags as `install.sh` (KMS/EGL/GLES, udev, ALSA, SDL2, networking; no X11/Wayland/Qt/ffmpeg) with
-`CROSS_COMPILE=arm-linux-gnueabihf-`, `PKG_CONFIG_LIBDIR` pointed at the multiarch dir, `make
-DESTDIR=<stage> install`, plus a `DEPENDS` file (the runtime packages, from `ldd` + `dpkg -S` over the
-staged binary) and `VERSION`. Built against the image's Bookworm libraries, so it runs on Bookworm and
-Trixie Pi OS alike (a binary built on the older glibc runs on the newer). Output
-`retroarch-<tag>-<arch>.tar.gz`; `--latest` asks GitHub for the newest `v*` tag as `install.sh` does.
-
-If RetroArch's `qb` configure fights the cross pkg-config (it is not the buildbot's preferred path), the
-fallback is the same script under `docker run --platform linux/arm/v7 debian:bookworm` with
-`qemu-user-static` - slow (an hour or two on the server's 2 cores) but RetroArch releases monthly, and it
-is exactly what the Pi does natively. Decide by trying the cross build first.
-
-Prove on the Pi 400: untar over `/`, `apt-get install` the `DEPENDS`, start the launcher, play a Genesis
-game and a PS1 game through RetroArch. Then `tools/repo_publish.sh retroarch v1.22.2 ...`. A `retroarch.yml`
-workflow (`workflow_dispatch` + a monthly schedule, self-hosted) builds and publishes the newest tag.
-
-### Step 4 - the installer uses it (M) - done
-
-`install.sh --retroarch prebuilt|source|apt|none`, **`prebuilt` the new default**: read
-`$REPO/rpi/retroarch/latest.json`, download the matching architecture's tarball (`.part`, sha256 checked,
-skipped when `/usr/local/share/autobleem/retroarch.version` already says that version), untar into `/`,
-`apt-get install` the `DEPENDS` list (no build-essential, no `-dev` packages), write the version stamp.
-`--repo URL` and `autobleem.txt`'s `repo=` override the base URL. **Falls back to `source`** when the repo
-is unreachable or has no build for this architecture - the installer must keep working with the server
-down. The first-boot script's RetroArch question text changes from "10-40 minute build" to "a download".
-`payload_rpi/README.md` and CLAUDE.md's Pi section follow.
-
-Prove: a fresh install on the Pi 400 with `--retroarch prebuilt`, timed against today's build.
+- 1-2: the Caddy server (`docker/repo/`), `tools/repo_publish.sh` + `tools/repo_index.py` + `repo_assets.py`,
+  the ab2 page and the Pi manual - live at `https://autobleem.retromenele.pl/` since 2026-09-19.
+- 3-4: `ci/build_retroarch.sh` (RetroArch cross-built in the image) and `install.sh --retroarch prebuilt`
+  as the default - verified on the Pi 400.
+- 6: Imager's repository URL (`rpi-imager/os_list.json`; `make_rpi_image.sh --repo` fills `url`/`icon`),
+  in the README - 2026-09-19.
+- 7: the Pi package without the cover databases (`make_rpi_package.sh` leaves them out, `--with-covers`
+  puts them back; `install.sh`'s `install_cover_databases` fetches them from `db/`, sha256-checked, not
+  behind `--no-downloads`) - 2026-09-19, the owner's call.
+- 8: `ci/build_cores.sh` (the cores and bundles downloaded from buildbot, packed as
+  `rpi/cores/<arch>/cores-<arch>-<date>.tar.gz`, newest kept) and `install.sh`'s `download_cores_tarball`
+  (one download into a `RetroArch/` with no cores yet; the buildbot loop is the fallback and the re-run
+  path) - 2026-09-19.
 
 ### Step 5 - CI publishes (S)
 
@@ -179,44 +122,10 @@ Prove: a fresh install on the Pi 400 with `--retroarch prebuilt`, timed against 
 <tag> dist/*/…` inside the runner (the bind mount from step 1), so a tag lands on the repo and as a GitHub
 draft release in one run. `latest.json` is only rewritten by a non-prerelease tag. The Docker image build
 (`docker/build-image.sh`, `image.yml`) takes the cover databases from `$AB_REPO_URL/db/` when
-`AB_COVERS_DIR` is unset - with that, `image.yml` can run on a GitHub-hosted runner too.
-
-### Step 6 - Raspberry Pi Imager (S)
-
-`tools/rpi_imager_repo.json`'s placeholders become real: `url` = `$AB_REPO_URL/rpi-imager/images/<v>/…`,
-`icon` = `$AB_REPO_URL/rpi-imager/icon.png` (a 128x128 PNG of the logo, added to `tools/`), `devices`
-per architecture (`pi3-32bit`, `pi4-32bit`, `pi400-32bit`, `pi5-32bit`, `pizero2-32bit` and the `-64bit`
-set). `make_rpi_image.sh` writes the JSON with the URL it is given (`--repo`), `tools/repo_publish.sh image`
-uploads the images and installs the JSON as `rpi-imager/os_list.json`. `payload_rpi/README.md`'s
-"Flashing with Raspberry Pi Imager" gets the one-liner: *Imager → App Options → Content Repository →
-`https://autobleem.retromenele.pl/rpi-imager/os_list.json`* (or `rpi-imager --repo <that URL>`) - no
-local manifest needed any more; `tools/rpi_imager_local_manifest.py` stays for offline builds.
-
-Prove: Imager on the PC lists both images from the URL and flashes the armhf one with presets.
-
-### Step 7 (optional, the owner's call) - the Pi package without the cover databases (S)
-
-The Pi tarball is 306 MB, 290 MB of it the cover databases - the very thing that overflowed the image's
-root on 2026-09-19. With `db/` on the repo, `make_rpi_package.sh --no-covers` ships without them and
-`install.sh`'s `install_payload` fetches `coversU/P/J.db` by sha256 from `$REPO/db/` when
-`Autobleem/bin/db/` is empty (the launcher already tolerates their absence - it shows `default.png`). The
-image's staged package drops to ~16 MB and the first boot needs no extra root growth for it. The console
-zip keeps its databases (a console has no network). Not done until the owner says so - it makes a Pi
-install depend on the repo for its covers.
-
-### Step 8 - the cores as one tarball per architecture (S) - the owner's idea, 2026-09-19
-
-`download_retroarch_content()` makes ~130 requests to `buildbot.libretro.com` (one zip per core) plus the
-seven bundles, on every install, and gets whatever the nightly has that day. Instead: `ci/build_cores.sh
-<armhf|arm64>` (in the image or on the server, no compiling - it downloads the same things once) packs
-`cores/*.so` + `info/` and the `assets/autoconfig/database-rdb/database-cursors/cheats/overlays/
-shaders_glsl` bundles as `rpi/cores/<arch>/cores-<arch>-<YYYYMMDD>.tar.gz` (~300 MB armhf, more for
-arm64 with its 222 cores) with a `CORES` manifest (name, size, sha256 of each `.so`) and publishes it
-(`tools/repo_publish.sh cores <arch> <date> ...`; newest kept, like RetroArch). `install.sh`'s
-`download_retroarch_content` fetches `rpi/cores/latest.json`, downloads the one tarball (`.part`, sha256)
-and unpacks it into `RetroArch/`, falling back to the per-core buildbot download when the repository is
-unreachable. A `cores.yml` workflow refreshes it monthly next to `retroarch.yml`. The set is then a known
-quantity per release - a core that breaks on the Pi (picodrive's Cyclone) can be left out at the source.
+`AB_COVERS_DIR` is unset - with that, `image.yml` can run on a GitHub-hosted runner too. Two more jobs on a
+schedule and `workflow_dispatch`: `retroarch.yml` (`ci/build_retroarch.sh` + publish) and `cores.yml`
+(`ci/build_cores.sh` + publish), monthly. **The owner does not want a pre-release published from the server
+yet** (2026-09-19) - the job is written so a tag does it, and the first run is the owner's call.
 
 ### Step 9 - images built on the server, rootless (M) - agreed 2026-09-19
 
@@ -239,15 +148,9 @@ run then yields the five packages *and* the two images, published together.
 ## Out of scope
 
 - DNS: the owner's, on the Netlify side (one `A` record).
-- Mirroring libretro's cores, assets, thumbnails or RetroBIOS: they stay at their sources; the installer
-  and the launcher's `OnlineAssets` keep their URLs.
+- Mirroring libretro's thumbnails or RetroBIOS: they stay at their sources (the cores and bundles are
+  mirrored as one tarball, step 8 - done); the launcher's `OnlineAssets` keeps its URLs.
 - An "update available" check in the launcher, and the fast in-place Pi update (IDEAS.md): both would read
   `releases/latest.json` - this repository is their prerequisite, not their implementation.
 - Uploads through HTTP, accounts, statistics.
 
-## Open questions for the owner
-
-1. ~~Proxy or DNS record?~~ Settled 2026-09-19: an `A` record, HTTPS from Caddy on 443 (the owner did
-   not want to lose HTTPS, and a Netlify proxy would carry every image download through Netlify).
-2. Step 7 - a Pi package that needs the repo for its covers, or the self-contained 306 MB one?
-3. ~~Retention?~~ Settled 2026-09-19: pre-releases are replaced, not kept; the page lists stable releases only.

@@ -98,6 +98,17 @@ A second way to get to the same place as the tarball + `install.sh` flow above: 
 answer at most two questions (which WiFi; RetroArch or PS1-only), and watch AutoBleem install itself on the screen. The manual flow
 above remains the fully proven path - see the "Status" table for how far this one has been exercised.
 
+**The ready-made images are on AutoBleem's download site.** In Raspberry Pi Imager: *App Options*
+(the gear, or Ctrl+Shift+X) *-> Content Repository -> Use custom* and enter
+
+    https://autobleem.retromenele.pl/rpi-imager/os_list.json
+
+(or start it as `rpi-imager --repo <that URL>`); AutoBleem then appears in the *Operating System* list
+for both 32-bit and 64-bit, with Imager's own customisation screen (user, WiFi, SSH) on top. Or download
+an `.img.xz` from <https://autobleem.retromenele.pl/> and flash it with *Use custom*. The site's
+[Raspberry Pi page](https://autobleem.retromenele.pl/rpi-install.html) says which image fits which Pi.
+What follows is how those images are built.
+
 `tools/make_rpi_image.sh` takes an official Raspberry Pi OS Lite image (downloaded automatically, or your
 own with `--base`) and injects an AutoBleem package plus a first-boot service. The only other changes to the
 base image are on its boot partition: `cmdline.txt` loses the word `resize` (see "The data partition" -
