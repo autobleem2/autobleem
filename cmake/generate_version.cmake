@@ -24,6 +24,11 @@ else()
             WORKING_DIRECTORY ${SOURCE_DIR} OUTPUT_VARIABLE GIT_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     execute_process(COMMAND git describe --tags --abbrev=0
             WORKING_DIRECTORY ${SOURCE_DIR} OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    # diff-index trusts the index's cached stat info; without a refresh first, a file whose mtime changed
+    # (a merge, a checkout, another git build - MSYS2's git and Git for Windows keep different stat data) is
+    # reported as modified when its content is not, and the build is stamped "dirty" for nothing
+    execute_process(COMMAND git update-index -q --refresh
+            WORKING_DIRECTORY ${SOURCE_DIR} RESULT_VARIABLE _ignored ERROR_QUIET OUTPUT_QUIET)
     execute_process(COMMAND git diff-index --quiet HEAD --
             WORKING_DIRECTORY ${SOURCE_DIR} RESULT_VARIABLE GIT_DIRTY_RESULT ERROR_QUIET)
     if (GIT_HASH AND NOT GIT_DIRTY_RESULT EQUAL 0)
