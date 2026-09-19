@@ -115,6 +115,12 @@ repository" paragraphs and in the tools' own headers:
   `rpi/cores/<arch>/cores-<arch>-<date>.tar.gz`, newest kept) and `install.sh`'s `download_cores_tarball`
   (one download into a `RetroArch/` with no cores yet; the buildbot loop is the fallback and the re-run
   path) - 2026-09-19.
+- 9: images built on the server, rootless - `tools/make_rpi_image.sh --rootless` (the default without
+  root): `debugfs -w` on `<img>?offset=<root partition>` for the five writes into the ext4 root, `mcopy`
+  on `<img>@@<boot offset>` for the two boot files, offsets read from the MBR by hand; runs in the Docker
+  image (`mtools` added) via `docker/run.sh`. 7 minutes per image at the new default xz level 4 (12 at 6,
+  for ~2% size), no Pi and no transfers: the `c3a684c` set was the first built this way and published
+  straight from the server - 2026-09-20. The Pi 400 only tests images, on the owner's request, never in CI.
 
 ### Step 5 - CI publishes (S)
 
@@ -126,24 +132,6 @@ draft release in one run. `latest.json` is only rewritten by a non-prerelease ta
 schedule and `workflow_dispatch`: `retroarch.yml` (`ci/build_retroarch.sh` + publish) and `cores.yml`
 (`ci/build_cores.sh` + publish), monthly. **The owner does not want a pre-release published from the server
 yet** (2026-09-19) - the job is written so a tag does it, and the first run is the owner's call.
-
-### Step 9 - images built on the server, rootless (M) - agreed 2026-09-19
-
-`tools/make_rpi_image.sh` loop-mounts the base image, which needs root - the reason images have been built
-on the Pi 400. Everything it does inside the image is file placement, and the standard tools do that on an
-*unmounted* image: `debugfs -w` (e2fsprogs) for the ext4 root - `write` the tarball and
-`autobleem-firstboot.sh` into `/opt/autobleem-image/`, `write` the `.service` into
-`/etc/systemd/system/`, `symlink` it under `multi-user.target.wants/`, `mkdir` as needed - and `mtools`
-(`mcopy -i <img>@@<offset>`) for the FAT boot partition: `cmdline.txt` out, `resize` removed, back in;
-`autobleem.txt` in. Partition offsets from `sfdisk -J` on the image file. xz, sha256 and the Imager JSON
-are plain userland. So `ci/build_image.sh <armhf|arm64> --package ...` runs inside the existing
-`autobleem-build` image through `docker/run.sh` (the Dockerfile's last stage gains `mtools`; `e2fsprogs`,
-`xz-utils` and `util-linux` are there), no `--privileged`, no qemu - still injection-only. Verification is
-mount-free too: `debugfs -R "ls -l ..."` and `mcopy` out to compare, plus the re-decompressed image's
-partition table. The Pi 400 then only ever *tests* an image, on the owner's request from the PC - never as
-part of CI (there is no Pi in the cloud, the owner's rule). The mount-based path stays in
-`make_rpi_image.sh` for a machine with root; `ci/build_image.sh` is what the server and a tag run. One CI
-run then yields the five packages *and* the two images, published together.
 
 ## Out of scope
 

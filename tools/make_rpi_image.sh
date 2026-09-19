@@ -10,23 +10,23 @@
 # the exFAT data partition install.sh creates, exactly as a manual "tar xzf ... && sudo bash install.sh"
 # would.
 #
-# Run this ON a Linux host with root (losetup/mount) - in practice the Pi 400 build host this project
-# already uses over ssh (see CLAUDE.md's "Pi test setup"), though nothing here is Pi-specific: it is plain
-# image manipulation (loop-mount, copy files, recompress), not cross-compiling.
+# Two ways to edit the image, same result (2026-09-20): --rootless writes the ext4 root with debugfs
+# (e2fsprogs) and the FAT boot partition with mcopy (mtools), nothing mounted, no root - what the build
+# server runs inside the Docker image; --mount loop-mounts it and needs root (the Pi 400 way, the
+# original). Nothing here is Pi-specific or cross-compiles: it is plain image manipulation.
 #
-#   ./tools/make_rpi_image.sh --arch armhf --package /path/to/autobleem-rpi.tar.gz
-#   ./tools/make_rpi_image.sh --arch arm64 --package /path/to/autobleem-rpi-arm64.tar.gz
+#   docker/run.sh tools/make_rpi_image.sh --arch armhf --package dist/rpi/autobleem-rpi.tar.gz \
+#       --work build_rpi_image --out build_rpi_image/out            # the server, after ci/build.sh rpi
+#   sudo ./tools/make_rpi_image.sh --arch arm64 --package /path/to/autobleem-rpi-arm64.tar.gz   # a Pi
 #
-# Build the package first, on the PC, the usual way (see payload_rpi/README.md):
-#   ./make_rpi.sh   && ./tools/make_rpi_package.sh --arch armhf   # -> build_rpi/autobleem-rpi.tar.gz
-#   ./make_rpi64.sh && ./tools/make_rpi_package.sh --arch arm64   # -> build_rpi64/autobleem-rpi-arm64.tar.gz
-# then copy the tarball to this host and point --package at it.
+# Build the package first (ci/build.sh rpi rpi64 in the Docker image, or on the PC: ./make_rpi.sh &&
+# ./tools/make_rpi_package.sh --arch armhf, likewise make_rpi64.sh / --arch arm64) and point --package at
+# it. About 7 minutes per image on the 2-core server, most of it xz.
 #
 # Output: <out>/autobleem-<version>-rpi-<arch>.img.xz (the version is the package's VERSION file, written by
 # tools/make_rpi_package.sh from the build's version.h; --version overrides it), plus <out>/rpi_imager_repo.json (a copy of
-# tools/rpi_imager_repo.json with this run's size/hash fields filled in - see that file and
-# payload_rpi/README.md's "Flashing with Raspberry Pi Imager" section for what still needs filling in by
-# hand: where you host the .img.xz, an icon, and the device-tag list).
+# tools/rpi_imager_repo.json with this run's size/hash fields, url and icon filled in - what
+# tools/repo_publish.sh image turns into the site's rpi-imager/os_list.json).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,6 +40,8 @@ PACKAGE=""               # path to autobleem-rpi(.tar.gz|-arm64.tar.gz) (require
 BASE_IMG=""              # --base: a URL or local .img.xz; default is the architecture's official "latest"
 WORK_DIR=""              # --work: scratch space (downloaded/decompressed image, loop mount point)
 OUT_DIR=""               # --out: where the finished .img.xz and repo.json land (default: same as WORK_DIR)
+MODE=""                  # --mount | --rootless: how the image is edited (default: mount as root, rootless otherwise)
+XZ_LEVEL="${AB_XZ_LEVEL:-4}"   # xz preset for the output: 4 took 7 min where 6 took 12 on the server, for ~2% more size
 KEEP_RAW=0               # --keep-raw: don't delete the decompressed .img after recompressing
 VERSION=""               # --version: what to name the image after; default: the package's VERSION file
 REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: where tools/repo_publish.sh image puts it
@@ -73,6 +75,13 @@ Usage: sudo ./tools/make_rpi_image.sh --arch armhf|arm64 --package PATH [options
                        (default: ./build_rpi_image)
   --out DIR            where the finished .img.xz and repo.json land (default: same as --work)
   --keep-raw           keep the decompressed .img after recompressing (default: deleted to save space)
+  --rootless           edit the image without mounting it: debugfs (e2fsprogs) writes the ext4 root, mcopy
+                       (mtools) the FAT boot partition - no root, no loop device, works in a container
+                       (the build server: docker/run.sh tools/make_rpi_image.sh ...). The default when not
+                       root and both tools are there.
+  --mount              the loop-mount way (needs root); the default when run with sudo
+  --xz-level N         xz preset for the output, 0-9 (default 4, or AB_XZ_LEVEL: 7 min against 12 for 6 on the
+                       build server, for about 2% more size)
   --repo URL           the download repository the image will be published to - what the Imager JSON's
                        url and icon fields point at (default: AB_REPO_URL or AutoBleem's; the JSON is
                        laid out as tools/repo_publish.sh image puts things: rpi-imager/images/<version>/)
@@ -81,7 +90,7 @@ Usage: sudo ./tools/make_rpi_image.sh --arch armhf|arm64 --package PATH [options
   --dry-run            print what would happen and change nothing (no download, no mount, no root needed)
   -h, --help           this text
 
-Must be run as root (sudo) for losetup/mount, except --dry-run.
+Needs root (sudo) for the loop-mount way; the rootless way needs only debugfs and mcopy.
 EOF
 }
 
@@ -96,6 +105,9 @@ parse_args() {
             --base)     BASE_IMG="${2:?--base needs a URL or path}"; shift 2 ;;
             --work)     WORK_DIR="${2:?--work needs a directory}"; shift 2 ;;
             --out)      OUT_DIR="${2:?--out needs a directory}"; shift 2 ;;
+            --mount)    MODE=mount; shift ;;
+            --rootless) MODE=rootless; shift ;;
+            --xz-level) XZ_LEVEL="${2:?--xz-level needs 0-9}"; shift 2 ;;
             --keep-raw) KEEP_RAW=1; shift ;;
             --version)  VERSION="${2:?--version needs a value}"; shift 2 ;;
             --repo)     REPO_URL="${2:?--repo needs a URL}"; shift 2 ;;
@@ -121,9 +133,19 @@ preflight() {
     [ -n "$WORK_DIR" ] || WORK_DIR="$REPO_DIR/build_rpi_image"
     [ -n "$OUT_DIR" ] || OUT_DIR="$WORK_DIR"
 
-    if [ "$DRY_RUN" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
-        die "run this with sudo (losetup/mount need root) - or pass --dry-run"
+    if [ -z "$MODE" ]; then
+        if [ "$(id -u)" -eq 0 ]; then
+            MODE=mount
+        elif command -v debugfs >/dev/null 2>&1 && command -v mcopy >/dev/null 2>&1; then
+            MODE=rootless
+        elif [ "$DRY_RUN" -eq 0 ]; then
+            die "run this with sudo (losetup/mount need root), or install e2fsprogs + mtools for --rootless"
+        fi
     fi
+    if [ "$MODE" = mount ] && [ "$DRY_RUN" -eq 0 ] && [ "$(id -u)" -ne 0 ]; then
+        die "--mount needs root (losetup/mount) - sudo, or --rootless"
+    fi
+    log "Editing the image by: ${MODE:-mount} (--mount / --rootless)"
 
     # xz/sha256sum/tar/python3 are used even in a dry run (well, would be - the dry-run path skips calling
     # them too, but they're ordinary PATH tools for any user, unlike the mount family below, so checking
@@ -135,9 +157,13 @@ preflight() {
     for tool in xz sha256sum tar python3; do
         command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
     done
-    if [ "$DRY_RUN" -eq 0 ]; then
+    if [ "$DRY_RUN" -eq 0 ] && [ "$MODE" = mount ]; then
         for tool in losetup udevadm mount umount mountpoint; do
             command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
+        done
+    elif [ "$DRY_RUN" -eq 0 ]; then
+        for tool in debugfs mcopy; do
+            command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool (e2fsprogs / mtools, for --rootless)"
         done
     fi
     if [ -z "$BASE_IMG" ] || [[ "$BASE_IMG" == http://* || "$BASE_IMG" == https://* ]]; then
@@ -280,9 +306,37 @@ LOOP_DEV=""
 ROOT_MNT=""
 BOOT_MNT=""
 
+BOOT_OFF=""   # rootless mode: byte offsets of the two partitions inside the raw image
+ROOT_OFF=""
+
+# the MBR's partition table, read by hand (16-byte entries at 0x1be: the LBA start is bytes 8-11): no
+# sfdisk, no root - a Raspberry Pi OS image is always MBR with the boot partition first and the root second
+partition_offsets() {
+    python3 - "$RAW_IMG" <<'PY'
+import struct, sys
+with open(sys.argv[1], "rb") as f:
+    f.seek(0x1be)
+    table = f.read(64)
+starts = [struct.unpack_from("<I", table, i * 16 + 8)[0] * 512 for i in range(2)]
+print(starts[0], starts[1])
+PY
+}
+
 mount_image() {
     if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would losetup -fP %s and mount its root (2nd) partition\n' "$RAW_IMG"
+        if [ "$MODE" = rootless ]; then
+            printf '    would read the partition table of %s and edit its two partitions in place\n' "$RAW_IMG"
+        else
+            printf '    would losetup -fP %s and mount its root (2nd) partition\n' "$RAW_IMG"
+        fi
+        return 0
+    fi
+    if [ "$MODE" = rootless ]; then
+        read -r BOOT_OFF ROOT_OFF < <(partition_offsets)
+        [ "${ROOT_OFF:-0}" -gt 0 ] || die "no second partition in $RAW_IMG - is this a Raspberry Pi OS image?"
+        log "Partitions of $RAW_IMG: boot at $BOOT_OFF, root at $ROOT_OFF (rootless - not mounted)"
+        debugfs -R "ls -l /etc" "$RAW_IMG?offset=$ROOT_OFF" >/dev/null 2>&1 \
+            || die "debugfs cannot read the root filesystem at offset $ROOT_OFF"
         return 0
     fi
     log "Mounting $RAW_IMG"
@@ -298,6 +352,7 @@ mount_image() {
 
 unmount_image() {
     [ "$DRY_RUN" -eq 1 ] && return 0
+    [ "$MODE" = rootless ] && return 0
     local m
     for m in "$BOOT_MNT" "$ROOT_MNT"; do
         if [ -n "$m" ] && mountpoint -q "$m" 2>/dev/null; then
@@ -326,6 +381,10 @@ inject_payload() {
         return 0
     fi
     log "Injecting the AutoBleem package and first-boot service"
+    if [ "$MODE" = rootless ]; then
+        inject_payload_rootless
+        return 0
+    fi
     local image_dir="$ROOT_MNT/opt/autobleem-image"
     mkdir -p "$image_dir"
     cp "$PACKAGE" "$image_dir/autobleem-rpi.tar.gz"
@@ -340,6 +399,40 @@ inject_payload() {
     mkdir -p "$ROOT_MNT/etc/systemd/system/multi-user.target.wants"
     ln -sf ../autobleem-firstboot.service \
         "$ROOT_MNT/etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service"
+}
+
+# the same five writes through debugfs, on the unmounted root filesystem. `write` gives the new file the
+# local file's uid/gid/mode - ours, not root's - so every one is set explicitly (mode is the full st_mode).
+inject_payload_rootless() {
+    local fs="$RAW_IMG?offset=$ROOT_OFF"
+    # (the banner, "Allocated inode" chatter and "already exists" on a mkdir of a directory the base image
+    # has are noise; anything else debugfs says is shown)
+    dfs() {
+        debugfs -w -R "$1" "$fs" 2>&1 \
+            | grep -vE '^debugfs 1\.|^Allocated inode|directory already exists|^$' || true
+    }
+    put() { # put LOCAL IMAGEPATH MODE
+        dfs "rm $2" >/dev/null   # a rerun over the same raw image would fail on an existing file
+        dfs "write $1 $2"
+        dfs "sif $2 uid 0"
+        dfs "sif $2 gid 0"
+        dfs "sif $2 mode $3"
+    }
+    dfs "mkdir /opt/autobleem-image"
+    put "$PACKAGE" /opt/autobleem-image/autobleem-rpi.tar.gz 0100644
+    put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" /opt/autobleem-image/autobleem-firstboot.sh 0100755
+    put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" /etc/systemd/system/autobleem-firstboot.service 0100644
+    dfs "mkdir /etc/systemd/system/multi-user.target.wants"
+    dfs "rm /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service" >/dev/null
+    dfs "symlink /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service ../autobleem-firstboot.service"
+    # what went in, as the image will see it
+    debugfs -R "ls -l /opt/autobleem-image" "$fs" 2>/dev/null | grep -v '^debugfs' | sed 's/^/    /'
+    debugfs -R "ls -l /etc/systemd/system/multi-user.target.wants" "$fs" 2>/dev/null | grep autobleem | sed 's/^/    /'
+    # every file went in whole
+    local want got
+    want="$(stat -c %s "$PACKAGE")"
+    got="$(debugfs -R "stat /opt/autobleem-image/autobleem-rpi.tar.gz" "$fs" 2>/dev/null | sed -n 's/.*Size: \([0-9]*\).*/\1/p' | head -1)"
+    [ "$want" = "$got" ] || die "the package inside the image is $got bytes, the file is $want"
 }
 
 #*******************************
@@ -358,14 +451,30 @@ inject_boot_files() {
         return 0
     fi
     log "Editing the boot partition: cmdline.txt without 'resize', plus autobleem.txt"
-    local cmdline="$BOOT_MNT/cmdline.txt" kept="" word
-    [ -f "$cmdline" ] || die "no cmdline.txt on the boot partition - not a Raspberry Pi OS image?"
+    local cmdline kept="" word
+    if [ "$MODE" = rootless ]; then
+        # mtools reads and writes the FAT partition in place: <image>@@<byte offset>
+        cmdline="$WORK_DIR/cmdline.txt"
+        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" ::cmdline.txt "$cmdline" \
+            || die "no cmdline.txt on the boot partition - not a Raspberry Pi OS image?"
+    else
+        cmdline="$BOOT_MNT/cmdline.txt"
+        [ -f "$cmdline" ] || die "no cmdline.txt on the boot partition - not a Raspberry Pi OS image?"
+    fi
     for word in $(tr -d '\n' <"$cmdline"); do
         [ "$word" = resize ] && continue
         kept="$kept${kept:+ }$word"
     done
     printf '%s\n' "$kept" >"$cmdline"
-    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
+    if [ "$MODE" = rootless ]; then
+        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$cmdline" ::cmdline.txt || die "writing cmdline.txt failed"
+        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$REPO_DIR/payload_rpi/system/autobleem.txt" ::autobleem.txt \
+            || die "writing autobleem.txt failed"
+        rm -f "$cmdline"
+        mdir -i "$RAW_IMG@@$BOOT_OFF" ::autobleem.txt ::cmdline.txt | grep -iE "autobleem|cmdline" | sed 's/^/    /'
+    else
+        install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
+    fi
 }
 
 #*******************************
@@ -384,9 +493,9 @@ finalize_image() {
     EXTRACT_SIZE="$(stat -c%s "$RAW_IMG")"
     EXTRACT_SHA256="$(sha256sum "$RAW_IMG" | cut -d' ' -f1)"
 
-    log "Recompressing to $out_img (xz -T0, this can take a while)"
+    log "Recompressing to $out_img (xz -T0 -$XZ_LEVEL, this can take a while)"
     rm -f "$out_img"
-    if ! xz -T0 -6 -c "$RAW_IMG" >"$out_img"; then
+    if ! xz -T0 "-$XZ_LEVEL" -c "$RAW_IMG" >"$out_img"; then
         rm -f "$out_img" # never leave a truncated image that looks like a real one
         die "xz failed writing $out_img (out of space?) - the decompressed image is kept in $WORK_DIR"
     fi
@@ -463,12 +572,12 @@ summary() {
     cat <<EOF
 
   Image:      $OUT_IMG
-  Repo JSON:  $OUT_DIR/rpi_imager_repo.json  (still needs 'url', 'icon' and, if you want one, a 'devices'
-              filter filled in by hand before it's usable with Raspberry Pi Imager - see
-              payload_rpi/README.md's "Flashing with Raspberry Pi Imager" section)
+  Repo JSON:  $OUT_DIR/rpi_imager_repo.json  (url/icon point at $REPO_URL; tools/repo_publish.sh image
+              puts the image and this file on the site, where it becomes rpi-imager/os_list.json)
 
   Test it with Raspberry Pi Imager: "Use custom", point at the .img.xz directly (no customisation offered
-  that way), or at the filled-in JSON via a local file / --repo for hostname/WiFi/SSH/user setup too.
+  that way), or at the JSON via tools/rpi_imager_local_manifest.py / --repo for hostname/WiFi/SSH/user
+  setup too.
 
 EOF
 }

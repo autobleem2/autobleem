@@ -534,12 +534,19 @@ same configure as the installer's source build, no FLAC - its soname differs bet
 `retroarch.version`/`retroarch.depends` under `usr/local/share/autobleem`), and **`install.sh --retroarch
 prebuilt` is the default** (`--repo`, `autobleem.txt` `repo=`; falls back to the source build when the
 repository is unreachable). Verified on the Pi 400 the same day: installed in a couple of minutes, plays a
-NES game. Images are built on the Pi 400 from packages the server built (`docker/run.sh ci/build.sh rpi
-rpi64`, fetched by the Pi over HTTPS); an image bakes the repository URL into its installer, which is why
-the owner held image builds back until the domain existed. What is left of the plan: CI publishing on a
-tag (the owner does not want a pre-release published from the server yet), the Imager repo URL in the
-README, the cores as one tarball per architecture (step 8, the owner's idea), and (optional) a Pi package
-without the cover databases.
+NES game. **Since 2026-09-20 the images are built on the server too**, rootless: `docker/run.sh
+tools/make_rpi_image.sh --arch armhf --package dist/rpi/autobleem-rpi.tar.gz --work build_rpi_image --out
+build_rpi_image/out` after `ci/build.sh rpi rpi64` - `--rootless` (the default without root) does the
+five writes into the ext4 root with `debugfs -w` on `<img>?offset=N` and the two boot files with `mcopy`
+on `<img>@@N`, offsets read from the MBR; `--mount` is the old loop-mount way for a machine with root.
+7 minutes per image at the default xz level 4 (12 at level 6 for ~2% less size), then
+`tools/repo_publish.sh --local image ...` on the same machine - no Pi in the loop. The Pi 400 only *tests*
+an image, on the owner's request, never as part of CI (there is no Pi in the cloud). The Pi package leaves
+the cover databases out (`make_rpi_package.sh --with-covers` puts them back; `install.sh` fetches them
+from the site's `db/`), and the installer takes the cores as one tarball (`rpi/cores/`, `ci/build_cores.sh`
+- a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
+download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. What is left of
+the plan: CI publishing on a tag (the owner does not want a full pre-release built from the server yet).
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
