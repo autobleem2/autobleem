@@ -734,7 +734,14 @@ create_data_partition() {
     log "Creating a ${DATA_LABEL} partition on $DISK (${start}MiB - ${end}MiB)"
     confirm "This writes a new partition table entry to $DISK. Continue?"
 
-    run parted -s "$DISK" mkpart primary "${start}MiB" "${end}MiB"
+    # parted prints the disk's size rounded to whole MiB, so a free span that runs to the end of the disk
+    # ends at a value that can be a fraction past the last sector - and "mkpart ... 120580MiB" is then
+    # "outside of the device" (seen on the first image's first boot, a 117.8 GB card). 100% is parted's own
+    # way of saying "to the end", so a span that reaches the disk's end asks for that instead.
+    local disk_end end_arg="${end}MiB"
+    disk_end="$(parted -ms "$DISK" unit MiB print 2>/dev/null | awk -F: -v d="$DISK" '$1 == d { print $2 + 0 }')"
+    [ -n "$disk_end" ] && [ "$end" -ge "$disk_end" ] && end_arg="100%"
+    run parted -s "$DISK" mkpart primary "${start}MiB" "$end_arg"
     run partprobe "$DISK"
     run udevadm settle
 
