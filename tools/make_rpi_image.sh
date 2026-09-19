@@ -232,11 +232,13 @@ decompress_base_image() {
 #*******************************
 # mount_image / unmount_image
 #*******************************
-# only the root (ext4) partition is mounted - the payload goes under /opt on the root filesystem, not the
-# FAT boot partition (see docs/rpi-image-and-update-plan.md: boot is small and shared with the
-# kernel/firmware, and the injected tree is tens of MB, not worth the risk of crowding it).
+# Both partitions are mounted: the payload goes under /opt on the root filesystem (the FAT boot partition
+# is small and shared with the kernel/firmware - see docs/rpi-image-and-update-plan.md), and the boot
+# partition gets two small edits: cmdline.txt loses the word "resize" (see inject_boot_files) and gains
+# autobleem.txt (the first-boot options, editable from any PC).
 LOOP_DEV=""
 ROOT_MNT=""
+BOOT_MNT=""
 
 mount_image() {
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -248,21 +250,27 @@ mount_image() {
     udevadm settle
     [ -b "${LOOP_DEV}p2" ] || die "no ${LOOP_DEV}p2 - is this really a Raspberry Pi OS image (boot + root)?"
     ROOT_MNT="$WORK_DIR/root-mnt"
-    mkdir -p "$ROOT_MNT"
+    BOOT_MNT="$WORK_DIR/boot-mnt"
+    mkdir -p "$ROOT_MNT" "$BOOT_MNT"
     mount "${LOOP_DEV}p2" "$ROOT_MNT"
+    mount "${LOOP_DEV}p1" "$BOOT_MNT"
 }
 
 unmount_image() {
     [ "$DRY_RUN" -eq 1 ] && return 0
-    if [ -n "$ROOT_MNT" ] && mountpoint -q "$ROOT_MNT" 2>/dev/null; then
-        sync
-        umount "$ROOT_MNT" || warn "umount $ROOT_MNT failed"
-    fi
+    local m
+    for m in "$BOOT_MNT" "$ROOT_MNT"; do
+        if [ -n "$m" ] && mountpoint -q "$m" 2>/dev/null; then
+            sync
+            umount "$m" || warn "umount $m failed"
+        fi
+    done
     if [ -n "$LOOP_DEV" ]; then
         losetup -d "$LOOP_DEV" 2>/dev/null || warn "losetup -d $LOOP_DEV failed"
     fi
     LOOP_DEV=""
     ROOT_MNT=""
+    BOOT_MNT=""
 }
 
 # unmount/detach on any exit (success, error, or an interrupted run) so a failed build never leaves a loop
@@ -281,8 +289,8 @@ inject_payload() {
     local image_dir="$ROOT_MNT/opt/autobleem-image"
     mkdir -p "$image_dir"
     cp "$PACKAGE" "$image_dir/autobleem-rpi.tar.gz"
-    install -m 0755 "$SCRIPT_DIR/../payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
-    install -m 0644 "$SCRIPT_DIR/../payload_rpi/system/autobleem-firstboot.service" \
+    install -m 0755 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
+    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" \
         "$ROOT_MNT/etc/systemd/system/autobleem-firstboot.service"
 
     # "systemctl enable" for a plain WantedBy=multi-user.target unit is just this symlink - done by hand
@@ -292,6 +300,32 @@ inject_payload() {
     mkdir -p "$ROOT_MNT/etc/systemd/system/multi-user.target.wants"
     ln -sf ../autobleem-firstboot.service \
         "$ROOT_MNT/etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service"
+}
+
+#*******************************
+# inject_boot_files
+#*******************************
+# Two edits on the FAT boot partition. cmdline.txt loses the word "resize": that is what the base image's
+# initramfs keys on to grow the root partition over the whole card on the first boot
+# (/usr/share/initramfs-tools/scripts/local-premount/resize_early, and set_partuuid next to it), and a
+# root that fills the card leaves install.sh no room for the exFAT data partition - instead install.sh
+# grows the root to a bounded size itself (--grow-root, from autobleem.txt's root_gib) and takes the rest.
+# Nothing else on the partition is touched: cloud-init's user-data/network-config/meta-data stay exactly as
+# the base image ships them, so Raspberry Pi Imager's OS customisation still lands on top of them.
+inject_boot_files() {
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would drop "resize" from cmdline.txt and add autobleem.txt on the boot partition\n'
+        return 0
+    fi
+    log "Editing the boot partition: cmdline.txt without 'resize', plus autobleem.txt"
+    local cmdline="$BOOT_MNT/cmdline.txt" kept="" word
+    [ -f "$cmdline" ] || die "no cmdline.txt on the boot partition - not a Raspberry Pi OS image?"
+    for word in $(tr -d '\n' <"$cmdline"); do
+        [ "$word" = resize ] && continue
+        kept="$kept${kept:+ }$word"
+    done
+    printf '%s\n' "$kept" >"$cmdline"
+    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
 }
 
 #*******************************
@@ -396,6 +430,7 @@ main() {
     decompress_base_image
     mount_image
     inject_payload
+    inject_boot_files
     unmount_image
     finalize_image
     update_repo_json

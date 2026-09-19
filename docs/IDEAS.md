@@ -13,10 +13,12 @@ target, or a build pipeline change).
 
 ## Prebuilt Raspberry Pi image for Raspberry Pi Imager
 
-**Status:** implemented and `tools/make_rpi_image.sh` itself verified on the Pi 400 for both architectures
-(2026-09-19 - see CLAUDE.md's "Flashable image for Raspberry Pi Imager"). **Not yet verified: flashing the
-result and booting it** - the first/second-boot `autobleem-firstboot.service` handoff and Raspberry Pi
-Imager's own customisation alongside it are still unrun on real hardware.
+**Status:** implemented; the image build verified on the Pi 400 for both architectures, and the first image
+flashed and booted once (2026-09-19 - see CLAUDE.md's "Flashable image for Raspberry Pi Imager" for what
+that first boot changed: the first boot now owns the screen, asks for WiFi when there is none, and grows the
+root to a bounded size instead of letting it fill the card). **Not yet verified:** the reworked first boot
+end to end on a fresh card - WiFi prompt, Imager presets via the local manifest, `--grow-root`, the
+install-then-reboot handoff.
 
 Ship the Pi port as a flashable `.img.xz` (alongside the existing tarball + `install.sh`) that Raspberry Pi
 Imager's "Use custom" can write directly, with Imager doing hostname/user/WiFi/SSH/locale and AutoBleem's

@@ -164,6 +164,35 @@ Steps:
    the image, ready to hand to Imager's "Use custom" with a local JSON, or to host and reference by URL
    later.
 
+### What the first real boot changed (2026-09-19)
+
+The first image was flashed plain ("Use custom", no presets) onto the Pi 400 and booted. Three things the
+plan above had not accounted for, all now in the implementation:
+
+1. **No network on first boot is the normal case, not an edge case.** With no Imager presets, Raspberry Pi
+   OS's own wizard asks for a keyboard layout and a user; WiFi stays `rfkill`-blocked because no country was
+   set. `autobleem-firstboot` then ran `install.sh --yes` in the background with no network, `apt-get
+   install` failed (`Temporary failure resolving 'deb.debian.org'`), and the screen showed a login prompt
+   with no hint of any of it. Now the service owns tty1 (`Conflicts=getty@tty1.service`,
+   `StandardInput/Output=tty`), so the whole first boot is on the screen, and the script asks for WiFi when
+   there is none: country (needed to unblock rfkill), an `nmcli` scan, pick/hidden/Ethernet/skip, password,
+   connect, a real fetch check, then an NTP wait before `apt`. Preset WiFi is *not* an AutoBleem option -
+   Imager's customisation screen and the boot partition's own cloud-init `network-config` already are that.
+2. **The root grows over the whole card on the stock first boot**, which leaves nothing for the data
+   partition. On Trixie the grow is done by the initramfs when `cmdline.txt` contains the word `resize`
+   (`local-premount/resize_early`; `set_partuuid` next to it also keys on it); `make_rpi_image.sh` removes
+   that word, and `install.sh` gained `--grow-root GIB` (sfdisk `-N` + `partx -u` + online `resize2fs`,
+   capped to leave room for the data partition, run before `apt` because a fresh Lite root has ~400 MB
+   free) to grow the root to a bounded size instead. `autobleem.txt` on the boot partition carries
+   `root_gib=8` and the other install options.
+3. **Imager's customisation screen needs metadata for a local file.** `tools/rpi_imager_local_manifest.py`
+   writes the `*.rpi-imager-manifest` (`file://` URLs, the same shape as Imager's own
+   `create_local_json.py` output) from the build's `rpi_imager_repo.json`, so a locally built image gets
+   the user/WiFi/SSH screen.
+
+Still to verify on hardware after this: the interactive WiFi prompt end to end, a first boot with Imager
+presets through the local manifest, `--grow-root` on a real card, and the install-then-reboot handoff.
+
 ### What stays out of scope for this round (per the "injection only" choice)
 
 No package pre-install, no RetroArch pre-built into the image, no qemu/chroot - first boot after the

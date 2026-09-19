@@ -424,49 +424,62 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
-**Flashable image for Raspberry Pi Imager** (2026-09-19, plan at `docs/rpi-image-and-update-plan.md`,
-**`tools/make_rpi_image.sh` itself verified on the Pi 400 for both architectures - flashing/booting the
-result is not**). A second way to get AutoBleem
-onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh` takes an official Raspberry
-Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi Foundation's stable "latest"
-redirect, sha256-verified against its published checksum, or a local `--base`), loop-mounts it and injects
-an AutoBleem package plus `payload_rpi/system/autobleem-firstboot.{service,sh}` onto its root filesystem
-under `/opt/autobleem-image/` - **injection only**, deliberately: no chroot, no qemu, no package
-pre-install, nothing from the base image is ever executed at build time (`systemctl enable`'s effect is
-one hand-crafted symlink instead), so the same mechanism works for either architecture from either
-architecture's build host. Raspberry Pi Imager's own OS customisation (hostname, user, WiFi, SSH - cloud-init
-or firstrun.sh, whichever the base image's `init_format` is) is never touched by this, so it keeps working
-unmodified. `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/
-autobleem-image/.done`, ordered `After=multi-user.target` so it runs after that customisation has had its
-turn) runs `install.sh --yes` with its normal defaults on first boot; a Pi with no working network yet
-simply gets retried on the next boot (a counter caps it at 20 attempts, then it disables itself and leaves a
-note), which is the "first or second boot" story the idea in `docs/IDEAS.md` was scoped around. On success
-it deletes the staged package, disables itself and reboots once more, since the boot splash and HDMI mode
-only take full effect on the boot after `install.sh` sets them. `tools/rpi_imager_repo.json` is the checked-in
-template for Imager's "Use custom" -> local JSON / `--repo` metadata format; `make_rpi_image.sh` writes a
-filled-in copy (real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/
-`release_date`) to its output directory per architecture built, but deliberately leaves `url` (this repo has
-no publishing pipeline yet for hosting the `.img.xz`), `icon` and a `devices` filter as placeholders rather
-than guessed values - see the template's own `"//"` field. `payload_rpi/README.md`'s "Flashing with
-Raspberry Pi Imager" section has the walkthrough. **Verified on the Pi 400** (2026-09-19, both
-`--arch armhf` and `--arch arm64`, the build host this project already uses over ssh): each run downloaded
-and sha256-checked its architecture's real Lite image, mounted it, injected the payload, recompressed, and
-- re-mounting the *output* `.img.xz` independently afterward - the injected tarball, the executable
-`autobleem-firstboot.sh`, the unit file and its `multi-user.target.wants/` enable symlink were all confirmed
-present and correct, and the boot partition's `cmdline.txt` byte-for-byte untouched; a second run into the
-same `--out` directory correctly filled in the other architecture's entry in `rpi_imager_repo.json` alongside
-the first rather than overwriting it; no stray loop devices or mounts survived either run. Two bugs only
-visible against real hardware were found and fixed along the way: `--dry-run` wrongly required
-`losetup`/`mount`-family tools that only live on root's PATH (`/sbin`), and the base-image redirect
-resolution silently never worked against the Pi's actual wget 1.25.0 output format, which was falling back
-to naming the downloaded file after the alias URL and failing its `.sha256` check - both fixed and
-re-verified live. The arm64 run used the existing armhf tarball as a stand-in `--package` (no arm64
-AutoBleem build exists yet to test with), so it proves the image-build *mechanics* for that architecture,
-not a genuine arm64 payload. **Still not done:** actually flashing the produced image with Raspberry Pi
-Imager onto a card and booting it - `autobleem-firstboot.service` running for real, Imager's own
-customisation coexisting with it, and the first/second-boot retry/reboot handoff are all still unverified,
-same caveat as
-the 64-bit Pi port below when it landed.
+**Flashable image for Raspberry Pi Imager** (2026-09-19, plan at `docs/rpi-image-and-update-plan.md`). A
+second way to get AutoBleem onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh`
+takes an official Raspberry Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi
+Foundation's stable "latest" redirect, sha256-verified against its published checksum, or a local `--base`),
+loop-mounts it and injects an AutoBleem package plus `payload_rpi/system/autobleem-firstboot.{service,sh}`
+onto its root filesystem under `/opt/autobleem-image/` - **injection only**, deliberately: no chroot, no
+qemu, no package pre-install, nothing from the base image is ever executed at build time (`systemctl
+enable`'s effect is one hand-crafted symlink instead), so the same mechanism works for either architecture
+from either architecture's build host. Two edits on the boot partition: `cmdline.txt` loses the word
+**`resize`** - on Trixie that is what the initramfs (`local-premount/resize_early`, and `set_partuuid`)
+keys on to grow the root over the whole card, which would leave `install.sh` no room for the data
+partition - and **`autobleem.txt`** (from `payload_rpi/system/`) is added: AutoBleem's first-boot options
+as `key=value`, editable from any PC (`root_gib` default 8, `hdmi_mode`, `retroarch`, `thumbnails`, `bios`,
+`downloads`; CRLF/BOM tolerated). cloud-init's `user-data`/`network-config`/`meta-data` are left exactly as
+shipped, so Raspberry Pi Imager's OS customisation (this base image is cloud-init 25.2 + rpi-cloud-init-mods:
+`init_format: cloudinit-rpi`) lands on top as on a stock image. **`install.sh --grow-root GIB`** is the
+counterpart to `--shrink-root`: `sfdisk --no-reread --force -N` + `partx -u` + `resize2fs` grow the still
+image-sized root online (proven on a mounted loop-device filesystem on the Pi), capped so 2 GiB stay for the
+data partition, run before apt (a fresh Lite root has ~400 MB free) and skipped when a data partition exists.
+`autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
+`After=multi-user.target cloud-final.service userconfig.service`, `Conflicts=getty@tty1.service`,
+`StandardInput/Output=tty` on `/dev/tty1`) **owns the screen and keyboard for the first boot**, the way
+`autobleem.service` does later: the whole install is watched, not a silent journal-only job. The script
+waits up to 40 s for network; **with none it asks** - `rfkill unblock` + the WiFi country (default from
+`cmdline.txt`'s `cfg80211.ieee80211_regdom=`, else the locale; Raspberry Pi OS keeps WiFi soft-blocked
+until one is set, `raspi-config nonint do_wifi_country`), an `nmcli` scan listed by signal, pick / hidden
+SSID / "I plugged in Ethernet" / skip, password, `nmcli device wifi connect`, then a real fetch check -
+then waits for NTP (`timedatectl ... NTPSynchronized`), then runs `install.sh --yes` + the `autobleem.txt`
+options, output on tty1 and tee'd to `/var/log/autobleem-firstboot-install.log`. Failure or a skipped
+network question gives `getty@tty1` back and retries on the next boot (a counter caps it at 20, then it
+disables itself and leaves a note); success deletes the staged package, disables the unit and reboots once
+more (boot splash and HDMI mode take effect on the boot after `install.sh` sets them). WiFi presets are not
+an AutoBleem key on purpose - Imager's screen and the boot partition's own `network-config` already are
+that. `tools/rpi_imager_repo.json` is the checked-in template for Imager's metadata; `make_rpi_image.sh`
+writes a filled-in copy (real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/
+`release_date`) to its output directory per architecture built, `url`/`icon`/`devices` left as placeholders
+(no publishing pipeline yet). **`tools/rpi_imager_local_manifest.py`** turns that into what Imager's own
+`doc/local_json/create_local_json.py` produces for local files - a `*.rpi-imager-manifest` with `file://`
+URLs (double-click it, or App Options -> Content Repository -> Use custom file, or `--repo`) - which is what
+makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
+"Flashing with Raspberry Pi Imager" section has the walkthrough.
+
+**What has run for real** (2026-09-19, Pi 400 as the build host over ssh, then as the target): the image
+build itself for both architectures (download, verify, mount, inject, recompress; the *output* re-mounted
+and its contents checked; a second run fills the other architecture's JSON entry alongside); two build-script
+bugs found only against real hardware (`--dry-run` demanding `/sbin`-only tools; the wget redirect parsing
+matching neither of wget 1.25.0's two `Location` line formats, so the download was named after the alias
+URL and the `.sha256` check failed). **The first real boot of the first image** (arm64, "Use custom", no
+presets) is what shaped the first-boot script above: the wizard asked for a keyboard layout, WiFi stayed
+rfkill-blocked with no country set, `autobleem-firstboot` ran `install.sh --yes` silently in the background
+with no network and died at `apt-get install` (`Temporary failure resolving 'deb.debian.org'`), leaving a
+login prompt and no clue on screen - hence tty1 ownership, the WiFi prompt, the NTP wait; and the root had
+been grown over the whole card - hence the `resize` removal and `--grow-root`. `--grow-root`'s partition
+mechanics were proven on a mounted loop-device filesystem on the Pi; the rebuilt image is the next thing to
+flash. **Still to verify on hardware:** the interactive WiFi prompt end to end, a first boot with Imager's
+presets via the local manifest, `--grow-root` on a real card, and the whole install-then-reboot handoff.
 
 ### Raspberry Pi 64-bit (2026-09-18)
 
