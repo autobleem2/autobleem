@@ -63,6 +63,10 @@ build_win/
 build_updateroms/
 db/
 
+# large release assets tools/install_autobleem.py pulls from (cover DBs, the RetroBoot/RetroArch
+# bundle for its optional step) - sourced locally from a full AutoBleem release package, never committed
+vendor/
+
 #If you edit, or view, a file in Visual Studio in open folder mode it creates files in a .vs folder to keep track
 .vs/
 
