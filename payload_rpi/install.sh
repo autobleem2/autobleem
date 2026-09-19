@@ -553,7 +553,7 @@ download_retroarch_content() {
         while read -r _date _crc zip; do
             [ -n "$zip" ] || continue
             count=$((count + 1))
-            printf '\r    [%3d/%3d] %-50s' "$count" "$total" "$zip"
+            printf '\r    [%3d/%3d] %3d%% %-50s' "$count" "$total" "$((count * 100 / total))" "$zip"
             # a re-run keeps the cores it has; RetroArch's Online Updater is the way to refresh them
             [ -f "$RA_ROOT/cores/${zip%.zip}" ] && continue
             if wget -q -O "$tmp/$zip" "$cores_url/$zip" && unzip -oq "$tmp/$zip" -d "$RA_ROOT/cores"; then
@@ -593,7 +593,8 @@ download_retroarch_content() {
 # rdb downloaded above, so a game the scanner identifies gets its box art from here (the covers*.db in
 # Autobleem/bin/db, when present, is the fallback). thumbnailpacks.libretro.com's zips are gone, and the
 # GitHub mirror is one 1.5 GB archive of all three folders, so this mirrors the per-file listing at
-# thumbnails.libretro.com instead: ~9000 files, wget -r skips what is already there (re-runs resume).
+# thumbnails.libretro.com instead: ~9000 files, only the ones not already there (re-runs resume), four
+# connections at a time, with a running [n/total] percentage on the screen.
 download_thumbnails() {
     case "$THUMBNAILS" in
         none) log "skipping the thumbnails (--thumbnails none)"; return 0 ;;
@@ -602,20 +603,71 @@ download_thumbnails() {
         *) die "--thumbnails takes boxarts, all or none (got '$THUMBNAILS')" ;;
     esac
     local system="Sony - PlayStation"
+    local base="https://thumbnails.libretro.com/${system// /%20}"
+    local tmp=/tmp/autobleem-thumbs
+    run mkdir -p "$tmp"
     local dir
     for dir in $dirs; do
         local dest="$RA_ROOT/thumbnails/$system/$dir"
-        log "RetroArch: thumbnails.libretro.com/$system/$dir -> $dest (a while: one file at a time)"
         run mkdir -p "$dest"
-        # -np: never up; -nH --cut-dirs=2: drop the host and the two path parts, so a file lands straight in
-        # $dest; -nc: keep files already there; -A: the images only, not the index pages
-        if ! run wget -q -r -np -nH --cut-dirs=2 -nc -A png,jpg -P "$dest" \
-                "https://thumbnails.libretro.com/${system// /%20}/$dir/"; then
-            warn "thumbnails: the $dir download stopped early - run the installer again to resume it"
+        if [ "$DRY_RUN" -eq 1 ]; then
+            printf '    would list %s/%s/ and download the files not yet in %s, 4 at a time, with a counter\n' "$base" "$dir" "$dest"
+            continue
         fi
+        # The directory listing first, so the total is known and the screen can show a percentage - this
+        # is the longest download of the install (~9000 files for the box arts) and used to be a silent
+        # recursive wget. The hrefs are percent-encoded; the local file names are the decoded form, which
+        # is what wget -r wrote before and what the launcher's ThumbnailLookup matches against.
+        log "RetroArch: thumbnails.libretro.com/$system/$dir - listing"
+        if ! wget -q -O "$tmp/index.html" "$base/$dir/"; then
+            warn "thumbnails: cannot fetch the $dir listing - run the installer again later to get them"
+            continue
+        fi
+        grep -oE 'href="[^"]+\.(png|jpg)"' "$tmp/index.html" | sed 's/^href="//; s/"$//' | sort -u >"$tmp/all.txt"
+        local total present=0
+        total="$(grep -c . "$tmp/all.txt")"
+        if [ "$total" -eq 0 ]; then
+            warn "thumbnails: the $dir listing has no images - the site's layout may have changed"
+            continue
+        fi
+        : >"$tmp/todo.txt"
+        local href name
+        while IFS= read -r href; do
+            name="$(printf '%b' "${href//%/\\x}")"
+            if [ -s "$dest/$name" ]; then
+                present=$((present + 1))
+            else
+                printf '%s/%s/%s\n' "$base" "$dir" "$href" >>"$tmp/todo.txt"
+            fi
+        done <"$tmp/all.txt"
+        local todo=$((total - present))
+        if [ "$todo" -eq 0 ]; then
+            log "RetroArch: $dir - all $total files already there"
+            continue
+        fi
+        log "RetroArch: $dir - $todo of $total files to download into $dest ($present already there)"
+        # four wget streams, each on one kept-alive connection over its share of the list; every finished
+        # file is one -nv line, which the awk turns into the running counter (a 404 counts as done too -
+        # it is reported at the end, not retried)
+        rm -f "$tmp"/todo.part.*
+        split -n l/4 -d "$tmp/todo.txt" "$tmp/todo.part."
+        local part
+        {
+            for part in "$tmp"/todo.part.*; do
+                [ -s "$part" ] || continue
+                wget -nv -nc -P "$dest" -i "$part" 2>&1 &
+            done
+            wait
+        } | awk -v total="$total" -v done0="$present" '
+            # one result line per file: "<date> URL:... [size] -> file" on success, "<date> ERROR 404: ..."
+            # on failure (preceded by a bare URL line, not counted), "already there" for a -nc skip; each
+            # wget also ends with a FINISHED/Total/Downloaded summary, not counted either
+            function show() { printf "\r    [%5d/%5d] %3d%%", done0 + n, total, (done0 + n) * 100 / total; fflush() }
+            / URL:/ || /already there/ { n++; show() }
+            / ERROR / { n++; err++; show() }
+            END { printf "\n"; if (err) printf "    %d files did not download - run the installer again to retry them\n", err }'
     done
-    # wget leaves the directory index pages behind when it cannot delete them
-    run find "$RA_ROOT/thumbnails" -name 'index.html*' -delete
+    run rm -rf "$tmp"
 }
 
 #*******************************
@@ -658,7 +710,7 @@ download_bios_pack() {
     while read -r sha size url dest; do
         [ -n "$dest" ] || continue
         count=$((count + 1))
-        printf '\r    [%3d/%3d] %-50.50s' "$count" "$total" "$dest"
+        printf '\r    [%3d/%3d] %3d%% %-50.50s' "$count" "$total" "$((count * 100 / total))" "$dest"
         target="$RA_ROOT/system/$dest"
         if [ -f "$target" ] && [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$sha" ]; then
             continue
