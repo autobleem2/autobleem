@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -27,9 +28,14 @@ class ScanProgressListener;
 //
 // Nothing is fetched until probe() has succeeded once for this instance - one cheap request to the
 // thumbnails server - so a machine without a network pays a few seconds per scan and notices nothing
-// else. A box art the server does not have is remembered (Named_Boxarts/.autobleem-missing.txt, one
-// escaped name per line) and not asked for again; delete the file to retry. A fetch that fails after a
-// successful probe counts as missing, unless the probe fails again right after - then the network went,
+// else. A box art is asked for by its exact name first; when the server has no such file, the database's
+// Named_Boxarts/ index (the server lists its folders) is fetched once per database and the file is picked
+// from it with ThumbnailLookup::pickName - the same tag-peeling, case-insensitive, region-tolerant rules
+// the carousel finds a local file with, since libretro's thumbnails follow newer No-Intro spellings than
+// the rdb ("Sonic The Hedgehog" for the rdb's "Sonic the Hedgehog") - and saved under the server's name.
+// A box art the server has under no matching name is remembered (Named_Boxarts/.autobleem-missing.txt,
+// one escaped name per line) and not asked for again; delete the file to retry. A fetch that fails after
+// a successful probe counts as missing, unless the probe fails again right after - then the network went,
 // and the pass stops without marking anything.
 //
 // Owned by nothing: ScanService's worker makes one per scan cycle from the config it was given.
@@ -58,9 +64,16 @@ public:
     int ensureDatabases(const std::string &rdbDir);
 
     enum class BoxArt { Fetched, AlreadyThere, Missing, Failed };
-    // <thumbnailsDir>/<dbName>/Named_Boxarts/<escaped label>.png from the server, unless it is there
-    // already or was found missing before
+    // the label's box art into <thumbnailsDir>/<dbName>/Named_Boxarts/ from the server - by the exact name,
+    // else by the best name in the server's index - unless a matching file is there already or the
+    // server was found to have none before
     BoxArt fetchBoxArt(const std::string &thumbnailsDir, const std::string &dbName, const std::string &label);
+    // the file names in the server's Named_Boxarts/ folder for a database (fetched once per instance,
+    // an empty list when the index could not be read)
+    const std::vector<std::string> &serverIndex(const std::string &dbName);
+    // the file names an nginx/Apache directory index page links to, URL-decoded, images only
+    static std::vector<std::string> parseIndex(const std::string &html);
+    static std::string urlDecode(const std::string &s);
 
     // one cover to ask for: <thumbnailsDir>/<database>/Named_Boxarts/<label>.png
     struct BoxArtRequest {
@@ -89,6 +102,10 @@ public:
     static std::string boxArtUrl(const std::string &baseUrl, const std::string &dbName, const std::string &label);
     static std::string boxArtPath(const std::string &thumbnailsDir, const std::string &dbName,
                                   const std::string &label);
+    // the same for a file name the server already has (no escaping, no .png added)
+    static std::string boxArtFileUrl(const std::string &baseUrl, const std::string &dbName,
+                                     const std::string &fileName);
+    static std::string boxArtDir(const std::string &thumbnailsDir, const std::string &dbName);
     static std::string urlEncode(const std::string &s); // RFC 3986: everything but unreserved as %XX
     static std::string missingListPath(const std::string &thumbnailsDir, const std::string &dbName);
 
@@ -103,4 +120,5 @@ private:
     CommandRunner runner_;
     bool probed_ = false;
     bool online_ = false;
+    std::map<std::string, std::vector<std::string>> indexCache_; // serverIndex(), per database
 };

@@ -10,9 +10,11 @@
 #include <ableem/engine/thumbnail_lookup.h>
 #include <ableem/engine/zip_archive.h>
 
+#include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iterator>
 
 using namespace std;
 
@@ -73,8 +75,80 @@ string OnlineAssets::boxArtUrl(const string &baseUrl, const string &dbName, cons
 }
 
 string OnlineAssets::boxArtPath(const string &thumbnailsDir, const string &dbName, const string &label) {
-    return DirEntry::removeSeparatorFromEndOfPath(thumbnailsDir) + sep + dbName + sep + "Named_Boxarts" + sep +
-           ableem::ThumbnailLookup::escapeName(label) + ".png";
+    return boxArtDir(thumbnailsDir, dbName) + sep + ableem::ThumbnailLookup::escapeName(label) + ".png";
+}
+
+string OnlineAssets::boxArtFileUrl(const string &baseUrl, const string &dbName, const string &fileName) {
+    return DirEntry::removeSeparatorFromEndOfPath(baseUrl) + "/" + urlEncode(dbName) + "/Named_Boxarts/" +
+           urlEncode(fileName);
+}
+
+string OnlineAssets::boxArtDir(const string &thumbnailsDir, const string &dbName) {
+    return DirEntry::removeSeparatorFromEndOfPath(thumbnailsDir) + sep + dbName + sep + "Named_Boxarts";
+}
+
+//*******************************
+// OnlineAssets::urlDecode / parseIndex
+//*******************************
+string OnlineAssets::urlDecode(const string &s) {
+    string out;
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '%' && i + 2 < s.size() && isxdigit(static_cast<unsigned char>(s[i + 1])) &&
+            isxdigit(static_cast<unsigned char>(s[i + 2]))) {
+            out += static_cast<char>(stoi(s.substr(i + 1, 2), nullptr, 16));
+            i += 2;
+        } else {
+            out += s[i];
+        }
+    }
+    return out;
+}
+
+// href="Sonic%20The%20Hedgehog%20%28USA%2C%20Europe%29.png" -> Sonic The Hedgehog (USA, Europe).png; the
+// listing's "../" and sub-folders (a trailing /) are not files. Both nginx (libretro's server) and Apache
+// write their indexes this way.
+vector<string> OnlineAssets::parseIndex(const string &html) {
+    vector<string> names;
+    size_t pos = 0;
+    while ((pos = html.find("href=\"", pos)) != string::npos) {
+        pos += 6;
+        const size_t end = html.find('"', pos);
+        if (end == string::npos)
+            break;
+        string name = urlDecode(html.substr(pos, end - pos));
+        pos = end + 1;
+        // an entity the server may have used for the name in the link
+        Strings::replaceAll(name, "&amp;", "&");
+        if (name.empty() || name.back() == '/' || name.find('/') != string::npos || name.find('?') != string::npos)
+            continue;
+        if (DirEntry::matchExtension(name, ".png") || DirEntry::matchExtension(name, ".jpg") ||
+            DirEntry::matchExtension(name, ".jpeg"))
+            names.push_back(name);
+    }
+    return names;
+}
+
+//*******************************
+// OnlineAssets::serverIndex
+//*******************************
+const vector<string> &OnlineAssets::serverIndex(const string &dbName) {
+    auto it = indexCache_.find(dbName);
+    if (it != indexCache_.end())
+        return it->second;
+    vector<string> &names = indexCache_[dbName];
+    const string url =
+        DirEntry::removeSeparatorFromEndOfPath(config_.thumbnailsBaseUrl) + "/" + urlEncode(dbName) + "/Named_Boxarts/";
+    const string tmp = Env::getWorkingPath() + sep + ".online-index.html";
+    if (fetch(url, tmp)) {
+        ifstream in(tmp, ios::binary);
+        const string html((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
+        names = parseIndex(html);
+        PLOG_INFO << "Box art index for " << dbName << ": " << names.size() << " files on the server";
+    } else {
+        PLOG_WARNING << "Box art index for " << dbName << " could not be read: " << url;
+    }
+    DirEntry::removeFile(tmp);
+    return names;
 }
 
 string OnlineAssets::missingListPath(const string &thumbnailsDir, const string &dbName) {
@@ -277,8 +351,10 @@ vector<OnlineAssets::BoxArtRequest> OnlineAssets::ps1Requests(const vector<ablee
 // OnlineAssets::fetchBoxArt
 //*******************************
 OnlineAssets::BoxArt OnlineAssets::fetchBoxArt(const string &thumbnailsDir, const string &dbName, const string &label) {
+    const string dir = boxArtDir(thumbnailsDir, dbName);
     const string path = boxArtPath(thumbnailsDir, dbName, label);
-    if (DirEntry::exists(path))
+    // the exact file, or one the carousel's lookup would settle for (a fetch under the server's spelling)
+    if (DirEntry::exists(path) || !ableem::ThumbnailLookup::pickName(DirEntry::listNames(dir), label).empty())
         return BoxArt::AlreadyThere;
     const string listPath = missingListPath(thumbnailsDir, dbName);
     set<string> missing = loadMissingList(listPath);
@@ -292,6 +368,15 @@ OnlineAssets::BoxArt OnlineAssets::fetchBoxArt(const string &thumbnailsDir, cons
     // the server said no - or the network went: the probe tells which
     if (!probe(true))
         return BoxArt::Failed;
+    // no file of that exact name: the server's index, and the name in it the carousel would pick
+    const string serverName = ableem::ThumbnailLookup::pickName(serverIndex(dbName), label);
+    if (!serverName.empty()) {
+        PLOG_INFO << "Box art for " << label << " is " << serverName << " on the server";
+        if (fetch(boxArtFileUrl(config_.thumbnailsBaseUrl, dbName, serverName), dir + sep + serverName))
+            return BoxArt::Fetched;
+        if (!probe(true))
+            return BoxArt::Failed;
+    }
     missing.insert(name);
     saveMissingList(listPath, missing);
     return BoxArt::Missing;

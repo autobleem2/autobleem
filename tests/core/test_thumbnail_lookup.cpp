@@ -11,6 +11,7 @@
 #include <ableem/engine/thumbnail_lookup.h>
 
 #include <string>
+#include <vector>
 
 using ableem::ThumbnailLookup;
 using std::string;
@@ -145,6 +146,23 @@ TEST_CASE("the fuzzy fallback takes another region's file, prefers shared tags, 
     lookup.clearCache();
     CHECK(lookup.findThumbnail(kSystem, "Foo: Bar (USA)", "Named_Boxarts") ==
           t.boxarts + "/Foo_ Bar (USA) (Rev 1).png");
+}
+
+TEST_CASE("case never matters: libretro's spelling of a name is found for the rdb's, and pickName works on any list") {
+    ThumbTree t;
+    t.touch(t.boxarts + "/Sonic The Hedgehog (USA, Europe).png");
+    t.touch(t.boxarts + "/Sonic The Hedgehog 2 (World).png");
+    ThumbnailLookup lookup;
+    CHECK(lookup.findBoxArt(kSystem, "Sonic the Hedgehog (USA, Europe)") ==
+          t.boxarts + "/Sonic The Hedgehog (USA, Europe).png");
+    // the fuzzy fallback ignores case too, and gives the name as the file is spelled
+    CHECK(lookup.findBoxArt(kSystem, "SONIC THE HEDGEHOG 2 (USA)") == t.boxarts + "/Sonic The Hedgehog 2 (World).png");
+    // the same rules over a plain list of names (the server's index)
+    std::vector<string> names{"Persona (USA).png", "Persona 2 (USA).png", "persona (europe).jpg"};
+    CHECK(ThumbnailLookup::pickName(names, "Persona (Europe)") == "persona (europe).jpg");
+    CHECK(ThumbnailLookup::pickName(names, "persona (japan)") == "Persona (USA).png");
+    CHECK(ThumbnailLookup::pickName(names, "Persona 3 (USA)") == "");
+    CHECK(ThumbnailLookup::pickName({}, "Persona (USA)") == "");
 }
 
 TEST_CASE("the directory listing is cached until clearCache") {

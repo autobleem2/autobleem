@@ -30,11 +30,17 @@ public:
     // what libretro-thumbnails does to a name before it becomes a file name: &*/:`<>?\| -> _
     static std::string escapeName(const std::string &name);
 
-    // <thumbnails>/<dbName>/<thumbnailDir>/<name>.{png,jpg,jpeg}, first hit or "". recordName (the rdb's
-    // canonical name, when known) is tried before title, because that is what the file is named after;
-    // each has its trailing " (...)" tags peeled off one at a time ("Persona.jpg" for "Persona (USA)").
-    // Last, the fuzzy match: any "<bare name> (...)" file in the folder, the one sharing most of the
-    // original tags, then USA > Europe > World, then alphabetical.
+    // The file among `names` (a folder's listing, or libretro's server index) for a game: recordName (the
+    // rdb's canonical name, when known) is tried before title, because that is what the file is named
+    // after; each has its trailing " (...)" tags peeled off one at a time ("Persona.jpg" for "Persona
+    // (USA)"). Last, the fuzzy match: any "<bare name> (...)" file, the one sharing most of the original
+    // tags, then USA > Europe > World, then alphabetical. Case does not matter anywhere - libretro's
+    // thumbnails follow newer No-Intro spellings than the rdb ("Sonic The Hedgehog" vs "Sonic the
+    // Hedgehog"). Returns the name as it is in the list, "" for no match.
+    static std::string pickName(const std::vector<std::string> &names, const std::string &title,
+                                const std::string &recordName = "");
+
+    // <thumbnails>/<dbName>/<thumbnailDir>/ + pickName() over that folder, or ""
     std::string findThumbnail(const std::string &dbName, const std::string &title, const std::string &thumbnailDir,
                               const std::string &recordName = "");
     // Named_Boxarts, else Named_Titles, else Named_Snaps
@@ -50,9 +56,6 @@ public:
 
 private:
     const std::vector<std::string> &listDir(const std::string &dir);
-    std::string tryWithTagStripping(const std::string &dir, std::string candidate);
-    std::string fuzzyMatch(const std::string &dir, const std::string &bare,
-                           const std::vector<std::string> &preferredTags);
 
     std::string thumbnailsDir_, screenshotsDir_, statesDir_;
     std::unordered_map<std::string, std::vector<std::string>> dirCache_;

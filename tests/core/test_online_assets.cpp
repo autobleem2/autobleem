@@ -129,9 +129,9 @@ TEST_CASE("fetchBoxArt: fetched once, then already there; a server miss is remem
 
     size_t before = server.commands.size();
     CHECK(online.fetchBoxArt(thumbs, NES, "Homebrew Thing (World)") == OnlineAssets::BoxArt::Missing);
-    CHECK(server.commands.size() == before + 2); // the fetch, and the probe that said the server is up
+    CHECK(server.commands.size() == before + 3); // the fetch, the probe that said the server is up, the index
     CHECK(online.fetchBoxArt(thumbs, NES, "Homebrew Thing (World)") == OnlineAssets::BoxArt::Missing);
-    CHECK(server.commands.size() == before + 2); // remembered
+    CHECK(server.commands.size() == before + 3); // remembered
     std::set<string> missing = OnlineAssets::loadMissingList(OnlineAssets::missingListPath(thumbs, NES));
     CHECK(missing == std::set<string>{"Homebrew Thing (World)"});
 
@@ -140,6 +140,45 @@ TEST_CASE("fetchBoxArt: fetched once, then already there; a server miss is remem
     CHECK(online.fetchBoxArt(thumbs, NES, "Battletoads (USA)") == OnlineAssets::BoxArt::Failed);
     CHECK_FALSE(online.online());
     CHECK(OnlineAssets::loadMissingList(OnlineAssets::missingListPath(thumbs, NES)).size() == 1);
+}
+
+TEST_CASE("fetchBoxArt: a name the server spells differently is found in its index and saved under that name") {
+    TempDir tmp("online");
+    EnvFixture env;
+    env.setWorkingPath(tmp.path());
+    FakeServer server;
+    server.files["http://thumbs/"] = "<html>";
+    const char *const MD = "Sega - Mega Drive - Genesis";
+    // nginx's index: the newer No-Intro capitalisation, an &amp; in a link, a sub-folder, the parent link
+    server.files["http://thumbs/Sega%20-%20Mega%20Drive%20-%20Genesis/Named_Boxarts/"] =
+        "<html><body><a href=\"../\">../</a>\n"
+        "<a href=\"Sonic%20The%20Hedgehog%20%28USA%2C%20Europe%29.png\">Sonic The Hedgehog (USA, Europe).png</a>\n"
+        "<a href=\"Sonic%20The%20Hedgehog%202%20%28World%29.png\">Sonic The Hedgehog 2 (World).png</a>\n"
+        "<a href=\"Ecco%20%26amp%3B%20Tails%20%28USA%29.png\">x</a>\n"
+        "<a href=\"sub/\">sub/</a><a href=\"notes.txt\">notes.txt</a></body></html>";
+    server.files[OnlineAssets::boxArtFileUrl("http://thumbs", MD, "Sonic The Hedgehog (USA, Europe).png")] = "PNG";
+    OnlineAssets online(config(), server.runner());
+    const string thumbs = tmp.at("thumbnails");
+
+    CHECK(OnlineAssets::urlDecode("a%20b%28c%29%2C") == "a b(c),");
+    vector<string> index =
+        OnlineAssets::parseIndex(server.files["http://thumbs/Sega%20-%20Mega%20Drive%20-%20Genesis/Named_Boxarts/"]);
+    CHECK(index == vector<string>{"Sonic The Hedgehog (USA, Europe).png", "Sonic The Hedgehog 2 (World).png",
+                                  "Ecco & Tails (USA).png"});
+
+    // the rdb's spelling: the exact fetch misses, the index has it with a capital T
+    CHECK(online.fetchBoxArt(thumbs, MD, "Sonic the Hedgehog (USA, Europe)") == OnlineAssets::BoxArt::Fetched);
+    CHECK(tmp.readFile(string("thumbnails/") + MD + "/Named_Boxarts/Sonic The Hedgehog (USA, Europe).png") == "PNG");
+    // ...and that file counts as there next time, and the index was read once
+    size_t before = server.commands.size();
+    CHECK(online.fetchBoxArt(thumbs, MD, "Sonic the Hedgehog (USA, Europe)") == OnlineAssets::BoxArt::AlreadyThere);
+    CHECK(server.commands.size() == before);
+    // another region's spelling settles for what the index has (the fuzzy rule), no second index fetch
+    CHECK(online.fetchBoxArt(thumbs, MD, "Sonic the Hedgehog 2 (USA)") ==
+          OnlineAssets::BoxArt::Missing);        // the picked file is not served
+    CHECK(server.commands.size() == before + 4); // exact fetch, probe, the picked name, probe - no index
+    CHECK(OnlineAssets::loadMissingList(OnlineAssets::missingListPath(thumbs, MD)) ==
+          std::set<string>{"Sonic the Hedgehog 2 (USA)"});
 }
 
 TEST_CASE("ensureDatabases: nothing to do with databases there or no network; else the bundle is unpacked") {
@@ -193,7 +232,7 @@ TEST_CASE("fetchMissingBoxArt by request: only the covers not there, each arriva
     int fetched = online.fetchMissingBoxArt(
         {{PSX, "Crash Bandicoot (USA)"}, {PSX, "Tekken 2 (USA)"}, {PSX, "Nobody (Nowhere)"}}, thumbs, nullptr, nullptr,
         &missing,
-        [&](const OnlineAssets::BoxArtRequest &r, const string &path) { arrived.push_back({r.label, path}); });
+        [&](const OnlineAssets::BoxArtRequest &r, const string &path) { arrived.emplace_back(r.label, path); });
 
     CHECK(fetched == 1);
     CHECK(missing == 1);
