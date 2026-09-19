@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# Cross-build RetroArch for the Raspberry Pi inside the build image, as a tarball the Pi installer unpacks
+# over / instead of building from source (docs/repo-server-plan.md, step 3):
+#
+#   docker/run.sh ci/build_retroarch.sh armhf            # the newest v* tag on github.com
+#   docker/run.sh ci/build_retroarch.sh arm64 v1.22.2    # that tag
+#   docker/run.sh ci/build_retroarch.sh all              # both architectures
+#
+# Output: build_retroarch/dist/retroarch-<tag>-<arch>.tar.gz (+ .sha256) - `make DESTDIR=... install` of
+# the same ./configure as payload_rpi/install.sh's source build (KMS/EGL/GLES, udev, ALSA, SDL2, networking;
+# no X11/Wayland/Qt/ffmpeg), plus two files under usr/local/share/autobleem/: retroarch.version (the tag -
+# install.sh's stamp) and retroarch.depends (the runtime packages, one per line, Bookworm names).
+#
+# Built against the image's Bookworm multiarch libraries, so it runs on Bookworm and Trixie Raspberry Pi OS:
+# a binary linked on the older glibc loads on the newer, and every library it needs keeps its soname across
+# the two releases (FLAC does not - libFLAC.so.12 vs .14 - so it is left out; RetroArch only used it for
+# playing FLAC files in its audio mixer). armhf targets armv7-a + NEON (Pi 2 and up), like the launcher.
+#
+#   AB_JOBS=N   parallel jobs (default: nproc)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+ROOT="$PWD"
+JOBS="${AB_JOBS:-$(nproc)}"
+WORK="$ROOT/build_retroarch"
+DIST="$WORK/dist"
+
+usage() { sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+banner() { echo; echo "==> $*"; }
+
+[ $# -ge 1 ] || usage
+ARCH="$1"
+TAG="${2:-}"
+case "$ARCH" in armhf|arm64|all) ;; *) usage ;; esac
+
+# the newest release tag, as install.sh finds it
+if [ -z "$TAG" ]; then
+    TAG="$(git ls-remote --tags --refs https://github.com/libretro/RetroArch.git \
+            | awk -F/ '{print $NF}' | grep -E '^v[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -V | tail -1)"
+    [ -n "$TAG" ] || { echo "cannot find the latest RetroArch tag on github.com" >&2; exit 1; }
+fi
+banner "RetroArch $TAG"
+
+SRC="$WORK/RetroArch-$TAG"
+if [ ! -d "$SRC/.git" ]; then
+    rm -rf "$SRC"
+    git clone -q --depth 1 --branch "$TAG" https://github.com/libretro/RetroArch.git "$SRC"
+fi
+
+#*******************************
+# build_one
+#*******************************
+build_one() {
+    local arch="$1" triplet cflags
+    case "$arch" in
+        armhf) triplet=arm-linux-gnueabihf; cflags="-O2 -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard" ;;
+        arm64) triplet=aarch64-linux-gnu;   cflags="-O2" ;;
+    esac
+    local stage="$WORK/stage-$arch"
+    local out="$DIST/retroarch-$TAG-$arch.tar.gz"
+    banner "$arch: configure ($triplet)"
+    rm -rf "$stage"
+    mkdir -p "$stage" "$DIST"
+    (
+        cd "$SRC"
+        # each architecture starts from a clean tree: the Makefile builds in place
+        make -s clean >/dev/null 2>&1 || true
+        export CROSS_COMPILE="$triplet-"
+        export PKG_CONFIG_LIBDIR="/usr/lib/$triplet/pkgconfig:/usr/share/pkgconfig"
+        export CFLAGS="$cflags" CXXFLAGS="$cflags"
+        ./configure --prefix=/usr/local \
+            --disable-x11 --disable-wayland --disable-videocore --disable-vulkan --disable-qt \
+            --disable-ffmpeg --disable-jack --disable-oss --disable-pulse --disable-sdl --disable-flac \
+            --enable-sdl2 --enable-kms --enable-egl --enable-opengles --enable-opengles3 \
+            --enable-udev --enable-alsa --enable-networking \
+            $([ "$arch" = armhf ] && echo --enable-neon)
+        banner "$arch: make -j$JOBS"
+        make -j"$JOBS"
+        make DESTDIR="$stage" install
+    )
+    "$triplet-strip" "$stage/usr/local/bin/retroarch"
+
+    # the runtime packages: the sonames the binary needs, mapped to the packages that own them here
+    banner "$arch: dependencies"
+    local meta="$stage/usr/local/share/autobleem"
+    mkdir -p "$meta"
+    echo "$TAG" > "$meta/retroarch.version"
+    # (dpkg knows a library by the path its package shipped - /lib/... for glibc and liblzma on a merged-usr
+    # system, /usr/lib/... for the rest - so both are asked; libc6/libgcc/libstdc++ are always there)
+    "$triplet-objdump" -p "$stage/usr/local/bin/retroarch" | awk '/NEEDED/ {print $2}' | while read -r so; do
+        { dpkg -S "/usr/lib/$triplet/$so" 2>/dev/null || dpkg -S "/lib/$triplet/$so" 2>/dev/null || true; } \
+            | head -1 | sed 's/:.*//'
+    done | grep -vE '^(libc6|libgcc-s1|libstdc\+\+6|)$' | sort -u > "$meta/retroarch.depends"
+    [ -s "$meta/retroarch.depends" ] || { echo "no dependencies found for $arch - something is off" >&2; exit 1; }
+    cat "$meta/retroarch.depends"
+
+    banner "$arch: $out"
+    tar -C "$stage" --owner=0 --group=0 -czf "$out" .
+    (cd "$DIST" && sha256sum "$(basename "$out")" > "$(basename "$out").sha256")
+    ls -la "$out"
+    file "$stage/usr/local/bin/retroarch" || true
+}
+
+if [ "$ARCH" = all ]; then
+    build_one armhf
+    build_one arm64
+else
+    build_one "$ARCH"
+fi
+banner "done: $DIST"

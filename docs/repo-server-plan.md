@@ -95,9 +95,12 @@ autobleem-repo/
 
 Each step is its own feature branch and commit (gitflow), each proven before the next.
 
-**Status 2026-09-19:** steps 1 and 2 are done and live at `http://212.71.244.78:9090/` (the DNS record is
-not set up yet, so the base URL is the direct address for now - `AB_REPO_URL`): the page, the assets, the
-three cover databases and the `933bd2f` image set. Steps 3-7 are open.
+**Status 2026-09-19:** steps 1-4 are done and live at `http://212.71.244.78:9090/` (the DNS record is
+not set up yet, so the base URL is the direct address for now - `AB_REPO_URL`): the page and the Pi manual,
+the assets, the three cover databases, the `933bd2f` image set, and RetroArch v1.22.2 for both
+architectures - cross-built in the image, installed on the Pi 400 (Trixie) by `install.sh --retroarch
+prebuilt` in a couple of minutes, every library resolving. Steps 5-7 are open. **No image is to be built
+until the domain exists** (the owner's rule: an image bakes the repository's URL into its installer).
 
 ### Step 1 - the server (S) - done
 
@@ -126,7 +129,15 @@ runs `tools/repo_index.py` on the server (python3 is there) to regenerate `lates
 the CI job does). `--prune` for the image retention. Prove: publish the current `db/` (the real cover DBs
 from the Docker image's `/opt/autobleem/db`) and the two `933bd2f` images from the Pi.
 
-### Step 3 - prebuilt RetroArch (M)
+### Step 3 - prebuilt RetroArch (M) - done
+
+The cross build worked first time: RetroArch's `qb` configure takes `CROSS_COMPILE` and
+`PKG_CONFIG_LIBDIR`. FLAC is disabled (its soname differs between Bookworm and Trixie); the `DEPENDS`
+list is derived with `objdump -p` + `dpkg -S` (asked for both `/usr/lib/<triplet>/` and `/lib/<triplet>/`
+- dpkg knows glibc and liblzma by the latter on a merged-usr system). The build-deps are a `retroarch`
+stage after `psc` in the Dockerfile, so adding them rebuilt no toolchain. What the installer turned up:
+`pkg_first_available` used `apt-cache show`, which succeeds silently for a virtual name (`libasound2` on
+Trixie is only Provided by `libasound2t64`) - it checks for an installation candidate now.
 
 `ci/build_retroarch.sh <armhf|arm64> [tag]` **inside the Docker image**, cross-compiled - the image already
 has `crossbuild-essential-armhf/-arm64` and the multiarch SDL2 dev packages; it gains the rest of
@@ -148,7 +159,7 @@ Prove on the Pi 400: untar over `/`, `apt-get install` the `DEPENDS`, start the 
 game and a PS1 game through RetroArch. Then `tools/repo_publish.sh retroarch v1.22.2 ...`. A `retroarch.yml`
 workflow (`workflow_dispatch` + a monthly schedule, self-hosted) builds and publishes the newest tag.
 
-### Step 4 - the installer uses it (M)
+### Step 4 - the installer uses it (M) - done
 
 `install.sh --retroarch prebuilt|source|apt|none`, **`prebuilt` the new default**: read
 `$REPO/rpi/retroarch/latest.json`, download the matching architecture's tarball (`.part`, sha256 checked,

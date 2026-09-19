@@ -19,10 +19,15 @@ root_gib=8
 #hdmi_mode=1920x1080@60
 
 # RetroArch - optional. AutoBleem plays PlayStation games on its own; RetroArch adds the other systems (NES,
-# SNES, Mega Drive, arcade, ...) at the cost of a 10-40 minute build and close to a GB of downloads. Left
-# unset, the first boot asks on the screen (no answer within a minute = yes). Set it to skip the question:
-#   source - latest release, built on the Pi | apt - the distribution's package | none - PS1-only AutoBleem
-#retroarch=source
+# SNES, Mega Drive, arcade, ...) at the cost of close to a GB of downloads. Left unset, the first boot asks
+# on the screen (no answer within a minute = yes). Set it to skip the question:
+#   prebuilt - the latest release from AutoBleem's download site (seconds; built here if the site is down)
+#   source - latest release, built on the Pi (10-40 minutes) | apt - the distribution's package
+#   none - PS1-only AutoBleem
+#retroarch=prebuilt
+
+# AutoBleem's download site (the prebuilt RetroArch). Only for a mirror or a copy on your own network.
+#repo=http://212.71.244.78:9090
 
 # PS1 box art. The launcher fetches each game's cover from thumbnails.libretro.com when it scans the
 # game, so nothing needs mirroring: none (default) | boxarts (the whole set, ~350 MB, for covers offline) |

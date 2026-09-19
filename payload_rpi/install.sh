@@ -34,7 +34,8 @@ DO_BOOT_CONFIG=1
 QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the launcher is the only thing seen
 BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem logo) from the initramfs on; needs QUIET_BOOT
 HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
-RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
+RETROARCH_MODE=prebuilt         # --retroarch: prebuilt (from the download repository) | source | apt | none
+REPO_URL="${AB_REPO_URL:-http://212.71.244.78:9090}"   # --repo: the download repository (docs/repo-server-plan.md)
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
 THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
@@ -110,8 +111,11 @@ Usage: sudo bash install.sh [options]
   --hdmi-mode MODE     the HDMI mode set on the kernel command line for the whole boot (default: 1920x1080@60;
                        the launcher draws its 1280x720 UI at 1.5x on a 1080p screen, covers and text sharp;
                        1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode)
-  --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
-                       apt: the distribution's package; none: leave RetroArch alone
+  --retroarch MODE     prebuilt (default): the newest RetroArch release built for this architecture by
+                       AutoBleem's download repository (--repo), unpacked in seconds - falls back to source
+                       when the repository cannot be reached; source: build the latest release here, 10-40
+                       min on a Pi; apt: the distribution's package; none: leave RetroArch alone
+  --repo URL           the download repository (default: $AB_REPO_URL or AutoBleem's)
   --thumbnails WHAT    none (default): the launcher fetches a game's cover from thumbnails.libretro.com when
                        it scans the game, so nothing is mirrored here; boxarts: the whole PS1 set (~9000
                        files, ~350 MB, resumable, four streams) for covers offline; all: title screens and
@@ -144,7 +148,8 @@ parse_args() {
             --no-quiet-boot)  QUIET_BOOT=0; BOOT_SPLASH=0; shift ;;
             --no-boot-splash) BOOT_SPLASH=0; shift ;;
             --hdmi-mode)      HDMI_MODE="${2:?--hdmi-mode needs a mode such as 1280x720@60, or none}"; shift 2 ;;
-            --retroarch)      RETROARCH_MODE="${2:?--retroarch needs source, apt or none}"; shift 2 ;;
+            --retroarch)      RETROARCH_MODE="${2:?--retroarch needs prebuilt, source, apt or none}"; shift 2 ;;
+            --repo)           REPO_URL="${2:?--repo needs a URL}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
             --no-bios)        DO_BIOS=0; shift ;;
             --thumbnails)     THUMBNAILS="${2:?--thumbnails needs boxarts, all or none}"; shift 2 ;;
@@ -217,7 +222,10 @@ preflight() {
 pkg_first_available() {
     local name
     for name in "$@"; do
-        if apt-cache show "$name" >/dev/null 2>&1; then
+        # a package apt can install - "apt-cache show" alone is not the test: it succeeds, silently, for a
+        # name that only exists as something another package Provides (libasound2 on Trixie, libasound2t64's
+        # virtual name), which apt-get then refuses to install
+        if apt-cache policy "$name" 2>/dev/null | grep -q '^  Candidate: [^(]'; then
             echo "$name"
             return 0
         fi
@@ -255,9 +263,10 @@ install_packages() {
 #*******************************
 # RetroArch is the second half of the launcher: the RetroArch set and playlists, "RetroArch" in the L2+R2
 # system menu, and a PS1 game's "Play using RA" option. libretro's buildbot has every core for armhf and
-# arm64 but no frontend build, and the distribution's package trails the releases, so the default is to build
-# the latest tagged release here, from source (10-40 minutes depending on the Pi). --retroarch apt takes the
-# distribution's instead; --retroarch none leaves whatever is installed alone.
+# arm64 but no frontend build, and the distribution's package trails the releases, so the default is the
+# newest release AutoBleem's download repository has built for this architecture (ci/build_retroarch.sh -
+# the same configure as the source build here, seconds instead of 10-40 minutes), else that source build.
+# --retroarch apt takes the distribution's instead; --retroarch none leaves whatever is installed alone.
 install_retroarch() {
     case "$RETROARCH_MODE" in
         none)
@@ -266,6 +275,10 @@ install_retroarch() {
         apt)
             install_retroarch_apt
             return 0 ;;
+        prebuilt)
+            install_retroarch_prebuilt && return 0
+            warn "no prebuilt RetroArch - building it from source instead"
+            ;&
         source)
             install_retroarch_source || {
                 warn "building RetroArch failed - installing the distribution's package instead"
@@ -273,8 +286,63 @@ install_retroarch() {
             }
             return 0 ;;
         *)
-            die "--retroarch takes source, apt or none (got '$RETROARCH_MODE')" ;;
+            die "--retroarch takes prebuilt, source, apt or none (got '$RETROARCH_MODE')" ;;
     esac
+}
+
+#*******************************
+# install_retroarch_prebuilt
+#*******************************
+# <repo>/rpi/retroarch/latest.json names the newest build per architecture; its tarball is `make install`ed
+# RetroArch as files under usr/local (plus etc/retroarch.cfg), unpacked over /, with the runtime packages it
+# needs listed in usr/local/share/autobleem/retroarch.depends (Bookworm names - the t64 spelling is tried
+# too, for Trixie) and its version in retroarch.version, the same stamp the source build writes.
+install_retroarch_prebuilt() {
+    local stamp=/usr/local/share/autobleem/retroarch.version
+    local latest=/tmp/autobleem-retroarch-latest.json
+    local version url sha
+    command -v python3 >/dev/null 2>&1 || { warn "python3 is needed to read the repository's index"; return 1; }
+    log "RetroArch: asking $REPO_URL for a build for $ARCH"
+    if ! wget -q -O "$latest" "$REPO_URL/rpi/retroarch/latest.json"; then
+        warn "cannot reach $REPO_URL/rpi/retroarch/latest.json"
+        return 1
+    fi
+    read -r version url sha < <(python3 - "$latest" "$ARCH" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+a = d.get(sys.argv[2]) or {}
+print(d.get("version", ""), a.get("url", ""), a.get("sha256", ""))
+PY
+    )
+    [ -n "$url" ] || { warn "the repository has no RetroArch build for $ARCH"; return 1; }
+    if [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$version" ] && [ -x /usr/local/bin/retroarch ]; then
+        log "RetroArch $version is already installed"
+        return 0
+    fi
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would download %s, check its sha256, unpack it over / and apt-get install what it needs\n' "$url"
+        return 0
+    fi
+    local tarball=/tmp/autobleem-retroarch.tar.gz
+    log "RetroArch: downloading $version ($url)"
+    if ! wget -q -O "$tarball.part" "$url" || [ "$(sha256sum "$tarball.part" | cut -d' ' -f1)" != "$sha" ]; then
+        warn "the download failed or its sha256 does not match"
+        rm -f "$tarball.part"
+        return 1
+    fi
+    mv -f "$tarball.part" "$tarball"
+    run tar -xzf "$tarball" -C / --no-same-owner || { rm -f "$tarball"; return 1; }
+    rm -f "$tarball"
+    if [ "$DO_PACKAGES" -eq 1 ] && [ -f /usr/local/share/autobleem/retroarch.depends ]; then
+        local pkgs=() p
+        while read -r p; do
+            [ -n "$p" ] && pkgs+=("$(pkg_first_available "$p" "${p}t64")")
+        done < /usr/local/share/autobleem/retroarch.depends
+        run apt-get install -y "${pkgs[@]}" \
+            || warn "not every library RetroArch needs could be installed (${pkgs[*]}) - it may not start"
+    fi
+    hash -r
+    log "RetroArch: installed $version as /usr/local/bin/retroarch"
 }
 
 install_retroarch_apt() {
