@@ -92,6 +92,27 @@ cp -a "$REPO/src/resources/." "$APP/"
 # never reads it, so shipping it would only be confusing.
 rm -f "$APP/internal.db"
 
+# VERSION: what this package is, for tools/make_rpi_image.sh to name the image after (the build host has no
+# git tree, and the binary is for another architecture). Read from the build's own generated version.h so
+# it says exactly what the binary's About screen says: the tag, plus the short hash and "-dirty" unless the
+# tree is clean and exactly at that tag - so a release is "v2.0.0", a development build "v2.0.0-pre0-a65250f-dirty".
+VERSION_H="$BUILD_DIR/generated/core/version.h"
+if [ -f "$VERSION_H" ]; then
+    ab_version="$(sed -n 's/^constexpr const char \*VERSION = "\([^"]*\)".*/\1/p' "$VERSION_H")"
+    ab_hash="$(sed -n 's/^constexpr const char \*GIT_HASH = "\([^"]*\)".*/\1/p' "$VERSION_H")"
+    ab_dirty="$(sed -n 's/^constexpr bool GIT_DIRTY = \([a-z]*\);.*/\1/p' "$VERSION_H")"
+    if [ "$ab_dirty" = false ] && git -C "$REPO" describe --tags --exact-match HEAD >/dev/null 2>&1; then
+        ab_full="$ab_version"
+    else
+        ab_full="$ab_version${ab_hash:+-$ab_hash}"
+        [ "$ab_dirty" = true ] && ab_full="$ab_full-dirty"
+    fi
+    printf '%s\n' "$ab_full" > "$STAGE/VERSION"
+    echo "==> version $ab_full"
+else
+    echo "    (no $VERSION_H - the package carries no VERSION file; make_rpi_image.sh will name the image without one)"
+fi
+
 # themes: the converted theme.json layout, the same ones the console's payload ships
 cp -a "$REPO/payload/themes/." "$STAGE/themes/"
 
