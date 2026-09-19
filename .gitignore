@@ -69,7 +69,6 @@ db/
 
 #Claude Code local settings
 .claude/settings.local.json
-build_win2/
 # anchored to the root: an unanchored "build/" also matches lib_ableem/third_party/libchdr/deps/zstd-1.5.6/build/,
 # which is vendored *source* (zstd's own CMakeLists.txt lives there), not a build output directory - it was
 # silently missing from every fresh clone until this line was anchored (2026-09-18).
@@ -81,4 +80,6 @@ usb/
 # the PS1 BIOS images (System/Bios on the Pi) - never committed
 bios/
 __pycache__/
-__pycache__/
+
+# tools/win_drive.ps1's screenshots land in the root
+/shot*.png

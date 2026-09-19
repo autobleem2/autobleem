@@ -775,7 +775,12 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into `build_rpi_dbg/`. See the
   "Raspberry Pi port" section above. All three build scripts are incremental now; `make_win.sh`'s time is
   mostly `ctest`.
-- **Mac/Linux**: `make_mac.sh`, `make_sys.sh`.
+- **Linux/macOS (native)**: `make_sys.sh` - a plain host build into `build_sys/`. (The root's 2019 leftovers
+  went on 2026-09-19: the armv7 `MacToolchain.cmake`/`PS1Ctoolchain.cmake`/`PSCtoolchainV7.cmake` and
+  `make_mac.sh`/`make_all.sh` - the console build is `make_psc.sh` with `toolchains/psc/` - and
+  `make_english.txt.sh` (`tools/lang_tools.py extract`), `.dep.inc`, a stray `coversP.db`, `default.lic`,
+  root copies of `default.png`/`pcsx.cfg` (the real ones are in `src/resources`), and `win_drive.ps1`'s
+  screenshots, now ignored as `/shot*.png`.)
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
