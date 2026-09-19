@@ -218,6 +218,24 @@ and unpacks it into `RetroArch/`, falling back to the per-core buildbot download
 unreachable. A `cores.yml` workflow refreshes it monthly next to `retroarch.yml`. The set is then a known
 quantity per release - a core that breaks on the Pi (picodrive's Cyclone) can be left out at the source.
 
+### Step 9 - images built on the server, rootless (M) - agreed 2026-09-19
+
+`tools/make_rpi_image.sh` loop-mounts the base image, which needs root - the reason images have been built
+on the Pi 400. Everything it does inside the image is file placement, and the standard tools do that on an
+*unmounted* image: `debugfs -w` (e2fsprogs) for the ext4 root - `write` the tarball and
+`autobleem-firstboot.sh` into `/opt/autobleem-image/`, `write` the `.service` into
+`/etc/systemd/system/`, `symlink` it under `multi-user.target.wants/`, `mkdir` as needed - and `mtools`
+(`mcopy -i <img>@@<offset>`) for the FAT boot partition: `cmdline.txt` out, `resize` removed, back in;
+`autobleem.txt` in. Partition offsets from `sfdisk -J` on the image file. xz, sha256 and the Imager JSON
+are plain userland. So `ci/build_image.sh <armhf|arm64> --package ...` runs inside the existing
+`autobleem-build` image through `docker/run.sh` (the Dockerfile's last stage gains `mtools`; `e2fsprogs`,
+`xz-utils` and `util-linux` are there), no `--privileged`, no qemu - still injection-only. Verification is
+mount-free too: `debugfs -R "ls -l ..."` and `mcopy` out to compare, plus the re-decompressed image's
+partition table. The Pi 400 then only ever *tests* an image, on the owner's request from the PC - never as
+part of CI (there is no Pi in the cloud, the owner's rule). The mount-based path stays in
+`make_rpi_image.sh` for a machine with root; `ci/build_image.sh` is what the server and a tag run. One CI
+run then yields the five packages *and* the two images, published together.
+
 ## Out of scope
 
 - DNS: the owner's, on the Netlify side (one `A` record).
