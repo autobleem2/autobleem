@@ -14,6 +14,7 @@ Reads what is there (docs/repo-server-plan.md has the layout) and writes:
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
+    rpi-install.html                   the Raspberry Pi manual: which image for which Pi, the setup, games
 
 Every file's sha256 comes from its `<name>.sha256` sidecar (sha256sum format) when there is one, else it
 is computed and the sidecar written.
@@ -298,6 +299,7 @@ a.dl{display:inline-block;padding:.25rem .7rem;border:1px solid var(--line);bord
 a.dl:hover{background:rgba(79,200,255,.2);text-decoration:none}
 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;color:#fff;background:rgba(255,255,255,.07);padding:.05em .35em;border-radius:3px}
 .older{color:var(--dim);font-size:.9rem}
+ul,ol{line-height:1.55;padding-left:1.4rem}li{margin:.3rem 0}
 footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
@@ -354,7 +356,9 @@ def render_index(base_url, releases, builds, images, dbs):
         out.append("<p>Flash with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>: "
                    "<em>Use custom</em> with a downloaded file, or add this repository under "
                    "<em>App Options &rarr; Content Repository</em>: <code>%s/rpi-imager/os_list.json</code>. "
-                   "The first boot finishes the install (a network connection is needed).</p>" % e(base_url))
+                   "The first boot finishes the install (a network connection is needed). "
+                   "<a href=\"/rpi-install.html\">Which image for which Pi, and the whole setup, step by step</a>."
+                   "</p>" % e(base_url))
         out.append("<table><tr><th>OS</th><th>File</th><th></th></tr>")
         for arch, title in (("armhf", "32-bit Raspberry Pi OS (Pi 2/3/4/400/Zero 2)"),
                             ("arm64", "64-bit Raspberry Pi OS (Pi 3/4/5/400/Zero 2)")):
@@ -386,6 +390,126 @@ def render_index(base_url, releases, builds, images, dbs):
     return "\n".join(out) + "\n"
 
 
+#*******************************
+# the Raspberry Pi manual page
+#*******************************
+RPI_MODELS = [
+    # model, 32-bit image, 64-bit image, note
+    ("Raspberry Pi 5", "yes", "yes", ""),
+    ("Raspberry Pi 4 Model B", "yes", "yes", ""),
+    ("Raspberry Pi 400", "yes", "yes", "the test machine - both images are tried here"),
+    ("Raspberry Pi 3 Model B / B+ / A+", "yes", "yes", "1 GB of RAM (512 MB on the A+): fine for the launcher and PS1"),
+    ("Raspberry Pi Zero 2 W", "yes", "yes", "512 MB of RAM; PS1 runs, the heavier RetroArch cores do not"),
+    ("Raspberry Pi 2 Model B", "yes", "v1.2 only", "v1.1 has a 32-bit-only CPU; slow for anything 3D"),
+    ("Compute Module 3 / 4 / 5", "yes", "yes", "with a carrier board that has HDMI and USB"),
+    ("Raspberry Pi 1, Zero, Zero W", "no", "no", "ARMv6 - neither image runs on these"),
+]
+
+
+def render_rpi_install(base_url, images):
+    e = html.escape
+    newest = newest_of(images) if images else None
+    out = []
+    out.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">")
+    out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    out.append("<title>AutoBleem on a Raspberry Pi</title><link rel=\"icon\" href=\"/assets/icon.png\">")
+    out.append("<style>%s</style></head><body>" % PAGE_CSS)
+    out.append("<div class=\"hero\"></div><main>")
+    out.append("<div class=\"panel\"><h1>AutoBleem on a Raspberry Pi</h1>"
+               "<p>AutoBleem turns a Raspberry Pi into a PlayStation Classic-style console: it boots straight into "
+               "the game carousel, plays PlayStation games with its own emulator, and - with RetroArch - the "
+               "other systems too. The image is Raspberry Pi OS Lite with AutoBleem's setup added; the first boot "
+               "finishes the installation by itself. <a href=\"/\">&larr; Downloads</a></p></div>")
+
+    out.append("<div class=\"panel\"><h2>Which image</h2>"
+               "<p>Two images, one per flavour of Raspberry Pi OS. <strong>The 32-bit image is the one to take</strong> "
+               "unless you have a reason not to: AutoBleem's PlayStation emulator has its fast ARM dynamic "
+               "recompiler only on 32-bit, and every Pi from the 2 up runs it. The 64-bit image runs the "
+               "same launcher with a slower (interpreted) PlayStation emulator, but RetroArch has about twice "
+               "as many cores built for 64-bit ARM - pick it for the other systems on a Pi 4, 400 or 5.</p>"
+               "<table><tr><th>Model</th><th>32-bit image</th><th>64-bit image</th><th>Notes</th></tr>")
+    for model, b32, b64, note in RPI_MODELS:
+        out.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (e(model), e(b32), e(b64), e(note)))
+    out.append("</table>")
+    if newest:
+        out.append("<p style=\"margin-top:1rem\">")
+        for arch, title in (("armhf", "32-bit image"), ("arm64", "64-bit image")):
+            f = images[newest].get(arch)
+            if f:
+                out.append("<a class=\"dl\" href=\"%s\">%s (%s)</a> " % (e(f["url"]), title, human(f["size"])))
+        out.append("</p>")
+    out.append("</div>")
+
+    out.append("<div class=\"panel\"><h2>You need</h2><ul>"
+               "<li>A Raspberry Pi from the table, its power supply, and an HDMI screen.</li>"
+               "<li>A microSD card of <strong>16 GB or more</strong> - 32 GB and up if you want room for games "
+               "(the system takes 8 GB, the rest becomes the games partition).</li>"
+               "<li>A USB or Bluetooth gamepad - a DualShock 4, an Xbox pad, an 8BitDo, any pad the Pi sees as a game "
+               "controller. The launcher is driven with the pad; a keyboard is only for the first boot.</li>"
+               "<li><strong>Internet on the first boot</strong> (Ethernet or WiFi): the setup downloads RetroArch, "
+               "its cores and the BIOS files, about a gigabyte in all.</li>"
+               "<li><a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a> on a PC or Mac.</li>"
+               "</ul></div>")
+
+    out.append("<div class=\"panel\"><h2>Flashing the card</h2><ol>"
+               "<li>In Imager, choose your Raspberry Pi model, then under <em>Operating System</em> pick "
+               "<em>Use custom</em> and the downloaded <code>.img.xz</code> - or first add this site under "
+               "<em>App Options &rarr; Content Repository</em> (<code>%s/rpi-imager/os_list.json</code>) and pick "
+               "AutoBleem from the list.</li>"
+               "<li>Choose the card under <em>Storage</em>.</li>"
+               "<li>Say <strong>yes to customisation</strong> when Imager offers it: set a user name and password, "
+               "your <strong>WiFi</strong> network and country, and enable <strong>SSH</strong>. With these preset the "
+               "first boot needs no keyboard at all. (Skipping is fine too - the first boot then asks for the WiFi "
+               "on the screen.)</li>"
+               "<li>Write, then put the card in the Pi and power it on.</li></ol></div>" % e(base_url))
+
+    out.append("<div class=\"panel\"><h2>The first boot</h2>"
+               "<p>Raspberry Pi OS starts once to apply your presets, then AutoBleem's setup takes the screen:</p><ol>"
+               "<li>It waits for the network. Without one it lists the WiFi networks it can see and asks for the "
+               "password (or press <code>e</code> after plugging in an Ethernet cable).</li>"
+               "<li>It asks whether to install <strong>RetroArch</strong>. <code>Y</code> (or a minute of silence) gives "
+               "the full install with about 130 systems; <code>n</code> a lean PlayStation-only AutoBleem. RetroArch "
+               "can be added later by running the installer again.</li>"
+               "<li>It grows the system partition, creates the <code>AUTOBLEEM</code> games partition on the rest of "
+               "the card, downloads RetroArch (ready-built from this site - or, when the site cannot be reached, "
+               "builds it, which takes 10-40 minutes), its cores and the BIOS files, and reboots. Everything is "
+               "shown on the screen; nothing needs pressing.</li>"
+               "<li>The Pi comes up in the game carousel. It is empty until you add games.</li></ol>"
+               "<p>If something fails (no network, a download that would not finish), the setup says so, gives the "
+               "login prompt back and simply tries again on the next boot.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Adding games</h2>"
+               "<p>The <code>AUTOBLEEM</code> partition is exFAT, so any PC or Mac reads it: put the card in a reader, "
+               "or copy over the network with SFTP (WinSCP, FileZilla, <code>scp</code>) to "
+               "<code>/media/autobleem/</code> on the Pi once SSH is enabled.</p><ul>"
+               "<li><strong>PlayStation games</strong>: one folder per game in <code>Games/</code>, with the game's "
+               "<code>.cue</code> + <code>.bin</code>, <code>.chd</code> or <code>.pbp</code> inside. A multi-disc game is "
+               "one folder with every disc in it. Cover art and the title come on their own (the launcher looks the "
+               "game up and fetches its cover online); your own <code>&lt;name&gt;.png</code> next to the game wins.</li>"
+               "<li><strong>Other systems</strong> (with RetroArch): into <code>RetroArch/roms/&lt;system&gt;/</code> - a "
+               "folder per system is already there, named as RetroArch names them ("
+               "<em>Nintendo - Nintendo Entertainment System</em>, <em>Sega - Mega Drive - Genesis</em>, ...).</li>"
+               "<li><strong>BIOS files</strong>: the setup installs the PlayStation BIOS and RetroArch's system files; "
+               "your own go to <code>System/Bios/</code> and <code>RetroArch/system/</code>.</li></ul>"
+               "<p>The launcher watches its folders: copy a game in while it runs and it appears in the carousel by "
+               "itself, cover and all.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Options and updates</h2>"
+               "<p><code>autobleem.txt</code> on the card's small boot partition (readable on any PC) holds the "
+               "first-boot options as <code>key=value</code>: the system partition's size, the HDMI mode, the "
+               "RetroArch answer, whether to mirror the box art. Edit it before the first boot; comments in the file "
+               "explain each key.</p>"
+               "<p>To update an installed Pi, download the Raspberry Pi tarball from the <a href=\"/\">downloads</a> "
+               "page, unpack it on the Pi and run <code>sudo bash install.sh</code> - it keeps the games partition "
+               "and everything on it, and skips what is already installed.</p>"
+               "<p>Questions and bug reports: <a href=\"https://github.com/autobleem/AutoBleem2\">github.com/autobleem/AutoBleem2</a>. "
+               "The Pi's logs are in <code>System/Logs/</code> on the games partition.</p></div>")
+
+    out.append("<footer>Generated %s UTC &middot; theme: ab2</footer></main></body></html>"
+               % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
+    return "\n".join(out) + "\n"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("repo", help="the repository directory")
@@ -401,11 +525,12 @@ def main():
     builds = index_retroarch(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
-    page = render_index(base_url, releases, builds, images, dbs)
-    tmp = os.path.join(repo, ".index.html.tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(page)
-    os.replace(tmp, os.path.join(repo, "index.html"))
+    for name, page in (("index.html", render_index(base_url, releases, builds, images, dbs)),
+                       ("rpi-install.html", render_rpi_install(base_url, images))):
+        tmp = os.path.join(repo, ".%s.tmp" % name)
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(page)
+        os.replace(tmp, os.path.join(repo, name))
     print("%s: %d releases, %d RetroArch builds, %d image sets, %d databases" % (
         repo, len(releases), len(builds), len(images), len(dbs)))
 
