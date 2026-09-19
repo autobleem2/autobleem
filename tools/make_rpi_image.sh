@@ -154,6 +154,26 @@ preflight() {
     log "Work directory: $WORK_DIR"
     log "Output directory: $OUT_DIR"
     run mkdir -p "$WORK_DIR" "$OUT_DIR"
+
+    # Room to work in, checked now rather than found out an hour later: the base image compressed (~0.6 GB)
+    # and decompressed (~3.1 GB) sit in the work directory together while the output (~0.7 GB) is written -
+    # an 8 GB Pi root with RetroArch's source tree and the apt cache on it ran out at the very last step.
+    # On a Pi, --work/--out on the data partition is the natural place.
+    if [ "$DRY_RUN" -eq 0 ]; then
+        local need_work_mib=5000 need_out_mib=800 free_mib
+        free_mib="$(df -Pm "$WORK_DIR" | awk 'NR == 2 { print $4 }')"
+        if [ "$(df -P "$WORK_DIR" | awk 'NR == 2 { print $1 }')" = "$(df -P "$OUT_DIR" | awk 'NR == 2 { print $1 }')" ]; then
+            need_work_mib=$((need_work_mib + need_out_mib))
+        else
+            local free_out_mib
+            free_out_mib="$(df -Pm "$OUT_DIR" | awk 'NR == 2 { print $4 }')"
+            [ "$free_out_mib" -ge "$need_out_mib" ] \
+                || die "only ${free_out_mib} MiB free under $OUT_DIR - the image needs about ${need_out_mib} MiB there (--out elsewhere?)"
+        fi
+        [ "$free_mib" -ge "$need_work_mib" ] \
+            || die "only ${free_mib} MiB free under $WORK_DIR - this needs about ${need_work_mib} MiB (the base image, its
+    decompressed copy and the output). --work somewhere roomier, e.g. the data partition on a Pi."
+    fi
 }
 
 #*******************************
@@ -361,7 +381,10 @@ finalize_image() {
 
     log "Recompressing to $out_img (xz -T0, this can take a while)"
     rm -f "$out_img"
-    xz -T0 -6 -c "$RAW_IMG" >"$out_img"
+    if ! xz -T0 -6 -c "$RAW_IMG" >"$out_img"; then
+        rm -f "$out_img" # never leave a truncated image that looks like a real one
+        die "xz failed writing $out_img (out of space?) - the decompressed image is kept in $WORK_DIR"
+    fi
     [ "$KEEP_RAW" -eq 1 ] || rm -f "$RAW_IMG"
 
     DOWNLOAD_SIZE="$(stat -c%s "$out_img")"
