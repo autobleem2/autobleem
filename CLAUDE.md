@@ -159,8 +159,9 @@ Still to do, in order:
    `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. Superseded on
    2026-09-19 by the Docker image's Stretch/gcc-6 toolchain (see "CI" under Build), and **that build has run
    on a console**: the launcher came up on the owner's PSC (stock kernel, a FAT32 stick) with every cover in
-   place, PS1 and RetroArch alike. Sound, a PS1 launch through the new pcsx-ab and the console tools are
-   still to be exercised there.
+   place, PS1 and RetroArch alike; after the two fixes noted under Build, sound (ALSA), a PS1 game in the
+   image's pcsx-ab and a Mega Drive game in RetroArch (RetroBoot 1.2) all ran there too. The console tools
+   (pscbios, abflashkit) are still to be exercised.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
