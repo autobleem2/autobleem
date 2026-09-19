@@ -443,6 +443,16 @@ shipped, so Raspberry Pi Imager's OS customisation (this base image is cloud-ini
 counterpart to `--shrink-root`: `sfdisk --no-reread --force -N` + `partx -u` + `resize2fs` grow the still
 image-sized root online (proven on a mounted loop-device filesystem on the Pi), capped so 2 GiB stay for the
 data partition, run before apt (a fresh Lite root has ~400 MB free) and skipped when a data partition exists.
+The output is `autobleem-<version>-rpi-<arch>.img.xz`: `make_rpi_package.sh` writes a `VERSION` file into the
+tarball from the build's generated `version.h` (the tag, plus short hash and `-dirty` unless clean and exactly
+at the tag), `make_rpi_image.sh` reads it from the tarball (`--version` overrides) and also puts it in the
+Imager JSON description. (Found on the way: `generate_version.cmake`'s `git diff-index` stamped clean trees
+dirty until an `update-index --refresh` was added before it - stale stat info, worse with MSYS2's git and
+Git for Windows sharing one checkout.) **RetroArch is a question on the first boot** (owner's rule, see the
+memory note: optional everywhere): unless `autobleem.txt` says `retroarch=`, the script asks, a minute's
+silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh` makes that a lean PS1-only
+install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
+pack shrinks to `scph5501.bin`/`scph5500.bin`.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
 `After=multi-user.target cloud-final.service userconfig.service`, `Conflicts=getty@tty1.service`,
 `StandardInput/Output=tty` on `/dev/tty1`) **owns the screen and keyboard for the first boot**, the way
