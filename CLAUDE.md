@@ -495,7 +495,8 @@ URLs (double-click it, or App Options -> Content Repository -> Use custom file, 
 makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
-**The download repository** (2026-09-19, plan in `docs/repo-server-plan.md`): **`https://autobleem.retromenele.pl/`**,
+**The download repository** (2026-09-19; its plan, `docs/repo-server-plan.md`, was removed on 2026-09-20 when
+every step was done - the git log has it): **`https://autobleem.retromenele.pl/`**,
 the build server's `/home/claude/autobleem-repo` served by a Caddy container (`docker/repo/`) on 443 (a
 Let's Encrypt certificate Caddy obtained by TLS-ALPN-01 once the owner's `A` record existed - the host's
 nginx keeps port 80, and no root was needed; Caddy renews it) and on 9090 as plain HTTP
@@ -545,8 +546,14 @@ an image, on the owner's request, never as part of CI (there is no Pi in the clo
 the cover databases out (`make_rpi_package.sh --with-covers` puts them back; `install.sh` fetches them
 from the site's `db/`), and the installer takes the cores as one tarball (`rpi/cores/`, `ci/build_cores.sh`
 - a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
-download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. What is left of
-the plan: CI publishing on a tag (the owner does not want a full pre-release built from the server yet).
+download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. **CI feeds the
+site, for the Pi only** (2026-09-20, the owner's scope): `ci.yml`'s `site` job on a `v*` tag publishes the
+two Pi tarballs to `releases/<tag>/` and builds + publishes both images, rootless, on the self-hosted
+runner (`/home/claude/autobleem-repo` mounted into the job container as `REPO_DIR`); `site-refresh.yml`
+(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. Both are written
+and unrun: nothing in Actions runs until the runner is registered (the owner's PAT, `docs/ci-plan.md`).
+The console zip is not on the site and its cover databases still come from the Docker image's baked copy
+(the console has no network, so the zip must carry them) - deliberately left as is.
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same

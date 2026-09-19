@@ -121,7 +121,7 @@ fi
 cp -a "$REPO/payload/themes/." "$STAGE/themes/"
 
 # cover art databases: not in the package by default since 2026-09-19 - they are 290 MB of the 306, and
-# install.sh downloads them from the download repository (docs/repo-server-plan.md, step 7; a Pi needs
+# install.sh downloads them from the download repository (CLAUDE.md, "The download repository"; a Pi needs
 # the network for its install anyway). --with-covers puts them in: the Docker image's copy
 # (AB_COVERS_DB_DIR, see docker/), else the checkout's db/ - git-ignored, so a clean checkout has only
 # stubs (or nothing); the installer says so on the Pi rather than failing.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cross-build RetroArch for the Raspberry Pi inside the build image, as a tarball the Pi installer unpacks
-# over / instead of building from source (docs/repo-server-plan.md, step 3):
+# over / instead of building from source (CLAUDE.md, "The download repository"):
 #
 #   docker/run.sh ci/build_retroarch.sh armhf            # the newest v* tag on github.com
 #   docker/run.sh ci/build_retroarch.sh arm64 v1.22.2    # that tag

@@ -127,3 +127,38 @@ jobs:
           ls -lR dist
           gh release create "${GITHUB_REF_NAME}" --title "AutoBleem ${GITHUB_REF_NAME}" --notes-from-tag --draft \
             dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/win/*.zip
+
+  # The download site (CLAUDE.md, "The download repository" - scoped to the Pi for now, the owner's call): on a
+  # tag, the two Pi tarballs go to releases/<tag>/ on the site and the two images are built from them,
+  # rootless, right there (tools/make_rpi_image.sh --rootless, ~7 min each) and go to rpi-imager/images/.
+  # Self-hosted only: the site is the build server's /home/claude/autobleem-repo, mounted into the job.
+  # A -pre* tag replaces the previous pre-release, a plain tag becomes the latest release (repo_index.py).
+  site:
+    name: publish to the site
+    if: startsWith(github.ref, 'refs/tags/v') && inputs.runner != 'github'
+    needs: [native, cross]
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/autobleem/autobleem-build:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      volumes:
+        - /home/claude/autobleem-repo:/srv/autobleem-repo
+    env:
+      REPO_DIR: /srv/autobleem-repo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Publish the Pi packages
+        run: tools/repo_publish.sh --local release "${GITHUB_REF_NAME}" dist/rpi/*.tar.gz dist/rpi64/*.tar.gz
+      - name: Build the images
+        run: |
+          tools/make_rpi_image.sh --rootless --arch armhf --package dist/rpi/autobleem-rpi.tar.gz \
+              --work build_rpi_image --out build_rpi_image/out
+          tools/make_rpi_image.sh --rootless --arch arm64 --package dist/rpi64/autobleem-rpi-arm64.tar.gz \
+              --work build_rpi_image --out build_rpi_image/out
+      - name: Publish the images
+        run: tools/repo_publish.sh --local image "${GITHUB_REF_NAME}" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json

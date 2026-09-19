@@ -1,0 +1,55 @@
+# Keeps the Pi installer's downloads on the site current (CLAUDE.md, "The download repository"): RetroArch cross-built
+# for both Pi architectures (ci/build_retroarch.sh) and the cores + bundles packed as one tarball each
+# (ci/build_cores.sh, a download from buildbot.libretro.com, nothing compiled). Monthly, or on request;
+# either half alone through the inputs. Self-hosted only - the site is the build server's directory,
+# mounted into the job; repo_index.py keeps the newest of each and drops the rest.
+name: Site refresh
+
+on:
+  schedule:
+    - cron: '17 4 3 * *'   # the 3rd of the month, 04:17 UTC
+  workflow_dispatch:
+    inputs:
+      retroarch:
+        description: build and publish RetroArch (newest tag)
+        type: boolean
+        default: true
+      cores:
+        description: download and publish the cores tarballs
+        type: boolean
+        default: true
+
+concurrency:
+  group: site-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: vars.AB_CI_ENABLED == 'true'
+    runs-on: self-hosted
+    container:
+      image: ghcr.io/autobleem/autobleem-build:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      volumes:
+        - /home/claude/autobleem-repo:/srv/autobleem-repo
+    env:
+      REPO_DIR: /srv/autobleem-repo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: RetroArch for the Pi
+        if: github.event_name == 'schedule' || inputs.retroarch
+        run: |
+          ci/build_retroarch.sh all
+          tag="$(ls build_retroarch/dist/retroarch-*-armhf.tar.gz | sed 's/.*retroarch-\(v[^-]*\)-armhf.*/\1/')"
+          tools/repo_publish.sh --local retroarch "$tag" build_retroarch/dist/retroarch-"$tag"-*.tar.gz
+
+      - name: Cores for the Pi
+        if: github.event_name == 'schedule' || inputs.cores
+        run: |
+          ci/build_cores.sh all
+          for arch in armhf arm64; do
+            tools/repo_publish.sh --local cores "$arch" build_cores/dist/cores-"$arch"-*.tar.gz
+          done
