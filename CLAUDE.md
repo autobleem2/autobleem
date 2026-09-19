@@ -425,7 +425,8 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
 
 **Flashable image for Raspberry Pi Imager** (2026-09-19, plan at `docs/rpi-image-and-update-plan.md`,
-implemented so far: **built and reviewed, not yet run on real hardware**). A second way to get AutoBleem
+**`tools/make_rpi_image.sh` itself verified on the Pi 400 for both architectures - flashing/booting the
+result is not**). A second way to get AutoBleem
 onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh` takes an official Raspberry
 Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi Foundation's stable "latest"
 redirect, sha256-verified against its published checksum, or a local `--base`), loop-mounts it and injects
@@ -447,9 +448,24 @@ filled-in copy (real `extract_size`/`extract_sha256`/`image_download_size`/`imag
 `release_date`) to its output directory per architecture built, but deliberately leaves `url` (this repo has
 no publishing pipeline yet for hosting the `.img.xz`), `icon` and a `devices` filter as placeholders rather
 than guessed values - see the template's own `"//"` field. `payload_rpi/README.md`'s "Flashing with
-Raspberry Pi Imager" section has the walkthrough. **Still to do:** actually build and flash an image on the
-build host this project already uses over ssh (`docs`/CLAUDE.md's Pi 400 access), and verify Imager's own
-customisation and the first/second-boot handoff on real hardware - nothing here has run yet, same caveat as
+Raspberry Pi Imager" section has the walkthrough. **Verified on the Pi 400** (2026-09-19, both
+`--arch armhf` and `--arch arm64`, the build host this project already uses over ssh): each run downloaded
+and sha256-checked its architecture's real Lite image, mounted it, injected the payload, recompressed, and
+- re-mounting the *output* `.img.xz` independently afterward - the injected tarball, the executable
+`autobleem-firstboot.sh`, the unit file and its `multi-user.target.wants/` enable symlink were all confirmed
+present and correct, and the boot partition's `cmdline.txt` byte-for-byte untouched; a second run into the
+same `--out` directory correctly filled in the other architecture's entry in `rpi_imager_repo.json` alongside
+the first rather than overwriting it; no stray loop devices or mounts survived either run. Two bugs only
+visible against real hardware were found and fixed along the way: `--dry-run` wrongly required
+`losetup`/`mount`-family tools that only live on root's PATH (`/sbin`), and the base-image redirect
+resolution silently never worked against the Pi's actual wget 1.25.0 output format, which was falling back
+to naming the downloaded file after the alias URL and failing its `.sha256` check - both fixed and
+re-verified live. The arm64 run used the existing armhf tarball as a stand-in `--package` (no arm64
+AutoBleem build exists yet to test with), so it proves the image-build *mechanics* for that architecture,
+not a genuine arm64 payload. **Still not done:** actually flashing the produced image with Raspberry Pi
+Imager onto a card and booting it - `autobleem-firstboot.service` running for real, Imager's own
+customisation coexisting with it, and the first/second-boot retry/reboot handoff are all still unverified,
+same caveat as
 the 64-bit Pi port below when it landed.
 
 ### Raspberry Pi 64-bit (2026-09-18)
