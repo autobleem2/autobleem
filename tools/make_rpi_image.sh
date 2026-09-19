@@ -115,10 +115,21 @@ preflight() {
         die "run this with sudo (losetup/mount need root) - or pass --dry-run"
     fi
 
+    # xz/sha256sum/tar/python3 are used even in a dry run (well, would be - the dry-run path skips calling
+    # them too, but they're ordinary PATH tools for any user, unlike the mount family below, so checking
+    # them always is harmless and catches a genuinely missing tool early either way. losetup/mount/umount/
+    # mountpoint/udevadm typically live in /sbin, which is on root's PATH (sudo's secure_path) but not a
+    # plain user's - checking for them under a plain --dry-run would fail even though dry-run never calls
+    # them, so they're only required for a real run.
     local tool
-    for tool in losetup udevadm mount umount mountpoint xz sha256sum tar python3; do
+    for tool in xz sha256sum tar python3; do
         command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
     done
+    if [ "$DRY_RUN" -eq 0 ]; then
+        for tool in losetup udevadm mount umount mountpoint; do
+            command -v "$tool" >/dev/null 2>&1 || die "missing required tool: $tool"
+        done
+    fi
     if [ -z "$BASE_IMG" ] || [[ "$BASE_IMG" == http://* || "$BASE_IMG" == https://* ]]; then
         command -v wget >/dev/null 2>&1 || die "missing required tool: wget (downloading the base image)"
     fi
@@ -168,10 +179,22 @@ resolve_base_image() {
         BASE_RELEASE_DATE="__unknown_in_dry_run__"
         return 0
     fi
-    final_url="$(wget -q --max-redirect=5 --server-response "$src" -O /dev/null 2>&1 \
-        | awk '/^  Location: /{u=$2} END{print u}')"
-    # wget's -O /dev/null with --server-response prints every hop's Location header; the loop above keeps
-    # the last one, which is the final, dated URL we actually want to name the file after
+    # NOT -q: some wget builds suppress --server-response's header dump under -q too, silently breaking
+    # this (found live on the Pi 400's wget 1.25 - -q ate the header lines, final_url came back empty, and
+    # the fallback below then downloaded and named the file after the alias URL instead of the real dated
+    # one, which made the .sha256 check fail with a filename mismatch: the sidecar names the dated file,
+    # not the alias). The extra chatter this prints is captured into a variable, never shown.
+    #
+    # Two different lines can carry the redirect target, and neither is what an early version of this
+    # script assumed (also found live, the hard way): --server-response echoes the raw HTTP header, which
+    # can be sent by the server in any case ("  location: <url>", two-space indented, lowercase, on this
+    # server) - and wget's own "I'm following this" message is a separate line ("Location: <url>
+    # [following]", capitalised, flush left, no indent). Match either, case-insensitively, regardless of
+    # leading whitespace; $2 is the URL in both formats since awk's default field splitting ignores
+    # leading whitespace anyway.
+    final_url="$(wget --max-redirect=5 --server-response "$src" -O /dev/null 2>&1 \
+        | awk 'tolower($0) ~ /^[[:space:]]*location:/ {u=$2} END{print u}')"
+    # the loop above keeps the last one, which is the final, dated URL we actually want to name the file after
     if [ -z "$final_url" ]; then
         final_url="$src" # not a redirect after all - use it as given
     fi
