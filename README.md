@@ -91,7 +91,7 @@ Apps payload.
 | PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. |
 | Raspberry Pi (32-bit) | `./make_rpi.sh` with the SysGCC toolchain, then `tools/make_rpi_package.sh` for the installable tarball. |
 | Windows (development) | `./make_win.sh` from an MSYS2 UCRT64 shell: builds, runs the tests, validates the language files, checks formatting. `python tools/make_usb.py usb` stages a fake USB root; `tools/win_drive.ps1` drives the exe from the keyboard for smoke tests. |
-| Mac / Linux | `make_mac.sh`, `make_sys.sh`. |
+| Linux / macOS (native) | `make_sys.sh`. |
 
 C++14, CMake >= 3.12, SDL2 + SDL2_image + SDL2_mixer + SDL2_ttf. Everything else is vendored.
 `CLAUDE.md` has the details for each target and the coding conventions (`tools/format.sh`, `tools/lint.sh`).
