@@ -21,6 +21,8 @@ concurrency:
 
 jobs:
   image:
+    # the same switch as ci.yml: the repository variable AB_CI_ENABLED
+    if: vars.AB_CI_ENABLED == 'true'
     runs-on: [self-hosted, linux, x64]
     permissions:
       contents: read

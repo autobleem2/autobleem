@@ -37,9 +37,12 @@ concurrency:
 env:
   IMAGE: ghcr.io/autobleem/autobleem-build:latest
 
+# Nothing runs until the repository variable AB_CI_ENABLED is 'true' (Settings -> Secrets and variables ->
+# Actions -> Variables): the switch for bringing the pipeline up, and for pausing it.
 jobs:
   native:
     name: native (tests, format, lint)
+    if: vars.AB_CI_ENABLED == 'true'
     runs-on: ${{ (github.event_name == 'pull_request' || inputs.runner == 'github') && 'ubuntu-24.04' || 'self-hosted' }}
     container:
       image: ghcr.io/autobleem/autobleem-build:latest
@@ -60,7 +63,7 @@ jobs:
 
   # which cross targets to build: the dispatch input's list, else all four
   plan:
-    if: github.event_name != 'pull_request'
+    if: vars.AB_CI_ENABLED == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.targets.outputs.json }}

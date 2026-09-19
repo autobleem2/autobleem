@@ -52,6 +52,10 @@ the build directories exist.
 
 ## On GitHub Actions
 
+Both workflows are behind one switch: the repository variable **`AB_CI_ENABLED`** (*Settings -> Secrets and
+variables -> Actions -> Variables*). Until it is `true`, every run is skipped - so the workflows can be
+merged before the runner exists, and the pipeline can be paused without touching the files.
+
 - **`.github/workflows/image.yml`** builds the image on the self-hosted runner (the cover databases it bakes
   in are only there) and pushes `ghcr.io/autobleem/autobleem-build:latest` + `:<sha>`. Runs when `docker/**`
   changes on develop/master, or by hand ("Run workflow", optionally with every layer rebuilt). The package
