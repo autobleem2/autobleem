@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Publish files to the download repository (docs/repo-server-plan.md) and regenerate its index.
+#
+#   tools/repo_publish.sh release v2.0.0 dist/psc/*.zip dist/rpi/*.tar.gz ...   -> releases/v2.0.0/
+#   tools/repo_publish.sh image v2.0.0-pre0-933bd2f build_rpi_image/*.img.xz build_rpi_image/rpi_imager_repo.json
+#                                                                              -> rpi-imager/images/<version>/
+#   tools/repo_publish.sh retroarch v1.22.2 retroarch-v1.22.2-armhf.tar.gz     -> rpi/retroarch/v1.22.2/
+#   tools/repo_publish.sh db db/covers*.db                                     -> db/
+#   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
+#   tools/repo_publish.sh index                                                just regenerate the index
+#   tools/repo_publish.sh --prune 3 index                                      ... and keep only 3 image sets
+#
+# The files go over ssh (rsync to $REPO_HOST, "psc-build" in ~/.ssh/config, into $REPO_DIR) with a .sha256
+# next to each; then tools/repo_index.py runs on the server over the whole tree (it is uploaded as
+# <repo>/.tools/repo_index.py so the server needs no checkout). --local skips ssh and copies within this
+# machine - what a CI job on the server does, with $REPO_DIR bind-mounted.
+#
+# AB_REPO_URL is what the generated urls start with (default: the server's direct address until the domain
+# is set up). Nothing here deletes anything except --prune, and that only under rpi-imager/images.
+set -euo pipefail
+
+REPO_HOST="${REPO_HOST:-psc-build}"
+REPO_DIR="${REPO_DIR:-/home/claude/autobleem-repo}"
+AB_REPO_URL="${AB_REPO_URL:-http://212.71.244.78:9090}"
+LOCAL=0
+PRUNE=""
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --local) LOCAL=1; shift ;;
+        --prune) PRUNE="${2:?--prune needs a count}"; shift 2 ;;
+        -h|--help) usage ;;
+        *) break ;;
+    esac
+done
+[ $# -ge 1 ] || usage 1
+KIND="$1"; shift
+
+# where the files of this kind land, relative to the repository root
+case "$KIND" in
+    release)   [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="releases/$VERSION" ;;
+    image)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi-imager/images/$VERSION" ;;
+    retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/retroarch/$VERSION" ;;
+    db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
+    assets)    DEST="assets" ;;
+    index)     DEST="" ;;
+    *)         echo "unknown kind: $KIND" >&2; usage 1 ;;
+esac
+
+# a scratch dir with the files to upload and their sidecars, so one rsync does it
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE" "$STAGE.assets"' EXIT
+
+if [ "$KIND" = assets ]; then
+    python3 "$HERE/repo_assets.py" "$STAGE.assets"
+    set -- "$STAGE.assets"/*
+fi
+
+if [ -n "$DEST" ]; then
+    mkdir -p "$STAGE/$DEST"
+    for f in "$@"; do
+        [ -f "$f" ] || { echo "not a file: $f" >&2; exit 1; }
+        cp "$f" "$STAGE/$DEST/"
+        case "$f" in
+            *.json|*.txt|*.sha256|*.ttf) ;;
+            *) (cd "$STAGE/$DEST" && sha256sum "$(basename "$f")" > "$(basename "$f").sha256") ;;
+        esac
+    done
+    echo "publishing to $DEST: $(cd "$STAGE/$DEST" && ls | grep -v '\.sha256$' | tr '\n' ' ')"
+fi
+mkdir -p "$STAGE/.tools"
+cp "$HERE/repo_index.py" "$STAGE/.tools/"
+
+# the index run on the server (and the image retention)
+remote_index() {
+    cat <<EOF
+set -e
+cd "$REPO_DIR"
+if [ -n "$PRUNE" ] && [ -d rpi-imager/images ]; then
+    ls -1 rpi-imager/images | sort -V | head -n -"$PRUNE" | while read -r old; do
+        echo "pruning rpi-imager/images/\$old"; rm -rf "rpi-imager/images/\$old"
+    done
+fi
+if [ -f assets/icon.png ]; then mkdir -p rpi-imager && cp assets/icon.png rpi-imager/icon.png; fi
+python3 .tools/repo_index.py . --base-url "$AB_REPO_URL"
+EOF
+}
+
+if [ "$LOCAL" -eq 1 ]; then
+    mkdir -p "$REPO_DIR"
+    cp -r "$STAGE"/. "$REPO_DIR"/
+    bash -c "$(remote_index)"
+else
+    rsync -rlt --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r "$STAGE"/ "$REPO_HOST:$REPO_DIR/"
+    ssh "$REPO_HOST" "$(remote_index)"
+fi
+echo "done: $AB_REPO_URL/${DEST:+$DEST/}"
