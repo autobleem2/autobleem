@@ -584,7 +584,6 @@ download_retroarch_content() {
         run rm -f "$tmp/$bundle.zip"
     done
     run rm -rf "$tmp"
-    download_thumbnails
 }
 
 #*******************************
@@ -637,8 +636,18 @@ download_bios_pack() {
     local manifest="$SCRIPT_DIR/system/$manifest_name"
     [ -f "$manifest" ] || { warn "no system/$manifest_name in the package - no BIOS files installed"; return 0; }
 
+    # --retroarch none is a PS1-only AutoBleem: nothing reads RetroArch/system but pcsx-ab's two files
+    # (install_ps1_bios), so the rest of the ~200 MB pack is not fetched. Same manifest, filtered by name.
+    local entries
+    if [ "$RETROARCH_MODE" = none ]; then
+        # the last field is the destination under RetroArch/system - the PS1 files sit at its top level
+        entries="$(grep '^[0-9a-f]' "$manifest" | awk '$4 == "scph5501.bin" || $4 == "scph5500.bin"')"
+        log "BIOS pack: PS1-only (--retroarch none) - just the two files pcsx-ab needs"
+    else
+        entries="$(grep '^[0-9a-f]' "$manifest")"
+    fi
     local total
-    total="$(grep -c '^[0-9a-f]' "$manifest")"
+    total="$(echo "$entries" | grep -c .)"
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would download the %s BIOS files of %s into %s/system\n' "$total" "$(basename "$manifest")" "$RA_ROOT"
         printf '    would copy scph5501.bin/scph5500.bin to %s/System/Bios as romw.bin/romJP.bin if not there\n' "$DATA_MOUNT"
@@ -663,7 +672,7 @@ download_bios_pack() {
             rm -f "$target.part"
             failed=$((failed + 1))
         fi
-    done < <(grep '^[0-9a-f]' "$manifest")
+    done < <(echo "$entries")
     printf '\n'
     log "BIOS pack: $fetched downloaded, $((count - fetched - failed)) already there"
     [ "$failed" -eq 0 ] || warn "$failed BIOS files did not download or did not match their hash - run the installer again"
@@ -1207,6 +1216,7 @@ main() {
     create_tree
     install_retroarch
     download_retroarch_content
+    download_thumbnails         # the launcher's PS1 box art - wanted with or without RetroArch
     download_bios_pack
     install_payload
     install_service

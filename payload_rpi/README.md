@@ -19,7 +19,7 @@ This is a port in progress. Be aware of what is and is not here:
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
 | PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
 | BIOS | **downloaded by the installer**: a ~190 MB (armhf) or ~230 MB (arm64) pack (`system/biospack.txt` / `biospack-arm64.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py --arch armhf\|arm64`, one manifest per architecture's actual core list) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
-| RetroArch | the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
+| RetroArch | **optional** - the image's first boot asks, `install.sh --retroarch none` is a PS1-only AutoBleem (the launcher hides its RetroArch set and menu items when none is installed). When wanted: the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **yes**, on a Pi 400 (32-bit) since 2026-09-18: boots, scans, plays PS1 games and the other-systems RetroArch set, sound over HDMI. The 64-bit build compiles and packages cleanly but has not yet been run on a 64-bit Pi OS card. |
 | Flashing with Raspberry Pi Imager | `tools/make_rpi_image.sh` builds a flashable `.img.xz` whose first boot installs AutoBleem on the screen, asking for WiFi if it has none - see "Flashing with Raspberry Pi Imager" below. The build is verified on the Pi 400 for both architectures and the first image has booted once (which is what shaped the current first-boot flow); **the reworked first boot has not yet been through a fresh card end to end** - the manual tarball + `install.sh` flow above is the proven path. |
@@ -89,7 +89,7 @@ and `--no-quiet-boot`.
 ## Flashing with Raspberry Pi Imager
 
 A second way to get to the same place as the tarball + `install.sh` flow above: flash one card, boot it,
-answer at most one question (which WiFi), and watch AutoBleem install itself on the screen. The manual flow
+answer at most two questions (which WiFi; RetroArch or PS1-only), and watch AutoBleem install itself on the screen. The manual flow
 above remains the fully proven path - see the "Status" table for how far this one has been exercised.
 
 `tools/make_rpi_image.sh` takes an official Raspberry Pi OS Lite image (downloaded automatically, or your
@@ -127,11 +127,17 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    to skip - it asks again on the next boot). It also sets the WiFi country first, because Raspberry Pi OS
    keeps WiFi blocked (`rfkill`) until one is set.
 2. waits for the clock to sync (NTP) - `apt` distrusts a clock that is days off, and a Pi has no battery clock.
-3. runs `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
+3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
+   its own; RetroArch adds the other systems at the cost of a 10-40 minute build and close to a GB of
+   downloads. `n` gives a lean PS1-only install: no build, no cores, only the two PS1 BIOS files out of the
+   pack (box art is still fetched); the launcher hides its RetroArch set and menu items when no RetroArch is
+   installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
+   alone gets the full install. RetroArch can be added later by running `install.sh` again.
+4. runs `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
    screen: packages, `--grow-root` (the root partition grows from the base image's ~3 GB to `root_gib`, the
-   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source, cores, BIOS pack,
+   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source if wanted, cores, BIOS,
    thumbnails. The same output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
-4. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
+5. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
    mode only take full effect on the boot after `install.sh` sets them. On failure it says so, gives the
    login prompt back, and tries again on the next boot (up to 20 times, then it gives up and leaves a note).
 
@@ -156,8 +162,8 @@ Everything is on the small FAT boot partition, editable from any PC after flashi
   - or edit `network-config` on the boot partition by hand - it is cloud-init's netplan-style file and has a
     commented WiFi example (`wifis: wlan0: access-points:` and `regulatory-domain`).
 - **`autobleem.txt`** - AutoBleem's own first-boot options, one `key=value` per line, documented in the file:
-  `root_gib` (default 8), `hdmi_mode`, `retroarch` (source/apt/none), `thumbnails` (boxarts/all/none),
-  `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
+  `root_gib` (default 8), `hdmi_mode`, `retroarch` (source/apt/none - unset means the first boot asks),
+  `thumbnails` (boxarts/all/none), `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
 
 `tools/make_rpi_image.sh` also writes `<out>/rpi_imager_repo.json` - the checked-in `tools/rpi_imager_repo.json`
 template with this run's real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/

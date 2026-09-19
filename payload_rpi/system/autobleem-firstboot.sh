@@ -79,7 +79,37 @@ read_options() {
     done <"$OPTIONS_FILE"
 }
 
-# the install.sh arguments the options translate to
+# RetroArch is optional - it is the slow, heavy half of the install (10-40 minutes of building, close to a
+# GB of cores, assets and BIOS files), and without it AutoBleem is still complete for PS1 games. Asked on
+# the screen unless autobleem.txt already says (retroarch=source|apt|none). A minute with no answer means
+# yes: someone who preset everything in Raspberry Pi Imager and walked away gets the full install.
+ask_retroarch() {
+    local v="${OPT[retroarch]:-}"
+    case "$v" in
+        source|apt|none) return 0 ;;
+        ""|ask) ;;
+        *) warn "autobleem.txt: retroarch=$v is not source, apt or none - asking instead" ;;
+    esac
+    printf '\n'
+    printf '   AutoBleem plays PlayStation games on its own. RetroArch adds the other systems - NES, SNES,\n'
+    printf '   Mega Drive, arcade and about a hundred more - but it is built from source here (10-40 minutes)\n'
+    printf '   and downloads close to a GB of cores, databases and BIOS files. It can be added later by running\n'
+    printf '   the installer again.\n\n'
+    local answer=""
+    if read -rt 60 -p "   Install RetroArch too? [Y/n] (yes in 60 seconds) " answer; then
+        printf '\n'
+    else
+        printf '\n   (no answer - installing RetroArch)\n'
+    fi
+    case "$answer" in
+        n|N|no|NO|No) OPT[retroarch]=none; log "RetroArch: no - a PS1-only AutoBleem" ;;
+        *)            OPT[retroarch]=source; log "RetroArch: yes" ;;
+    esac
+}
+
+# the install.sh arguments the options translate to. A PS1-only install skips the cores/assets download
+# (nothing would run them) - install.sh itself keeps the PS1 box art and trims the BIOS pack to the two
+# PS1 files when --retroarch none.
 install_args() {
     local args=(--yes)
     local v
@@ -88,7 +118,9 @@ install_args() {
     v="${OPT[retroarch]:-}";      [ -n "$v" ] && args+=(--retroarch "$v")
     v="${OPT[thumbnails]:-}";     [ -n "$v" ] && args+=(--thumbnails "$v")
     v="${OPT[bios]:-yes}";        case "$v" in no|false|0) args+=(--no-bios) ;; esac
-    v="${OPT[downloads]:-yes}";   case "$v" in no|false|0) args+=(--no-downloads) ;; esac
+    v="${OPT[downloads]:-yes}"
+    if [ "${OPT[retroarch]:-}" = none ]; then v=no; fi
+    case "$v" in no|false|0) args+=(--no-downloads) ;; esac
     printf '%s\n' "${args[@]}"
 }
 
@@ -320,6 +352,8 @@ if wait_for_clock; then
 else
     warn "clock not synchronised yet ($(date)) - carrying on"
 fi
+
+ask_retroarch
 
 if [ ! -d "$UNPACK_DIR" ]; then
     log "Unpacking $PACKAGE"
