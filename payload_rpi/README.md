@@ -53,6 +53,10 @@ pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` (32-bit) and `paylo
 
 Copy the tarball for your Pi's architecture over (`scp`, or just put it on a USB stick).
 
+Or build both on the build server's Docker image - `docker/run.sh ci/build.sh rpi rpi64`, see `docs/ci.md` -
+which also builds pcsx-ab from the same run and includes the real cover databases (a package built on a PC
+checkout has only the stubs in `db/`, so scanned games get no covers from that fallback).
+
 ## Install (on the Pi)
 
 ```bash
