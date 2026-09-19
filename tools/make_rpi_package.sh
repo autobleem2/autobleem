@@ -95,10 +95,12 @@ rm -f "$APP/internal.db"
 # themes: the converted theme.json layout, the same ones the console's payload ships
 cp -a "$REPO/payload/themes/." "$STAGE/themes/"
 
-# cover art databases. db/ is git-ignored, so a clean checkout has only stubs (or nothing) - the installer
-# says so on the Pi rather than failing.
-if ls "$REPO/db"/covers*.db >/dev/null 2>&1; then
-    cp -a "$REPO"/db/covers*.db "$STAGE/Autobleem/bin/db/"
+# cover art databases: the Docker image's copy (AB_COVERS_DB_DIR, see docker/), else the checkout's db/ -
+# git-ignored, so a clean checkout has only stubs (or nothing); the installer says so on the Pi rather
+# than failing.
+COVERS="${AB_COVERS_DB_DIR:-$REPO/db}"
+if ls "$COVERS"/covers*.db >/dev/null 2>&1; then
+    cp -a "$COVERS"/covers*.db "$STAGE/Autobleem/bin/db/"
 else
     echo "    (no db/covers*.db to include - scanned games will have no titles or covers)"
 fi

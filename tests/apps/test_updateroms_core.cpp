@@ -144,8 +144,16 @@ TEST_CASE("detect: a console stick by RetroBoot's folder, a Pi card by its retro
     CHECK(setup.romsDir == fwd(pi.tmp.at("RetroArch/roms")));
     CHECK(setup.targetRomsDir == "/media/autobleem/RetroArch/roms");
 
+    // --target psc on a Pi card: the console layout says retroarch/, the card has RetroArch/. On the exFAT
+    // stick in a Windows PC (where UpdateRoms.exe runs) they are the same folder; on a case-sensitive
+    // filesystem (the Linux CI) they are not, and detect rightly finds no RetroArch there.
+#ifdef _WIN32
     REQUIRE(UpdateRomsJob::detect(pi.tmp.path(), setup, error, "psc"));
     CHECK(setup.target == "psc");
+#else
+    CHECK_FALSE(UpdateRomsJob::detect(pi.tmp.path(), setup, error, "psc"));
+    CHECK(error.find("No RetroArch") != string::npos);
+#endif
 
     TempDir notAStick("nope");
     CHECK_FALSE(UpdateRomsJob::detect(notAStick.path(), setup, error));
