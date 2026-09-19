@@ -173,8 +173,10 @@ plan above had not accounted for, all now in the implementation:
    OS's own wizard asks for a keyboard layout and a user; WiFi stays `rfkill`-blocked because no country was
    set. `autobleem-firstboot` then ran `install.sh --yes` in the background with no network, `apt-get
    install` failed (`Temporary failure resolving 'deb.debian.org'`), and the screen showed a login prompt
-   with no hint of any of it. Now the service owns tty1 (`Conflicts=getty@tty1.service`,
-   `StandardInput/Output=tty`), so the whole first boot is on the screen, and the script asks for WiFi when
+   with no hint of any of it. Now the service owns its own console, tty8 (`StandardInput/Output=tty`,
+   `TTYPath=/dev/tty8`, `chvt 8` on start and `chvt 1` on failure - the first attempt, tty1 with
+   `Conflicts=getty@tty1.service`, never ran: a `Wants=`-pulled unit conflicting with another unit in the
+   same boot transaction gets its job dropped), so the whole first boot is on the screen, and the script asks for WiFi when
    there is none: country (needed to unblock rfkill), an `nmcli` scan, pick/hidden/Ethernet/skip, password,
    connect, a real fetch check, then an NTP wait before `apt`. Preset WiFi is *not* an AutoBleem option -
    Imager's customisation screen and the boot partition's own cloud-init `network-config` already are that.
