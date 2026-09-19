@@ -3,7 +3,7 @@
 
 Run on the server over the repository directory after every publish (tools/repo_publish.sh does it):
 
-    repo_index.py /home/claude/autobleem-repo --base-url http://212.71.244.78:9090
+    repo_index.py /home/claude/autobleem-repo --base-url https://autobleem.retromenele.pl
 
 Reads what is there (docs/repo-server-plan.md has the layout) and writes:
 
@@ -36,7 +36,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 5
+INDEX_VERSION = 6
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -518,7 +518,7 @@ def render_rpi_install(base_url, images):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("repo", help="the repository directory")
-    ap.add_argument("--base-url", default=os.environ.get("AB_REPO_URL", "http://212.71.244.78:9090"),
+    ap.add_argument("--base-url", default=os.environ.get("AB_REPO_URL", "https://autobleem.retromenele.pl"),
                     help="what the urls in the json files start with (default: $AB_REPO_URL or the server's address)")
     args = ap.parse_args()
     repo = os.path.abspath(args.repo)

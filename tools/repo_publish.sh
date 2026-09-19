@@ -14,14 +14,14 @@
 # <repo>/.tools/repo_index.py so the server needs no checkout). --local skips ssh and copies within this
 # machine - what a CI job on the server does, with $REPO_DIR bind-mounted.
 #
-# AB_REPO_URL is what the generated urls start with (default: the server's direct address until the domain
-# is set up). Retention is the index script's: a pre-release replaces the previous pre-release (releases and
+# AB_REPO_URL is what the generated urls start with (default: the domain; http://212.71.244.78:9090 is the
+# same tree without TLS). Retention is the index script's: a pre-release replaces the previous pre-release (releases and
 # image sets), only the newest RetroArch build is kept, stable releases stay.
 set -euo pipefail
 
 REPO_HOST="${REPO_HOST:-psc-build}"
 REPO_DIR="${REPO_DIR:-/home/claude/autobleem-repo}"
-AB_REPO_URL="${AB_REPO_URL:-http://212.71.244.78:9090}"
+AB_REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"
 LOCAL=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
