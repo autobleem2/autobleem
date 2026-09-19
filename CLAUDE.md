@@ -416,8 +416,8 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   is remembered in `Named_Boxarts/.autobleem-missing.txt`. Pi: 36 covers fetched, 31 not on the server.
   **Step 5** (2026-09-19): `apps/updateroms/` - `UpdateRoms.exe`, run from the stick in a PC, does the
   same scan with the PC's network and the target's paths (`usb_root` in the platform inis); see its
-  CLAUDE.md. **The plan is complete**; what is left is listed at the end of the plan doc (a static build
-  without the ~50 MB of codec DLLs; nothing of this has run on a console).
+  CLAUDE.md. **The plan is complete**; what is left is listed at the end of the plan doc (nothing of this
+  has run on a console).
 - Two gotchas the port turned up. `System::getAvailableSpace()` called a `floatToString()` that **has never
   existed anywhere in the code base** - the whole `#ifndef AB_DEBUG_HOST` branch had simply never been
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
@@ -499,9 +499,10 @@ port targets 32-bit Trixie (and Bookworm).
 `apps/updateroms/` (2026-09-19) is the odd one out: a **PC** program, `UpdateRoms.exe`, built on the dev
 hosts only (root `CMakeLists.txt` skips it for `arm`/`aarch64`), that scans a console stick or a Pi card
 sitting in a card reader - `UpdateRomsJob` (core, tested) over the same `RetroArchScanner`/`CoreInfoTable`/
-`OnlineAssets` the launcher's scan uses, writing the target's paths; `GuiUpdateRoms` on `ab_classic` with
-the stick's theme. `tools/make_updateroms_bundle.sh` makes the folder for a stick, `make_usb.py` stages it
-into `usb/UpdateRoms/`. Its own CLAUDE.md has the rest.
+`OnlineAssets` the launcher's scan uses, writing the target's paths. **A plain Win32 window, no SDL, no
+AutoBleem theme** (the owner's call), linked `-static`: one 540 KB exe with no MinGW DLLs.
+`tools/make_updateroms_bundle.sh` makes the folder for a stick (a Release build in `build_updateroms/`),
+`make_usb.py` stages it into `usb/UpdateRoms/`. Its own CLAUDE.md has the rest.
 
 The two standalone tools the console runs from `Apps/` - **PSC-Bios** (`apps/pscbios/`: WiFi, timezone,
 the gamepad mapping wizard) and **ABFlashKit** (`apps/abflashkit/`: the kernel flasher) - were 2020 forks

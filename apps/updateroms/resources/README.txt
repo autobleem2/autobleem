@@ -24,5 +24,6 @@ It never touches your PlayStation games, their database or the themes. A playlis
 (with its own scanner on the console) is kept and added to, never replaced. A cover the server does not
 have is noted in Named_Boxarts/.autobleem-missing.txt and not asked for again; delete that file to retry.
 
-Requires Windows 10 or later (curl.exe, which every Windows has since 2018, does the downloading). The
-same folder works for a Raspberry Pi's SD card in a card reader.
+Requires Windows 10 or later (curl.exe, which every Windows has since 2018, does the downloading); the
+program itself is one file with nothing to install. The same folder works for a Raspberry Pi's SD card
+in a card reader.

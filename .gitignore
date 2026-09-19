@@ -59,6 +59,7 @@ build_rpi64/
 build_rpi64_dbg/
 build_sys/
 build_win/
+build_updateroms/
 db/
 
 #If you edit, or view, a file in Visual Studio in open folder mode it creates files in a .vs folder to keep track

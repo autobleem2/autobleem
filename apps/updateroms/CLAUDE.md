@@ -9,7 +9,10 @@ art - **with the PC's network** and **with the target's paths in the playlists**
 target's `platform/<target>.ini`: `/media/roms/...` for the console, `/media/autobleem/RetroArch/roms/...`
 for a Pi card). The console then boots and finds everything in place; its own scan has nothing left to do.
 
-Two targets, like the console tools:
+Two targets, like the console tools, but **no SDL and no AutoBleem rendering** (the owner's call, the same
+night it was first written on `ab_classic`): a plain Win32 window, and a statically linked exe that needs
+nothing of MSYS2 - the release bundle is **one 540 KB file** (Release, stripped, UPX) where the SDL version
+had been 28 MB plus 50 MB of DLLs.
 
 - **`updateroms_core`** (`src/core/update_roms_job.*`, links `ab_core`, tested from
   `tests/apps/test_updateroms_core.cpp`): `UpdateRomsJob::rootFromProgramPath()` (the first parent folder
@@ -22,23 +25,22 @@ Two targets, like the console tools:
   with every system's core path mapped onto the target's RetroArch dir, box art for what lacks one. In
   `RetroArchScanner::merge` a kept entry that names *this* machine's ROM folder (a launcher scan run on
   the PC) is made to name the target's, which is what makes a stick scanned here and there consistent.
-- **`updateroms`** (`UpdateRoms.exe`): `main.cpp` (arguments, `--quiet` on stdout, the log to
-  `System/Logs/updateroms.log`), `UpdateRomsApp : AppBase` (the stick's config.ini, theme and language;
-  `loadAssets(false)` - the theme's look, never its music, on the owner's request), `GuiUpdateRoms` - the
-  one screen: the job on a thread reporting through `ScanProgressListener` and a line sink under a mutex,
-  the main loop drawing title / stage line / progress bar / the last log lines / `Close` (or `Stop`, which
-  asks the job to return at its next checkpoint). Escape is `Stop`/`Close` here
-  (`Input::setPowerKeyAsKey(true)`), never the power switch.
+- **`updateroms`** (`UpdateRoms.exe`): `main.cpp` (arguments, `--quiet` on the console it was started
+  from, the log to `System/Logs/updateroms.log`) and `win32_window.cpp` - one window: a stage line, a
+  progress bar (marquee until the scanner reports a count), a list box with every line the job said, and
+  a button that is Stop while it runs (the job returns at its next checkpoint) and Close when done; the
+  job on a `std::thread` writing a mutex-guarded `State` a 100 ms timer moves into the controls; the
+  system's message font; a manifest (`updateroms.rc`) for common controls v6 and DPI awareness. A
+  `-mwindows` GUI-subsystem exe, so no console pops up when double-clicked; `--quiet` attaches to the
+  parent console (`AttachConsole`) unless stdout is already redirected, which a script's pipe or file is.
+  `-static -static-libgcc -static-libstdc++`: `ldd` shows only Windows' own DLLs. Off Windows there is
+  the `--quiet` path only (the window is `#ifdef _WIN32`).
 
-Built on the dev hosts only (root `CMakeLists.txt`: not for `arm`/`aarch64`); `make_win.sh` builds and
-validates its `resources/lang/`. **`tools/make_updateroms_bundle.sh`** makes the folder for a stick:
-`build_win/UpdateRoms/` with the exe, its `lang/` and `README.txt`, and the MSYS2 DLLs `ldd` names - SDL2
-and its image/mixer/ttf libraries with every codec they were built with, ~50 MB, which is the known wart:
-a `-static` build that leaves the codecs out (the tool needs PNG and TrueType and no sound at all) is the
-follow-up. The exe is console-subsystem so `--quiet` can print; a console window comes up next to the
-SDL one on Windows. `tools/make_usb.py` stages the exe into `usb/UpdateRoms/` for the dev tree (DLLs from
-PATH there, as for the launcher).
+Built on the dev hosts only (root `CMakeLists.txt`: not for `arm`/`aarch64`). **`tools/
+make_updateroms_bundle.sh`** makes the folder for a stick: a Release build in `build_updateroms/`
+(incremental, `--clean` wipes), stripped and UPX-packed into `build_win/UpdateRoms/` next to `README.txt`.
+`tools/make_usb.py` stages the Debug exe into `usb/UpdateRoms/` for the dev tree.
 
 Tested on the fake tree with the real network: 146 databases fetched and unpacked, playlists written with
-`/media/...` paths and `/media/retroarch/cores/...` core paths, covers fetched. **Not yet run against a
-real console stick** - the console has never run this build at all.
+`/media/...` paths and `/media/retroarch/cores/...` core paths, covers fetched, the window and the packed
+exe both run. **Not yet run against a real console stick** - the console has never run this build at all.
