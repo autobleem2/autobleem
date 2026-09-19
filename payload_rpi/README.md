@@ -112,9 +112,11 @@ Each run downloads that architecture's current "latest" Raspberry Pi OS Lite ima
 its published checksum), loop-mounts it, drops the package into `/opt/autobleem-image/` on its root
 filesystem alongside `autobleem-firstboot.service` (enabled by hand-crafting the same symlink `systemctl
 enable` would - no chroot, no qemu, nothing from the base image is ever executed at build time), edits the
-boot partition as above, and recompresses it to `<out>/autobleem-rpi-image-<arch>.img.xz`. `--dry-run`
+boot partition as above, and recompresses it to `<out>/autobleem-<version>-rpi-<arch>.img.xz` - the version is
+the package's `VERSION` file, which `tools/make_rpi_package.sh` writes from the build's own `version.h`
+(`v2.0.0` for a clean tree at that tag, `v2.0.0-pre0-ad109aa` otherwise; `--version` overrides). `--dry-run`
 prints what it would do without downloading, mounting or needing root; `--help` lists every option
-(`--base`, `--work`, `--out`, `--keep-raw`).
+(`--base`, `--work`, `--out`, `--keep-raw`, `--version`).
 
 ### What the first boot does
 
@@ -154,7 +156,7 @@ Everything is on the small FAT boot partition, editable from any PC after flashi
     not have. `tools/rpi_imager_local_manifest.py` writes that metadata for your local image:
     ```bash
     python tools/rpi_imager_local_manifest.py --repo build_rpi_image/rpi_imager_repo.json \
-        --arm64 build_rpi_image/autobleem-rpi-image-arm64.img.xz -o build_rpi_image/os_list_local.rpi-imager-manifest
+        --arm64 build_rpi_image/autobleem-v2.0.0-pre0-ad109aa-rpi-arm64.img.xz -o build_rpi_image/os_list_local.rpi-imager-manifest
     ```
     then double-click the `.rpi-imager-manifest` file (or Imager: App Options -> Content Repository -> Use
     custom file, or `rpi-imager --repo <file>`): the AutoBleem image appears in the OS list *with* the
