@@ -276,17 +276,17 @@ anything that touches the console's databases.
 - Fresh entries' core paths are mapped onto the target's RetroArch dir, and `RetroArchScanner::merge`
   now maps a kept entry that names *this* machine's ROM folder (a launcher scan run on the PC) onto the
   target's - both were this PC's drive letter otherwise.
-- The window is `AppBase` on `ab_classic` with the stick's theme (no music, on request), the job on a
-  thread; `--quiet` for scripts. `tools/make_updateroms_bundle.sh` gathers the exe with the MSYS2 DLLs
-  `ldd` names into `build_win/UpdateRoms/` - **~50 MB of DLLs**, SDL2_image/mixer with every codec: the
-  static, codec-less build the plan wanted is the one follow-up (the tool needs PNG, TrueType and no sound).
+- The window: first written as `AppBase` on `ab_classic` with the stick's theme, which made the exe 28 MB
+  plus 50 MB of MSYS2 DLLs (SDL2_image/mixer with every codec); the owner then asked for **a plain Win32
+  window, no SDL, no AutoBleem rendering** - `win32_window.cpp`, statically linked, a `-mwindows` exe
+  that `--quiet` can still print from (`AttachConsole`). `tools/make_updateroms_bundle.sh` builds it
+  Release into `build_updateroms/`, strips and UPX-packs it: **one 540 KB file** plus README.txt.
 - Verified against the fake tree with the real network (146 databases fetched and unpacked, playlists with
   `/media/...` paths, covers fetched); **not against a real console stick** - the console has never run
   this build.
 
 ## What is left (2026-09-19)
 
-- A `-static` UpdateRoms without the codec DLLs (above).
 - The console has never run any of this: steps 1-3 are verified on the Pi 400 and the PC, step 5 on the
   PC's fake tree. `/media/roms` on the console is from the old playlists, not from hardware.
 - `neogeo.zip` next to the arcade sets is listed as "Neo Geo" (it is an FBNeo database record); the BIOS
