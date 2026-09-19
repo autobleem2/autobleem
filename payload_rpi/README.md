@@ -132,13 +132,14 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
 3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
    its own; RetroArch adds the other systems at the cost of a 10-40 minute build and close to a GB of
    downloads. `n` gives a lean PS1-only install: no build, no cores, only the two PS1 BIOS files out of the
-   pack (box art is still fetched); the launcher hides its RetroArch set and menu items when no RetroArch is
+   pack; the launcher hides its RetroArch set and menu items when no RetroArch is
    installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
    alone gets the full install. RetroArch can be added later by running `install.sh` again.
 4. runs `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
    screen: packages, `--grow-root` (the root partition grows from the base image's ~3 GB to `root_gib`, the
-   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source if wanted, cores, BIOS,
-   thumbnails. The same output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
+   rest of the card becomes the `AUTOBLEEM` partition), RetroArch built from source if wanted, cores, BIOS.
+   Box art is not mirrored: the launcher fetches each game's cover when it scans it (see below). The same
+   output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
 5. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
    mode only take full effect on the boot after `install.sh` sets them. On failure it says so, gives the
    login prompt back, and tries again on the next boot (up to 20 times, then it gives up and leaves a note).
@@ -165,7 +166,7 @@ Everything is on the small FAT boot partition, editable from any PC after flashi
     commented WiFi example (`wifis: wlan0: access-points:` and `regulatory-domain`).
 - **`autobleem.txt`** - AutoBleem's own first-boot options, one `key=value` per line, documented in the file:
   `root_gib` (default 8), `hdmi_mode`, `retroarch` (source/apt/none - unset means the first boot asks),
-  `thumbnails` (boxarts/all/none), `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
+  `thumbnails` (none/boxarts/all), `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
 
 `tools/make_rpi_image.sh` also writes `<out>/rpi_imager_repo.json` - the checked-in `tools/rpi_imager_repo.json`
 template with this run's real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/
