@@ -1,0 +1,49 @@
+# Builds docker/Dockerfile - the autobleem-build image every CI job runs in - and publishes it to GHCR as
+# ghcr.io/autobleem/autobleem-build:latest (and :<sha>). Runs on the self-hosted runner only: that is where
+# the cover databases the image bakes in live (docker/runner/compose.yml mounts them at AB_COVERS_DIR).
+# The first build takes about an hour on the server's two cores; afterwards only the changed layers.
+name: Build image
+
+on:
+  push:
+    branches: [develop, master]
+    paths: ['docker/**', '.github/workflows/image.yml']
+  workflow_dispatch:
+    inputs:
+      no_cache:
+        description: rebuild every layer
+        type: boolean
+        default: false
+
+concurrency:
+  group: image
+  cancel-in-progress: false
+
+jobs:
+  image:
+    runs-on: [self-hosted, linux, x64]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/autobleem-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build
+        run: |
+          image="$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')"
+          args=()
+          [ "${{ inputs.no_cache }}" = "true" ] && args+=(--no-cache)
+          docker/build-image.sh --tag "$image" "${args[@]}"
+
+      - name: Push
+        run: docker push --all-tags "$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')"
+
+      - name: Summary
+        run: |
+          image="$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')"
+          { echo "## autobleem-build"; echo; docker image ls "$image" | sed 's/^/    /'; } >> "$GITHUB_STEP_SUMMARY"
