@@ -156,9 +156,11 @@ Still to do, in order:
    console playlist *format*, not this machine's layout.
 3. ~~Split `GuiLauncher`~~ - done (phase D, 2026-09-16). **The refactor plan is complete.**
 4. ~~Set up the Sony ARM toolchain~~ - done 2026-09-17: `make_psc.sh` builds on the remote server (see Build).
-   `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. **Still to
-   do: run it on a console** - nothing has run on real hardware yet; the Windows/MinGW build is the only one
-   that has been executed. The Pi toolchain (below) is a different target and does not substitute for it.
+   `autobleem-gui` cross-compiles and links cleanly with the Sony GCC 8.2 toolchain. Superseded on
+   2026-09-19 by the Docker image's Stretch/gcc-6 toolchain (see "CI" under Build), and **that build has run
+   on a console**: the launcher came up on the owner's PSC (stock kernel, a FAT32 stick) with every cover in
+   place, PS1 and RetroArch alike. Sound, a PS1 launch through the new pcsx-ab and the console tools are
+   still to be exercised there.
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
@@ -870,7 +872,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `ci.yml` (`native` on every push/PR; the cross targets on develop/master/tags/dispatch; a `v*` tag ->
   draft release with the five packages; PRs always on GitHub-hosted runners). The self-hosted runner is
   `docker/runner/compose.yml`. Verified 2026-09-19 on the server: all five targets green (37/37 tests,
-  format, tidy), packages inspected; **not yet run through GitHub Actions** and nothing run on a console.
+  format, tidy), packages inspected; **not yet run through GitHub Actions**. **Run on a console
+  2026-09-19**: the psc package's launcher, `libs.tar.gz` and pcsx-ab went onto the owner's stick (the
+  previous set kept in `E:\tmp\stick-prev`), and the launcher started with all covers - the first hardware
+  run of any console build of this repo.
   What the image's compilers turned up: the console's gcc-6 cannot combine an inherited constructor with a
   member initialised from another member (`GuiLauncher` now spells its constructor out - keep it that way
   for every screen), and the test fixture's scratch dirs now carry the pid (`ctest -j` runs suites in
@@ -899,8 +904,8 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   **`make_psc.sh` checks that on the server before fetching the binary** (`tools/check_psc_binary.sh`:
   highest `GLIBC_`/`GLIBCXX_` version needed, and no RPATH/RUNPATH - the toolchain file sets
   `CMAKE_SKIP_RPATH`, since `FindSDL2.cmake` links the sysroot's `.so` files by absolute path), and passes
-  the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`. **Not yet
-  run on a console.**
+  the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`. This
+  Sony-toolchain build has never run on a console; the image's gcc-6 build has (2026-09-19).
 - The Pi toolchain files (`toolchains/rpi/RPitoolchain.cmake`, `toolchains/rpi64/RPi64toolchain.cmake`, over
   the shared `toolchains/rpi/common.cmake`) take the SysGCC toolchain when its directory exists
   (`AB_RPI_TOOLCHAIN` / `AB_RPI64_TOOLCHAIN`, the Windows PC) and Debian's multiarch cross compiler
