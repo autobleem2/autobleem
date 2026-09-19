@@ -57,8 +57,13 @@ build server serves and that anything with `wget`/`curl` can read:
 - **A generated landing page** (`index.html` at the root, `tools/repo_index.py`, rerun after every
   publish): the latest release's five packages, the two images with the Imager instructions, the RetroArch
   builds - links and sizes, nothing dynamic. Everything else is nginx's autoindex.
-- **Retention**: images are the only big thing (1.8 GB a release). Keep the last three release image
-  sets; `tools/repo_publish.sh --prune` deletes older ones (and never anything under `db/` or `releases/`).
+- **Retention** (the owner's rule): pre-release builds are not kept - a new pre-release replaces the
+  previous one, in `releases/` and in `rpi-imager/images/` alike (`repo_index.py` deletes the older ones
+  on every publish). The page shows the latest stable release and, in its own panel marked as a
+  development build, that one pre-release (`releases/unstable.json` for machines), and the newest image
+  set even when it is a pre-release (the owner asked for both when they vanished). Of the RetroArch builds only the newest
+  version is kept. Stable releases and their images stay (1.8 GB of images a release; a stable release is
+  rare).
 - **The repo's base URL is data, not code**: `AB_REPO_URL` (default `https://autobleem.retromenele.pl`)
   in `ci/`, `--repo URL` in `install.sh`, `repo=` in `autobleem.txt`, so a mirror or a LAN copy for testing
   is one setting. The direct `http://212.71.244.78:9090` is the fallback while the DNS record is on its way.
@@ -69,7 +74,8 @@ build server serves and that anything with `wget`/`curl` can read:
 autobleem-repo/
   index.html                         generated (tools/repo_index.py)
   releases/
-    latest.json                      {"version": "v2.0.0", "date": ..., "files": {"psc": {"url","sha256","size"}, "rpi", "rpi64", "win", "updateroms"}}
+    latest.json                      the newest stable release: {"version": "v2.0.0", "date": ..., "files": {"psc": {"url","sha256","size"}, "rpi", "rpi64", "win", "updateroms"}}
+    unstable.json                    the one pre-release kept, same shape
     v2.0.0/                          the five packages + SHA256SUMS + release.json (same shape as latest.json)
   rpi-imager/
     os_list.json                     what Raspberry Pi Imager's "Add repository" takes (the filled-in tools/rpi_imager_repo.json)
@@ -200,4 +206,4 @@ install depend on the repo for its covers.
 1. ~~Proxy or DNS record?~~ Settled 2026-09-19: an `A` record, HTTPS from Caddy on 443 (the owner did
    not want to lose HTTPS, and a Netlify proxy would carry every image download through Netlify).
 2. Step 7 - a Pi package that needs the repo for its covers, or the self-contained 306 MB one?
-3. Retention: three release image sets (5.4 GB) on 22 GB free - or fewer?
+3. ~~Retention?~~ Settled 2026-09-19: pre-releases are replaced, not kept; the page lists stable releases only.
