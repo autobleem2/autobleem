@@ -85,3 +85,9 @@ __pycache__/
 
 # tools/win_drive.ps1's screenshots land in the root
 /shot*.png
+
+# the cover databases docker/build-image.sh stages into the image build context
+/docker/db/
+
+# the self-hosted runner's token (docker/runner/compose.yml)
+/docker/runner/.env
