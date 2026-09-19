@@ -210,6 +210,10 @@ stop), checks the free space against the tarball's unpacked size (`gzip -l`), an
 rest - behind an `.extracted` marker, so a half-unpacked tree from a failed attempt is removed rather
 than run on the retry (it used to skip the extraction whenever the directory existed).
 
+The same card then went end to end after a manual grow over ssh (the fixed script and a re-packed tarball
+put in place): the armhf image boots into the launcher, so of the list below only `--grow-only` growing a
+root for real is left, on the next image built from `develop`.
+
 Still to verify on hardware after this: the interactive WiFi prompt end to end, a first boot with Imager
 presets through the local manifest, `--grow-root` on a real card, and the install-then-reboot handoff.
 
