@@ -24,8 +24,10 @@ root_gib=8
 #   source - latest release, built on the Pi | apt - the distribution's package | none - PS1-only AutoBleem
 #retroarch=source
 
-# PS1 box art from thumbnails.libretro.com: boxarts (~350 MB) | all (title screens and snaps too) | none
-#thumbnails=boxarts
+# PS1 box art. The launcher fetches each game's cover from thumbnails.libretro.com when it scans the
+# game, so nothing needs mirroring: none (default) | boxarts (the whole set, ~350 MB, for covers offline) |
+# all (title screens and snaps too)
+#thumbnails=none
 
 # The BIOS pack (RetroArch/system, and the PS1 BIOS for pcsx-ab): yes | no. Without RetroArch only the two
 # PS1 files are fetched.

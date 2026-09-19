@@ -414,6 +414,15 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   is empty and the box art of every ROM without one - only with config.ini `online=true` (Options: "Fetch
   box art online"), after one probe per cycle, and only when there is something to fetch; a server miss
   is remembered in `Named_Boxarts/.autobleem-missing.txt`. Pi: 36 covers fetched, 31 not on the server.
+  **PS1 games get the same since 2026-09-19** (`ScanService::fetchMissingPs1BoxArt`, after
+  `scanGamesDirectory`): a game with no PNG next to it and nothing in the thumbnails tree is asked for by
+  its rdb record name (libretro-thumbnails' file name), else its title, and its Game.ini gets the cached
+  path at once; `OnlineAssets::fetchMissingBoxArt` takes `(database, label)` requests now, with an
+  on-fetched callback, and `ps1Requests()` is the selection (both tested). `config.ini`'s `online`
+  defaults to **true**; the gate is the platform's `download_command` (Pi, PC - never the console). With
+  that, `install.sh --thumbnails` defaults to `none` - the ~9300-file mirror (now four streams with a
+  percentage) is `--thumbnails boxarts`, for covers offline. The owner first said no to this and then
+  yes, for network-guaranteed platforms only.
   **Step 5** (2026-09-19): `apps/updateroms/` - `UpdateRoms.exe`, run from the stick in a PC, does the
   same scan with the PC's network and the target's paths (`usb_root` in the platform inis); see its
   CLAUDE.md. **The plan is complete**; what is left is listed at the end of the plan doc (nothing of this

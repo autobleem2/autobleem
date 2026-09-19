@@ -36,7 +36,8 @@ HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, 
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
-THUMBNAILS=boxarts              # --thumbnails: boxarts (the PS1 covers, ~350 MB) | all (+ title screens, snaps) | none
+THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
+                                # PS1 set, ~350 MB, for covers offline) | all (+ title screens, snaps)
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
 
 #*******************************
@@ -108,8 +109,10 @@ Usage: sudo bash install.sh [options]
                        1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode)
   --retroarch MODE     source (default): build the latest RetroArch release here, 10-40 min on a Pi;
                        apt: the distribution's package; none: leave RetroArch alone
-  --thumbnails WHAT    boxarts (default): the PS1 covers from thumbnails.libretro.com (~9000 files, ~350 MB,
-                       resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
+  --thumbnails WHAT    none (default): the launcher fetches a game's cover from thumbnails.libretro.com when
+                       it scans the game, so nothing is mirrored here; boxarts: the whole PS1 set (~9000
+                       files, ~350 MB, resumable, four streams) for covers offline; all: title screens and
+                       snaps too (~3x)
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
   --no-bios            do not download the BIOS pack (system/biospack.txt or biospack-arm64.txt: ~190-230 MB
