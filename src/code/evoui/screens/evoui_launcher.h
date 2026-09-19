@@ -42,6 +42,9 @@ extern const ableem::Color brightWhite;
 class GuiLauncher : public GuiScreen {
 public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
+    // spelled out rather than inherited (using GuiScreen::GuiScreen): the console's GCC 6 cannot combine an
+    // inherited constructor with a member initialised from another member, which `carousel` is
+    explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {}
     void init() override;
     ~GuiLauncher() override;
     void render() override;
@@ -147,7 +150,7 @@ public:
     bool r2Held = false; // with L2 held too the system menu opens, whichever was pressed first
 
     // the row of covers: the games it shows, the selected one, the scroll animation
-    Carousel carousel{*gui};
+    Carousel carousel;
 
     // the screen elements are owned by staticElements / frontElemets (created in loadAssets, freed in freeAssets).
     // the named pointers below are non-owning shortcuts into those vectors.
@@ -200,8 +203,6 @@ public:
     // screen (a sub-screen, PCSX) the rest of the time. loadAssets() restarts it; render() draws it.
     int fadeAlpha = 255;
     long fadeStart = 0;
-    using GuiScreen::GuiScreen;
-
     std::vector<std::string> raPlaylists;
     void refreshPlaylistNames(); // after the scan rewrote playlists
 

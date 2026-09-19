@@ -6,6 +6,13 @@
 #include <ableem/engine/filesystem.h>
 #include <cstdlib>
 #include <string>
+#ifdef _WIN32
+#include <process.h>
+#define AB_TEST_PID _getpid()
+#else
+#include <unistd.h>
+#define AB_TEST_PID getpid()
+#endif
 
 //******************
 // TempDir
@@ -21,7 +28,9 @@
 class TempDir {
 public:
     explicit TempDir(const std::string &label) {
-        // the counter keeps two TempDirs made in the same test from colliding
+        // the counter keeps two TempDirs made in the same test from colliding; the pid keeps two test
+        // executables run at once (ctest -j) apart - the same label and counter in both used to make one
+        // delete the other's tree from under it
         static int counter = 0;
         const char *base = getenv("TMPDIR");
         if (base == nullptr)
@@ -29,7 +38,7 @@ public:
         if (base == nullptr)
             base = ".";
         path_ = ableem::DirEntry::removeSeparatorFromEndOfPath(base) + ableem::sep + "ab_test_" + label + "_" +
-                std::to_string(++counter);
+                std::to_string(AB_TEST_PID) + "_" + std::to_string(++counter);
         ableem::DirEntry::removeDirAndContents(path_); // a previous run that was killed mid-test
         ableem::DirEntry::createDir(path_);
     }
