@@ -11,11 +11,14 @@
 #include "core/services/online_assets.h"
 
 #include <ableem/engine/filesystem.h>
+#include <ableem/engine/thumbnail_lookup.h>
 #include <ableem/engine/zip_writer.h>
 
 #include <fstream>
 #include <map>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 using ableem::DirEntry;
@@ -169,4 +172,58 @@ TEST_CASE("ensureDatabases: nothing to do with databases there or no network; el
     size_t before = server.commands.size();
     CHECK(online.ensureDatabases(tmp.at("retroarch/database/rdb")) == 2);
     CHECK(server.commands.size() == before); // they are there: not even a probe
+}
+
+TEST_CASE("fetchMissingBoxArt by request: only the covers not there, each arrival reported with its file") {
+    TempDir tmp("online");
+    EnvFixture env;
+    env.setWorkingPath(tmp.path());
+    FakeServer server;
+    server.files["http://thumbs/"] = "<html>";
+    const char *const PSX = ableem::ThumbnailLookup::PlayStationDbName;
+    server.files[OnlineAssets::boxArtUrl("http://thumbs", PSX, "Crash Bandicoot (USA)")] = "crash";
+    server.files[OnlineAssets::boxArtUrl("http://thumbs", PSX, "Tekken 2 (USA)")] = "tekken";
+    OnlineAssets online(config(), server.runner());
+    const string thumbs = tmp.at("thumbnails");
+    // one is there already, one the server has, one it does not
+    tmp.writeFile(string("thumbnails/") + PSX + "/Named_Boxarts/Tekken 2 (USA).png", "old");
+
+    vector<std::pair<string, string>> arrived;
+    int missing = -1;
+    int fetched = online.fetchMissingBoxArt(
+        {{PSX, "Crash Bandicoot (USA)"}, {PSX, "Tekken 2 (USA)"}, {PSX, "Nobody (Nowhere)"}}, thumbs, nullptr, nullptr,
+        &missing,
+        [&](const OnlineAssets::BoxArtRequest &r, const string &path) { arrived.push_back({r.label, path}); });
+
+    CHECK(fetched == 1);
+    CHECK(missing == 1);
+    REQUIRE(arrived.size() == 1);
+    CHECK(arrived[0].first == "Crash Bandicoot (USA)");
+    CHECK(arrived[0].second == OnlineAssets::boxArtPath(thumbs, PSX, "Crash Bandicoot (USA)"));
+    CHECK(tmp.readFile(string("thumbnails/") + PSX + "/Named_Boxarts/Crash Bandicoot (USA).png") == "crash");
+    CHECK(tmp.readFile(string("thumbnails/") + PSX + "/Named_Boxarts/Tekken 2 (USA).png") == "old"); // untouched
+}
+
+TEST_CASE("ps1Requests: the games without any cover, named by the rdb record, else the title") {
+    auto game = [](const string &title, const string &record, const string &coverPath, bool pngNextToIt) {
+        auto g = std::make_shared<ableem::UsbGame>();
+        g->title = title;
+        g->recordName = record;
+        g->coverPath = coverPath;
+        g->coverImageFound = pngNextToIt;
+        return g;
+    };
+    vector<ableem::UsbGamePtr> games = {
+        game("Crash Bandicoot", "Crash Bandicoot (USA)", "", false),             // wanted, by record name
+        game("Homebrew", "", "", false),                                         // wanted, by title (no rdb match)
+        game("Tekken 2", "Tekken 2 (USA)", "/thumbs/Tekken 2 (USA).png", false), // the tree has it
+        game("Ridge Racer", "Ridge Racer (USA)", "", true),                      // a PNG next to the game
+        game("", "", "", false),                                                 // nothing to name it by
+        nullptr,
+    };
+    vector<OnlineAssets::BoxArtRequest> requests = OnlineAssets::ps1Requests(games);
+    REQUIRE(requests.size() == 2);
+    CHECK(requests[0].database == string(ableem::ThumbnailLookup::PlayStationDbName));
+    CHECK(requests[0].label == "Crash Bandicoot (USA)");
+    CHECK(requests[1].label == "Homebrew");
 }
