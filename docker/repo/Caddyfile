@@ -1,0 +1,35 @@
+# The download repository (docker/repo/compose.yml). Two listeners over one read-only tree, /srv/repo.
+{
+    # port 80 belongs to the host's nginx: no HTTP-01 challenge and no http->https redirect from Caddy
+    auto_https disable_redirects
+    admin off
+}
+
+(repo) {
+    root * /srv/repo
+    file_server browse {
+        hide .*
+    }
+    encode gzip
+    # the machine-readable files and the landing page change on every publish; versioned folders never do
+    @volatile path *.json /index.html /
+    @versioned not path *.json /index.html /
+    header @volatile Cache-Control "max-age=300"
+    header @versioned Cache-Control "max-age=86400"
+    header -Server
+}
+
+# HTTPS, certificate from Let's Encrypt over TLS-ALPN-01 (needs only port 443 reachable at this name)
+{$REPO_HOST} {
+    tls {
+        issuer acme {
+            disable_http_challenge
+        }
+    }
+    import repo
+}
+
+# plain HTTP - the direct address, and LAN tests
+http://:9090 {
+    import repo
+}
