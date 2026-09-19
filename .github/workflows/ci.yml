@@ -1,0 +1,129 @@
+# The build pipeline: every job is `ci/build.sh <target>` inside the autobleem-build image (see docker/), so
+# what CI does is exactly what `docker/run.sh ci/build.sh <target>` does on the build server or any Docker
+# host. `native` (the tests, the language files, clang-format, clang-tidy) runs on every push and pull
+# request; the four cross builds run on develop/master, on tags and on request; a v* tag ends in a GitHub
+# release with the console zip, the two Pi tarballs, the Windows launcher zip and UpdateRoms. The cross jobs
+# check out pcsx-ab (autobleem/pcsx-ab2) next to this tree: ci/build.sh builds the emulator first and the
+# packages ship that build, not the checked-in binaries.
+#
+# Runners: the self-hosted one on the build server by default, GitHub's ubuntu-24.04 when asked for
+# (workflow_dispatch "runner"), and *always* GitHub's for pull requests - a self-hosted runner on a public
+# repository must never execute a fork's code. The Actions settings should require approval for outside
+# collaborators' workflows as well.
+name: CI
+
+on:
+  push:
+    branches: [develop, master]
+    tags: ['v*']
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: where to build
+        type: choice
+        options: [self-hosted, github]
+        default: self-hosted
+      targets:
+        description: cross targets (space separated; empty = all four)
+        type: string
+        default: ''
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/autobleem/autobleem-build:latest
+
+# Nothing runs until the repository variable AB_CI_ENABLED is 'true' (Settings -> Secrets and variables ->
+# Actions -> Variables): the switch for bringing the pipeline up, and for pausing it.
+jobs:
+  native:
+    name: native (tests, format, lint)
+    if: vars.AB_CI_ENABLED == 'true'
+    runs-on: ${{ (github.event_name == 'pull_request' || inputs.runner == 'github') && 'ubuntu-24.04' || 'self-hosted' }}
+    container:
+      image: ghcr.io/autobleem/autobleem-build:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # git describe needs the tags
+      - name: Build, test, check
+        run: ci/build.sh native
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native
+          path: dist/native/
+          retention-days: 7
+
+  # which cross targets to build: the dispatch input's list, else all four
+  plan:
+    if: vars.AB_CI_ENABLED == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    outputs:
+      targets: ${{ steps.targets.outputs.json }}
+    steps:
+      - id: targets
+        run: |
+          t="${{ inputs.targets }}"
+          [ -n "$t" ] || t="psc rpi rpi64 win"
+          echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+
+  cross:
+    name: ${{ matrix.target }}
+    if: github.event_name != 'pull_request'
+    needs: [native, plan]
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    runs-on: ${{ inputs.runner == 'github' && 'ubuntu-24.04' || 'self-hosted' }}
+    container:
+      image: ghcr.io/autobleem/autobleem-build:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      AB_PCSX_DIR: ${{ github.workspace }}/pcsx-ab
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: autobleem
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: autobleem/pcsx-ab2
+          path: pcsx-ab
+      - name: Build and package
+        working-directory: autobleem
+        run: ci/build.sh ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: autobleem/dist/${{ matrix.target }}/
+          retention-days: 30
+
+  release:
+    name: release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [native, cross]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lR dist
+          gh release create "${GITHUB_REF_NAME}" --title "AutoBleem ${GITHUB_REF_NAME}" --notes-from-tag --draft \
+            dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/win/*.zip

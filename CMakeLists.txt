@@ -24,6 +24,9 @@ endif()
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
 	message(STATUS "Building for ARM")
+	# The console is a Cortex-A35 (ARMv8-A, run in AArch32) with NEON. GCC 8+ spells that armv8-a+simd;
+	# an older GCC - the Stretch gcc-6 the Docker image builds with, the newest whose libstdc++ matches the
+	# console's glibc 2.24 - takes the -mfpu spelling (its old branch here was armv7ve without NEON).
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 8.0)
 		message(STATUS "CXX Compiler Version > 8")
 		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a+simd -Os -s")
@@ -31,8 +34,8 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
         message(STATUS "Newer GCC installed")
 	else()
 		message(STATUS "CXX Compiler Version <= 8")
-		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv7ve -s -Os")
-		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv7ve -s -Os")
+		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
+		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
 	endif()
 
 	# the Sony sysroot is wherever toolchains/psc/PSCtoolchainV8.cmake found the toolchain (AB_PSC_TOOLCHAIN);

@@ -63,6 +63,10 @@ build_win/
 build_updateroms/
 db/
 
+# large release assets tools/install_autobleem.py pulls from (cover DBs, the RetroBoot/RetroArch
+# bundle for its optional step) - sourced locally from a full AutoBleem release package, never committed
+vendor/
+
 #If you edit, or view, a file in Visual Studio in open folder mode it creates files in a .vs folder to keep track
 .vs/
 
@@ -85,3 +89,9 @@ __pycache__/
 
 # tools/win_drive.ps1's screenshots land in the root
 /shot*.png
+
+# the cover databases docker/build-image.sh stages into the image build context
+/docker/db/
+
+# the self-hosted runner's token (docker/runner/compose.yml)
+/docker/runner/.env

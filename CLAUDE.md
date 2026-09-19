@@ -823,6 +823,42 @@ split is the CMake source lists, and the include rule: nothing in `ab_classic` i
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
+- **CI: one Docker image builds every target** (2026-09-19; `docs/ci.md` is the operator's page,
+  `docs/ci-plan.md` the plan until the workflows have run). `docker/Dockerfile` -> `autobleem-build`
+  (Debian Bookworm, ~3.4 GB, built on the server with `docker/build-image.sh`): the native build with
+  clang-format/clang-tidy **22** (apt.llvm.org, the major MSYS2 has), Debian's `crossbuild-essential-armhf`
+  / `-arm64` with the multiarch `libsdl2*-dev` packages for the two Pis, `mingw-w64` (posix) with the
+  official SDL2 mingw devel packages at `/opt/mingw-sdl2` for Windows, the three cover databases at
+  `/opt/autobleem/db`, and **the console toolchain by AutoBleem-NG's recipe** under `/opt/psc`: a Debian
+  Stretch armhf sysroot (`mmdebstrap --variant=extract` from archive.debian.org - glibc 2.24 / libstdc++
+  6.0.22, the console's own), Stretch's **gcc-6** cross compiler (patchelf'ed RUNPATH to its own
+  isl/mpc/mpfr/gmp, its libc linker scripts rewritten to bare names - no host `/usr/arm-linux-gnueabihf`
+  hijack, that directory is the Pi cross libc's), and **SDL2 2.0.12 + image 2.6.3 + mixer 2.6.3 + ttf
+  2.20.2 built from source** with the console's backend set (Wayland + dummy, GLES via EGL, ALSA, udev, no
+  X11), wrapped as `armv8-sony-linux-gnueabihf-*` so `PSCtoolchainV8.cmake` works with
+  `-DAB_PSC_TOOLCHAIN=/opt/psc`. The 2019 Sony toolchain (`/opt/toolchain`, `autobleem/PSC-CrossCompile-
+  Toolchain`) is **no longer what releases are built with** (the owner's call: outdated). Each stage ends
+  with `docker/ab-validate.sh` linking a C++14 + SDL test program and checking the result (the console:
+  ARMv8, nothing above GLIBC_2.24 / GLIBCXX_3.4.22, no RPATH, a Wayland SDL2).
+  `ci/build.sh native|psc|rpi|rpi64|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into the
+  same `build_*/` dirs the `make_*.sh` scripts use, builds, validates and packages into `dist/<t>/`; for
+  `psc`/`rpi`/`rpi64` it **builds pcsx-ab first** from the sibling checkout (`AB_PCSX_DIR` /
+  `../pcsx-ab`; pcsx-ab has its own `ci/build.sh` and the same Debian-fallback toolchain files) and the
+  package ships that emulator. New scripts: `tools/make_psc_package.sh` (the console zip - the release
+  script `make_psc.sh` always assumed; it also **regenerates `libs.tar.gz`** from the image's SDL build,
+  keeping iconv/ogg/vorbis) and `tools/make_win_package.sh` (launcher zip with the four SDL DLLs +
+  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). The workflows: `.github/workflows/image.yml` (the
+  image, self-hosted only - the cover DBs are there - pushed to `ghcr.io/autobleem/autobleem-build`) and
+  `ci.yml` (`native` on every push/PR; the cross targets on develop/master/tags/dispatch; a `v*` tag ->
+  draft release with the five packages; PRs always on GitHub-hosted runners). The self-hosted runner is
+  `docker/runner/compose.yml`. Verified 2026-09-19 on the server: all five targets green (37/37 tests,
+  format, tidy), packages inspected; **not yet run through GitHub Actions** and nothing run on a console.
+  What the image's compilers turned up: the console's gcc-6 cannot combine an inherited constructor with a
+  member initialised from another member (`GuiLauncher` now spells its constructor out - keep it that way
+  for every screen), and the test fixture's scratch dirs now carry the pid (`ctest -j` runs suites in
+  parallel; same label + counter in two processes deleted each other's trees). Editing the root
+  CMakeLists' console branch: a GCC < 8 gets `-march=armv8-a -mfpu=neon-vfpv4` (it used to get armv7ve,
+  no NEON - a branch that had never been compiled).
 - **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` → `build_psc/dist/`
   (`autobleem-gui`), built **on the build server over ssh** - the same shape as pcsx-ab's
   `make_psc.sh`, so the two build side by side there. `ssh psc-build` (a `Host` entry in `~/.ssh/config`, in
@@ -847,6 +883,12 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `CMAKE_SKIP_RPATH`, since `FindSDL2.cmake` links the sysroot's `.so` files by absolute path), and passes
   the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`. **Not yet
   run on a console.**
+- The Pi toolchain files (`toolchains/rpi/RPitoolchain.cmake`, `toolchains/rpi64/RPi64toolchain.cmake`, over
+  the shared `toolchains/rpi/common.cmake`) take the SysGCC toolchain when its directory exists
+  (`AB_RPI_TOOLCHAIN` / `AB_RPI64_TOOLCHAIN`, the Windows PC) and Debian's multiarch cross compiler
+  otherwise (the image) - same thing in pcsx-ab. `toolchains/mingw/MinGWtoolchain.cmake` is the Windows
+  cross build from Linux (`-static-libgcc -static-libstdc++`; the tests are built and run only under
+  wine, which the image does not have - the native target runs the suites).
 - **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/`, then
   `tools/make_rpi_package.sh` for the installable tarball. Incremental since 2026-09-19 (it used to
   `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into `build_rpi_dbg/`. See the
@@ -905,7 +947,8 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   ships with its tests in the same commit (the refactor plan's rule, kept after the plan itself was done).
   - `tests/support/env_fixture.h` - **use it in any test that touches a path.** `ableem::Environment`'s
     setters are static, so without it tests inherit each other's roots and pass or fail by run order.
-  - `tests/support/temp_dir.h` - a scratch tree that deletes itself; `makeSubDir`/`writeFile`/`readFile`.
+  - `tests/support/temp_dir.h` - a scratch tree that deletes itself; `makeSubDir`/`writeFile`/`readFile`. Named
+    with the pid and a counter, so suites run in parallel (`ctest -j`, the CI) cannot touch each other.
   - Add a suite with `ab_add_test(<name> core/<file>.cpp)` in `tests/CMakeLists.txt`. Tests include app
     headers from `src/code`, e.g. `#include "core/services/config.h"`.
   - The test exes need `C:\msys64\ucrt64\bin` on PATH to run directly (ctest inherits it from the
