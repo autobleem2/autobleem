@@ -23,6 +23,7 @@ DATA_LABEL="AUTOBLEEM"          # the exFAT partition's label - also how the REA
 DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
 SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() (opt-in, it is destructive)
+GROW_ROOT_GIB=""                # --grow-root: grow a still-small root to this size first, see grow_root()
 STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, themes/, Games/, Apps/)
 DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
 DRY_RUN=0
@@ -93,6 +94,11 @@ Usage: sudo bash install.sh [options]
   --stage DIR          the payload tree to install from (default: this directory)
   --shrink-root GIB    shrink the root filesystem to GIB and use the freed space for the data partition.
                        REPARTITIONS THE CARD. Needs a reboot to do the work offline. Back up first.
+  --grow-root GIB      the opposite case - a root filesystem that was never expanded (an image built by
+                       tools/make_rpi_image.sh, or a card whose cmdline.txt lost the word "resize" before
+                       the first boot): grow it to GIB, online, and leave the rest for the data partition.
+                       Capped so at least 2 GiB stay free for the data partition; a no-op when the root is
+                       already that big.
   --no-packages        skip apt - assume SDL2/RetroArch/exfatprogs are already installed
   --no-boot-config     do not touch cmdline.txt/config.txt
   --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
@@ -125,6 +131,7 @@ parse_args() {
             --mount)          DATA_MOUNT="${2:?--mount needs a path}"; shift 2 ;;
             --stage)          STAGE_DIR="${2:?--stage needs a directory}"; shift 2 ;;
             --shrink-root)    SHRINK_ROOT_GIB="${2:?--shrink-root needs a size in GiB}"; shift 2 ;;
+            --grow-root)      GROW_ROOT_GIB="${2:?--grow-root needs a size in GiB}"; shift 2 ;;
             --no-packages)    DO_PACKAGES=0; shift ;;
             --no-boot-config) DO_BOOT_CONFIG=0; shift ;;
             --no-quiet-boot)  QUIET_BOOT=0; BOOT_SPLASH=0; shift ;;
@@ -817,6 +824,70 @@ disarm_shrink() {
 }
 
 #*******************************
+# grow_root
+#*******************************
+# The image tools/make_rpi_image.sh builds keeps the root filesystem at the base image's size (its
+# cmdline.txt has no "resize", so the initramfs never grows the partition over the whole card) - that is
+# what leaves room for the data partition. But a 3 GB root is too small for what install.sh puts on it
+# (RetroArch built from source alone wants a couple of GB), so the root is grown here first, online, to a
+# bounded size, and ensure_data_partition then takes the rest. sfdisk rewrites the partition's size in
+# place (--no-reread: the disk is in use, the kernel is told separately with partx), and resize2fs grows
+# ext4 while mounted - both are what growpart does, minus the "to the very end" it insists on.
+grow_root() {
+    local gib="$1"
+    local rootdev rootname diskname partnum start_s size_s disk_s target_s max_s target_mib
+    rootdev="$(findmnt -no SOURCE /)"
+    rootname="$(basename "$rootdev")"
+    diskname="$(basename "$DISK")"
+    [ -r "/sys/class/block/$rootname/partition" ] || die "cannot tell which partition $rootdev is"
+    partnum="$(cat "/sys/class/block/$rootname/partition")"
+    # sysfs sizes are in 512-byte sectors whatever the device says
+    start_s="$(cat "/sys/class/block/$rootname/start")"
+    size_s="$(cat "/sys/class/block/$rootname/size")"
+    disk_s="$(cat "/sys/block/$diskname/size")"
+
+    target_s=$((gib * 1024 * 1024 * 2))
+    max_s=$((disk_s - start_s - MIN_DATA_MIB * 2048))
+    if [ "$target_s" -gt "$max_s" ]; then
+        warn "the card is too small for a ${gib} GiB root plus a ${MIN_DATA_MIB} MiB data partition - growing the root to $((max_s / 2048)) MiB instead"
+        target_s=$max_s
+    fi
+    if [ "$target_s" -le "$size_s" ]; then
+        log "Root partition is already $((size_s / 2048)) MiB - not growing it"
+        return 0
+    fi
+    target_mib=$((target_s / 2048))
+    log "Growing $rootdev from $((size_s / 2048)) MiB to ${target_mib} MiB (the rest of $DISK is for the data partition)"
+    confirm "Grow partition $partnum of $DISK to ${target_mib} MiB?"
+
+    # ",SIZE" keeps the start and sets the new size; the disk is in use, so no re-read, and --force past
+    # sfdisk's own "device is mounted" refusal
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would run: echo ",%sMiB" | sfdisk --no-reread --force -N %s %s\n' "$target_mib" "$partnum" "$DISK"
+    else
+        echo ",${target_mib}MiB" | sfdisk --no-reread --force -N "$partnum" "$DISK" \
+            || die "sfdisk could not resize partition $partnum of $DISK"
+    fi
+    # tell the kernel about the new size of a partition that is mounted (BLKPG_RESIZE_PARTITION)
+    run partx -u --nr "$partnum" "$DISK" || run partprobe "$DISK" || true
+    run udevadm settle
+    run resize2fs "$rootdev" || die "resize2fs $rootdev failed - the partition is grown but the filesystem is not"
+    log "Root filesystem grown"
+}
+
+# --grow-root, before apt starts filling a root that is still the base image's size (a fresh Lite root has
+# a few hundred MB free - not enough for the packages, let alone the RetroArch build). Pointless once the
+# data partition exists: it sits right after the root, there is nothing to grow into.
+maybe_grow_root() {
+    [ -n "$GROW_ROOT_GIB" ] || return 0
+    if [ -n "$(existing_data_partition)" ]; then
+        log "A $DATA_LABEL partition already exists - ignoring --grow-root"
+        return 0
+    fi
+    grow_root "$GROW_ROOT_GIB"
+}
+
+#*******************************
 # ensure_data_partition
 #*******************************
 # sets DATA_DEV to the exFAT partition to use, creating it if that is possible without destroying anything.
@@ -853,8 +924,9 @@ ensure_data_partition() {
       * sudo bash install.sh --shrink-root 8     shrink the root filesystem to 8GiB and use the rest here.
                                               Repartitions the card on the next boot - back up first.
       * shrink partition 2 from another machine (GParted), then re-run this installer.
-      * re-flash, and before the first boot delete the 'init=...firstboot' part of cmdline.txt on the FAT
-        partition so the root filesystem is never expanded. Everything left over is then free space."
+      * re-flash, and before the first boot delete the word 'resize' from cmdline.txt on the FAT partition
+        so the root filesystem is never expanded (Raspberry Pi OS Trixie; older images used init=...firstboot).
+        Then run this installer with --grow-root 8: the root grows to 8 GiB and the rest is the data partition."
 }
 
 #*******************************
@@ -1128,6 +1200,7 @@ EOF
 main() {
     parse_args "$@"
     preflight
+    maybe_grow_root             # --grow-root: the root must have room before apt fills it
     install_packages
     ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data

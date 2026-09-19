@@ -5,20 +5,28 @@ Description=AutoBleem first-boot setup (image-injected install)
 # the marker file exists (install.sh already ran once, successfully) skips this unit for free, without
 # even starting the script - systemd logs the skip and that's it.
 ConditionPathExists=!/opt/autobleem-image/.done
-# After multi-user.target, not before it: Raspberry Pi Imager's own customisation (hostname, user, WiFi,
-# SSH - cloud-init or firstrun.sh, whichever this image's init_format is) runs earlier in the boot
-# sequence, and this unit is meant to run after it has had its shot, not race it. Wants=/After=
-# network-online.target is a best-effort wait for network - not required, since install.sh already
-# degrades gracefully offline (see its own apt/wget failure handling) and a Pi with no network on this
-# boot simply gets retried on the next one (see autobleem-firstboot.sh's attempt counter).
-After=multi-user.target network-online.target
+# After multi-user.target, not before it: the base image's own first-boot work runs earlier - cloud-init
+# (cloud-final.service: Raspberry Pi Imager's hostname/user/WiFi/SSH presets, this image's init_format is
+# cloudinit-rpi) and the user-creation wizard (userconfig.service, on tty8) when there were no presets.
+# This unit is meant to run after both have had their turn, not race them; After= on a unit that is not
+# active is a no-op. network-online.target is only a best-effort wait: the script asks for WiFi itself when
+# there is still no network, so a Pi with none configured is not stuck.
+After=multi-user.target network-online.target cloud-final.service userconfig.service
 Wants=network-online.target
+# the first boot is watched and answered on the screen: this unit takes tty1 (the keyboard and the HDMI
+# console) from the login prompt while it runs. The script starts getty@tty1 again on the way out when it
+# does not reboot, so a failed run leaves a login prompt, not a dead console.
+Conflicts=getty@tty1.service
 
 [Service]
 Type=oneshot
 ExecStart=/opt/autobleem-image/autobleem-firstboot.sh
-StandardOutput=journal
-StandardError=journal
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
 
 [Install]
 WantedBy=multi-user.target
