@@ -69,8 +69,22 @@ if [ -n "$DEST" ]; then
     done
     echo "publishing to $DEST: $(cd "$STAGE/$DEST" && ls | grep -v '\.sha256$' | tr '\n' ' ')"
 fi
+# the index script travels with every publish, but never backwards: an older copy (the server's rsync'd
+# checkout, behind the PC's) must not replace the one the repository already runs - it regenerated the
+# page without the manual link once
 mkdir -p "$STAGE/.tools"
-cp "$HERE/repo_index.py" "$STAGE/.tools/"
+index_version() { sed -n 's/^INDEX_VERSION = \([0-9]*\).*/\1/p' | head -1; }
+mine="$(index_version < "$HERE/repo_index.py")"
+if [ "$LOCAL" -eq 1 ]; then
+    theirs="$(index_version < "$REPO_DIR/.tools/repo_index.py" 2>/dev/null || true)"
+else
+    theirs="$(ssh "$REPO_HOST" "cat $REPO_DIR/.tools/repo_index.py 2>/dev/null" | index_version || true)"
+fi
+if [ "${mine:-0}" -ge "${theirs:-0}" ]; then
+    cp "$HERE/repo_index.py" "$STAGE/.tools/"
+else
+    echo "keeping the repository's repo_index.py (INDEX_VERSION $theirs; this checkout has $mine)" >&2
+fi
 
 # the index run on the server (and the image retention)
 remote_index() {

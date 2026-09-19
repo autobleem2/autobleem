@@ -35,6 +35,9 @@ import shutil
 import sys
 from datetime import datetime, timezone
 
+# bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
+INDEX_VERSION = 5
+
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
     ("psc", re.compile(r"^autobleem-psc-.*\.zip$"), "PlayStation Classic (USB stick zip)"),
