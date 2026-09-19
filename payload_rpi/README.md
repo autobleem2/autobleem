@@ -19,7 +19,7 @@ This is a port in progress. Be aware of what is and is not here:
 | Launcher, scanner, themes, memory cards, covers | built and packaged |
 | PS1 games | run in **pcsx-ab**, the console's own emulator, built for the Pi (`Autobleem/bin/emu/`, with the `gpu_peops`/`gpu_unai` plugins) — save states, memory cards and "Resume" work the way they do on the console |
 | BIOS | **downloaded by the installer**: a ~190 MB (armhf) or ~230 MB (arm64) pack (`system/biospack.txt` / `biospack-arm64.txt`, built from [RetroBIOS](https://github.com/Abdess/retrobios) by `tools/biospack.py --arch armhf\|arm64`, one manifest per architecture's actual core list) into `RetroArch/system/` — every system with a `roms/` folder (consoles, handhelds, the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers), arcade, Neo Geo CD, ScummVM, Doom — and the PS1 BIOS (SCPH-5501/5500) copied to `System/Bios/romw.bin` + `romJP.bin` for pcsx-ab, unless you have already put your own there. `--no-bios` skips it; without a `romw.bin` pcsx-ab runs on its HLE BIOS, which many games tolerate and some do not |
-| RetroArch | **optional** - the image's first boot asks, `install.sh --retroarch none` is a PS1-only AutoBleem (the launcher hides its RetroArch set and menu items when none is installed). When wanted: the **latest release, built from source by the installer** (libretro's buildbot has every core for armhf and arm64 but no frontend build), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
+| RetroArch | **optional** - the image's first boot asks, `install.sh --retroarch none` is a PS1-only AutoBleem (the launcher hides its RetroArch set and menu items when none is installed). When wanted: the **latest release, prebuilt for the Pi by AutoBleem's download site** (`--retroarch prebuilt`, the default - libretro's buildbot has every core for armhf and arm64 but no frontend build; built from source by the installer when the site cannot be reached), with all ~130 cores, core info, menu assets, pad autoconfigs and scanner databases downloaded into `RetroArch/` on the data partition. AutoBleem's RetroArch set shows the playlists RetroArch's scanner writes there; "Play using RA" runs a PS1 game in `pcsx_rearmed` |
 | Internal games | gone, by design — a Pi has no built-in game list, so the set and its option are compiled out |
 | Tested on real hardware | **yes**, on a Pi 400 (32-bit) since 2026-09-18: boots, scans, plays PS1 games and the other-systems RetroArch set, sound over HDMI. The 64-bit build compiles and packages cleanly but has not yet been run on a 64-bit Pi OS card. |
 | Flashing with Raspberry Pi Imager | `tools/make_rpi_image.sh` builds a flashable `.img.xz` whose first boot installs AutoBleem on the screen, asking for WiFi if it has none - see "Flashing with Raspberry Pi Imager" below. The build is verified on the Pi 400 for both architectures and the first image has booted once (which is what shaped the current first-boot flow); **the reworked first boot has not yet been through a fresh card end to end** - the manual tarball + `install.sh` flow above is the proven path. |
@@ -70,9 +70,10 @@ sudo reboot
 (`bash install.sh` rather than `./install.sh` because a package built on a Windows host loses the executable
 bit on the way into the tarball.)
 
-The installer: installs SDL2, libpng, exfatprogs and parted; builds the latest RetroArch release from
-source (10-40 minutes depending on the Pi - `--retroarch apt` takes the distribution's package instead,
-`--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
+The installer: installs SDL2, libpng, exfatprogs and parted; installs the latest RetroArch release - the
+build AutoBleem's download site has for this architecture, or from source when the site cannot be reached
+(10-40 minutes depending on the Pi; `--retroarch source` asks for that outright, `--retroarch apt` takes
+the distribution's package instead, `--retroarch none` skips it); finds or creates the exFAT data partition; builds the AutoBleem and RetroArch
 trees on it; downloads every core for the Pi's architecture plus RetroArch's info/assets/autoconfig/database bundles from
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
 later); downloads the BIOS pack (~190 MB, file by file with a SHA-256 check, only what is missing -
@@ -86,7 +87,8 @@ games. The installer fills both from the pack (SCPH-5501 and SCPH-5500); to use 
 before running it, or replace them afterwards — a re-run never overwrites them.
 
 `--help` lists the options. The useful ones are `--shrink-root` / `--grow-root` (see "The data partition"),
-`--retroarch`, `--no-downloads`, `--no-bios`, `--no-packages`, `--stage`, `--hdmi-mode` (default
+`--retroarch`, `--repo` (AutoBleem's download site, for a mirror or a copy on your own network),
+`--no-downloads`, `--no-bios`, `--no-packages`, `--stage`, `--hdmi-mode` (default
 `1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode), `--no-boot-splash`
 and `--no-quiet-boot`.
 
@@ -134,8 +136,9 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    keeps WiFi blocked (`rfkill`) until one is set.
 2. waits for the clock to sync (NTP) - `apt` distrusts a clock that is days off, and a Pi has no battery clock.
 3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
-   its own; RetroArch adds the other systems at the cost of a 10-40 minute build and close to a GB of
-   downloads. `n` gives a lean PS1-only install: no build, no cores, only the two PS1 BIOS files out of the
+   its own; RetroArch adds the other systems at the cost of close to a GB of downloads (the RetroArch
+   build itself comes from AutoBleem's download site in seconds; only without it is it built here, in
+   10-40 minutes). `n` gives a lean PS1-only install: no RetroArch, no cores, only the two PS1 BIOS files out of the
    pack; the launcher hides its RetroArch set and menu items when no RetroArch is
    installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
    alone gets the full install. RetroArch can be added later by running `install.sh` again.
@@ -143,7 +146,7 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    ~3 GB to `root_gib`, the rest of the card becomes the `AUTOBLEEM` partition) - the package unpacks to
    over 300 MB and a fresh root has less free than that - then unpacks the package and runs
    `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
-   screen: packages, RetroArch built from source if wanted, cores, BIOS.
+   screen: packages, RetroArch if wanted, cores, BIOS.
    Box art is not mirrored: the launcher fetches each game's cover when it scans it (see below). The same
    output is kept in `/var/log/autobleem-firstboot-install.log` for reading over ssh.
 5. on success: deletes the staged package, disables itself and reboots once more - the boot splash and HDMI
@@ -219,7 +222,8 @@ drive alongside the small `bootfs` one.
 
 ```
 /media/autobleem/
-  Games/<game name>/           your games - one folder each, .cue+.bin / .pbp / .chd. A multi-disc game is
+  Games/<game name>/           your games - one folder each, .cue+.bin / .pbp / .chd (files dropped straight
+                               into Games/ are sorted into folders by the scan). A multi-disc game is
                                one folder with every disc in it (plus the .m3u the scan writes); folders named
                                "Game (Disc 1)", "Game (Disc 2)"... are merged into "Game" by the scan - the
                                other discs' own Game.ini and save states are deleted in the process
@@ -251,8 +255,9 @@ drive alongside the small `bootfs` one.
     retroarch.cfg                every directory above is set in here; RetroArch keeps it up to date
 ```
 
-Add games by copying a folder into `Games/` from any computer. The launcher notices on its own — the scanner
-runs in the background and the carousel updates while you watch.
+Add games by copying them into `Games/` from any computer - a folder per game, or just the files: the scan
+moves loose game files into a folder of their own. The launcher notices on its own — the scanner runs in
+the background and the carousel updates while you watch.
 
 ## RetroArch
 
