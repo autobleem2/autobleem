@@ -1,0 +1,33 @@
+{
+  "//": "Template for Raspberry Pi Imager's 'Use custom' -> local JSON feature, or a --repo URL. tools/make_rpi_image.sh fills in the extract_/image_download_ size and sha256 fields for whichever architecture it just built, from a copy of this file. It does NOT fill in 'url' (where you host the .img.xz - GitHub Releases or your own web space; this repo has no publishing pipeline for that yet) or 'icon' (an AutoBleem icon URL), and leaves 'devices' out on purpose - Imager treats a missing 'devices' as 'offer this OS everywhere', which is the safe default until the exact device-tag vocabulary Imager expects is confirmed against Raspberry Pi's own published os_list_imagingutility.json (not verified as part of this work - see payload_rpi/README.md's Raspberry Pi Imager section). Every field here starting with __ is a placeholder token; nothing with one should be used to flash a real card until it's replaced.",
+  "imager": {
+    "latest_version": "2.0.0",
+    "url": "https://www.raspberrypi.com/software/"
+  },
+  "os_list": [
+    {
+      "name": "AutoBleem (32-bit)",
+      "description": "PlayStation Classic-style game launcher appliance for Raspberry Pi OS Lite armhf - completes its own setup on the first or second boot.",
+      "icon": "__ICON_URL__",
+      "url": "__ARMHF_IMAGE_URL__",
+      "extract_size": "__ARMHF_EXTRACT_SIZE__",
+      "extract_sha256": "__ARMHF_EXTRACT_SHA256__",
+      "image_download_size": "__ARMHF_IMAGE_DOWNLOAD_SIZE__",
+      "image_download_sha256": "__ARMHF_IMAGE_DOWNLOAD_SHA256__",
+      "release_date": "__ARMHF_RELEASE_DATE__",
+      "init_format": "cloudinit-rpi"
+    },
+    {
+      "name": "AutoBleem (64-bit)",
+      "description": "PlayStation Classic-style game launcher appliance for Raspberry Pi OS Lite arm64 - completes its own setup on the first or second boot.",
+      "icon": "__ICON_URL__",
+      "url": "__ARM64_IMAGE_URL__",
+      "extract_size": "__ARM64_EXTRACT_SIZE__",
+      "extract_sha256": "__ARM64_EXTRACT_SHA256__",
+      "image_download_size": "__ARM64_IMAGE_DOWNLOAD_SIZE__",
+      "image_download_sha256": "__ARM64_IMAGE_DOWNLOAD_SHA256__",
+      "release_date": "__ARM64_RELEASE_DATE__",
+      "init_format": "cloudinit-rpi"
+    }
+  ]
+}

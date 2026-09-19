@@ -13,7 +13,9 @@ target, or a build pipeline change).
 
 ## Prebuilt Raspberry Pi image for Raspberry Pi Imager
 
-**Status:** researched, not started.
+**Status:** implemented (2026-09-19, `tools/make_rpi_image.sh`, `payload_rpi/system/autobleem-firstboot.*`,
+`tools/rpi_imager_repo.json` - see CLAUDE.md's "Flashable image for Raspberry Pi Imager"), **not yet run on
+real hardware**.
 
 Ship the Pi port as a flashable `.img.xz` (alongside the existing tarball + `install.sh`) that Raspberry Pi
 Imager's "Use custom" can write directly, with Imager doing hostname/user/WiFi/SSH/locale and AutoBleem's

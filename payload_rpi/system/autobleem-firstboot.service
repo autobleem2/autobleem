@@ -1,0 +1,24 @@
+[Unit]
+Description=AutoBleem first-boot setup (image-injected install)
+# tools/make_rpi_image.sh injects this unit, autobleem-firstboot.sh and the AutoBleem package into an
+# official Raspberry Pi OS Lite image at /opt/autobleem-image/. ConditionPathExists means a boot after
+# the marker file exists (install.sh already ran once, successfully) skips this unit for free, without
+# even starting the script - systemd logs the skip and that's it.
+ConditionPathExists=!/opt/autobleem-image/.done
+# After multi-user.target, not before it: Raspberry Pi Imager's own customisation (hostname, user, WiFi,
+# SSH - cloud-init or firstrun.sh, whichever this image's init_format is) runs earlier in the boot
+# sequence, and this unit is meant to run after it has had its shot, not race it. Wants=/After=
+# network-online.target is a best-effort wait for network - not required, since install.sh already
+# degrades gracefully offline (see its own apt/wget failure handling) and a Pi with no network on this
+# boot simply gets retried on the next one (see autobleem-firstboot.sh's attempt counter).
+After=multi-user.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/autobleem-image/autobleem-firstboot.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
