@@ -89,15 +89,15 @@ read_options() {
 ask_retroarch() {
     local v="${OPT[retroarch]:-}"
     case "$v" in
-        source|apt|none) return 0 ;;
+        prebuilt|source|apt|none) return 0 ;;
         ""|ask) ;;
-        *) warn "autobleem.txt: retroarch=$v is not source, apt or none - asking instead" ;;
+        *) warn "autobleem.txt: retroarch=$v is not prebuilt, source, apt or none - asking instead" ;;
     esac
     printf '\n'
     printf '   AutoBleem plays PlayStation games on its own. RetroArch adds the other systems - NES, SNES,\n'
-    printf '   Mega Drive, arcade and about a hundred more - but it is built from source here (10-40 minutes)\n'
-    printf '   and downloads close to a GB of cores, databases and BIOS files. It can be added later by running\n'
-    printf '   the installer again.\n\n'
+    printf '   Mega Drive, arcade and about a hundred more - a ready-made build is downloaded (or, if the\n'
+    printf '   download site cannot be reached, it is built here, 10-40 minutes), plus close to a GB of cores,\n'
+    printf '   databases and BIOS files. It can be added later by running the installer again.\n\n'
     local answer=""
     if read -rt 60 -p "   Install RetroArch too? [Y/n] (yes in 60 seconds) " answer; then
         printf '\n'
@@ -106,7 +106,7 @@ ask_retroarch() {
     fi
     case "$answer" in
         n|N|no|NO|No) OPT[retroarch]=none; log "RetroArch: no - a PS1-only AutoBleem" ;;
-        *)            OPT[retroarch]=source; log "RetroArch: yes" ;;
+        *)            OPT[retroarch]=prebuilt; log "RetroArch: yes" ;;
     esac
 }
 
@@ -119,6 +119,7 @@ install_args() {
     v="${OPT[root_gib]:-8}";      [ "$v" != 0 ] && [ "$v" != none ] && args+=(--grow-root "$v")
     v="${OPT[hdmi_mode]:-}";      [ -n "$v" ] && args+=(--hdmi-mode "$v")
     v="${OPT[retroarch]:-}";      [ -n "$v" ] && args+=(--retroarch "$v")
+    v="${OPT[repo]:-}";           [ -n "$v" ] && args+=(--repo "$v")
     v="${OPT[thumbnails]:-}";     [ -n "$v" ] && args+=(--thumbnails "$v")
     v="${OPT[bios]:-yes}";        case "$v" in no|false|0) args+=(--no-bios) ;; esac
     v="${OPT[downloads]:-yes}"

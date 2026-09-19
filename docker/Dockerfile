@@ -16,6 +16,8 @@
 #             (glibc 2.24 / libstdc++ 6.0.22 - the console's own), Stretch's gcc-6 cross compiler, and the
 #             SDL2 family built from source against it, wrapped as armv8-sony-linux-gnueabihf-* so
 #             toolchains/psc/PSCtoolchainV8.cmake works with -DAB_PSC_TOOLCHAIN=/opt/psc
+#   retroarch - the Pi runtime libraries (armhf + arm64 dev packages) ci/build_retroarch.sh cross-builds
+#             RetroArch against, for the download repository
 #   all     - the default target: everything above, with the environment the ci/ scripts expect
 #
 # Every version is a build-arg; the defaults are what has been verified.
@@ -331,7 +333,15 @@ RUN ln -s /opt/psc/sdl2/include/SDL2 /opt/psc/sysroot/usr/include/SDL2 && \
 RUN ab-validate psc
 
 # ---------------------------------------------------------------------------------------------------------
-FROM psc AS all
+# retroarch: what ci/build_retroarch.sh cross-builds RetroArch for the two Pi architectures with - the
+# runtime libraries payload_rpi/install.sh's source build needs, as foreign-architecture dev packages (no
+# FLAC: its soname differs between Bookworm and Trixie, see the script). Placed after psc on purpose: a
+# change here rebuilds no toolchain, only this layer.
+FROM psc AS retroarch
+RUN apt-get update && apt-get install -y --no-install-recommends         libasound2-dev:armhf libudev-dev:armhf libusb-1.0-0-dev:armhf libgbm-dev:armhf libdrm-dev:armhf         libegl-dev:armhf libgles-dev:armhf libfreetype-dev:armhf libxml2-dev:armhf         libasound2-dev:arm64 libudev-dev:arm64 libusb-1.0-0-dev:arm64 libgbm-dev:arm64 libdrm-dev:arm64         libegl-dev:arm64 libgles-dev:arm64 libfreetype-dev:arm64 libxml2-dev:arm64         file     && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------------------------------------
+FROM retroarch AS all
 # what ci/build.sh and the toolchain files read
 ENV AB_PSC_TOOLCHAIN=/opt/psc \
     AB_MINGW_SDL2=/opt/mingw-sdl2 \
