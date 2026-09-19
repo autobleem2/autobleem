@@ -1,0 +1,33 @@
+# The download repository on the build server - https://autobleem.retromenele.pl (docs/repo-server-plan.md):
+# a Caddy container serving the plain directory REPO_DIR (default /home/claude/autobleem-repo), read-only.
+#
+#   443  HTTPS for autobleem.retromenele.pl - Caddy obtains and renews the Let's Encrypt certificate itself
+#        through the TLS-ALPN-01 challenge, which runs over 443: the host's nginx keeps port 80, and nothing
+#        here needs root (the Docker daemon binds the ports).
+#   9090 plain HTTP, the same tree - the direct http://<server ip>:9090 address, and what a LAN test uses.
+#
+# Nothing is uploaded through Caddy: publishing is rsync over ssh into REPO_DIR (tools/repo_publish.sh) or a
+# copy from the CI runner, which has the same directory mounted. The caddy_data volume holds the certificate;
+# do not delete it casually (Let's Encrypt rate-limits re-issues).
+#
+#   REPO_DIR=/home/claude/autobleem-repo docker compose up -d      # from this directory, as the claude user
+#   docker compose logs -f                                         # the ACME exchange on the first HTTPS hit
+services:
+  caddy:
+    image: caddy:2
+    container_name: autobleem-repo
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "9090:9090"
+    environment:
+      REPO_HOST: ${REPO_HOST:-autobleem.retromenele.pl}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${REPO_DIR:-/home/claude/autobleem-repo}:/srv/repo:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
