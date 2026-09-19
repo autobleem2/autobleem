@@ -207,33 +207,36 @@ int OnlineAssets::ensureDatabases(const string &rdbDir) {
 //*******************************
 // OnlineAssets::fetchMissingBoxArt
 //*******************************
-int OnlineAssets::fetchMissingBoxArt(const vector<ableem::RetroArchScanResult::Game> &games,
-                                     const string &thumbnailsDir, ableem::ScanProgressListener *listener,
-                                     const function<bool()> &shouldStop, int *missing) {
+int OnlineAssets::fetchMissingBoxArt(const vector<BoxArtRequest> &requests, const string &thumbnailsDir,
+                                     ableem::ScanProgressListener *listener, const function<bool()> &shouldStop,
+                                     int *missing, const OnFetched &onFetched) {
     if (missing)
         *missing = 0;
     ableem::ThumbnailLookup thumbnails;
-    vector<const ableem::RetroArchScanResult::Game *> wanted;
-    for (const auto &game : games) {
-        if (thumbnails.findBoxArt(game.database, game.label).empty())
-            wanted.push_back(&game);
+    vector<const BoxArtRequest *> wanted;
+    for (const auto &request : requests) {
+        if (thumbnails.findBoxArt(request.database, request.label).empty())
+            wanted.push_back(&request);
     }
     if (wanted.empty() || !probe())
         return 0;
 
     int fetched = 0, notOnServer = 0, index = 0;
-    for (const auto *game : wanted) {
+    for (const auto *request : wanted) {
         index++;
         if (listener)
-            listener->onScanProgress(ableem::ScanStage::FetchingBoxArt, game->label, index,
+            listener->onScanProgress(ableem::ScanStage::FetchingBoxArt, request->label, index,
                                      static_cast<int>(wanted.size()));
-        BoxArt outcome = fetchBoxArt(thumbnailsDir, game->database, game->label);
-        if (outcome == BoxArt::Fetched)
+        BoxArt outcome = fetchBoxArt(thumbnailsDir, request->database, request->label);
+        if (outcome == BoxArt::Fetched) {
             fetched++;
-        else if (outcome == BoxArt::Missing)
+            if (onFetched)
+                onFetched(*request, boxArtPath(thumbnailsDir, request->database, request->label));
+        } else if (outcome == BoxArt::Missing) {
             notOnServer++;
-        else if (outcome == BoxArt::Failed && !online_)
+        } else if (outcome == BoxArt::Failed && !online_) {
             break; // the network went
+        }
         if (shouldStop && shouldStop())
             break;
     }
@@ -242,6 +245,32 @@ int OnlineAssets::fetchMissingBoxArt(const vector<ableem::RetroArchScanResult::G
     if (missing)
         *missing = notOnServer;
     return fetched;
+}
+
+int OnlineAssets::fetchMissingBoxArt(const vector<ableem::RetroArchScanResult::Game> &games,
+                                     const string &thumbnailsDir, ableem::ScanProgressListener *listener,
+                                     const function<bool()> &shouldStop, int *missing) {
+    vector<BoxArtRequest> requests;
+    requests.reserve(games.size());
+    for (const auto &game : games)
+        requests.push_back({game.database, game.label});
+    return fetchMissingBoxArt(requests, thumbnailsDir, listener, shouldStop, missing);
+}
+
+//*******************************
+// OnlineAssets::ps1Requests
+//*******************************
+vector<OnlineAssets::BoxArtRequest> OnlineAssets::ps1Requests(const vector<ableem::UsbGamePtr> &games) {
+    vector<BoxArtRequest> requests;
+    for (const auto &game : games) {
+        if (!game || game->coverImageFound || !game->coverPath.empty())
+            continue;
+        const string &label = game->recordName.empty() ? game->title : game->recordName;
+        if (label.empty())
+            continue;
+        requests.push_back({ableem::ThumbnailLookup::PlayStationDbName, label});
+    }
+    return requests;
 }
 
 //*******************************

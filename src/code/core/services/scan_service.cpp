@@ -222,6 +222,46 @@ bool ScanService::checkForChanges() {
 }
 
 //*******************************
+// ScanService::fetchMissingPs1BoxArt
+//*******************************
+// The covers the scan did not find for PS1 games - no PNG next to the game, nothing in the thumbnails tree
+// - come from libretro's server one game at a time, the way the other systems' ROMs already get theirs,
+// only where the platform has a download_command (a Pi, a PC; never the console). The file lands where
+// ThumbnailLookup looks, and the game's Game.ini gets the cached path at once, so neither this scan's
+// database rows nor the next scan have to look again. Reported to the launcher as BoxArtFetched, which
+// makes it drop its thumbnail listings and reload the covers on show.
+void ScanService::fetchMissingPs1BoxArt(Listener &listener, const vector<UsbGamePtr> &games) {
+    unique_ptr<OnlineAssets> online;
+    {
+        lock_guard<mutex> lock(onlineMutex_);
+        if (onlineEnabled_)
+            online = make_unique<OnlineAssets>(onlineConfig_, onlineRunner_);
+    }
+    if (!online)
+        return;
+    vector<OnlineAssets::BoxArtRequest> requests = OnlineAssets::ps1Requests(games);
+    if (requests.empty())
+        return;
+    int fetched = online->fetchMissingBoxArt(
+        requests, Env::getPathToRetroarchThumbnailsDir(), &listener, [this]() { return stopping_.load(); }, nullptr,
+        [&games](const OnlineAssets::BoxArtRequest &request, const string &path) {
+            for (const UsbGamePtr &game : games) {
+                if (game->coverPath.empty() && !game->coverImageFound &&
+                    (game->recordName == request.label || (game->recordName.empty() && game->title == request.label))) {
+                    game->coverPath = path;
+                    game->saveGameIni(game->fullPath + sep + GAME_INI);
+                }
+            }
+        });
+    if (fetched > 0) {
+        WorkerEvent event;
+        event.kind = WorkerEvent::Kind::BoxArtFetched;
+        event.boxArtFetched = fetched;
+        pushEvent(std::move(event));
+    }
+}
+
+//*******************************
 // ScanService::scanRetroArchRoms
 //*******************************
 // The worker's own CoreInfoTable, not RetroArchService's: the service belongs to the main thread, and the
@@ -301,6 +341,7 @@ void ScanService::runScan() {
     MetadataLookup metadata(Env::getPathToCoversDBDir(), Env::getPathToPlayStationRdbFile());
     GameScanner scanner(&listener);
     scanner.scanGamesDirectory(hierarchy, metadata);
+    fetchMissingPs1BoxArt(listener, scanner.gamesToAddToDB);
 
     GamesFingerprint fp = GamesFingerprint::take(gamesDir);
     lastScannedFingerprint_ = fp;
