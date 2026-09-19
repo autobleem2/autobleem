@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 #
-# AutoBleem for Raspberry Pi - installer for Raspberry Pi OS Lite (32-bit).
+# AutoBleem for Raspberry Pi - installer for Raspberry Pi OS Lite, 32-bit (armhf) or 64-bit (arm64).
 #
 # Turns a plain Lite install into an AutoBleem appliance: an exFAT data partition that behaves like the
 # PlayStation Classic's USB stick (drop games onto it from Windows/macOS/Linux), the launcher started at boot
-# on tty1 with no desktop, and RetroArch behind it.
+# on tty1 with no desktop, and RetroArch behind it. The package this unpacks from is built for one
+# architecture (tools/make_rpi_package.sh --arch armhf|arm64); this installer detects which at runtime and
+# picks the matching RetroArch core builds.
 #
 # Run it from the unpacked release package:   sudo bash install.sh
 # See README.md in this directory for the whole story, including what has and has not run on real hardware.
@@ -15,6 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #*******************************
 # defaults
 #*******************************
+ARCH=""                         # armhf | arm64, set by preflight() from dpkg --print-architecture
+RA_ARCH=""                      # same, used for the buildbot.libretro.com path in download_retroarch_content()
 DATA_LABEL="AUTOBLEEM"          # the exFAT partition's label - also how the README tells users to find it
 DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
@@ -30,7 +34,7 @@ BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem 
 HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=source           # --retroarch: source (latest release, built here) | apt | none
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
-DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack.txt, from github.com/Abdess/retrobios)
+DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
 THUMBNAILS=boxarts              # --thumbnails: boxarts (the PS1 covers, ~350 MB) | all (+ title screens, snaps) | none
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
 
@@ -102,8 +106,8 @@ Usage: sudo bash install.sh [options]
                        resumable) into RetroArch/thumbnails; all: title screens and snaps too (~3x); none
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
-  --no-bios            do not download the BIOS pack (system/biospack.txt: ~190 MB of console, computer,
-                       arcade and ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and
+  --no-bios            do not download the BIOS pack (system/biospack.txt or biospack-arm64.txt: ~190-230 MB
+                       of console, computer, arcade and ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and
                        the PS1 BIOS for pcsx-ab into System/Bios)
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
@@ -151,14 +155,18 @@ preflight() {
         warn "this does not look like a Raspberry Pi (no /proc/device-tree/model)"
     fi
 
-    # The cross build in toolchains/rpi is arm-linux-gnueabihf, so the userland has to be 32-bit. A 64-bit
-    # Raspberry Pi OS will not run it without setting up armhf multiarch, which is not what this installer does.
-    local arch
-    arch="$(dpkg --print-architecture)"
-    if [ "$arch" != "armhf" ]; then
-        die "this package is 32-bit (armhf) and the system is '$arch'. Flash the 32-bit Raspberry Pi OS Lite,
-    or rebuild AutoBleem with an aarch64 toolchain."
-    fi
+    # The package is built for one architecture (armhf: toolchains/rpi/RPitoolchain.cmake, or arm64:
+    # toolchains/rpi64/RPi64toolchain.cmake) and the binaries it stages only run on a matching userland.
+    # RA_ARCH feeds download_retroarch_content()'s buildbot path - buildbot.libretro.com calls it "aarch64",
+    # not Debian's "arm64" (dpkg --print-architecture), so the two are not the same string.
+    ARCH="$(dpkg --print-architecture)"
+    case "$ARCH" in
+        armhf) RA_ARCH=armhf ;;
+        arm64) RA_ARCH=aarch64 ;;
+        *) die "unsupported architecture '$ARCH' - AutoBleem for the Pi is built for armhf (32-bit) or arm64
+    (64-bit) Raspberry Pi OS Lite." ;;
+    esac
+    log "Architecture: $ARCH"
 
     if [ -r /etc/os-release ]; then
         # shellcheck disable=SC1091
@@ -232,9 +240,9 @@ install_packages() {
 # install_retroarch
 #*******************************
 # RetroArch is the second half of the launcher: the RetroArch set and playlists, "RetroArch" in the L2+R2
-# system menu, and a PS1 game's "Play using RA" option. libretro's buildbot has every core for armhf but no
-# frontend build, and the distribution's package trails the releases, so the default is to build the latest
-# tagged release here, from source (10-40 minutes depending on the Pi). --retroarch apt takes the
+# system menu, and a PS1 game's "Play using RA" option. libretro's buildbot has every core for armhf and
+# arm64 but no frontend build, and the distribution's package trails the releases, so the default is to build
+# the latest tagged release here, from source (10-40 minutes depending on the Pi). --retroarch apt takes the
 # distribution's instead; --retroarch none leaves whatever is installed alone.
 install_retroarch() {
     case "$RETROARCH_MODE" in
@@ -511,14 +519,14 @@ EOF
 # download_retroarch_content
 #*******************************
 # What RetroArch's own Online Updater would fetch, done here so it is complete before the first start: every
-# core the buildbot has for armhf (its .index-extended is the list RetroArch itself uses), the core info
+# core the buildbot has for this architecture (its .index-extended is the list RetroArch itself uses), the core info
 # files AutoBleem's RetroArch set is built from, and the menu assets, pad autoconfigs, scanner databases,
 # cheats, overlays and GLSL shaders. A few hundred MB; --no-downloads skips all of it.
 download_retroarch_content() {
     [ "$DO_DOWNLOADS" -eq 1 ] || { log "skipping the RetroArch cores and assets (--no-downloads)"; return 0; }
 
     local base=https://buildbot.libretro.com
-    local cores_url="$base/nightly/linux/armhf/latest"
+    local cores_url="$base/nightly/linux/$RA_ARCH/latest"
     local tmp=/tmp/autobleem-ra
     run mkdir -p "$tmp"
 
@@ -607,16 +615,20 @@ download_thumbnails() {
 #*******************************
 # download_bios_pack
 #*******************************
-# The BIOS files the cores need, into RetroArch/system/. system/biospack.txt (built by tools/biospack.py in
-# the source tree) names every file with its SHA-256, size and URL: a pinned commit of RetroBIOS
-# (github.com/Abdess/retrobios), cut down to the systems with a roms/ folder here plus arcade and ScummVM -
-# the full RetroArch pack is 5.8 GB, this is ~190 MB. A file already there with the right hash is kept, so a
-# re-run only fetches what is missing or damaged; the download lands in a .part next to the target and is
-# renamed once its hash checks out, so a power cut cannot leave a half file that looks whole.
+# The BIOS files the cores need, into RetroArch/system/. system/biospack.txt (armhf) or
+# system/biospack-arm64.txt (arm64) - built per architecture by tools/biospack.py in the source tree, from
+# the cores that architecture's buildbot actually has - names every file with its SHA-256, size and URL: a
+# pinned commit of RetroBIOS (github.com/Abdess/retrobios), cut down to the systems with a roms/ folder here
+# plus arcade and ScummVM - the full RetroArch pack is 5.8 GB, this is ~190-230 MB depending on architecture.
+# A file already there with the right hash is kept, so a re-run only fetches what is missing or damaged; the
+# download lands in a .part next to the target and is renamed once its hash checks out, so a power cut
+# cannot leave a half file that looks whole.
 download_bios_pack() {
     [ "$DO_BIOS" -eq 1 ] || { log "skipping the BIOS pack (--no-bios)"; return 0; }
-    local manifest="$SCRIPT_DIR/system/biospack.txt"
-    [ -f "$manifest" ] || { warn "no system/biospack.txt in the package - no BIOS files installed"; return 0; }
+    local manifest_name=biospack.txt
+    [ "$ARCH" = arm64 ] && manifest_name=biospack-arm64.txt
+    local manifest="$SCRIPT_DIR/system/$manifest_name"
+    [ -f "$manifest" ] || { warn "no system/$manifest_name in the package - no BIOS files installed"; return 0; }
 
     local total
     total="$(grep -c '^[0-9a-f]' "$manifest")"

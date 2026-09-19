@@ -352,21 +352,31 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   initramfs (PID ~181, `vc4.ko` is in there - plymouth's initramfs hook pulls the DRM modules in even with
   `MODULES=dep`), `plymouth-quit.service` stays inactive, `plymouth-quit-wait` finishes in the same second
   as the session's "boot splash taken down", the CRTC is 1280x720, kernel to launcher ~8 s.
-- **BIOS pack** (2026-09-18): `install.sh`'s `download_bios_pack()` fetches `system/biospack.txt` into
+- **BIOS pack** (2026-09-18, per-architecture manifest 2026-09-19): `install.sh`'s `download_bios_pack()`
+  fetches `system/biospack.txt` (armhf) or `system/biospack-arm64.txt` (arm64, picked by `$ARCH`) into
   `RetroArch/system/` - one line per file, `<sha256> <size> <url> <path>`, wget + `sha256sum` per file, a
   `.part` renamed once the hash checks out, files already right are skipped (so a re-run only repairs) - and
   `install_ps1_bios()` copies SCPH-5501/5500 to `System/Bios/romw.bin`/`romJP.bin` for pcsx-ab unless the
-  user's own are there. `--no-bios` skips both; `--no-downloads` does not. The manifest is written by
-  **`tools/biospack.py`** from [RetroBIOS](https://github.com/Abdess/retrobios) (`install/retroarch.json`
-  + `install/targets/retroarch.json`, pinned to one commit in `RETROBIOS_REF`): the `linux-armhf` target's
-  cores minus `mame`, an allow-list of `Vendor/System` folders (everything `RA_ROM_SYSTEMS` has a folder for -
-  consoles, handhelds and the Amiga/C64/MSX/Spectrum/PC-98/X68000 computers - plus arcade, Neo Geo CD,
-  ScummVM, Doom/Wolfenstein engine data) and path excludes (arcade `samples/`, MAME's
-  `history/mameinfo/cheat.dat`, stella's `.wav`, x86 `.dll/.so/.dylib`, `dc/`, `kronos/`). 626 files,
-  189 MB (ScummVM is 94 of them), against 5.8 GB for RetroBIOS's whole RetroArch pack. `RA_ROM_SYSTEMS`
-  names are RetroArch's rdb names (`database/rdb/*.rdb`) so a scan of `roms/` lands in the right playlist;
-  `disksys.rom` (FDS) lives in RetroBIOS's `Arcade/FBNeo` folder, and DOS has a folder but no files (its
-  only "BIOS" entries are x86 MIDI libraries).
+  user's own are there. `--no-bios` skips both; `--no-downloads` does not. Both manifests are written by
+  **`tools/biospack.py --arch armhf|arm64`** from [RetroBIOS](https://github.com/Abdess/retrobios)
+  (`install/retroarch.json`, pinned to one commit in `RETROBIOS_REF`) filtered to the cores that
+  architecture actually has, minus `mame`, an allow-list of `Vendor/System` folders (everything
+  `RA_ROM_SYSTEMS` has a folder for - consoles, handhelds and the Amiga/C64/MSX/Spectrum/PC-98/X68000
+  computers - plus arcade, Neo Geo CD, ScummVM, Doom/Wolfenstein engine data) and path excludes (arcade
+  `samples/`, MAME's `history/mameinfo/cheat.dat`, stella's `.wav`, x86 `.dll/.so/.dylib`, `dc/`,
+  `kronos/`). **Where the core list comes from differs by architecture**: armhf reads RetroBIOS's own
+  `install/targets/retroarch.json` (`"linux-armhf"` - 109 cores); arm64 has no matching entry there (only
+  `android-arm64-v8a`/`osx-arm64`/`ios-arm64`, none of them this target), so it reads the real listing at
+  `buildbot.libretro.com/nightly/linux/aarch64/latest/.index-extended` instead - the same URL
+  `download_retroarch_content()` itself downloads cores from - via `biospack.py`'s `buildbot_cores()`. 222
+  cores there vs 109 for armhf, so the arm64 pack is bigger: 694 files/230 MB vs 647 files/188 MB (both
+  numbers as of the pinned commit; `--list` reprints them live) against 5.8 GB for RetroBIOS's whole
+  RetroArch pack. **`buildbot.libretro.com`'s directory is `linux/aarch64`, not `linux/arm64`** - Debian's
+  `dpkg --print-architecture` says `arm64`, the buildbot's own path segment does not match it; `install.sh`
+  maps one to the other (`RA_ARCH=aarch64` when `$ARCH` is `arm64`) for both the cores download and the BIOS
+  pack. `RA_ROM_SYSTEMS` names are RetroArch's rdb names (`database/rdb/*.rdb`) so a scan of `roms/` lands
+  in the right playlist; `disksys.rom` (FDS) lives in RetroBIOS's `Arcade/FBNeo` folder, and DOS has a
+  folder but no files (its only "BIOS" entries are x86 MIDI libraries).
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
 - **Other systems run** (2026-09-18): ROMs in `RetroArch/roms/<system>/`, scanned by RetroArch's own Import
@@ -405,6 +415,76 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   compiled, because no ARM build had ever run. Fixed with a file-local helper. And `config.ini`'s `Cfg=` key
   was an absolute console path that the installer had to rewrite per install - gone since 2026-09-18, the
   selection script is `Env::getPathToRCDir() + autobleem_cfg.sh` on every platform.
+
+### Raspberry Pi 64-bit (2026-09-18)
+
+A second Pi architecture, alongside the 32-bit port above, not a separate app target: `AB_PLATFORM_RPI` and
+`AB_TARGET_RPI` do not branch on word size, so every application-level behaviour (no internal games,
+root-relative layout, install-tree paths) is identical on both. Only the toolchain, three build-system
+files, and the checked-in pcsx-ab binary differ. **Builds cleanly, unrun on hardware** - `make_rpi64.sh`,
+`pcsx-rearmed-develop`'s `make_rpi64.sh` and `make_rpi_package.sh --arch arm64` all verified end to end
+2026-09-18/19 (real aarch64 ELF binaries, a working `autobleem-rpi-arm64.tar.gz`); the owner has no 64-bit
+Pi OS card imaged yet, so nothing has booted on real hardware. Targets 64-bit **Trixie**, same as the 32-bit
+port targets 32-bit Trixie (and Bookworm).
+
+- **Toolchain**: `toolchains/rpi64/RPi64toolchain.cmake`, over "SysGCC for Raspberry Pi (64-bit)" -
+  gnutoolchains.com/raspberry64 (Sysprogs OÜ, the same vendor family as the 32-bit `C:\sysGCC\raspberry`;
+  sysprogs.com's own site says it has no 64-bit Pi toolchain, but gnutoolchains.com's free prebuilt one
+  does - GCC 14.2.0, built against `2025-12-04-raspios-trixie`, same GCC version as the 32-bit toolchain).
+  Installed 2026-09-18 to **`E:\sysGCC\raspberry64`** (the owner's call - not `C:`, unlike the 32-bit one),
+  via `raspberry64-gcc14.2.0.exe /S /D=E:\sysGCC\raspberry64` (its NSIS installer takes silent-install
+  flags). Same compiler/sysroot layout as the 32-bit toolchain assumed:
+  `aarch64-linux-gnu-{gcc,g++,strip}.exe` in `bin/`, sysroot at `<root>/aarch64-linux-gnu/sysroot` with
+  SDL2/SDL2_image/SDL2_mixer/SDL2_ttf/libpng16 runtime `.so`s under `usr/lib/aarch64-linux-gnu`.
+  `./make_rpi64.sh` configures and builds into `build_rpi64/` (`--debug` -> `build_rpi64_dbg/`; incremental, `--clean` wipes), mirroring
+  `make_rpi.sh` exactly. Target is plain `armv8-a` - every 64-bit-capable Pi (3/4/5/400/Zero 2 W) is that
+  core, so there is no armv7-style board split to make.
+- **SDL2 discovery**: `toolchains/rpi64/cmake/FindSDL2.cmake` is the same borrowed-headers-plus-imported-.so
+  trick as the 32-bit module, and *reuses* `toolchains/rpi/sdl2-devkit/include` by relative path rather than
+  keeping a second copy - the public SDL2 headers are pure C and arch-independent. Only the library
+  directory differs: the sysroot's `usr/lib/aarch64-linux-gnu` instead of `usr/lib/arm-linux-gnueabihf`.
+- Root `CMakeLists.txt`'s `ABLEEM_EMBEDDED_TARGET` switch matched `CMAKE_SYSTEM_PROCESSOR MATCHES "^arm"`,
+  which `aarch64` does not match - fixed to also check `STREQUAL "aarch64"` so cursor-grab/keyboard-as-pad
+  are disabled on a 64-bit Pi the same as everywhere else embedded. No other CMakeLists.txt change was
+  needed: the PSC's `^arm`-and-`NOT AB_TARGET_RPI` branch and the Pi's own `elseif (AB_TARGET_RPI)` branch
+  both already keyed off `AB_TARGET_RPI` rather than the processor string.
+- **pcsx-ab has no aarch64 dynarec** in this fork (verified: no repo-authored aarch64 anywhere in
+  `pcsx-rearmed-develop`, and Ari64's dynarec/NEON GPU-GTE assembly is 32-bit-ARM-only) - PS1 games on a
+  64-bit Pi run through its C interpreter, like the PC build, not the NEON dynarec the 32-bit Pi gets. Still
+  correct, just slower per clock. `pcsx-rearmed-develop`'s `CMakeLists.txt:35-39` sets `_pcsxab_is_arm` from
+  `CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM)"`, which is deliberately **not** extended to aarch64 for this
+  reason - folding aarch64 into that branch would try to build 32-bit ARM assembly with the 64-bit compiler.
+  Its own `toolchains/rpi64/RPi64toolchain.cmake` and `make_rpi64.sh` (mirroring the 32-bit ones there) build
+  it as a plain aarch64 Linux target instead, `PCSXAB_GLES`/dynarec left off. Built 2026-09-19: a real
+  aarch64 `pcsx-ab` + the three plugins, committed into `emu-arm64/` below.
+- **Package**: one `payload_rpi/` tree still serves both architectures - `install.sh` reads
+  `dpkg --print-architecture` (`armhf` or `arm64`) into `$ARCH`, and separately into `$RA_ARCH` (`armhf` or
+  **`aarch64`**, not `arm64` - buildbot.libretro.com's own directory name for 64-bit ARM does not match
+  Debian's; caught and fixed 2026-09-19 before it shipped, `nightly/linux/arm64/` 404s) for the
+  `buildbot.libretro.com/nightly/linux/$RA_ARCH/latest` cores URL. Only the emulator binaries are
+  architecture-specific, so pcsx-ab (with its `plugins/`) is checked in twice: `payload_rpi/Autobleem/bin/emu/` (armhf) and
+  `payload_rpi/Autobleem/bin/emu-arm64/` (arm64, built and committed 2026-09-19).
+  `tools/make_rpi_package.sh --arch armhf|arm64` (armhf is the default, unchanged output name)
+  picks the matching `build_rpi`/`build_rpi64` source directory and, for `arm64`, moves `emu-arm64/`'s
+  contents over `emu/` while staging so the on-device path stays `Autobleem/bin/emu/pcsx-ab` either way; the
+  tarball is named `autobleem-rpi.tar.gz` (armhf) or `autobleem-rpi-arm64.tar.gz` (arm64) so the two never
+  collide on the Pi's home directory during `--push`. Both verified 2026-09-19 - `autobleem-gui` packs with
+  UPX as `linux/arm64` (1.2 MB), the 32-bit package rebuilt clean alongside it (no regression).
+- **BIOS pack** (2026-09-19): `tools/biospack.py --arch arm64` builds `payload_rpi/system/biospack-arm64.txt`
+  (694 files, 230 MB) from the real `buildbot.libretro.com/nightly/linux/aarch64` core listing, since
+  RetroBIOS's own per-target file has no 64-bit Linux entry to read instead - see "BIOS pack" under the
+  32-bit section above for the full mechanism, now shared by both architectures. Spot-verified: downloaded
+  and hashed 4 random entries against the manifest, all matched.
+- **A pre-existing repo bug this work turned up** (fixed on `develop`, 2026-09-18, unrelated to word size):
+  `.gitignore`'s bare `build/` line matched at any depth, silently excluding
+  `lib_ableem/third_party/libchdr/deps/zstd-1.5.6/build/` - zstd's own vendored `CMakeLists.txt`, not a
+  build output directory - from every commit. A truly fresh clone's CMake configure failed outright on
+  *every* platform (`add_subdirectory given source ... which is not an existing directory`); it only ever
+  worked in the long-lived `autobleem-develop` checkout because those files were on disk from before the
+  line was added, untracked. Anchored to `/build/` and the nine missing files recovered from that checkout.
+- **Not done**: no 64-bit Pi OS card imaged, so nothing has booted on real hardware; no boot-splash
+  initramfs testing (the 64-bit image is one kernel, not the 32-bit image's per-board v6/v7/v7l/v8 set, so
+  `update-initramfs -u -k all` should need no board-split reasoning there - unverified).
 
 ## Console tools (`apps/`, 2026-09-18)
 
