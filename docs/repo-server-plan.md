@@ -89,7 +89,11 @@ autobleem-repo/
 
 Each step is its own feature branch and commit (gitflow), each proven before the next.
 
-### Step 1 - the server (S)
+**Status 2026-09-19:** steps 1 and 2 are done and live at `http://212.71.244.78:9090/` (the DNS record is
+not set up yet, so the base URL is the direct address for now - `AB_REPO_URL`): the page, the assets, the
+three cover databases and the `933bd2f` image set. Steps 3-7 are open.
+
+### Step 1 - the server (S) - done
 
 `docker/repo/compose.yml` (`caddy:2`, ports `443:443` and `9090:9090`, `./Caddyfile`, the repo directory
 read-only at `/srv/repo`, named volumes for `/data` and `/config` so the certificate survives a
@@ -102,7 +106,12 @@ once the `A` record resolves (Caddy fetches the certificate on the first request
 compose logs` shows the ACME exchange). The runner compose gets the same bind mount
 (`/home/claude/autobleem-repo` at the same path inside).
 
-### Step 2 - publish + index tools (S)
+### Step 2 - publish + index tools (S) - done
+
+Landing page styled after the ab2 theme (its background with the logo as the hero, the navy/cyan palette,
+Selawik Light), assets staged from `payload/themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png`
+is the emblem cut out for the favicon and Imager). `tools/repo_index.py` runs on the server from
+`<repo>/.tools/`.
 
 `tools/repo_publish.sh <kind> <files...>` - `kind` is `release <version>`, `image <version>`, `retroarch
 <version>`, `db` - rsyncs over `ssh psc-build` into the right folder, writes the `.sha256` sidecars, then
