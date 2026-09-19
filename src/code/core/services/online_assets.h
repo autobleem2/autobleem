@@ -4,11 +4,17 @@
 //
 #pragma once
 
+#include <ableem/engine/retroarch_scanner.h>
+
 #include <cstdint>
 #include <functional>
 #include <set>
 #include <string>
 #include <vector>
+
+namespace ableem {
+class ScanProgressListener;
+}
 
 //******************
 // OnlineAssets
@@ -54,6 +60,14 @@ public:
     // <thumbnailsDir>/<dbName>/Named_Boxarts/<escaped label>.png from the server, unless it is there
     // already or was found missing before
     BoxArt fetchBoxArt(const std::string &thumbnailsDir, const std::string &dbName, const std::string &label);
+
+    // the box art of every game in `games` without one on disk (this instance's own ThumbnailLookup says,
+    // fuzzy fallback included), reported as ScanStage::FetchingBoxArt per game; the pass ends when the
+    // network goes or shouldStop() says so. Returns how many covers arrived; `missing` counts the
+    // server's misses.
+    int fetchMissingBoxArt(const std::vector<ableem::RetroArchScanResult::Game> &games,
+                           const std::string &thumbnailsDir, ableem::ScanProgressListener *listener,
+                           const std::function<bool()> &shouldStop, int *missing = nullptr);
 
     static std::string boxArtUrl(const std::string &baseUrl, const std::string &dbName, const std::string &label);
     static std::string boxArtPath(const std::string &thumbnailsDir, const std::string &dbName,

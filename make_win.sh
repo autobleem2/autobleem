@@ -19,6 +19,7 @@ ctest --output-on-failure
 python ../tools/lang_tools.py validate
 python ../tools/lang_tools.py --src-dir ../apps/pscbios/src --lang-dir ../apps/pscbios/resources/lang validate
 python ../tools/lang_tools.py --src-dir ../apps/abflashkit/src --lang-dir ../apps/abflashkit/resources/lang validate
+python ../tools/lang_tools.py --src-dir ../apps/updateroms/src --lang-dir ../apps/updateroms/resources/lang validate
 
 # every source is clang-formatted (tools/format.sh rewrites the ones that are not)
 bash ../tools/format.sh --check

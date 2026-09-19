@@ -1,9 +1,9 @@
-# Scanning RetroArch's ROMs from AutoBleem - the plan (steps 1-3 done 2026-09-18/19, 4-5 to go)
+# Scanning RetroArch's ROMs from AutoBleem - the plan (complete, 2026-09-18/19)
 
 Written 2026-09-18 morning after the Raspberry Pi got its BIOS pack, parked until real ROMs had been run on
 the Pi through RetroArch's own scanner; revised the same evening once they had (846 ROMs over nine systems,
-Sega and ColecoVision confirmed running) and after the day's launcher work. **Steps 1 to 3 are in**
-(that evening and the next night, see their "Done" notes); pick it up at step 4.
+Sega and ColecoVision confirmed running) and after the day's launcher work. **All five steps are in**
+(that evening and the next night, see the "Done" notes under each). What is left is noted at the end.
 
 **RetroArch is optional on every platform** (the owner, 2026-09-18): none of this runs unless RetroArch is
 detected - `ScanService::romScanEnabled()` = `Env::retroArchInstalled()` (the binary the platform ini
@@ -222,6 +222,12 @@ with these particulars:
 - The Game Manager's per-game preview works for RetroArch games (it already reads the thumbnails tree).
 - `payload_rpi/README.md`'s "Games for the other systems" shrinks to "copy them in, wait for the line".
 
+**Done 2026-09-19**, as far as it goes: the status line came with step 1 ("Scanning ROMs n/m: <system>",
+"Fetching box art n/m: <game>" with step 3, the ROM count in "Scan complete"), the README with steps 1-3.
+The Game Manager item was **left out on purpose**: it lists USB PS1 games only - it is the folder manager
+(delete a game, flush covers) - so "its preview for RetroArch games" would mean listing ROMs there with a
+delete action, a feature nobody asked for. The carousel shows the covers; the meta panel the metadata.
+
 ### 5. `UpdateRoms.exe` - the console's online path, from a PC
 
 The PlayStation Classic's USB stick spends its life being plugged into a PC to get games copied on. So
@@ -259,6 +265,32 @@ business if anyone asks.
 
 Not in scope for it: PS1 games (the console's own scan does those, and it needs no network), themes,
 anything that touches the console's databases.
+
+**Done 2026-09-19** - `apps/updateroms/` (its own CLAUDE.md has the detail). As planned, with:
+
+- The stick's kind is **not** told by the RetroArch folder's name: a stick in a PC is exFAT, where the
+  Pi's `RetroArch/` and RetroBoot's `retroarch/` are the same folder. RetroBoot's own folder is the
+  console's mark, the Pi installer's `retroarch.cfg` the Pi's; `--target psc|rpi` overrides.
+- The target's `usb_root` is a new key in `platform/psc.ini` (`/media`) and `rpi.ini`
+  (`/media/autobleem`), read by the tool only; the PC's `pc.ini` supplies `download_command`.
+- Fresh entries' core paths are mapped onto the target's RetroArch dir, and `RetroArchScanner::merge`
+  now maps a kept entry that names *this* machine's ROM folder (a launcher scan run on the PC) onto the
+  target's - both were this PC's drive letter otherwise.
+- The window is `AppBase` on `ab_classic` with the stick's theme (no music, on request), the job on a
+  thread; `--quiet` for scripts. `tools/make_updateroms_bundle.sh` gathers the exe with the MSYS2 DLLs
+  `ldd` names into `build_win/UpdateRoms/` - **~50 MB of DLLs**, SDL2_image/mixer with every codec: the
+  static, codec-less build the plan wanted is the one follow-up (the tool needs PNG, TrueType and no sound).
+- Verified against the fake tree with the real network (146 databases fetched and unpacked, playlists with
+  `/media/...` paths, covers fetched); **not against a real console stick** - the console has never run
+  this build.
+
+## What is left (2026-09-19)
+
+- A `-static` UpdateRoms without the codec DLLs (above).
+- The console has never run any of this: steps 1-3 are verified on the Pi 400 and the PC, step 5 on the
+  PC's fake tree. `/media/roms` on the console is from the old playlists, not from hardware.
+- `neogeo.zip` next to the arcade sets is listed as "Neo Geo" (it is an FBNeo database record); the BIOS
+  belongs in `system/`, which the Pi README says.
 
 ## Caveats to keep in view
 

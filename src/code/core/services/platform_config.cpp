@@ -72,6 +72,7 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
     if (!value("retroarch_roms_dir").empty())
         cfg.retroarchRomsDir = value("retroarch_roms_dir");
     cfg.downloadCommand = value("download_command");
+    cfg.usbRoot = value("usb_root");
     return cfg;
 }
 

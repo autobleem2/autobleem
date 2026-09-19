@@ -265,6 +265,14 @@ def main():
     make_fake_game(games)
     make_fake_retroarch(usb)
 
+    # UpdateRoms, the PC-side scanner, in the stick's root as a release lays it out (the DLLs come from
+    # PATH here; tools/make_updateroms_bundle.sh gathers them for a real stick)
+    updateroms = os.path.join(args.build, 'apps', 'updateroms', 'UpdateRoms.exe')
+    if os.path.exists(updateroms):
+        dst = os.path.join(usb, 'UpdateRoms')
+        copy_tree(os.path.join(REPO, 'apps', 'updateroms', 'resources'), dst)
+        shutil.copy2(updateroms, dst)
+
     print('usb root ready:', usb)
     print('run:  cd "%s" && autobleem-gui.exe "%s"   (C:\\msys64\\ucrt64\\bin on PATH for the SDL DLLs)' % (app, usb))
     return 0

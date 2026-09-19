@@ -7,7 +7,6 @@
 
 #include <ableem/engine/retroarch_cores.h>
 #include <ableem/engine/retroarch_scanner.h>
-#include <ableem/engine/thumbnail_lookup.h>
 
 #include <chrono>
 #include <iostream>
@@ -256,7 +255,8 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
               << " playlists written, " << result.unknownFolders.size() << " folders with no core";
 
     if (online && !result.games.empty()) {
-        int fetched = fetchBoxArt(listener, *online, result.games);
+        int fetched = online->fetchMissingBoxArt(result.games, Env::getPathToRetroarchThumbnailsDir(), &listener,
+                                                 [this]() { return stopping_.load(); });
         if (fetched > 0) {
             WorkerEvent event;
             event.kind = WorkerEvent::Kind::BoxArtFetched;
@@ -265,44 +265,6 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
         }
     }
     return result.gamesFound;
-}
-
-//*******************************
-// ScanService::fetchBoxArt
-//*******************************
-// One request per game without a cover on disk (this thread's own ThumbnailLookup says, with the fuzzy
-// fallback: a cover under a slightly different name is a cover). A server miss is remembered by
-// OnlineAssets, so a game whose box art libretro simply does not have costs one request ever; the network
-// going away mid-pass ends the pass.
-int ScanService::fetchBoxArt(Listener &listener, OnlineAssets &online,
-                             const vector<ableem::RetroArchScanResult::Game> &games) {
-    ableem::ThumbnailLookup thumbnails;
-    vector<const ableem::RetroArchScanResult::Game *> wanted;
-    for (const auto &game : games) {
-        if (thumbnails.findBoxArt(game.database, game.label).empty())
-            wanted.push_back(&game);
-    }
-    if (wanted.empty() || !online.probe())
-        return 0;
-
-    const string thumbnailsDir = Env::getPathToRetroarchThumbnailsDir();
-    int fetched = 0, missing = 0, index = 0;
-    for (const auto *game : wanted) {
-        index++;
-        listener.onScanProgress(ScanStage::FetchingBoxArt, game->label, index, static_cast<int>(wanted.size()));
-        OnlineAssets::BoxArt outcome = online.fetchBoxArt(thumbnailsDir, game->database, game->label);
-        if (outcome == OnlineAssets::BoxArt::Fetched)
-            fetched++;
-        else if (outcome == OnlineAssets::BoxArt::Missing)
-            missing++;
-        else if (outcome == OnlineAssets::BoxArt::Failed && !online.online())
-            break; // the network went
-        if (stopping_.load())
-            break;
-    }
-    PLOG_INFO << "Box art: " << fetched << " fetched, " << missing << " not on the server, of " << wanted.size()
-              << " games without one";
-    return fetched;
 }
 
 //*******************************
