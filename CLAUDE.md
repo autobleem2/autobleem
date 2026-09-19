@@ -490,6 +490,16 @@ URLs (double-click it, or App Options -> Content Repository -> Use custom file, 
 makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
+**The download repository** (2026-09-19, plan in `docs/repo-server-plan.md`): the build server serves
+`/home/claude/autobleem-repo` through a Caddy container (`docker/repo/`) on **9090** (plain HTTP, the
+address in use - `http://212.71.244.78:9090/`) and 443 (HTTPS for `autobleem.retromenele.pl` once the DNS
+record exists; TLS-ALPN-01, so the host's nginx keeps port 80). `tools/repo_publish.sh <release|image|
+retroarch|db|assets|index>` rsyncs over ssh (or `--local` on the server) and reruns `tools/repo_index.py`
+there, which writes `releases/latest.json`, `rpi/retroarch/latest.json`, `rpi-imager/os_list.json` and the
+ab2-styled `index.html`. `AB_REPO_URL` is the base URL everything generated starts with - flip it when
+the domain is up. Holds the cover databases and the `933bd2f` images so far; the prebuilt RetroArch and
+the installer's `--retroarch prebuilt` are the plan's next steps.
+
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
 run and bakes in the **real cover databases** (the PC checkout's `db/` holds 16 KB stubs, so a package made
@@ -522,8 +532,13 @@ died unpacking the package: the 306 MB tarball is staged on the still image-size
 `autobleem-firstboot.sh` now extracts `install.sh` alone, runs it with `--grow-root N --grow-only` (preflight +
 grow, then stop - a no-op on a retry), checks the free space against `gzip -l`'s unpacked size, and only
 then unpacks the rest, behind an `.extracted` marker (a half-unpacked tree from a failed attempt is removed,
-not run). **Still to verify on hardware:** that fix on an armhf first boot (the image needs rebuilding
-on the Pi 400 first), the multi-kernel armhf boot splash, `--grow-root` from the firstboot script.
+not run). **Verified the same evening on that card**: the root grown by hand to 8 GiB over ssh, the fixed
+script and a re-packed tarball dropped into `/opt/autobleem-image/`, and the retry went end to end -
+`--grow-only` a no-op, the package unpacked, RetroArch built (~25 min), cores, BIOS, splash, reboot into
+the launcher on the 109 GB data partition. So the armhf image's first boot is proven apart from the
+`--grow-only` growing a root for real (it has only ever found one already grown) - that is what the next
+image build from `develop` checks. A 32-bit Trixie root also makes a 2 GB `/var/swap` (dphys-swapfile)
+on its first boot with room; `root_gib=8` covers it.
 
 ### Raspberry Pi 64-bit (2026-09-18)
 
