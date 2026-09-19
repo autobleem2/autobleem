@@ -126,7 +126,7 @@ prints what it would do without downloading, mounting or needing root; `--help` 
 
 The base image boots as usual: cloud-init applies whatever Raspberry Pi Imager was told (user, hostname,
 WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout and a user on the screen. Then
-`autobleem-firstboot.service` takes over the screen and keyboard (tty1) and:
+`autobleem-firstboot.service` takes over the screen and keyboard (it switches to its own console, tty8) and:
 
 1. waits for the network. **No network?** It asks: it lists the WiFi networks it can see, you pick one and
    type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`, or `s`
