@@ -5,6 +5,15 @@ picked up for implementation - same role `docs/retroarch-scanner-plan.md` served
 this file (per CLAUDE.md's "finished plans leave docs/" rule) once implemented, or once superseded by an
 updated plan.
 
+**Status 2026-09-19 (end of day):** **Part 2 is implemented** - `tools/make_rpi_image.sh`,
+`payload_rpi/system/autobleem-firstboot.{service,sh}`, `autobleem.txt`, `install.sh --grow-root`,
+`tools/rpi_imager_repo.json` + `tools/rpi_imager_local_manifest.py`; both architectures built on the Pi 400,
+the arm64 image flashed with Imager presets and taken through the whole first boot into the launcher ("What
+the first real boot changed" below is the diff between this plan and what shipped). CLAUDE.md's "Flashable
+image for Raspberry Pi Imager" is the record of what exists. **Part 1 (the fast update) is not started** -
+that is what keeps this file in `docs/`; when Part 1 lands, delete the file and move what is still true into
+CLAUDE.md.
+
 ## Context
 
 Today the Raspberry Pi port ships only as `payload_rpi/` + `install.sh`, run by hand over ssh on top of a

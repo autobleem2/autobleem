@@ -13,12 +13,14 @@ target, or a build pipeline change).
 
 ## Prebuilt Raspberry Pi image for Raspberry Pi Imager
 
-**Status:** implemented; the image build verified on the Pi 400 for both architectures, and the first image
-flashed and booted once (2026-09-19 - see CLAUDE.md's "Flashable image for Raspberry Pi Imager" for what
-that first boot changed: the first boot now owns the screen, asks for WiFi when there is none, and grows the
-root to a bounded size instead of letting it fill the card). **Not yet verified:** the reworked first boot
-end to end on a fresh card - WiFi prompt, Imager presets via the local manifest, `--grow-root`, the
-install-then-reboot handoff.
+**Status:** done (2026-09-19). `tools/make_rpi_image.sh` builds both architectures on the Pi 400;
+`tools/rpi_imager_local_manifest.py` makes the local Imager manifest that enables Imager's customisation
+screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
+ask for WiFi when there is none, bounded root growth - CLAUDE.md's "Flashable image for Raspberry Pi Imager"
+has the story); the second (arm64, Imager presets via the manifest) ran end to end into the launcher. The
+`v2.0.0-pre0-933bd2f` armhf + arm64 images are built and checked. **Not yet verified:** the interactive WiFi
+prompt on a flash without presets, and any armhf image boot. Everything below is the pre-implementation
+research, kept for the reasoning.
 
 Ship the Pi port as a flashable `.img.xz` (alongside the existing tarball + `install.sh`) that Raspberry Pi
 Imager's "Use custom" can write directly, with Imager doing hostname/user/WiFi/SSH/locale and AutoBleem's
