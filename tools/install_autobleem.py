@@ -69,6 +69,7 @@ INSTALL NOTES - copies onto the (already cleaned, or already-fresh) drive:
   payload/Themes/<name>/        -> Themes/<name>/              (each theme folder replaced whole)
   payload/RetroArch/            -> RetroArch/                  (the README files and bios/biospack.txt,
                                                                  merged over what is there)
+  payload/Docs/                 -> Docs/                       (the manuals and release notes)
   build_win/UpdateRoms/         -> UpdateRoms/                 (run ./tools/make_updateroms_bundle.sh first,
                                                                  or pass --skip-updateroms)
 Each prerequisite that is missing is reported and skipped rather than aborting the whole install, so
@@ -485,7 +486,7 @@ def analyze(root: Path, opts) -> Analysis:
         for d in a.boot_exploit_dirs:
             a.actions.append((d, 'boot-exploit folder', '--remove-boot-exploit; jailbreak must be redone'))
 
-    known_names = {'autobleem', 'apps', 'system', 'games', 'themes', 'roms', 'retroarch'}
+    known_names = {'autobleem', 'apps', 'system', 'games', 'themes', 'roms', 'retroarch', 'docs', 'updateroms'}
     known_names |= {d.name.lower() for d in a.boot_exploit_dirs}
     junk_names_lower = {n.lower() for n in JUNK_DIR_NAMES} | {n.lower() for n in JUNK_FILE_NAMES}
     if root.is_dir():
@@ -933,6 +934,10 @@ def stage_install(root: Path, opts, dry_run: bool):
     else:
         for app_dir in sorted(p for p in payload_apps.iterdir() if p.is_dir()):
             replace_tree(app_dir, usb_apps / app_dir.name, dry_run, log)
+
+    docs = REPO_ROOT / 'payload' / 'Docs'
+    if docs.is_dir():
+        replace_tree(docs, find_ci(root, 'Docs') or (root / 'Docs'), dry_run, log)
 
     if not payload_themes.is_dir():
         print(f'  WARNING: {payload_themes} missing - skipping themes install')

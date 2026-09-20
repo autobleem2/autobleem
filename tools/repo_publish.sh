@@ -14,6 +14,8 @@
 #                                                                              -> psc/libs/ (newest date kept)
 #   tools/repo_publish.sh psc-apps dist/release/apps-psc-20260920.tar.gz dist/release/apps-psc-20260920.json
 #                                                                              -> psc/apps/ (newest date kept; tools/pack_psc_apps.py)
+#   tools/repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt          -> psc/bios/ (the BIOS list the installer
+#                                                                                 fetches RetroBIOS's files by; the list only)
 #   tools/repo_publish.sh samples build_samples/samples-20260920.tar.gz build_samples/samples-20260920.json
 #                                                                              -> samples/ (newest date kept)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
@@ -59,6 +61,7 @@ case "$KIND" in
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;
     psc-apps)  [ $# -ge 1 ] || usage 1; DEST="psc/apps" ;;
+    psc-bios)  [ $# -ge 1 ] || usage 1; DEST="psc/bios" ;;
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;

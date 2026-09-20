@@ -15,6 +15,8 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     psc/cores/latest.json              the newest cores tarball for the console (psc/cores/cores-psc-<date>.tar.gz)
     psc/libs/latest.json               the newest runtime-library pack for the console's apps (psc/libs/libs-psc-<date>.tar.gz)
     psc/apps/latest.json               the newest pack of the console's third-party Apps (psc/apps/apps-psc-<date>.tar.gz)
+    psc/bios/latest.json               the console's BIOS list (psc/bios/biospack.txt: what the installer fetches from
+                                       RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
@@ -42,11 +44,14 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 15
+INDEX_VERSION = 20
 
-# the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
+# the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
     ("psc", re.compile(r"^autobleem-psc-.*\.zip$"), "PlayStation Classic (USB stick zip)"),
+    ("psc-fs", re.compile(r"^autobleem-psc-.*\.tar\.gz$"),
+     "PlayStation Classic, the stick's file system for the installer (no RetroArch and no cover databases - "
+     "the installer adds those from the packs below and db/)"),
     ("rpi", re.compile(r"^autobleem-rpi(-armhf)?(-v.*)?\.tar\.gz$"), "Raspberry Pi, 32-bit OS (tarball + install.sh)"),
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
     ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
@@ -321,6 +326,33 @@ def index_psc_libs(repo, base_url):
     return index_psc_dated(repo, base_url, "libs", PSC_LIBS_RE, "library pack")
 
 
+def index_psc_bios(repo, base_url):
+    """psc/bios/biospack.txt - the console's BIOS manifest (tools/biospack.py --arch psc): one line per file,
+    <sha256> <size> <url> <path>, the URLs pointing at RetroBIOS. latest.json says how many files and bytes
+    the installer would fetch, and which RetroBIOS commit the list is from."""
+    path = os.path.join(repo, "psc", "bios", "biospack.txt")
+    if not os.path.isfile(path):
+        return None
+    entry = file_entry(repo, base_url, path)
+    count = total = 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("# Built by tools/biospack.py"):
+                m = re.search(r"at ([0-9a-f]{7,40}),", line)
+                if m:
+                    entry["retrobios_ref"] = m.group(1)
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.rstrip("\n").split(" ", 3)
+            if len(parts) == 4:
+                count += 1
+                total += int(parts[1])
+    entry["count"] = count
+    entry["total_bytes"] = total
+    write_json(os.path.join(repo, "psc", "bios", "latest.json"), entry)
+    return entry
+
+
 def index_psc_apps(repo, base_url):
     """psc/apps/: the console's third-party Apps (amiberry, doom, eduke32, ...) as tools/pack_psc_apps.py
     packs them - Apps/<name>/ folders, self-contained, laid out for the stick."""
@@ -474,6 +506,8 @@ h1{font-weight:300;font-size:1.9rem;letter-spacing:.06em;text-transform:uppercas
 h2{font-weight:300;font-size:1.35rem;letter-spacing:.05em;text-transform:uppercase;margin:0 0 .8rem;color:var(--cyan)}
 h2 small,h1 small{font-size:.7em;color:var(--dim);letter-spacing:0;text-transform:none;margin-left:.6rem}
 p{line-height:1.5;margin:.4rem 0 .8rem}
+ul.what{line-height:1.5;margin:.3rem 0 .9rem;padding-left:1.2rem}ul.what li{margin:.25rem 0}
+ul.what b{color:var(--ink);font-weight:600}
 a{color:var(--cyan);text-decoration:none}a:hover{color:#fff;text-decoration:underline}
 table{border-collapse:collapse;width:100%}
 td,th{text-align:left;padding:.45rem .6rem;border-bottom:1px solid rgba(80,200,255,.14);vertical-align:top}
@@ -503,7 +537,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None):
+                 psc_apps=None, psc_bios=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -553,18 +587,30 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     out.append("<div class=\"hero\"></div><main>")
     out.append("<div class=\"panel\"><h1>Downloads</h1>"
                "<p><a href=\"https://github.com/autobleem/AutoBleem2\">AutoBleem</a>, the game launcher for the "
-               "PlayStation Classic and the Raspberry Pi, by platform: first what you install from, then the "
-               "<em>build inputs</em> - the pieces the installers, the image build and the CI fetch from here "
-               "(RetroArch builds, cores, the cover databases). Every file has a <code>.sha256</code> next to it; "
-               "<a href=\"/releases/\">browse</a> the tree for older versions. Machine-readable: "
-               "<a href=\"/releases/latest.json\">releases/latest.json</a>.</p></div>")
+               "PlayStation Classic and the Raspberry Pi.</p>"
+               "<p>Each platform's tab has two parts:</p>"
+               "<ul class=\"what\">"
+               "<li><b>Install</b> - what you install from: the console's USB stick package, the Pi images, the "
+               "Windows programs.</li>"
+               "<li><b>Build inputs</b> - the pieces the installers, the image build and the CI fetch from here: "
+               "RetroArch builds, cores, libraries, apps, the cover databases.</li>"
+               "</ul>"
+               "<p>Every file has a <code>.sha256</code> next to it. <a href=\"/releases/\">Browse</a> the tree for "
+               "older versions; for machines there is <a href=\"/releases/latest.json\">releases/latest.json</a>.</p>"
+               "</div>")
 
     # ---- PlayStation Classic ----
     out.append("<h2 class=\"plat\" id=\"psc\">PlayStation Classic</h2>")
     out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>The USB stick package: unzip onto the root of a FAT32 stick named SONY and boot the console with it.</p>")
+               "<p>The console is set up from a PC: the installer prepares a USB stick from the build inputs below - "
+               "the stick's file system, then the cover databases and, if wanted, RetroArch with its cores, "
+               "libraries, apps and BIOS files.</p>"
+               "<p>The installer is in the works; until it is here, the pieces are below.</p>")
     block = release_block(("psc",))
-    out += block if block else ["<p>Nothing published yet.</p>"]
+    if block:
+        out.append("<p>The stick as one zip, covers included - unzip it onto the root of a FAT32 stick named "
+                   "<code>SONY</code> and boot the console with it:</p>")
+        out += block
     out += older()
     out.append("</div>")
     rows = []
@@ -581,23 +627,42 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if psc_apps:
         rows.append(row("Apps, %s%s" % (date_of(psc_apps["date"]),
                                         ", %d apps" % psc_apps["count"] if psc_apps.get("count") else ""), psc_apps))
-    if rows:
+    if psc_bios:
+        rows.append(row("BIOS list: %d files, %d MB, fetched from RetroBIOS by the installer"
+                        % (psc_bios["count"], psc_bios["total_bytes"] // (1024 * 1024)), psc_bios))
+    if rows or release_block(("psc-fs",)):
+        def links(latest, manifest, what="the list"):
+            out = "<a href=\"%s\">latest.json</a>" % latest
+            if manifest:
+                out += ", <a href=\"%s\">%s</a>" % (e(manifest), what)
+            return " (" + out + ")"
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
-                   "<p>What the PC installer lays out on the stick. Under <code>RetroArch/bin</code>: RetroArch built for the "
-                   "console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches - it loads "
-                   "xz-compressed cores as they are (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s) - and the "
-                   "cores with their info files, RetroBoot 1.2's set for now, the ones that run on a stock console "
-                   "(<a href=\"/psc/cores/latest.json\">latest.json</a>%s). Under <code>Autobleem/lib</code>: the runtime "
-                   "libraries the Apps need beyond the firmware - SDL2_image/mixer/ttf, freetype, png, vorbis - and the "
-                   "xpad kernel module (<a href=\"/psc/libs/latest.json\">latest.json</a>%s). Under <code>Apps</code>: the "
-                   "third-party apps - Amiberry, Doom, Duke Nukem 3D, OpenBOR, Tyrian, Prince of Persia, Shadow Warrior, "
-                   "Wolfenstein 3D - self-contained (<a href=\"/psc/apps/latest.json\">latest.json</a>%s). The BIOS files "
-                   "for <code>RetroArch/bios</code> come from RetroBIOS, by the list in the package.</p>"
-                   % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if psc_builds and b.get("manifest") else "",
-                      ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else "",
-                      ", <a href=\"%s\">the list</a>" % e(psc_libs["manifest"]) if psc_libs and psc_libs.get("manifest") else "",
-                      ", <a href=\"%s\">the list</a>" % e(psc_apps["manifest"]) if psc_apps and psc_apps.get("manifest") else ""))
-        out.append(table(rows) + "</div>")
+                   "<p>What the PC installer lays out on a stick, piece by piece:</p>"
+                   "<ul class=\"what\">"
+                   "<li><b>The stick's file system</b> - the launcher, pcsx-ab, the scripts, the themes, the console "
+                   "tools, the manuals. One tarball per release, without RetroArch and without the cover databases "
+                   "(the installer fetches those from <a href=\"/db/\">db/</a>).</li>"
+                   "<li><b>RetroArch</b> (<code>RetroArch/bin</code>) - built for the console's firmware (glibc 2.24, "
+                   "Wayland, GLES, ALSA, udev) with the PSC patches; it loads xz-compressed cores as they are%s.</li>"
+                   "<li><b>Cores</b> - with their info files. RetroBoot 1.2's set for now: the ones that run on a "
+                   "stock console%s.</li>"
+                   "<li><b>Runtime libraries</b> (<code>Autobleem/lib</code>) - what the Apps need beyond the "
+                   "firmware: SDL2_image/mixer/ttf, freetype, png, vorbis; and the xpad kernel module for Xbox "
+                   "pads%s.</li>"
+                   "<li><b>Apps</b> (<code>Apps/</code>) - Amiberry, Doom, Duke Nukem 3D, OpenBOR, Tyrian, Prince of "
+                   "Persia, Shadow Warrior, Wolfenstein 3D, each self-contained%s.</li>"
+                   "<li><b>BIOS list</b> (<code>RetroArch/bios</code>) - the installer fetches the BIOS files from "
+                   "RetroBIOS by this list, file by file. No BIOS file is on this site%s.</li>"
+                   "</ul>"
+                   % (links("/psc/retroarch/latest.json", b.get("manifest") if psc_builds else None, "manifest.json"),
+                      links("/psc/cores/latest.json", psc_cores.get("manifest") if psc_cores else None),
+                      links("/psc/libs/latest.json", psc_libs.get("manifest") if psc_libs else None),
+                      links("/psc/apps/latest.json", psc_apps.get("manifest") if psc_apps else None),
+                      links("/psc/bios/latest.json", None)))
+        out += release_block(("psc-fs",))
+        if rows:
+            out.append(table(rows))
+        out.append("</div>")
 
     # ---- Raspberry Pi ----
     out.append("<h2 class=\"plat\" id=\"rpi\">Raspberry Pi</h2>")
@@ -605,12 +670,16 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if images:
         stable_images = {v: f for v, f in images.items() if not is_prerelease(v)}
         newest = newest_of(stable_images) or newest_of(images)
-        out.append("<p>Flash an image with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>: "
-                   "<em>Use custom</em> with a downloaded file, or add this repository under "
-                   "<em>App Options &rarr; Content Repository</em>: <code>%s/rpi-imager/os_list.json</code>. "
-                   "The first boot finishes the install (a network connection is needed). "
-                   "<a href=\"/rpi-install.html\">Which image for which Pi, and the whole setup, step by step</a>."
-                   "</p>" % e(base_url))
+        out.append("<p>Flash an image with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>, "
+                   "one of two ways:</p>"
+                   "<ul class=\"what\">"
+                   "<li><b>Use custom</b> - with an image downloaded from here.</li>"
+                   "<li><b>This repository</b> - add it under <em>App Options &rarr; Content Repository</em>: "
+                   "<code>%s/rpi-imager/os_list.json</code>. The images then appear in Imager's own list.</li>"
+                   "</ul>"
+                   "<p>The first boot finishes the install; a network connection is needed for it.</p>"
+                   "<p><a href=\"/rpi-install.html\">Which image for which Pi, and the whole setup, step by step.</a></p>"
+                   % e(base_url))
         out.append("<h3>Images <small>%s%s</small></h3>" % (e(newest), " &middot; pre-release" if is_prerelease(newest) else ""))
         rows = []
         for arch, title in (("armhf", "32-bit Raspberry Pi OS (Pi 2/3/4/400/Zero 2)"),
@@ -623,12 +692,16 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
         out.append("<p>No image published yet.</p>")
     out.append("</div>")
     out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
-               "<p>The package the image carries and <code>install.sh</code> installs from - also the way onto a Pi "
-               "already running Raspberry Pi OS Lite - and what the installer downloads: RetroArch prebuilt "
-               "(<a href=\"/rpi/retroarch/latest.json\">latest.json</a>; <code>--retroarch prebuilt</code> instead of a "
-               "source build) and every core libretro's buildbot has for the architecture with the info, assets, "
-               "autoconfig, database, cheats, overlays and shaders bundles, one download instead of ~130 "
-               "(<a href=\"/rpi/cores/latest.json\">latest.json</a>).</p>")
+               "<p><b>The package</b> - what the image carries and <code>install.sh</code> installs from. It is also "
+               "the way onto a Pi already running Raspberry Pi OS Lite: unpack it and run the script.</p>"
+               "<p>What the installer downloads:</p>"
+               "<ul class=\"what\">"
+               "<li><b>RetroArch</b>, prebuilt for each architecture (<a href=\"/rpi/retroarch/latest.json\">latest.json</a>). "
+               "<code>--retroarch prebuilt</code> takes it instead of building from source.</li>"
+               "<li><b>Cores</b> - every core libretro's buildbot has for the architecture, with the info, assets, "
+               "autoconfig, database, cheats, overlays and shaders bundles: one download instead of about 130 "
+               "(<a href=\"/rpi/cores/latest.json\">latest.json</a>).</li>"
+               "</ul>")
     block = release_block(("rpi", "rpi64"))
     out += block
     rows = []
@@ -652,8 +725,12 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     # ---- PC ----
     out.append("<h2 class=\"plat\" id=\"pc\">PC</h2>")
     out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>Windows: the launcher, for a look on a PC, and UpdateRoms, which prepares a console stick or a Pi card "
-               "in a card reader - playlists, names from the databases, box art.</p>")
+               "<p>Two Windows programs:</p>"
+               "<ul class=\"what\">"
+               "<li><b>The launcher</b> - AutoBleem itself, for a look on a PC.</li>"
+               "<li><b>UpdateRoms</b> - prepares a console stick or a Pi card in a card reader: the playlists, "
+               "names from RetroArch's databases, box art.</li>"
+               "</ul>")
     block = release_block(("win", "updateroms"))
     out += block if block else ["<p>Nothing published yet.</p>"]
     out.append("</div>")
@@ -662,16 +739,18 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if dbs or samples:
         out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
     if dbs:
-        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2><p>The launcher's PS1 cover art databases, "
-                   "baked into the console and Windows packages and fetched by the Pi installer (<a href=\"/db/\">db/</a>).</p>")
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+                   "<p><b>The cover art databases</b> - the launcher's PS1 covers, by region (<a href=\"/db/\">db/</a>).</p>"
+                   "<p>Baked into the console and Windows packages; the Pi installer fetches them.</p>")
         out.append(table([row("", f) for f in dbs]) + "</div>")
     if samples:
         games = samples.get("games") or []
         names = {"psx": "PlayStation", "nes": "NES", "snes": "Super NES", "md": "Mega Drive"}
-        out.append("<div class=\"panel inputs\"><h2>Sample games</h2><p>What the Pi installer puts on the shelf so the "
-                   "first start is not an empty one: homebrew whose licence allows redistribution, one small pack "
-                   "(<a href=\"/samples/\">samples/</a>, <a href=\"/samples/latest.json\">latest.json</a>%s). "
-                   "Unpack it onto a console stick or a Pi card as it is - the games sit where the launcher looks.</p>"
+        out.append("<div class=\"panel inputs\"><h2>Sample games</h2>"
+                   "<p>What the Pi installer puts on the shelf, so the first start is not an empty one: homebrew "
+                   "whose licence allows redistribution, in one small pack "
+                   "(<a href=\"/samples/\">samples/</a>, <a href=\"/samples/latest.json\">latest.json</a>%s).</p>"
+                   "<p>Unpack it onto a console stick or a Pi card as it is - the games sit where the launcher looks.</p>"
                    % (", <a href=\"%s\">the list</a>" % e(samples["manifest"]) if samples.get("manifest") else ""))
         rows = [row("Sample pack, %s%s" % (date_of(samples["date"]), ", %d games" % len(games) if games else ""), samples)]
         out.append(table(rows))
@@ -866,10 +945,11 @@ def main():
     psc_cores = index_psc_cores(repo, base_url)
     psc_libs = index_psc_libs(repo, base_url)
     psc_apps = index_psc_apps(repo, base_url)
+    psc_bios = index_psc_bios(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
