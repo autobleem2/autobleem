@@ -376,7 +376,7 @@ owner's target PC (a BIOS *and* a UEFI machine); `tools/repo_publish.sh --local 
 
 - **D** done: the `pcusb` Docker stage and toolchain, `ci/build.sh pcusb` (37/37 suites as i386), `payload_linux/` with one `install.sh` (`PLATFORM=rpi|pcusb`), the tarball.
 
-- **E** done apart from real hardware: `tools/make_pc_image.sh` builds under `docker/run.sh --privileged` (E0's answer: the server's kernel refuses user namespaces in a container); the image boots in VirtualBox (BIOS, PAE kernel) through GRUB, plymouth and the first-boot screen; `pc/retroarch/` published, `pc/cores/` in progress; the manual page is `pc-install.html`. UEFI (32- and 64-bit) and real hardware untested.
+- **E** done apart from real hardware: `tools/make_pc_image.sh` builds under `docker/run.sh --privileged` (E0's answer: the server's kernel refuses user namespaces in a container); the image's first boot went end to end in VirtualBox (BIOS, PAE kernel): GRUB, plymouth, the first-boot screen, the install, the reboot, the launcher. `pc/retroarch/` (v1.22.2) and `pc/cores/i386/` (212 cores) are published; the manual page is `pc-install.html`. UEFI (32- and 64-bit), real hardware and a pad untested.
 
 - **F2** not started: pcsx-ab has no i386 target; the stick plays PS1 through RetroArch's pcsx_rearmed core meanwhile.
 

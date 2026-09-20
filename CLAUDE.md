@@ -828,7 +828,18 @@ everything of the Pi's: the launcher on tty1 over kmsdrm, the exFAT data partiti
   (a drop-in runs `ssh-keygen -A` ahead of `sshd -t`). To get a shell when the first-boot screen owns the
   keyboard: hold Shift for GRUB, `e`, append `systemd.mask=autobleem-firstboot.service` to the `linux` line,
   Ctrl+X, log in as `autobleem`/`autobleem`; VBoxManage's `keyboardputscancode`/`keyboardputstring` drive it.
-  QEMU was tried first and removed again - the owner's VirtualBox is the VM for this.
+  QEMU was tried first and removed again - the owner's VirtualBox is the VM for this. **The second image
+  went end to end** the same day: the root grown, the exFAT data partition made, RetroArch (that run took
+  the slow road - `pc/retroarch/` was not published yet, the source build died on the mixed GL flags since
+  fixed, and Debian's `retroarch` package came in with its Qt desktop - ~400 MB the appliance never uses,
+  so on `pcusb` a failed build now means "go on without RetroArch, retry on a later run", and the cores
+  are only fetched for a RetroArch that is there), the cores and bundles, 730 BIOS files, the payload, the
+  three initramfs (redundant on the image - the theme-unchanged check now applies to every run, two
+  minutes saved), a reboot, and **the ab2 launcher on the screen**. The site has `pc/retroarch/`
+  (v1.22.2, 6 MB: desktop OpenGL only - GLES and GL together leave RetroArch's gl1 driver unlinkable) and
+  `pc/cores/i386/` (212 cores, 779 MB; `unzip`'s "done with warnings" over the cheats bundle used to kill
+  `build_cores.sh`), so a fresh first boot takes the fast road. Untested: UEFI (both widths), real hardware,
+  a pad (keyboard-as-pad is off on an appliance, so the VM shows the carousel and no more).
 
 ## The online update (2026-09-20, a Pi and the dev hosts - never the console)
 
