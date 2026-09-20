@@ -1015,8 +1015,9 @@ emulator until pcsx-abnxt's phase 8. **pcsx-abnxt** (`E:\Programming\pcsx-abnxt`
 what Sony and we added (the front buttons, the resume-point contract, the autosave ring, disc change, the
 menu, filters, two pads, `SET_BY_PCSX`) on top of what upstream has now - aarch64 dynarec, lightrec, C-SIMD
 gpu_neon, lid emulation, SlowBoot, a per-serial hack database. Sony's 131-serial per-title hacks are **not**
-ported (tested instead, ported on evidence). Its `docs/port-plan.md` is the plan and `docs/reference/` the
-inventory of the old delta with two patches; its CLAUDE.md the decisions. **Nothing on this side changes**:
+ported (tested instead, ported on evidence). **Its port plan is complete** (2026-09-20 night, the owner's call -
+the plan file is deleted, `git show` has it; the compatibility pass and the release, phases 7-8, are deferred
+to the owner's testing) and `docs/reference/` is the inventory of the old delta with two patches; its CLAUDE.md the decisions. **Nothing on this side changes**:
 the launch scripts, `pcsx.cfg`, `ResumePointService`'s files and `LaunchService` are the contract the new
 emulator keeps, and the binary keeps the name `pcsx-ab` in the payloads.
 
