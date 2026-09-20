@@ -1465,8 +1465,22 @@ PY
         return 0
     fi
     mv -f "$tarball.part" "$tarball"
-    local -a members=(Games SAMPLES.md)
-    [ "$RETROARCH_MODE" = none ] || members+=(RetroArch)
+    # only the top-level members the pack actually has: naming one it lacks makes tar fail outright
+    # (the pack has had no PS1 game - no Games/ - since 2026-09-20, and every install lost all of its samples
+    # to "Games: Not found in archive"); the RetroArch part only where RetroArch is installed
+    local -a members=()
+    local top
+    while read -r top; do
+        case "$top" in
+            Games|SAMPLES.md) members+=("$top") ;;
+            RetroArch) [ "$RETROARCH_MODE" = none ] || members+=("$top") ;;
+        esac
+    done < <(tar -tzf "$tarball" | sed 's|/.*||' | sort -u)
+    if [ ${#members[@]} -eq 0 ]; then
+        warn "the sample pack has nothing for this install - no sample games this time"
+        rm -f "$tarball"
+        return 0
+    fi
     if ! tar -xzf "$tarball" -C "$DATA_MOUNT" --no-same-owner --no-same-permissions "${members[@]}"; then
         warn "could not unpack the sample pack - no sample games this time"
         rm -f "$tarball"
