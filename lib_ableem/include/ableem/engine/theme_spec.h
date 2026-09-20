@@ -150,6 +150,9 @@ struct LauncherTheme {
         // where the save state's picture is pasted on the resume icon, in the icon's own pixels (the icon
         // is 118x118, drawn scaled); unset means the launcher's default of (25, 33) 68x52
         ThemeRect resumePicture;
+        // where the resume-slot picker writes "Slot n" on its copy of the icon, in the icon's pixels (the
+        // text is left-aligned there); unset means the original spot, (22, 18), above the original window
+        ThemePoint resumeSlotLabel;
     } menuIcons; // the launcher's menu row
     struct MemcardManager {
         std::string grid, pencil;

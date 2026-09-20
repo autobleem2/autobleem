@@ -92,7 +92,8 @@ void GameSettingsService::refreshPcsx(GameSettings &s) const {
     p.frameskip = atoi(processor.getValue(path, "frameskip3").c_str());
     p.dither = atoi(processor.getValue(path, "gpu_peops.iUseDither").c_str());
     p.scanlines = atoi(processor.getValue(path, "scanlines").c_str());
-    p.scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), nullptr, 16);
+    string level = processor.getValue(path, "scanline_level");
+    p.scanlineLevel = level.empty() ? 80 : strtol(level.c_str(), nullptr, 16); // hex in the file; 80% by default
     p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), nullptr, 16);
     string slowBoot = processor.getValue(path, "SlowBoot");
     p.bootLogo = slowBoot.empty() ? 1 : atoi(slowBoot.c_str()); // pcsx-ab's own default is 1

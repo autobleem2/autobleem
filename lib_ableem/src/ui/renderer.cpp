@@ -5,6 +5,7 @@
 #include <ableem/engine/log.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
 #include <vector>
@@ -134,7 +135,42 @@ Renderer::~Renderer() {
 void Renderer::clear() {
     SDL_RenderClear(impl->renderer);
 }
+//*******************************
+// debugShot
+//*******************************
+// AB_SHOT=<file.bmp> in the environment: what the renderer is about to present, saved every 3 s (a %d in
+// the name numbers the frames) - a look at a display one cannot see, or at a PC whose screen is in use.
+static void debugShot(SDL_Renderer *renderer) {
+    static const char *path = nullptr;
+    static bool checked = false;
+    static Uint32 last = 0;
+    static int count = 0;
+    if (!checked) {
+        path = std::getenv("AB_SHOT");
+        checked = true;
+    }
+    if (!path)
+        return;
+    Uint32 now = SDL_GetTicks();
+    if (last != 0 && now - last < 3000)
+        return;
+    last = now;
+    int w = 0, h = 0;
+    if (SDL_GetRendererOutputSize(renderer, &w, &h) != 0)
+        return;
+    SDL_Surface *s = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_ARGB8888);
+    if (!s)
+        return;
+    if (SDL_RenderReadPixels(renderer, nullptr, SDL_PIXELFORMAT_ARGB8888, s->pixels, s->pitch) == 0) {
+        char name[512];
+        snprintf(name, sizeof(name), path, count++);
+        SDL_SaveBMP(s, name);
+    }
+    SDL_FreeSurface(s);
+}
+
 void Renderer::present() {
+    debugShot(impl->renderer);
     SDL_RenderPresent(impl->renderer);
     if (!statsEnabled())
         return;
