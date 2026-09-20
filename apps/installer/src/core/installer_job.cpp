@@ -240,8 +240,8 @@ private:
             say("  AutoBleem " + (info.installedVersion.empty() ? string("(unknown version)") : info.installedVersion) +
                 " is on the stick - updating to " + info.packageVersion);
             savedConfig = readText(at(ConfigIni));
-            for (const char *dir : {"Autobleem/bin/autobleem", "Autobleem/bin/emu", "Autobleem/rc", "Apps/pscbios",
-                                    "Apps/abflashkit", "Docs"}) {
+            for (const char *dir : {"Autobleem/bin/autobleem", "Autobleem/bin/emu", "Autobleem/bin/emunxt",
+                                    "Autobleem/rc", "Apps/pscbios", "Apps/abflashkit", "Docs"}) {
                 if (DirEntry::isDirectory(at(dir)))
                     DirEntry::removeDirAndContents(at(dir));
             }

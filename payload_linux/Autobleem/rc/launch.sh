@@ -12,7 +12,7 @@
 #   $3 lang                                          $8 filter   1 bilinear, 0 nearest
 #   $4 region     (the console's script ignores it   $9 pad      always "NA"
 #                 and passes -region 4; so does this)
-#   $5 gameFolder the game's own folder
+#   $5 gameFolder the game's own folder            $10 emulator  pcsx-ab (bin/emu) or pcsx-abnxt (bin/emunxt)
 #
 # BIOS: pcsx.cfg says "Bios = SET_BY_PCSX", and pcsx-ab resolves that to bios/romw.bin - or bios/romJP.bin
 # for a game whose serial starts with SLP/SCP - so System/Bios needs both (the console copies romw.bin as
@@ -29,7 +29,17 @@ FILTER="${8:-0}"
 
 RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
-EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu"
+# which emulator: pcsx-ab (Autobleem/bin/emu, the one AutoBleem has always shipped) or pcsx-abnxt
+# (Autobleem/bin/emunxt, the next one); the binary is pcsx-ab in either folder
+case "${10:-pcsx-ab}" in
+  pcsx-abnxt) EMU_DIR="$DATA_MOUNT/Autobleem/bin/emunxt" ;;
+  *)          EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu" ;;
+esac
+if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
+  echo "AUTOBLEEM: no $EMU_DIR/pcsx-ab - falling back to Autobleem/bin/emu"
+  EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu"
+fi
+echo "AUTOBLEEM: emulator $EMU_DIR"
 BIOS_DIR="$DATA_MOUNT/System/Bios"
 RA_DIR="$DATA_MOUNT/RetroArch"
 RUN_DIR=/tmp/runpcsx

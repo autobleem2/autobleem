@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 69 / Total: 265
+# Untranslated: 70 / Total: 266
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -101,8 +101,8 @@ Frameskip:=跳帧：
 Free=可用
 free of=
 Free space=可用空间
-Game=游戏
 GAME=游戏
+Game=游戏
 Game data=游戏数据
 Game failed to verify:=游戏验证失败：
 Game History=游戏历史
@@ -121,8 +121,8 @@ HIGH SCORE=最高分
 Hostname=
 In Game=游戏中
 In Retroarch Game=RetroArch 游戏中
-INTERNAL=内置
 Internal=内置
+INTERNAL=内置
 Internal Games=内置游戏
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=关机
 POWER SHOT=强力射击
 POWERING OFF... PLEASE WAIT=正在关机... 请稍候
 Processor=
+PS1 Emulator:=
 Published by:=发行商：
 Quick scroll to next letter=快速滚动到下一个字母
 Quit emulation - back to AutoBleem=退出模拟 - 返回 AutoBleem

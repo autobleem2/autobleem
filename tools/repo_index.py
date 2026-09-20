@@ -19,6 +19,8 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
                                        RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
+    emu/pcsx-ab/latest.json            the newest build of each emulator, one package per platform (emu/<name>/<version>/,
+    emu/pcsx-abnxt/latest.json         each repository's tools/make_packages.sh) - the classic pcsx-ab and the next one
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
@@ -45,7 +47,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 24
+INDEX_VERSION = 26
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -75,6 +77,21 @@ PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
+# the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
+PCSX_RE = re.compile(r"^(?P<name>pcsx-ab|pcsx-abnxt)-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|win64)\.(tar\.gz|zip)$")
+EMULATORS = (
+    ("pcsx-ab", "pcsx-ab, the classic emulator",
+     "The PS1 emulator AutoBleem has always shipped (<code>Autobleem/bin/emu/</code>): PCSX-ReARMed as the console's "
+     "firmware took it in 2017, with Sony's and AutoBleem's additions "
+     "(<a href=\"https://github.com/autobleem/pcsx-ab2\">github.com/autobleem/pcsx-ab2</a>)."),
+    ("pcsx-abnxt", "pcsx-abnxt, the next emulator",
+     "The PS1 emulator that replaces pcsx-ab: upstream PCSX-ReARMed as it is today (r26) with the console's "
+     "front buttons, the resume points, the in-game menu and the filters on top "
+     "(<a href=\"https://github.com/autobleem/pcsx-abnxt\">github.com/autobleem/pcsx-abnxt</a>). The launcher's "
+     "Options -> \"PS1 Emulator\" picks it (<code>Autobleem/bin/emunxt/</code>)."),
+)
+PCSX_PLATFORMS = (("psc", "PlayStation Classic"), ("rpi-armhf", "Raspberry Pi, 32-bit OS"),
+                  ("rpi-arm64", "Raspberry Pi, 64-bit OS"), ("win64", "Windows"))
 
 
 # version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
@@ -131,7 +148,16 @@ def file_entry(repo, base_url, path):
         "size": os.path.getsize(path),
         "sha256": sidecar_sha256(path),
         "url": base_url + "/" + rel,
+        "uploaded": uploaded_at(path),
     }
+
+
+def uploaded_at(path):
+    """When the file was published, UTC: the .sha256 sidecar's mtime - repo_publish.sh writes it as it
+    publishes (rsync -t keeps the package's own mtime, which is when it was built) - else the file's."""
+    stamp = path + ".sha256"
+    when = os.path.getmtime(stamp if os.path.isfile(stamp) else path)
+    return datetime.fromtimestamp(when, timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def data_files(directory):
@@ -480,6 +506,54 @@ def index_images(repo, base_url):
 
 
 #*******************************
+# pcsx-abnxt, the next emulator
+#*******************************
+def pcsx_version_key(version):
+    """pcsx-abnxt's r26-20-gb9801962 (git describe: upstream's tag, our commits past it, the commit) -> (26, 20),
+    a bare r26 -> (26, 0); pcsx-ab's 20260920-fc8c992 (the date and the commit - that repository has no
+    tags) -> (20260920, 0)."""
+    m = re.match(r"^r(\d+)(?:-(\d+)-g[0-9a-f]+)?", version)
+    if not m:
+        m = re.match(r"^(\d{8})-[0-9a-f]+$", version)
+        if not m:
+            return (0, 0, version)
+        return (int(m.group(1)), 0, version)
+    return (int(m.group(1)), int(m.group(2) or 0), version)
+
+
+def index_pcsx(repo, base_url, name="pcsx-abnxt"):
+    """emu/<name>/<version>/<name>-<version>-<platform>.tar.gz|zip (+ <name>-<version>.json), name = pcsx-ab or
+    pcsx-abnxt - the newest version kept, the rest deleted, latest.json = the newest."""
+    root = os.path.join(repo, "emu", name)
+    builds = {}  # version -> {"files": {plat: entry}, "manifest": url}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            for path in data_files(folder):
+                m = PCSX_RE.match(os.path.basename(path))
+                if m and m.group("name") == name and m.group("version") == version:
+                    builds.setdefault(version, {"files": {}})["files"][m.group("plat")] = file_entry(repo, base_url, path)
+            manifest = os.path.join(folder, "%s-%s.json" % (name, version))
+            if version in builds and os.path.isfile(manifest):
+                builds[version]["manifest"] = base_url + "/emu/%s/%s/%s-%s.json" % (name, version, name, version)
+                try:
+                    with open(manifest, encoding="utf-8") as f:
+                        builds[version]["note"] = json.load(f).get("note", "")
+                except (OSError, ValueError):
+                    pass
+    if builds:
+        newest = sorted(builds, key=pcsx_version_key)[-1]
+        prune([os.path.join(root, v) for v in builds if v != newest], [], name + " build")
+        builds = {newest: builds[newest]}
+        latest = {"version": newest}
+        latest.update(builds[newest])
+        write_json(os.path.join(root, "latest.json"), latest)
+    return builds
+
+
+#*******************************
 # PC stick images
 #*******************************
 def index_pc_images(repo, base_url):
@@ -582,6 +656,7 @@ td,th{text-align:left;padding:.45rem .6rem;border-bottom:1px solid rgba(80,200,2
 th{font-weight:300;color:var(--dim);font-size:.85rem;letter-spacing:.06em;text-transform:uppercase}
 tr:last-child td{border-bottom:0}
 td.size{white-space:nowrap;color:var(--dim);text-align:right}
+td.when{white-space:nowrap;color:var(--dim);font-size:.85em}
 a.dl{display:inline-block;padding:.25rem .7rem;border:1px solid var(--line);border-radius:4px;background:rgba(79,200,255,.08)}
 a.dl:hover{background:rgba(79,200,255,.2);text-decoration:none}
 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;color:#fff;background:rgba(255,255,255,.07);padding:.05em .35em;border-radius:3px}
@@ -605,20 +680,23 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None, pc=None):
+                 psc_apps=None, psc_bios=None, pcsx=None, pc=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
     e = html.escape
 
     def row(label, f, cls="dl"):
-        return "<tr><td>%s</td><td><a class=\"%s\" href=\"%s\">%s</a></td><td class=\"size\">%s</td></tr>" % (
-            e(label), cls, e(f["url"]), e(f["name"]), human(f["size"]))
+        return ("<tr><td>%s</td><td><a class=\"%s\" href=\"%s\">%s</a></td><td class=\"size\">%s</td>"
+                "<td class=\"when\">%s</td></tr>" % (
+                    e(label), cls, e(f["url"]), e(f["name"]), human(f["size"]), e(f.get("uploaded", ""))))
 
     def date_of(d):
         return "%s-%s-%s" % (d[:4], d[4:6], d[6:])
 
     def table(rows, head=("", "File", "")):
+        # every row ends with the upload time; the callers name the first three columns
+        head = tuple(head) + ("Uploaded",)
         return "<table><tr>%s</tr>%s</table>" % ("".join("<th>%s</th>" % h for h in head), "".join(rows))
 
     stable = [r for r in releases if not r["prerelease"]]
@@ -844,8 +922,22 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
         out.append("</div>")
 
     # ---- shared build inputs ----
-    if dbs or samples:
+    if dbs or samples or pcsx:
         out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
+    for name, heading, blurb in EMULATORS:
+        builds_of = (pcsx or {}).get(name)
+        if not builds_of:
+            continue
+        version = sorted(builds_of, key=pcsx_version_key)[-1]
+        b = builds_of[version]
+        out.append("<div class=\"panel inputs\"><h2>%s</h2>"
+                   "<p>%s Build: <b>%s</b>. Each package unpacks to <code>pcsx-ab</code> + <code>plugins/</code> "
+                   "in the layout the launch scripts expect "
+                   "(<a href=\"/emu/%s/latest.json\">latest.json</a>%s).</p>"
+                   % (e(heading), blurb, e(b.get("note") or version), e(name),
+                      ", <a href=\"%s\">the manifest</a>" % e(b["manifest"]) if b.get("manifest") else ""))
+        rows = [row(title, b["files"][plat]) for plat, title in PCSX_PLATFORMS if plat in b["files"]]
+        out.append("<h3>%s</h3>" % e(version) + table(rows, ("Platform", "File", "")) + "</div>")
     if dbs:
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
                    "<p><b>The cover art databases</b> - the launcher's PS1 covers, by region (<a href=\"/db/\">db/</a>).</p>"
@@ -1154,7 +1246,9 @@ def main():
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
     pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc)),
+    pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
+    pcsx = {name: b for name, b in pcsx.items() if b}
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pcsx, pc)),
                        ("rpi-install.html", render_rpi_install(base_url, images)),
                        ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
@@ -1162,9 +1256,9 @@ def main():
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
     print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, "
-          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack" % (
+          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack, %d emulator builds" % (
         repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images),
-        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0"))
+        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0", len(pcsx)))
 
 
 if __name__ == "__main__":

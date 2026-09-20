@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -101,8 +101,8 @@ Frameskip:=Frameskip:
 Free=Vrij
 free of=
 Free space=Vrije ruimte
-Game=Game
 GAME=GAME
+Game=Game
 Game data=
 Game failed to verify:=Game verificatie mislukt:
 Game History=Game geschiedenis
@@ -121,8 +121,8 @@ HIGH SCORE=HOOGSTE SCORE
 Hostname=
 In Game=In game
 In Retroarch Game=In RetroArch game
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interne games
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Uitschakelen
 POWER SHOT=KRACHTSCHOT
 POWERING OFF... PLEASE WAIT=UITSCHAKELEN... EVEN GEDULD
 Processor=
+PS1 Emulator:=
 Published by:=Gepubliceerd door:
 Quick scroll to next letter=Snel scrollen naar volgende letter
 Quit emulation - back to AutoBleem=Emulatie afsluiten - terug naar AutoBleem

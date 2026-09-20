@@ -893,9 +893,10 @@ def stage_install(root: Path, opts, dry_run: bool):
             else:
                 usb_autobleem.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(start_sh, usb_autobleem / 'start.sh')
-        emu_src = payload_ab / 'bin' / 'emu'
-        if emu_src.is_dir():
-            replace_tree(emu_src, usb_autobleem / 'bin' / 'emu', dry_run, log)
+        for emu in ('emu', 'emunxt'):  # pcsx-ab and pcsx-abnxt, the next emulator (Options -> "PS1 Emulator")
+            emu_src = payload_ab / 'bin' / emu
+            if emu_src.is_dir():
+                replace_tree(emu_src, usb_autobleem / 'bin' / emu, dry_run, log)
 
     if not resources.is_dir():
         print(f'  ERROR: {resources} missing - skipping resources install')

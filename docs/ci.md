@@ -31,8 +31,10 @@ last run on that host.
 `../pcsx-rearmed-develop` next to this tree; the CI checks out `autobleem/pcsx-ab2` there), and the stripped
 `pcsx-ab` + `plugins/*.so` replace `payload/Autobleem/bin/emu/` or `payload_linux/Autobleem/bin/emu{,-arm64,-i386}/`
 before the package is made - so a package always ships an emulator built by the same image, from the same
-run. `AB_NO_PCSX=1` ships the checked-in binaries instead (a developer without that checkout); a pcsx-ab
-checkout without the target yet (`pcusb`) is reported and the package ships without an emulator. The console
+run. pcsx-abnxt (`AB_PCSXNXT_DIR`, else `../pcsx-abnxt`) is built the same way right after it, into
+`Autobleem/bin/emunxt{,-arm64,-i386}/`. `AB_NO_PCSX=1` ships the checked-in binaries instead (a developer
+without that checkout); a checkout without the target yet (`pcusb`) is reported and the package ships
+without that emulator. The console
 emulator is built with `gles=ON` (EGL on Weston - `gpu_gles.so`), the Pis with SDL2's renderer; the 32-bit
 targets get the NEON GPU/GTE and Ari64's dynarec, the 64-bit Pi the C interpreter (no aarch64 dynarec in
 this fork). `docker/run.sh` mounts that checkout at its own path next to this one.

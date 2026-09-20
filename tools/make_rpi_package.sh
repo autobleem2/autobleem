@@ -76,18 +76,22 @@ mkdir -p "$STAGE"
 cp -a "$PAYLOAD/." "$STAGE/"
 
 # the arch-specific pcsx-ab tree lives at Autobleem/bin/emu (armhf), emu-arm64 or emu-i386 in the checked-in
-# payload; the staged tree always uses emu/ on the device, so another architecture's package replaces emu/
+# payload - and the same for emunxt (pcsx-abnxt, the next emulator): emunxt, emunxt-arm64, emunxt-i386. The
+# staged tree always uses emu/ and emunxt/ on the device, so another architecture's package replaces each
 # with its own tree's contents (an emu-* that is not checked in yet - the PC stick until pcsx-ab has been
 # built for it - leaves no emu/ at all: install.sh's RetroArch core fallback plays PS1 then).
-if [ "$EMU_SRC_SUBDIR" != emu ]; then
-    rm -rf "$STAGE/Autobleem/bin/emu"
-    if [ -d "$STAGE/Autobleem/bin/$EMU_SRC_SUBDIR" ]; then
-        mv "$STAGE/Autobleem/bin/$EMU_SRC_SUBDIR" "$STAGE/Autobleem/bin/emu"
-    else
-        echo "    (no $PAYLOAD/Autobleem/bin/$EMU_SRC_SUBDIR - the package ships no pcsx-ab)"
+EMU_ARCH_SUFFIX="${EMU_SRC_SUBDIR#emu}"   # "" for armhf, "-arm64", "-i386"
+for emu in emu emunxt; do
+    if [ -n "$EMU_ARCH_SUFFIX" ]; then
+        rm -rf "$STAGE/Autobleem/bin/$emu"
+        if [ -d "$STAGE/Autobleem/bin/$emu$EMU_ARCH_SUFFIX" ]; then
+            mv "$STAGE/Autobleem/bin/$emu$EMU_ARCH_SUFFIX" "$STAGE/Autobleem/bin/$emu"
+        elif [ "$emu" = emu ]; then
+            echo "    (no $PAYLOAD/Autobleem/bin/$emu$EMU_ARCH_SUFFIX - the package ships no pcsx-ab)"
+        fi
     fi
-fi
-rm -rf "$STAGE/Autobleem/bin/emu-arm64" "$STAGE/Autobleem/bin/emu-i386"
+    rm -rf "$STAGE/Autobleem/bin/$emu-arm64" "$STAGE/Autobleem/bin/$emu-i386"
+done
 
 # the app: the freshly cross-compiled binary plus the resources tree it reads at runtime. The resources come
 # from the repo rather than from $BUILD_DIR, which also holds the object files and CMake's own scratch.
@@ -150,7 +154,7 @@ find "$STAGE" -type f -name placeholder -delete
 
 # Best effort: on a Windows build host the executable bit does not stick, which is why install.sh checks for
 # the binary with -f rather than -x, chmods what it deploys itself, and is documented as "sudo bash install.sh".
-chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui"          "$STAGE/Autobleem/bin/emu/pcsx-ab" 2>/dev/null || true
+chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui"          "$STAGE/Autobleem/bin/emu/pcsx-ab" "$STAGE/Autobleem/bin/emunxt/pcsx-ab" 2>/dev/null || true
 
 echo "==> Building $TARBALL"
 rm -f "$TARBALL"

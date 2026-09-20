@@ -130,7 +130,8 @@ TEST_CASE("PCSX is started through rc/launch.sh with the nine arguments the scri
                                       "0",                                       // resume
                                       "0",                                       // aspect
                                       "0",                                       // filter
-                                      "NA"});                                    // pad
+                                      "NA",                                      // pad
+                                      "pcsx-ab"});                               // emulator (the default)
     CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));               // normalised in place, as always
 
     CHECK(lib.usbGame()->last_played > 0); // the launch is the "last played" time
@@ -147,6 +148,16 @@ TEST_CASE("the aspect and filter arguments come from config.ini") {
     const vector<string> &args = lib.runner.only().args;
     CHECK(args[6] == "1");
     CHECK(args[7] == "1");
+}
+
+TEST_CASE("the emulator argument is config.ini's choice between pcsx-ab and pcsx-abnxt") {
+    Launching lib;
+    lib.configure("Emulator=pcsx-abnxt\n");
+    PsGamePtr game = lib.usbGame();
+
+    lib.service->launch(game, EmuMode::Pcsx, -1);
+
+    CHECK(lib.runner.only().args[9] == "pcsx-abnxt");
 }
 
 TEST_CASE("a .pbp or .chd image is handed over as it is; anything else gets .cue") {

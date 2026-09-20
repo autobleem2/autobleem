@@ -1326,7 +1326,7 @@ mount_data() {
 create_tree() {
     log "Creating the AutoBleem tree under $DATA_MOUNT"
     local d
-    for d in Autobleem/bin/autobleem Autobleem/bin/db Autobleem/bin/emu Autobleem/rc \
+    for d in Autobleem/bin/autobleem Autobleem/bin/db Autobleem/bin/emu Autobleem/bin/emunxt Autobleem/rc \
              Games System/Bios System/Databases System/Logs Themes Apps; do
         run mkdir -p "$DATA_MOUNT/$d"
     done
@@ -1368,7 +1368,7 @@ $STAGE_DIR/Autobleem/bin/autobleem
 
     # exFAT has no permission bits of its own - the mount's umask=000 already makes everything 0777 - so a
     # chmod there is either a no-op or refused by the driver. Neither is a reason to stop.
-    run chmod +x "$app_dest/autobleem-gui" "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" || true
+    run chmod +x "$app_dest/autobleem-gui" "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" "$DATA_MOUNT/Autobleem/bin/emunxt/pcsx-ab" || true
     run chmod +x "$DATA_MOUNT/Autobleem/rc/"*.sh || true
 
     if [ -f "$app_dest/config.ini.keep" ]; then

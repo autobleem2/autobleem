@@ -543,7 +543,7 @@ psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroA
 "RetroArch for the console" below), **`psc/libs/`** and **`psc/apps/`** (the same shape: `libs-psc-<date>.tar.gz`,
 the libraries and the xpad module for `Autobleem/lib/`, from retroarch-psc's `tools/pack_retroboot_libs.py`;
 `apps-psc-<date>.tar.gz`, the eight third-party Apps as `Apps/<name>/`, from `tools/pack_psc_apps.py` over a
-stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`emu/pcsx-abnxt/<version>/`** and **`emu/pcsx-ab/<version>/`** + `latest.json` each (2026-09-20: the two emulators' packages, one per platform, from each repo's `tools/make_packages.sh` - pcsx-abnxt's version is `git describe` (`r26-24-g0f4727f1`), pcsx-ab's `<date>-<hash>` (`20260920-fc8c992`, no tags there); `repo_publish.sh pcsx|pcsx-ab <version> dist/packages/*`; the newest version kept; `EMULATORS` in `repo_index.py` renders one panel each under "Every platform"), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay. **Since INDEX_VERSION 22 a package kind the new pre-release does not bring is carried
 over** from the one it replaces (a publish of the console's packages alone no longer drops the Pi's, and
@@ -565,6 +565,20 @@ AutoBleem 2 logo is painted into it; `ab.png` is blank) as the hero, the navy/cy
 staged as `assets/` from `payload/Themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
 emblem cut out for the favicon and Imager's icon, checked in because MSYS2's python has no Pillow). To
 change the pages: edit the render functions, bump `INDEX_VERSION`, `tools/repo_publish.sh index`.
+**The page generator is merged on every publish, never copied** (2026-09-20, after two sessions had
+overwritten each other's page twice): `tools/repo_index_merge.py` three-way merges this checkout's
+`tools/repo_index.py` with the copy the repository runs (`<repo>/.tools/repo_index.py`) over the older of
+the two develop versions they started from - mine from `git merge-base HEAD origin/develop`, the
+repository's stored next to its copy as `.tools/repo_index.base.py` + `.rev` - with `git merge-file`;
+`repo_publish.sh` uploads the result and the newer base. Distinct lines combine (a panel one session added
+survives the other's publish); the same lines changed on both sides are a conflict and **nothing is
+published** - the file with the markers is left in a temp dir, resolve it, commit to develop, publish
+again. `INDEX_VERSION` is informational now (the larger of the two, +1 when the merge changed the
+repository's). The server keeps `.tools/repo_index.prev.py` and falls back to it when the merged copy
+fails to run. A tree without git (the server's rsync trees) merges over the repository's stored base,
+right as long as that tree is at least as new as it. Two lines conflict easily - `render_index`'s
+signature and `main()`'s summary `print` - so a new panel is best committed to develop before the next
+session publishes. (The PC USB stick's `pc/` panels landed on develop with the merge of 2026-09-20.)
 `AB_REPO_URL` is the base URL everything generated starts with.
 
 It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
@@ -895,6 +909,32 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   rescans** (the owner's rule): `install_payload()` removes `games.fingerprint`/`roms.fingerprint`. Nothing on the screen said why: the launcher had left, the
   helper's failure message is a 6 s dialog on tty1 and the session loop restarted the launcher - so
   read `update.log` first when an update "does nothing".
+
+## pcsx-abnxt - the next emulator (`github.com/autobleem/pcsx-abnxt`, started 2026-09-20)
+
+pcsx-ab (`autobleem/pcsx-ab2`, `E:\Programming\pcsx-rearmed-develop`) is a 2017 upstream snapshot (master
+`bebe989b`, r22 + 25 commits - what Sony's firmware took) with Sony's and our patches; it stays the shipped
+emulator until pcsx-abnxt's phase 8. **pcsx-abnxt** (`E:\Programming\pcsx-abnxt`) is a public GitHub fork of
+`notaz/pcsx_rearmed` at **r26** with our own `autobleem/libpicofe` fork as the submodule, re-implementing
+what Sony and we added (the front buttons, the resume-point contract, the autosave ring, disc change, the
+menu, filters, two pads, `SET_BY_PCSX`) on top of what upstream has now - aarch64 dynarec, lightrec, C-SIMD
+gpu_neon, lid emulation, SlowBoot, a per-serial hack database. Sony's 131-serial per-title hacks are **not**
+ported (tested instead, ported on evidence). Its `docs/port-plan.md` is the plan and `docs/reference/` the
+inventory of the old delta with two patches; its CLAUDE.md the decisions. **Nothing on this side changes**:
+the launch scripts, `pcsx.cfg`, `ResumePointService`'s files and `LaunchService` are the contract the new
+emulator keeps, and the binary keeps the name `pcsx-ab` in the payloads.
+
+**Both ship, the user picks** (2026-09-20, the owner's ask): Options -> **"PS1 Emulator"** (`config.ini`
+`emulator` = `pcsx-ab` | `pcsx-abnxt`, `pcsx-ab` the default and the fallback for any other value - `Config`),
+which `LaunchService::launchPcsx` passes as the **10th argument** of `launch.sh`; the console's and the Pi's
+scripts run `Autobleem/bin/emu/pcsx-ab` or **`Autobleem/bin/emunxt/pcsx-ab`** (the same binary name and
+`plugins/` layout, `emunxt-arm64/` for the 64-bit Pi as `emu-arm64/`) and fall back to `emu/` when the
+chosen folder has no binary. Both read the same `.pcsx` (pcsx.cfg, memory cards); a resume point one wrote
+does not load in the other (save-state versions differ) - the game starts fresh. `ci/build.sh` builds
+pcsx-abnxt into `emunxt/` from `AB_PCSXNXT_DIR` / `../pcsx-abnxt` next to pcsx-ab; `make_rpi_package.sh`,
+`install.sh`, the PC installer's update list and `install_autobleem.py` know the folder. The checked-in
+`emunxt/` binaries are `r26-24-g0f4727f1` (console, Pi armhf, Pi arm64); on a PC a game launch is a splash
+either way, so the row is only carried through there.
 
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
@@ -1502,6 +1542,7 @@ USB stick root = `/media` on the PSC:
 ```
 /media/Autobleem/bin/autobleem/   autobleem-gui + absplash + resources (run.sh, lang/, evoimg/, platform/, splash/, ...)
 /media/Autobleem/bin/emu/         pcsx-ab + plugins/*.so
+/media/Autobleem/bin/emunxt/      pcsx-abnxt, the next emulator, as pcsx-ab + plugins/*.so (Options -> "PS1 Emulator")
 /media/Autobleem/bin/db/          covers*.db (regional cover-art DBs; "../db" relative to the binary)
 /media/Autobleem/rc/*.sh          boot/launch glue (see payload/Autobleem/rc)
 /media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot; lib/apps, lib/retroarch, lib/modules

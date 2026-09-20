@@ -43,6 +43,14 @@ Config::Config() {
         inifile.values["aspect"] = "false";
         aDefaultWasSet = true;
     }
+    // which PS1 emulator a game starts in (Options -> "PS1 Emulator"): pcsx-ab, the one AutoBleem has always
+    // shipped (Autobleem/bin/emu), or pcsx-abnxt, the next one (Autobleem/bin/emunxt) - the launch scripts
+    // get the name as their last argument. Both read the same pcsx.cfg and memory cards; a resume point
+    // written by one does not load in the other (different save-state versions), the game then starts fresh.
+    if (inifile.values["emulator"] != "pcsx-ab" && inifile.values["emulator"] != "pcsx-abnxt") {
+        inifile.values["emulator"] = "pcsx-ab";
+        aDefaultWasSet = true;
+    }
     if (inifile.values["jewel"] == "") {
         inifile.values["jewel"] = "default";
         aDefaultWasSet = true;
