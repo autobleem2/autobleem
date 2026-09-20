@@ -1539,8 +1539,10 @@ install_boot_splash() {
         BOOT_SPLASH=0
         return 0
     fi
-    # an update with the same theme files keeps the initramfs it has (rebuilding every kernel's takes minutes)
-    if [ "$UPDATE_MODE" -eq 1 ] && cmp -s "$src/splash.png" "$PLYMOUTH_THEME_DIR/splash.png" \
+    # the same theme files already in place and selected - an update, or an image that was built with them
+    # (the PC stick's) - keep the initramfs they are in (rebuilding every kernel's takes minutes)
+    if [ -f /etc/plymouth/plymouthd.conf ] && grep -q '^Theme=autobleem' /etc/plymouth/plymouthd.conf \
+       && cmp -s "$src/splash.png" "$PLYMOUTH_THEME_DIR/splash.png" \
        && cmp -s "$src/autobleem.script" "$PLYMOUTH_THEME_DIR/autobleem.script" \
        && cmp -s "$src/autobleem.plymouth" "$PLYMOUTH_THEME_DIR/autobleem.plymouth"; then
         log "Boot splash unchanged - keeping the initramfs"
