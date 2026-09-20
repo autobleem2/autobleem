@@ -22,6 +22,7 @@ enum class SystemMenuAction {
     GameManager,
     HardwareInfo,
     Options,
+    SoftwareUpdate, // AB_ONLINE_UPDATE builds only
     About,
     PowerOff
 };
@@ -43,6 +44,7 @@ public:
     void loop() override;
 
     std::string retroArchLabel = "RetroArch"; // "RetroArch" or "EmulationStation", per retroboot.cfg
+    bool updateAvailable = false;             // shown as a note on the Software Update row
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
     ableem::Texture background;               // the launcher's background, drawn dimmed under the panel
 

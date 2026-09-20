@@ -14,7 +14,9 @@
 // for rc/selection.sh to read after the process exits. The numeric values are part of that contract and
 // must not change. IDLE is the resting default and also what a plain "close the app" leaves behind -
 // selection.sh's own default (start_autobleem, i.e. come straight back here) is the right thing for that.
-enum MenuOption { MENU_OPTION_IDLE = 1, MENU_OPTION_RETRO = 4, MENU_OPTION_START = 5 };
+// UPDATE (2026-09-20) is the online update: the launcher has downloaded the new package(s) into
+// System/Updates and leaves so the Pi's session loop can run autobleem-update over them.
+enum MenuOption { MENU_OPTION_IDLE = 1, MENU_OPTION_RETRO = 4, MENU_OPTION_START = 5, MENU_OPTION_UPDATE = 6 };
 
 // which emulator/launcher path to use for the game about to start
 enum class EmuMode { Pcsx, RetroArch, Launcher };

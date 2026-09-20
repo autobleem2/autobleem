@@ -50,30 +50,6 @@ own setup finishing itself on first or second boot.
 
 ---
 
-## Fast in-place update for an already-installed Pi
-
-**Status:** researched, not started (came up alongside the image idea above, but stands on its own).
-
-Two asks: (1) `install.sh`, re-run against a Pi it already set up, should detect that and take a fast path
-- skip repartitioning, package installs, the RetroArch source build, and the core/BIOS/thumbnail downloads,
-  and only refresh what changed. (2) a way to update without ssh at all: drop a new release tarball into a
-  folder on the exFAT data partition from a PC, applied automatically at the next boot.
-
-- **Is it possible:** yes, and cheaply - no new runtime dependencies needed.
-- **Mechanism:** a sha256-diff copy (compare each payload file's hash against what's already installed,
-  copy only what differs) is the dependency-free equivalent of an rsync delta and works identically whether
-  the source is a freshly-extracted tarball (the drop-on-partition path) or the staged tree over ssh (the
-  `install.sh` re-run path) - one implementation, two entry points.
-- **Where the boot-time apply would hook in:** `payload_rpi/system/autobleem-session.sh` already loops
-  around starting `autobleem-gui`; an update check/apply step before that loop starts (writing progress to
-  `/dev/tty1`, since the service's stdout goes to the journal, invisible before the launcher owns the
-  screen) is a natural fit and needs no new service.
-- **Complexity: M.** Contained to `payload_rpi/install.sh` and `payload_rpi/system/autobleem-session.sh`
-  (plus a new small shared shell helper for the diff-copy). No new tools, no image work.
-- Full plan: [`docs/rpi-image-and-update-plan.md`](rpi-image-and-update-plan.md) (Part 1).
-
----
-
 ## PC Linux build that boots/runs from a USB stick, like the original console
 
 **Status:** researched, not started.

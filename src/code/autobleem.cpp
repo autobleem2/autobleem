@@ -3,6 +3,7 @@
 //
 #include "autobleem.h"
 #include "core/services/system.h"
+#include <ctime>
 #include "evoui/screens/evoui_launcher.h"
 
 #include <cstdlib>
@@ -153,6 +154,11 @@ int AutoBleem::run() {
     gui_->display(false);
 
     applyOnlineSetting();
+#ifdef AB_ONLINE_UPDATE
+    applyUpdateSetting();
+    if (updates().checkDue(time(nullptr)))
+        updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
+#endif
     scans().start();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
@@ -208,7 +214,7 @@ int AutoBleem::run() {
         // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item, or a
         // future one like it); Circle alone in the launcher is a no-op - there is nothing else to show -
         // so any other return from show() is unexpected and the safest thing is to just show it again
-        if (session_.menuOption == MENU_OPTION_RETRO) {
+        if (session_.menuOption == MENU_OPTION_RETRO || session_.menuOption == MENU_OPTION_UPDATE) {
             break;
         }
     }

@@ -6,6 +6,7 @@
 #include "system.h"
 #include "../main.h"
 #include "../model/timing.h"
+#include "core/version.h"
 #include "environment.h"
 
 //*******************************
@@ -63,6 +64,13 @@ Config::Config() {
     // has a download_command and the server answers; Options -> "Fetch box art online"
     if (inifile.values["online"] == "") {
         inifile.values["online"] = "true";
+        aDefaultWasSet = true;
+    }
+    // the launcher's online update check (UpdateService, Options -> "Updates"): off | stable | latest.
+    // A pre-release build follows the pre-releases by default, a release build the releases.
+    if (inifile.values["updates"] == "") {
+        inifile.values["updates"] =
+            std::string(Version::VERSION).find("-pre") != std::string::npos ? "latest" : "stable";
         aDefaultWasSet = true;
     }
     // the classic screens' font: the theme's, unless "themefont" is off and "font" names a .ttf/.otf from

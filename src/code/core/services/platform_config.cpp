@@ -74,6 +74,8 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
     if (!value("retroarch_bios_dir").empty())
         cfg.retroarchBiosDir = value("retroarch_bios_dir");
     cfg.downloadCommand = value("download_command");
+    cfg.repoUrl = value("repo_url");
+    cfg.updateDownloadCommand = value("update_download_command");
     cfg.usbRoot = value("usb_root");
     return cfg;
 }
@@ -93,4 +95,5 @@ void PlatformConfig::apply() const {
     Env::setRetroarchRomsDir(under(Env::getPathToUSBRoot(), retroarchRomsDir));
     Env::setRetroarchBiosDir(under(Env::getPathToUSBRoot(), retroarchBiosDir));
     Env::setDownloadCommand(downloadCommand);
+    Env::setUpdateSource(repoUrl, updateDownloadCommand);
 }

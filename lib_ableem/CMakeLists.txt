@@ -49,6 +49,8 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/zip_writer.cpp
         src/engine/game_library.cpp
         src/engine/md5.cpp
+        src/engine/sha256.cpp
+        src/engine/update_catalog.cpp
         src/engine/unecm.c
         src/engine/cd_image_reader.h
         src/engine/binary_reader.h

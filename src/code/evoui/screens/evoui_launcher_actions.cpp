@@ -22,6 +22,10 @@
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
+#ifdef AB_ONLINE_UPDATE
+#include "evoui_update.h"
+#include <ctime>
+#endif
 
 #include <algorithm>
 #include <iostream>
@@ -262,6 +266,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
 
     if (exitCode == 0) {
         app.applyOnlineSetting(); // "Fetch box art online" may have changed
+#ifdef AB_ONLINE_UPDATE
+        app.applyUpdateSetting(); // "Updates" (the channel) may have changed
+#endif
         freeAssets();
         loadAssets();
         app.session().resumingGui = false;
@@ -544,6 +551,9 @@ void GuiLauncher::loop_openSystemMenu() {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
         systemMenu.scanInProgress = app.scans().scanning();
+#ifdef AB_ONLINE_UPDATE
+        systemMenu.updateAvailable = app.updates().status().info.any();
+#endif
         if (background != nullptr)
             systemMenu.background = background->tex;
         systemMenu.show();
@@ -628,6 +638,12 @@ void GuiLauncher::loop_openSystemMenu() {
         loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
         break;
 
+    case SystemMenuAction::SoftwareUpdate:
+#ifdef AB_ONLINE_UPDATE
+        loop_softwareUpdate();
+#endif
+        break;
+
     case SystemMenuAction::About: {
         GuiAbout aboutScreen(*gui);
         aboutScreen.show();
@@ -646,3 +662,98 @@ void GuiLauncher::loop_openSystemMenu() {
     }
     }
 }
+
+#ifdef AB_ONLINE_UPDATE
+//*******************************
+// GuiLauncher::pollUpdates
+//*******************************
+// The check AutoBleem::run() started lands here: when it found something the user has not skipped or
+// postponed, the question is asked right away, over the carousel. Also starts the daily check for a
+// launcher that stays up for days.
+void GuiLauncher::pollUpdates() {
+    UpdateService &updates = app.updates();
+    const time_t now = ::time(nullptr); // GuiLauncher::time is the frame clock
+    if (updates.checkDue(now))
+        updates.startCheck(now);
+    const UpdateService::Status status = updates.poll();
+    if (status.checkedThisPoll && status.phase == UpdateService::Phase::Checked && updates.shouldPrompt(now))
+        offerUpdate(false);
+}
+
+//*******************************
+// GuiLauncher::loop_softwareUpdate
+//*******************************
+// The system menu's item: a check now, on the screen, then the question - or "up to date".
+void GuiLauncher::loop_softwareUpdate() {
+    UpdateService &updates = app.updates();
+    if (!updates.enabled()) {
+        GuiConfirm confirm(*gui);
+        confirm.label = _("Updates are off - turn them on in Options");
+        confirm.show();
+        return;
+    }
+    if (updates.status().phase == UpdateService::Phase::Downloading)
+        return;
+    updates.startCheck(::time(nullptr));
+    {
+        GuiUpdateProgress progress(*gui);
+        if (background != nullptr)
+            progress.background = background->tex;
+        progress.show();
+    }
+    if (updates.status().phase == UpdateService::Phase::Checked && updates.status().info.any())
+        offerUpdate(true);
+}
+
+//*******************************
+// GuiLauncher::offerUpdate
+//*******************************
+// The question, and what follows a yes: the download with its bar, then - on a Pi - out to the session
+// loop with MENU_OPTION_UPDATE, which runs autobleem-update over System/Updates; a dev host stops at the
+// downloaded files, there is no installer to run on it.
+void GuiLauncher::offerUpdate(bool fromMenu) {
+    UpdateService &updates = app.updates();
+    const time_t now = ::time(nullptr); // GuiLauncher::time is the frame clock
+    UpdateChoice choice;
+    {
+        GuiUpdatePrompt prompt(*gui);
+        prompt.info = updates.status().info;
+        if (background != nullptr)
+            prompt.background = background->tex;
+        prompt.show();
+        choice = prompt.result;
+    }
+    if (!fromMenu)
+        forgetHeldModifiers();
+    switch (choice) {
+    case UpdateChoice::Later:
+        updates.postpone(now);
+        return;
+    case UpdateChoice::Skip:
+        updates.skip(now);
+        return;
+    case UpdateChoice::Now:
+        break;
+    }
+    updates.startDownload();
+    UpdateService::Status outcome;
+    {
+        GuiUpdateProgress progress(*gui);
+        if (background != nullptr)
+            progress.background = background->tex;
+        progress.show();
+        outcome = progress.finalStatus;
+    }
+    if (outcome.phase != UpdateService::Phase::Downloaded)
+        return;
+#ifdef AB_PLATFORM_RPI
+    // the session loop takes it from here (payload_rpi/system/autobleem-session.sh)
+    app.session().menuOption = MENU_OPTION_UPDATE;
+    menuVisible = false;
+#else
+    GuiConfirm confirm(*gui);
+    confirm.label = _("Downloaded into System/Updates - a Raspberry Pi would run the installer now");
+    confirm.show();
+#endif
+}
+#endif

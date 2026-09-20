@@ -22,6 +22,10 @@ struct PlatformConfig {
     std::string retroarchRomsDir = "RetroArch/roms"; // the other systems' ROM folders; relative to the USB root
     std::string retroarchBiosDir = "RetroArch/bios"; // RetroArch's system dir, the cores' BIOS files; likewise
     std::string downloadCommand; // fetches %u to %o, with its own timeout; "" = this platform cannot (the console)
+    // the online update (UpdateService, AB_ONLINE_UPDATE builds): where the download repository is, and how a
+    // package of tens of MB is fetched (%u, %o, no short timeout); "" = no update check on this platform
+    std::string repoUrl;
+    std::string updateDownloadCommand;
     // what this platform calls its USB root - the prefix its playlists carry ("/media" on the console,
     // "/media/autobleem" on a Pi). Not applied to Env: it is for a tool writing the target's files from
     // another machine (UpdateRoms), where Env's root is that machine's.

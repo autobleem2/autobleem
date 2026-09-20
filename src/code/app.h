@@ -16,6 +16,9 @@
 #include "core/services/resume_point.h"
 #include "core/services/retroarch.h"
 #include "core/services/scan_service.h"
+#ifdef AB_ONLINE_UPDATE
+#include "core/services/update_service.h"
+#endif
 #include <ableem/engine/thumbnail_lookup.h>
 
 //******************
@@ -48,6 +51,12 @@ public:
     // hands the scan config.ini's "online" and the platform's download command - at start, and again
     // whenever Options may have changed the setting
     void applyOnlineSetting();
+#ifdef AB_ONLINE_UPDATE
+    // the online update check (a Pi, a dev host): configured from the platform, config.ini's "updates"
+    // channel and the build's version facts - at start, and again whenever Options may have changed it
+    UpdateService &updates() { return updates_; }
+    void applyUpdateSetting();
+#endif
     Session &session() { return session_; }
 
 protected:
@@ -62,6 +71,9 @@ protected:
     RetroArchService retroArch_;
     ableem::ThumbnailLookup thumbnails_;
     ScanService scans_{gameLibrary, &retroArch_};
+#ifdef AB_ONLINE_UPDATE
+    UpdateService updates_;
+#endif
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
 };
