@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Pack the RetroArch cores and bundles for one Pi architecture into a single tarball for the download
 # repository (CLAUDE.md, "The download repository") - nothing is compiled: this downloads exactly what
-# payload_rpi/install.sh's download_retroarch_content() fetches from buildbot.libretro.com, once, so an
+# payload_linux/install.sh's download_retroarch_content() fetches from buildbot.libretro.com, once, so an
 # install gets one file from our server instead of ~130 requests to libretro's.
 #
 #   ci/build_cores.sh armhf            # buildbot's linux/armhf nightly

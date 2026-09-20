@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build payload_rpi/system/biospack.txt (or biospack-arm64.txt), the BIOS pack install.sh downloads -
+"""Build payload_linux/system/biospack.txt (or biospack-arm64.txt), the BIOS pack install.sh downloads -
 and, with --arch psc, payload/RetroArch/bios/biospack.txt, the console's (what the PC installer fetches
 into RetroArch/bios on a stick).
 
@@ -22,8 +22,8 @@ carries (psc/cores/latest.json -> its cores-psc-<date>.json; KMFD's km_<core>_xt
 onto the plain core names RetroBIOS uses), plus the systems only the console's cores cover (Saturn,
 Dreamcast, DS, PC-FX, Atari ST, ...). Its manifest is payload/RetroArch/bios/biospack.txt.
 
-    python tools/biospack.py                 # rewrite payload_rpi/system/biospack.txt (armhf) from the pinned commit
-    python tools/biospack.py --arch arm64    # rewrite payload_rpi/system/biospack-arm64.txt
+    python tools/biospack.py                 # rewrite payload_linux/system/biospack.txt (armhf) from the pinned commit
+    python tools/biospack.py --arch arm64    # rewrite payload_linux/system/biospack-arm64.txt
     python tools/biospack.py --ref main      # try RetroBIOS's current main (then update RETROBIOS_REF)
     python tools/biospack.py --list          # print what is in and out, per system, and stop
     python tools/biospack.py --arch arm64 --list
@@ -56,9 +56,9 @@ BUILDBOT_INDEX = "https://buildbot.libretro.com/nightly/linux/{buildbot_arch}/la
 REPO = os.path.join(os.path.dirname(__file__), "..")
 ARCHES = {
     "armhf": {"buildbot_arch": "armhf", "manifest_name": "biospack.txt",
-              "manifest_dir": os.path.join(REPO, "payload_rpi", "system"), "where": "the Raspberry Pi"},
+              "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the Raspberry Pi"},
     "arm64": {"buildbot_arch": "aarch64", "manifest_name": "biospack-arm64.txt",
-              "manifest_dir": os.path.join(REPO, "payload_rpi", "system"), "where": "the Raspberry Pi"},
+              "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the Raspberry Pi"},
     "psc": {"buildbot_arch": None, "manifest_name": "biospack.txt",
             "manifest_dir": os.path.join(REPO, "payload", "RetroArch", "bios"), "where": "the PlayStation Classic"},
 }
@@ -397,7 +397,7 @@ def main():
                          help="which target's core list to build the pack for: the Pi's armhf (default) or arm64, "
                               "or psc, the console")
     parser.add_argument("--ref", default=RETROBIOS_REF, help="RetroBIOS commit or branch to read (default: the pinned one)")
-    parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_rpi/system/"
+    parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_linux/system/"
                          "biospack.txt for armhf, biospack-arm64.txt for arm64, payload/RetroArch/bios/biospack.txt "
                          "for psc)")
     parser.add_argument("--list", action="store_true", help="print the selection and change nothing")

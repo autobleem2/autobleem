@@ -1,7 +1,7 @@
 # Installing AutoBleem on a Raspberry Pi, from a blank SD card
 
 A step-by-step path from an empty SD card to a running AutoBleem Pi. For everything else (the data
-partition, RetroArch, adding games, troubleshooting) see `payload_rpi/README.md` - this page only gets you
+partition, RetroArch, adding games, troubleshooting) see `payload_linux/README.md` - this page only gets you
 there.
 
 **64-bit note**: the 64-bit build is cross-compiled, packaged and verified on the PC (real aarch64
@@ -104,7 +104,7 @@ the BIOS pack, install AutoBleem itself, and set up the boot splash. Let it fini
 tells you where everything landed.
 
 If it stops at "no room to make one" because the card's root filesystem was already grown over the whole
-card (Raspberry Pi Imager's default), that is expected and covered in `payload_rpi/README.md` under "The
+card (Raspberry Pi Imager's default), that is expected and covered in `payload_linux/README.md` under "The
 data partition" - the short version is `sudo bash install.sh --shrink-root 8`, which repartitions the card
 on the next boot (destructive if you already put something on the card - do this on a fresh card).
 
@@ -116,12 +116,12 @@ sudo reboot
 
 The Pi comes back up straight into the AutoBleem launcher on the TV/monitor, no login prompt. Plug in a USB
 gamepad, and add games by copying them onto the `AUTOBLEEM` partition (`Games/<game name>/`) from any
-computer - pull the card, or `scp`/network-share to the Pi while it runs. See `payload_rpi/README.md`
+computer - pull the card, or `scp`/network-share to the Pi while it runs. See `payload_linux/README.md`
 ("Where things go", "Games for the other systems") for the full layout and how RetroArch's games are
 scanned in.
 
 ## If it does not come up
 
-`payload_rpi/README.md`'s "If something goes wrong" section covers this: `Alt+F2` for a login prompt,
+`payload_linux/README.md`'s "If something goes wrong" section covers this: `Alt+F2` for a login prompt,
 `sudo journalctl -u autobleem -f` for what the launcher is doing, and the specific black-screen/no-launcher/
 no-games symptoms it has already seen.

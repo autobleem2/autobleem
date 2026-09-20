@@ -46,7 +46,7 @@ This is a port in progress. Be aware of what is and is not here:
 ./tools/make_rpi_package.sh --arch arm64     # -> build_rpi64/autobleem-rpi-arm64.tar.gz
 ```
 
-pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` (32-bit) and `payload_rpi/Autobleem/bin/emu-arm64/`
+pcsx-ab is checked in under `payload_linux/Autobleem/bin/emu/` (32-bit) and `payload_linux/Autobleem/bin/emu-arm64/`
 (64-bit) and rides along. To refresh it from a new build, run pcsx-rearmed-develop's
 `AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` (32-bit) or `./make_rpi64.sh` (64-bit), which copies its
 `build_rpi/dist/` or `build_rpi64/dist/` there.

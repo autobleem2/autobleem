@@ -28,7 +28,7 @@ last run on that host.
 **pcsx-ab first.** For `psc`, `rpi` and `rpi64` the script begins with the emulator: pcsx-ab's own
 `ci/build.sh <target>` in its checkout (`AB_PCSX_DIR`, else `../pcsx-ab`, `../pcsx-ab2` or
 `../pcsx-rearmed-develop` next to this tree; the CI checks out `autobleem/pcsx-ab2` there), and the stripped
-`pcsx-ab` + `plugins/*.so` replace `payload/Autobleem/bin/emu/` or `payload_rpi/Autobleem/bin/emu{,-arm64}/`
+`pcsx-ab` + `plugins/*.so` replace `payload/Autobleem/bin/emu/` or `payload_linux/Autobleem/bin/emu{,-arm64}/`
 before the package is made - so a package always ships an emulator built by the same image, from the same
 run. `AB_NO_PCSX=1` ships the checked-in binaries instead (a developer without that checkout). The console
 emulator is built with `gles=ON` (EGL on Weston - `gpu_gles.so`), the Pis with SDL2's renderer; the 32-bit

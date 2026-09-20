@@ -11,7 +11,7 @@
 //
 // The download: each needed tarball into <usb>/System/Updates/, sha256-checked against the catalog, then
 // pending.json for the Pi's autobleem-update script (the launcher exits with MENU_OPTION_UPDATE and the
-// session loop runs it - payload_rpi/system/autobleem-session.sh). Progress is the growing file's size.
+// session loop runs it - payload_linux/system/autobleem-session.sh). Progress is the growing file's size.
 //
 #pragma once
 

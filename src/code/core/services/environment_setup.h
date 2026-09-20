@@ -2,7 +2,7 @@
 // EnvironmentSetup: tells ableem::Environment where everything is, from a program's command line. The one
 // place that knows the difference between the console layout (/media, /usr/sony) and a root given on the
 // command line (a debug host, or the Raspberry Pi port, where that root is the mount point of the exFAT
-// data partition - see payload_rpi/). Was main.cpp's setupEnvironment(); the console tools under apps/
+// data partition - see payload_linux/). Was main.cpp's setupEnvironment(); the console tools under apps/
 // share it, which is how they find the main GUI's config.ini, themes and fonts.
 //
 #pragma once

@@ -14,7 +14,7 @@
 # pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64 from its own checkout
 # (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with its
 # ci/build.sh, and the stripped result replaces the checked-in payload/Autobleem/bin/emu/ (console) or
-# payload_rpi/Autobleem/bin/emu{,-arm64}/ (Pi) before the package is made. AB_NO_PCSX=1 keeps the
+# payload_linux/Autobleem/bin/emu{,-arm64}/ (Pi) before the package is made. AB_NO_PCSX=1 keeps the
 # checked-in binaries - for a developer without that checkout; the CI always builds it.
 #
 #   AB_JOBS=N       parallel jobs (default: nproc)
@@ -163,8 +163,8 @@ build_rpi() { # build_rpi armhf|arm64
         arm64) dir=build_rpi64; toolchain=toolchains/rpi64/RPi64toolchain.cmake; proc=aarch64 ;;
     esac
     case "$arch" in
-        armhf) build_pcsx rpi   payload_rpi/Autobleem/bin/emu ;;
-        arm64) build_pcsx rpi64 payload_rpi/Autobleem/bin/emu-arm64 ;;
+        armhf) build_pcsx rpi   payload_linux/Autobleem/bin/emu ;;
+        arm64) build_pcsx rpi64 payload_linux/Autobleem/bin/emu-arm64 ;;
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \

@@ -475,7 +475,7 @@ def index_images(repo, base_url):
 #*******************************
 def index_samples(repo, base_url):
     """samples/samples-<date>.tar.gz (+ samples-<date>.json, what is inside - tools/build_samples.py) - the
-    newest kept; latest.json is what payload_rpi/install.sh reads (url, sha256, date, the games)."""
+    newest kept; latest.json is what payload_linux/install.sh reads (url, sha256, date, the games)."""
     root = os.path.join(repo, "samples")
     dated = {}
     for path in data_files(root):

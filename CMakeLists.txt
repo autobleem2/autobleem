@@ -16,7 +16,7 @@ option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libchdr)" ON
 # and core/services/environment.h derives the semantic macros the code checks (AB_DEBUG_HOST, AB_APPLIANCE,
 # AB_ROOT_RELATIVE_LAYOUT, AB_HAS_INTERNAL_GAMES) - the sources never test the CPU or the OS for this.
 #   psc    the PlayStation Classic (the console): the /media tree, /gaadata's internal games, offline updates
-#   rpi    the Raspberry Pi appliance (payload_rpi/): forks the emulators, halts for real, no internal games,
+#   rpi    the Raspberry Pi appliance (payload_linux/): forks the emulators, halts for real, no internal games,
 #          everything on the exFAT data partition given on the command line, the online update
 #   pcusb  the 32-bit PC USB-stick appliance: rpi's semantics on x86
 #   win    the Windows product (the NSIS installer): a real target on a desktop OS

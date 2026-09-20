@@ -24,7 +24,7 @@ SELF_SERVICE=autobleem-firstboot.service
 PACKAGE="$IMAGE_DIR/autobleem-rpi.tar.gz"
 UNPACK_DIR="$IMAGE_DIR/autobleem-rpi"
 BOOT_DIR=/boot/firmware
-OPTIONS_FILE="$BOOT_DIR/autobleem.txt"      # written by tools/make_rpi_image.sh from payload_rpi/system/autobleem.txt
+OPTIONS_FILE="$BOOT_DIR/autobleem.txt"      # written by tools/make_rpi_image.sh from payload_linux/system/autobleem.txt
 INSTALL_LOG=/var/log/autobleem-firstboot-install.log   # install.sh's output, for a look after the fact (ssh)
 
 # the script's stdout is tty1; the journal only gets what log() sends it
@@ -174,7 +174,7 @@ note_in_data_logs() {
 # options: autobleem.txt on the boot partition
 #*******************************
 # key=value lines, # comments; edited from any PC (FAT), so CRLF and BOM are tolerated. Keys are what
-# payload_rpi/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads, samples.
+# payload_linux/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads, samples.
 # WiFi is deliberately not here - Raspberry Pi Imager's customisation and the boot partition's own
 # network-config (cloud-init) already cover "preset WiFi"; this script only asks when neither did.
 declare -A OPT=()

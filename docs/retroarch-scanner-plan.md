@@ -220,7 +220,7 @@ with these particulars:
 - The scan status line already shows the PS1 pass; it gets the ROM pass too ("Scanning Sega - Mega
   Drive - Genesis... 99 games").
 - The Game Manager's per-game preview works for RetroArch games (it already reads the thumbnails tree).
-- `payload_rpi/README.md`'s "Games for the other systems" shrinks to "copy them in, wait for the line".
+- `payload_linux/README.md`'s "Games for the other systems" shrinks to "copy them in, wait for the line".
 
 **Done 2026-09-19**, as far as it goes: the status line came with step 1 ("Scanning ROMs n/m: <system>",
 "Fetching box art n/m: <game>" with step 3, the ROM count in "Scan complete"), the README with steps 1-3.

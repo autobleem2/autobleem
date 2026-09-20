@@ -7,7 +7,7 @@
 #   docker/run.sh ci/build_retroarch.sh all              # both architectures
 #
 # Output: build_retroarch/dist/retroarch-<tag>-<arch>.tar.gz (+ .sha256) - `make DESTDIR=... install` of
-# the same ./configure as payload_rpi/install.sh's source build (KMS/EGL/GLES, udev, ALSA, SDL2, networking;
+# the same ./configure as payload_linux/install.sh's source build (KMS/EGL/GLES, udev, ALSA, SDL2, networking;
 # no X11/Wayland/Qt/ffmpeg), plus two files under usr/local/share/autobleem/: retroarch.version (the tag -
 # install.sh's stamp) and retroarch.depends (the runtime packages, one per line, Bookworm names).
 #

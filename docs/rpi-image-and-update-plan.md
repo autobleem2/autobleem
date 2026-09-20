@@ -6,7 +6,7 @@ this file (per CLAUDE.md's "finished plans leave docs/" rule) once implemented, 
 updated plan.
 
 **Status 2026-09-19 (end of day):** **Part 2 is implemented** - `tools/make_rpi_image.sh`,
-`payload_rpi/system/autobleem-firstboot.{service,sh}`, `autobleem.txt`, `install.sh --grow-root`,
+`payload_linux/system/autobleem-firstboot.{service,sh}`, `autobleem.txt`, `install.sh --grow-root`,
 `tools/rpi_imager_repo.json` + `tools/rpi_imager_local_manifest.py`; both architectures built on the Pi 400,
 the arm64 image flashed with Imager presets and taken through the whole first boot into the launcher ("What
 the first real boot changed" below is the diff between this plan and what shipped). CLAUDE.md's "Flashable
@@ -16,7 +16,7 @@ CLAUDE.md.
 
 ## Context
 
-Today the Raspberry Pi port ships only as `payload_rpi/` + `install.sh`, run by hand over ssh on top of a
+Today the Raspberry Pi port ships only as `payload_linux/` + `install.sh`, run by hand over ssh on top of a
 stock Raspberry Pi OS Lite install (`tools/make_rpi_package.sh` -> `autobleem-rpi(.tar.gz|-arm64.tar.gz)`).
 That is a good dev/test path but a poor "give this to someone else" path: they still need to flash Lite
 themselves, get ssh working, copy the tarball up and run `sudo bash install.sh`. The owner wants a second
@@ -41,7 +41,7 @@ launcher starts, with progress shown on tty1.
 
 ### Shared piece: a diff-copy helper in `install.sh`
 
-Add `apply_payload_diff(src_tree, dest_tree)` to `payload_rpi/install.sh`: walks the files under `src_tree`
+Add `apply_payload_diff(src_tree, dest_tree)` to `payload_linux/install.sh`: walks the files under `src_tree`
 (the staged/extracted package - `Autobleem/`, `themes/`, plus `Autobleem/rc/*.sh`), and for each one compares
 `sha256sum` against the same relative path under `dest_tree`; copies only when missing or different. This
 replaces the current unconditional `cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"` loop in `install_payload()`
@@ -73,7 +73,7 @@ them on an update: `--update` (forces update mode even if autodetection is ambig
 New folder in the payload layout: `Autobleem/update/` (an empty dir kept by a `placeholder` file, like
 `Games/`/`Apps/` are today). A user copies `autobleem-rpi.tar.gz` (or `-arm64`) there from a PC.
 
-`payload_rpi/system/autobleem-session.sh` gains an `apply_pending_update()` step, called once right after
+`payload_linux/system/autobleem-session.sh` gains an `apply_pending_update()` step, called once right after
 `boot_splash_down` and before the `while true` launcher loop (so it runs once per boot, not once per
 launcher-restart-after-RetroArch cycle):
 - Look for exactly one `*.tar.gz` under `$DATA_MOUNT/Autobleem/update/`. None -> return immediately (the
@@ -86,7 +86,7 @@ launcher-restart-after-RetroArch cycle):
   simpler: the tarball name itself, `-arm64` suffix vs `dpkg --print-architecture`); mismatch -> log a
   warning to tty1, move the tarball to `.rejected` and continue booting normally rather than bricking the
   boot loop.
-- Call the same diff-copy logic `install.sh` uses (factor it into `payload_rpi/system/lib/payload_diff.sh`,
+- Call the same diff-copy logic `install.sh` uses (factor it into `payload_linux/system/lib/payload_diff.sh`,
   sourced by both `install.sh` and `autobleem-session.sh`, so there is exactly one implementation) over
   `.extract/Autobleem` -> `$DATA_MOUNT/Autobleem`, `.extract/themes` -> `$DATA_MOUNT/themes`. Preserve
   `config.ini` the same way `install_payload()` does.
@@ -97,7 +97,7 @@ launcher-restart-after-RetroArch cycle):
   `$LOG_DIR/update.log`, cleans up `.extract`, and **falls through to starting the launcher anyway** with
   the old files untouched - an update must never be the reason the appliance fails to boot.
 
-`payload_rpi/README.md` gets a short "Updating" section covering both paths (ssh re-run of `install.sh`,
+`payload_linux/README.md` gets a short "Updating" section covering both paths (ssh re-run of `install.sh`,
 and drag a new tarball into `Autobleem/update/` and reboot).
 
 ### Why this is "fastest possible" without adding new infrastructure
@@ -144,7 +144,7 @@ Steps:
    small and shared with kernel/firmware; the injected tree here is small, ~30-50 MB, since the package's
    `RetroArch/` entry is just empty standard subfolders - no cores/BIOS/thumbnails are bundled, those still
    come down on first boot exactly as they do today).
-4. Install a new systemd oneshot unit, `autobleem-firstboot.service` (`payload_rpi/system/autobleem-firstboot.service`
+4. Install a new systemd oneshot unit, `autobleem-firstboot.service` (`payload_linux/system/autobleem-firstboot.service`
    + a small runner script `autobleem-firstboot.sh`, both new files checked into the repo and copied in by
    the build script - not generated ad hoc), `WantedBy=multi-user.target`, ordered `After=multi-user.target`
    so it runs once other boot-time setup (including cloud-init/firstrun) has had its shot. The script:
@@ -229,16 +229,16 @@ time.
 
 ## Files touched / added
 
-- `payload_rpi/install.sh` - `detect_existing_install()`, `apply_payload_diff()` (or sourced from the new
+- `payload_linux/install.sh` - `detect_existing_install()`, `apply_payload_diff()` (or sourced from the new
   shared lib), update-mode branch in `main()`, new flags, `usage()`/README updates.
-- `payload_rpi/system/lib/payload_diff.sh` - new, the shared diff-copy function.
-- `payload_rpi/system/autobleem-session.sh` - `apply_pending_update()`.
-- `payload_rpi/Autobleem/update/placeholder` - new empty dir.
-- `payload_rpi/system/autobleem-firstboot.service`, `payload_rpi/system/autobleem-firstboot.sh` - new.
+- `payload_linux/system/lib/payload_diff.sh` - new, the shared diff-copy function.
+- `payload_linux/system/autobleem-session.sh` - `apply_pending_update()`.
+- `payload_linux/Autobleem/update/placeholder` - new empty dir.
+- `payload_linux/system/autobleem-firstboot.service`, `payload_linux/system/autobleem-firstboot.sh` - new.
 - `tools/make_rpi_package.sh` - simplify the printed re-install usage block now that `install.sh` self-detects.
 - `tools/make_rpi_image.sh` - new, run on the Pi 400.
 - `tools/rpi_imager_repo.json` - new template.
-- `payload_rpi/README.md` - "Updating" section, "Flashing with Raspberry Pi Imager" section.
+- `payload_linux/README.md` - "Updating" section, "Flashing with Raspberry Pi Imager" section.
 - `CLAUDE.md` - new dated entries under the Raspberry Pi port section once implemented (per existing
   convention in this file).
 

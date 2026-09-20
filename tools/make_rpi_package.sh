@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Package a Raspberry Pi cross build into the tarball payload_rpi/install.sh expects.
+# Package a Raspberry Pi cross build into the tarball payload_linux/install.sh expects.
 #
 #   ./make_rpi.sh                      # 32-bit cross-compile (toolchains/rpi/RPitoolchain.cmake)
 #   ./tools/make_rpi_package.sh        # -> build_rpi/autobleem-rpi.tar.gz
@@ -14,7 +14,7 @@
 #                                      # ...and scp it to the Pi's home (default: $AB_PI_HOST, else
 #                                      # pi@raspberrypi.local), the way make_psc.sh talks to its build server
 #
-# The package is payload_rpi/ as checked in (install.sh, README.md, system/ for the host-side files, and the
+# The package is payload_linux/ as checked in (install.sh, README.md, system/ for the host-side files, and the
 # data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu (armhf) or bin/emu-arm64
 # (arm64), put there by pcsx-rearmed-develop's make_rpi.sh/make_rpi64.sh - Games/, Apps/) with the built
 # parts filled in: the binary and its resources in Autobleem/bin/autobleem, the cover databases in
@@ -22,7 +22,7 @@
 # onto the exFAT partition as they are - the same install.sh serves both architectures, detecting which at
 # runtime (dpkg --print-architecture).
 #
-# Copy the tarball to the Pi, unpack it, and run install.sh from inside it. See payload_rpi/README.md.
+# Copy the tarball to the Pi, unpack it, and run install.sh from inside it. See payload_linux/README.md.
 set -euo pipefail
 
 ARCH=armhf
@@ -50,7 +50,7 @@ esac
 
 cd "$(dirname "$0")/.."
 REPO="$PWD"
-PAYLOAD="$REPO/payload_rpi"
+PAYLOAD="$REPO/payload_linux"
 BUILD_DIR="$REPO/$BUILD_SUBDIR"
 STAGE="$BUILD_DIR/package/autobleem-rpi"
 TARBALL="$BUILD_DIR/autobleem-rpi${TARBALL_SUFFIX}.tar.gz"
@@ -134,7 +134,7 @@ else
     echo "    (no db/covers*.db to include - scanned games will have no titles or covers)"
 fi
 
-# the empty 'placeholder' files (payload_rpi/ and src/resources/music) only exist so git keeps the empty
+# the empty 'placeholder' files (payload_linux/ and src/resources/music) only exist so git keeps the empty
 # directories; they have no business on the Pi
 find "$STAGE" -type f -name placeholder -delete
 

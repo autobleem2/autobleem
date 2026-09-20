@@ -236,7 +236,7 @@ generator, the year on the meta panel, the per-size bold font cache `Fonts::bold
 wrappers + sorted languages, music not restarting on theme browse, Favorites fallback, rc guards, the
 stock-SonyUI/`.lic`/RetroBoot-patch cleanup), the libchdr refresh, and Phase 1 - `RdbReader`,
 `MetadataLookup`, `ThumbnailLookup` (see lib_ableem/engine below), verified on the Pi 400 with the
-libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, the multi-disc folder merge
+libretro box arts mirrored by `payload_linux/install.sh --thumbnails`; Phase 2, the multi-disc folder merge
 (`DiscSuffix`, `mergeMultiDiscFolders`); pcsx-ab's libchdr refresh (its own repo); `core/version.h` + the
 `make_psc.sh` link gates; Phase 3, lightgun games (`LightgunService`, `GameSet::Lightgun`, the editors);
 plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
@@ -276,7 +276,7 @@ Things to know when working on the Pi over ssh: `plink -pw` from `C:\Program Fil
 will not install ssh keys), `sudo -S` with the password on stdin, the journal is not persistent, and the
 launcher's logs are `System/Logs/AB_out.txt`/`AB_err.txt` on the partition. PS1 games run in **pcsx-ab** as on the console: the Pi build from `E:\Programming\pcsx-rearmed-develop`
 (`AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` copies its `build_rpi/dist/` into
-`payload_rpi/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
+`payload_linux/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
 Pi `rc/launch.sh` builds `/tmp/runpcsx` exactly as the console's does (`.pcsx` -> the `!SaveStates` folder,
 `bios` -> `System/Bios`, `plugins` -> `emu/plugins`, `-region 4`, `-load 1` on resume). The BIOS is the user's:
 `System/Bios/romw.bin` + `romJP.bin` (pcsx.cfg's `Bios = SET_BY_PCSX` picks one by serial; HLE without them).
@@ -324,7 +324,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so the appliances
   (`rpi`, `pcusb`) take their own branch there, flags from the toolchain file. Without that the Pi build was
   getting armv8 code, which would SIGILL on a Pi 2.
-- **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
+- **Package**: `payload_linux/` is a sibling of `payload/`, not inside it, and is laid out as the package the
   Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
   `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces, the plymouth theme), and the data-partition
   tree exactly as it lands on the exFAT partition - `Autobleem/rc/` (the Pi `launch.sh`/`launch_rb.sh`/
@@ -347,7 +347,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
 - **Boot screen** (2026-09-18): the installer sets the KMS mode for the whole boot on the kernel command line
   (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...`, `--hdmi-mode`; `config.txt`'s `hdmi_mode` is ignored by
   the KMS driver) - the launcher asks SDL for 1280x720 anyway, so plymouth and the launcher share one mode and
-  the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_rpi/system/plymouth/`
+  the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_linux/system/plymouth/`
   (`splash.png` 1280x720 on black), installed to `/usr/share/plymouth/themes/autobleem` and packed into **every** installed kernel's initramfs
   (`update-initramfs -u -k all` since 2026-09-18 - the 32-bit image carries one per board, v6/v7/v7l/v8,
   and a card set up on the Pi 400 showed the stock theme when moved to a Pi 3; the shrink hook stays on the
@@ -388,7 +388,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
 - **Other systems run** (2026-09-18): ROMs in `RetroArch/roms/<system>/`, scanned by RetroArch's own Import
-  Content (guide: `payload_rpi/README.md`, "Games for the other systems"), launched from the RetroArch set
+  Content (guide: `payload_linux/README.md`, "Games for the other systems"), launched from the RetroArch set
   in-process like pcsx. What that took: `RetroArchService::mapPlaylistPath()` (no double `/media` prefix on a
   Pi), only installed cores in the database->core table, the `showOptions()` null deref on a fresh screen
   with a foreign game (the launcher used to die on the way back and be restarted with the splash),
@@ -446,14 +446,14 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
 second way to get AutoBleem onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh`
 takes an official Raspberry Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi
 Foundation's stable "latest" redirect, sha256-verified against its published checksum, or a local `--base`),
-loop-mounts it and injects an AutoBleem package plus `payload_rpi/system/autobleem-firstboot.{service,sh}`
+loop-mounts it and injects an AutoBleem package plus `payload_linux/system/autobleem-firstboot.{service,sh}`
 onto its root filesystem under `/opt/autobleem-image/` - **injection only**, deliberately: no chroot, no
 qemu, no package pre-install, nothing from the base image is ever executed at build time (`systemctl
 enable`'s effect is one hand-crafted symlink instead), so the same mechanism works for either architecture
 from either architecture's build host. Two edits on the boot partition: `cmdline.txt` loses the word
 **`resize`** - on Trixie that is what the initramfs (`local-premount/resize_early`, and `set_partuuid`)
 keys on to grow the root over the whole card, which would leave `install.sh` no room for the data
-partition - and **`autobleem.txt`** (from `payload_rpi/system/`) is added: AutoBleem's first-boot options
+partition - and **`autobleem.txt`** (from `payload_linux/system/`) is added: AutoBleem's first-boot options
 as `key=value`, editable from any PC (`root_gib` default 8, `hdmi_mode`, `retroarch`, `thumbnails`, `bios`,
 `downloads`; CRLF/BOM tolerated), and **ssh is enabled** (the owner's rule, 2026-09-20: once installed the launcher owns
 tty1 and the keyboard, so there is no console to enable it from - the `multi-user.target.wants/ssh.service`
@@ -474,7 +474,7 @@ memory note: optional everywhere): unless `autobleem.txt` says `retroarch=`, the
 silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh` makes that a lean PS1-only
 install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
 pack shrinks to `scph5501.bin`/`scph5500.bin`.
-**The first boot has a screen** (2026-09-20, the owner's ask): `payload_rpi/system/autobleem-install-ui.py`
+**The first boot has a screen** (2026-09-20, the owner's ask): `payload_linux/system/autobleem-install-ui.py`
 draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdlib - it decodes the plymouth
 `splash.png` itself (a small PNG reader), renders text from the console's Terminus PSF fonts
 (`/usr/share/consolefonts`, PSF1/2 with their unicode tables) and puts tty8 in `KD_GRAPHICS`. The logo,
@@ -519,7 +519,7 @@ writes a filled-in copy (real `extract_size`/`extract_sha256`/`image_download_si
 (no publishing pipeline yet). **`tools/rpi_imager_local_manifest.py`** turns that into what Imager's own
 `doc/local_json/create_local_json.py` produces for local files - a `*.rpi-imager-manifest` with `file://`
 URLs (double-click it, or App Options -> Content Repository -> Use custom file, or `--repo`) - which is what
-makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
+makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_linux/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
 **The download repository** (2026-09-19; its plan, `docs/repo-server-plan.md`, was removed on 2026-09-20 when
@@ -725,20 +725,20 @@ port targets 32-bit Trixie (and Bookworm).
   Its own `toolchains/rpi64/RPi64toolchain.cmake` and `make_rpi64.sh` (mirroring the 32-bit ones there) build
   it as a plain aarch64 Linux target instead, `PCSXAB_GLES`/dynarec left off. Built 2026-09-19: a real
   aarch64 `pcsx-ab` + the three plugins, committed into `emu-arm64/` below.
-- **Package**: one `payload_rpi/` tree still serves both architectures - `install.sh` reads
+- **Package**: one `payload_linux/` tree still serves both architectures - `install.sh` reads
   `dpkg --print-architecture` (`armhf` or `arm64`) into `$ARCH`, and separately into `$RA_ARCH` (`armhf` or
   **`aarch64`**, not `arm64` - buildbot.libretro.com's own directory name for 64-bit ARM does not match
   Debian's; caught and fixed 2026-09-19 before it shipped, `nightly/linux/arm64/` 404s) for the
   `buildbot.libretro.com/nightly/linux/$RA_ARCH/latest` cores URL. Only the emulator binaries are
-  architecture-specific, so pcsx-ab (with its `plugins/`) is checked in twice: `payload_rpi/Autobleem/bin/emu/` (armhf) and
-  `payload_rpi/Autobleem/bin/emu-arm64/` (arm64, built and committed 2026-09-19).
+  architecture-specific, so pcsx-ab (with its `plugins/`) is checked in twice: `payload_linux/Autobleem/bin/emu/` (armhf) and
+  `payload_linux/Autobleem/bin/emu-arm64/` (arm64, built and committed 2026-09-19).
   `tools/make_rpi_package.sh --arch armhf|arm64` (armhf is the default, unchanged output name)
   picks the matching `build_rpi`/`build_rpi64` source directory and, for `arm64`, moves `emu-arm64/`'s
   contents over `emu/` while staging so the on-device path stays `Autobleem/bin/emu/pcsx-ab` either way; the
   tarball is named `autobleem-rpi.tar.gz` (armhf) or `autobleem-rpi-arm64.tar.gz` (arm64) so the two never
   collide on the Pi's home directory during `--push`. Both verified 2026-09-19 - `autobleem-gui` packs with
   UPX as `linux/arm64` (1.2 MB), the 32-bit package rebuilt clean alongside it (no regression).
-- **BIOS pack** (2026-09-19): `tools/biospack.py --arch arm64` builds `payload_rpi/system/biospack-arm64.txt`
+- **BIOS pack** (2026-09-19): `tools/biospack.py --arch arm64` builds `payload_linux/system/biospack-arm64.txt`
   (694 files, 230 MB) from the real `buildbot.libretro.com/nightly/linux/aarch64` core listing, since
   RetroBIOS's own per-target file has no 64-bit Linux entry to read instead - see "BIOS pack" under the
   32-bit section above for the full mechanism, now shared by both architectures. Spot-verified: downloaded
@@ -803,7 +803,7 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   System/Updates" message (try it with `AB_UPDATE_PLATFORM=rpi` and `AB_UPDATE_RETROARCH_VERSION=...` in
   the environment - verified on the PC against the live site: prompt, 48 MB download, pending.json).
 - **The Pi's apply step**: `autobleem-session.sh` sees `AB_SELECTION=6` and runs
-  **`autobleem-update`** (`payload_rpi/system/autobleem-update.sh`, installed to `/usr/local/bin` by
+  **`autobleem-update`** (`payload_linux/system/autobleem-update.sh`, installed to `/usr/local/bin` by
   `install.sh`'s `install_update_helper()` together with the first-boot screen, its splash and a copy
   of the installer under `/usr/local/share/autobleem/`): it unpacks the new package and runs its
   **`install.sh --update`** (`--yes`, RetroArch `prebuilt` only where the stamp says one is installed,
@@ -1531,7 +1531,7 @@ the 118 slot so it clears the footer bar in the launcher's Games state. Where th
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
 its tile. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
-`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_rpi/` next to it is the Raspberry Pi installer
+`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
 ## Conventions and gotchas

@@ -1232,7 +1232,7 @@ create_tree() {
 #*******************************
 # install_payload
 #*******************************
-# payload_rpi/ is the tree that goes on the data partition, laid out exactly like the console's payload/:
+# payload_linux/ is the tree that goes on the data partition, laid out exactly like the console's payload/:
 # Autobleem/bin/autobleem (the app and its resources), Autobleem/bin/db (covers), Autobleem/rc (the launch
 # scripts), Themes/, Games/, Apps/. Installing is copying it across - tools/make_rpi_package.sh is what fills
 # in the parts that are built rather than checked in (the binary, the resources, the cover databases).
