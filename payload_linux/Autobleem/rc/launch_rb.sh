@@ -45,9 +45,10 @@ core_path() {
     esac
     name="${name%_libretro.so}"
 
-    # the cores the installer downloaded from libretro's buildbot first, then the distribution's
+    # the cores the installer downloaded from libretro's buildbot first, then the distribution's under its
+    # multiarch dir (whichever architecture this is)
     local dir
-    for dir in "$RA_DIR/cores" /usr/lib/arm-linux-gnueabihf/libretro /usr/lib/libretro; do
+    for dir in "$RA_DIR/cores" /usr/lib/*-linux-gnu*/libretro /usr/lib/libretro; do
         [ -f "$dir/${name}_libretro.so" ] && { echo "$dir/${name}_libretro.so"; return 0; }
     done
     return 1

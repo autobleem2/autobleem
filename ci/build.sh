@@ -8,14 +8,17 @@
 #   psc      build_psc/     the PlayStation Classic (toolchains/psc, AB_PSC_TOOLCHAIN) -> autobleem-psc-<v>.zip
 #   rpi      build_rpi/     Raspberry Pi 32-bit (toolchains/rpi) -> autobleem-rpi.tar.gz
 #   rpi64    build_rpi64/   Raspberry Pi 64-bit (toolchains/rpi64) -> autobleem-rpi-arm64.tar.gz
+#   pcusb    build_pcusb/   the 32-bit PC USB stick (toolchains/pcusb, i386 Debian) -> autobleem-pcusb-i386.tar.gz;
+#                           its unit tests run too (i386 runs on the host)
 #   win      build_mingw/   Windows (toolchains/mingw) -> autobleem-win-<v>.zip + UpdateRoms-<v>.zip
 #   all      every one of the above, in that order
 #
-# pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64 from its own checkout
-# (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with its
-# ci/build.sh, and the stripped result replaces the checked-in payload/Autobleem/bin/emu/ (console) or
-# payload_linux/Autobleem/bin/emu{,-arm64}/ (Pi) before the package is made. AB_NO_PCSX=1 keeps the
-# checked-in binaries - for a developer without that checkout; the CI always builds it.
+# pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64/pcusb from its own
+# checkout (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with
+# its ci/build.sh, and the stripped result replaces the checked-in payload/Autobleem/bin/emu/ (console) or
+# payload_linux/Autobleem/bin/emu{,-arm64,-i386}/ (the appliances) before the package is made. AB_NO_PCSX=1
+# keeps the checked-in binaries - for a developer without that checkout; the CI always builds it. A pcsx-ab
+# checkout without the target (pcusb, until it has one) is reported and the package ships without it.
 #
 #   AB_JOBS=N       parallel jobs (default: nproc)
 #   AB_PCSX_DIR=D   the pcsx-ab checkout;  AB_NO_PCSX=1  use the checked-in emulator binaries
@@ -93,7 +96,7 @@ pcsx_dir() {
         if [ -f "$d/ci/build.sh" ]; then (cd "$d" && pwd); return; fi
     done
 }
-build_pcsx() { # build_pcsx psc|rpi|rpi64 DEST - pcsx-ab for the target into the payload folder DEST
+build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST - pcsx-ab for the target into the payload folder DEST
     local target="$1" dest="$2" dir
     if [ -n "${AB_NO_PCSX:-}" ]; then
         echo "    AB_NO_PCSX: the checked-in emulator in $dest ships"
@@ -103,6 +106,10 @@ build_pcsx() { # build_pcsx psc|rpi|rpi64 DEST - pcsx-ab for the target into the
     if [ -z "$dir" ]; then
         echo "pcsx-ab checkout not found (AB_PCSX_DIR, or ../pcsx-ab next to this tree; AB_NO_PCSX=1 ships the checked-in binaries)" >&2
         exit 1
+    fi
+    if ! grep -q "$target)" "$dir/ci/build.sh"; then
+        echo "    pcsx-ab at $dir has no $target target yet - the package ships whatever $dest holds"
+        return
     fi
     banner "pcsx-ab $target: $dir"
     (cd "$dir" && AB_JOBS="$JOBS" bash ci/build.sh "$target")
@@ -184,6 +191,24 @@ build_rpi() { # build_rpi armhf|arm64
     dist_note "$target"
 }
 
+build_pcusb() {
+    build_pcsx pcusb payload_linux/Autobleem/bin/emu-i386
+    banner "pcusb: configure + build (build_pcusb)"
+    configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
+    ninja -C build_pcusb -j "$JOBS"
+    banner "pcusb: check"
+    file build_pcusb/autobleem-gui
+    file build_pcusb/autobleem-gui | grep -q 'ELF 32-bit LSB.*Intel 80386'
+    # i386 runs on this host: the suites are a gate here too (their scratch dirs carry the pid, -j is safe)
+    banner "pcusb: tests"
+    ctest --test-dir build_pcusb --output-on-failure -j "$JOBS"
+    banner "pcusb: package"
+    bash tools/make_rpi_package.sh --arch i386
+    dist_reset pcusb
+    cp build_pcusb/autobleem-pcusb-i386.tar.gz dist/pcusb/
+    dist_note pcusb
+}
+
 # --- win: Windows --------------------------------------------------------------------------------------------
 build_win() {
     banner "win: configure + build (build_mingw)"
@@ -208,9 +233,9 @@ build_win() {
 targets=()
 for t in "$@"; do
     case "$t" in
-        all) targets+=(native psc rpi rpi64 win) ;;
-        native|psc|rpi|rpi64|win) targets+=("$t") ;;
-        *) echo "unknown target: $t (native, psc, rpi, rpi64, win, all)" >&2; exit 2 ;;
+        all) targets+=(native psc rpi rpi64 pcusb win) ;;
+        native|psc|rpi|rpi64|pcusb|win) targets+=("$t") ;;
+        *) echo "unknown target: $t (native, psc, rpi, rpi64, pcusb, win, all)" >&2; exit 2 ;;
     esac
 done
 echo "AutoBleem $VERSION - targets: ${targets[*]} - $JOBS jobs"
@@ -222,6 +247,7 @@ for t in "${targets[@]}"; do
         psc)    build_psc ;;
         rpi)    build_rpi armhf ;;
         rpi64)  build_rpi arm64 ;;
+        pcusb)  build_pcusb ;;
         win)    build_win ;;
     esac
     echo "==> $t done in $(( $(date +%s) - t0 )) s"

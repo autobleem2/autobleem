@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# AutoBleem for Raspberry Pi - installer for Raspberry Pi OS Lite, 32-bit (armhf) or 64-bit (arm64).
+# AutoBleem for a Linux appliance - the installer for a Raspberry Pi (Raspberry Pi OS Lite, 32-bit armhf or
+# 64-bit arm64) and for the 32-bit PC USB stick (Debian 12 Bookworm i386).
 #
-# Turns a plain Lite install into an AutoBleem appliance: an exFAT data partition that behaves like the
+# Turns a plain minimal install into an AutoBleem appliance: an exFAT data partition that behaves like the
 # PlayStation Classic's USB stick (drop games onto it from Windows/macOS/Linux), the launcher started at boot
 # on tty1 with no desktop, and RetroArch behind it. The package this unpacks from is built for one
-# architecture (tools/make_rpi_package.sh --arch armhf|arm64); this installer detects which at runtime and
-# picks the matching RetroArch core builds.
+# architecture (tools/make_rpi_package.sh --arch armhf|arm64|i386); this installer detects which at runtime
+# and picks the matching RetroArch builds, and detects the platform - a Pi (its firmware boot partition,
+# cmdline.txt/config.txt) or a PC (GRUB) - for the boot setup. The platform-specific parts are the
+# *_rpi / *_pcusb functions; everything else is shared.
 #
 # Run it from the unpacked release package:   sudo bash install.sh
 # See README.md in this directory for the whole story, including what has and has not run on real hardware.
@@ -17,8 +20,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #*******************************
 # defaults
 #*******************************
-ARCH=""                         # armhf | arm64, set by preflight() from dpkg --print-architecture
-RA_ARCH=""                      # same, used for the buildbot.libretro.com path in download_retroarch_content()
+PLATFORM=""                     # rpi | pcusb, set by detect_platform() (--platform overrides)
+PLATFORM_DIR=""                 # the download repository's folder for this platform's RetroArch builds and
+                                # cores: rpi (armhf, arm64) or pc (i386)
+ARCH=""                         # armhf | arm64 | i386, set by preflight() from dpkg --print-architecture
+RA_ARCH=""                      # same as buildbot.libretro.com spells it (aarch64, x86), for download_retroarch_content()
+BOOT_DIR=""                     # a Pi's firmware partition (/boot/firmware) or a PC's ESP (/boot/efi), set by preflight()
 DATA_LABEL="AUTOBLEEM"          # the exFAT partition's label - also how the README tells users to find it
 DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
@@ -26,14 +33,15 @@ SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() 
 GROW_ROOT_GIB=""                # --grow-root: grow a still-small root to this size first, see grow_root()
 GROW_ONLY=0                     # --grow-only: stop right after the root is grown (the first-boot script's use)
 STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, Themes/, Games/, Apps/)
-DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
+DISK=""                         # --disk: the SD card / USB stick. autodetected from where the boot files or the root live
 DRY_RUN=0
 ASSUME_YES=0                    # --yes: answer every confirmation, for unattended runs over ssh
 DO_PACKAGES=1
 DO_BOOT_CONFIG=1
 QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the launcher is the only thing seen
 BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem logo) from the initramfs on; needs QUIET_BOOT
-HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
+HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it (a Pi;
+                                # a PC's KMS driver takes the screen's native mode and the option is ignored)
 RETROARCH_MODE=prebuilt         # --retroarch: prebuilt (from the download repository) | source | apt | none
 REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: the download repository (CLAUDE.md, "The download repository")
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
@@ -97,7 +105,9 @@ usage() {
     cat <<'EOF'
 Usage: sudo bash install.sh [options]
 
-  --disk DEVICE        SD card to put the data partition on (default: the disk /boot/firmware is on)
+  --platform P         rpi (a Raspberry Pi) or pcusb (the 32-bit PC stick); detected when not given
+  --disk DEVICE        SD card / USB stick to put the data partition on (default: the disk the boot
+                       files - or, on a PC, the root filesystem - are on)
   --mount PATH         where to mount it (default: /media/autobleem)
   --stage DIR          the payload tree to install from (default: this directory)
   --shrink-root GIB    shrink the root filesystem to GIB and use the freed space for the data partition.
@@ -113,9 +123,10 @@ Usage: sudo bash install.sh [options]
   --no-boot-config     do not touch cmdline.txt/config.txt
   --no-quiet-boot      keep the kernel messages and rainbow splash on screen while booting (no boot splash then)
   --no-boot-splash     boot quietly but without the AutoBleem logo (no plymouth)
-  --hdmi-mode MODE     the HDMI mode set on the kernel command line for the whole boot (default: 1920x1080@60;
-                       the launcher draws its 1280x720 UI at 1.5x on a 1080p screen, covers and text sharp;
-                       1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode)
+  --hdmi-mode MODE     a Pi: the HDMI mode set on the kernel command line for the whole boot (default:
+                       1920x1080@60; the launcher draws its 1280x720 UI at 1.5x on a 1080p screen, covers and
+                       text sharp; 1280x720@60 for a 720p screen; "none" leaves the screen's preferred mode).
+                       A PC always boots in the screen's native mode - the option is ignored there
   --retroarch MODE     prebuilt (default): the newest RetroArch release built for this architecture by
                        AutoBleem's download repository (--repo), unpacked in seconds - falls back to source
                        when the repository cannot be reached; source: build the latest release here, 10-40
@@ -127,7 +138,7 @@ Usage: sudo bash install.sh [options]
                        snaps too (~3x)
   --no-downloads       do not download the RetroArch cores, core info, assets, databases from
                        buildbot.libretro.com (a few hundred MB; RetroArch's Online Updater can do it later)
-  --no-bios            do not download the BIOS pack (system/biospack.txt or biospack-arm64.txt: ~190-230 MB
+  --no-bios            do not download the BIOS pack (system/biospack.txt, biospack-arm64.txt or -i386.txt: ~190-230 MB
                        of console, computer, arcade and ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and
                        the PS1 BIOS for pcsx-ab into System/Bios)
   --no-samples         do not install the sample games (a 1 MB pack from the download repository: a homebrew
@@ -151,6 +162,7 @@ EOF
 parse_args() {
     while [ $# -gt 0 ]; do
         case "$1" in
+            --platform)       PLATFORM="${2:?--platform needs rpi or pcusb}"; shift 2 ;;
             --disk)           DISK="${2:?--disk needs a device}"; shift 2 ;;
             --mount)          DATA_MOUNT="${2:?--mount needs a path}"; shift 2 ;;
             --stage)          STAGE_DIR="${2:?--stage needs a directory}"; shift 2 ;;
@@ -198,24 +210,26 @@ preflight() {
         log "Update mode: RetroArch $RETROARCH_MODE, nothing repartitioned"
     fi
 
-    if [ -r /proc/device-tree/model ]; then
-        log "Model: $(tr -d '\0' < /proc/device-tree/model)"
-    else
-        warn "this does not look like a Raspberry Pi (no /proc/device-tree/model)"
-    fi
-
-    # The package is built for one architecture (armhf: toolchains/rpi/RPitoolchain.cmake, or arm64:
-    # toolchains/rpi64/RPi64toolchain.cmake) and the binaries it stages only run on a matching userland.
-    # RA_ARCH feeds download_retroarch_content()'s buildbot path - buildbot.libretro.com calls it "aarch64",
-    # not Debian's "arm64" (dpkg --print-architecture), so the two are not the same string.
+    # The package is built for one architecture (armhf: toolchains/rpi/RPitoolchain.cmake, arm64:
+    # toolchains/rpi64/RPi64toolchain.cmake, i386: toolchains/pcusb/PcUsbToolchain.cmake) and the binaries
+    # it stages only run on a matching userland. RA_ARCH feeds download_retroarch_content()'s buildbot path -
+    # buildbot.libretro.com calls them "aarch64" and "x86", not Debian's "arm64" and "i386"
+    # (dpkg --print-architecture), so the two are not the same string.
     ARCH="$(dpkg --print-architecture)"
     case "$ARCH" in
         armhf) RA_ARCH=armhf ;;
         arm64) RA_ARCH=aarch64 ;;
-        *) die "unsupported architecture '$ARCH' - AutoBleem for the Pi is built for armhf (32-bit) or arm64
-    (64-bit) Raspberry Pi OS Lite." ;;
+        i386)  RA_ARCH=x86 ;;
+        *) die "unsupported architecture '$ARCH' - AutoBleem is built for armhf (32-bit) or arm64 (64-bit)
+    Raspberry Pi OS Lite, and for i386 Debian (the PC stick)." ;;
     esac
     log "Architecture: $ARCH"
+
+    detect_platform
+    case "$PLATFORM" in
+        rpi)   PLATFORM_DIR=rpi; preflight_rpi ;;
+        pcusb) PLATFORM_DIR=pc;  preflight_pcusb ;;
+    esac
 
     if [ -r /etc/os-release ]; then
         # shellcheck disable=SC1091
@@ -228,18 +242,67 @@ preflight() {
     own tty1, but the desktop may fight it for the screen. 'sudo systemctl disable lightdm' if it does."
     fi
 
+    [ -b "$DISK" ] || die "not a block device: $DISK"
+    log "Disk: $DISK"
+}
+
+#*******************************
+# detect_platform
+#*******************************
+# A Raspberry Pi has a device tree with its model in it; the PC stick is an i386 Debian. --platform
+# overrides (a Pi-shaped board that is not a Pi, a PC install to try the Pi paths on).
+detect_platform() {
+    if [ -n "$PLATFORM" ]; then
+        case "$PLATFORM" in
+            rpi|pcusb) log "Platform: $PLATFORM (--platform)" ;;
+            *) die "--platform takes rpi or pcusb (got '$PLATFORM')" ;;
+        esac
+        return 0
+    fi
+    if [ -r /proc/device-tree/model ] && grep -qi 'raspberry' /proc/device-tree/model; then
+        PLATFORM=rpi
+        log "Platform: Raspberry Pi - $(tr -d '\0' < /proc/device-tree/model)"
+    elif [ "$ARCH" = i386 ] || [ "$ARCH" = amd64 ]; then
+        PLATFORM=pcusb
+        log "Platform: PC ($ARCH)"
+    elif [ -r /proc/device-tree/model ]; then
+        PLATFORM=rpi
+        warn "not a Raspberry Pi by its model ($(tr -d '\0' < /proc/device-tree/model)) - taking the Pi's paths anyway"
+    else
+        die "cannot tell what this machine is (no /proc/device-tree/model, not x86) - say --platform rpi|pcusb"
+    fi
+}
+
+# a Pi: the firmware partition holds cmdline.txt/config.txt, and the card is whatever it is on
+preflight_rpi() {
     BOOT_DIR=/boot/firmware
     [ -d "$BOOT_DIR" ] || BOOT_DIR=/boot     # pre-bookworm images keep the firmware files in /boot
     [ -f "$BOOT_DIR/cmdline.txt" ] || die "no cmdline.txt under $BOOT_DIR - is this Raspberry Pi OS?"
     log "Boot files: $BOOT_DIR"
-
     if [ -z "$DISK" ]; then
         local bootpart
         bootpart="$(findmnt -no SOURCE "$BOOT_DIR")" || die "cannot tell which device $BOOT_DIR is on"
         DISK="/dev/$(lsblk -no PKNAME "$bootpart")"
     fi
-    [ -b "$DISK" ] || die "not a block device: $DISK"
-    log "SD card: $DISK"
+}
+
+# the PC stick: GRUB boots it (BIOS or UEFI), the ESP is /boot/efi when there is one (it is the image's
+# first partition, mounted by label whichever way the machine booted), and the stick is the disk the root
+# filesystem is on
+preflight_pcusb() {
+    command -v update-grub >/dev/null 2>&1 || warn "no update-grub - the boot setup (quiet boot, splash) will be skipped"
+    if findmnt -no SOURCE /boot/efi >/dev/null 2>&1; then
+        BOOT_DIR=/boot/efi
+    else
+        BOOT_DIR=/boot
+    fi
+    log "Boot files: $BOOT_DIR (GRUB)"
+    if [ -z "$DISK" ]; then
+        local rootpart
+        rootpart="$(findmnt -no SOURCE /)" || die "cannot tell which device / is on"
+        rootpart="${rootpart%%\[*}"   # a bind/subvol mount shows as /dev/sdX2[/path]
+        DISK="/dev/$(lsblk -no PKNAME "$rootpart")"
+    fi
 }
 
 #*******************************
@@ -348,8 +411,8 @@ install_retroarch_prebuilt() {
     fi
     command -v python3 >/dev/null 2>&1 || { warn "python3 is needed to read the repository's index"; return 1; }
     log "RetroArch: asking $REPO_URL for a build for $ARCH"
-    if ! wget -q -O "$latest" "$REPO_URL/rpi/retroarch/latest.json"; then
-        warn "cannot reach $REPO_URL/rpi/retroarch/latest.json"
+    if ! wget -q -O "$latest" "$REPO_URL/$PLATFORM_DIR/retroarch/latest.json"; then
+        warn "cannot reach $REPO_URL/$PLATFORM_DIR/retroarch/latest.json"
         return 1
     fi
     read -r version url sha < <(python3 - "$latest" "$ARCH" <<'PY'
@@ -430,11 +493,15 @@ install_retroarch_source() {
     log "RetroArch: building $tag from source (this takes a while on a Pi)"
 
     if [ "$DO_PACKAGES" -eq 1 ]; then
-        # KMS/EGL/GLES output, udev pads, ALSA sound. No X11, no Wayland, no Qt, no ffmpeg recording.
+        # KMS/EGL/GLES output, udev pads, ALSA sound. No X11, no Wayland, no Qt, no ffmpeg recording. A PC's
+        # Mesa drivers speak desktop OpenGL too, which more cores and shaders expect than GLES.
+        local gl_dev=""
+        [ "$PLATFORM" = pcusb ] && gl_dev="$(pkg_first_available libgl-dev libgl1-mesa-dev)"
+        # shellcheck disable=SC2086
         run apt-get install -y build-essential git pkg-config \
             libasound2-dev libudev-dev libusb-1.0-0-dev libgbm-dev libdrm-dev \
             "$(pkg_first_available libegl-dev libegl1-mesa-dev)" \
-            "$(pkg_first_available libgles-dev libgles2-mesa-dev)" \
+            "$(pkg_first_available libgles-dev libgles2-mesa-dev)" $gl_dev \
             libfreetype-dev zlib1g-dev libxml2-dev libsdl2-dev libflac-dev || return 1
     fi
 
@@ -450,13 +517,16 @@ install_retroarch_source() {
         printf '    would run: (cd %s && ./configure ... && make -j%s && make install)\n' "$src" "$(nproc)"
         return 0
     fi
+    local gl_flags=""
+    [ "$PLATFORM" = pcusb ] && gl_flags="--enable-opengl"
     (
         cd "$src" || exit 1
         exec </dev/null
+        # shellcheck disable=SC2086
         ./configure --prefix=/usr/local \
             --disable-x11 --disable-wayland --disable-videocore --disable-vulkan --disable-qt \
             --disable-ffmpeg --disable-jack --disable-oss --disable-pulse --disable-sdl \
-            --enable-sdl2 --enable-kms --enable-egl --enable-opengles --enable-opengles3 \
+            --enable-sdl2 --enable-kms --enable-egl --enable-opengles --enable-opengles3 $gl_flags \
             --enable-udev --enable-alsa --enable-networking \
         && make -j"$(nproc)" \
         && make install
@@ -734,8 +804,8 @@ download_cores_tarball() {
     command -v python3 >/dev/null 2>&1 || return 1
     mkdir -p "$(dirname "$latest")"
     log "RetroArch: asking $REPO_URL for the cores of $ARCH"
-    if ! wget -q -O "$latest" "$REPO_URL/rpi/cores/latest.json"; then
-        warn "cannot reach $REPO_URL/rpi/cores/latest.json - downloading the cores one by one instead"
+    if ! wget -q -O "$latest" "$REPO_URL/$PLATFORM_DIR/cores/latest.json"; then
+        warn "cannot reach $REPO_URL/$PLATFORM_DIR/cores/latest.json - downloading the cores one by one instead"
         return 1
     fi
     read -r url sha date < <(python3 - "$latest" "$ARCH" <<'PY'
@@ -868,7 +938,10 @@ download_thumbnails() {
 download_bios_pack() {
     [ "$DO_BIOS" -eq 1 ] || { log "skipping the BIOS pack (--no-bios)"; return 0; }
     local manifest_name=biospack.txt
-    [ "$ARCH" = arm64 ] && manifest_name=biospack-arm64.txt
+    case "$ARCH" in
+        arm64) manifest_name=biospack-arm64.txt ;;
+        i386)  manifest_name=biospack-i386.txt ;;
+    esac
     local manifest="$SCRIPT_DIR/system/$manifest_name"
     [ -f "$manifest" ] || { warn "no system/$manifest_name in the package - no BIOS files installed"; return 0; }
 
@@ -1026,6 +1099,9 @@ SHRINK_SCRIPT=/etc/initramfs-tools/scripts/local-premount/autobleem-shrink
 shrink_root() {
     local gib="$1"
     local rootdev
+    [ "$PLATFORM" = rpi ] || die "--shrink-root is a Raspberry Pi mechanism (it rides on cmdline.txt); the PC
+    stick's image ships with a small root that --grow-root grows, and a hand-made PC install should be
+    partitioned with room left for the data partition"
     rootdev="$(findmnt -no SOURCE /)"
 
     log "Staging an offline shrink of $rootdev to ${gib}GiB"
@@ -1169,6 +1245,14 @@ ensure_data_partition() {
         warn "the largest free span on $DISK is only ${size}MiB"
     fi
 
+    if [ "$PLATFORM" = pcusb ]; then
+        die "no $DATA_LABEL partition and no room to make one.
+
+    The root filesystem fills the disk. Shrink it from another machine (GParted, or a live USB) so at least
+    ${MIN_DATA_MIB}MiB are free after it, then re-run this installer - or install Debian again with a smaller
+    root partition. The AutoBleem image (tools/make_pc_image.sh) is laid out for this: its root is small and
+    --grow-root grows it, leaving the rest of the stick for the data partition."
+    fi
     die "no $DATA_LABEL partition and no room to make one.
 
     The root filesystem was grown over the whole card on first boot, which is normal. Pick one:
@@ -1470,25 +1554,74 @@ install_boot_splash() {
 #*******************************
 # configure_boot
 #*******************************
+# The kernel command line for a quiet boot with the splash, per platform: a Pi's firmware reads cmdline.txt
+# (and config.txt for its own rainbow square); a PC's GRUB takes it from /etc/default/grub.
 configure_boot() {
     [ "$DO_BOOT_CONFIG" -eq 1 ] || { log "skipping boot config (--no-boot-config)"; return 0; }
+    case "$PLATFORM" in
+        rpi)   configure_boot_rpi ;;
+        pcusb) configure_boot_pcusb ;;
+    esac
+}
 
+# the same words both platforms boot with: no console blanking (a game would look like a crash after 10
+# minutes), no kernel log, no cursor, plymouth for "splash" (ignore-serial-consoles keeps it on the screen
+# when a serial console is also named)
+boot_cmdline_words() {
+    local extra="consoleblank=0"
+    if [ "$QUIET_BOOT" -eq 1 ]; then
+        extra="$extra quiet loglevel=3 logo.nologo vt.global_cursor_default=0"
+    fi
+    if [ "$BOOT_SPLASH" -eq 1 ]; then
+        extra="$extra splash plymouth.ignore-serial-consoles"
+    fi
+    echo "$extra"
+}
+
+configure_boot_pcusb() {
+    local grub_default=/etc/default/grub
+    if ! command -v update-grub >/dev/null 2>&1 || [ ! -f "$grub_default" ]; then
+        warn "no GRUB configuration to edit ($grub_default) - the boot stays as it is"
+        return 0
+    fi
+    log "Configuring $grub_default"
+    run cp -n "$grub_default" "$grub_default.autobleem-backup"
+
+    # GRUB_CMDLINE_LINUX_DEFAULT gets our words (any earlier value's other words kept, ours replacing their
+    # namesakes); the menu is hidden with a 2 s Shift window, the framebuffer mode GRUB set is kept for the
+    # kernel so the handover to plymouth is not a modeset. Every key is written whole - a missing one is added.
+    local current cmdline word kept
+    current="$(sed -n 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"$/\1/p' "$grub_default" | tail -1)"
+    kept=""
+    for word in $current; do
+        case " $(boot_cmdline_words) " in
+            *" ${word%%=*}="*|*" $word "*) ;;   # ours replaces it
+            *) kept="$kept${kept:+ }$word" ;;
+        esac
+    done
+    cmdline="$kept${kept:+ }$(boot_cmdline_words)"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would set GRUB_CMDLINE_LINUX_DEFAULT="%s", GRUB_TIMEOUT=2, GRUB_TIMEOUT_STYLE=hidden and run update-grub\n' "$cmdline"
+        return 0
+    fi
+    {
+        grep -vE '^(GRUB_CMDLINE_LINUX_DEFAULT|GRUB_TIMEOUT|GRUB_TIMEOUT_STYLE|GRUB_GFXMODE|GRUB_GFXPAYLOAD_LINUX)=' "$grub_default"
+        printf 'GRUB_CMDLINE_LINUX_DEFAULT="%s"\n' "$cmdline"
+        printf 'GRUB_TIMEOUT=2\nGRUB_TIMEOUT_STYLE=hidden\nGRUB_GFXMODE=auto\nGRUB_GFXPAYLOAD_LINUX=keep\n'
+    } | write_file "$grub_default"
+    run update-grub || warn "update-grub failed - the boot options were written to $grub_default but not applied"
+    [ "$HDMI_MODE" = "1920x1080@60" ] || [ "$HDMI_MODE" = none ] \
+        || log "(--hdmi-mode is a Raspberry Pi option: a PC boots in the screen's native mode)"
+}
+
+configure_boot_rpi() {
     log "Configuring $BOOT_DIR/cmdline.txt"
     run cp -n "$BOOT_DIR/cmdline.txt" "$BOOT_DIR/cmdline.txt.autobleem-backup"
 
     local cmdline extra
     cmdline="$(tr -d '\n' < "$BOOT_DIR/cmdline.txt")"
-
-    # consoleblank=0: without it the framebuffer blanks after 10 minutes and a game looks like a crash.
-    extra="consoleblank=0"
-    if [ "$QUIET_BOOT" -eq 1 ]; then
-        extra="$extra quiet loglevel=3 logo.nologo vt.global_cursor_default=0"
-    fi
-    # Debian's plymouth only comes up for "splash"; ignore-serial-consoles keeps it graphical on the HDMI
-    # screen instead of dropping to text because cmdline.txt also names console=serial0.
-    if [ "$BOOT_SPLASH" -eq 1 ]; then
-        extra="$extra splash plymouth.ignore-serial-consoles"
-    fi
+    extra="$(boot_cmdline_words)"
 
     local word
     for word in $extra; do
@@ -1533,6 +1666,16 @@ configure_boot() {
 #*******************************
 # summary
 #*******************************
+ssh_hint() {
+    if [ "$PLATFORM" = rpi ]; then
+        echo "sudo raspi-config -> Interface Options -> SSH."
+    elif systemctl is-enabled ssh >/dev/null 2>&1; then
+        echo "it is (ssh <user>@<this machine>)."
+    else
+        echo "sudo apt-get install openssh-server."
+    fi
+}
+
 summary() {
     log "Done."
     cat <<EOF
@@ -1555,10 +1698,10 @@ summary() {
   Stop it owning the screen:        sudo systemctl disable --now autobleem && sudo systemctl enable --now getty@tty1
 
   Alt+F2 gives you a login prompt if the launcher ever fails to come up. Enabling SSH before you reboot is a
-  good idea: sudo raspi-config -> Interface Options -> SSH.
+  good idea: $(ssh_hint)
 
-  Power the Pi off from the launcher's L2+R2 menu (Power Off) or with "sudo poweroff", not by pulling the
-  plug: an unclean shutdown can leave freshly written files empty.
+  Power the machine off from the launcher's L2+R2 menu (Power Off) or with "sudo poweroff", not by pulling
+  the plug: an unclean shutdown can leave freshly written files empty.
 
 EOF
     if [ "$DRY_RUN" -eq 1 ]; then

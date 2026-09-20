@@ -59,6 +59,9 @@ ARCHES = {
               "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the Raspberry Pi"},
     "arm64": {"buildbot_arch": "aarch64", "manifest_name": "biospack-arm64.txt",
               "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the Raspberry Pi"},
+    # the 32-bit PC stick: buildbot's "x86" is Debian's i386 (RetroBIOS's targets have no 32-bit Linux either)
+    "i386": {"buildbot_arch": "x86", "manifest_name": "biospack-i386.txt",
+             "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the PC USB stick"},
     "psc": {"buildbot_arch": None, "manifest_name": "biospack.txt",
             "manifest_dir": os.path.join(REPO, "payload", "RetroArch", "bios"), "where": "the PlayStation Classic"},
 }
@@ -395,11 +398,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--arch", choices=sorted(ARCHES), default="armhf",
                          help="which target's core list to build the pack for: the Pi's armhf (default) or arm64, "
-                              "or psc, the console")
+                              "i386 (the PC stick), or psc, the console")
     parser.add_argument("--ref", default=RETROBIOS_REF, help="RetroBIOS commit or branch to read (default: the pinned one)")
     parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_linux/system/"
-                         "biospack.txt for armhf, biospack-arm64.txt for arm64, payload/RetroArch/bios/biospack.txt "
-                         "for psc)")
+                         "biospack.txt for armhf, biospack-arm64.txt for arm64, biospack-i386.txt for i386, "
+                         "payload/RetroArch/bios/biospack.txt for psc)")
     parser.add_argument("--list", action="store_true", help="print the selection and change nothing")
     parser.add_argument("--check", metavar="DIR", help="verify a RetroArch/system/ folder against the manifest")
     args = parser.parse_args()

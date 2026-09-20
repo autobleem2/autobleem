@@ -44,7 +44,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 22
+INDEX_VERSION = 23
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -56,6 +56,8 @@ PACKAGE_KINDS = [
      "the installer adds those from the packs below and db/)"),
     ("rpi", re.compile(r"^autobleem-rpi(-armhf)?(-v.*)?\.tar\.gz$"), "Raspberry Pi, 32-bit OS (tarball + install.sh)"),
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
+    ("pcusb", re.compile(r"^autobleem-pcusb-i386.*\.tar\.gz$"),
+     "PC USB stick, 32-bit Debian (tarball + install.sh - what the stick image installs and updates from)"),
     ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
     ("updateroms", re.compile(r"^UpdateRoms-.*\.zip$"), "UpdateRoms for Windows (scan a stick or card on a PC)"),
 ]
@@ -763,6 +765,16 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     block = release_block(("win", "updateroms"))
     out += block if block else ["<p>Nothing published yet.</p>"]
     out.append("</div>")
+    # the PC USB stick's package (the stick image comes with its builder - until then, the tarball alone:
+    # install it over a Debian 12 i386 like the Pi's over Raspberry Pi OS)
+    block = release_block(("pcusb",))
+    if block:
+        out.append("<div class=\"panel inputs\"><h2>PC USB stick</h2>"
+                   "<p>A 32-bit Debian appliance for a USB stick, the same as the Raspberry Pi's: unpack the tarball "
+                   "on a minimal Debian 12 (i386) and run <code>sudo bash install.sh</code>. What the stick image "
+                   "installs and updates from.</p>")
+        out += block
+        out.append("</div>")
 
     # ---- shared build inputs ----
     if dbs or samples:

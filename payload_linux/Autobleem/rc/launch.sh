@@ -80,10 +80,12 @@ fi
 # AutoBleem's save-state slots, so "Resume" starts from the beginning.
 echo "AUTOBLEEM: no $EMU_DIR/pcsx-ab - falling back to RetroArch" >&2
 
+# the cores the installer downloaded first, then the distribution's under its multiarch dir (whichever
+# architecture this is: arm-linux-gnueabihf, aarch64-linux-gnu, i386-linux-gnu)
 CORE=""
 for candidate in \
     "$RA_DIR/cores/pcsx_rearmed_libretro.so" \
-    /usr/lib/arm-linux-gnueabihf/libretro/pcsx_rearmed_libretro.so \
+    /usr/lib/*-linux-gnu*/libretro/pcsx_rearmed_libretro.so \
     /usr/lib/libretro/pcsx_rearmed_libretro.so; do
     [ -f "$candidate" ] && { CORE="$candidate"; break; }
 done
