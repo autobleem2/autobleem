@@ -152,6 +152,9 @@ bool Environment::hasRetroBoot() {
 string Environment::getPathToRetroarchRomsDir() {
     return retroarchRomsDir.empty() ? usbRoot + sep + "RetroArch" + sep + "roms" : retroarchRomsDir;
 }
+string Environment::getPathToPs1BiosDir() {
+    return usbRoot + sep + "System" + sep + "Bios";
+}
 string Environment::getPathToRetroarchBiosDir() {
     return retroarchBiosDir.empty() ? usbRoot + sep + "RetroArch" + sep + "bios" : retroarchBiosDir;
 }

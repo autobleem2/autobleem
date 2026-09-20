@@ -16,9 +16,11 @@
 // calls into the OS, so static; the one that matters for testing, runAndWait, is behind ProcessRunner.
 class System {
 public:
-    // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait. returns exit code, -1 if it could not
-    // run. This is the only fork/exec in the code base - everything that starts a process goes through here.
-    static int runAndWait(const std::string &exe, const std::vector<std::string> &args);
+    // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait, started in 'cwd' when one is given.
+    // returns exit code, -1 if it could not run. This is the only fork/exec in the code base - everything
+    // that starts a process goes through here (CreateProcess on Windows, where the child gets no console
+    // window of its own).
+    static int runAndWait(const std::string &exe, const std::vector<std::string> &args, const std::string &cwd = "");
 
     static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
     // the same, one entry per non-empty line of stdout, trimmed - for a command that lists things

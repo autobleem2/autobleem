@@ -24,11 +24,8 @@ namespace {
 // come straight back, which is what the interceptors' #ifdef used to do.
 class SplashProcessRunner : public ProcessRunner {
 public:
-    void run(const string &exe, const vector<string> &args) override {
-        string line = "would run " + exe;
-        for (const string &arg : args)
-            line += " '" + arg + "'";
-        PLOG_INFO << line;
+    void run(const LaunchPlan &plan) override {
+        PLOG_INFO << "would run " << plan.toString();
         Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
     }
     bool needsExclusiveDisplay() const override { return false; } // it draws on the launcher's own window
@@ -40,8 +37,10 @@ public:
 // AutoBleem::makeProcessRunner
 //*******************************
 unique_ptr<ProcessRunner> AutoBleem::makeProcessRunner() {
-#ifdef AB_DEBUG_HOST
+#if defined(AB_DEBUG_HOST)
     return unique_ptr<ProcessRunner>(new SplashProcessRunner());
+#elif defined(AB_PLATFORM_WIN)
+    return unique_ptr<ProcessRunner>(new WinProcessRunner());
 #else
     return unique_ptr<ProcessRunner>(new ForkProcessRunner());
 #endif
@@ -80,8 +79,16 @@ void AutoBleem::launchGame() {
     if (runner_->needsExclusiveDisplay()) {
         gui_->releaseDisplay();
     }
+    // on a desktop the emulator opens its own window over ours: ours goes out of the way for the run
+    if (runner_->minimisesLauncherWindow()) {
+        gui_->minimizeWindow();
+    }
 
     launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
+
+    if (runner_->minimisesLauncherWindow()) {
+        gui_->restoreWindow();
+    }
 
     bool reloadFavHist{false};
     if (session_.runningGame->foreign)

@@ -40,6 +40,100 @@ string LaunchService::retroArchLauncherScript() {
 }
 
 //*******************************
+// LaunchService::pcsxExecutable / retroArchExecutable
+//*******************************
+string LaunchService::pcsxExecutable() {
+#ifdef _WIN32
+    return Env::pcsxDir() + sep + "pcsx-ab.exe";
+#else
+    return Env::pcsxDir() + sep + "pcsx-ab";
+#endif
+}
+
+string LaunchService::retroArchExecutable() {
+    for (const string &path : Env::retroArchBinaries()) {
+        if (DirEntry::exists(path)) {
+            return path;
+        }
+    }
+    return "";
+}
+
+//*******************************
+// LaunchService::planPcsx
+//*******************************
+// script mode - args as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume,
+// aspect, filter, pad, emulator (config.ini's "emulator": pcsx-ab or pcsx-abnxt - which Autobleem/bin
+// folder the script runs). direct mode - pcsx-ab's own options, the way the scripts invoke it, plus where
+// its dot dir (the save-state folder: pcsx.cfg, memcards, sstates) and the BIOS are.
+LaunchPlan LaunchService::planPcsx(const PsGame &game, const string &discImage, const string &lang, int resumePoint,
+                                   const string &aspect, const string &filter) const {
+    LaunchPlan plan;
+    if (!Env::directLaunch()) {
+        plan.exe = pcsxLauncherScript();
+        plan.args = {game.ssFolder,
+                     discImage,
+                     lang,
+                     "2", // region: need to find out if console is jap to switch to 2 - later on
+                     game.folder,
+                     resumePoint != -1 ? "1" : "0",
+                     aspect,
+                     filter,
+                     "NA", // pad mapping per-game was never wired up; this was always the fallback
+                     config_.inifile.values.at("emulator")};
+        return plan;
+    }
+    plan.exe = pcsxExecutable();
+    plan.cwd = Env::pcsxDir();
+    plan.args = {"-dotdir",  game.ssFolder,
+                 "-biosdir", Env::getPathToPs1BiosDir(),
+                 "-filter",  filter,
+                 "-ratio",   aspect,
+                 "-lang",    lang,
+                 "-region",  "4",
+                 "-enter",   "1"};
+    if (resumePoint != -1) {
+        plan.args.push_back("-load");
+        plan.args.push_back(to_string(resumePoint));
+    }
+    plan.args.push_back("-fullscreen");
+    plan.args.push_back("-cdfile");
+    plan.args.push_back(discImage);
+    return plan;
+}
+
+//*******************************
+// LaunchService::planRetroArch
+//*******************************
+// script mode - args as rc/launch_rb.sh reads them: file, core. direct mode - retroarch --config <its cfg>
+// -L <core> --fullscreen <file>, with the platform's PS1 core for one of ours.
+LaunchPlan LaunchService::planRetroArch(const string &file, const string &core) {
+    LaunchPlan plan;
+    if (!Env::directLaunch()) {
+        plan.exe = retroArchLauncherScript();
+        plan.args = {file, core};
+        return plan;
+    }
+    plan.exe = retroArchExecutable();
+    plan.cwd = Env::getPathToRetroarchDir();
+    const string corePath = (core == RaNeonCore || core == RaPeopsCore) ? Env::getPathToRetroarchCoreFile() : core;
+    plan.args = {"--config", raConfigFile(), "-L", corePath, "--fullscreen", file};
+    return plan;
+}
+
+//*******************************
+// LaunchService::planApp
+//*******************************
+LaunchPlan LaunchService::planApp(const PsGame &game) {
+    LaunchPlan plan;
+    plan.exe = game.base + sep + game.startup;
+    if (Env::directLaunch()) {
+        plan.cwd = game.base;
+    }
+    return plan;
+}
+
+//*******************************
 // LaunchService::raSavesDir / raConfigFile / raCoreOptionsFile
 //*******************************
 string LaunchService::raSavesDir() {
@@ -94,7 +188,9 @@ LaunchService::Path LaunchService::pathFor(const PsGame &game, EmuMode mode) {
 // LaunchService::launch
 //*******************************
 void LaunchService::launch(PsGamePtr &game, EmuMode mode, int resumePoint) {
-    writeSelectionScript();
+    if (!Env::directLaunch()) {
+        writeSelectionScript(); // nothing sources it when no script runs
+    }
 
     switch (pathFor(*game, mode)) {
     case Path::Pcsx:
@@ -140,8 +236,6 @@ string LaunchService::raBaseNameFor(const PsGame &game) {
 //*******************************
 // LaunchService::launchPcsx
 //*******************************
-// args, as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad,
-// emulator (config.ini's "emulator": pcsx-ab or pcsx-abnxt - which Autobleem/bin folder the script runs)
 void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
     PLOG_INFO << "calling LaunchService::launchPcsx()";
 
@@ -149,10 +243,8 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
 
     string lastCDpoint = game.ssFolder + sep + "lastcdimg.txt";
     string lastCDpointX = game.ssFolder + sep + "lastcdimg." + to_string(resumePoint) + ".txt";
-    vector<string> args;
     string gameFile = "";
 
-    string region = "2"; // need to find out if console is jap to switch to 2 - later on
     string aspect = "0";
     if (config_.inifile.values["aspect"] == "true") {
         aspect = "1";
@@ -167,8 +259,6 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
 
     trim(game.ssFolder);
     game.ssFolder = DirEntry::removeSeparatorFromEndOfPath(game.ssFolder);
-
-    args.push_back(game.ssFolder);
 
     remove(lastCDpoint.c_str());
 
@@ -188,22 +278,23 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
         gameFile = discImageFor(game);
     }
 
-    args.push_back(gameFile);
     // hack to get language from lang file
     string langStr = _("|@lang|");
     if (langStr == "|@lang|") {
         langStr = "2";
     }
-    args.push_back(langStr); // lang by language file hack
-    args.push_back(region);
-    args.push_back(game.folder);
-    args.push_back(resumePoint != -1 ? "1" : "0");
-    args.push_back(aspect);
-    args.push_back(filter);
-    args.push_back("NA"); // pad mapping per-game was never wired up; this was always the fallback
-    args.push_back(config_.inifile.values["emulator"]);
 
-    runner_.run(pcsxLauncherScript(), args);
+    if (Env::directLaunch() && !game.internal) {
+        // the per-game pcsx.cfg belongs next to the save states, where pcsx-ab reads it - the scripts do
+        // this copy themselves
+        string cfg = game.folder + sep + PCSX_CFG;
+        if (DirEntry::exists(cfg)) {
+            DirEntry::createDirs(game.ssFolder);
+            DirEntry::copy(cfg, game.ssFolder + sep + PCSX_CFG);
+        }
+    }
+
+    runner_.run(planPcsx(game, gameFile, langStr, resumePoint, aspect, filter));
     cleanupPcsxConfig(game);
 
     usleep(3 * 1000);
@@ -233,7 +324,6 @@ void LaunchService::cleanupPcsxConfig(PsGame &game) {
 //*******************************
 // LaunchService::launchRetroArch
 //*******************************
-// args, as rc/launch_rb.sh reads them: file, core
 void LaunchService::launchRetroArch(PsGame &game) {
     PLOG_INFO << "calling LaunchService::launchRetroArch()";
 
@@ -287,7 +377,6 @@ void LaunchService::launchRetroArch(PsGame &game) {
     if (game.foreign) {
         RACore = game.core_path;
     }
-    vector<string> args{gameFile, RACore};
 
     // core config here - to be optional
     if (config_.inifile.values["raconfig"] == "true") {
@@ -295,7 +384,7 @@ void LaunchService::launchRetroArch(PsGame &game) {
         transferRaConfig(game);
     }
 
-    runner_.run(retroArchLauncherScript(), args);
+    runner_.run(planRetroArch(gameFile, RACore));
     usleep(3 * 1000);
 
     // core config here - to be optional
@@ -490,8 +579,6 @@ void LaunchService::launchApp(PsGame &game) {
         PLOG_INFO << "FOREIGN MODE";
     }
 
-    string link = game.base + sep + game.startup;
-
-    runner_.run(link, {});
+    runner_.run(planApp(game));
     usleep(3 * 1000);
 }

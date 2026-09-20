@@ -9,6 +9,7 @@
 
 #include "core/services/launch.h"
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -435,4 +436,104 @@ TEST_CASE("which launcher runs is decided by the game first and the mode second"
     CHECK(lib.runner.calls[1].exe == lib.rcScript("launch_rb.sh"));
     CHECK(lib.runner.calls[2].exe == lib.rcScript("launch_rb.sh"));
     CHECK(lib.runner.calls[3].exe == "/media/Apps/SomeApp/run.sh");
+}
+
+// --- direct launches (the Windows product: launch_mode=direct, no rc scripts) ---
+
+namespace {
+// the Windows layout over the fixture's root: the emulator in <resources>/emu, RetroArch's official tree in
+// <root>/RetroArch/bin with .dll cores
+struct DirectLaunching : Launching {
+    DirectLaunching() {
+        Env::setDirectLaunch(true);
+        Env::setPcsxDir(tmp.makeSubDir("program/emu"));
+        ableem::Environment::setRetroarchDir(tmp.makeSubDir("RetroArch/bin"));
+        ableem::Environment::setRetroarchCoreExtension(".dll");
+        ableem::Environment::setRetroarchCoreFile(tmp.at("RetroArch/bin/cores/pcsx_rearmed_libretro.dll"));
+        Env::setRetroArchBinaries({tmp.at("RetroArch/bin/retroarch.exe")});
+        tmp.writeFile("RetroArch/bin/retroarch.exe", "MZ");
+    }
+    // the executable the plan names, without the .exe the Windows build adds
+    static string stem(const string &exe) {
+        return exe.size() > 4 && exe.compare(exe.size() - 4, 4, ".exe") == 0 ? exe.substr(0, exe.size() - 4) : exe;
+    }
+};
+} // namespace
+
+TEST_CASE("direct mode: pcsx-ab itself, from its own folder, with the dot dir, the BIOS and full screen") {
+    DirectLaunching lib;
+    lib.configure("Aspect=true\nMip=false\n");
+    PsGamePtr game = lib.usbGame();
+
+    SUBCASE("a fresh start") {
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        const FakeProcessRunner::Call &call = lib.runner.only();
+        CHECK(DirectLaunching::stem(call.exe) == lib.tmp.at("program/emu/pcsx-ab"));
+        CHECK(call.cwd == lib.tmp.at("program/emu"));
+        CHECK(call.args == vector<string>{"-dotdir", lib.tmp.at("Games/Tekken 3/sstates"), "-biosdir",
+                                          lib.tmp.at("System/Bios"), "-filter", "0", "-ratio", "1", "-lang", "2",
+                                          "-region", "4", "-enter", "1", "-fullscreen", "-cdfile",
+                                          lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
+    }
+    SUBCASE("resuming a slot adds -load") {
+        lib.service->launch(game, EmuMode::Pcsx, 2);
+        const vector<string> &args = lib.runner.only().args;
+        auto load = std::find(args.begin(), args.end(), "-load");
+        REQUIRE(load != args.end());
+        CHECK(*(load + 1) == "2");
+    }
+    SUBCASE("no selection script is written: nothing would source it") {
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("Autobleem/rc/autobleem_cfg.sh")));
+    }
+    SUBCASE("the game folder's pcsx.cfg is put next to the save states, as the scripts do") {
+        lib.tmp.writeFile("Games/Tekken 3/pcsx.cfg", "Gpu3 = gpu_peops.so\n");
+        lib.runner.whileRunning = [&] { CHECK(lib.read(lib.ssFile(game, "pcsx.cfg")) == "Gpu3 = gpu_peops.so\n"); };
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        CHECK(lib.runner.calls.size() == 1);
+    }
+}
+
+TEST_CASE("direct mode: RetroArch itself with its config, the core and full screen") {
+    DirectLaunching lib;
+    lib.configure("Raconfig=false\n");
+
+    SUBCASE("one of our PS1 games gets the platform's PS1 core, whichever GPU plugin it names") {
+        PsGamePtr game = lib.usbGame();
+        lib.tmp.writeFile("Games/Tekken 3/pcsx.cfg", "Gpu3 = gpu_peops.so\n");
+        lib.service->launch(game, EmuMode::RetroArch, -1);
+        const FakeProcessRunner::Call &call = lib.runner.only();
+        CHECK(call.exe == lib.tmp.at("RetroArch/bin/retroarch.exe"));
+        CHECK(call.cwd == lib.tmp.at("RetroArch/bin"));
+        CHECK(call.args == vector<string>{"--config", lib.tmp.at("RetroArch/bin/retroarch.cfg"), "-L",
+                                          lib.tmp.at("RetroArch/bin/cores/pcsx_rearmed_libretro.dll"), "--fullscreen",
+                                          lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
+    }
+    SUBCASE("a playlist entry brings its own core") {
+        PsGamePtr rom = lib.foreignGame(false);
+        rom->core_path = lib.tmp.at("RetroArch/bin/cores/snes9x_libretro.dll");
+        lib.service->launch(rom, EmuMode::Pcsx, -1);
+        const FakeProcessRunner::Call &call = lib.runner.only();
+        CHECK(call.args[3] == lib.tmp.at("RetroArch/bin/cores/snes9x_libretro.dll"));
+        CHECK(call.args[5] == "/media/RetroArch/roms/snes/rom.sfc");
+    }
+    SUBCASE("no RetroArch binary installed: the plan names nothing to run") {
+        Env::setRetroArchBinaries({lib.tmp.at("RetroArch/bin/missing.exe")});
+        CHECK(LaunchService::retroArchExecutable().empty());
+    }
+}
+
+TEST_CASE("direct mode: an App runs from its own folder") {
+    DirectLaunching lib;
+    PsGamePtr app = lib.foreignGame(true);
+    lib.service->launch(app, EmuMode::Launcher, -1);
+    const FakeProcessRunner::Call &call = lib.runner.only();
+    CHECK(call.exe == "/media/Apps/SomeApp/run.sh");
+    CHECK(call.cwd == "/media/Apps/SomeApp");
+}
+
+TEST_CASE("LaunchPlan::toString is the command on one line, the directory when there is one") {
+    LaunchPlan plan{"C:/emu/pcsx-ab.exe", {"-cdfile", "Tekken 3.cue"}, "C:/emu"};
+    CHECK(plan.toString() == "'C:/emu/pcsx-ab.exe' '-cdfile' 'Tekken 3.cue' (in C:/emu)");
+    CHECK(LaunchPlan{"/bin/sh", {}, ""}.toString() == "'/bin/sh'");
 }

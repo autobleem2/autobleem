@@ -24,15 +24,28 @@
 
 using namespace std;
 
-#ifndef AB_DEBUG_HOST
 namespace {
+#ifndef AB_DEBUG_HOST
 string floatToString(float value, int precision) {
     ostringstream oss;
     oss << fixed << setprecision(precision) << value;
     return oss.str();
 }
-} // namespace
 #endif
+#ifdef _WIN32
+wstring wide(const string &s) {
+    if (s.empty()) {
+        return L"";
+    }
+    int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+    wstring w(n > 0 ? n - 1 : 0, L'\0');
+    if (n > 1) {
+        MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
+    }
+    return w;
+}
+#endif
+} // namespace
 
 //*******************************
 // System::powerOff
@@ -148,16 +161,71 @@ string System::execUnixCommand(const char *cmd) {
 //*******************************
 // fork + exec the program and wait for it to finish.
 // returns the exit status of the program, or -1 if it could not be started.
-int System::runAndWait(const string &exe, const vector<string> &args) {
+int System::runAndWait(const string &exe, const vector<string> &args, const string &cwd) {
     string line = "CMD line to execute: '" + exe + "'";
     for (const string &arg : args) {
         line += " '" + arg + "'";
     }
+    if (!cwd.empty()) {
+        line += " (in " + cwd + ")";
+    }
     PLOG_INFO << line;
 
 #ifdef _WIN32
-    PLOG_INFO << "runAndWait is not supported on Windows";
-    return -1;
+    // one command line, quoted by the rules CommandLineToArgvW / the CRT undo: an argument with a space,
+    // a tab or a quote goes in quotes, backslashes before a quote (or the closing one) are doubled
+    wstring cmd;
+    auto quoted = [](const string &arg) {
+        wstring w = wide(arg);
+        if (!w.empty() && w.find_first_of(L" \t\"") == wstring::npos) {
+            return w;
+        }
+        wstring out = L"\"";
+        size_t backslashes = 0;
+        for (wchar_t c : w) {
+            if (c == L'\\') {
+                ++backslashes;
+                continue;
+            }
+            if (c == L'"') {
+                out.append(backslashes * 2 + 1, L'\\');
+            } else {
+                out.append(backslashes, L'\\');
+            }
+            backslashes = 0;
+            out += c;
+        }
+        out.append(backslashes * 2, L'\\');
+        out += L'"';
+        return out;
+    };
+    cmd = quoted(exe);
+    for (const string &arg : args) {
+        cmd += L" " + quoted(arg);
+    }
+    vector<wchar_t> buffer(cmd.begin(), cmd.end());
+    buffer.push_back(L'\0');
+    wstring dir = wide(cwd);
+
+    STARTUPINFOW si;
+    memset(&si, 0, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    memset(&pi, 0, sizeof(pi));
+    // CREATE_NO_WINDOW: a console program (a script through cmd, curl) gets no console window; a GUI
+    // program is unaffected
+    if (!CreateProcessW(nullptr, buffer.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                        nullptr, dir.empty() ? nullptr : dir.c_str(), &si, &pi)) {
+        PLOG_WARNING << "could not start " << exe << ": error " << GetLastError();
+        return -1;
+    }
+    CloseHandle(pi.hThread);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 0;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hProcess);
+    PLOG_INFO << exe << " exited with " << code;
+    return static_cast<int>(code);
 #else
     // argv[0] is the program itself, then the args, then a null terminator
     vector<const char *> argv;
@@ -174,6 +242,9 @@ int System::runAndWait(const string &exe, const vector<string> &args) {
     }
     if (pid == 0) {
         // child. if exec fails we must not return into the parent's code path (that would run a second GUI).
+        if (!cwd.empty() && chdir(cwd.c_str()) != 0) {
+            _exit(126);
+        }
         execvp(exe.c_str(), const_cast<char **>(argv.data()));
         _exit(127);
     }
@@ -187,6 +258,8 @@ int System::runAndWait(const string &exe, const vector<string> &args) {
         int exitCode = WEXITSTATUS(status);
         if (exitCode == 127) {
             PLOG_WARNING << "could not start: " << exe;
+        } else if (exitCode == 126) {
+            PLOG_WARNING << "could not start " << exe << " in " << cwd;
         }
         return exitCode;
     }

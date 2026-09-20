@@ -56,6 +56,7 @@ struct Environment {
     static std::string getPathToSaveStatesDir(); // games:/!SaveStates
     static std::string getPathToSystemDir();     // usb:/System
     static std::string getPathToLogsDir();       // usb:/System/Logs - AB_out.txt, AB_err.txt, autobleem.log
+    static std::string getPathToPs1BiosDir();    // usb:/System/Bios - pcsx-ab's romw.bin/romJP.bin off the console
     static std::string getPathToRetroarchDir();  // usb:/RetroArch/bin unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
     static std::string getPathToRetroarchRdbDir();        // <retroarch>/database/rdb - libretro-database's .rdb files

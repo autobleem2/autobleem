@@ -197,6 +197,19 @@ bool Platform::hasDisplay() const {
     return impl->window != nullptr;
 }
 
+void Platform::minimizeWindow() {
+    if (!impl->window)
+        return;
+    SDL_MinimizeWindow(impl->window);
+}
+
+void Platform::restoreWindow() {
+    if (!impl->window)
+        return;
+    SDL_RestoreWindow(impl->window);
+    SDL_RaiseWindow(impl->window);
+}
+
 void Platform::setScaleQuality(int quality) {
     char buf[2] = {static_cast<char>('0' + quality), 0};
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, buf);

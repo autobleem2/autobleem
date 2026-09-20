@@ -54,6 +54,12 @@ public:
     void acquireDisplay();
     bool hasDisplay() const;
 
+    // On a desktop, where another program opens its own window over ours instead of needing the display
+    // to itself: the window out of the way for the run (SDL_MinimizeWindow) and back, on top, after it
+    // (SDL_RestoreWindow + SDL_RaiseWindow). No-ops without a window.
+    void minimizeWindow();
+    void restoreWindow();
+
     // called by Input::poll() when the console power button or Esc is seen. the app is expected to show a
     // message and actually power off/exit; the library has no policy of its own here.
     void setPowerOffHandler(std::function<void()> handler);
