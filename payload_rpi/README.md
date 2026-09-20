@@ -139,11 +139,14 @@ prints what it would do without downloading, mounting or needing root; `--help` 
 
 The base image boots as usual: cloud-init applies whatever Raspberry Pi Imager was told (user, hostname,
 WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout and a user on the screen. Then
-`autobleem-firstboot.service` takes over the screen and keyboard (it switches to its own console, tty8) and:
+`autobleem-firstboot.service` takes over the screen and keyboard (it switches to its own console, tty8) and
+shows the whole first boot as one graphical screen - the AutoBleem logo with a panel under it: the questions
+as menus and fields, the waits as messages, then the installer's progress (two bars and its last lines).
+It:
 
 1. waits for the network. **No network?** It asks: it lists the WiFi networks it can see, you pick one and
-   type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`, or `s`
-   to skip - it asks again on the next boot). It also sets the WiFi country first, because Raspberry Pi OS
+   type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`). There
+   is no skipping it: nothing can be installed without the network. It also sets the WiFi country first, because Raspberry Pi OS
    keeps WiFi blocked (`rfkill`) until one is set.
 2. waits for the clock to sync (NTP) - `apt` distrusts a clock that is days off, and a Pi has no battery clock.
 3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
@@ -153,10 +156,7 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    pack; the launcher hides its RetroArch set and menu items when no RetroArch is
    installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
    alone gets the full install. RetroArch can be added later by running `install.sh` again.
-4. from here on the screen is graphical - the AutoBleem logo, a bar for the step (of nine), a bar for the
-   download in progress and a box with the installer's last lines (`system/autobleem-install-ui.py`,
-   drawing on the framebuffer: nothing but python3 and the console fonts exist at that point). It
-   grows the root partition first (`install.sh --grow-root <root_gib> --grow-only`: from the base image's
+4. grows the root partition first (`install.sh --grow-root <root_gib> --grow-only`: from the base image's
    ~3 GB to `root_gib`, the rest of the card becomes the `AUTOBLEEM` partition) - the package unpacks to
    over 300 MB and a fresh root has less free than that - then unpacks the package and runs
    `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the
