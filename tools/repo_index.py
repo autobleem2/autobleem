@@ -15,6 +15,8 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     psc/cores/latest.json              the newest cores tarball for the console (psc/cores/cores-psc-<date>.tar.gz)
     psc/libs/latest.json               the newest runtime-library pack for the console's apps (psc/libs/libs-psc-<date>.tar.gz)
     psc/apps/latest.json               the newest pack of the console's third-party Apps (psc/apps/apps-psc-<date>.tar.gz)
+    psc/bios/latest.json               the console's BIOS list (psc/bios/biospack.txt: what the installer fetches from
+                                       RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
@@ -42,7 +44,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 16
+INDEX_VERSION = 17
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -323,6 +325,33 @@ def index_psc_libs(repo, base_url):
     return index_psc_dated(repo, base_url, "libs", PSC_LIBS_RE, "library pack")
 
 
+def index_psc_bios(repo, base_url):
+    """psc/bios/biospack.txt - the console's BIOS manifest (tools/biospack.py --arch psc): one line per file,
+    <sha256> <size> <url> <path>, the URLs pointing at RetroBIOS. latest.json says how many files and bytes
+    the installer would fetch, and which RetroBIOS commit the list is from."""
+    path = os.path.join(repo, "psc", "bios", "biospack.txt")
+    if not os.path.isfile(path):
+        return None
+    entry = file_entry(repo, base_url, path)
+    count = total = 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("# Built by tools/biospack.py"):
+                m = re.search(r"at ([0-9a-f]{7,40}),", line)
+                if m:
+                    entry["retrobios_ref"] = m.group(1)
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.rstrip("\n").split(" ", 3)
+            if len(parts) == 4:
+                count += 1
+                total += int(parts[1])
+    entry["count"] = count
+    entry["total_bytes"] = total
+    write_json(os.path.join(repo, "psc", "bios", "latest.json"), entry)
+    return entry
+
+
 def index_psc_apps(repo, base_url):
     """psc/apps/: the console's third-party Apps (amiberry, doom, eduke32, ...) as tools/pack_psc_apps.py
     packs them - Apps/<name>/ folders, self-contained, laid out for the stick."""
@@ -505,7 +534,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None):
+                 psc_apps=None, psc_bios=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -583,6 +612,9 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if psc_apps:
         rows.append(row("Apps, %s%s" % (date_of(psc_apps["date"]),
                                         ", %d apps" % psc_apps["count"] if psc_apps.get("count") else ""), psc_apps))
+    if psc_bios:
+        rows.append(row("BIOS list: %d files, %d MB, fetched from RetroBIOS by the installer"
+                        % (psc_bios["count"], psc_bios["total_bytes"] // (1024 * 1024)), psc_bios))
     if rows or release_block(("psc-fs",)):
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
                    "<p>What the PC installer lays out on the stick. First the stick's own file system - the launcher, "
@@ -596,7 +628,8 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                    "xpad kernel module (<a href=\"/psc/libs/latest.json\">latest.json</a>%s). Under <code>Apps</code>: the "
                    "third-party apps - Amiberry, Doom, Duke Nukem 3D, OpenBOR, Tyrian, Prince of Persia, Shadow Warrior, "
                    "Wolfenstein 3D - self-contained (<a href=\"/psc/apps/latest.json\">latest.json</a>%s). The BIOS files "
-                   "for <code>RetroArch/bios</code> come from RetroBIOS, by the list in the package.</p>"
+                   "for <code>RetroArch/bios</code> the installer fetches from RetroBIOS, file by file, by the list "
+                   "here (<a href=\"/psc/bios/latest.json\">latest.json</a>) - no BIOS file is on this site.</p>"
                    % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if psc_builds and b.get("manifest") else "",
                       ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else "",
                       ", <a href=\"%s\">the list</a>" % e(psc_libs["manifest"]) if psc_libs and psc_libs.get("manifest") else "",
@@ -873,10 +906,11 @@ def main():
     psc_cores = index_psc_cores(repo, base_url)
     psc_libs = index_psc_libs(repo, base_url)
     psc_apps = index_psc_apps(repo, base_url)
+    psc_bios = index_psc_bios(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:

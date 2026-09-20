@@ -541,7 +541,7 @@ psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroA
 "RetroArch for the console" below), **`psc/libs/`** and **`psc/apps/`** (the same shape: `libs-psc-<date>.tar.gz`,
 the libraries and the xpad module for `Autobleem/lib/`, from retroarch-psc's `tools/pack_retroboot_libs.py`;
 `apps-psc-<date>.tar.gz`, the eight third-party Apps as `Apps/<name>/`, from `tools/pack_psc_apps.py` over a
-stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay.
 
@@ -907,7 +907,7 @@ keeps `dc/` - 719 files, 302 MB against the Pi's 647/188. `.gitignore`'s `bios/`
 that folder's two files.
 
 **What is left**: the **PC installer** (read `psc/retroarch/latest.json`, `psc/cores/latest.json`,
-`psc/libs/latest.json`, `psc/apps/latest.json` and `payload/RetroArch/bios/biospack.txt`, lay `RetroArch/bin`
+`psc/libs/latest.json`, `psc/apps/latest.json` and `psc/bios/latest.json` (the BIOS list - the installer downloads the files from RetroBIOS), take the stick's file system from the release's `autobleem-psc-<v>.tar.gz`, lay `RetroArch/bin`
 - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a generated cfg with the
 directory keys above - `RetroArch/bios`, `Autobleem/lib` and `Apps` on the stick; `tools/install_autobleem.py`
 is the base, `UpdateRoms.exe` the neighbour); UPX in `make
