@@ -13,6 +13,7 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     rpi/retroarch/latest.json          the newest RetroArch build per architecture
     psc/retroarch/latest.json          the newest RetroArch build for the PlayStation Classic (psc/retroarch/<tag>/)
     psc/cores/latest.json              the newest cores tarball for the console (psc/cores/cores-psc-<date>.tar.gz)
+    psc/libs/latest.json               the newest runtime-library pack for the console's apps (psc/libs/libs-psc-<date>.tar.gz)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
@@ -40,7 +41,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 12
+INDEX_VERSION = 13
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -56,6 +57,7 @@ CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz
 # the console build's tag is the RetroArch version plus a build number (github.com/autobleem/retroarch-psc)
 PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
+PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 
 
@@ -275,12 +277,12 @@ def index_psc_retroarch(repo, base_url):
     return builds
 
 
-def index_psc_cores(repo, base_url):
-    """psc/cores/cores-psc-<date>.tar.gz (+ cores-psc-<date>.json, the list inside) - the newest kept."""
-    root = os.path.join(repo, "psc", "cores")
+def index_psc_dated(repo, base_url, kind, pattern, what):
+    """psc/<kind>/<kind>-psc-<date>.tar.gz (+ <kind>-psc-<date>.json, the list inside) - the newest kept."""
+    root = os.path.join(repo, "psc", kind)
     dated = {}
     for path in data_files(root):
-        m = PSC_CORES_RE.match(os.path.basename(path))
+        m = pattern.match(os.path.basename(path))
         if m:
             dated[m.group("date")] = path
     if not dated:
@@ -288,15 +290,15 @@ def index_psc_cores(repo, base_url):
     newest = max(dated)
     for date, path in dated.items():
         if date != newest:
-            print("pruning PSC cores tarball %s" % os.path.basename(path))
-            for f in (path, path + ".sha256", os.path.join(root, "cores-psc-%s.json" % date)):
+            print("pruning PSC %s %s" % (what, os.path.basename(path)))
+            for f in (path, path + ".sha256", os.path.join(root, "%s-psc-%s.json" % (kind, date))):
                 if os.path.isfile(f):
                     os.remove(f)
     entry = file_entry(repo, base_url, dated[newest])
     entry["date"] = newest
-    manifest = os.path.join(root, "cores-psc-%s.json" % newest)
+    manifest = os.path.join(root, "%s-psc-%s.json" % (kind, newest))
     if os.path.isfile(manifest):
-        entry["manifest"] = base_url + "/psc/cores/cores-psc-%s.json" % newest
+        entry["manifest"] = base_url + "/psc/%s/%s-psc-%s.json" % (kind, kind, newest)
         try:
             with open(manifest, encoding="utf-8") as f:
                 entry["count"] = json.load(f).get("count")
@@ -304,6 +306,17 @@ def index_psc_cores(repo, base_url):
             pass
     write_json(os.path.join(root, "latest.json"), entry)
     return entry
+
+
+def index_psc_cores(repo, base_url):
+    """psc/cores/: RetroBoot 1.2's cores as retroarch-psc's tools/pack_retroboot_cores.py packs them."""
+    return index_psc_dated(repo, base_url, "cores", PSC_CORES_RE, "cores tarball")
+
+
+def index_psc_libs(repo, base_url):
+    """psc/libs/: the runtime libraries RetroBoot's apps and AutoBleem's Apps need beyond the firmware
+    (retroarch-psc's tools/pack_retroboot_libs.py)."""
+    return index_psc_dated(repo, base_url, "libs", PSC_LIBS_RE, "library pack")
 
 
 #*******************************
@@ -474,7 +487,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
 
-def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None):
+def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -548,15 +561,21 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if psc_cores:
         rows.append(row("RetroArch cores, %s%s" % (date_of(psc_cores["date"]),
                                                     ", %d cores" % psc_cores["count"] if psc_cores.get("count") else ""), psc_cores))
+    if psc_libs:
+        rows.append(row("Runtime libraries for the apps, %s%s" % (date_of(psc_libs["date"]),
+                                                                   ", %d libraries" % psc_libs["count"] if psc_libs.get("count") else ""), psc_libs))
     if rows:
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
                    "<p>What the PC installer puts under <code>retroarch/</code> on the stick: RetroArch built for the "
                    "console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches - it loads "
                    "xz-compressed cores as they are (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s) - and the "
                    "cores with their info files, RetroBoot 1.2's set for now, the ones that run on a stock console "
-                   "(<a href=\"/psc/cores/latest.json\">latest.json</a>%s).</p>"
+                   "(<a href=\"/psc/cores/latest.json\">latest.json</a>%s); and the runtime libraries RetroBoot's apps and "
+                   "AutoBleem's Apps need beyond the firmware - SDL2_image/mixer/ttf, freetype, png, vorbis, a newer "
+                   "libstdc++ (<a href=\"/psc/libs/latest.json\">latest.json</a>%s).</p>"
                    % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if psc_builds and b.get("manifest") else "",
-                      ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else ""))
+                      ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else "",
+                      ", <a href=\"%s\">the list</a>" % e(psc_libs["manifest"]) if psc_libs and psc_libs.get("manifest") else ""))
         out.append(table(rows) + "</div>")
 
     # ---- Raspberry Pi ----
@@ -787,10 +806,11 @@ def main():
     cores = index_cores(repo, base_url)
     psc_builds = index_psc_retroarch(repo, base_url)
     psc_cores = index_psc_cores(repo, base_url)
+    psc_libs = index_psc_libs(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
