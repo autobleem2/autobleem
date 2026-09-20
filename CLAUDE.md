@@ -789,8 +789,15 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   initramfs not rebuilt when the splash files are unchanged) piped through the progress screen on
   tty1, with **`--retroarch-tarball`** pointing at the pre-downloaded build (a RetroArch-only update
   uses the installed release's installer copy). Success removes `System/Updates`; the session loop then
-  starts the new launcher. Log: `System/Logs/update.log`. **Unrun on a Pi** as of this writing - the
-  next image build carries it, and the first real update is the test.
+  starts the new launcher. Log: `System/Logs/update.log`. **The first real update (2026-09-20, the Pi
+  400 on the `a84b8b4` image -> `6338ac9`)**: the check, the prompt and the 43 MB download all worked;
+  the apply step died in one second at `tar` - the helper staged the package on the exFAT data
+  partition, and tar run as root restores the archive's uid/gid, which exFAT refuses ("Cannot change
+  ownership ... Operation not permitted", exit 2). The stage is `/var/tmp/autobleem-update` on the root
+  filesystem now, with `--no-same-owner`. And **an installed launcher's first start after an update
+  rescans** (the owner's rule): `install_payload()` removes `games.fingerprint`/`roms.fingerprint`. Nothing on the screen said why: the launcher had left, the
+  helper's failure message is a 6 s dialog on tty1 and the session loop restarted the launcher - so
+  read `update.log` first when an update "does nothing".
 
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
