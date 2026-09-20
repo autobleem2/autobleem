@@ -29,6 +29,7 @@ private:
     Gui();
     static float outputScale();
     static int multisampleSamples();
+    static bool fullscreen();
     static std::string windowTitle_;
 
 public:

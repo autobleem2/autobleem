@@ -67,12 +67,28 @@ int Gui::multisampleSamples() {
 }
 
 //********************
+// Gui::fullscreen
+//********************
+// The whole screen on every real target - a console-like launcher has no window to be a window in. The
+// console and the appliances already are (Wayland on the PSC, KMS/DRM on a Pi and the PC stick: the window
+// is the display); on the Windows product it is SDL's desktop full screen. Only the dev build keeps its
+// 1280x720 window (tools/win_drive.ps1 posts keys to it); AB_WINDOWED=1 in the environment asks a product
+// build for one too, for a look.
+bool Gui::fullscreen() {
+#if defined(AB_DEBUG_HOST)
+    return false;
+#else
+    return getenv("AB_WINDOWED") == nullptr;
+#endif
+}
+
+//********************
 // Gui::Gui
 //********************
 string Gui::windowTitle_ = "AutoBleem";
 
 Gui::Gui()
-    : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
+    : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples(), fullscreen()),
       assets_(renderer(), AppBase::get().theme(), AppBase::get().config()),
       text_(renderer(), AppBase::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     // the pad mappings the launcher and the pscbios wizard share; probePads() reads the first that exists

@@ -100,7 +100,20 @@ void Renderer::recreate(Platform &platform) {
     SDL_GetWindowSize(window, &outputWidth, &outputHeight);
     impl->width = platform.logicalWidth();
     impl->height = platform.logicalHeight();
-    impl->scale = impl->width > 0 ? static_cast<float>(outputWidth) / impl->width : 1.0f;
+    // the canvas as big as fits the window, centred: a window made outputScale times the canvas fits
+    // exactly; a full-screen one on a desktop of another shape gets black bars (the viewport is the window
+    // target's alone - SDL keeps a render target's viewport apart, so targets stay addressed from 0,0)
+    float sx = impl->width > 0 ? static_cast<float>(outputWidth) / impl->width : 1.0f;
+    float sy = impl->height > 0 ? static_cast<float>(outputHeight) / impl->height : 1.0f;
+    impl->scale = std::min(sx, sy);
+    int drawnWidth = static_cast<int>(std::lround(impl->width * impl->scale));
+    int drawnHeight = static_cast<int>(std::lround(impl->height * impl->scale));
+    if (drawnWidth != outputWidth || drawnHeight != outputHeight) {
+        SDL_Rect viewport{(outputWidth - drawnWidth) / 2, (outputHeight - drawnHeight) / 2, drawnWidth, drawnHeight};
+        SDL_RenderSetViewport(impl->renderer, &viewport);
+        PLOG_INFO << "Canvas " << drawnWidth << "x" << drawnHeight << " at " << viewport.x << "," << viewport.y
+                  << " in a " << outputWidth << "x" << outputHeight << " window";
+    }
 }
 
 float Renderer::outputScale() const {

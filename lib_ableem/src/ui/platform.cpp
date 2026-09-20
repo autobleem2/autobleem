@@ -13,6 +13,7 @@ struct Platform::Impl {
     int width = 0, height = 0; // the window
     int logicalWidth = 0, logicalHeight = 0;
     int multisampleSamples = 0; // asked for, then what was got
+    bool fullscreen = false;    // the whole desktop rather than a width x height window
 };
 
 namespace {
@@ -22,15 +23,18 @@ namespace {
 // cover strips included, real MSAA edges. SDL_WINDOW_OPENGL makes the window come with that context at
 // once instead of being recreated by the renderer later. A driver without MSAA fails the window, and the
 // window is then made again without it.
-SDL_Window *createWindow(const std::string &title, int w, int h, int &samples) {
+SDL_Window *createWindow(const std::string &title, int w, int h, int &samples, bool fullscreen) {
+    // the desktop's own mode, no modeset: what a launcher that hands the screen to an emulator and takes it
+    // back wants (a mode change would flash the display twice per game)
+    const Uint32 flags = fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
     if (samples > 0) {
 #ifdef _WIN32
         SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // Windows would otherwise take direct3d, which ignores this
 #endif
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, samples);
-        SDL_Window *window =
-            SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_OPENGL);
+        SDL_Window *window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h,
+                                              SDL_WINDOW_OPENGL | flags);
         if (window)
             return window;
         PLOG_WARNING << "No " << samples << "x multisampled GL window (" << SDL_GetError() << ") - going without";
@@ -38,7 +42,7 @@ SDL_Window *createWindow(const std::string &title, int w, int h, int &samples) {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
         samples = 0;
     }
-    return SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, 0);
+    return SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, flags);
 }
 } // namespace
 
@@ -66,7 +70,7 @@ int Platform::logicalHeight() const {
 }
 
 Platform::Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth,
-                   int outputHeight, int multisampleSamples)
+                   int outputHeight, int multisampleSamples, bool fullscreen)
     : impl(new Impl()) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
@@ -80,9 +84,15 @@ Platform::Platform(const std::string &windowTitle, int logicalWidth, int logical
     impl->logicalWidth = logicalWidth;
     impl->logicalHeight = logicalHeight;
     impl->multisampleSamples = multisampleSamples;
-    impl->window = createWindow(windowTitle, outputWidth, outputHeight, impl->multisampleSamples);
+    impl->fullscreen = fullscreen;
+    impl->window = createWindow(windowTitle, outputWidth, outputHeight, impl->multisampleSamples, fullscreen);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
+    }
+    if (fullscreen) {
+        int w = 0, h = 0;
+        SDL_GetWindowSize(impl->window, &w, &h);
+        PLOG_INFO << "Full-screen window: " << w << "x" << h;
     }
 
 #ifndef ABLEEM_DEV_HOST
@@ -184,7 +194,8 @@ void Platform::acquireDisplay() {
     if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
         throw std::runtime_error(std::string("SDL_InitSubSystem(VIDEO) failed: ") + SDL_GetError());
     }
-    impl->window = createWindow(impl->windowTitle, impl->width, impl->height, impl->multisampleSamples);
+    impl->window =
+        createWindow(impl->windowTitle, impl->width, impl->height, impl->multisampleSamples, impl->fullscreen);
     if (!impl->window) {
         throw std::runtime_error(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
     }

@@ -1,0 +1,36 @@
+// the Windows product's resources: the icon (tools/make_icon.py from tools/repo_icon.png) and the version
+// block Explorer's Details tab shows. CMake configures this into the build tree with the tag filled in.
+#include <windows.h>
+
+1 ICON "@AB_RC_ICON@"
+
+#define AB_RC_VERSION @AB_RC_VERSION@
+#define AB_RC_VERSION_TEXT "@AB_RC_TAG@"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION AB_RC_VERSION
+PRODUCTVERSION AB_RC_VERSION
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "AutoBleem"
+            VALUE "FileDescription", "AutoBleem game launcher"
+            VALUE "FileVersion", AB_RC_VERSION_TEXT
+            VALUE "InternalName", "autobleem-gui"
+            VALUE "OriginalFilename", "autobleem-gui.exe"
+            VALUE "ProductName", "AutoBleem"
+            VALUE "ProductVersion", AB_RC_VERSION_TEXT
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

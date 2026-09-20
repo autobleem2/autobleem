@@ -383,6 +383,27 @@ target_link_libraries(autobleem-gui
          ${CMAKE_DL_LIBS}
 )
 
+if (AB_TARGET STREQUAL "win")
+    # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
+    # System/Logs/autobleem.log), with the icon and a version block (src/win/autobleem.rc; the numbers from
+    # the last tag at configure time - core/version.h stays the truth about the build)
+    execute_process(COMMAND git describe --tags --abbrev=0 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE AB_RC_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if (NOT AB_RC_TAG)
+        set(AB_RC_TAG ${AB_VERSION_FALLBACK})
+    endif()
+    string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" _rc_nums "${AB_RC_TAG}")
+    if (_rc_nums)
+        set(AB_RC_VERSION "${CMAKE_MATCH_1},${CMAKE_MATCH_2},${CMAKE_MATCH_3},0")
+    else()
+        set(AB_RC_VERSION "0,0,0,0")
+    endif()
+    set(AB_RC_ICON ${CMAKE_SOURCE_DIR}/src/win/autobleem.ico)
+    configure_file(src/win/autobleem.rc.in ${CMAKE_BINARY_DIR}/generated/autobleem.rc @ONLY)
+    target_sources(autobleem-gui PRIVATE ${CMAKE_BINARY_DIR}/generated/autobleem.rc)
+    target_link_options(autobleem-gui PRIVATE -mwindows)
+endif()
+
 
 add_custom_command(TARGET autobleem-gui PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

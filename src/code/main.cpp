@@ -16,14 +16,43 @@
 #include "core/services/system_info.h"
 #include "core/version.h"
 #include <ableem/engine/log.h>
+#ifdef AB_PLATFORM_WIN
+#include <windows.h>
+#endif
 
 using namespace std;
+
+#ifdef AB_PLATFORM_WIN
+//*******************************
+// attachParentConsole
+//*******************************
+// The product is a GUI-subsystem exe (no console window behind the launcher), so started from a console -
+// --sysinfo, or a look at the log lines - its output would go nowhere: attach to the parent's console, unless
+// stdout/stderr were redirected to a file or a pipe already, which is kept.
+static void attachParentConsole() {
+    auto redirected = [](DWORD which) {
+        HANDLE h = GetStdHandle(which);
+        return h != nullptr && h != INVALID_HANDLE_VALUE && GetFileType(h) != FILE_TYPE_UNKNOWN;
+    };
+    const bool outRedirected = redirected(STD_OUTPUT_HANDLE), errRedirected = redirected(STD_ERROR_HANDLE);
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        return;
+    FILE *f = nullptr;
+    if (!outRedirected)
+        freopen_s(&f, "CONOUT$", "w", stdout);
+    if (!errRedirected)
+        freopen_s(&f, "CONOUT$", "w", stderr);
+}
+#endif
 
 //*******************************
 // runAutobleem
 //*******************************
 // the whole program. main() below only wraps it so that a stray exception is logged instead of a silent abort().
 static int runAutobleem(int argc, char *argv[]) {
+#ifdef AB_PLATFORM_WIN
+    attachParentConsole();
+#endif
     // stdout/stderr go to /media/System/Logs/AB_*.txt (see run.sh). without this they are block buffered and the
     // last lines before a crash never reach the file, which is exactly when they are needed.
     cout.setf(ios::unitbuf);

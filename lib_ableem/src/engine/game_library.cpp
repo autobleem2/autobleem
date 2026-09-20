@@ -3,6 +3,7 @@
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/retroarch_playlist.h"
 #include "ableem/engine/strings.h"
+#include "ableem/engine/log.h"
 
 #include <algorithm>
 #include <fstream>
@@ -98,7 +99,14 @@ bool GameLibrary::exportToRetroArchPlaylist() {
         entries.push_back(entry);
     }
 
-    return RetroArchPlaylist::save(Environment::getPathToRetroarchPlaylistsDir() + sep + RA_PLAYLIST, entries);
+    // the playlists dir is RetroArch's: without a RetroArch tree there is nowhere to put the list and nobody
+    // to read it (a Windows install without RetroArch, a Pi that declined it) - not an error
+    const string playlistsDir = Environment::getPathToRetroarchPlaylistsDir();
+    if (!DirEntry::isDirectory(playlistsDir)) {
+        PLOG_DEBUG << "no " << playlistsDir << " - the RetroArch playlist is not written";
+        return false;
+    }
+    return RetroArchPlaylist::save(playlistsDir + sep + RA_PLAYLIST, entries);
 }
 
 //*******************************

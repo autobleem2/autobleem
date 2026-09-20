@@ -134,13 +134,6 @@ int AutoBleem::run() {
         return EXIT_FAILURE;
     }
 
-    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
-        // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
-        // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
-        // is the other source, so a stick with that tree but no covers*.db is fine.
-        gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
-    }
-
     string pathToGamesDir = Env::getPathToGamesDir();
 
     MemcardManager memcardOperation(pathToGamesDir);
@@ -159,6 +152,14 @@ int AutoBleem::run() {
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     gui_->display(false);
+
+    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
+        // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
+        // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
+        // is the other source, so a stick with that tree but no covers*.db is fine. After display(): the
+        // theme's font and background are loaded there, and the message drawn before it was a black screen.
+        gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
+    }
 
     applyOnlineSetting();
 #ifdef AB_ONLINE_UPDATE

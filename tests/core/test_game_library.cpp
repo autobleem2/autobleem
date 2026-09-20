@@ -52,3 +52,10 @@ TEST_CASE("a game folder with a <base>.m3u is exported as the .m3u, for a CHD to
     auto paths = exportedPaths(lib);
     CHECK(paths["Multi"] == lib.tmp.at("Games/Multi") + "/" + "Multi (Disc 1).m3u");
 }
+
+TEST_CASE("without a RetroArch playlists dir the export writes nothing and says so") {
+    GameLibraryFixture lib;
+    lib.addUsbGame(1, "Tekken 3");
+    CHECK_FALSE(lib.library.exportToRetroArchPlaylist());
+    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("RetroArch/bin/playlists/AutoBleem.lpl")));
+}

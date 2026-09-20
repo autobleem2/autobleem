@@ -73,7 +73,7 @@ private:
     // a window of outputWidth x outputHeight pixels showing a logicalWidth x logicalHeight canvas, with
     // multisampleSamples-x MSAA on its GL context when that is not 0 (see GuiBase)
     Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth, int outputHeight,
-             int multisampleSamples);
+             int multisampleSamples, bool fullscreen);
     struct Impl;
     Impl *impl;
 
