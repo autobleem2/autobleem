@@ -25,10 +25,16 @@ public class W {
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc cb, IntPtr l);
   [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
   [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetWindowTextW(IntPtr h, System.Text.StringBuilder s, int n);
+  public static string Title(IntPtr h) { var sb = new System.Text.StringBuilder(256); GetWindowTextW(h, sb, 256); return sb.ToString(); }
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern int GetClassNameW(IntPtr h, System.Text.StringBuilder s, int n);
+  public static string ClassName(IntPtr h) { var sb = new System.Text.StringBuilder(256); GetClassNameW(h, sb, 256); return sb.ToString(); }
+  // the process's SDL window ("SDL_app"), not its console - keys posted to the console go nowhere
   public static IntPtr FindByPid(uint pid) {
-    IntPtr found = IntPtr.Zero;
-    EnumWindows((h, l) => { uint p; GetWindowThreadProcessId(h, out p); if (p == pid && IsWindowVisible(h)) { found = h; return false; } return true; }, IntPtr.Zero);
-    return found;
+    IntPtr found = IntPtr.Zero, any = IntPtr.Zero;
+    EnumWindows((h, l) => { uint p; GetWindowThreadProcessId(h, out p); if (p == pid) { if (ClassName(h) == "SDL_app") { found = h; return false; } if (IsWindowVisible(h)) any = h; } return true; }, IntPtr.Zero);
+    return found != IntPtr.Zero ? found : any;
   }
 }
 "@
@@ -61,11 +67,16 @@ if ($Tool -ne "") {
 } else {
   Copy-Item $Exe "$U\Autobleem\bin\autobleem\" -Force
   Set-Location "$U\Autobleem\bin\autobleem"
+  # (not -WindowStyle Hidden: SDL's window would start hidden too; the console it gets is a nuisance on the
+  # screenshots only - AB_SHOT=<file%d.bmp> in the environment has the launcher save its own frames instead)
   $p = Start-Process -FilePath ".\autobleem-gui.exe" -ArgumentList "`"$U`"" -RedirectStandardOutput "$U\System\Logs\AB_out.txt" -RedirectStandardError "$U\System\Logs\AB_err.txt" -PassThru
 }
 Start-Sleep $InitialWait
 $h = [W]::FindByPid($p.Id)
-"window handle: $h"
+for ($try = 0; $try -lt 20 -and [W]::ClassName($h) -ne "SDL_app"; $try++) { Start-Sleep -Milliseconds 500; $h = [W]::FindByPid($p.Id) }
+"window handle: $h ($([W]::ClassName($h)) '$([W]::Title($h))')"
+# SDL only turns posted key messages into events for the window that has the keyboard focus
+[W]::SetForegroundWindow($h) | Out-Null; Start-Sleep -Milliseconds 300
 $shot = 0
 function Shot { $script:shot++; $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen; $b = New-Object System.Drawing.Bitmap $vs.Width,$vs.Height; $g = [System.Drawing.Graphics]::FromImage($b); $g.CopyFromScreen($vs.X,$vs.Y,0,0,$b.Size); $b.Save("$S\shot$script:shot.png"); $g.Dispose(); $b.Dispose() }
 Shot

@@ -65,7 +65,8 @@ Themes/<name>/
     "hints": { "cross": "images/hint_cross.png", "circle": "images/hint_circle.png", "triangle": "images/hint_triangle.png" },
     "menuIcons": { "settings": "images/menu_settings.png", "guide": "images/menu_guide.png",
                    "memcard": "images/menu_memcard.png", "resume": "images/menu_resume.png",
-                   "resumePicture": { "x": 25, "y": 33, "w": 68, "h": 52 } },
+                   "resumePicture": { "x": 25, "y": 33, "w": 68, "h": 52 },
+                   "resumeSlotLabel": { "x": 22, "y": 18 } },
     "memcardManager": { "grid": "images/memcard_grid.png", "pencil": "images/memcard_pencil.png" },
     "fonts": { "medium": "font/SST-Medium.ttf", "bold": "font/SST-Bold.ttf" },
     "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464" }
@@ -95,7 +96,7 @@ Themes/<name>/
 | `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). `textShadow: false` drops the dark halo drawn under the launcher's text (it is what keeps white text readable on a light background; on by default). |
 | `launcher.snapPanel` | `{ "x", "y", "w", "h" }`: where the selected game's screenshot (RetroArch's thumbnails `Named_Snaps`, or the user's own from `retroarch/screenshots`) is drawn, aspect-fit inside the rect. Leave it out and no screenshot is drawn. |
 | `launcher.hints` | The cross/circle/triangle icons in the footer. |
-| `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. |
+| `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
 | `launcher.fonts` | The launcher's medium and bold ttf. Without them the console's own SST fonts are used. |
 | `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). |

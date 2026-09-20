@@ -77,6 +77,15 @@ void PsStateSelector::render() {
 
         shared_ptr<Gui> gui(Gui::getInstance());
 
+        // where the picture goes on the resume icon, in the icon's pixels - the theme's say (ab2 centres a
+        // screen on its tile), else the original frame's window; the same rect the menu row uses
+        ableem::Rect window{25, 33, 68, 52};
+        const auto &icons = App::get().theme().launcher().menuIcons;
+        if (icons.resumePicture.set) {
+            window = ableem::Rect(icons.resumePicture.x, icons.resumePicture.y, icons.resumePicture.w,
+                                  icons.resumePicture.h);
+        }
+
         gui->text().renderText_WithColor(font30, text, 0, 110, brightWhite, XALIGN_CENTER); // translated above
 
         if (operation == OP_LOAD) {
@@ -107,16 +116,22 @@ void PsStateSelector::render() {
                 input.w = s.w;
                 input.h = s.h;
                 ableem::Rect imgOut;
-                imgOut.x = x + (118 * scale) * i + 67;
-                imgOut.y = y + 90;
-                imgOut.w = 184;
-                imgOut.h = 140;
+                imgOut.x = output.x + window.x * scale;
+                imgOut.y = y + window.y * scale;
+                imgOut.w = window.w * scale;
+                imgOut.h = window.h * scale;
 
                 renderer.copy(slotImg[i], &input, &imgOut);
             }
 
-            gui->text().renderText_WithColor(font24, _("Slot") + " " + to_string(i + 1), output.x + 60, 270,
-                                             brightWhite);
+            // the slot's name where the theme puts it on the icon; the original spot otherwise - which is
+            // exactly where it always was (x + 60, 270 on the 2.7x tile)
+            ableem::Rect label{22, 18, 0, 0};
+            if (icons.resumeSlotLabel.set)
+                label = ableem::Rect(icons.resumeSlotLabel.x, icons.resumeSlotLabel.y, 0, 0);
+            gui->text().renderText_WithColor(font24, _("Slot") + " " + to_string(i + 1),
+                                             output.x + static_cast<int>(label.x * scale + 0.5f),
+                                             y + static_cast<int>(label.y * scale + 0.5f), brightWhite);
         }
     }
 }

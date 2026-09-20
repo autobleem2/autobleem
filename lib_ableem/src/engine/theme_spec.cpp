@@ -316,6 +316,11 @@ bool ThemeSpec::load(const string &path) {
                 readRect(*p, launcher.menuIcons.resumePicture.x, launcher.menuIcons.resumePicture.y,
                          launcher.menuIcons.resumePicture.w, launcher.menuIcons.resumePicture.h,
                          launcher.menuIcons.resumePicture.set);
+            if (const json *p = child(*m, "resumeSlotLabel")) {
+                readInt(*p, "x", launcher.menuIcons.resumeSlotLabel.x);
+                readInt(*p, "y", launcher.menuIcons.resumeSlotLabel.y);
+                launcher.menuIcons.resumeSlotLabel.set = true;
+            }
         }
         if (const json *m = child(*l, "memcardManager")) {
             readStr(*m, "grid", launcher.memcardManager.grid);
@@ -464,6 +469,7 @@ bool ThemeSpec::save(const string &path) const {
                 p["h"] = launcher.menuIcons.resumePicture.h;
                 m["resumePicture"] = p;
             }
+            putPoint(m, "resumeSlotLabel", launcher.menuIcons.resumeSlotLabel);
             putObject(l, "menuIcons", m);
         }
         {
@@ -537,6 +543,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(launcher.textShadow, base.launcher.textShadow);
     mergeSet(launcher.snapPanel, base.launcher.snapPanel);
     mergeSet(launcher.menuIcons.resumePicture, base.launcher.menuIcons.resumePicture);
+    mergeSet(launcher.menuIcons.resumeSlotLabel, base.launcher.menuIcons.resumeSlotLabel);
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
     mergeColor(launcher.colors.hint, base.launcher.colors.hint);

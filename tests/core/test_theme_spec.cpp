@@ -110,6 +110,9 @@ ThemeSpec fullSpec() {
     l.menuIcons.resumePicture.w = 68;
     l.menuIcons.resumePicture.h = 52;
     l.menuIcons.resumePicture.set = true;
+    l.menuIcons.resumeSlotLabel.x = 30;
+    l.menuIcons.resumeSlotLabel.y = 78;
+    l.menuIcons.resumeSlotLabel.set = true;
 
     s.sounds.cursor = "sounds/cursor.wav";
     s.sounds.cancel = "sounds/cancel.wav";
@@ -182,6 +185,8 @@ TEST_CASE("a full theme survives a save/load round trip") {
     CHECK(in.launcher.snapPanel.w == 240);
     CHECK(in.launcher.menuIcons.resumePicture.set);
     CHECK(in.launcher.menuIcons.resumePicture.y == 22);
+    CHECK(in.launcher.menuIcons.resumeSlotLabel.set);
+    CHECK(in.launcher.menuIcons.resumeSlotLabel.y == 78);
     CHECK(in.sounds.resume == "sounds/resume_new.wav");
 
     // every file field made the trip - the one list in fileFields() is what everything else iterates

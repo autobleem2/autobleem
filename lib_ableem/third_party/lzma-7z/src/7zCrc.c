@@ -85,7 +85,10 @@ UInt32 Z7_FASTCALL CrcUpdateT1(UInt32 v, const void *data, size_t size, const UI
     #endif
     #endif
   #elif (defined(__clang__) && (__clang_major__ >= 3)) \
-     || (defined(__GNUC__) && (__GNUC__ > 4))
+     || (defined(__GNUC__) && (__GNUC__ > 4) \
+         && (defined(MY_CPU_ARM64) || (__GNUC__ >= 8)))
+      // AutoBleem: a 32-bit ARM GCC before 8 (the PlayStation Classic's gcc-6) has no
+      // target("arch=armv8-a+crc") attribute; it takes the table CRC like any compiler without one
       #if !defined(__ARM_FEATURE_CRC32)
         #define __ARM_FEATURE_CRC32 1
         #if defined(__clang__)
