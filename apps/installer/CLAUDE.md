@@ -74,3 +74,33 @@ A `--quiet` run of the same options is what the tests' fake site mirrors (a fres
 over a used stick, an AutoBleem 1.0 stick, RetroArch over a RetroBoot-era cfg, a stop, a site down).
 **Ran on the owner's stick and the result booted on the console (2026-09-20).** The install names the
 stick SONY (`ensureVolumeLabel`, before the job; the status line announces it when the label differs).
+
+## AutoBleemWinSetup - the Windows product's setup helper (2026-09-20)
+
+The second program in this tree, for the *Windows product* (`docs/pc-targets-plan.md`, phase C): the NSIS
+installer (`installer/windows/autobleem.nsi`) puts the program folder in place and writes
+`HKCU\Software\AutoBleem` (`InstallDir`, `DataRoot`, `Version`, `Opt*`); everything under the data folder
+is this program's. Same window code as the console installer with the data folder (a box + Browse...) in
+place of the stick, the same progress page; `AutoBleemWinSetup.exe --run --root DIR --program DIR
+[--covers JUP] [--retroarch] [--bios] [--samples]` is what the installer runs (`--run`: straight to the
+progress page, the wizard asked the questions), `--quiet --update` what a silent `/S` update runs, and
+the Start Menu's "AutoBleem Setup" (no flags) shows the questions again to add RetroArch or the BIOS
+files later.
+
+- **`WindowsInstallJob`** (`src/core/windows_install_job.*`, on `InstallJobBase` - the phase/line
+  reporting, `downloadVerified`, `fetchCatalog`, `untar` and the BIOS pack loop the two jobs share;
+  tested from `tests/apps/test_windows_install_job.cpp`): **the data folder** (the tree made, the shipped
+  `<program>/Themes/*` copied in once - a theme already there is the user's; `--update` removes
+  `games.fingerprint`/`roms.fingerprint` so the launcher rescans), **the cover databases** (into
+  `System/Databases`), **RetroArch** (libretro's own Windows build: the site's repack
+  `win/retroarch/latest.json` -> `RetroArch/bin`, else the official `RetroArch.7z` from buildbot
+  unpacked with `ableem::SevenZipArchive` - its `RetroArch-Win64/` top folder stripped; the official
+  `RetroArch-Win64-setup.exe` is *not* used, its manifest says `requireAdministrator`; a
+  `retroarch.cfg` written when there is none: full screen, `quit_on_close_content = 2`, the roms folder
+  as the browser's start; `RetroArch/bin/VERSION` the stamp), **the cores** (the site's `win/cores` pack
+  -> `RetroArch/bin`, else one `_libretro.dll.zip` per core from buildbot's `windows/x86_64` index;
+  `RetroArch_cores.7z` is out: 1.5 GB in one solid block, which the SDK's extractor would hold in memory),
+  **the BIOS files** (`win/bios/latest.json`, `tools/biospack.py --arch win64`, into RetroArch's own
+  `RetroArch/bin/system`), **the samples** (`RetroArch/roms` and `RetroArch/bin/thumbnails`, the
+  Windows layout). Verified against the live site with both fallbacks (RetroArch 1.22.2 unpacked in
+  47 s, 237 cores in 3 min), and the installer end to end on the PC: the wizard, then `/S` as an update.

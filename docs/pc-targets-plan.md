@@ -392,4 +392,12 @@ owner's target PC (a BIOS *and* a UEFI machine); `tools/repo_publish.sh --local 
   `Documents\AutoBleem`, came up at 1920x1080 in ab2, scanned a game, found its cover, checked for updates
   without a console flash. A RetroArch launch on Windows waits for C (no RetroArch in the data tree yet).
 
-- **C, G** not started.
+- **C** done apart from the self-update round trip against the site: C1 `AutoBleemWinSetup` +
+  `WindowsInstallJob` (verified live), C2 the NSIS installer (the wizard by the owner, `/S` as an update),
+  C3 the launcher's mutex/`win-setup` key/detached installer start. `ci/build.sh win` builds the product
+  and the installer in the image (first server run 2026-09-20 evening).
+- **G** done: the site's PC tab has the *PC USB stick* / *Windows* pills; CLAUDE.md has "The Windows
+  product" and `apps/installer/CLAUDE.md` the helper.
+- **Both PS1 emulators on the PC targets** (the owner's ask, 2026-09-20): done - Windows by direct launches
+  (`-dotdir` for pcsx-abnxt, a junction run dir for pcsx-ab), the stick by the emulator repos' new `pcusb`
+  targets (`emu-i386`/`emunxt-i386` in the payload, the package published as `v2.0.0-pre0-021b55c`).
