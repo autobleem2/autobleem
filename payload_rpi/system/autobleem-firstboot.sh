@@ -174,7 +174,7 @@ note_in_data_logs() {
 # options: autobleem.txt on the boot partition
 #*******************************
 # key=value lines, # comments; edited from any PC (FAT), so CRLF and BOM are tolerated. Keys are what
-# payload_rpi/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads.
+# payload_rpi/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads, samples.
 # WiFi is deliberately not here - Raspberry Pi Imager's customisation and the boot partition's own
 # network-config (cloud-init) already cover "preset WiFi"; this script only asks when neither did.
 declare -A OPT=()
@@ -229,6 +229,7 @@ install_args() {
     v="${OPT[repo]:-}";           [ -n "$v" ] && args+=(--repo "$v")
     v="${OPT[thumbnails]:-}";     [ -n "$v" ] && args+=(--thumbnails "$v")
     v="${OPT[bios]:-yes}";        case "$v" in no|false|0) args+=(--no-bios) ;; esac
+    v="${OPT[samples]:-yes}";     case "$v" in no|false|0) args+=(--no-samples) ;; esac
     v="${OPT[downloads]:-yes}"
     if [ "${OPT[retroarch]:-}" = none ]; then v=no; fi
     case "$v" in no|false|0) args+=(--no-downloads) ;; esac
