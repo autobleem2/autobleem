@@ -153,7 +153,10 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
    pack; the launcher hides its RetroArch set and menu items when no RetroArch is
    installed. No answer within a minute means yes, so a Pi set up entirely from Imager's presets and left
    alone gets the full install. RetroArch can be added later by running `install.sh` again.
-4. grows the root partition first (`install.sh --grow-root <root_gib> --grow-only`: from the base image's
+4. from here on the screen is graphical - the AutoBleem logo, a bar for the step (of nine), a bar for the
+   download in progress and a box with the installer's last lines (`system/autobleem-install-ui.py`,
+   drawing on the framebuffer: nothing but python3 and the console fonts exist at that point). It
+   grows the root partition first (`install.sh --grow-root <root_gib> --grow-only`: from the base image's
    ~3 GB to `root_gib`, the rest of the card becomes the `AUTOBLEEM` partition) - the package unpacks to
    over 300 MB and a fresh root has less free than that - then unpacks the package and runs
    `install.sh --yes` with the options from `autobleem.txt` (below), with its whole output on the

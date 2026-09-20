@@ -1434,24 +1434,38 @@ EOF
 #*******************************
 # main
 #*******************************
+# "@@phase N/M text" lines for autobleem-firstboot.sh's screen (system/autobleem-install-ui.py), which
+# turns them into its first progress bar; only with AB_UI_MARKERS=1, a terminal never sees them
+PHASES=9
+phase() { [ "${AB_UI_MARKERS:-0}" = 1 ] && printf '@@phase %s/%s %s\n' "$1" "$PHASES" "$2"; return 0; }
+
 main() {
     parse_args "$@"
+    phase 1 "Preparing"
     preflight
+    phase 2 "The system partition"
     maybe_grow_root             # --grow-root: the root must have room before apt fills it
     if [ "$GROW_ONLY" -eq 1 ]; then
         [ -n "$GROW_ROOT_GIB" ] || die "--grow-only needs --grow-root GIB"
         log "--grow-only: stopping here"
         exit 0
     fi
+    phase 3 "Installing packages"
     install_packages
+    phase 4 "The games partition"
     ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data
     create_tree
+    phase 5 "RetroArch"
     install_retroarch
+    phase 6 "RetroArch cores and assets"
     download_retroarch_content
     download_thumbnails         # the launcher's PS1 box art - wanted with or without RetroArch
+    phase 7 "BIOS files"
     download_bios_pack
+    phase 8 "AutoBleem"
     install_payload
+    phase 9 "Boot setup"
     install_service
     install_boot_splash
     configure_boot

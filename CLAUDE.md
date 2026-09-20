@@ -469,6 +469,17 @@ memory note: optional everywhere): unless `autobleem.txt` says `retroarch=`, the
 silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh` makes that a lean PS1-only
 install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
 pack shrinks to `scph5501.bin`/`scph5500.bin`.
+**The first boot has a screen** (2026-09-20, the owner's ask): `payload_rpi/system/autobleem-install-ui.py`
+draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdlib - it decodes the plymouth
+`splash.png` itself (a small PNG reader), renders text from the console's Terminus PSF fonts
+(`/usr/share/consolefonts`, PSF1/2 with their unicode tables) and puts tty8 in `KD_GRAPHICS`. The logo,
+"Setting up AutoBleem", bar 1 = the phase (from `@@phase N/9 text` lines `install.sh`'s `phase()` prints
+with `AB_UI_MARKERS=1`), bar 2 = the last percentage seen in the output (the download loops, wget) or a
+pulse, and a box with the last 8 lines (a `` progress line rewrites the box's last line). The first-boot
+script pipes `install.sh` through `tee` (the log) and the screen; `--keep-graphics` on success (the reboot
+takes the picture down), `text_mode()` on failure. ~40 ms a frame on a PC, 4 fps; `--render out.ppm
+--fonts DIR` draws one frame on a PC for a look. The image build injects the script and the splash into
+`/opt/autobleem-image/`. Verified on the Pi 400 with the real installer.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
 `After=multi-user.target cloud-final.service userconfig.service`, `StandardInput/Output=tty` on
 **`/dev/tty8`**, its own VT, switched to with `chvt 8` and back with `chvt 1`) **owns the screen and keyboard
