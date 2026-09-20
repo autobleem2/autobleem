@@ -50,6 +50,16 @@ give_tty_back() {
     chvt 1 >/dev/null 2>&1 || true
 }
 
+# the screen's program leaves tty8 in graphics mode (the success path reboots from the picture); the
+# failure path wants text back for its message (KDSETMODE = 0x4B3A, KD_TEXT = 0)
+text_mode() {
+    python3 - <<'PY' 2>/dev/null || true
+import fcntl, os
+f = os.open("/dev/tty8", os.O_RDWR)
+fcntl.ioctl(f, 0x4B3A, 0)
+PY
+}
+
 # best-effort note in System/Logs, once the data partition exists to hold one
 note_in_data_logs() {
     local logdir
@@ -424,12 +434,28 @@ fi
 
 mapfile -t ARGS < <(install_args)
 log "Running install.sh ${ARGS[*]}"
-log "(this takes a while: packages, RetroArch built from source, cores and BIOS downloads)"
+log "(this takes a while: packages, RetroArch, cores and BIOS downloads)"
 printf '\n'
 {
     printf '=== %s: install.sh %s\n' "$(date)" "${ARGS[*]}"
 } >>"$INSTALL_LOG" 2>/dev/null || true
-if bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG"; then
+# The installer's output goes through the screen (autobleem-install-ui.py: the logo, a bar per phase from
+# install.sh's @@phase lines, a bar for the download in progress, the last lines of output) - and, whole,
+# into the log. Without the screen's program or a framebuffer the output shows as plain text, as before.
+UI="$IMAGE_DIR/autobleem-install-ui.py"
+if [ -f "$UI" ] && [ -c /dev/fb0 ] && command -v python3 >/dev/null 2>&1; then
+    run_installer() {
+        AB_UI_MARKERS=1 bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG" \
+            | python3 "$UI" --logo "$IMAGE_DIR/splash.png" --tty /dev/tty8 --keep-graphics
+        return "${PIPESTATUS[0]}"
+    }
+else
+    run_installer() {
+        bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG"
+        return "${PIPESTATUS[0]}"
+    }
+fi
+if run_installer; then
     log "install.sh succeeded"
     touch "$MARKER"
     rm -f "$ATTEMPTS_FILE"
@@ -449,6 +475,7 @@ if bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG"; then
     reboot
 else
     rc=$?
+    text_mode
     warn "install.sh failed (exit $rc) - will retry next boot. Log: $INSTALL_LOG"
     sleep 5
     give_tty_back

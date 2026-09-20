@@ -389,6 +389,9 @@ inject_payload() {
     mkdir -p "$image_dir"
     cp "$PACKAGE" "$image_dir/autobleem-rpi.tar.gz"
     install -m 0755 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
+    # the first boot's screen: the installer's output as a logo, two bars and a box (see the script)
+    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-install-ui.py" "$image_dir/autobleem-install-ui.py"
+    install -m 0644 "$REPO_DIR/payload_rpi/system/plymouth/splash.png" "$image_dir/splash.png"
     install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" \
         "$ROOT_MNT/etc/systemd/system/autobleem-firstboot.service"
 
@@ -421,6 +424,8 @@ inject_payload_rootless() {
     dfs "mkdir /opt/autobleem-image"
     put "$PACKAGE" /opt/autobleem-image/autobleem-rpi.tar.gz 0100644
     put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" /opt/autobleem-image/autobleem-firstboot.sh 0100755
+    put "$REPO_DIR/payload_rpi/system/autobleem-install-ui.py" /opt/autobleem-image/autobleem-install-ui.py 0100644
+    put "$REPO_DIR/payload_rpi/system/plymouth/splash.png" /opt/autobleem-image/splash.png 0100644
     put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" /etc/systemd/system/autobleem-firstboot.service 0100644
     dfs "mkdir /etc/systemd/system/multi-user.target.wants"
     dfs "rm /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service" >/dev/null
