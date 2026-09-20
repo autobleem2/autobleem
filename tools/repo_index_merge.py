@@ -50,7 +50,7 @@ def git(args, cwd, timeout=None):
     a prompt - a fetch that would ask for credentials fails instead"""
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_ASKPASS="", SSH_ASKPASS="")
     try:
-        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, env=env, timeout=timeout)
+        r = subprocess.run(["git"] + args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, env=env, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout if r.returncode == 0 else None
@@ -142,7 +142,7 @@ def main():
         write(pb, neutral(base))
         write(pt, neutral(theirs))
         r = subprocess.run(["git", "merge-file", "-p", "-L", "this checkout", "-L", "develop (base)",
-                            "-L", "the repository", pm, pb, pt], capture_output=True, text=True)
+                            "-L", "the repository", pm, pb, pt], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         merged = r.stdout
     if r.returncode < 0 or (r.returncode > 0 and "<<<<<<<" not in merged):
         print("repo_index.py: git merge-file failed: " + r.stderr.strip(), file=sys.stderr)
