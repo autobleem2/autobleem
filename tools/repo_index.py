@@ -44,7 +44,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 19
+INDEX_VERSION = 20
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -602,11 +602,15 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     # ---- PlayStation Classic ----
     out.append("<h2 class=\"plat\" id=\"psc\">PlayStation Classic</h2>")
     out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>The USB stick package.</p>"
-               "<p>Unzip it onto the root of a FAT32 stick named <code>SONY</code>, then boot the console with the "
-               "stick in the second controller port.</p>")
+               "<p>The console is set up from a PC: the installer prepares a USB stick from the build inputs below - "
+               "the stick's file system, then the cover databases and, if wanted, RetroArch with its cores, "
+               "libraries, apps and BIOS files.</p>"
+               "<p>The installer is in the works; until it is here, the pieces are below.</p>")
     block = release_block(("psc",))
-    out += block if block else ["<p>Nothing published yet.</p>"]
+    if block:
+        out.append("<p>The stick as one zip, covers included - unzip it onto the root of a FAT32 stick named "
+                   "<code>SONY</code> and boot the console with it:</p>")
+        out += block
     out += older()
     out.append("</div>")
     rows = []
