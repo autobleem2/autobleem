@@ -578,7 +578,12 @@ repository's). The server keeps `.tools/repo_index.prev.py` and falls back to it
 fails to run. A tree without git (the server's rsync trees) merges over the repository's stored base,
 right as long as that tree is at least as new as it. Two lines conflict easily - `render_index`'s
 signature and `main()`'s summary `print` - so a new panel is best committed to develop before the next
-session publishes. (The PC USB stick's `pc/` panels landed on develop with the merge of 2026-09-20.)
+session publishes. (The PC USB stick's `pc/` panels landed on develop with the merge of 2026-09-20.) Two
+things the first publishes through it showed: the server's python is 3.6, so the tool uses no
+`capture_output`; and a **stored base older than a region both sides had added** conflicts on every
+publish that touches that region, whichever side is right - the base only moves on a successful publish
+**from a git checkout** (the server's rsync tree has none), and now moves even when the two copies are
+already identical. So: land the page change on develop, publish from the PC checkout.
 `AB_REPO_URL` is the base URL everything generated starts with.
 
 It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
@@ -852,8 +857,13 @@ everything of the Pi's: the launcher on tty1 over kmsdrm, the exFAT data partiti
   minutes saved), a reboot, and **the ab2 launcher on the screen**. The site has `pc/retroarch/`
   (v1.22.2, 6 MB: desktop OpenGL only - GLES and GL together leave RetroArch's gl1 driver unlinkable) and
   `pc/cores/i386/` (212 cores, 779 MB; `unzip`'s "done with warnings" over the cheats bundle used to kill
-  `build_cores.sh`), so a fresh first boot takes the fast road. Untested: UEFI (both widths), real hardware,
-  a pad (keyboard-as-pad is off on an appliance, so the VM shows the carousel and no more).
+  `build_cores.sh`), so a fresh first boot takes the fast road - **~8 minutes to the launcher, seen on a
+  BIOS VM and on a 64-bit UEFI VM** (the amd64 kernel with the i386 userland: no 64-bit RetroArch exists or
+  is needed). The `7ad9b85` image is on the site (`pc/images/`, the `pcusb` package in the pre-release,
+  `pc-install.html`). Untested: 32-bit UEFI, real hardware, a pad (keyboard-as-pad is off on an appliance,
+  so the VM shows the carousel and no more). Found on the way: **every Pi and PC-stick install had been
+  losing its sample games** - the pack has had no `Games/` since Tetrade left and `tar` was told to extract
+  it by name (fixed: the members come from the pack).
 
 ## The online update (2026-09-20, a Pi and the dev hosts - never the console)
 
