@@ -8,6 +8,8 @@
 #   tools/repo_publish.sh cores armhf build_cores/dist/cores-armhf-*.tar.gz    -> rpi/cores/armhf/
 #   tools/repo_publish.sh psc-retroarch v1.22.2-1 dist/release/retroarch-psc-v1.22.2-1.zip dist/release/manifest.json
 #                                                                              -> psc/retroarch/v1.22.2-1/ (the retroarch-psc repo's `make publish`)
+#   tools/repo_publish.sh psc-cores dist/release/cores-psc-20260920.tar.gz dist/release/cores-psc-20260920.json
+#                                                                              -> psc/cores/ (newest date kept)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
@@ -48,6 +50,7 @@ case "$KIND" in
     retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/retroarch/$VERSION" ;;
     cores)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/cores/$VERSION" ;;
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
+    psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;
     index)     DEST="" ;;
