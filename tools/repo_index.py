@@ -17,6 +17,11 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     psc/apps/latest.json               the newest pack of the console's third-party Apps (psc/apps/apps-psc-<date>.tar.gz)
     psc/bios/latest.json               the console's BIOS list (psc/bios/biospack.txt: what the installer fetches from
                                        RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
+    win/retroarch/<v>/                 RetroArch for the Windows product: libretro's own x86_64 build repacked as
+                                       retroarch-win64-<v>.tar.gz (ci/build_retroarch.sh win64), the newest kept,
+                                       latest.json = the file plus "version"
+    win/cores/                         cores-win64-<date>.tar.gz (ci/build_cores.sh win64), the newest kept
+    win/bios/                          biospack-win64.txt, the Windows list (tools/biospack.py --arch win64)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     emu/pcsx-ab/latest.json            the newest build of each emulator, one package per platform (emu/<name>/<version>/,
@@ -25,6 +30,7 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
     rpi-install.html                   the Raspberry Pi manual: which image for which Pi, the setup, games
+    pc-install.html                    the PC USB stick's manual: what it runs on, writing the stick, the setup
 
 Every file's sha256 comes from its `<name>.sha256` sidecar (sha256sum format) when there is one, else it
 is computed and the sidecar written.
@@ -46,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 25
+INDEX_VERSION = 29
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -58,16 +64,28 @@ PACKAGE_KINDS = [
      "the installer adds those from the packs below and db/)"),
     ("rpi", re.compile(r"^autobleem-rpi(-armhf)?(-v.*)?\.tar\.gz$"), "Raspberry Pi, 32-bit OS (tarball + install.sh)"),
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
-    ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
+    ("pcusb", re.compile(r"^autobleem-pcusb-i386.*\.tar\.gz$"),
+     "PC USB stick, 32-bit Debian (tarball + install.sh - what the stick image installs and updates from)"),
+    ("win-setup", re.compile(r"^AutoBleemSetup-.*\.exe$"), "Windows installer (per user, no administrator rights)"),
+    ("win-product", re.compile(r"^autobleem-win-product-.*\.zip$"),
+     "Windows, the same program as a portable folder (dataroot.txt names the data folder)"),
+    ("win", re.compile(r"^autobleem-win-(?!product).*\.zip$"), "Windows (launcher, for a look on a PC)"),
     ("updateroms", re.compile(r"^UpdateRoms-.*\.zip$"), "UpdateRoms for Windows (scan a stick or card on a PC)"),
 ]
 IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-rpi-(?P<arch>armhf|arm64)\.img\.xz$")
-RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64)\.tar\.gz$")
-CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz$")
+# the PC stick's image (tools/make_pc_image.sh), under pc/images/<version>/
+PC_IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-pcusb-(?P<arch>i386)\.img\.xz$")
+# the appliances' RetroArch builds and cores tarballs, under rpi/ (armhf, arm64) and pc/ (i386)
+RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64|i386)\.tar\.gz$")
+CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64|i386)-(?P<date>[0-9]{8})\.tar\.gz$")
+PLATFORM_ARCHES = {"rpi": ("armhf", "arm64"), "pc": ("i386",)}
 # the console build's tag is the RetroArch version plus a build number (github.com/autobleem/retroarch-psc)
 PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
+# the Windows product: libretro's own build repacked, its cores, its BIOS list (AutoBleemWinSetup reads them)
+WIN_RETROARCH_RE = re.compile(r"^retroarch-win64-(?P<version>[0-9][0-9.]*)\.tar\.gz$")
+WIN_CORES_RE = re.compile(r"^cores-win64-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 # the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
@@ -275,8 +293,10 @@ def index_releases(repo, base_url):
 #*******************************
 # RetroArch builds
 #*******************************
-def index_retroarch(repo, base_url):
-    root = os.path.join(repo, "rpi", "retroarch")
+def index_retroarch(repo, base_url, platform="rpi"):
+    """<platform>/retroarch/<tag>/retroarch-<tag>-<arch>.tar.gz (ci/build_retroarch.sh) - the newest tag kept,
+    latest.json = its entries by architecture; what install.sh and the launcher's update read."""
+    root = os.path.join(repo, platform, "retroarch")
     builds = {}  # tag -> arch -> entry
     if os.path.isdir(root):
         for tag in os.listdir(root):
@@ -382,7 +402,12 @@ def index_psc_bios(repo, base_url):
     """psc/bios/biospack.txt - the console's BIOS manifest (tools/biospack.py --arch psc): one line per file,
     <sha256> <size> <url> <path>, the URLs pointing at RetroBIOS. latest.json says how many files and bytes
     the installer would fetch, and which RetroBIOS commit the list is from."""
-    path = os.path.join(repo, "psc", "bios", "biospack.txt")
+    return index_bios_list(repo, base_url, "psc", "biospack.txt")
+
+
+def index_bios_list(repo, base_url, platform, filename):
+    """<platform>/bios/<filename> -> <platform>/bios/latest.json (see index_psc_bios)"""
+    path = os.path.join(repo, platform, "bios", filename)
     if not os.path.isfile(path):
         return None
     entry = file_entry(repo, base_url, path)
@@ -401,8 +426,64 @@ def index_psc_bios(repo, base_url):
                 total += int(parts[1])
     entry["count"] = count
     entry["total_bytes"] = total
-    write_json(os.path.join(repo, "psc", "bios", "latest.json"), entry)
+    write_json(os.path.join(repo, platform, "bios", "latest.json"), entry)
     return entry
+
+
+#*******************************
+# the Windows product
+#*******************************
+def win_version_key(version):
+    return tuple(int(x) for x in re.findall(r"\d+", version)) or (0,)
+
+
+def index_win(repo, base_url):
+    """win/retroarch/<v>/retroarch-win64-<v>.tar.gz (libretro's Windows build repacked - the newest version
+    kept, latest.json = its entry plus "version"), win/cores/cores-win64-<date>.tar.gz (the newest kept,
+    latest.json = its entry plus "date") and win/bios/biospack-win64.txt (latest.json as for the console)
+    - what AutoBleemWinSetup fetches, each falling back to libretro's own servers when missing here."""
+    out = {}
+    root = os.path.join(repo, "win", "retroarch")
+    builds = {}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            note_published(folder)
+            for path in data_files(folder):
+                m = WIN_RETROARCH_RE.match(os.path.basename(path))
+                if m and m.group("version") == version:
+                    builds[version] = file_entry(repo, base_url, path)
+    if builds:
+        newest = max(builds, key=win_version_key)
+        prune([os.path.join(root, v) for v in builds if v != newest], [], "Windows RetroArch build")
+        entry = dict(builds[newest])
+        entry["version"] = newest
+        write_json(os.path.join(root, "latest.json"), entry)
+        out["retroarch"] = entry
+    root = os.path.join(repo, "win", "cores")
+    dated = {}
+    for path in data_files(root):
+        m = WIN_CORES_RE.match(os.path.basename(path))
+        if m:
+            dated[m.group("date")] = path
+    if dated:
+        newest = max(dated)
+        for date, path in dated.items():
+            if date != newest:
+                print("pruning cores tarball %s" % os.path.basename(path))
+                os.remove(path)
+                if os.path.isfile(path + ".sha256"):
+                    os.remove(path + ".sha256")
+        entry = file_entry(repo, base_url, dated[newest])
+        entry["date"] = newest
+        write_json(os.path.join(root, "latest.json"), entry)
+        out["cores"] = entry
+    bios = index_bios_list(repo, base_url, "win", "biospack-win64.txt")
+    if bios:
+        out["bios"] = bios
+    return out
 
 
 def index_psc_apps(repo, base_url):
@@ -414,11 +495,11 @@ def index_psc_apps(repo, base_url):
 #*******************************
 # cores tarballs
 #*******************************
-def index_cores(repo, base_url):
-    """rpi/cores/<arch>/cores-<arch>-<date>.tar.gz - the newest per architecture, the rest deleted."""
-    root = os.path.join(repo, "rpi", "cores")
+def index_cores(repo, base_url, platform="rpi"):
+    """<platform>/cores/<arch>/cores-<arch>-<date>.tar.gz - the newest per architecture, the rest deleted."""
+    root = os.path.join(repo, platform, "cores")
     latest = {}
-    for arch in ("armhf", "arm64"):
+    for arch in PLATFORM_ARCHES[platform]:
         folder = os.path.join(root, arch)
         dated = {}
         for path in data_files(folder):
@@ -497,6 +578,39 @@ def index_images(repo, base_url):
 
 
 #*******************************
+# PC stick images
+#*******************************
+def index_pc_images(repo, base_url):
+    """pc/images/<version>/autobleem-<version>-pcusb-i386.img.xz (+ .sha256; tools/make_pc_image.sh) - one
+    pre-release set at most, stable ones kept; latest.json = the newest stable, else the pre-release."""
+    root = os.path.join(repo, "pc", "images")
+    versions = {}  # version -> {arch: entry}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            note_published(folder)
+            for path in data_files(folder):
+                m = PC_IMAGE_RE.match(os.path.basename(path))
+                if m:
+                    versions.setdefault(version, {})[m.group("arch")] = file_entry(repo, base_url, path)
+    if not versions:
+        return versions
+    pre = [v for v in versions if is_prerelease(v)]
+    stable = [v for v in versions if not is_prerelease(v)]
+    if len(pre) > 1:
+        keep = newest_of(pre)
+        prune([os.path.join(root, v) for v in pre if v != keep], [], "pre-release PC image set")
+        versions = {v: f for v, f in versions.items() if v == keep or v in stable}
+    newest = newest_of(stable) or newest_of(versions)
+    latest = {"version": newest, "prerelease": is_prerelease(newest)}
+    latest.update(versions[newest])
+    write_json(os.path.join(root, "latest.json"), latest)
+    return versions
+
+
+#*******************************
 # pcsx-abnxt, the next emulator
 #*******************************
 def pcsx_version_key(version):
@@ -549,7 +663,7 @@ def index_pcsx(repo, base_url, name="pcsx-abnxt"):
 #*******************************
 def index_samples(repo, base_url):
     """samples/samples-<date>.tar.gz (+ samples-<date>.json, what is inside - tools/build_samples.py) - the
-    newest kept; latest.json is what payload_rpi/install.sh reads (url, sha256, date, the games)."""
+    newest kept; latest.json is what payload_linux/install.sh reads (url, sha256, date, the games)."""
     root = os.path.join(repo, "samples")
     dated = {}
     for path in data_files(root):
@@ -632,13 +746,22 @@ nav.tabs a.active{background:var(--panel);color:var(--cyan);border-color:var(--c
 body.js section.tab{display:none}
 body.js section.tab.active{display:block}
 body.js section.tab h2.plat{display:none}
+nav.subtabs{display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .6rem}
+nav.subtabs a{padding:.3rem .9rem;border:1px solid var(--line);border-radius:999px;background:rgba(4,22,56,.5);
+  color:var(--dim);font-size:.9rem;letter-spacing:.04em}
+nav.subtabs a:hover{color:#fff;text-decoration:none}
+nav.subtabs a.active{background:var(--panel);color:var(--cyan);border-color:var(--cyan)}
+h3.subtab{font-size:1.2rem;text-transform:none;letter-spacing:0;color:#fff;margin:1.6rem 0 .2rem}
+body.js section.subtab{display:none}
+body.js section.subtab.active{display:block}
+body.js section.subtab h3.subtab{display:none}
 ul,ol{line-height:1.55;padding-left:1.4rem}li{margin:.3rem 0}
 footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None, pcsx=None):
+                 psc_apps=None, psc_bios=None, pc=None, pcsx=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -691,11 +814,11 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     out.append("<div class=\"hero\"></div><main>")
     out.append("<div class=\"panel\"><h1>Downloads</h1>"
                "<p><a href=\"https://github.com/autobleem/AutoBleem2\">AutoBleem</a>, the game launcher for the "
-               "PlayStation Classic and the Raspberry Pi.</p>"
+               "PlayStation Classic, the Raspberry Pi and the PC - as a bootable USB stick or a Windows program.</p>"
                "<p>Each platform's tab has two parts:</p>"
                "<ul class=\"what\">"
                "<li><b>Install</b> - what you install from: the console's USB stick package, the Pi images, the "
-               "Windows programs.</li>"
+               "PC stick image, the Windows installer.</li>"
                "<li><b>Build inputs</b> - the pieces the installers, the image build and the CI fetch from here: "
                "RetroArch builds, cores, libraries, apps, the cover databases.</li>"
                "</ul>"
@@ -829,18 +952,90 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
         out.append("<p>Nothing published yet.</p>")
     out.append("</div>")
 
-    # ---- PC ----
+    # ---- PC: two products, two sub-tabs (tabbed() splits the section on the h3.subtab headings) ----
     out.append("<h2 class=\"plat\" id=\"pc\">PC</h2>")
+    pc = pc or {}
+    # the PC USB stick: the image a user writes to a stick (Install), and under it what it installs and
+    # updates from - the tarball, the i386 RetroArch build, the cores (Build inputs)
+    out.append("<h3 class=\"subtab\" id=\"pc-usb\">PC USB stick</h3>")
+    pc_images = pc.get("images") or {}
+    if pc_images:
+        out.append("<div class=\"panel\"><h2>Install</h2>"
+                   "<p>A 32-bit Debian appliance on a USB stick, the same as the Raspberry Pi's: write the image to a "
+                   "stick of 8 GB or more (Rufus in DD mode, balenaEtcher, <code>dd</code>), boot the PC from it "
+                   "(BIOS or UEFI, Secure Boot off) and the first boot sets AutoBleem up on the screen; the rest of "
+                   "the stick becomes the games partition. <a href=\"/pc-install.html\">The whole setup, step by "
+                   "step.</a></p>")
+        rows = []
+        for version in sorted(pc_images, key=version_key, reverse=True):
+            for arch, f in sorted(pc_images[version].items()):
+                label = "%s (%s)" % (version, "development build" if is_prerelease(version) else "stable")
+                rows.append(row(label, f))
+        out.append(table(rows, ("Version", "Image", "")))
+        out.append("</div>")
+    else:
+        out.append("<div class=\"panel\"><h2>Install</h2><p>No stick image published yet.</p></div>")
+    block = release_block(("pcusb",))
+    pc_builds = pc.get("builds") or {}
+    pc_cores = pc.get("cores") or {}
+    if block or pc_builds or pc_cores:
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+                   "<p>What the stick's first boot and the launcher's update fetch: the package (unpack it on a minimal "
+                   "Debian 12 i386 and run <code>sudo bash install.sh</code> to install by hand), RetroArch built for "
+                   "i386 (<a href=\"/pc/retroarch/latest.json\">latest.json</a>) and the cores tarball "
+                   "(<a href=\"/pc/cores/latest.json\">latest.json</a>).</p>")
+        out += block
+        rows = []
+        for tag, arches in pc_builds.items():
+            for arch, f in sorted(arches.items()):
+                rows.append(row("RetroArch %s, %s" % (tag, arch), f))
+        for arch, f in sorted(pc_cores.items()):
+            rows.append(row("cores, %s (%s)" % (arch, date_of(f["date"])), f))
+        if rows:
+            out.append(table(rows))
+        out.append("</div>")
+
+    # the Windows product: the installer (Install), the portable folder and the two tools next to it, and
+    # what the setup helper fetches - libretro's RetroArch repacked, the cores, the BIOS list (Build inputs)
+    out.append("<h3 class=\"subtab\" id=\"pc-windows\">Windows</h3>")
     out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>Two Windows programs:</p>"
+               "<p>AutoBleem as a Windows program: run the installer - it asks for nothing more than a folder for "
+               "the games, installs for your user alone (no administrator rights) and, if you tick it, fetches "
+               "RetroArch with every core so the other systems' games play too. The launcher runs full screen, "
+               "like on the console; Esc or the menu's Power Off leaves it. It keeps itself up to date from "
+               "here (Options -> Updates).</p>"
                "<ul class=\"what\">"
-               "<li><b>The launcher</b> - AutoBleem itself, for a look on a PC.</li>"
+               "<li><b>AutoBleemSetup</b> - the installer (SmartScreen: <i>More info -> Run anyway</i>; it is not "
+               "signed).</li>"
+               "<li><b>Portable</b> - the same program as a folder for a stick or a drive: rename "
+               "<code>dataroot.txt.example</code> to <code>dataroot.txt</code> and name the games folder in "
+               "it.</li>"
                "<li><b>UpdateRoms</b> - prepares a console stick or a Pi card in a card reader: the playlists, "
                "names from RetroArch's databases, box art.</li>"
+               "<li><b>The launcher</b> zip - AutoBleem's development build, for a look at a stick's tree on a "
+               "PC (<code>autobleem-gui.exe &lt;root&gt;</code>).</li>"
                "</ul>")
-    block = release_block(("win", "updateroms"))
+    block = release_block(("win-setup", "win-product", "updateroms", "win"))
     out += block if block else ["<p>Nothing published yet.</p>"]
     out.append("</div>")
+    win = pc.get("win") or {}
+    if win:
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+                   "<p>What the installer's setup step fetches (each with a fallback to libretro's own servers when "
+                   "missing here): RetroArch for Windows - libretro's build, repacked "
+                   "(<a href=\"/win/retroarch/latest.json\">latest.json</a>), the cores "
+                   "(<a href=\"/win/cores/latest.json\">latest.json</a>) and the BIOS list "
+                   "(<a href=\"/win/bios/latest.json\">latest.json</a> - the files themselves come from RetroBIOS).</p>")
+        rows = []
+        if win.get("retroarch"):
+            rows.append(row("RetroArch %s, Windows x86_64" % win["retroarch"]["version"], win["retroarch"]))
+        if win.get("cores"):
+            rows.append(row("cores, Windows x86_64 (%s)" % date_of(win["cores"]["date"]), win["cores"]))
+        if win.get("bios"):
+            rows.append(row("BIOS list (%d files, %d MB)" % (win["bios"]["count"], win["bios"]["total_bytes"] // (1024 * 1024)),
+                            win["bios"]))
+        out.append(table(rows))
+        out.append("</div>")
 
     # ---- shared build inputs ----
     if dbs or samples or pcsx:
@@ -903,22 +1098,58 @@ def tabbed(out):
     tabs = [(rest[i], rest[i + 1], rest[i + 2]) for i in range(0, len(rest), 3)]
     bar = "<nav class=\"tabs\" role=\"tablist\">" + "".join(
         "<a href=\"#%s\" data-tab=\"%s\" role=\"tab\">%s</a>" % (tid, tid, title) for tid, title, _ in tabs) + "</nav>"
+
+    def subtabbed(parent, body):
+        """a section with <h3 class="subtab" id=...> headings becomes a pill bar and one <section
+        class="subtab"> per heading (the PC's two products); one without is returned as it is"""
+        sub_parts = re.split(r'<h3 class="subtab" id="([a-z-]+)">([^<]+)</h3>', body)
+        if len(sub_parts) < 3:
+            return body
+        intro, sub_rest = sub_parts[0], sub_parts[1:]
+        subs = [(sub_rest[i], sub_rest[i + 1], sub_rest[i + 2]) for i in range(0, len(sub_rest), 3)]
+        sub_bar = "<nav class=\"subtabs\" role=\"tablist\">" + "".join(
+            "<a href=\"#%s\" data-subtab=\"%s\" data-parent=\"%s\" role=\"tab\">%s</a>" % (sid, sid, parent, title)
+            for sid, title, _ in subs) + "</nav>"
+        return intro + sub_bar + "".join(
+            "<section class=\"subtab\" id=\"%s\" data-parent=\"%s\"><h3 class=\"subtab\">%s</h3>%s</section>"
+            % (sid, parent, title, sub_body) for sid, title, sub_body in subs)
+
     sections = "".join(
-        "<section class=\"tab\" id=\"%s\"><h2 class=\"plat\">%s</h2>%s</section>" % (tid, title, body)
+        "<section class=\"tab\" id=\"%s\"><h2 class=\"plat\">%s</h2>%s</section>" % (tid, title, subtabbed(tid, body))
         for tid, title, body in tabs)
     script = """<script>
 (function(){
   var tabs=document.querySelectorAll('nav.tabs a'), secs=document.querySelectorAll('section.tab');
+  var subs=document.querySelectorAll('section.subtab'), subLinks=document.querySelectorAll('nav.subtabs a');
   if(!tabs.length) return;
   document.body.classList.add('js');
+  function showSub(id){
+    var parent=null;
+    subs.forEach(function(s){ if(s.id===id) parent=s.dataset.parent; });
+    if(!parent) return false;
+    subs.forEach(function(s){ if(s.dataset.parent===parent) s.classList.toggle('active', s.id===id); });
+    subLinks.forEach(function(a){ if(a.dataset.parent===parent) a.classList.toggle('active', a.dataset.subtab===id); });
+    return parent;
+  }
   function show(id){
+    var parent=showSub(id);
+    if(parent) id=parent;
     var found=false;
     secs.forEach(function(s){ var on=(s.id===id); s.classList.toggle('active',on); if(on) found=true; });
     if(!found){ show(secs[0].id); return; }
     tabs.forEach(function(a){ a.classList.toggle('active', a.dataset.tab===id); });
+    // a plain section shows its first sub-tab
+    var first=null;
+    subs.forEach(function(s){ if(s.dataset.parent===id && !first) first=s; });
+    if(first && !parent){
+      var any=false; subs.forEach(function(s){ if(s.dataset.parent===id && s.classList.contains('active')) any=true; });
+      if(!any) showSub(first.id);
+    }
   }
   tabs.forEach(function(a){ a.addEventListener('click', function(ev){
     ev.preventDefault(); history.replaceState(null,'','#'+a.dataset.tab); show(a.dataset.tab); }); });
+  subLinks.forEach(function(a){ a.addEventListener('click', function(ev){
+    ev.preventDefault(); history.replaceState(null,'','#'+a.dataset.subtab); show(a.dataset.subtab); }); });
   window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
   show(location.hash.slice(1));
 })();
@@ -1047,6 +1278,99 @@ def render_rpi_install(base_url, images):
                % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
     return "\n".join(out) + "\n"
 
+#*******************************
+# pc-install.html
+#*******************************
+def render_pc_install(base_url, images):
+    """The PC stick's manual: what it is, what it runs on, writing the image, the first boot, where games go."""
+    e = html.escape
+    newest = newest_of(images) if images else None
+    out = []
+    out.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">")
+    out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    out.append("<title>AutoBleem on a PC USB stick</title><link rel=\"icon\" href=\"/assets/icon.png\">")
+    out.append("<style>%s</style></head><body>" % PAGE_CSS)
+    out.append("<div class=\"hero\"></div><main>")
+    out.append("<div class=\"panel\"><h1>AutoBleem on a PC USB stick</h1>"
+               "<p>AutoBleem on a USB stick that turns any PC into a PlayStation Classic-style console: boot the PC "
+               "from the stick and it comes up in the game carousel, with nothing of the PC's own disks touched. "
+               "Games live on the stick itself, on a partition any computer can write to. A 32-bit Linux is inside, "
+               "so an old PC works as well as a new one. <a href=\"/\">&larr; Downloads</a></p>")
+    if newest:
+        f = images[newest].get("i386")
+        if f:
+            out.append("<p><a class=\"dl\" href=\"%s\">%s (%s)</a>%s</p>" % (
+                e(f["url"]), e(f["name"]), human(f["size"]),
+                " - a development build" if is_prerelease(newest) else ""))
+    out.append("</div>")
+
+    out.append("<div class=\"panel\"><h2>You need</h2><ul>"
+               "<li>A PC with an <strong>Intel or AMD processor</strong> - anything from a Pentium M / Athlon XP "
+               "up, 32- or 64-bit; 1 GB of memory or more. The stick carries three Linux kernels and boots the one "
+               "the processor calls for, from a plain BIOS or from UEFI (32- or 64-bit).</li>"
+               "<li>A USB stick of <strong>8 GB or more</strong> - 32 GB and up for room for games (the system "
+               "takes 8 GB, the rest becomes the games partition).</li>"
+               "<li>A USB or Bluetooth gamepad - a DualShock 4, an Xbox pad, an 8BitDo, any pad Linux sees as a "
+               "game controller. The launcher is driven with the pad; a keyboard is only for the first boot.</li>"
+               "<li><strong>Internet on the first boot</strong> (a network cable, or WiFi - the setup asks): it "
+               "downloads RetroArch, its cores, the BIOS files and the cover databases.</li>"
+               "<li>A screen on HDMI or DisplayPort; the sound goes out the same cable.</li></ul>"
+               "<p><strong>Graphics:</strong> Intel and AMD graphics work out of the box. Nvidia cards run on the "
+               "open driver, which handles most of them; a very new one may show nothing - use another card or "
+               "the processor's own graphics.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Writing the stick</h2><ol>"
+               "<li>Download the image above (a <code>.img.xz</code> file).</li>"
+               "<li><strong>Windows:</strong> <a href=\"https://rufus.ie/\">Rufus</a> - pick the stick, pick the "
+               "image (Rufus reads .img.xz as it is), and when it asks, choose <em>Write in DD Image mode</em>. "
+               "<a href=\"https://etcher.balena.io/\">balenaEtcher</a> works as well, on every system.</li>"
+               "<li><strong>Linux / macOS:</strong> <code>xzcat autobleem-*.img.xz | sudo dd of=/dev/sdX bs=4M "
+               "status=progress</code> (the stick's device, not a partition of it - everything on the stick is "
+               "erased).</li></ol></div>")
+
+    out.append("<div class=\"panel\"><h2>Booting from it</h2>"
+               "<p>Plug the stick in and start the PC from it: the boot menu key at power-on (F12, F11, F8 or Esc "
+               "depending on the make - the PC's own screen says which), or the boot order in the BIOS/UEFI "
+               "setup. <strong>Secure Boot must be off</strong> in the UEFI setup: nothing on the stick is "
+               "signed. Both a BIOS (\"legacy\" / CSM) boot and a UEFI boot work.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>What the first boot does</h2>"
+               "<p>The first boot is the installation, on the screen, watched and answered with the keyboard:</p><ol>"
+               "<li>With no network cable it asks for a WiFi network and its password.</li>"
+               "<li>It asks whether to install <strong>RetroArch</strong> (the other systems - NES, SNES, Mega "
+               "Drive, arcade and about a hundred more; close to a GB of downloads). A minute with no answer "
+               "means yes. Without it AutoBleem is a PlayStation-only machine.</li>"
+               "<li>The system partition is grown to 8 GB and <strong>the rest of the stick becomes the "
+               "<code>AUTOBLEEM</code> games partition</strong> (exFAT).</li>"
+               "<li>RetroArch, its cores, the BIOS files, the cover databases and the sample games are "
+               "downloaded; the boot logo is set up.</li>"
+               "<li>The PC reboots into the launcher.</li></ol>"
+               "<p>Something failed? The screen says so and the same boot runs again next time. The log is "
+               "<code>/var/log/autobleem-firstboot-install.log</code> on the stick's Linux partition.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Games</h2>"
+               "<p>Plug the stick into any computer: the <code>AUTOBLEEM</code> drive is the games partition. "
+               "PlayStation games go into <code>Games/</code>, a folder per game (<code>.cue</code>+<code>.bin</code>, "
+               "<code>.pbp</code>, <code>.chd</code>) - or drop the files straight into <code>Games/</code> and the "
+               "launcher sorts them into folders. The other systems' games go into <code>RetroArch/roms/</code>, a "
+               "folder per system, named as they are already there. The launcher scans on every start and while "
+               "it runs; covers and titles come from the databases and, when online, from libretro's thumbnails.</p>"
+               "<p>Your own PlayStation BIOS (<code>romw.bin</code>, <code>romJP.bin</code>) goes into "
+               "<code>System/Bios/</code>; the setup put the standard ones there already.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Options and updates</h2>"
+               "<p><code>autobleem.txt</code> on the stick's small first partition holds the first boot's "
+               "options (the system partition's size, RetroArch yes/no, what to download) - edit it on any "
+               "computer before the first boot; the comments in it explain each key.</p>"
+               "<p>The launcher checks this site for updates once a day (<em>Options &rarr; Updates</em>, "
+               "and <em>Software Update</em> in the L2+R2 menu) and installs one from inside, the games "
+               "untouched.</p>"
+               "<p>For a terminal: <strong>ssh</strong> is on from the first boot, user <code>autobleem</code>, "
+               "password <code>autobleem</code> - change it (<code>passwd</code>). On the PC itself, Alt+F2 "
+               "gives a login prompt next to the launcher.</p></div>")
+    out.append("</main></body></html>")
+    return "\n".join(out)
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1062,25 +1386,32 @@ def main():
     releases = index_releases(repo, base_url)
     builds = index_retroarch(repo, base_url)
     cores = index_cores(repo, base_url)
+    pc_builds = index_retroarch(repo, base_url, "pc")
+    pc_cores = index_cores(repo, base_url, "pc")
+    pc_images = index_pc_images(repo, base_url)
     psc_builds = index_psc_retroarch(repo, base_url)
     psc_cores = index_psc_cores(repo, base_url)
     psc_libs = index_psc_libs(repo, base_url)
     psc_apps = index_psc_apps(repo, base_url)
     psc_bios = index_psc_bios(repo, base_url)
+    win = index_win(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
     pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
     pcsx = {name: b for name, b in pcsx.items() if b}
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pcsx)),
-                       ("rpi-install.html", render_rpi_install(base_url, images))):
+    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images, "win": win}
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx)),
+                       ("rpi-install.html", render_rpi_install(base_url, images)),
+                       ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases, %s sample pack, %d emulator builds" % (
-        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images), len(dbs),
-        "1" if samples else "0", len(pcsx)))
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, "
+          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack" % (
+        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images),
+        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0"))
 
 
 if __name__ == "__main__":

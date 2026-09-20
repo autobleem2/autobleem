@@ -23,6 +23,14 @@
 // work around a run, the RetroArch config transfer. What was an #ifdef AB_DEBUG_HOST in each interceptor is
 // now which ProcessRunner the composition root passes in, which is also what makes the argv assertable.
 //
+// Two ways to start an emulator, the platform ini's launch_mode (Env::directLaunch()):
+//   script  rc/launch.sh / rc/launch_rb.sh with the arguments those scripts read - the console, the Pi, the
+//           PC stick, the dev host
+//   direct  the emulator itself, no shell: pcsx-ab from Env::pcsxDir() with its -dotdir/-biosdir options,
+//           RetroArch from the first Env::retroArchBinaries() that exists, both full screen - the Windows
+//           product, where there is no shell to run a script in. No selection script is written either.
+// planPcsx()/planRetroArch() build the LaunchPlan for either; launch() runs it.
+//
 // Owned by App (App::launcher()).
 class LaunchService {
 public:
@@ -48,6 +56,19 @@ public:
     // where the launcher scripts are
     static std::string pcsxLauncherScript();      // rc/launch.sh
     static std::string retroArchLauncherScript(); // rc/launch_rb.sh
+    // the direct-launch programs: <pcsx dir>/pcsx-ab(.exe), and the first RetroArch binary that exists
+    // ("" when none does)
+    static std::string pcsxExecutable();
+    static std::string retroArchExecutable();
+
+    // what a launch runs, for either mode. The pcsx plan: the save-state folder, the disc image, the
+    // language id, the resume slot (-1 = none) and config.ini's aspect/filter flags as "0"/"1".
+    // The RetroArch plan: the file and the core - "NEON"/"PEOPS" for one of our PS1 games (the platform's
+    // PS1 core in direct mode), else a core path.
+    LaunchPlan planPcsx(const PsGame &game, const std::string &discImage, const std::string &lang, int resumePoint,
+                        const std::string &aspect, const std::string &filter) const;
+    static LaunchPlan planRetroArch(const std::string &file, const std::string &core);
+    static LaunchPlan planApp(const PsGame &game);
 
 private:
     enum class Path { Pcsx, RetroArch, App };

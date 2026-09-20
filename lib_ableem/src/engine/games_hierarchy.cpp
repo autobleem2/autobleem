@@ -194,7 +194,7 @@ void GamesHierarchy::getHierarchy(const std::string &path) {
     }
     printRowGameInfo(false);
 
-    string opath = Environment::getWorkingPath() + sep + "gameHierarchy_beforeScan.txt";
+    string opath = Environment::getPathToStateDir() + sep + "gameHierarchy_beforeScan.txt";
     ofstream outfile;
     outfile.open(opath);
     DirEntry::checkWritable(outfile, opath); // diagnostics only, keep going
@@ -209,7 +209,7 @@ void GamesHierarchy::getHierarchy(const std::string &path) {
 // run this after Scanner has filled in the serial so we can correctly match duplicate games
 //*******************************
 void GamesHierarchy::makeGamesToDisplayWhileRemovingChildDuplicates() {
-    string dupFilePath = Environment::getWorkingPath() + sep + "duplicateGames.txt";
+    string dupFilePath = Environment::getPathToStateDir() + sep + "duplicateGames.txt";
     dupFile.open(dupFilePath.c_str(), ios::binary);
 
     if (gameSubDirRows.size() > 0)

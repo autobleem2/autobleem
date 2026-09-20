@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # Runs once per boot, via autobleem-firstboot.service (WantedBy=multi-user.target), on a card written from
-# an image tools/make_rpi_image.sh built - until AutoBleem's own install.sh has completed successfully once.
+# an image tools/make_rpi_image.sh built - or a stick from tools/make_pc_image.sh's - until AutoBleem's own
+# install.sh has completed successfully once. The platform (a Pi, or the PC stick) decides where the boot
+# partition with autobleem.txt is and how the WiFi country is set; everything else is the same.
 #
 # The service hands this script a virtual terminal (tty8, switched onto the screen here), so the first boot
 # is something the user watches and can answer, not a silent background job: it waits for network, and when there is none it asks
@@ -21,10 +23,24 @@ MARKER="$IMAGE_DIR/.done"
 ATTEMPTS_FILE="$IMAGE_DIR/.attempts"
 MAX_ATTEMPTS=20
 SELF_SERVICE=autobleem-firstboot.service
-PACKAGE="$IMAGE_DIR/autobleem-rpi.tar.gz"
-UNPACK_DIR="$IMAGE_DIR/autobleem-rpi"
-BOOT_DIR=/boot/firmware
-OPTIONS_FILE="$BOOT_DIR/autobleem.txt"      # written by tools/make_rpi_image.sh from payload_rpi/system/autobleem.txt
+# the staged package: autobleem-rpi.tar.gz (a Pi) or autobleem-pcusb-i386.tar.gz (the PC stick), one of
+# them, its top directory named after the platform (tools/make_rpi_package.sh)
+PACKAGE="$(ls "$IMAGE_DIR"/autobleem-*.tar.gz 2>/dev/null | head -1)"
+PACKAGE="${PACKAGE:-$IMAGE_DIR/autobleem-rpi.tar.gz}"
+case "$(basename "$PACKAGE")" in
+    autobleem-pcusb*) PLATFORM=pcusb; UNPACK_DIR="$IMAGE_DIR/autobleem-pcusb" ;;
+    *)                PLATFORM=rpi;   UNPACK_DIR="$IMAGE_DIR/autobleem-rpi" ;;
+esac
+# where autobleem.txt is: a Pi's firmware partition, the PC image's ESP (written there by the image builder
+# from payload_linux/system/autobleem.txt or autobleem-pc.txt; editable from any PC, both are FAT)
+if [ "$PLATFORM" = pcusb ]; then
+    BOOT_DIR=/boot/efi
+else
+    BOOT_DIR=/boot/firmware
+fi
+OPTIONS_FILE="$BOOT_DIR/autobleem.txt"
+# how the dialogs name this computer - a PC user must never read "Pi"
+if [ "$PLATFORM" = pcusb ]; then MACHINE="this PC"; else MACHINE="this Pi"; fi
 INSTALL_LOG=/var/log/autobleem-firstboot-install.log   # install.sh's output, for a look after the fact (ssh)
 
 # the script's stdout is tty1; the journal only gets what log() sends it
@@ -174,7 +190,7 @@ note_in_data_logs() {
 # options: autobleem.txt on the boot partition
 #*******************************
 # key=value lines, # comments; edited from any PC (FAT), so CRLF and BOM are tolerated. Keys are what
-# payload_rpi/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads, samples.
+# payload_linux/system/autobleem.txt documents: root_gib, hdmi_mode, retroarch, thumbnails, bios, downloads, samples.
 # WiFi is deliberately not here - Raspberry Pi Imager's customisation and the boot partition's own
 # network-config (cloud-init) already cover "preset WiFi"; this script only asks when neither did.
 declare -A OPT=()
@@ -240,10 +256,10 @@ install_args() {
 # network
 #*******************************
 # "online" means a real fetch works, not just an interface with an address: DNS plus one HTTP round trip to
-# the host install.sh downloads from first.
+# the host install.sh's apt downloads from first.
 is_online() {
-    getent hosts downloads.raspberrypi.com >/dev/null 2>&1 || return 1
-    wget -q --spider --timeout=5 --tries=1 https://downloads.raspberrypi.com/ >/dev/null 2>&1
+    getent hosts deb.debian.org >/dev/null 2>&1 || return 1
+    wget -q --spider --timeout=5 --tries=1 https://deb.debian.org/ >/dev/null 2>&1
 }
 
 # waits up to $1 seconds, printing a dot a second
@@ -274,23 +290,28 @@ has_wifi_device() {
 }
 
 # the regulatory country: whatever is already set (Imager/the wizard/raspi-config put it on the kernel
-# command line - cmdline.txt first, it is the current setting, /proc/cmdline is what this boot started
-# with), else the locale's territory, else nothing - the prompt then asks
+# command line - a Pi's cmdline.txt first, it is the current setting, /proc/cmdline is what this boot
+# started with; the PC stick's is in modprobe.d), else the locale's territory, else nothing - the prompt then asks
 wifi_country_default() {
     local cc
     cc="$(cat "$BOOT_DIR/cmdline.txt" /proc/cmdline 2>/dev/null | tr ' ' '\n' \
         | sed -n 's/^cfg80211\.ieee80211_regdom=//p' | head -1)"
+    [ -n "$cc" ] && { echo "$cc"; return 0; }
+    cc="$(sed -n 's/^options cfg80211 ieee80211_regdom=//p' /etc/modprobe.d/cfg80211.conf 2>/dev/null | head -1)"
     [ -n "$cc" ] && { echo "$cc"; return 0; }
     cc="$(sed -n 's/^LANG=[a-z]*_\([A-Z][A-Z]\).*/\1/p' /etc/default/locale 2>/dev/null | head -1)"
     echo "${cc:-}"
 }
 
 # Raspberry Pi OS keeps WiFi soft-blocked (rfkill) until a country is set - that is why a Lite image whose
-# first-boot wizard skipped the WiFi step has no WiFi at all. raspi-config knows how to set it persistently.
+# first-boot wizard skipped the WiFi step has no WiFi at all. raspi-config knows how to set it persistently
+# on a Pi; a plain Debian takes it as a cfg80211 module option, kept in modprobe.d for the next boots.
 set_wifi_country() {
     local cc="$1"
-    if command -v raspi-config >/dev/null 2>&1; then
+    if [ "$PLATFORM" = rpi ] && command -v raspi-config >/dev/null 2>&1; then
         raspi-config nonint do_wifi_country "$cc" >/dev/null 2>&1 || true
+    else
+        printf 'options cfg80211 ieee80211_regdom=%s\n' "$cc" > /etc/modprobe.d/cfg80211.conf 2>/dev/null || true
     fi
     iw reg set "$cc" >/dev/null 2>&1 || true
     rfkill unblock wifi >/dev/null 2>&1 || true
@@ -317,7 +338,7 @@ interactive_network() {
     log "No network connection."
     if has_wifi_device; then
         cc="$(wifi_country_default)"
-        choice="$(ui_input "WiFi country" "Two letters, e.g. GB, PL, US - Raspberry Pi OS keeps WiFi blocked until one is set." \
+        choice="$(ui_input "WiFi country" "Two letters, e.g. GB, PL, US - WiFi stays blocked until one is set." \
             ${cc:+--default "$cc"})"
         cc="${choice:-$cc}"
         cc="$(echo "$cc" | tr 'a-z' 'A-Z' | tr -cd 'A-Z')"
@@ -329,7 +350,7 @@ interactive_network() {
             nmcli radio wifi on >/dev/null 2>&1 || true
         fi
     else
-        ui_message "No WiFi adapter found" "Ethernet is the only option on this Pi." --wait 3
+        ui_message "No WiFi adapter found" "Ethernet is the only option on $MACHINE." --wait 3
     fi
 
     while :; do
@@ -413,6 +434,12 @@ ensure_network() {
 #*******************************
 # main
 #*******************************
+# an image built from packages (tools/make_pc_image.sh) ships without ssh host keys - every stick would
+# share them otherwise - and Debian's sshd does not make its own the way Raspberry Pi OS's
+# regenerate_ssh_host_keys.service does; done first thing, so ssh works whatever happens below
+if [ -d /etc/ssh ] && ! ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then
+    ssh-keygen -A >/dev/null 2>&1 && systemctl restart ssh >/dev/null 2>&1 || true
+fi
 show_our_tty
 clear 2>/dev/null || true
 printf '\n\033[1m  AutoBleem - first boot setup\033[0m\n\n'
@@ -455,11 +482,15 @@ if ! ensure_network; then
     exit 1
 fi
 
-ui_message "Setting the clock..." "A Pi has no battery clock; the time comes from the network (NTP)."
-if wait_for_clock; then
-    log "Clock synchronised: $(date)"
-else
-    warn "clock not synchronised yet ($(date)) - carrying on"
+# a Pi has no battery clock: its time is the image's build date until NTP sets it, and apt refuses
+# repository metadata "from the future". A PC has an RTC - nothing to wait for there.
+if [ "$PLATFORM" = rpi ]; then
+    ui_message "Setting the clock..." "A Pi has no battery clock; the time comes from the network (NTP)."
+    if wait_for_clock; then
+        log "Clock synchronised: $(date)"
+    else
+        warn "clock not synchronised yet ($(date)) - carrying on"
+    fi
 fi
 
 ask_retroarch
@@ -476,7 +507,7 @@ if [ -d "$UNPACK_DIR" ] && [ ! -f "$EXTRACTED_MARKER" ]; then
 fi
 if [ ! -f "$EXTRACTED_MARKER" ]; then
     mkdir -p "$IMAGE_DIR"
-    if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR" autobleem-rpi/install.sh; then
+    if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR" "$(basename "$UNPACK_DIR")/install.sh"; then
         warn "cannot extract install.sh from $PACKAGE - will retry next boot"
         sleep 3
         give_tty_back
@@ -487,8 +518,13 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
         log "Growing the root filesystem to ${root_gib} GiB before unpacking"
         ui_message "Preparing the system partition..." "Growing it to ${root_gib} GiB."
         if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only 2>&1 | tee -a "$INSTALL_LOG"; then
+            # the dialog left the screen in graphics mode: text back, or the message is never seen (the
+            # first PC-stick boot sat on "Preparing the system partition" with the reason only in the log)
+            ui_message "Setup failed" "Could not grow the system partition. It will try again on the next boot." \
+                "The details are in $INSTALL_LOG (log in on another console)." --wait 8
+            text_mode
             warn "could not grow the root filesystem - will retry next boot. Log: $INSTALL_LOG"
-            sleep 5
+            sleep 3
             give_tty_back
             exit 1
         fi
@@ -518,7 +554,7 @@ fi
 
 INSTALLER="$UNPACK_DIR/install.sh"
 if [ ! -f "$INSTALLER" ]; then
-    # tools/make_rpi_package.sh's tarball has autobleem-rpi/ as its single top-level entry, so extracting
+    # tools/make_rpi_package.sh's tarball has autobleem-<platform>/ as its single top-level entry, so extracting
     # into $IMAGE_DIR should always produce $UNPACK_DIR/install.sh directly - this only fires if that
     # layout ever changes, and retrying won't fix it.
     warn "no install.sh under $UNPACK_DIR - package layout unexpected, giving up"

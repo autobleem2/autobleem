@@ -3,7 +3,7 @@
     "The sample games an install ships so a fresh AutoBleem is not an empty shelf: homebrew whose licence lets us",
     "redistribute it (every entry names it), one per system at least. tools/build_samples.py downloads each file",
     "from its upstream release (sha256-checked), lays it out as it lands on the data partition and packs",
-    "samples-<date>.tar.gz for the download repository (samples/); payload_rpi/install.sh fetches that.",
+    "samples-<date>.tar.gz for the download repository (samples/); payload_linux/install.sh fetches that.",
     "same name in the thumbnails tree. Covers: tools/samples/make_covers.py -> covers/ (checked in).",
     "'shot' is the screenshot make_covers.py draws from (a file under tools/samples/shots/, from the game's own",
     "repository, under the game's licence).",

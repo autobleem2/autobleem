@@ -66,7 +66,7 @@ SoC.
   missing is entirely the *distro/appliance* side - getting a PC to boot into that binary with nothing else
   running.
 - **X11/Wayland turn out not to be needed.** SDL2 talks to the DRM/KMS device directly (`SDL_VIDEODRIVER=kmsdrm`),
-  which is exactly what the Pi's `autobleem.service` already sets (`payload_rpi/system/autobleem.service`) to
+  which is exactly what the Pi's `autobleem.service` already sets (`payload_linux/system/autobleem.service`) to
   draw straight to the screen from a plain systemd service on a virtual terminal, no compositor. The same
   should work on a PC with a KMS-capable driver (Intel/AMD's kernel modesetting drivers, and Nouveau for
   Nvidia - the closed Nvidia driver is the one common case that does *not* do KMS the same way and would be
@@ -79,7 +79,7 @@ SoC.
      Linux - Alpine specifically has a documented "diskless"/USB-install mode plus an `apkovl` overlay
      mechanism built exactly for "always boot straight into one app" appliances), then apply a genericized
      version of the Pi's own playbook on top: a systemd unit that owns tty1 the way
-     `payload_rpi/system/autobleem.service`/`autobleem-session.sh` do, `SDL_VIDEODRIVER=kmsdrm`, packages
+     `payload_linux/system/autobleem.service`/`autobleem-session.sh` do, `SDL_VIDEODRIVER=kmsdrm`, packages
      from the distro's own repo (SDL2, RetroArch) instead of cross-compiled. This reuses the Pi port's
      pattern almost line for line - no new mechanism, just a new base OS and native (not cross-compiled) x86
      packages.
@@ -199,7 +199,7 @@ system carousel before you drop into a platform's game list.
 - **The one real gap: there is no system-logo artwork anywhere in this repo today** (checked - no
   `xmb`/console-logo/system-logo assets under `lib_ableem/`, `payload/`, or `src/resources/`). A Recalbox-style
   wheel lives or dies on that art, and it doesn't exist yet for the ~50+ systems `RA_ROM_SYSTEMS` in
-  `payload_rpi/install.sh` lists. Options, in rising effort: start with **text tiles** (system name rendered
+  `payload_linux/install.sh` lists. Options, in rising effort: start with **text tiles** (system name rendered
   onto a plain tile via `TextRenderer`, the same "no art yet" fallback the empty-box placeholder already
   models) so the screen works day one; then source or commission real per-system logos later (community
   logo packs exist for ES/Recalbox-style themes, but licensing/attribution would need checking per pack,
@@ -331,7 +331,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
 - **A real starting point exists, just not in this codebase**: RetroArch's own shader zoo has GLSL ports of
   the well-known CRT shaders (`crt-easymode`, `crt-lottes`, `zfast-crt`, ...) - AutoBleem's own Pi installer
   already fetches a `shaders_glsl` bundle from `buildbot.libretro.com/assets/frontend/shaders_glsl.zip` for
-  RetroArch itself (`payload_rpi/install.sh`'s `download_retroarch_content()`). That's RetroArch's own
+  RetroArch itself (`payload_linux/install.sh`'s `download_retroarch_content()`). That's RetroArch's own
   shader *loader* infrastructure, not reusable directly by pcsx-ab, but the shader *source* (GLSL fragment
   shaders, mostly self-contained math over a source texture + screen coordinates) is a real, permissively-
   licensed (RetroArch's shader repos are public/BSD-ish per-shader) reference to port one or two of the

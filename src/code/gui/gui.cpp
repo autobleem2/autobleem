@@ -33,7 +33,7 @@ float Gui::outputScale() {
     if (env && atof(env) >= 1.0) {
         return static_cast<float>(atof(env));
     }
-#elif defined(AB_PLATFORM_RPI)
+#elif defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN)
     ableem::Size display = ableem::Platform::desktopDisplaySize();
     if (display.w >= 1920 && display.h >= 1080) {
         PLOG_INFO << "Display is " << display.w << "x" << display.h << ", drawing the 1280x720 UI at 1.5x";
@@ -47,22 +47,38 @@ float Gui::outputScale() {
 // Gui::multisampleSamples
 //********************
 // Anti-aliasing for the carousel's turned covers and everything else the renderer draws: MSAA on the
-// window's GL context. 4x on a dev host. None on a Pi: measured on a Pi 400 at 1080p (2026-09-18), even
-// 2x misses vsync and halves the frame rate for stretches, where 0x holds 60 fps with an 18 ms worst
+// window's GL context. 4x on a dev host and a Windows PC. None on an appliance: measured on a Pi 400 at 1080p
+// (2026-09-18), even 2x misses vsync and halves the frame rate for stretches, where 0x holds 60 fps with an 18 ms worst
 // frame - the covers get their smooth edges from the transparent margin PsCarouselGame composes them
 // with instead. AB_MSAA in the environment overrides either. Not on the console: whether its GL driver
 // has it is unknown until the build has run there.
 int Gui::multisampleSamples() {
-#if defined(AB_DEBUG_HOST) || defined(AB_PLATFORM_RPI)
+#if !defined(AB_PLATFORM_PSC)
     const char *env = getenv("AB_MSAA");
     if (env) {
         return atoi(env);
     }
 #endif
-#if defined(AB_DEBUG_HOST)
+#if defined(AB_DEBUG_HOST) || defined(AB_PLATFORM_WIN)
     return 4;
 #else
     return 0;
+#endif
+}
+
+//********************
+// Gui::fullscreen
+//********************
+// The whole screen on every real target - a console-like launcher has no window to be a window in. The
+// console and the appliances already are (Wayland on the PSC, KMS/DRM on a Pi and the PC stick: the window
+// is the display); on the Windows product it is SDL's desktop full screen. Only the dev build keeps its
+// 1280x720 window (tools/win_drive.ps1 posts keys to it); AB_WINDOWED=1 in the environment asks a product
+// build for one too, for a look.
+bool Gui::fullscreen() {
+#if defined(AB_DEBUG_HOST)
+    return false;
+#else
+    return getenv("AB_WINDOWED") == nullptr;
 #endif
 }
 
@@ -72,7 +88,7 @@ int Gui::multisampleSamples() {
 string Gui::windowTitle_ = "AutoBleem";
 
 Gui::Gui()
-    : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples()),
+    : ableem::GuiBase(windowTitle_, ScreenWidth, ScreenHeight, outputScale(), multisampleSamples(), fullscreen()),
       assets_(renderer(), AppBase::get().theme(), AppBase::get().config()),
       text_(renderer(), AppBase::get().theme(), assets_.themeFont, assets_.buttonTextureMap) {
     // the pad mappings the launcher and the pscbios wizard share; probePads() reads the first that exists

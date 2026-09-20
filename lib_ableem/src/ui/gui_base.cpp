@@ -3,11 +3,12 @@
 
 namespace ableem {
 
-GuiBase::GuiBase(const std::string &windowTitle, int width, int height, float outputScale, int multisampleSamples)
+GuiBase::GuiBase(const std::string &windowTitle, int width, int height, float outputScale, int multisampleSamples,
+                 bool fullscreen)
     // Platform and Renderer have private constructors reachable only via GuiBase/Platform friendship, hence
     // the `new` here instead of make_unique.
     : platform_(new Platform(windowTitle, width, height, static_cast<int>(std::lround(width * outputScale)),
-                             static_cast<int>(std::lround(height * outputScale)), multisampleSamples)),
+                             static_cast<int>(std::lround(height * outputScale)), multisampleSamples, fullscreen)),
       renderer_(new Renderer(*platform_)), input_(new Input(*platform_)) {}
 
 // members are destroyed in reverse declaration order: audio_, input_, renderer_, platform_ - which is

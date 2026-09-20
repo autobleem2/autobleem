@@ -31,7 +31,7 @@ export RSYNC_RSH="ssh -o BatchMode=yes"
 echo "==> syncing to $HOST:$REMOTE_DIR"
 rsync -az --delete \
     --exclude '/build_*' --exclude '/.git' --exclude '/.vscode' --exclude '/dist' \
-    --exclude '/usb' --exclude '/db' --exclude '/payload' --exclude '/payload_rpi' --exclude '/!refactor' --exclude '/psctools' \
+    --exclude '/usb' --exclude '/db' --exclude '/payload' --exclude '/payload_linux' --exclude '/!refactor' --exclude '/psctools' \
     --exclude '/toolchains/rpi/sdl2-devkit' \
     --exclude '*.o' --exclude '*.so' --exclude '*.exe' --exclude '*.dll' \
     ./ "$HOST:$REMOTE_DIR/"

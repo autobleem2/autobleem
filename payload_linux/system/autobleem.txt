@@ -1,8 +1,8 @@
-# AutoBleem first-boot options.
+# AutoBleem first-boot options - the Raspberry Pi (autobleem-pc.txt is the PC stick's edition).
 #
 # This file sits on the small FAT boot partition of the card, next to config.txt, so it can be edited from
 # any Windows/macOS/Linux machine before the first boot. autobleem-firstboot reads it once, on the boot that
-# installs AutoBleem, and turns each key into an install.sh option (see payload_rpi/README.md). A key that
+# installs AutoBleem, and turns each key into an install.sh option (see payload_linux/README.md). A key that
 # is missing or commented out keeps its default. Lines starting with # are comments.
 #
 # WiFi is not set here. Either use Raspberry Pi Imager's OS customisation when flashing (it writes the

@@ -6,6 +6,9 @@
 #                                                                              -> rpi-imager/images/<version>/
 #   tools/repo_publish.sh retroarch v1.22.2 retroarch-v1.22.2-armhf.tar.gz     -> rpi/retroarch/v1.22.2/
 #   tools/repo_publish.sh cores armhf build_cores/dist/cores-armhf-*.tar.gz    -> rpi/cores/armhf/
+#   tools/repo_publish.sh pc-image v2.0.0-pre0-933bd2f build_pc_image/out/*.img.xz  -> pc/images/<version>/ (the PC stick)
+#   tools/repo_publish.sh pc-retroarch v1.22.2 retroarch-v1.22.2-i386.tar.gz    -> pc/retroarch/v1.22.2/
+#   tools/repo_publish.sh pc-cores i386 build_cores/dist/cores-i386-*.tar.gz    -> pc/cores/i386/
 #   tools/repo_publish.sh psc-retroarch v1.22.2-1 dist/release/retroarch-psc-v1.22.2-1.zip dist/release/manifest.json
 #                                                                              -> psc/retroarch/v1.22.2-1/ (the retroarch-psc repo's `make publish`)
 #   tools/repo_publish.sh psc-cores dist/release/cores-psc-20260920.tar.gz dist/release/cores-psc-20260920.json
@@ -14,6 +17,11 @@
 #                                                                              -> psc/libs/ (newest date kept)
 #   tools/repo_publish.sh psc-apps dist/release/apps-psc-20260920.tar.gz dist/release/apps-psc-20260920.json
 #                                                                              -> psc/apps/ (newest date kept; tools/pack_psc_apps.py)
+#   tools/repo_publish.sh win-retroarch 1.22.2 build_retroarch/dist/retroarch-win64-1.22.2.tar.gz -> win/retroarch/1.22.2/
+#   tools/repo_publish.sh win-cores build_cores/dist/cores-win64-20260920.tar.gz    -> win/cores/ (the Windows product's
+#                                                                                      RetroArch, cores and BIOS list -
+#                                                                                      AutoBleemWinSetup reads them)
+#   tools/repo_publish.sh win-bios src/win/biospack-win64.txt                       -> win/bios/
 #   tools/repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt          -> psc/bios/ (the BIOS list the installer
 #                                                                                 fetches RetroBIOS's files by; the list only)
 #   tools/repo_publish.sh samples build_samples/samples-20260920.tar.gz build_samples/samples-20260920.json
@@ -63,11 +71,17 @@ case "$KIND" in
     image)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi-imager/images/$VERSION" ;;
     retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/retroarch/$VERSION" ;;
     cores)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/cores/$VERSION" ;;
+    pc-image)  [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/images/$VERSION" ;;
+    pc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/retroarch/$VERSION" ;;
+    pc-cores)  [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/cores/$VERSION" ;;
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;
     psc-apps)  [ $# -ge 1 ] || usage 1; DEST="psc/apps" ;;
     psc-bios)  [ $# -ge 1 ] || usage 1; DEST="psc/bios" ;;
+    win-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="win/retroarch/$VERSION" ;;
+    win-cores) [ $# -ge 1 ] || usage 1; DEST="win/cores" ;;
+    win-bios)  [ $# -ge 1 ] || usage 1; DEST="win/bios" ;;
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     pcsx)      [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-abnxt/$VERSION" ;;
     pcsx-ab)   [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-ab/$VERSION" ;;

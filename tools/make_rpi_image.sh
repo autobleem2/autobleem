@@ -6,7 +6,7 @@
 # stays out of scope for this round"). Raspberry Pi Imager's own OS customisation (hostname, user, WiFi,
 # SSH, locale) keeps working unmodified, because the image's own first-boot mechanism (cloud-init or
 # firstrun.sh, whichever the base image ships) is never touched; autobleem-firstboot.service runs after it,
-# on the first or second boot (see payload_rpi/system/autobleem-firstboot.sh), and installs AutoBleem onto
+# on the first or second boot (see payload_linux/system/autobleem-firstboot.sh), and installs AutoBleem onto
 # the exFAT data partition install.sh creates, exactly as a manual "tar xzf ... && sudo bash install.sh"
 # would.
 #
@@ -388,11 +388,11 @@ inject_payload() {
     local image_dir="$ROOT_MNT/opt/autobleem-image"
     mkdir -p "$image_dir"
     cp "$PACKAGE" "$image_dir/autobleem-rpi.tar.gz"
-    install -m 0755 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
+    install -m 0755 "$REPO_DIR/payload_linux/system/autobleem-firstboot.sh" "$image_dir/autobleem-firstboot.sh"
     # the first boot's screen: the installer's output as a logo, two bars and a box (see the script)
-    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-install-ui.py" "$image_dir/autobleem-install-ui.py"
-    install -m 0644 "$REPO_DIR/payload_rpi/system/plymouth/splash.png" "$image_dir/splash.png"
-    install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" \
+    install -m 0644 "$REPO_DIR/payload_linux/system/autobleem-install-ui.py" "$image_dir/autobleem-install-ui.py"
+    install -m 0644 "$REPO_DIR/payload_linux/system/plymouth/splash.png" "$image_dir/splash.png"
+    install -m 0644 "$REPO_DIR/payload_linux/system/autobleem-firstboot.service" \
         "$ROOT_MNT/etc/systemd/system/autobleem-firstboot.service"
 
     # "systemctl enable" for a plain WantedBy=multi-user.target unit is just this symlink - done by hand
@@ -427,10 +427,10 @@ inject_payload_rootless() {
     }
     dfs "mkdir /opt/autobleem-image"
     put "$PACKAGE" /opt/autobleem-image/autobleem-rpi.tar.gz 0100644
-    put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.sh" /opt/autobleem-image/autobleem-firstboot.sh 0100755
-    put "$REPO_DIR/payload_rpi/system/autobleem-install-ui.py" /opt/autobleem-image/autobleem-install-ui.py 0100644
-    put "$REPO_DIR/payload_rpi/system/plymouth/splash.png" /opt/autobleem-image/splash.png 0100644
-    put "$REPO_DIR/payload_rpi/system/autobleem-firstboot.service" /etc/systemd/system/autobleem-firstboot.service 0100644
+    put "$REPO_DIR/payload_linux/system/autobleem-firstboot.sh" /opt/autobleem-image/autobleem-firstboot.sh 0100755
+    put "$REPO_DIR/payload_linux/system/autobleem-install-ui.py" /opt/autobleem-image/autobleem-install-ui.py 0100644
+    put "$REPO_DIR/payload_linux/system/plymouth/splash.png" /opt/autobleem-image/splash.png 0100644
+    put "$REPO_DIR/payload_linux/system/autobleem-firstboot.service" /etc/systemd/system/autobleem-firstboot.service 0100644
     dfs "mkdir /etc/systemd/system/multi-user.target.wants"
     dfs "rm /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service" >/dev/null
     dfs "symlink /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service ../autobleem-firstboot.service"
@@ -480,7 +480,7 @@ inject_boot_files() {
     printf '%s\n' "$kept" >"$cmdline"
     if [ "$MODE" = rootless ]; then
         mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$cmdline" ::cmdline.txt || die "writing cmdline.txt failed"
-        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$REPO_DIR/payload_rpi/system/autobleem.txt" ::autobleem.txt \
+        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$REPO_DIR/payload_linux/system/autobleem.txt" ::autobleem.txt \
             || die "writing autobleem.txt failed"
         # the official "enable ssh" marker too (sshswitch.service turns it into enable --now and removes it)
         : >"$WORK_DIR/ssh"
@@ -488,7 +488,7 @@ inject_boot_files() {
         rm -f "$cmdline" "$WORK_DIR/ssh"
         mdir -i "$RAW_IMG@@$BOOT_OFF" ::autobleem.txt ::cmdline.txt ::ssh | grep -iE "autobleem|cmdline|ssh" | sed 's/^/    /'
     else
-        install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
+        install -m 0644 "$REPO_DIR/payload_linux/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
         : >"$BOOT_MNT/ssh"
     fi
 }

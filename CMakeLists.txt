@@ -12,23 +12,47 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # out (.chd games then scan as "no serial") if it's ever unwanted.
 option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libchdr)" ON)
 
-# The Raspberry Pi port (payload_rpi/). A Pi is a real target like the console - it forks the emulators - but
-# its files live on the exFAT data partition it is given on the command line and it has no built-in games.
-# toolchains/rpi/RPitoolchain.cmake forces this on; see AB_PLATFORM_RPI in core/services/environment.h.
-option(AB_TARGET_RPI "Build for the Raspberry Pi instead of the PlayStation Classic" OFF)
-if (AB_TARGET_RPI)
-    message(STATUS "Building for the Raspberry Pi")
-    add_compile_definitions(AB_PLATFORM_RPI)
+# AB_TARGET: which of the five things this build is for. Exactly one AB_PLATFORM_<TARGET> is defined from it,
+# and core/services/environment.h derives the semantic macros the code checks (AB_DEBUG_HOST, AB_APPLIANCE,
+# AB_ROOT_RELATIVE_LAYOUT, AB_HAS_INTERNAL_GAMES) - the sources never test the CPU or the OS for this.
+#   psc    the PlayStation Classic (the console): the /media tree, /gaadata's internal games, offline updates
+#   rpi    the Raspberry Pi appliance (payload_linux/): forks the emulators, halts for real, no internal games,
+#          everything on the exFAT data partition given on the command line, the online update
+#   pcusb  the 32-bit PC USB-stick appliance: rpi's semantics on x86
+#   win    the Windows product (the NSIS installer): a real target on a desktop OS
+#   dev    a development host (make_win.sh, make_sys.sh): the emulators are not forked, a window,
+#          keyboard-as-pad, the 1/2-arg roots - what tools/win_drive.ps1 drives
+# Empty, the default: psc when cross-compiling for ARM, dev otherwise. The toolchain files force theirs.
+set(AB_TARGET "" CACHE STRING "psc | rpi | pcusb | win | dev (empty: psc on ARM, dev elsewhere)")
+option(AB_TARGET_RPI "Deprecated: the same as -DAB_TARGET=rpi" OFF)
+if (AB_TARGET_RPI AND AB_TARGET STREQUAL "")
+    message(WARNING "AB_TARGET_RPI is deprecated, use -DAB_TARGET=rpi")
+    set(AB_TARGET "rpi")
 endif()
+if (AB_TARGET STREQUAL "")
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(AB_TARGET "psc")
+    else()
+        set(AB_TARGET "dev")
+    endif()
+endif()
+set(_ab_targets psc rpi pcusb win dev)
+if (NOT AB_TARGET IN_LIST _ab_targets)
+    message(FATAL_ERROR "AB_TARGET must be one of: ${_ab_targets} (got '${AB_TARGET}')")
+endif()
+string(TOUPPER "${AB_TARGET}" _ab_target_upper)
+message(STATUS "Building for target ${AB_TARGET} (AB_PLATFORM_${_ab_target_upper})")
+add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 
-# The launcher's online update (core/services/update_service.*, the update dialogs): a Pi and the dev hosts
-# check the download repository for a newer AutoBleem/RetroArch and fetch it; the console updates from a
-# stick, offline, and carries none of this code - the console branch below switches it off.
-option(AB_ONLINE_UPDATE "Build the online update check and download (the Pi and the dev hosts)" ON)
+# The launcher's online update (core/services/update_service.*, the update dialogs): the appliances, the
+# Windows product and the dev hosts check the download repository for a newer AutoBleem/RetroArch and fetch
+# it; the console updates from a stick, offline, and carries none of this code - its branch below switches
+# it off.
+option(AB_ONLINE_UPDATE "Build the online update check and download (everything but the console)" ON)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
-	message(STATUS "Building for ARM")
+if (AB_TARGET STREQUAL "psc")
+	message(STATUS "Building for ARM (the console)")
 	set(AB_ONLINE_UPDATE OFF) # the console has no network: its updater is offline (see the option above)
 	# The console is a Cortex-A35 (ARMv8-A, run in AArch32) with NEON. GCC 8+ spells that armv8-a+simd;
 	# an older GCC - the Stretch gcc-6 the Docker image builds with, the newest whose libstdc++ matches the
@@ -54,11 +78,11 @@ if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
 	include_directories(src/include "${_ab_psc_sysroot}/usr/include")
 	link_directories("${_ab_psc_sysroot}/usr/lib")
 
-elseif (AB_TARGET_RPI)
+elseif (AB_TARGET STREQUAL "rpi" OR AB_TARGET STREQUAL "pcusb")
 
-	# the -march/-mfpu for a Pi come from the toolchain file (a Pi 2 is armv7, not the console's armv8), and
-	# there is no Sony sysroot to add to the include path.
-	message(STATUS "Building for ARM (Raspberry Pi) CPU flags=${CMAKE_CXX_FLAGS}")
+	# the CPU flags for an appliance come from its toolchain file (a Pi 2 is armv7, not the console's armv8;
+	# the PC stick is i686), and there is no Sony sysroot to add to the include path.
+	message(STATUS "Building for an appliance (${AB_TARGET}) CPU flags=${CMAKE_CXX_FLAGS}")
 	include_directories(src/include)
 
 else()
@@ -101,9 +125,9 @@ endif()
 find_package(Threads REQUIRED)
 
 # lib_ableem: the portable SDL2 wrapper (own SDL discovery, own demo). autobleem-gui links it and does not
-# touch SDL directly at all - see CLAUDE.md. aarch64 (the 64-bit Pi) is an embedded target too, it just
-# doesn't match "^arm" the way 32-bit ARM and the PSC's armv8-a do.
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+# touch SDL directly at all - see CLAUDE.md. The console and the two appliances are embedded targets (no
+# cursor grab, keyboard-as-pad off); a dev host and the Windows product keep lib_ableem's dev-host behaviour.
+if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "rpi" OR AB_TARGET STREQUAL "pcusb")
     set(ABLEEM_EMBEDDED_TARGET ON CACHE BOOL "" FORCE)
 endif()
 
@@ -149,6 +173,8 @@ add_library(ab_core STATIC
         src/code/core/services/environment.h
         src/code/core/services/environment_setup.cpp
         src/code/core/services/environment_setup.h
+        src/code/core/services/windows_host.cpp
+        src/code/core/services/windows_host.h
         src/code/core/services/clock.cpp
         src/code/core/services/clock.h
         src/code/core/services/config.h
@@ -195,8 +221,9 @@ if (AB_ONLINE_UPDATE)
             src/code/core/services/update_service.h)
 endif()
 if (WIN32)
-    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop
-    target_link_libraries(ab_core iphlpapi ws2_32)
+    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop;
+    # WindowsHost: the Documents folder (SHGetKnownFolderPath) and the registry
+    target_link_libraries(ab_core iphlpapi ws2_32 shell32 ole32 advapi32)
 endif()
 
 # core/version.h: the version, commit and build time, regenerated on every build (see the script). The
@@ -356,6 +383,27 @@ target_link_libraries(autobleem-gui
          ${CMAKE_DL_LIBS}
 )
 
+if (AB_TARGET STREQUAL "win")
+    # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
+    # System/Logs/autobleem.log), with the icon and a version block (src/win/autobleem.rc; the numbers from
+    # the last tag at configure time - core/version.h stays the truth about the build)
+    execute_process(COMMAND git describe --tags --abbrev=0 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE AB_RC_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if (NOT AB_RC_TAG)
+        set(AB_RC_TAG ${AB_VERSION_FALLBACK})
+    endif()
+    string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" _rc_nums "${AB_RC_TAG}")
+    if (_rc_nums)
+        set(AB_RC_VERSION "${CMAKE_MATCH_1},${CMAKE_MATCH_2},${CMAKE_MATCH_3},0")
+    else()
+        set(AB_RC_VERSION "0,0,0,0")
+    endif()
+    set(AB_RC_ICON ${CMAKE_SOURCE_DIR}/src/win/autobleem.ico)
+    configure_file(src/win/autobleem.rc.in ${CMAKE_BINARY_DIR}/generated/autobleem.rc @ONLY)
+    target_sources(autobleem-gui PRIVATE ${CMAKE_BINARY_DIR}/generated/autobleem.rc)
+    target_link_options(autobleem-gui PRIVATE -mwindows)
+endif()
+
 
 add_custom_command(TARGET autobleem-gui PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -372,16 +420,15 @@ target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
 
 
 # the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
-# ab_classic; a Raspberry Pi has no PSC kernel to configure or flash, so not there
-if (NOT AB_TARGET_RPI)
+# ab_classic; the appliances and the Windows product have no PSC kernel to configure or flash
+if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     add_subdirectory(apps/pscbios)
     add_subdirectory(apps/abflashkit)
 endif()
 
-# UpdateRoms: the PC-side ROM scanner for a stick in a card reader - a dev-host program only (the
-# targets have the launcher's own scan)
-if (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+# UpdateRoms: the PC-side ROM scanner for a stick in a card reader, and the installer, which makes the
+# stick from a PC - PC programs (the targets have the launcher's own scan)
+if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "win")
     add_subdirectory(apps/updateroms)
-    # and the installer, which makes the stick from a PC
     add_subdirectory(apps/installer)
 endif()

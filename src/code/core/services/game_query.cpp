@@ -19,8 +19,9 @@ using namespace std;
 // GameQueryService::showInternalGames
 //*******************************
 bool GameQueryService::showInternalGames() const {
-#ifdef AB_PLATFORM_RPI
-    return false; // a Pi has no built-in games, so the option is not offered either (GuiOptions::fill)
+#ifndef AB_HAS_INTERNAL_GAMES
+    return false; // an appliance or a Windows PC has no built-in games; the option is not offered either
+                  // (GuiOptions::fill)
 #else
     return config_.inifile.values["origames"] == "true";
 #endif

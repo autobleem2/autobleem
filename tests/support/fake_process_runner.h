@@ -17,13 +17,10 @@
 // like while the emulator would be running - `whileRunning` is called from run() so a test can look at
 // that moment (which memory card is in play, which config is in place) before the service puts things back.
 struct FakeProcessRunner : ProcessRunner {
-    struct Call {
-        std::string exe;
-        std::vector<std::string> args;
-    };
+    using Call = LaunchPlan;
 
-    void run(const std::string &exe, const std::vector<std::string> &args) override {
-        calls.push_back(Call{exe, args});
+    void run(const LaunchPlan &plan) override {
+        calls.push_back(plan);
         if (whileRunning)
             whileRunning();
     }

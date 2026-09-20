@@ -24,11 +24,8 @@ namespace {
 // come straight back, which is what the interceptors' #ifdef used to do.
 class SplashProcessRunner : public ProcessRunner {
 public:
-    void run(const string &exe, const vector<string> &args) override {
-        string line = "would run " + exe;
-        for (const string &arg : args)
-            line += " '" + arg + "'";
-        PLOG_INFO << line;
+    void run(const LaunchPlan &plan) override {
+        PLOG_INFO << "would run " << plan.toString();
         Gui::splash("I'm sorry Dave.  I'm afraid I can't do that.");
     }
     bool needsExclusiveDisplay() const override { return false; } // it draws on the launcher's own window
@@ -40,8 +37,10 @@ public:
 // AutoBleem::makeProcessRunner
 //*******************************
 unique_ptr<ProcessRunner> AutoBleem::makeProcessRunner() {
-#ifdef AB_DEBUG_HOST
+#if defined(AB_DEBUG_HOST)
     return unique_ptr<ProcessRunner>(new SplashProcessRunner());
+#elif defined(AB_PLATFORM_WIN)
+    return unique_ptr<ProcessRunner>(new WinProcessRunner());
 #else
     return unique_ptr<ProcessRunner>(new ForkProcessRunner());
 #endif
@@ -55,14 +54,14 @@ bool AutoBleem::openLibrary() {
         return false;
     }
 
-#ifndef AB_PLATFORM_RPI
+#ifdef AB_PLATFORM_PSC
     // if the /System/Databases/internal.db doesn't exist make a copy from the PSC
     PLOG_INFO << "Importing internal games from PSC to USB";
     System::execUnixCommand((Env::getPathToRCDir() + sep + "backup_internal.sh").c_str());
 #endif
 
-    // on a Pi this opens (and so creates) an empty internal.db: nothing ever queries it - the internal sets
-    // are unreachable there - but GameCatalogService and GameSettingsService still expect the handle to exist.
+    // off the console this opens (and so creates) an empty internal.db: nothing ever queries it - the internal
+    // sets are unreachable there - but GameCatalogService and GameSettingsService still expect the handle to exist.
     return gameLibrary.openInternalGames();
 }
 
@@ -80,8 +79,16 @@ void AutoBleem::launchGame() {
     if (runner_->needsExclusiveDisplay()) {
         gui_->releaseDisplay();
     }
+    // on a desktop the emulator opens its own window over ours: ours goes out of the way for the run
+    if (runner_->minimisesLauncherWindow()) {
+        gui_->minimizeWindow();
+    }
 
     launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
+
+    if (runner_->minimisesLauncherWindow()) {
+        gui_->restoreWindow();
+    }
 
     bool reloadFavHist{false};
     if (session_.runningGame->foreign)
@@ -127,13 +134,6 @@ int AutoBleem::run() {
         return EXIT_FAILURE;
     }
 
-    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
-        // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
-        // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
-        // is the other source, so a stick with that tree but no covers*.db is fine.
-        gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
-    }
-
     string pathToGamesDir = Env::getPathToGamesDir();
 
     MemcardManager memcardOperation(pathToGamesDir);
@@ -152,6 +152,14 @@ int AutoBleem::run() {
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     gui_->display(false);
+
+    if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
+        // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
+        // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
+        // is the other source, so a stick with that tree but no covers*.db is fine. After display(): the
+        // theme's font and background are loaded there, and the message drawn before it was a black screen.
+        gui_->criticalException(_("WARNING: NO COVER DB FOUND. PRESS ANY BUTTON."));
+    }
 
     applyOnlineSetting();
 #ifdef AB_ONLINE_UPDATE

@@ -23,8 +23,10 @@ public:
     // canvas in a 1920x1080 window) - see Renderer for what that means. multisampleSamples (4, say) asks for
     // an MSAA GL context, which smooths the edges of everything the renderer draws; 0 does not ask, and a
     // driver that cannot give one is simply gone without (Platform::multisampleSamples() says which).
+    // fullscreen puts the window over the whole desktop instead (SDL_WINDOW_FULLSCREEN_DESKTOP - no mode
+    // change): outputScale is then ignored, the canvas is drawn as big as fits and centred (see Renderer).
     explicit GuiBase(const std::string &windowTitle = "AutoBleem", int width = ScreenWidth, int height = ScreenHeight,
-                     float outputScale = 1.0f, int multisampleSamples = 0);
+                     float outputScale = 1.0f, int multisampleSamples = 0, bool fullscreen = false);
     virtual ~GuiBase();
 
     Platform &platform() { return *platform_; }

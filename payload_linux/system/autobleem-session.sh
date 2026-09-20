@@ -25,7 +25,56 @@ mkdir -p "$LOG_DIR"
 # audio (its headphone jack) - everything went silent the first time. Point ALSA at the HDMI output the
 # screen is on instead, system-wide, for everything started from here: autobleem-gui and pcsx-ab (SDL ->
 # ALSA "default") and RetroArch (its alsa driver). Re-done on every start: the screen may move ports.
+# A Pi's HDMI ports are ALSA cards of their own (vc4hdmi0/1); a PC's are pcm devices of its HDA card, one
+# per connector, and which one has a screen with speakers behind it is in the codec's ELD - so two ways.
 hdmi_audio() {
+    if grep -q vc4hdmi /proc/asound/cards 2>/dev/null; then
+        pi_hdmi_audio
+    else
+        pc_hdmi_audio
+    fi
+}
+
+# write ALSA's system-wide default: a card, and a device on it when given ("!" because alsa.conf declares
+# these as integers; the name form needs the redefinition)
+set_alsa_default() { # set_alsa_default CARD [DEVICE]
+    local conf
+    conf="$(printf 'defaults.pcm.!card "%s"\ndefaults.ctl.!card "%s"' "$1" "$1")"
+    [ -n "${2:-}" ] && conf="$conf$(printf '\ndefaults.pcm.!device %s' "$2")"
+    if [ "$(cat /etc/asound.conf 2>/dev/null)" != "$conf" ]; then
+        printf '%s\n' "$conf" > /etc/asound.conf.autobleem-tmp && mv -f /etc/asound.conf.autobleem-tmp /etc/asound.conf
+        echo "autobleem-session: audio -> card $1${2:+ device $2}"
+    fi
+}
+
+# a PC: the first HDMI/DisplayPort pin whose ELD says a monitor is present (the screen the picture is on,
+# with speakers) - its pcm is the n-th "HDMI n" device of that card. No such pin (a screen without audio, a
+# VGA monitor, a VM): ALSA's default stays, which is the analog output.
+pc_hdmi_audio() {
+    local card eld n p dev pcms
+    for card in /proc/asound/card[0-9]*; do
+        [ -d "$card" ] || continue
+        n=0
+        for eld in "$card"/eld#*; do
+            [ -f "$eld" ] || continue
+            if grep -qE 'monitor_present[[:space:]]+1' "$eld"; then
+                # the HDMI pcm devices of this card, in device order
+                pcms="$(for p in "$card"/pcm[0-9]*p; do
+                            grep -q '^name: HDMI' "$p/info" 2>/dev/null && basename "$p"
+                        done | sed 's/^pcm//; s/p$//' | sort -n)"
+                dev="$(printf '%s\n' "$pcms" | sed -n "$((n + 1))p")"
+                if [ -n "$dev" ]; then
+                    set_alsa_default "${card##*/card}" "$dev"
+                    return 0
+                fi
+            fi
+            n=$((n + 1))
+        done
+    done
+    echo "autobleem-session: no HDMI/DP screen with audio - leaving ALSA's default alone"
+}
+
+pi_hdmi_audio() {
     local card="" conn
     for conn in /sys/class/drm/card*-HDMI-A-1 /sys/class/drm/card*-HDMI-A-2; do
         [ -f "$conn/status" ] || continue
@@ -42,14 +91,7 @@ hdmi_audio() {
         card="$(awk '/vc4hdmi/ { gsub(/[^a-z0-9]/, "", $2); print $2; exit }' /proc/asound/cards)"
     fi
     [ -n "$card" ] || { echo "autobleem-session: no HDMI audio card - leaving ALSA's default alone"; return 0; }
-
-    # "!" because alsa.conf declares these as integers; the name form needs the redefinition
-    local conf
-    conf="$(printf 'defaults.pcm.!card "%s"\ndefaults.ctl.!card "%s"' "$card" "$card")"
-    if [ "$(cat /etc/asound.conf 2>/dev/null)" != "$conf" ]; then
-        printf '%s\n' "$conf" > /etc/asound.conf.autobleem-tmp && mv -f /etc/asound.conf.autobleem-tmp /etc/asound.conf
-        echo "autobleem-session: audio -> $card"
-    fi
+    set_alsa_default "$card"
 }
 
 #*******************************

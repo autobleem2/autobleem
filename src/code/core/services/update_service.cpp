@@ -1,3 +1,4 @@
+#include "system.h"
 #include "update_service.h"
 
 #include <ableem/engine/filesystem.h>
@@ -45,7 +46,7 @@ string baseName(const string &url) {
 //*******************************
 UpdateService::UpdateService(CommandRunner runner) : runner_(std::move(runner)) {
     if (!runner_)
-        runner_ = [](const string &commandLine) { return system(commandLine.c_str()); };
+        runner_ = [](const string &commandLine) { return System::runShellCommand(commandLine); };
 }
 
 UpdateService::~UpdateService() {
@@ -187,8 +188,8 @@ void UpdateService::checkThread() {
     } else {
         error = "cannot read the release list";
     }
-    if (!config_.installedRetroArch.empty() && !config_.arch.empty()) {
-        if (fetchText(base + "rpi/retroarch/latest.json", scratch, text) && retroarch.parse(text))
+    if (!config_.installedRetroArch.empty() && !config_.arch.empty() && !config_.retroarchCatalog.empty()) {
+        if (fetchText(base + config_.retroarchCatalog, scratch, text) && retroarch.parse(text))
             haveRetroArch = true;
     }
     if (haveRelease || haveRetroArch) {

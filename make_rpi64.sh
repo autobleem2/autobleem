@@ -2,7 +2,7 @@
 # Cross-compile for a 64-bit Raspberry Pi OS Lite (Trixie) userland, using the Windows-hosted "SysGCC for
 # Raspberry Pi (64-bit)" toolchain at C:\sysGCC\raspberry64 (not the 32-bit toolchain - see make_rpi.sh for
 # that, and CLAUDE.md's "Raspberry Pi port" section for both). The result goes into build_rpi64/;
-# tools/make_rpi_package.sh --arch arm64 turns it into the installable tarball (see payload_rpi/README.md).
+# tools/make_rpi_package.sh --arch arm64 turns it into the installable tarball (see payload_linux/README.md).
 #
 # Run it the way make_rpi.sh is run, from the MSYS2 UCRT64 shell. The toolchain file names the compilers by
 # absolute path, so C:\sysGCC\raspberry64\bin deliberately does NOT go on PATH: its rm.exe/mkdir.exe/make.exe

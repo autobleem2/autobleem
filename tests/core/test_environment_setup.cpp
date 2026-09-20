@@ -68,8 +68,11 @@ TEST_CASE("fromDbAndGames is the debug layout: the two paths given, the rest fro
 
 TEST_CASE("fromArguments accepts one root or db + games and refuses anything else") {
     EnvFixture env;
+#ifndef AB_PLATFORM_WIN
+    // (the Windows product takes no argument as "the installed layout" - fromWindowsInstall)
     Args none({"autobleem-gui"});
     CHECK_FALSE(EnvironmentSetup::fromArguments(none.argc(), none.argv()));
+#endif
 
     Args one({"autobleem-gui", "/usb"});
     CHECK(EnvironmentSetup::fromArguments(one.argc(), one.argv()));
@@ -112,4 +115,64 @@ TEST_CASE("the app dir and the working path are independent") {
     env.setAppDir("/usb/Apps/pscbios");
     CHECK(Env::getPathToLangDir() == "/usb/Autobleem/bin/autobleem/lang");
     CHECK(Env::getPathToAppLangDir() == "/usb/Apps/pscbios/lang");
+}
+
+TEST_CASE("fromWindowsInstall: the registry's data root first, then the pointer file, then Documents") {
+    TempDir tmp("win_install");
+    EnvFixture env;
+    const string program = tmp.makeSubDir("Program Files/AutoBleem");
+    HostFacts facts;
+    facts.programDir = program;
+    facts.documentsDir = tmp.makeSubDir("Documents");
+
+    SUBCASE("Documents when nothing else names one") {
+        const string root = EnvironmentSetup::fromWindowsInstall(facts);
+        CHECK(root == facts.documentsDir + "/AutoBleem");
+        CHECK(Env::getPathToUSBRoot() == root);
+        CHECK(Env::getPathToGamesDir() == root + "/Games");
+        CHECK(Env::getPathToRegionalDBFile() == root + "/System/Databases/regional.db");
+        CHECK(Env::getPathToInternalDBFile() == root + "/System/Databases/internal.db");
+        CHECK(Env::getPathToCoversDBDir() == root + "/System/Databases");
+        CHECK(Env::getPathToThemesDir() == root + "/Themes");
+        // the resources are the program's own, what the program writes goes into the data tree
+        CHECK(Env::getWorkingPath() == program);
+        CHECK(Env::getPathToStateDir() == root + "/System");
+        CHECK(Env::getSonyPath() == program + "/sony");
+        // the tree is made
+        CHECK(ableem::DirEntry::isDirectory(root + "/Games"));
+        CHECK(ableem::DirEntry::isDirectory(root + "/System/Logs"));
+        CHECK(ableem::DirEntry::isDirectory(root + "/RetroArch/roms"));
+        CHECK(ableem::DirEntry::isDirectory(root + "/Apps"));
+    }
+
+    SUBCASE("the pointer file next to the exe beats Documents, a trailing separator is dropped") {
+        facts.pointerFileDataRoot = tmp.path() + "/Portable/";
+        CHECK(EnvironmentSetup::fromWindowsInstall(facts) == tmp.path() + "/Portable");
+        CHECK(Env::getPathToGamesDir() == tmp.path() + "/Portable/Games");
+    }
+
+    SUBCASE("the registry beats both") {
+        facts.pointerFileDataRoot = tmp.path() + "/Portable";
+        facts.registryDataRoot = tmp.path() + "/Chosen";
+        CHECK(EnvironmentSetup::fromWindowsInstall(facts) == tmp.path() + "/Chosen");
+        CHECK(Env::getPathToGamesDir() == tmp.path() + "/Chosen/Games");
+    }
+
+    SUBCASE("no Documents folder and nothing else: nothing is set up") {
+        facts.documentsDir = "";
+        CHECK(EnvironmentSetup::fromWindowsInstall(facts).empty());
+    }
+
+    SUBCASE("the shipped themes are copied into the data tree once, a user's edit kept") {
+        tmp.writeFile("Program Files/AutoBleem/Themes/ab2/theme.json", "{shipped}");
+        tmp.writeFile("Program Files/AutoBleem/Themes/ab2/images/bg.png", "png");
+        const string root = EnvironmentSetup::fromWindowsInstall(facts);
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{shipped}");
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/images/bg.png") == "png");
+
+        tmp.writeFile("Documents/AutoBleem/Themes/ab2/theme.json", "{edited}");
+        tmp.writeFile("Program Files/AutoBleem/Themes/ab2/theme.json", "{updated}");
+        EnvironmentSetup::fromWindowsInstall(facts);
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{edited}");
+    }
 }

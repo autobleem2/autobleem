@@ -154,12 +154,13 @@ void PsMeta::render() {
 
             yOffset += 21;
             // last played line
-#ifdef AB_DEBUG_HOST
-            // the devel system has time
-            gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
-#else
+#ifdef AB_PLATFORM_PSC
+            // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
             if (Env::autobleemKernel)
                 gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+#else
+            // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
+            gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
 #endif
         }
 

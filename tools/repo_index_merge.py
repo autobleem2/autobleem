@@ -50,7 +50,7 @@ def git(args, cwd, timeout=None):
     a prompt - a fetch that would ask for credentials fails instead"""
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_ASKPASS="", SSH_ASKPASS="")
     try:
-        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, env=env, timeout=timeout)
+        r = subprocess.run(["git"] + args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, env=env, timeout=timeout)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout if r.returncode == 0 else None
@@ -112,9 +112,16 @@ def main():
         return finish(mine, mine_base, mine_rev, "no copy in the repository yet, this checkout's goes up")
     if neutral(theirs) == neutral(mine):
         v = max(index_version(mine), index_version(theirs))
-        return finish(VERSION_RE.sub("INDEX_VERSION = %d" % v, theirs, count=1),
-                      theirs_base if theirs_base is not None else mine_base,
-                      theirs_rev if theirs_base is not None else mine_rev, "same as the repository's")
+        # the same file both sides: the base moves up to this checkout's develop version when that is the
+        # newer of the two (a publish from a git checkout is how a base older than both sides' changes
+        # gets left behind - otherwise the next differing publish conflicts on the region both had added)
+        base, rev = theirs_base, theirs_rev
+        if mine_base is not None and mine_rev and (
+                theirs_base is None or not theirs_rev or theirs_rev == mine_rev
+                or git(["merge-base", "--is-ancestor", theirs_rev, mine_rev], tree) is not None):
+            base, rev = mine_base, mine_rev
+        return finish(VERSION_RE.sub("INDEX_VERSION = %d" % v, theirs, count=1), base, rev,
+                      "same as the repository's")
 
     # the base: the older of the two develop versions (an ancestor's file is what both sides changed from);
     # with only one known, that one
@@ -142,7 +149,7 @@ def main():
         write(pb, neutral(base))
         write(pt, neutral(theirs))
         r = subprocess.run(["git", "merge-file", "-p", "-L", "this checkout", "-L", "develop (base)",
-                            "-L", "the repository", pm, pb, pt], capture_output=True, text=True)
+                            "-L", "the repository", pm, pb, pt], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         merged = r.stdout
     if r.returncode < 0 or (r.returncode > 0 and "<<<<<<<" not in merged):
         print("repo_index.py: git merge-file failed: " + r.stderr.strip(), file=sys.stderr)

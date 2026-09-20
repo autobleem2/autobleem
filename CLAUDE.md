@@ -236,7 +236,7 @@ generator, the year on the meta panel, the per-size bold font cache `Fonts::bold
 wrappers + sorted languages, music not restarting on theme browse, Favorites fallback, rc guards, the
 stock-SonyUI/`.lic`/RetroBoot-patch cleanup), the libchdr refresh, and Phase 1 - `RdbReader`,
 `MetadataLookup`, `ThumbnailLookup` (see lib_ableem/engine below), verified on the Pi 400 with the
-libretro box arts mirrored by `payload_rpi/install.sh --thumbnails`; Phase 2, the multi-disc folder merge
+libretro box arts mirrored by `payload_linux/install.sh --thumbnails`; Phase 2, the multi-disc folder merge
 (`DiscSuffix`, `mergeMultiDiscFolders`); pcsx-ab's libchdr refresh (its own repo); `core/version.h` + the
 `make_psc.sh` link gates; Phase 3, lightgun games (`LightgunService`, `GameSet::Lightgun`, the editors);
 plog (`<ableem/engine/log.h>`); the Key=Value language files + `tools/lang_tools.py`; fitted/wrapped/elided
@@ -276,7 +276,7 @@ Things to know when working on the Pi over ssh: `plink -pw` from `C:\Program Fil
 will not install ssh keys), `sudo -S` with the password on stdin, the journal is not persistent, and the
 launcher's logs are `System/Logs/AB_out.txt`/`AB_err.txt` on the partition. PS1 games run in **pcsx-ab** as on the console: the Pi build from `E:\Programming\pcsx-rearmed-develop`
 (`AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` copies its `build_rpi/dist/` into
-`payload_rpi/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
+`payload_linux/Autobleem/bin/emu/`, which is checked in like the console's `payload/Autobleem/bin/emu/`), and the
 Pi `rc/launch.sh` builds `/tmp/runpcsx` exactly as the console's does (`.pcsx` -> the `!SaveStates` folder,
 `bios` -> `System/Bios`, `plugins` -> `emu/plugins`, `-region 4`, `-load 1` on resume). The BIOS is the user's:
 `System/Bios/romw.bin` + `romJP.bin` (pcsx.cfg's `Bios = SET_BY_PCSX` picks one by serial; HLE without them).
@@ -311,18 +311,20 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   headers from `toolchains/rpi/sdl2-devkit/include` (copied from the MSYS2 SDL2 package - the public headers
   are arch-independent, and 2.32.10 vs the Pi's 2.32.4 is ABI-safe) and `IMPORTED_LOCATION` pointed straight
   at the versioned `.so`, which is what makes the missing symlinks irrelevant.
-- **`AB_PLATFORM_RPI`** (`core/services/environment.h`), set by the CMake option `AB_TARGET_RPI` which the
-  toolchain file forces on. A Pi is a *real* target, not an `AB_DEBUG_HOST`: it forks emulators and halts for
-  real. What it changes: `GameQueryService::showInternalGames()` is hard `false` and the "Show Internal Games"
-  row is gone from the Options menu (a Pi has no `/gaadata`); `backup_internal.sh` is not run. The new
-  `AB_ROOT_RELATIVE_LAYOUT` (debug host **or** Pi) is what now selects `setupEnvironment`'s "everything under
-  the root given on the command line" branch, which the Pi shares with the 1-arg debug mode.
+- **`AB_PLATFORM_RPI`** (`core/services/environment.h`), from `-DAB_TARGET=rpi` (the toolchain file forces
+  it; see "The platform model" under Build). A Pi is a *real* target, not an `AB_DEBUG_HOST`: it forks
+  emulators and halts for real. What `AB_APPLIANCE` (rpi or pcusb) changes: `GameQueryService::
+  showInternalGames()` is hard `false` and the "Show Internal Games" row is gone from the Options menu (no
+  `/gaadata`; `AB_HAS_INTERNAL_GAMES` is psc/dev only); `backup_internal.sh` is the console's alone.
+  `AB_ROOT_RELATIVE_LAYOUT` (everything but the console) is what selects `EnvironmentSetup`'s "everything
+  under the root given on the command line" branch, which the Pi shares with the 1-arg debug mode.
   `internal.db` is still *opened* on a Pi (it comes up empty) because `GameCatalogService`/
   `GameSettingsService` unconditionally expect the handle.
-- Root `CMakeLists.txt`'s `^arm` branch is PSC-specific (it overwrites `CMAKE_CXX_FLAGS` with
-  `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so `AB_TARGET_RPI` now
-  takes its own branch there. Without that the Pi build was getting armv8 code, which would SIGILL on a Pi 2.
-- **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
+- Root `CMakeLists.txt`'s console branch is PSC-specific (it overwrites `CMAKE_CXX_FLAGS` with
+  `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so the appliances
+  (`rpi`, `pcusb`) take their own branch there, flags from the toolchain file. Without that the Pi build was
+  getting armv8 code, which would SIGILL on a Pi 2.
+- **Package**: `payload_linux/` is a sibling of `payload/`, not inside it, and is laid out as the package the
   Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
   `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces, the plymouth theme), and the data-partition
   tree exactly as it lands on the exFAT partition - `Autobleem/rc/` (the Pi `launch.sh`/`launch_rb.sh`/
@@ -345,7 +347,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
 - **Boot screen** (2026-09-18): the installer sets the KMS mode for the whole boot on the kernel command line
   (`video=HDMI-A-1:1280x720@60 video=HDMI-A-2:...`, `--hdmi-mode`; `config.txt`'s `hdmi_mode` is ignored by
   the KMS driver) - the launcher asks SDL for 1280x720 anyway, so plymouth and the launcher share one mode and
-  the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_rpi/system/plymouth/`
+  the handover is not a modeset. The AutoBleem logo is a plymouth `script` theme, `payload_linux/system/plymouth/`
   (`splash.png` 1280x720 on black), installed to `/usr/share/plymouth/themes/autobleem` and packed into **every** installed kernel's initramfs
   (`update-initramfs -u -k all` since 2026-09-18 - the 32-bit image carries one per board, v6/v7/v7l/v8,
   and a card set up on the Pi 400 showed the stock theme when moved to a Pi 3; the shrink hook stays on the
@@ -386,7 +388,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   `--list` shows what is in and out, `--check DIR` verifies a `system/` folder. **No BIOS file is in this
   repository** - only their hashes and URLs.
 - **Other systems run** (2026-09-18): ROMs in `RetroArch/roms/<system>/`, scanned by RetroArch's own Import
-  Content (guide: `payload_rpi/README.md`, "Games for the other systems"), launched from the RetroArch set
+  Content (guide: `payload_linux/README.md`, "Games for the other systems"), launched from the RetroArch set
   in-process like pcsx. What that took: `RetroArchService::mapPlaylistPath()` (no double `/media` prefix on a
   Pi), only installed cores in the database->core table, the `showOptions()` null deref on a fresh screen
   with a foreign game (the launcher used to die on the way back and be restarted with the splash),
@@ -444,14 +446,14 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
 second way to get AutoBleem onto a Pi, alongside the tarball + `install.sh` flow: `tools/make_rpi_image.sh`
 takes an official Raspberry Pi OS Lite image (downloaded automatically per architecture from Raspberry Pi
 Foundation's stable "latest" redirect, sha256-verified against its published checksum, or a local `--base`),
-loop-mounts it and injects an AutoBleem package plus `payload_rpi/system/autobleem-firstboot.{service,sh}`
+loop-mounts it and injects an AutoBleem package plus `payload_linux/system/autobleem-firstboot.{service,sh}`
 onto its root filesystem under `/opt/autobleem-image/` - **injection only**, deliberately: no chroot, no
 qemu, no package pre-install, nothing from the base image is ever executed at build time (`systemctl
 enable`'s effect is one hand-crafted symlink instead), so the same mechanism works for either architecture
 from either architecture's build host. Two edits on the boot partition: `cmdline.txt` loses the word
 **`resize`** - on Trixie that is what the initramfs (`local-premount/resize_early`, and `set_partuuid`)
 keys on to grow the root over the whole card, which would leave `install.sh` no room for the data
-partition - and **`autobleem.txt`** (from `payload_rpi/system/`) is added: AutoBleem's first-boot options
+partition - and **`autobleem.txt`** (from `payload_linux/system/`) is added: AutoBleem's first-boot options
 as `key=value`, editable from any PC (`root_gib` default 8, `hdmi_mode`, `retroarch`, `thumbnails`, `bios`,
 `downloads`; CRLF/BOM tolerated), and **ssh is enabled** (the owner's rule, 2026-09-20: once installed the launcher owns
 tty1 and the keyboard, so there is no console to enable it from - the `multi-user.target.wants/ssh.service`
@@ -472,7 +474,7 @@ memory note: optional everywhere): unless `autobleem.txt` says `retroarch=`, the
 silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh` makes that a lean PS1-only
 install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
 pack shrinks to `scph5501.bin`/`scph5500.bin`.
-**The first boot has a screen** (2026-09-20, the owner's ask): `payload_rpi/system/autobleem-install-ui.py`
+**The first boot has a screen** (2026-09-20, the owner's ask): `payload_linux/system/autobleem-install-ui.py`
 draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdlib - it decodes the plymouth
 `splash.png` itself (a small PNG reader), renders text from the console's Terminus PSF fonts
 (`/usr/share/consolefonts`, PSF1/2 with their unicode tables) and puts tty8 in `KD_GRAPHICS`. The logo,
@@ -517,7 +519,7 @@ writes a filled-in copy (real `extract_size`/`extract_sha256`/`image_download_si
 (no publishing pipeline yet). **`tools/rpi_imager_local_manifest.py`** turns that into what Imager's own
 `doc/local_json/create_local_json.py` produces for local files - a `*.rpi-imager-manifest` with `file://`
 URLs (double-click it, or App Options -> Content Repository -> Use custom file, or `--repo`) - which is what
-makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
+makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_linux/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
 **The download repository** (2026-09-19; its plan, `docs/repo-server-plan.md`, was removed on 2026-09-20 when
@@ -576,8 +578,12 @@ repository's). The server keeps `.tools/repo_index.prev.py` and falls back to it
 fails to run. A tree without git (the server's rsync trees) merges over the repository's stored base,
 right as long as that tree is at least as new as it. Two lines conflict easily - `render_index`'s
 signature and `main()`'s summary `print` - so a new panel is best committed to develop before the next
-session publishes. The PC USB stick (i386) work of a parallel session is still only in the repository's
-copy (`PC_IMAGE_RE`, `PLATFORM_ARCHES`, the `pc/` panels) until it lands on develop.
+session publishes. (The PC USB stick's `pc/` panels landed on develop with the merge of 2026-09-20.) Two
+things the first publishes through it showed: the server's python is 3.6, so the tool uses no
+`capture_output`; and a **stored base older than a region both sides had added** conflicts on every
+publish that touches that region, whichever side is right - the base only moves on a successful publish
+**from a git checkout** (the server's rsync tree has none), and now moves even when the two copies are
+already identical. So: land the page change on develop, publish from the PC checkout.
 `AB_REPO_URL` is the base URL everything generated starts with.
 
 It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
@@ -738,20 +744,20 @@ port targets 32-bit Trixie (and Bookworm).
   Its own `toolchains/rpi64/RPi64toolchain.cmake` and `make_rpi64.sh` (mirroring the 32-bit ones there) build
   it as a plain aarch64 Linux target instead, `PCSXAB_GLES`/dynarec left off. Built 2026-09-19: a real
   aarch64 `pcsx-ab` + the three plugins, committed into `emu-arm64/` below.
-- **Package**: one `payload_rpi/` tree still serves both architectures - `install.sh` reads
+- **Package**: one `payload_linux/` tree still serves both architectures - `install.sh` reads
   `dpkg --print-architecture` (`armhf` or `arm64`) into `$ARCH`, and separately into `$RA_ARCH` (`armhf` or
   **`aarch64`**, not `arm64` - buildbot.libretro.com's own directory name for 64-bit ARM does not match
   Debian's; caught and fixed 2026-09-19 before it shipped, `nightly/linux/arm64/` 404s) for the
   `buildbot.libretro.com/nightly/linux/$RA_ARCH/latest` cores URL. Only the emulator binaries are
-  architecture-specific, so pcsx-ab (with its `plugins/`) is checked in twice: `payload_rpi/Autobleem/bin/emu/` (armhf) and
-  `payload_rpi/Autobleem/bin/emu-arm64/` (arm64, built and committed 2026-09-19).
+  architecture-specific, so pcsx-ab (with its `plugins/`) is checked in twice: `payload_linux/Autobleem/bin/emu/` (armhf) and
+  `payload_linux/Autobleem/bin/emu-arm64/` (arm64, built and committed 2026-09-19).
   `tools/make_rpi_package.sh --arch armhf|arm64` (armhf is the default, unchanged output name)
   picks the matching `build_rpi`/`build_rpi64` source directory and, for `arm64`, moves `emu-arm64/`'s
   contents over `emu/` while staging so the on-device path stays `Autobleem/bin/emu/pcsx-ab` either way; the
   tarball is named `autobleem-rpi.tar.gz` (armhf) or `autobleem-rpi-arm64.tar.gz` (arm64) so the two never
   collide on the Pi's home directory during `--push`. Both verified 2026-09-19 - `autobleem-gui` packs with
   UPX as `linux/arm64` (1.2 MB), the 32-bit package rebuilt clean alongside it (no regression).
-- **BIOS pack** (2026-09-19): `tools/biospack.py --arch arm64` builds `payload_rpi/system/biospack-arm64.txt`
+- **BIOS pack** (2026-09-19): `tools/biospack.py --arch arm64` builds `payload_linux/system/biospack-arm64.txt`
   (694 files, 230 MB) from the real `buildbot.libretro.com/nightly/linux/aarch64` core listing, since
   RetroBIOS's own per-target file has no 64-bit Linux entry to read instead - see "BIOS pack" under the
   32-bit section above for the full mechanism, now shared by both architectures. Spot-verified: downloaded
@@ -778,6 +784,86 @@ port targets 32-bit Trixie (and Bookworm).
   unmounts the exFAT partitions before rebooting (a `sync` alone was not enough), `IniFile::save` writes
   atomically (`.tmp` + `DirEntry::replaceFile`) and `IniFile::load` warns about an empty file, and `Config`
   defaults `theme` to `ab2` in code (tested). Audio was fine all along (the owner's mistake).
+
+## The PC USB stick (2026-09-20, `pcusb`)
+
+The Pi appliance on a **32-bit x86 PC** (the owner's call: older CPUs must boot it), first of the two PC
+targets of `docs/pc-targets-plan.md` (the other, the Windows product, comes after). **Debian 12 Bookworm
+i386** - the last Debian with a 32-bit x86 kernel (Trixie has none; Bookworm LTS runs to mid-2028) - and
+everything of the Pi's: the launcher on tty1 over kmsdrm, the exFAT data partition, the first-boot screen,
+`install.sh`, the online update through `autobleem-update`. What is shared and what differs:
+
+- **One package tree, `payload_linux/`** (was `payload_rpi/`, renamed 2026-09-20): one `install.sh` with
+  `PLATFORM=rpi|pcusb` (`detect_platform()`: a Pi by its device tree, a PC by its architecture; `--platform`
+  overrides) and the platform-specific parts in `*_rpi` / `*_pcusb` functions - the boot files (a Pi's
+  firmware partition + `cmdline.txt`/`config.txt`; a PC's `/boot/efi` + `/etc/default/grub` and
+  `update-grub`, the same quiet-boot/splash words through `boot_cmdline_words()`), the disk (the boot
+  partition's, or the root's), the arch gate (`i386` -> buildbot's `x86`), the site's folder for RetroArch
+  builds and cores (`rpi/` or `pc/`, `PLATFORM_DIR`), the BIOS manifest (`biospack-i386.txt`, 730 files -
+  `tools/biospack.py --arch i386`), desktop OpenGL in a source-built RetroArch on x86. `--shrink-root` and
+  `--hdmi-mode` stay Pi mechanisms (a PC's KMS driver takes the screen's native mode). **A PC user never reads
+  "Pi"** (the owner's rule): `install.sh`'s messages say `$MACHINE`/`$MEDIUM` ("the Pi"/"the card",
+  "the PC"/"the stick"), the first-boot dialogs likewise, and `system/autobleem-pc.txt` is the stick's
+  edition of the options file. A PC has an RTC, so the first boot's NTP wait is the Pi's alone.
+  `autobleem-session.sh` picks the HDMI/DP output whose ELD reports a screen on a PC (`pc_hdmi_audio`; the
+  Pi's `vc4hdmi` cards as before). The first-boot script finds the staged package by name
+  (`autobleem-pcusb-i386.tar.gz` -> the PC paths) and makes ssh host keys when an image shipped without them.
+- **The build**: `AB_TARGET=pcusb` (`toolchains/pcusb/PcUsbToolchain.cmake`: Debian's `i686-linux-gnu`
+  cross compiler from the Docker image's `pcusb` stage, `-march=i686 -mtune=generic` - no SSE2, Debian's own
+  i386 baseline - `-D_FILE_OFFSET_BITS=64`; **the unit tests build and run there**, i386 being native on the
+  amd64 server - the first run as an appliance build found three suites assuming internal games).
+  `docker/run.sh ci/build.sh pcusb` -> `dist/pcusb/autobleem-pcusb-i386.tar.gz` (41 MB, top dir
+  `autobleem-pcusb`; `tools/make_rpi_package.sh --arch i386`, emu from `Autobleem/bin/emu-i386/` once
+  pcsx-ab has an i386 build - **it has none yet**, so the package ships no pcsx-ab and PS1 runs through
+  RetroArch's pcsx_rearmed core, `launch.sh`'s fallback). Site: the `pcusb` release kind, `pc/retroarch/`
+  (`ci/build_retroarch.sh i386` - the compiler triplet is `i686-linux-gnu`, the multiarch dir
+  `i386-linux-gnu`), `pc/cores/i386/` (`ci/build_cores.sh i386`, buildbot's `linux/x86`), `pc/images/`
+  (`repo_publish.sh pc-image|pc-retroarch|pc-cores`, `repo_index.py` indexes `pc/` as it does `rpi/`).
+  `pcusb.ini`'s `retroarch_catalog=pc/retroarch/latest.json` is where the launcher's update looks for RetroArch.
+- **The image, `tools/make_pc_image.sh`**: Debian publishes no i386 disk image, so it is built from packages -
+  `mmdebstrap` (root mode under `docker/run.sh --privileged` on the server: its Ubuntu 18.04 kernel refuses
+  `newuidmap` in a container, so `--rootless`/`--userns` is unproven there) with a customize hook that
+  finishes the root from inside (our staged files, the `autobleem:autobleem` user in `sudo`, plymouth's
+  theme in every initramfs, the GRUB menu, no ssh host keys, no machine-id; grub2-common's kernel hook
+  diverted for the build since `update-grub` cannot probe a device in a chroot), `mke2fs -d` on the unpacked
+  tar (never the tar itself: mke2fs built `--disable-nls` reads it in the C locale and refuses the first
+  non-ASCII name), an MBR with p1 the ESP (FAT32 `ABBOOT`: `EFI/BOOT/BOOTIA32.EFI` + `BOOTX64.EFI` from
+  `grub-mkimage` with an early config that finds the root by label, and `autobleem.txt`) and p2 the root
+  (ext4 `AUTOBLEEM_ROOT`, 4 GB, grown to `root_gib` on the first boot; the data partition is made of the
+  rest), `boot.img`/`core.img` written into the MBR gap by hand (`grub-bios-setup` is not in the `-bin`
+  packages). No loop device anywhere. **Three kernels** because GRUB's x86_64-efi loader refuses a 32-bit
+  kernel: `linux-image-686`, `-686-pae` and **`linux-image-amd64:amd64` as a foreign-architecture package**
+  (Bookworm's i386 archive has no amd64 kernel; Debian's release notes describe this route) - the userland
+  is i386 whichever runs; `tools/pc_image/10_autobleem` (in place of `10_linux`) picks by `cpuid -l`/`-p`.
+  Secure Boot must be off. `--reuse-root` keeps the 8-minute mmdebstrap result while iterating. Output
+  `autobleem-<v>-pcusb-i386.img.xz` (593 MB, 4.25 GB raw); the Docker `all` stage carries the tools
+  (`grub-*-bin`, `fdisk`, `dosfstools`, `uidmap`, e2fsprogs 1.47.2 from source).
+- **First boot in VirtualBox** (2026-09-20, a 32-bit VM with PAE, BIOS; `E:/tmp/pcimg`, VM `ab-pcusb-bios`,
+  the VDI grown to 16 GB so the data partition has room): GRUB picked the PAE kernel, plymouth, the
+  first-boot screen with the RetroArch question - then it sat on "Preparing the system partition":
+  **Bookworm's util-linux no longer carries `sfdisk`** (the `fdisk` package does), and the failure was only
+  in the log because the dialog had left the screen in graphics mode - both fixed (the image has `fdisk`, a
+  failed grow shows a dialog). `ssh.service` failed five times over on the boot screen for want of host keys
+  (a drop-in runs `ssh-keygen -A` ahead of `sshd -t`). To get a shell when the first-boot screen owns the
+  keyboard: hold Shift for GRUB, `e`, append `systemd.mask=autobleem-firstboot.service` to the `linux` line,
+  Ctrl+X, log in as `autobleem`/`autobleem`; VBoxManage's `keyboardputscancode`/`keyboardputstring` drive it.
+  QEMU was tried first and removed again - the owner's VirtualBox is the VM for this. **The second image
+  went end to end** the same day: the root grown, the exFAT data partition made, RetroArch (that run took
+  the slow road - `pc/retroarch/` was not published yet, the source build died on the mixed GL flags since
+  fixed, and Debian's `retroarch` package came in with its Qt desktop - ~400 MB the appliance never uses,
+  so on `pcusb` a failed build now means "go on without RetroArch, retry on a later run", and the cores
+  are only fetched for a RetroArch that is there), the cores and bundles, 730 BIOS files, the payload, the
+  three initramfs (redundant on the image - the theme-unchanged check now applies to every run, two
+  minutes saved), a reboot, and **the ab2 launcher on the screen**. The site has `pc/retroarch/`
+  (v1.22.2, 6 MB: desktop OpenGL only - GLES and GL together leave RetroArch's gl1 driver unlinkable) and
+  `pc/cores/i386/` (212 cores, 779 MB; `unzip`'s "done with warnings" over the cheats bundle used to kill
+  `build_cores.sh`), so a fresh first boot takes the fast road - **~8 minutes to the launcher, seen on a
+  BIOS VM and on a 64-bit UEFI VM** (the amd64 kernel with the i386 userland: no 64-bit RetroArch exists or
+  is needed). The `7ad9b85` image is on the site (`pc/images/`, the `pcusb` package in the pre-release,
+  `pc-install.html`). Untested: 32-bit UEFI, real hardware, a pad (keyboard-as-pad is off on an appliance,
+  so the VM shows the carousel and no more). Found on the way: **every Pi and PC-stick install had been
+  losing its sample games** - the pack has had no `Games/` since Tetrade left and `tar` was told to extract
+  it by name (fixed: the members come from the pack).
 
 ## The online update (2026-09-20, a Pi and the dev hosts - never the console)
 
@@ -816,7 +902,7 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   System/Updates" message (try it with `AB_UPDATE_PLATFORM=rpi` and `AB_UPDATE_RETROARCH_VERSION=...` in
   the environment - verified on the PC against the live site: prompt, 48 MB download, pending.json).
 - **The Pi's apply step**: `autobleem-session.sh` sees `AB_SELECTION=6` and runs
-  **`autobleem-update`** (`payload_rpi/system/autobleem-update.sh`, installed to `/usr/local/bin` by
+  **`autobleem-update`** (`payload_linux/system/autobleem-update.sh`, installed to `/usr/local/bin` by
   `install.sh`'s `install_update_helper()` together with the first-boot screen, its splash and a copy
   of the installer under `/usr/local/share/autobleem/`): it unpacks the new package and runs its
   **`install.sh --update`** (`--yes`, RetroArch `prebuilt` only where the stamp says one is installed,
@@ -1238,6 +1324,32 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 ## Build
 
+### The platform model (2026-09-20)
+
+One CMake cache string, **`AB_TARGET`** = `psc | rpi | pcusb | win | dev`, says what a build is for
+(empty: `psc` when cross-compiling for ARM, `dev` otherwise; the toolchain files force theirs; the old
+`AB_TARGET_RPI=ON` is a deprecated alias). Exactly one `AB_PLATFORM_<TARGET>` is defined from it, and
+`core/services/environment.h` derives the macros the sources actually test - each named for what it means,
+and **the sources never test the CPU or the OS** to tell targets apart (an i386 Linux build used to fall
+through `__x86_64__ || _WIN32` and compile as the console):
+
+| macro | targets | meaning |
+|---|---|---|
+| `AB_DEBUG_HOST` | dev | a development machine: the emulators are not forked (the splash runner), power off is `exit()`, free space is not measured, keyboard-as-pad, a 1280x720 window, the 1/2-arg roots (`make_win.sh`, `tools/win_drive.ps1`) |
+| `AB_APPLIANCE` | rpi, pcusb | forks and halts for real, no console tree behind it (the data partition on the command line), no built-in games, an update = `MENU_OPTION_UPDATE` for the session script to re-run the installer |
+| `AB_ROOT_RELATIVE_LAYOUT` | all but psc | every path from a root given on the command line (or found by the Windows product) instead of `/media` + `/usr/sony` |
+| `AB_HAS_INTERNAL_GAMES` | psc, dev | `/gaadata`'s games can be shown (`GameQueryService::showInternalGames`, the Options row) |
+
+`Env::platformName()` is `psc/rpi/pcusb/win/pc` and names `resources/platform/<name>.ini` - where a
+platform's *paths* differ (`PlatformConfig`; since 2026-09-20 also `retroarch_catalog`, the site's
+RetroArch listing for the update check - `rpi/retroarch/latest.json`, `pc/retroarch/latest.json` for the
+PC stick, empty on Windows; `launch_mode=script|direct` and `pcsx_dir` for the Windows product's direct
+launches; `core_extension` - `.dll` on Windows, what `CoreInfoTable` and the default PS1 core file use).
+`ABLEEM_EMBEDDED_TARGET` is on for psc/rpi/pcusb. `win` is the Windows product (the NSIS installer, a real
+target; `make_win.sh --product`), `pcusb` the 32-bit Debian PC stick - both coming (`docs/pc-targets-plan.md`).
+The other per-target switches: the console tools (`apps/pscbios`, `apps/abflashkit`) build for psc/dev, the PC
+programs (`apps/updateroms`, `apps/installer`) for dev/win, `AB_ONLINE_UPDATE` is off for psc.
+
 Six targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), **`ab_classic`** (2026-09-18: `app_base.*` and
 the game-agnostic part of `gui/` - Gui, ThemeAssets, TextRenderer, Fonts, AppAudio, the splash/confirm/
@@ -1347,9 +1459,9 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
   Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs).
-  Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. The x86/Windows/Pi
-  switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
-  `__x86_64__` directly.
+  Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. A dev build is
+  `AB_TARGET=dev` -> `AB_DEBUG_HOST` (see "The platform model" below) - use that, never `__x86_64__` or
+  `_WIN32`, to mean "a development machine".
 - **`libchdr`** (`#include <libchdr/chd.h>`, link `chdr`) is vendored under `lib_ableem/third_party/libchdr/` -
   upstream libchdr at `8bba774` (2025-06-08), the snapshot AutoBleem-NG bundles, replacing the older libmamecd
   fork on 2026-09-18 because chdman's default **zstd** codec was missing there (a fresh CHD would not open).
@@ -1500,7 +1612,7 @@ defaults, which both the services and the screens need.
 | `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`, and - with RetroArch detected, `romScanEnabled()` - `ableem::RetroArchScanner` over the ROM folders with its own `CoreInfoTable`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread, has `RetroArchService` reload rewritten playlists, and returns a `ScanUpdate` (added/updated/removed games, `playlistsWritten`, progress, finished with the game and ROM counts). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce over both `games.fingerprint` and `roms.fingerprint`, checked every `ScanWatchInterval` when nothing was requested directly; `fingerprintsMatchDisk()` is the startup check. Owned by `App` (`app.scans()`, constructed with `&retroArch_`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags, the `AB_DEBUG_HOST` macro, `platformName()` (`"psc"`/`"rpi"`/`"pc"` - the one place the build macros decide a path), `retroArchInstalled()` and `padMappingFiles()` (the `gamecontrollerdb.txt` list `Gui`'s constructor hands `Input::loadMappings()` - the kernel's `/etc/autobleem` one on the console, then the shipped one in the resources dir; **loaded since 2026-09-18** - until then nothing called `loadMappings` and the pscbios wizard's output was never read). All path getters live in the library (`getPathToKernelConfigDir()` is `""` off the console); extend `ableem::Environment` instead of adding new literal paths. |
-| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pc.ini`) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18), `download_command` (how the platform fetches a URL to a file, `%u`/`%o`, with its own timeout; empty = never online - the console; 2026-09-19, `Env::downloadCommand()`). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. Add per-platform paths here, never as `#ifdef AB_PLATFORM_RPI` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
+| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pcusb.ini`, `pc.ini`; `win.ini` to come) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18), `download_command` (how the platform fetches a URL to a file, `%u`/`%o`, with its own timeout; empty = never online - the console; 2026-09-19, `Env::downloadCommand()`). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. `retroarch_catalog`, `launch_mode`, `core_extension`, `pcsx_dir` (2026-09-20, see "The platform model"). Add per-platform paths here, never as `#ifdef AB_PLATFORM_*` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
 | `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is `English text=Translated text` lines under a `#` header (since 2026-09-18; the old pairs-of-lines layout is still read when the first line is not a comment). **`tools/lang_tools.py`** keeps them in step: `extract` (English.txt from every `_("...")`), `update [--remove-obsolete]`, `validate` (run by `make_win.sh`), `compare <Lang>`, `convert`, `merge <dir>`. A key cannot contain `=` - decorate at render time (`".-= " + _("Testing") + " =-."`). Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
@@ -1545,7 +1657,7 @@ the 118 slot so it clears the footer bar in the launcher's Games state. Where th
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
 its tile. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
-`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_rpi/` next to it is the Raspberry Pi installer
+`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
 ## Conventions and gotchas

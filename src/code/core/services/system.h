@@ -6,6 +6,7 @@
 
 #include "environment.h" // for AB_DEBUG_HOST
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -16,11 +17,21 @@
 // calls into the OS, so static; the one that matters for testing, runAndWait, is behind ProcessRunner.
 class System {
 public:
-    // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait. returns exit code, -1 if it could not
-    // run. This is the only fork/exec in the code base - everything that starts a process goes through here.
-    static int runAndWait(const std::string &exe, const std::vector<std::string> &args);
+    // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait, started in 'cwd' when one is given.
+    // returns exit code, -1 if it could not run. This is the only fork/exec in the code base - everything
+    // that starts a process goes through here (CreateProcess on Windows, where the child gets no console
+    // window of its own).
+    static int runAndWait(const std::string &exe, const std::vector<std::string> &args, const std::string &cwd = "");
+    // starts a program and does not wait: the Windows product's update, which the launcher hands the
+    // installer and leaves. True when it started.
+    static bool startDetached(const std::string &exe, const std::vector<std::string> &args);
 
     static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
+    // runs a command line through the shell and waits: std::system, except that on Windows the child
+    // (cmd.exe and what it starts - curl) gets no console window, so nothing flashes over the launcher.
+    // returns the exit status (0 = success), -1 when the shell could not be started. What OnlineAssets and
+    // UpdateService run their download commands with.
+    static int runShellCommand(const std::string &commandLine);
     // the same, one entry per non-empty line of stdout, trimmed - for a command that lists things
     static std::vector<std::string> execUnixCommandLines(const std::string &cmd);
 
@@ -32,7 +43,10 @@ public:
     // by ScanService's worker thread so a background scan never competes with a running emulator for CPU.
     static void lowerCurrentThreadPriority();
 
-    static std::string getAvailableSpace(); // "N GB / M GB (P%)" for the status bar, from df on the USB root
+    // the free and total bytes of the filesystem 'path' is on (statvfs / GetDiskFreeSpaceEx); false when
+    // the path is not there
+    static bool diskSpace(const std::string &path, uint64_t &freeBytes, uint64_t &totalBytes);
+    static std::string getAvailableSpace(); // "N GB / M GB (P%)" for the status bar, of the USB root's filesystem
 
     static unsigned int getRandomNumber();
     static unsigned int getRandomIndex(unsigned int size); // 0 .. size-1

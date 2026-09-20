@@ -7,6 +7,8 @@
 #   ab-validate native          host g++ + the SDL2 dev packages; the program is run
 #   ab-validate pi              arm-linux-gnueabihf and aarch64-linux-gnu g++ + the multiarch SDL2 packages
 #   ab-validate mingw           x86_64-w64-mingw32-g++-posix + /opt/mingw-sdl2; the result is a PE32+ exe
+#   ab-validate pcusb           i686-linux-gnu-g++ + the i386 multiarch SDL2 packages; the program is an
+#                               i386 ELF for a plain i686 (no SSE2), and is run - i386 runs on the host
 #   ab-validate psc-compiler    the Stretch gcc-6 cross compiler links a C++ program against its sysroot
 #   ab-validate psc             ...and against the SDL2 family built into /opt/psc/sdl2; the binary is
 #                               ARMv8, needs nothing above GLIBC_2.24 / GLIBCXX_3.4.22, has no RPATH
@@ -85,6 +87,15 @@ case "$check" in
         assert_not_newer GLIBC "$(highest aarch64-linux-gnu-readelf "$work/arm64" GLIBC)" 2.36
         echo "  armhf: $(arm-linux-gnueabihf-g++ --version | head -1)"
         echo "  arm64: $(aarch64-linux-gnu-g++ --version | head -1)"
+        ;;
+
+    pcusb)
+        i686-linux-gnu-g++ -std=c++14 -march=i686 -mtune=generic -Os -s \
+            -o "$work/i386" "$work/test.cpp" -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf -pthread
+        file "$work/i386" | grep -q 'ELF 32-bit LSB.*Intel 80386' || { file "$work/i386"; exit 1; }
+        assert_not_newer GLIBC "$(highest i686-linux-gnu-readelf "$work/i386" GLIBC)" 2.36
+        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy "$work/i386"
+        echo "  i386: $(i686-linux-gnu-g++ --version | head -1)"
         ;;
 
     mingw)

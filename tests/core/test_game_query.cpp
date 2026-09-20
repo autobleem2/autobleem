@@ -8,6 +8,7 @@
 #include "../support/temp_dir.h"
 
 #include "core/services/config.h"
+#include "core/services/environment.h"
 #include "core/services/game_query.h"
 
 #include <memory>
@@ -115,6 +116,9 @@ TEST_CASE("origames=false pushes the internal-games views back to the sub-dir vi
     }
 }
 
+// The console and a dev host can show the built-in games (AB_HAS_INTERNAL_GAMES); an appliance (a Pi, the PC
+// stick) has none and compiles the option out - origames=true means nothing there.
+#ifdef AB_HAS_INTERNAL_GAMES
 TEST_CASE("origames=true mixes the internal games into the all-games set") {
     ThreeGames lib;
     ConfigIn cfg(lib.tmp, "Origames=true\n");
@@ -141,6 +145,19 @@ TEST_CASE("the internal-only set is just the built-in games") {
 
     CHECK(titlesOf(query.gamesFor(selection)) == vector<string>{"Battle Arena Toshinden", "Jumping Flash"});
 }
+#else
+TEST_CASE("an appliance never shows internal games, whatever origames says") {
+    ThreeGames lib;
+    ConfigIn cfg(lib.tmp, "Origames=true\n");
+    GameQueryService query(lib.library, *cfg);
+
+    CHECK_FALSE(query.showInternalGames());
+
+    GameSetSelection selection;
+    selection.ps1SelectState = Ps1SelectState::AllGames;
+    CHECK(titlesOf(query.gamesFor(selection)) == vector<string>{"Crash Bandicoot", "Ridge Racer", "Tekken 3"});
+}
+#endif
 
 TEST_CASE("the favorites set is only the games flagged favorite") {
     ThreeGames lib;

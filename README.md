@@ -79,9 +79,9 @@ Apps payload.
   **ABFlashKit** (kernel flasher) - the 2020 forks under `apps/`, rebuilt on the same libraries, drawn with
   the launcher's theme, translated into all 17 languages, with fakes so they run on a PC for visual testing.
   The launcher loads the wizard's `gamecontrollerdb.txt`.
-- **Raspberry Pi port** (`payload_rpi/`): 32-bit Raspberry Pi OS on a Pi 2/3/4/400/Zero 2 W, games on an
+- **Raspberry Pi port** (`payload_linux/`): 32-bit Raspberry Pi OS on a Pi 2/3/4/400/Zero 2 W, games on an
   exFAT partition of the SD card, RetroArch built from source with every libretro core, the BIOS pack
-  fetched from RetroBIOS, a plymouth boot splash, pcsx-ab for PS1. See `payload_rpi/README.md`.
+  fetched from RetroBIOS, a plymouth boot splash, pcsx-ab for PS1. See `payload_linux/README.md`.
 - The `Cfg=` absolute path in `config.ini` is gone; every path derives from the USB root.
 
 ### The next emulator: pcsx-abnxt

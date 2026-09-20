@@ -16,6 +16,7 @@ string gamesDir;
 string regionalDbFile;
 string internalDbFile;
 string workingPath;
+string stateDir; // empty: the working path
 string appDir;
 string kernelConfigDir;
 string sonyDataPath;
@@ -26,6 +27,7 @@ string retroarchDir;      // empty: usb:/RetroArch/bin, the console's layout
 string retroarchCoreFile; // empty: pcsx_rearmed under the retroarch dir
 string retroarchRomsDir;  // empty: usb:/RetroArch/roms
 string retroarchBiosDir;  // empty: usb:/RetroArch/bios
+string retroarchCoreExtension = ".so";
 } // namespace
 
 //*******************************
@@ -51,6 +53,9 @@ void Environment::setKernelConfigDir(const string &path) {
     kernelConfigDir = path;
 }
 
+void Environment::setStateDir(const string &path) {
+    stateDir = path;
+}
 void Environment::setWorkingPath(const string &path) {
     workingPath = path;
 }
@@ -77,6 +82,12 @@ void Environment::setRetroarchRomsDir(const string &path) {
 }
 void Environment::setRetroarchBiosDir(const string &path) {
     retroarchBiosDir = path;
+}
+void Environment::setRetroarchCoreExtension(const string &ext) {
+    retroarchCoreExtension = ext.empty() ? ".so" : ext[0] == '.' ? ext : "." + ext;
+}
+const string &Environment::getRetroarchCoreExtension() {
+    return retroarchCoreExtension;
 }
 
 //*******************************
@@ -131,14 +142,18 @@ string Environment::getPathToPlayStationRdbFile() {
     return getPathToRetroarchRdbDir() + sep + "Sony - PlayStation.rdb";
 }
 string Environment::getPathToRetroarchCoreFile() {
-    return retroarchCoreFile.empty() ? getPathToRetroarchDir() + sep + "cores/pcsx_rearmed_libretro.so"
-                                     : retroarchCoreFile;
+    return retroarchCoreFile.empty()
+               ? getPathToRetroarchDir() + sep + "cores/pcsx_rearmed_libretro" + retroarchCoreExtension
+               : retroarchCoreFile;
 }
 bool Environment::hasRetroBoot() {
     return DirEntry::exists(getPathToRetroarchDir() + sep + "retroboot");
 }
 string Environment::getPathToRetroarchRomsDir() {
     return retroarchRomsDir.empty() ? usbRoot + sep + "RetroArch" + sep + "roms" : retroarchRomsDir;
+}
+string Environment::getPathToPs1BiosDir() {
+    return usbRoot + sep + "System" + sep + "Bios";
 }
 string Environment::getPathToRetroarchBiosDir() {
     return retroarchBiosDir.empty() ? usbRoot + sep + "RetroArch" + sep + "bios" : retroarchBiosDir;
@@ -163,6 +178,9 @@ string Environment::getWorkingPath() {
         return workingPath;
     char temp[PATH_MAX];
     return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+}
+string Environment::getPathToStateDir() {
+    return stateDir.empty() ? getWorkingPath() : stateDir;
 }
 
 //*******************************

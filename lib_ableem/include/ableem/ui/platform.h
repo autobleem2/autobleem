@@ -54,6 +54,12 @@ public:
     void acquireDisplay();
     bool hasDisplay() const;
 
+    // On a desktop, where another program opens its own window over ours instead of needing the display
+    // to itself: the window out of the way for the run (SDL_MinimizeWindow) and back, on top, after it
+    // (SDL_RestoreWindow + SDL_RaiseWindow). No-ops without a window.
+    void minimizeWindow();
+    void restoreWindow();
+
     // called by Input::poll() when the console power button or Esc is seen. the app is expected to show a
     // message and actually power off/exit; the library has no policy of its own here.
     void setPowerOffHandler(std::function<void()> handler);
@@ -67,7 +73,7 @@ private:
     // a window of outputWidth x outputHeight pixels showing a logicalWidth x logicalHeight canvas, with
     // multisampleSamples-x MSAA on its GL context when that is not 0 (see GuiBase)
     Platform(const std::string &windowTitle, int logicalWidth, int logicalHeight, int outputWidth, int outputHeight,
-             int multisampleSamples);
+             int multisampleSamples, bool fullscreen);
     struct Impl;
     Impl *impl;
 

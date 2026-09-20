@@ -18,6 +18,10 @@
 #             toolchains/psc/PSCtoolchainV8.cmake works with -DAB_PSC_TOOLCHAIN=/opt/psc
 #   retroarch - the Pi runtime libraries (armhf + arm64 dev packages) ci/build_retroarch.sh cross-builds
 #             RetroArch against, for the download repository
+#   pcusb   - the 32-bit PC USB-stick appliance: Debian's i686-linux-gnu cross compiler + the i386 multiarch
+#             SDL2 dev packages (the launcher, pcsx-ab) and RetroArch's i386 runtime dev packages. i386 code
+#             runs natively on the amd64 host, so its unit tests run in the image too. Late in the order on
+#             purpose: adding it left every layer above cached.
 #   all     - the default target: everything above, with the environment the ci/ scripts expect
 #
 # Every version is a build-arg; the defaults are what has been verified.
@@ -334,17 +338,51 @@ RUN ab-validate psc
 
 # ---------------------------------------------------------------------------------------------------------
 # retroarch: what ci/build_retroarch.sh cross-builds RetroArch for the two Pi architectures with - the
-# runtime libraries payload_rpi/install.sh's source build needs, as foreign-architecture dev packages (no
+# runtime libraries payload_linux/install.sh's source build needs, as foreign-architecture dev packages (no
 # FLAC: its soname differs between Bookworm and Trixie, see the script). Placed after psc on purpose: a
 # change here rebuilds no toolchain, only this layer.
 FROM psc AS retroarch
 RUN apt-get update && apt-get install -y --no-install-recommends         libasound2-dev:armhf libudev-dev:armhf libusb-1.0-0-dev:armhf libgbm-dev:armhf libdrm-dev:armhf         libegl-dev:armhf libgles-dev:armhf libfreetype-dev:armhf libxml2-dev:armhf         libasound2-dev:arm64 libudev-dev:arm64 libusb-1.0-0-dev:arm64 libgbm-dev:arm64 libdrm-dev:arm64         libegl-dev:arm64 libgles-dev:arm64 libfreetype-dev:arm64 libxml2-dev:arm64         file     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------------------------------------
+# pcusb: the 32-bit PC stick (payload_linux/, Debian 12 Bookworm i386 - the last Debian with an i386 kernel).
+# The same multiarch route as the Pis: crossbuild-essential-i386 is i686-linux-gnu-gcc, the :i386 dev
+# packages give real headers and .so links under /usr/lib/i386-linux-gnu, and the jackd2 pin (see pi) holds.
+# The RetroArch dev packages are for ci/build_retroarch.sh i386.
+FROM retroarch AS pcusb
+RUN dpkg --add-architecture i386 \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        crossbuild-essential-i386 \
+        libsdl2-dev:i386 libsdl2-image-dev:i386 libsdl2-mixer-dev:i386 libsdl2-ttf-dev:i386 \
+        libpng-dev:i386 zlib1g-dev:i386 libjack-jackd2-dev:i386 \
+        libasound2-dev:i386 libudev-dev:i386 libusb-1.0-0-dev:i386 libgbm-dev:i386 libdrm-dev:i386 \
+        libegl-dev:i386 libgles-dev:i386 libgl-dev:i386 libfreetype-dev:i386 libxml2-dev:i386 \
+    && rm -rf /var/lib/apt/lists/*
+COPY ab-validate.sh /usr/local/bin/ab-validate
+RUN ab-validate pcusb
+
+# ---------------------------------------------------------------------------------------------------------
 # all: the default target. mtools is for tools/make_rpi_image.sh's rootless mode (the FAT boot partition
 # of a Pi image, edited without mounting; e2fsprogs' debugfs, already here, does the ext4 root).
-FROM retroarch AS all
-RUN apt-get update && apt-get install -y --no-install-recommends mtools && rm -rf /var/lib/apt/lists/*
+# tools/make_pc_image.sh builds the PC stick's image from packages: mmdebstrap (already here, from the psc
+# stage), the three GRUB platform packages for its boot images (grub-mkimage, never grub-install), fdisk for
+# sfdisk on the image file, dosfstools for the ESP, uidmap for mmdebstrap's unshare mode (docker/run.sh
+# --userns), and e2fsprogs new enough for mke2fs -d to take a tar (1.47.1+; Bookworm has 1.47.0, so it is
+# built from source into /usr/local - the script falls back to unpacking the tar when it is older).
+FROM pcusb AS all
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        mtools fdisk dosfstools uidmap grub-pc-bin grub-efi-ia32-bin grub-efi-amd64-bin grub-common util-linux \
+        p7zip-full nsis \
+    && rm -rf /var/lib/apt/lists/*
+ARG E2FSPROGS_VERSION=1.47.2
+RUN cd /tmp \
+    && wget -q "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v${E2FSPROGS_VERSION}/e2fsprogs-${E2FSPROGS_VERSION}.tar.xz" \
+    && tar -xf e2fsprogs-${E2FSPROGS_VERSION}.tar.xz && cd e2fsprogs-${E2FSPROGS_VERSION} \
+    && ./configure --prefix=/usr/local --disable-nls --disable-fuse2fs >/dev/null \
+    && make -j"$(nproc)" >/dev/null && make install >/dev/null \
+    && cd /tmp && rm -rf e2fsprogs-${E2FSPROGS_VERSION}* \
+    && /usr/local/sbin/mke2fs -V 2>&1 | head -1
+ENV PATH="/usr/local/sbin:${PATH}"
 # sccache: a compiler cache in front of every compiler ci/build.sh configures (CMAKE_<LANG>_COMPILER_LAUNCHER,
 # so the native, Pi, MinGW and console builds all share it); docker/run.sh mounts the cache directory from
 # the host so it lives across containers. Last on purpose: a version bump rebuilds this layer only.

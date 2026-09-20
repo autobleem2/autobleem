@@ -87,8 +87,9 @@ void GuiOptions::fill() {
     app.lang().load(Env::getPathToLangDir(), "English");
 
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
-#ifndef AB_PLATFORM_RPI
-    // a Pi has no built-in games to show (GameQueryService::showInternalGames is hard false there)
+#ifdef AB_HAS_INTERNAL_GAMES
+    // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
+    // false there)
     lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true,
                        vector<string>({"false", "true"}));
 #endif
@@ -106,9 +107,9 @@ void GuiOptions::fill() {
     // only where the platform can fetch at all (download_command in its ini) - the console cannot
     if (!Env::downloadCommand().empty())
         lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
-#if defined(AB_ONLINE_UPDATE) && defined(AB_PLATFORM_RPI)
+#if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN))
     // the online update's channel (UpdateService): off, the stable releases, or the latest pre-release.
-    // A Pi only for now (the owner's call, 2026-09-20) - a dev host tests the flow with the default
+    // The real targets only (the owner's call, 2026-09-20) - a dev host tests the flow with the default
     lines.emplace_back(CFG_UPDATES, _("Updates:"), "updates", false, vector<string>({"stable", "latest", "off"}));
 #endif
     lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
@@ -281,7 +282,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 //*******************************
 void GuiOptions::doCircle_Pressed() {
     app.audio().cancel.play();
-    string cfg_path = Env::getWorkingPath() + sep + "config.ini";
+    string cfg_path = Env::getPathToStateDir() + sep + "config.ini";
     app.config().inifile.load(cfg_path); // restore the original config.ini settings
     app.lang().load(Env::getPathToLangDir(), app.config().inifile.values["language"]); // restore the original lang
     gui->loadAssets();                                                                 // restore original themes

@@ -19,7 +19,11 @@ struct Environment {
     static void setRegionalDbFile(const std::string &path); // regional.db, the scanned-games database
     static void setInternalDbFile(const std::string &path); // internal.db, the copy of the console's own database
     static void
-    setWorkingPath(const std::string &path); // resources dir: config.ini, default.png, memcard/, autobleem.list ...
+    setWorkingPath(const std::string &path); // resources dir: default.png, memcard/, lang/, the platform inis ...
+    // where the program keeps what it writes next to its resources - config.ini, the scan's fingerprints
+    // and reports, the online probe files: the working path itself unless set (the Windows product
+    // installs its resources under Program Files' equivalent and keeps these in <data>/System)
+    static void setStateDir(const std::string &path);
     // a tool's own folder (usb:/Apps/<tool>, where its run.sh cd's): its lang/, images, payload. Distinct
     // from the working path, which is the main GUI's resources dir the tools share (config.ini, themes).
     static void setAppDir(const std::string &path);
@@ -36,6 +40,9 @@ struct Environment {
     static void setRetroarchRomsDir(const std::string &path); // the other systems' ROMs; "" = usb:/RetroArch/roms
     static void setRetroarchBiosDir(const std::string &path); // RetroArch's system dir (the cores' BIOS files);
                                                               // "" = usb:/RetroArch/bios
+    // the cores' file extension: ".so" (the default), ".dll" on Windows - what a core is called next to its
+    // .info (CoreInfoTable), and what the default PS1 core file ends in
+    static void setRetroarchCoreExtension(const std::string &ext);
 
     //*******************************
     // paths
@@ -49,6 +56,7 @@ struct Environment {
     static std::string getPathToSaveStatesDir(); // games:/!SaveStates
     static std::string getPathToSystemDir();     // usb:/System
     static std::string getPathToLogsDir();       // usb:/System/Logs - AB_out.txt, AB_err.txt, autobleem.log
+    static std::string getPathToPs1BiosDir();    // usb:/System/Bios - pcsx-ab's romw.bin/romJP.bin off the console
     static std::string getPathToRetroarchDir();  // usb:/RetroArch/bin unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
     static std::string getPathToRetroarchRdbDir();        // <retroarch>/database/rdb - libretro-database's .rdb files
@@ -57,6 +65,7 @@ struct Environment {
     static std::string getPathToRetroarchStatesDir();
     static std::string getPathToPlayStationRdbFile(); // "Sony - PlayStation.rdb" in there, what MetadataLookup reads
     static std::string getPathToRetroarchCoreFile();
+    static const std::string &getRetroarchCoreExtension(); // ".so" unless setRetroarchCoreExtension() said otherwise
     static bool hasRetroBoot();                     // <retroarch>/retroboot exists - RetroBoot's tree is still there
     static std::string getPathToRetroarchRomsDir(); // usb:/RetroArch/roms unless setRetroarchRomsDir() said
                                                     // otherwise: a folder per system, named as RetroArch's
@@ -67,8 +76,9 @@ struct Environment {
     static std::string getPathToInternalDBFile();   // includes the "internal.db" filename
     static std::string getPathToInternalGamesDir(); // "/gaadata" unless configured otherwise
 
-    static std::string getWorkingPath();              // the resources dir; the current dir when never set
-    static std::string getAppDir();                   // the tool's own folder; the current dir when never set
+    static std::string getWorkingPath();    // the resources dir; the current dir when never set
+    static std::string getPathToStateDir(); // where the program writes its own files; the working path unless set
+    static std::string getAppDir();         // the tool's own folder; the current dir when never set
     static std::string getPathToKernelConfigDir();    // "" without an AutoBleem kernel
     static std::string getPathToGameControllerDb();   // working:/gamecontrollerdb.txt - the shipped SDL pad mappings
     static std::string getPathToAppLangDir();         // app:/lang - a tool's own translation files

@@ -52,4 +52,4 @@ endif()
 set(AB_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 
 # The Pi port: no internal games, paths under the exFAT data partition given on the command line.
-set(AB_TARGET_RPI ON CACHE BOOL "" FORCE)
+set(AB_TARGET rpi CACHE STRING "" FORCE)
