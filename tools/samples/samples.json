@@ -4,37 +4,12 @@
     "redistribute it (every entry names it), one per system at least. tools/build_samples.py downloads each file",
     "from its upstream release (sha256-checked), lays it out as it lands on the data partition and packs",
     "samples-<date>.tar.gz for the download repository (samples/); payload_rpi/install.sh fetches that.",
-    "The PS1 game gets a locked Game.ini (Automation=0) so the scanner keeps the metadata and the cover written",
-    "here, and a pcsx.cfg - 'skip_boot_logo' sets SlowBoot = 0 in it, for a disc whose custom boot logo breaks",
-    "pcsx-ab's BIOS shell; the ROMs are named as the launcher's ROM scan labels them (the file's stem) with a box art of the",
     "same name in the thumbnails tree. Covers: tools/samples/make_covers.py -> covers/ (checked in).",
     "'shot' is the screenshot make_covers.py draws from (a file under tools/samples/shots/, from the game's own",
-    "repository, under the game's licence)."
+    "repository, under the game's licence).",
+    "No PS1 game today: Tetrade (MIT, PSn00bSDK) was the one until 2026-09-20 - it does not run on pcsx-ab (see CLAUDE.md), and no other PS1 homebrew with a redistributable licence and a disc image turned up. The PSX layout code in build_samples.py stays for when one does."
   ],
   "games": [
-    {
-      "id": "tetrade",
-      "system": "psx",
-      "title": "Tetrade",
-      "author": "Logan Campbell",
-      "year": 2025,
-      "players": 2,
-      "publisher": "Logan Campbell",
-      "licence": "MIT",
-      "licence_url": "https://github.com/Logan-Campbell/Tetrade/blob/master/LICENSE",
-      "source": "https://github.com/Logan-Campbell/Tetrade",
-      "description": "A Tetris-style puzzle game with marathon and two-player modes, built with PSn00bSDK.",
-      "skip_boot_logo": true,
-      "files": [
-        {"url": "https://github.com/Logan-Campbell/Tetrade/releases/download/v1.0/TETRADE_PSX.bin",
-         "sha256": "2f41feba2023cbdcd9c1c3d4cfc3d8d1a7f1a2de0afea2e7a050b84640d6eaf8", "name": "Tetrade.bin"},
-        {"url": "https://github.com/Logan-Campbell/Tetrade/releases/download/v1.0/TETRADE_PSX.cue",
-         "sha256": "98cb45d15241900c8459176e833be5edee78120763ac4d91d79d24020b10d67a", "name": "Tetrade.cue",
-         "rewrite_cue": true}
-      ],
-      "cover": "tetrade.png",
-      "shot": "tetrade_title.png"
-    },
     {
       "id": "nova",
       "system": "nes",
@@ -47,8 +22,11 @@
       "source": "https://github.com/NovaSquirrel/NovaTheSquirrel",
       "description": "A puzzle platformer in the spirit of Super Mario Bros. 3 and Kirby: copy abilities from enemies.",
       "files": [
-        {"url": "https://github.com/NovaSquirrel/NovaTheSquirrel/releases/download/v1.0.6a/nova.nes",
-         "sha256": "e4780e90b9d1587489bfb797d2ca395be21371ea9262fa9f87f99324ec6960ab", "name": "Nova the Squirrel.nes"}
+        {
+          "url": "https://github.com/NovaSquirrel/NovaTheSquirrel/releases/download/v1.0.6a/nova.nes",
+          "sha256": "e4780e90b9d1587489bfb797d2ca395be21371ea9262fa9f87f99324ec6960ab",
+          "name": "Nova the Squirrel.nes"
+        }
       ],
       "cover": "nova.png",
       "shot": "nova.png"
@@ -65,9 +43,12 @@
       "source": "https://github.com/undisbeliever/asteroids",
       "description": "The arcade classic on the Super NES.",
       "files": [
-        {"url": "https://github.com/undisbeliever/asteroids/releases/download/v1.03/Asteroids.v1.03.zip",
-         "sha256": "3b8fde888ce802900e66bd89cb7bdbb0444691111f8a8ea7eb0c887fd2ca62dc",
-         "member": "Asteroids (v1.03)/Asteroids (v1.03).sfc", "name": "Asteroids.sfc"}
+        {
+          "url": "https://github.com/undisbeliever/asteroids/releases/download/v1.03/Asteroids.v1.03.zip",
+          "sha256": "3b8fde888ce802900e66bd89cb7bdbb0444691111f8a8ea7eb0c887fd2ca62dc",
+          "member": "Asteroids (v1.03)/Asteroids (v1.03).sfc",
+          "name": "Asteroids.sfc"
+        }
       ],
       "cover": "asteroids.png",
       "shot": ""
@@ -84,9 +65,12 @@
       "source": "https://github.com/undisbeliever/castle_platformer",
       "description": "A simple single-screen platformer.",
       "files": [
-        {"url": "https://github.com/undisbeliever/castle_platformer/releases/download/v1.04/Castle.Platformer.v1.04.zip",
-         "sha256": "e75da7af6f3a1bd10c21cf4324d0c4321271ce3b9ef3408b2dc2db9cb05f9159",
-         "member": "Castle Platformer (v1.04)/Castle Platformer (v1.04).sfc", "name": "Castle Platformer.sfc"}
+        {
+          "url": "https://github.com/undisbeliever/castle_platformer/releases/download/v1.04/Castle.Platformer.v1.04.zip",
+          "sha256": "e75da7af6f3a1bd10c21cf4324d0c4321271ce3b9ef3408b2dc2db9cb05f9159",
+          "member": "Castle Platformer (v1.04)/Castle Platformer (v1.04).sfc",
+          "name": "Castle Platformer.sfc"
+        }
       ],
       "cover": "castle-platformer.png",
       "shot": ""
@@ -103,9 +87,12 @@
       "source": "https://github.com/M374LX/alexvsbus-md",
       "description": "Race a bus on foot: a fast platform runner, the Mega Drive port of the open-source game.",
       "files": [
-        {"url": "https://github.com/M374LX/alexvsbus-md/releases/download/pre3/alexvsbus-md-pre3.zip",
-         "sha256": "eea48b73298b7d38e69557cba291eaf05cf20f637d8faeaa032a53de2c562710",
-         "member": "alexvsbus-md-pre3/alexvsbus-pre3.md", "name": "Alex vs Bus - The Race.md"}
+        {
+          "url": "https://github.com/M374LX/alexvsbus-md/releases/download/pre3/alexvsbus-md-pre3.zip",
+          "sha256": "eea48b73298b7d38e69557cba291eaf05cf20f637d8faeaa032a53de2c562710",
+          "member": "alexvsbus-md-pre3/alexvsbus-pre3.md",
+          "name": "Alex vs Bus - The Race.md"
+        }
       ],
       "cover": "alexvsbus.png",
       "shot": "alexvsbus1.png"
