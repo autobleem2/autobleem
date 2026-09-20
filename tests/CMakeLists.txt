@@ -13,7 +13,9 @@ target_include_directories(doctest_main PUBLIC third_party)
 # the support pieces every test links: EnvFixture (Environment's setters are global), TempDir and
 # makeFakeGame (a real verifiable PS1 game on disk, for tests that exercise the scanner itself).
 add_library(ab_test_support STATIC support/temp_dir.cpp support/fake_game.cpp)
-target_include_directories(ab_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(ab_test_support PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        # support/tar_builder.h gzips with the engine's own miniz (a private header of ableem_engine)
+        ${CMAKE_SOURCE_DIR}/lib_ableem/third_party/miniz)
 target_link_libraries(ab_test_support ableem_engine)
 
 # one executable per suite; add_test per executable so a crash in one does not hide the others.
@@ -66,6 +68,8 @@ ab_add_test(test_theme_converter core/test_theme_converter.cpp)
 ab_add_test(test_theme_installer core/test_theme_installer.cpp)
 ab_add_test(test_theme_spec core/test_theme_spec.cpp)
 ab_add_test(test_zip_writer core/test_zip_writer.cpp)
+ab_add_test(test_tar_archive core/test_tar_archive.cpp)
+ab_add_test(test_update_catalog_packs core/test_update_catalog_packs.cpp)
 ab_add_test(test_harness core/test_env_fixture.cpp)
 
 # the console tools' suites (apps/), linking each tool's SDL-free core
@@ -76,3 +80,4 @@ endif()
 # UpdateRoms is a host program, and the tests are host-only too (the target is defined after this
 # directory; CMake resolves the name at generate time)
 ab_add_test(test_updateroms_core apps/test_updateroms_core.cpp LIBS updateroms_core)
+ab_add_test(test_installer_core apps/test_installer_core.cpp LIBS installer_core)

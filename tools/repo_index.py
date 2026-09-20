@@ -44,10 +44,12 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 20
+INDEX_VERSION = 21
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
+    ("installer", re.compile(r"^AutoBleemInstaller-.*\.zip$"),
+     "PlayStation Classic installer for Windows (the program and the stick's file system)"),
     ("psc", re.compile(r"^autobleem-psc-.*\.zip$"), "PlayStation Classic (USB stick zip)"),
     ("psc-fs", re.compile(r"^autobleem-psc-.*\.tar\.gz$"),
      "PlayStation Classic, the stick's file system for the installer (no RetroArch and no cover databases - "
@@ -602,10 +604,13 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     # ---- PlayStation Classic ----
     out.append("<h2 class=\"plat\" id=\"psc\">PlayStation Classic</h2>")
     out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>The console is set up from a PC: the installer prepares a USB stick from the build inputs below - "
-               "the stick's file system, then the cover databases and, if wanted, RetroArch with its cores, "
-               "libraries, apps and BIOS files.</p>"
-               "<p>The installer is in the works; until it is here, the pieces are below.</p>")
+               "<p>The console is set up from a Windows PC: unzip the installer, plug a USB stick in, run "
+               "<code>AutoBleemInstaller.exe</code>. It formats the stick if need be (FAT32), puts AutoBleem on it and "
+               "fetches what you tick from the build inputs below - the cover databases and, if wanted, RetroArch "
+               "with its cores, libraries, apps and BIOS files, and the sample games. Run it again to update: "
+               "your games, saves, memory cards and settings stay.</p>")
+    block = release_block(("installer",))
+    out += block if block else ["<p>No installer published yet.</p>"]
     block = release_block(("psc",))
     if block:
         out.append("<p>The stick as one zip, covers included - unzip it onto the root of a FAT32 stick named "

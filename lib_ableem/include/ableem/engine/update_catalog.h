@@ -53,6 +53,35 @@ struct RetroArchCatalog {
 };
 
 //******************
+// PackCatalog
+//******************
+// One dated pack as the site's psc/<kind>/latest.json (cores, libs, apps, bios, samples) describes it:
+// the file itself, its manifest's URL, its date (YYYYMMDD; "" for the BIOS list) and how many things are
+// in it. The BIOS list is the file itself (biospack.txt), with the total of what it names in totalBytes.
+struct PackCatalog {
+    UpdateFile file;
+    std::string manifestUrl;
+    std::string date;
+    int count = 0;
+    uint64_t totalBytes = 0;
+    bool parse(const std::string &jsonText);
+    bool load(const std::string &path);
+};
+
+//******************
+// PscRetroArchCatalog
+//******************
+// The console's RetroArch build, psc/retroarch/latest.json: the version tag ("v1.22.2-4"), the zip and the
+// manifest's URL.
+struct PscRetroArchCatalog {
+    std::string version;
+    UpdateFile zip;
+    std::string manifestUrl;
+    bool parse(const std::string &jsonText);
+    bool load(const std::string &path);
+};
+
+//******************
 // UpdateState
 //******************
 // What the launcher remembers between runs, so a check happens once a day and a "skip" or "remind me

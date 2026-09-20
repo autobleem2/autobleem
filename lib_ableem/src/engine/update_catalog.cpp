@@ -138,6 +138,43 @@ const UpdateFile *RetroArchCatalog::fileFor(const string &arch) const {
 }
 
 //*******************************
+// PackCatalog
+//*******************************
+bool PackCatalog::parse(const string &jsonText) {
+    json j = parseOrNull(jsonText);
+    if (!j.is_object() || !parseFile(j, file))
+        return false;
+    manifestUrl = str(j, "manifest");
+    date = str(j, "date");
+    count = static_cast<int>(inum(j, "count"));
+    totalBytes = num(j, "total_bytes");
+    return true;
+}
+
+bool PackCatalog::load(const string &path) {
+    return parse(readText(path));
+}
+
+//*******************************
+// PscRetroArchCatalog
+//*******************************
+bool PscRetroArchCatalog::parse(const string &jsonText) {
+    json j = parseOrNull(jsonText);
+    if (!j.is_object())
+        return false;
+    version = str(j, "version");
+    manifestUrl = str(j, "manifest");
+    auto z = j.find("zip");
+    if (z == j.end() || !parseFile(*z, zip))
+        return false;
+    return !version.empty();
+}
+
+bool PscRetroArchCatalog::load(const string &path) {
+    return parse(readText(path));
+}
+
+//*******************************
 // UpdateState
 //*******************************
 bool UpdateState::load(const string &path) {

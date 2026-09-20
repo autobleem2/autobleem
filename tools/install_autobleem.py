@@ -783,13 +783,15 @@ def stage_layout(root: Path, opts, dry_run: bool):
         cfg = ra_bin / 'retroarch.cfg'
         if cfg.is_file():
             changed |= rewrite_text_file(cfg, LAYOUT_PATH_REWRITES, dry_run, log, cfg_keys)
-        # the playlists (RetroBoot's Applications.lpl points into its launchers and goes)
+        # RetroBoot's own playlists cannot be carried over (Applications.lpl names its launchers, "Sony -
+        # PlayStation.lpl" the internal games through links under /tmp) and AutoBleem.lpl is written afresh
+        # by the launcher's next scan, which also rebuilds every per-system playlist from RetroArch/roms
         for lpl in sorted(list((ra_bin / 'playlists').glob('*.lpl')) + list(ra_bin.glob('content_*.lpl'))):
-            if lpl.name == 'Applications.lpl':
+            if lpl.name in ('Applications.lpl', 'Sony - PlayStation.lpl', 'AutoBleem.lpl'):
                 if dry_run:
-                    log(f'[DRYRUN] would remove {lpl} (RetroBoot\'s)')
+                    log(f'[DRYRUN] would remove {lpl} (rebuilt by the launcher\'s scan)')
                 else:
-                    log(f'removing {lpl} (RetroBoot\'s)')
+                    log(f'removing {lpl} (rebuilt by the launcher\'s scan)')
                     remove_path(lpl)
                 changed = True
                 continue

@@ -1,0 +1,4 @@
+// the manifest: common controls v6 (the themed progress bars) and DPI awareness; the picture on top of
+// the window is the launcher's return splash (src/resources/splash/autobleem.jpg), as RCDATA 1
+1 24 "installer.manifest"
+1 RCDATA "../../../src/resources/splash/autobleem.jpg"

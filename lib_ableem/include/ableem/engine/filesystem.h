@@ -72,7 +72,8 @@ public:
     static bool filesAreIdentical(const std::string &a,
                                   const std::string &b); // same size and bytes; false if either is missing
     static bool createDir(const std::string &name);
-    static int rmDir(std::string path); // recursive; 0 on success
+    static bool createDirs(const std::string &name); // every level, like mkdir -p; true if it exists afterwards
+    static int rmDir(std::string path);              // recursive; 0 on success
     static bool removeDirAndContents(const std::string path);
 
     static bool removeFile(const std::string &path);
