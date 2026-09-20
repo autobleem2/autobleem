@@ -29,15 +29,19 @@ REPO="$PWD"
 JOBS="${AB_JOBS:-$(nproc)}"
 
 # --- the version the package names carry --------------------------------------------------------------------
-# git describe when there is a .git (v2.0.0-pre0, or v2.0.0-pre0-12-gabc1234 past the tag, "-dirty" appended);
-# else what the environment says (make_psc.sh-style AB_GIT_*), else "dev". cmake/generate_version.cmake makes
-# the same decision for core/version.h.
+# What the environment says first (make_psc.sh-style AB_GIT_*: the caller's facts about a tree that has no
+# .git, or - the server's clone, tagless and "dirty" from the pcsx-ab binaries this very script copies into
+# payload*/ - a tree whose own git facts would mislabel it), else git describe (v2.0.0-pre0, or
+# v2.0.0-pre0-12-gabc1234 past the tag, "-dirty" appended), else "dev". cmake/generate_version.cmake makes
+# the same decision, in the same order, for core/version.h.
 version() {
     local v
-    v="$(git describe --tags --always --dirty 2>/dev/null || true)"
-    if [ -z "$v" ]; then
-        v="${AB_GIT_VERSION:-dev}"
-        [ -n "${AB_GIT_HASH:-}" ] && v="$v-${AB_GIT_HASH}"
+    if [ -n "${AB_GIT_HASH:-}" ]; then
+        v="${AB_GIT_VERSION:-dev}-${AB_GIT_HASH}"
+        [ "${AB_GIT_DIRTY:-}" = true ] && v="$v-dirty"
+    else
+        v="$(git describe --tags --always --dirty 2>/dev/null || true)"
+        [ -n "$v" ] || v="${AB_GIT_VERSION:-dev}"
     fi
     echo "$v"
 }
