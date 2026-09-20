@@ -73,7 +73,9 @@ build_one() {
         banner "$arch: $bundle -> $dest/"
         mkdir -p "$stage/$dest"
         wget -q -O "$tmp/$bundle.zip" "$BASE/assets/frontend/$bundle.zip"
-        unzip -oq "$tmp/$bundle.zip" -d "$stage/$dest"
+        # exit 1 is "done, with warnings" - the cheats bundle has entries whose local and central names
+        # disagree (unzip takes the central one), which set -e would otherwise turn into a dead script
+        unzip -oq "$tmp/$bundle.zip" -d "$stage/$dest" || [ $? -eq 1 ]
         rm -f "$tmp/$bundle.zip"
     done
 
