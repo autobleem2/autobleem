@@ -8,6 +8,7 @@
 #include "../support/env_fixture.h"
 #include "../support/temp_dir.h"
 
+#include <ableem/engine/filesystem.h>
 #include <ableem/engine/thumbnail_lookup.h>
 
 #include <string>
@@ -153,8 +154,13 @@ TEST_CASE("case never matters: libretro's spelling of a name is found for the rd
     t.touch(t.boxarts + "/Sonic The Hedgehog (USA, Europe).png");
     t.touch(t.boxarts + "/Sonic The Hedgehog 2 (World).png");
     ThumbnailLookup lookup;
+    // the stat-first exact check answers in the query's spelling on a case-insensitive filesystem (NTFS
+    // here, FAT32/exFAT on a stick - where that path opens all the same); the listing's spelling comes
+    // back only where the stat misses, on a case-sensitive one
+    const bool caseInsensitiveFs = ableem::DirEntry::exists(t.boxarts + "/SONIC THE HEDGEHOG (USA, EUROPE).PNG");
     CHECK(lookup.findBoxArt(kSystem, "Sonic the Hedgehog (USA, Europe)") ==
-          t.boxarts + "/Sonic The Hedgehog (USA, Europe).png");
+          t.boxarts +
+              (caseInsensitiveFs ? "/Sonic the Hedgehog (USA, Europe).png" : "/Sonic The Hedgehog (USA, Europe).png"));
     // the fuzzy fallback ignores case too, and gives the name as the file is spelled
     CHECK(lookup.findBoxArt(kSystem, "SONIC THE HEDGEHOG 2 (USA)") == t.boxarts + "/Sonic The Hedgehog 2 (World).png");
     // the same rules over a plain list of names (the server's index)

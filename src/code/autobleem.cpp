@@ -92,7 +92,11 @@ void AutoBleem::launchGame() {
         retroArch_.reloadFavoritesAndHistory(); // they could have changed
     }
 
-    usleep(300 * 1000);
+    // a moment for the machine to settle before the window comes back: on the PSC the GPU frees the
+    // emulator's memory a little after the process is gone, and a RetroArch 1.22.2 session (its XMB alone
+    // holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at 300 ms
+    bool wasRetroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
+    usleep((wasRetroArch ? 1000 : 300) * 1000);
 
     gui_->input().probePads();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
@@ -148,6 +152,13 @@ int AutoBleem::run() {
         scans().requestScan();
     }
 
+    // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
+    // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the
+    // emulator's memory yet, the launcher's first buffer uploads failed ("PVR: glBufferSubData: No memory
+    // for object data"), Weston then dropped the client ("wl_display@1: error 0: invalid object 16") and
+    // the Quit that followed took the whole program out through selection.sh's reboot. So the display is
+    // rebuilt a few times, a second apart, before that is accepted.
+    int displayLost = 0;
     while (true) {
         bool quitRequested = false;
         {
@@ -155,9 +166,19 @@ int AutoBleem::run() {
             launcherScreen.show();
             quitRequested = launcherScreen.quitRequested;
         }
-        if (quitRequested) { // the window's own close button - see GuiLauncher::loop()'s comment
-            break;
+        if (quitRequested) {
+            if (gui_->platform().isDevHost() || ++displayLost > 3) {
+                break; // the window's own close button - see GuiLauncher::loop()'s comment - or hopeless
+            }
+            PLOG_WARNING << "The display went away (attempt " << displayLost << " of 3) - rebuilding it";
+            gui_->releaseDisplay();
+            usleep(1000 * 1000);
+            gui_->input().flushEvents();
+            gui_->display(true);
+            session_.resumingGui = true;
+            continue;
         }
+        displayLost = 0;
 
         session_.resumingGui = false;
 
