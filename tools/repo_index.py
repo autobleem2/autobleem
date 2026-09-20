@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 29
+INDEX_VERSION = 30
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -89,7 +89,7 @@ WIN_CORES_RE = re.compile(r"^cores-win64-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 # the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
-PCSX_RE = re.compile(r"^(?P<name>pcsx-ab|pcsx-abnxt)-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|win64)\.(tar\.gz|zip)$")
+PCSX_RE = re.compile(r"^(?P<name>pcsx-ab|pcsx-abnxt)-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|pcusb|win64)\.(tar\.gz|zip)$")
 EMULATORS = (
     ("pcsx-ab", "pcsx-ab, the classic emulator",
      "The PS1 emulator AutoBleem has always shipped (<code>Autobleem/bin/emu/</code>): PCSX-ReARMed as the console's "
@@ -102,7 +102,8 @@ EMULATORS = (
      "Options -> \"PS1 Emulator\" picks it (<code>Autobleem/bin/emunxt/</code>)."),
 )
 PCSX_PLATFORMS = (("psc", "PlayStation Classic"), ("rpi-armhf", "Raspberry Pi, 32-bit OS"),
-                  ("rpi-arm64", "Raspberry Pi, 64-bit OS"), ("win64", "Windows"))
+                  ("rpi-arm64", "Raspberry Pi, 64-bit OS"), ("pcusb", "PC USB stick (32-bit Linux)"),
+                  ("win64", "Windows"))
 
 
 # version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
