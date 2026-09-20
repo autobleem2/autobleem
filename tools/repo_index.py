@@ -41,7 +41,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 13
+INDEX_VERSION = 14
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -481,7 +481,14 @@ h3{font-weight:300;font-size:1rem;letter-spacing:.05em;text-transform:uppercase;
 .panel.inputs{background:rgba(4,22,56,.5);border-style:dashed}
 .panel.inputs h2{color:var(--dim)}
 h3 small{letter-spacing:0;text-transform:none}
-p.nav{font-size:.95rem}
+nav.tabs{display:flex;flex-wrap:wrap;gap:.4rem;margin:1.4rem 0 .2rem}
+nav.tabs a{padding:.5rem 1rem;border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;
+  background:rgba(4,22,56,.5);color:var(--dim);font-size:1rem;letter-spacing:.05em;text-transform:uppercase}
+nav.tabs a:hover{color:#fff;text-decoration:none}
+nav.tabs a.active{background:var(--panel);color:var(--cyan);border-color:var(--cyan)}
+body.js section.tab{display:none}
+body.js section.tab.active{display:block}
+body.js section.tab h2.plat{display:none}
 ul,ol{line-height:1.55;padding-left:1.4rem}li{margin:.3rem 0}
 footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
@@ -541,9 +548,7 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                "<em>build inputs</em> - the pieces the installers, the image build and the CI fetch from here "
                "(RetroArch builds, cores, the cover databases). Every file has a <code>.sha256</code> next to it; "
                "<a href=\"/releases/\">browse</a> the tree for older versions. Machine-readable: "
-               "<a href=\"/releases/latest.json\">releases/latest.json</a>.</p>"
-               "<p class=\"nav\"><a href=\"#psc\">PlayStation Classic</a> &middot; <a href=\"#rpi\">Raspberry Pi</a> &middot; "
-               "<a href=\"#pc\">PC</a></p></div>")
+               "<a href=\"/releases/latest.json\">releases/latest.json</a>.</p></div>")
 
     # ---- PlayStation Classic ----
     out.append("<h2 class=\"plat\" id=\"psc\">PlayStation Classic</h2>")
@@ -663,9 +668,46 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
             out.append("</table>")
         out.append("</div>")
 
+    out = tabbed(out)
     out.append("<footer>Generated %s UTC &middot; theme: ab2</footer></main></body></html>"
                % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
     return "\n".join(out) + "\n"
+
+
+def tabbed(out):
+    """The page's platform sections - everything from each <h2 class="plat" id=...> to the next - as tabs:
+    a tab bar after the intro panel, one <section class="tab"> per platform, a few lines of script that
+    show the one named in the URL's #hash (the first otherwise) and keep the hash in step. Without script
+    every section is shown in turn, headings and all, as before."""
+    html_text = "\n".join(out)
+    parts = re.split(r'<h2 class="plat" id="([a-z]+)">([^<]+)</h2>', html_text)
+    if len(parts) < 3:
+        return out
+    head, rest = parts[0], parts[1:]
+    tabs = [(rest[i], rest[i + 1], rest[i + 2]) for i in range(0, len(rest), 3)]
+    bar = "<nav class=\"tabs\" role=\"tablist\">" + "".join(
+        "<a href=\"#%s\" data-tab=\"%s\" role=\"tab\">%s</a>" % (tid, tid, title) for tid, title, _ in tabs) + "</nav>"
+    sections = "".join(
+        "<section class=\"tab\" id=\"%s\"><h2 class=\"plat\">%s</h2>%s</section>" % (tid, title, body)
+        for tid, title, body in tabs)
+    script = """<script>
+(function(){
+  var tabs=document.querySelectorAll('nav.tabs a'), secs=document.querySelectorAll('section.tab');
+  if(!tabs.length) return;
+  document.body.classList.add('js');
+  function show(id){
+    var found=false;
+    secs.forEach(function(s){ var on=(s.id===id); s.classList.toggle('active',on); if(on) found=true; });
+    if(!found){ show(secs[0].id); return; }
+    tabs.forEach(function(a){ a.classList.toggle('active', a.dataset.tab===id); });
+  }
+  tabs.forEach(function(a){ a.addEventListener('click', function(ev){
+    ev.preventDefault(); history.replaceState(null,'','#'+a.dataset.tab); show(a.dataset.tab); }); });
+  window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
+  show(location.hash.slice(1));
+})();
+</script>"""
+    return [head, bar, sections, script]
 
 
 #*******************************
