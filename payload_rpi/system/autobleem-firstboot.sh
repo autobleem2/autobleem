@@ -11,8 +11,8 @@
 #
 # This is the "first or second boot" story from docs/rpi-image-and-update-plan.md: Raspberry Pi Imager's own
 # customisation (hostname, user, WiFi, SSH - cloud-init on this image) has run earlier in the same boot, so
-# with WiFi preset here nothing is asked. A run that cannot finish (the user skipped the network question,
-# install.sh failed) simply happens again on the next boot - the script is idempotent and re-arms itself by
+# with WiFi preset here nothing is asked. A run that cannot finish (the Pi was switched off at the network
+# question, install.sh failed) simply happens again on the next boot - the script is idempotent and re-arms itself by
 # not disabling the service until it either succeeds or gives up after MAX_ATTEMPTS boots.
 set -uo pipefail
 
@@ -308,7 +308,7 @@ wifi_scan() {
         }' | sort -rn
 }
 
-# The screen-and-keyboard WiFi setup. Returns 0 once online, 1 if the user chose to skip.
+# The screen-and-keyboard WiFi setup. Returns 0 once online - there is no other way out.
 interactive_network() {
     local cc choice ssid sec sig pass hidden out
     local -a nets items
@@ -348,7 +348,9 @@ interactive_network() {
             done
             items+=("r=Scan again" "h=Hidden network (type its name)")
         fi
-        items+=("e=I have plugged in an Ethernet cable - check again" "s=Skip for now - AutoBleem asks again on the next boot")
+        # no "skip": the install cannot happen without the network (the owner's rule) - the menu comes back
+        # until something works; a power-off simply brings the question back on the next boot
+        items+=("e=I have plugged in an Ethernet cable - check again")
         choice="$(ui_menu "No network connection" \
             "AutoBleem needs the internet for its first setup (packages, RetroArch, BIOS files)." \
             "$([ ${#nets[@]} -gt 0 ] && echo "Pick a WiFi network, or plug in an Ethernet cable:" || echo "No WiFi networks found - plug in an Ethernet cable, or scan again:")" \
@@ -357,7 +359,6 @@ interactive_network() {
         hidden=no
         case "$choice" in
             r|R|"") continue ;;
-            s|S) return 1 ;;
             e|E)
                 ui_message "Waiting for the network..." "Checking the connection for up to 30 seconds."
                 wait_for_network 30 && { log "Connected."; return 0; }
@@ -399,7 +400,7 @@ interactive_network() {
     done
 }
 
-# waits for network-online, then falls back to asking. 0 = online, 1 = the user skipped
+# waits for network-online, then asks until it is online (there is no skipping the network)
 ensure_network() {
     ui_message "Waiting for the network..." "Up to 40 seconds for WiFi or Ethernet to come up."
     if wait_for_network 40; then

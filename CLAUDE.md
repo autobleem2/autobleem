@@ -482,8 +482,8 @@ keys raw from tty8 (termios; arrows, Enter, Esc = exit 3, a one-character item k
 to `--default`); the script's `ui_menu`/`ui_input`/`ui_message` wrappers call them and fall back to the old
 text prompts without a framebuffer or when the program fails (any exit but 0/3 sets `UI_OK=0`). The console
 stays in graphics mode from the first dialog to the reboot; `text_mode()` before a failure message. The
-WiFi flow (country, scan list, hidden SSID, password, Ethernet, skip) and the RetroArch question are all
-dialogs now. ~40 ms a frame on a PC; `--render out.ppm --fonts DIR` draws one frame on a PC for a look.
+WiFi flow (country, scan list, hidden SSID, password, Ethernet - **no skip**, the owner's rule: the install
+needs the network, the menu comes back until it is there) and the RetroArch question are all dialogs now. ~40 ms a frame on a PC; `--render out.ppm --fonts DIR` draws one frame on a PC for a look.
 The image build injects the script and the splash into `/opt/autobleem-image/`. Verified on the Pi 400:
 the real installer through the progress screen, and the three dialog kinds with the Pi's keyboard.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
@@ -496,7 +496,7 @@ ran at all - nothing in the journal, `ConditionResult=no` never evaluated). The 
 waits up to 40 s for network; **with none it asks** - `rfkill unblock` + the WiFi country (default from
 `cmdline.txt`'s `cfg80211.ieee80211_regdom=`, else the locale; Raspberry Pi OS keeps WiFi soft-blocked
 until one is set, `raspi-config nonint do_wifi_country`), an `nmcli` scan listed by signal, pick / hidden
-SSID / "I plugged in Ethernet" / skip, password, `nmcli device wifi connect`, then a real fetch check -
+SSID / "I plugged in Ethernet" (skip removed 2026-09-20), password, `nmcli device wifi connect`, then a real fetch check -
 then waits for NTP (`timedatectl ... NTPSynchronized`), then runs `install.sh --yes` + the `autobleem.txt`
 options, output on tty8 and tee'd to `/var/log/autobleem-firstboot-install.log`. Failure or a skipped
 network question switches back to tty1 (the login prompt) and retries on the next boot (a counter caps it at 20, then it

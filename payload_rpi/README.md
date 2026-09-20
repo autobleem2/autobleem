@@ -145,8 +145,8 @@ as menus and fields, the waits as messages, then the installer's progress (two b
 It:
 
 1. waits for the network. **No network?** It asks: it lists the WiFi networks it can see, you pick one and
-   type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`, or `s`
-   to skip - it asks again on the next boot). It also sets the WiFi country first, because Raspberry Pi OS
+   type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`). There
+   is no skipping it: nothing can be installed without the network. It also sets the WiFi country first, because Raspberry Pi OS
    keeps WiFi blocked (`rfkill`) until one is set.
 2. waits for the clock to sync (NTP) - `apt` distrusts a clock that is days off, and a Pi has no battery clock.
 3. **asks whether to install RetroArch** (unless `autobleem.txt` already says). AutoBleem plays PS1 games on
