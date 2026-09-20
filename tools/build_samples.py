@@ -13,7 +13,10 @@ The tree inside:
 
     Games/<title>/<title>.cue + .bin, Game.ini (locked: Automation=0, so the scanner keeps the title,
         publisher, year and players written here - see UsbGame/GameScanner), <title>.png (the cover; the
-        carousel takes a PNG next to the game before anything else)
+        carousel takes a PNG next to the game before anything else), and pcsx.cfg - the launcher's default
+        (src/resources/pcsx.cfg) with "SlowBoot = 0" when the entry says "skip_boot_logo": the BIOS shell is
+        skipped, for a homebrew whose custom boot logo breaks it (Tetrade's does, on pcsx-ab); launch.sh copies
+        this file over the !SaveStates one at every start, so it is what the emulator reads
     RetroArch/roms/<system folder>/<label>.<ext>          the launcher's ROM scan labels a ROM no rdb
         knows by its file stem, so the file is named as the game should be listed
     RetroArch/thumbnails/<db>/Named_Boxarts/<label>.png   its box art, found by that label
@@ -99,6 +102,17 @@ def game_ini(entry, disc_name):
     return "\n".join(lines) + "\n"
 
 
+def pcsx_cfg(entry):
+    """The launcher's default pcsx.cfg, SlowBoot turned off when the entry asks for it."""
+    with open(os.path.join(ROOT, "src", "resources", "pcsx.cfg"), encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    if entry.get("skip_boot_logo"):
+        lines = [("SlowBoot = 0" if line.split("=")[0].strip() == "SlowBoot" else line) for line in lines]
+        if "SlowBoot = 0" not in lines:
+            lines.append("SlowBoot = 0")
+    return "\n".join(lines) + "\n"
+
+
 def stage_file(spec, cache, dest):
     """One manifest file into dest: downloaded, checked, a zip member taken out when 'member' says so."""
     src = fetch(spec["url"], cache)
@@ -139,6 +153,8 @@ def stage_psx(entry, cache, stage):
     disc = cue_name[:-4]
     with open(os.path.join(folder, "Game.ini"), "w", encoding="utf-8", newline="\n") as f:
         f.write(game_ini(entry, disc))
+    with open(os.path.join(folder, "pcsx.cfg"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(pcsx_cfg(entry))
     shutil.copyfile(os.path.join(SAMPLES_DIR, "covers", entry["cover"]), os.path.join(folder, disc + ".png"))
     return "Games/%s/" % entry["title"]
 

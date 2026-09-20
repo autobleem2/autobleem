@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 68 / Total: 264
+# Untranslated: 69 / Total: 265
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=RetroArch 中无法使用 Au
 AutoBleem Theme:=AutoBleem 主题：
 Background Music:=背景音乐：
 Backspace=退格
+Boot logo:=
 build=
 Built=
 Button Guide=按键指南

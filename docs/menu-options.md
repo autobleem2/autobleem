@@ -68,7 +68,7 @@ Cross saves and leaves, Circle leaves without saving, Start picks a random theme
 | Lightgun Game | The game is a light-gun game: it joins the Lightgun set and always runs in RetroArch (its pcsx_rearmed core has the guncon); switching it on switches Play using RA on, and keeps it on. |
 | Play using RA | This PS1 game runs in RetroArch. |
 | Lock data | The scanner leaves this game's Game.ini alone (its title, serial, region and disc list stay as you set them). |
-| High res, SpeedHack, Scanlines, Scanline Level, Clock, Frameskip, Plugin, Spu Interpolation | The game's pcsx.cfg. |
+| High res, SpeedHack, Scanlines, Scanline Level, Clock, Frameskip, Plugin, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |
 
 Triangle renames the game, Square changes its memory card, Start shares a new card, Circle leaves.
 

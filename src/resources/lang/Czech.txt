@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=Body pro pokračování Auto
 AutoBleem Theme:=AutoBleem téma:
 Background Music:=Hudba na pozadí:
 Backspace=Backspace
+Boot logo:=
 build=
 Built=
 Button Guide=Průvodce tlačítky

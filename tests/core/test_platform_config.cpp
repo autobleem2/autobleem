@@ -84,12 +84,14 @@ TEST_CASE("Env::retroArchInstalled is true when any candidate binary exists") {
     env.setUsbRoot(tmp.path());
 
     PlatformConfig cfg;
-    cfg.retroarchBinaries = {"retroarch", "bin/retroarch"}; // both relative to <root>/retroarch
+    cfg.retroarchBinaries = {"retroarch", "bin/retroarch"}; // both relative to the RetroArch dir
     cfg.apply();
     CHECK_FALSE(Environment::retroArchInstalled());
 
-    tmp.makeSubDir("retroarch/bin");
-    tmp.writeFile("retroarch/bin/retroarch", "#!/bin/sh\n");
+    // the engine's default is <root>/RetroArch/bin - spelled exactly, the CI runs on a case-sensitive
+    // filesystem (a "retroarch/bin" here passed on Windows and failed on Linux)
+    tmp.makeSubDir("RetroArch/bin/bin");
+    tmp.writeFile("RetroArch/bin/bin/retroarch", "#!/bin/sh\n");
     CHECK(Environment::retroArchInstalled());
 }
 

@@ -25,6 +25,7 @@ struct PcsxSettings {
     int scanlines = 0;
     int scanlineLevel = 0;
     int interpolation = 0;
+    int bootLogo = 1; // pcsx.cfg SlowBoot: the BIOS boot logo shown before the game; no line = shown
     std::string gpu;
 };
 
@@ -89,10 +90,13 @@ public:
     void setHighres(GameSettings &s, bool on); // also remembered in the Game.ini as Highres
     void setSpeedhack(GameSettings &s, bool on);
     void setScanlines(GameSettings &s, bool on);
-    void setScanlineLevel(GameSettings &s, int level);             // 0..100
-    void setClock(GameSettings &s, int clock);                     // 0..100
-    void setFrameskip(GameSettings &s, int frames);                // 0..3
-    void setInterpolation(GameSettings &s, int mode);              // 0..3
+    void setScanlineLevel(GameSettings &s, int level); // 0..100
+    void setClock(GameSettings &s, int clock);         // 0..100
+    void setFrameskip(GameSettings &s, int frames);    // 0..3
+    void setInterpolation(GameSettings &s, int mode);  // 0..3
+    // SlowBoot: off skips the BIOS shell (a homebrew's custom logo can crash pcsx-ab's boot); RetroArch
+    // gets it as pcsx_rearmed_show_bios_bootlogo (LaunchService)
+    void setBootLogo(GameSettings &s, bool on);
     void setGpuPlugin(GameSettings &s, const std::string &plugin); // USB only: "builtin_gpu" or "gpu_peops.so"
 
     static const char *const BuiltinGpu;

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem hervattingspunten 
 AutoBleem Theme:=AutoBleem Thema:
 Background Music:=Achtergrond Muziek
 Backspace=Backspace
+Boot logo:=
 build=
 Built=
 Button Guide=Knoppengids

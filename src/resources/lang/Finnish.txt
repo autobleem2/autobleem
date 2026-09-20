@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem-jatkamispisteet ei
 AutoBleem Theme:=AutoBleem Teema:
 Background Music:=Taustamusiikki:
 Backspace=Askelpalautin
+Boot logo:=
 build=
 Built=
 Button Guide=Painikeopas
