@@ -528,14 +528,20 @@ Imager's "Add repository" URL - `<repo>/rpi-imager/os_list.json` - with the `rpi
 placeholders filled in), `rpi/retroarch/<tag>/` + `latest.json`, **`psc/retroarch/<tag>/` + `latest.json`** (2026-09-20: the
 console's RetroArch from `github.com/autobleem/retroarch-psc` - its `make publish` runs `repo_publish.sh
 psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroArch version>-<build>`,
-`psc_version_key` orders it, the newest kept as for the Pi builds), `db/` (the three cover databases),
-`assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+`psc_version_key` orders it, the newest kept as for the Pi builds), **`psc/cores/cores-psc-<date>.tar.gz`**
++ `.json` + `latest.json` (the console's cores, `repo_publish.sh psc-cores`, newest date kept - see
+"RetroArch for the console" below), `db/` (the three cover databases), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay.
 
 **The web pages are generated, not stored**: `tools/repo_index.py` holds `PAGE_CSS` and renders
-`index.html` (the landing page: the latest stable release, the one pre-release in its own panel marked as a
-development build, the newest image set even when pre-release, the RetroArch builds, the cover databases)
+`index.html` (the landing page, **by platform since 2026-09-20** - PlayStation Classic, Raspberry Pi, PC,
+then "Every platform"; each platform is an *Install* panel (what a user installs from: the console's USB
+package, the Pi **images**, the Windows launcher + UpdateRoms - the latest stable release and, under it,
+the one pre-release marked as a development build) and a dashed *Build inputs* panel (what the
+installers, the image build and the CI fetch: the RetroArch builds, the cores tarballs, the Pi tarball
+with `install.sh`; the cover databases are the inputs every platform shares) - the owner's reading of the
+tree, an image or a package is the artefact, everything else feeds one)
 and `rpi-install.html` (the Pi manual: `RPI_MODELS` - which image for which Pi, 32-bit recommended because
 pcsx-ab's dynarec is ARM32-only, 64-bit for the bigger core set; requirements; Imager steps; what the first
 boot does; where games go - files dropped straight into `Games/` are sorted into folders by the scan;
@@ -693,6 +699,62 @@ port targets 32-bit Trixie (and Bookworm).
   unmounts the exFAT partitions before rebooting (a `sync` alone was not enough), `IniFile::save` writes
   atomically (`.tmp` + `DirEntry::replaceFile`) and `IniFile::load` warns about an empty file, and `Config`
   defaults `theme` to `ab2` in code (tested). Audio was fine all along (the owner's mistake).
+
+## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
+
+The console runs RetroArch from **our own build**, not RetroBoot's any more - a separate private repo,
+`autobleem/retroarch-psc` (`E:\Programming\retroarch-psc`), merged from AutoBleem-NG's `retroarch-psc` +
+`libretro-cores-psc` (the NG org and its repos are **gone from GitHub**; the owner's zips in Downloads were
+the source). One Dockerfile with NG's crosstool-ng toolchain stage (kept as `make retroarch-ctng`, the
+cores' route), but **`make retroarch` builds with the `autobleem-build` image's `/opt/psc` toolchain**
+(`retroarch/build.sh`: Stretch gcc-6 + the console's glibc 2.24 sysroot + our SDL2 2.0.12 - the compiler
+pcsx-ab and the launcher use; Stretch's freetype and liblzma .debs unpacked into the sysroot for the
+container's life; a **wayland-scanner 1.12** built from Stretch's tarball because the image's 1.21 emits
+`wl_proxy_marshal_flags()`, which the console's libwayland 1.12 lacks). NG's four patches (wl_shell
+fallback, PowerVR ribbon shader, pipeline limit, ALSA S16) plus **ours, `xz_core_loading.patch`**:
+`dylib_load` unpacks a core whose file is an xz stream (KMFD's `km_*` cores, 147 of the owner's 178) with
+liblzma into `/tmp/retroarch-cores/` and dlopens the copy - kept while the source's path/size/mtime match,
+one core cached at a time (`HAVE_XZ_CORES=1`, `-l:liblzma.a`, the firmware has no liblzma). Result: v1.22.2
+`autobleem-<build>`, 10.4 MB stripped / 3.4 MB UPX'd, GLIBC <= 2.22, libstdc++ static, 17 firmware
+libraries; tag `v1.22.2-1`, `make package-retroarch` -> `retroarch-psc-<tag>.zip` + `manifest.json`
+(`tools/make_manifest.py`, what the PC installer will read), `make publish` -> `psc/retroarch/` on the
+download repository. **Ran on the console 2026-09-20**: XMB, the PSC pad autoconfig, Wayland/EGL/GLES 3.2
+hw context, ALSA, the xz unpack - all in `retroarch/logs/retroarch.log`. GitHub Actions is written but
+gated off (`CI_ENABLED`); the owner builds on the server only.
+
+**Cores**: not built by us yet - `cores/cores.txt` is the RetroBoot roster (81) in build-priority order,
+NG's full 170 kept as `cores-full.txt`; the estimate for building the 81 on the 2-core server is ~a day
+(guessed from source sizes, not measured). **For now the console gets RetroBoot 1.2's cores as they are**:
+`tools/check_cores.py` (pyelftools) reports a `cores/` folder - xz or ELF, ABI, GLIBC/GLIBCXX against the
+firmware's 2.24/3.4.22, NEEDED against the firmware, libretro exports, GL; on the owner's stick 173 of 178
+load in any RetroArch (5 cannot on a stock console: two need glibc 2.28/2.29, `km_emux_chip8` is an x86-64
+build, `bsnes` needs libgomp, `km_imageviewer` is soft-float). `tools/pack_retroboot_cores.py` (`make
+pack-retroboot-cores RETROBOOT_DIR=F:/retroarch`) packs the 171 + their info files + `cores-psc-<date>.json`
+(sizes, sha256, glibc, GL, display names, and what was left out and why) -> `psc/cores/`. How RetroBoot
+injects libraries, for the record: `LD_LIBRARY_PATH=retroboot/lib` (liblzma + a GLIBCXX 3.4.25 libstdc++)
+for every RetroArch launch, `retroboot/assets/lib` -> `/tmp/rblib` for EmulationStation and the apps; none
+of the cores needs either. Its `launch_rfa_rom.sh` relaunches RetroArch **five times** on a non-zero exit
+(the blinking red LED, ~45 s) before returning to the launcher - our own launch scripts should give up
+after one.
+
+**Two RetroArch enum shifts between RetroBoot's 1.9.0 and 1.22.2 broke the old `retroarch.cfg`**:
+`xmb_theme = "8"` was RetroSystem, is Monochrome Inverted now (RetroSystem is 7); `menu_swap_ok_cancel_buttons`
+became `input_menu_swap_ok_cancel_buttons` (Circle was OK until set). `theme/` in the repo is the **ab2 XMB
+theme** for 1.22.2: `Autobleem2.png` (made by `make_wallpaper.py` from `payload/themes/ab2/images/AB-EvoBack.jpg`
+- logo bottom right, out of XMB's way, the bottom band a reflection of the texture), Selawik Light, the
+RetroSystem icons (a 2020 RetroBoot stick lacks 19 that 1.22.2 asks for - `disc.png`, `movie.png`, `Sega -
+Mega Drive - Genesis.png`, ... from libretro's retroarch-assets), `retroarch-theme.cfg` with the 1.22.2
+keys. `video_context_driver` must be `"wayland"` (empty = KMS first, which Weston blocks). All of this is
+on the owner's F: stick (the RetroBoot binary kept as `retroarch.retroboot-1.9.0`, the cfg as
+`retroarch.cfg.retroboot`) with free test content in `roms/` (Peter Lemon's SNES/NES/GB/GBA homebrew,
+mamedev's free arcade ROMs, Doom/Quake shareware, Cave Story); N64 needs a real game - the homebrew RSP
+tests crash GLupeN64 (a core dump inside the core, not RetroArch).
+
+**What is left**: the **PC installer** (read `psc/retroarch/latest.json` + `psc/cores/latest.json`, lay
+`retroarch/` on the stick - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a
+generated cfg - with **our own launch scripts** replacing `rc/launch_rb.sh`/`retroarch.sh`'s calls into
+`retroboot/bin/launch_rfa*.sh`; natural home next to `UpdateRoms.exe`); UPX in `make package-retroarch`
+(-> `v1.22.2-2`); building our own cores when wanted.
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 
