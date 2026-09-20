@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=Punt de represa AutoBleem pa
 AutoBleem Theme:=Tèma AutoBleem :
 Background Music:=Musica de fons :
 Backspace=Retorn arrièr
+Boot logo:=
 build=
 Built=
 Button Guide=Guida dels botons

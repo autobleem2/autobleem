@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 64 / Total: 264
+# Untranslated: 65 / Total: 265
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=RetroArch nie obsługuje pun
 AutoBleem Theme:=Skórka AutoBleem:
 Background Music:=Muzyka w tle:
 Backspace=Backspace
+Boot logo:=Logo startowe:
 build=
 Built=
 Button Guide=Opis funkcji

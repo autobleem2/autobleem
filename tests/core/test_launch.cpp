@@ -355,7 +355,7 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_psxclock = \"57\""));
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_spu_interpolation = \"gaussian\""));
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_frameskip  = \"1\""));
-    CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_show_bios_bootlogo  = \"enabled\""));
+    CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_show_bios_bootlogo = \"enabled\"")); // no SlowBoot line = shown
     CHECK(contains(coreOptionsInPlay, "pcsx_rearmed_nocdaudio  = \"enabled\""));
     // retroarch.cfg: the scanline overlay from pcsx.cfg, the viewport and filter from config.ini
     // "input_overlay" is a prefix of the next two keys; each line must be matched as a whole key or the

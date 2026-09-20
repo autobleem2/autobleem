@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=Los puntos de reanudacion de
 AutoBleem Theme:=Tema AutoBleem:
 Background Music:=Musica de Fondo:
 Backspace=Retroceso
+Boot logo:=
 build=
 Built=
 Button Guide=Guia de Botones

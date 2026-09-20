@@ -5,7 +5,8 @@
     "from its upstream release (sha256-checked), lays it out as it lands on the data partition and packs",
     "samples-<date>.tar.gz for the download repository (samples/); payload_rpi/install.sh fetches that.",
     "The PS1 game gets a locked Game.ini (Automation=0) so the scanner keeps the metadata and the cover written",
-    "here; the ROMs are named as the launcher's ROM scan labels them (the file's stem) with a box art of the",
+    "here, and a pcsx.cfg - 'skip_boot_logo' sets SlowBoot = 0 in it, for a disc whose custom boot logo breaks",
+    "pcsx-ab's BIOS shell; the ROMs are named as the launcher's ROM scan labels them (the file's stem) with a box art of the",
     "same name in the thumbnails tree. Covers: tools/samples/make_covers.py -> covers/ (checked in).",
     "'shot' is the screenshot make_covers.py draws from (a file under tools/samples/shots/, from the game's own",
     "repository, under the game's licence)."
@@ -23,6 +24,7 @@
       "licence_url": "https://github.com/Logan-Campbell/Tetrade/blob/master/LICENSE",
       "source": "https://github.com/Logan-Campbell/Tetrade",
       "description": "A Tetris-style puzzle game with marathon and two-player modes, built with PSn00bSDK.",
+      "skip_boot_logo": true,
       "files": [
         {"url": "https://github.com/Logan-Campbell/Tetrade/releases/download/v1.0/TETRADE_PSX.bin",
          "sha256": "2f41feba2023cbdcd9c1c3d4cfc3d8d1a7f1a2de0afea2e7a050b84640d6eaf8", "name": "Tetrade.bin"},

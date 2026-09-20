@@ -33,6 +33,8 @@ bool lineSetsProperty(const string &lcaseline, const string &lcasepattern) {
 //*******************************
 // ConfigFileEditor::replaceProperty
 //*******************************
+// A key the file does not have is appended (since 2026-09-20): a pcsx.cfg copied from an older default
+// has no line for an option added later (SlowBoot), and the editor's change must still land.
 void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, string newline) {
     if (!DirEntry::exists(fullCfgFilePath)) {
         PLOG_INFO << "  cfg file doesn't exist";
@@ -67,6 +69,11 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
             }
         }
         file.close();
+        if (!fileUpdated) {
+            PLOG_INFO << "  appending: '" << newline << "'";
+            lines.push_back(newline);
+            fileUpdated = true;
+        }
         if (fileUpdated) {
             file.open(fullCfgFilePath, ios::out | ios::trunc);
 

@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 264
+# Untranslated: 0 / Total: 265
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem resume points not 
 AutoBleem Theme:=AutoBleem Theme:
 Background Music:=Background Music:
 Backspace=Backspace
+Boot logo:=Boot logo:
 build=build
 Built=Built
 Button Guide=Button Guide
@@ -100,16 +101,16 @@ Frameskip:=Frameskip:
 Free=Free
 free of=free of
 Free space=Free space
-GAME=GAME
 Game=Game
+GAME=GAME
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
-games=games
 Games=Games
+games=games
 GFX Filter:=GFX Filter:
 Go back=Go back
 Graphics=Graphics

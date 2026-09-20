@@ -283,6 +283,25 @@ TEST_CASE("the levels are written in hex and clamped to their ranges") {
     CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "scanlines = 1"));
 }
 
+TEST_CASE("the boot logo is SlowBoot, shown when the cfg has no line, and the line is added when missing") {
+    Editing lib;
+    lib.writeAllUsbCfgs(); // PcsxCfg has no SlowBoot line, like a pcsx.cfg copied from an older default
+    GameSettings s = lib.service->open(lib.usbGame());
+    CHECK(s.pcsx.bootLogo == 1);
+
+    lib.service->setBootLogo(s, false);
+    CHECK(s.pcsx.bootLogo == 0);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "SlowBoot = 0"));
+    CHECK(contains(lib.tmp.readFile("Games/!SaveStates/Driver 2/pcsx.cfg"), "SlowBoot = 0"));
+    // appended, nothing else touched
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "spu_config.iUseInterpolation = 1"));
+
+    lib.service->setBootLogo(s, true);
+    CHECK(s.pcsx.bootLogo == 1);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "SlowBoot = 1"));
+    CHECK(!contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "SlowBoot = 0"));
+}
+
 TEST_CASE("the GPU plugin line is Gpu3, and only a USB game has one") {
     Editing lib;
     lib.writeAllUsbCfgs();
@@ -316,15 +335,18 @@ TEST_CASE("a pcsx.cfg with CRLF line endings reads clean values") {
         written, "Gpu3 = builtin_gpu\r")); // untouched lines keep their \r; the rewritten one gets the platform's endl
 }
 
-TEST_CASE("a pcsx.cfg without the key is left alone, and the value reads as off") {
+TEST_CASE("a pcsx.cfg without the key gets the line appended") {
     Editing lib;
     lib.writeAllUsbCfgs("psx_clock = 39\n");
     GameSettings s = lib.service->open(lib.usbGame());
 
     lib.service->setScanlines(s, true);
 
-    CHECK(s.pcsx.scanlines == 0); // ConfigFileEditor replaces lines, it never adds one
-    CHECK(lib.tmp.readFile("Games/Driver 2/pcsx.cfg") == "psx_clock = 39\n");
+    // ConfigFileEditor used to replace lines only and never add one, so a cfg from an older default
+    // could not take a newer option; since 2026-09-20 a missing key is appended
+    CHECK(s.pcsx.scanlines == 1);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "psx_clock = 39"));
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "scanlines = 1"));
 }
 
 TEST_CASE("a game with no pcsx.cfg at all reads every value as off and writes nothing") {

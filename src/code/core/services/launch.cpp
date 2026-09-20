@@ -390,6 +390,8 @@ void LaunchService::transferRaConfig(PsGame &game) {
         int scanlines = atoi(processor.getValue(path, "scanlines").c_str());
         int scanline_level = strtol(processor.getValue(path, "scanline_level").c_str(), nullptr, 16);
         int frameskip = atoi(processor.getValue(path, "frameskip3").c_str());
+        string slowBoot = processor.getValue(path, "SlowBoot");
+        bool bootLogo = slowBoot.empty() || atoi(slowBoot.c_str()) != 0;
 
         // the core options
         if (highres != 0)
@@ -414,7 +416,8 @@ void LaunchService::transferRaConfig(PsGame &game) {
         processor.replaceInFile(coreOptions, "pcsx_rearmed_psxclock",
                                 "pcsx_rearmed_psxclock = \"" + to_string(clock) + "\" ");
         processor.replaceInFile(coreOptions, "pcsx_rearmed_show_bios_bootlogo",
-                                "pcsx_rearmed_show_bios_bootlogo  = \"enabled\" ");
+                                string("pcsx_rearmed_show_bios_bootlogo = \"") + (bootLogo ? "enabled" : "disabled") +
+                                    "\" ");
         processor.replaceInFile(coreOptions, "pcsx_rearmed_nocdaudio", "pcsx_rearmed_nocdaudio  = \"enabled\" ");
 
         if (interpolation == 0) {
