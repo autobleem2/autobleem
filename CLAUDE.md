@@ -598,10 +598,8 @@ keeps the newest date, `latest.json` carries the games list, the landing page's 
 them with licence links). **Licence first**: every entry names its licence and URL, and only games we may
 *redistribute* went in - a free download is not enough. Today: Tetrade (PS1, MIT), Nova the Squirrel (NES,
 GPL-3.0), Asteroids + Castle Platformer (SNES, MIT, undisbeliever), Alex vs Bus - The Race (Mega Drive,
-GPL-3.0 + CC BY-SA assets, the `pre3` release). Left out on purpose: Magic Castle (Team Kaiga, all rights
-reserved - ask), the Cave Story ports (Studio Pixel's assets), Super Tilt Bro (WTFPL but its ROM is only on
-itch.io), the retrobrews SNES set (Super Boss Gaiden, Jet Pilot Rising, ... - "approved for that site only",
-ask D4S). The PS1 game gets a **locked `Game.ini`** (`Automation=0`, the launcher's own lock: the scanner then
+GPL-3.0 + CC BY-SA assets, the `pre3` release) - and that is the set: the owner closed the list on
+2026-09-20, no further sample games are planned. The PS1 game gets a **locked `Game.ini`** (`Automation=0`, the launcher's own lock: the scanner then
 skips its create/update branch, so the title/publisher/year/players and the PNG next to the game stay - no
 serial, no rdb, no covers db involved; verified on the PC: regional.db row `Tetrade / Logan Campbell / 2025 /
 2`, ini untouched). The ROMs are named as the launcher's ROM scan labels a ROM no rdb knows (the file's stem)
