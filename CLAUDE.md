@@ -833,6 +833,18 @@ inventory of the old delta with two patches; its CLAUDE.md the decisions. **Noth
 the launch scripts, `pcsx.cfg`, `ResumePointService`'s files and `LaunchService` are the contract the new
 emulator keeps, and the binary keeps the name `pcsx-ab` in the payloads.
 
+**Both ship, the user picks** (2026-09-20, the owner's ask): Options -> **"PS1 Emulator"** (`config.ini`
+`emulator` = `pcsx-ab` | `pcsx-abnxt`, `pcsx-ab` the default and the fallback for any other value - `Config`),
+which `LaunchService::launchPcsx` passes as the **10th argument** of `launch.sh`; the console's and the Pi's
+scripts run `Autobleem/bin/emu/pcsx-ab` or **`Autobleem/bin/emunxt/pcsx-ab`** (the same binary name and
+`plugins/` layout, `emunxt-arm64/` for the 64-bit Pi as `emu-arm64/`) and fall back to `emu/` when the
+chosen folder has no binary. Both read the same `.pcsx` (pcsx.cfg, memory cards); a resume point one wrote
+does not load in the other (save-state versions differ) - the game starts fresh. `ci/build.sh` builds
+pcsx-abnxt into `emunxt/` from `AB_PCSXNXT_DIR` / `../pcsx-abnxt` next to pcsx-ab; `make_rpi_package.sh`,
+`install.sh`, the PC installer's update list and `install_autobleem.py` know the folder. The checked-in
+`emunxt/` binaries are `r26-24-g0f4727f1` (console, Pi armhf, Pi arm64); on a PC a game launch is a splash
+either way, so the row is only carried through there.
+
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
 The console runs RetroArch from **our own build**, not RetroBoot's any more - a separate private repo,
@@ -1413,6 +1425,7 @@ USB stick root = `/media` on the PSC:
 ```
 /media/Autobleem/bin/autobleem/   autobleem-gui + absplash + resources (run.sh, lang/, evoimg/, platform/, splash/, ...)
 /media/Autobleem/bin/emu/         pcsx-ab + plugins/*.so
+/media/Autobleem/bin/emunxt/      pcsx-abnxt, the next emulator, as pcsx-ab + plugins/*.so (Options -> "PS1 Emulator")
 /media/Autobleem/bin/db/          covers*.db (regional cover-art DBs; "../db" relative to the binary)
 /media/Autobleem/rc/*.sh          boot/launch glue (see payload/Autobleem/rc)
 /media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot; lib/apps, lib/retroarch, lib/modules

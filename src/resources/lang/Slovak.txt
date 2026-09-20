@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -101,8 +101,8 @@ Frameskip:=Preskočenie snímok:
 Free=Voľné
 free of=
 Free space=Voľné miesto
-Game=Hra
 GAME=HRA
+Game=Hra
 Game data=
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game History=História hry
@@ -121,8 +121,8 @@ HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-INTERNAL=ORIGINÁLNE
 Internal=Originálne
+INTERNAL=ORIGINÁLNE
 Internal Games=Originálne hry
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Vypnúť
 POWER SHOT=SILNÁ STRELA
 POWERING OFF... PLEASE WAIT=VYPÍNAM... ČAKAJTE PROSÍM
 Processor=
+PS1 Emulator:=
 Published by:=Vydavateľ:
 Quick scroll to next letter=Rýchlo prejsť na nasledujúci znak
 Quit emulation - back to AutoBleem=Ukončiť emuláciu - návrat do AutoBleemu

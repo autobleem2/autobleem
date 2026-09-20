@@ -49,7 +49,8 @@ Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Mem
 | Show Internal Games | Whether the console's built-in games appear in the PS1 lists (not on a Raspberry Pi). |
 | Cover Style | The jewel-case frame around covers. |
 | Music / Background Music | Which track plays, and whether one plays at all. Stepping through themes no longer restarts the track. |
-| Widescreen, GFX Filter | pcsx-ab's display settings for every game. |
+| Widescreen, GFX Filter | The PS1 emulator's display settings for every game. |
+| PS1 Emulator | Which emulator plays PS1 games: `pcsx-ab`, the one AutoBleem has always shipped, or `pcsx-abnxt`, the next one (current upstream PCSX-ReARMed with AutoBleem's additions). Both use the same settings and memory cards; a resume point saved by one does not load in the other - the game then starts from its beginning. |
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
 | Fetch box art online | Whether the scan fetches missing covers (and RetroArch's databases, when there are none) from libretro's servers. Only on a platform that can (a Pi, a PC); one probe per scan decides whether there is a network, and a cover the server does not have is not asked for again. |

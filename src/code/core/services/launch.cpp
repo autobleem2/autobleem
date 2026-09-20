@@ -140,7 +140,8 @@ string LaunchService::raBaseNameFor(const PsGame &game) {
 //*******************************
 // LaunchService::launchPcsx
 //*******************************
-// args, as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad
+// args, as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad,
+// emulator (config.ini's "emulator": pcsx-ab or pcsx-abnxt - which Autobleem/bin folder the script runs)
 void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
     PLOG_INFO << "calling LaunchService::launchPcsx()";
 
@@ -200,6 +201,7 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
     args.push_back(aspect);
     args.push_back(filter);
     args.push_back("NA"); // pad mapping per-game was never wired up; this was always the fallback
+    args.push_back(config_.inifile.values["emulator"]);
 
     runner_.run(pcsxLauncherScript(), args);
     cleanupPcsxConfig(game);

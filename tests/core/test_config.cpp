@@ -37,6 +37,20 @@ TEST_CASE("Config fills in a default for every key the UI reads") {
     CHECK(config.inifile.values["music"] == "--");
     CHECK(config.inifile.values["showingtimeout"] == "2");
     CHECK(config.inifile.values["raconfig"] == "true");
+    CHECK(config.inifile.values["emulator"] == "pcsx-ab");
+}
+
+TEST_CASE("Config keeps a known emulator and falls back to pcsx-ab for anything else") {
+    TempDir tmp("config_emulator");
+    EnvFixture env;
+    env.setWorkingPath(tmp.path());
+
+    tmp.writeFile("config.ini", "[General]\nEmulator=pcsx-abnxt\n");
+    CHECK(Config().inifile.values["emulator"] == "pcsx-abnxt");
+
+    // a name the launch scripts have no folder for (a typo, an emulator that was removed) is not passed on
+    tmp.writeFile("config.ini", "[General]\nEmulator=pcsx-xyz\n");
+    CHECK(Config().inifile.values["emulator"] == "pcsx-ab");
 }
 
 TEST_CASE("Config keeps what the file already says") {

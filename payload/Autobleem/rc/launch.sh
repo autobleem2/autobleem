@@ -20,10 +20,18 @@ fi
 
 
 
-# select pcsx to use
-
-echo "Custom PCSX ONLY in EvolutionUI !!!"
-cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
+# which emulator: $10 is config.ini's "emulator" - pcsx-ab (Autobleem/bin/emu, the one AutoBleem has always
+# shipped) or pcsx-abnxt (Autobleem/bin/emunxt, the next one); the binary is pcsx-ab in either folder
+case "${10:-pcsx-ab}" in
+  pcsx-abnxt) EMU_DIR=/media/Autobleem/bin/emunxt ;;
+  *)          EMU_DIR=/media/Autobleem/bin/emu ;;
+esac
+if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
+  echo "no $EMU_DIR/pcsx-ab - falling back to Autobleem/bin/emu"
+  EMU_DIR=/media/Autobleem/bin/emu
+fi
+echo "emulator: $EMU_DIR"
+cp -f "$EMU_DIR/pcsx-ab" /tmp/pcsx
 [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
 
 
@@ -37,7 +45,8 @@ cd /tmp/runpcsx
 ln -s "$1" /tmp/runpcsx/.pcsx
 
 ln -s /media/System/Bios /tmp/runpcsx/bios
-ln -s /media/Autobleem/bin/emu/plugins /tmp/runpcsx/plugins
+ln -s "$EMU_DIR/plugins" /tmp/runpcsx/plugins
+[ -d "$EMU_DIR/skin" ] && ln -s "$EMU_DIR/skin" /tmp/runpcsx/skin
 
 if [ "$6" == "0" ]
 then
