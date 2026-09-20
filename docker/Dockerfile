@@ -364,8 +364,24 @@ RUN ab-validate pcusb
 # ---------------------------------------------------------------------------------------------------------
 # all: the default target. mtools is for tools/make_rpi_image.sh's rootless mode (the FAT boot partition
 # of a Pi image, edited without mounting; e2fsprogs' debugfs, already here, does the ext4 root).
+# tools/make_pc_image.sh builds the PC stick's image from packages: mmdebstrap (already here, from the psc
+# stage), the three GRUB platform packages for its boot images (grub-mkimage, never grub-install), fdisk for
+# sfdisk on the image file, dosfstools for the ESP, uidmap for mmdebstrap's unshare mode (docker/run.sh
+# --userns), and e2fsprogs new enough for mke2fs -d to take a tar (1.47.1+; Bookworm has 1.47.0, so it is
+# built from source into /usr/local - the script falls back to unpacking the tar when it is older).
 FROM pcusb AS all
-RUN apt-get update && apt-get install -y --no-install-recommends mtools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        mtools fdisk dosfstools uidmap grub-pc-bin grub-efi-ia32-bin grub-efi-amd64-bin grub-common util-linux \
+    && rm -rf /var/lib/apt/lists/*
+ARG E2FSPROGS_VERSION=1.47.2
+RUN cd /tmp \
+    && wget -q "https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v${E2FSPROGS_VERSION}/e2fsprogs-${E2FSPROGS_VERSION}.tar.xz" \
+    && tar -xf e2fsprogs-${E2FSPROGS_VERSION}.tar.xz && cd e2fsprogs-${E2FSPROGS_VERSION} \
+    && ./configure --prefix=/usr/local --disable-nls --disable-fuse2fs >/dev/null \
+    && make -j"$(nproc)" >/dev/null && make install >/dev/null \
+    && cd /tmp && rm -rf e2fsprogs-${E2FSPROGS_VERSION}* \
+    && /usr/local/sbin/mke2fs -V 2>&1 | head -1
+ENV PATH="/usr/local/sbin:${PATH}"
 # sccache: a compiler cache in front of every compiler ci/build.sh configures (CMAKE_<LANG>_COMPILER_LAUNCHER,
 # so the native, Pi, MinGW and console builds all share it); docker/run.sh mounts the cache directory from
 # the host so it lives across containers. Last on purpose: a version bump rebuilds this layer only.

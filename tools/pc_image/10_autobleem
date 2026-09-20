@@ -1,0 +1,54 @@
+#!/bin/sh
+# AutoBleem PC stick: the GRUB menu, in place of Debian's 10_linux (which install.sh/tools/make_pc_image.sh
+# make non-executable). Installed as /etc/grub.d/10_autobleem; update-grub (grub-mkconfig) runs it with
+# /etc/default/grub's variables in the environment, and tools/make_pc_image.sh runs it once at build time
+# the same way, before there is a machine to probe.
+#
+# The stick carries up to three kernels and the CPU decides which boots (GRUB's cpuid command, run before
+# the menu): a 64-bit CPU takes the amd64 kernel - a 64-bit UEFI firmware's GRUB cannot start a 32-bit
+# kernel at all, and on BIOS it is simply the better kernel for that machine; a 32-bit CPU with PAE takes
+# 686-pae; the oldest take 686. The root is found by label, never by device name: the stick is sda on one
+# PC and sdb on the next. The userland is i386 whichever kernel runs.
+#
+# Every kernel found under /boot gets an entry (--id names them for "set default"); a kernel that is not
+# there is simply not offered, and the first entry is the fallback when the chosen id does not exist.
+set -e
+
+cmdline="${GRUB_CMDLINE_LINUX_DEFAULT:-} ${GRUB_CMDLINE_LINUX:-}"
+have_amd64=0; have_pae=0; have_686=0
+entry() { # entry ID TITLE VERSION
+    printf "menuentry 'AutoBleem (%s)' --class autobleem --id %s {\n" "$2" "$1"
+    printf "\tinsmod part_msdos\n\tinsmod ext2\n\tsearch --no-floppy --label AUTOBLEEM_ROOT --set=root\n"
+    printf "\tlinux\t/boot/vmlinuz-%s root=LABEL=AUTOBLEEM_ROOT ro %s\n" "$3" "$cmdline"
+    [ -f "/boot/initrd.img-$3" ] && printf "\tinitrd\t/boot/initrd.img-%s\n" "$3"
+    printf "}\n"
+}
+
+cat <<'EOF'
+insmod cpuid
+if cpuid -l; then
+	set default=amd64
+elif cpuid -p; then
+	set default=pae
+else
+	set default=nonpae
+fi
+EOF
+
+# the 686-pae kernel first: the fallback entry (index 0) when the chosen id is not on this stick
+for k in /boot/vmlinuz-*-686-pae; do
+    [ -f "$k" ] || continue
+    entry pae "32-bit kernel, PAE" "${k#/boot/vmlinuz-}"; have_pae=1
+done
+for k in /boot/vmlinuz-*-amd64; do
+    [ -f "$k" ] || continue
+    entry amd64 "64-bit kernel" "${k#/boot/vmlinuz-}"; have_amd64=1
+done
+for k in /boot/vmlinuz-*-686; do
+    [ -f "$k" ] || continue
+    entry nonpae "32-bit kernel, no PAE" "${k#/boot/vmlinuz-}"; have_686=1
+done
+if [ "$have_pae$have_amd64$have_686" = 000 ]; then
+    echo "10_autobleem: no kernel under /boot" >&2
+    exit 1
+fi
