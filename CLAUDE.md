@@ -453,7 +453,10 @@ from either architecture's build host. Two edits on the boot partition: `cmdline
 keys on to grow the root over the whole card, which would leave `install.sh` no room for the data
 partition - and **`autobleem.txt`** (from `payload_rpi/system/`) is added: AutoBleem's first-boot options
 as `key=value`, editable from any PC (`root_gib` default 8, `hdmi_mode`, `retroarch`, `thumbnails`, `bios`,
-`downloads`; CRLF/BOM tolerated). cloud-init's `user-data`/`network-config`/`meta-data` are left exactly as
+`downloads`; CRLF/BOM tolerated), and **ssh is enabled** (the owner's rule, 2026-09-20: once installed the launcher owns
+tty1 and the keyboard, so there is no console to enable it from - the `multi-user.target.wants/ssh.service`
+symlink in the root plus the official empty `ssh` file on the boot partition; the host keys are made by Pi OS's
+own `regenerate_ssh_host_keys.service`). cloud-init's `user-data`/`network-config`/`meta-data` are left exactly as
 shipped, so Raspberry Pi Imager's OS customisation (this base image is cloud-init 25.2 + rpi-cloud-init-mods:
 `init_format: cloudinit-rpi`) lands on top as on a stock image. **`install.sh --grow-root GIB`** is the
 counterpart to `--shrink-root`: `sfdisk --no-reread --force -N` + `partx -u` + `resize2fs` grow the still
@@ -484,6 +487,11 @@ text prompts without a framebuffer or when the program fails (any exit but 0/3 s
 stays in graphics mode from the first dialog to the reboot; `text_mode()` before a failure message. The
 WiFi flow (country, scan list, hidden SSID, password, Ethernet - **no skip**, the owner's rule: the install
 needs the network, the menu comes back until it is there) and the RetroArch question are all dialogs now. ~40 ms a frame on a PC; `--render out.ppm --fonts DIR` draws one frame on a PC for a look.
+Every dialog is its own process, and decoding + scaling the splash PNG in pure Python cost ~1 s on the PC
+and several seconds on the Pi - the owner pressed Enter again into a panel that had not changed - so
+the prepared logo rows are cached in `splash.png.cache` next to the PNG (keyed on its size/mtime and the
+framebuffer geometry; 22 ms warm) and a taken answer redraws the panel with a "Please wait..." footer
+before the program exits (`accept()`); stale key presses are flushed when the next dialog opens.
 The image build injects the script and the splash into `/opt/autobleem-image/`. Verified on the Pi 400:
 the real installer through the progress screen, and the three dialog kinds with the Pi's keyboard.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
