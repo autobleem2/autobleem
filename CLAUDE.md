@@ -946,6 +946,18 @@ pcsx-abnxt into `emunxt/` from `AB_PCSXNXT_DIR` / `../pcsx-abnxt` next to pcsx-a
 `emunxt/` binaries are `r26-24-g0f4727f1` (console, Pi armhf, Pi arm64); on a PC a game launch is a splash
 either way, so the row is only carried through there.
 
+**The emulator speaks the launcher's language** (2026-09-20, the owner's rule: every language the launcher
+has, Chinese included - not Sony's 13 PNG sets): pcsx-abnxt's own screens (its disc picker and the two
+messages around it) are drawn from its own `lang/<Name>.txt` files, one per launcher language in the same
+`Key=Value` format, chosen by **`-language <Name>`** - `config.ini`'s `language` value, the **11th argument**
+of `launch.sh`, which both scripts pass on to nxt alone (the classic pcsx-ab would take an unknown option
+for a file to run); direct mode adds it to the nxt command line. The scripts also link the emulator's
+`lang/` and the launcher's `Autobleem/bin/autobleem/fonts/` (as `fonts/`) into the run directory: the
+emulator's font is Selawik Light in its `skin/ui.ttf`, and `Chinese_Simplified.txt` names
+`NotoSansSC-Regular.otf` (`|@font|`), which it finds through that link. The emulator packages carry
+`skin/` and `lang/` since pcsx-abnxt `82d77a16`; `ci/build.sh` copies the whole dist into `emunxt/`. On
+Windows (direct mode) Chinese needs a `fonts/` folder next to the emulator - not wired yet.
+
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
 The console runs RetroArch from **our own build**, not RetroBoot's any more - a separate private repo,

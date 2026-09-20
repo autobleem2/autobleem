@@ -132,7 +132,8 @@ TEST_CASE("PCSX is started through rc/launch.sh with the nine arguments the scri
                                       "0",                                       // aspect
                                       "0",                                       // filter
                                       "NA",                                      // pad
-                                      "pcsx-ab"});                               // emulator (the default)
+                                      "pcsx-ab",                                 // emulator (the default)
+                                      "English"});                               // language (the default)
     CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));               // normalised in place, as always
 
     CHECK(lib.usbGame()->last_played > 0); // the launch is the "last played" time
@@ -159,6 +160,16 @@ TEST_CASE("the emulator argument is config.ini's choice between pcsx-ab and pcsx
     lib.service->launch(game, EmuMode::Pcsx, -1);
 
     CHECK(lib.runner.only().args[9] == "pcsx-abnxt");
+}
+
+TEST_CASE("the language argument is config.ini's language, by the name of its lang file") {
+    Launching lib;
+    lib.configure("Language=Polski\n");
+    PsGamePtr game = lib.usbGame();
+
+    lib.service->launch(game, EmuMode::Pcsx, -1);
+
+    CHECK(lib.runner.only().args[10] == "Polski");
 }
 
 TEST_CASE("a .pbp or .chd image is handed over as it is; anything else gets .cue") {
@@ -502,8 +513,8 @@ TEST_CASE("direct mode: the PS1 emulator itself - pcsx-ab in launch.sh's run dir
         CHECK(call.cwd == lib.tmp.at("program/emunxt"));
         CHECK(call.args == vector<string>{"-dotdir", lib.tmp.at("Games/Tekken 3/sstates"), "-biosdir",
                                           lib.tmp.at("System/Bios"), "-filter", "0", "-ratio", "1", "-lang", "2",
-                                          "-region", "4", "-enter", "1", "-fullscreen", "-cdfile",
-                                          lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
+                                          "-region", "4", "-enter", "1", "-language", "English", "-fullscreen",
+                                          "-cdfile", lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
         CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/runpcsx")));
     }
     SUBCASE("a chosen emulator whose folder has no binary falls back to the other, as launch.sh does") {

@@ -82,8 +82,11 @@ string LaunchService::retroArchExecutable() {
 //*******************************
 // script mode - args as rc/launch.sh reads them: ssFolder, cdfile, lang, region, gameFolder, resume,
 // aspect, filter, pad, emulator (config.ini's "emulator": pcsx-ab or pcsx-abnxt - which Autobleem/bin
-// folder the script runs). direct mode - pcsx-ab's own options, the way the scripts invoke it, plus where
-// its dot dir (the save-state folder: pcsx.cfg, memcards, sstates) and the BIOS are.
+// folder the script runs), language (config.ini's "language" by name - English, Polski, ...: pcsx-abnxt
+// draws its own screens, the disc picker, in it from its lang/<Name>.txt; the script passes it as
+// -language to nxt alone, the classic pcsx-ab would take it for a file to run). direct mode - pcsx-ab's
+// own options, the way the scripts invoke it, plus where its dot dir (the save-state folder: pcsx.cfg,
+// memcards, sstates) and the BIOS are.
 LaunchPlan LaunchService::planPcsx(const PsGame &game, const string &discImage, const string &lang, int resumePoint,
                                    const string &aspect, const string &filter) const {
     LaunchPlan plan;
@@ -98,7 +101,8 @@ LaunchPlan LaunchService::planPcsx(const PsGame &game, const string &discImage, 
                      aspect,
                      filter,
                      "NA", // pad mapping per-game was never wired up; this was always the fallback
-                     config_.inifile.values.at("emulator")};
+                     config_.inifile.values.at("emulator"),
+                     config_.inifile.values.at("language")};
         return plan;
     }
     plan.exe = pcsxExecutable();
@@ -121,6 +125,11 @@ LaunchPlan LaunchService::planPcsx(const PsGame &game, const string &discImage, 
     for (const char *a :
          {"-filter", filter.c_str(), "-ratio", aspect.c_str(), "-lang", lang.c_str(), "-region", "4", "-enter", "1"}) {
         plan.args.push_back(a);
+    }
+    if (plan.cwd == emuDir) {
+        // pcsx-abnxt's own screens in the launcher's language (its lang/<Name>.txt next to the binary)
+        plan.args.push_back("-language");
+        plan.args.push_back(config_.inifile.values.at("language"));
     }
     if (resumePoint != -1) {
         plan.args.push_back("-load");
