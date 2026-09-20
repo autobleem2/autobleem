@@ -39,7 +39,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 10
+INDEX_VERSION = 11
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -427,7 +427,9 @@ a.dl:hover{background:rgba(79,200,255,.2);text-decoration:none}
 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;color:#fff;background:rgba(255,255,255,.07);padding:.05em .35em;border-radius:3px}
 .older{color:var(--dim);font-size:.9rem}
 h2.plat{margin:2.4rem 0 .2rem;padding-bottom:.3rem;border-bottom:1px solid var(--line);color:#fff;font-size:1.6rem}
-h3{font-weight:300;font-size:1rem;letter-spacing:.05em;text-transform:uppercase;margin:1.2rem 0 .4rem;color:var(--dim)}
+h3{font-weight:300;font-size:1rem;letter-spacing:.05em;text-transform:uppercase;margin:1rem 0 .4rem;color:var(--dim)}
+.panel.inputs{background:rgba(4,22,56,.5);border-style:dashed}
+.panel.inputs h2{color:var(--dim)}
 h3 small{letter-spacing:0;text-transform:none}
 p.nav{font-size:.95rem}
 ul,ol{line-height:1.55;padding-left:1.4rem}li{margin:.3rem 0}
@@ -436,6 +438,9 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores):
+    """The page: a section per platform, each with what a user installs from (the image, the package)
+    and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
+    builds, cores, the Pi tarball with install.sh, the cover databases."""
     e = html.escape
 
     def row(label, f, cls="dl"):
@@ -445,40 +450,34 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     def date_of(d):
         return "%s-%s-%s" % (d[:4], d[4:6], d[6:])
 
+    def table(rows, head=("", "File", "")):
+        return "<table><tr>%s</tr>%s</table>" % ("".join("<th>%s</th>" % h for h in head), "".join(rows))
+
     stable = [r for r in releases if not r["prerelease"]]
     pre = [r for r in releases if r["prerelease"]]
 
-    def release_panel(title, kinds, blurb=""):
-        """The platform's packages from the latest stable release and, below them, the one pre-release."""
+    def release_rows(kinds, which):
+        """The packages of the given kinds from a release, labelled with their kind."""
+        return [row(kind_title, which["files"][kind]) for kind, _, kind_title in PACKAGE_KINDS
+                if kind in kinds and kind in which["files"]]
+
+    def release_block(kinds):
+        """The latest stable release's packages of these kinds, then the one pre-release's; [] if none."""
         out = []
-        latest = stable[-1] if stable else None
-        head = "<h2>%s%s</h2>" % (title, " <small>%s &middot; %s</small>" % (e(latest["version"]), e(latest["date"])) if latest else "")
-        out.append("<div class=\"panel\">" + head)
-        if blurb:
-            out.append("<p>%s</p>" % blurb)
-        shown = False
-        if latest:
-            rows = [row(kind_title, latest["files"][kind]) for kind, _, kind_title in PACKAGE_KINDS
-                    if kind in kinds and kind in latest["files"]]
-            if rows:
-                out.append("<table><tr><th>Target</th><th>File</th><th></th></tr>" + "".join(rows) + "</table>")
-                shown = True
-        if pre:
-            p = pre[-1]
-            rows = [row(kind_title, p["files"][kind]) for kind, _, kind_title in PACKAGE_KINDS
-                    if kind in kinds and kind in p["files"]]
-            if rows:
-                out.append("<h3>Pre-release <small>%s &middot; %s &middot; a development build, not a release</small></h3>"
-                           % (e(p["version"]), e(p["date"])))
-                out.append("<table>" + "".join(rows) + "</table>")
-                shown = True
-        if not shown:
-            out.append("<p>Nothing published yet.</p>")
-        if len(stable) > 1:
-            out.append("<p class=\"older\">Older: %s</p>" % ", ".join(
-                "<a href=\"/releases/%s/\">%s</a>" % (e(r["version"]), e(r["version"])) for r in reversed(stable[:-1])))
-        out.append("</div>")
+        if stable and release_rows(kinds, stable[-1]):
+            out.append("<h3>Release <small>%s &middot; %s</small></h3>" % (e(stable[-1]["version"]), e(stable[-1]["date"])))
+            out.append(table(release_rows(kinds, stable[-1])))
+        if pre and release_rows(kinds, pre[-1]):
+            out.append("<h3>Pre-release <small>%s &middot; %s &middot; a development build, not a release</small></h3>"
+                       % (e(pre[-1]["version"]), e(pre[-1]["date"])))
+            out.append(table(release_rows(kinds, pre[-1])))
         return out
+
+    def older():
+        if len(stable) > 1:
+            return ["<p class=\"older\">Older releases: %s</p>" % ", ".join(
+                "<a href=\"/releases/%s/\">%s</a>" % (e(r["version"]), e(r["version"])) for r in reversed(stable[:-1]))]
+        return []
 
     out = []
     out.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">")
@@ -487,95 +486,107 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     out.append("<style>%s</style></head><body>" % PAGE_CSS)
     out.append("<div class=\"hero\"></div><main>")
     out.append("<div class=\"panel\"><h1>Downloads</h1>"
-               "<p>Packages, Raspberry Pi images, RetroArch builds and build inputs for "
-               "<a href=\"https://github.com/autobleem/AutoBleem2\">AutoBleem</a>, the game launcher for the "
-               "PlayStation Classic and the Raspberry Pi, by platform. Every file has a <code>.sha256</code> next to it; "
+               "<p><a href=\"https://github.com/autobleem/AutoBleem2\">AutoBleem</a>, the game launcher for the "
+               "PlayStation Classic and the Raspberry Pi, by platform: first what you install from, then the "
+               "<em>build inputs</em> - the pieces the installers, the image build and the CI fetch from here "
+               "(RetroArch builds, cores, the cover databases). Every file has a <code>.sha256</code> next to it; "
                "<a href=\"/releases/\">browse</a> the tree for older versions. Machine-readable: "
                "<a href=\"/releases/latest.json\">releases/latest.json</a>.</p>"
                "<p class=\"nav\"><a href=\"#psc\">PlayStation Classic</a> &middot; <a href=\"#rpi\">Raspberry Pi</a> &middot; "
-               "<a href=\"#pc\">PC</a> &middot; <a href=\"#inputs\">Build inputs</a></p></div>")
+               "<a href=\"#pc\">PC</a></p></div>")
 
     # ---- PlayStation Classic ----
     out.append("<h2 class=\"plat\" id=\"psc\">PlayStation Classic</h2>")
-    out += release_panel("AutoBleem for the console", ("psc",),
-                         "Unzip onto the root of a FAT32 USB stick named SONY and boot the console with it.")
+    out.append("<div class=\"panel\"><h2>Install</h2>"
+               "<p>The USB stick package: unzip onto the root of a FAT32 stick named SONY and boot the console with it.</p>")
+    block = release_block(("psc",))
+    out += block if block else ["<p>Nothing published yet.</p>"]
+    out += older()
+    out.append("</div>")
+    rows = []
     if psc_builds:
         newest = sorted(psc_builds, key=psc_version_key)[-1]
         b = psc_builds[newest]
-        out.append("<div class=\"panel\"><h2>RetroArch <small>%s</small></h2>" % e(newest))
-        out.append("<p>Built for the console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches; "
-                   "it loads xz-compressed cores as they are. What the PC installer puts under <code>retroarch/</code> "
-                   "on the stick (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s).</p><table>"
-                   % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if b.get("manifest") else ""))
-        out.append(row("retroarch + docs", b["zip"]))
-        out.append("</table></div>")
+        rows.append(row("RetroArch %s%s" % (newest, " (manifest)" if b.get("manifest") else ""), b["zip"]))
     if psc_cores:
-        out.append("<div class=\"panel\"><h2>RetroArch cores <small>%s</small></h2>" % e(date_of(psc_cores["date"])))
-        out.append("<p>%sThe libretro cores for the console - RetroBoot 1.2's set, the ones that run on a stock console - "
-                   "with their info files, one download (<a href=\"/psc/cores/latest.json\">latest.json</a>%s).</p><table>"
-                   % ("%d cores. " % psc_cores["count"] if psc_cores.get("count") else "",
-                      ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores.get("manifest") else ""))
-        out.append(row("cores + info", psc_cores))
-        out.append("</table></div>")
+        rows.append(row("RetroArch cores, %s%s" % (date_of(psc_cores["date"]),
+                                                    ", %d cores" % psc_cores["count"] if psc_cores.get("count") else ""), psc_cores))
+    if rows:
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+                   "<p>What the PC installer puts under <code>retroarch/</code> on the stick: RetroArch built for the "
+                   "console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches - it loads "
+                   "xz-compressed cores as they are (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s) - and the "
+                   "cores with their info files, RetroBoot 1.2's set for now, the ones that run on a stock console "
+                   "(<a href=\"/psc/cores/latest.json\">latest.json</a>%s).</p>"
+                   % (", <a href=\"%s\">manifest.json</a>" % e(b["manifest"]) if psc_builds and b.get("manifest") else "",
+                      ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else ""))
+        out.append(table(rows) + "</div>")
 
     # ---- Raspberry Pi ----
     out.append("<h2 class=\"plat\" id=\"rpi\">Raspberry Pi</h2>")
-    out += release_panel("AutoBleem for the Pi", ("rpi", "rpi64"),
-                         "A tarball with <code>install.sh</code> for a Pi already running Raspberry Pi OS Lite; "
-                         "the images below are the other way.")
+    out.append("<div class=\"panel\"><h2>Install</h2>")
     if images:
         stable_images = {v: f for v, f in images.items() if not is_prerelease(v)}
         newest = newest_of(stable_images) or newest_of(images)
-        out.append("<div class=\"panel\"><h2>Images <small>%s%s</small></h2>" % (
-            e(newest), " (pre-release)" if is_prerelease(newest) else ""))
-        out.append("<p>Flash with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>: "
+        out.append("<p>Flash an image with <a href=\"https://www.raspberrypi.com/software/\">Raspberry Pi Imager</a>: "
                    "<em>Use custom</em> with a downloaded file, or add this repository under "
                    "<em>App Options &rarr; Content Repository</em>: <code>%s/rpi-imager/os_list.json</code>. "
                    "The first boot finishes the install (a network connection is needed). "
                    "<a href=\"/rpi-install.html\">Which image for which Pi, and the whole setup, step by step</a>."
                    "</p>" % e(base_url))
-        out.append("<table><tr><th>OS</th><th>File</th><th></th></tr>")
+        out.append("<h3>Images <small>%s%s</small></h3>" % (e(newest), " &middot; pre-release" if is_prerelease(newest) else ""))
+        rows = []
         for arch, title in (("armhf", "32-bit Raspberry Pi OS (Pi 2/3/4/400/Zero 2)"),
                             ("arm64", "64-bit Raspberry Pi OS (Pi 3/4/5/400/Zero 2)")):
             f = images[newest].get(arch)
             if f:
-                out.append(row(title, f))
-        out.append("</table></div>")
+                rows.append(row(title, f))
+        out.append(table(rows, ("OS", "File", "")))
+    else:
+        out.append("<p>No image published yet.</p>")
+    out.append("</div>")
+    out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+               "<p>The package the image carries and <code>install.sh</code> installs from - also the way onto a Pi "
+               "already running Raspberry Pi OS Lite - and what the installer downloads: RetroArch prebuilt "
+               "(<a href=\"/rpi/retroarch/latest.json\">latest.json</a>; <code>--retroarch prebuilt</code> instead of a "
+               "source build) and every core libretro's buildbot has for the architecture with the info, assets, "
+               "autoconfig, database, cheats, overlays and shaders bundles, one download instead of ~130 "
+               "(<a href=\"/rpi/cores/latest.json\">latest.json</a>).</p>")
+    block = release_block(("rpi", "rpi64"))
+    out += block
+    rows = []
     if builds:
         newest = newest_of(builds)
-        out.append("<div class=\"panel\"><h2>RetroArch for the Pi installer <small>%s</small></h2>" % e(newest))
-        out.append("<p>What <code>install.sh --retroarch prebuilt</code> downloads instead of building from source "
-                   "(<a href=\"/rpi/retroarch/latest.json\">latest.json</a>).</p><table>")
         for arch in ("armhf", "arm64"):
             f = builds[newest].get(arch)
             if f:
-                out.append(row(arch, f))
-        out.append("</table></div>")
+                rows.append(row("RetroArch %s, %s" % (newest, arch), f))
     if cores:
-        out.append("<div class=\"panel\"><h2>RetroArch cores for the Pi installer</h2>"
-                   "<p>Every core libretro's buildbot has for the architecture, with the info, assets, autoconfig, "
-                   "database, cheats, overlays and shaders bundles - one download instead of ~130 "
-                   "(<a href=\"/rpi/cores/latest.json\">latest.json</a>).</p><table>")
         for arch in ("armhf", "arm64"):
             f = cores.get(arch)
             if f:
-                out.append(row("%s, %s" % (arch, date_of(f["date"])), f))
-        out.append("</table></div>")
+                rows.append(row("RetroArch cores, %s, %s" % (arch, date_of(f["date"])), f))
+    if rows:
+        out.append("<h3>RetroArch</h3>" + table(rows))
+    if not block and not rows:
+        out.append("<p>Nothing published yet.</p>")
+    out.append("</div>")
 
     # ---- PC ----
     out.append("<h2 class=\"plat\" id=\"pc\">PC</h2>")
-    out += release_panel("Windows", ("win", "updateroms"),
-                         "The launcher for a look on a PC, and UpdateRoms, which prepares a console stick or a Pi card "
-                         "in a card reader: playlists, names from the databases, box art.")
+    out.append("<div class=\"panel\"><h2>Install</h2>"
+               "<p>Windows: the launcher, for a look on a PC, and UpdateRoms, which prepares a console stick or a Pi card "
+               "in a card reader - playlists, names from the databases, box art.</p>")
+    block = release_block(("win", "updateroms"))
+    out += block if block else ["<p>Nothing published yet.</p>"]
+    out.append("</div>")
 
-    # ---- build inputs ----
+    # ---- shared build inputs ----
     if dbs:
-        out.append("<h2 class=\"plat\" id=\"inputs\">Build inputs</h2>")
-        out.append("<div class=\"panel\"><h2>Cover databases</h2><p>The launcher's PS1 cover art databases "
-                   "(<a href=\"/db/\">db/</a>).</p><table>")
-        for f in dbs:
-            out.append(row("", f))
-        out.append("</table></div>")
+        out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2><p>The launcher's PS1 cover art databases, "
+                   "baked into the console and Windows packages and fetched by the Pi installer (<a href=\"/db/\">db/</a>).</p>")
+        out.append(table([row("", f) for f in dbs]) + "</div>")
 
     out.append("<footer>Generated %s UTC &middot; theme: ab2</footer></main></body></html>"
                % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
