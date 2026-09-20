@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cerrno>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
@@ -237,7 +238,10 @@ bool System::makeDirectoryLink(const string &link, const string &target) {
     }
     return runShellCommand("mklink /J \"" + l + "\" \"" + t + "\" >nul") == 0 && DirEntry::isDirectory(link);
 #else
-    return symlink(target.c_str(), link.c_str()) == 0;
+    // a relative target would be taken relative to the link's own directory: the target as an absolute path
+    char resolved[PATH_MAX];
+    const char *abs = realpath(target.c_str(), resolved);
+    return abs != nullptr && symlink(abs, link.c_str()) == 0;
 #endif
 }
 
