@@ -13,6 +13,9 @@
 #   $4 region     (the console's script ignores it   $9 pad      always "NA"
 #                 and passes -region 4; so does this)
 #   $5 gameFolder the game's own folder            $10 emulator  pcsx-ab (bin/emu) or pcsx-abnxt (bin/emunxt)
+#                                                  $11 language  config.ini's (English, Polski, ...): pcsx-abnxt's
+#                                                                own screens speak it (its lang/<Name>.txt);
+#                                                                the classic pcsx-ab takes no such option
 #
 # BIOS: pcsx.cfg says "Bios = SET_BY_PCSX", and pcsx-ab resolves that to bios/romw.bin - or bios/romJP.bin
 # for a game whose serial starts with SLP/SCP - so System/Bios needs both (the console copies romw.bin as
@@ -26,6 +29,7 @@ GAME_FOLDER="${5:-}"
 RESUME="${6:-0}"
 ASPECT="${7:-0}"
 FILTER="${8:-0}"
+LANGUAGE="${11:-}"
 
 RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
@@ -70,13 +74,21 @@ if [ -f "$EMU_DIR/pcsx-ab" ]; then
     ln -s "$EMU_DIR/plugins" "$RUN_DIR/plugins"
     # the in-game menu's skin, if the emu ships one (the console's package does not)
     [ -d "$EMU_DIR/skin" ] && ln -s "$EMU_DIR/skin" "$RUN_DIR/skin"
+    # pcsx-abnxt's own screens: its language files, and the launcher's fonts folder for a language whose
+    # glyphs its own font lacks (Chinese)
+    [ -d "$EMU_DIR/lang" ] && ln -s "$EMU_DIR/lang" "$RUN_DIR/lang"
+    [ -d "$DATA_MOUNT/Autobleem/bin/autobleem/fonts" ] && ln -s "$DATA_MOUNT/Autobleem/bin/autobleem/fonts" "$RUN_DIR/fonts"
+    LANG_OPT=()
+    if [ "$EMU_DIR" = "$DATA_MOUNT/Autobleem/bin/emunxt" ] && [ -n "$LANGUAGE" ]; then
+        LANG_OPT=(-language "$LANGUAGE")
+    fi
 
     [ -f "$BIOS_DIR/romw.bin" ] || echo "AUTOBLEEM: no $BIOS_DIR/romw.bin - pcsx-ab will use its HLE BIOS"
 
     if [ "$RESUME" = "0" ]; then
-        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 -cdfile "$CD_FILE"
+        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 "${LANG_OPT[@]}" -cdfile "$CD_FILE"
     else
-        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 -load "$RESUME" -cdfile "$CD_FILE"
+        /tmp/pcsx -filter "$FILTER" -ratio "$ASPECT" -lang "$LANG_ID" -region 4 -enter 1 -load "$RESUME" "${LANG_OPT[@]}" -cdfile "$CD_FILE"
     fi
 
     echo FINISHED
