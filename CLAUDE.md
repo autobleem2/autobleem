@@ -737,10 +737,13 @@ of the cores needs either. Its `launch_rfa_rom.sh` relaunches RetroArch **five t
 (the blinking red LED, ~45 s) before returning to the launcher - our own launch scripts should give up
 after one.
 
-**Two RetroArch enum shifts between RetroBoot's 1.9.0 and 1.22.2 broke the old `retroarch.cfg`**:
-`xmb_theme = "8"` was RetroSystem, is Monochrome Inverted now (RetroSystem is 7); `menu_swap_ok_cancel_buttons`
-became `input_menu_swap_ok_cancel_buttons` (Circle was OK until set). `theme/` in the repo is the **ab2 XMB
-theme** for 1.22.2: `Autobleem2.png` (made by `make_wallpaper.py` from `payload/themes/ab2/images/AB-EvoBack.jpg`
+**What a RetroBoot-era `retroarch.cfg` gets wrong on 1.22.2** (all in the repo's `theme/retroarch-psc.cfg`,
+the installer's cfg fragment): `xmb_theme = "8"` was RetroSystem in 1.9.0 and is Monochrome Inverted now
+(RetroSystem is 7); `quit_on_close_content` (new since 1.10, default never) must be `2` or Close Content
+stays in XMB instead of returning to the launcher as 1.9.0 did; `video_context_driver` must be `wayland`.
+`menu_swap_ok_cancel_buttons = "true"` (Cross = OK in RetroArch's menus) is unchanged and works - a
+core's own menu is the core's mapping (prboom: RetroPad A = Circle = enter), not RetroArch's. `theme/` in
+the repo is the **ab2 XMB theme** for 1.22.2: `Autobleem2.png` (made by `make_wallpaper.py` from `payload/themes/ab2/images/AB-EvoBack.jpg`
 - logo bottom right, out of XMB's way, the bottom band a reflection of the texture), Selawik Light, the
 RetroSystem icons (a 2020 RetroBoot stick lacks 19 that 1.22.2 asks for - `disc.png`, `movie.png`, `Sega -
 Mega Drive - Genesis.png`, ... from libretro's retroarch-assets), `retroarch-theme.cfg` with the 1.22.2
@@ -748,7 +751,17 @@ keys. `video_context_driver` must be `"wayland"` (empty = KMS first, which Westo
 on the owner's F: stick (the RetroBoot binary kept as `retroarch.retroboot-1.9.0`, the cfg as
 `retroarch.cfg.retroboot`) with free test content in `roms/` (Peter Lemon's SNES/NES/GB/GBA homebrew,
 mamedev's free arcade ROMs, Doom/Quake shareware, Cave Story); N64 needs a real game - the homebrew RSP
-tests crash GLupeN64 (a core dump inside the core, not RetroArch).
+tests crash GLupeN64 (a core dump inside the core, not RetroArch). **Verified on the console 2026-09-20**:
+Cave Story, Doom, Quake run and return.
+
+**Coming back from RetroArch** (2026-09-20): the PSC's GPU frees the emulator's memory 3-4 s after the
+process is gone; the launcher's window rebuilt sooner had its buffer uploads fail (`PVR: glBufferSubData:
+No memory for object data` in `AB_err.txt`), Weston dropped the client (`wl_display@1: error 0: invalid
+object 16`), SDL posted a Quit and `AutoBleem::run()` took it for the window's close button - out through
+`selection.sh`'s reboot (what looked like the console going to sleep). Now `launchGame()` waits 2 s after a
+RetroArch session (300 ms after pcsx) and `run()` treats a Quit on the console as a lost display: release,
+1 s, rebuild, three times before giving up (after Quake it took two rebuilds; the log says
+`The display went away (attempt n of 3)`).
 
 **What is left**: the **PC installer** (read `psc/retroarch/latest.json` + `psc/cores/latest.json`, lay
 `retroarch/` on the stick - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a
@@ -1009,6 +1022,12 @@ split is the CMake source lists, and the include rule: nothing in `ab_classic` i
 compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. Debug builds compile with
 `-Wall -Wextra` (a few noisy categories off) - keep them warning-free.
 
+- **sccache** (2026-09-20) sits in front of every compiler in the image: `ci/build.sh` (and pcsx-ab's)
+  configure with `CMAKE_C/CXX_COMPILER_LAUNCHER=sccache`, `docker/run.sh` mounts the cache from the host
+  (`~/.cache/autobleem-sccache`, `AB_SCCACHE_DIR`, 10 GB) so it outlives the container, the run ends with
+  the stats; `AB_NO_SCCACHE=1` opts out. The console target: 263 s cold, **42 s** with the cache warm
+  (95 % hits) - the remaining misses are what includes the generated `core/version.h`. The image's last
+  layer holds the binary (a musl release), so a version bump rebuilds nothing else.
 - **CI: one Docker image builds every target** (2026-09-19; `docs/ci.md` is the operator's page,
   `docs/ci-plan.md` the plan until the workflows have run). `docker/Dockerfile` -> `autobleem-build`
   (Debian Bookworm, ~3.4 GB, built on the server with `docker/build-image.sh`): the native build with
