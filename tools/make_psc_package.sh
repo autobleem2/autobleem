@@ -58,6 +58,9 @@ APP="$STAGE/Autobleem/bin/autobleem"
 mkdir -p "$APP" "$STAGE/Autobleem/bin/db"
 cp -a "$REPO/src/resources/." "$APP/"
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/autobleem-gui"
+# absplash: the full-screen picture the launch scripts show around RetroArch (src/tools/absplash.cpp;
+# its pictures are src/resources/splash/, copied with the resources above)
+cp -a "$BUILD_DIR/absplash" "$APP/absplash"
 
 # the console tools, each over its resources (what make_psc.sh copies into payload/Apps by hand)
 for tool in pscbios abflashkit; do
@@ -68,7 +71,7 @@ done
 
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
-    for bin in "$APP/autobleem-gui" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit"; do
+    for bin in "$APP/autobleem-gui" "$APP/absplash" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit"; do
         upx -q --best --lzma "$bin" >/dev/null
     done
 fi
@@ -96,7 +99,7 @@ fi
 # git's directory keepers have no business on a stick; the executable bit does not survive a zip made on
 # Windows, which is why rc/autobleem.sh chmods what it runs, but from here it can be right
 find "$STAGE" -type f -name placeholder -delete
-chmod +x "$APP/autobleem-gui" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit" \
+chmod +x "$APP/autobleem-gui" "$APP/absplash" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit" \
          "$STAGE"/Autobleem/*.sh "$STAGE"/Autobleem/rc/*.sh "$STAGE"/Apps/*/*.sh 2>/dev/null || true
 
 echo "==> $ZIP"
