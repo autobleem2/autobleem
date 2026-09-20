@@ -347,6 +347,11 @@ add_custom_command(TARGET autobleem-gui PRE_BUILD
 configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 
+# absplash: a full-screen picture between the launcher and an emulator on the console (src/tools/absplash.cpp);
+# lib_ableem's ui only, no app code
+add_executable(absplash src/tools/absplash.cpp)
+target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
+
 
 # the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
 # ab_classic; a Raspberry Pi has no PSC kernel to configure or flash, so not there
