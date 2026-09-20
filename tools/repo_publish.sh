@@ -25,6 +25,9 @@
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
 #
+# The page generator travels with every publish, three-way merged with the repository's copy (see
+# tools/repo_index_merge.py) - never copied over it.
+#
 # The files go over ssh (rsync to $REPO_HOST, "psc-build" in ~/.ssh/config, into $REPO_DIR) with a .sha256
 # next to each; then tools/repo_index.py runs on the server over the whole tree (it is uploaded as
 # <repo>/.tools/repo_index.py so the server needs no checkout). --local skips ssh and copies within this
@@ -95,22 +98,25 @@ if [ -n "$DEST" ]; then
     done
     echo "publishing to $DEST: $(cd "$STAGE/$DEST" && ls | grep -v '\.sha256$' | tr '\n' ' ')"
 fi
-# the index script travels with every publish, but never backwards: an older copy (the server's rsync'd
-# checkout, behind the PC's) must not replace the one the repository already runs - it regenerated the
-# page without the manual link once
-mkdir -p "$STAGE/.tools"
-index_version() { sed -n 's/^INDEX_VERSION = \([0-9]*\).*/\1/p' | head -1; }
-mine="$(index_version < "$HERE/repo_index.py")"
+# the index script travels with every publish, merged three-way with the copy the repository runs
+# (tools/repo_index_merge.py): two checkouts publishing in turn no longer overwrite each other's page
+# generator, and a real conflict stops the publish before anything is copied
+mkdir -p "$STAGE/.tools" "$STAGE/.merge"
 if [ "$LOCAL" -eq 1 ]; then
-    theirs="$(index_version < "$REPO_DIR/.tools/repo_index.py" 2>/dev/null || true)"
+    for f in repo_index.py repo_index.base.py repo_index.rev; do
+        [ -f "$REPO_DIR/.tools/$f" ] && cp "$REPO_DIR/.tools/$f" "$STAGE/.merge/$f"
+    done
 else
-    theirs="$(ssh "$REPO_HOST" "cat $REPO_DIR/.tools/repo_index.py 2>/dev/null" | index_version || true)"
+    ssh "$REPO_HOST" "cd $REPO_DIR/.tools 2>/dev/null && tar cf - repo_index.py repo_index.base.py repo_index.rev 2>/dev/null || true"         | tar xf - -C "$STAGE/.merge" 2>/dev/null || true
 fi
-if [ "${mine:-0}" -ge "${theirs:-0}" ]; then
-    cp "$HERE/repo_index.py" "$STAGE/.tools/"
-else
-    echo "keeping the repository's repo_index.py (INDEX_VERSION $theirs; this checkout has $mine)" >&2
+if ! python3 "$HERE/repo_index_merge.py" --mine "$HERE/repo_index.py"         --theirs "$STAGE/.merge/repo_index.py" --theirs-base "$STAGE/.merge/repo_index.base.py"         --theirs-rev "$STAGE/.merge/repo_index.rev"         --out "$STAGE/.tools/repo_index.py" --out-base "$STAGE/.tools/repo_index.base.py"         --out-rev "$STAGE/.tools/repo_index.rev"; then
+    KEEP="$(mktemp -d "${TMPDIR:-/tmp}/repo_index_conflict.XXXXXX")"
+    cp "$STAGE/.tools/repo_index.py" "$KEEP/repo_index.py" 2>/dev/null || true
+    cp "$STAGE/.merge/repo_index.py" "$KEEP/repo_index.repository.py" 2>/dev/null || true
+    echo "not published: the merged copy with the conflict markers is $KEEP/repo_index.py (the repository's own copy next to it)" >&2
+    exit 1
 fi
+rm -rf "$STAGE/.merge"
 
 # the index run on the server (and the image retention)
 remote_index() {
@@ -118,7 +124,15 @@ remote_index() {
 set -e
 cd "$REPO_DIR"
 if [ -f assets/icon.png ]; then mkdir -p rpi-imager && cp assets/icon.png rpi-imager/icon.png; fi
-python3 .tools/repo_index.py . --base-url "$AB_REPO_URL"
+if ! python3 .tools/repo_index.py . --base-url "$AB_REPO_URL"; then
+    if [ -f .tools/repo_index.prev.py ]; then
+        echo "the merged repo_index.py failed - the previous copy is restored and run" >&2
+        cp .tools/repo_index.prev.py .tools/repo_index.py
+        python3 .tools/repo_index.py . --base-url "$AB_REPO_URL"
+    fi
+    exit 1
+fi
+cp .tools/repo_index.py .tools/repo_index.prev.py
 EOF
 }
 

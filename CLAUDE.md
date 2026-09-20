@@ -563,13 +563,21 @@ AutoBleem 2 logo is painted into it; `ab.png` is blank) as the hero, the navy/cy
 staged as `assets/` from `payload/Themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
 emblem cut out for the favicon and Imager's icon, checked in because MSYS2's python has no Pillow). To
 change the pages: edit the render functions, bump `INDEX_VERSION`, `tools/repo_publish.sh index`.
-**Two `repo_index.py`s exist at the moment** (2026-09-20): a parallel session's PC USB stick (i386) work -
-`PC_IMAGE_RE`, `PLATFORM_ARCHES`, the `pc/` panels - is only in its rsync tree on the server (`~/autobleem`,
-uncommitted), and its copy overwrote the site's page twice (same `INDEX_VERSION`, no pcsx panels). The
-server's `<repo>/.tools/repo_index.py` is a hand-merged copy of both at **`INDEX_VERSION 26`** - above
-`develop`'s 25, so a publish from either tree keeps it (the gate only uploads a copy that is at least as
-new). When the PC-stick work lands on `develop`, resolve `tools/repo_index.py` to carry both (the server's
-copy is that merge) and bump past 26.
+**The page generator is merged on every publish, never copied** (2026-09-20, after two sessions had
+overwritten each other's page twice): `tools/repo_index_merge.py` three-way merges this checkout's
+`tools/repo_index.py` with the copy the repository runs (`<repo>/.tools/repo_index.py`) over the older of
+the two develop versions they started from - mine from `git merge-base HEAD origin/develop`, the
+repository's stored next to its copy as `.tools/repo_index.base.py` + `.rev` - with `git merge-file`;
+`repo_publish.sh` uploads the result and the newer base. Distinct lines combine (a panel one session added
+survives the other's publish); the same lines changed on both sides are a conflict and **nothing is
+published** - the file with the markers is left in a temp dir, resolve it, commit to develop, publish
+again. `INDEX_VERSION` is informational now (the larger of the two, +1 when the merge changed the
+repository's). The server keeps `.tools/repo_index.prev.py` and falls back to it when the merged copy
+fails to run. A tree without git (the server's rsync trees) merges over the repository's stored base,
+right as long as that tree is at least as new as it. Two lines conflict easily - `render_index`'s
+signature and `main()`'s summary `print` - so a new panel is best committed to develop before the next
+session publishes. The PC USB stick (i386) work of a parallel session is still only in the repository's
+copy (`PC_IMAGE_RE`, `PLATFORM_ARCHES`, the `pc/` panels) until it lands on develop.
 `AB_REPO_URL` is the base URL everything generated starts with.
 
 It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
