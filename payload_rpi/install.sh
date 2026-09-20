@@ -245,10 +245,15 @@ install_packages() {
         warn "apt-get update failed - carrying on with whatever is already cached"
     fi
 
-    # SDL2 is what autobleem-gui draws with (pcsx-ab too, plus libpng16 for its screenshots and skin);
-    # exfatprogs formats the data partition; parted creates it; wget/unzip fetch the RetroArch cores.
+    # SDL2 is what autobleem-gui draws with (pcsx-ab too, plus libpng16 for its screenshots and skin).
+    # libgl1 + libgl1-mesa-dri (with libegl1/libgles2/libgbm1) are the GL SDL's "opengl" renderer dlopens on
+    # KMS: SDL2 does not depend on them, and without libGL.so.1 it silently falls back to a context with no
+    # shaders and no render targets - the launcher runs and shows a black screen (the first 64-bit image,
+    # 2026-09-20; on the 32-bit card they had come in with RetroArch's source-build packages). exfatprogs
+    # formats the data partition; parted creates it; wget/unzip fetch the RetroArch cores.
     run apt-get install -y \
         libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
+        libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1 \
         "$(pkg_first_available libpng16-16t64 libpng16-16)" zlib1g \
         exfatprogs parted alsa-utils wget unzip ca-certificates
 

@@ -88,6 +88,13 @@ void Renderer::recreate(Platform &platform) {
     SDL_RendererInfo info;
     if (SDL_GetRendererInfo(impl->renderer, &info) == 0) {
         PLOG_INFO << "Renderer: " << info.name << ", " << platform.multisampleSamples() << "x MSAA";
+        // every screen draws through render targets; a GL renderer whose library SDL could not load (no
+        // libGL.so.1 on a Pi) still gets created, without shaders or targets, and shows a black screen
+        if (!(info.flags & SDL_RENDERER_TARGETTEXTURE)) {
+            PLOG_ERROR << "Renderer " << info.name
+                       << " has no render-target support - nothing will be drawn. On a Pi: is libgl1 "
+                          "(libGL.so.1) installed? SDL_LOGGING=*=verbose shows what SDL failed to load.";
+        }
     }
     int outputWidth = 0, outputHeight = 0;
     SDL_GetWindowSize(window, &outputWidth, &outputHeight);

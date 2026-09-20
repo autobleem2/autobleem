@@ -58,6 +58,22 @@ TEST_CASE("Config keeps what the file already says") {
     CHECK(config.inifile.values["aspect"] == "false");
 }
 
+TEST_CASE("Config over an empty config.ini gives the shipped defaults, ab2 included") {
+    // what an unclean unmount left on the first Pi boot: the file exists and holds nothing
+    TempDir tmp("config_empty");
+    EnvFixture env;
+    env.setWorkingPath(tmp.path());
+    tmp.writeFile("config.ini", "");
+
+    Config config;
+
+    CHECK(config.inifile.values["theme"] == "ab2");
+    CHECK(config.inifile.values["language"] == "English");
+    // and the file written back is a real one again (atomically: no .tmp left behind)
+    CHECK(tmp.readFile("config.ini").find("Theme=ab2") != std::string::npos);
+    CHECK_FALSE(DirEntry::exists(tmp.path() + sep + "config.ini.tmp"));
+}
+
 TEST_CASE("Config drops the keys older AutoBleem versions wrote") {
     TempDir tmp("config_obsolete");
     EnvFixture env;
