@@ -62,8 +62,12 @@ PACKAGE_KINDS = [
     ("updateroms", re.compile(r"^UpdateRoms-.*\.zip$"), "UpdateRoms for Windows (scan a stick or card on a PC)"),
 ]
 IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-rpi-(?P<arch>armhf|arm64)\.img\.xz$")
-RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64)\.tar\.gz$")
-CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz$")
+# the PC stick's image (tools/make_pc_image.sh), under pc/images/<version>/
+PC_IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-pcusb-(?P<arch>i386)\.img\.xz$")
+# the appliances' RetroArch builds and cores tarballs, under rpi/ (armhf, arm64) and pc/ (i386)
+RETROARCH_RE = re.compile(r"^retroarch-(?P<tag>v[0-9][^-]*)-(?P<arch>armhf|arm64|i386)\.tar\.gz$")
+CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64|i386)-(?P<date>[0-9]{8})\.tar\.gz$")
+PLATFORM_ARCHES = {"rpi": ("armhf", "arm64"), "pc": ("i386",)}
 # the console build's tag is the RetroArch version plus a build number (github.com/autobleem/retroarch-psc)
 PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
@@ -251,8 +255,10 @@ def index_releases(repo, base_url):
 #*******************************
 # RetroArch builds
 #*******************************
-def index_retroarch(repo, base_url):
-    root = os.path.join(repo, "rpi", "retroarch")
+def index_retroarch(repo, base_url, platform="rpi"):
+    """<platform>/retroarch/<tag>/retroarch-<tag>-<arch>.tar.gz (ci/build_retroarch.sh) - the newest tag kept,
+    latest.json = its entries by architecture; what install.sh and the launcher's update read."""
+    root = os.path.join(repo, platform, "retroarch")
     builds = {}  # tag -> arch -> entry
     if os.path.isdir(root):
         for tag in os.listdir(root):
@@ -390,11 +396,11 @@ def index_psc_apps(repo, base_url):
 #*******************************
 # cores tarballs
 #*******************************
-def index_cores(repo, base_url):
-    """rpi/cores/<arch>/cores-<arch>-<date>.tar.gz - the newest per architecture, the rest deleted."""
-    root = os.path.join(repo, "rpi", "cores")
+def index_cores(repo, base_url, platform="rpi"):
+    """<platform>/cores/<arch>/cores-<arch>-<date>.tar.gz - the newest per architecture, the rest deleted."""
+    root = os.path.join(repo, platform, "cores")
     latest = {}
-    for arch in ("armhf", "arm64"):
+    for arch in PLATFORM_ARCHES[platform]:
         folder = os.path.join(root, arch)
         dated = {}
         for path in data_files(folder):
@@ -469,6 +475,39 @@ def index_images(repo, base_url):
             if os.path.isfile(os.path.join(repo, "rpi-imager", "icon.png")):
                 entry["icon"] = icon
         write_json(os.path.join(repo, "rpi-imager", "os_list.json"), os_list)
+    return versions
+
+
+#*******************************
+# PC stick images
+#*******************************
+def index_pc_images(repo, base_url):
+    """pc/images/<version>/autobleem-<version>-pcusb-i386.img.xz (+ .sha256; tools/make_pc_image.sh) - one
+    pre-release set at most, stable ones kept; latest.json = the newest stable, else the pre-release."""
+    root = os.path.join(repo, "pc", "images")
+    versions = {}  # version -> {arch: entry}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            note_published(folder)
+            for path in data_files(folder):
+                m = PC_IMAGE_RE.match(os.path.basename(path))
+                if m:
+                    versions.setdefault(version, {})[m.group("arch")] = file_entry(repo, base_url, path)
+    if not versions:
+        return versions
+    pre = [v for v in versions if is_prerelease(v)]
+    stable = [v for v in versions if not is_prerelease(v)]
+    if len(pre) > 1:
+        keep = newest_of(pre)
+        prune([os.path.join(root, v) for v in pre if v != keep], [], "pre-release PC image set")
+        versions = {v: f for v, f in versions.items() if v == keep or v in stable}
+    newest = newest_of(stable) or newest_of(versions)
+    latest = {"version": newest, "prerelease": is_prerelease(newest)}
+    latest.update(versions[newest])
+    write_json(os.path.join(root, "latest.json"), latest)
     return versions
 
 
@@ -565,7 +604,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None):
+                 psc_apps=None, psc_bios=None, pc=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -765,15 +804,41 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     block = release_block(("win", "updateroms"))
     out += block if block else ["<p>Nothing published yet.</p>"]
     out.append("</div>")
-    # the PC USB stick's package (the stick image comes with its builder - until then, the tarball alone:
-    # install it over a Debian 12 i386 like the Pi's over Raspberry Pi OS)
+    # the PC USB stick: the image a user writes to a stick (Install), and under it what it installs and
+    # updates from - the tarball, the i386 RetroArch build, the cores (Build inputs)
+    pc = pc or {}
+    pc_images = pc.get("images") or {}
+    if pc_images:
+        out.append("<div class=\"panel\"><h2>PC USB stick</h2>"
+                   "<p>A 32-bit Debian appliance on a USB stick, the same as the Raspberry Pi's: write the image to a "
+                   "stick of 8 GB or more (Rufus in DD mode, balenaEtcher, <code>dd</code>), boot the PC from it "
+                   "(BIOS or UEFI, Secure Boot off) and the first boot sets AutoBleem up on the screen; the rest of "
+                   "the stick becomes the games partition.</p>")
+        rows = []
+        for version in sorted(pc_images, key=version_key, reverse=True):
+            for arch, f in sorted(pc_images[version].items()):
+                label = "%s (%s)" % (version, "development build" if is_prerelease(version) else "stable")
+                rows.append(row(label, f))
+        out.append(table(rows, ("Version", "Image", "")))
+        out.append("</div>")
     block = release_block(("pcusb",))
-    if block:
-        out.append("<div class=\"panel inputs\"><h2>PC USB stick</h2>"
-                   "<p>A 32-bit Debian appliance for a USB stick, the same as the Raspberry Pi's: unpack the tarball "
-                   "on a minimal Debian 12 (i386) and run <code>sudo bash install.sh</code>. What the stick image "
-                   "installs and updates from.</p>")
+    pc_builds = pc.get("builds") or {}
+    pc_cores = pc.get("cores") or {}
+    if block or pc_builds or pc_cores:
+        out.append("<div class=\"panel inputs\"><h2>PC USB stick - build inputs</h2>"
+                   "<p>What the stick's first boot and the launcher's update fetch: the package (unpack it on a minimal "
+                   "Debian 12 i386 and run <code>sudo bash install.sh</code> to install by hand), RetroArch built for "
+                   "i386 (<a href=\"/pc/retroarch/latest.json\">latest.json</a>) and the cores tarball "
+                   "(<a href=\"/pc/cores/latest.json\">latest.json</a>).</p>")
         out += block
+        rows = []
+        for tag, arches in pc_builds.items():
+            for arch, f in sorted(arches.items()):
+                rows.append(row("RetroArch %s, %s" % (tag, arch), f))
+        for arch, f in sorted(pc_cores.items()):
+            rows.append(row("cores, %s (%s)" % (arch, date_of(f["date"])), f))
+        if rows:
+            out.append(table(rows))
         out.append("</div>")
 
     # ---- shared build inputs ----
@@ -982,6 +1047,9 @@ def main():
     releases = index_releases(repo, base_url)
     builds = index_retroarch(repo, base_url)
     cores = index_cores(repo, base_url)
+    pc_builds = index_retroarch(repo, base_url, "pc")
+    pc_cores = index_cores(repo, base_url, "pc")
+    pc_images = index_pc_images(repo, base_url)
     psc_builds = index_psc_retroarch(repo, base_url)
     psc_cores = index_psc_cores(repo, base_url)
     psc_libs = index_psc_libs(repo, base_url)
@@ -990,15 +1058,17 @@ def main():
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios)),
+    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases, %s sample pack" % (
-        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images), len(dbs),
-        "1" if samples else "0"))
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, "
+          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack" % (
+        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images),
+        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0"))
 
 
 if __name__ == "__main__":

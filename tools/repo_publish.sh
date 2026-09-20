@@ -6,6 +6,9 @@
 #                                                                              -> rpi-imager/images/<version>/
 #   tools/repo_publish.sh retroarch v1.22.2 retroarch-v1.22.2-armhf.tar.gz     -> rpi/retroarch/v1.22.2/
 #   tools/repo_publish.sh cores armhf build_cores/dist/cores-armhf-*.tar.gz    -> rpi/cores/armhf/
+#   tools/repo_publish.sh pc-image v2.0.0-pre0-933bd2f build_pc_image/out/*.img.xz  -> pc/images/<version>/ (the PC stick)
+#   tools/repo_publish.sh pc-retroarch v1.22.2 retroarch-v1.22.2-i386.tar.gz    -> pc/retroarch/v1.22.2/
+#   tools/repo_publish.sh pc-cores i386 build_cores/dist/cores-i386-*.tar.gz    -> pc/cores/i386/
 #   tools/repo_publish.sh psc-retroarch v1.22.2-1 dist/release/retroarch-psc-v1.22.2-1.zip dist/release/manifest.json
 #                                                                              -> psc/retroarch/v1.22.2-1/ (the retroarch-psc repo's `make publish`)
 #   tools/repo_publish.sh psc-cores dist/release/cores-psc-20260920.tar.gz dist/release/cores-psc-20260920.json
@@ -57,6 +60,9 @@ case "$KIND" in
     image)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi-imager/images/$VERSION" ;;
     retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/retroarch/$VERSION" ;;
     cores)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/cores/$VERSION" ;;
+    pc-image)  [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/images/$VERSION" ;;
+    pc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/retroarch/$VERSION" ;;
+    pc-cores)  [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="pc/cores/$VERSION" ;;
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;

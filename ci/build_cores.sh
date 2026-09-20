@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Pack the RetroArch cores and bundles for one Pi architecture into a single tarball for the download
+# Pack the RetroArch cores and bundles for one appliance architecture into a single tarball for the download
 # repository (CLAUDE.md, "The download repository") - nothing is compiled: this downloads exactly what
 # payload_linux/install.sh's download_retroarch_content() fetches from buildbot.libretro.com, once, so an
 # install gets one file from our server instead of ~130 requests to libretro's.
 #
 #   ci/build_cores.sh armhf            # buildbot's linux/armhf nightly
 #   ci/build_cores.sh arm64            # linux/aarch64 (buildbot's name for it)
+#   ci/build_cores.sh i386             # linux/x86 (the PC stick)
 #   ci/build_cores.sh all
 #
 # Output: build_cores/dist/cores-<arch>-<YYYYMMDD>.tar.gz (+ .sha256), laid out as the RetroArch tree the
 # installer unpacks it into (cores/, info/, assets/, autoconfig/, database/rdb, database/cursors, cheats/,
 # overlays/, shaders/) plus cores.manifest (the date, then every core with its size and sha256). Cores a
-# Pi cannot run are left out (SKIP_CORES). Runs anywhere with wget, unzip and sha256sum -
+# Pi cannot run are left out (SKIP_CORES - the PC stick takes every one). Runs anywhere with wget, unzip and sha256sum -
 # docker/run.sh is not needed but works.
 #
 #   AB_CORES_DATE=YYYYMMDD   name the tarball for that date (default: today)
@@ -30,14 +31,14 @@ usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 banner() { echo; echo "==> $*"; }
 
 [ $# -eq 1 ] || usage
-case "$1" in armhf|arm64|all) ;; *) usage ;; esac
+case "$1" in armhf|arm64|i386|all) ;; *) usage ;; esac
 
 #*******************************
 # build_one
 #*******************************
 build_one() {
-    local arch="$1" ra_arch
-    case "$arch" in armhf) ra_arch=armhf ;; arm64) ra_arch=aarch64 ;; esac
+    local arch="$1" ra_arch skip="$SKIP_CORES"
+    case "$arch" in armhf) ra_arch=armhf ;; arm64) ra_arch=aarch64 ;; i386) ra_arch=x86; skip="" ;; esac
     local cores_url="$BASE/nightly/linux/$ra_arch/latest"
     local stage="$WORK/stage-$arch" tmp="$WORK/tmp-$arch"
     local out="$DIST/cores-$arch-$DATE.tar.gz"
@@ -53,7 +54,7 @@ build_one() {
         [ -n "$zip" ] || continue
         name="${zip%_libretro.so.zip}"
         count=$((count + 1))
-        if printf '%s\n' $SKIP_CORES | grep -qx "$name"; then
+        if printf '%s\n' $skip | grep -qx "$name"; then
             echo "    [$count/$total] $zip - skipped"
             skipped=$((skipped + 1))
             continue
@@ -96,6 +97,7 @@ build_one() {
 if [ "$1" = all ]; then
     build_one armhf
     build_one arm64
+    build_one i386
 else
     build_one "$1"
 fi
