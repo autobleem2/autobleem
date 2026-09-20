@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 30
+INDEX_VERSION = 33
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -617,14 +617,16 @@ def index_pc_images(repo, base_url):
 def pcsx_version_key(version):
     """pcsx-abnxt's r26-20-gb9801962 (git describe: upstream's tag, our commits past it, the commit) -> (26, 20),
     a bare r26 -> (26, 0); pcsx-ab's 20260920-fc8c992 (the date and the commit - that repository has no
-    tags) -> (20260920, 0)."""
+    tags) -> (20260920, 0). A commit hash has no order, so two builds the key cannot tell apart (the same
+    day's pcsx-ab builds) are ordered by when they were published (PUBLISHED_AT) - the first publish of
+    a second same-day build kept the older one, whose hash happened to sort higher."""
     m = re.match(r"^r(\d+)(?:-(\d+)-g[0-9a-f]+)?", version)
     if not m:
         m = re.match(r"^(\d{8})-[0-9a-f]+$", version)
         if not m:
-            return (0, 0, version)
-        return (int(m.group(1)), 0, version)
-    return (int(m.group(1)), int(m.group(2) or 0), version)
+            return (0, 0, PUBLISHED_AT.get(version, 0), version)
+        return (int(m.group(1)), 0, PUBLISHED_AT.get(version, 0), version)
+    return (int(m.group(1)), int(m.group(2) or 0), PUBLISHED_AT.get(version, 0), version)
 
 
 def index_pcsx(repo, base_url, name="pcsx-abnxt"):
@@ -641,6 +643,9 @@ def index_pcsx(repo, base_url, name="pcsx-abnxt"):
                 m = PCSX_RE.match(os.path.basename(path))
                 if m and m.group("name") == name and m.group("version") == version:
                     builds.setdefault(version, {"files": {}})["files"][m.group("plat")] = file_entry(repo, base_url, path)
+                    stamp = path + ".sha256"
+                    PUBLISHED_AT[version] = max(PUBLISHED_AT.get(version, 0),
+                                                os.path.getmtime(stamp if os.path.isfile(stamp) else path))
             manifest = os.path.join(folder, "%s-%s.json" % (name, version))
             if version in builds and os.path.isfile(manifest):
                 builds[version]["manifest"] = base_url + "/emu/%s/%s/%s-%s.json" % (name, version, name, version)
