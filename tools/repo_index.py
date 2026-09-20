@@ -506,6 +506,39 @@ def index_images(repo, base_url):
 
 
 #*******************************
+# PC stick images
+#*******************************
+def index_pc_images(repo, base_url):
+    """pc/images/<version>/autobleem-<version>-pcusb-i386.img.xz (+ .sha256; tools/make_pc_image.sh) - one
+    pre-release set at most, stable ones kept; latest.json = the newest stable, else the pre-release."""
+    root = os.path.join(repo, "pc", "images")
+    versions = {}  # version -> {arch: entry}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            note_published(folder)
+            for path in data_files(folder):
+                m = PC_IMAGE_RE.match(os.path.basename(path))
+                if m:
+                    versions.setdefault(version, {})[m.group("arch")] = file_entry(repo, base_url, path)
+    if not versions:
+        return versions
+    pre = [v for v in versions if is_prerelease(v)]
+    stable = [v for v in versions if not is_prerelease(v)]
+    if len(pre) > 1:
+        keep = newest_of(pre)
+        prune([os.path.join(root, v) for v in pre if v != keep], [], "pre-release PC image set")
+        versions = {v: f for v, f in versions.items() if v == keep or v in stable}
+    newest = newest_of(stable) or newest_of(versions)
+    latest = {"version": newest, "prerelease": is_prerelease(newest)}
+    latest.update(versions[newest])
+    write_json(os.path.join(root, "latest.json"), latest)
+    return versions
+
+
+#*******************************
 # pcsx-abnxt, the next emulator
 #*******************************
 def pcsx_version_key(version):
@@ -551,39 +584,6 @@ def index_pcsx(repo, base_url, name="pcsx-abnxt"):
         latest.update(builds[newest])
         write_json(os.path.join(root, "latest.json"), latest)
     return builds
-
-
-#*******************************
-# PC stick images
-#*******************************
-def index_pc_images(repo, base_url):
-    """pc/images/<version>/autobleem-<version>-pcusb-i386.img.xz (+ .sha256; tools/make_pc_image.sh) - one
-    pre-release set at most, stable ones kept; latest.json = the newest stable, else the pre-release."""
-    root = os.path.join(repo, "pc", "images")
-    versions = {}  # version -> {arch: entry}
-    if os.path.isdir(root):
-        for version in os.listdir(root):
-            folder = os.path.join(root, version)
-            if not os.path.isdir(folder):
-                continue
-            note_published(folder)
-            for path in data_files(folder):
-                m = PC_IMAGE_RE.match(os.path.basename(path))
-                if m:
-                    versions.setdefault(version, {})[m.group("arch")] = file_entry(repo, base_url, path)
-    if not versions:
-        return versions
-    pre = [v for v in versions if is_prerelease(v)]
-    stable = [v for v in versions if not is_prerelease(v)]
-    if len(pre) > 1:
-        keep = newest_of(pre)
-        prune([os.path.join(root, v) for v in pre if v != keep], [], "pre-release PC image set")
-        versions = {v: f for v, f in versions.items() if v == keep or v in stable}
-    newest = newest_of(stable) or newest_of(versions)
-    latest = {"version": newest, "prerelease": is_prerelease(newest)}
-    latest.update(versions[newest])
-    write_json(os.path.join(root, "latest.json"), latest)
-    return versions
 
 
 #*******************************
@@ -680,7 +680,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None, pcsx=None, pc=None):
+                 psc_apps=None, psc_bios=None, pc=None, pcsx=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -1245,10 +1245,10 @@ def main():
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
     pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
     pcsx = {name: b for name, b in pcsx.items() if b}
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pcsx, pc)),
+    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx)),
                        ("rpi-install.html", render_rpi_install(base_url, images)),
                        ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
@@ -1256,9 +1256,9 @@ def main():
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
     print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, "
-          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack, %d emulator builds" % (
+          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack" % (
         repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images),
-        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0", len(pcsx)))
+        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0"))
 
 
 if __name__ == "__main__":
