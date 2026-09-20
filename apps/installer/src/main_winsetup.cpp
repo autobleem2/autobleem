@@ -5,6 +5,8 @@
 // installer's; everything under the data folder (Documents\AutoBleem by default) is this program's.
 //
 //   AutoBleemWinSetup.exe [--root DIR] [--program DIR]        the window, the questions started from the options
+//   AutoBleemWinSetup.exe --run --root DIR [--program DIR]    the window, straight to the progress page - the NSIS
+//                                                             installer's wizard asked the questions already
 //   AutoBleemWinSetup.exe --quiet --root DIR [--program DIR]  no window, the lines on the console it came from:
 //       [--covers JUP] [--retroarch] [--bios] [--samples] [--update] [--repo URL]
 //       --covers names the cover databases to fetch (J, U, P - the default is all three; "" for none)
@@ -57,7 +59,8 @@ public:
 #endif
 
 int usage() {
-    cout << "USAGE: AutoBleemWinSetup [--quiet] [--root DIR] [--program DIR] [--covers JUP] [--retroarch] [--bios]\n"
+    cout << "USAGE: AutoBleemWinSetup [--quiet|--run] [--root DIR] [--program DIR] [--covers JUP] [--retroarch] "
+            "[--bios]\n"
             "                         [--samples] [--update] [--repo URL]"
          << endl;
     return EXIT_FAILURE;
@@ -66,7 +69,7 @@ int usage() {
 } // namespace
 
 int main(int argc, char *argv[]) {
-    bool quiet = false;
+    bool quiet = false, run = false;
     WindowsInstallOptions options;
     string covers = "JUP";
     for (int i = 1; i < argc; i++) {
@@ -79,6 +82,8 @@ int main(int argc, char *argv[]) {
         };
         if (arg == "--quiet")
             quiet = true;
+        else if (arg == "--run")
+            run = true;
         else if (arg == "--retroarch")
             options.retroarch = true;
         else if (arg == "--bios")
@@ -120,7 +125,7 @@ int main(int argc, char *argv[]) {
 
     if (!quiet) {
 #ifdef _WIN32
-        return runSetupWindow(options);
+        return runSetupWindow(options, run);
 #else
         cout << "no window on this platform - use --quiet --root <dir>" << endl;
         return usage();

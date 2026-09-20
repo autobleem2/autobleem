@@ -111,6 +111,7 @@ struct Window {
     State state;
     thread worker;
     bool progressPage = false;
+    bool autoStart = false;
 };
 
 wstring wide(const string &utf8) {
@@ -408,6 +409,10 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         layout(*w);
         showPage(*w, false);
         describeFolder(*w);
+        if (w->autoStart && w->info.exists) {
+            startInstall(*w);
+            SetTimer(hwnd, IdTimer, 100, nullptr);
+        }
         return 0;
     }
     case WM_PAINT: {
@@ -497,12 +502,13 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 //*******************************
 // runSetupWindow
 //*******************************
-int runSetupWindow(const WindowsInstallOptions &defaults) {
+int runSetupWindow(const WindowsInstallOptions &defaults, bool autoStart) {
     INITCOMMONCONTROLSEX icc = {sizeof(icc), ICC_PROGRESS_CLASS | ICC_STANDARD_CLASSES};
     InitCommonControlsEx(&icc);
     CoInitialize(nullptr);
     Window w;
     w.defaults = defaults;
+    w.autoStart = autoStart;
     Gdiplus::GdiplusStartupInput gdiplusInput;
     Gdiplus::GdiplusStartup(&w.gdiplusToken, &gdiplusInput, nullptr);
     w.hero = loadHero();
@@ -516,9 +522,10 @@ int runSetupWindow(const WindowsInstallOptions &defaults) {
     wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     RegisterClassA(&wc);
 
-    HWND hwnd = CreateWindowExW(0, L"AutoBleemWinSetup", L"AutoBleem 2 - setup",
-                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT,
-                                Width, 600, nullptr, nullptr, wc.hInstance, &w);
+    HWND hwnd =
+        CreateWindowExW(0, L"AutoBleemWinSetup", autoStart ? L"AutoBleem 2 - setting up" : L"AutoBleem 2 - setup",
+                        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Width,
+                        600, nullptr, nullptr, wc.hInstance, &w);
     if (!hwnd) {
         PLOG_ERROR << "CreateWindow failed: " << GetLastError();
         return 1;

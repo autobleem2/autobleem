@@ -219,8 +219,9 @@ Section "-Setup"
     DetailPrint "AutoBleemWinSetup --quiet --update$0"
     ExecWait '"$INSTDIR\${SETUP}" --quiet --update$0' $1
   ${Else}
-    DetailPrint "AutoBleemWinSetup$0"
-    ExecWait '"$INSTDIR\${SETUP}"$0' $1
+    ; the questions were this wizard's: the helper shows its progress page only
+    DetailPrint "AutoBleemWinSetup --run$0"
+    ExecWait '"$INSTDIR\${SETUP}" --run$0' $1
   ${EndIf}
   ${If} $Restart == 1
     Exec '"$INSTDIR\${LAUNCHER}"'

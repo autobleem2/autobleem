@@ -10,7 +10,8 @@
 #   rpi64    build_rpi64/   Raspberry Pi 64-bit (toolchains/rpi64) -> autobleem-rpi-arm64.tar.gz
 #   pcusb    build_pcusb/   the 32-bit PC USB stick (toolchains/pcusb, i386 Debian) -> autobleem-pcusb-i386.tar.gz;
 #                           its unit tests run too (i386 runs on the host)
-#   win      build_mingw/   Windows (toolchains/mingw) -> autobleem-win-<v>.zip + UpdateRoms-<v>.zip
+#   win      build_mingw/   Windows (toolchains/mingw) -> autobleem-win-<v>.zip + UpdateRoms-<v>.zip, and the
+#            product (build_mingw_product/, AB_TARGET=win) -> autobleem-win-product-<v>.zip + AutoBleemSetup-<v>.exe
 #   all      every one of the above, in that order
 #
 # pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64/pcusb from its own
@@ -236,6 +237,26 @@ build_win() {
     banner "win: package"
     dist_reset win
     bash tools/make_win_package.sh --build-dir build_mingw --out dist/win --version "$VERSION"
+
+    # the Windows product: the same toolchain with AB_TARGET=win (the full-screen GUI exe, the zero-argument
+    # start, the direct launches), its program folder with the two PS1 emulators (the site's win64 packages -
+    # the emulators are built on the PC, not here) and AutoBleemWinSetup, then the NSIS installer over it
+    banner "win: the product (build_mingw_product)"
+    configure build_mingw_product -DCMAKE_BUILD_TYPE=Release -DAB_ENABLE_CHD=ON -DAB_TARGET=win \
+        -DCMAKE_TOOLCHAIN_FILE=toolchains/mingw/MinGWtoolchain.cmake
+    ninja -C build_mingw_product -j "$JOBS"
+    file build_mingw_product/autobleem-gui.exe | grep -q 'PE32+ executable.*x86-64'
+    objdump -p build_mingw_product/autobleem-gui.exe | grep -q 'Subsystem.*Windows GUI'
+    bash tools/make_win_package.sh --build-dir build_mingw --product build_mingw_product --out dist/win --version "$VERSION"
+    if command -v makensis >/dev/null 2>&1; then
+        banner "win: the installer"
+        makensis -V2 -DVERSION="$VERSION" -DSTAGE="$PWD/build_mingw_product/package/AutoBleem" \
+            -DOUT="$PWD/dist/win/AutoBleemSetup-$VERSION.exe" -DICON="$PWD/src/win/autobleem.ico" \
+            installer/windows/autobleem.nsi
+        ls -la "dist/win/AutoBleemSetup-$VERSION.exe"
+    else
+        echo "    (no makensis - the installer is not built; the product zip is)"
+    fi
     dist_note win
 }
 
