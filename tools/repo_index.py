@@ -141,7 +141,16 @@ def file_entry(repo, base_url, path):
         "size": os.path.getsize(path),
         "sha256": sidecar_sha256(path),
         "url": base_url + "/" + rel,
+        "uploaded": uploaded_at(path),
     }
+
+
+def uploaded_at(path):
+    """When the file was published, UTC: the .sha256 sidecar's mtime - repo_publish.sh writes it as it
+    publishes (rsync -t keeps the package's own mtime, which is when it was built) - else the file's."""
+    stamp = path + ".sha256"
+    when = os.path.getmtime(stamp if os.path.isfile(stamp) else path)
+    return datetime.fromtimestamp(when, timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def data_files(directory):
@@ -605,6 +614,7 @@ td,th{text-align:left;padding:.45rem .6rem;border-bottom:1px solid rgba(80,200,2
 th{font-weight:300;color:var(--dim);font-size:.85rem;letter-spacing:.06em;text-transform:uppercase}
 tr:last-child td{border-bottom:0}
 td.size{white-space:nowrap;color:var(--dim);text-align:right}
+td.when{white-space:nowrap;color:var(--dim);font-size:.85em}
 a.dl{display:inline-block;padding:.25rem .7rem;border:1px solid var(--line);border-radius:4px;background:rgba(79,200,255,.08)}
 a.dl:hover{background:rgba(79,200,255,.2);text-decoration:none}
 code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;color:#fff;background:rgba(255,255,255,.07);padding:.05em .35em;border-radius:3px}
@@ -635,13 +645,16 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     e = html.escape
 
     def row(label, f, cls="dl"):
-        return "<tr><td>%s</td><td><a class=\"%s\" href=\"%s\">%s</a></td><td class=\"size\">%s</td></tr>" % (
-            e(label), cls, e(f["url"]), e(f["name"]), human(f["size"]))
+        return ("<tr><td>%s</td><td><a class=\"%s\" href=\"%s\">%s</a></td><td class=\"size\">%s</td>"
+                "<td class=\"when\">%s</td></tr>" % (
+                    e(label), cls, e(f["url"]), e(f["name"]), human(f["size"]), e(f.get("uploaded", ""))))
 
     def date_of(d):
         return "%s-%s-%s" % (d[:4], d[4:6], d[6:])
 
     def table(rows, head=("", "File", "")):
+        # every row ends with the upload time; the callers name the first three columns
+        head = tuple(head) + ("Uploaded",)
         return "<table><tr>%s</tr>%s</table>" % ("".join("<th>%s</th>" % h for h in head), "".join(rows))
 
     stable = [r for r in releases if not r["prerelease"]]
