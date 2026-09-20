@@ -53,6 +53,7 @@ KEEP_RAW=0               # --keep-raw
 VERSION=""               # --version
 DRY_RUN=0
 NO_AMD64_KERNEL=0        # --no-amd64-kernel: leave the 64-bit kernel out (BIOS and 32-bit UEFI machines only)
+REUSE_ROOT=0             # --reuse-root: keep the work dir's root.tar from the last run (skips mmdebstrap, ~8 min)
 
 # what the root gets. The launcher's own runtime (SDL2, Mesa's GL/EGL/GLES + GBM for kmsdrm, libpng),
 # plymouth for the splash, exfatprogs/parted/e2fsprogs for install.sh's partitioning, NetworkManager +
@@ -62,14 +63,15 @@ NO_AMD64_KERNEL=0        # --no-amd64-kernel: leave the 64-bit kernel out (BIOS 
 # device. What install.sh apt-gets on the first boot is here already, so that boot is short.
 PACKAGES_COMMON="initramfs-tools systemd systemd-sysv systemd-timesyncd udev dbus kmod sudo locales
   console-setup kbd less nano python3 network-manager wpasupplicant iw wireless-regdb rfkill iproute2
-  ca-certificates curl wget unzip xz-utils parted exfatprogs e2fsprogs dosfstools util-linux alsa-utils
+  ca-certificates curl wget unzip xz-utils parted exfatprogs e2fsprogs dosfstools util-linux fdisk alsa-utils
   plymouth libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 libpng16-16 zlib1g
   libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1 mesa-va-drivers grub2-common grub-pc-bin grub-efi-ia32-bin
   grub-efi-amd64-bin openssh-server pciutils usbutils firmware-linux-free firmware-misc-nonfree
   firmware-amd-graphics firmware-iwlwifi firmware-atheros firmware-realtek firmware-brcm80211
-  firmware-intel-sound firmware-sof-signed fontconfig-config fonts-dejavu-core zstd"
-# (fontconfig-config: plymouth's initramfs hook copies /etc/fonts/fonts.conf and fails without it; zstd:
-# the initramfs compressor initramfs-tools prefers, gzip otherwise)
+  firmware-intel-sound firmware-sof-signed fontconfig fonts-dejavu-core zstd"
+# (fontconfig: plymouth's initramfs hook copies /etc/fonts/fonts.conf and runs fc-cache, and fails without them; zstd:
+# the initramfs compressor initramfs-tools prefers, gzip otherwise; fdisk: Bookworm's util-linux no longer carries
+# sfdisk, which install.sh --grow-root runs - the first PC-stick boot stopped at "command not found")
 PACKAGES_KERNELS="linux-image-686-pae linux-image-686"
 PACKAGES_AMD64_KERNEL="linux-image-amd64:amd64"   # a foreign-architecture package (see the header)
 
@@ -106,6 +108,9 @@ Usage: tools/make_pc_image.sh --package PATH [options]
                        grows it to autobleem.txt's root_gib and makes the data partition of the rest)
   --esp-size SIZE      the EFI system partition (default: 256M)
   --no-amd64-kernel    no 64-bit kernel: BIOS and 32-bit-UEFI machines only, ~80 MB less (see the header)
+  --reuse-root         take the work directory's root.tar from the last run instead of running mmdebstrap
+                       again (the package inside it is the last run's too - for iterating on the image
+                       assembly, not for a release)
   --xz-level N         xz preset for the output, 0-9 (default 4, or AB_XZ_LEVEL)
   --keep-raw           keep the decompressed .img after recompressing
   --version V          name the image autobleem-V-pcusb-i386.img.xz (default: the package's VERSION file)
@@ -130,6 +135,7 @@ parse_args() {
             --root-size) ROOT_SIZE="${2:?--root-size needs a size}"; shift 2 ;;
             --esp-size)  ESP_SIZE="${2:?--esp-size needs a size}"; shift 2 ;;
             --no-amd64-kernel) NO_AMD64_KERNEL=1; shift ;;
+            --reuse-root) REUSE_ROOT=1; shift ;;
             --xz-level)  XZ_LEVEL="${2:?--xz-level needs 0-9}"; shift 2 ;;
             --keep-raw)  KEEP_RAW=1; shift ;;
             --version)   VERSION="${2:?--version needs a value}"; shift 2 ;;
@@ -256,6 +262,17 @@ EOF
     # no WiFi country yet: the first boot asks, and keeps its answer here
     : >"$s/etc/modprobe.d/cfg80211.conf"
 
+    # the image ships no ssh host keys (every stick would share them), and Debian's ssh.service checks the
+    # config (sshd -t) before it starts - which fails without keys, five times over, on the boot screen.
+    # A drop-in makes the keys first; ssh-keygen -A is a no-op once they exist.
+    mkdir -p "$s/etc/systemd/system/ssh.service.d"
+    cat >"$s/etc/systemd/system/ssh.service.d/autobleem-host-keys.conf" <<'EOF'
+[Service]
+ExecStartPre=
+ExecStartPre=/usr/bin/ssh-keygen -A
+ExecStartPre=/usr/sbin/sshd -t
+EOF
+
     # initramfs-tools' own fsck hook reads the type of the *mounted* root, which in the build chroot is the
     # host's - so the ext4 fsck goes in by a hook of ours, and the root is checked at boot as on any Debian
     mkdir -p "$s/etc/initramfs-tools/hooks"
@@ -334,6 +351,10 @@ EOF
         printf '    would run: mmdebstrap --mode=%s --architectures=%s --variant=minbase --include=... %s %s\n' "$mmmode" "$arches" "$RELEASE" "$ROOT_TAR"
         return 0
     fi
+    if [ "$REUSE_ROOT" -eq 1 ] && [ -f "$ROOT_TAR" ]; then
+        warn "--reuse-root: taking $ROOT_TAR from the last run (mmdebstrap skipped)"
+        return 0
+    fi
     log "Building the Debian $RELEASE i386 root with mmdebstrap (--mode=$mmmode, $(echo $packages | wc -w) packages)"
     rm -f "$ROOT_TAR"
     # the kernel packages' postinst runs update-grub, which cannot probe a device inside a chroot and would
@@ -354,11 +375,12 @@ EOF
 }
 
 #*******************************
-# make_root_fs (rootless)
+# make_root_fs
 #*******************************
-# ext4 from the tar without mounting: mke2fs -d takes a tar since e2fsprogs 1.47.1 (the Docker image
-# builds that; Bookworm's own 1.47.0 takes only a directory - hence the tar is unpacked first where the
-# host's e2fsprogs is older, as root inside a fresh user namespace so the owners survive).
+# ext4 from the tar without mounting anything: the tar is unpacked (as root; or inside a user namespace
+# where we are root - the owners are kept either way) and mke2fs -d takes the directory. (mke2fs since
+# 1.47.1 reads a tar directly too, but through libarchive in the C locale - it refuses the first non-ASCII
+# file name, and Debian's packages have a few - so the directory it is.)
 make_root_fs() {
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '    would make %s (ext4, %s) from %s\n' "$ROOT_FS" "$ROOT_SIZE" "$ROOT_TAR"
@@ -366,22 +388,16 @@ make_root_fs() {
     fi
     log "Making the ext4 root ($ROOT_SIZE) from the tarball"
     rm -f "$ROOT_FS"
-    if mke2fs -V 2>&1 | grep -qE 'mke2fs 1\.(4[7-9]\.[1-9]|4[8-9]|[5-9])'; then
-        run mke2fs -q -F -t ext4 -L AUTOBLEEM_ROOT -E root_owner=0:0 -d "$ROOT_TAR" "$ROOT_FS" "$ROOT_SIZE"
+    local dir="$WORK_DIR/rootdir"
+    rm -rf "$dir"; mkdir -p "$dir"
+    local cmd="tar -xf '$ROOT_TAR' -C '$dir' && mke2fs -q -F -t ext4 -L AUTOBLEEM_ROOT -d '$dir' '$ROOT_FS' '$ROOT_SIZE'"
+    if [ "$(id -u)" -eq 0 ]; then
+        run sh -c "$cmd" || die "mke2fs -d failed"
     else
-        # unpack (as root, or inside a user namespace where we are root - the tar's owners are kept either
-        # way), then -d the directory
-        local dir="$WORK_DIR/rootdir"
-        rm -rf "$dir"; mkdir -p "$dir"
-        local cmd="tar -xf '$ROOT_TAR' -C '$dir' && mke2fs -q -F -t ext4 -L AUTOBLEEM_ROOT -d '$dir' '$ROOT_FS' '$ROOT_SIZE'"
-        if [ "$(id -u)" -eq 0 ]; then
-            run sh -c "$cmd" || die "mke2fs -d failed"
-        else
-            run unshare --map-root-user --map-users=auto --map-groups=auto sh -c "$cmd" \
-                || die "mke2fs -d failed (the host's e2fsprogs is older than 1.47.1 and the unpack needed a user namespace)"
-        fi
-        rm -rf "$dir"
+        run unshare --map-root-user --map-users=auto --map-groups=auto sh -c "$cmd" \
+            || die "mke2fs -d failed (the unpack needs a user namespace when not root)"
     fi
+    rm -rf "$dir"
     run e2fsck -fy "$ROOT_FS" >/dev/null || true
 }
 
@@ -421,7 +437,7 @@ make_esp() {
     run mmd -i "$ESP_IMG" ::/EFI ::/EFI/BOOT
     run mcopy -i "$ESP_IMG" "$GRUB_DIR/BOOTIA32.EFI" ::/EFI/BOOT/BOOTIA32.EFI
     run mcopy -i "$ESP_IMG" "$GRUB_DIR/BOOTX64.EFI" ::/EFI/BOOT/BOOTX64.EFI
-    run mcopy -i "$ESP_IMG" "$REPO_DIR/payload_linux/system/autobleem.txt" ::/autobleem.txt
+    run mcopy -i "$ESP_IMG" "$REPO_DIR/payload_linux/system/autobleem-pc.txt" ::/autobleem.txt
 }
 
 #*******************************

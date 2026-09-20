@@ -32,13 +32,15 @@ case "$(basename "$PACKAGE")" in
     *)                PLATFORM=rpi;   UNPACK_DIR="$IMAGE_DIR/autobleem-rpi" ;;
 esac
 # where autobleem.txt is: a Pi's firmware partition, the PC image's ESP (written there by the image builder
-# from payload_linux/system/autobleem.txt; editable from any PC, both are FAT)
+# from payload_linux/system/autobleem.txt or autobleem-pc.txt; editable from any PC, both are FAT)
 if [ "$PLATFORM" = pcusb ]; then
     BOOT_DIR=/boot/efi
 else
     BOOT_DIR=/boot/firmware
 fi
 OPTIONS_FILE="$BOOT_DIR/autobleem.txt"
+# how the dialogs name this computer - a PC user must never read "Pi"
+if [ "$PLATFORM" = pcusb ]; then MACHINE="this PC"; else MACHINE="this Pi"; fi
 INSTALL_LOG=/var/log/autobleem-firstboot-install.log   # install.sh's output, for a look after the fact (ssh)
 
 # the script's stdout is tty1; the journal only gets what log() sends it
@@ -336,7 +338,7 @@ interactive_network() {
     log "No network connection."
     if has_wifi_device; then
         cc="$(wifi_country_default)"
-        choice="$(ui_input "WiFi country" "Two letters, e.g. GB, PL, US - Raspberry Pi OS keeps WiFi blocked until one is set." \
+        choice="$(ui_input "WiFi country" "Two letters, e.g. GB, PL, US - WiFi stays blocked until one is set." \
             ${cc:+--default "$cc"})"
         cc="${choice:-$cc}"
         cc="$(echo "$cc" | tr 'a-z' 'A-Z' | tr -cd 'A-Z')"
@@ -348,7 +350,7 @@ interactive_network() {
             nmcli radio wifi on >/dev/null 2>&1 || true
         fi
     else
-        ui_message "No WiFi adapter found" "Ethernet is the only option on this Pi." --wait 3
+        ui_message "No WiFi adapter found" "Ethernet is the only option on $MACHINE." --wait 3
     fi
 
     while :; do
@@ -480,11 +482,15 @@ if ! ensure_network; then
     exit 1
 fi
 
-ui_message "Setting the clock..." "A Pi has no battery clock; the time comes from the network (NTP)."
-if wait_for_clock; then
-    log "Clock synchronised: $(date)"
-else
-    warn "clock not synchronised yet ($(date)) - carrying on"
+# a Pi has no battery clock: its time is the image's build date until NTP sets it, and apt refuses
+# repository metadata "from the future". A PC has an RTC - nothing to wait for there.
+if [ "$PLATFORM" = rpi ]; then
+    ui_message "Setting the clock..." "A Pi has no battery clock; the time comes from the network (NTP)."
+    if wait_for_clock; then
+        log "Clock synchronised: $(date)"
+    else
+        warn "clock not synchronised yet ($(date)) - carrying on"
+    fi
 fi
 
 ask_retroarch
@@ -512,8 +518,13 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
         log "Growing the root filesystem to ${root_gib} GiB before unpacking"
         ui_message "Preparing the system partition..." "Growing it to ${root_gib} GiB."
         if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only 2>&1 | tee -a "$INSTALL_LOG"; then
+            # the dialog left the screen in graphics mode: text back, or the message is never seen (the
+            # first PC-stick boot sat on "Preparing the system partition" with the reason only in the log)
+            ui_message "Setup failed" "Could not grow the system partition. It will try again on the next boot." \
+                "The details are in $INSTALL_LOG (log in on another console)." --wait 8
+            text_mode
             warn "could not grow the root filesystem - will retry next boot. Log: $INSTALL_LOG"
-            sleep 5
+            sleep 3
             give_tty_back
             exit 1
         fi

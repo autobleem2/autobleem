@@ -26,6 +26,8 @@ PLATFORM_DIR=""                 # the download repository's folder for this plat
 ARCH=""                         # armhf | arm64 | i386, set by preflight() from dpkg --print-architecture
 RA_ARCH=""                      # same as buildbot.libretro.com spells it (aarch64, x86), for download_retroarch_content()
 BOOT_DIR=""                     # a Pi's firmware partition (/boot/firmware) or a PC's ESP (/boot/efi), set by preflight()
+MACHINE="the machine"           # how the messages name this computer: "the Pi" / "the PC" (detect_platform)
+MEDIUM="the disk"               # ...and what it boots from: "the card" / "the stick" - a PC user must never read "Pi"
 DATA_LABEL="AUTOBLEEM"          # the exFAT partition's label - also how the README tells users to find it
 DATA_MOUNT="/media/autobleem"
 MIN_DATA_MIB=2048               # refuse to make a data partition smaller than this - it holds every game
@@ -257,6 +259,7 @@ detect_platform() {
             rpi|pcusb) log "Platform: $PLATFORM (--platform)" ;;
             *) die "--platform takes rpi or pcusb (got '$PLATFORM')" ;;
         esac
+        name_platform
         return 0
     fi
     if [ -r /proc/device-tree/model ] && grep -qi 'raspberry' /proc/device-tree/model; then
@@ -271,6 +274,15 @@ detect_platform() {
     else
         die "cannot tell what this machine is (no /proc/device-tree/model, not x86) - say --platform rpi|pcusb"
     fi
+    name_platform
+}
+
+# the words the messages use for this computer and what it boots from
+name_platform() {
+    case "$PLATFORM" in
+        rpi)   MACHINE="the Pi"; MEDIUM="the card" ;;
+        pcusb) MACHINE="the PC"; MEDIUM="the stick" ;;
+    esac
 }
 
 # a Pi: the firmware partition holds cmdline.txt/config.txt, and the card is whatever it is on
@@ -490,7 +502,7 @@ install_retroarch_source() {
         log "RetroArch $tag is already built and installed"
         return 0
     fi
-    log "RetroArch: building $tag from source (this takes a while on a Pi)"
+    log "RetroArch: building $tag from source (this takes a while on $MACHINE)"
 
     if [ "$DO_PACKAGES" -eq 1 ]; then
         # KMS/EGL/GLES output, udev pads, ALSA sound. No X11, no Wayland, no Qt, no ffmpeg recording. A PC's
@@ -1105,7 +1117,7 @@ shrink_root() {
     rootdev="$(findmnt -no SOURCE /)"
 
     log "Staging an offline shrink of $rootdev to ${gib}GiB"
-    warn "This repartitions $DISK on the next boot. If it goes wrong the card may not boot."
+    warn "This repartitions $DISK on the next boot. If it goes wrong $MEDIUM may not boot."
     warn "Back up anything you care about first."
     confirm "Shrink $rootdev to ${gib}GiB and reboot now?"
 
@@ -1134,7 +1146,7 @@ shrink_root() {
     fi
 
     log "Rebooting to do the shrink (a few minutes - the console shows autobleem-shrink: lines)."
-    log "Run this installer again when the Pi comes back up."
+    log "Run this installer again when $MACHINE comes back up."
     run sync
     run reboot
     exit 0
@@ -1177,7 +1189,7 @@ grow_root() {
     target_s=$((gib * 1024 * 1024 * 2))
     max_s=$((disk_s - start_s - MIN_DATA_MIB * 2048))
     if [ "$target_s" -gt "$max_s" ]; then
-        warn "the card is too small for a ${gib} GiB root plus a ${MIN_DATA_MIB} MiB data partition - growing the root to $((max_s / 2048)) MiB instead"
+        warn "$MEDIUM is too small for a ${gib} GiB root plus a ${MIN_DATA_MIB} MiB data partition - growing the root to $((max_s / 2048)) MiB instead"
         target_s=$max_s
     fi
     if [ "$target_s" -le "$size_s" ]; then
@@ -1690,7 +1702,7 @@ summary() {
   Logs             $DATA_MOUNT/System/Logs/
   Themes           $DATA_MOUNT/Themes/
 
-  The $DATA_LABEL partition is exFAT, so you can pull the card and drop games on it from Windows, macOS or
+  The $DATA_LABEL partition is exFAT, so you can pull $MEDIUM and drop games on it from Windows, macOS or
   Linux. Windows shows it as a second drive next to the small boot partition (Windows 10 1903 and newer).
 
   Start it now without rebooting:   sudo systemctl start autobleem
