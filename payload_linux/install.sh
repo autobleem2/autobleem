@@ -391,8 +391,16 @@ install_retroarch() {
             ;&
         source)
             install_retroarch_source || {
-                warn "building RetroArch failed - installing the distribution's package instead"
-                install_retroarch_apt
+                if [ "$PLATFORM" = pcusb ]; then
+                    # Debian's retroarch package is the desktop build - Qt and GTK behind it, ~400 MB the
+                    # appliance never uses (the owner's call, 2026-09-20): a PC stick that can reach neither
+                    # the site nor github.com goes without, and gets RetroArch on a later run
+                    warn "building RetroArch failed - going on without it (run the installer again to retry)"
+                    RETROARCH_MODE=none
+                else
+                    warn "building RetroArch failed - installing the distribution's package instead"
+                    install_retroarch_apt
+                fi
             }
             return 0 ;;
         *)
@@ -739,6 +747,8 @@ EOF
 # cheats, overlays and GLSL shaders. A few hundred MB; --no-downloads skips all of it.
 download_retroarch_content() {
     [ "$DO_DOWNLOADS" -eq 1 ] || { log "skipping the RetroArch cores and assets (--no-downloads)"; return 0; }
+    # nothing would run them (--retroarch none, or a build that failed and was given up on)
+    [ "$RETROARCH_MODE" != none ] || { log "no RetroArch here - skipping its cores and assets"; return 0; }
 
     # one tarball from AutoBleem's download repository first (ci/build_cores.sh packs the same cores and
     # bundles); the per-core download from buildbot below is the fallback, and what a re-run uses to fill in
