@@ -111,6 +111,10 @@ void AutoBleem::launchGame() {
 
     gui_->display(true);
     session_.resumingGui = true; // the launcher fades back in over the game that just ended
+
+    // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
+    // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
+    unlink("/tmp/.abload");
 }
 
 //*******************************
