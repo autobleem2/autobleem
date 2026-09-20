@@ -1531,6 +1531,15 @@ Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr 
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
 `backup_internal.sh`.
 
+**`AB_SHOT=<file%d.bmp>`** (2026-09-20) has the launcher save the frame it presents every 3 s - the way to look
+at a Pi's screen over ssh (a systemd drop-in `Environment=AB_SHOT=/tmp/ab%%d.bmp` on `autobleem.service`,
+removed afterwards: 8 MB a frame into tmpfs) or at a PC whose screen is in use; pcsx-abnxt has the same as
+`PLAT_SDL2_SHOT`. `win_drive.ps1` had posted its keys to the process's *console* window all along (the
+`GetWindowText`/`GetClassName` imports were not `CharSet.Unicode`, so every name came back one letter long
+and the `SDL_app` window was never matched) - fixed the same day; the resume-slot picker on the PC needs a
+clean return from a game (`filename.txt` in the game's `!SaveStates`), which the splash runner simulates when
+the file is there.
+
 **Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
 `X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
 `Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
@@ -1655,7 +1664,8 @@ the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMe
 and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
-its tile. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-slot picker writes "Slot n" on its
+2.7x copy of the icon - unset = the original spot, so older themes are untouched. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
