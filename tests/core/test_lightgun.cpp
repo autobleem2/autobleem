@@ -9,6 +9,7 @@
 #include "../support/temp_dir.h"
 
 #include "core/services/config.h"
+#include "core/services/environment.h"
 #include "core/services/game_query.h"
 #include "core/services/game_settings.h"
 #include "core/services/lightgun.h"
@@ -176,7 +177,12 @@ TEST_CASE("the Lightgun set is every flagged PS1 and RetroArch game, by title; e
     CHECK(query.gamesFor(selection).empty()); // no LightgunService yet
 
     query.setLightguns(&lightguns);
+#ifdef AB_HAS_INTERNAL_GAMES
     CHECK(lib.titlesOf(query.gamesFor(selection)) == vector<string>{"Point Blank", "Time Crisis", "Virtua Cop"});
+#else
+    // an appliance shows no internal game (Point Blank is the built-in one here)
+    CHECK(lib.titlesOf(query.gamesFor(selection)) == vector<string>{"Time Crisis", "Virtua Cop"});
+#endif
 
     lib.tmp.writeFile("config.ini", "Origames=false\n");
     Config noInternal;

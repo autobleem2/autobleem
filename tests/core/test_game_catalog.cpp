@@ -7,6 +7,7 @@
 #include "../support/string_maker.h"
 
 #include "core/services/config.h"
+#include "core/services/environment.h"
 #include "core/services/game_catalog.h"
 #include "core/services/game_query.h"
 
@@ -133,9 +134,15 @@ TEST_CASE("internal games share the one history ranking with USB games") {
     lib.play("Jumping Flash");
     lib.play("Tekken 3");
 
+#ifdef AB_HAS_INTERNAL_GAMES
     CHECK(lib.historyOrder() == vector<string>{"Tekken 3", "Jumping Flash"});
     // if internal games were left out of the renumbering, both would still claim rank 1
     CHECK(lib.historyRanks() == vector<int>{1, 2});
+#else
+    // an appliance ranks the internal game the same way but never shows it (GameQueryService)
+    CHECK(lib.historyOrder() == vector<string>{"Tekken 3"});
+    CHECK(lib.historyRanks() == vector<int>{1});
+#endif
 }
 
 TEST_CASE("the history stops at HistoryLimit games and the oldest drops off") {
