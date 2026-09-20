@@ -20,6 +20,7 @@
 #                                                                              -> samples/ (newest date kept)
 #   tools/repo_publish.sh pcsx r26-20-gb9801962 ../pcsx-abnxt/dist/packages/*   -> emu/pcsx-abnxt/<version>/ (the pcsx-abnxt
 #                                                                                 repository's tools/make_packages.sh; newest kept)
+#   tools/repo_publish.sh pcsx-ab 20260920-fc8c992 ../pcsx-ab2/dist/packages/*  -> emu/pcsx-ab/<version>/ (the same, the classic emulator)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
@@ -41,7 +42,7 @@ AB_REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"
 LOCAL=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-usage() { sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -66,6 +67,7 @@ case "$KIND" in
     psc-bios)  [ $# -ge 1 ] || usage 1; DEST="psc/bios" ;;
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     pcsx)      [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-abnxt/$VERSION" ;;
+    pcsx-ab)   [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-ab/$VERSION" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;
     index)     DEST="" ;;

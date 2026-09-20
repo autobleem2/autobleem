@@ -19,9 +19,8 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
                                        RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
-    emu/pcsx-abnxt/latest.json         the newest pcsx-abnxt build, one package per platform (emu/pcsx-abnxt/<version>/,
-                                       the pcsx-abnxt repository's tools/make_packages.sh) - a development build until
-                                       it replaces pcsx-ab in the releases
+    emu/pcsx-ab/latest.json            the newest build of each emulator, one package per platform (emu/<name>/<version>/,
+    emu/pcsx-abnxt/latest.json         each repository's tools/make_packages.sh) - the classic pcsx-ab and the next one
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
@@ -47,7 +46,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 23
+INDEX_VERSION = 25
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -71,7 +70,19 @@ PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
-PCSX_RE = re.compile(r"^pcsx-abnxt-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|win64)\.(tar\.gz|zip)$")
+# the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
+PCSX_RE = re.compile(r"^(?P<name>pcsx-ab|pcsx-abnxt)-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|win64)\.(tar\.gz|zip)$")
+EMULATORS = (
+    ("pcsx-ab", "pcsx-ab, the classic emulator",
+     "The PS1 emulator AutoBleem has always shipped (<code>Autobleem/bin/emu/</code>): PCSX-ReARMed as the console's "
+     "firmware took it in 2017, with Sony's and AutoBleem's additions "
+     "(<a href=\"https://github.com/autobleem/pcsx-ab2\">github.com/autobleem/pcsx-ab2</a>)."),
+    ("pcsx-abnxt", "pcsx-abnxt, the next emulator",
+     "The PS1 emulator that replaces pcsx-ab: upstream PCSX-ReARMed as it is today (r26) with the console's "
+     "front buttons, the resume points, the in-game menu and the filters on top "
+     "(<a href=\"https://github.com/autobleem/pcsx-abnxt\">github.com/autobleem/pcsx-abnxt</a>). The launcher's "
+     "Options -> \"PS1 Emulator\" picks it (<code>Autobleem/bin/emunxt/</code>)."),
+)
 PCSX_PLATFORMS = (("psc", "PlayStation Classic"), ("rpi-armhf", "Raspberry Pi, 32-bit OS"),
                   ("rpi-arm64", "Raspberry Pi, 64-bit OS"), ("win64", "Windows"))
 
@@ -480,18 +491,22 @@ def index_images(repo, base_url):
 # pcsx-abnxt, the next emulator
 #*******************************
 def pcsx_version_key(version):
-    """r26-20-gb9801962 (git describe: upstream's tag, our commits past it, the commit) -> (26, 20); a
-    bare r26 -> (26, 0)."""
+    """pcsx-abnxt's r26-20-gb9801962 (git describe: upstream's tag, our commits past it, the commit) -> (26, 20),
+    a bare r26 -> (26, 0); pcsx-ab's 20260920-fc8c992 (the date and the commit - that repository has no
+    tags) -> (20260920, 0)."""
     m = re.match(r"^r(\d+)(?:-(\d+)-g[0-9a-f]+)?", version)
     if not m:
-        return (0, 0, version)
+        m = re.match(r"^(\d{8})-[0-9a-f]+$", version)
+        if not m:
+            return (0, 0, version)
+        return (int(m.group(1)), 0, version)
     return (int(m.group(1)), int(m.group(2) or 0), version)
 
 
-def index_pcsx(repo, base_url):
-    """emu/pcsx-abnxt/<version>/pcsx-abnxt-<version>-<platform>.tar.gz|zip (+ pcsx-abnxt-<version>.json) - the
-    newest version kept, the rest deleted, latest.json = the newest."""
-    root = os.path.join(repo, "emu", "pcsx-abnxt")
+def index_pcsx(repo, base_url, name="pcsx-abnxt"):
+    """emu/<name>/<version>/<name>-<version>-<platform>.tar.gz|zip (+ <name>-<version>.json), name = pcsx-ab or
+    pcsx-abnxt - the newest version kept, the rest deleted, latest.json = the newest."""
+    root = os.path.join(repo, "emu", name)
     builds = {}  # version -> {"files": {plat: entry}, "manifest": url}
     if os.path.isdir(root):
         for version in os.listdir(root):
@@ -500,11 +515,11 @@ def index_pcsx(repo, base_url):
                 continue
             for path in data_files(folder):
                 m = PCSX_RE.match(os.path.basename(path))
-                if m and m.group("version") == version:
+                if m and m.group("name") == name and m.group("version") == version:
                     builds.setdefault(version, {"files": {}})["files"][m.group("plat")] = file_entry(repo, base_url, path)
-            manifest = os.path.join(folder, "pcsx-abnxt-%s.json" % version)
+            manifest = os.path.join(folder, "%s-%s.json" % (name, version))
             if version in builds and os.path.isfile(manifest):
-                builds[version]["manifest"] = base_url + "/emu/pcsx-abnxt/%s/pcsx-abnxt-%s.json" % (version, version)
+                builds[version]["manifest"] = base_url + "/emu/%s/%s/%s-%s.json" % (name, version, name, version)
                 try:
                     with open(manifest, encoding="utf-8") as f:
                         builds[version]["note"] = json.load(f).get("note", "")
@@ -512,7 +527,7 @@ def index_pcsx(repo, base_url):
                     pass
     if builds:
         newest = sorted(builds, key=pcsx_version_key)[-1]
-        prune([os.path.join(root, v) for v in builds if v != newest], [], "pcsx-abnxt build")
+        prune([os.path.join(root, v) for v in builds if v != newest], [], name + " build")
         builds = {newest: builds[newest]}
         latest = {"version": newest}
         latest.update(builds[newest])
@@ -817,17 +832,17 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     # ---- shared build inputs ----
     if dbs or samples or pcsx:
         out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
-    if pcsx:
-        version = sorted(pcsx, key=pcsx_version_key)[-1]
-        b = pcsx[version]
-        out.append("<div class=\"panel inputs\"><h2>pcsx-abnxt, the next emulator</h2>"
-                   "<p>The PS1 emulator that replaces pcsx-ab: upstream PCSX-ReARMed as it is today (r26) with the "
-                   "console's front buttons, the resume points, the in-game menu and the filters on top "
-                   "(<a href=\"https://github.com/autobleem/pcsx-abnxt\">github.com/autobleem/pcsx-abnxt</a>). "
-                   "A development build: <b>%s</b>. Each package unpacks to <code>pcsx-ab</code> + <code>plugins/</code> "
-                   "and replaces the same files in <code>Autobleem/bin/emu/</code> "
-                   "(<a href=\"/emu/pcsx-abnxt/latest.json\">latest.json</a>%s).</p>"
-                   % (e(b.get("note") or "not yet run on the console or a Pi"),
+    for name, heading, blurb in EMULATORS:
+        builds_of = (pcsx or {}).get(name)
+        if not builds_of:
+            continue
+        version = sorted(builds_of, key=pcsx_version_key)[-1]
+        b = builds_of[version]
+        out.append("<div class=\"panel inputs\"><h2>%s</h2>"
+                   "<p>%s Build: <b>%s</b>. Each package unpacks to <code>pcsx-ab</code> + <code>plugins/</code> "
+                   "in the layout the launch scripts expect "
+                   "(<a href=\"/emu/%s/latest.json\">latest.json</a>%s).</p>"
+                   % (e(heading), blurb, e(b.get("note") or version), e(name),
                       ", <a href=\"%s\">the manifest</a>" % e(b["manifest"]) if b.get("manifest") else ""))
         rows = [row(title, b["files"][plat]) for plat, title in PCSX_PLATFORMS if plat in b["files"]]
         out.append("<h3>%s</h3>" % e(version) + table(rows, ("Platform", "File", "")) + "</div>")
@@ -1042,14 +1057,15 @@ def main():
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
-    pcsx = index_pcsx(repo, base_url)
+    pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
+    pcsx = {name: b for name, b in pcsx.items() if b}
     for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pcsx)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases, %s sample pack, %d pcsx-abnxt build" % (
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases, %s sample pack, %d emulator builds" % (
         repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images), len(dbs),
         "1" if samples else "0", len(pcsx)))
 
