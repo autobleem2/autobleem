@@ -93,10 +93,12 @@ void AutoBleem::launchGame() {
     }
 
     // a moment for the machine to settle before the window comes back: on the PSC the GPU frees the
-    // emulator's memory a little after the process is gone, and a RetroArch 1.22.2 session (its XMB alone
-    // holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at 300 ms
+    // emulator's memory a few seconds after the process is gone, and a RetroArch 1.22.2 session (its XMB
+    // alone holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at
+    // 300 ms and at 1 s (twice, after Quake; the third rebuild at ~4 s held), so 2 s here and the
+    // rebuild-on-loss in run() for the rest
     bool wasRetroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
-    usleep((wasRetroArch ? 1000 : 300) * 1000);
+    usleep((wasRetroArch ? 2000 : 300) * 1000);
 
     gui_->input().probePads();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
