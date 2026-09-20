@@ -41,12 +41,13 @@ struct UpdateInfo {
 class UpdateService {
 public:
     struct Config {
-        std::string repoUrl;            // "https://autobleem.retromenele.pl"
-        std::string channel;            // "off" | "stable" | "latest"
-        std::string platformKey;        // the release.json files key: "rpi", "rpi64", "win", ...
-        std::string arch;               // the retroarch latest.json key: "armhf", "arm64"; "" = no RetroArch check
-        std::string installedVersion;   // "v2.0.0-pre0-df68521" (tag-hash) - what the site's version is compared to
-        std::string installedStable;    // "v2.0.0-pre0" - the tag alone, for the stable channel
+        std::string repoUrl;     // "https://autobleem.retromenele.pl"
+        std::string channel;     // "off" | "stable" | "latest"
+        std::string platformKey; // the release.json files key: "rpi", "rpi64", "win", ...
+        std::string arch;        // the retroarch latest.json key: "armhf", "arm64", "i386"; "" = no RetroArch check
+        std::string retroarchCatalog; // that latest.json, relative to repoUrl ("rpi/retroarch/latest.json"); "" = none
+        std::string installedVersion; // "v2.0.0-pre0-df68521" (tag-hash) - what the site's version is compared to
+        std::string installedStable;  // "v2.0.0-pre0" - the tag alone, for the stable channel
         std::string installedRetroArch; // "" = RetroArch not installed (no check)
         std::string fetchCommand;       // the platform's download command, %u %o (short timeout is fine)
         std::string downloadCommand;    // the same without a timeout, for the tarballs

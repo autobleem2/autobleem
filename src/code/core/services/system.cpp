@@ -41,12 +41,12 @@ string floatToString(float value, int precision) {
 // console's power button all come here. sync() first, so the last log lines and any ini just written
 // reach the USB stick before the halt.
 void System::powerOff() {
-#ifdef AB_DEBUG_HOST
-    exit(0);
-#else
+#if defined(AB_PLATFORM_PSC) || defined(AB_APPLIANCE)
     System::execUnixCommand("shutdown -h now");
     sync();
     exit(0);
+#else
+    exit(0); // a dev host or a Windows PC: leaving the launcher is all "power off" means
 #endif
 }
 

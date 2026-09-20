@@ -27,7 +27,8 @@ function(ab_add_test name)
     # tests include app headers as "core/services/config.h", the way the app will once src/code is a root
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
     # tests/data: checked-in fixtures (the test disc images, see tests/data/generate_test_files.sh)
-    target_compile_definitions(${name} PRIVATE AB_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+    target_compile_definitions(${name} PRIVATE AB_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+                                               AB_RESOURCES_DIR="${CMAKE_SOURCE_DIR}/src/resources")
     target_link_libraries(${name} doctest_main ab_test_support ab_core ${AB_TEST_LIBS})
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
@@ -72,8 +73,8 @@ ab_add_test(test_tar_archive core/test_tar_archive.cpp)
 ab_add_test(test_update_catalog_packs core/test_update_catalog_packs.cpp)
 ab_add_test(test_harness core/test_env_fixture.cpp)
 
-# the console tools' suites (apps/), linking each tool's SDL-free core
-if (NOT AB_TARGET_RPI)
+# the console tools' suites (apps/), linking each tool's SDL-free core - built where the tools are
+if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
     ab_add_test(test_abflashkit_core apps/test_abflashkit_core.cpp LIBS abflashkit_core)
 endif()

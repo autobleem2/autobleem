@@ -311,17 +311,19 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   headers from `toolchains/rpi/sdl2-devkit/include` (copied from the MSYS2 SDL2 package - the public headers
   are arch-independent, and 2.32.10 vs the Pi's 2.32.4 is ABI-safe) and `IMPORTED_LOCATION` pointed straight
   at the versioned `.so`, which is what makes the missing symlinks irrelevant.
-- **`AB_PLATFORM_RPI`** (`core/services/environment.h`), set by the CMake option `AB_TARGET_RPI` which the
-  toolchain file forces on. A Pi is a *real* target, not an `AB_DEBUG_HOST`: it forks emulators and halts for
-  real. What it changes: `GameQueryService::showInternalGames()` is hard `false` and the "Show Internal Games"
-  row is gone from the Options menu (a Pi has no `/gaadata`); `backup_internal.sh` is not run. The new
-  `AB_ROOT_RELATIVE_LAYOUT` (debug host **or** Pi) is what now selects `setupEnvironment`'s "everything under
-  the root given on the command line" branch, which the Pi shares with the 1-arg debug mode.
+- **`AB_PLATFORM_RPI`** (`core/services/environment.h`), from `-DAB_TARGET=rpi` (the toolchain file forces
+  it; see "The platform model" under Build). A Pi is a *real* target, not an `AB_DEBUG_HOST`: it forks
+  emulators and halts for real. What `AB_APPLIANCE` (rpi or pcusb) changes: `GameQueryService::
+  showInternalGames()` is hard `false` and the "Show Internal Games" row is gone from the Options menu (no
+  `/gaadata`; `AB_HAS_INTERNAL_GAMES` is psc/dev only); `backup_internal.sh` is the console's alone.
+  `AB_ROOT_RELATIVE_LAYOUT` (everything but the console) is what selects `EnvironmentSetup`'s "everything
+  under the root given on the command line" branch, which the Pi shares with the 1-arg debug mode.
   `internal.db` is still *opened* on a Pi (it comes up empty) because `GameCatalogService`/
   `GameSettingsService` unconditionally expect the handle.
-- Root `CMakeLists.txt`'s `^arm` branch is PSC-specific (it overwrites `CMAKE_CXX_FLAGS` with
-  `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so `AB_TARGET_RPI` now
-  takes its own branch there. Without that the Pi build was getting armv8 code, which would SIGILL on a Pi 2.
+- Root `CMakeLists.txt`'s console branch is PSC-specific (it overwrites `CMAKE_CXX_FLAGS` with
+  `-march=armv8-a+simd` and adds `/opt/toolchain/armv8-sony-...` to the include path), so the appliances
+  (`rpi`, `pcusb`) take their own branch there, flags from the toolchain file. Without that the Pi build was
+  getting armv8 code, which would SIGILL on a Pi 2.
 - **Package**: `payload_rpi/` is a sibling of `payload/`, not inside it, and is laid out as the package the
   Pi unpacks: `install.sh` + `README.md` at the top, `system/` for the host-side files (systemd unit, the
   `autobleem-session.sh` loop that replaces `rc/selection.sh`, the two shrink-root initramfs pieces, the plymouth theme), and the data-partition
@@ -1197,6 +1199,32 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
 
 ## Build
 
+### The platform model (2026-09-20)
+
+One CMake cache string, **`AB_TARGET`** = `psc | rpi | pcusb | win | dev`, says what a build is for
+(empty: `psc` when cross-compiling for ARM, `dev` otherwise; the toolchain files force theirs; the old
+`AB_TARGET_RPI=ON` is a deprecated alias). Exactly one `AB_PLATFORM_<TARGET>` is defined from it, and
+`core/services/environment.h` derives the macros the sources actually test - each named for what it means,
+and **the sources never test the CPU or the OS** to tell targets apart (an i386 Linux build used to fall
+through `__x86_64__ || _WIN32` and compile as the console):
+
+| macro | targets | meaning |
+|---|---|---|
+| `AB_DEBUG_HOST` | dev | a development machine: the emulators are not forked (the splash runner), power off is `exit()`, free space is not measured, keyboard-as-pad, a 1280x720 window, the 1/2-arg roots (`make_win.sh`, `tools/win_drive.ps1`) |
+| `AB_APPLIANCE` | rpi, pcusb | forks and halts for real, no console tree behind it (the data partition on the command line), no built-in games, an update = `MENU_OPTION_UPDATE` for the session script to re-run the installer |
+| `AB_ROOT_RELATIVE_LAYOUT` | all but psc | every path from a root given on the command line (or found by the Windows product) instead of `/media` + `/usr/sony` |
+| `AB_HAS_INTERNAL_GAMES` | psc, dev | `/gaadata`'s games can be shown (`GameQueryService::showInternalGames`, the Options row) |
+
+`Env::platformName()` is `psc/rpi/pcusb/win/pc` and names `resources/platform/<name>.ini` - where a
+platform's *paths* differ (`PlatformConfig`; since 2026-09-20 also `retroarch_catalog`, the site's
+RetroArch listing for the update check - `rpi/retroarch/latest.json`, `pc/retroarch/latest.json` for the
+PC stick, empty on Windows; `launch_mode=script|direct` and `pcsx_dir` for the Windows product's direct
+launches; `core_extension` - `.dll` on Windows, what `CoreInfoTable` and the default PS1 core file use).
+`ABLEEM_EMBEDDED_TARGET` is on for psc/rpi/pcusb. `win` is the Windows product (the NSIS installer, a real
+target; `make_win.sh --product`), `pcusb` the 32-bit Debian PC stick - both coming (`docs/pc-targets-plan.md`).
+The other per-target switches: the console tools (`apps/pscbios`, `apps/abflashkit`) build for psc/dev, the PC
+programs (`apps/updateroms`, `apps/installer`) for dev/win, `AB_ONLINE_UPDATE` is off for psc.
+
 Six targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), **`ab_classic`** (2026-09-18: `app_base.*` and
 the game-agnostic part of `gui/` - Gui, ThemeAssets, TextRenderer, Fonts, AppAudio, the splash/confirm/
@@ -1306,9 +1334,9 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
   Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs).
-  Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. The x86/Windows/Pi
-  switch is the single macro `AB_DEBUG_HOST` (defined in `core/services/environment.h`) — use it, never
-  `__x86_64__` directly.
+  Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. A dev build is
+  `AB_TARGET=dev` -> `AB_DEBUG_HOST` (see "The platform model" below) - use that, never `__x86_64__` or
+  `_WIN32`, to mean "a development machine".
 - **`libchdr`** (`#include <libchdr/chd.h>`, link `chdr`) is vendored under `lib_ableem/third_party/libchdr/` -
   upstream libchdr at `8bba774` (2025-06-08), the snapshot AutoBleem-NG bundles, replacing the older libmamecd
   fork on 2026-09-18 because chdman's default **zstd** codec was missing there (a fresh CHD would not open).
@@ -1458,7 +1486,7 @@ defaults, which both the services and the screens need.
 | `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`, and - with RetroArch detected, `romScanEnabled()` - `ableem::RetroArchScanner` over the ROM folders with its own `CoreInfoTable`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread, has `RetroArchService` reload rewritten playlists, and returns a `ScanUpdate` (added/updated/removed games, `playlistsWritten`, progress, finished with the game and ROM counts). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce over both `games.fingerprint` and `roms.fingerprint`, checked every `ScanWatchInterval` when nothing was requested directly; `fingerprintsMatchDisk()` is the startup check. Owned by `App` (`app.scans()`, constructed with `&retroArch_`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
 | `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags, the `AB_DEBUG_HOST` macro, `platformName()` (`"psc"`/`"rpi"`/`"pc"` - the one place the build macros decide a path), `retroArchInstalled()` and `padMappingFiles()` (the `gamecontrollerdb.txt` list `Gui`'s constructor hands `Input::loadMappings()` - the kernel's `/etc/autobleem` one on the console, then the shipped one in the resources dir; **loaded since 2026-09-18** - until then nothing called `loadMappings` and the pscbios wizard's output was never read). All path getters live in the library (`getPathToKernelConfigDir()` is `""` off the console); extend `ableem::Environment` instead of adding new literal paths. |
-| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pc.ini`) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18), `download_command` (how the platform fetches a URL to a file, `%u`/`%o`, with its own timeout; empty = never online - the console; 2026-09-19, `Env::downloadCommand()`). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. Add per-platform paths here, never as `#ifdef AB_PLATFORM_RPI` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
+| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pcusb.ini`, `pc.ini`; `win.ini` to come) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18), `download_command` (how the platform fetches a URL to a file, `%u`/`%o`, with its own timeout; empty = never online - the console; 2026-09-19, `Env::downloadCommand()`). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. `retroarch_catalog`, `launch_mode`, `core_extension`, `pcsx_dir` (2026-09-20, see "The platform model"). Add per-platform paths here, never as `#ifdef AB_PLATFORM_*` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
 | `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
 | `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is `English text=Translated text` lines under a `#` header (since 2026-09-18; the old pairs-of-lines layout is still read when the first line is not a comment). **`tools/lang_tools.py`** keeps them in step: `extract` (English.txt from every `_("...")`), `update [--remove-obsolete]`, `validate` (run by `make_win.sh`), `compare <Lang>`, `convert`, `merge <dir>`. A key cannot contain `=` - decorate at render time (`".-= " + _("Testing") + " =-."`). Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
 | `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |

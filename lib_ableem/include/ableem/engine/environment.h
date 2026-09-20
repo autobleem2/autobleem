@@ -36,6 +36,9 @@ struct Environment {
     static void setRetroarchRomsDir(const std::string &path); // the other systems' ROMs; "" = usb:/RetroArch/roms
     static void setRetroarchBiosDir(const std::string &path); // RetroArch's system dir (the cores' BIOS files);
                                                               // "" = usb:/RetroArch/bios
+    // the cores' file extension: ".so" (the default), ".dll" on Windows - what a core is called next to its
+    // .info (CoreInfoTable), and what the default PS1 core file ends in
+    static void setRetroarchCoreExtension(const std::string &ext);
 
     //*******************************
     // paths
@@ -57,6 +60,7 @@ struct Environment {
     static std::string getPathToRetroarchStatesDir();
     static std::string getPathToPlayStationRdbFile(); // "Sony - PlayStation.rdb" in there, what MetadataLookup reads
     static std::string getPathToRetroarchCoreFile();
+    static const std::string &getRetroarchCoreExtension(); // ".so" unless setRetroarchCoreExtension() said otherwise
     static bool hasRetroBoot();                     // <retroarch>/retroboot exists - RetroBoot's tree is still there
     static std::string getPathToRetroarchRomsDir(); // usb:/RetroArch/roms unless setRetroarchRomsDir() said
                                                     // otherwise: a folder per system, named as RetroArch's

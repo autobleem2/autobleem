@@ -57,6 +57,15 @@ struct FakeSite {
     vector<string> commands;
     bool down = false;
 
+    // how many fetches of this URL the service made
+    int fetched(const string &url) const {
+        int n = 0;
+        for (const string &c : commands)
+            if (c.find(" " + url + " ") != string::npos)
+                n++;
+        return n;
+    }
+
     UpdateService::CommandRunner runner() {
         return [this](const string &commandLine) {
             commands.push_back(commandLine);
@@ -82,6 +91,7 @@ UpdateService::Config config(const TempDir &tmp, const string &channel = "latest
     c.channel = channel;
     c.platformKey = "rpi";
     c.arch = "armhf";
+    c.retroarchCatalog = "rpi/retroarch/latest.json";
     c.installedStable = "v2.0.0-pre0";
     c.installedVersion = "v2.0.0-pre0-83fe6d1";
     c.installedRetroArch = "v1.22.1";
@@ -213,6 +223,45 @@ TEST_CASE("UpdateService::compare: what counts as newer") {
     CHECK(UpdateService::channelFile("stable") == "releases/latest.json");
     CHECK(UpdateService::commandFor("curl -o \"%o\" \"%u\"", "http://x/y", "/tmp/out") ==
           "curl -o \"/tmp/out\" \"http://x/y\"");
+}
+
+TEST_CASE("UpdateService: RetroArch's catalog is wherever the platform says, or nowhere") {
+    TempDir tmp("update-catalog");
+    FakeSite site;
+    site.files["http://site/releases/unstable.json"] = ReleaseJson;
+    // the PC stick's builds are listed under pc/, keyed by its architecture
+    site.files["http://site/pc/retroarch/latest.json"] =
+        "{\"version\": \"v1.22.2\", \"i386\": {\"name\": \"retroarch-v1.22.2-i386.tar.gz\", \"size\": 3, "
+        "\"sha256\": \"RAX86\", \"url\": \"http://site/pc/retroarch/v1.22.2/retroarch-v1.22.2-i386.tar.gz\"}}";
+
+    SUBCASE("a pcusb build reads pc/retroarch/latest.json") {
+        UpdateService::Config c = config(tmp);
+        c.platformKey = "pcusb";
+        c.arch = "i386";
+        c.retroarchCatalog = "pc/retroarch/latest.json";
+        UpdateService service(site.runner());
+        service.configure(c);
+        service.startCheck(1000);
+        UpdateService::Status s = waitFor(service);
+        CHECK(s.phase == UpdateService::Phase::Checked);
+        CHECK(s.info.retroarchVersion == "v1.22.2");
+        CHECK(s.info.retroarch.sha256 == "RAX86");
+        CHECK(site.fetched("http://site/pc/retroarch/latest.json") == 1);
+        CHECK(site.fetched("http://site/rpi/retroarch/latest.json") == 0);
+    }
+
+    SUBCASE("no catalog (Windows: RetroArch updates itself) - no RetroArch check, AutoBleem's still made") {
+        UpdateService::Config c = config(tmp);
+        c.retroarchCatalog.clear();
+        UpdateService service(site.runner());
+        service.configure(c);
+        service.startCheck(1000);
+        UpdateService::Status s = waitFor(service);
+        CHECK(s.phase == UpdateService::Phase::Checked);
+        CHECK(s.info.autobleemVersion == "v2.0.0-pre0-df68521");
+        CHECK(s.info.retroarchVersion.empty());
+        CHECK(site.fetched("http://site/rpi/retroarch/latest.json") == 0);
+    }
 }
 
 TEST_CASE("UpdateService: the check against the site, and what the user's answers do") {

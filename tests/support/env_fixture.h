@@ -54,6 +54,8 @@ private:
         std::string retroarchRomsDir;
         std::string retroarchBiosDir;
         std::vector<std::string> retroArchBinaries;
+        std::string coreExtension, downloadCommand, repoUrl, updateDownloadCommand, retroArchCatalog, pcsxDir;
+        bool directLaunch = false;
     };
 
     static Roots capture() {
@@ -66,8 +68,8 @@ private:
             E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "bin"
                 ? std::string()
                 : E::getPathToRetroarchDir(),
-            E::getPathToRetroarchCoreFile() ==
-                    E::getPathToRetroarchDir() + ableem::sep + "cores/pcsx_rearmed_libretro.so"
+            E::getPathToRetroarchCoreFile() == E::getPathToRetroarchDir() + ableem::sep +
+                                                   "cores/pcsx_rearmed_libretro" + E::getRetroarchCoreExtension()
                 ? std::string()
                 : E::getPathToRetroarchCoreFile(),
             E::getPathToRetroarchRomsDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "roms"
@@ -76,7 +78,9 @@ private:
             E::getPathToRetroarchBiosDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "bios"
                 ? std::string()
                 : E::getPathToRetroarchBiosDir(),
-            ::Environment::retroArchBinaries()};
+            ::Environment::retroArchBinaries(), E::getRetroarchCoreExtension(), ::Environment::downloadCommand(),
+            ::Environment::repoUrl(), ::Environment::updateDownloadCommand(), ::Environment::retroArchCatalog(),
+            ::Environment::pcsxDir(), ::Environment::directLaunch()};
     }
 
     static void restore(const Roots &r) {
@@ -97,6 +101,11 @@ private:
         E::setRetroarchRomsDir(r.retroarchRomsDir);
         E::setRetroarchBiosDir(r.retroarchBiosDir);
         ::Environment::setRetroArchBinaries(r.retroArchBinaries);
+        E::setRetroarchCoreExtension(r.coreExtension);
+        ::Environment::setDownloadCommand(r.downloadCommand);
+        ::Environment::setUpdateSource(r.repoUrl, r.updateDownloadCommand, r.retroArchCatalog);
+        ::Environment::setPcsxDir(r.pcsxDir);
+        ::Environment::setDirectLaunch(r.directLaunch);
     }
 
     Roots saved_;

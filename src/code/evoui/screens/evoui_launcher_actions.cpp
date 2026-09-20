@@ -746,13 +746,13 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     }
     if (outcome.phase != UpdateService::Phase::Downloaded)
         return;
-#ifdef AB_PLATFORM_RPI
+#ifdef AB_APPLIANCE
     // the session loop takes it from here (payload_rpi/system/autobleem-session.sh)
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
 #else
     GuiConfirm confirm(*gui);
-    confirm.label = _("Downloaded into System/Updates - a Raspberry Pi would run the installer now");
+    confirm.label = _("Downloaded into System/Updates - an appliance would run the installer now");
     confirm.show();
 #endif
 }

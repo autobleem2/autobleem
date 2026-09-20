@@ -1,4 +1,5 @@
 #include "ableem/engine/retroarch_cores.h"
+#include "ableem/engine/environment.h"
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/log.h"
 #include "ableem/engine/strings.h"
@@ -86,7 +87,8 @@ void CoreInfoTable::load(const string &retroarchDir, const string &coresCfgPath)
     for (const DirEntry &entry : DirEntry::diru_FilesOnly(infoDir)) {
         if (DirEntry::getFileExtension(entry.name) != "info")
             continue;
-        string corePath = coresDir + sep + DirEntry::getFileNameWithoutExtension(entry.name) + ".so";
+        string corePath = coresDir + sep + DirEntry::getFileNameWithoutExtension(entry.name) +
+                          Environment::getRetroarchCoreExtension();
         CoreInfoPtr info = parseInfoFile(infoDir + sep + entry.name, corePath);
         if (!DirEntry::exists(info->core_path))
             continue;

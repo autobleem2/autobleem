@@ -92,7 +92,7 @@ if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
 fi
 cp -a "$REPO/src/resources/." "$APP/"
 
-# internal.db is the PlayStation Classic's own game list. A Pi has no built-in games (AB_PLATFORM_RPI) and
+# internal.db is the PlayStation Classic's own game list. A Pi has no built-in games (AB_APPLIANCE) and
 # never reads it, so shipping it would only be confusing.
 rm -f "$APP/internal.db"
 

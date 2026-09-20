@@ -30,7 +30,8 @@ using CoreInfos = std::vector<CoreInfoPtr>;
 //******************
 // CoreInfoTable
 //******************
-// load() reads every .info and keeps the cores whose .so is actually in <retroarch>/cores - the info bundle
+// load() reads every .info and keeps the cores whose .so (.dll on Windows - Environment::getRetroarchCoreExtension())
+// is actually in <retroarch>/cores - the info bundle
 // describes every core libretro builds, a few hundred, and a database mapped to a core that is not
 // installed would make every game of that system unplayable. Each database then gets the first installed
 // core (the one with the most extensions first) whose .info lists it, unless the cores.cfg says otherwise:
@@ -40,7 +41,7 @@ class CoreInfoTable {
 public:
     void load(const std::string &retroarchDir, const std::string &coresCfgPath);
 
-    // one .info file; corePath is the .so it names (<retroarch>/cores/<stem>.so)
+    // one .info file; corePath is the core it names (<retroarch>/cores/<stem>.so)
     static CoreInfoPtr parseInfoFile(const std::string &file, const std::string &corePath);
 
     const CoreInfos &cores() const { return cores_; }

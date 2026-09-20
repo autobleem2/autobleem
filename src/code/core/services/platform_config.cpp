@@ -76,7 +76,21 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
     cfg.downloadCommand = value("download_command");
     cfg.repoUrl = value("repo_url");
     cfg.updateDownloadCommand = value("update_download_command");
+    cfg.retroarchCatalog = value("retroarch_catalog");
     cfg.usbRoot = value("usb_root");
+    if (!value("launch_mode").empty()) {
+        if (value("launch_mode") == "script" || value("launch_mode") == "direct")
+            cfg.launchMode = value("launch_mode");
+        else
+            PLOG_WARNING << "launch_mode=" << value("launch_mode") << " in " << iniPath
+                         << " - script or direct; using script";
+    }
+    if (!value("core_extension").empty()) {
+        cfg.coreExtension = value("core_extension");
+        if (cfg.coreExtension[0] != '.')
+            cfg.coreExtension = "." + cfg.coreExtension;
+    }
+    cfg.pcsxDir = value("pcsx_dir");
     return cfg;
 }
 
@@ -86,7 +100,7 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
 void PlatformConfig::apply() const {
     string raDir = under(Env::getPathToUSBRoot(), retroarchDir);
     Env::setRetroarchDir(raDir);
-    Env::setRetroarchCoreFile(under(raDir, retroarchCore));
+    Env::setRetroarchCoreFile(retroarchCore.empty() ? "" : under(raDir, retroarchCore));
 
     vector<string> binaries;
     for (const string &b : retroarchBinaries)
@@ -95,5 +109,8 @@ void PlatformConfig::apply() const {
     Env::setRetroarchRomsDir(under(Env::getPathToUSBRoot(), retroarchRomsDir));
     Env::setRetroarchBiosDir(under(Env::getPathToUSBRoot(), retroarchBiosDir));
     Env::setDownloadCommand(downloadCommand);
-    Env::setUpdateSource(repoUrl, updateDownloadCommand);
+    Env::setUpdateSource(repoUrl, updateDownloadCommand, retroarchCatalog);
+    Env::setRetroarchCoreExtension(coreExtension);
+    Env::setDirectLaunch(launchMode == "direct");
+    Env::setPcsxDir(pcsxDir.empty() ? "" : under(Env::getWorkingPath(), pcsxDir));
 }

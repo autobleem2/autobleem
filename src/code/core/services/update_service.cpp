@@ -187,8 +187,8 @@ void UpdateService::checkThread() {
     } else {
         error = "cannot read the release list";
     }
-    if (!config_.installedRetroArch.empty() && !config_.arch.empty()) {
-        if (fetchText(base + "rpi/retroarch/latest.json", scratch, text) && retroarch.parse(text))
+    if (!config_.installedRetroArch.empty() && !config_.arch.empty() && !config_.retroarchCatalog.empty()) {
+        if (fetchText(base + config_.retroarchCatalog, scratch, text) && retroarch.parse(text))
             haveRetroArch = true;
     }
     if (haveRelease || haveRetroArch) {

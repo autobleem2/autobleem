@@ -26,6 +26,7 @@ string retroarchDir;      // empty: usb:/RetroArch/bin, the console's layout
 string retroarchCoreFile; // empty: pcsx_rearmed under the retroarch dir
 string retroarchRomsDir;  // empty: usb:/RetroArch/roms
 string retroarchBiosDir;  // empty: usb:/RetroArch/bios
+string retroarchCoreExtension = ".so";
 } // namespace
 
 //*******************************
@@ -77,6 +78,12 @@ void Environment::setRetroarchRomsDir(const string &path) {
 }
 void Environment::setRetroarchBiosDir(const string &path) {
     retroarchBiosDir = path;
+}
+void Environment::setRetroarchCoreExtension(const string &ext) {
+    retroarchCoreExtension = ext.empty() ? ".so" : ext[0] == '.' ? ext : "." + ext;
+}
+const string &Environment::getRetroarchCoreExtension() {
+    return retroarchCoreExtension;
 }
 
 //*******************************
@@ -131,8 +138,9 @@ string Environment::getPathToPlayStationRdbFile() {
     return getPathToRetroarchRdbDir() + sep + "Sony - PlayStation.rdb";
 }
 string Environment::getPathToRetroarchCoreFile() {
-    return retroarchCoreFile.empty() ? getPathToRetroarchDir() + sep + "cores/pcsx_rearmed_libretro.so"
-                                     : retroarchCoreFile;
+    return retroarchCoreFile.empty()
+               ? getPathToRetroarchDir() + sep + "cores/pcsx_rearmed_libretro" + retroarchCoreExtension
+               : retroarchCoreFile;
 }
 bool Environment::hasRetroBoot() {
     return DirEntry::exists(getPathToRetroarchDir() + sep + "retroboot");
