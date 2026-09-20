@@ -48,6 +48,11 @@ void IniFile::load(const string &_path) {
             break;
     };
     file.close();
+    // a file that opens but holds nothing is not "no file": it is what an unclean unmount leaves behind
+    // (the first 64-bit Pi image's config.ini, 2026-09-20) - say so, the caller's defaults take over
+    if (section.empty() && values.empty()) {
+        PLOG_WARNING << "Ini file is empty: " << path;
+    }
 }
 
 //*******************************
@@ -70,9 +75,12 @@ void IniFile::mergeFrom(const string &_path) {
 //*******************************
 void IniFile::save(const string &_path) {
     PLOG_INFO << "Writing ini file: " << _path;
+    // written next to the target and renamed over it: a save that is cut short (a power cut, a reboot with
+    // the partition still dirty) then leaves the old file, not an empty one that reads as "no settings"
+    const string tmp = _path + ".tmp";
     ofstream os;
-    os.open(_path);
-    if (!DirEntry::checkWritable(os, _path))
+    os.open(tmp);
+    if (!DirEntry::checkWritable(os, tmp))
         return;
     os << "[" << section << "]" << endl;
     for (auto &item : values) {
@@ -87,6 +95,9 @@ void IniFile::save(const string &_path) {
     }
     os.flush();
     os.close();
+    if (!DirEntry::replaceFile(tmp, _path)) {
+        PLOG_ERROR << "Could not replace " << _path << " with the new " << tmp;
+    }
 }
 
 //*******************************

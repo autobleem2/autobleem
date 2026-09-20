@@ -661,9 +661,21 @@ port targets 32-bit Trixie (and Bookworm).
   *every* platform (`add_subdirectory given source ... which is not an existing directory`); it only ever
   worked in the long-lived `autobleem-develop` checkout because those files were on disk from before the
   line was added, untracked. Anchored to `/build/` and the nine missing files recovered from that checkout.
-- **Not done**: no 64-bit Pi OS card imaged, so nothing has booted on real hardware; no boot-splash
-  initramfs testing (the 64-bit image is one kernel, not the 32-bit image's per-board v6/v7/v7l/v8 set, so
-  `update-initramfs -u -k all` should need no board-split reasoning there - unverified).
+- **First boot on hardware 2026-09-20**: the `c3a684c` arm64 image (built rootless on the server) on
+  the Pi 400 - the first boot went end to end (`--grow-only` grew the image-sized root, the cores tarball,
+  the cover databases, the prebuilt arm64 RetroArch, the boot splash from the single 64-bit kernel) and
+  the launcher came up **black, with no sound**: SDL's "opengl" renderer could not dlopen `libGL.so.1`
+  (`libgl1` was never a dependency of anything - on the 32-bit card it had come in with RetroArch's
+  source-build packages, and the prebuilt RetroArch ends that) and silently gave a context with no
+  shaders and no render targets. `install.sh` installs `libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1`
+  since; `ableem::Renderer` logs an error when a renderer has no render-target support. On the 64-bit
+  kernel `/dev/dri/card0` is v3d and `card1` the vc4 display - SDL picks card1 by itself. The same boot
+  came up in the **default theme**: the kernel log said "exFAT-fs: Volume was not properly unmounted" -
+  the first boot's `reboot` had left the data partition dirty and `config.ini` (copied last, small) came
+  back as an empty file, which the launcher read as "no settings". Three fixes: the first-boot script
+  unmounts the exFAT partitions before rebooting (a `sync` alone was not enough), `IniFile::save` writes
+  atomically (`.tmp` + `DirEntry::replaceFile`) and `IniFile::load` warns about an empty file, and `Config`
+  defaults `theme` to `ab2` in code (tested). Audio was fine all along (the owner's mistake).
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 

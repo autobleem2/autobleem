@@ -438,6 +438,13 @@ if bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG"; then
     rm -rf "$UNPACK_DIR" "$PACKAGE"
     log "Rebooting to finish - the HDMI mode and boot splash only take full effect on the next boot"
     sleep 3
+    # install.sh mounted the data partition itself, so it is handed back clean here: the first 64-bit
+    # boot (2026-09-20) came up with "exFAT-fs: Volume was not properly unmounted" and an empty config.ini
+    # (the launcher then started with the default theme) - a sync alone did not do it
+    sync
+    for m in $(findmnt -rno TARGET -t exfat 2>/dev/null); do
+        umount "$m" 2>/dev/null && log "Unmounted $m" || warn "could not unmount $m - syncing instead"
+    done
     sync
     reboot
 else
