@@ -21,9 +21,15 @@ if (AB_TARGET_RPI)
     add_compile_definitions(AB_PLATFORM_RPI)
 endif()
 
+# The launcher's online update (core/services/update_service.*, the update dialogs): a Pi and the dev hosts
+# check the download repository for a newer AutoBleem/RetroArch and fetch it; the console updates from a
+# stick, offline, and carries none of this code - the console branch below switches it off.
+option(AB_ONLINE_UPDATE "Build the online update check and download (the Pi and the dev hosts)" ON)
+
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^arm" AND NOT AB_TARGET_RPI)
 	message(STATUS "Building for ARM")
+	set(AB_ONLINE_UPDATE OFF) # the console has no network: its updater is offline (see the option above)
 	# The console is a Cortex-A35 (ARMv8-A, run in AArch32) with NEON. GCC 8+ spells that armv8-a+simd;
 	# an older GCC - the Stretch gcc-6 the Docker image builds with, the newest whose libstdc++ matches the
 	# console's glibc 2.24 - takes the -mfpu spelling (its old branch here was armv7ve without NEON).
@@ -181,6 +187,13 @@ add_library(ab_core STATIC
         src/code/core/services/theme_installer.h
         )
 target_link_libraries(ab_core ableem_engine)
+if (AB_ONLINE_UPDATE)
+    message(STATUS "Online update: on")
+    add_compile_definitions(AB_ONLINE_UPDATE)
+    target_sources(ab_core PRIVATE
+            src/code/core/services/update_service.cpp
+            src/code/core/services/update_service.h)
+endif()
 if (WIN32)
     # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop
     target_link_libraries(ab_core iphlpapi ws2_32)
@@ -323,6 +336,11 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
+if (AB_ONLINE_UPDATE)
+    target_sources(ab_evoui PRIVATE
+            src/code/evoui/screens/evoui_update.cpp
+            src/code/evoui/screens/evoui_update.h)
+endif()
 
 # the program: main() and AutoBleem (App plus the outer loop, which shows the launcher directly).
 add_executable(

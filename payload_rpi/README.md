@@ -236,6 +236,15 @@ However you get there, the result is an exFAT partition labelled `AUTOBLEEM`, mo
 Windows 10 (1903 and later), macOS and Linux all show it when you plug the card in; it appears as a second
 drive alongside the small `bootfs` one.
 
+## Updates
+
+The launcher checks AutoBleem's download site once a day (and at every start) for a newer AutoBleem or
+RetroArch and asks on the screen: *Update now*, *Remind me tomorrow* or *Skip this version*. *Update now*
+downloads the package(s) with a progress bar and re-runs the installer with the same screen the first boot
+had; your games, settings, cores and BIOS files stay. *Options -> Updates* picks what it follows - `stable`
+releases, `latest` (the pre-releases too) or `off` - and the L2+R2 menu's *Software Update* checks on
+the spot. Over ssh the same is `sudo bash install.sh --update` from an unpacked package.
+
 ## Where things go
 
 ```

@@ -53,6 +53,9 @@ void GuiLauncher::loop() {
                 carousel.loadOneMissingTexture();
         }
         applyScanUpdate(app.scans().poll());
+#ifdef AB_ONLINE_UPDATE
+        pollUpdates();
+#endif
         render();
 
         if (!carousel.scrolling && state == LauncherScreenState::Games) {

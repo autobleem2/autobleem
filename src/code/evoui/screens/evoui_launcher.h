@@ -99,6 +99,14 @@ public:
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
+#ifdef AB_ONLINE_UPDATE
+    // the online update: the check's result once a frame (it asks when one lands), the system menu's
+    // "Software Update" item (a check now, then the same question), and the download that ends in
+    // MENU_OPTION_UPDATE on a Pi
+    void pollUpdates();
+    void loop_softwareUpdate();
+    void offerUpdate(bool fromMenu);
+#endif
 
     // a button is released
     void loop_joyButtonReleased();

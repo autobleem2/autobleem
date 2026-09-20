@@ -14,6 +14,7 @@ RC_DIR="$DATA_MOUNT/Autobleem/rc"
 LOG_DIR="$DATA_MOUNT/System/Logs"
 
 SEL_RETROARCH=4
+SEL_UPDATE=6      # the online update: the launcher downloaded it, autobleem-update applies it (install.sh --update)
 
 mkdir -p "$LOG_DIR"
 
@@ -99,6 +100,14 @@ while true; do
 
     if [ "$selection" = "$SEL_RETROARCH" ] && [ -x "$RC_DIR/retroarch.sh" ]; then
         "$RC_DIR/retroarch.sh"
+    elif [ "$selection" = "$SEL_UPDATE" ]; then
+        if command -v autobleem-update >/dev/null 2>&1; then
+            autobleem-update "$DATA_MOUNT"
+        else
+            echo "autobleem-session: no autobleem-update on this system - re-run install.sh from a package once" >&2
+        fi
+        # a stale selection must not run the update again on the next pass
+        rm -f "$RC_DIR/autobleem_cfg.sh"
     fi
 
     sync

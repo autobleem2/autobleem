@@ -35,4 +35,6 @@
 #include "engine/zip_writer.h"
 #include "engine/crc32.h"
 #include "engine/md5.h"
+#include "engine/sha256.h"
+#include "engine/update_catalog.h"
 #include "engine/game_library.h"

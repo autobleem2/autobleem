@@ -9,6 +9,8 @@ bool Env::hiddenMenuEnabled = false;
 namespace {
 vector<string> retroArchBinaries_{"retroarch"};
 string downloadCommand_;
+string repoUrl_;
+string updateDownloadCommand_;
 } // namespace
 
 //*******************************
@@ -50,6 +52,18 @@ void Env::setDownloadCommand(const string &command) {
 }
 const string &Env::downloadCommand() {
     return downloadCommand_;
+}
+void Env::setUpdateSource(const string &repoUrl, const string &downloadCommand) {
+    repoUrl_ = repoUrl;
+    while (!repoUrl_.empty() && repoUrl_.back() == '/')
+        repoUrl_.pop_back();
+    updateDownloadCommand_ = downloadCommand;
+}
+const string &Env::repoUrl() {
+    return repoUrl_;
+}
+const string &Env::updateDownloadCommand() {
+    return updateDownloadCommand_;
 }
 const vector<string> &Env::retroArchBinaries() {
     return retroArchBinaries_;
