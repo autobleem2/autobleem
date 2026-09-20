@@ -621,6 +621,17 @@ Pi's `launch.sh` copies the game folder's cfg over the `!SaveStates` one at ever
 pcsx-ab reads). With that, **`ConfigFileEditor::replaceProperty` appends a key the file does not have** -
 it used to replace lines only, so a pcsx.cfg copied from an older default could never take a newer
 option (the test that pinned that is flipped). The pack on the site was rebuilt in place (same date).
+**Skipping the shell was not enough** (the same day, traced on the Pi 400 with a per-second pc/EPC print and
+an I/O-write trace): the game booted and sat in PSn00bSDK's `DrawSync` forever, because **the 2013-era
+core decoded the I/O registers by the literal `0x1f80....` addresses the PsyQ libraries use** - PSn00bSDK
+reaches them through KSEG1 (`0xbf80....`), and every such write fell through `psxHwWrite16/32`'s switch to
+plain memory: no GPU DMA ever started, no I_MASK write took effect. pcsx-ab2 `1feb7e2` masks the address
+(`switch (add & 0x1fffffff)`, as upstream does); with it Tetrade boots with the interpreter and the
+dynarec, through the shell and without it. Two more pcsx-ab changes from the same hunt: the real-BIOS
+fast boot now **loads the executable itself** (`aeac3f9`, upstream's "manual booting" - SYSTEM.CNF, the
+exe, pc/gp/sp - instead of the 2013 `pc = ra` jump, which relied on the kernel booting the CD), and
+LoadCdrom logs it. The pack keeps `SlowBoot = 0` for Tetrade: its image has no licence data, so the shell
+shows a garbled logo before the game. **Any PSn00bSDK homebrew was broken on pcsx-ab until this fix.**
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
