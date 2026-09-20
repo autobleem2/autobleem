@@ -610,6 +610,17 @@ with a box art of the same name under `RetroArch/thumbnails/<db>/Named_Boxarts/`
 `tools/samples/make_covers.py` (Pillow, so run on the PC and checked in as `tools/samples/covers/`): the
 game's own title screenshot (`tools/samples/shots/`, from its repository) cropped to the box shape the
 carousel draws for the system (square PS1, tall NES/MD, wide SNES), a navy band with the title in Selawik.
+**Tetrade crashed pcsx-ab in the BIOS shell** (2026-09-20, the owner on the Pi: its custom boot logo - the
+fork had upstream's "skip BIOS logos" jump commented out, so the shell always ran). Hence **the boot logo is
+a per-game option**: pcsx-ab's `Config.SlowBoot` (pcsx-ab2 `377da70`; 1 = run the shell, the default on
+every existing card; 0 = return into the kernel past it, as upstream always does), pcsx.cfg `SlowBoot`,
+the game editor's "Boot logo" row (`GameSettingsService::setBootLogo`, `PcsxSettings::bootLogo`; no line =
+shown), `LaunchService` passing it to RetroArch as `pcsx_rearmed_show_bios_bootlogo`, and the sample
+pack shipping a `pcsx.cfg` next to the PS1 game (`skip_boot_logo` in the manifest -> `SlowBoot = 0`; the
+Pi's `launch.sh` copies the game folder's cfg over the `!SaveStates` one at every launch, so it is what
+pcsx-ab reads). With that, **`ConfigFileEditor::replaceProperty` appends a key the file does not have** -
+it used to replace lines only, so a pcsx.cfg copied from an older default could never take a newer
+option (the test that pinned that is flipped). The pack on the site was rebuilt in place (same date).
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
