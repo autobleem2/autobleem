@@ -61,9 +61,11 @@ build_one() {
         arm64) triplet=aarch64-linux-gnu;   multiarch=$triplet;       cflags="-O2" ;;
         i386)  triplet=i686-linux-gnu;      multiarch=i386-linux-gnu; cflags="-O2 -march=i686 -mtune=generic" ;;
     esac
-    # a PC's Mesa drivers speak desktop OpenGL as well as GLES, and more cores and shaders expect it
-    local gl_flags=""
-    [ "$arch" = i386 ] && gl_flags="--enable-opengl"
+    # a PC's Mesa drivers speak desktop OpenGL, which more cores and shaders expect than GLES - and the two
+    # cannot be mixed: with both on, RetroArch compiles its legacy gl1 driver but links GLESv2, which has no
+    # glMatrixMode (the first i386 build died there). So: desktop GL on x86, GLES on the Pis.
+    local gl_flags="--enable-opengles --enable-opengles3"
+    [ "$arch" = i386 ] && gl_flags="--enable-opengl --disable-opengles --disable-opengles3"
     local stage="$WORK/stage-$arch"
     local out="$DIST/retroarch-$TAG-$arch.tar.gz"
     banner "$arch: configure ($triplet)"
@@ -79,7 +81,7 @@ build_one() {
         ./configure --prefix=/usr/local \
             --disable-x11 --disable-wayland --disable-videocore --disable-vulkan --disable-qt \
             --disable-ffmpeg --disable-jack --disable-oss --disable-pulse --disable-sdl --disable-flac \
-            --enable-sdl2 --enable-kms --enable-egl --enable-opengles --enable-opengles3 $gl_flags \
+            --enable-sdl2 --enable-kms --enable-egl $gl_flags \
             --enable-udev --enable-alsa --enable-networking \
             $([ "$arch" = armhf ] && echo --enable-neon)
         banner "$arch: make -j$JOBS"

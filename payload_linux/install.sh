@@ -529,8 +529,9 @@ install_retroarch_source() {
         printf '    would run: (cd %s && ./configure ... && make -j%s && make install)\n' "$src" "$(nproc)"
         return 0
     fi
-    local gl_flags=""
-    [ "$PLATFORM" = pcusb ] && gl_flags="--enable-opengl"
+    # desktop OpenGL on a PC, GLES on a Pi - never both (see ci/build_retroarch.sh)
+    local gl_flags="--enable-opengles --enable-opengles3"
+    [ "$PLATFORM" = pcusb ] && gl_flags="--enable-opengl --disable-opengles --disable-opengles3"
     (
         cd "$src" || exit 1
         exec </dev/null
@@ -538,7 +539,7 @@ install_retroarch_source() {
         ./configure --prefix=/usr/local \
             --disable-x11 --disable-wayland --disable-videocore --disable-vulkan --disable-qt \
             --disable-ffmpeg --disable-jack --disable-oss --disable-pulse --disable-sdl \
-            --enable-sdl2 --enable-kms --enable-egl --enable-opengles --enable-opengles3 $gl_flags \
+            --enable-sdl2 --enable-kms --enable-egl $gl_flags \
             --enable-udev --enable-alsa --enable-networking \
         && make -j"$(nproc)" \
         && make install
