@@ -16,6 +16,15 @@ Reads the installer's output on stdin:
     adding one; ANSI colours are stripped
 On EOF the last frame stays (the caller reboots). --render FILE writes the frame as a PPM instead of the
 framebuffer, for a look on a PC.
+
+The questions of the first boot use the same screen (a panel under the logo, keys read raw from the tty):
+    ... menu --title "Install RetroArch?" --text "..." --item y=Yes --item n=No --default y --timeout 60
+        prints the chosen item's key (Up/Down/Enter, or the key as a hotkey; the default on timeout)
+    ... input --title "Password" [--secret]       prints what was typed
+    ... message --title "Waiting for the network" [--wait S]    draws and returns (the picture stays)
+Esc cancels a menu or an input: nothing printed, exit 3 (any other failure is exit 1, and the script falls
+back to its text prompts). The console stays in graphics mode between calls
+(--text-mode puts it back); the first-boot script's text prompts are the fallback without a framebuffer.
 """
 
 import argparse
@@ -424,6 +433,214 @@ def feed(screen, chunk, ends_with_cr):
 
 
 #*******************************
+# dialogs: menu, input, message
+#*******************************
+# The questions of the first boot, on the same screen as the progress: a panel under the logo with a title,
+# some lines of text and either a list to pick from, a field to type into, or nothing (a message that stays
+# on the screen while the script works). Keys come raw from the console (termios), so this works in
+# KD_GRAPHICS mode where the kernel's line editor is not drawing anything.
+class Dialog:
+    def __init__(self, screen, title, lines, items=None, field=None, secret=False, footer="", timeout=0):
+        self.s = screen
+        self.title, self.lines = title, lines
+        self.items = items or []          # [(key, label)]
+        self.selected = 0
+        self.field = field                # None, or the text typed so far
+        self.secret = secret
+        self.footer = footer
+        self.timeout = timeout            # seconds left to show, 0 = none
+        self.rows = 10                    # list rows shown at once
+
+    def draw(self):
+        s, c = self.s, self.s.c
+        w, h = c.width, c.height
+        c.fill(0, 0, w, h, BLACK)
+        if s.logo:
+            for off, line in s.logo:
+                c.buf[off:off + len(line)] = line
+        big, small, lh = s.big, s.small, s.line_height
+        x0, bw = s.margin, w - 2 * s.margin
+        y = s.logo_bottom
+        # the panel: title, text, then the list or the field, then the footer
+        rows = min(self.rows, len(self.items))
+        body = len(self.lines) * lh + (rows * (lh + 6) if rows else 0) + (lh + 20 if self.field is not None else 0)
+        ph = 16 + (big.height if big else 32) + 12 + body + 8 + 12 + lh + 16
+        c.fill(x0, y, bw, ph, PANEL)
+        c.frame(x0, y, bw, ph, LINE, 2)
+        ty = y + 16
+        c.text(x0 + 24, ty, self.title, big, INK, PANEL)
+        ty += (big.height if big else 32) + 12
+        max_chars = (bw - 48) // (small.width if small else 8)
+        for line in self.lines:
+            c.text(x0 + 24, ty, line[:max_chars], small, DIM, PANEL)
+            ty += lh
+        ty += 8
+        if rows:
+            first = max(0, min(self.selected - rows // 2, len(self.items) - rows))
+            for i in range(first, first + rows):
+                key, label = self.items[i]
+                text = ("  %-3s %s" % (key + ")", label)) if key else "      " + label
+                if i == self.selected:
+                    c.fill(x0 + 16, ty - 2, bw - 32, lh + 4, CYAN)
+                    c.text(x0 + 24, ty, text[:max_chars], small, BLACK, CYAN)
+                else:
+                    c.text(x0 + 24, ty, text[:max_chars], small, INK, PANEL)
+                ty += lh + 6
+            if len(self.items) > rows:
+                c.text(x0 + bw - 24 - 14 * (small.width if small else 8), ty - lh - 6,
+                       "%d/%d" % (self.selected + 1, len(self.items)), small, DIM, PANEL)
+        if self.field is not None:
+            shown = ("*" * len(self.field)) if self.secret else self.field
+            shown = shown[-(max_chars - 4):] + "_"
+            c.fill(x0 + 24, ty + 4, bw - 48, lh + 12, NAVY)
+            c.frame(x0 + 24, ty + 4, bw - 48, lh + 12, LINE, 1)
+            c.text(x0 + 32, ty + 10, shown, small, INK, NAVY)
+            ty += lh + 20
+        ty += 12
+        footer = self.footer
+        if self.timeout:
+            footer = "%s   (%d s)" % (footer, self.timeout) if footer else "%d s" % self.timeout
+        c.text(x0 + 24, ty, footer[:max_chars], small, DIM, PANEL)
+
+
+class Keyboard:
+    """Raw keys from the console: 'up', 'down', 'enter', 'esc', 'backspace', or the character."""
+    def __init__(self, fd):
+        import termios
+        self.termios = termios
+        self.fd = fd
+        self.saved = termios.tcgetattr(fd)
+        raw = termios.tcgetattr(fd)
+        raw[3] &= ~(termios.ICANON | termios.ECHO | termios.ISIG)
+        raw[6][termios.VMIN] = 0
+        raw[6][termios.VTIME] = 0
+        termios.tcsetattr(fd, termios.TCSANOW, raw)
+        termios.tcflush(fd, termios.TCIFLUSH)
+        self.pending = b""
+
+    def restore(self):
+        try:
+            self.termios.tcsetattr(self.fd, self.termios.TCSANOW, self.saved)
+        except OSError:
+            pass
+
+    def read(self, timeout):
+        """One key within timeout seconds, else None."""
+        if not self.pending:
+            ready, _, _ = select.select([self.fd], [], [], timeout)
+            if not ready:
+                return None
+            self.pending += os.read(self.fd, 64)
+        b = self.pending
+        if b.startswith(b"\x1b["):
+            if len(b) < 3:
+                self.pending += os.read(self.fd, 64) if select.select([self.fd], [], [], 0.05)[0] else b""
+                b = self.pending
+                if len(b) < 3:
+                    self.pending = b""
+                    return "esc"
+            code, self.pending = b[2:3], b[3:]
+            return {b"A": "up", b"B": "down", b"C": "right", b"D": "left"}.get(code, "")
+        if b[:1] == b"\x1b":
+            self.pending = b[1:]
+            return "esc"
+        if b[:1] in (b"\r", b"\n"):
+            self.pending = b[1:]
+            return "enter"
+        if b[:1] in (b"\x7f", b"\x08"):
+            self.pending = b[1:]
+            return "backspace"
+        # a UTF-8 character
+        n = 1
+        first = b[0]
+        if first >= 0xF0:
+            n = 4
+        elif first >= 0xE0:
+            n = 3
+        elif first >= 0xC0:
+            n = 2
+        ch, self.pending = b[:n].decode("utf-8", "replace"), b[n:]
+        return ch if ch.isprintable() else ""
+
+
+def run_dialog(args, screen, present, tty):
+    """menu / input / message. Prints the answer on stdout; exit 0, or 3 when cancelled with Esc."""
+    items = []
+    for it in getattr(args, "item", None) or []:
+        key, _, label = it.partition("=")
+        items.append((key, label if label else key))
+    field = "" if args.mode == "input" else None
+    if field is not None and args.default:
+        field = args.default
+    footer = {"menu": "Up/Down or a letter to choose, Enter to confirm",
+              "input": "Type, Backspace to correct, Enter to confirm", "message": ""}[args.mode]
+    dialog = Dialog(screen, args.title, args.text or [], items, field, args.secret, footer)
+    if args.mode == "menu" and args.default:
+        for i, (key, _) in enumerate(items):
+            if key == args.default:
+                dialog.selected = i
+    deadline = time.monotonic() + args.timeout if args.timeout else None
+    dialog.draw()
+    present(dialog)
+    if args.mode == "message":
+        if args.wait:
+            time.sleep(args.wait)
+        return 0
+    if tty is None:
+        # no console to read from (a PC render): the default, or nothing
+        print(args.default or "")
+        return 0
+    kb = Keyboard(tty)
+    try:
+        last_draw = time.monotonic()
+        while True:
+            if deadline is not None:
+                left = int(deadline - time.monotonic() + 0.999)
+                if left <= 0:
+                    print(args.default or "")
+                    return 0
+                dialog.timeout = left
+            key = kb.read(0.5)
+            if key is None:
+                if deadline is not None and time.monotonic() - last_draw >= 1.0:
+                    dialog.draw()
+                    present(dialog)
+                    last_draw = time.monotonic()
+                continue
+            if key == "esc":
+                print("")
+                return 3
+            if key == "enter":
+                if args.mode == "menu":
+                    print(items[dialog.selected][0] if items else "")
+                else:
+                    print(dialog.field)
+                return 0
+            if args.mode == "menu":
+                if key == "up" and items:
+                    dialog.selected = (dialog.selected - 1) % len(items)
+                elif key == "down" and items:
+                    dialog.selected = (dialog.selected + 1) % len(items)
+                elif key and len(key) == 1:
+                    # a hotkey: the item whose key is that character, or, for a digit, the item number
+                    for i, (k, _) in enumerate(items):
+                        if k.lower() == key.lower():
+                            dialog.selected = i
+                            print(k)
+                            return 0
+            else:
+                if key == "backspace":
+                    dialog.field = dialog.field[:-1]
+                elif key and len(key) == 1:
+                    dialog.field += key
+            dialog.draw()
+            present(dialog)
+            last_draw = time.monotonic()
+    finally:
+        kb.restore()
+
+
+#*******************************
 # main
 #*******************************
 def main():
@@ -431,14 +648,32 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--logo", default="", help="the PNG with the logo (the plymouth splash)")
     ap.add_argument("--fb", default="/dev/fb0")
-    ap.add_argument("--tty", default="", help="the console to switch to graphics mode while drawing")
+    ap.add_argument("--tty", default="", help="the console: switched to graphics mode, and where the keys come from")
     ap.add_argument("--render", default="", help="write the final frame to this PPM file instead of the framebuffer")
     ap.add_argument("--size", default="", help="WxH for --render (default 1920x1080)")
     ap.add_argument("--fps", type=float, default=4.0)
     ap.add_argument("--fonts", default=FONT_DIR, help="where the PSF console fonts are")
-    ap.add_argument("--keep-graphics", action="store_true",
-                    help="leave the console in graphics mode at exit (the caller reboots from the picture)")
+    ap.add_argument("--text-mode", action="store_true",
+                    help="put the console back in text mode at exit (the default keeps the picture: the next "
+                         "dialog or the reboot takes over)")
+    sub = ap.add_subparsers(dest="mode")
+    sub.add_parser("progress", help="the installer's output on stdin (the default)")
+    for name in ("menu", "input", "message"):
+        p = sub.add_parser(name)
+        p.add_argument("--title", required=True)
+        p.add_argument("--text", action="append", help="a line of text (repeat)")
+        p.add_argument("--default", default="", help="menu: the item chosen on Enter/timeout; input: the initial text")
+        p.add_argument("--timeout", type=int, default=0, help="seconds until the default is taken")
+        if name == "menu":
+            p.add_argument("--item", action="append", help="KEY=label (repeat); a key that is one character is a hotkey")
+        if name == "input":
+            p.add_argument("--secret", action="store_true", help="show stars")
+        if name == "message":
+            p.add_argument("--wait", type=float, default=0, help="seconds to stay before returning")
     args = ap.parse_args()
+    args.mode = args.mode or "progress"
+    if not hasattr(args, "secret"):
+        args.secret = False
     FONT_DIR = args.fonts
 
     if args.render:
@@ -472,13 +707,31 @@ def main():
         except OSError:
             tty = None
 
-    def present():
-        screen.draw()
+    def present(what=screen):
+        what.draw()
         if fb is not None:
             fb.seek(0)
             fb.write(canvas.buf)
 
+    def render_to_file():
+        if not args.render:
+            return
+        with open(args.render, "wb") as f:
+            f.write(b"P6\n%d %d\n255\n" % (width, height))
+            out = bytearray()
+            for y in range(height):
+                for x in range(width):
+                    off = y * stride + x * 4
+                    v = struct.unpack_from("<I", canvas.buf, off)[0]
+                    out += bytes(((v >> 16) & 255, (v >> 8) & 255, v & 255))
+            f.write(out)
+
+    status = 0
     try:
+        if args.mode != "progress":
+            status = run_dialog(args, screen, present, tty)
+            render_to_file()
+            return status
         present()
         stdin = sys.stdin.buffer
         pending = b""
@@ -519,25 +772,16 @@ def main():
         screen.done = True
         screen.percent = 100
         present()
-        if args.render:
-            with open(args.render, "wb") as f:
-                f.write(b"P6\n%d %d\n255\n" % (width, height))
-                out = bytearray()
-                for y in range(height):
-                    for x in range(width):
-                        off = y * stride + x * 4
-                        v = struct.unpack_from("<I", canvas.buf, off)[0]
-                        out += bytes(((v >> 16) & 255, (v >> 8) & 255, v & 255))
-                f.write(out)
+        render_to_file()
     finally:
         if tty is not None:
-            if not args.keep_graphics:
+            if args.text_mode:
                 try:
                     fcntl.ioctl(tty, KDSETMODE, KD_TEXT)
                 except OSError:
                     pass
             os.close(tty)
-    return 0
+    return status
 
 
 if __name__ == "__main__":

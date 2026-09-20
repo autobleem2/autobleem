@@ -60,6 +60,107 @@ fcntl.ioctl(f, 0x4B3A, 0)
 PY
 }
 
+#*******************************
+# the screen: dialogs
+#*******************************
+# Every question and every wait goes through these. With the screen's program and a framebuffer (an image
+# built by tools/make_rpi_image.sh) they are drawn under the logo, keys read from the console; otherwise
+# they are the plain-text prompts they always were. The console stays in graphics mode from the first
+# dialog to the reboot; text_mode() brings the text back for a failure message.
+UI="$IMAGE_DIR/autobleem-install-ui.py"
+UI_OK=0
+if [ -f "$UI" ] && [ -c /dev/fb0 ] && command -v python3 >/dev/null 2>&1; then
+    UI_OK=1
+fi
+ui() { python3 "$UI" --logo "$IMAGE_DIR/splash.png" --tty /dev/tty8 "$@"; }
+
+# ui_message TITLE [LINE...] [--wait S]: shown, and left on the screen while the script works
+ui_message() {
+    local title="$1"; shift
+    local -a lines=() extra=()
+    while [ $# -gt 0 ]; do
+        case "$1" in --wait) extra+=(--wait "$2"); shift 2 ;; *) lines+=(--text "$1"); shift ;; esac
+    done
+    if [ "$UI_OK" -eq 1 ]; then
+        ui message --title "$title" "${lines[@]}" "${extra[@]}" 2>>"$INSTALL_LOG" && return 0
+        UI_OK=0; text_mode
+    fi
+    printf '\n   %s\n' "$title"
+    local l
+    for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
+    [ ${#extra[@]} -gt 0 ] && sleep "${extra[1]}"
+    return 0
+}
+
+# ui_menu TITLE [LINE...] -- KEY=LABEL... [--default KEY] [--timeout S]: prints the chosen key
+ui_menu() {
+    local title="$1"; shift
+    local -a lines=() items=() extra=()
+    local default="" timeout=0
+    while [ $# -gt 0 ] && [ "$1" != -- ]; do lines+=(--text "$1"); shift; done
+    [ "${1:-}" = -- ] && shift
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --default) default="$2"; extra+=(--default "$2"); shift 2 ;;
+            --timeout) timeout="$2"; extra+=(--timeout "$2"); shift 2 ;;
+            *) items+=("$1"); shift ;;
+        esac
+    done
+    if [ "$UI_OK" -eq 1 ]; then
+        local -a args=()
+        local it rc
+        for it in "${items[@]}"; do args+=(--item "$it"); done
+        ui menu --title "$title" "${lines[@]}" "${args[@]}" "${extra[@]}" 2>>"$INSTALL_LOG"
+        rc=$?
+        [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] && return 0
+        UI_OK=0; text_mode      # the screen's program failed: the text prompts from here on
+    fi
+    printf '\n   %s\n' "$title"
+    local l
+    for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
+    printf '\n'
+    for it in "${items[@]}"; do printf '   %3s) %s\n' "${it%%=*}" "${it#*=}"; done
+    local choice=""
+    if [ "$timeout" -gt 0 ]; then
+        read -rt "$timeout" -p "   Your choice${default:+ [$default]}: " choice || true
+        printf '\n'
+    else
+        read -rp "   Your choice${default:+ [$default]}: " choice
+    fi
+    printf '%s\n' "${choice:-$default}"
+}
+
+# ui_input TITLE [LINE...] [--secret] [--default V]: prints what was typed
+ui_input() {
+    local title="$1"; shift
+    local -a lines=() extra=()
+    local secret=0 default=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --secret) secret=1; extra+=(--secret); shift ;;
+            --default) default="$2"; extra+=(--default "$2"); shift 2 ;;
+            *) lines+=(--text "$1"); shift ;;
+        esac
+    done
+    if [ "$UI_OK" -eq 1 ]; then
+        local rc
+        ui input --title "$title" "${lines[@]}" "${extra[@]}" 2>>"$INSTALL_LOG"
+        rc=$?
+        [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] && return 0
+        UI_OK=0; text_mode
+    fi
+    printf '\n   %s\n' "$title"
+    local l
+    for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
+    local value=""
+    if [ "$secret" -eq 1 ]; then
+        read -rsp "   > " value; printf '\n'
+    else
+        read -rp "   > ${default:+[$default] }" value
+    fi
+    printf '%s\n' "${value:-$default}"
+}
+
 # best-effort note in System/Logs, once the data partition exists to hold one
 note_in_data_logs() {
     local logdir
@@ -103,17 +204,13 @@ ask_retroarch() {
         ""|ask) ;;
         *) warn "autobleem.txt: retroarch=$v is not prebuilt, source, apt or none - asking instead" ;;
     esac
-    printf '\n'
-    printf '   AutoBleem plays PlayStation games on its own. RetroArch adds the other systems - NES, SNES,\n'
-    printf '   Mega Drive, arcade and about a hundred more - a ready-made build is downloaded (or, if the\n'
-    printf '   download site cannot be reached, it is built here, 10-40 minutes), plus close to a GB of cores,\n'
-    printf '   databases and BIOS files. It can be added later by running the installer again.\n\n'
-    local answer=""
-    if read -rt 60 -p "   Install RetroArch too? [Y/n] (yes in 60 seconds) " answer; then
-        printf '\n'
-    else
-        printf '\n   (no answer - installing RetroArch)\n'
-    fi
+    local answer
+    answer="$(ui_menu "Install RetroArch too?" \
+        "AutoBleem plays PlayStation games on its own. RetroArch adds the other systems - NES, SNES," \
+        "Mega Drive, arcade and about a hundred more: a ready-made build is downloaded (or built here," \
+        "10-40 minutes, if the download site cannot be reached), plus close to a GB of cores, databases" \
+        "and BIOS files. It can be added later by running the installer again." \
+        -- "y=Yes, install RetroArch" "n=No, PlayStation only" --default y --timeout 60)"
     case "$answer" in
         n|N|no|NO|No) OPT[retroarch]=none; log "RetroArch: no - a PS1-only AutoBleem" ;;
         *)            OPT[retroarch]=prebuilt; log "RetroArch: yes" ;;
@@ -214,16 +311,13 @@ wifi_scan() {
 # The screen-and-keyboard WiFi setup. Returns 0 once online, 1 if the user chose to skip.
 interactive_network() {
     local cc choice ssid sec sig pass hidden out
-    local -a nets
+    local -a nets items
 
-    printf '\n'
     log "No network connection."
-    printf '   AutoBleem needs the internet for its first setup (packages, RetroArch, BIOS files).\n'
-    printf '   Plug in an Ethernet cable, or pick a WiFi network below.\n\n'
-
     if has_wifi_device; then
         cc="$(wifi_country_default)"
-        read -rp "   WiFi country code (two letters, e.g. GB, PL, US)${cc:+ [$cc]}: " choice
+        choice="$(ui_input "WiFi country" "Two letters, e.g. GB, PL, US - Raspberry Pi OS keeps WiFi blocked until one is set." \
+            ${cc:+--default "$cc"})"
         cc="${choice:-$cc}"
         cc="$(echo "$cc" | tr 'a-z' 'A-Z' | tr -cd 'A-Z')"
         if [ -n "$cc" ]; then
@@ -234,7 +328,7 @@ interactive_network() {
             nmcli radio wifi on >/dev/null 2>&1 || true
         fi
     else
-        warn "no WiFi adapter found - Ethernet is the only option on this Pi"
+        ui_message "No WiFi adapter found" "Ethernet is the only option on this Pi." --wait 3
     fi
 
     while :; do
@@ -243,41 +337,38 @@ interactive_network() {
             return 0
         fi
         nets=()
+        items=()
         if has_wifi_device; then
-            printf '\n   Scanning for WiFi networks...\n'
+            ui_message "Scanning for WiFi networks..."
             mapfile -t nets < <(wifi_scan)
-            if [ ${#nets[@]} -eq 0 ]; then
-                printf '   (no networks found)\n'
-            else
-                local i
-                for ((i = 0; i < ${#nets[@]}; i++)); do
-                    IFS=$'\t' read -r sig sec ssid <<<"${nets[i]}"
-                    printf '   %2d) %-40.40s  %3s%%  %s\n' "$((i + 1))" "$ssid" "$sig" "${sec:---}"
-                done
-            fi
-            printf '\n'
-            printf '    r) scan again        h) hidden network (type its name)\n'
+            local i
+            for ((i = 0; i < ${#nets[@]}; i++)); do
+                IFS=$'\t' read -r sig sec ssid <<<"${nets[i]}"
+                items+=("$(printf '%d=%-32.32s %3s%%  %s' "$((i + 1))" "$ssid" "$sig" "${sec:---}")")
+            done
+            items+=("r=Scan again" "h=Hidden network (type its name)")
         fi
-        printf '    e) I have plugged in an Ethernet cable - check again\n'
-        printf '    s) skip for now - AutoBleem will ask again on the next boot\n\n'
-        read -rp "   Your choice${nets:+ [1-${#nets[@]}]}: " choice
+        items+=("e=I have plugged in an Ethernet cable - check again" "s=Skip for now - AutoBleem asks again on the next boot")
+        choice="$(ui_menu "No network connection" \
+            "AutoBleem needs the internet for its first setup (packages, RetroArch, BIOS files)." \
+            "$([ ${#nets[@]} -gt 0 ] && echo "Pick a WiFi network, or plug in an Ethernet cable:" || echo "No WiFi networks found - plug in an Ethernet cable, or scan again:")" \
+            -- "${items[@]}" ${nets:+--default 1})"
 
         hidden=no
         case "$choice" in
             r|R|"") continue ;;
             s|S) return 1 ;;
             e|E)
-                printf '   Waiting for the network'
+                ui_message "Waiting for the network..." "Checking the connection for up to 30 seconds."
                 wait_for_network 30 && { log "Connected."; return 0; }
-                warn "still no network"
+                ui_message "Still no network" "Nothing reachable through the cable yet." --wait 3
                 continue ;;
             h|H)
-                read -rp "   Network name (SSID): " ssid
+                ssid="$(ui_input "Hidden network" "The network's name (SSID):")"
                 [ -n "$ssid" ] || continue
                 hidden=yes; sec="?" ;;
             *)
                 if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#nets[@]} ]; then
-                    printf '   ?\n'
                     continue
                 fi
                 IFS=$'\t' read -r sig sec ssid <<<"${nets[choice - 1]}" ;;
@@ -285,25 +376,24 @@ interactive_network() {
 
         pass=""
         if [ "$hidden" = yes ] || { [ -n "$sec" ] && [ "$sec" != "--" ]; }; then
-            read -rsp "   Password for '$ssid' (empty for an open network): " pass
-            printf '\n'
+            pass="$(ui_input "Password for '$ssid'" "Leave it empty for an open network." --secret)"
         fi
 
-        printf '   Connecting to %s...\n' "$ssid"
+        ui_message "Connecting to $ssid..."
         # a failed attempt leaves a profile with the wrong password behind, which a retry would reuse
         nmcli connection delete "$ssid" >/dev/null 2>&1 || true
         local -a cmd=(nmcli device wifi connect "$ssid")
         [ -n "$pass" ] && cmd+=(password "$pass")
         [ "$hidden" = yes ] && cmd+=(hidden yes)
         if out="$("${cmd[@]}" 2>&1)"; then
-            printf '   Checking the connection'
+            ui_message "Connected to $ssid" "Checking that the internet is reachable..."
             if wait_for_network 40; then
                 log "Connected to $ssid."
                 return 0
             fi
-            warn "connected to $ssid, but the internet is not reachable through it"
+            ui_message "Connected to $ssid, but the internet is not reachable through it" --wait 4
         else
-            warn "could not connect: ${out##*$'\n'}"
+            ui_message "Could not connect to $ssid" "${out##*$'\n'}" --wait 4
             nmcli connection delete "$ssid" >/dev/null 2>&1 || true
         fi
     done
@@ -311,7 +401,7 @@ interactive_network() {
 
 # waits for network-online, then falls back to asking. 0 = online, 1 = the user skipped
 ensure_network() {
-    printf 'Waiting for the network'
+    ui_message "Waiting for the network..." "Up to 40 seconds for WiFi or Ethernet to come up."
     if wait_for_network 40; then
         return 0
     fi
@@ -356,12 +446,14 @@ log "attempt $attempts of $MAX_ATTEMPTS"
 read_options
 
 if ! ensure_network; then
+    text_mode
     warn "no network - AutoBleem setup will try again on the next boot"
     sleep 3
     give_tty_back
     exit 1
 fi
 
+ui_message "Setting the clock..." "A Pi has no battery clock; the time comes from the network (NTP)."
 if wait_for_clock; then
     log "Clock synchronised: $(date)"
 else
@@ -391,6 +483,7 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
     root_gib="${OPT[root_gib]:-8}"
     if [ "$root_gib" != 0 ] && [ "$root_gib" != none ]; then
         log "Growing the root filesystem to ${root_gib} GiB before unpacking"
+        ui_message "Preparing the system partition..." "Growing it to ${root_gib} GiB."
         if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only 2>&1 | tee -a "$INSTALL_LOG"; then
             warn "could not grow the root filesystem - will retry next boot. Log: $INSTALL_LOG"
             sleep 5
@@ -410,6 +503,7 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
         exit 1
     fi
     log "Unpacking $PACKAGE (${need_mib} MiB)"
+    ui_message "Unpacking AutoBleem..." "${need_mib} MiB"
     if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR"; then
         warn "extract failed - will retry next boot"
         rm -rf "$UNPACK_DIR"
@@ -442,11 +536,9 @@ printf '\n'
 # The installer's output goes through the screen (autobleem-install-ui.py: the logo, a bar per phase from
 # install.sh's @@phase lines, a bar for the download in progress, the last lines of output) - and, whole,
 # into the log. Without the screen's program or a framebuffer the output shows as plain text, as before.
-UI="$IMAGE_DIR/autobleem-install-ui.py"
-if [ -f "$UI" ] && [ -c /dev/fb0 ] && command -v python3 >/dev/null 2>&1; then
+if [ "$UI_OK" -eq 1 ]; then
     run_installer() {
-        AB_UI_MARKERS=1 bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG" \
-            | python3 "$UI" --logo "$IMAGE_DIR/splash.png" --tty /dev/tty8 --keep-graphics
+        AB_UI_MARKERS=1 bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG" | ui progress
         return "${PIPESTATUS[0]}"
     }
 else
