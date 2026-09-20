@@ -771,6 +771,18 @@ RetroArch session (300 ms after pcsx) and `run()` treats a Quit on the console a
 1 s, rebuild, three times before giving up (after Quake it took two rebuilds; the log says
 `The display went away (attempt n of 3)`).
 
+**The splashes around RetroArch** (2026-09-20): `absplash` (`src/tools/absplash.cpp`, lib_ableem's ui
+only, shipped packed next to the launcher with `src/resources/splash/{retroarch,autobleem}.jpg`) shows a
+picture in the same full-screen window the launcher and RetroArch use - `absplash IMAGE --until-exists F |
+--until-gone F | --seconds S [--timeout S]`. On the stick RetroBoot's `launch_rfa_rom.sh` (patched by hand,
+copy at `E:	mp\launch_rfa_rom.sh.ab2` - the model for our own launch script) runs it: the RetroArch
+picture from launch until RetroArch's log says `Found display driver` (+1 s, `/tmp/.ra_up`), the AutoBleem
+2 picture from RetroArch's exit until the launcher's window is back - `launchGame()` removes
+`/tmp/.abload` after `display(true)`; `rc/launch_rb.sh` no longer does. **The reason nothing showed for a
+day**: the stick's `retroboot/retroboot.cfg` had `show_splash=0` (RetroBoot's own setting; the backup
+copy had 1) - the splash functions never ran. RetroBoot's rbimage/abimage (a 1280x720 toplevel window,
+a 200x200 BMP at (540,260)) are replaced, not fixed. Verified on the console.
+
 **What is left**: the **PC installer** (read `psc/retroarch/latest.json` + `psc/cores/latest.json`, lay
 `retroarch/` on the stick - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a
 generated cfg - with **our own launch scripts** replacing `rc/launch_rb.sh`/`retroarch.sh`'s calls into
