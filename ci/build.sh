@@ -246,7 +246,8 @@ build_win() {
         -DCMAKE_TOOLCHAIN_FILE=toolchains/mingw/MinGWtoolchain.cmake
     ninja -C build_mingw_product -j "$JOBS"
     file build_mingw_product/autobleem-gui.exe | grep -q 'PE32+ executable.*x86-64'
-    objdump -p build_mingw_product/autobleem-gui.exe | grep -q 'Subsystem.*Windows GUI'
+    # (not grep -q: it would quit at the match and objdump's SIGPIPE fails the pipeline under pipefail)
+    objdump -p build_mingw_product/autobleem-gui.exe | grep 'Subsystem.*Windows GUI' >/dev/null
     bash tools/make_win_package.sh --build-dir build_mingw --product build_mingw_product --out dist/win --version "$VERSION"
     if command -v makensis >/dev/null 2>&1; then
         banner "win: the installer"

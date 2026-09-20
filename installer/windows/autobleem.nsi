@@ -142,7 +142,7 @@ Section "AutoBleem (required)" SecProgram
   RMDir /r "$INSTDIR\lang"
   RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\emu"
-  File /r "${STAGE}\*.*"
+  File /r "${STAGE}/*.*"   ; a forward slash: the Linux makensis (the image) takes no backslash here
   WriteRegStr HKCU "${REGKEY}" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${REGKEY}" "DataRoot" "$DataRoot"
   WriteRegStr HKCU "${REGKEY}" "Version" "${VERSION}"
