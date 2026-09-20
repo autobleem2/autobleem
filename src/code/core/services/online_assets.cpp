@@ -1,6 +1,7 @@
 //
 // OnlineAssets - see the header.
 //
+#include "system.h"
 #include "online_assets.h"
 #include "environment.h"
 #include "../main.h"
@@ -45,7 +46,7 @@ string dirOf(const string &path) {
 //*******************************
 OnlineAssets::OnlineAssets(const Config &config, CommandRunner runner) : config_(config), runner_(std::move(runner)) {
     if (!runner_)
-        runner_ = [](const string &commandLine) { return system(commandLine.c_str()); };
+        runner_ = [](const string &commandLine) { return System::runShellCommand(commandLine); };
 }
 
 //*******************************

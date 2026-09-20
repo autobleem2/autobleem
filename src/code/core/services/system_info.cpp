@@ -1,6 +1,7 @@
 //
 // SystemInfoService: the machine, the OS, the volumes and the network, for the Hardware Information screen.
 //
+#include "system.h"
 #include "system_info.h"
 #include "../main.h"
 #include "environment.h"
@@ -26,7 +27,6 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/in.h>
-#include <sys/statvfs.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 #endif
@@ -485,19 +485,5 @@ string SystemInfoService::formatSpace(uint64_t freeBytes, uint64_t totalBytes) {
 // SystemInfoService::spaceOf
 //*******************************
 bool SystemInfoService::spaceOf(const string &path, uint64_t &freeBytes, uint64_t &totalBytes) {
-#ifdef _WIN32
-    ULARGE_INTEGER freeToCaller, total;
-    if (!GetDiskFreeSpaceExA(path.c_str(), &freeToCaller, &total, nullptr))
-        return false;
-    freeBytes = freeToCaller.QuadPart;
-    totalBytes = total.QuadPart;
-    return true;
-#else
-    struct statvfs fs{};
-    if (statvfs(path.c_str(), &fs) != 0)
-        return false;
-    freeBytes = static_cast<uint64_t>(fs.f_bavail) * fs.f_frsize;
-    totalBytes = static_cast<uint64_t>(fs.f_blocks) * fs.f_frsize;
-    return true;
-#endif
+    return System::diskSpace(path, freeBytes, totalBytes);
 }

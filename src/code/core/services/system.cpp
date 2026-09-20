@@ -17,6 +17,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <sys/statvfs.h>
 #include <sys/wait.h>
 #include <sched.h>
 #endif
@@ -25,13 +26,11 @@
 using namespace std;
 
 namespace {
-#ifndef AB_DEBUG_HOST
 string floatToString(float value, int precision) {
     ostringstream oss;
     oss << fixed << setprecision(precision) << value;
     return oss.str();
 }
-#endif
 #ifdef _WIN32
 wstring wide(const string &s) {
     if (s.empty()) {
@@ -43,6 +42,32 @@ wstring wide(const string &s) {
         MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
     }
     return w;
+}
+
+// the one CreateProcess: a ready command line (the program first), the directory to start in ("" = ours),
+// waited for; the exit code, -1 when it could not start. CREATE_NO_WINDOW: a console program (cmd, curl)
+// gets no console window of its own; a GUI program is unaffected.
+int createProcessAndWait(const wstring &commandLine, const wstring &dir, const string &what) {
+    vector<wchar_t> buffer(commandLine.begin(), commandLine.end());
+    buffer.push_back(L'\0');
+
+    STARTUPINFOW si;
+    memset(&si, 0, sizeof(si));
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi;
+    memset(&pi, 0, sizeof(pi));
+    if (!CreateProcessW(nullptr, buffer.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                        nullptr, dir.empty() ? nullptr : dir.c_str(), &si, &pi)) {
+        PLOG_WARNING << "could not start " << what << ": error " << GetLastError();
+        return -1;
+    }
+    CloseHandle(pi.hThread);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 0;
+    GetExitCodeProcess(pi.hProcess, &code);
+    CloseHandle(pi.hProcess);
+    PLOG_INFO << what << " exited with " << code;
+    return static_cast<int>(code);
 }
 #endif
 } // namespace
@@ -86,20 +111,57 @@ void System::lowerCurrentThreadPriority() {
  * Return the available space of a usb device
  */
 string System::getAvailableSpace() {
-#ifdef AB_DEBUG_HOST
-    return "x86 - does not care about free space - Does not work on mac";
+    // the filesystem the USB root (the data partition on a Pi, the data tree's drive on Windows) is on
+    uint64_t freeBytes = 0, totalBytes = 0;
+    if (!diskSpace(Env::getPathToUSBRoot(), freeBytes, totalBytes)) {
+        return "";
+    }
+    const double gb = 1024.0 * 1024.0 * 1024.0;
+    int freeSpacePerc = totalBytes > 0 ? static_cast<int>(freeBytes * 100 / totalBytes) : 0;
+    return floatToString(static_cast<float>(freeBytes / gb), 2) + " GB / " +
+           floatToString(static_cast<float>(totalBytes / gb), 2) + " GB (" + to_string(freeSpacePerc) + "%)";
+}
+
+//*******************************
+// System::diskSpace
+//*******************************
+bool System::diskSpace(const string &path, uint64_t &freeBytes, uint64_t &totalBytes) {
+#ifdef _WIN32
+    ULARGE_INTEGER freeToCaller, total;
+    if (!GetDiskFreeSpaceExW(wide(path).c_str(), &freeToCaller, &total, nullptr)) {
+        return false;
+    }
+    freeBytes = freeToCaller.QuadPart;
+    totalBytes = total.QuadPart;
+    return true;
 #else
-    // the filesystem the USB root (the data partition, on a Pi) is on; execUnixCommand returns "" when df
-    // fails - Strings::toInt makes that a 0 instead of a thrown exception
-    int gb = 1024 * 1024;
-    string root = "'" + Env::getPathToUSBRoot() + "'";
-    string freeCmd = "df -P " + root + " | tail -1 | awk '{print $4}'";
-    string totalCmd = "df -P " + root + " | tail -1 | awk '{print $2}'";
-    float freeSpace = (float)Strings::toInt(execUnixCommand(freeCmd.c_str())) / gb;
-    float totalSpace = (float)Strings::toInt(execUnixCommand(totalCmd.c_str())) / gb;
-    int freeSpacePerc = totalSpace > 0 ? (int)((freeSpace / totalSpace) * 100) : 0;
-    return floatToString(freeSpace, 2) + " GB / " + floatToString(totalSpace, 2) + " GB (" + to_string(freeSpacePerc) +
-           "%)";
+    struct statvfs fs{};
+    if (statvfs(path.c_str(), &fs) != 0) {
+        return false;
+    }
+    freeBytes = static_cast<uint64_t>(fs.f_bavail) * fs.f_frsize;
+    totalBytes = static_cast<uint64_t>(fs.f_blocks) * fs.f_frsize;
+    return true;
+#endif
+}
+
+//*******************************
+// System::runShellCommand
+//*******************************
+int System::runShellCommand(const string &commandLine) {
+    PLOG_INFO << "Shell: " << commandLine;
+#ifdef _WIN32
+    // cmd.exe parses its own command line, not by the CRT's rules: `/c "<line>"` - the outer quotes go
+    // and everything between them is the command, its own quotes intact. ComSpec is where cmd.exe is.
+    const char *comspec = getenv("ComSpec");
+    wstring cmd = L"\"" + wide(comspec ? comspec : "cmd.exe") + L"\" /c \"" + wide(commandLine) + L"\"";
+    return createProcessAndWait(cmd, L"", "cmd /c " + commandLine);
+#else
+    int status = system(commandLine.c_str());
+    if (status == -1) {
+        return -1;
+    }
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 #endif
 }
 
@@ -203,29 +265,7 @@ int System::runAndWait(const string &exe, const vector<string> &args, const stri
     for (const string &arg : args) {
         cmd += L" " + quoted(arg);
     }
-    vector<wchar_t> buffer(cmd.begin(), cmd.end());
-    buffer.push_back(L'\0');
-    wstring dir = wide(cwd);
-
-    STARTUPINFOW si;
-    memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi;
-    memset(&pi, 0, sizeof(pi));
-    // CREATE_NO_WINDOW: a console program (a script through cmd, curl) gets no console window; a GUI
-    // program is unaffected
-    if (!CreateProcessW(nullptr, buffer.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                        nullptr, dir.empty() ? nullptr : dir.c_str(), &si, &pi)) {
-        PLOG_WARNING << "could not start " << exe << ": error " << GetLastError();
-        return -1;
-    }
-    CloseHandle(pi.hThread);
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    DWORD code = 0;
-    GetExitCodeProcess(pi.hProcess, &code);
-    CloseHandle(pi.hProcess);
-    PLOG_INFO << exe << " exited with " << code;
-    return static_cast<int>(code);
+    return createProcessAndWait(cmd, wide(cwd), exe);
 #else
     // argv[0] is the program itself, then the args, then a null terminator
     vector<const char *> argv;

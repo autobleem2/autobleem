@@ -1,3 +1,4 @@
+#include "system.h"
 #include "update_service.h"
 
 #include <ableem/engine/filesystem.h>
@@ -45,7 +46,7 @@ string baseName(const string &url) {
 //*******************************
 UpdateService::UpdateService(CommandRunner runner) : runner_(std::move(runner)) {
     if (!runner_)
-        runner_ = [](const string &commandLine) { return system(commandLine.c_str()); };
+        runner_ = [](const string &commandLine) { return System::runShellCommand(commandLine); };
 }
 
 UpdateService::~UpdateService() {
