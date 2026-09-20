@@ -241,7 +241,8 @@ drive alongside the small `bootfs` one.
 The launcher checks AutoBleem's download site once a day (and at every start) for a newer AutoBleem or
 RetroArch and asks on the screen: *Update now*, *Remind me tomorrow* or *Skip this version*. *Update now*
 downloads the package(s) with a progress bar and re-runs the installer with the same screen the first boot
-had; your games, settings, cores and BIOS files stay. *Options -> Updates* picks what it follows - `stable`
+had; your games, settings, cores and BIOS files stay, and the new launcher rescans the games once on its
+first start. *Options -> Updates* picks what it follows - `stable`
 releases, `latest` (the pre-releases too) or `off` - and the L2+R2 menu's *Software Update* checks on
 the spot. Over ssh the same is `sudo bash install.sh --update` from an unpacked package.
 

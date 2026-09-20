@@ -794,7 +794,8 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   the apply step died in one second at `tar` - the helper staged the package on the exFAT data
   partition, and tar run as root restores the archive's uid/gid, which exFAT refuses ("Cannot change
   ownership ... Operation not permitted", exit 2). The stage is `/var/tmp/autobleem-update` on the root
-  filesystem now, with `--no-same-owner`. Nothing on the screen said why: the launcher had left, the
+  filesystem now, with `--no-same-owner`. And **an installed launcher's first start after an update
+  rescans** (the owner's rule): `install_payload()` removes `games.fingerprint`/`roms.fingerprint`. Nothing on the screen said why: the launcher had left, the
   helper's failure message is a 6 s dialog on tty1 and the session loop restarted the launcher - so
   read `update.log` first when an update "does nothing".
 
