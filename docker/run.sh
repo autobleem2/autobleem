@@ -7,11 +7,34 @@
 #   docker/run.sh ci/build.sh all
 #   docker/run.sh                         an interactive shell in the image
 #   AB_BUILD_IMAGE=ghcr.io/autobleem/autobleem-build:latest docker/run.sh ...
+#
+# Two modes for the image builders (tools/make_pc_image.sh builds a Debian root from packages, which wants
+# either user namespaces or real root), both off by default - a build needs neither:
+#   docker/run.sh --userns CMD...        still the calling user, but seccomp and AppArmor unconfined so
+#                                        mmdebstrap --mode=unshare can make its user namespace and mount
+#                                        inside it (the rootless route; needs the kernel to allow
+#                                        unprivileged user namespaces)
+#   docker/run.sh --privileged CMD...    root inside the container with every device (loop mounts,
+#                                        grub-install on a loop device): the --mount route; files the
+#                                        command writes into the tree come out root-owned
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 IMAGE="${AB_BUILD_IMAGE:-autobleem-build:latest}"
 OPTS=()
+USER_OPTS=(-u "$(id -u):$(id -g)" -e HOME=/tmp)
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --userns)
+            OPTS+=(--security-opt seccomp=unconfined --security-opt apparmor=unconfined)
+            shift ;;
+        --privileged)
+            OPTS+=(--privileged)
+            USER_OPTS=(-e HOME=/root)
+            shift ;;
+        *) break ;;
+    esac
+done
 [ -t 0 ] && OPTS+=(-it)
 # every AB_* variable goes through: the ci/build.sh knobs, and the AB_GIT_* facts for a tree without .git
 for v in "${!AB_@}"; do OPTS+=(-e "$v"); done
@@ -34,5 +57,5 @@ if [ -z "${AB_NO_SCCACHE:-}" ]; then
 fi
 exec docker run --rm "${OPTS[@]}" \
     -v "$PWD:$PWD" -w "$PWD" \
-    -u "$(id -u):$(id -g)" -e HOME=/tmp \
+    "${USER_OPTS[@]}" \
     "$IMAGE" "$@"

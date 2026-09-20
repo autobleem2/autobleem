@@ -1,4 +1,4 @@
-# AutoBleem on a Raspberry Pi
+# AutoBleem on a Raspberry Pi - and on a PC USB stick
 
 Turns a Raspberry Pi running **Raspberry Pi OS Lite**, 32-bit (armhf) or 64-bit (arm64), into an AutoBleem
 machine: it boots straight into the launcher with no desktop, and its games live on an exFAT partition you
@@ -6,6 +6,17 @@ can plug into a Windows, Mac or Linux machine and drop games onto — the same w
 USB stick works. The two architectures build and install the same way; pick the tarball for the OS you
 flashed (`autobleem-rpi.tar.gz` for 32-bit, `autobleem-rpi-arm64.tar.gz` for 64-bit) - `install.sh` detects
 which it is running on and downloads the matching RetroArch cores.
+
+**The PC USB stick** (2026-09-20) is the same appliance on a **32-bit x86 PC**: `autobleem-pcusb-i386.tar.gz`
+installs over a minimal **Debian 12 Bookworm i386** (the last Debian with a 32-bit x86 kernel, so older
+CPUs run it too) exactly as the Pi's tarball installs over Raspberry Pi OS - `install.sh` detects a PC and
+takes its own boot setup (GRUB instead of `cmdline.txt`; there is no `--hdmi-mode`, the KMS driver takes
+the screen's native mode), the i386 RetroArch build and cores (`biospack-i386.txt` for the BIOS), and
+everything else - the data partition, the session on tty1, the update - is the Pi's. Its own flashable
+stick image (`tools/make_pc_image.sh`) is the next step; until then, install Debian 12 i386 by hand
+(the netinst, no desktop, leave room after the root partition for the data partition), then:
+
+    tar xzf autobleem-pcusb-i386.tar.gz && cd autobleem-pcusb && sudo bash install.sh
 
 Starting from a blank SD card? `docs/pi-install-guide.md` walks through flashing the OS, first boot and
 running the installer, start to finish. This page is the fuller reference once you're there.

@@ -12,6 +12,7 @@ or on GitHub's runners. `docs/ci-plan.md` was the plan; this is the operator's p
 | `psc` | `build_psc/` | `toolchains/psc/PSCtoolchainV8.cmake` over `/opt/psc` (Stretch sysroot, gcc-6, SDL2 2.0.12 built in the image) | `autobleem-psc-<v>.zip` - the USB stick's root (`tools/make_psc_package.sh`) |
 | `rpi` | `build_rpi/` | `toolchains/rpi/RPitoolchain.cmake` (Debian `arm-linux-gnueabihf`) | `autobleem-rpi.tar.gz` (`tools/make_rpi_package.sh`) |
 | `rpi64` | `build_rpi64/` | `toolchains/rpi64/RPi64toolchain.cmake` (Debian `aarch64-linux-gnu`) | `autobleem-rpi-arm64.tar.gz` |
+| `pcusb` | `build_pcusb/` | `toolchains/pcusb/PcUsbToolchain.cmake` (Debian `i686-linux-gnu`, `-march=i686`, the image's `pcusb` stage) | `autobleem-pcusb-i386.tar.gz` - the 32-bit PC stick (`tools/make_rpi_package.sh --arch i386`); its unit tests run in the image, i386 being native there |
 | `win` | `build_mingw/` | `toolchains/mingw/MinGWtoolchain.cmake` (mingw-w64 posix + `/opt/mingw-sdl2`) | `autobleem-win-<v>.zip`, `UpdateRoms-<v>.zip` (`tools/make_win_package.sh`) |
 
 `<v>` is `git describe --tags --always --dirty`. The build directories are the ones `make_*.sh` use, so a
@@ -25,12 +26,13 @@ the native, Pi, MinGW and console builds all draw on it; `docker/run.sh` mounts 
 run ends with the hit/miss stats. A clean checkout (the CI's) then compiles only what changed since the
 last run on that host.
 
-**pcsx-ab first.** For `psc`, `rpi` and `rpi64` the script begins with the emulator: pcsx-ab's own
+**pcsx-ab first.** For `psc`, `rpi`, `rpi64` and `pcusb` the script begins with the emulator: pcsx-ab's own
 `ci/build.sh <target>` in its checkout (`AB_PCSX_DIR`, else `../pcsx-ab`, `../pcsx-ab2` or
 `../pcsx-rearmed-develop` next to this tree; the CI checks out `autobleem/pcsx-ab2` there), and the stripped
-`pcsx-ab` + `plugins/*.so` replace `payload/Autobleem/bin/emu/` or `payload_linux/Autobleem/bin/emu{,-arm64}/`
+`pcsx-ab` + `plugins/*.so` replace `payload/Autobleem/bin/emu/` or `payload_linux/Autobleem/bin/emu{,-arm64,-i386}/`
 before the package is made - so a package always ships an emulator built by the same image, from the same
-run. `AB_NO_PCSX=1` ships the checked-in binaries instead (a developer without that checkout). The console
+run. `AB_NO_PCSX=1` ships the checked-in binaries instead (a developer without that checkout); a pcsx-ab
+checkout without the target yet (`pcusb`) is reported and the package ships without an emulator. The console
 emulator is built with `gles=ON` (EGL on Weston - `gpu_gles.so`), the Pis with SDL2's renderer; the 32-bit
 targets get the NEON GPU/GTE and Ari64's dynarec, the 64-bit Pi the C interpreter (no aarch64 dynarec in
 this fork). `docker/run.sh` mounts that checkout at its own path next to this one.
