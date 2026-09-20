@@ -37,8 +37,11 @@ struct PlatformConfig {
     // the RetroArch cores' file extension (".so"; ".dll" on Windows) - how CoreInfoTable finds a core
     // next to its .info, and what retroarch_core defaults to
     std::string coreExtension = ".so";
-    // where pcsx-ab is for a direct launch; relative to the resources dir unless absolute; "" = none
+    // where pcsx-ab (pcsx_dir) and pcsx-abnxt (pcsxnxt_dir) are for a direct launch - the same two
+    // folders the scripts know as Autobleem/bin/emu and emunxt; relative to the resources dir unless
+    // absolute; "" = none
     std::string pcsxDir;
+    std::string pcsxNxtDir;
     // what this platform calls its USB root - the prefix its playlists carry ("/media" on the console,
     // "/media/autobleem" on a Pi). Not applied to Env: it is for a tool writing the target's files from
     // another machine (UpdateRoms), where Env's root is that machine's.

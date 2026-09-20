@@ -219,6 +219,37 @@ bool System::startDetached(const string &exe, const vector<string> &args) {
 }
 
 //*******************************
+// System::makeDirectoryLink / removeDirectoryLink
+//*******************************
+bool System::makeDirectoryLink(const string &link, const string &target) {
+    removeDirectoryLink(link);
+#ifdef _WIN32
+    string l = link, t = target;
+    for (char &c : l)
+        if (c == '/')
+            c = '\\';
+    for (char &c : t)
+        if (c == '/')
+            c = '\\';
+    // a junction wants a directory that exists
+    if (!DirEntry::isDirectory(target)) {
+        return false;
+    }
+    return runShellCommand("mklink /J \"" + l + "\" \"" + t + "\" >nul") == 0 && DirEntry::isDirectory(link);
+#else
+    return symlink(target.c_str(), link.c_str()) == 0;
+#endif
+}
+
+void System::removeDirectoryLink(const string &link) {
+#ifdef _WIN32
+    RemoveDirectoryW(wide(link).c_str()); // a junction goes, its target stays; a real directory only when empty
+#else
+    unlink(link.c_str());
+#endif
+}
+
+//*******************************
 // System::runShellCommand
 //*******************************
 int System::runShellCommand(const string &commandLine) {

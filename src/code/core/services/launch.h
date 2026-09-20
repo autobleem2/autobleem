@@ -56,10 +56,18 @@ public:
     // where the launcher scripts are
     static std::string pcsxLauncherScript();      // rc/launch.sh
     static std::string retroArchLauncherScript(); // rc/launch_rb.sh
-    // the direct-launch programs: <pcsx dir>/pcsx-ab(.exe), and the first RetroArch binary that exists
-    // ("" when none does)
-    static std::string pcsxExecutable();
+    // the direct-launch programs: the PS1 emulator config.ini's "emulator" names - <pcsx dir>/pcsx-ab(.exe)
+    // for pcsx-ab, <pcsxnxt dir>/pcsx-ab(.exe) for pcsx-abnxt - falling back to the other when that folder
+    // has no binary, as launch.sh does ("" when neither has one: RetroArch's PS1 core is next); and the
+    // first RetroArch binary that exists ("" when none does)
+    std::string pcsxExecutable() const;
     static std::string retroArchExecutable();
+    // <dir>/pcsx-ab(.exe)
+    static std::string pcsxBinaryIn(const std::string &dir);
+    // a direct launch of the old pcsx-ab, which knows only the run directory launch.sh lays out (.pcsx,
+    // bios and plugins as links next to the working directory): <System>/runpcsx, made with directory
+    // links before the run and cleared after. pcsx-abnxt takes -dotdir/-biosdir instead and needs none.
+    static std::string pcsxRunDir();
 
     // what a launch runs, for either mode. The pcsx plan: the save-state folder, the disc image, the
     // language id, the resume slot (-1 = none) and config.ini's aspect/filter flags as "0"/"1".

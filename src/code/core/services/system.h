@@ -26,6 +26,12 @@ public:
     // installer and leaves. True when it started.
     static bool startDetached(const std::string &exe, const std::vector<std::string> &args);
 
+    // a directory link: a symlink, or on Windows a junction (mklink /J - no privilege needed, NTFS only)
+    // - what a direct launch of pcsx-ab lays its run directory out with, the way launch.sh does with ln -s
+    static bool makeDirectoryLink(const std::string &link, const std::string &target);
+    // removes the link itself, never what it points at (RemoveDirectory on a junction, unlink on a symlink)
+    static void removeDirectoryLink(const std::string &link);
+
     static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
     // runs a command line through the shell and waits: std::system, except that on Windows the child
     // (cmd.exe and what it starts - curl) gets no console window, so nothing flashes over the launcher.

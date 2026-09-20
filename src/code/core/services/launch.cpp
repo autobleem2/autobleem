@@ -40,14 +40,32 @@ string LaunchService::retroArchLauncherScript() {
 }
 
 //*******************************
-// LaunchService::pcsxExecutable / retroArchExecutable
+// LaunchService::pcsxBinaryIn / pcsxExecutable / retroArchExecutable
 //*******************************
-string LaunchService::pcsxExecutable() {
+string LaunchService::pcsxBinaryIn(const string &dir) {
+    if (dir.empty()) {
+        return "";
+    }
 #ifdef _WIN32
-    return Env::pcsxDir() + sep + "pcsx-ab.exe";
+    return dir + sep + "pcsx-ab.exe";
 #else
-    return Env::pcsxDir() + sep + "pcsx-ab";
+    return dir + sep + "pcsx-ab";
 #endif
+}
+
+string LaunchService::pcsxExecutable() const {
+    // the chosen one first, the other when its folder has no binary - the same order launch.sh keeps
+    const bool nxt = config_.inifile.values.at("emulator") == "pcsx-abnxt";
+    const string first = pcsxBinaryIn(nxt ? Env::pcsxNxtDir() : Env::pcsxDir());
+    const string second = pcsxBinaryIn(nxt ? Env::pcsxDir() : Env::pcsxNxtDir());
+    if (!first.empty() && DirEntry::exists(first)) {
+        return first;
+    }
+    if (!second.empty() && DirEntry::exists(second)) {
+        PLOG_INFO << "no " << first << " - falling back to " << second;
+        return second;
+    }
+    return "";
 }
 
 string LaunchService::retroArchExecutable() {
@@ -84,22 +102,43 @@ LaunchPlan LaunchService::planPcsx(const PsGame &game, const string &discImage, 
         return plan;
     }
     plan.exe = pcsxExecutable();
-    plan.cwd = Env::pcsxDir();
-    plan.args = {"-dotdir",  game.ssFolder,
-                 "-biosdir", Env::getPathToPs1BiosDir(),
-                 "-filter",  filter,
-                 "-ratio",   aspect,
-                 "-lang",    lang,
-                 "-region",  "4",
-                 "-enter",   "1"};
+    if (plan.exe.empty()) {
+        // no PS1 emulator of our own on this machine: RetroArch's pcsx_rearmed core plays the game (it
+        // cannot read our save-state slots, so a resume starts from the beginning) - launch.sh's fallback
+        PLOG_INFO << "no pcsx-ab in " << Env::pcsxDir() << " or " << Env::pcsxNxtDir()
+                  << " - falling back to RetroArch's PS1 core";
+        return planRetroArch(discImage, RaNeonCore);
+    }
+    const string emuDir = plan.exe.substr(0, plan.exe.find_last_of('/'));
+    if (!Env::pcsxNxtDir().empty() && emuDir == Env::pcsxNxtDir()) {
+        // pcsx-abnxt: the profile and the BIOS named outright, full screen by its own option
+        plan.cwd = emuDir;
+        plan.args = {"-dotdir", game.ssFolder, "-biosdir", Env::getPathToPs1BiosDir()};
+    } else {
+        // pcsx-ab: the run directory launch.sh builds, made with directory links by launchPcsx()
+        plan.cwd = pcsxRunDir();
+    }
+    for (const char *a :
+         {"-filter", filter.c_str(), "-ratio", aspect.c_str(), "-lang", lang.c_str(), "-region", "4", "-enter", "1"}) {
+        plan.args.push_back(a);
+    }
     if (resumePoint != -1) {
         plan.args.push_back("-load");
         plan.args.push_back(to_string(resumePoint));
     }
-    plan.args.push_back("-fullscreen");
+    if (plan.cwd == emuDir) {
+        plan.args.push_back("-fullscreen");
+    }
     plan.args.push_back("-cdfile");
     plan.args.push_back(discImage);
     return plan;
+}
+
+//*******************************
+// LaunchService::pcsxRunDir
+//*******************************
+string LaunchService::pcsxRunDir() {
+    return Env::getPathToSystemDir() + sep + "runpcsx";
 }
 
 //*******************************
@@ -294,7 +333,32 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
         }
     }
 
-    runner_.run(planPcsx(game, gameFile, langStr, resumePoint, aspect, filter));
+    LaunchPlan plan = planPcsx(game, gameFile, langStr, resumePoint, aspect, filter);
+    // the old pcsx-ab started directly: its run directory as launch.sh lays it out - .pcsx the save-state
+    // folder, bios the PS1 BIOS, plugins the emulator's - as directory links, cleared again after
+    const bool runDir = plan.cwd == pcsxRunDir();
+    if (runDir) {
+        const string dir = pcsxRunDir(), emuDir = plan.exe.substr(0, plan.exe.find_last_of('/'));
+        DirEntry::createDirs(dir);
+        DirEntry::createDirs(Env::getPathToPs1BiosDir());
+        DirEntry::createDirs(game.ssFolder); // a link needs its target to exist (the emulator would make it)
+        bool ok = System::makeDirectoryLink(dir + sep + ".pcsx", game.ssFolder) &&
+                  System::makeDirectoryLink(dir + sep + "bios", Env::getPathToPs1BiosDir());
+        if (ok && DirEntry::isDirectory(emuDir + sep + "plugins")) {
+            ok = System::makeDirectoryLink(dir + sep + "plugins", emuDir + sep + "plugins");
+        }
+        if (!ok) {
+            // no links on this file system (a FAT stick): the emulator would run with an empty profile
+            PLOG_WARNING << "cannot lay out " << dir << " - RetroArch's PS1 core plays the game instead";
+            plan = planRetroArch(gameFile, RaNeonCore);
+        }
+    }
+    runner_.run(plan);
+    if (runDir) {
+        for (const char *l : {".pcsx", "bios", "plugins"}) {
+            System::removeDirectoryLink(pcsxRunDir() + sep + l);
+        }
+    }
     cleanupPcsxConfig(game);
 
     usleep(3 * 1000);

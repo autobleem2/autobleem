@@ -90,10 +90,12 @@ struct Environment : ableem::Environment {
     // product); otherwise through the rc/launch*.sh scripts (the console, the appliances, a dev host)
     static void setDirectLaunch(bool direct);
     static bool directLaunch();
-    // PlatformConfig's pcsx_dir: where pcsx-ab is for a direct launch (resolved, absolute); "" = the
-    // scripts know
+    // PlatformConfig's pcsx_dir / pcsxnxt_dir: where pcsx-ab and pcsx-abnxt are for a direct launch
+    // (resolved, absolute); "" = the scripts know. Options -> "PS1 Emulator" picks between the two
     static void setPcsxDir(const std::string &path);
     static const std::string &pcsxDir();
+    static void setPcsxNxtDir(const std::string &path);
+    static const std::string &pcsxNxtDir();
 
     // the gamecontrollerdb.txt files SDL's pad mappings come from, first existing wins: the kernel's
     // (/etc/autobleem on the console - what the pscbios wizard writes when it is there), then the shipped

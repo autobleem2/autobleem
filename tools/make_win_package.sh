@@ -12,9 +12,13 @@
 #
 #   autobleem-win-product-<v>.zip   AutoBleem/: autobleem-gui.exe (GUI subsystem, full screen, the data tree
 #                            found by itself - see EnvironmentSetup::fromWindowsInstall) + resources + DLLs,
-#                            Themes/ (payload/Themes, copied into the data tree on the first start), emu/
-#                            (pcsx-ab's Windows build when AB_PCSX_WIN_DIST names one - none yet: PS1 games
-#                            go through RetroArch's pcsx_rearmed until then), dataroot.txt.example
+#                            AutoBleemWinSetup.exe, Themes/ (payload/Themes, copied into the data tree on the
+#                            first start), the two PS1 emulators as emu/ (pcsx-ab) and emunxt/ (pcsx-abnxt) -
+#                            Options -> "PS1 Emulator" picks, as on the console and the Pi - from a local
+#                            build (AB_PCSX_WIN_DIST / AB_PCSXNXT_WIN_DIST: a folder with pcsx-ab.exe and its
+#                            DLLs) or else the site's win64 package (emu/pcsx-ab, emu/pcsx-abnxt latest.json;
+#                            AB_NO_PCSX=1 ships none: PS1 games then go through RetroArch's pcsx_rearmed),
+#                            dataroot.txt.example
 #
 #   tools/make_win_package.sh [--build-dir build_mingw] [--product build_win_product] [--out dist/win]
 #                             [--version v2.0.0]
@@ -61,14 +65,20 @@ runtime_dlls() {
     # the image's SDL DLLs are self-contained; MSYS2's pull in forty more (libpng, freetype, the codecs,
     # libstdc++ ...) - there, every DLL ldd finds under the environment's bin dir comes along, so the
     # folder runs on a PC with no MSYS2
-    if [ ! -d "$SDL/bin" ] && [ -n "${MSYSTEM:-}" ] && command -v ldd >/dev/null 2>&1; then
-        local exe found
-        for exe in "$dest"/*.exe "$dest"/SDL2*.dll; do
-            for found in $(ldd "$exe" 2>/dev/null | grep -io "$bindir/[^ ]*[.]dll" | sort -u); do
-                [ -f "$dest/$(basename "$found")" ] || cp "$found" "$dest/"
-            done
+    [ -d "$SDL/bin" ] || msys_dll_closure "$dest"
+}
+
+# every DLL of the MSYS2 environment the exes and DLLs in a folder need, copied next to them
+msys_dll_closure() {
+    local dest="$1" bindir exe found
+    [ -n "${MSYSTEM:-}" ] && command -v ldd >/dev/null 2>&1 || return 0
+    bindir="$(dirname "$(command -v gcc)")"
+    for exe in "$dest"/*.exe "$dest"/*.dll; do
+        [ -f "$exe" ] || continue
+        for found in $(ldd "$exe" 2>/dev/null | grep -io "$bindir/[^ ]*[.]dll" | sort -u); do
+            [ -f "$dest/$(basename "$found")" ] || cp "$found" "$dest/"
         done
-    fi
+    done
 }
 
 # a zip of a staged folder's contents: zip where there is one, python's zipfile otherwise (MSYS2 has no zip)
@@ -80,6 +90,55 @@ zipdir() {
     else
         python3 -c 'import shutil,sys; shutil.make_archive(sys.argv[1][:-4], "zip", sys.argv[2])' "$out" "$dir"
     fi
+}
+
+# emulator NAME FOLDER [LOCAL_DIST]: pcsx-ab.exe with its DLLs, plugins and skin into $APP/FOLDER - from
+# LOCAL_DIST when it holds one, else the site's win64 zip (emu/<name>/latest.json; its one top folder is
+# stripped); nothing, with a note, when neither is there or AB_NO_PCSX is set
+emulator() {
+    local name="$1" folder="$2" local_dist="$3" url tmp
+    if [ -n "${AB_NO_PCSX:-}" ]; then
+        echo "    AB_NO_PCSX: no $name"
+        return
+    fi
+    if [ -n "$local_dist" ] && [ -f "$local_dist/pcsx-ab.exe" ]; then
+        # a build dir as well as a packaged folder: the exe, its DLLs, the plugins and the menu's skin
+        mkdir -p "$APP/$folder"
+        cp "$local_dist/pcsx-ab.exe" "$APP/$folder/"
+        cp "$local_dist"/*.dll "$APP/$folder/" 2>/dev/null || true
+        [ -d "$local_dist/plugins" ] && cp -a "$local_dist/plugins" "$APP/$folder/"
+        if [ -d "$local_dist/skin" ]; then
+            cp -a "$local_dist/skin" "$APP/$folder/"
+        elif [ -d "$local_dist/../frontend/pandora/skin" ]; then
+            cp -a "$local_dist/../frontend/pandora/skin" "$APP/$folder/" # a build dir: the menu's skin from the tree
+        fi
+        msys_dll_closure "$APP/$folder"
+        echo "    $name from $local_dist -> $folder/"
+        return
+    fi
+    url="$(curl -sfL "${AB_REPO_URL:-https://autobleem.retromenele.pl}/emu/$name/latest.json" \
+        | python3 -c 'import json,sys; print(json.load(sys.stdin)["files"]["win64"]["url"])' 2>/dev/null || true)"
+    if [ -z "$url" ]; then
+        echo "    (no Windows build of $name - locally or on the site)"
+        return
+    fi
+    tmp="$(mktemp -d)"
+    if curl -sfL -o "$tmp/emu.zip" "$url" && python3 -c '
+import sys, zipfile
+z = zipfile.ZipFile(sys.argv[1])
+names = [n for n in z.namelist() if not n.endswith("/")]
+top = names[0].split("/")[0] + "/" if all("/" in n and n.split("/")[0] == names[0].split("/")[0] for n in names) else ""
+for n in names:
+    dest = sys.argv[2] + "/" + n[len(top):]
+    import os; os.makedirs(os.path.dirname(dest), exist_ok=True)
+    open(dest, "wb").write(z.read(n))
+' "$tmp/emu.zip" "$APP/$folder" && [ -f "$APP/$folder/pcsx-ab.exe" ]; then
+        echo "    $name from $url -> $folder/"
+    else
+        echo "    (the site's $name package could not be fetched - none shipped)"
+        rm -rf "$APP/$folder"
+    fi
+    rm -rf "$tmp"
 }
 
 mkdir -p "$OUT"
@@ -108,13 +167,9 @@ if [ -n "$PRODUCT_DIR" ]; then
     fi
     mkdir -p "$APP/Themes"
     cp -a "$REPO/payload/Themes/." "$APP/Themes/"
-    # pcsx-ab's Windows build, when there is one (AB_PCSX_WIN_DIST: a folder with pcsx-ab.exe and its DLLs)
-    if [ -n "${AB_PCSX_WIN_DIST:-}" ] && [ -f "$AB_PCSX_WIN_DIST/pcsx-ab.exe" ]; then
-        mkdir -p "$APP/emu"
-        cp -a "$AB_PCSX_WIN_DIST/." "$APP/emu/"
-    else
-        echo "    (no pcsx-ab Windows build - PS1 games run through RetroArch's pcsx_rearmed core)"
-    fi
+    # the two PS1 emulators: a local Windows build, else the site's package of each
+    emulator "pcsx-ab" "emu" "${AB_PCSX_WIN_DIST:-}"
+    emulator "pcsx-abnxt" "emunxt" "${AB_PCSXNXT_WIN_DIST:-}"
     cat > "$APP/dataroot.txt.example" <<'EOF'
 # A portable copy of AutoBleem: rename this file to dataroot.txt and put on its first line the folder that
 # holds the games (Games\), the settings (System\) and the themes - a folder on this stick, say. Without

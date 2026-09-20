@@ -447,11 +447,18 @@ struct DirectLaunching : Launching {
     DirectLaunching() {
         Env::setDirectLaunch(true);
         Env::setPcsxDir(tmp.makeSubDir("program/emu"));
+        Env::setPcsxNxtDir(tmp.makeSubDir("program/emunxt"));
+        putEmulator("emu");
+        putEmulator("emunxt");
         ableem::Environment::setRetroarchDir(tmp.makeSubDir("RetroArch/bin"));
         ableem::Environment::setRetroarchCoreExtension(".dll");
         ableem::Environment::setRetroarchCoreFile(tmp.at("RetroArch/bin/cores/pcsx_rearmed_libretro.dll"));
         Env::setRetroArchBinaries({tmp.at("RetroArch/bin/retroarch.exe")});
         tmp.writeFile("RetroArch/bin/retroarch.exe", "MZ");
+    }
+    // a pcsx-ab binary in <program>/<folder>, named as this build's LaunchService looks for it
+    void putEmulator(const string &folder) {
+        tmp.writeFile("program/" + folder + "/" + LaunchService::pcsxBinaryIn("x").substr(2), "MZ");
     }
     // the executable the plan names, without the .exe the Windows build adds
     static string stem(const string &exe) {
@@ -460,22 +467,62 @@ struct DirectLaunching : Launching {
 };
 } // namespace
 
-TEST_CASE("direct mode: pcsx-ab itself, from its own folder, with the dot dir, the BIOS and full screen") {
+TEST_CASE("direct mode: the PS1 emulator itself - pcsx-ab in launch.sh's run directory, pcsx-abnxt by its options") {
     DirectLaunching lib;
     lib.configure("Aspect=true\nMip=false\n");
     PsGamePtr game = lib.usbGame();
 
-    SUBCASE("a fresh start") {
+    SUBCASE("a fresh start with pcsx-ab (the default): the run directory laid out with directory links") {
+        string linksSeen;
+        lib.runner.whileRunning = [&] {
+            // while the emulator runs: .pcsx is the save-state folder, bios the PS1 BIOS folder
+            linksSeen = ableem::DirEntry::isDirectory(lib.tmp.at("System/runpcsx/.pcsx")) &&
+                                ableem::DirEntry::exists(lib.tmp.at("System/runpcsx/.pcsx/pcsx.cfg")) &&
+                                ableem::DirEntry::isDirectory(lib.tmp.at("System/runpcsx/bios"))
+                            ? "linked"
+                            : "not linked";
+        };
+        lib.tmp.writeFile("Games/Tekken 3/sstates/pcsx.cfg", "Gpu3 = x\n");
         lib.service->launch(game, EmuMode::Pcsx, -1);
         const FakeProcessRunner::Call &call = lib.runner.only();
         CHECK(DirectLaunching::stem(call.exe) == lib.tmp.at("program/emu/pcsx-ab"));
-        CHECK(call.cwd == lib.tmp.at("program/emu"));
+        CHECK(call.cwd == lib.tmp.at("System/runpcsx"));
+        CHECK(call.args == vector<string>{"-filter", "0", "-ratio", "1", "-lang", "2", "-region", "4", "-enter", "1",
+                                          "-cdfile", lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
+        CHECK(linksSeen == "linked");
+        // the links go after the run, the save states stay
+        CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/runpcsx/.pcsx")));
+        CHECK(ableem::DirEntry::exists(lib.tmp.at("Games/Tekken 3/sstates/pcsx.cfg")));
+    }
+    SUBCASE("Options' PS1 Emulator picks pcsx-abnxt, run from its folder with -dotdir/-biosdir/-fullscreen") {
+        lib.configure("Aspect=true\nMip=false\nEmulator=pcsx-abnxt\n");
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        const FakeProcessRunner::Call &call = lib.runner.only();
+        CHECK(DirectLaunching::stem(call.exe) == lib.tmp.at("program/emunxt/pcsx-ab"));
+        CHECK(call.cwd == lib.tmp.at("program/emunxt"));
         CHECK(call.args == vector<string>{"-dotdir", lib.tmp.at("Games/Tekken 3/sstates"), "-biosdir",
                                           lib.tmp.at("System/Bios"), "-filter", "0", "-ratio", "1", "-lang", "2",
                                           "-region", "4", "-enter", "1", "-fullscreen", "-cdfile",
                                           lib.tmp.at("Games/Tekken 3/Tekken 3.cue")});
+        CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/runpcsx")));
+    }
+    SUBCASE("a chosen emulator whose folder has no binary falls back to the other, as launch.sh does") {
+        lib.configure("Emulator=pcsx-abnxt\n");
+        ableem::DirEntry::removeDirAndContents(lib.tmp.at("program/emunxt"));
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        CHECK(DirectLaunching::stem(lib.runner.only().exe) == lib.tmp.at("program/emu/pcsx-ab"));
+    }
+    SUBCASE("neither emulator on this machine: RetroArch's PS1 core plays the game") {
+        ableem::DirEntry::removeDirAndContents(lib.tmp.at("program/emu"));
+        ableem::DirEntry::removeDirAndContents(lib.tmp.at("program/emunxt"));
+        lib.service->launch(game, EmuMode::Pcsx, -1);
+        const FakeProcessRunner::Call &call = lib.runner.only();
+        CHECK(call.exe == lib.tmp.at("RetroArch/bin/retroarch.exe"));
+        CHECK(call.args[3] == lib.tmp.at("RetroArch/bin/cores/pcsx_rearmed_libretro.dll"));
+        CHECK(call.args[5] == lib.tmp.at("Games/Tekken 3/Tekken 3.cue"));
     }
     SUBCASE("resuming a slot adds -load") {
+        lib.configure("Emulator=pcsx-abnxt\n");
         lib.service->launch(game, EmuMode::Pcsx, 2);
         const vector<string> &args = lib.runner.only().args;
         auto load = std::find(args.begin(), args.end(), "-load");

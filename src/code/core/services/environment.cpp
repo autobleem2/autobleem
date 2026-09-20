@@ -14,6 +14,7 @@ string updateDownloadCommand_;
 string retroArchCatalog_;
 bool directLaunch_ = false;
 string pcsxDir_;
+string pcsxNxtDir_;
 } // namespace
 
 //*******************************
@@ -83,6 +84,12 @@ void Env::setPcsxDir(const string &path) {
 }
 const string &Env::pcsxDir() {
     return pcsxDir_;
+}
+void Env::setPcsxNxtDir(const string &path) {
+    pcsxNxtDir_ = path;
+}
+const string &Env::pcsxNxtDir() {
+    return pcsxNxtDir_;
 }
 const string &Env::repoUrl() {
     return repoUrl_;

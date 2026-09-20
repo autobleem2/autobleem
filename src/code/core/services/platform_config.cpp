@@ -91,6 +91,7 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
             cfg.coreExtension = "." + cfg.coreExtension;
     }
     cfg.pcsxDir = value("pcsx_dir");
+    cfg.pcsxNxtDir = value("pcsxnxt_dir");
     return cfg;
 }
 
@@ -113,4 +114,5 @@ void PlatformConfig::apply() const {
     Env::setRetroarchCoreExtension(coreExtension);
     Env::setDirectLaunch(launchMode == "direct");
     Env::setPcsxDir(pcsxDir.empty() ? "" : under(Env::getWorkingPath(), pcsxDir));
+    Env::setPcsxNxtDir(pcsxNxtDir.empty() ? "" : under(Env::getWorkingPath(), pcsxNxtDir));
 }

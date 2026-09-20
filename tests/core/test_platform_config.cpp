@@ -148,18 +148,21 @@ TEST_CASE("PlatformConfig: the update, launch and core-extension keys") {
         cfg.coreExtension = ".dll";
         cfg.retroarchCatalog = "/pc/retroarch/latest.json";
         cfg.pcsxDir = "emu";
+        cfg.pcsxNxtDir = "emunxt";
         cfg.apply();
         CHECK(Environment::directLaunch());
         CHECK(Environment::getRetroarchCoreExtension() == ".dll");
         CHECK(Environment::getPathToRetroarchCoreFile() == "/data/RetroArch/bin/cores/pcsx_rearmed_libretro.dll");
         CHECK(Environment::retroArchCatalog() == "pc/retroarch/latest.json");
         CHECK(Environment::pcsxDir() == "/app/emu");
+        CHECK(Environment::pcsxNxtDir() == "/app/emunxt");
 
         PlatformConfig plain;
         plain.apply();
         CHECK_FALSE(Environment::directLaunch());
         CHECK(Environment::getPathToRetroarchCoreFile() == "/data/RetroArch/bin/cores/pcsx_rearmed_libretro.so");
         CHECK(Environment::pcsxDir().empty());
+        CHECK(Environment::pcsxNxtDir().empty());
     }
 }
 
