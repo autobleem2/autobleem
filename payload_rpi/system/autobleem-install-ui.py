@@ -37,6 +37,7 @@ import struct
 import sys
 import time
 import zlib
+import pickle
 
 try:
     import fcntl  # Linux only; --render on a PC has no console to switch
@@ -304,15 +305,19 @@ class Canvas:
 # the screen
 #*******************************
 class Screen:
-    def __init__(self, canvas, logo, big, small):
+    def __init__(self, canvas, logo, big, small, logo_cache=""):
         self.c = canvas
         self.big, self.small = big, small
         w, h = canvas.width, canvas.height
         self.margin = w // 8
         # the logo: its bright part, scaled to at most 40% of the height and 60% of the width, centred
         self.logo_bottom = h // 12
-        if logo:
-            crop = crop_dark_border(logo)
+        self.logo = None
+        if logo and logo_cache:
+            self.logo, self.logo_bottom = self.load_logo_cache(logo_cache, canvas)
+        png = load_png(logo) if logo and self.logo is None else None
+        if png is not None:
+            crop = crop_dark_border(png)
             cw, ch = crop[2] - crop[0], crop[3] - crop[1]
             num, den = 1, 1
             max_w, max_h = w * 6 // 10, h * 4 // 10
@@ -321,15 +326,15 @@ class Screen:
             # blitted once into the canvas, then kept as raw rows: a frame copies them back with slice
             # assignments instead of scaling the PNG again (seconds per frame on a Pi in pure Python)
             x, y = (w - cw * num // den) // 2, h // 16
-            canvas.blit_rgb(x, y, logo, crop, num, den)
+            canvas.blit_rgb(x, y, png, crop, num, den)
             out_w, out_h = cw * num // den, ch * num // den
             self.logo = []
             for yy in range(y, min(canvas.height, y + out_h)):
                 off = yy * canvas.stride + x * canvas.bytes_pp
                 self.logo.append((off, bytes(canvas.buf[off:off + out_w * canvas.bytes_pp])))
             self.logo_bottom = y + out_h + h // 24
-        else:
-            self.logo = None
+            if logo_cache:
+                self.save_logo_cache(logo_cache, logo, canvas)
         self.phase, self.phase_index, self.phase_count = "Preparing", 0, 1
         self.percent = None
         self.percent_at = time.monotonic()
@@ -338,6 +343,36 @@ class Screen:
         self.done = False
         self.line_height = (small.height + 4) if small else 20
         self.box_lines = 8
+
+    # Decoding the PNG and scaling it is pure Python at a pixel a step: seconds on a Pi, paid by every
+    # dialog the first boot opens (each is its own process). So the rows as they land in the framebuffer
+    # are kept in a file next to the PNG, good for that PNG (size, mtime) on that framebuffer geometry.
+    @staticmethod
+    def cache_key(logo_path, canvas):
+        st = os.stat(logo_path)
+        return (2, st.st_size, int(st.st_mtime), canvas.width, canvas.height, canvas.bpp, canvas.stride)
+
+    @staticmethod
+    def load_logo_cache(path, canvas):
+        try:
+            with open(path, "rb") as f:
+                key, logo_bottom, rows = pickle.load(f)
+            if key != Screen.cache_key(path[:-len(".cache")], canvas):
+                return None, 0
+            for off, data in rows:
+                canvas.buf[off:off + len(data)] = data
+            return rows, logo_bottom
+        except Exception:
+            return None, 0
+
+    def save_logo_cache(self, path, logo_path, canvas):
+        try:
+            tmp = path + ".tmp"
+            with open(tmp, "wb") as f:
+                pickle.dump((self.cache_key(logo_path, canvas), self.logo_bottom, self.logo), f, 2)
+            os.replace(tmp, path)
+        except Exception:
+            pass
 
     def draw(self):
         c = self.c
@@ -591,6 +626,16 @@ def run_dialog(args, screen, present, tty):
         print(args.default or "")
         return 0
     kb = Keyboard(tty)
+
+    def accept(answer, status=0):
+        # the answer is taken: say so on the screen before handing it back - the script's next step can
+        # take a while to show anything, and a silent panel invites a second press
+        dialog.footer, dialog.timeout = "Please wait...", 0
+        dialog.draw()
+        present(dialog)
+        print(answer)
+        return status
+
     try:
         last_draw = time.monotonic()
         while True:
@@ -608,14 +653,11 @@ def run_dialog(args, screen, present, tty):
                     last_draw = time.monotonic()
                 continue
             if key == "esc":
-                print("")
-                return 3
+                return accept("", 3)
             if key == "enter":
                 if args.mode == "menu":
-                    print(items[dialog.selected][0] if items else "")
-                else:
-                    print(dialog.field)
-                return 0
+                    return accept(items[dialog.selected][0] if items else "")
+                return accept(dialog.field)
             if args.mode == "menu":
                 if key == "up" and items:
                     dialog.selected = (dialog.selected - 1) % len(items)
@@ -626,8 +668,7 @@ def run_dialog(args, screen, present, tty):
                     for i, (k, _) in enumerate(items):
                         if k.lower() == key.lower():
                             dialog.selected = i
-                            print(k)
-                            return 0
+                            return accept(k)
             else:
                 if key == "backspace":
                     dialog.field = dialog.field[:-1]
@@ -693,11 +734,10 @@ def main():
         fb = open(args.fb, "r+b", buffering=0)
 
     canvas = Canvas(width, height, bpp, stride)
-    logo = load_png(args.logo) if args.logo else None
     scale = height / 1080.0
     big = find_font(32 if scale >= 0.9 else 24)
     small = find_font(20 if scale >= 0.9 else 16) or find_font(16)
-    screen = Screen(canvas, logo, big, small)
+    screen = Screen(canvas, args.logo, big, small, args.logo + ".cache" if args.logo and fb is not None else "")
 
     tty = None
     if args.tty and fb is not None and fcntl is not None:

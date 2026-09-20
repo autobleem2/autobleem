@@ -402,6 +402,10 @@ inject_payload() {
     mkdir -p "$ROOT_MNT/etc/systemd/system/multi-user.target.wants"
     ln -sf ../autobleem-firstboot.service \
         "$ROOT_MNT/etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service"
+    # ssh on from the first boot (the owner's rule, 2026-09-20): the launcher owns tty1 and the keyboard
+    # once installed, so there is no console to enable it from afterwards. The same symlink "systemctl
+    # enable ssh" makes; the host keys are made by Raspberry Pi OS's own regenerate_ssh_host_keys.service.
+    ln -sf /lib/systemd/system/ssh.service "$ROOT_MNT/etc/systemd/system/multi-user.target.wants/ssh.service"
 }
 
 # the same five writes through debugfs, on the unmounted root filesystem. `write` gives the new file the
@@ -430,9 +434,12 @@ inject_payload_rootless() {
     dfs "mkdir /etc/systemd/system/multi-user.target.wants"
     dfs "rm /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service" >/dev/null
     dfs "symlink /etc/systemd/system/multi-user.target.wants/autobleem-firstboot.service ../autobleem-firstboot.service"
+    # ssh enabled (see inject_payload)
+    dfs "rm /etc/systemd/system/multi-user.target.wants/ssh.service" >/dev/null
+    dfs "symlink /etc/systemd/system/multi-user.target.wants/ssh.service /lib/systemd/system/ssh.service"
     # what went in, as the image will see it
     debugfs -R "ls -l /opt/autobleem-image" "$fs" 2>/dev/null | grep -v '^debugfs' | sed 's/^/    /'
-    debugfs -R "ls -l /etc/systemd/system/multi-user.target.wants" "$fs" 2>/dev/null | grep autobleem | sed 's/^/    /'
+    debugfs -R "ls -l /etc/systemd/system/multi-user.target.wants" "$fs" 2>/dev/null | grep -E 'autobleem|ssh' | sed 's/^/    /'
     # every file went in whole
     local want got
     want="$(stat -c %s "$PACKAGE")"
@@ -452,10 +459,10 @@ inject_payload_rootless() {
 # the base image ships them, so Raspberry Pi Imager's OS customisation still lands on top of them.
 inject_boot_files() {
     if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would drop "resize" from cmdline.txt and add autobleem.txt on the boot partition\n'
+        printf '    would drop "resize" from cmdline.txt and add autobleem.txt + ssh on the boot partition\n'
         return 0
     fi
-    log "Editing the boot partition: cmdline.txt without 'resize', plus autobleem.txt"
+    log "Editing the boot partition: cmdline.txt without 'resize', plus autobleem.txt and ssh"
     local cmdline kept="" word
     if [ "$MODE" = rootless ]; then
         # mtools reads and writes the FAT partition in place: <image>@@<byte offset>
@@ -475,10 +482,14 @@ inject_boot_files() {
         mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$cmdline" ::cmdline.txt || die "writing cmdline.txt failed"
         mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$REPO_DIR/payload_rpi/system/autobleem.txt" ::autobleem.txt \
             || die "writing autobleem.txt failed"
-        rm -f "$cmdline"
-        mdir -i "$RAW_IMG@@$BOOT_OFF" ::autobleem.txt ::cmdline.txt | grep -iE "autobleem|cmdline" | sed 's/^/    /'
+        # the official "enable ssh" marker too (sshswitch.service turns it into enable --now and removes it)
+        : >"$WORK_DIR/ssh"
+        mcopy -o -i "$RAW_IMG@@$BOOT_OFF" "$WORK_DIR/ssh" ::ssh || die "writing ssh failed"
+        rm -f "$cmdline" "$WORK_DIR/ssh"
+        mdir -i "$RAW_IMG@@$BOOT_OFF" ::autobleem.txt ::cmdline.txt ::ssh | grep -iE "autobleem|cmdline|ssh" | sed 's/^/    /'
     else
         install -m 0644 "$REPO_DIR/payload_rpi/system/autobleem.txt" "$BOOT_MNT/autobleem.txt"
+        : >"$BOOT_MNT/ssh"
     fi
 }
 
