@@ -475,7 +475,7 @@ draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdl
 (`/usr/share/consolefonts`, PSF1/2 with their unicode tables) and puts tty8 in `KD_GRAPHICS`. The logo,
 "Setting up AutoBleem", bar 1 = the phase (from `@@phase N/9 text` lines `install.sh`'s `phase()` prints
 with `AB_UI_MARKERS=1`), bar 2 = the last percentage seen in the output (the download loops, wget) or a
-pulse, and a box with the last 8 lines (a `` progress line rewrites the box's last line). The first-boot
+pulse, and a box with the last 8 lines (a `\r` progress line rewrites the box's last line). The first-boot
 script pipes `install.sh` through `tee` (the log) and the screen. **The questions are on the same screen**
 (the owner's ask, the same day): `menu` / `input` / `message` modes draw a panel under the logo and read
 keys raw from tty8 (termios; arrows, Enter, Esc = exit 3, a one-character item key as a hotkey, a countdown
