@@ -41,18 +41,19 @@ struct FakeStick {
     explicit FakeStick(bool pi = false) : tmp("stick") {
         env.setWorkingPath(tmp.path());
         tmp.makeSubDir("Autobleem/bin/autobleem/platform");
-        tmp.writeFile("Autobleem/bin/autobleem/platform/psc.ini",
-                      "retroarch_dir=retroarch\nretroarch_roms_dir=roms\ndownload_command=\nusb_root=/media\n");
+        tmp.writeFile(
+            "Autobleem/bin/autobleem/platform/psc.ini",
+            "retroarch_dir=RetroArch/bin\nretroarch_roms_dir=RetroArch/roms\ndownload_command=\nusb_root=/media\n");
         tmp.writeFile("Autobleem/bin/autobleem/platform/rpi.ini",
                       "retroarch_dir=RetroArch\nretroarch_roms_dir=RetroArch/roms\nusb_root=/media/autobleem\n");
         tmp.writeFile("Autobleem/bin/autobleem/platform/pc.ini", "download_command=fetch %u %o\n");
         tmp.writeFile("Autobleem/bin/autobleem/platform/roms_folders.cfg", "Arcade=FBNeo - Arcade Games\n");
         tmp.makeSubDir("System/Logs");
-        ra = pi ? "RetroArch" : "retroarch";
+        ra = pi ? "RetroArch" : "RetroArch/bin";
         if (pi)
             tmp.writeFile("RetroArch/retroarch.cfg", "# generated\n");
         else
-            tmp.makeSubDir("retroarch/retroboot");
+            tmp.makeSubDir("RetroArch/bin");
         tmp.writeFile(ra + "/info/nestopia_libretro.info", "display_name = \"Nintendo - NES (Nestopia)\"\n"
                                                            "supported_extensions = \"nes|fds\"\n"
                                                            "database = \"" +
@@ -61,7 +62,7 @@ struct FakeStick {
         tmp.makeSubDir(ra + "/playlists");
         tmp.makeSubDir(ra + "/database/rdb");
         tmp.makeSubDir(ra + "/thumbnails");
-        roms = pi ? "RetroArch/roms" : "roms";
+        roms = "RetroArch/roms";
         tmp.makeSubDir(roms + "/" + NES);
     }
 
@@ -123,17 +124,17 @@ TEST_CASE("rootFromProgramPath: the first parent with Autobleem/bin/autobleem, e
     CHECK(UpdateRomsJob::rootFromProgramPath("UpdateRoms.exe") == "");
 }
 
-TEST_CASE("detect: a console stick by RetroBoot's folder, a Pi card by its retroarch.cfg, --target over both") {
+TEST_CASE("detect: a console stick by its RetroArch/bin, a Pi card by its retroarch.cfg, --target over both") {
     FakeStick console;
     UpdateRomsJob::Setup setup;
     string error;
     REQUIRE(UpdateRomsJob::detect(console.tmp.path(), setup, error));
     CHECK(setup.target == "psc");
     CHECK(setup.targetRoot == "/media");
-    CHECK(setup.romsDir == fwd(console.tmp.at("roms")));
-    CHECK(setup.playlistsDir == fwd(console.tmp.at("retroarch/playlists")));
-    CHECK(setup.targetRomsDir == "/media/roms");
-    CHECK(setup.targetRetroarchDir == "/media/retroarch");
+    CHECK(setup.romsDir == fwd(console.tmp.at("RetroArch/roms")));
+    CHECK(setup.playlistsDir == fwd(console.tmp.at("RetroArch/bin/playlists")));
+    CHECK(setup.targetRomsDir == "/media/RetroArch/roms");
+    CHECK(setup.targetRetroarchDir == "/media/RetroArch/bin");
     CHECK(setup.downloadCommand == "fetch %u %o"); // the PC's, never the console's empty one
     CHECK(setup.coresCfg == fwd(console.tmp.at("Autobleem/bin/autobleem/platform/psc.cores.cfg")));
 
@@ -144,16 +145,10 @@ TEST_CASE("detect: a console stick by RetroBoot's folder, a Pi card by its retro
     CHECK(setup.romsDir == fwd(pi.tmp.at("RetroArch/roms")));
     CHECK(setup.targetRomsDir == "/media/autobleem/RetroArch/roms");
 
-    // --target psc on a Pi card: the console layout says retroarch/, the card has RetroArch/. On the exFAT
-    // stick in a Windows PC (where UpdateRoms.exe runs) they are the same folder; on a case-sensitive
-    // filesystem (the Linux CI) they are not, and detect rightly finds no RetroArch there.
-#ifdef _WIN32
-    REQUIRE(UpdateRomsJob::detect(pi.tmp.path(), setup, error, "psc"));
-    CHECK(setup.target == "psc");
-#else
+    // --target psc on a Pi card: the console layout says RetroArch/bin, the card has no bin/ - detect
+    // rightly finds no RetroArch there
     CHECK_FALSE(UpdateRomsJob::detect(pi.tmp.path(), setup, error, "psc"));
     CHECK(error.find("No RetroArch") != string::npos);
-#endif
 
     TempDir notAStick("nope");
     CHECK_FALSE(UpdateRomsJob::detect(notAStick.path(), setup, error));
@@ -183,9 +178,9 @@ TEST_CASE("run: the playlists name the target's paths - ROMs and cores - and the
 
     ableem::RetroArchPlaylistEntries entries = stick.playlist();
     REQUIRE(entries.size() == 1);
-    CHECK(entries[0].path == string("/media/roms/") + NES + "/lolo.nes");
+    CHECK(entries[0].path == string("/media/RetroArch/roms/") + NES + "/lolo.nes");
     CHECK(entries[0].label == "Adventures of Lolo (USA)");
-    CHECK(entries[0].core_path == "/media/retroarch/cores/nestopia_libretro.so");
+    CHECK(entries[0].core_path == "/media/RetroArch/bin/cores/nestopia_libretro.so");
     CHECK(entries[0].crc32 == "79520FA1|crc");
 }
 
@@ -238,19 +233,19 @@ TEST_CASE("run: an entry a scan on this PC wrote with this PC's path is made to 
     string error;
     REQUIRE(UpdateRomsJob::detect(stick.tmp.path(), setup, error));
     ableem::RetroArchPlaylistEntry old;
-    old.path = stick.tmp.at(string("roms/") + NES + "/lolo.nes");
+    old.path = stick.tmp.at(string("RetroArch/roms/") + NES + "/lolo.nes");
     old.label = "lolo";
     old.core_path = "DETECT";
     old.core_name = "DETECT";
     old.crc32 = "00000000|crc";
     old.db_name = string(NES) + ".lpl";
-    REQUIRE(ableem::RetroArchPlaylist::save(stick.tmp.at(string("retroarch/playlists/") + NES + ".lpl"), {old}));
+    REQUIRE(ableem::RetroArchPlaylist::save(stick.tmp.at(string("RetroArch/bin/playlists/") + NES + ".lpl"), {old}));
 
     FakeServer server;
     UpdateRomsJob::Report report = UpdateRomsJob::run(setup, nullptr, nullptr, nullptr, server.runner());
     CHECK(report.playlistsWritten.size() == 1);
     ableem::RetroArchPlaylistEntries entries = stick.playlist();
     REQUIRE(entries.size() == 1);
-    CHECK(entries[0].path == string("/media/roms/") + NES + "/lolo.nes");
+    CHECK(entries[0].path == string("/media/RetroArch/roms/") + NES + "/lolo.nes");
     CHECK(entries[0].label == "lolo"); // kept: no database to say better
 }

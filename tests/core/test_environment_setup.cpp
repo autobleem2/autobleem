@@ -40,7 +40,7 @@ TEST_CASE("fromRoot derives every path from the one root") {
     CHECK(Env::getPathToInternalDBFile() == "/usb/System/Databases/internal.db");
     CHECK(Env::getWorkingPath() == "/usb/Autobleem/bin/autobleem");
     CHECK(Env::getPathToLangDir() == "/usb/Autobleem/bin/autobleem/lang");
-    CHECK(Env::getPathToThemesDir() == "/usb/themes");
+    CHECK(Env::getPathToThemesDir() == "/usb/Themes");
     CHECK(Env::getPathToCoversDBDir() == "/usb/Autobleem/bin/db");
     CHECK(Env::getPathToRCDir() == "/usb/Autobleem/rc");
     CHECK(Env::getPathToGameControllerDb() == "/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt");
@@ -62,7 +62,7 @@ TEST_CASE("fromDbAndGames is the debug layout: the two paths given, the rest fro
     CHECK(Env::getPathToUSBRoot() == "/stick");
     CHECK(Env::getPathToGamesDir() == "/stick/Games");
     CHECK(Env::getPathToRegionalDBFile() == "/tmp/regional.db");
-    CHECK(Env::getPathToThemesDir() == Env::getWorkingPath() + "/themes");
+    CHECK(Env::getPathToThemesDir() == Env::getWorkingPath() + "/Themes");
     CHECK(Env::getPathToCoversDBDir() == "../db");
 }
 

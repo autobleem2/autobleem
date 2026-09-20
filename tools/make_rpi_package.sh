@@ -18,7 +18,7 @@
 # data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu (armhf) or bin/emu-arm64
 # (arm64), put there by pcsx-rearmed-develop's make_rpi.sh/make_rpi64.sh - Games/, Apps/) with the built
 # parts filled in: the binary and its resources in Autobleem/bin/autobleem, the cover databases in
-# Autobleem/bin/db, and payload/themes as themes/. install.sh then copies Autobleem/ themes/ Games/ Apps/
+# Autobleem/bin/db, and payload/Themes as Themes/. install.sh then copies Autobleem/ Themes/ Games/ Apps/
 # onto the exFAT partition as they are - the same install.sh serves both architectures, detecting which at
 # runtime (dpkg --print-architecture).
 #
@@ -82,7 +82,7 @@ fi
 # the app: the freshly cross-compiled binary plus the resources tree it reads at runtime. The resources come
 # from the repo rather than from $BUILD_DIR, which also holds the object files and CMake's own scratch.
 APP="$STAGE/Autobleem/bin/autobleem"
-mkdir -p "$APP" "$STAGE/Autobleem/bin/db" "$STAGE/themes"
+mkdir -p "$APP" "$STAGE/Autobleem/bin/db" "$STAGE/Themes"
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/"
 # packed with UPX (3.1 MB -> 1 MB; unpacked in memory at start, verified on the Pi 400) unless AB_NO_UPX=1 -
 # a packed binary is no use to gdb, and make_rpi.sh/make_rpi64.sh --debug's build is never packaged anyway
@@ -118,7 +118,7 @@ else
 fi
 
 # themes: the converted theme.json layout, the same ones the console's payload ships
-cp -a "$REPO/payload/themes/." "$STAGE/themes/"
+cp -a "$REPO/payload/Themes/." "$STAGE/Themes/"
 
 # cover art databases: not in the package by default since 2026-09-19 - they are 290 MB of the 306, and
 # install.sh downloads them from the download repository (CLAUDE.md, "The download repository"; a Pi needs

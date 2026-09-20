@@ -72,8 +72,8 @@ struct Launching : GameLibraryFixture {
         game->title = app ? "Some App" : "Some ROM";
         game->base = app ? "/media/Apps/SomeApp" : "rom";
         game->startup = "run.sh";
-        game->image_path = "/media/roms/snes/rom.sfc";
-        game->core_path = "/media/retroarch/cores/snes9x_libretro.so";
+        game->image_path = "/media/RetroArch/roms/snes/rom.sfc";
+        game->core_path = "/media/RetroArch/bin/cores/snes9x_libretro.so";
         return game;
     }
 
@@ -281,7 +281,7 @@ TEST_CASE("a foreign RetroArch game is its playlist image and its own core") {
     lib.service->launch(game, EmuMode::RetroArch, -1);
 
     CHECK(lib.runner.only().args ==
-          vector<string>{"/media/roms/snes/rom.sfc", "/media/retroarch/cores/snes9x_libretro.so"});
+          vector<string>{"/media/RetroArch/roms/snes/rom.sfc", "/media/RetroArch/bin/cores/snes9x_libretro.so"});
 }
 
 TEST_CASE("the game's card1.mcd is RetroArch's .srm for the run, and what RetroArch saved comes back") {
@@ -289,13 +289,13 @@ TEST_CASE("the game's card1.mcd is RetroArch's .srm for the run, and what RetroA
     lib.configure("Raconfig=false\n");
     PsGamePtr game = lib.usbGame();
     lib.tmp.writeFile("Games/Tekken 3/sstates/memcards/card1.mcd", "the game's own");
-    lib.tmp.writeFile("retroarch/saves/Tekken 3.srm", "whatever RetroArch had");
+    lib.tmp.writeFile("RetroArch/bin/saves/Tekken 3.srm", "whatever RetroArch had");
 
     string srmInPlay, srmBackup;
     lib.runner.whileRunning = [&] {
-        srmInPlay = lib.tmp.readFile("retroarch/saves/Tekken 3.srm");
-        srmBackup = lib.tmp.readFile("retroarch/saves/Tekken 3.srm.bak");
-        lib.tmp.writeFile("retroarch/saves/Tekken 3.srm", "the game's own + this run");
+        srmInPlay = lib.tmp.readFile("RetroArch/bin/saves/Tekken 3.srm");
+        srmBackup = lib.tmp.readFile("RetroArch/bin/saves/Tekken 3.srm.bak");
+        lib.tmp.writeFile("RetroArch/bin/saves/Tekken 3.srm", "the game's own + this run");
     };
 
     lib.service->launch(game, EmuMode::RetroArch, -1);
@@ -303,8 +303,8 @@ TEST_CASE("the game's card1.mcd is RetroArch's .srm for the run, and what RetroA
     CHECK(srmInPlay == "the game's own");
     CHECK(srmBackup == "whatever RetroArch had");
     CHECK(lib.tmp.readFile("Games/Tekken 3/sstates/memcards/card1.mcd") == "the game's own + this run");
-    CHECK(lib.tmp.readFile("retroarch/saves/Tekken 3.srm") == "whatever RetroArch had");
-    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("retroarch/saves/Tekken 3.srm.bak")));
+    CHECK(lib.tmp.readFile("RetroArch/bin/saves/Tekken 3.srm") == "whatever RetroArch had");
+    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("RetroArch/bin/saves/Tekken 3.srm.bak")));
 }
 
 TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for the run and are put back after") {
@@ -337,13 +337,13 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
                                   "custom_viewport_y = \"0\"\n"
                                   "aspect_ratio_index = \"0\"\n"
                                   "video_smooth = \"false\"\n";
-    lib.tmp.writeFile("retroarch/config/retroarch-core-options.cfg", coreOptionsBefore);
-    lib.tmp.writeFile("retroarch/retroarch.cfg", raConfigBefore);
+    lib.tmp.writeFile("RetroArch/bin/config/retroarch-core-options.cfg", coreOptionsBefore);
+    lib.tmp.writeFile("RetroArch/bin/retroarch.cfg", raConfigBefore);
 
     string coreOptionsInPlay, raConfigInPlay;
     lib.runner.whileRunning = [&] {
-        coreOptionsInPlay = lib.tmp.readFile("retroarch/config/retroarch-core-options.cfg");
-        raConfigInPlay = lib.tmp.readFile("retroarch/retroarch.cfg");
+        coreOptionsInPlay = lib.tmp.readFile("RetroArch/bin/config/retroarch-core-options.cfg");
+        raConfigInPlay = lib.tmp.readFile("RetroArch/bin/retroarch.cfg");
     };
 
     lib.service->launch(game, EmuMode::RetroArch, -1);
@@ -369,22 +369,22 @@ TEST_CASE("with raconfig on, the game's pcsx.cfg settings are RetroArch's for th
     CHECK(contains(raConfigInPlay, "video_smooth  = \"true\"")); // mip=false means smooth on; it always has
 
     // and afterwards both are exactly what they were
-    CHECK(lib.tmp.readFile("retroarch/config/retroarch-core-options.cfg") == coreOptionsBefore);
-    CHECK(lib.tmp.readFile("retroarch/retroarch.cfg") == raConfigBefore);
-    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("retroarch/retroarch.cfg.bak")));
+    CHECK(lib.tmp.readFile("RetroArch/bin/config/retroarch-core-options.cfg") == coreOptionsBefore);
+    CHECK(lib.tmp.readFile("RetroArch/bin/retroarch.cfg") == raConfigBefore);
+    CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("RetroArch/bin/retroarch.cfg.bak")));
 }
 
 TEST_CASE("a foreign game with raconfig on still gets the viewport and filter, but no core options") {
     Launching lib;
     lib.configure("Raconfig=true\nAspect=false\nMip=true\n");
     PsGamePtr game = lib.foreignGame(false);
-    lib.tmp.writeFile("retroarch/config/retroarch-core-options.cfg", "pcsx_rearmed_psxclock = \"50\"\n");
-    lib.tmp.writeFile("retroarch/retroarch.cfg", "custom_viewport_width = \"0\"\nvideo_smooth = \"true\"\n");
+    lib.tmp.writeFile("RetroArch/bin/config/retroarch-core-options.cfg", "pcsx_rearmed_psxclock = \"50\"\n");
+    lib.tmp.writeFile("RetroArch/bin/retroarch.cfg", "custom_viewport_width = \"0\"\nvideo_smooth = \"true\"\n");
 
     string coreOptionsInPlay, raConfigInPlay;
     lib.runner.whileRunning = [&] {
-        coreOptionsInPlay = lib.tmp.readFile("retroarch/config/retroarch-core-options.cfg");
-        raConfigInPlay = lib.tmp.readFile("retroarch/retroarch.cfg");
+        coreOptionsInPlay = lib.tmp.readFile("RetroArch/bin/config/retroarch-core-options.cfg");
+        raConfigInPlay = lib.tmp.readFile("RetroArch/bin/retroarch.cfg");
     };
 
     lib.service->launch(game, EmuMode::RetroArch, -1);

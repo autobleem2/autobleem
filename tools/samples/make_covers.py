@@ -23,7 +23,7 @@ except ImportError:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-FONT = os.path.join(ROOT, "payload", "themes", "ab2", "selawik-light.ttf")
+FONT = os.path.join(ROOT, "payload", "Themes", "ab2", "selawik-light.ttf")
 
 # the box shape per system, as the carousel draws it: PS1 square in the jewel case, NES/Mega Drive tall,
 # SNES wide (see evoui/carousel_game.* - a big box takes the art at its own aspect)

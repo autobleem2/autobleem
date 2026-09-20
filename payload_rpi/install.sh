@@ -25,7 +25,7 @@ MIN_DATA_MIB=2048               # refuse to make a data partition smaller than t
 SHRINK_ROOT_GIB=""              # --shrink-root: repartition, see shrink_root() (opt-in, it is destructive)
 GROW_ROOT_GIB=""                # --grow-root: grow a still-small root to this size first, see grow_root()
 GROW_ONLY=0                     # --grow-only: stop right after the root is grown (the first-boot script's use)
-STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, themes/, Games/, Apps/)
+STAGE_DIR="$SCRIPT_DIR"         # the payload tree to install (Autobleem/, Themes/, Games/, Apps/)
 DISK=""                         # --disk: the SD card. autodetected from where /boot/firmware lives
 DRY_RUN=0
 ASSUME_YES=0                    # --yes: answer every confirmation, for unattended runs over ssh
@@ -1176,12 +1176,12 @@ mount_data() {
 # create_tree
 #*******************************
 # The same layout as the PSC's USB stick, because that is what the app expects: main.cpp's setupEnvironment
-# derives every path from this root (Autobleem/bin/autobleem, Games, System/Databases, themes, ...).
+# derives every path from this root (Autobleem/bin/autobleem, Games, System/Databases, Themes, ...).
 create_tree() {
     log "Creating the AutoBleem tree under $DATA_MOUNT"
     local d
     for d in Autobleem/bin/autobleem Autobleem/bin/db Autobleem/bin/emu Autobleem/rc \
-             Games System/Bios System/Databases System/Logs themes Apps; do
+             Games System/Bios System/Databases System/Logs Themes Apps; do
         run mkdir -p "$DATA_MOUNT/$d"
     done
     RA_ROOT="$DATA_MOUNT/RetroArch"
@@ -1195,7 +1195,7 @@ create_tree() {
 #*******************************
 # payload_rpi/ is the tree that goes on the data partition, laid out exactly like the console's payload/:
 # Autobleem/bin/autobleem (the app and its resources), Autobleem/bin/db (covers), Autobleem/rc (the launch
-# scripts), themes/, Games/, Apps/. Installing is copying it across - tools/make_rpi_package.sh is what fills
+# scripts), Themes/, Games/, Apps/. Installing is copying it across - tools/make_rpi_package.sh is what fills
 # in the parts that are built rather than checked in (the binary, the resources, the cover databases).
 install_payload() {
     local app_dest="$DATA_MOUNT/Autobleem/bin/autobleem"
@@ -1215,7 +1215,7 @@ $STAGE_DIR/Autobleem/bin/autobleem
     # cp -r, not -a: exFAT has no owners or modes to preserve (the mount forces them), and cp -a's failure
     # to preserve them is a non-zero exit even though every file was copied
     local d
-    for d in Autobleem themes Games Apps RetroArch; do
+    for d in Autobleem Themes Games Apps RetroArch; do
         [ -d "$STAGE_DIR/$d" ] || continue
         run cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
     done
@@ -1474,7 +1474,7 @@ summary() {
                                               states/ playlists/ ... the standard layout. After copying games
                                               in: RetroArch -> Import Content -> Scan Directory -> roms
   Logs             $DATA_MOUNT/System/Logs/
-  Themes           $DATA_MOUNT/themes/
+  Themes           $DATA_MOUNT/Themes/
 
   The $DATA_LABEL partition is exFAT, so you can pull the card and drop games on it from Windows, macOS or
   Linux. Windows shows it as a second drive next to the small boot partition (Windows 10 1903 and newer).

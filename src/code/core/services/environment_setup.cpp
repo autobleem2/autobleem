@@ -19,7 +19,7 @@ void EnvironmentSetup::fromRoot(const string &root) {
     Env::setRegionalDbFile(root + sep + "System/Databases/regional.db");
     Env::setInternalDbFile(root + sep + "System/Databases/internal.db");
     Env::setWorkingPath(root + sep + "Autobleem/bin/autobleem");
-    Env::setThemesDir(root + sep + "themes");
+    Env::setThemesDir(root + sep + "Themes");
     Env::setCoversDbDir(root + sep + "Autobleem/bin/db");
 #ifdef AB_ROOT_RELATIVE_LAYOUT
     Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
@@ -45,7 +45,7 @@ void EnvironmentSetup::fromDbAndGames(const string &regionalDb, const string &ga
     Env::setSonyDataPath("/usr/sony/share/data");
 #endif
     // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)
-    Env::setThemesDir(Env::getWorkingPath() + sep + "themes");
+    Env::setThemesDir(Env::getWorkingPath() + sep + "Themes");
     Env::setCoversDbDir("../db");
     applyPlatformConfig();
 }

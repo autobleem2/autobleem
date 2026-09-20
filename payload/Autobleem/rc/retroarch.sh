@@ -1,12 +1,11 @@
 #!/bin/sh
 
-#kill sony stuffs and set powermanagement parameters
-killall -s KILL showLogo sonyapp ui_menu auto_dimmer pcsx dimmer
-echo 2 > /data/power/disable
+# RetroArch's own menu, from the launcher's L2+R2 system menu: selection.sh runs this after autobleem-gui
+# has exited with AB_SELECTION=4, and AutoBleem is started over when RetroArch is done.
 
-sh /media/retroarch/retroboot/bin/launch_rfa.sh
+sh /media/Autobleem/rc/launch_rb.sh
 
-#return to Autobleem UI
+# return to AutoBleem
 cd /media/Autobleem/
-rm /tmp/.abload
+rm -f /tmp/.abload
 ./start.sh

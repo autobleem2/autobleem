@@ -14,9 +14,8 @@ mkdir -p /media/System/Logs
 mkdir -p /media/System/UI
 
 
-cp -r /media/Autobleem/rc/launch_rom.rfa.sh /media/retroarch/retroboot/bin/
-cp -r /media/Autobleem/bin/autobleem/AutoBleem.rdb /media/retroarch/database/rdb/
-chmod 777 /media/retroarch/retroboot/bin/*
+# AutoBleem's own PS1 database for RetroArch, when RetroArch is on the stick (RetroArch/bin is its tree)
+[ -d /media/RetroArch/bin/database/rdb ] && cp /media/Autobleem/bin/autobleem/AutoBleem.rdb /media/RetroArch/bin/database/rdb/
 
 
 # Copy the BIOS files to USB

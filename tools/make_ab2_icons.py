@@ -3,7 +3,7 @@
 circuit-board tile with a cyan neon outline and glow, a line glyph inside - instead of the grey icons it
 inherited from the original theme.
 
-  python tools/make_ab2_icons.py [out dir]      (default: payload/themes/ab2/images)
+  python tools/make_ab2_icons.py [out dir]      (default: payload/Themes/ab2/images)
 
 Files: menu_settings.png (a gear), menu_guide.png (a gamepad - the "Game" item, game parameters),
 menu_memcard.png (a PS1 memory card), memcard_pencil.png (the memory card editor's cursor, a stylus with
@@ -207,7 +207,7 @@ def recolour_switch(src, dst, hue):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join("payload", "themes", "ab2", "images")
+    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join("payload", "Themes", "ab2", "images")
     os.makedirs(out, exist_ok=True)
     with_glyph(gear).save(os.path.join(out, "menu_settings.png"))
     with_glyph(gamepad).save(os.path.join(out, "menu_guide.png"))
@@ -215,7 +215,7 @@ def main():
     screen_window_clear(with_glyph(screen, scale=1)).save(os.path.join(out, "menu_resume.png"))
     cursor().save(os.path.join(out, "memcard_pencil.png"))
     theme_dir = os.path.dirname(out.rstrip("/\\")) if os.path.basename(out.rstrip("/\\")) == "images" else out
-    default_dir = os.path.join("payload", "themes", "default")
+    default_dir = os.path.join("payload", "Themes", "default")
     recolour_switch(os.path.join(default_dir, "on.png"), os.path.join(theme_dir, "on.png"), 150)
     Image.open(os.path.join(default_dir, "off.png")).save(os.path.join(theme_dir, "off.png"))
     print("wrote icons to", out, "and on.png/off.png to", theme_dir)

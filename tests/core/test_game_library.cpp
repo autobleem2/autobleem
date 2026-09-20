@@ -16,10 +16,10 @@ namespace {
 
 // the exported AutoBleem.lpl as label -> path
 std::map<string, string> exportedPaths(GameLibraryFixture &lib) {
-    lib.tmp.makeSubDir("retroarch/playlists");
+    lib.tmp.makeSubDir("RetroArch/bin/playlists");
     REQUIRE(lib.library.exportToRetroArchPlaylist());
     ableem::RetroArchPlaylistEntries entries;
-    REQUIRE(ableem::RetroArchPlaylist::load(lib.tmp.at("retroarch/playlists/AutoBleem.lpl"), entries));
+    REQUIRE(ableem::RetroArchPlaylist::load(lib.tmp.at("RetroArch/bin/playlists/AutoBleem.lpl"), entries));
     std::map<string, string> paths;
     for (const auto &e : entries)
         paths[e.label] = e.path;

@@ -254,7 +254,7 @@ drive alongside the small `bootfs` one.
   Autobleem/rc/                launch.sh, launch_rb.sh, retroarch.sh
   System/Databases/            regional.db (scanned games)
   System/Logs/                 AB_out.txt, AB_err.txt
-  themes/                      UI themes (docs/theme-format.md)
+  Themes/                      UI themes (docs/theme-format.md)
   Apps/                        launchable apps
   RetroArch/                   RetroArch's standard tree, and everything it needs:
     roms/<system>/               your games for the other systems: a folder per system is already there

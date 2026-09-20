@@ -12,6 +12,8 @@
 #                                                                              -> psc/cores/ (newest date kept)
 #   tools/repo_publish.sh psc-libs dist/release/libs-psc-20260920.tar.gz dist/release/libs-psc-20260920.json
 #                                                                              -> psc/libs/ (newest date kept)
+#   tools/repo_publish.sh psc-apps dist/release/apps-psc-20260920.tar.gz dist/release/apps-psc-20260920.json
+#                                                                              -> psc/apps/ (newest date kept; tools/pack_psc_apps.py)
 #   tools/repo_publish.sh samples build_samples/samples-20260920.tar.gz build_samples/samples-20260920.json
 #                                                                              -> samples/ (newest date kept)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
@@ -56,6 +58,7 @@ case "$KIND" in
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;
+    psc-apps)  [ $# -ge 1 ] || usage 1; DEST="psc/apps" ;;
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;

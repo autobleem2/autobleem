@@ -16,7 +16,7 @@ class EnvironmentSetup {
 public:
     // everything under one root - what the console (/media), the Pi (its data partition) and the 1-arg
     // debug mode all are: usb:/Games, usb:/System/Databases/*.db, usb:/Autobleem/bin/autobleem as the
-    // resources dir (config.ini, lang/, fonts), usb:/Autobleem/bin/db, usb:/themes. The Sony data tree is
+    // resources dir (config.ini, lang/, fonts), usb:/Autobleem/bin/db, usb:/Themes. The Sony data tree is
     // the console's own or, on a root-relative layout, <resources>/sony.
     static void fromRoot(const std::string &root);
 

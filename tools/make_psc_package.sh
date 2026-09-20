@@ -4,7 +4,7 @@
 # shipped (the 2020 BUILD.sh on the build server did the same by hand):
 #
 #   <zip root>/                        payload/ as checked in: the exploit folder, Autobleem/{rc,lib,start.sh},
-#                                      Apps/, Games/, themes/, the release notes
+#                                      Apps/, Games/, Themes/, RetroArch/{bin,bios,roms}, the release notes
 #   Autobleem/bin/autobleem/           the launcher + src/resources (config.ini, internal.db, lang/, ...)
 #   Autobleem/bin/db/                  coversJ/P/U.db
 #   Autobleem/lib/libs.tar.gz          the shared libraries rc/autobleem.sh unpacks to /tmp/lib at boot: the

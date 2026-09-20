@@ -1,7 +1,7 @@
 # AutoBleem themes: `theme.json`
 
-A theme is a folder under `/media/themes/<name>/` with a `theme.json` and the files it names. Everything in
-the file is optional: a key that is missing is taken from `themes/default/theme.json`, and a file that is
+A theme is a folder under `/media/Themes/<name>/` with a `theme.json` and the files it names. Everything in
+the file is optional: a key that is missing is taken from `Themes/default/theme.json`, and a file that is
 named but not in the folder is taken from the default theme too. So a theme can be as small as a
 background and a logo. Paths in the file are relative to the theme folder; `/` is the separator.
 
@@ -12,7 +12,7 @@ Written 2026-09-17, when the format replaced `theme.ini`. The code that reads it
 ## Layout
 
 ```
-themes/<name>/
+Themes/<name>/
   theme.json
   background.jpg  ab.png  zrnic.ttf  mel.ogg  cross.png ...   the classic UI's files - names are free,
                                                               theme.json says which is which
@@ -28,7 +28,7 @@ themes/<name>/
 
 ## The file
 
-`payload/themes/aergb/theme.json`, with every section:
+`payload/Themes/aergb/theme.json`, with every section:
 
 ```json
 {

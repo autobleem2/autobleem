@@ -22,9 +22,10 @@ string sonyDataPath;
 string themesDir;
 string coversDbDir;
 string internalGamesDir = "/gaadata";
-string retroarchDir;      // empty: derived from usbRoot
-string retroarchCoreFile; // empty: RetroBoot's pcsx_rearmed_neon core under the retroarch dir
-string retroarchRomsDir;  // empty: usb:/roms, RetroBoot's layout
+string retroarchDir;      // empty: usb:/RetroArch/bin, the console's layout
+string retroarchCoreFile; // empty: pcsx_rearmed under the retroarch dir
+string retroarchRomsDir;  // empty: usb:/RetroArch/roms
+string retroarchBiosDir;  // empty: usb:/RetroArch/bios
 } // namespace
 
 //*******************************
@@ -74,6 +75,9 @@ void Environment::setRetroarchCoreFile(const string &path) {
 void Environment::setRetroarchRomsDir(const string &path) {
     retroarchRomsDir = path;
 }
+void Environment::setRetroarchBiosDir(const string &path) {
+    retroarchBiosDir = path;
+}
 
 //*******************************
 // Environment:: getters
@@ -106,7 +110,7 @@ string Environment::getPathToLogsDir() {
     return getPathToSystemDir() + sep + "Logs";
 }
 string Environment::getPathToRetroarchDir() {
-    return retroarchDir.empty() ? usbRoot + sep + "retroarch" : retroarchDir;
+    return retroarchDir.empty() ? usbRoot + sep + "RetroArch" + sep + "bin" : retroarchDir;
 }
 string Environment::getPathToRetroarchPlaylistsDir() {
     return getPathToRetroarchDir() + sep + "playlists";
@@ -127,14 +131,17 @@ string Environment::getPathToPlayStationRdbFile() {
     return getPathToRetroarchRdbDir() + sep + "Sony - PlayStation.rdb";
 }
 string Environment::getPathToRetroarchCoreFile() {
-    return retroarchCoreFile.empty() ? getPathToRetroarchDir() + sep + "cores/km_pcsx_rearmed_neon_libretro.so"
+    return retroarchCoreFile.empty() ? getPathToRetroarchDir() + sep + "cores/pcsx_rearmed_libretro.so"
                                      : retroarchCoreFile;
 }
 bool Environment::hasRetroBoot() {
     return DirEntry::exists(getPathToRetroarchDir() + sep + "retroboot");
 }
 string Environment::getPathToRetroarchRomsDir() {
-    return retroarchRomsDir.empty() ? usbRoot + sep + "roms" : retroarchRomsDir;
+    return retroarchRomsDir.empty() ? usbRoot + sep + "RetroArch" + sep + "roms" : retroarchRomsDir;
+}
+string Environment::getPathToRetroarchBiosDir() {
+    return retroarchBiosDir.empty() ? usbRoot + sep + "RetroArch" + sep + "bios" : retroarchBiosDir;
 }
 string Environment::getPathToRegionalDBFile() {
     return regionalDbFile;

@@ -52,27 +52,31 @@ private:
         std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath, appDir, kernelConfigDir;
         std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
         std::string retroarchRomsDir;
+        std::string retroarchBiosDir;
         std::vector<std::string> retroArchBinaries;
     };
 
     static Roots capture() {
         using E = ableem::Environment;
-        return Roots{E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(),
-                     E::getPathToInternalDBFile(), E::getWorkingPath(), E::getAppDir(), E::getPathToKernelConfigDir(),
-                     E::getSonyPath(), E::getPathToThemesDir(), E::getPathToCoversDBDir(),
-                     E::getPathToInternalGamesDir(),
-                     // an explicit override is kept as such; a derived one is "" so the derivation survives
-                     E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "retroarch"
-                         ? std::string()
-                         : E::getPathToRetroarchDir(),
-                     E::getPathToRetroarchCoreFile() ==
-                             E::getPathToRetroarchDir() + ableem::sep + "cores/km_pcsx_rearmed_neon_libretro.so"
-                         ? std::string()
-                         : E::getPathToRetroarchCoreFile(),
-                     E::getPathToRetroarchRomsDir() == E::getPathToUSBRoot() + ableem::sep + "roms"
-                         ? std::string()
-                         : E::getPathToRetroarchRomsDir(),
-                     ::Environment::retroArchBinaries()};
+        return Roots{
+            E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(), E::getPathToInternalDBFile(),
+            E::getWorkingPath(), E::getAppDir(), E::getPathToKernelConfigDir(), E::getSonyPath(),
+            E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
+            // an explicit override is kept as such; a derived one is "" so the derivation survives
+            E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "bin"
+                ? std::string()
+                : E::getPathToRetroarchDir(),
+            E::getPathToRetroarchCoreFile() ==
+                    E::getPathToRetroarchDir() + ableem::sep + "cores/pcsx_rearmed_libretro.so"
+                ? std::string()
+                : E::getPathToRetroarchCoreFile(),
+            E::getPathToRetroarchRomsDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "roms"
+                ? std::string()
+                : E::getPathToRetroarchRomsDir(),
+            E::getPathToRetroarchBiosDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "bios"
+                ? std::string()
+                : E::getPathToRetroarchBiosDir(),
+            ::Environment::retroArchBinaries()};
     }
 
     static void restore(const Roots &r) {
@@ -91,6 +95,7 @@ private:
         E::setRetroarchDir(r.retroarchDir);
         E::setRetroarchCoreFile(r.retroarchCoreFile);
         E::setRetroarchRomsDir(r.retroarchRomsDir);
+        E::setRetroarchBiosDir(r.retroarchBiosDir);
         ::Environment::setRetroArchBinaries(r.retroArchBinaries);
     }
 

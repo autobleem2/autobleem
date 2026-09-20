@@ -83,8 +83,13 @@ vendor/
 # the mocked USB root tools/make_usb.py builds for running the app on a PC
 usb/
 
-# the PS1 BIOS images (System/Bios on the Pi) - never committed
+# the PS1 BIOS images (System/Bios on the Pi) - never committed. payload/RetroArch/bios holds only the
+# console's BIOS manifest (tools/biospack.py --arch psc) and a README, no BIOS file.
 bios/
+!/payload/RetroArch/bios/
+/payload/RetroArch/bios/*
+!/payload/RetroArch/bios/biospack.txt
+!/payload/RetroArch/bios/README.txt
 __pycache__/
 
 # tools/win_drive.ps1's screenshots land in the root
@@ -96,3 +101,5 @@ __pycache__/
 # the self-hosted runner's token (docker/runner/compose.yml)
 /docker/runner/.env
 /build_samples/
+# the packs tools/pack_psc_apps.py and friends write
+/dist/

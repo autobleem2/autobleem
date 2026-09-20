@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build payload_rpi/system/biospack.txt (or biospack-arm64.txt), the BIOS pack install.sh downloads.
+"""Build payload_rpi/system/biospack.txt (or biospack-arm64.txt), the BIOS pack install.sh downloads -
+and, with --arch psc, payload/RetroArch/bios/biospack.txt, the console's (what the PC installer fetches
+into RetroArch/bios on a stick).
 
 The files come from RetroBIOS (github.com/Abdess/retrobios), a source-verified BIOS collection with a
 manifest per platform - install/retroarch.json lists every file the RetroArch pack carries, with its size,
@@ -15,11 +17,17 @@ makes a roms/ folder for, arcade, ScummVM, Doom) and writes a flat manifest that
 download_bios_pack() fetches file by file with wget and checks with sha256sum - no BIOS file is ever checked
 in here, and the pack is pinned to one RetroBIOS commit so the same manifest comes out every time.
 
+The console (--arch psc) is the same selection over the cores the download repository's psc/cores pack
+carries (psc/cores/latest.json -> its cores-psc-<date>.json; KMFD's km_<core>_xtreme names are folded back
+onto the plain core names RetroBIOS uses), plus the systems only the console's cores cover (Saturn,
+Dreamcast, DS, PC-FX, Atari ST, ...). Its manifest is payload/RetroArch/bios/biospack.txt.
+
     python tools/biospack.py                 # rewrite payload_rpi/system/biospack.txt (armhf) from the pinned commit
     python tools/biospack.py --arch arm64    # rewrite payload_rpi/system/biospack-arm64.txt
     python tools/biospack.py --ref main      # try RetroBIOS's current main (then update RETROBIOS_REF)
     python tools/biospack.py --list          # print what is in and out, per system, and stop
     python tools/biospack.py --arch arm64 --list
+    python tools/biospack.py --arch psc      # rewrite payload/RetroArch/bios/biospack.txt (the console)
     python tools/biospack.py --check DIR     # verify a RetroArch/system/ folder against the manifest
 
 Only the standard library is needed.
@@ -45,12 +53,31 @@ RETROBIOS_TARGET = "linux-armhf"  # RetroBIOS's own per-target core list - armhf
 # buildbot.libretro.com's directory name for each architecture (not the same as Debian's - arm64 is
 # "aarch64" there) and the manifest file install.sh looks for on that architecture.
 BUILDBOT_INDEX = "https://buildbot.libretro.com/nightly/linux/{buildbot_arch}/latest/.index-extended"
+REPO = os.path.join(os.path.dirname(__file__), "..")
 ARCHES = {
-    "armhf": {"buildbot_arch": "armhf", "manifest_name": "biospack.txt"},
-    "arm64": {"buildbot_arch": "aarch64", "manifest_name": "biospack-arm64.txt"},
+    "armhf": {"buildbot_arch": "armhf", "manifest_name": "biospack.txt",
+              "manifest_dir": os.path.join(REPO, "payload_rpi", "system"), "where": "the Raspberry Pi"},
+    "arm64": {"buildbot_arch": "aarch64", "manifest_name": "biospack-arm64.txt",
+              "manifest_dir": os.path.join(REPO, "payload_rpi", "system"), "where": "the Raspberry Pi"},
+    "psc": {"buildbot_arch": None, "manifest_name": "biospack.txt",
+            "manifest_dir": os.path.join(REPO, "payload", "RetroArch", "bios"), "where": "the PlayStation Classic"},
 }
 
-MANIFEST_DIR = os.path.join(os.path.dirname(__file__), "..", "payload_rpi", "system")
+# the console's cores: the download repository's pack (retroarch-psc's tools/pack_retroboot_cores.py)
+PSC_CORES_LATEST = "https://autobleem.retromenele.pl/psc/cores/latest.json"
+# KMFD's core names -> the upstream names RetroBIOS's manifest lists. Prefixes and flavour suffixes are
+# stripped first (km_flycast_xtreme_amped -> flycast); these are the renames that leaves.
+PSC_CORE_PREFIXES = ("km_", "lightgun_")
+PSC_CORE_SUFFIXES = ("_xtreme", "_amped", "_bright", "_ws", "_wide", "_legacy", "_accuracy", "_neon", "_peops",
+                     "_low profile")
+PSC_CORE_ALIASES = {
+    "reicast": "flycast", "swanstation": "duckstation", "genesis_xtreme_gx": "genesis_plus_gx",
+    "vice_c64": "vice_x64", "vice_c128": "vice_x128", "vice_vic20": "vice_xvic", "vice_x64": "vice_x64",
+    "mupen64": "mupen64plus_next", "mupen64_plus": "mupen64plus_next", "mupen64plus": "mupen64plus_next",
+    "glupen64": "mupen64plus_next", "ludicrousn64": "mupen64plus_next", "parallel_n64": "mupen64plus_next",
+    "mess2022": "mess2015", "mame2014": "mame2015", "mame2016": "mame2015", "x1_millennium": "x1",
+    "uae4arm": "puae", "yabause": "ymir", "4do": "opera",
+}
 
 # RetroBIOS keeps its files as bios/<Vendor>/<System>/...; these are the folders the pack draws from. The
 # comment says what on the Pi wants the files. A system with a roms/ folder in install.sh but nothing here
@@ -113,14 +140,34 @@ SYSTEMS = {
     "Id Software/Wolfenstein 3D": "ecwolf's ecwolf.pk3",
 }
 
+# Systems only the console's cores cover (KMFD's set has flycast, yabause, melonDS, mednafen_pcfx, hatari,
+# cap32/crocods, ppsspp, dosbox_pure, xrick, nxengine that the Pi's buildbot armhf set has not) - added to
+# SYSTEMS for --arch psc. Nintendo/DS (1.7 GB, the DSi NAND images) is deliberately not the folder used:
+# Nintendo/Nintendo DS has the 3 MB melonDS wants.
+PSC_SYSTEMS = {
+    "Sega/Saturn": "yabause (saturn_bios.bin)",
+    "Sega/Dreamcast": "flycast, reicast (dc_boot.bin, dc_flash.bin, the NAOMI/Atomiswave sets)",
+    "Nintendo/Nintendo DS": "melonds, desmume (bios7/bios9/firmware)",
+    "NEC/PC-FX": "mednafen_pcfx",
+    "Atari/ST": "hatari (tos.img)",
+    "Amstrad/CPC": "cap32, crocods",
+    "Sony/PlayStation Portable": "ppsspp",
+    "Other/ppsspp": "ppsspp's assets",
+    "DOS/DOSBox": "dosbox_pure (the MT-32 ROMs)",
+    "Other/NXEngine": "nxengine (Cave Story's data)",
+    "Other/xrick": "xrick's data",
+}
+
 # Cores from the target's list that the pack does not serve. The current-year `mame` core is on the armhf
 # buildbot but is far too heavy for a Pi, and the device ROM sets only it loads are the biggest arcade files.
 DROP_CORES = {"mame"}
 
 # Paths (relative to system/) that are out whatever folder they come from. Not BIOS: the arcade sound
 # samples, MAME's history/mameinfo/cheat text, stella's KidVid audio, x86 MIDI libraries; no core on
-# armhf: the Dreamcast/Naomi and ST-V sets (flycast, kronos).
+# armhf: the Dreamcast/Naomi and ST-V sets (flycast, kronos). The console has flycast, so dc/ stays in
+# for it (PSC_EXCLUDE_PREFIXES).
 EXCLUDE_PREFIXES = ("fba2012/samples/", "fbneo/samples/", "dc/", "kronos/")
+PSC_EXCLUDE_PREFIXES = ("fba2012/samples/", "fbneo/samples/", "kronos/")
 EXCLUDE_NAMES = {"history.dat", "mameinfo.dat", "cheat.dat"}
 EXCLUDE_SUFFIXES = (".wav", ".dll", ".dylib", ".so")
 
@@ -180,9 +227,38 @@ def system_of(entry):
     return "/".join(parts[1:3]) if parts[0] == "bios" and len(parts) >= 4 else None
 
 
-def excluded(dest):
+def excluded(dest, prefixes=EXCLUDE_PREFIXES):
     name = dest.rsplit("/", 1)[-1]
-    return dest.startswith(EXCLUDE_PREFIXES) or name in EXCLUDE_NAMES or dest.endswith(EXCLUDE_SUFFIXES)
+    return dest.startswith(prefixes) or name in EXCLUDE_NAMES or dest.endswith(EXCLUDE_SUFFIXES)
+
+
+def psc_core_name(name):
+    """km_snes9x2010_xtreme_amped -> snes9x2010; the names RetroBIOS's manifest knows."""
+    for prefix in PSC_CORE_PREFIXES:
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+    changed = True
+    while changed:
+        changed = False
+        for suffix in PSC_CORE_SUFFIXES:
+            if name.endswith(suffix):
+                name = name[: -len(suffix)]
+                changed = True
+    return PSC_CORE_ALIASES.get(name, name)
+
+
+def psc_cores(latest_url):
+    """The console's cores, from the download repository's psc/cores pack: latest.json names the pack's
+    own json, which lists every core in it."""
+    latest = fetch_json(latest_url, "psc/cores/latest.json")
+    if not latest.get("manifest"):
+        sys.exit(f"{latest_url} names no manifest - has the cores pack been published?")
+    pack = fetch_json(latest["manifest"], "psc cores manifest")
+    cores = {psc_core_name(core["name"]) for core in pack["cores"]}
+    cores |= {core["name"] for core in pack["cores"]}
+    if not cores:
+        sys.exit(f"no cores listed at {latest['manifest']}")
+    return cores
 
 
 def buildbot_cores(buildbot_arch):
@@ -204,20 +280,20 @@ def buildbot_cores(buildbot_arch):
     return cores
 
 
-def select(manifest, target_cores, arch_label):
+def select(manifest, target_cores, arch_label, systems=SYSTEMS, exclude_prefixes=EXCLUDE_PREFIXES):
     """The pack: (kept, dropped) lists of manifest entries, each with a 'why' for --list."""
     cores = set(target_cores) - DROP_CORES
     kept, dropped = [], []
     for entry in manifest["files"]:
         system = system_of(entry)
-        if system not in SYSTEMS:
+        if system not in systems:
             dropped.append((entry, "system not in the pack"))
         elif entry["cores"] is not None and not set(entry["cores"]) & cores:
             dropped.append((entry, "no core for it on " + arch_label))
-        elif excluded(entry["dest"]):
+        elif excluded(entry["dest"], exclude_prefixes):
             dropped.append((entry, "excluded path"))
         else:
-            kept.append((entry, SYSTEMS[system]))
+            kept.append((entry, systems[system]))
     kept.sort(key=lambda item: (system_of(item[0]), item[0]["dest"].lower()))
     return kept, dropped
 
@@ -261,24 +337,24 @@ def mib(size):
     return size / (1024 * 1024)
 
 
-def print_listing(kept, dropped):
+def print_listing(kept, dropped, systems=SYSTEMS):
     by_system = defaultdict(list)
     for entry, why in kept:
         by_system[system_of(entry) or why].append(entry)
     print(f"In the pack ({len(kept)} files, {mib(sum(e['size'] for e, _ in kept)):.1f} MB):")
     for system in sorted(by_system):
         entries = by_system[system]
-        print(f"  {mib(sum(e['size'] for e in entries)):7.1f} MB {len(entries):4d}  {system}  - {SYSTEMS.get(system, 'from the core')}")
+        print(f"  {mib(sum(e['size'] for e in entries)):7.1f} MB {len(entries):4d}  {system}  - {systems.get(system, 'from the core')}")
     print()
     print("Left out, the biggest first:")
     for entry, why in sorted(dropped, key=lambda item: -item[0]["size"])[:30]:
         print(f"  {mib(entry['size']):7.1f} MB  {entry['dest']:50s} {why}")
 
 
-def write_manifest(kept, ref, generated, path):
+def write_manifest(kept, ref, generated, path, where, into):
     total = sum(e["size"] for e, _ in kept)
     lines = [
-        "# AutoBleem's BIOS pack for the Raspberry Pi: what install.sh downloads into RetroArch/system/.",
+        f"# AutoBleem's BIOS pack for {where}: what the installer downloads into {into}.",
         f"# Built by tools/biospack.py from RetroBIOS (github.com/Abdess/retrobios) at {ref},",
         f"# {generated}. {len(kept)} files, {total} bytes ({mib(total):.0f} MB), plus what the cores' own",
         "# repositories carry in their system/ trees (EXTRA_SOURCES in the script: blueMSX's Machines).",
@@ -318,15 +394,22 @@ def check_dir(manifest_path, directory):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--arch", choices=sorted(ARCHES), default="armhf",
-                         help="which Pi architecture's core list to build the pack for (default: armhf)")
+                         help="which target's core list to build the pack for: the Pi's armhf (default) or arm64, "
+                              "or psc, the console")
     parser.add_argument("--ref", default=RETROBIOS_REF, help="RetroBIOS commit or branch to read (default: the pinned one)")
     parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_rpi/system/"
-                         "biospack.txt for armhf, biospack-arm64.txt for arm64)")
+                         "biospack.txt for armhf, biospack-arm64.txt for arm64, payload/RetroArch/bios/biospack.txt "
+                         "for psc)")
     parser.add_argument("--list", action="store_true", help="print the selection and change nothing")
     parser.add_argument("--check", metavar="DIR", help="verify a RetroArch/system/ folder against the manifest")
     args = parser.parse_args()
+    arch = ARCHES[args.arch]
     if args.out is None:
-        args.out = os.path.normpath(os.path.join(MANIFEST_DIR, ARCHES[args.arch]["manifest_name"]))
+        args.out = os.path.normpath(os.path.join(arch["manifest_dir"], arch["manifest_name"]))
+    systems, exclude_prefixes, into = SYSTEMS, EXCLUDE_PREFIXES, "RetroArch/system/"
+    if args.arch == "psc":
+        systems = dict(SYSTEMS, **PSC_SYSTEMS)
+        exclude_prefixes, into = PSC_EXCLUDE_PREFIXES, "RetroArch/bios/"
 
     if args.check:
         sys.exit(0 if check_dir(args.out, args.check) else 1)
@@ -338,21 +421,23 @@ def main():
         if RETROBIOS_TARGET not in targets:
             sys.exit(f"RetroBIOS has no '{RETROBIOS_TARGET}' target any more; targets: {', '.join(sorted(targets))}")
         target_cores, arch_label = targets[RETROBIOS_TARGET], RETROBIOS_TARGET
+    elif args.arch == "psc":
+        target_cores, arch_label = psc_cores(PSC_CORES_LATEST), "the console"
     else:
-        buildbot_arch = ARCHES[args.arch]["buildbot_arch"]
+        buildbot_arch = arch["buildbot_arch"]
         target_cores = buildbot_cores(buildbot_arch)
         arch_label = f"the {buildbot_arch} buildbot"
-    unknown = sorted(s for s in SYSTEMS if not any(system_of(e) == s for e in manifest["files"]))
+    unknown = sorted(s for s in systems if not any(system_of(e) == s for e in manifest["files"]))
     if unknown:
         print("warning: no files under these folders any more: " + ", ".join(unknown), file=sys.stderr)
 
-    kept, dropped = select(manifest, target_cores, arch_label)
+    kept, dropped = select(manifest, target_cores, arch_label, systems, exclude_prefixes)
     kept = add_extras(kept)
     if args.list:
-        print_listing(kept, dropped)
+        print_listing(kept, dropped, systems)
         return
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    total = write_manifest(kept, args.ref, generated, args.out)
+    total = write_manifest(kept, args.ref, generated, args.out, arch["where"], into)
     print(f"{args.out}: {len(kept)} files, {mib(total):.1f} MB, RetroBIOS {args.ref}")
 
 

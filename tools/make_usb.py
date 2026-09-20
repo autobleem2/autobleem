@@ -172,8 +172,10 @@ FAKE_SYSTEMS = {
 
 
 def make_fake_retroarch(usb):
-    """retroarch/ with a stub binary, the fake core + .info, and roms/<system>/<game>.zip (one ROM inside)"""
-    ra = os.path.join(usb, 'retroarch')
+    """RetroArch/bin with a stub binary, the fake core + .info, RetroArch/bios, and RetroArch/roms/<system>/<game>.zip
+    (one ROM inside) - the console's layout"""
+    ra = os.path.join(usb, 'RetroArch', 'bin')
+    os.makedirs(os.path.join(usb, 'RetroArch', 'bios'), exist_ok=True)
     for d in ('cores', 'info', 'playlists'):
         os.makedirs(os.path.join(ra, d), exist_ok=True)
     binary = os.path.join(ra, 'retroarch')
@@ -188,7 +190,7 @@ def make_fake_retroarch(usb):
         f.write('supported_extensions = "%s"\n' % extensions)
         f.write('database = "%s"\n' % '|'.join(FAKE_SYSTEMS))
 
-    roms = os.path.join(usb, 'roms')
+    roms = os.path.join(usb, 'RetroArch', 'roms')
     for system, (ext, games) in FAKE_SYSTEMS.items():
         folder = os.path.join(roms, system)
         os.makedirs(folder, exist_ok=True)
@@ -221,7 +223,7 @@ def main():
         print('note: no', exe, '- build first (make_win.sh), then run this again or let the build task copy it')
 
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
-    replace_tree(os.path.join(REPO, 'payload', 'themes'), os.path.join(usb, 'themes'))
+    replace_tree(os.path.join(REPO, 'payload', 'Themes'), os.path.join(usb, 'Themes'))
     if os.path.isdir(os.path.join(REPO, 'payload', 'Apps')):
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
 
@@ -257,7 +259,7 @@ def main():
 
     # the app writes an EmulationStation gamelist here after a scan, and demands a scan at every boot while the
     # file is missing - the directory has to exist for it to be written at all
-    os.makedirs(os.path.join(usb, 'retroarch', 'retroboot', 'emulationstation', '.emulationstation', 'gamelists', 'psx'),
+    os.makedirs(os.path.join(usb, 'RetroArch', 'bin', 'retroboot', 'emulationstation', '.emulationstation', 'gamelists', 'psx'),
                 exist_ok=True)
 
     games = os.path.join(usb, 'Games')

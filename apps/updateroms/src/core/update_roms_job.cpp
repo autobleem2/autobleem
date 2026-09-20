@@ -65,12 +65,12 @@ bool UpdateRomsJob::detect(const string &root, Setup &setup, string &error, cons
         error = "Not an AutoBleem stick: no Autobleem/bin/autobleem under " + setup.root;
         return false;
     }
-    // which platform the stick is for. Not by the folder's name - a stick in a PC is exFAT, where RetroArch/
-    // (the Pi's tree) and retroarch/ (RetroBoot's) are the same folder: RetroBoot's own folder is the
-    // console's mark, the retroarch.cfg the Pi installer generates is the Pi's. The platform ini says the rest.
+    // which platform the stick is for: both keep RetroArch under RetroArch/, but the console's tree is one
+    // level down (RetroArch/bin, with bios/ and roms/ beside it) and the Pi's is RetroArch's own standard
+    // tree, with the retroarch.cfg the Pi installer generates at its top. The platform ini says the rest.
     if (!target.empty())
         setup.target = target;
-    else if (DirEntry::isDirectory(setup.root + sep + "retroarch/retroboot"))
+    else if (DirEntry::isDirectory(setup.root + sep + "RetroArch/bin"))
         setup.target = "psc";
     else if (DirEntry::exists(setup.root + sep + "RetroArch/retroarch.cfg"))
         setup.target = "rpi";

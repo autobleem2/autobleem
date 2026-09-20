@@ -206,7 +206,7 @@ if (AB_BUILD_TESTS)
     add_subdirectory(tests)
 
     # theme_convert <themesDir>: the ThemeInstaller over every zip and the ThemeConverter over every theme
-    # folder, for converting payload/themes or a theme being worked on ahead of the app doing it on first load. A host tool, so it rides on the
+    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load. A host tool, so it rides on the
     # tests' switch; it ships nowhere.
     add_executable(theme_convert tools/theme_convert/main.cpp)
     target_include_directories(theme_convert PRIVATE src/code)

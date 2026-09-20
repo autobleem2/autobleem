@@ -27,13 +27,15 @@ struct Environment {
     // ssid.cfg); "" - the default - where there is no such kernel (a Pi, a dev host)
     static void setKernelConfigDir(const std::string &path);
     static void setSonyDataPath(const std::string &path);     // the console's own data (fonts): /usr/sony/share/data
-    static void setThemesDir(const std::string &path);        // usb:/themes
+    static void setThemesDir(const std::string &path);        // usb:/Themes
     static void setCoversDbDir(const std::string &path);      // where coversU/P/J.db are
     static void setInternalGamesDir(const std::string &path); // the console's built-in games; default "/gaadata"
-    static void setRetroarchDir(const std::string &path);     // RetroArch's tree; "" (the default) means usb:/retroarch
+    static void setRetroarchDir(const std::string &path); // RetroArch's tree; "" (the default) means usb:/RetroArch/bin
     static void
-    setRetroarchCoreFile(const std::string &path); // the PS1 core the exported playlist names; "" = RetroBoot's
-    static void setRetroarchRomsDir(const std::string &path); // the other systems' ROMs; "" = usb:/roms
+    setRetroarchCoreFile(const std::string &path); // the PS1 core the exported playlist names; "" = pcsx_rearmed
+    static void setRetroarchRomsDir(const std::string &path); // the other systems' ROMs; "" = usb:/RetroArch/roms
+    static void setRetroarchBiosDir(const std::string &path); // RetroArch's system dir (the cores' BIOS files);
+                                                              // "" = usb:/RetroArch/bios
 
     //*******************************
     // paths
@@ -47,7 +49,7 @@ struct Environment {
     static std::string getPathToSaveStatesDir(); // games:/!SaveStates
     static std::string getPathToSystemDir();     // usb:/System
     static std::string getPathToLogsDir();       // usb:/System/Logs - AB_out.txt, AB_err.txt, autobleem.log
-    static std::string getPathToRetroarchDir();  // usb:/retroarch unless setRetroarchDir() said otherwise
+    static std::string getPathToRetroarchDir();  // usb:/RetroArch/bin unless setRetroarchDir() said otherwise
     static std::string getPathToRetroarchPlaylistsDir();
     static std::string getPathToRetroarchRdbDir();        // <retroarch>/database/rdb - libretro-database's .rdb files
     static std::string getPathToRetroarchThumbnailsDir(); // <retroarch>/thumbnails - the libretro-thumbnails packs
@@ -55,9 +57,12 @@ struct Environment {
     static std::string getPathToRetroarchStatesDir();
     static std::string getPathToPlayStationRdbFile(); // "Sony - PlayStation.rdb" in there, what MetadataLookup reads
     static std::string getPathToRetroarchCoreFile();
-    static bool hasRetroBoot();                     // usb:/retroarch/retroboot exists - the console's RetroArch bundle
-    static std::string getPathToRetroarchRomsDir(); // usb:/roms unless setRetroarchRomsDir() said otherwise:
-                                                    // a folder per system, named as RetroArch's databases are
+    static bool hasRetroBoot();                     // <retroarch>/retroboot exists - RetroBoot's tree is still there
+    static std::string getPathToRetroarchRomsDir(); // usb:/RetroArch/roms unless setRetroarchRomsDir() said
+                                                    // otherwise: a folder per system, named as RetroArch's
+                                                    // databases are
+    static std::string getPathToRetroarchBiosDir(); // usb:/RetroArch/bios unless setRetroarchBiosDir() said
+                                                    // otherwise: what retroarch.cfg's system_directory names
     static std::string getPathToRegionalDBFile();   // includes the "regional.db" filename
     static std::string getPathToInternalDBFile();   // includes the "internal.db" filename
     static std::string getPathToInternalGamesDir(); // "/gaadata" unless configured otherwise

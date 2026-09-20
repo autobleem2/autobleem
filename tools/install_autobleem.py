@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Refreshes a PSC USB stick: strips whatever old AutoBleem install is on it (any version - this
 matches by the stable top-level layout AutoBleem has always shipped, not by version-specific content)
-down to Games/themes/roms and the console's boot-exploit/RetroBoot layer, then lays down a fresh
-AutoBleem2 build on top. Cross-platform (Windows/Linux), stdlib only.
+down to Games/Themes/RetroArch and the console's boot-exploit folder, brings the folder layout up to
+date, then lays down a fresh AutoBleem2 build on top. Cross-platform (Windows/Linux), stdlib only.
 
     python tools/install_autobleem.py                                   interactive
     python tools/install_autobleem.py --drive F:\\ --dry-run
@@ -10,10 +10,11 @@ AutoBleem2 build on top. Cross-platform (Windows/Linux), stdlib only.
     python tools/install_autobleem.py --drive F:\\ --execute --stage clean
     python tools/install_autobleem.py --drive F:\\ --execute --with-retroboot
 
-Four stages (--stage), 'all' (the default) runs clean, games, then install:
+Five stages (--stage), 'all' (the default) runs clean, games, layout, then install:
   analyze   report what's on the drive; changes nothing
   clean     remove old AutoBleem elements + macOS junk (see CLEAN NOTES below)
   games     strip every PS1 game folder under Games/ down to its disc images (see GAMES NOTES below)
+  layout    bring an older stick's folders to the current layout (see LAYOUT NOTES below)
   install   copy a fresh AutoBleem2 payload onto the drive (does not clean first)
 
 CLEAN NOTES - removed, because rc/backup.sh and backup_internal.sh regenerate every one of these
@@ -24,10 +25,10 @@ from the console's own /gaadata and /data at the next boot (see payload/Autoblee
     Region, Logs, UI, lightguns.txt            rebuilt by AutoBleem2's next scan)
   Apps/pscbios/, Apps/abflashkit/             AutoBleem2 ships these two fresh (--remove-all-apps for
                                                the whole Apps/ folder instead, --keep-apps for neither)
-  retroarch/playlists/AutoBleem.lpl           the PS1 library export; rewritten by AutoBleem2's next
+  RetroArch/bin/playlists/AutoBleem.lpl       the PS1 library export; rewritten by AutoBleem2's next
                                                boot/scan (needs a real boot - UpdateRoms.exe never touches
                                                PS1 playlists, only the per-system ROM ones)
-  retroarch/playlists/Sony - PlayStation.lpl  a stale PS1 playlist not written by AutoBleem2 at all
+  RetroArch/bin/playlists/Sony - PlayStation.lpl  a stale PS1 playlist not written by AutoBleem2 at all
                                                (--remove-retroarch-tree removes the whole tree instead)
 GAMES NOTES - the 'games' stage leaves each game folder under Games/ with nothing but its disc images
 (.cue/.bin/.img/.chd/.pbp/.ecm/.m3u/.ccd/.sub/.iso/.mds/.mdf/.toc), so AutoBleem2's first scan builds
@@ -38,37 +39,58 @@ and other strays. Sub-directories of games (Games/RPG/<game>/) are walked the sa
 (your memory card sets) and Games/!SaveStates (save states, per-game settings) are yours and are kept;
 --purge-saves removes them too for a truly clean slate. --keep-game-metadata skips the stage in 'all'.
 
-Left alone: themes/, roms/, the rest of retroarch/ (RetroBoot's own tree, boot-critical), the
-boot-exploit payload folder (a bare UUID-named directory - required to boot at all), and anything else
-not recognized as AutoBleem's own (reported, never touched).
+Left alone: Themes/, RetroArch/roms, the rest of RetroArch/, the boot-exploit payload folder (a bare
+UUID-named directory - required to boot at all), and anything else not recognized as AutoBleem's own
+(reported, never touched).
+
+LAYOUT NOTES - the stick's layout since 2026-09 (the 'layout' stage converts an older one in place):
+  Themes/                       was themes/
+  RetroArch/bin/                RetroArch's own tree - was retroarch/ at the root (RetroBoot's)
+  RetroArch/bios/               RetroArch's system directory - was retroarch/system
+  RetroArch/roms/               the other systems' games - was roms/ at the root
+  Autobleem/lib/apps, retroarch, modules   the libraries and kernel module RetroBoot carried under
+                                retroarch/retroboot (assets/lib, lib, modules) - copied out of there
+  Apps/<name>/                  self-contained: a RetroBoot-era app whose run.sh reached into
+                                retroarch/apps/<name> gets those files moved in and its scripts pointed
+                                at the new paths (Autobleem/rc/app_env.sh puts the libraries on its path)
+retroarch.cfg and every playlist are rewritten for the new paths (/media/RetroArch/bin, /media/RetroArch/roms,
+system_directory = /media/RetroArch/bios); RetroBoot's Applications.lpl goes. What RetroBoot itself left
+under RetroArch/bin/retroboot is not touched - nothing of AutoBleem's uses it any more (the launch scripts
+are Autobleem/rc/launch_rb.sh and retroarch.sh), so it can be deleted by hand.
 
 INSTALL NOTES - copies onto the (already cleaned, or already-fresh) drive:
   build_psc/dist/autobleem-gui  -> Autobleem/bin/autobleem/autobleem-gui   (run ./make_psc.sh first)
   src/resources/                -> Autobleem/bin/autobleem/
   payload/Autobleem/{rc,start.sh,lib,bin/emu}  -> Autobleem/...
   db/covers*.db                 -> Autobleem/bin/db/           (optional - see README/CLAUDE.md)
-  payload/Apps/<name>/          -> Apps/<name>/                (each app folder replaced whole)
-  payload/themes/<name>/        -> themes/<name>/              (each theme folder replaced whole)
+  payload/Apps/<name>/          -> Apps/<name>/                (each app folder replaced whole - the two
+                                                                 console tools; the third-party apps are
+                                                                 the download repository's psc/apps pack)
+  payload/Themes/<name>/        -> Themes/<name>/              (each theme folder replaced whole)
+  payload/RetroArch/            -> RetroArch/                  (the README files and bios/biospack.txt,
+                                                                 merged over what is there)
   build_win/UpdateRoms/         -> UpdateRoms/                 (run ./tools/make_updateroms_bundle.sh first,
                                                                  or pass --skip-updateroms)
 Each prerequisite that is missing is reported and skipped rather than aborting the whole install, so
-e.g. Apps/themes can be refreshed even without a freshly built binary at hand.
+e.g. Apps/Themes can be refreshed even without a freshly built binary at hand.
 
-roms/<old short name>/ (nes, snes, gba, ...) is renamed to roms/<RetroArch database name>/ (see
+RetroArch/roms/<old short name>/ (nes, snes, gba, ...) is renamed to <RetroArch database name>/ (see
 ROMS_LAYOUT_MAP) - the scanner only recognizes a folder named exactly as its database is. Two old
 names that target the same database (nes+famicom, snes+sfc, ...) are merged, not overwritten.
 --skip-roms-convert leaves roms/ untouched.
 
 UpdateRoms.exe (apps/updateroms/) is the PC-side RetroArch scanner - run it from the stick after install
-(UpdateRoms/UpdateRoms.exe, or --quiet for no window) to write the per-system playlists under roms/<system>/
-with the PC's network (box art, RetroArch's databases). It deliberately never touches AutoBleem.lpl,
-Favorites or History - AutoBleem.lpl (the PS1 library export) is written only by autobleem-gui's own scan,
-which needs a real boot (the console, or a PC debug build run against the stick once).
+(UpdateRoms/UpdateRoms.exe, or --quiet for no window) to write the per-system playlists under
+RetroArch/roms/<system>/ with the PC's network (box art, RetroArch's databases). It deliberately never
+touches AutoBleem.lpl, Favorites or History - AutoBleem.lpl (the PS1 library export) is written only by
+autobleem-gui's own scan, which needs a real boot (the console, or a PC debug build run against the stick once).
 
 RETROBOOT (optional, off unless asked): --with-retroboot copies a RetroBoot/RetroArch bundle to
-retroarch/ when the drive doesn't already have one (or always, with --replace-retroboot). The source
+RetroArch/bin when the drive doesn't already have one (or always, with --replace-retroboot). The source
 is --retroboot-source, default vendor/retroboot-bundle/retroarch - not part of this repo; populate it
-yourself from a full AutoBleem release package (see tools/install_autobleem.py --help-retroboot).
+yourself from a full AutoBleem release package. The 'layout' stage then makes the tree ours (bios/,
+roms/, the paths). The proper source of RetroArch for a stick is the download repository (psc/retroarch,
+psc/cores, psc/libs, psc/apps) - the PC installer over it is the next step.
 
 This tool does not jailbreak a blank stick - it refreshes AutoBleem on one that is already exploited
 (the boot-exploit folder must already be there; --remove-boot-exploit deletes it, which needs redoing
@@ -431,13 +453,15 @@ def analyze(root: Path, opts) -> Analysis:
                 if c:
                     a.actions.append((c, 'Apps/pscbios + abflashkit', 'AutoBleem2 ships this fresh'))
 
-    retroarch_dir = known('retroarch')
+    retroarch_dir = known('RetroArch')
     a.retroarch_dir = retroarch_dir
     if retroarch_dir:
         if opts.remove_retroarch_tree:
-            a.actions.append((retroarch_dir, 'retroarch/ (whole tree)', '--remove-retroarch-tree'))
+            a.actions.append((retroarch_dir, 'RetroArch/ (whole tree)', '--remove-retroarch-tree'))
         elif not opts.keep_autobleem_playlists:
-            playlists_dir = find_ci(retroarch_dir, 'playlists')
+            # the tree is RetroArch/bin since 2026-09; an older stick still has it at the top
+            ra_tree = find_ci(retroarch_dir, 'bin') or retroarch_dir
+            playlists_dir = find_ci(ra_tree, 'playlists')
             if playlists_dir:
                 c = find_ci(playlists_dir, 'AutoBleem.lpl')
                 if c:
@@ -450,8 +474,8 @@ def analyze(root: Path, opts) -> Analysis:
                                                                   'AutoBleem2 uses AutoBleem.lpl for PS1 instead'))
 
     a.games_dir = known('Games')
-    a.themes_dir = known('themes')
-    a.roms_dir = known('roms')
+    a.themes_dir = known('Themes')
+    a.roms_dir = known('roms') or (find_ci(retroarch_dir, 'roms') if retroarch_dir else None)
 
     if root.is_dir():
         for child in root.iterdir():
@@ -615,6 +639,218 @@ def stage_games(root: Path, opts, dry_run: bool):
 
 
 # --------------------------------------------------------------------------------------------------
+# layout: an older stick's folders as they are laid out since 2026-09 (see LAYOUT NOTES)
+# --------------------------------------------------------------------------------------------------
+
+# the path rewrites for retroarch.cfg, the playlists and the apps' scripts, in order (the longer first)
+LAYOUT_PATH_REWRITES = [
+    ('/media/retroarch/retroboot/assets/lib', '/media/Autobleem/lib/apps'),
+    ('/media/retroarch/apps', '/media/Apps'),
+    ('/media/RetroArch/bin/apps', '/media/Apps'),
+    ('/media/retroarch/logs/', '/media/System/Logs/'),
+    ('/media/retroarch/system', '/media/RetroArch/bios'),
+    ('/media/retroarch/', '/media/RetroArch/bin/'),
+    ('/media/retroarch"', '/media/RetroArch/bin"'),
+    ('/media/roms/', '/media/RetroArch/roms/'),
+    ('/media/roms"', '/media/RetroArch/roms"'),
+    ('${RB_LIBRARY_PATH}', '/tmp/applib'),
+    ('$RB_LIBRARY_PATH', '/tmp/applib'),
+]
+# the block a RetroBoot-era run.sh starts with (loadconfig.sh + init_libs.sh) -> our app_env.sh
+RB_RUN_SH_BLOCK = re.compile(r'if \[ -z "(\$\{RB_LIBRARY_PATH\}|/tmp/applib)" \]; then\n.*?\nfi\n'
+                             r'if \[ ! -d "(\$\{RB_LIBRARY_PATH\}|/tmp/applib)" \]; then\n.*?\nfi\n', re.S)
+APP_ENV_LINE = '. /media/Autobleem/rc/app_env.sh\n'
+
+
+def rewrite_text_file(path: Path, rewrites, dry_run: bool, log, extra=None):
+    """applies the (old, new) pairs to a text file, keeping its bytes otherwise (line endings, BOM);
+    returns whether anything changed"""
+    try:
+        raw = path.read_bytes()
+        text = raw.decode('utf-8', errors='surrogateescape')
+    except OSError as e:
+        print(f'  WARNING: cannot read {path}: {e}', file=sys.stderr)
+        return False
+    new = extra(text) if extra else text
+    for old, repl in rewrites:
+        new = new.replace(old, repl)
+    if new == text:
+        return False
+    if dry_run:
+        log(f'[DRYRUN] would rewrite the paths in {path}')
+    else:
+        log(f'rewriting the paths in {path}')
+        path.write_bytes(new.encode('utf-8', errors='surrogateescape'))
+    return True
+
+
+def move_merge(src: Path, dst: Path, dry_run: bool, log, keep_existing=False):
+    """moves src's contents into dst (created if missing) and removes src; a file already in dst is
+    overwritten unless keep_existing"""
+    if dry_run:
+        log(f'[DRYRUN] would move {src} into {dst}')
+        return
+    dst.mkdir(parents=True, exist_ok=True)
+    for child in list(src.iterdir()):
+        target = dst / child.name
+        if child.is_dir() and target.is_dir():
+            move_merge(child, target, dry_run, log, keep_existing)
+        elif target.exists():
+            if keep_existing:
+                remove_path(child)
+            else:
+                remove_path(target)
+                shutil.move(str(child), str(target))
+        else:
+            shutil.move(str(child), str(target))
+    try:
+        src.rmdir()
+    except OSError:
+        pass
+
+
+def rename_case(path: Path, name: str, dry_run: bool, log):
+    """path -> its parent/name when only the case differs (FAT and exFAT are case-insensitive: a plain
+    rename onto the same letters is refused on some systems, so it goes through a temporary name)"""
+    if path.name == name:
+        return path
+    target = path.parent / name
+    if dry_run:
+        log(f'[DRYRUN] would rename {path} -> {name}')
+        return target
+    log(f'renaming {path} -> {name}')
+    tmp = path.parent / (name + '.renaming')
+    path.rename(tmp)
+    tmp.rename(target)
+    return target
+
+
+def stage_layout(root: Path, opts, dry_run: bool):
+    def log(msg):
+        print(msg)
+
+    print('--- bringing the folder layout up to date ---')
+    changed = False
+
+    # Themes/
+    themes = find_ci(root, 'Themes')
+    if themes and themes.name != 'Themes':
+        rename_case(themes, 'Themes', dry_run, log)
+        changed = True
+
+    # RetroArch/bin: an old retroarch/ at the root (retroarch.cfg or cores/ directly in it) moves down a level
+    ra = find_ci(root, 'RetroArch')
+    if ra and ((ra / 'retroarch.cfg').is_file() or (ra / 'cores').is_dir()) and not (ra / 'bin').is_dir():
+        if dry_run:
+            log(f'[DRYRUN] would move {ra} -> {root / "RetroArch" / "bin"}')
+        else:
+            log(f'moving {ra} -> {root / "RetroArch" / "bin"}')
+            tmp = root / 'RetroArch.migrating'
+            ra.rename(tmp)
+            ra = root / 'RetroArch'
+            ra.mkdir()
+            tmp.rename(ra / 'bin')
+        changed = True
+    elif ra and ra.name != 'RetroArch':
+        ra = rename_case(ra, 'RetroArch', dry_run, log)
+        changed = True
+    if ra is None:
+        ra = root / 'RetroArch'
+    ra_bin = ra / 'bin'
+    if dry_run and not ra_bin.is_dir():
+        ra_bin = (find_ci(root, 'RetroArch') or ra)  # the tree as it still is, for the dry run's reading
+
+    # RetroArch/bios: was bin/system
+    old_system = find_ci(ra_bin, 'system') if ra_bin.is_dir() else None
+    if old_system and old_system.is_dir():
+        move_merge(old_system, ra / 'bios', dry_run, log)
+        changed = True
+
+    # RetroArch/roms: was roms/ at the root
+    old_roms = find_ci(root, 'roms')
+    if old_roms and old_roms.is_dir():
+        move_merge(old_roms, ra / 'roms', dry_run, log)
+        changed = True
+
+    if ra_bin.is_dir():
+        # retroarch.cfg: the paths, and the two keys that must name the new folders
+        def cfg_keys(text):
+            text = re.sub(r'^system_directory\s*=.*$', 'system_directory = "/media/RetroArch/bios"', text, flags=re.M)
+            text = re.sub(r'^rgui_browser_directory\s*=.*$', 'rgui_browser_directory = "/media/RetroArch/roms/"', text,
+                          flags=re.M)
+            return text
+        cfg = ra_bin / 'retroarch.cfg'
+        if cfg.is_file():
+            changed |= rewrite_text_file(cfg, LAYOUT_PATH_REWRITES, dry_run, log, cfg_keys)
+        # the playlists (RetroBoot's Applications.lpl points into its launchers and goes)
+        for lpl in sorted(list((ra_bin / 'playlists').glob('*.lpl')) + list(ra_bin.glob('content_*.lpl'))):
+            if lpl.name == 'Applications.lpl':
+                if dry_run:
+                    log(f'[DRYRUN] would remove {lpl} (RetroBoot\'s)')
+                else:
+                    log(f'removing {lpl} (RetroBoot\'s)')
+                    remove_path(lpl)
+                changed = True
+                continue
+            changed |= rewrite_text_file(lpl, LAYOUT_PATH_REWRITES, dry_run, log)
+
+        # the libraries and the kernel module RetroBoot carried, where AutoBleem's scripts look for them
+        rb = ra_bin / 'retroboot'
+        lib_dst = (find_ci(root, 'Autobleem') or (root / 'Autobleem')) / 'lib'
+        for src, name in ((rb / 'assets' / 'lib', 'apps'), (rb / 'lib', 'retroarch'), (rb / 'modules', 'modules')):
+            if src.is_dir() and any(not (lib_dst / name / f.name).exists() for f in src.iterdir()):
+                copy_tree_merge(src, lib_dst / name, dry_run, log)
+                changed = True
+
+        # the apps: a RetroBoot-era Apps/<name> gets bin/apps/<name>'s files and its scripts rewritten
+        apps = find_ci(root, 'Apps')
+        rb_apps = find_ci(ra_bin, 'apps')
+        if apps and apps.is_dir():
+            for app in sorted(p for p in apps.iterdir() if p.is_dir()):
+                run_sh = app / 'run.sh'
+                if not run_sh.is_file():
+                    continue
+                try:
+                    run_text = run_sh.read_text(encoding='utf-8', errors='replace')
+                    all_text = ''.join(f.read_text(encoding='utf-8', errors='replace') for f in app.glob('*.sh'))
+                except OSError:
+                    continue
+                marks = ('/media/retroarch/', 'RB_LIBRARY_PATH', 'retroboot/bin/', '/media/RetroArch/bin/apps')
+                if not any(m in all_text for m in marks):
+                    continue
+                if 'retroboot/bin/launch_rfa' in run_text:
+                    # RetroBoot's own menu as an app - the system menu's RetroArch item is that now
+                    if dry_run:
+                        log(f'[DRYRUN] would remove {app} (RetroBoot\'s launcher app)')
+                    else:
+                        log(f'removing {app} (RetroBoot\'s launcher app)')
+                        remove_path(app)
+                    changed = True
+                    continue
+                if rb_apps:
+                    src = find_ci(rb_apps, app.name)
+                    if src and src.is_dir():
+                        move_merge(src, app, dry_run, log, keep_existing=True)
+
+                def run_sh_env(text):
+                    text = RB_RUN_SH_BLOCK.sub('', text)
+                    if APP_ENV_LINE.strip() not in text:
+                        lines = text.split('\n')
+                        at = 1 if lines and lines[0].startswith('#!') else 0
+                        while at < len(lines) and lines[at].startswith('#'):
+                            at += 1
+                        lines.insert(at, APP_ENV_LINE.rstrip('\n'))
+                        text = '\n'.join(lines)
+                    return text
+                for script in sorted(app.glob('*.sh')):
+                    changed |= rewrite_text_file(script, LAYOUT_PATH_REWRITES, dry_run, log,
+                                                 run_sh_env if script.name == 'run.sh' else None)
+
+    if not changed:
+        print('  nothing to do - the layout is current')
+
+
+# --------------------------------------------------------------------------------------------------
 # install
 # --------------------------------------------------------------------------------------------------
 
@@ -627,14 +863,16 @@ def stage_install(root: Path, opts, dry_run: bool):
     dist_binary = REPO_ROOT / 'build_psc' / 'dist' / 'autobleem-gui'
     db_dir = REPO_ROOT / 'db'
     payload_apps = REPO_ROOT / 'payload' / 'Apps'
-    payload_themes = REPO_ROOT / 'payload' / 'themes'
+    payload_themes = REPO_ROOT / 'payload' / 'Themes'
+    payload_retroarch = REPO_ROOT / 'payload' / 'RetroArch'
 
     usb_autobleem = find_ci(root, 'Autobleem') or (root / 'Autobleem')
     usb_apps = find_ci(root, 'Apps') or (root / 'Apps')
-    usb_themes = find_ci(root, 'themes') or (root / 'themes')
+    usb_themes = find_ci(root, 'Themes') or (root / 'Themes')
     usb_games = find_ci(root, 'Games') or (root / 'Games')
     usb_system = find_ci(root, 'System') or (root / 'System')
-    usb_roms = find_ci(root, 'roms') or (root / 'roms')
+    usb_retroarch = find_ci(root, 'RetroArch') or (root / 'RetroArch')
+    usb_roms = find_ci(usb_retroarch, 'roms') or (usb_retroarch / 'roms')
 
     print('--- installing fresh AutoBleem2 payload ---')
 
@@ -702,6 +940,11 @@ def stage_install(root: Path, opts, dry_run: bool):
         for theme_dir in sorted(p for p in payload_themes.iterdir() if p.is_dir()):
             replace_tree(theme_dir, usb_themes / theme_dir.name, dry_run, log)
 
+    # the RetroArch folder's skeleton: bin/ bios/ roms/ with their README files and bios/biospack.txt,
+    # over whatever is there (never replacing a tree - bin/ is the user's RetroArch)
+    if payload_retroarch.is_dir():
+        copy_tree_merge(payload_retroarch, usb_retroarch, dry_run, log)
+
     updateroms_src = opts.updateroms_source or (REPO_ROOT / 'build_win' / 'UpdateRoms')
     if not opts.skip_updateroms:
         if not (updateroms_src / 'UpdateRoms.exe').is_file():
@@ -722,17 +965,17 @@ def stage_install(root: Path, opts, dry_run: bool):
         convert_roms_layout(usb_roms, dry_run, log)
 
     # --- optional RetroBoot/RetroArch bundle ------------------------------------------------------
-    usb_retroarch = find_ci(root, 'retroarch')
-    has_retroarch = usb_retroarch is not None
+    usb_ra_bin = find_ci(usb_retroarch, 'bin') if usb_retroarch.is_dir() else None
+    has_retroarch = usb_ra_bin is not None and (usb_ra_bin / 'retroarch').is_file()
     want = opts.with_retroboot
     if want is None:
         if has_retroarch:
-            print('[skip] retroarch/ already present, kept as-is (pass --with-retroboot --replace-retroboot to refresh it)')
+            print('[skip] RetroArch/bin already present, kept as-is (pass --with-retroboot --replace-retroboot to refresh it)')
             want = False
         elif opts.interactive:
-            want = confirm('No RetroBoot/RetroArch tree found on this drive. Install one now?', default=False)
+            want = confirm('No RetroArch tree found on this drive. Install a RetroBoot bundle now?', default=False)
         else:
-            print('[skip] no retroarch/ tree and --with-retroboot not given; RetroArch integration will stay off')
+            print('[skip] no RetroArch/bin tree and --with-retroboot not given; RetroArch integration will stay off')
             want = False
 
     if want and (not has_retroarch or opts.replace_retroboot):
@@ -740,9 +983,10 @@ def stage_install(root: Path, opts, dry_run: bool):
         if not source.is_dir():
             print(f'  ERROR: RetroBoot source not found at {source} - pass --retroboot-source PATH')
         else:
-            dst = usb_retroarch or (root / 'retroarch')
+            dst = usb_ra_bin or (usb_retroarch / 'bin')
             print(f'--- installing RetroBoot/RetroArch bundle from {source} (large, this can take a while) ---')
             replace_tree(source, dst, dry_run, log)
+            stage_layout(root, opts, dry_run)
 
     print()
     print('=== install summary ===')
@@ -750,8 +994,10 @@ def stage_install(root: Path, opts, dry_run: bool):
         ('autobleem-gui', usb_autobleem / 'bin' / 'autobleem' / 'autobleem-gui'),
         ('resources', usb_autobleem / 'bin' / 'autobleem' / 'config.ini'),
         ('Apps/', usb_apps),
-        ('themes/', usb_themes),
-        ('retroarch/', usb_retroarch or (root / 'retroarch')),
+        ('Themes/', usb_themes),
+        ('RetroArch/bin/', usb_retroarch / 'bin' / 'retroarch'),
+        ('RetroArch/bios/', usb_retroarch / 'bios'),
+        ('RetroArch/roms/', usb_roms),
         ('UpdateRoms/', root / 'UpdateRoms' / 'UpdateRoms.exe'),
     ):
         state = 'present' if p.exists() else ('would exist' if dry_run else 'MISSING')
@@ -794,8 +1040,9 @@ def report_readiness(root: Path):
                        if c.is_dir() and not c.name.startswith('!'))
     print(f'  [info] {n_games} game folder(s) under Games/')
 
-    retro = find_ci(root, 'retroarch')
-    print(f'  [info] RetroBoot/RetroArch tree: {"present" if retro else "not installed"}')
+    retro = find_ci(root, 'RetroArch')
+    retro = (retro / 'bin' / 'retroarch') if retro else None
+    print(f'  [info] RetroArch (RetroArch/bin/retroarch): {"present" if retro and retro.is_file() else "not installed"}')
 
 
 # --------------------------------------------------------------------------------------------------
@@ -809,15 +1056,15 @@ def parse_args(argv):
     mode.add_argument('--dry-run', action='store_true', help='preview only, changes nothing')
     mode.add_argument('--execute', action='store_true', help='actually modify the drive')
     p.add_argument('--yes', action='store_true', help='skip the "are you sure" confirmation (still needs --execute)')
-    p.add_argument('--stage', choices=['analyze', 'clean', 'games', 'install', 'all'], default='all')
+    p.add_argument('--stage', choices=['analyze', 'clean', 'games', 'layout', 'install', 'all'], default='all')
     p.add_argument('--keep-game-metadata', action='store_true', help="skip the 'games' stage in 'all' (leave Game.ini, pcsx.cfg, covers... in the game folders)")
     p.add_argument('--keep-covers', action='store_true', help="the 'games' stage keeps .png files next to the images (your own covers)")
     p.add_argument('--purge-saves', action='store_true', help="the 'games' stage also removes Games/!SaveStates and Games/!MemCards (save states, memory cards)")
 
     p.add_argument('--keep-apps', action='store_true', help='leave all of Apps/ as-is, including pscbios/abflashkit')
     p.add_argument('--remove-all-apps', action='store_true', help='delete the whole old Apps/ folder, not just pscbios/abflashkit')
-    p.add_argument('--remove-retroarch-tree', action='store_true', help='delete the whole retroarch/ tree instead of just its two PS1 playlists (AutoBleem.lpl, Sony - PlayStation.lpl)')
-    p.add_argument('--keep-autobleem-playlists', action='store_true', help="leave retroarch/playlists/AutoBleem.lpl and 'Sony - PlayStation.lpl' alone")
+    p.add_argument('--remove-retroarch-tree', action='store_true', help='delete the whole RetroArch/ tree instead of just its two PS1 playlists (AutoBleem.lpl, Sony - PlayStation.lpl)')
+    p.add_argument('--keep-autobleem-playlists', action='store_true', help="leave RetroArch/bin/playlists/AutoBleem.lpl and 'Sony - PlayStation.lpl' alone")
     p.add_argument('--remove-boot-exploit', action='store_true', help='also delete the boot-exploit payload folder (you will need to redo the jailbreak)')
 
     retro = p.add_mutually_exclusive_group()
@@ -825,7 +1072,7 @@ def parse_args(argv):
                         help='install the RetroBoot/RetroArch bundle (skipped if already present, unless --replace-retroboot)')
     retro.add_argument('--without-retroboot', dest='with_retroboot', action='store_false',
                         help="don't install RetroBoot/RetroArch even if missing")
-    p.add_argument('--replace-retroboot', action='store_true', help='replace an existing retroarch/ tree with --with-retroboot')
+    p.add_argument('--replace-retroboot', action='store_true', help='replace an existing RetroArch/bin tree with --with-retroboot')
     p.add_argument('--retroboot-source', type=Path, help='source retroarch/ tree for the RetroBoot bundle (default vendor/retroboot-bundle/retroarch)')
 
     p.add_argument('--skip-roms-convert', action='store_true', help="don't rename roms/<old short name> onto roms/<RetroArch database name> (see ROMS_LAYOUT_MAP)")
@@ -883,6 +1130,10 @@ def main(argv=None):
 
     if opts.stage == 'games' or (opts.stage == 'all' and not opts.keep_game_metadata):
         stage_games(root, opts, dry_run)
+        print()
+
+    if opts.stage in ('layout', 'all'):
+        stage_layout(root, opts, dry_run)
         print()
 
     if opts.stage in ('install', 'all'):

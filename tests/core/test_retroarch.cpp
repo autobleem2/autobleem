@@ -32,21 +32,21 @@ struct RetroArchTree {
         addCore("bsnes_libretro", "Nintendo - SNES (bsnes)", "sfc", "Nintendo - Super Nintendo Entertainment System");
         addCore("stella_libretro", "Atari - 2600 (Stella)", "a26|bin", "Atari - 2600");
 
-        tmp.writeFile("roms/snes/Chrono Trigger.sfc", "rom");
-        tmp.writeFile("roms/snes/Earthbound.sfc", "rom");
-        tmp.writeFile("roms/atari/Pitfall.a26", "rom");
-        tmp.writeFile("roms/snes/pack.zip", "archive");
+        tmp.writeFile("RetroArch/roms/snes/Chrono Trigger.sfc", "rom");
+        tmp.writeFile("RetroArch/roms/snes/Earthbound.sfc", "rom");
+        tmp.writeFile("RetroArch/roms/atari/Pitfall.a26", "rom");
+        tmp.writeFile("RetroArch/roms/snes/pack.zip", "archive");
     }
 
     void addCore(const string &file, const string &displayName, const string &extensions, const string &database) {
-        tmp.writeFile("retroarch/info/" + file + ".info", "display_name = \"" + displayName +
-                                                              "\"\n"
-                                                              "supported_extensions = \"" +
-                                                              extensions +
-                                                              "\"\n"
-                                                              "database = \"" +
-                                                              database + "\"\n");
-        tmp.writeFile("retroarch/cores/" + file + ".so", "core");
+        tmp.writeFile("RetroArch/bin/info/" + file + ".info", "display_name = \"" + displayName +
+                                                                  "\"\n"
+                                                                  "supported_extensions = \"" +
+                                                                  extensions +
+                                                                  "\"\n"
+                                                                  "database = \"" +
+                                                                  database + "\"\n");
+        tmp.writeFile("RetroArch/bin/cores/" + file + ".so", "core");
     }
 
     struct Entry {
@@ -79,22 +79,23 @@ struct RetroArchTree {
     }
 
     void writePlaylist(const string &name, const vector<Entry> &entries, bool asJson = true) {
-        tmp.writeFile("retroarch/playlists/" + name + ".lpl", asJson ? json(entries) : sixLine(entries));
+        tmp.writeFile("RetroArch/bin/playlists/" + name + ".lpl", asJson ? json(entries) : sixLine(entries));
     }
 
     static Entry snes(const string &rom, const string &label, const string &core = "DETECT") {
-        return Entry{"/media/roms/snes/" + rom, label, core, core == "DETECT" ? "DETECT" : "Nintendo - SNES (Snes9x)",
+        return Entry{"/media/RetroArch/roms/snes/" + rom, label, core,
+                     core == "DETECT" ? "DETECT" : "Nintendo - SNES (Snes9x)",
                      "Nintendo - Super Nintendo Entertainment System.lpl"};
     }
 
     // what RetroArch itself writes into content_favorites.lpl / content_history.lpl: the core it used, but
     // no db_name, and for history no label either
     static Entry byRetroArch(const string &rom, const string &label) {
-        return Entry{"/media/roms/snes/" + rom, label, "/media/retroarch/cores/snes9x_libretro.so",
+        return Entry{"/media/RetroArch/roms/snes/" + rom, label, "/media/RetroArch/bin/cores/snes9x_libretro.so",
                      "Nintendo - SNES (Snes9x)", ""};
     }
 
-    string core(const string &file) const { return tmp.at("retroarch/cores/" + file + ".so"); }
+    string core(const string &file) const { return tmp.at("RetroArch/bin/cores/" + file + ".so"); }
     // this host's platform file, as RetroArchService looks for it
     static string coresCfg() { return string("platform/") + Env::platformName() + ".cores.cfg"; }
 
@@ -127,11 +128,12 @@ TEST_CASE("playlists are listed by name, without AutoBleem's own and the Apps li
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
     ra.writePlaylist("Atari - 2600",
-                     {{"/media/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}}, false);
+                     {{"/media/RetroArch/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}},
+                     false);
     ra.writePlaylist("AutoBleem", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});    // our own export
     ra.writePlaylist("Applications", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")}); // the Apps list
-    ra.tmp.writeFile("retroarch/playlists/Empty.lpl", "");
-    ra.tmp.writeFile("retroarch/playlists/notes.txt", "not a playlist");
+    ra.tmp.writeFile("RetroArch/bin/playlists/Empty.lpl", "");
+    ra.tmp.writeFile("RetroArch/bin/playlists/notes.txt", "not a playlist");
     ra.writePlaylist("Nothing valid", {ra.snes("Missing.sfc", "Missing")}); // every entry dropped
 
     CHECK(ra.service.playlistNames() == vector<string>{"Atari - 2600", "Nintendo - SNES"});
@@ -145,7 +147,7 @@ TEST_CASE("playlists are sorted by name in byte order, whatever order the direct
     // order, which would put "atari" before "Sega" and hide a missing sort. Byte order puts it after.
     ra.writePlaylist("Sega - Genesis", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
     ra.writePlaylist("atari - 2600",
-                     {{"/media/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}});
+                     {{"/media/RetroArch/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}});
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Earthbound.sfc", "Earthbound")});
 
     CHECK(ra.service.playlistNames() == vector<string>{"Nintendo - SNES", "Sega - Genesis", "atari - 2600"});
@@ -153,8 +155,8 @@ TEST_CASE("playlists are sorted by name in byte order, whatever order the direct
 
 TEST_CASE("an entry becomes a foreign game on the USB root, playing with the core it names when that exists") {
     RetroArchTree ra;
-    ra.writePlaylist("Nintendo - SNES",
-                     {ra.snes("Chrono Trigger.sfc", "Chrono Trigger", "/media/retroarch/cores/snes9x_libretro.so")});
+    ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger",
+                                                 "/media/RetroArch/bin/cores/snes9x_libretro.so")});
 
     PsGames games = ra.service.gamesInPlaylist("Nintendo - SNES");
     REQUIRE(games.size() == 1);
@@ -163,7 +165,7 @@ TEST_CASE("an entry becomes a foreign game on the USB root, playing with the cor
     CHECK(game.foreign);
     CHECK_FALSE(game.app);
     CHECK(game.locked);
-    CHECK(game.image_path == ra.tmp.at("roms/snes/Chrono Trigger.sfc")); // /media mapped onto the USB root
+    CHECK(game.image_path == ra.tmp.at("RetroArch/roms/snes/Chrono Trigger.sfc")); // /media mapped onto the USB root
     CHECK(game.core_path == ra.core("snes9x_libretro"));
     CHECK(game.core_name == "Nintendo - SNES (Snes9x)");
     CHECK(game.db_name == "Nintendo - Super Nintendo Entertainment System.lpl");
@@ -173,7 +175,7 @@ TEST_CASE("a DETECT entry gets the core whose .info lists the playlist's databas
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
     ra.writePlaylist("Atari - 2600",
-                     {{"/media/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}});
+                     {{"/media/RetroArch/roms/atari/Pitfall.a26", "Pitfall", "DETECT", "DETECT", "Atari - 2600.lpl"}});
 
     PsGames snes = ra.service.gamesInPlaylist("Nintendo - SNES");
     REQUIRE(snes.size() == 1);
@@ -189,7 +191,7 @@ TEST_CASE("a DETECT entry gets the core whose .info lists the playlist's databas
 TEST_CASE("an .info whose core is not installed takes no part in the mapping") {
     RetroArchTree ra;
     // the info bundle describes every core there is; this one would win on extensions, but its .so is missing
-    ra.tmp.writeFile("retroarch/info/mesen_libretro.info",
+    ra.tmp.writeFile("RetroArch/bin/info/mesen_libretro.info",
                      "display_name = \"Nintendo - SNES (Mesen)\"\n"
                      "supported_extensions = \"sfc|smc|fig|swc\"\n"
                      "database = \"Nintendo - Super Nintendo Entertainment System\"\n");
@@ -203,25 +205,26 @@ TEST_CASE("an .info whose core is not installed takes no part in the mapping") {
 
 TEST_CASE("a playlist path is mapped onto the USB root only when it is not there already") {
     // the console: the USB root is /media, a playlist path is what it is
-    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "/media") == "/media/roms/x.sfc");
+    CHECK(RetroArchService::mapPlaylistPath("/media/RetroArch/roms/x.sfc", "/media") == "/media/RetroArch/roms/x.sfc");
     // a dev host: a console playlist's /media is the fake USB tree
-    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "C:/usb") == "C:/usb/roms/x.sfc");
-    CHECK(RetroArchService::mapPlaylistPath("/media/retroarch/cores/a.so", "/home/me/usb") ==
-          "/home/me/usb/retroarch/cores/a.so");
+    CHECK(RetroArchService::mapPlaylistPath("/media/RetroArch/roms/x.sfc", "C:/usb") == "C:/usb/RetroArch/roms/x.sfc");
+    CHECK(RetroArchService::mapPlaylistPath("/media/RetroArch/bin/cores/a.so", "/home/me/usb") ==
+          "/home/me/usb/RetroArch/bin/cores/a.so");
     // a Pi: the USB root is /media/autobleem and RetroArch writes its real mount point - no double prefix
     CHECK(RetroArchService::mapPlaylistPath("/media/autobleem/RetroArch/roms/x.sfc", "/media/autobleem") ==
           "/media/autobleem/RetroArch/roms/x.sfc");
     // a console playlist carried onto a Pi still maps
-    CHECK(RetroArchService::mapPlaylistPath("/media/roms/x.sfc", "/media/autobleem") == "/media/autobleem/roms/x.sfc");
+    CHECK(RetroArchService::mapPlaylistPath("/media/RetroArch/roms/x.sfc", "/media/autobleem") ==
+          "/media/autobleem/RetroArch/roms/x.sfc");
     // not a /media path: untouched (DETECT, a Windows path)
     CHECK(RetroArchService::mapPlaylistPath("DETECT", "/media/autobleem") == "DETECT");
-    CHECK(RetroArchService::mapPlaylistPath("C:/usb/roms/x.sfc", "C:/usb") == "C:/usb/roms/x.sfc");
+    CHECK(RetroArchService::mapPlaylistPath("C:/usb/RetroArch/roms/x.sfc", "C:/usb") == "C:/usb/RetroArch/roms/x.sfc");
 }
 
 TEST_CASE("a core the entry names but which is not installed is re-detected") {
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES",
-                     {ra.snes("Chrono Trigger.sfc", "Chrono Trigger", "/media/retroarch/cores/gone_libretro.so")});
+                     {ra.snes("Chrono Trigger.sfc", "Chrono Trigger", "/media/RetroArch/bin/cores/gone_libretro.so")});
 
     PsGames games = ra.service.gamesInPlaylist("Nintendo - SNES");
     REQUIRE(games.size() == 1);
@@ -246,8 +249,8 @@ TEST_CASE("entries whose ROM or core cannot be found are dropped; an entry insid
                                             ra.snes("Missing.sfc", "Missing ROM"),
                                             ra.snes("pack.zip#Earthbound.sfc", "In an archive"),
                                             ra.snes("gone.zip#Earthbound.sfc", "In a missing archive"),
-                                            {"/media/roms/snes/Earthbound.sfc", "No core for this", "DETECT", "DETECT",
-                                             "Nintendo - Virtual Boy.lpl"},
+                                            {"/media/RetroArch/roms/snes/Earthbound.sfc", "No core for this", "DETECT",
+                                             "DETECT", "Nintendo - Virtual Boy.lpl"},
                                         });
 
     CHECK(titles(ra.service.gamesInPlaylist("Nintendo - SNES")) == vector<string>{"Chrono Trigger", "In an archive"});
@@ -258,14 +261,14 @@ TEST_CASE("Favorites and History follow the playlists, with what RetroArch left 
     ra.writePlaylist("Nintendo - SNES",
                      {ra.snes("Chrono Trigger.sfc", "Chrono Trigger"), ra.snes("Earthbound.sfc", "Earthbound")});
     // RetroArch writes a favorite with no db_name, and a history entry with no label either
-    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+    ra.tmp.writeFile("RetroArch/bin/content_favorites.lpl",
                      RetroArchTree::json({
                          RetroArchTree::byRetroArch("Earthbound.sfc", "Earthbound"),
                          RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger"),
                      }));
-    ra.tmp.writeFile("retroarch/content_history.lpl", RetroArchTree::json({
-                                                          RetroArchTree::byRetroArch("Chrono Trigger.sfc", ""),
-                                                      }));
+    ra.tmp.writeFile("RetroArch/bin/content_history.lpl", RetroArchTree::json({
+                                                              RetroArchTree::byRetroArch("Chrono Trigger.sfc", ""),
+                                                          }));
 
     CHECK(ra.service.playlistNames() == vector<string>{"Nintendo - SNES", "Favorites", "History"});
     CHECK(ra.service.favoritesPlaylistName() == "Favorites");
@@ -285,7 +288,7 @@ TEST_CASE("Favorites and History follow the playlists, with what RetroArch left 
 TEST_CASE("a favorite or history entry with no playlist behind it is dropped") {
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES", {ra.snes("Chrono Trigger.sfc", "Chrono Trigger")});
-    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+    ra.tmp.writeFile("RetroArch/bin/content_favorites.lpl",
                      RetroArchTree::json({
                          RetroArchTree::byRetroArch("Earthbound.sfc", "Earthbound"), // not in any playlist
                          RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger"),
@@ -300,7 +303,7 @@ TEST_CASE("reloadFavoritesAndHistory picks up what RetroArch changed while it ra
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - SNES",
                      {ra.snes("Chrono Trigger.sfc", "Chrono Trigger"), ra.snes("Earthbound.sfc", "Earthbound")});
-    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+    ra.tmp.writeFile("RetroArch/bin/content_favorites.lpl",
                      RetroArchTree::json({
                          RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger"),
                      }));
@@ -308,14 +311,14 @@ TEST_CASE("reloadFavoritesAndHistory picks up what RetroArch changed while it ra
     REQUIRE(ra.service.gameCount("Favorites") == 1);
 
     // RetroArch ran: a second favorite, and a history file that did not exist before
-    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+    ra.tmp.writeFile("RetroArch/bin/content_favorites.lpl",
                      RetroArchTree::json({
                          RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger"),
                          RetroArchTree::byRetroArch("Earthbound.sfc", "Earthbound"),
                      }));
-    ra.tmp.writeFile("retroarch/content_history.lpl", RetroArchTree::json({
-                                                          RetroArchTree::byRetroArch("Earthbound.sfc", ""),
-                                                      }));
+    ra.tmp.writeFile("RetroArch/bin/content_history.lpl", RetroArchTree::json({
+                                                              RetroArchTree::byRetroArch("Earthbound.sfc", ""),
+                                                          }));
     ra.service.reloadFavoritesAndHistory();
 
     CHECK(ra.service.playlistNames() == vector<string>{"Nintendo - SNES", "Favorites", "History"});
@@ -333,14 +336,14 @@ TEST_CASE("a playlist's games get publisher, year and players from the system's 
     RetroArchTree ra;
     ra.writePlaylist("Nintendo - Super Nintendo Entertainment System",
                      {ra.snes("Chrono Trigger.sfc", "Chrono Trigger (USA)"), ra.snes("Earthbound.sfc", "Earthbound")});
-    ra.tmp.writeFile("retroarch/content_favorites.lpl",
+    ra.tmp.writeFile("RetroArch/bin/content_favorites.lpl",
                      RetroArchTree::json({RetroArchTree::byRetroArch("Chrono Trigger.sfc", "Chrono Trigger (USA)")}));
     test_support::Bytes records;
     test_support::appendRomRecord(records, "Chrono Trigger (USA)", "Chrono Trigger (USA).sfc", 0x2D206BF7u, "Square",
                                   1995, 1);
     records.push_back(0xc0);
-    ra.tmp.makeSubDir("retroarch/database/rdb");
-    test_support::writeRdb(ra.tmp, "retroarch/database/rdb/Nintendo - Super Nintendo Entertainment System.rdb",
+    ra.tmp.makeSubDir("RetroArch/bin/database/rdb");
+    test_support::writeRdb(ra.tmp, "RetroArch/bin/database/rdb/Nintendo - Super Nintendo Entertainment System.rdb",
                            test_support::makeRdb(0, records));
 
     PsGames games = ra.service.gamesInPlaylist("Nintendo - Super Nintendo Entertainment System");
@@ -358,8 +361,8 @@ TEST_CASE("a playlist's games get publisher, year and players from the system's 
     CHECK(favorites[0]->year == 1995);
 
     // no database for a playlist: nothing happens, nothing is asked again
-    ra.writePlaylist("Atari - 2600", {RetroArchTree::Entry{"/media/roms/atari/Pitfall.a26", "Pitfall", "DETECT",
-                                                           "DETECT", "Atari - 2600.lpl"}});
+    ra.writePlaylist("Atari - 2600", {RetroArchTree::Entry{"/media/RetroArch/roms/atari/Pitfall.a26", "Pitfall",
+                                                           "DETECT", "DETECT", "Atari - 2600.lpl"}});
     RetroArchService fresh;
     PsGames atari = fresh.gamesInPlaylist("Atari - 2600");
     REQUIRE(atari.size() == 1);

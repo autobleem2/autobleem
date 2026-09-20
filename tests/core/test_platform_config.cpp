@@ -15,12 +15,14 @@ TEST_CASE("PlatformConfig::load takes the keys from the ini and keeps defaults f
                                       "retroarch_dir=RetroArch\n"
                                       "retroarch_core = cores/pcsx_rearmed_libretro.so\n"
                                       "retroarch_binary=/usr/local/bin/retroarch; /usr/bin/retroarch\n"
-                                      "retroarch_roms_dir=RetroArch/roms\n");
+                                      "retroarch_roms_dir=RetroArch/roms\n"
+                                      "retroarch_bios_dir=RetroArch/system\n");
 
     PlatformConfig cfg = PlatformConfig::load(PlatformConfig::pathFor(tmp.path(), "rpi"));
     CHECK(cfg.retroarchDir == "RetroArch");
     CHECK(cfg.retroarchCore == "cores/pcsx_rearmed_libretro.so");
     CHECK(cfg.retroarchRomsDir == "RetroArch/roms");
+    CHECK(cfg.retroarchBiosDir == "RetroArch/system");
     REQUIRE(cfg.retroarchBinaries.size() == 2);
     CHECK(cfg.retroarchBinaries[0] == "/usr/local/bin/retroarch");
     CHECK(cfg.retroarchBinaries[1] == "/usr/bin/retroarch");
@@ -29,16 +31,17 @@ TEST_CASE("PlatformConfig::load takes the keys from the ini and keeps defaults f
     tmp.writeFile("platform/odd.ini", "retroarch_dir=elsewhere\n");
     PlatformConfig odd = PlatformConfig::load(PlatformConfig::pathFor(tmp.path(), "odd"));
     CHECK(odd.retroarchDir == "elsewhere");
-    CHECK(odd.retroarchCore == "cores/km_pcsx_rearmed_neon_libretro.so");
+    CHECK(odd.retroarchCore == "cores/pcsx_rearmed_libretro.so");
     REQUIRE(odd.retroarchBinaries.size() == 1);
     CHECK(odd.retroarchBinaries[0] == "retroarch");
-    CHECK(odd.retroarchRomsDir == "roms");
+    CHECK(odd.retroarchRomsDir == "RetroArch/roms");
+    CHECK(odd.retroarchBiosDir == "RetroArch/bios");
 }
 
 TEST_CASE("PlatformConfig::load without a file is the console's layout") {
     PlatformConfig cfg = PlatformConfig::load("/nowhere/platform/psc.ini");
-    CHECK(cfg.retroarchDir == "retroarch");
-    CHECK(cfg.retroarchCore == "cores/km_pcsx_rearmed_neon_libretro.so");
+    CHECK(cfg.retroarchDir == "RetroArch/bin");
+    CHECK(cfg.retroarchCore == "cores/pcsx_rearmed_libretro.so");
     REQUIRE(cfg.retroarchBinaries.size() == 1);
     CHECK(cfg.retroarchBinaries[0] == "retroarch");
 }
@@ -55,11 +58,12 @@ TEST_CASE("PlatformConfig::apply resolves relative paths against the USB root an
 
     PlatformConfig console; // the defaults
     console.apply();
-    CHECK(Environment::getPathToRetroarchDir() == "/media/retroarch");
-    CHECK(Environment::getPathToRetroarchCoreFile() == "/media/retroarch/cores/km_pcsx_rearmed_neon_libretro.so");
+    CHECK(Environment::getPathToRetroarchDir() == "/media/RetroArch/bin");
+    CHECK(Environment::getPathToRetroarchCoreFile() == "/media/RetroArch/bin/cores/pcsx_rearmed_libretro.so");
     REQUIRE(Environment::retroArchBinaries().size() == 1);
-    CHECK(Environment::retroArchBinaries()[0] == "/media/retroarch/retroarch");
-    CHECK(Environment::getPathToRetroarchRomsDir() == "/media/roms");
+    CHECK(Environment::retroArchBinaries()[0] == "/media/RetroArch/bin/retroarch");
+    CHECK(Environment::getPathToRetroarchRomsDir() == "/media/RetroArch/roms");
+    CHECK(Environment::getPathToRetroarchBiosDir() == "/media/RetroArch/bios");
 
     PlatformConfig pi;
     pi.retroarchDir = "RetroArch";
@@ -101,6 +105,6 @@ TEST_CASE("EnvFixture restores the RetroArch core file and binaries") {
         pi.apply();
         CHECK(Environment::getPathToRetroarchCoreFile() == "/before/RetroArch/cores/x.so");
     }
-    CHECK(Environment::getPathToRetroarchDir() == "/before/retroarch");
-    CHECK(Environment::getPathToRetroarchCoreFile() == "/before/retroarch/cores/km_pcsx_rearmed_neon_libretro.so");
+    CHECK(Environment::getPathToRetroarchDir() == "/before/RetroArch/bin");
+    CHECK(Environment::getPathToRetroarchCoreFile() == "/before/RetroArch/bin/cores/pcsx_rearmed_libretro.so");
 }
