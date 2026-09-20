@@ -5,6 +5,8 @@
 # for the dev hosts only: it is what runs on the PC the stick is plugged into.
 
 add_library(installer_core STATIC
+        src/core/install_job_base.cpp
+        src/core/install_job_base.h
         src/core/installer_job.cpp
         src/core/installer_job.h
         src/core/legacy_layout.cpp

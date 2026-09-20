@@ -48,6 +48,7 @@ add_library(ableem_engine ${ABLEEM_LIB_KIND}
         src/engine/zip_archive.cpp
         src/engine/tar_archive.cpp
         src/engine/zip_writer.cpp
+        src/engine/seven_zip_archive.cpp
         src/engine/game_library.cpp
         src/engine/md5.cpp
         src/engine/sha256.cpp
@@ -85,6 +86,9 @@ if (ABLEEM_ENABLE_CHD)
     # third_party/libchdr is vendored (see its CMakeLists.txt) - CHD support needs no system install.
     add_subdirectory(third_party/libchdr EXCLUDE_FROM_ALL)
     target_link_libraries(ableem_engine PRIVATE chdr)
+    # the 7z reader (SevenZipArchive) shares libchdr's LZMA codecs - see third_party/lzma-7z/README.md
+    add_subdirectory(third_party/lzma-7z EXCLUDE_FROM_ALL)
+    target_link_libraries(ableem_engine PRIVATE lzma7z)
 else()
     target_compile_definitions(ableem_engine PRIVATE ABLEEM_NO_CHD)
 endif()
