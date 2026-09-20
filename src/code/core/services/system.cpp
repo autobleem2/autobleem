@@ -44,10 +44,46 @@ wstring wide(const string &s) {
     return w;
 }
 
+// one command line, quoted by the rules CommandLineToArgvW / the CRT undo: an argument with a space, a
+// tab or a quote goes in quotes, backslashes before a quote (or the closing one) are doubled
+wstring quotedArgument(const string &arg) {
+    wstring w = wide(arg);
+    if (!w.empty() && w.find_first_of(L" \t\"") == wstring::npos) {
+        return w;
+    }
+    wstring out = L"\"";
+    size_t backslashes = 0;
+    for (wchar_t c : w) {
+        if (c == L'\\') {
+            ++backslashes;
+            continue;
+        }
+        if (c == L'"') {
+            out.append(backslashes * 2 + 1, L'\\');
+        } else {
+            out.append(backslashes, L'\\');
+        }
+        backslashes = 0;
+        out += c;
+    }
+    out.append(backslashes * 2, L'\\');
+    out += L'"';
+    return out;
+}
+
+wstring commandLineFor(const string &exe, const vector<string> &args) {
+    wstring cmd = quotedArgument(exe);
+    for (const string &arg : args) {
+        cmd += L" " + quotedArgument(arg);
+    }
+    return cmd;
+}
+
 // the one CreateProcess: a ready command line (the program first), the directory to start in ("" = ours),
-// waited for; the exit code, -1 when it could not start. CREATE_NO_WINDOW: a console program (cmd, curl)
-// gets no console window of its own; a GUI program is unaffected.
-int createProcessAndWait(const wstring &commandLine, const wstring &dir, const string &what) {
+// waited for unless `wait` is false; the exit code (0 when not waited for), -1 when it could not start.
+// CREATE_NO_WINDOW: a console program (cmd, curl) gets no console window of its own; a GUI program is
+// unaffected.
+int createProcessAndWait(const wstring &commandLine, const wstring &dir, const string &what, bool wait = true) {
     vector<wchar_t> buffer(commandLine.begin(), commandLine.end());
     buffer.push_back(L'\0');
 
@@ -62,6 +98,11 @@ int createProcessAndWait(const wstring &commandLine, const wstring &dir, const s
         return -1;
     }
     CloseHandle(pi.hThread);
+    if (!wait) {
+        CloseHandle(pi.hProcess);
+        PLOG_INFO << what << " started";
+        return 0;
+    }
     WaitForSingleObject(pi.hProcess, INFINITE);
     DWORD code = 0;
     GetExitCodeProcess(pi.hProcess, &code);
@@ -141,6 +182,38 @@ bool System::diskSpace(const string &path, uint64_t &freeBytes, uint64_t &totalB
     }
     freeBytes = static_cast<uint64_t>(fs.f_bavail) * fs.f_frsize;
     totalBytes = static_cast<uint64_t>(fs.f_blocks) * fs.f_frsize;
+    return true;
+#endif
+}
+
+//*******************************
+// System::startDetached
+//*******************************
+bool System::startDetached(const string &exe, const vector<string> &args) {
+    string line = "Starting (not waited for): '" + exe + "'";
+    for (const string &arg : args) {
+        line += " '" + arg + "'";
+    }
+    PLOG_INFO << line;
+#ifdef _WIN32
+    return createProcessAndWait(commandLineFor(exe, args), L"", exe, false) == 0;
+#else
+    vector<const char *> argv;
+    argv.push_back(exe.c_str());
+    for (const string &arg : args) {
+        argv.push_back(arg.c_str());
+    }
+    argv.push_back(nullptr);
+    pid_t pid = fork();
+    if (pid == -1) {
+        PLOG_WARNING << "fork() failed: " << strerror(errno);
+        return false;
+    }
+    if (pid == 0) {
+        setsid();
+        execvp(exe.c_str(), const_cast<char **>(argv.data()));
+        _exit(127);
+    }
     return true;
 #endif
 }
@@ -234,38 +307,7 @@ int System::runAndWait(const string &exe, const vector<string> &args, const stri
     PLOG_INFO << line;
 
 #ifdef _WIN32
-    // one command line, quoted by the rules CommandLineToArgvW / the CRT undo: an argument with a space,
-    // a tab or a quote goes in quotes, backslashes before a quote (or the closing one) are doubled
-    wstring cmd;
-    auto quoted = [](const string &arg) {
-        wstring w = wide(arg);
-        if (!w.empty() && w.find_first_of(L" \t\"") == wstring::npos) {
-            return w;
-        }
-        wstring out = L"\"";
-        size_t backslashes = 0;
-        for (wchar_t c : w) {
-            if (c == L'\\') {
-                ++backslashes;
-                continue;
-            }
-            if (c == L'"') {
-                out.append(backslashes * 2 + 1, L'\\');
-            } else {
-                out.append(backslashes, L'\\');
-            }
-            backslashes = 0;
-            out += c;
-        }
-        out.append(backslashes * 2, L'\\');
-        out += L'"';
-        return out;
-    };
-    cmd = quoted(exe);
-    for (const string &arg : args) {
-        cmd += L" " + quoted(arg);
-    }
-    return createProcessAndWait(cmd, wide(cwd), exe);
+    return createProcessAndWait(commandLineFor(exe, args), wide(cwd), exe);
 #else
     // argv[0] is the program itself, then the args, then a null terminator
     vector<const char *> argv;

@@ -38,7 +38,9 @@ const char *ReleaseJson = R"({
     "rpi64": {"name": "autobleem-rpi-arm64.tar.gz", "size": 5, "sha256": "SHA64",
               "url": "http://site/releases/v2.0.0-pre0-df68521/autobleem-rpi-arm64.tar.gz"},
     "rpi": {"name": "autobleem-rpi.tar.gz", "size": 5, "sha256": "SHA32",
-            "url": "http://site/releases/v2.0.0-pre0-df68521/autobleem-rpi.tar.gz"}
+            "url": "http://site/releases/v2.0.0-pre0-df68521/autobleem-rpi.tar.gz"},
+    "win-setup": {"name": "AutoBleemSetup-v2.0.0-pre0-df68521.exe", "size": 7, "sha256": "SHAWIN",
+                  "url": "http://site/releases/v2.0.0-pre0-df68521/AutoBleemSetup-v2.0.0-pre0-df68521.exe"}
   },
   "other_files": []
 })";
@@ -210,6 +212,15 @@ TEST_CASE("UpdateService::compare: what counts as newer") {
         UpdateService::Config c = config(tmp);
         c.platformKey = "psc";
         CHECK(UpdateService::compare(c, &release, &ra).autobleemVersion == "");
+    }
+    SUBCASE("the Windows product: the installer exe, and no RetroArch check without an arch") {
+        UpdateService::Config c = config(tmp);
+        c.platformKey = "win-setup";
+        c.arch = "";
+        c.installedRetroArch = "1.22.2";
+        UpdateInfo info = UpdateService::compare(c, &release, &ra);
+        CHECK(info.autobleem.name == "AutoBleemSetup-v2.0.0-pre0-df68521.exe");
+        CHECK(info.retroarchVersion == "");
     }
     SUBCASE("no RetroArch installed, or no build for the architecture -> no RetroArch update") {
         UpdateService::Config c = config(tmp);

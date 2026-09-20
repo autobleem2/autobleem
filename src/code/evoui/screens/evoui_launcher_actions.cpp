@@ -746,10 +746,24 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     }
     if (outcome.phase != UpdateService::Phase::Downloaded)
         return;
-#ifdef AB_APPLIANCE
+#if defined(AB_APPLIANCE)
     // the session loop takes it from here (payload_linux/system/autobleem-session.sh)
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
+#elif defined(AB_PLATFORM_WIN)
+    // the downloaded installer, silently and with the launcher restarted after: it waits for this
+    // process to leave (the launcher's mutex, main.cpp) before it touches the program folder
+    {
+        const string setup = Env::getPathToSystemDir() + sep + "Updates" + sep + outcome.info.autobleem.name;
+        if (System::startDetached(setup, {"/S", "/RESTART"})) {
+            app.session().menuOption = MENU_OPTION_UPDATE;
+            menuVisible = false;
+        } else {
+            GuiConfirm confirm(*gui);
+            confirm.label = _("The installer could not be started - it is in System/Updates");
+            confirm.show();
+        }
+    }
 #else
     GuiConfirm confirm(*gui);
     confirm.label = _("Downloaded into System/Updates - an appliance would run the installer now");

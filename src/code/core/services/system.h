@@ -22,6 +22,9 @@ public:
     // that starts a process goes through here (CreateProcess on Windows, where the child gets no console
     // window of its own).
     static int runAndWait(const std::string &exe, const std::vector<std::string> &args, const std::string &cwd = "");
+    // starts a program and does not wait: the Windows product's update, which the launcher hands the
+    // installer and leaves. True when it started.
+    static bool startDetached(const std::string &exe, const std::vector<std::string> &args);
 
     static std::string execUnixCommand(const char *cmd); // run a shell command, return its stdout ("" on failure)
     // runs a command line through the shell and waits: std::system, except that on Windows the child

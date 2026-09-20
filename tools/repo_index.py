@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 27
+INDEX_VERSION = 28
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -66,7 +66,10 @@ PACKAGE_KINDS = [
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
     ("pcusb", re.compile(r"^autobleem-pcusb-i386.*\.tar\.gz$"),
      "PC USB stick, 32-bit Debian (tarball + install.sh - what the stick image installs and updates from)"),
-    ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
+    ("win-setup", re.compile(r"^AutoBleemSetup-.*\.exe$"), "Windows installer (per user, no administrator rights)"),
+    ("win-product", re.compile(r"^autobleem-win-product-.*\.zip$"),
+     "Windows, the same program as a portable folder (dataroot.txt names the data folder)"),
+    ("win", re.compile(r"^autobleem-win-(?!product).*\.zip$"), "Windows (launcher, for a look on a PC)"),
     ("updateroms", re.compile(r"^UpdateRoms-.*\.zip$"), "UpdateRoms for Windows (scan a stick or card on a PC)"),
 ]
 IMAGE_RE = re.compile(r"^autobleem-(?P<version>.+)-rpi-(?P<arch>armhf|arm64)\.img\.xz$")

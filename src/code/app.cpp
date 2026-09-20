@@ -70,6 +70,10 @@ void App::applyUpdateSetting() {
         if (stamp && getline(stamp, version))
             c.installedRetroArch = Strings::trim(version);
     }
+#elif defined(AB_PLATFORM_WIN)
+    // the installer exe (AutoBleemSetup-<v>.exe, the site's "win-setup"); RetroArch is libretro's own
+    // there and not ours to update (no arch = no RetroArch check)
+    c.platformKey = "win-setup";
 #else
     const char *platform = getenv("AB_UPDATE_PLATFORM");
     c.platformKey = platform != nullptr && *platform != 0 ? platform : "win";

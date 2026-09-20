@@ -47,16 +47,28 @@ pack() { if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then upx 
 # the runtime DLLs next to an exe: SDL2's four and winpthread, from the mingw devkit (the image) or from
 # the MSYS2 environment the compiler came from
 runtime_dlls() {
-    local dest="$1" dll src
+    local dest="$1" dll src bindir
+    bindir="$(dirname "$(command -v gcc)")"
     for dll in SDL2.dll SDL2_image.dll SDL2_mixer.dll SDL2_ttf.dll libwinpthread-1.dll; do
         src=""
-        for candidate in "$SDL/bin/$dll" "$(dirname "$(command -v gcc)")/$dll" \
+        for candidate in "$SDL/bin/$dll" "$bindir/$dll" \
             /usr/x86_64-w64-mingw32/lib/$dll /usr/lib/gcc/x86_64-w64-mingw32/*-posix/$dll; do
             [ -f "$candidate" ] && { src="$candidate"; break; }
         done
         [ -n "$src" ] || { echo "$dll not found" >&2; exit 1; }
         cp "$src" "$dest/"
     done
+    # the image's SDL DLLs are self-contained; MSYS2's pull in forty more (libpng, freetype, the codecs,
+    # libstdc++ ...) - there, every DLL ldd finds under the environment's bin dir comes along, so the
+    # folder runs on a PC with no MSYS2
+    if [ ! -d "$SDL/bin" ] && [ -n "${MSYSTEM:-}" ] && command -v ldd >/dev/null 2>&1; then
+        local exe found
+        for exe in "$dest"/*.exe "$dest"/SDL2*.dll; do
+            for found in $(ldd "$exe" 2>/dev/null | grep -io "$bindir/[^ ]*[.]dll" | sort -u); do
+                [ -f "$dest/$(basename "$found")" ] || cp "$found" "$dest/"
+            done
+        done
+    fi
 }
 
 # a zip of a staged folder's contents: zip where there is one, python's zipfile otherwise (MSYS2 has no zip)
@@ -85,6 +97,15 @@ if [ -n "$PRODUCT_DIR" ]; then
     "$STRIP" "$APP/autobleem-gui.exe"
     pack "$APP/autobleem-gui.exe"
     runtime_dlls "$APP"
+    # the setup helper: the data tree from the download repository (the NSIS installer runs it, and the
+    # Start Menu's "AutoBleem Setup"); static, so it needs no DLL
+    if [ -f "$PRODUCT_DIR/apps/installer/AutoBleemWinSetup.exe" ]; then
+        cp "$PRODUCT_DIR/apps/installer/AutoBleemWinSetup.exe" "$APP/"
+        "$STRIP" "$APP/AutoBleemWinSetup.exe"
+        pack "$APP/AutoBleemWinSetup.exe"
+    else
+        echo "    (no apps/installer/AutoBleemWinSetup.exe in $PRODUCT_DIR - the package has no setup helper)"
+    fi
     mkdir -p "$APP/Themes"
     cp -a "$REPO/payload/Themes/." "$APP/Themes/"
     # pcsx-ab's Windows build, when there is one (AB_PCSX_WIN_DIST: a folder with pcsx-ab.exe and its DLLs)

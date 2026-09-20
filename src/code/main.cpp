@@ -52,6 +52,14 @@ static void attachParentConsole() {
 static int runAutobleem(int argc, char *argv[]) {
 #ifdef AB_PLATFORM_WIN
     attachParentConsole();
+    // one launcher at a time, and the installer's cue: AutoBleemSetup-<v>.exe /S (an update) waits for
+    // this mutex to be released - by this process leaving - before it replaces the program folder
+    HANDLE launcherMutex = CreateMutexW(nullptr, TRUE, L"Global\\AutoBleemLauncher");
+    if (launcherMutex != nullptr && GetLastError() == ERROR_ALREADY_EXISTS) {
+        PLOG_INFO << "AutoBleem is already running";
+        return EXIT_SUCCESS;
+    }
+    (void)launcherMutex; // held until the process ends
 #endif
     // stdout/stderr go to /media/System/Logs/AB_*.txt (see run.sh). without this they are block buffered and the
     // last lines before a crash never reach the file, which is exactly when they are needed.
