@@ -71,7 +71,8 @@
       "pencil": "images/memcard_pencil.png"
     },
     "colors": {
-      "hint": "#ffffff"
+      "hint": "#ffffff",
+      "selection": "#4fc3f7"
     }
   }
 }
