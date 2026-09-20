@@ -125,6 +125,8 @@ int main(int argc, char *argv[]) {
     string error;
 #ifdef _WIN32
     WinInetDownloader downloader;
+    if (options.root.size() >= 2 && options.root[1] == ':' && !ensureVolumeLabel(options.root, "SONY", error))
+        cout << "Note: " << error << " - the console expects a stick named SONY" << endl;
 #else
     CommandDownloader downloader;
 #endif

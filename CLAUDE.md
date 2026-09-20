@@ -543,7 +543,9 @@ the libraries and the xpad module for `Autobleem/lib/`, from retroarch-psc's `to
 `apps-psc-<date>.tar.gz`, the eight third-party Apps as `Apps/<name>/`, from `tools/pack_psc_apps.py` over a
 stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
-releases stay.
+releases stay. **Since INDEX_VERSION 22 a package kind the new pre-release does not bring is carried
+over** from the one it replaces (a publish of the console's packages alone no longer drops the Pi's, and
+the other way round - two sessions publishing into the pre-release did exactly that on 2026-09-20).
 
 **The web pages are generated, not stored**: `tools/repo_index.py` holds `PAGE_CSS` and renders
 `index.html` (the landing page, **by platform since 2026-09-20** - PlayStation Classic, Raspberry Pi, PC,
@@ -929,8 +931,11 @@ the `psc/*/latest.json` shapes and `DirEntry::createDirs`; `DirEntry::copyFile` 
 of what it did (no caller until now). Verified on the PC over the real site into a folder (covers in 25 s;
 RetroArch + all 719 BIOS files + samples, 1.7 GB); **not yet on a real stick or the console**.
 
-**What is left**: the installer on a real stick and a console boot of the result; UPX in `make
-package-retroarch` (-> `v1.22.2-2`); building our own cores when wanted.
+**The installer ran on the owner's stick and the result booted** (2026-09-20). Since then it also puts
+**UpdateRoms** on the stick (a phase after the unpacking: `releases/unstable.json` / `latest.json`, the
+release whose `psc-fs` is this package, its `updateroms` zip into `<stick>/UpdateRoms/`; missing = a
+line, not a failure) and **names the stick SONY** (`ensureVolumeLabel`, the status line says so). What is
+left is in `TODO.md`.
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 

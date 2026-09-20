@@ -44,7 +44,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 21
+INDEX_VERSION = 22
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -207,10 +207,34 @@ def index_releases(repo, base_url):
             }
             write_json(os.path.join(folder, "release.json"), release)
             releases.append(release)
-    # one pre-release at most: the newest; every stable release stays
+    # one pre-release at most: the newest; every stable release stays. A package kind the newest
+    # pre-release does not bring (a publish of the console's packages alone, the Pi's alone) is carried
+    # over from the one it replaces, so the set on the page stays whole - the packages carry their own
+    # names and versions
     stable = [r for r in releases if not r["prerelease"]]
     pre = [r for r in releases if r["prerelease"]]
     if len(pre) > 1:
+        newest = pre[-1]
+        dest = os.path.join(root, newest["version"])
+        carried = False
+        for older in reversed(pre[:-1]):
+            for kind, entry in older["files"].items():
+                if kind in newest["files"]:
+                    continue
+                src = os.path.join(root, older["version"], entry["name"])
+                if not os.path.isfile(src):
+                    continue
+                print("carrying %s (%s) over from pre-release %s" % (entry["name"], kind, older["version"]))
+                for suffix in ("", ".sha256"):
+                    if os.path.isfile(src + suffix):
+                        shutil.move(src + suffix, os.path.join(dest, entry["name"] + suffix))
+                newest["files"][kind] = file_entry(repo, base_url, os.path.join(dest, entry["name"]))
+                carried = True
+        if carried:
+            with open(os.path.join(dest, "SHA256SUMS"), "w", encoding="utf-8") as f:
+                for entry in list(newest["files"].values()) + newest["other_files"]:
+                    f.write("%s  %s\n" % (entry["sha256"], entry["name"]))
+            write_json(os.path.join(dest, "release.json"), newest)
         prune([os.path.join(root, r["version"]) for r in pre[:-1]], [], "pre-release")
         pre = pre[-1:]
     for name, which in (("latest.json", stable), ("unstable.json", pre)):

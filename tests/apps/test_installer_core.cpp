@@ -190,6 +190,24 @@ struct Fixture {
             tmp.writeFile("site/bios.json", j);
         }
         site.files[string(Site) + "/psc/bios/latest.json"] = tmp.at("site/bios.json");
+        // the releases: the pre-release this package is from (with UpdateRoms), a stable one without it
+        {
+            ableem::ZipWriter zip;
+            REQUIRE(zip.open(tmp.at("site/UpdateRoms-v2.0.0-pre0-abc1234.zip")));
+            zip.addBytes("UpdateRoms/UpdateRoms.exe", "MZ updateroms");
+            zip.addBytes("UpdateRoms/README.txt", "readme");
+            REQUIRE(zip.close());
+            string ur = json("UpdateRoms-v2.0.0-pre0-abc1234.zip", tmp.at("site/UpdateRoms-v2.0.0-pre0-abc1234.zip"));
+            string fs = json("autobleem-psc-v2.0.0-pre0-abc1234.tar.gz", options.packageFile);
+            tmp.writeFile("site/unstable.json",
+                          "{\"version\": \"v2.0.0-pre0-abc1234\", \"prerelease\": true, \"files\": {\"psc-fs\": " + fs +
+                              ", \"updateroms\": " + ur + "}}");
+            tmp.writeFile("site/latest.json", "{\"version\": \"v1.9.9\", \"files\": {\"psc\": " + fs + "}}");
+            site.files[string(Site) + "/releases/unstable.json"] = tmp.at("site/unstable.json");
+            site.files[string(Site) + "/releases/latest.json"] = tmp.at("site/latest.json");
+            site.files[string(Site) + "/UpdateRoms-v2.0.0-pre0-abc1234.zip"] =
+                tmp.at("site/UpdateRoms-v2.0.0-pre0-abc1234.zip");
+        }
         // the samples: a PS1 game, a NES ROM with its box art
         {
             TarBuilder b;
@@ -242,13 +260,16 @@ TEST_CASE("a fresh install with the default options: the package and the three c
     CHECK_FALSE(before.installed);
     CHECK(before.packageVersion == "v2.0.0-pre0-abc1234");
     CHECK(InstallerJob::phasesFor(fx.options, before) == vector<string>{"Reading the package", "Preparing the stick",
-                                                                        "Unpacking AutoBleem", "Cover databases",
-                                                                        "Finishing"});
+                                                                        "Unpacking AutoBleem", "UpdateRoms",
+                                                                        "Cover databases", "Finishing"});
 
     string error;
     REQUIRE_MESSAGE(fx.run(error), error);
     CHECK(fx.out.phases == vector<string>{"Reading the package", "Preparing the stick", "Unpacking AutoBleem",
-                                          "Cover databases", "Finishing"});
+                                          "UpdateRoms", "Cover databases", "Finishing"});
+    // UpdateRoms from the release this package belongs to (the pre-release names it)
+    CHECK(fx.tmp.readFile("stick/UpdateRoms/UpdateRoms.exe") == "MZ updateroms");
+    CHECK(fx.site.count("UpdateRoms-v2.0.0-pre0-abc1234.zip") == 1);
     CHECK(fx.tmp.readFile("stick/Autobleem/bin/autobleem/autobleem-gui") == "ELF v2.0.0-pre0-abc1234");
     CHECK(fx.tmp.readFile("stick/VERSION") == "v2.0.0-pre0-abc1234\n");
     CHECK(fx.has("Games/!SaveStates"));
@@ -296,6 +317,7 @@ TEST_CASE("an update replaces what the package ships and keeps the user's files 
     fx.tmp.writeFile("stick/Autobleem/bin/autobleem/old-file.txt", "stale"); // the launcher's folder is replaced
     fx.tmp.writeFile("stick/Autobleem/rc/stale.sh", "old");
     fx.tmp.writeFile("stick/Docs/old.txt", "old");
+    fx.tmp.writeFile("stick/UpdateRoms/stale.dll", "old");
 
     Fixture next; // a newer package, the same stick
     next.options = fx.options;
@@ -318,6 +340,8 @@ TEST_CASE("an update replaces what the package ships and keeps the user's files 
     CHECK_FALSE(fx.has("Autobleem/bin/autobleem/old-file.txt"));
     CHECK_FALSE(fx.has("Autobleem/rc/stale.sh"));
     CHECK_FALSE(fx.has("Docs/old.txt"));
+    CHECK_FALSE(fx.has("UpdateRoms/stale.dll"));
+    CHECK(fx.has("UpdateRoms/UpdateRoms.exe"));
     CHECK(next.out.said("config.ini kept as it was"));
     CHECK(next.out.said("Updated."));
 }
@@ -329,10 +353,10 @@ TEST_CASE("RetroArch, its cores, libraries, apps and bundles, then the BIOS file
     fx.options.samples = true;
     StickInfo before = InstallerJob::inspect(fx.options);
     vector<string> phases = InstallerJob::phasesFor(fx.options, before);
-    CHECK(phases.size() == 12);
-    CHECK(phases[4] == "RetroArch");
-    CHECK(phases[9] == "BIOS files");
-    CHECK(phases[10] == "Sample games");
+    CHECK(phases.size() == 13);
+    CHECK(phases[5] == "RetroArch");
+    CHECK(phases[10] == "BIOS files");
+    CHECK(phases[11] == "Sample games");
 
     string error;
     REQUIRE_MESSAGE(fx.run(error), error);
@@ -475,6 +499,7 @@ TEST_CASE("an AutoBleem 1.0 / NG stick is brought to the new layout before the u
     vector<string> phases = InstallerJob::phasesFor(fx.options, info);
     CHECK(phases[1] == "Preparing the update");
     CHECK(phases[2] == "Bringing the old layout up to date");
+    CHECK(phases[4] == "UpdateRoms");
 
     string error;
     REQUIRE_MESSAGE(fx.run(error), error);

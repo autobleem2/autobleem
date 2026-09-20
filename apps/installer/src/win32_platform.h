@@ -38,6 +38,10 @@ std::vector<RemovableDrive> listRemovableDrives();
 bool formatDrive(const std::string &letter, const std::string &fileSystem, const std::string &label,
                  const std::function<void(const std::string &)> &say, std::string &error);
 
+// the stick's label as the console expects it: SONY. Sets it when it is anything else; false with the
+// reason when Windows refuses (the label is then reported, not fatal)
+bool ensureVolumeLabel(const std::string &root, const std::string &label, std::string &error);
+
 // the directory of the running program, forward slashes, no trailing slash
 std::string programDirectory();
 

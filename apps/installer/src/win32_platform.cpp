@@ -157,6 +157,26 @@ vector<RemovableDrive> listRemovableDrives() {
 }
 
 //*******************************
+// ensureVolumeLabel
+//*******************************
+bool ensureVolumeLabel(const string &root, const string &label, string &error) {
+    if (root.size() < 2 || root[1] != ':') {
+        error = "not a drive: " + root;
+        return false;
+    }
+    wchar_t r[] = {static_cast<wchar_t>(root[0]), L':', L'\\', 0};
+    wchar_t current[MAX_PATH + 1] = {0};
+    if (GetVolumeInformationW(r, current, MAX_PATH, nullptr, nullptr, nullptr, nullptr, 0) &&
+        _wcsicmp(current, wide(label).c_str()) == 0)
+        return true;
+    if (!SetVolumeLabelW(r, wide(label).c_str())) {
+        error = "cannot name " + root.substr(0, 2) + " " + label + ": " + lastErrorText(GetLastError());
+        return false;
+    }
+    return true;
+}
+
+//*******************************
 // programDirectory
 //*******************************
 string programDirectory() {

@@ -27,7 +27,10 @@ AutoBleem theme; the bundle a release carries is `AutoBleemInstaller-<version>.z
   from `retroarch/apps/<name>` with its scripts rewritten (`rewritePaths`, `rewriteRunScript`),
   `Apps/retroboot` removed; the same steps as `tools/install_autobleem.py --stage layout`, whose run on the
   owner's stick came first), **unpacking** (`TarArchive::extract` to the root, `config.ini` put back, the Games/System folders
-  made), **the cover databases** (`db/covers{J,U,P}.db`, the `.sha256` sidecar first - a file already
+  made), **UpdateRoms** (`releases/unstable.json` and `latest.json`; the release whose `psc-fs` is this very
+  package, else the pre-release, else the stable one; its `updateroms` zip unpacked to `<stick>/UpdateRoms/`
+  - the console has no network, box art comes from a PC run of it; none on the site = a line, not a
+  failure), **the cover databases** (`db/covers{J,U,P}.db`, the `.sha256` sidecar first - a file already
   there with that hash is not fetched), **RetroArch** (`psc/retroarch/latest.json` -> the zip -> the
   binary, `theme/Autobleem2.png` -> `Retroarch themes/`, the font -> `fonts/`, the zip's `VERSION`;
   `retroarch.cfg` written when there is none: `:/`-relative directory keys, `system_directory =
@@ -69,4 +72,5 @@ Built on the dev hosts only (root `CMakeLists.txt`, next to UpdateRoms). Verifie
 three covers in 25 s), then RetroArch + BIOS + samples into the same folder; the window with no stick in.
 A `--quiet` run of the same options is what the tests' fake site mirrors (a fresh install, an update
 over a used stick, an AutoBleem 1.0 stick, RetroArch over a RetroBoot-era cfg, a stop, a site down).
-**Not yet run against a real stick, and the result not yet booted on the console.**
+**Ran on the owner's stick and the result booted on the console (2026-09-20).** The install names the
+stick SONY (`ensureVolumeLabel`, before the job; the status line announces it when the label differs).

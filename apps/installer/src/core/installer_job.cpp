@@ -17,6 +17,7 @@ using namespace std;
 using ableem::DirEntry;
 using ableem::PackCatalog;
 using ableem::PscRetroArchCatalog;
+using ableem::ReleaseCatalog;
 using ableem::Sha256;
 using ableem::TarArchive;
 using ableem::TarEntry;
@@ -113,7 +114,8 @@ public:
     bool go(string &error) {
         phases = InstallerJob::phasesFor(opt, info);
         DirEntry::createDirs(scratch);
-        bool ok = package(error) && prepare(error) && legacy(error) && unpack(error) && covers(error);
+        bool ok =
+            package(error) && prepare(error) && legacy(error) && unpack(error) && updateRoms(error) && covers(error);
         if (ok && opt.retroarch)
             ok = retroarch(error);
         if (ok && opt.bios && (opt.retroarch || info.hasRetroArch))
@@ -289,6 +291,52 @@ private:
                                 "System/Logs", "Apps", "Themes"})
             DirEntry::createDirs(at(dir));
         say("  done");
+        return true;
+    }
+
+    //******************
+    // 3b. UpdateRoms
+    //******************
+    // the PC-side ROM scanner, into <stick>/UpdateRoms/ from the release this package belongs to - the
+    // console has no network, so the ROMs' box art and names come from a PC run of it. Not having it is
+    // no reason to stop.
+    bool updateRoms(string &error) {
+        phase("UpdateRoms");
+        if (stopped(error))
+            return false;
+        const UpdateFile *file = nullptr;
+        ReleaseCatalog unstable, stable;
+        string text, why;
+        if (fetchCatalog("releases/unstable.json", text, why))
+            unstable.parse(text);
+        if (fetchCatalog("releases/latest.json", text, why))
+            stable.parse(text);
+        // the release whose console package this is, else the pre-release, else the stable one
+        const string mine = "autobleem-psc-" + info.packageVersion + ".tar.gz";
+        for (const ReleaseCatalog *r : {&unstable, &stable}) {
+            const UpdateFile *fs = r->fileFor("psc-fs");
+            if (fs && fs->name == mine && r->fileFor("updateroms")) {
+                file = r->fileFor("updateroms");
+                break;
+            }
+        }
+        if (!file)
+            file = unstable.fileFor("updateroms") ? unstable.fileFor("updateroms") : stable.fileFor("updateroms");
+        if (!file) {
+            say("  no UpdateRoms package on the site - skipped (copy UpdateRoms/ onto the stick by hand for box art)");
+            return true;
+        }
+        const string zip = scratch + "/" + file->name;
+        if (!downloadVerified(*file, zip, error)) {
+            say("  could not fetch " + file->name + ": " + error + " - going on without it");
+            error.clear();
+            return true;
+        }
+        if (DirEntry::isDirectory(at("UpdateRoms")))
+            DirEntry::removeDirAndContents(at("UpdateRoms"));
+        if (!ZipArchive::extract(zip, root))
+            say("  could not unpack " + file->name + " - going on without it");
+        DirEntry::removeFile(zip);
         return true;
     }
 
@@ -772,6 +820,7 @@ vector<string> InstallerJob::phasesFor(const InstallOptions &options, const Stic
     if (info.legacyLayout)
         phases.push_back("Bringing the old layout up to date");
     phases.push_back("Unpacking AutoBleem");
+    phases.push_back("UpdateRoms");
     if (options.coversJapan || options.coversUsa || options.coversPal)
         phases.push_back("Cover databases");
     if (options.retroarch)

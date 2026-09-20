@@ -227,6 +227,9 @@ void describeStick(Window &w) {
         }
         if (w.info.hasRetroArch)
             text += " RetroArch " + w.info.retroarchVersion + " is on it.";
+        if (d.ready && _stricmp(d.label.c_str(), "SONY") != 0)
+            text += " It is named \"" + (d.label.empty() ? string("(no label)") : d.label) +
+                    "\" - it will be named SONY, as the console expects.";
         if (d.fileSystem == "exFAT")
             text += " (exFAT: the AutoBleem kernel is needed on the console.)";
     }
@@ -316,6 +319,8 @@ void startInstall(Window &w) {
         Listener listener(w.state);
         WinInetDownloader downloader;
         string error;
+        if (!ensureVolumeLabel(o.root, "SONY", error))
+            listener.onLine("Note: " + error + " - the console expects a stick named SONY");
         bool ok = InstallerJob::run(o, downloader, listener, [&w]() { return w.state.stop.load(); }, error);
         {
             lock_guard<mutex> lock(w.state.m);
