@@ -632,6 +632,13 @@ fast boot now **loads the executable itself** (`aeac3f9`, upstream's "manual boo
 exe, pc/gp/sp - instead of the 2013 `pc = ra` jump, which relied on the kernel booting the CD), and
 LoadCdrom logs it. The pack keeps `SlowBoot = 0` for Tetrade: its image has no licence data, so the shell
 shows a garbled logo before the game. **Any PSn00bSDK homebrew was broken on pcsx-ab until this fix.**
+**That fix was not the whole story**: with it the game boots, sets 320x240, runs its DMAs and IRQ acks
+through the init, and then goes quiet after the ordering-table clear - never draws, the screen stays
+black (RetroArch's current pcsx_rearmed plays it). The owner stopped the emulator work there
+(2026-09-20): **Tetrade is out of the sample pack, and the pack has no PS1 game** - the four ROMs stay;
+`build_samples.py` keeps its PSX layout code (locked Game.ini, pcsx.cfg with `SlowBoot = 0`) for the day a
+PS1 homebrew with a redistributable licence, a disc image and a working boot on pcsx-ab turns up. The
+KSEG1 and fast-boot changes stay in pcsx-ab (they are right regardless).
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
