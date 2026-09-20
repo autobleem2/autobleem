@@ -22,7 +22,10 @@ SHARE=/usr/local/share/autobleem
 UI="$SHARE/autobleem-install-ui.py"
 LOGO="$SHARE/splash.png"
 INSTALLER_COPY="$SHARE/installer/install.sh"   # the installed release's own installer, for a RetroArch-only update
-STAGE="$DATA_MOUNT/.autobleem-update"
+# the package is unpacked on the root filesystem, not the data partition: exFAT cannot take the archive's
+# ownership (tar, run as root, restores uid/gid by default and exits 2 on "Operation not permitted") nor
+# its modes; the first real update (2026-09-20) died right there
+STAGE=/var/tmp/autobleem-update
 TTY=/dev/tty1
 
 mkdir -p "$(dirname "$LOG")"
@@ -56,7 +59,7 @@ if [ -n "$ab_file" ]; then
     rm -rf "$STAGE"
     mkdir -p "$STAGE"
     log "unpacking $ab_file"
-    if ! tar -xzf "$UPDATES/$ab_file" -C "$STAGE"; then
+    if ! tar --no-same-owner -xzf "$UPDATES/$ab_file" -C "$STAGE"; then
         log "could not unpack $ab_file"
         rm -rf "$STAGE"
         exit 1
