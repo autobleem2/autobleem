@@ -345,6 +345,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends         libasou
 # of a Pi image, edited without mounting; e2fsprogs' debugfs, already here, does the ext4 root).
 FROM retroarch AS all
 RUN apt-get update && apt-get install -y --no-install-recommends mtools && rm -rf /var/lib/apt/lists/*
+# sccache: a compiler cache in front of every compiler ci/build.sh configures (CMAKE_<LANG>_COMPILER_LAUNCHER,
+# so the native, Pi, MinGW and console builds all share it); docker/run.sh mounts the cache directory from
+# the host so it lives across containers. Last on purpose: a version bump rebuilds this layer only.
+ARG SCCACHE_VERSION=0.18.0
+RUN cd /tmp && a=sccache-v${SCCACHE_VERSION}-x86_64-unknown-linux-musl \
+    && wget -q https://github.com/mozilla/sccache/releases/download/v${SCCACHE_VERSION}/$a.tar.gz \
+    && tar -xf $a.tar.gz && install -m755 $a/sccache /usr/local/bin/sccache && rm -rf $a* \
+    && sccache --version
 # what ci/build.sh and the toolchain files read
 ENV AB_PSC_TOOLCHAIN=/opt/psc \
     AB_MINGW_SDL2=/opt/mingw-sdl2 \

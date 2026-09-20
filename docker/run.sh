@@ -24,6 +24,14 @@ if [ -z "$pcsx" ]; then
     done
 fi
 [ -n "$pcsx" ] && [ -d "$pcsx" ] && OPTS+=(-v "$pcsx:$pcsx")
+# the compiler cache (ci/build.sh puts sccache in front of every compiler): a directory of the host's, so
+# a container's compiles are the next container's cache hits - AB_SCCACHE_DIR names it, AB_NO_SCCACHE=1
+# leaves it out (ci/build.sh then builds without a launcher)
+if [ -z "${AB_NO_SCCACHE:-}" ]; then
+    cache="${AB_SCCACHE_DIR:-$HOME/.cache/autobleem-sccache}"
+    mkdir -p "$cache"
+    OPTS+=(-v "$cache:/tmp/sccache" -e SCCACHE_DIR=/tmp/sccache -e SCCACHE_CACHE_SIZE="${AB_SCCACHE_SIZE:-10G}")
+fi
 exec docker run --rm "${OPTS[@]}" \
     -v "$PWD:$PWD" -w "$PWD" \
     -u "$(id -u):$(id -g)" -e HOME=/tmp \

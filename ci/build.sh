@@ -19,6 +19,7 @@
 #
 #   AB_JOBS=N       parallel jobs (default: nproc)
 #   AB_PCSX_DIR=D   the pcsx-ab checkout;  AB_NO_PCSX=1  use the checked-in emulator binaries
+#   AB_NO_SCCACHE=1 no compiler cache (sccache is put in front of every compiler when the image has it)
 #   AB_NO_LINT=1    skip clang-tidy in the native target (it is the slow part)
 #   AB_NO_UPX=1     leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
@@ -57,7 +58,22 @@ configure() { # configure BUILD_DIR ARGS...
             rm -rf "$dir"
         fi
     fi
-    cmake -S . -B "$dir" -G Ninja "$@"
+    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "$@"
+}
+# sccache in front of every compiler when it is there (the image has it; docker/run.sh mounts the cache
+# from the host) - one launcher for the native, Pi, MinGW and console compilers, each keyed by its own
+# binary. AB_NO_SCCACHE=1 builds without. The stats at the end of a run say what it did.
+LAUNCHER=()
+if [ -z "${AB_NO_SCCACHE:-}" ] && command -v sccache >/dev/null 2>&1; then
+    LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache)
+    export AB_SCCACHE=1
+    sccache --start-server >/dev/null 2>&1 || true
+    sccache --zero-stats >/dev/null 2>&1 || true
+fi
+sccache_stats() {
+    [ -n "${AB_SCCACHE:-}" ] || return 0
+    banner "sccache"
+    sccache --show-stats 2>/dev/null | grep -E "Compile requests|Cache hits|Cache misses|Non-cacheable|Cache size|Cache location" || true
 }
 dist_reset() { rm -rf "dist/$1"; mkdir -p "dist/$1"; }
 dist_note() { # dist_note TARGET - what was built, for the artifact
@@ -210,3 +226,4 @@ banner "done in $(( $(date +%s) - start )) s:"
 for t in "${targets[@]}"; do
     find "dist/$t" -type f | sort | while read -r f; do printf '    %-50s %s\n' "$f" "$(du -h "$f" | cut -f1)"; done
 done
+sccache_stats
