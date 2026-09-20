@@ -168,7 +168,7 @@ Still to do, in order:
 5. Features. Done on 2026-09-17: **themes are `theme.json`** (`docs/theme-format.md`). `ableem::ThemeSpec` is
    the typed theme (engine, JSON in/out, partial-over-default merge, per-file fallback), `ThemeConverter`
    (`core/services/theme_converter.*`) turns an old `theme.ini` + PSC-data-tree folder into the new layout in
-   place - `Theme::load()` does it on first contact, `tools/theme_convert` ahead of time - and `payload/themes`
+   place - `Theme::load()` does it on first contact, `tools/theme_convert` ahead of time - and `payload/Themes`
    ships converted (aergb 334 -> 29 files). The stock SonyUI is no longer re-skinned (`rc/selection.sh`), and
    `src/resources/sony/` is just the two SST fonts. **The console tools are in the tree** (2026-09-18,
    `apps/`, see "Console tools"): pscbios and abflashkit build with the launcher, draw with its theme and
@@ -329,7 +329,7 @@ works because the fstab entry has no `noexec`. Trixie renamed packages for its 6
   `retroarch.sh`), `Autobleem/bin/emu/`, `Games/`, `Apps/` (empty dirs kept by `placeholder` files).
   `tools/make_rpi_package.sh` copies that tree, fills in `Autobleem/bin/autobleem` (`build_rpi/autobleem-gui`
   + `src/resources`, minus `internal.db`), `Autobleem/bin/db` (`db/covers*.db`) and `themes/`
-  (`payload/themes`), strips the placeholders, and tars it to `build_rpi/autobleem-rpi.tar.gz`. `install.sh`
+  (`payload/Themes`), strips the placeholders, and tars it to `build_rpi/autobleem-rpi.tar.gz`. `install.sh`
   then finds or creates the exFAT partition, copies `Autobleem/ themes/ Games/ Apps/` onto it as they are, and
   puts the launcher on tty1 via systemd with `getty@tty1` disabled. Documented as `sudo bash install.sh`
   because a package built on Windows loses the executable bit.
@@ -538,7 +538,10 @@ console's RetroArch from `github.com/autobleem/retroarch-psc` - its `make publis
 psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroArch version>-<build>`,
 `psc_version_key` orders it, the newest kept as for the Pi builds), **`psc/cores/cores-psc-<date>.tar.gz`**
 + `.json` + `latest.json` (the console's cores, `repo_publish.sh psc-cores`, newest date kept - see
-"RetroArch for the console" below), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+"RetroArch for the console" below), **`psc/libs/`** and **`psc/apps/`** (the same shape: `libs-psc-<date>.tar.gz`,
+the libraries and the xpad module for `Autobleem/lib/`, from retroarch-psc's `tools/pack_retroboot_libs.py`;
+`apps-psc-<date>.tar.gz`, the eight third-party Apps as `Apps/<name>/`, from `tools/pack_psc_apps.py` over a
+stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay.
 
@@ -555,7 +558,7 @@ pcsx-ab's dynarec is ARM32-only, 64-bit for the bigger core set; requirements; I
 boot does; where games go - files dropped straight into `Games/` are sorted into folders by the scan;
 options and updates). Styled after the **ab2 theme** at the owner's request: its `abback2.jpg` (the
 AutoBleem 2 logo is painted into it; `ab.png` is blank) as the hero, the navy/cyan palette, Selawik Light -
-staged as `assets/` from `payload/themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
+staged as `assets/` from `payload/Themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
 emblem cut out for the favicon and Imager's icon, checked in because MSYS2's python has no Pillow). To
 change the pages: edit the render functions, bump `INDEX_VERSION`, `tools/repo_publish.sh index`.
 `AB_REPO_URL` is the base URL everything generated starts with.
@@ -775,7 +778,7 @@ the installer's cfg fragment): `xmb_theme = "8"` was RetroSystem in 1.9.0 and is
 stays in XMB instead of returning to the launcher as 1.9.0 did; `video_context_driver` must be `wayland`.
 `menu_swap_ok_cancel_buttons = "true"` (Cross = OK in RetroArch's menus) is unchanged and works - a
 core's own menu is the core's mapping (prboom: RetroPad A = Circle = enter), not RetroArch's. `theme/` in
-the repo is the **ab2 XMB theme** for 1.22.2: `Autobleem2.png` (made by `make_wallpaper.py` from `payload/themes/ab2/images/AB-EvoBack.jpg`
+the repo is the **ab2 XMB theme** for 1.22.2: `Autobleem2.png` (made by `make_wallpaper.py` from `payload/Themes/ab2/images/AB-EvoBack.jpg`
 - logo bottom right, out of XMB's way, the bottom band a reflection of the texture), Selawik Light, the
 RetroSystem icons (a 2020 RetroBoot stick lacks 19 that 1.22.2 asks for - `disc.png`, `movie.png`, `Sega -
 Mega Drive - Genesis.png`, ... from libretro's retroarch-assets), `retroarch-theme.cfg` with the 1.22.2
@@ -807,11 +810,51 @@ day**: the stick's `retroboot/retroboot.cfg` had `show_splash=0` (RetroBoot's ow
 copy had 1) - the splash functions never ran. RetroBoot's rbimage/abimage (a 1280x720 toplevel window,
 a 200x200 BMP at (540,260)) are replaced, not fixed. Verified on the console.
 
-**What is left**: the **PC installer** (read `psc/retroarch/latest.json` + `psc/cores/latest.json`, lay
-`retroarch/` on the stick - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a
-generated cfg - with **our own launch scripts** replacing `rc/launch_rb.sh`/`retroarch.sh`'s calls into
-`retroboot/bin/launch_rfa*.sh`; natural home next to `UpdateRoms.exe`); UPX in `make package-retroarch`
-(-> `v1.22.2-2`); building our own cores when wanted.
+**The stick's layout, and our own launch scripts** (2026-09-20, the owner's cleanup of the F: stick - the
+final structure the PC installer makes): `Themes/` (was `themes/`), and everything of RetroArch's under
+**`RetroArch/`** - `bin/` is RetroArch's own tree (what was `retroarch/` at the root: the binary, cores,
+info, assets, playlists, saves, `retroarch.cfg`, and RetroBoot's leftover `retroboot/` and `apps/`
+folders, unused), `bios/` its system directory (was `retroarch/system`; `retroarch.cfg`'s
+`system_directory`), `roms/` the other systems' games (was `roms/` at the root). `psc.ini`/`pc.ini` say
+`retroarch_dir=RetroArch/bin`, `retroarch_roms_dir=RetroArch/roms`, `retroarch_bios_dir=RetroArch/bios`
+(`Env::getPathToRetroarchBiosDir()`; the Pi's is `RetroArch/system`), `retroarch_core=cores/pcsx_rearmed_libretro.so`
+(`km_pcsx_rearmed_neon` never existed on a RetroBoot 1.2 stick); the engine's defaults are the same, and
+`UpdateRoms` tells a console stick by its `RetroArch/bin`. FAT/exFAT are case-insensitive, so an old stick
+or card keeps working with `Themes`. **RetroBoot's scripts are not run any more**: `rc/launch_rb.sh <file>
+<core>` starts RetroArch itself (`NEON`/`PEOPS` -> pcsx_rearmed/swanstation as RetroBoot mapped them; the
+tree's directories and the console's PS1 BIOS into `RetroArch/bios` first; `XDG_CONFIG_HOME` is a `/tmp`
+dir whose `retroarch` is a symlink to `RetroArch/bin`, so the cfg's "default" directories - favorites,
+history - land there as RetroBoot's `XDG_CONFIG_HOME=/media` put them in `retroarch/`; the absplash
+pictures; a non-zero exit keeps `logs/retroarch_crash.log` with dmesg and blinks the red LED four times,
+**no relaunch**), `rc/retroarch.sh` runs it with nothing loaded and restarts AutoBleem, `rc/app_env.sh` is
+what an App's `run.sh` sources (links `Autobleem/lib/apps/*` into `/tmp/applib` with the soname links -
+the stick cannot hold symlinks - and exports `LD_LIBRARY_PATH`; RetroBoot's `init_libs.sh`), `boot.sh`
+insmods `Autobleem/lib/modules/*.ko` (xpad), `launch_rb.sh` puts `Autobleem/lib/retroarch` on RetroArch's
+path when present (our build needs nothing from it). `Autobleem/lib/{apps,retroarch,modules}` is the
+site's **libs pack** unpacked (its groups are named so). **The Apps**: `payload/Apps` keeps only pscbios and
+abflashkit; the eight third-party apps (amiberry, doom, eduke32, openbor, opentyrian, sdlpop,
+shadowwarrior, wolf4sdl) are the site's **apps pack** (`tools/pack_psc_apps.py F:/Apps`), each
+self-contained under `Apps/<name>/` - the RetroBoot-era ones had their binaries in `retroarch/apps/<name>`
+and got them moved in, their scripts pointed at `/media/Apps/<name>`, `/media/System/Logs` and
+`app_env.sh`. `Apps/retroboot` (RetroBoot's own menu as an app) is gone - the system menu's RetroArch item
+is that. **`tools/install_autobleem.py --stage layout`** converts an older stick in place (renames, moves,
+`retroarch.cfg` and every playlist's paths, `Applications.lpl` removed, the libraries copied out of
+`retroboot/`, the apps made self-contained) and is idempotent; it ran on the owner's stick, then the new
+launcher, `absplash`, the tools, the platform inis, the rc scripts and `UpdateRoms.exe` (which wrote
+`/media/RetroArch/roms/...` playlists) went on. **Not yet booted on the console** after the change.
+`payload/RetroArch/` is the folder's skeleton (README files) plus **`bios/biospack.txt`**, the console's
+BIOS manifest: `tools/biospack.py --arch psc` takes the cores from `psc/cores/latest.json` (KMFD's
+`km_<core>_xtreme...` names folded onto RetroBIOS's - `PSC_CORE_ALIASES`), adds the systems only those
+cores cover (`PSC_SYSTEMS`: Saturn, Dreamcast, DS, PC-FX, Atari ST, CPC, PSP, DOSBox, NXEngine, xrick) and
+keeps `dc/` - 719 files, 302 MB against the Pi's 647/188. `.gitignore`'s `bios/` rule has an exception for
+that folder's two files.
+
+**What is left**: the **PC installer** (read `psc/retroarch/latest.json`, `psc/cores/latest.json`,
+`psc/libs/latest.json`, `psc/apps/latest.json` and `payload/RetroArch/bios/biospack.txt`, lay `RetroArch/bin`
+- binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a generated cfg with the
+directory keys above - `RetroArch/bios`, `Autobleem/lib` and `Apps` on the stick; `tools/install_autobleem.py`
+is the base, `UpdateRoms.exe` the neighbour); the console pass of the new layout; UPX in `make
+package-retroarch` (-> `v1.22.2-2`); building our own cores when wanted.
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 
@@ -951,7 +994,7 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   named otherwise to its database's playlist): entries
   outside the folder stay, an entry whose file is still there is kept exactly (RetroArch's own label/CRC),
   the vanished go, the new join, sorted by label; `.tmp` + `DirEntry::replaceFile`, only when something
-  changed. `targetRomsDir` is what the playlists name (the console's `/media/roms` when a PC writes them -
+  changed. `targetRomsDir` is what the playlists name (the console's `/media/RetroArch/roms` when a PC writes them -
   the plan's step 5); `""` = `romsDir`. `AutoBleem`, `Applications` and `content_*` are never written.
   With `Options::rdbDir` (2026-09-19) each folder's `ScannedRoms` go through `identify()` first: the
   system's `.rdb` names a zip member by CRC, a loose file by `Crc32::ofFile` (up to `maxCrcBytes`), an
@@ -1229,7 +1272,7 @@ usb/Autobleem/bin/autobleem/   <- contents of build_win/ (exe + resources)
 usb/Autobleem/bin/db/          <- db/covers*.db
 usb/Autobleem/rc/              <- payload/Autobleem/rc/*
 usb/System/Databases/internal.db  <- src/resources/internal.db
-usb/System/Logs/               usb/Games/<game dirs>/   usb/themes/ <- payload/themes/*
+usb/System/Logs/               usb/Games/<game dirs>/   usb/Themes/ <- payload/Themes/*
 ```
 Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr are the log. Expected noise on
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
@@ -1254,20 +1297,24 @@ The x86 ifdef blocks make PC runs use `Env::getWorkingPath()` (cwd) for themes/d
 USB stick root = `/media` on the PSC:
 
 ```
-/media/Autobleem/bin/autobleem/   autobleem-gui + resources (run.sh, themes fallback, lang/, evoimg/, ...)
+/media/Autobleem/bin/autobleem/   autobleem-gui + absplash + resources (run.sh, lang/, evoimg/, platform/, splash/, ...)
 /media/Autobleem/bin/emu/         pcsx-ab + plugins/*.so
 /media/Autobleem/bin/db/          covers*.db (regional cover-art DBs; "../db" relative to the binary)
 /media/Autobleem/rc/*.sh          boot/launch glue (see payload/Autobleem/rc)
-/media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot
+/media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot; lib/apps, lib/retroarch, lib/modules
+                                  are the site's libs pack (the Apps' libraries -> /tmp/applib, RetroArch's, xpad.ko)
 /media/Games/                     user games, one folder per game; !SaveStates/, !MemCards/ sub-dirs
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
 /media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui), autobleem.log (plog,
                                   rolling), launch.log / pcsx.log (the launch scripts' and pcsx-ab's), ui_menu.log
 /media/System/lightguns.txt       RetroArch games flagged as light-gun games, one image path per line
 /media/System/Bios|Preferences|Region|UI/   rc/backup.sh's copies of the console's own files, made at boot
-/media/themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/ launchable apps
-/media/retroarch/                 RetroBoot's RetroArch tree: database/rdb/Sony - PlayStation.rdb (game metadata),
-                                  thumbnails/Sony - PlayStation/Named_*/ (covers), screenshots/, states/, playlists/
+/media/Themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/<name>/ launchable apps (app.ini + run.sh)
+/media/RetroArch/bin/             RetroArch's own tree (since 2026-09-20; was /media/retroarch): the binary, cores/, info/,
+                                  database/rdb/Sony - PlayStation.rdb (game metadata), thumbnails/Sony - PlayStation/
+                                  Named_*/ (covers), screenshots/, states/, playlists/, retroarch.cfg
+/media/RetroArch/bios/            RetroArch's system directory - the cores' BIOS files (bios/biospack.txt lists them)
+/media/RetroArch/roms/            the other systems' games, a folder per system named as RetroArch's databases are
 /gaadata/<id>/                    stock internal games (read-only console storage)
 ```
 
@@ -1279,7 +1326,8 @@ firmware's own 2.0.4, so no SDL API newer than 2.0.4) → `bin/autobleem/run.sh`
 `/autobleem` existing on the console means the AutoBleem kernel is installed (`Env::autobleemKernel`: a real
 clock, so "Last played" is shown).
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
-or `rc/launch_rb.sh` (RetroArch: file, core). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
+or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
+an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
 in practice only ever `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item); starting a
 game and returning from one both loop back into the launcher in-process and never reach it. `selection.sh`
