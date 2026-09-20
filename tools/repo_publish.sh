@@ -10,6 +10,8 @@
 #                                                                              -> psc/retroarch/v1.22.2-1/ (the retroarch-psc repo's `make publish`)
 #   tools/repo_publish.sh psc-cores dist/release/cores-psc-20260920.tar.gz dist/release/cores-psc-20260920.json
 #                                                                              -> psc/cores/ (newest date kept)
+#   tools/repo_publish.sh samples build_samples/samples-20260920.tar.gz build_samples/samples-20260920.json
+#                                                                              -> samples/ (newest date kept)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
@@ -51,6 +53,7 @@ case "$KIND" in
     cores)     [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="rpi/cores/$VERSION" ;;
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
+    samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;
     index)     DEST="" ;;

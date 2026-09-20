@@ -77,7 +77,11 @@ the distribution's package instead, `--retroarch none` skips it); finds or creat
 trees on it; downloads every core for the Pi's architecture plus RetroArch's info/assets/autoconfig/database bundles from
 `buildbot.libretro.com` (a few hundred MB; `--no-downloads` skips it, RetroArch's Online Updater can do it
 later); downloads the BIOS pack (~190 MB, file by file with a SHA-256 check, only what is missing -
-`--no-bios` skips it); installs the launcher, pcsx-ab, themes and launch scripts; wires up a systemd service that owns
+`--no-bios` skips it); installs the launcher, pcsx-ab, themes and launch scripts; puts a few **sample games** on
+the shelf (a 1 MB pack from the download site: Tetrade for the PS1 and, with RetroArch, Nova the Squirrel for
+the NES, Asteroids and Castle Platformer for the Super NES, Alex vs Bus for the Mega Drive - homebrew whose
+licences allow it, listed with links in `SAMPLES.md` on the data partition; `--no-samples` skips them, and
+deleting one is final - the installer never puts a sample back); wires up a systemd service that owns
 tty1; and sets up a quiet boot at 1080p with the AutoBleem logo on screen (plymouth) instead of the kernel
 log. It works on Raspberry Pi OS Bookworm and Trixie (Trixie renamed some packages for its 64-bit `time_t`
 transition; the installer tries both names).
@@ -88,7 +92,7 @@ before running it, or replace them afterwards — a re-run never overwrites them
 
 `--help` lists the options. The useful ones are `--shrink-root` / `--grow-root` (see "The data partition"),
 `--retroarch`, `--repo` (AutoBleem's download site, for a mirror or a copy on your own network),
-`--no-downloads`, `--no-bios`, `--no-packages`, `--stage`, `--hdmi-mode` (default
+`--no-downloads`, `--no-bios`, `--no-samples`, `--no-packages`, `--stage`, `--hdmi-mode` (default
 `1920x1080@60`, `1280x720@60` for a 720p screen; `none` keeps the screen's preferred mode), `--no-boot-splash`
 and `--no-quiet-boot`.
 
@@ -189,7 +193,7 @@ Everything is on the small FAT boot partition, editable from any PC after flashi
     commented WiFi example (`wifis: wlan0: access-points:` and `regulatory-domain`).
 - **`autobleem.txt`** - AutoBleem's own first-boot options, one `key=value` per line, documented in the file:
   `root_gib` (default 8), `hdmi_mode`, `retroarch` (source/apt/none - unset means the first boot asks),
-  `thumbnails` (none/boxarts/all), `bios` (yes/no), `downloads` (yes/no). They become `install.sh` options.
+  `thumbnails` (none/boxarts/all), `bios` (yes/no), `downloads` (yes/no), `samples` (yes/no). They become `install.sh` options.
 
 `tools/make_rpi_image.sh` also writes `<out>/rpi_imager_repo.json` - the checked-in `tools/rpi_imager_repo.json`
 template with this run's real `extract_size`/`extract_sha256`/`image_download_size`/`image_download_sha256`/

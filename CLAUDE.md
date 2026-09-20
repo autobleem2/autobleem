@@ -538,7 +538,7 @@ console's RetroArch from `github.com/autobleem/retroarch-psc` - its `make publis
 psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroArch version>-<build>`,
 `psc_version_key` orders it, the newest kept as for the Pi builds), **`psc/cores/cores-psc-<date>.tar.gz`**
 + `.json` + `latest.json` (the console's cores, `repo_publish.sh psc-cores`, newest date kept - see
-"RetroArch for the console" below), `db/` (the three cover databases), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+"RetroArch for the console" below), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay.
 
@@ -585,6 +585,30 @@ runner (`/home/claude/autobleem-repo` mounted into the job container as `REPO_DI
 and unrun: nothing in Actions runs until the runner is registered (the owner's PAT, `docs/ci-plan.md`).
 The console zip is not on the site and its cover databases still come from the Docker image's baked copy
 (the console has no network, so the zip must carry them) - deliberately left as is.
+
+**Sample games** (2026-09-20, the owner's ask: an install should not start with an empty shelf): `install.sh`'s
+`install_sample_games()` (phase 8, after the payload; `--no-samples`, `autobleem.txt` `samples=no`) fetches
+`samples/latest.json` from the site and unpacks the newest `samples-<date>.tar.gz` onto the data partition -
+`Games/` and `SAMPLES.md` always, the `RetroArch/` part (roms + thumbnails) only with RetroArch installed -
+once (`System/samples.txt` remembers it, so a re-run never puts back a sample the user deleted). The pack is
+**`tools/build_samples.py`** over **`tools/samples/samples.json`**: each game's files from its upstream release
+URL, sha256-checked (a zip member taken out), laid out as they land on the partition; only the stdlib, so it
+runs in the Docker image; `tools/repo_publish.sh samples <tar.gz> <json>` publishes it (`repo_index.py`
+keeps the newest date, `latest.json` carries the games list, the landing page's "Sample games" panel shows
+them with licence links). **Licence first**: every entry names its licence and URL, and only games we may
+*redistribute* went in - a free download is not enough. Today: Tetrade (PS1, MIT), Nova the Squirrel (NES,
+GPL-3.0), Asteroids + Castle Platformer (SNES, MIT, undisbeliever), Alex vs Bus - The Race (Mega Drive,
+GPL-3.0 + CC BY-SA assets, the `pre3` release). Left out on purpose: Magic Castle (Team Kaiga, all rights
+reserved - ask), the Cave Story ports (Studio Pixel's assets), Super Tilt Bro (WTFPL but its ROM is only on
+itch.io), the retrobrews SNES set (Super Boss Gaiden, Jet Pilot Rising, ... - "approved for that site only",
+ask D4S). The PS1 game gets a **locked `Game.ini`** (`Automation=0`, the launcher's own lock: the scanner then
+skips its create/update branch, so the title/publisher/year/players and the PNG next to the game stay - no
+serial, no rdb, no covers db involved; verified on the PC: regional.db row `Tetrade / Logan Campbell / 2025 /
+2`, ini untouched). The ROMs are named as the launcher's ROM scan labels a ROM no rdb knows (the file's stem)
+with a box art of the same name under `RetroArch/thumbnails/<db>/Named_Boxarts/`. The covers are drawn by
+`tools/samples/make_covers.py` (Pillow, so run on the PC and checked in as `tools/samples/covers/`): the
+game's own title screenshot (`tools/samples/shots/`, from its repository) cropped to the box shape the
+carousel draws for the system (square PS1, tall NES/MD, wide SNES), a navy band with the title in Selawik.
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same

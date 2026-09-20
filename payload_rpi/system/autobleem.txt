@@ -41,3 +41,9 @@ root_gib=8
 # RetroArch cores, core info, menu assets, databases from buildbot.libretro.com (a few hundred MB): yes | no.
 # Ignored (no) without RetroArch.
 #downloads=yes
+
+# Sample games (1 MB from AutoBleem's download site): a homebrew PS1 game, and with RetroArch a NES, two
+# Super NES and a Mega Drive homebrew game, each with its box art - so there is something on the shelf
+# before you copy your own games over. SAMPLES.md on the games partition names them and their licences;
+# delete any you do not want. yes | no
+#samples=yes

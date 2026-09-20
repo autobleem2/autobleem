@@ -14,6 +14,7 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     psc/retroarch/latest.json          the newest RetroArch build for the PlayStation Classic (psc/retroarch/<tag>/)
     psc/cores/latest.json              the newest cores tarball for the console (psc/cores/cores-psc-<date>.tar.gz)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
+    samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
@@ -39,7 +40,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 11
+INDEX_VERSION = 12
 
 # the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -55,6 +56,7 @@ CORES_RE = re.compile(r"^cores-(?P<arch>armhf|arm64)-(?P<date>[0-9]{8})\.tar\.gz
 # the console build's tag is the RetroArch version plus a build number (github.com/autobleem/retroarch-psc)
 PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
+SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 
 
 # version folder -> its mtime, filled in as the tree is read: two builds of the same pre-release label
@@ -390,6 +392,41 @@ def index_images(repo, base_url):
 
 
 #*******************************
+# sample games
+#*******************************
+def index_samples(repo, base_url):
+    """samples/samples-<date>.tar.gz (+ samples-<date>.json, what is inside - tools/build_samples.py) - the
+    newest kept; latest.json is what payload_rpi/install.sh reads (url, sha256, date, the games)."""
+    root = os.path.join(repo, "samples")
+    dated = {}
+    for path in data_files(root):
+        m = SAMPLES_RE.match(os.path.basename(path))
+        if m:
+            dated[m.group("date")] = path
+    if not dated:
+        return None
+    newest = max(dated)
+    for date, path in dated.items():
+        if date != newest:
+            print("pruning sample pack %s" % os.path.basename(path))
+            for f in (path, path + ".sha256", os.path.join(root, "samples-%s.json" % date)):
+                if os.path.isfile(f):
+                    os.remove(f)
+    entry = file_entry(repo, base_url, dated[newest])
+    entry["date"] = newest
+    manifest = os.path.join(root, "samples-%s.json" % newest)
+    if os.path.isfile(manifest):
+        entry["manifest"] = base_url + "/samples/samples-%s.json" % newest
+        try:
+            with open(manifest, encoding="utf-8") as f:
+                entry["games"] = json.load(f).get("games", [])
+        except (OSError, ValueError):
+            pass
+    write_json(os.path.join(root, "latest.json"), entry)
+    return entry
+
+
+#*******************************
 # cover databases
 #*******************************
 def index_db(repo, base_url):
@@ -437,7 +474,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
 
 
-def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores):
+def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -582,11 +619,30 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     out.append("</div>")
 
     # ---- shared build inputs ----
-    if dbs:
+    if dbs or samples:
         out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
+    if dbs:
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2><p>The launcher's PS1 cover art databases, "
                    "baked into the console and Windows packages and fetched by the Pi installer (<a href=\"/db/\">db/</a>).</p>")
         out.append(table([row("", f) for f in dbs]) + "</div>")
+    if samples:
+        games = samples.get("games") or []
+        names = {"psx": "PlayStation", "nes": "NES", "snes": "Super NES", "md": "Mega Drive"}
+        out.append("<div class=\"panel inputs\"><h2>Sample games</h2><p>What the Pi installer puts on the shelf so the "
+                   "first start is not an empty one: homebrew whose licence allows redistribution, one small pack "
+                   "(<a href=\"/samples/\">samples/</a>, <a href=\"/samples/latest.json\">latest.json</a>%s). "
+                   "Unpack it onto a console stick or a Pi card as it is - the games sit where the launcher looks.</p>"
+                   % (", <a href=\"%s\">the list</a>" % e(samples["manifest"]) if samples.get("manifest") else ""))
+        rows = [row("Sample pack, %s%s" % (date_of(samples["date"]), ", %d games" % len(games) if games else ""), samples)]
+        out.append(table(rows))
+        if games:
+            out.append("<table><tr><th>Game</th><th>System</th><th>By</th><th>Licence</th></tr>")
+            for g in games:
+                out.append("<tr><td><a href=\"%s\">%s</a></td><td>%s</td><td>%s</td><td><a href=\"%s\">%s</a></td></tr>"
+                           % (e(g.get("source", "")), e(g.get("title", "")), e(names.get(g.get("system"), g.get("system", ""))),
+                              e(g.get("author", "")), e(g.get("licence_url", "")), e(g.get("licence", ""))))
+            out.append("</table>")
+        out.append("</div>")
 
     out.append("<footer>Generated %s UTC &middot; theme: ab2</footer></main></body></html>"
                % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
@@ -733,14 +789,16 @@ def main():
     psc_cores = index_psc_cores(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores)),
+    samples = index_samples(repo, base_url)
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples)),
                        ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
-    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases" % (
-        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images), len(dbs)))
+    print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, %d databases, %s sample pack" % (
+        repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images), len(dbs),
+        "1" if samples else "0"))
 
 
 if __name__ == "__main__":

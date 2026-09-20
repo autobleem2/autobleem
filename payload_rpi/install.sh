@@ -38,6 +38,7 @@ RETROARCH_MODE=prebuilt         # --retroarch: prebuilt (from the download repos
 REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: the download repository (CLAUDE.md, "The download repository")
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
+DO_SAMPLES=1                    # --no-samples: skip the sample games (samples/ on the download repository)
 THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
                                 # PS1 set, ~350 MB, for covers offline) | all (+ title screens, snaps)
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
@@ -125,6 +126,10 @@ Usage: sudo bash install.sh [options]
   --no-bios            do not download the BIOS pack (system/biospack.txt or biospack-arm64.txt: ~190-230 MB
                        of console, computer, arcade and ScummVM files from github.com/Abdess/retrobios into RetroArch/system, and
                        the PS1 BIOS for pcsx-ab into System/Bios)
+  --no-samples         do not install the sample games (a 1 MB pack from the download repository: a homebrew
+                       PS1 game in Games/ and, with RetroArch, NES/SNES/Mega Drive homebrew in RetroArch/roms/,
+                       each with its box art - so the shelf is not empty on the first start; SAMPLES.md on the
+                       data partition says what they are and under which licences)
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
   -h, --help           this text
@@ -152,6 +157,7 @@ parse_args() {
             --repo)           REPO_URL="${2:?--repo needs a URL}"; shift 2 ;;
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
             --no-bios)        DO_BIOS=0; shift ;;
+            --no-samples)     DO_SAMPLES=0; shift ;;
             --thumbnails)     THUMBNAILS="${2:?--thumbnails needs boxarts, all or none}"; shift 2 ;;
             --yes)            ASSUME_YES=1; shift ;;
             --dry-run)        DRY_RUN=1; shift ;;
@@ -1263,6 +1269,64 @@ install_cover_databases() {
 }
 
 #*******************************
+# install_sample_games
+#*******************************
+# So the shelf is not empty on the first start: the sample pack from the download repository (samples/,
+# built by tools/build_samples.py from tools/samples/samples.json - homebrew whose licence allows
+# redistribution) laid out as it is on the data partition: Games/<game>/ with a locked Game.ini and a
+# cover for the PS1 game, RetroArch/roms/<system>/ + thumbnails for the others (those only when RetroArch
+# is installed - nothing plays them otherwise). Once: System/samples.txt remembers the pack installed, so a
+# re-run does not put back a sample the user deleted. Not behind --no-downloads (that is RetroArch's
+# content); --no-samples skips it. A site that cannot be reached is a warning, not a failure.
+install_sample_games() {
+    [ "$DO_SAMPLES" -eq 1 ] || { log "skipping the sample games (--no-samples)"; return 0; }
+    local marker="$DATA_MOUNT/System/samples.txt" latest="$DATA_MOUNT/.autobleem-tmp/samples-latest.json"
+    local url sha date tarball
+    if [ -f "$marker" ]; then
+        log "Sample games: already installed ($(head -1 "$marker")) - not again"
+        return 0
+    fi
+    command -v python3 >/dev/null 2>&1 || { warn "no python3 - skipping the sample games"; return 0; }
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '    would download %s/samples/latest.json and unpack the pack into %s\n' "$REPO_URL" "$DATA_MOUNT"
+        return 0
+    fi
+    mkdir -p "$(dirname "$latest")"
+    log "Sample games: asking $REPO_URL for the pack"
+    if ! wget -q -O "$latest" "$REPO_URL/samples/latest.json"; then
+        warn "cannot reach $REPO_URL/samples/latest.json - no sample games this time (re-run the installer to get them)"
+        return 0
+    fi
+    read -r url sha date < <(python3 - "$latest" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+print(d.get("url", ""), d.get("sha256", ""), d.get("date", ""))
+PY
+    )
+    [ -n "$url" ] || { warn "the repository has no sample pack"; return 0; }
+    tarball="$DATA_MOUNT/.autobleem-tmp/samples.tar.gz"
+    log "Sample games: downloading the pack of $date ($url)"
+    if ! wget -q --show-progress -O "$tarball.part" "$url" \
+       || [ "$(sha256sum "$tarball.part" | cut -d' ' -f1)" != "$sha" ]; then
+        warn "the download failed or its sha256 does not match - no sample games this time"
+        rm -f "$tarball.part"
+        return 0
+    fi
+    mv -f "$tarball.part" "$tarball"
+    local -a members=(Games SAMPLES.md)
+    [ "$RETROARCH_MODE" = none ] || members+=(RetroArch)
+    if ! tar -xzf "$tarball" -C "$DATA_MOUNT" --no-same-owner --no-same-permissions "${members[@]}"; then
+        warn "could not unpack the sample pack - no sample games this time"
+        rm -f "$tarball"
+        return 0
+    fi
+    rm -rf "$DATA_MOUNT/.autobleem-tmp"
+    mkdir -p "$DATA_MOUNT/System"
+    printf 'pack %s from %s\n' "$date" "$url" > "$marker"
+    log "Sample games: installed (see SAMPLES.md on the games partition)"
+}
+
+#*******************************
 # install_service
 #*******************************
 # The launcher runs as root on tty1, the way the console runs it: it needs the DRM device, every /dev/input
@@ -1465,6 +1529,7 @@ main() {
     download_bios_pack
     phase 8 "AutoBleem"
     install_payload
+    install_sample_games
     phase 9 "Boot setup"
     install_service
     install_boot_splash
