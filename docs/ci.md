@@ -16,7 +16,14 @@ or on GitHub's runners. `docs/ci-plan.md` was the plan; this is the operator's p
 
 `<v>` is `git describe --tags --always --dirty`. The build directories are the ones `make_*.sh` use, so a
 tree built one way is picked up incrementally by the other. `AB_JOBS`, `AB_NO_LINT=1`, `AB_NO_UPX=1`,
-`AB_CLEAN=1` are the knobs (see the script's header).
+`AB_CLEAN=1`, `AB_NO_SCCACHE=1` are the knobs (see the script's header).
+
+**sccache** (2026-09-20) sits in front of every compiler the image has - `ci/build.sh` (and pcsx-ab's)
+configure with `CMAKE_C/CXX_COMPILER_LAUNCHER=sccache`, one cache keyed by each compiler's own binary, so
+the native, Pi, MinGW and console builds all draw on it; `docker/run.sh` mounts it from the host
+(`~/.cache/autobleem-sccache`, `AB_SCCACHE_DIR`; 10 GB, `AB_SCCACHE_SIZE`) so it outlives the container. A
+run ends with the hit/miss stats. A clean checkout (the CI's) then compiles only what changed since the
+last run on that host.
 
 **pcsx-ab first.** For `psc`, `rpi` and `rpi64` the script begins with the emulator: pcsx-ab's own
 `ci/build.sh <target>` in its checkout (`AB_PCSX_DIR`, else `../pcsx-ab`, `../pcsx-ab2` or
