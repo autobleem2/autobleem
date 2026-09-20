@@ -819,6 +819,20 @@ PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#
   helper's failure message is a 6 s dialog on tty1 and the session loop restarted the launcher - so
   read `update.log` first when an update "does nothing".
 
+## pcsx-abnxt - the next emulator (`github.com/autobleem/pcsx-abnxt`, started 2026-09-20)
+
+pcsx-ab (`autobleem/pcsx-ab2`, `E:\Programming\pcsx-rearmed-develop`) is a 2017 upstream snapshot (master
+`bebe989b`, r22 + 25 commits - what Sony's firmware took) with Sony's and our patches; it stays the shipped
+emulator until pcsx-abnxt's phase 8. **pcsx-abnxt** (`E:\Programming\pcsx-abnxt`) is a public GitHub fork of
+`notaz/pcsx_rearmed` at **r26** with our own `autobleem/libpicofe` fork as the submodule, re-implementing
+what Sony and we added (the front buttons, the resume-point contract, the autosave ring, disc change, the
+menu, filters, two pads, `SET_BY_PCSX`) on top of what upstream has now - aarch64 dynarec, lightrec, C-SIMD
+gpu_neon, lid emulation, SlowBoot, a per-serial hack database. Sony's 131-serial per-title hacks are **not**
+ported (tested instead, ported on evidence). Its `docs/port-plan.md` is the plan and `docs/reference/` the
+inventory of the old delta with two patches; its CLAUDE.md the decisions. **Nothing on this side changes**:
+the launch scripts, `pcsx.cfg`, `ResumePointService`'s files and `LaunchService` are the contract the new
+emulator keeps, and the binary keeps the name `pcsx-ab` in the payloads.
+
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
 The console runs RetroArch from **our own build**, not RetroBoot's any more - a separate private repo,
