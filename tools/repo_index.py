@@ -892,8 +892,7 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                    "<p>A 32-bit Debian appliance on a USB stick, the same as the Raspberry Pi's: write the image to a "
                    "stick of 8 GB or more (Rufus in DD mode, balenaEtcher, <code>dd</code>), boot the PC from it "
                    "(BIOS or UEFI, Secure Boot off) and the first boot sets AutoBleem up on the screen; the rest of "
-                   "the stick becomes the games partition. <a href=\"/pc-install.html\">The whole setup, step by "
-                   "step.</a></p>")
+                   "the stick becomes the games partition.</p>")
         rows = []
         for version in sorted(pc_images, key=version_key, reverse=True):
             for arch, f in sorted(pc_images[version].items()):
@@ -1249,8 +1248,7 @@ def main():
     pcsx = {name: b for name, b in pcsx.items() if b}
     pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
     for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx)),
-                       ("rpi-install.html", render_rpi_install(base_url, images)),
-                       ("pc-install.html", render_pc_install(base_url, pc_images))):
+                       ("rpi-install.html", render_rpi_install(base_url, images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
