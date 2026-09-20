@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem obnoví body, ktor
 AutoBleem Theme:=Téma AutoBleemu:
 Background Music:=Hudba na pozadí:
 Backspace=Vrátiť
+Boot logo:=
 build=
 Built=
 Button Guide=Sprievodca tlačidlami

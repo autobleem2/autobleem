@@ -24,7 +24,8 @@ using namespace std;
 #define OPT_FRAMESKIP 14
 #define OPT_PLUGIN 15
 #define OPT_INTERPOLATION 16
-#define OPT_LAST 16
+#define OPT_BOOTLOGO 17
+#define OPT_LAST 17
 
 //*******************************
 // GuiEditor::processOptionChange
@@ -84,6 +85,10 @@ void GuiEditor::processOptionChange(bool direction) {
 
     case OPT_PLUGIN:
         svc.setGpuPlugin(settings, direction ? GameSettingsService::PeopsGpu : GameSettingsService::BuiltinGpu);
+        break;
+
+    case OPT_BOOTLOGO:
+        svc.setBootLogo(settings, direction);
         break;
     }
 }
@@ -199,6 +204,10 @@ void GuiEditor::render() {
 
     gui->text().renderTextLineOptions(_("Spu Interpolation:") + " " + to_string(pcsx.interpolation), OPT_INTERPOLATION,
                                       yoffset, XALIGN_LEFT, 300);
+
+    gui->text().renderTextLineOptions(_("Boot logo:") +
+                                          (pcsx.bootLogo != 0 ? string("|@Check|") : string("|@Uncheck|")),
+                                      OPT_BOOTLOGO, yoffset, XALIGN_LEFT, 300);
 
     gui->text().renderSelectionBox(selOption, yoffset, 300);
 

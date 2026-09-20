@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 75 / Total: 264
+# Untranslated: 76 / Total: 265
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem sürdürme noktala
 AutoBleem Theme:=AutoBleem Teması
 Background Music:=Arkaplan Müziği:
 Backspace=Geri Sil
+Boot logo:=
 build=
 Built=
 Button Guide=Düğme Kılavuzu

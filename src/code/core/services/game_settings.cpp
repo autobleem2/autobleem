@@ -94,6 +94,8 @@ void GameSettingsService::refreshPcsx(GameSettings &s) const {
     p.scanlines = atoi(processor.getValue(path, "scanlines").c_str());
     p.scanlineLevel = strtol(processor.getValue(path, "scanline_level").c_str(), nullptr, 16);
     p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), nullptr, 16);
+    string slowBoot = processor.getValue(path, "SlowBoot");
+    p.bootLogo = slowBoot.empty() ? 1 : atoi(slowBoot.c_str()); // pcsx-ab's own default is 1
 }
 
 //*******************************
@@ -245,6 +247,13 @@ void GameSettingsService::setFrameskip(GameSettings &s, int frames) {
 //*******************************
 void GameSettingsService::setInterpolation(GameSettings &s, int mode) {
     replaceCfgLine(s, "spu_config.iUseInterpolation", toHex(clampTo(mode, 0, 3)));
+}
+
+//*******************************
+// GameSettingsService::setBootLogo
+//*******************************
+void GameSettingsService::setBootLogo(GameSettings &s, bool on) {
+    replaceCfgLine(s, "SlowBoot", to_string(on ? 1 : 0));
 }
 
 //*******************************

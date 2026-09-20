@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=Punctele de reluare AutoBlee
 AutoBleem Theme:=Schema de culori pentru AutoBleem:
 Background Music:=Muzica de fundal:
 Backspace=Backspace
+Boot logo:=
 build=
 Built=
 Button Guide=Ghid butoane

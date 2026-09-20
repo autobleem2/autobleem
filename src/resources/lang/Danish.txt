@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleem-genoptagelsespunkt
 AutoBleem Theme:=AutoBleem Tema:
 Background Music:=Baggrundsmusik:
 Backspace=Backspace
+Boot logo:=
 build=
 Built=
 Button Guide=Knapguide

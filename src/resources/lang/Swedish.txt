@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=AutoBleems spar-punkter är 
 AutoBleem Theme:=AutoBleem-tema:
 Background Music:=Bakgrundsmusik:
 Backspace=Backsteg
+Boot logo:=
 build=
 Built=
 Button Guide=Knappguide

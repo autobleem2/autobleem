@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 73 / Total: 264
+# Untranslated: 74 / Total: 265
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -22,6 +22,7 @@ AutoBleem resume points not available in RetroArch.=Os pontos de retomada do Aut
 AutoBleem Theme:=Tema do AutoBleem:
 Background Music:=Música de Fundo:
 Backspace=Backspace
+Boot logo:=
 build=
 Built=
 Button Guide=Guia de Botões
