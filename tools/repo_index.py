@@ -42,11 +42,13 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 15
+INDEX_VERSION = 16
 
-# the five release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
+# the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
     ("psc", re.compile(r"^autobleem-psc-.*\.zip$"), "PlayStation Classic (USB stick zip)"),
+    ("psc-fs", re.compile(r"^autobleem-psc-.*\.tar\.gz$"),
+     "PlayStation Classic, the stick's file system for the installer (no RetroArch - added from the packs below)"),
     ("rpi", re.compile(r"^autobleem-rpi(-armhf)?(-v.*)?\.tar\.gz$"), "Raspberry Pi, 32-bit OS (tarball + install.sh)"),
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
     ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
@@ -581,9 +583,11 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     if psc_apps:
         rows.append(row("Apps, %s%s" % (date_of(psc_apps["date"]),
                                         ", %d apps" % psc_apps["count"] if psc_apps.get("count") else ""), psc_apps))
-    if rows:
+    if rows or release_block(("psc-fs",)):
         out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
-                   "<p>What the PC installer lays out on the stick. Under <code>RetroArch/bin</code>: RetroArch built for the "
+                   "<p>What the PC installer lays out on the stick. First the stick's own file system - the launcher, "
+                   "pcsx-ab, the scripts, themes, the console tools - as one tarball per release, without RetroArch; "
+                   "then, on request, RetroArch. Under <code>RetroArch/bin</code>: RetroArch built for the "
                    "console's firmware (glibc 2.24, Wayland, GLES, ALSA, udev) with the PSC patches - it loads "
                    "xz-compressed cores as they are (<a href=\"/psc/retroarch/latest.json\">latest.json</a>%s) - and the "
                    "cores with their info files, RetroBoot 1.2's set for now, the ones that run on a stock console "
@@ -597,7 +601,10 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                       ", <a href=\"%s\">the list</a>" % e(psc_cores["manifest"]) if psc_cores and psc_cores.get("manifest") else "",
                       ", <a href=\"%s\">the list</a>" % e(psc_libs["manifest"]) if psc_libs and psc_libs.get("manifest") else "",
                       ", <a href=\"%s\">the list</a>" % e(psc_apps["manifest"]) if psc_apps and psc_apps.get("manifest") else ""))
-        out.append(table(rows) + "</div>")
+        out += release_block(("psc-fs",))
+        if rows:
+            out.append(table(rows))
+        out.append("</div>")
 
     # ---- Raspberry Pi ----
     out.append("<h2 class=\"plat\" id=\"rpi\">Raspberry Pi</h2>")
