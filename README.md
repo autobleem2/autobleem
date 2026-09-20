@@ -1,8 +1,8 @@
 # AutoBleem 2
 
 AutoBleem is a game launcher for the **PlayStation Classic**: it replaces the stock SonyUI, scans a USB stick
-for PS1 games, keeps their metadata and cover art, and starts them in the bundled `pcsx-ab` or in
-RetroArch/RetroBoot. Version 2 is a rebuilt AutoBleem - the same product, the same USB layout and the same
+for PS1 games, keeps their metadata and cover art, and starts them in the bundled `pcsx-ab` (or its successor,
+`pcsx-abnxt`) or in RetroArch. Version 2 is a rebuilt AutoBleem - the same product, the same USB layout and the same
 themes, on a codebase that was taken apart and put back together during 2026 - and it now also runs as an
 appliance on a **Raspberry Pi**.
 
@@ -84,11 +84,31 @@ Apps payload.
   fetched from RetroBIOS, a plymouth boot splash, pcsx-ab for PS1. See `payload_rpi/README.md`.
 - The `Cfg=` absolute path in `config.ini` is gone; every path derives from the USB root.
 
+### The next emulator: pcsx-abnxt
+
+`pcsx-ab`, the emulator AutoBleem has always shipped, is PCSX-ReARMed as the console's firmware took it in
+2017 plus Sony's and AutoBleem's additions ([autobleem/pcsx-ab2](https://github.com/autobleem/pcsx-ab2)).
+**pcsx-abnxt** ([autobleem/pcsx-abnxt](https://github.com/autobleem/pcsx-abnxt)) is its successor: a
+public fork of [notaz/pcsx_rearmed](https://github.com/notaz/pcsx_rearmed) at its current release (r26),
+with everything AutoBleem needs re-implemented on top - the console's front buttons (open, reset, power),
+the resume points and save-state pictures, the autosave ring, disc changes, the in-game menu, the
+filters, two pads, `SET_BY_PCSX` BIOS selection - so it brings what upstream gained in nine years: an
+aarch64 dynarec, lightrec on x86, the C-SIMD `gpu_neon`, lid emulation, CHD, a per-serial game database.
+Sony's per-title hacks are not ported wholesale; games are tested and a hack is ported when a regression
+shows.
+
+**Both ship, and you choose.** Every package carries both emulators (`Autobleem/bin/emu/` and
+`Autobleem/bin/emunxt/`, the same layout and binary name) and Options -> **"PS1 Emulator"** picks which one
+plays PS1 games, on the console, a Pi and the PC alike; `pcsx-ab` is the default until pcsx-abnxt has been
+through its compatibility pass. Settings and memory cards are shared; a resume point saved by one emulator
+does not load in the other (the game then starts from the beginning). Standalone packages of each are on
+the download repository under `emu/`.
+
 ## Building
 
 | Target | How |
 |---|---|
-| PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. |
+| PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. Releases come from the Docker image (`docs/ci.md`: `docker/run.sh ci/build.sh psc`), which also builds both emulators from their checkouts next to this tree. |
 | Raspberry Pi (32-bit) | `./make_rpi.sh` with the SysGCC toolchain, then `tools/make_rpi_package.sh` for the installable tarball. |
 | Windows (development) | `./make_win.sh` from an MSYS2 UCRT64 shell: builds, runs the tests, validates the language files, checks formatting. `python tools/make_usb.py usb` stages a fake USB root; `tools/win_drive.ps1` drives the exe from the keyboard for smoke tests. |
 | Linux / macOS (native) | `make_sys.sh`. |
