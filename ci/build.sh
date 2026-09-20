@@ -203,6 +203,7 @@ build_rpi() { # build_rpi armhf|arm64
 
 build_pcusb() {
     build_pcsx pcusb payload_linux/Autobleem/bin/emu-i386
+    build_pcsx pcusb payload_linux/Autobleem/bin/emunxt-i386 nxt
     banner "pcusb: configure + build (build_pcusb)"
     configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
     ninja -C build_pcusb -j "$JOBS"
