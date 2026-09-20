@@ -10,6 +10,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <ableem/engine/log.h>
+#include <ableem/engine/update_catalog.h>
+#include "core/version.h"
 
 using namespace std;
 
@@ -164,6 +166,20 @@ int AutoBleem::run() {
     applyOnlineSetting();
 #ifdef AB_ONLINE_UPDATE
     applyUpdateSetting();
+#ifdef AB_PLATFORM_WIN
+    // the installer the last update downloaded: this build is what it installed, so it and pending.json
+    // go (the Pi's autobleem-update helper clears the folder itself)
+    {
+        const string updatesDir = Env::getPathToSystemDir() + sep + "Updates";
+        ableem::PendingUpdate pending;
+        if (pending.load(updatesDir + sep + "pending.json") &&
+            pending.autobleemVersion == string(Version::VERSION) + "-" + Version::GIT_HASH) {
+            PLOG_INFO << "Update " << pending.autobleemVersion << " is what runs now - removing its installer";
+            DirEntry::removeFile(updatesDir + sep + pending.autobleemFile);
+            DirEntry::removeFile(updatesDir + sep + "pending.json");
+        }
+    }
+#endif
     if (updates().checkDue(time(nullptr)))
         updates().startCheck(time(nullptr)); // once a day, and at every start - the launcher asks when it lands
 #endif
