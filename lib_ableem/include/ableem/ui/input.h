@@ -144,6 +144,9 @@ public:
     // puts the PSC event filter back: SDL drops it when its events subsystem is quit, which happens when the
     // video and pad subsystems are both released around an emulator run (GuiBase::acquireDisplay() calls it)
     void reinstallEventFilter();
+    // the SDL hints the pad subsystem must see before it comes up (Platform's constructor and probePads()
+    // call it): the kernel's pad drivers rather than SDL's hidapi, which makes some pads re-enumerate
+    static void padDriverHints();
     void probePads(); // (re)opens the joystick/game controller subsystem and registers already-connected pads
     void flushPads(); // closes every open pad (e.g. before handing control to another program)
     int activePadCount() const;

@@ -1765,7 +1765,15 @@ and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
 its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-slot picker writes "Slot n" on its
-2.7x copy of the icon - unset = the original spot, so older themes are untouched. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+2.7x copy of the icon - unset = the original spot, so older themes are untouched. `launcher.colors.selection`
+(2026-09-21) is the picker's colour for the selected slot: a halo in it around the tile (the tile's own alpha, drawn
+larger twice with additive blending, so it follows any tile's shape) and the other tiles dimmed; unset = the original
+red tint of the selected tile, which only ever showed on a white tile (ab2's cyan tile made it invisible). **Pads go
+through the kernel's drivers, not SDL's hidapi** (`Input::padDriverHints()`, `SDL_HINT_JOYSTICK_HIDAPI=0`, before every
+init of the pad subsystem - Platform's constructor and `probePads()`): hidapi probes a pad's HID reports itself and
+the Pi 400's multi-mode "PS4/PC/PS3/Android" pad answered by re-enumerating - disconnect, back as an "Xbox 360" pad,
+back as itself three seconds later - every time the launcher opened it, at boot and after every game, which left the
+resume-slot picker dead to the pad for those seconds. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).

@@ -69,7 +69,7 @@ Themes/<name>/
                    "resumeSlotLabel": { "x": 22, "y": 18 } },
     "memcardManager": { "grid": "images/memcard_grid.png", "pencil": "images/memcard_pencil.png" },
     "fonts": { "medium": "font/SST-Medium.ttf", "bold": "font/SST-Bold.ttf" },
-    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464" }
+    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464", "selection": "#4fc3f7" }
   },
   "sounds": { "cursor": "sounds/cursor.wav", "cancel": "sounds/cancel.wav", "homeUp": "sounds/home_up.wav",
               "homeDown": "sounds/home_down.wav", "resume": "sounds/resume_new.wav" }
@@ -99,7 +99,7 @@ Themes/<name>/
 | `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
 | `launcher.fonts` | The launcher's medium and bold ttf. Without them the console's own SST fonts are used. |
-| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). |
+| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. |
 | `sounds` | The five UI sounds. |
 
 Colours are `"#rrggbb"`; alphas are 0-255.
