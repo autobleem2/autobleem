@@ -18,5 +18,5 @@ echo Core "$2"
 
 sh /media/retroarch/retroboot/bin/launch_rfa_rom.sh "$1" "$2"
 echo "launch_rfa_rom.sh exited with status $?"
-rm /tmp/.abload
+# /tmp/.abload (RetroBoot's return splash) is removed by the launcher itself, once its window is back
 usleep 250000 
