@@ -8,19 +8,23 @@
 # partition install.sh makes out of the rest of the stick - exactly the Pi flow.
 #
 # Debian publishes no raw disk image for i386, hence "from packages": mmdebstrap makes the root filesystem
-# (no chroot as root, no qemu - i386 runs natively on the amd64 build host), the partition table and the
-# ESP are written on the image file (sfdisk, mtools), and GRUB's images come from the host's grub-*-bin
-# packages (grub-mkimage): no loop device is needed at all - the --rootless mode, what the build server runs
-# inside the Docker image (docker/run.sh --userns). --mount is the same with real root (docker/run.sh
-# --privileged, or sudo on a Linux machine): mmdebstrap in root mode, and grub-bios-setup on a loop device.
+# (no qemu - i386 runs natively on the amd64 build host), mke2fs -d turns it into the ext4 root, the
+# partition table and the ESP are written on the image file (sfdisk, mtools), GRUB's images come from the
+# host's grub-*-bin packages (grub-mkimage) and boot.img/core.img are written into the MBR by hand: no
+# loop device is ever needed. Two modes differ only in how mmdebstrap gets its root: --rootless
+# (--mode=unshare, a user namespace; docker/run.sh --userns on a host whose kernel lets a container map
+# one) and --mount (--mode=root; docker/run.sh --privileged - what the build server runs, its kernel
+# refusing newuidmap in a container - or sudo on a Linux machine).
 #
 # Three kernels, GRUB picks with cpuid: linux-image-686 for a CPU without PAE, linux-image-686-pae for the
 # rest of the 32-bit world, and linux-image-amd64 for a 64-bit CPU - GRUB's x86_64-efi loader refuses to
-# start a 32-bit kernel ("kernel doesn't support 64-bit CPUs"), so a 64-bit UEFI machine needs it; Debian's
-# i386 archive carries that kernel for exactly this, a 32-bit userland under a 64-bit kernel. The userland
-# is i386 whichever kernel runs. Secure Boot must be off: nothing here is signed.
+# start a 32-bit kernel ("kernel doesn't support 64-bit CPUs"), so a 64-bit UEFI machine needs it. Bookworm's
+# i386 archive has no amd64 kernel any more; it is installed the way Debian's release notes describe for an
+# i386 system that wants one - amd64 added as a foreign architecture, linux-image-amd64:amd64 - a 32-bit
+# userland under a 64-bit kernel. The userland is i386 whichever kernel runs. Secure Boot must be off:
+# nothing here is signed.
 #
-#   docker/run.sh --userns tools/make_pc_image.sh --package dist/pcusb/autobleem-pcusb-i386.tar.gz \
+#   docker/run.sh --privileged tools/make_pc_image.sh --package dist/pcusb/autobleem-pcusb-i386.tar.gz \
 #       --work build_pc_image --out build_pc_image/out            # the server, after ci/build.sh pcusb
 #
 # Output: <out>/autobleem-<version>-pcusb-i386.img.xz + .sha256 (the version is the package's VERSION
@@ -63,9 +67,11 @@ PACKAGES_COMMON="initramfs-tools systemd systemd-sysv systemd-timesyncd udev dbu
   libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1 mesa-va-drivers grub2-common grub-pc-bin grub-efi-ia32-bin
   grub-efi-amd64-bin openssh-server pciutils usbutils firmware-linux-free firmware-misc-nonfree
   firmware-amd-graphics firmware-iwlwifi firmware-atheros firmware-realtek firmware-brcm80211
-  firmware-intel-sound firmware-sof-signed"
+  firmware-intel-sound firmware-sof-signed fontconfig-config fonts-dejavu-core zstd"
+# (fontconfig-config: plymouth's initramfs hook copies /etc/fonts/fonts.conf and fails without it; zstd:
+# the initramfs compressor initramfs-tools prefers, gzip otherwise)
 PACKAGES_KERNELS="linux-image-686-pae linux-image-686"
-PACKAGES_AMD64_KERNEL="linux-image-amd64"
+PACKAGES_AMD64_KERNEL="linux-image-amd64:amd64"   # a foreign-architecture package (see the header)
 
 #*******************************
 # output helpers
@@ -91,9 +97,9 @@ Usage: tools/make_pc_image.sh --package PATH [options]
   --out DIR            where the finished .img.xz and .sha256 land (default: same as --work)
   --rootless           no root, no loop device: mmdebstrap --mode=unshare, the root filesystem made from
                        inside its user namespace, the partition table and ESP written on the image file, GRUB
-                       by grub-mkimage. The default when not root (the build server: docker/run.sh --userns ...)
-  --mount              with root: mmdebstrap --mode=root, the image loop-mounted for the root filesystem and
-                       grub-bios-setup. The default when run as root (docker/run.sh --privileged ..., or sudo)
+                       by grub-mkimage. The default when not root (docker/run.sh --userns, where the kernel lets a container map one)
+  --mount              with root: mmdebstrap --mode=root - the default when run as root (docker/run.sh
+                       --privileged, what the build server uses, or sudo on a Linux machine)
   --release NAME       the Debian release (default: bookworm - the last with an i386 kernel)
   --mirror URL         the Debian mirror (default: http://deb.debian.org/debian)
   --root-size SIZE     the root partition in the image, parted/truncate syntax (default: 4G; the first boot
@@ -165,9 +171,11 @@ preflight() {
         [ -d "$d" ] || die "no $d - the host needs grub-pc-bin, grub-efi-ia32-bin and grub-efi-amd64-bin"
     done
     if [ "$MODE" = mount ]; then
-        for tool in losetup mount umount grub-bios-setup; do
+        for tool in losetup mount umount; do
             command -v "$tool" >/dev/null 2>&1 || die "$tool is needed for --mount"
         done
+        # grub-bios-setup is in grub-pc (which would grub-install on a real disk at install), not the -bin
+        # packages: without it boot.img/core.img are written by hand, which is what grub-bios-setup does anyway
     fi
 
     WORK_DIR="${WORK_DIR:-$REPO_DIR/build_pc_image}"
@@ -247,6 +255,25 @@ EOF
     ln -sf /lib/systemd/system/ssh.service "$s/etc/systemd/system/multi-user.target.wants/ssh.service"
     # no WiFi country yet: the first boot asks, and keeps its answer here
     : >"$s/etc/modprobe.d/cfg80211.conf"
+
+    # initramfs-tools' own fsck hook reads the type of the *mounted* root, which in the build chroot is the
+    # host's - so the ext4 fsck goes in by a hook of ours, and the root is checked at boot as on any Debian
+    mkdir -p "$s/etc/initramfs-tools/hooks"
+    cat >"$s/etc/initramfs-tools/hooks/autobleem-fsck" <<'EOF'
+#!/bin/sh
+# AutoBleem PC stick: fsck for the ext4 root in the initramfs (the stock hook could not tell the root's type
+# when the image was built in a chroot)
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+. /usr/share/initramfs-tools/hook-functions
+copy_exec /sbin/fsck /sbin
+copy_exec /sbin/fsck.ext4 /sbin
+copy_exec /sbin/e2fsck /sbin
+copy_exec /sbin/logsave /sbin
+exit 0
+EOF
+    chmod 0755 "$s/etc/initramfs-tools/hooks/autobleem-fsck"
 }
 
 #*******************************
@@ -258,8 +285,11 @@ EOF
 # do), the ssh host keys and the machine-id removed. The result is a tar (rootless: mke2fs turns it into
 # the ext4 root below without ever mounting anything) or, with root, the loop-mounted root partition directly.
 build_root() {
-    local packages="$PACKAGES_COMMON $PACKAGES_KERNELS"
-    [ "$NO_AMD64_KERNEL" -eq 1 ] || packages="$packages $PACKAGES_AMD64_KERNEL"
+    local packages="$PACKAGES_COMMON $PACKAGES_KERNELS" arches=i386
+    if [ "$NO_AMD64_KERNEL" -eq 0 ]; then
+        packages="$packages $PACKAGES_AMD64_KERNEL"
+        arches=i386,amd64   # the first is the root's own; amd64 is foreign, for its kernel alone
+    fi
     local include
     include="$(echo $packages | tr ' ' ',')"
     local mmmode=unshare
@@ -301,7 +331,7 @@ EOF
     chmod +x "$finish"
 
     if [ "$DRY_RUN" -eq 1 ]; then
-        printf '    would run: mmdebstrap --mode=%s --architectures=i386 --variant=minbase --include=... %s %s\n' "$mmmode" "$RELEASE" "$ROOT_TAR"
+        printf '    would run: mmdebstrap --mode=%s --architectures=%s --variant=minbase --include=... %s %s\n' "$mmmode" "$arches" "$RELEASE" "$ROOT_TAR"
         return 0
     fi
     log "Building the Debian $RELEASE i386 root with mmdebstrap (--mode=$mmmode, $(echo $packages | wc -w) packages)"
@@ -309,7 +339,7 @@ EOF
     # the kernel packages' postinst runs update-grub, which cannot probe a device inside a chroot and would
     # fail the whole build: grub2-common's hook is diverted away before the packages go in, and the
     # diversion removed again at the end (finish-root.sh) so a kernel upgrade on the stick does update GRUB
-    mmdebstrap --mode="$mmmode" --architectures=i386 --variant=minbase \
+    mmdebstrap --mode="$mmmode" --architectures="$arches" --variant=minbase \
         --components=main,contrib,non-free,non-free-firmware \
         --include="$include" \
         --skip=check/qemu \
