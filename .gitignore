@@ -95,3 +95,4 @@ __pycache__/
 
 # the self-hosted runner's token (docker/runner/compose.yml)
 /docker/runner/.env
+/build_samples/
