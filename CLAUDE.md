@@ -541,7 +541,7 @@ psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroA
 "RetroArch for the console" below), **`psc/libs/`** and **`psc/apps/`** (the same shape: `libs-psc-<date>.tar.gz`,
 the libraries and the xpad module for `Autobleem/lib/`, from retroarch-psc's `tools/pack_retroboot_libs.py`;
 `apps-psc-<date>.tar.gz`, the eight third-party Apps as `Apps/<name>/`, from `tools/pack_psc_apps.py` over a
-stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`emu/pcsx-abnxt/<version>/`** + `latest.json` (2026-09-20: the next emulator's packages, one per platform, from the pcsx-abnxt repo's `tools/make_packages.sh`; `repo_publish.sh pcsx <version> dist/packages/*`; the newest version kept; its own panel under "Every platform"), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
+stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`emu/pcsx-abnxt/<version>/`** and **`emu/pcsx-ab/<version>/`** + `latest.json` each (2026-09-20: the two emulators' packages, one per platform, from each repo's `tools/make_packages.sh` - pcsx-abnxt's version is `git describe` (`r26-24-g0f4727f1`), pcsx-ab's `<date>-<hash>` (`20260920-fc8c992`, no tags there); `repo_publish.sh pcsx|pcsx-ab <version> dist/packages/*`; the newest version kept; `EMULATORS` in `repo_index.py` renders one panel each under "Every platform"), **`psc/bios/biospack.txt`** + `latest.json` (the console's BIOS *list* only - `repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt`; the installer fetches the files from RetroBIOS, the owner's rule: no BIOS file on the site), `db/` (the three cover databases), **`samples/`** (the sample-games pack, below), `assets/`. **Retention** (the owner's rules): a pre-release *replaces* the previous one (packages and image
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay. **Since INDEX_VERSION 22 a package kind the new pre-release does not bring is carried
 over** from the one it replaces (a publish of the console's packages alone no longer drops the Pi's, and
@@ -563,6 +563,13 @@ AutoBleem 2 logo is painted into it; `ab.png` is blank) as the hero, the navy/cy
 staged as `assets/` from `payload/Themes/ab2` by `tools/repo_assets.py` (`tools/repo_icon.png` is the
 emblem cut out for the favicon and Imager's icon, checked in because MSYS2's python has no Pillow). To
 change the pages: edit the render functions, bump `INDEX_VERSION`, `tools/repo_publish.sh index`.
+**Two `repo_index.py`s exist at the moment** (2026-09-20): a parallel session's PC USB stick (i386) work -
+`PC_IMAGE_RE`, `PLATFORM_ARCHES`, the `pc/` panels - is only in its rsync tree on the server (`~/autobleem`,
+uncommitted), and its copy overwrote the site's page twice (same `INDEX_VERSION`, no pcsx panels). The
+server's `<repo>/.tools/repo_index.py` is a hand-merged copy of both at **`INDEX_VERSION 26`** - above
+`develop`'s 25, so a publish from either tree keeps it (the gate only uploads a copy that is at least as
+new). When the PC-stick work lands on `develop`, resolve `tools/repo_index.py` to carry both (the server's
+copy is that merge) and bump past 26.
 `AB_REPO_URL` is the base URL everything generated starts with.
 
 It holds the cover databases, the images and **RetroArch v1.22.2 for armhf and arm64** - `ci/build_retroarch.sh`
