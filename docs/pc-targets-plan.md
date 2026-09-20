@@ -378,6 +378,18 @@ owner's target PC (a BIOS *and* a UEFI machine); `tools/repo_publish.sh --local 
 
 - **E** done apart from real hardware: `tools/make_pc_image.sh` builds under `docker/run.sh --privileged` (E0's answer: the server's kernel refuses user namespaces in a container); the image's first boot went end to end in VirtualBox (BIOS, PAE kernel): GRUB, plymouth, the first-boot screen, the install, the reboot, the launcher. `pc/retroarch/` (v1.22.2) and `pc/cores/i386/` (212 cores) are published; the manual page is `pc-install.html`. UEFI (32- and 64-bit), real hardware and a pad untested.
 
-- **F2** not started: pcsx-ab has no i386 target; the stick plays PS1 through RetroArch's pcsx_rearmed core meanwhile.
+- **F1/F2** deferred (the owner: wait for the new pcsx, pcsx-abnxt): pcsx-ab has no i386 or win64 target; the
+  stick and the Windows product play PS1 through RetroArch's pcsx_rearmed core meanwhile. The direct pcsx
+  launch plan (`-dotdir`, `-biosdir`, `-fullscreen`) is written and tested, dormant until an exe exists.
 
-- **B, C, F1, G** not started (Windows).
+- **B** done (2026-09-20, four commits): B1 the state dir (`Environment::setStateDir`) and the zero-argument
+  start (`EnvironmentSetup::fromWindowsInstall(HostFacts)`, `WindowsHost`, `win.ini`); B2 `LaunchPlan`, the
+  direct launches, `System::runAndWait` real on Windows (CreateProcessW), `WinProcessRunner` (the window
+  minimised for the run); B3 `System::runShellCommand` (cmd with CREATE_NO_WINDOW - the default runner of
+  OnlineAssets/UpdateService) and `System::diskSpace`; B4 full screen on every real target (SDL
+  fullscreen-desktop, the canvas letterboxed by a viewport), `-mwindows`, the icon and version block,
+  `make_win_package.sh --product`. Verified on the PC: the product exe with no arguments made
+  `Documents\AutoBleem`, came up at 1920x1080 in ab2, scanned a game, found its cover, checked for updates
+  without a console flash. A RetroArch launch on Windows waits for C (no RetroArch in the data tree yet).
+
+- **C, G** not started.
