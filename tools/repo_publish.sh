@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish files to the download repository (docs/repo-server-plan.md) and regenerate its index.
+# Publish files to the download repository (CLAUDE.md, "The download repository") and regenerate its index.
 #
 #   tools/repo_publish.sh release v2.0.0 dist/psc/*.zip dist/rpi/*.tar.gz ...   -> releases/v2.0.0/
 #   tools/repo_publish.sh image v2.0.0-pre0-933bd2f build_rpi_image/*.img.xz build_rpi_image/rpi_imager_repo.json

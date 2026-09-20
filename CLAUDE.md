@@ -469,6 +469,17 @@ memory note: optional everywhere): unless `autobleem.txt` says `retroarch=`, the
 silence means yes; `n` means `--retroarch none --no-downloads`, and `install.sh` makes that a lean PS1-only
 install - `download_thumbnails` is its own step (box art is the launcher's, not RetroArch's) and the BIOS
 pack shrinks to `scph5501.bin`/`scph5500.bin`.
+**The first boot has a screen** (2026-09-20, the owner's ask): `payload_rpi/system/autobleem-install-ui.py`
+draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdlib - it decodes the plymouth
+`splash.png` itself (a small PNG reader), renders text from the console's Terminus PSF fonts
+(`/usr/share/consolefonts`, PSF1/2 with their unicode tables) and puts tty8 in `KD_GRAPHICS`. The logo,
+"Setting up AutoBleem", bar 1 = the phase (from `@@phase N/9 text` lines `install.sh`'s `phase()` prints
+with `AB_UI_MARKERS=1`), bar 2 = the last percentage seen in the output (the download loops, wget) or a
+pulse, and a box with the last 8 lines (a `` progress line rewrites the box's last line). The first-boot
+script pipes `install.sh` through `tee` (the log) and the screen; `--keep-graphics` on success (the reboot
+takes the picture down), `text_mode()` on failure. ~40 ms a frame on a PC, 4 fps; `--render out.ppm
+--fonts DIR` draws one frame on a PC for a look. The image build injects the script and the splash into
+`/opt/autobleem-image/`. Verified on the Pi 400 with the real installer.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
 `After=multi-user.target cloud-final.service userconfig.service`, `StandardInput/Output=tty` on
 **`/dev/tty8`**, its own VT, switched to with `chvt 8` and back with `chvt 1`) **owns the screen and keyboard
@@ -495,7 +506,8 @@ URLs (double-click it, or App Options -> Content Repository -> Use custom file, 
 makes Imager offer the customisation screen (user/WiFi/SSH) for a locally built image. `payload_rpi/README.md`'s
 "Flashing with Raspberry Pi Imager" section has the walkthrough.
 
-**The download repository** (2026-09-19, plan in `docs/repo-server-plan.md`): **`https://autobleem.retromenele.pl/`**,
+**The download repository** (2026-09-19; its plan, `docs/repo-server-plan.md`, was removed on 2026-09-20 when
+every step was done - the git log has it): **`https://autobleem.retromenele.pl/`**,
 the build server's `/home/claude/autobleem-repo` served by a Caddy container (`docker/repo/`) on 443 (a
 Let's Encrypt certificate Caddy obtained by TLS-ALPN-01 once the owner's `A` record existed - the host's
 nginx keeps port 80, and no root was needed; Caddy renews it) and on 9090 as plain HTTP
@@ -534,12 +546,25 @@ same configure as the installer's source build, no FLAC - its soname differs bet
 `retroarch.version`/`retroarch.depends` under `usr/local/share/autobleem`), and **`install.sh --retroarch
 prebuilt` is the default** (`--repo`, `autobleem.txt` `repo=`; falls back to the source build when the
 repository is unreachable). Verified on the Pi 400 the same day: installed in a couple of minutes, plays a
-NES game. Images are built on the Pi 400 from packages the server built (`docker/run.sh ci/build.sh rpi
-rpi64`, fetched by the Pi over HTTPS); an image bakes the repository URL into its installer, which is why
-the owner held image builds back until the domain existed. What is left of the plan: CI publishing on a
-tag (the owner does not want a pre-release published from the server yet), the Imager repo URL in the
-README, the cores as one tarball per architecture (step 8, the owner's idea), and (optional) a Pi package
-without the cover databases.
+NES game. **Since 2026-09-20 the images are built on the server too**, rootless: `docker/run.sh
+tools/make_rpi_image.sh --arch armhf --package dist/rpi/autobleem-rpi.tar.gz --work build_rpi_image --out
+build_rpi_image/out` after `ci/build.sh rpi rpi64` - `--rootless` (the default without root) does the
+five writes into the ext4 root with `debugfs -w` on `<img>?offset=N` and the two boot files with `mcopy`
+on `<img>@@N`, offsets read from the MBR; `--mount` is the old loop-mount way for a machine with root.
+7 minutes per image at the default xz level 4 (12 at level 6 for ~2% less size), then
+`tools/repo_publish.sh --local image ...` on the same machine - no Pi in the loop. The Pi 400 only *tests*
+an image, on the owner's request, never as part of CI (there is no Pi in the cloud). The Pi package leaves
+the cover databases out (`make_rpi_package.sh --with-covers` puts them back; `install.sh` fetches them
+from the site's `db/`), and the installer takes the cores as one tarball (`rpi/cores/`, `ci/build_cores.sh`
+- a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
+download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. **CI feeds the
+site, for the Pi only** (2026-09-20, the owner's scope): `ci.yml`'s `site` job on a `v*` tag publishes the
+two Pi tarballs to `releases/<tag>/` and builds + publishes both images, rootless, on the self-hosted
+runner (`/home/claude/autobleem-repo` mounted into the job container as `REPO_DIR`); `site-refresh.yml`
+(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. Both are written
+and unrun: nothing in Actions runs until the runner is registered (the owner's PAT, `docs/ci-plan.md`).
+The console zip is not on the site and its cover databases still come from the Docker image's baked copy
+(the console has no network, so the zip must carry them) - deliberately left as is.
 
 **Where the packages come from now**: the build server's Docker image (`docs/ci.md` - `ssh psc-build`,
 `cd ~/autobleem`, `docker/run.sh ci/build.sh rpi rpi64`, `dist/<target>/`), which builds pcsx-ab from the same
@@ -647,9 +672,21 @@ port targets 32-bit Trixie (and Bookworm).
   *every* platform (`add_subdirectory given source ... which is not an existing directory`); it only ever
   worked in the long-lived `autobleem-develop` checkout because those files were on disk from before the
   line was added, untracked. Anchored to `/build/` and the nine missing files recovered from that checkout.
-- **Not done**: no 64-bit Pi OS card imaged, so nothing has booted on real hardware; no boot-splash
-  initramfs testing (the 64-bit image is one kernel, not the 32-bit image's per-board v6/v7/v7l/v8 set, so
-  `update-initramfs -u -k all` should need no board-split reasoning there - unverified).
+- **First boot on hardware 2026-09-20**: the `c3a684c` arm64 image (built rootless on the server) on
+  the Pi 400 - the first boot went end to end (`--grow-only` grew the image-sized root, the cores tarball,
+  the cover databases, the prebuilt arm64 RetroArch, the boot splash from the single 64-bit kernel) and
+  the launcher came up **black, with no sound**: SDL's "opengl" renderer could not dlopen `libGL.so.1`
+  (`libgl1` was never a dependency of anything - on the 32-bit card it had come in with RetroArch's
+  source-build packages, and the prebuilt RetroArch ends that) and silently gave a context with no
+  shaders and no render targets. `install.sh` installs `libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1`
+  since; `ableem::Renderer` logs an error when a renderer has no render-target support. On the 64-bit
+  kernel `/dev/dri/card0` is v3d and `card1` the vc4 display - SDL picks card1 by itself. The same boot
+  came up in the **default theme**: the kernel log said "exFAT-fs: Volume was not properly unmounted" -
+  the first boot's `reboot` had left the data partition dirty and `config.ini` (copied last, small) came
+  back as an empty file, which the launcher read as "no settings". Three fixes: the first-boot script
+  unmounts the exFAT partitions before rebooting (a `sync` alone was not enough), `IniFile::save` writes
+  atomically (`.tmp` + `DirEntry::replaceFile`) and `IniFile::load` warns about an empty file, and `Config`
+  defaults `theme` to `ab2` in code (tested). Audio was fine all along (the owner's mistake).
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 

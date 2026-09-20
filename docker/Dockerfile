@@ -341,7 +341,10 @@ FROM psc AS retroarch
 RUN apt-get update && apt-get install -y --no-install-recommends         libasound2-dev:armhf libudev-dev:armhf libusb-1.0-0-dev:armhf libgbm-dev:armhf libdrm-dev:armhf         libegl-dev:armhf libgles-dev:armhf libfreetype-dev:armhf libxml2-dev:armhf         libasound2-dev:arm64 libudev-dev:arm64 libusb-1.0-0-dev:arm64 libgbm-dev:arm64 libdrm-dev:arm64         libegl-dev:arm64 libgles-dev:arm64 libfreetype-dev:arm64 libxml2-dev:arm64         file     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------------------------------------
+# all: the default target. mtools is for tools/make_rpi_image.sh's rootless mode (the FAT boot partition
+# of a Pi image, edited without mounting; e2fsprogs' debugfs, already here, does the ext4 root).
 FROM retroarch AS all
+RUN apt-get update && apt-get install -y --no-install-recommends mtools && rm -rf /var/lib/apt/lists/*
 # what ci/build.sh and the toolchain files read
 ENV AB_PSC_TOOLCHAIN=/opt/psc \
     AB_MINGW_SDL2=/opt/mingw-sdl2 \

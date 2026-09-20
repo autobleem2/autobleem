@@ -35,7 +35,7 @@ QUIET_BOOT=1                    # strip the kernel log/rainbow splash so the lau
 BOOT_SPLASH=1                   # plymouth with system/plymouth/ (the AutoBleem logo) from the initramfs on; needs QUIET_BOOT
 HDMI_MODE="1920x1080@60"        # --hdmi-mode: the KMS mode for the whole boot, so plymouth and the launcher share it
 RETROARCH_MODE=prebuilt         # --retroarch: prebuilt (from the download repository) | source | apt | none
-REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: the download repository (docs/repo-server-plan.md)
+REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: the download repository (CLAUDE.md, "The download repository")
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
 THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
@@ -245,10 +245,15 @@ install_packages() {
         warn "apt-get update failed - carrying on with whatever is already cached"
     fi
 
-    # SDL2 is what autobleem-gui draws with (pcsx-ab too, plus libpng16 for its screenshots and skin);
-    # exfatprogs formats the data partition; parted creates it; wget/unzip fetch the RetroArch cores.
+    # SDL2 is what autobleem-gui draws with (pcsx-ab too, plus libpng16 for its screenshots and skin).
+    # libgl1 + libgl1-mesa-dri (with libegl1/libgles2/libgbm1) are the GL SDL's "opengl" renderer dlopens on
+    # KMS: SDL2 does not depend on them, and without libGL.so.1 it silently falls back to a context with no
+    # shaders and no render targets - the launcher runs and shows a black screen (the first 64-bit image,
+    # 2026-09-20; on the 32-bit card they had come in with RetroArch's source-build packages). exfatprogs
+    # formats the data partition; parted creates it; wget/unzip fetch the RetroArch cores.
     run apt-get install -y \
         libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-mixer-2.0-0 libsdl2-ttf-2.0-0 \
+        libgl1 libgl1-mesa-dri libegl1 libgles2 libgbm1 \
         "$(pkg_first_available libpng16-16t64 libpng16-16)" zlib1g \
         exfatprogs parted alsa-utils wget unzip ca-certificates
 
@@ -1429,24 +1434,38 @@ EOF
 #*******************************
 # main
 #*******************************
+# "@@phase N/M text" lines for autobleem-firstboot.sh's screen (system/autobleem-install-ui.py), which
+# turns them into its first progress bar; only with AB_UI_MARKERS=1, a terminal never sees them
+PHASES=9
+phase() { [ "${AB_UI_MARKERS:-0}" = 1 ] && printf '@@phase %s/%s %s\n' "$1" "$PHASES" "$2"; return 0; }
+
 main() {
     parse_args "$@"
+    phase 1 "Preparing"
     preflight
+    phase 2 "The system partition"
     maybe_grow_root             # --grow-root: the root must have room before apt fills it
     if [ "$GROW_ONLY" -eq 1 ]; then
         [ -n "$GROW_ROOT_GIB" ] || die "--grow-only needs --grow-root GIB"
         log "--grow-only: stopping here"
         exit 0
     fi
+    phase 3 "Installing packages"
     install_packages
+    phase 4 "The games partition"
     ensure_data_partition       # may arm --shrink-root and reboot: everything slow comes after it
     mount_data
     create_tree
+    phase 5 "RetroArch"
     install_retroarch
+    phase 6 "RetroArch cores and assets"
     download_retroarch_content
     download_thumbnails         # the launcher's PS1 box art - wanted with or without RetroArch
+    phase 7 "BIOS files"
     download_bios_pack
+    phase 8 "AutoBleem"
     install_payload
+    phase 9 "Boot setup"
     install_service
     install_boot_splash
     configure_boot
