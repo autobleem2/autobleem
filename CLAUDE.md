@@ -907,7 +907,7 @@ keeps `dc/` - 719 files, 302 MB against the Pi's 647/188. `.gitignore`'s `bios/`
 that folder's two files.
 
 **What is left**: the **PC installer** (read `psc/retroarch/latest.json`, `psc/cores/latest.json`,
-`psc/libs/latest.json`, `psc/apps/latest.json` and `psc/bios/latest.json` (the BIOS list - the installer downloads the files from RetroBIOS), take the stick's file system from the release's `autobleem-psc-<v>.tar.gz`, lay `RetroArch/bin`
+`psc/libs/latest.json`, `psc/apps/latest.json` and `psc/bios/latest.json` (the BIOS list - the installer downloads the files from RetroBIOS), take the stick's file system from the release's `autobleem-psc-<v>.tar.gz` (no `RetroArch/`, no cover databases - the installer fetches `db/`; the zip has both, the console has no network), lay `RetroArch/bin`
 - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a generated cfg with the
 directory keys above - `RetroArch/bios`, `Autobleem/lib` and `Apps` on the stick; `tools/install_autobleem.py`
 is the base, `UpdateRoms.exe` the neighbour); UPX in `make
@@ -1453,7 +1453,7 @@ defaults, which both the services and the screens need.
 | `apps/pscbios/`, `apps/abflashkit/` | `PscBios`, `AbFlashKit` | The console tools (see "Console tools"), each with its own CLAUDE.md, a `<tool>_core` library and a program on `ab_classic`. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
-`default`, `evolution`), bundled Apps, release notes. `ab2`'s launcher menu icons (gear, gamepad, memory card,
+`default`, `evolution`), the two console tools under `Apps/`, `RetroArch/`'s skeleton, `Docs/` (the 0.9.0 manuals and release notes - at the root until 2026-09-20). `ab2`'s launcher menu icons (gear, gamepad, memory card,
 the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
 and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is

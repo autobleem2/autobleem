@@ -44,13 +44,14 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 18
+INDEX_VERSION = 19
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
     ("psc", re.compile(r"^autobleem-psc-.*\.zip$"), "PlayStation Classic (USB stick zip)"),
     ("psc-fs", re.compile(r"^autobleem-psc-.*\.tar\.gz$"),
-     "PlayStation Classic, the stick's file system for the installer (no RetroArch - added from the packs below)"),
+     "PlayStation Classic, the stick's file system for the installer (no RetroArch and no cover databases - "
+     "the installer adds those from the packs below and db/)"),
     ("rpi", re.compile(r"^autobleem-rpi(-armhf)?(-v.*)?\.tar\.gz$"), "Raspberry Pi, 32-bit OS (tarball + install.sh)"),
     ("rpi64", re.compile(r"^autobleem-rpi-arm64.*\.tar\.gz$"), "Raspberry Pi, 64-bit OS (tarball + install.sh)"),
     ("win", re.compile(r"^autobleem-win-.*\.zip$"), "Windows (launcher, for a look on a PC)"),
@@ -635,7 +636,8 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                    "<p>What the PC installer lays out on a stick, piece by piece:</p>"
                    "<ul class=\"what\">"
                    "<li><b>The stick's file system</b> - the launcher, pcsx-ab, the scripts, the themes, the console "
-                   "tools. One tarball per release, without RetroArch.</li>"
+                   "tools, the manuals. One tarball per release, without RetroArch and without the cover databases "
+                   "(the installer fetches those from <a href=\"/db/\">db/</a>).</li>"
                    "<li><b>RetroArch</b> (<code>RetroArch/bin</code>) - built for the console's firmware (glibc 2.24, "
                    "Wayland, GLES, ALSA, udev) with the PSC patches; it loads xz-compressed cores as they are%s.</li>"
                    "<li><b>Cores</b> - with their info files. RetroBoot 1.2's set for now: the ones that run on a "
