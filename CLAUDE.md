@@ -887,7 +887,7 @@ is that. **`tools/install_autobleem.py --stage layout`** converts an older stick
 `retroarch.cfg` and every playlist's paths, `Applications.lpl` removed, the libraries copied out of
 `retroboot/`, the apps made self-contained) and is idempotent; it ran on the owner's stick, then the new
 launcher, `absplash`, the tools, the platform inis, the rc scripts and `UpdateRoms.exe` (which wrote
-`/media/RetroArch/roms/...` playlists) went on. **Not yet booted on the console** after the change.
+`/media/RetroArch/roms/...` playlists) went on. **Verified on the console 2026-09-20** (the owner: "looks like it works ok").
 `payload/RetroArch/` is the folder's skeleton (README files) plus **`bios/biospack.txt`**, the console's
 BIOS manifest: `tools/biospack.py --arch psc` takes the cores from `psc/cores/latest.json` (KMFD's
 `km_<core>_xtreme...` names folded onto RetroBIOS's - `PSC_CORE_ALIASES`), adds the systems only those
@@ -899,7 +899,7 @@ that folder's two files.
 `psc/libs/latest.json`, `psc/apps/latest.json` and `payload/RetroArch/bios/biospack.txt`, lay `RetroArch/bin`
 - binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a generated cfg with the
 directory keys above - `RetroArch/bios`, `Autobleem/lib` and `Apps` on the stick; `tools/install_autobleem.py`
-is the base, `UpdateRoms.exe` the neighbour); the console pass of the new layout; UPX in `make
+is the base, `UpdateRoms.exe` the neighbour); UPX in `make
 package-retroarch` (-> `v1.22.2-2`); building our own cores when wanted.
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
