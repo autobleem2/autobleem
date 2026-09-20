@@ -112,6 +112,7 @@ GAME OVER=GAME OVER
 Games=Games
 games=games
 GFX Filter:=GFX Filter:
+PS1 Emulator:=PS1 Emulator:
 Go back=Go back
 Graphics=Graphics
 Hardware=Hardware

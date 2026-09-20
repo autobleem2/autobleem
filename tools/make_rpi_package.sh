@@ -72,12 +72,15 @@ cp -a "$PAYLOAD/." "$STAGE/"
 # the arch-specific pcsx-ab tree lives at Autobleem/bin/emu (armhf) or emu-arm64 (arm64) in the checked-in
 # payload; the staged tree always uses emu/ on the device, so an arm64 package replaces emu/ with emu-arm64's
 # contents.
-if [ "$ARCH" = arm64 ]; then
-    rm -rf "$STAGE/Autobleem/bin/emu"
-    mv "$STAGE/Autobleem/bin/emu-arm64" "$STAGE/Autobleem/bin/emu"
-else
-    rm -rf "$STAGE/Autobleem/bin/emu-arm64"
-fi
+# contents. The same for emunxt (pcsx-abnxt, the next emulator) and emunxt-arm64.
+for emu in emu emunxt; do
+    if [ "$ARCH" = arm64 ]; then
+        rm -rf "$STAGE/Autobleem/bin/$emu"
+        [ -d "$STAGE/Autobleem/bin/$emu-arm64" ] && mv "$STAGE/Autobleem/bin/$emu-arm64" "$STAGE/Autobleem/bin/$emu"
+    else
+        rm -rf "$STAGE/Autobleem/bin/$emu-arm64"
+    fi
+done
 
 # the app: the freshly cross-compiled binary plus the resources tree it reads at runtime. The resources come
 # from the repo rather than from $BUILD_DIR, which also holds the object files and CMake's own scratch.
@@ -140,7 +143,7 @@ find "$STAGE" -type f -name placeholder -delete
 
 # Best effort: on a Windows build host the executable bit does not stick, which is why install.sh checks for
 # the binary with -f rather than -x, chmods what it deploys itself, and is documented as "sudo bash install.sh".
-chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui"          "$STAGE/Autobleem/bin/emu/pcsx-ab" 2>/dev/null || true
+chmod +x "$STAGE/install.sh" "$STAGE/system/"*.sh "$STAGE/Autobleem/rc/"*.sh "$APP/autobleem-gui"          "$STAGE/Autobleem/bin/emu/pcsx-ab" "$STAGE/Autobleem/bin/emunxt/pcsx-ab" 2>/dev/null || true
 
 echo "==> Building $TARBALL"
 rm -f "$TARBALL"

@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -101,8 +101,8 @@ Frameskip:=Preskočení snímků:
 Free=Volné
 free of=
 Free space=Volné místo
-Game=Hra
 GAME=HRA
+Game=Hra
 Game data=
 Game failed to verify:=Ověření hry selhalo:
 Game History=Historie her
@@ -121,8 +121,8 @@ HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-INTERNAL=INTERNÍ
 Internal=Interní
+INTERNAL=INTERNÍ
 Internal Games=Interní hry
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Vypnout
 POWER SHOT=SILNÁ STŘELA
 POWERING OFF... PLEASE WAIT=VYPÍNÁM... ČEKEJTE PROSÍM
 Processor=
+PS1 Emulator:=
 Published by:=Vydavatel:
 Quick scroll to next letter=Rychlý přesun na nasledující písmeno
 Quit emulation - back to AutoBleem=Ukončit emuláci - návrat do AutoBleem

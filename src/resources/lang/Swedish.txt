@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -101,8 +101,8 @@ Frameskip:=Frameskip:
 Free=Ledigt
 free of=
 Free space=Ledigt utrymme
-Game=Spel
 GAME=SPEL
+Game=Spel
 Game data=
 Game failed to verify:=Spelverifiering misslyckades:
 Game History=Spelhistorik
@@ -121,8 +121,8 @@ HIGH SCORE=BÄSTA RESULTAT
 Hostname=
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interna spel
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Stäng av
 POWER SHOT=KRAFTSKOTT
 POWERING OFF... PLEASE WAIT=STÄNGER AV... VÄNLIGEN VÄNTA
 Processor=
+PS1 Emulator:=
 Published by:=Utgivet av:
 Quick scroll to next letter=Snabbscrolla till nästa bokstav
 Quit emulation - back to AutoBleem=Avsluta emulation - tillbaka till AutoBleem

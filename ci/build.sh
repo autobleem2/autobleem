@@ -93,18 +93,25 @@ pcsx_dir() {
         if [ -f "$d/ci/build.sh" ]; then (cd "$d" && pwd); return; fi
     done
 }
-build_pcsx() { # build_pcsx psc|rpi|rpi64 DEST - pcsx-ab for the target into the payload folder DEST
-    local target="$1" dest="$2" dir
+# pcsx-abnxt, the next emulator (github.com/autobleem/pcsx-abnxt), ships next to pcsx-ab as Autobleem/bin/emunxt
+# (emunxt-arm64 for the 64-bit Pi) - Options -> "PS1 Emulator" picks; AB_PCSXNXT_DIR names its checkout
+pcsxnxt_dir() {
+    if [ -n "${AB_PCSXNXT_DIR:-}" ]; then echo "$AB_PCSXNXT_DIR"; return; fi
+    if [ -f ../pcsx-abnxt/ci/build.sh ]; then (cd ../pcsx-abnxt && pwd); fi
+}
+build_pcsx() { # build_pcsx psc|rpi|rpi64 DEST [nxt] - pcsx-ab (or pcsx-abnxt) for the target into the payload folder DEST
+    local target="$1" dest="$2" which="${3:-ab}" dir name=pcsx-ab
+    [ "$which" = nxt ] && name=pcsx-abnxt
     if [ -n "${AB_NO_PCSX:-}" ]; then
         echo "    AB_NO_PCSX: the checked-in emulator in $dest ships"
         return
     fi
-    dir="$(pcsx_dir)"
+    if [ "$which" = nxt ]; then dir="$(pcsxnxt_dir)"; else dir="$(pcsx_dir)"; fi
     if [ -z "$dir" ]; then
-        echo "pcsx-ab checkout not found (AB_PCSX_DIR, or ../pcsx-ab next to this tree; AB_NO_PCSX=1 ships the checked-in binaries)" >&2
+        echo "$name checkout not found (AB_PCSX_DIR / AB_PCSXNXT_DIR, or ../pcsx-ab / ../pcsx-abnxt next to this tree; AB_NO_PCSX=1 ships the checked-in binaries)" >&2
         exit 1
     fi
-    banner "pcsx-ab $target: $dir"
+    banner "$name $target: $dir"
     (cd "$dir" && AB_JOBS="$JOBS" bash ci/build.sh "$target")
     local built="$dir/build_$target/dist"
     [ -f "$built/pcsx-ab" ] || { echo "no $built/pcsx-ab after the build" >&2; exit 1; }
@@ -140,6 +147,7 @@ build_native() {
 build_psc() {
     local toolchain="${AB_PSC_TOOLCHAIN:-/opt/psc}"
     build_pcsx psc payload/Autobleem/bin/emu
+    build_pcsx psc payload/Autobleem/bin/emunxt nxt
     banner "psc: configure + build (build_psc, toolchain $toolchain)"
     configure build_psc -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE=toolchains/psc/PSCtoolchainV8.cmake -DAB_PSC_TOOLCHAIN="$toolchain"
@@ -163,8 +171,10 @@ build_rpi() { # build_rpi armhf|arm64
         arm64) dir=build_rpi64; toolchain=toolchains/rpi64/RPi64toolchain.cmake; proc=aarch64 ;;
     esac
     case "$arch" in
-        armhf) build_pcsx rpi   payload_rpi/Autobleem/bin/emu ;;
-        arm64) build_pcsx rpi64 payload_rpi/Autobleem/bin/emu-arm64 ;;
+        armhf) build_pcsx rpi   payload_rpi/Autobleem/bin/emu
+               build_pcsx rpi   payload_rpi/Autobleem/bin/emunxt nxt ;;
+        arm64) build_pcsx rpi64 payload_rpi/Autobleem/bin/emu-arm64
+               build_pcsx rpi64 payload_rpi/Autobleem/bin/emunxt-arm64 nxt ;;
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \

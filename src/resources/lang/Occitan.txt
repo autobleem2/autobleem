@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -101,8 +101,8 @@ Frameskip:=Frameskip :
 Free=Liure
 free of=
 Free space=Espaci liure
-Game=Jòc
 GAME=JÒC
+Game=Jòc
 Game data=
 Game failed to verify:=Verificacion del jòc fracassada :
 Game History=Istoric dels jòcs
@@ -121,8 +121,8 @@ HIGH SCORE=MELHOR MARCA
 Hostname=
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-INTERNAL=INTÈRNA
 Internal=Intèrna
+INTERNAL=INTÈRNA
 Internal Games=Jòcs intèrnes
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Atudar
 POWER SHOT=TIR PODEROS
 POWERING OFF... PLEASE WAIT=EXTINCION... ESPERATZ
 Processor=
+PS1 Emulator:=
 Published by:=Editat per :
 Quick scroll to next letter=Davalada rapida fins a la letra seguenta
 Quit emulation - back to AutoBleem=Quitar l'emulation - tornar a AutoBleem

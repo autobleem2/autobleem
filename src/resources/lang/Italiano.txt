@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 74 / Total: 265
+# Untranslated: 75 / Total: 266
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -101,8 +101,8 @@ Frameskip:=Frameskip:
 Free=Libero
 free of=
 Free space=Spazio libero
-Game=Gioco
 GAME=GIOCO
+Game=Gioco
 Game data=
 Game failed to verify:=Verifica fallita per questi giochi:
 Game History=Cronologia Giochi
@@ -121,8 +121,8 @@ HIGH SCORE=PUNTEGGIO MIGLIORE
 Hostname=
 In Game=Mentre Giochi
 In Retroarch Game=Mentre Giochi - in RetroArch
-INTERNAL=INTERNO
 Internal=Interno
+INTERNAL=INTERNO
 Internal Games=Giochi Interni
 Kernel=
 Keyboard=
@@ -178,6 +178,7 @@ Power Off=Spegni
 POWER SHOT=COLPO POTENTE
 POWERING OFF... PLEASE WAIT=SPEGNIMENTO IN CORSO... ATTENDERE PREGO
 Processor=
+PS1 Emulator:=
 Published by:=Pubblicato da:
 Quick scroll to next letter=Scorri rapidamente alla lettera successiva
 Quit emulation - back to AutoBleem=Esci dall'emulazione - torna ad AutoBleem

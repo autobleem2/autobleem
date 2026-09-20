@@ -47,7 +47,8 @@ This is a port in progress. Be aware of what is and is not here:
 ```
 
 pcsx-ab is checked in under `payload_rpi/Autobleem/bin/emu/` (32-bit) and `payload_rpi/Autobleem/bin/emu-arm64/`
-(64-bit) and rides along. To refresh it from a new build, run pcsx-rearmed-develop's
+(64-bit) and rides along; pcsx-abnxt, the next emulator, the same way under `emunxt/` and `emunxt-arm64/`
+(Options -> "PS1 Emulator" picks which one plays). To refresh it from a new build, run pcsx-rearmed-develop's
 `AUTOBLEEM_DIR=../autobleem-develop ./make_rpi.sh` (32-bit) or `./make_rpi64.sh` (64-bit), which copies its
 `build_rpi/dist/` or `build_rpi64/dist/` there.
 
@@ -260,6 +261,7 @@ the spot. Over ssh the same is `sudo bash install.sh --update` from an unpacked 
   Autobleem/bin/autobleem/     autobleem-gui and its resources
   Autobleem/bin/db/            covers*.db - the cover art databases
   Autobleem/bin/emu/           pcsx-ab and plugins/ (gpu_peops.so, gpu_unai.so)
+  Autobleem/bin/emunxt/        pcsx-abnxt, the next emulator, in the same layout (Options -> "PS1 Emulator")
   System/Bios/                 romw.bin, romJP.bin - the PS1 BIOS pcsx-ab uses (from the pack, or yours)
   Autobleem/rc/                launch.sh, launch_rb.sh, retroarch.sh
   System/Databases/            regional.db (scanned games)
