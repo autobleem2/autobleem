@@ -52,7 +52,7 @@ RETROBIOS_TARGET = "linux-armhf"  # RetroBIOS's own per-target core list - armhf
 
 # buildbot.libretro.com's directory name for each architecture (not the same as Debian's - arm64 is
 # "aarch64" there) and the manifest file install.sh looks for on that architecture.
-BUILDBOT_INDEX = "https://buildbot.libretro.com/nightly/linux/{buildbot_arch}/latest/.index-extended"
+BUILDBOT_INDEX = "https://buildbot.libretro.com/nightly/{buildbot_os}/{buildbot_arch}/latest/.index-extended"
 REPO = os.path.join(os.path.dirname(__file__), "..")
 ARCHES = {
     "armhf": {"buildbot_arch": "armhf", "manifest_name": "biospack.txt",
@@ -62,6 +62,10 @@ ARCHES = {
     # the 32-bit PC stick: buildbot's "x86" is Debian's i386 (RetroBIOS's targets have no 32-bit Linux either)
     "i386": {"buildbot_arch": "x86", "manifest_name": "biospack-i386.txt",
              "manifest_dir": os.path.join(REPO, "payload_linux", "system"), "where": "the PC USB stick"},
+    # the Windows product: buildbot's windows/x86_64 cores (.dll), the list published as win/bios on the site
+    "win64": {"buildbot_arch": "x86_64", "buildbot_os": "windows", "core_suffix": "_libretro.dll.zip",
+              "manifest_name": "biospack-win64.txt", "manifest_dir": os.path.join(REPO, "src", "win"),
+              "where": "Windows"},
     "psc": {"buildbot_arch": None, "manifest_name": "biospack.txt",
             "manifest_dir": os.path.join(REPO, "payload", "RetroArch", "bios"), "where": "the PlayStation Classic"},
 }
@@ -264,18 +268,17 @@ def psc_cores(latest_url):
     return cores
 
 
-def buildbot_cores(buildbot_arch):
+def buildbot_cores(buildbot_arch, buildbot_os="linux", suffix="_libretro.so.zip"):
     """The core names actually built for this architecture, straight from the buildbot's own nightly
     listing - what install.sh's download_retroarch_content() itself downloads from. Used instead of
     RetroBIOS's targets/retroarch.json for an architecture RetroBIOS has no matching entry for (arm64:
     it only lists android-arm64-v8a/osx-arm64/ios-arm64, none of them this target)."""
-    url = BUILDBOT_INDEX.format(buildbot_arch=buildbot_arch)
+    url = BUILDBOT_INDEX.format(buildbot_os=buildbot_os, buildbot_arch=buildbot_arch)
     try:
         with urllib.request.urlopen(url, timeout=60) as resp:
             text = resp.read().decode("utf-8", "replace")
     except Exception as exc:  # noqa: BLE001
         sys.exit(f"cannot fetch the buildbot core list from {url}: {exc}")
-    suffix = "_libretro.so.zip"
     cores = {line.split()[-1][: -len(suffix)]
              for line in text.splitlines() if line.strip().endswith(suffix)}
     if not cores:
@@ -398,7 +401,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--arch", choices=sorted(ARCHES), default="armhf",
                          help="which target's core list to build the pack for: the Pi's armhf (default) or arm64, "
-                              "i386 (the PC stick), or psc, the console")
+                              "i386 (the PC stick), win64 (the Windows product), or psc, the console")
     parser.add_argument("--ref", default=RETROBIOS_REF, help="RetroBIOS commit or branch to read (default: the pinned one)")
     parser.add_argument("--out", default=None, help="where to write the manifest (default: payload_linux/system/"
                          "biospack.txt for armhf, biospack-arm64.txt for arm64, biospack-i386.txt for i386, "
@@ -413,6 +416,8 @@ def main():
     if args.arch == "psc":
         systems = dict(SYSTEMS, **PSC_SYSTEMS)
         exclude_prefixes, into = PSC_EXCLUDE_PREFIXES, "RetroArch/bios/"
+    elif args.arch == "win64":
+        into = "RetroArch/bin/system/"  # RetroArch's own tree: its system dir is inside it on Windows
 
     if args.check:
         sys.exit(0 if check_dir(args.out, args.check) else 1)
@@ -428,8 +433,9 @@ def main():
         target_cores, arch_label = psc_cores(PSC_CORES_LATEST), "the console"
     else:
         buildbot_arch = arch["buildbot_arch"]
-        target_cores = buildbot_cores(buildbot_arch)
-        arch_label = f"the {buildbot_arch} buildbot"
+        target_cores = buildbot_cores(buildbot_arch, arch.get("buildbot_os", "linux"),
+                                      arch.get("core_suffix", "_libretro.so.zip"))
+        arch_label = f"the {arch.get('buildbot_os', 'linux')}/{buildbot_arch} buildbot"
     unknown = sorted(s for s in systems if not any(system_of(e) == s for e in manifest["files"]))
     if unknown:
         print("warning: no files under these folders any more: " + ", ".join(unknown), file=sys.stderr)

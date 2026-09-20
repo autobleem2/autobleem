@@ -372,6 +372,7 @@ RUN ab-validate pcusb
 FROM pcusb AS all
 RUN apt-get update && apt-get install -y --no-install-recommends \
         mtools fdisk dosfstools uidmap grub-pc-bin grub-efi-ia32-bin grub-efi-amd64-bin grub-common util-linux \
+        p7zip-full nsis \
     && rm -rf /var/lib/apt/lists/*
 ARG E2FSPROGS_VERSION=1.47.2
 RUN cd /tmp \

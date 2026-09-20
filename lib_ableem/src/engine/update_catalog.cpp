@@ -146,6 +146,7 @@ bool PackCatalog::parse(const string &jsonText) {
         return false;
     manifestUrl = str(j, "manifest");
     date = str(j, "date");
+    version = str(j, "version");
     count = static_cast<int>(inum(j, "count"));
     totalBytes = num(j, "total_bytes");
     return true;

@@ -17,6 +17,11 @@
 #                                                                              -> psc/libs/ (newest date kept)
 #   tools/repo_publish.sh psc-apps dist/release/apps-psc-20260920.tar.gz dist/release/apps-psc-20260920.json
 #                                                                              -> psc/apps/ (newest date kept; tools/pack_psc_apps.py)
+#   tools/repo_publish.sh win-retroarch 1.22.2 build_retroarch/dist/retroarch-win64-1.22.2.tar.gz -> win/retroarch/1.22.2/
+#   tools/repo_publish.sh win-cores build_cores/dist/cores-win64-20260920.tar.gz    -> win/cores/ (the Windows product's
+#                                                                                      RetroArch, cores and BIOS list -
+#                                                                                      AutoBleemWinSetup reads them)
+#   tools/repo_publish.sh win-bios src/win/biospack-win64.txt                       -> win/bios/
 #   tools/repo_publish.sh psc-bios payload/RetroArch/bios/biospack.txt          -> psc/bios/ (the BIOS list the installer
 #                                                                                 fetches RetroBIOS's files by; the list only)
 #   tools/repo_publish.sh samples build_samples/samples-20260920.tar.gz build_samples/samples-20260920.json
@@ -74,6 +79,9 @@ case "$KIND" in
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;
     psc-apps)  [ $# -ge 1 ] || usage 1; DEST="psc/apps" ;;
     psc-bios)  [ $# -ge 1 ] || usage 1; DEST="psc/bios" ;;
+    win-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="win/retroarch/$VERSION" ;;
+    win-cores) [ $# -ge 1 ] || usage 1; DEST="win/cores" ;;
+    win-bios)  [ $# -ge 1 ] || usage 1; DEST="win/bios" ;;
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     pcsx)      [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-abnxt/$VERSION" ;;
     pcsx-ab)   [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-ab/$VERSION" ;;

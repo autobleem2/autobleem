@@ -62,6 +62,7 @@ struct PackCatalog {
     UpdateFile file;
     std::string manifestUrl;
     std::string date;
+    std::string version; // a versioned pack (win/retroarch: RetroArch's own version), "" for a dated one
     int count = 0;
     uint64_t totalBytes = 0;
     bool parse(const std::string &jsonText);

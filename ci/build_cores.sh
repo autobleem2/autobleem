@@ -7,6 +7,8 @@
 #   ci/build_cores.sh armhf            # buildbot's linux/armhf nightly
 #   ci/build_cores.sh arm64            # linux/aarch64 (buildbot's name for it)
 #   ci/build_cores.sh i386             # linux/x86 (the PC stick)
+#   ci/build_cores.sh win64            # windows/x86_64 (the Windows product: the .dll cores + info, no bundles -
+#                                      # libretro's RetroArch.7z carries the assets, autoconfig, database, ...)
 #   ci/build_cores.sh all
 #
 # Output: build_cores/dist/cores-<arch>-<YYYYMMDD>.tar.gz (+ .sha256), laid out as the RetroArch tree the
@@ -31,15 +33,20 @@ usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 banner() { echo; echo "==> $*"; }
 
 [ $# -eq 1 ] || usage
-case "$1" in armhf|arm64|i386|all) ;; *) usage ;; esac
+case "$1" in armhf|arm64|i386|win64|all) ;; *) usage ;; esac
 
 #*******************************
 # build_one
 #*******************************
 build_one() {
-    local arch="$1" ra_arch skip="$SKIP_CORES"
-    case "$arch" in armhf) ra_arch=armhf ;; arm64) ra_arch=aarch64 ;; i386) ra_arch=x86; skip="" ;; esac
-    local cores_url="$BASE/nightly/linux/$ra_arch/latest"
+    local arch="$1" ra_arch ra_os=linux skip="$SKIP_CORES" ext=so
+    case "$arch" in
+        armhf) ra_arch=armhf ;;
+        arm64) ra_arch=aarch64 ;;
+        i386)  ra_arch=x86; skip="" ;;
+        win64) ra_arch=x86_64; ra_os=windows; skip=""; ext=dll ;;
+    esac
+    local cores_url="$BASE/nightly/$ra_os/$ra_arch/latest"
     local stage="$WORK/stage-$arch" tmp="$WORK/tmp-$arch"
     local out="$DIST/cores-$arch-$DATE.tar.gz"
     rm -rf "$stage" "$tmp"
@@ -52,7 +59,7 @@ build_one() {
     banner "$arch: $total cores"
     while read -r _date _crc zip; do
         [ -n "$zip" ] || continue
-        name="${zip%_libretro.so.zip}"
+        name="${zip%_libretro.$ext.zip}"
         count=$((count + 1))
         if printf '%s\n' $skip | grep -qx "$name"; then
             echo "    [$count/$total] $zip - skipped"
@@ -65,10 +72,12 @@ build_one() {
         rm -f "$tmp/$zip"
     done < "$tmp/.index-extended"
 
-    # bundle -> where it unpacks, the same table as install.sh's download_retroarch_content()
-    local bundle dest
-    for bundle in info:info assets:assets autoconfig:autoconfig database-rdb:database/rdb \
-                  database-cursors:database/cursors cheats:cheats overlays:overlays shaders_glsl:shaders; do
+    # bundle -> where it unpacks, the same table as install.sh's download_retroarch_content(); the Windows
+    # pack takes the info files alone - libretro's RetroArch.7z ships the rest
+    local bundle dest bundles="info:info assets:assets autoconfig:autoconfig database-rdb:database/rdb \
+                  database-cursors:database/cursors cheats:cheats overlays:overlays shaders_glsl:shaders"
+    [ "$arch" != win64 ] || bundles="info:info"
+    for bundle in $bundles; do
         dest="${bundle#*:}"; bundle="${bundle%%:*}"
         banner "$arch: $bundle -> $dest/"
         mkdir -p "$stage/$dest"
@@ -83,7 +92,7 @@ build_one() {
     # cores.manifest lands in RetroArch/ on the Pi: the date on the first line, then one core per line
     {
         echo "# AutoBleem cores tarball $arch $DATE - name size sha256"
-        (cd "$stage/cores" && for f in *_libretro.so; do
+        (cd "$stage/cores" && for f in *_libretro.$ext; do
             printf '%s %s %s\n' "$f" "$(stat -c %s "$f")" "$(sha256sum "$f" | cut -d' ' -f1)"
         done)
     } > "$stage/cores.manifest"
@@ -100,6 +109,7 @@ if [ "$1" = all ]; then
     build_one armhf
     build_one arm64
     build_one i386
+    build_one win64
 else
     build_one "$1"
 fi

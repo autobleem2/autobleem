@@ -5,6 +5,8 @@
 #   docker/run.sh ci/build_retroarch.sh armhf            # the newest v* tag on github.com
 #   docker/run.sh ci/build_retroarch.sh arm64 v1.22.2    # that tag
 #   docker/run.sh ci/build_retroarch.sh i386             # the PC stick (i686, desktop OpenGL added to GLES)
+#   docker/run.sh ci/build_retroarch.sh win64            # the Windows product: nothing compiled - libretro's own
+#                                                        # x86_64 build (RetroArch.7z) repacked as a tarball
 #   docker/run.sh ci/build_retroarch.sh all              # every architecture
 #
 # Output: build_retroarch/dist/retroarch-<tag>-<arch>.tar.gz (+ .sha256) - `make DESTDIR=... install` of
@@ -33,7 +35,7 @@ banner() { echo; echo "==> $*"; }
 [ $# -ge 1 ] || usage
 ARCH="$1"
 TAG="${2:-}"
-case "$ARCH" in armhf|arm64|i386|all) ;; *) usage ;; esac
+case "$ARCH" in armhf|arm64|i386|win64|all) ;; *) usage ;; esac
 
 # the newest release tag, as install.sh finds it
 if [ -z "$TAG" ]; then
@@ -42,6 +44,43 @@ if [ -z "$TAG" ]; then
     [ -n "$TAG" ] || { echo "cannot find the latest RetroArch tag on github.com" >&2; exit 1; }
 fi
 banner "RetroArch $TAG"
+
+#*******************************
+# build_win64
+#*******************************
+# The Windows product runs libretro's own build: its RetroArch.7z (the portable archive - the setup exe asks
+# for administrator rights, which a per-user install has not got) fetched from buildbot's stable folder for
+# the tag, unpacked with 7z, its RetroArch-Win64/ top folder stripped, a VERSION file added, and tarred as
+# what AutoBleemWinSetup unpacks into <data>/RetroArch/bin (win/retroarch on the site). The cores are a
+# separate pack (ci/build_cores.sh win64).
+build_win64() {
+    local version="${TAG#v}" stage="$WORK/stage-win64" tmp="$WORK/tmp-win64"
+    local out="$DIST/retroarch-win64-$version.tar.gz"
+    local url="https://buildbot.libretro.com/stable/$version/windows/x86_64/RetroArch.7z"
+    local sevenzip
+    sevenzip="$(command -v 7z || command -v 7za || command -v 7zr || true)"
+    [ -n "$sevenzip" ] || { echo "no 7z on this machine (p7zip-full) - cannot unpack RetroArch.7z" >&2; exit 1; }
+    rm -rf "$stage" "$tmp"
+    mkdir -p "$stage" "$tmp" "$DIST"
+    banner "win64: $url"
+    wget -q -O "$tmp/RetroArch.7z" "$url"
+    "$sevenzip" x -y -o"$tmp" "$tmp/RetroArch.7z" >/dev/null
+    [ -f "$tmp/RetroArch-Win64/retroarch.exe" ] || { echo "no RetroArch-Win64/retroarch.exe in the archive" >&2; exit 1; }
+    mv "$tmp/RetroArch-Win64/"* "$stage/"
+    echo "$version" > "$stage/VERSION"
+    banner "win64: $out"
+    tar -C "$stage" --owner=0 --group=0 -czf "$out" .
+    (cd "$DIST" && sha256sum "$(basename "$out")" > "$(basename "$out").sha256")
+    ls -la "$out"
+    rm -rf "$tmp"
+}
+
+if [ "$ARCH" = win64 ]; then
+    mkdir -p "$DIST"
+    build_win64
+    banner "done: $DIST"
+    exit 0
+fi
 
 SRC="$WORK/RetroArch-$TAG"
 if [ ! -d "$SRC/.git" ]; then
@@ -115,6 +154,7 @@ if [ "$ARCH" = all ]; then
     build_one armhf
     build_one arm64
     build_one i386
+    build_win64
 else
     build_one "$ARCH"
 fi

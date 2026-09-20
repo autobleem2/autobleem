@@ -17,6 +17,11 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     psc/apps/latest.json               the newest pack of the console's third-party Apps (psc/apps/apps-psc-<date>.tar.gz)
     psc/bios/latest.json               the console's BIOS list (psc/bios/biospack.txt: what the installer fetches from
                                        RetroBIOS into RetroArch/bios - only the list is here, never a BIOS file)
+    win/retroarch/<v>/                 RetroArch for the Windows product: libretro's own x86_64 build repacked as
+                                       retroarch-win64-<v>.tar.gz (ci/build_retroarch.sh win64), the newest kept,
+                                       latest.json = the file plus "version"
+    win/cores/                         cores-win64-<date>.tar.gz (ci/build_cores.sh win64), the newest kept
+    win/bios/                          biospack-win64.txt, the Windows list (tools/biospack.py --arch win64)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
     samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
     emu/pcsx-ab/latest.json            the newest build of each emulator, one package per platform (emu/<name>/<version>/,
@@ -47,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 26
+INDEX_VERSION = 27
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -75,6 +80,9 @@ PLATFORM_ARCHES = {"rpi": ("armhf", "arm64"), "pc": ("i386",)}
 PSC_RETROARCH_RE = re.compile(r"^retroarch-psc-(?P<tag>v[0-9][0-9.]*-[0-9]+)\.zip$")
 PSC_CORES_RE = re.compile(r"^cores-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
+# the Windows product: libretro's own build repacked, its cores, its BIOS list (AutoBleemWinSetup reads them)
+WIN_RETROARCH_RE = re.compile(r"^retroarch-win64-(?P<version>[0-9][0-9.]*)\.tar\.gz$")
+WIN_CORES_RE = re.compile(r"^cores-win64-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 # the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
@@ -391,7 +399,12 @@ def index_psc_bios(repo, base_url):
     """psc/bios/biospack.txt - the console's BIOS manifest (tools/biospack.py --arch psc): one line per file,
     <sha256> <size> <url> <path>, the URLs pointing at RetroBIOS. latest.json says how many files and bytes
     the installer would fetch, and which RetroBIOS commit the list is from."""
-    path = os.path.join(repo, "psc", "bios", "biospack.txt")
+    return index_bios_list(repo, base_url, "psc", "biospack.txt")
+
+
+def index_bios_list(repo, base_url, platform, filename):
+    """<platform>/bios/<filename> -> <platform>/bios/latest.json (see index_psc_bios)"""
+    path = os.path.join(repo, platform, "bios", filename)
     if not os.path.isfile(path):
         return None
     entry = file_entry(repo, base_url, path)
@@ -410,8 +423,64 @@ def index_psc_bios(repo, base_url):
                 total += int(parts[1])
     entry["count"] = count
     entry["total_bytes"] = total
-    write_json(os.path.join(repo, "psc", "bios", "latest.json"), entry)
+    write_json(os.path.join(repo, platform, "bios", "latest.json"), entry)
     return entry
+
+
+#*******************************
+# the Windows product
+#*******************************
+def win_version_key(version):
+    return tuple(int(x) for x in re.findall(r"\d+", version)) or (0,)
+
+
+def index_win(repo, base_url):
+    """win/retroarch/<v>/retroarch-win64-<v>.tar.gz (libretro's Windows build repacked - the newest version
+    kept, latest.json = its entry plus "version"), win/cores/cores-win64-<date>.tar.gz (the newest kept,
+    latest.json = its entry plus "date") and win/bios/biospack-win64.txt (latest.json as for the console)
+    - what AutoBleemWinSetup fetches, each falling back to libretro's own servers when missing here."""
+    out = {}
+    root = os.path.join(repo, "win", "retroarch")
+    builds = {}
+    if os.path.isdir(root):
+        for version in os.listdir(root):
+            folder = os.path.join(root, version)
+            if not os.path.isdir(folder):
+                continue
+            note_published(folder)
+            for path in data_files(folder):
+                m = WIN_RETROARCH_RE.match(os.path.basename(path))
+                if m and m.group("version") == version:
+                    builds[version] = file_entry(repo, base_url, path)
+    if builds:
+        newest = max(builds, key=win_version_key)
+        prune([os.path.join(root, v) for v in builds if v != newest], [], "Windows RetroArch build")
+        entry = dict(builds[newest])
+        entry["version"] = newest
+        write_json(os.path.join(root, "latest.json"), entry)
+        out["retroarch"] = entry
+    root = os.path.join(repo, "win", "cores")
+    dated = {}
+    for path in data_files(root):
+        m = WIN_CORES_RE.match(os.path.basename(path))
+        if m:
+            dated[m.group("date")] = path
+    if dated:
+        newest = max(dated)
+        for date, path in dated.items():
+            if date != newest:
+                print("pruning cores tarball %s" % os.path.basename(path))
+                os.remove(path)
+                if os.path.isfile(path + ".sha256"):
+                    os.remove(path + ".sha256")
+        entry = file_entry(repo, base_url, dated[newest])
+        entry["date"] = newest
+        write_json(os.path.join(root, "latest.json"), entry)
+        out["cores"] = entry
+    bios = index_bios_list(repo, base_url, "win", "biospack-win64.txt")
+    if bios:
+        out["bios"] = bios
+    return out
 
 
 def index_psc_apps(repo, base_url):
@@ -1242,12 +1311,13 @@ def main():
     psc_libs = index_psc_libs(repo, base_url)
     psc_apps = index_psc_apps(repo, base_url)
     psc_bios = index_psc_bios(repo, base_url)
+    win = index_win(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
     pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
     pcsx = {name: b for name, b in pcsx.items() if b}
-    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
+    pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images, "win": win}
     for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx)),
                        ("rpi-install.html", render_rpi_install(base_url, images)),
                        ("pc-install.html", render_pc_install(base_url, pc_images))):
