@@ -398,20 +398,10 @@ std::string Input::mappingForDeviceIndex(int index) const {
     return result;
 }
 
-void Input::padDriverHints() {
-    // The pads through the kernel's own drivers (evdev), not SDL's hidapi driver: hidapi talks to a pad's
-    // USB HID reports itself, and a multi-mode pad (the Pi 400's "PS4/PC/PS3/Android" one, say) answers
-    // that by re-enumerating - the log showed it disconnect, come back as an "Xbox 360" pad, then as itself
-    // three seconds later, every time the launcher (re)opened it: at boot and after every game, where the
-    // resume-slot picker sat dead to the pad for those seconds. Nothing here needs what hidapi adds (rumble,
-    // the light bar). The hint dates from SDL 2.0.9; the console's 2.0.4 has no hidapi to turn off.
-#ifdef SDL_HINT_JOYSTICK_HIDAPI
-    SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI, "0");
-#endif
-}
-
 void Input::probePads() {
-    padDriverHints(); // the subsystem reads the hints again each time it comes up
+    // (SDL_HINT_JOYSTICK_HIDAPI=0 was tried here, 2026-09-21, against the Pi 400's pad re-enumerating for
+    // three seconds after every open - through evdev the same pad came up with another GUID and a mapping
+    // with Triangle and Square swapped; reverted, the delay is still open)
     SDL_InitSubSystem(SDL_INIT_JOYSTICK);
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     if (!impl->pads.empty()) {

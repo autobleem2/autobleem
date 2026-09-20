@@ -1768,12 +1768,13 @@ its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-s
 2.7x copy of the icon - unset = the original spot, so older themes are untouched. `launcher.colors.selection`
 (2026-09-21) is the picker's colour for the selected slot: a halo in it around the tile (the tile's own alpha, drawn
 larger twice with additive blending, so it follows any tile's shape) and the other tiles dimmed; unset = the original
-red tint of the selected tile, which only ever showed on a white tile (ab2's cyan tile made it invisible). **Pads go
-through the kernel's drivers, not SDL's hidapi** (`Input::padDriverHints()`, `SDL_HINT_JOYSTICK_HIDAPI=0`, before every
-init of the pad subsystem - Platform's constructor and `probePads()`): hidapi probes a pad's HID reports itself and
-the Pi 400's multi-mode "PS4/PC/PS3/Android" pad answered by re-enumerating - disconnect, back as an "Xbox 360" pad,
-back as itself three seconds later - every time the launcher opened it, at boot and after every game, which left the
-resume-slot picker dead to the pad for those seconds. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+red tint of the selected tile, which only ever showed on a white tile (ab2's cyan tile made it invisible). **Open: the
+pad is dead for 1-3 s after every game (and at boot) on the Pi 400** - its multi-mode "PS4/PC/PS3/Android" pad
+re-enumerates right after the launcher opens it (the log: disconnect, back as an "Xbox 360" pad a second later, back
+as itself three seconds after that), which is SDL's hidapi driver probing the pad's HID reports.
+`SDL_HINT_JOYSTICK_HIDAPI=0` (evdev instead) stopped the re-enumeration but the same pad then came up with another
+GUID and a mapping with Triangle/Square swapped - reverted the same day; a fix has to keep hidapi's mapping (a
+gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all). ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).

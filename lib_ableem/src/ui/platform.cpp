@@ -1,5 +1,4 @@
 #include "ableem/ui/platform.h"
-#include "ableem/ui/input.h"
 #include "sdl_common.h"
 #include <ableem/engine/log.h>
 #include <sstream>
@@ -77,7 +76,6 @@ Platform::Platform(const std::string &windowTitle, int logicalWidth, int logical
         throw std::runtime_error(std::string("SDL_Init failed: ") + SDL_GetError());
     }
     SDL_InitSubSystem(SDL_INIT_AUDIO);
-    Input::padDriverHints(); // before the pad subsystem's first init
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
 
     impl->windowTitle = windowTitle;
