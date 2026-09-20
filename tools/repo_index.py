@@ -23,6 +23,7 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
                                        rpi_imager_repo.json make_rpi_image.sh wrote next to them)
     index.html                         the landing page
     rpi-install.html                   the Raspberry Pi manual: which image for which Pi, the setup, games
+    pc-install.html                    the PC USB stick's manual: what it runs on, writing the stick, the setup
 
 Every file's sha256 comes from its `<name>.sha256` sidecar (sha256sum format) when there is one, else it
 is computed and the sidecar written.
@@ -44,7 +45,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 23
+INDEX_VERSION = 24
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -813,7 +814,8 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                    "<p>A 32-bit Debian appliance on a USB stick, the same as the Raspberry Pi's: write the image to a "
                    "stick of 8 GB or more (Rufus in DD mode, balenaEtcher, <code>dd</code>), boot the PC from it "
                    "(BIOS or UEFI, Secure Boot off) and the first boot sets AutoBleem up on the screen; the rest of "
-                   "the stick becomes the games partition.</p>")
+                   "the stick becomes the games partition. <a href=\"/pc-install.html\">The whole setup, step by "
+                   "step.</a></p>")
         rows = []
         for version in sorted(pc_images, key=version_key, reverse=True):
             for arch, f in sorted(pc_images[version].items()):
@@ -1032,6 +1034,99 @@ def render_rpi_install(base_url, images):
                % datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"))
     return "\n".join(out) + "\n"
 
+#*******************************
+# pc-install.html
+#*******************************
+def render_pc_install(base_url, images):
+    """The PC stick's manual: what it is, what it runs on, writing the image, the first boot, where games go."""
+    e = html.escape
+    newest = newest_of(images) if images else None
+    out = []
+    out.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">")
+    out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+    out.append("<title>AutoBleem on a PC USB stick</title><link rel=\"icon\" href=\"/assets/icon.png\">")
+    out.append("<style>%s</style></head><body>" % PAGE_CSS)
+    out.append("<div class=\"hero\"></div><main>")
+    out.append("<div class=\"panel\"><h1>AutoBleem on a PC USB stick</h1>"
+               "<p>AutoBleem on a USB stick that turns any PC into a PlayStation Classic-style console: boot the PC "
+               "from the stick and it comes up in the game carousel, with nothing of the PC's own disks touched. "
+               "Games live on the stick itself, on a partition any computer can write to. A 32-bit Linux is inside, "
+               "so an old PC works as well as a new one. <a href=\"/\">&larr; Downloads</a></p>")
+    if newest:
+        f = images[newest].get("i386")
+        if f:
+            out.append("<p><a class=\"dl\" href=\"%s\">%s (%s)</a>%s</p>" % (
+                e(f["url"]), e(f["name"]), human(f["size"]),
+                " - a development build" if is_prerelease(newest) else ""))
+    out.append("</div>")
+
+    out.append("<div class=\"panel\"><h2>You need</h2><ul>"
+               "<li>A PC with an <strong>Intel or AMD processor</strong> - anything from a Pentium M / Athlon XP "
+               "up, 32- or 64-bit; 1 GB of memory or more. The stick carries three Linux kernels and boots the one "
+               "the processor calls for, from a plain BIOS or from UEFI (32- or 64-bit).</li>"
+               "<li>A USB stick of <strong>8 GB or more</strong> - 32 GB and up for room for games (the system "
+               "takes 8 GB, the rest becomes the games partition).</li>"
+               "<li>A USB or Bluetooth gamepad - a DualShock 4, an Xbox pad, an 8BitDo, any pad Linux sees as a "
+               "game controller. The launcher is driven with the pad; a keyboard is only for the first boot.</li>"
+               "<li><strong>Internet on the first boot</strong> (a network cable, or WiFi - the setup asks): it "
+               "downloads RetroArch, its cores, the BIOS files and the cover databases.</li>"
+               "<li>A screen on HDMI or DisplayPort; the sound goes out the same cable.</li></ul>"
+               "<p><strong>Graphics:</strong> Intel and AMD graphics work out of the box. Nvidia cards run on the "
+               "open driver, which handles most of them; a very new one may show nothing - use another card or "
+               "the processor's own graphics.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Writing the stick</h2><ol>"
+               "<li>Download the image above (a <code>.img.xz</code> file).</li>"
+               "<li><strong>Windows:</strong> <a href=\"https://rufus.ie/\">Rufus</a> - pick the stick, pick the "
+               "image (Rufus reads .img.xz as it is), and when it asks, choose <em>Write in DD Image mode</em>. "
+               "<a href=\"https://etcher.balena.io/\">balenaEtcher</a> works as well, on every system.</li>"
+               "<li><strong>Linux / macOS:</strong> <code>xzcat autobleem-*.img.xz | sudo dd of=/dev/sdX bs=4M "
+               "status=progress</code> (the stick's device, not a partition of it - everything on the stick is "
+               "erased).</li></ol></div>")
+
+    out.append("<div class=\"panel\"><h2>Booting from it</h2>"
+               "<p>Plug the stick in and start the PC from it: the boot menu key at power-on (F12, F11, F8 or Esc "
+               "depending on the make - the PC's own screen says which), or the boot order in the BIOS/UEFI "
+               "setup. <strong>Secure Boot must be off</strong> in the UEFI setup: nothing on the stick is "
+               "signed. Both a BIOS (\"legacy\" / CSM) boot and a UEFI boot work.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>What the first boot does</h2>"
+               "<p>The first boot is the installation, on the screen, watched and answered with the keyboard:</p><ol>"
+               "<li>With no network cable it asks for a WiFi network and its password.</li>"
+               "<li>It asks whether to install <strong>RetroArch</strong> (the other systems - NES, SNES, Mega "
+               "Drive, arcade and about a hundred more; close to a GB of downloads). A minute with no answer "
+               "means yes. Without it AutoBleem is a PlayStation-only machine.</li>"
+               "<li>The system partition is grown to 8 GB and <strong>the rest of the stick becomes the "
+               "<code>AUTOBLEEM</code> games partition</strong> (exFAT).</li>"
+               "<li>RetroArch, its cores, the BIOS files, the cover databases and the sample games are "
+               "downloaded; the boot logo is set up.</li>"
+               "<li>The PC reboots into the launcher.</li></ol>"
+               "<p>Something failed? The screen says so and the same boot runs again next time. The log is "
+               "<code>/var/log/autobleem-firstboot-install.log</code> on the stick's Linux partition.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Games</h2>"
+               "<p>Plug the stick into any computer: the <code>AUTOBLEEM</code> drive is the games partition. "
+               "PlayStation games go into <code>Games/</code>, a folder per game (<code>.cue</code>+<code>.bin</code>, "
+               "<code>.pbp</code>, <code>.chd</code>) - or drop the files straight into <code>Games/</code> and the "
+               "launcher sorts them into folders. The other systems' games go into <code>RetroArch/roms/</code>, a "
+               "folder per system, named as they are already there. The launcher scans on every start and while "
+               "it runs; covers and titles come from the databases and, when online, from libretro's thumbnails.</p>"
+               "<p>Your own PlayStation BIOS (<code>romw.bin</code>, <code>romJP.bin</code>) goes into "
+               "<code>System/Bios/</code>; the setup put the standard ones there already.</p></div>")
+
+    out.append("<div class=\"panel\"><h2>Options and updates</h2>"
+               "<p><code>autobleem.txt</code> on the stick's small first partition holds the first boot's "
+               "options (the system partition's size, RetroArch yes/no, what to download) - edit it on any "
+               "computer before the first boot; the comments in it explain each key.</p>"
+               "<p>The launcher checks this site for updates once a day (<em>Options &rarr; Updates</em>, "
+               "and <em>Software Update</em> in the L2+R2 menu) and installs one from inside, the games "
+               "untouched.</p>"
+               "<p>For a terminal: <strong>ssh</strong> is on from the first boot, user <code>autobleem</code>, "
+               "password <code>autobleem</code> - change it (<code>passwd</code>). On the PC itself, Alt+F2 "
+               "gives a login prompt next to the launcher.</p></div>")
+    out.append("</main></body></html>")
+    return "\n".join(out)
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1060,7 +1155,8 @@ def main():
     samples = index_samples(repo, base_url)
     pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images}
     for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc)),
-                       ("rpi-install.html", render_rpi_install(base_url, images))):
+                       ("rpi-install.html", render_rpi_install(base_url, images)),
+                       ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(page)
