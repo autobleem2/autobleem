@@ -78,7 +78,9 @@ if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
     ab_add_test(test_abflashkit_core apps/test_abflashkit_core.cpp LIBS abflashkit_core)
 endif()
-# UpdateRoms is a host program, and the tests are host-only too (the target is defined after this
-# directory; CMake resolves the name at generate time)
-ab_add_test(test_updateroms_core apps/test_updateroms_core.cpp LIBS updateroms_core)
-ab_add_test(test_installer_core apps/test_installer_core.cpp LIBS installer_core)
+# UpdateRoms and the installer are PC programs, built for dev and win (the targets are defined after this
+# directory; CMake resolves the names at generate time) - not for an appliance whose tests run (pcusb)
+if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "win")
+    ab_add_test(test_updateroms_core apps/test_updateroms_core.cpp LIBS updateroms_core)
+    ab_add_test(test_installer_core apps/test_installer_core.cpp LIBS installer_core)
+endif()
