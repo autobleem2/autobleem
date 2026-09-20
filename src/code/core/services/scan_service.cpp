@@ -78,14 +78,14 @@ ScanService::~ScanService() {
 // ScanService::fingerprintFilePath
 //*******************************
 string ScanService::fingerprintFilePath() {
-    return Env::getWorkingPath() + sep + "games.fingerprint";
+    return Env::getPathToStateDir() + sep + "games.fingerprint";
 }
 
 //*******************************
 // ScanService::romsFingerprintFilePath
 //*******************************
 string ScanService::romsFingerprintFilePath() {
-    return Env::getWorkingPath() + sep + "roms.fingerprint";
+    return Env::getPathToStateDir() + sep + "roms.fingerprint";
 }
 
 //*******************************

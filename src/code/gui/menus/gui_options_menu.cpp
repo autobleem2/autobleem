@@ -282,7 +282,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 //*******************************
 void GuiOptions::doCircle_Pressed() {
     app.audio().cancel.play();
-    string cfg_path = Env::getWorkingPath() + sep + "config.ini";
+    string cfg_path = Env::getPathToStateDir() + sep + "config.ini";
     app.config().inifile.load(cfg_path); // restore the original config.ini settings
     app.lang().load(Env::getPathToLangDir(), app.config().inifile.values["language"]); // restore the original lang
     gui->loadAssets();                                                                 // restore original themes

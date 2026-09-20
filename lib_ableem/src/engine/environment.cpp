@@ -16,6 +16,7 @@ string gamesDir;
 string regionalDbFile;
 string internalDbFile;
 string workingPath;
+string stateDir; // empty: the working path
 string appDir;
 string kernelConfigDir;
 string sonyDataPath;
@@ -52,6 +53,9 @@ void Environment::setKernelConfigDir(const string &path) {
     kernelConfigDir = path;
 }
 
+void Environment::setStateDir(const string &path) {
+    stateDir = path;
+}
 void Environment::setWorkingPath(const string &path) {
     workingPath = path;
 }
@@ -171,6 +175,9 @@ string Environment::getWorkingPath() {
         return workingPath;
     char temp[PATH_MAX];
     return (getcwd(temp, sizeof(temp)) ? string(temp) : string(""));
+}
+string Environment::getPathToStateDir() {
+    return stateDir.empty() ? getWorkingPath() : stateDir;
 }
 
 //*******************************

@@ -79,7 +79,7 @@ void GameScanner::writeSubDirRows(GamesHierarchy &gamesHierarchy, GameDatabase &
 // GameScanner::writeAutobleemList
 //*******************************
 void GameScanner::writeAutobleemList(const UsbGames &games, const map<string, int> &idByPath) {
-    string path = Environment::getWorkingPath() + sep + "autobleem.list";
+    string path = Environment::getPathToStateDir() + sep + "autobleem.list";
     ofstream outfile;
     outfile.open(path);
     if (!DirEntry::checkWritable(outfile, path))
@@ -341,7 +341,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 
     UsbGames allGames = gamesHierarchy.getAllGames();
 
-    string badGameFilePath = Environment::getWorkingPath() + sep + "gamesThatFailedVerifyCheck.txt";
+    string badGameFilePath = Environment::getPathToStateDir() + sep + "gamesThatFailedVerifyCheck.txt";
     ofstream badGameFile;
     badGameFile.open(badGameFilePath.c_str(), ios::binary);
     DirEntry::checkWritable(badGameFile, badGameFilePath); // diagnostics only, keep going
@@ -538,7 +538,7 @@ void GameScanner::scanGamesDirectory(GamesHierarchy &gamesHierarchy, MetadataLoo
 
     gamesHierarchy.printRowDisplayGameInfo(false);
 
-    string path = Environment::getWorkingPath() + sep + "gameHierarchy_afterScanAndRemovingDuplicates.txt";
+    string path = Environment::getPathToStateDir() + sep + "gameHierarchy_afterScanAndRemovingDuplicates.txt";
     ofstream outfile;
     outfile.open(path);
     DirEntry::checkWritable(outfile, path); // diagnostics only, keep going

@@ -173,6 +173,8 @@ add_library(ab_core STATIC
         src/code/core/services/environment.h
         src/code/core/services/environment_setup.cpp
         src/code/core/services/environment_setup.h
+        src/code/core/services/windows_host.cpp
+        src/code/core/services/windows_host.h
         src/code/core/services/clock.cpp
         src/code/core/services/clock.h
         src/code/core/services/config.h
@@ -219,8 +221,9 @@ if (AB_ONLINE_UPDATE)
             src/code/core/services/update_service.h)
 endif()
 if (WIN32)
-    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop
-    target_link_libraries(ab_core iphlpapi ws2_32)
+    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop;
+    # WindowsHost: the Documents folder (SHGetKnownFolderPath) and the registry
+    target_link_libraries(ab_core iphlpapi ws2_32 shell32 ole32 advapi32)
 endif()
 
 # core/version.h: the version, commit and build time, regenerated on every build (see the script). The

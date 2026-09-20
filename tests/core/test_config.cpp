@@ -157,3 +157,19 @@ TEST_CASE("Config writes config.ini into the working path, not the current direc
 
     CHECK(ableem::DirEntry::exists(tmp.at("config.ini")));
 }
+
+TEST_CASE("Config writes config.ini into the state dir when one is set apart from the working path") {
+    TempDir tmp("config_state_dir");
+    EnvFixture env;
+    env.setWorkingPath(tmp.makeSubDir("program"));
+    ableem::Environment::setStateDir(tmp.makeSubDir("data/System"));
+
+    Config config;
+    config.inifile.values["theme"] = "aergb";
+    config.save();
+
+    CHECK_FALSE(ableem::DirEntry::exists(tmp.at("program/config.ini")));
+    CHECK(ableem::DirEntry::exists(tmp.at("data/System/config.ini")));
+    Config again;
+    CHECK(again.inifile.values["theme"] == "aergb");
+}

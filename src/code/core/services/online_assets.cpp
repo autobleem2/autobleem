@@ -138,7 +138,7 @@ const vector<string> &OnlineAssets::serverIndex(const string &dbName) {
     vector<string> &names = indexCache_[dbName];
     const string url =
         DirEntry::removeSeparatorFromEndOfPath(config_.thumbnailsBaseUrl) + "/" + urlEncode(dbName) + "/Named_Boxarts/";
-    const string tmp = Env::getWorkingPath() + sep + ".online-index.html";
+    const string tmp = Env::getPathToStateDir() + sep + ".online-index.html";
     if (fetch(url, tmp)) {
         ifstream in(tmp, ios::binary);
         const string html((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
@@ -229,7 +229,7 @@ bool OnlineAssets::probe(bool again) {
         return online_;
     const bool first = !probed_;
     probed_ = true;
-    const string probeFile = Env::getWorkingPath() + sep + ".online-probe";
+    const string probeFile = Env::getPathToStateDir() + sep + ".online-probe";
     online_ = fetch(config_.thumbnailsBaseUrl + "/", probeFile);
     DirEntry::removeFile(probeFile);
     // the first answer is news; a re-probe after a server miss is routine unless the answer changed

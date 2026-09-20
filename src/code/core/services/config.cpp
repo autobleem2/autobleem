@@ -13,7 +13,7 @@
 // Config::Config()
 //*******************************
 Config::Config() {
-    std::string path = Env::getWorkingPath() + sep + "config.ini";
+    std::string path = Env::getPathToStateDir() + sep + "config.ini";
     inifile.load(path);
 
     // these are no longer used
@@ -108,6 +108,6 @@ Config::Config() {
 //*******************************
 void Config::save() {
     inifile.values["pcsx"] = "bleemsync";
-    std::string path = Env::getWorkingPath() + sep + "config.ini";
+    std::string path = Env::getPathToStateDir() + sep + "config.ini";
     inifile.save(path);
 }

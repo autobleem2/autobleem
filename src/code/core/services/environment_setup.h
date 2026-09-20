@@ -10,6 +10,19 @@
 #include <string>
 
 //******************
+// HostFacts
+//******************
+// What the Windows product's zero-argument start is decided from (EnvironmentSetup::fromWindowsInstall):
+// where the program is, and where the user's data tree was put. Filled in by WindowsHost on Windows; a
+// test fills it by hand - the decision itself has no Windows in it.
+struct HostFacts {
+    std::string programDir;          // the folder the exe is in - the resources are next to it
+    std::string registryDataRoot;    // HKCU\Software\AutoBleem\DataRoot, what the installer wrote; "" = none
+    std::string pointerFileDataRoot; // the first line of <programDir>/dataroot.txt (a portable copy); "" = none
+    std::string documentsDir;        // the user's Documents folder - the default home of the data tree
+};
+
+//******************
 // EnvironmentSetup
 //******************
 class EnvironmentSetup {
@@ -24,8 +37,17 @@ public:
     // directory (internal.db next to the binary, ../db for the covers)
     static void fromDbAndGames(const std::string &regionalDb, const std::string &gamesDir);
 
+    // the Windows product (AB_PLATFORM_WIN), started with no arguments: the data tree is the registry's
+    // DataRoot, else the pointer file's, else <Documents>/AutoBleem - made when missing, with the shipped
+    // themes copied in the first time; the resources are the program's own folder, and what the program
+    // writes about itself (config.ini, the scan's fingerprints) goes to <data>/System. Returns the data
+    // root; "" (with the reason logged) when it cannot be made.
+    static std::string fromWindowsInstall(const HostFacts &facts);
+    static const char *const DefaultDataFolder; // "AutoBleem" - under Documents
+
     // autobleem-gui's command line: `<root>` or `<regional.db> <games dir>`; false, with the USAGE line
-    // logged, for anything else. Options like --sysinfo are the caller's to strip first.
+    // logged, for anything else (on the Windows product no argument at all is the normal case:
+    // fromWindowsInstall with WindowsHost's facts). Options like --sysinfo are the caller's to strip first.
     static bool fromArguments(int argc, char *argv[]);
 
     // a tool in usb:/Apps/<tool>: an optional `<root>` (on the console it is /media and run.sh passes

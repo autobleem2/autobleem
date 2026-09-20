@@ -56,6 +56,7 @@ private:
         std::vector<std::string> retroArchBinaries;
         std::string coreExtension, downloadCommand, repoUrl, updateDownloadCommand, retroArchCatalog, pcsxDir;
         bool directLaunch = false;
+        std::string stateDir; // "" = the working path
     };
 
     static Roots capture() {
@@ -80,7 +81,8 @@ private:
                 : E::getPathToRetroarchBiosDir(),
             ::Environment::retroArchBinaries(), E::getRetroarchCoreExtension(), ::Environment::downloadCommand(),
             ::Environment::repoUrl(), ::Environment::updateDownloadCommand(), ::Environment::retroArchCatalog(),
-            ::Environment::pcsxDir(), ::Environment::directLaunch()};
+            ::Environment::pcsxDir(), ::Environment::directLaunch(),
+            E::getPathToStateDir() == E::getWorkingPath() ? std::string() : E::getPathToStateDir()};
     }
 
     static void restore(const Roots &r) {
@@ -106,6 +108,7 @@ private:
         ::Environment::setUpdateSource(r.repoUrl, r.updateDownloadCommand, r.retroArchCatalog);
         ::Environment::setPcsxDir(r.pcsxDir);
         ::Environment::setDirectLaunch(r.directLaunch);
+        E::setStateDir(r.stateDir);
     }
 
     Roots saved_;
