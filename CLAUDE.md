@@ -730,6 +730,54 @@ port targets 32-bit Trixie (and Bookworm).
   atomically (`.tmp` + `DirEntry::replaceFile`) and `IniFile::load` warns about an empty file, and `Config`
   defaults `theme` to `ab2` in code (tested). Audio was fine all along (the owner's mistake).
 
+## The online update (2026-09-20, a Pi and the dev hosts - never the console)
+
+The launcher keeps itself current from the download repository, the way the owner asked: **check at
+start and once a day, say so, ask, and on a yes fetch everything and re-run the installer with the
+first-boot screen**. The console has no network and updates from a stick, so **none of this is compiled
+into the console build**: the CMake option `AB_ONLINE_UPDATE` (on by default) is switched off in the
+PSC branch of the root CMakeLists, and every hook in the launcher sits behind `#ifdef AB_ONLINE_UPDATE`.
+
+- **`UpdateService`** (`core/services/update_service.*`, `App::updates()`, configured by
+  `App::applyUpdateSetting()` at start and after Options): a worker thread fetches
+  `releases/unstable.json` (the "latest" channel - the one pre-release; falls back to `latest.json`
+  when there is none) or `releases/latest.json` ("stable") plus `rpi/retroarch/latest.json` through the
+  platform's `download_command`, and `compare()` calls a version that is not the installed one an update
+  - the site keeps one pre-release, so different is newer; AutoBleem's installed version is
+  `Version::VERSION-GIT_HASH` on the latest channel, the tag alone on stable; RetroArch's is the
+  `/usr/local/share/autobleem/retroarch.version` stamp (no stamp = not checked). `checkDue()` is once
+  per `CheckInterval` (24 h) with `System/update.json` remembering the last check, the postponement and
+  the skipped versions (`ableem::UpdateState`). `startDownload()` fetches each tarball into
+  `System/Updates/` with the platform's **`update_download_command`** (no short timeout - `rpi.ini`,
+  `pc.ini`; `repo_url` next to it, both new `PlatformConfig` keys -> `Env::repoUrl()` /
+  `updateDownloadCommand()`), checks it with the new engine **`ableem::Sha256`** against the catalog,
+  and writes `pending.json` (`ableem::PendingUpdate`) for the Pi. Progress is the `.part` file's size.
+  The JSON side lives in the engine (`engine/update_catalog.*`: `ReleaseCatalog`, `RetroArchCatalog`,
+  `UpdateState`, `PendingUpdate`) - the app includes no JSON library. Tested in
+  `tests/core/test_update_service.cpp` against a fake site.
+- **Options -> "Updates"**: `stable` | `latest` | `off` (config.ini `updates`; the default follows the
+  build - a `-pre` version takes `latest`). **Shown on a Pi only** for now (the owner's call).
+- **The screens** (`evoui/screens/evoui_update.*`): `GuiUpdatePrompt` - "Update available", the
+  versions and sizes, *Update now / Remind me tomorrow / Skip this version* (Circle = later);
+  `GuiUpdateProgress` - the check, the download bar, the outcome. `GuiLauncher::pollUpdates()` (once a
+  frame, next to the scan poll) raises the prompt when a check lands with something not skipped or
+  postponed; the L2+R2 menu's **"Software Update"** item (`loop_softwareUpdate()`) checks on the spot.
+  `offerUpdate()` runs the download and then, on a Pi, leaves the launcher with the new
+  **`MENU_OPTION_UPDATE` (6)** in `autobleem_cfg.sh`; a dev host stops at a "downloaded into
+  System/Updates" message (try it with `AB_UPDATE_PLATFORM=rpi` and `AB_UPDATE_RETROARCH_VERSION=...` in
+  the environment - verified on the PC against the live site: prompt, 48 MB download, pending.json).
+- **The Pi's apply step**: `autobleem-session.sh` sees `AB_SELECTION=6` and runs
+  **`autobleem-update`** (`payload_rpi/system/autobleem-update.sh`, installed to `/usr/local/bin` by
+  `install.sh`'s `install_update_helper()` together with the first-boot screen, its splash and a copy
+  of the installer under `/usr/local/share/autobleem/`): it unpacks the new package and runs its
+  **`install.sh --update`** (`--yes`, RetroArch `prebuilt` only where the stamp says one is installed,
+  nothing repartitioned, everything already there kept - config.ini, cores, BIOS, samples - and the
+  initramfs not rebuilt when the splash files are unchanged) piped through the progress screen on
+  tty1, with **`--retroarch-tarball`** pointing at the pre-downloaded build (a RetroArch-only update
+  uses the installed release's installer copy). Success removes `System/Updates`; the session loop then
+  starts the new launcher. Log: `System/Logs/update.log`. **Unrun on a Pi** as of this writing - the
+  next image build carries it, and the first real update is the test.
+
 ## RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20)
 
 The console runs RetroArch from **our own build**, not RetroBoot's any more - a separate private repo,

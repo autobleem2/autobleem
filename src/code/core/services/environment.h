@@ -53,6 +53,11 @@ struct Environment : ableem::Environment {
     // cannot - what OnlineAssets runs
     static void setDownloadCommand(const std::string &command);
     static const std::string &downloadCommand();
+    // PlatformConfig's repo_url and update_download_command: the download repository the online update
+    // checks, and the command that fetches a package from it (no short timeout); "" = no update here
+    static void setUpdateSource(const std::string &repoUrl, const std::string &downloadCommand);
+    static const std::string &repoUrl();
+    static const std::string &updateDownloadCommand();
 
     // the gamecontrollerdb.txt files SDL's pad mappings come from, first existing wins: the kernel's
     // (/etc/autobleem on the console - what the pscbios wizard writes when it is there), then the shipped

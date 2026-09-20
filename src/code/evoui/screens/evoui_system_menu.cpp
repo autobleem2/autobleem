@@ -29,6 +29,10 @@ void GuiSystemMenu::init() {
     items.push_back(
         {SystemMenuAction::HardwareInfo, _("Hardware Information"), _("Controller and system information")});
     items.push_back({SystemMenuAction::Options, _("Options"), _("Customize AutoBleem settings")});
+#ifdef AB_ONLINE_UPDATE
+    items.push_back({SystemMenuAction::SoftwareUpdate, _("Software Update"),
+                     updateAvailable ? _("An update is available") : _("Check the download site for a newer version")});
+#endif
     items.push_back({SystemMenuAction::About, _("About"), _("About AutoBleem")});
     items.push_back({SystemMenuAction::PowerOff, _("Power Off"), _("Safely power off the console")});
     selected = 0;

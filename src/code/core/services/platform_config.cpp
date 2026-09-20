@@ -72,6 +72,8 @@ PlatformConfig PlatformConfig::load(const string &iniPath) {
     if (!value("retroarch_roms_dir").empty())
         cfg.retroarchRomsDir = value("retroarch_roms_dir");
     cfg.downloadCommand = value("download_command");
+    cfg.repoUrl = value("repo_url");
+    cfg.updateDownloadCommand = value("update_download_command");
     cfg.usbRoot = value("usb_root");
     return cfg;
 }
@@ -90,4 +92,5 @@ void PlatformConfig::apply() const {
     Env::setRetroArchBinaries(binaries);
     Env::setRetroarchRomsDir(under(Env::getPathToUSBRoot(), retroarchRomsDir));
     Env::setDownloadCommand(downloadCommand);
+    Env::setUpdateSource(repoUrl, updateDownloadCommand);
 }

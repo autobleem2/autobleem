@@ -39,6 +39,10 @@ REPO_URL="${AB_REPO_URL:-https://autobleem.retromenele.pl}"   # --repo: the down
 DO_DOWNLOADS=1                  # --no-downloads: skip the RetroArch cores/assets from buildbot.libretro.com
 DO_BIOS=1                       # --no-bios: skip the BIOS pack (system/biospack*.txt, from github.com/Abdess/retrobios)
 DO_SAMPLES=1                    # --no-samples: skip the sample games (samples/ on the download repository)
+UPDATE_MODE=0                   # --update: a re-run over an installed Pi from a newer package (the launcher's
+                                # online update, system/autobleem-update.sh): unattended, RetroArch replaced from
+                                # the repository only when it is installed, nothing repartitioned
+RETROARCH_TARBALL=""            # --retroarch-tarball: a prebuilt RetroArch already downloaded (the online update)
 THUMBNAILS=none                 # --thumbnails: none (the launcher fetches each game's cover itself) | boxarts (the whole
                                 # PS1 set, ~350 MB, for covers offline) | all (+ title screens, snaps)
 RA_ROOT=""                      # $DATA_MOUNT/RetroArch once the mount point is known
@@ -130,6 +134,11 @@ Usage: sudo bash install.sh [options]
                        PS1 game in Games/ and, with RetroArch, NES/SNES/Mega Drive homebrew in RetroArch/roms/,
                        each with its box art - so the shelf is not empty on the first start; SAMPLES.md on the
                        data partition says what they are and under which licences)
+  --update             the online update's re-run over an installed Pi (autobleem-update): --yes, RetroArch
+                       from the repository when one is installed here (--retroarch none otherwise), no
+                       repartitioning; everything already there is kept (config.ini, cores, BIOS, samples)
+  --retroarch-tarball FILE  install this prebuilt RetroArch tarball (already downloaded and checked) instead
+                       of fetching one - what the online update hands over
   --yes                answer every confirmation with YES (unattended runs; --shrink-root repartitions!)
   --dry-run            print what would happen and change nothing
   -h, --help           this text
@@ -158,6 +167,8 @@ parse_args() {
             --no-downloads)   DO_DOWNLOADS=0; shift ;;
             --no-bios)        DO_BIOS=0; shift ;;
             --no-samples)     DO_SAMPLES=0; shift ;;
+            --update)         UPDATE_MODE=1; ASSUME_YES=1; shift ;;
+            --retroarch-tarball) RETROARCH_TARBALL="${2:?--retroarch-tarball needs a file}"; shift 2 ;;
             --thumbnails)     THUMBNAILS="${2:?--thumbnails needs boxarts, all or none}"; shift 2 ;;
             --yes)            ASSUME_YES=1; shift ;;
             --dry-run)        DRY_RUN=1; shift ;;
@@ -173,6 +184,19 @@ parse_args() {
 # Everything that would make the rest pointless, checked before anything is changed.
 preflight() {
     [ "$(id -u)" -eq 0 ] || die "run this with sudo"
+
+    if [ "$UPDATE_MODE" -eq 1 ]; then
+        # the online update: over what is here. RetroArch is replaced from the repository only where the
+        # prebuilt/source stamp says one is installed (an apt one stays apt's, a PS1-only Pi stays that)
+        SHRINK_ROOT_GIB=""
+        GROW_ROOT_GIB=""
+        if [ -n "$RETROARCH_TARBALL" ] || { [ -f /usr/local/share/autobleem/retroarch.version ] && [ -x /usr/local/bin/retroarch ]; }; then
+            RETROARCH_MODE=prebuilt
+        else
+            RETROARCH_MODE=none
+        fi
+        log "Update mode: RetroArch $RETROARCH_MODE, nothing repartitioned"
+    fi
 
     if [ -r /proc/device-tree/model ]; then
         log "Model: $(tr -d '\0' < /proc/device-tree/model)"
@@ -312,6 +336,16 @@ install_retroarch_prebuilt() {
     local stamp=/usr/local/share/autobleem/retroarch.version
     local latest=/tmp/autobleem-retroarch-latest.json
     local version url sha
+    if [ -n "$RETROARCH_TARBALL" ]; then
+        # the online update downloaded and checked it already (UpdateService): unpack it as it is
+        [ -f "$RETROARCH_TARBALL" ] || { warn "no such file: $RETROARCH_TARBALL"; return 1; }
+        log "RetroArch: installing $RETROARCH_TARBALL"
+        run tar -xzf "$RETROARCH_TARBALL" -C / --no-same-owner || return 1
+        install_retroarch_depends
+        hash -r
+        log "RetroArch: installed $(cat "$stamp" 2>/dev/null || echo "?") as /usr/local/bin/retroarch"
+        return 0
+    fi
     command -v python3 >/dev/null 2>&1 || { warn "python3 is needed to read the repository's index"; return 1; }
     log "RetroArch: asking $REPO_URL for a build for $ARCH"
     if ! wget -q -O "$latest" "$REPO_URL/rpi/retroarch/latest.json"; then
@@ -344,16 +378,21 @@ PY
     mv -f "$tarball.part" "$tarball"
     run tar -xzf "$tarball" -C / --no-same-owner || { rm -f "$tarball"; return 1; }
     rm -f "$tarball"
-    if [ "$DO_PACKAGES" -eq 1 ] && [ -f /usr/local/share/autobleem/retroarch.depends ]; then
-        local pkgs=() p
-        while read -r p; do
-            [ -n "$p" ] && pkgs+=("$(pkg_first_available "$p" "${p}t64")")
-        done < /usr/local/share/autobleem/retroarch.depends
-        run apt-get install -y "${pkgs[@]}" \
-            || warn "not every library RetroArch needs could be installed (${pkgs[*]}) - it may not start"
-    fi
+    install_retroarch_depends
     hash -r
     log "RetroArch: installed $version as /usr/local/bin/retroarch"
+}
+
+# the runtime packages a prebuilt RetroArch lists in retroarch.depends (Bookworm names; the t64 spelling
+# is tried too, for Trixie)
+install_retroarch_depends() {
+    [ "$DO_PACKAGES" -eq 1 ] && [ -f /usr/local/share/autobleem/retroarch.depends ] || return 0
+    local pkgs=() p
+    while read -r p; do
+        [ -n "$p" ] && pkgs+=("$(pkg_first_available "$p" "${p}t64")")
+    done < /usr/local/share/autobleem/retroarch.depends
+    run apt-get install -y "${pkgs[@]}" \
+        || warn "not every library RetroArch needs could be installed (${pkgs[*]}) - it may not start"
 }
 
 install_retroarch_apt() {
@@ -1346,6 +1385,25 @@ install_service() {
     run systemctl set-default multi-user.target
     run systemctl daemon-reload
     run systemctl enable autobleem.service
+
+    install_update_helper
+}
+
+#*******************************
+# install_update_helper
+#*******************************
+# The launcher's online update (its Options -> Updates, CLAUDE.md "The online update") ends with the
+# session loop running autobleem-update over what the launcher downloaded: that script, the first boot's
+# progress screen and its logo, and a copy of this installer (with system/, for a RetroArch-only update that
+# has no new package to take install.sh from) go under /usr/local.
+install_update_helper() {
+    local share=/usr/local/share/autobleem
+    run install -d -m 0755 "$share" "$share/installer/system"
+    run install -m 0755 "$SCRIPT_DIR/system/autobleem-update.sh" /usr/local/bin/autobleem-update
+    run install -m 0644 "$SCRIPT_DIR/system/autobleem-install-ui.py" "$share/autobleem-install-ui.py"
+    run install -m 0644 "$SCRIPT_DIR/system/plymouth/splash.png" "$share/splash.png"
+    run install -m 0755 "$SCRIPT_DIR/install.sh" "$share/installer/install.sh"
+    run cp -r "$SCRIPT_DIR/system/." "$share/installer/system/"
 }
 
 #*******************************
@@ -1366,6 +1424,13 @@ install_boot_splash() {
     if [ ! -f "$src/splash.png" ]; then
         warn "no system/plymouth/splash.png in the package - no boot splash"
         BOOT_SPLASH=0
+        return 0
+    fi
+    # an update with the same theme files keeps the initramfs it has (rebuilding every kernel's takes minutes)
+    if [ "$UPDATE_MODE" -eq 1 ] && cmp -s "$src/splash.png" "$PLYMOUTH_THEME_DIR/splash.png" \
+       && cmp -s "$src/autobleem.script" "$PLYMOUTH_THEME_DIR/autobleem.script" \
+       && cmp -s "$src/autobleem.plymouth" "$PLYMOUTH_THEME_DIR/autobleem.plymouth"; then
+        log "Boot splash unchanged - keeping the initramfs"
         return 0
     fi
     if ! command -v plymouth-set-default-theme >/dev/null 2>&1; then
