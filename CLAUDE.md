@@ -799,7 +799,7 @@ RetroArch session (300 ms after pcsx) and `run()` treats a Quit on the console a
 only, shipped packed next to the launcher with `src/resources/splash/{retroarch,autobleem}.jpg`) shows a
 picture in the same full-screen window the launcher and RetroArch use - `absplash IMAGE --until-exists F |
 --until-gone F | --seconds S [--timeout S]`. On the stick RetroBoot's `launch_rfa_rom.sh` (patched by hand,
-copy at `E:	mp\launch_rfa_rom.sh.ab2` - the model for our own launch script) runs it: the RetroArch
+copy at `E:/tmp/launch_rfa_rom.sh.ab2` - the model for our own launch script) runs it: the RetroArch
 picture from launch until RetroArch's log says `Found display driver` (+1 s, `/tmp/.ra_up`), the AutoBleem
 2 picture from RetroArch's exit until the launcher's window is back - `launchGame()` removes
 `/tmp/.abload` after `display(true)`; `rc/launch_rb.sh` no longer does. **The reason nothing showed for a
