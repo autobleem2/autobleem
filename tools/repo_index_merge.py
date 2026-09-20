@@ -45,11 +45,13 @@ def write(path, text):
         f.write(text)
 
 
-def git(args, cwd):
-    """stdout of a git command, or None when git or the repository is not there."""
+def git(args, cwd, timeout=None):
+    """stdout of a git command, or None when git or the repository is not there (or it timed out); never
+    a prompt - a fetch that would ask for credentials fails instead"""
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0", GIT_ASKPASS="", SSH_ASKPASS="")
     try:
-        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True)
-    except OSError:
+        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True, env=env, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout if r.returncode == 0 else None
 
@@ -84,7 +86,8 @@ def main():
     mine_base = None
     if git(["rev-parse", "--is-inside-work-tree"], tree):
         # the stored base revs are merge-bases with origin/develop, so a fetch makes them all known here
-        git(["fetch", "-q", "origin"], tree)
+        # (best effort: a fetch this git cannot do without asking - no credential store - is skipped)
+        git(["fetch", "-q", "origin"], tree, timeout=30)
         for ref in ("origin/develop", "develop"):
             mine_rev = (git(["merge-base", "HEAD", ref], tree) or "").strip() or None
             if mine_rev:
