@@ -382,4 +382,6 @@ endif()
 # targets have the launcher's own scan)
 if (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
     add_subdirectory(apps/updateroms)
+    # and the installer, which makes the stick from a PC
+    add_subdirectory(apps/installer)
 endif()

@@ -61,6 +61,7 @@ build_rpi_image/
 build_sys/
 build_win/
 build_updateroms/
+build_installer/
 db/
 
 # large release assets tools/install_autobleem.py pulls from (cover DBs, the RetroBoot/RetroArch

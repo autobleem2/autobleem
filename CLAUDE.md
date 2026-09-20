@@ -924,16 +924,29 @@ cores cover (`PSC_SYSTEMS`: Saturn, Dreamcast, DS, PC-FX, Atari ST, CPC, PSP, DO
 keeps `dc/` - 719 files, 302 MB against the Pi's 647/188. `.gitignore`'s `bios/` rule has an exception for
 that folder's two files.
 
-**What is left**: the **PC installer** (read `psc/retroarch/latest.json`, `psc/cores/latest.json`,
-`psc/libs/latest.json`, `psc/apps/latest.json` and `psc/bios/latest.json` (the BIOS list - the installer downloads the files from RetroBIOS), take the stick's file system from the release's `autobleem-psc-<v>.tar.gz` (no `RetroArch/`, no cover databases - the installer fetches `db/`; the zip has both, the console has no network), lay `RetroArch/bin`
-- binary, cores, info, libretro's assets/autoconfig/database bundles, the theme, a generated cfg with the
-directory keys above - `RetroArch/bios`, `Autobleem/lib` and `Apps` on the stick; `tools/install_autobleem.py`
-is the base, `UpdateRoms.exe` the neighbour); UPX in `make
+**The PC installer exists** (2026-09-20, `apps/installer/`, its own CLAUDE.md): `AutoBleemInstaller.exe`,
+a Win32 program like UpdateRoms with the Pi first-boot screen's look (the splash picture on top, the
+questions as checkboxes, then two progress bars and the log), shipped as `AutoBleemInstaller-<v>.zip` with
+the release's `autobleem-psc-<v>.tar.gz` next to it (`tools/make_installer_bundle.sh <tarball>`; `PACKAGE_KINDS`
+"installer" on the site, INDEX_VERSION 21). It picks a removable drive (formats it FAT32/exFAT through
+`format.com`, or `fat32format.exe` beside it for FAT32 over 32 GB), unpacks the tarball, fetches the ticked
+cover databases (all three by default), RetroArch with cores/libs/apps/libretro bundles (off by default),
+the BIOS files by `psc/bios` (needs RetroArch), the samples; run again it **updates** - the package's own
+files replaced, everything of the user's kept, `config.ini` too - and an **AutoBleem 1.0 / NG stick is
+brought to the new layout first** (the `layout` stage's steps in C++, `legacy_layout.*`; RetroBoot's
+playlists dropped for the launcher's scan to rebuild). The engine got `TarArchive` (`.tar.gz` through
+miniz, `tests/support/tar_builder.h` writes them for the tests), `PackCatalog`/`PscRetroArchCatalog` for
+the `psc/*/latest.json` shapes and `DirEntry::createDirs`; `DirEntry::copyFile` had returned the opposite
+of what it did (no caller until now). Verified on the PC over the real site into a folder (covers in 25 s;
+RetroArch + all 719 BIOS files + samples, 1.7 GB); **not yet on a real stick or the console**.
+
+**What is left**: the installer on a real stick and a console boot of the result; UPX in `make
 package-retroarch` (-> `v1.22.2-2`); building our own cores when wanted.
 
 ## Console tools (`apps/`, 2026-09-18) - and one PC tool
 
-`apps/updateroms/` (2026-09-19) is the odd one out: a **PC** program, `UpdateRoms.exe`, built on the dev
+`apps/installer/` (2026-09-20) and `apps/updateroms/` (2026-09-19) are the odd ones out: **PC** programs. The
+installer is described under "RetroArch for the console" and in its own CLAUDE.md. UpdateRoms is a program, `UpdateRoms.exe`, built on the dev
 hosts only (root `CMakeLists.txt` skips it for `arm`/`aarch64`), that scans a console stick or a Pi card
 sitting in a card reader - `UpdateRomsJob` (core, tested) over the same `RetroArchScanner`/`CoreInfoTable`/
 `OnlineAssets` the launcher's scan uses, writing the target's paths. **A plain Win32 window, no SDL, no

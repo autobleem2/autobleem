@@ -349,6 +349,19 @@ bool DirEntry::createDir(const string &_name) {
 }
 
 //*******************************
+// DirEntry::createDirs
+//*******************************
+bool DirEntry::createDirs(const string &dir) {
+    if (dir.empty() || isDirectory(dir))
+        return true;
+    size_t slash = dir.find_last_of("/\\");
+    if (slash != string::npos && slash > 0 && !createDirs(dir.substr(0, slash)))
+        return false;
+    createDir(dir);
+    return isDirectory(dir);
+}
+
+//*******************************
 // DirEntry::rmDir
 //*******************************
 int DirEntry::rmDir(string path) {
@@ -430,7 +443,8 @@ bool DirEntry::replaceFile(const std::string &pathFrom, const std::string &pathT
 // DirEntry::copyFile
 //*******************************
 bool DirEntry::copyFile(const std::string &pathFrom, const std::string &pathTo) {
-    return DirEntry::copy(pathFrom, pathTo) == 0;
+    // copy() answers true on success (2026-09-20: this used to compare it with 0 - and had no caller)
+    return DirEntry::copy(pathFrom, pathTo);
 }
 
 //*******************************
