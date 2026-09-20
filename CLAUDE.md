@@ -476,10 +476,16 @@ draws on `/dev/fb0` (RGB565 or XRGB, from sysfs) with nothing but python3's stdl
 "Setting up AutoBleem", bar 1 = the phase (from `@@phase N/9 text` lines `install.sh`'s `phase()` prints
 with `AB_UI_MARKERS=1`), bar 2 = the last percentage seen in the output (the download loops, wget) or a
 pulse, and a box with the last 8 lines (a `` progress line rewrites the box's last line). The first-boot
-script pipes `install.sh` through `tee` (the log) and the screen; `--keep-graphics` on success (the reboot
-takes the picture down), `text_mode()` on failure. ~40 ms a frame on a PC, 4 fps; `--render out.ppm
---fonts DIR` draws one frame on a PC for a look. The image build injects the script and the splash into
-`/opt/autobleem-image/`. Verified on the Pi 400 with the real installer.
+script pipes `install.sh` through `tee` (the log) and the screen. **The questions are on the same screen**
+(the owner's ask, the same day): `menu` / `input` / `message` modes draw a panel under the logo and read
+keys raw from tty8 (termios; arrows, Enter, Esc = exit 3, a one-character item key as a hotkey, a countdown
+to `--default`); the script's `ui_menu`/`ui_input`/`ui_message` wrappers call them and fall back to the old
+text prompts without a framebuffer or when the program fails (any exit but 0/3 sets `UI_OK=0`). The console
+stays in graphics mode from the first dialog to the reboot; `text_mode()` before a failure message. The
+WiFi flow (country, scan list, hidden SSID, password, Ethernet, skip) and the RetroArch question are all
+dialogs now. ~40 ms a frame on a PC; `--render out.ppm --fonts DIR` draws one frame on a PC for a look.
+The image build injects the script and the splash into `/opt/autobleem-image/`. Verified on the Pi 400:
+the real installer through the progress screen, and the three dialog kinds with the Pi's keyboard.
 `autobleem-firstboot.service` (`WantedBy=multi-user.target`, `ConditionPathExists=!/opt/autobleem-image/.done`,
 `After=multi-user.target cloud-final.service userconfig.service`, `StandardInput/Output=tty` on
 **`/dev/tty8`**, its own VT, switched to with `chvt 8` and back with `chvt 1`) **owns the screen and keyboard
