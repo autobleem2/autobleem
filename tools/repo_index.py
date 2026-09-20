@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 28
+INDEX_VERSION = 29
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -746,6 +746,15 @@ nav.tabs a.active{background:var(--panel);color:var(--cyan);border-color:var(--c
 body.js section.tab{display:none}
 body.js section.tab.active{display:block}
 body.js section.tab h2.plat{display:none}
+nav.subtabs{display:flex;flex-wrap:wrap;gap:.4rem;margin:1rem 0 .6rem}
+nav.subtabs a{padding:.3rem .9rem;border:1px solid var(--line);border-radius:999px;background:rgba(4,22,56,.5);
+  color:var(--dim);font-size:.9rem;letter-spacing:.04em}
+nav.subtabs a:hover{color:#fff;text-decoration:none}
+nav.subtabs a.active{background:var(--panel);color:var(--cyan);border-color:var(--cyan)}
+h3.subtab{font-size:1.2rem;text-transform:none;letter-spacing:0;color:#fff;margin:1.6rem 0 .2rem}
+body.js section.subtab{display:none}
+body.js section.subtab.active{display:block}
+body.js section.subtab h3.subtab{display:none}
 ul,ol{line-height:1.55;padding-left:1.4rem}li{margin:.3rem 0}
 footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 """
@@ -805,11 +814,11 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
     out.append("<div class=\"hero\"></div><main>")
     out.append("<div class=\"panel\"><h1>Downloads</h1>"
                "<p><a href=\"https://github.com/autobleem/AutoBleem2\">AutoBleem</a>, the game launcher for the "
-               "PlayStation Classic and the Raspberry Pi.</p>"
+               "PlayStation Classic, the Raspberry Pi and the PC - as a bootable USB stick or a Windows program.</p>"
                "<p>Each platform's tab has two parts:</p>"
                "<ul class=\"what\">"
                "<li><b>Install</b> - what you install from: the console's USB stick package, the Pi images, the "
-               "Windows programs.</li>"
+               "PC stick image, the Windows installer.</li>"
                "<li><b>Build inputs</b> - the pieces the installers, the image build and the CI fetch from here: "
                "RetroArch builds, cores, libraries, apps, the cover databases.</li>"
                "</ul>"
@@ -943,24 +952,15 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
         out.append("<p>Nothing published yet.</p>")
     out.append("</div>")
 
-    # ---- PC ----
+    # ---- PC: two products, two sub-tabs (tabbed() splits the section on the h3.subtab headings) ----
     out.append("<h2 class=\"plat\" id=\"pc\">PC</h2>")
-    out.append("<div class=\"panel\"><h2>Install</h2>"
-               "<p>Two Windows programs:</p>"
-               "<ul class=\"what\">"
-               "<li><b>The launcher</b> - AutoBleem itself, for a look on a PC.</li>"
-               "<li><b>UpdateRoms</b> - prepares a console stick or a Pi card in a card reader: the playlists, "
-               "names from RetroArch's databases, box art.</li>"
-               "</ul>")
-    block = release_block(("win", "updateroms"))
-    out += block if block else ["<p>Nothing published yet.</p>"]
-    out.append("</div>")
+    pc = pc or {}
     # the PC USB stick: the image a user writes to a stick (Install), and under it what it installs and
     # updates from - the tarball, the i386 RetroArch build, the cores (Build inputs)
-    pc = pc or {}
+    out.append("<h3 class=\"subtab\" id=\"pc-usb\">PC USB stick</h3>")
     pc_images = pc.get("images") or {}
     if pc_images:
-        out.append("<div class=\"panel\"><h2>PC USB stick</h2>"
+        out.append("<div class=\"panel\"><h2>Install</h2>"
                    "<p>A 32-bit Debian appliance on a USB stick, the same as the Raspberry Pi's: write the image to a "
                    "stick of 8 GB or more (Rufus in DD mode, balenaEtcher, <code>dd</code>), boot the PC from it "
                    "(BIOS or UEFI, Secure Boot off) and the first boot sets AutoBleem up on the screen; the rest of "
@@ -973,11 +973,13 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                 rows.append(row(label, f))
         out.append(table(rows, ("Version", "Image", "")))
         out.append("</div>")
+    else:
+        out.append("<div class=\"panel\"><h2>Install</h2><p>No stick image published yet.</p></div>")
     block = release_block(("pcusb",))
     pc_builds = pc.get("builds") or {}
     pc_cores = pc.get("cores") or {}
     if block or pc_builds or pc_cores:
-        out.append("<div class=\"panel inputs\"><h2>PC USB stick - build inputs</h2>"
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
                    "<p>What the stick's first boot and the launcher's update fetch: the package (unpack it on a minimal "
                    "Debian 12 i386 and run <code>sudo bash install.sh</code> to install by hand), RetroArch built for "
                    "i386 (<a href=\"/pc/retroarch/latest.json\">latest.json</a>) and the cores tarball "
@@ -991,6 +993,48 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
             rows.append(row("cores, %s (%s)" % (arch, date_of(f["date"])), f))
         if rows:
             out.append(table(rows))
+        out.append("</div>")
+
+    # the Windows product: the installer (Install), the portable folder and the two tools next to it, and
+    # what the setup helper fetches - libretro's RetroArch repacked, the cores, the BIOS list (Build inputs)
+    out.append("<h3 class=\"subtab\" id=\"pc-windows\">Windows</h3>")
+    out.append("<div class=\"panel\"><h2>Install</h2>"
+               "<p>AutoBleem as a Windows program: run the installer - it asks for nothing more than a folder for "
+               "the games, installs for your user alone (no administrator rights) and, if you tick it, fetches "
+               "RetroArch with every core so the other systems' games play too. The launcher runs full screen, "
+               "like on the console; Esc or the menu's Power Off leaves it. It keeps itself up to date from "
+               "here (Options -> Updates).</p>"
+               "<ul class=\"what\">"
+               "<li><b>AutoBleemSetup</b> - the installer (SmartScreen: <i>More info -> Run anyway</i>; it is not "
+               "signed).</li>"
+               "<li><b>Portable</b> - the same program as a folder for a stick or a drive: rename "
+               "<code>dataroot.txt.example</code> to <code>dataroot.txt</code> and name the games folder in "
+               "it.</li>"
+               "<li><b>UpdateRoms</b> - prepares a console stick or a Pi card in a card reader: the playlists, "
+               "names from RetroArch's databases, box art.</li>"
+               "<li><b>The launcher</b> zip - AutoBleem's development build, for a look at a stick's tree on a "
+               "PC (<code>autobleem-gui.exe &lt;root&gt;</code>).</li>"
+               "</ul>")
+    block = release_block(("win-setup", "win-product", "updateroms", "win"))
+    out += block if block else ["<p>Nothing published yet.</p>"]
+    out.append("</div>")
+    win = pc.get("win") or {}
+    if win:
+        out.append("<div class=\"panel inputs\"><h2>Build inputs</h2>"
+                   "<p>What the installer's setup step fetches (each with a fallback to libretro's own servers when "
+                   "missing here): RetroArch for Windows - libretro's build, repacked "
+                   "(<a href=\"/win/retroarch/latest.json\">latest.json</a>), the cores "
+                   "(<a href=\"/win/cores/latest.json\">latest.json</a>) and the BIOS list "
+                   "(<a href=\"/win/bios/latest.json\">latest.json</a> - the files themselves come from RetroBIOS).</p>")
+        rows = []
+        if win.get("retroarch"):
+            rows.append(row("RetroArch %s, Windows x86_64" % win["retroarch"]["version"], win["retroarch"]))
+        if win.get("cores"):
+            rows.append(row("cores, Windows x86_64 (%s)" % date_of(win["cores"]["date"]), win["cores"]))
+        if win.get("bios"):
+            rows.append(row("BIOS list (%d files, %d MB)" % (win["bios"]["count"], win["bios"]["total_bytes"] // (1024 * 1024)),
+                            win["bios"]))
+        out.append(table(rows))
         out.append("</div>")
 
     # ---- shared build inputs ----
@@ -1054,22 +1098,58 @@ def tabbed(out):
     tabs = [(rest[i], rest[i + 1], rest[i + 2]) for i in range(0, len(rest), 3)]
     bar = "<nav class=\"tabs\" role=\"tablist\">" + "".join(
         "<a href=\"#%s\" data-tab=\"%s\" role=\"tab\">%s</a>" % (tid, tid, title) for tid, title, _ in tabs) + "</nav>"
+
+    def subtabbed(parent, body):
+        """a section with <h3 class="subtab" id=...> headings becomes a pill bar and one <section
+        class="subtab"> per heading (the PC's two products); one without is returned as it is"""
+        sub_parts = re.split(r'<h3 class="subtab" id="([a-z-]+)">([^<]+)</h3>', body)
+        if len(sub_parts) < 3:
+            return body
+        intro, sub_rest = sub_parts[0], sub_parts[1:]
+        subs = [(sub_rest[i], sub_rest[i + 1], sub_rest[i + 2]) for i in range(0, len(sub_rest), 3)]
+        sub_bar = "<nav class=\"subtabs\" role=\"tablist\">" + "".join(
+            "<a href=\"#%s\" data-subtab=\"%s\" data-parent=\"%s\" role=\"tab\">%s</a>" % (sid, sid, parent, title)
+            for sid, title, _ in subs) + "</nav>"
+        return intro + sub_bar + "".join(
+            "<section class=\"subtab\" id=\"%s\" data-parent=\"%s\"><h3 class=\"subtab\">%s</h3>%s</section>"
+            % (sid, parent, title, sub_body) for sid, title, sub_body in subs)
+
     sections = "".join(
-        "<section class=\"tab\" id=\"%s\"><h2 class=\"plat\">%s</h2>%s</section>" % (tid, title, body)
+        "<section class=\"tab\" id=\"%s\"><h2 class=\"plat\">%s</h2>%s</section>" % (tid, title, subtabbed(tid, body))
         for tid, title, body in tabs)
     script = """<script>
 (function(){
   var tabs=document.querySelectorAll('nav.tabs a'), secs=document.querySelectorAll('section.tab');
+  var subs=document.querySelectorAll('section.subtab'), subLinks=document.querySelectorAll('nav.subtabs a');
   if(!tabs.length) return;
   document.body.classList.add('js');
+  function showSub(id){
+    var parent=null;
+    subs.forEach(function(s){ if(s.id===id) parent=s.dataset.parent; });
+    if(!parent) return false;
+    subs.forEach(function(s){ if(s.dataset.parent===parent) s.classList.toggle('active', s.id===id); });
+    subLinks.forEach(function(a){ if(a.dataset.parent===parent) a.classList.toggle('active', a.dataset.subtab===id); });
+    return parent;
+  }
   function show(id){
+    var parent=showSub(id);
+    if(parent) id=parent;
     var found=false;
     secs.forEach(function(s){ var on=(s.id===id); s.classList.toggle('active',on); if(on) found=true; });
     if(!found){ show(secs[0].id); return; }
     tabs.forEach(function(a){ a.classList.toggle('active', a.dataset.tab===id); });
+    // a plain section shows its first sub-tab
+    var first=null;
+    subs.forEach(function(s){ if(s.dataset.parent===id && !first) first=s; });
+    if(first && !parent){
+      var any=false; subs.forEach(function(s){ if(s.dataset.parent===id && s.classList.contains('active')) any=true; });
+      if(!any) showSub(first.id);
+    }
   }
   tabs.forEach(function(a){ a.addEventListener('click', function(ev){
     ev.preventDefault(); history.replaceState(null,'','#'+a.dataset.tab); show(a.dataset.tab); }); });
+  subLinks.forEach(function(a){ a.addEventListener('click', function(ev){
+    ev.preventDefault(); history.replaceState(null,'','#'+a.dataset.subtab); show(a.dataset.subtab); }); });
   window.addEventListener('hashchange', function(){ show(location.hash.slice(1)); });
   show(location.hash.slice(1));
 })();
