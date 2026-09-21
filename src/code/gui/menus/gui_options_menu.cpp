@@ -10,9 +10,9 @@ using namespace std;
 string GuiOptions::getStatusLine() {
     auto id = lines[selected].id;
     if (id == CFG_THEME || id == CFG_MUSIC)
-        return "|@X| " + _("OK") + "     " + "|@O| " + _("Cancel") + "  " + "|@Start|   " + _("Random") + "|";
+        return "|@O| " + _("Go back") + "  " + "|@Start|   " + _("Random") + "|";
     else
-        return "|@X| " + _("OK") + "     " + "|@O| " + _("Cancel") + "|";
+        return "|@O| " + _("Go back") + "|";
 }
 
 //*******************************
@@ -280,25 +280,21 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 //*******************************
 // GuiOptions::doCircle_Pressed
 //*******************************
+// Circle leaves with the settings as they are on screen, as every other screen does - there is no
+// "back without saving" here any more (it used to be Cross = save, Circle = discard)
 void GuiOptions::doCircle_Pressed() {
-    app.audio().cancel.play();
-    string cfg_path = Env::getPathToStateDir() + sep + "config.ini";
-    app.config().inifile.load(cfg_path); // restore the original config.ini settings
-    app.lang().load(Env::getPathToLangDir(), app.config().inifile.values["language"]); // restore the original lang
-    gui->loadAssets();                                                                 // restore original themes
-    menuVisible = false;
-    exitCode = -1;
-}
-
-//*******************************
-// GuiOptions::doCross_Pressed
-//*******************************
-void GuiOptions::doCross_Pressed() {
     app.audio().cancel.play();
     app.config().save();
     menuVisible = false;
     exitCode = 0;
 }
+
+//*******************************
+// GuiOptions::doCross_Pressed
+//*******************************
+// the rows are changed with Left/Right (and Start for a random theme or track); Cross does nothing, as in
+// the game editor
+void GuiOptions::doCross_Pressed() {}
 
 //*******************************
 // GuiOptions::doJoyRight
