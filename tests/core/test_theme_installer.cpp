@@ -146,7 +146,6 @@ TEST_CASE("Theme::load() installs a dropped zip and can then load it, converting
     TempDir tmp("installer");
     env.setWorkingPath(tmp.path());
     env.setThemesDir(tmp.makeSubDir("themes"));
-    env.setSonyDataPath(tmp.makeSubDir("sony"));
     tmp.writeFile("themes/default/theme.json", "{ \"classic\": { \"background\": \"bg.png\", \"menuLines\": 12 } }");
     tmp.writeFile("themes/default/bg.png", "x");
     tmp.writeFile("themes/retro.zip", ZIP_FIXTURE(NESTED_ZIP));

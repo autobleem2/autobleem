@@ -14,7 +14,7 @@
       "h": 180
     },
     "font": {
-      "file": "zrnic.ttf",
+      "file": "saira-semicondensed-medium.ttf",
       "size": 20
     },
     "menuLines": 13,
@@ -65,10 +65,6 @@
     "memcardManager": {
       "grid": "images/memcard_grid.png",
       "pencil": "images/memcard_pencil.png"
-    },
-    "fonts": {
-      "medium": "font/SST-Medium.ttf",
-      "bold": "font/SST-Bold.ttf"
     }
   },
   "sounds": {

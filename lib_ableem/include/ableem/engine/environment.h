@@ -30,7 +30,6 @@ struct Environment {
     // the AutoBleem kernel's own configuration folder on the console (/etc/autobleem: its gamecontrollerdb.txt,
     // ssid.cfg); "" - the default - where there is no such kernel (a Pi, a dev host)
     static void setKernelConfigDir(const std::string &path);
-    static void setSonyDataPath(const std::string &path);     // the console's own data (fonts): /usr/sony/share/data
     static void setThemesDir(const std::string &path);        // usb:/Themes
     static void setCoversDbDir(const std::string &path);      // where coversU/P/J.db are
     static void setInternalGamesDir(const std::string &path); // the console's built-in games; default "/gaadata"
@@ -84,8 +83,8 @@ struct Environment {
     static std::string getPathToAppLangDir();         // app:/lang - a tool's own translation files
     static std::string getPathToMemcardTemplateDir(); // working:/memcard - the blank card1.mcd/card2.mcd
     static std::string getPathToLangDir();            // working:/lang - the <Language>.txt translation files
-    static std::string getSonyPath();
-    static std::string getSonyFontPath(); // sony:/font
+    static std::string getPathToFontsDir();           // working:/fonts - the shipped fonts (the launcher's
+                                                      // Open Sans pair, Noto Sans SC for Chinese)
 
     static std::string getPathToThemesDir();
     static std::string getPathToCoversDBDir();

@@ -37,7 +37,6 @@ public:
     void setWorkingPath(const std::string &p) { ableem::Environment::setWorkingPath(p); }
     void setAppDir(const std::string &p) { ableem::Environment::setAppDir(p); }
     void setThemesDir(const std::string &p) { ableem::Environment::setThemesDir(p); }
-    void setSonyDataPath(const std::string &p) { ableem::Environment::setSonyDataPath(p); }
     void setCoversDbDir(const std::string &p) { ableem::Environment::setCoversDbDir(p); }
     void setRegionalDbFile(const std::string &p) { ableem::Environment::setRegionalDbFile(p); }
     void setInternalDbFile(const std::string &p) { ableem::Environment::setInternalDbFile(p); }
@@ -50,7 +49,7 @@ public:
 private:
     struct Roots {
         std::string usbRoot, gamesDir, regionalDbFile, internalDbFile, workingPath, appDir, kernelConfigDir;
-        std::string sonyDataPath, themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
+        std::string themesDir, coversDbDir, internalGamesDir, retroarchDir, retroarchCoreFile;
         std::string retroarchRomsDir;
         std::string retroarchBiosDir;
         std::vector<std::string> retroArchBinaries;
@@ -64,8 +63,8 @@ private:
         using E = ableem::Environment;
         return Roots{
             E::getPathToUSBRoot(), E::getPathToGamesDir(), E::getPathToRegionalDBFile(), E::getPathToInternalDBFile(),
-            E::getWorkingPath(), E::getAppDir(), E::getPathToKernelConfigDir(), E::getSonyPath(),
-            E::getPathToThemesDir(), E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
+            E::getWorkingPath(), E::getAppDir(), E::getPathToKernelConfigDir(), E::getPathToThemesDir(),
+            E::getPathToCoversDBDir(), E::getPathToInternalGamesDir(),
             // an explicit override is kept as such; a derived one is "" so the derivation survives
             E::getPathToRetroarchDir() == E::getPathToUSBRoot() + ableem::sep + "RetroArch" + ableem::sep + "bin"
                 ? std::string()
@@ -95,7 +94,6 @@ private:
         E::setWorkingPath(r.workingPath);
         E::setAppDir(r.appDir);
         E::setKernelConfigDir(r.kernelConfigDir);
-        E::setSonyDataPath(r.sonyDataPath);
         E::setThemesDir(r.themesDir);
         E::setCoversDbDir(r.coversDbDir);
         E::setInternalGamesDir(r.internalGamesDir);

@@ -19,7 +19,6 @@ string workingPath;
 string stateDir; // empty: the working path
 string appDir;
 string kernelConfigDir;
-string sonyDataPath;
 string themesDir;
 string coversDbDir;
 string internalGamesDir = "/gaadata";
@@ -58,9 +57,6 @@ void Environment::setStateDir(const string &path) {
 }
 void Environment::setWorkingPath(const string &path) {
     workingPath = path;
-}
-void Environment::setSonyDataPath(const string &path) {
-    sonyDataPath = path;
 }
 void Environment::setThemesDir(const string &path) {
     themesDir = path;
@@ -213,13 +209,10 @@ string Environment::getPathToLangDir() {
 }
 
 //*******************************
-// Environment::getSonyPath / getSonyFontPath
+// Environment::getPathToFontsDir
 //*******************************
-string Environment::getSonyPath() {
-    return sonyDataPath;
-}
-string Environment::getSonyFontPath() {
-    return getSonyPath() + sep + "font";
+string Environment::getPathToFontsDir() {
+    return getWorkingPath() + sep + "fonts";
 }
 
 //*******************************

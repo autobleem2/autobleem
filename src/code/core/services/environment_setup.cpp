@@ -24,10 +24,7 @@ void EnvironmentSetup::fromRoot(const string &root) {
     Env::setWorkingPath(root + sep + "Autobleem/bin/autobleem");
     Env::setThemesDir(root + sep + "Themes");
     Env::setCoversDbDir(root + sep + "Autobleem/bin/db");
-#ifdef AB_ROOT_RELATIVE_LAYOUT
-    Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
-#else
-    Env::setSonyDataPath("/usr/sony/share/data");
+#ifndef AB_ROOT_RELATIVE_LAYOUT
     Env::setKernelConfigDir("/etc/autobleem");
 #endif
     applyPlatformConfig();
@@ -42,10 +39,8 @@ void EnvironmentSetup::fromDbAndGames(const string &regionalDb, const string &ga
     Env::setRegionalDbFile(regionalDb);
 #ifdef AB_ROOT_RELATIVE_LAYOUT
     Env::setInternalDbFile("internal.db"); // it's in the same dir as the autobleem-gui app you are debugging
-    Env::setSonyDataPath(Env::getWorkingPath() + sep + "sony");
 #else
     Env::setInternalDbFile("/media/System/Databases/internal.db");
-    Env::setSonyDataPath("/usr/sony/share/data");
 #endif
     // the working path stays the current dir (Env::getWorkingPath() falls back to getcwd)
     Env::setThemesDir(Env::getWorkingPath() + sep + "Themes");
@@ -117,7 +112,6 @@ string EnvironmentSetup::fromWindowsInstall(const HostFacts &facts) {
     Env::setStateDir(root + sep + "System");
     Env::setThemesDir(root + sep + "Themes");
     Env::setCoversDbDir(root + sep + "System/Databases");
-    Env::setSonyDataPath(facts.programDir + sep + "sony");
     applyPlatformConfig();
     return root;
 }

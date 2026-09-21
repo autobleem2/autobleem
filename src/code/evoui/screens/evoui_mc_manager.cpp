@@ -23,7 +23,7 @@ void GuiMcManager::loadAssets() {
     shared_ptr<Gui> gui(Gui::getInstance());
     mcGrid = ableem::Texture::loadFile(renderer, app.theme().launcher().memcardManager.grid);
     mcPencil = ableem::Texture::loadFile(renderer, app.theme().launcher().memcardManager.pencil);
-    fontJIS = Fonts::openNewSharedCachedFont(Env::getWorkingPath() + sep + "japanese.ttf", 20, renderer);
+    fontJIS = Fonts::openNewSharedCachedFont(Env::getPathToFontsDir() + sep + "NotoSansSC-Regular.otf", 20, renderer);
 
     memcard1 = std::make_unique<CardEdit>(renderer);
     memcard2 = std::make_unique<CardEdit>(renderer);

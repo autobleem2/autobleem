@@ -12,17 +12,13 @@ using ableem::Texture;
 // ThemeAssets::ThemeAssets
 //*******************************
 ThemeAssets::ThemeAssets(ableem::Renderer &renderer, Theme &theme, Config &config)
-    : renderer_(renderer), theme_(theme), config_(config) {
-    sonyFonts.openAllFonts(Env::getSonyFontPath() + sep + "SST-Medium.ttf",
-                           Env::getSonyFontPath() + sep + "SST-Bold.ttf", renderer_);
-}
+    : renderer_(renderer), theme_(theme), config_(config) {}
 
 //*******************************
 // ThemeAssets::load
 //*******************************
 void ThemeAssets::unload() {
     themeFonts.closeAll();
-    sonyFonts.closeAll();
     themeFont = ableem::Font();
     backgroundImg = Texture();
     logo = Texture();
@@ -81,7 +77,8 @@ void ThemeAssets::load() {
     buttonTextureMap["Enter"] = Texture::loadFile(renderer_, b.enter);
     buttonTextureMap["Tab"] = Texture::loadFile(renderer_, b.tab);
 
-    // a theme without launcher fonts (and a default theme without them either) gets the console's own
+    // a theme without launcher fonts (and a default theme without them either) gets the shipped pair -
+    // Open Sans Medium/Bold (OFL), the stand-in for the console's SST since 2026-09-21
     string classicFont = classic.font.file;
     // ...the user's own font for the classic screens, when Options says so (the launcher's fonts stay)
     string userFont =
@@ -89,8 +86,9 @@ void ThemeAssets::load() {
     if (!userFont.empty())
         classicFont = userFont;
     string medium =
-        launcher.fonts.medium.empty() ? Env::getSonyFontPath() + sep + "SST-Medium.ttf" : launcher.fonts.medium;
-    string bold = launcher.fonts.bold.empty() ? Env::getSonyFontPath() + sep + "SST-Bold.ttf" : launcher.fonts.bold;
+        launcher.fonts.medium.empty() ? Env::getPathToFontsDir() + sep + "OpenSans-Medium.ttf" : launcher.fonts.medium;
+    string bold =
+        launcher.fonts.bold.empty() ? Env::getPathToFontsDir() + sep + "OpenSans-Bold.ttf" : launcher.fonts.bold;
     // ...unless the language needs glyphs no theme font has: then the one CJK font draws everything
     string cjk = Fonts::cjkFontFor(config_.inifile.values["language"]);
     if (!cjk.empty()) {

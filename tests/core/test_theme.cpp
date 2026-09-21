@@ -22,7 +22,6 @@ struct Themes {
     Themes() : tmp("theme") {
         env.setWorkingPath(tmp.path());
         env.setThemesDir(tmp.makeSubDir("themes"));
-        env.setSonyDataPath(tmp.makeSubDir("sony"));
 
         tmp.makeSubDir("themes/default/images");
         tmp.makeSubDir("themes/default/font");

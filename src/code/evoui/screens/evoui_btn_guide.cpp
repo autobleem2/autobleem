@@ -22,7 +22,7 @@ void GuiBtnGuide::render() {
     int xLeft = 300;
     int xRight = 520;
     int line = 0;
-    auto font = gui->assets().sonyFonts[FONT_20_BOLD];
+    auto font = gui->assets().themeFonts[FONT_20_BOLD];
 
     auto renderTextLineToColumns = [&](const string &textLeft, const string &textRight) {
         gui->text().renderTextLineToColumns(textLeft, textRight, xLeft, xRight, line++, yoffset, font);

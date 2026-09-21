@@ -45,11 +45,9 @@ TEST_CASE("fromRoot derives every path from the one root") {
     CHECK(Env::getPathToRCDir() == "/usb/Autobleem/rc");
     CHECK(Env::getPathToGameControllerDb() == "/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt");
 #ifdef AB_ROOT_RELATIVE_LAYOUT
-    CHECK(Env::getSonyPath() == "/usb/Autobleem/bin/autobleem/sony");
     CHECK(Env::getPathToKernelConfigDir().empty());
     CHECK(Env::padMappingFiles() == std::vector<string>{"/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt"});
 #else
-    CHECK(Env::getSonyPath() == "/usr/sony/share/data");
     CHECK(Env::getPathToKernelConfigDir() == "/etc/autobleem");
     CHECK(Env::padMappingFiles() == std::vector<string>{"/etc/autobleem/gamecontrollerdb.txt",
                                                         "/usb/Autobleem/bin/autobleem/gamecontrollerdb.txt"});
@@ -137,7 +135,6 @@ TEST_CASE("fromWindowsInstall: the registry's data root first, then the pointer 
         // the resources are the program's own, what the program writes goes into the data tree
         CHECK(Env::getWorkingPath() == program);
         CHECK(Env::getPathToStateDir() == root + "/System");
-        CHECK(Env::getSonyPath() == program + "/sony");
         // the tree is made
         CHECK(ableem::DirEntry::isDirectory(root + "/Games"));
         CHECK(ableem::DirEntry::isDirectory(root + "/System/Logs"));

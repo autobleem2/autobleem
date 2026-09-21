@@ -37,7 +37,7 @@ ableem::Font Fonts::openNewSharedCachedFont(const string &filename, int fontSize
 std::string Fonts::cjkFontFor(const std::string &language) {
     if (language.find("Chinese") == std::string::npos)
         return "";
-    std::string path = Env::getWorkingPath() + sep + "fonts" + sep + "NotoSansSC-Regular.otf";
+    std::string path = Env::getPathToFontsDir() + sep + "NotoSansSC-Regular.otf";
     return DirEntry::exists(path) ? path : "";
 }
 
@@ -82,7 +82,7 @@ void Fonts::openAllFonts(const std::string &mediumTtf, const std::string &boldTt
 // Fonts::userFontDirs
 //*******************************
 vector<string> Fonts::userFontDirs(const string &themeDir) {
-    return {Env::getPathToRetroarchDir() + sep + "fonts", Env::getWorkingPath() + sep + "fonts", themeDir};
+    return {Env::getPathToRetroarchDir() + sep + "fonts", Env::getPathToFontsDir(), themeDir};
 }
 
 //*******************************

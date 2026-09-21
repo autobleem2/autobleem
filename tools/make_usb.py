@@ -215,7 +215,7 @@ def main():
     os.makedirs(usb, exist_ok=True)
 
     app = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
-    copy_tree(os.path.join(REPO, 'src', 'resources'), app)          # resources next to the binary, sony/ included
+    copy_tree(os.path.join(REPO, 'src', 'resources'), app)          # resources next to the binary, fonts/ included
     exe = os.path.join(args.build, 'autobleem-gui.exe')
     if os.path.exists(exe):
         shutil.copy2(exe, app)

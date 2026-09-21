@@ -31,7 +31,6 @@ public:
     void unload();
 
     Fonts themeFonts;
-    Fonts sonyFonts;
     ableem::Font themeFont;
     // the classic font (the file themeFont was opened from - theme, user or CJK) at another size, for a screen
     // whose rows will not fit at the theme's

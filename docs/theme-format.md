@@ -14,14 +14,14 @@ Written 2026-09-17, when the format replaced `theme.ini`. The code that reads it
 ```
 Themes/<name>/
   theme.json
-  background.jpg  ab.png  zrnic.ttf  mel.ogg  cross.png ...   the classic UI's files - names are free,
+  background.jpg  ab.png  saira-semicondensed-medium.ttf  mel.ogg  cross.png ...   the classic UI's files - names are free,
                                                               theme.json says which is which
   images/launcher_background.png  launcher_footer.png  play_button.png  play_text.png
          settings_panel.png  meta_panel.png  arrow.png  hint_cross.png  hint_circle.png
          hint_triangle.png  menu_settings.png  menu_guide.png  menu_memcard.png  menu_resume.png
          memcard_grid.png  memcard_pencil.png                 the EvolutionUI launcher (names are free
                                                               here too; these are what the converter picks)
-  font/SST-Medium.ttf  font/SST-Bold.ttf                      optional
+  font/medium.ttf  font/bold.ttf                              optional - the launcher's own pair
   sounds/cursor.wav  cancel.wav  home_up.wav  home_down.wav  resume_new.wav      optional
   credit.txt                                                  anything else at the root is left alone
 ```
@@ -37,7 +37,7 @@ Themes/<name>/
   "classic": {
     "background": "background.jpg",
     "logo": { "file": "ab.png", "x": 520, "y": 0, "w": 240, "h": 180 },
-    "font": { "file": "zrnic.ttf", "size": 24 },
+    "font": { "file": "saira-semicondensed-medium.ttf", "size": 22 },
     "menuLines": 13,
     "menuPanel": { "x": 30, "y": 10, "w": 1220, "h": 530, "color": "#000000", "alpha": 170 },
     "statusBar": { "x": 0, "y": -670, "w": 1280, "h": 30, "textY": 662, "color": "#000000", "alpha": 170 },
@@ -98,7 +98,7 @@ Themes/<name>/
 | `launcher.hints` | The cross/circle/triangle icons in the footer. |
 | `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
-| `launcher.fonts` | The launcher's medium and bold ttf. Without them the console's own SST fonts are used. |
+| `launcher.fonts` | The launcher's medium and bold ttf. Without them the shipped pair is used: `resources/fonts/OpenSans-Medium.ttf` / `-Bold.ttf` (OFL; the console's SST fonts were, until 2026-09-21). |
 | `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. |
 | `sounds` | The five UI sounds. |
 
