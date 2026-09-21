@@ -180,6 +180,7 @@ struct RomsTree {
 };
 
 const char *const NES = "Nintendo - Nintendo Entertainment System";
+const char *const SNES = "Nintendo - Super Nintendo Entertainment System";
 
 } // namespace
 
@@ -711,6 +712,20 @@ TEST_CASE("Crc32::ofFile streams a file, refuses one over the limit, spells a CR
     CHECK(Crc32::playlistText(0) == "00000000|crc");
 }
 
+TEST_CASE("Crc32::fromPlaylistText reads back what playlistText wrote and refuses anything else") {
+    uint32_t crc = 1;
+    CHECK(Crc32::fromPlaylistText("089A93F8|crc", crc));
+    CHECK(crc == CrcOtherRom);
+    CHECK(Crc32::fromPlaylistText("79520fa1|crc", crc)); // lower case is fine
+    CHECK(crc == CrcRom);
+    crc = 1;
+    CHECK_FALSE(Crc32::fromPlaylistText("", crc));
+    CHECK_FALSE(Crc32::fromPlaylistText("00000000|crc", crc)); // "none", as a playlist spells it
+    CHECK_FALSE(Crc32::fromPlaylistText("089A93F8", crc));
+    CHECK_FALSE(Crc32::fromPlaylistText("089A93FX|crc", crc));
+    CHECK(crc == 1);
+}
+
 TEST_CASE("identify: a zipped ROM by the archive's CRC, a loose one by hashing it, a miss keeps the file's name") {
     TempDir tmp("identify");
     tmp.makeSubDir("nes");
@@ -769,6 +784,124 @@ TEST_CASE("identify: an arcade set by its archive's name, whatever its bytes") {
     CHECK(roms[0].entry.label == "Metal Slug (NGM-2510)");
     CHECK(roms[0].entry.crc32 == "00000000|crc"); // the archive is not hashed
     CHECK(roms[1].entry.label == "neogeo");
+}
+
+TEST_CASE("seedCrcsFromPlaylist: a loose ROM the playlist knows takes the entry's CRC; zips and sets do not") {
+    TempDir tmp("seed");
+    tmp.makeSubDir("nes");
+    tmp.writeFile("nes/toads.nes", "other rom");
+    tmp.writeFile("nes/new.nes", "brand new");
+    writeZip(tmp.at("nes/lolo.zip"), {{"lolo.nes", "rom"}});
+    ScannedRoms roms = RetroArchScanner::scanFolder(tmp.at("nes"), "/r/nes", nesSystem());
+    REQUIRE(roms.size() == 3); // lolo.zip#lolo.nes, new, toads - sorted by path
+
+    RetroArchPlaylistEntries existing;
+    RetroArchPlaylistEntry toads;
+    toads.path = "/r/nes/toads.nes";
+    toads.label = "toads";
+    toads.crc32 = "089A93F8|crc"; // what an earlier scan (or RetroArch) recorded
+    existing.push_back(toads);
+    RetroArchPlaylistEntry lolo;
+    lolo.path = tmp.at("nes/lolo.zip") + "#lolo.nes"; // under the source folder, spelled this machine's way
+    lolo.label = "lolo";
+    lolo.crc32 = "DEADBEEF|crc";
+    existing.push_back(lolo);
+    RetroArchPlaylistEntry noCrc;
+    noCrc.path = "/r/nes/new.nes";
+    noCrc.label = "new";
+    noCrc.crc32 = "00000000|crc"; // no CRC on record: nothing to take
+    existing.push_back(noCrc);
+
+    CHECK(RetroArchScanner::seedCrcsFromPlaylist(roms, existing, tmp.at("nes"), "/r/nes") == 1);
+    CHECK(roms[0].crc == Crc32::ofBytes("rom")); // the archive's own CRC stands, not DEADBEEF
+    CHECK(roms[1].crc == 0);                     // new.nes: no CRC to take, identify() will hash it
+    CHECK(roms[2].crc == CrcOtherRom);
+    CHECK(roms[2].entry.crc32 == "089A93F8|crc");
+}
+
+TEST_CASE("scan: a loose ROM with a CRC in the playlist is not hashed again - the entry's CRC is what the database "
+          "is asked about") {
+    RomsTree t;
+    t.addCore("nestopia_libretro", "Nintendo - NES / Famicom (Nestopia UE)", "nes|fds", NES);
+    writeNesRdb(t.tmp, "retroarch/database/rdb");
+    t.options.rdbDir = t.tmp.at("retroarch/database/rdb");
+    const string nes = string("roms/") + NES;
+    t.tmp.writeFile(nes + "/game.nes", "rom"); // its real CRC is Lolo's
+    RetroArchSystems systems = RetroArchScanner::systemsFrom(t.cores());
+
+    // a playlist that says the file is Battletoads' CRC, unidentified - as RetroArch would have written
+    // for a file it hashed and did not know at the time
+    RetroArchPlaylistEntries entries;
+    RetroArchPlaylistEntry e;
+    e.path = t.tmp.at(nes + "/game.nes");
+    e.label = "game";
+    e.core_path = "DETECT";
+    e.core_name = "DETECT";
+    e.crc32 = "089A93F8|crc";
+    e.db_name = string(NES) + ".lpl";
+    entries.push_back(e);
+    REQUIRE(RetroArchPlaylist::save(t.playlist(NES), entries));
+
+    RetroArchScanner scanner;
+    RetroArchScanResult result = scanner.scan(t.options, systems);
+    CHECK(result.gamesIdentified == 1);
+    // named by the playlist's CRC, not by hashing the bytes (which would have said Lolo)
+    CHECK(labelsOf(t.loadPlaylist(NES)) == vector<string>{"Battletoads (USA)"});
+}
+
+TEST_CASE("scan: with a state file a folder nothing changed in is skipped; a ROM, playlist or database change "
+          "brings it back") {
+    RomsTree t;
+    t.addCore("nestopia_libretro", "Nintendo - NES / Famicom (Nestopia UE)", "nes|fds", NES);
+    t.addCore("snes9x_libretro", "Nintendo - SNES / SFC (Snes9x)", "sfc|smc", SNES);
+    t.tmp.writeFile(string("roms/") + NES + "/A.nes", "rom");
+    t.tmp.writeFile(string("roms/") + SNES + "/B.sfc", "rom");
+    t.options.stateFile = t.tmp.at("roms.scanstate");
+    RetroArchSystems systems = RetroArchScanner::systemsFrom(t.cores());
+    RetroArchScanner scanner;
+
+    RetroArchScanResult first = scanner.scan(t.options, systems);
+    CHECK(first.systemsScanned == 2);
+    CHECK(first.systemsSkipped == 0);
+    CHECK(first.gamesFound == 2);
+    CHECK(DirEntry::exists(t.options.stateFile));
+
+    RetroArchScanResult second = scanner.scan(t.options, systems);
+    CHECK(second.systemsScanned == 2);
+    CHECK(second.systemsSkipped == 2); // nothing changed anywhere
+    CHECK(second.gamesFound == 2);     // the counts still come, from the playlists
+    CHECK(second.games.size() == 2);
+    CHECK(second.playlistsWritten.empty());
+
+    // a ROM added to one folder: that folder is scanned, the other still skipped
+    t.tmp.writeFile(string("roms/") + NES + "/C.nes", "rom2");
+    RetroArchScanResult third = scanner.scan(t.options, systems);
+    CHECK(third.systemsSkipped == 1);
+    CHECK(third.playlistsWritten == vector<string>{string(NES) + ".lpl"});
+    CHECK(labelsOf(t.loadPlaylist(NES)) == vector<string>{"A", "C"});
+    CHECK(scanner.scan(t.options, systems).systemsSkipped == 2); // and settles again
+
+    // the playlist changed under us (RetroArch, or a hand edit): its folder is looked at again
+    RetroArchPlaylistEntries entries = t.loadPlaylist(NES);
+    entries[0].label = "A (renamed by hand)";
+    entries[0].label += " and longer";
+    REQUIRE(RetroArchPlaylist::save(t.playlist(NES), entries));
+    RetroArchScanResult fourth = scanner.scan(t.options, systems);
+    CHECK(fourth.systemsSkipped == 1);
+    CHECK(fourth.playlistsWritten.empty()); // an existing entry is kept as it is - nothing to rewrite
+    CHECK(scanner.scan(t.options, systems).systemsSkipped == 2);
+
+    // a database arriving for the system: looked at again, and the games named
+    writeNesRdb(t.tmp, "retroarch/database/rdb");
+    t.options.rdbDir = t.tmp.at("retroarch/database/rdb");
+    RetroArchScanResult fifth = scanner.scan(t.options, systems);
+    CHECK(fifth.systemsSkipped == 1);  // the SNES folder has no database, its digest is what it was
+    CHECK(fifth.gamesIdentified == 1); // A.nes ("rom") is Lolo
+    CHECK(scanner.scan(t.options, systems).systemsSkipped == 2);
+
+    // without a state file every folder is scanned every time
+    t.options.stateFile = "";
+    CHECK(scanner.scan(t.options, systems).systemsSkipped == 0);
 }
 
 TEST_CASE("merge: a database name replaces an existing unidentified label for the same ROM, and only that") {

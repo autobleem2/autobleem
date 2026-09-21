@@ -114,6 +114,13 @@ void ScanService::setOnline(bool enabled, const OnlineAssets::Config &config, On
 }
 
 //*******************************
+// ScanService::romScanStateFilePath
+//*******************************
+string ScanService::romScanStateFilePath() {
+    return Env::getPathToStateDir() + sep + "roms.scanstate";
+}
+
+//*******************************
 // ScanService::fingerprintsMatchDisk
 //*******************************
 bool ScanService::fingerprintsMatchDisk() {
@@ -288,6 +295,7 @@ int ScanService::scanRetroArchRoms(Listener &listener, vector<string> &playlists
     options.playlistsDir = Env::getPathToRetroarchPlaylistsDir();
     options.folderAliases = ableem::RetroArchScanner::loadFolderAliases(romsFolderAliasesPath());
     options.rdbDir = Env::getPathToRetroarchRdbDir(); // a missing one just means nothing gets identified
+    options.stateFile = romScanStateFilePath();       // so a folder nothing changed in is not scanned again
     ableem::RetroArchScanner scanner(&listener);
     ableem::RetroArchScanResult result = scanner.scan(options, ableem::RetroArchScanner::systemsFrom(cores));
     playlistsWritten = result.playlistsWritten;

@@ -28,6 +28,8 @@ public:
 
     bool load(const std::string &path); // false (fingerprint left empty) if the file does not exist/parse
     bool save(const std::string &path) const;
+    std::string text() const; // what save() writes, as one string - for digesting a folder's state
+    bool empty() const { return entries_.empty(); }
 
     bool operator==(const GamesFingerprint &other) const { return entries_ == other.entries_; }
     bool operator!=(const GamesFingerprint &other) const { return !(*this == other); }

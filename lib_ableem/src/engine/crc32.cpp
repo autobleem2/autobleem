@@ -48,4 +48,30 @@ string Crc32::playlistText(uint32_t crc) {
     return buf;
 }
 
+//*******************************
+// Crc32::fromPlaylistText
+//*******************************
+bool Crc32::fromPlaylistText(const string &text, uint32_t &crc) {
+    if (text.size() != 12 || text.compare(8, 4, "|crc") != 0)
+        return false;
+    uint32_t value = 0;
+    for (int i = 0; i < 8; i++) {
+        char c = text[i];
+        int digit;
+        if (c >= '0' && c <= '9')
+            digit = c - '0';
+        else if (c >= 'A' && c <= 'F')
+            digit = c - 'A' + 10;
+        else if (c >= 'a' && c <= 'f')
+            digit = c - 'a' + 10;
+        else
+            return false;
+        value = (value << 4) | static_cast<uint32_t>(digit);
+    }
+    if (value == 0)
+        return false;
+    crc = value;
+    return true;
+}
+
 } // namespace ableem

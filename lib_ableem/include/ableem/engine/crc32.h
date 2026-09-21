@@ -16,6 +16,8 @@ struct Crc32 {
     static uint32_t ofBytes(const std::string &bytes);
     // "%08X|crc" - how a playlist spells a CRC; "00000000|crc" for none
     static std::string playlistText(uint32_t crc);
+    // the reverse: "089A93F8|crc" -> 0x089A93F8; false (crc untouched) for "", "00000000|crc" or anything else
+    static bool fromPlaylistText(const std::string &text, uint32_t &crc);
 };
 
 } // namespace ableem

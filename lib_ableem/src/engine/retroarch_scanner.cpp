@@ -1,4 +1,6 @@
 #include "ableem/engine/retroarch_scanner.h"
+#include "ableem/engine/games_fingerprint.h"
+#include "ableem/engine/md5.h"
 #include "ableem/engine/crc32.h"
 #include "ableem/engine/filesystem.h"
 #include "ableem/engine/game_scanner.h"
@@ -286,6 +288,39 @@ int RetroArchScanner::identify(ScannedRoms &roms, const RdbReader &rdb, uint64_t
 }
 
 //*******************************
+// RetroArchScanner::seedCrcsFromPlaylist
+//*******************************
+int RetroArchScanner::seedCrcsFromPlaylist(ScannedRoms &roms, const RetroArchPlaylistEntries &existing,
+                                           const string &sourceFolder, const string &targetFolder) {
+    const string sourcePrefix = forwardSlashes(sourceFolder) + "/";
+    const string targetPrefix = forwardSlashes(targetFolder) + "/";
+    // the existing entries under our folder, by the path a fresh scan gives the same file
+    map<string, uint32_t> known;
+    for (const RetroArchPlaylistEntry &entry : existing) {
+        uint32_t crc = 0;
+        if (!Crc32::fromPlaylistText(entry.crc32, crc))
+            continue;
+        string path = forwardSlashes(entry.path);
+        if (startsWith(path, sourcePrefix))
+            path = targetPrefix + path.substr(sourcePrefix.size());
+        if (startsWith(path, targetPrefix))
+            known[path] = crc;
+    }
+    int seeded = 0;
+    for (ScannedRom &rom : roms) {
+        if (rom.crc != 0 || rom.wholeArchive)
+            continue;
+        auto it = known.find(forwardSlashes(rom.entry.path));
+        if (it == known.end())
+            continue;
+        rom.crc = it->second;
+        rom.entry.crc32 = Crc32::playlistText(it->second);
+        seeded++;
+    }
+    return seeded;
+}
+
+//*******************************
 // RetroArchScanner::merge
 //*******************************
 RetroArchPlaylistEntries RetroArchScanner::merge(const RetroArchPlaylistEntries &existing, const ScannedRoms &fresh,
@@ -355,6 +390,47 @@ RetroArchPlaylistEntries RetroArchScanner::merge(const RetroArchPlaylistEntries 
 }
 
 //*******************************
+// the per-folder state file: "<folder>\t<digest>" lines
+//*******************************
+static map<string, string> loadScanState(const string &path) {
+    map<string, string> state;
+    if (path.empty())
+        return state;
+    ifstream is(path, ios::binary);
+    string line;
+    while (getline(is, line)) {
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        size_t tab = line.find('\t');
+        if (tab == string::npos || tab == 0)
+            continue;
+        state[line.substr(0, tab)] = line.substr(tab + 1);
+    }
+    return state;
+}
+
+static void saveScanState(const string &path, const map<string, string> &state) {
+    if (path.empty())
+        return;
+    ofstream os(path, ios::binary);
+    if (!DirEntry::checkWritable(os, path))
+        return;
+    for (const auto &entry : state)
+        os << entry.first << "\t" << entry.second << "\n";
+}
+
+// everything a folder's playlist depends on, in one line: what is in the folder (names and sizes), what
+// the playlist is now, what the database is, where the playlist points and which core it names
+static string folderDigest(const string &folderFingerprint, const string &playlistPath, const string &rdbPath,
+                           const string &targetFolder, const RetroArchSystem &system) {
+    auto sizeOf = [](const string &path) {
+        return DirEntry::exists(path) ? to_string(DirEntry::fileSize(path)) : string("-");
+    };
+    return Md5::ofString(folderFingerprint + "\n" + sizeOf(playlistPath) + "\n" + sizeOf(rdbPath) + "\n" +
+                         targetFolder + "\n" + system.coreName + "\n" + system.corePath);
+}
+
+//*******************************
 // RetroArchScanner::scan
 //*******************************
 RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroArchSystems &systems) {
@@ -395,6 +471,11 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
         return result;
     }
 
+    // the folders' digests from the last scan, and the ones this scan settles on (a folder whose
+    // playlist could not be handled records nothing, so it is looked at again next time)
+    const map<string, string> lastState = loadScanState(options.stateFile);
+    map<string, string> newState;
+
     int index = 0;
     RdbReader rdb;
     string rdbLoadedFor; // the database rdb holds, so two folders of one system open it once
@@ -407,27 +488,49 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
 
         const string sourceFolder = romsDir + sep + name;
         const string targetFolder = targetRomsDir + "/" + name;
-        ScannedRoms fresh = scanFolder(sourceFolder, targetFolder, system);
+        const string playlistPath = playlistsDir + sep + system.name + ".lpl";
+        const string rdbPath = options.rdbDir.empty() ? ""
+                                                      : DirEntry::removeSeparatorFromEndOfPath(options.rdbDir) + sep +
+                                                            system.name + ".rdb";
 
-        // the system's database, when there is one - the folder's games get their names from it
-        int identifiedHere = 0;
-        if (!options.rdbDir.empty() && !fresh.empty()) {
-            if (rdbLoadedFor != system.name) {
-                const string rdbPath =
-                    DirEntry::removeSeparatorFromEndOfPath(options.rdbDir) + sep + system.name + ".rdb";
-                rdbLoadedFor = system.name;
-                if (DirEntry::exists(rdbPath))
-                    rdb.open(rdbPath); // invalid afterwards when it could not be read
-                else
-                    rdb = RdbReader(); // no database for this system: the previous one must not answer
+        // the entries under this folder, counted and reported as the result's games
+        auto countOurs = [&](const RetroArchPlaylistEntries &entries) {
+            int ours = 0;
+            for (const RetroArchPlaylistEntry &entry : entries) {
+                const string file = filePart(entry.path);
+                if (startsWith(forwardSlashes(file), forwardSlashes(targetFolder) + "/") ||
+                    startsWith(forwardSlashes(file), forwardSlashes(sourceFolder) + "/")) {
+                    ours++;
+                    result.games.push_back({system.name, entry.label});
+                }
             }
-            if (rdb.isValid())
-                identifiedHere = identify(fresh, rdb, options.maxCrcBytes);
+            return ours;
+        };
+
+        // nothing about the folder changed since the last scan: its playlist stands as it is
+        string folderFingerprint;
+        if (!options.stateFile.empty()) {
+            folderFingerprint = GamesFingerprint::takeAllFiles(sourceFolder).text();
+            auto last = lastState.find(name);
+            if (last != lastState.end() &&
+                last->second == folderDigest(folderFingerprint, playlistPath, rdbPath, targetFolder, system)) {
+                RetroArchPlaylistEntries entries;
+                if (DirEntry::exists(playlistPath) && !RetroArchPlaylist::load(playlistPath, entries, nullptr)) {
+                    PLOG_WARNING << "Playlist " << playlistPath << " could not be read";
+                    continue;
+                }
+                result.systemsScanned++;
+                result.systemsSkipped++;
+                result.gamesFound += countOurs(entries);
+                newState[name] = last->second;
+                continue;
+            }
         }
+
+        ScannedRoms fresh = scanFolder(sourceFolder, targetFolder, system);
 
         // two folders may feed one playlist (Arcade and SNK - Neo Geo both into FBNeo's): each pass sees
         // the other's entries as foreign and leaves them, so the file is read fresh every time
-        const string playlistPath = playlistsDir + sep + system.name + ".lpl";
         RetroArchPlaylistEntries existing;
         RetroArchPlaylistHeader header;
         const bool hadPlaylist = DirEntry::exists(playlistPath);
@@ -436,40 +539,56 @@ RetroArchScanResult RetroArchScanner::scan(const Options &options, const RetroAr
             PLOG_WARNING << "Playlist " << playlistPath << " could not be read, not rewritten";
             continue;
         }
-        RetroArchPlaylistEntries merged = merge(existing, fresh, sourceFolder, targetFolder);
 
-        int ours = 0;
-        for (const RetroArchPlaylistEntry &entry : merged) {
-            const string file = filePart(entry.path);
-            if (startsWith(forwardSlashes(file), forwardSlashes(targetFolder) + "/") ||
-                startsWith(forwardSlashes(file), forwardSlashes(sourceFolder) + "/")) {
-                ours++;
-                result.games.push_back({system.name, entry.label});
+        // the system's database, when there is one - the folder's games get their names from it. A file
+        // the playlist already knows by CRC is not hashed again (seedCrcsFromPlaylist)
+        int identifiedHere = 0;
+        if (!rdbPath.empty() && !fresh.empty()) {
+            if (rdbLoadedFor != system.name) {
+                rdbLoadedFor = system.name;
+                if (DirEntry::exists(rdbPath))
+                    rdb.open(rdbPath); // invalid afterwards when it could not be read
+                else
+                    rdb = RdbReader(); // no database for this system: the previous one must not answer
+            }
+            if (rdb.isValid()) {
+                seedCrcsFromPlaylist(fresh, existing, sourceFolder, targetFolder);
+                identifiedHere = identify(fresh, rdb, options.maxCrcBytes);
             }
         }
+
+        RetroArchPlaylistEntries merged = merge(existing, fresh, sourceFolder, targetFolder);
+
+        int ours = countOurs(merged);
         result.systemsScanned++;
         result.gamesFound += ours;
         result.gamesIdentified += identifiedHere;
 
         bool unchanged = hadPlaylist && merged.size() == existing.size() &&
                          equal(merged.begin(), merged.end(), existing.begin(), sameEntry);
-        if (unchanged || (!hadPlaylist && merged.empty()))
-            continue;
-
-        // write beside it and swap: RetroArch may be reading the playlist this very moment
-        const string tempPath = playlistPath + ".tmp";
-        if (!RetroArchPlaylist::save(tempPath, merged, header) || !DirEntry::replaceFile(tempPath, playlistPath)) {
-            PLOG_WARNING << "Could not write " << playlistPath;
-            DirEntry::removeFile(tempPath);
-            continue;
+        if (!(unchanged || (!hadPlaylist && merged.empty()))) {
+            // write beside it and swap: RetroArch may be reading the playlist this very moment
+            const string tempPath = playlistPath + ".tmp";
+            if (!RetroArchPlaylist::save(tempPath, merged, header) || !DirEntry::replaceFile(tempPath, playlistPath)) {
+                PLOG_WARNING << "Could not write " << playlistPath;
+                DirEntry::removeFile(tempPath);
+                continue;
+            }
+            PLOG_INFO << "Playlist " << system.name << ".lpl: " << merged.size() << " entries (" << ours << " from "
+                      << name << ", " << identifiedHere << " named by the database)";
+            const string written = system.name + ".lpl";
+            if (find(result.playlistsWritten.begin(), result.playlistsWritten.end(), written) ==
+                result.playlistsWritten.end())
+                result.playlistsWritten.push_back(written);
         }
-        PLOG_INFO << "Playlist " << system.name << ".lpl: " << merged.size() << " entries (" << ours << " from " << name
-                  << ", " << identifiedHere << " named by the database)";
-        const string written = system.name + ".lpl";
-        if (find(result.playlistsWritten.begin(), result.playlistsWritten.end(), written) ==
-            result.playlistsWritten.end())
-            result.playlistsWritten.push_back(written);
+
+        // the digest is taken with the playlist as it is now, so the next scan finds it unchanged
+        if (!options.stateFile.empty())
+            newState[name] = folderDigest(folderFingerprint, playlistPath, rdbPath, targetFolder, system);
     }
+
+    if (!options.stateFile.empty() && newState != lastState)
+        saveScanState(options.stateFile, newState);
     return result;
 }
 

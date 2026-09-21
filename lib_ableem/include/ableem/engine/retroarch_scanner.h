@@ -19,6 +19,13 @@
 // the box art - and an identified name replaces an unidentified one an earlier scan left in the playlist.
 // No database, or no hit, keeps the file's stem. Nothing is dropped for not being in the database.
 //
+// A rescan is cheap where nothing changed. With Options::stateFile the scanner remembers, per folder, a
+// digest of the folder's file list and sizes, the playlist's size and the database's size (no mtimes -
+// the PSC's clock cannot be trusted): a folder whose digest is what it was last time is not listed,
+// opened, hashed, looked up or merged - its playlist is only read for the counts. And a loose file the
+// playlist already has an entry for (with a CRC - ours from an earlier scan, or RetroArch's) is never
+// hashed again: the entry's CRC is taken as the file's, and the database asked about that.
+//
 // An existing playlist is merged, never replaced: entries that point outside the system's ROM folder
 // (the user's own additions) stay as they are; an entry under it whose file is still there is kept
 // exactly (RetroArch's scanner may have identified it - its label and CRC are better than ours); a
@@ -84,6 +91,7 @@ struct RetroArchScanResult {
     int gamesIdentified = 0;                   // of those, the ones a database named
     std::vector<Game> games;                   // the entries under the ROM folders, as the playlists have them
     std::vector<std::string> playlistsWritten; // "<system>.lpl" for every playlist whose content changed
+    int systemsSkipped = 0;                    // folders left alone because nothing about them changed (stateFile)
     std::vector<std::string> unknownFolders;   // <roms>/<x> with no system in the table for it
 };
 
@@ -104,6 +112,8 @@ public:
         std::string rdbDir;
         // a loose file bigger than this is not hashed (a CD image: its entry keeps the file's name)
         uint64_t maxCrcBytes = 64 * 1024 * 1024;
+        // where the per-folder digests of the last scan are kept ("" = every folder is scanned every time)
+        std::string stateFile;
     };
 
     explicit RetroArchScanner(ScanProgressListener *listener = nullptr) : listener_(listener) {}
@@ -126,6 +136,11 @@ public:
 
     // names every entry the database knows - see the header comment; returns how many it named
     static int identify(ScannedRoms &roms, const RdbReader &rdb, uint64_t maxCrcBytes);
+
+    // a loose ROM the existing playlist has an entry for, with a CRC, takes that CRC - so identify()
+    // does not hash it again. sourceFolder/targetFolder as for merge(). Returns how many were seeded.
+    static int seedCrcsFromPlaylist(ScannedRoms &roms, const RetroArchPlaylistEntries &existing,
+                                    const std::string &sourceFolder, const std::string &targetFolder);
 
     // the merge of an existing playlist with a fresh scan of its folder - see the header comment.
     // sourceFolder is the folder on this machine, targetFolder what the playlist names it; an existing

@@ -120,6 +120,9 @@ public:
     // requestScan() right away.
     static std::string fingerprintFilePath();
     static std::string romsFingerprintFilePath();
+    // <state>/roms.scanstate - the ROM scanner's per-folder digests (RetroArchScanner::Options::stateFile),
+    // what lets a rescan skip every ROM folder nothing changed in
+    static std::string romScanStateFilePath();
     static bool fingerprintsMatchDisk();
 
     // resources/platform/roms_folders.cfg - the ROM folders not named as their database is ("Arcade")

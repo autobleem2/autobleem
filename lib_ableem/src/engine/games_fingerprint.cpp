@@ -73,6 +73,16 @@ bool GamesFingerprint::save(const string &path) const {
 }
 
 //*******************************
+// GamesFingerprint::text
+//*******************************
+string GamesFingerprint::text() const {
+    string out;
+    for (const auto &entry : entries_)
+        out += entry.first + "\t" + entry.second + "\n";
+    return out;
+}
+
+//*******************************
 // GamesFingerprint::load
 //*******************************
 bool GamesFingerprint::load(const string &path) {

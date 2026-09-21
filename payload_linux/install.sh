@@ -1379,7 +1379,7 @@ $STAGE_DIR/Autobleem/bin/autobleem
     # (new Game.ini keys, a merge rule, box art) must reach the games already there, and the fingerprints
     # are what makes the launcher skip the scan when nothing on disk changed - so they go
     log "Removing the scan fingerprints - the launcher rescans on its next start"
-    run rm -f "$app_dest/games.fingerprint" "$app_dest/roms.fingerprint"
+    run rm -f "$app_dest/games.fingerprint" "$app_dest/roms.fingerprint" "$app_dest/roms.scanstate"
 
     [ -f "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" ] || warn "no pcsx-ab in the package - PS1 games will fall back
     to RetroArch's pcsx_rearmed core (no AutoBleem save states). Build it with pcsx-rearmed-develop/make_rpi.sh."
