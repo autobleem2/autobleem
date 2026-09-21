@@ -236,6 +236,7 @@ Slot=Slot
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Leertaste
 SpeedHack:=SpeedHack:
 SPREAD SHOT=STREUSCHUSS

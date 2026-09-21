@@ -236,6 +236,7 @@ Slot=Pozícia
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Medzera
 SpeedHack:=SpeedHack:
 SPREAD SHOT=ROZPTÝLENÁ PALBA

@@ -321,6 +321,22 @@ TEST_CASE("the smoothing is soft_filter, none when the cfg has no line, clamped 
     CHECK(std::string(GameSettingsService::SmoothingNames[4]) == "HQ3x");
 }
 
+TEST_CASE("Sony's hacks are the sonyhacks flag, off when the cfg has no line") {
+    Editing lib;
+    lib.writeAllUsbCfgs();
+    GameSettings s = lib.service->open(lib.usbGame());
+    CHECK(s.pcsx.sonyHacks == 0);
+
+    lib.service->setSonyHacks(s, true);
+    CHECK(s.pcsx.sonyHacks == 1);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "sonyhacks = 1"));
+    CHECK(contains(lib.tmp.readFile("Games/!SaveStates/Driver 2/pcsx.cfg"), "sonyhacks = 1"));
+
+    lib.service->setSonyHacks(s, false);
+    CHECK(s.pcsx.sonyHacks == 0);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "sonyhacks = 0"));
+}
+
 TEST_CASE("the GPU plugin line is Gpu3, and only a USB game has one") {
     Editing lib;
     lib.writeAllUsbCfgs();

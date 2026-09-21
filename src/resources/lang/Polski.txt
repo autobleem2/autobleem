@@ -236,6 +236,7 @@ Slot=Slot
 Smoothing:=Wygładzanie:
 SoC=
 Software Update=
+Sony hacks:=Poprawki Sony:
 Space=Spacja
 SpeedHack:=SpeedHack:
 SPREAD SHOT=STRZAŁ ROZPROSZONY

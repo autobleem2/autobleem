@@ -236,6 +236,7 @@ Slot=Plats
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Mellanslag
 SpeedHack:=SpeedHack:
 SPREAD SHOT=SPRIDNINGSSKOTT

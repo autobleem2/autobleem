@@ -236,6 +236,7 @@ Slot=Bloco
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Espaço
 SpeedHack:=SpeedHack:
 SPREAD SHOT=TIRO EM LEQUE

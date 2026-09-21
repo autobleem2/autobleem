@@ -236,6 +236,7 @@ Slot=Ranura
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Espacio
 SpeedHack:=SpeedHack:
 SPREAD SHOT=DISPARO MULTIPLE
