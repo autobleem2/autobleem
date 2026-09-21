@@ -1,9 +1,10 @@
 //
-// NotificationBubble: a small panel in the launcher's top-right corner for something happening in the
-// background - the scan. A title, a line of detail (elided to the bubble), a thin progress bar when there
-// is a count; it slides in from the edge when it appears, stays while it is fed, and fades out a while
-// after the last message (or at once when told to). Drawn in PanelStyle's look, so it reads as one of the
-// launcher's panels.
+// NotificationBubble: a small panel at the launcher's right edge for something the user should know -
+// the scan's progress, which games the carousel shows, a message. A title, a line of detail (elided to
+// the bubble), a thin progress bar when there is a count; it slides in from the edge when it appears,
+// stays while it is fed, and fades out a while after the last message (or at once when told to). Drawn in
+// PanelStyle's look, so it reads as one of the launcher's panels. The bubbles stack under each other at
+// the top-right corner (GuiLauncher::render): the scan's first, the notification lines' under it.
 //
 #pragma once
 
@@ -24,10 +25,15 @@ public:
 
     // once a frame, over the launcher's other elements
     void render(Gui &gui, long now);
+    // the panel's height as render() draws it (0 while hidden) - the next bubble stacks under it
+    int height() const;
+    // the panel's width: `width`, or the text's own plus the padding when fitWidth is set (never wider)
+    int panelWidth(Gui &gui) const;
 
     int right = 1280 - 16; // the bubble's right edge
     int top = 16;
     int width = 440;
+    bool fitWidth = false; // a message bubble is as wide as its text; the scan's keeps its width
 
 private:
     enum class State { Hidden, SlidingIn, Shown, FadingOut };

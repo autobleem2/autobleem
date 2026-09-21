@@ -417,7 +417,7 @@ void GuiLauncher::loadAssets() {
     hintColor = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secColor;
 
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
-    notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
+    notificationLines.create(2);
 
     scanRosterChangedSinceReload = false;
 
@@ -654,8 +654,10 @@ void GuiLauncher::render() {
     gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, hintColor);
     gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, hintColor);
 
-    notificationLines.tickTock();
+    // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);
+    notificationLines.render(*gui, time,
+                             scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top);
 
     for (auto &obj : frontElemets)
         obj->render();

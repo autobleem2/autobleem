@@ -1,5 +1,5 @@
 //
-// NotificationBubble: the launcher's top-right corner panel for the scan. See the header.
+// NotificationBubble: the launcher's top-right corner panels - the scan's, the messages'. See the header.
 //
 #include "evoui_notification_bubble.h"
 #include "../../gui/gui.h"
@@ -21,6 +21,9 @@ const int Pad = 12;
 // NotificationBubble::show
 //*******************************
 void NotificationBubble::show(const string &title, const string &detail, int done, int total, long holdMs) {
+    // the clock is the platform's: a show() before the first render() (the launcher's "Showing:" line is
+    // set while its assets load) must not count its hold from 0
+    now_ = Gui::getInstance()->platform().ticks();
     title_ = title;
     detail_ = detail;
     done_ = done;
@@ -42,6 +45,26 @@ void NotificationBubble::hide() {
         return;
     state_ = State::FadingOut;
     stateSince_ = now_;
+}
+
+//*******************************
+// NotificationBubble::height / panelWidth
+//*******************************
+int NotificationBubble::height() const {
+    if (state_ == State::Hidden)
+        return 0;
+    const bool bar = total_ > 0;
+    return Pad + TitleHeight + (detail_.empty() ? 0 : DetailHeight) + (bar ? BarHeight + 8 : 0) + Pad;
+}
+
+int NotificationBubble::panelWidth(Gui &gui) const {
+    if (!fitWidth)
+        return width;
+    Fonts &fonts = gui.assets().themeFonts;
+    int text = gui.text().textWidth(fonts[FONT_20_BOLD], title_);
+    if (!detail_.empty())
+        text = max(text, gui.text().textWidth(fonts[FONT_15_BOLD], detail_));
+    return min(width, text + 2 * Pad);
 }
 
 //*******************************
@@ -68,13 +91,13 @@ void NotificationBubble::render(Gui &gui, long now) {
         progress = easeOutCubic(static_cast<float>(now - stateSince_) / SlideMs);
     else if (state_ == State::FadingOut)
         progress = 1.0f - easeOutCubic(static_cast<float>(now - stateSince_) / SlideMs);
+    const int width = panelWidth(gui);
     const int offset = static_cast<int>((1.0f - progress) * (width + 16));
 
     PanelStyle style = gui.panelStyle();
     Fonts &fonts = gui.assets().themeFonts;
     const bool bar = total_ > 0;
-    const int height = Pad + TitleHeight + (detail_.empty() ? 0 : DetailHeight) + (bar ? BarHeight + 8 : 0) + Pad;
-    ableem::Rect panel(right - width + offset, top, width, height);
+    ableem::Rect panel(right - width + offset, top, width, height());
     style.sheet(gui.renderer(), panel);
 
     const int textWidth = width - 2 * Pad;

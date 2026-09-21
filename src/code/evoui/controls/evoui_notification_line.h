@@ -1,29 +1,30 @@
+//
+// NotificationLines: the launcher's messages - which games the carousel shows ("Showing: All Games (50
+// games)", line 0) and whatever else it has to say (a resume point saved, a scan already running, the
+// first letter of a jump; line 1). Each line is a NotificationBubble at the top-right corner, stacked
+// under the scan's bubble, so every notification in the launcher looks the same (2026-09-21; they used to
+// be two text lines across the top of the screen).
+//
 #pragma once
 
-#include <ableem/ui/types.h>
-#include <vector>
+#include "evoui_notification_bubble.h"
+
 #include <string>
-#include "../../gui/gui_font.h"
-#include "../../core/model/timing.h"
+#include <vector>
+
+class Gui;
 
 //******************
 // NotificationLine
 //******************
 struct NotificationLine {
-    int x = 10;
-    int y = 10;
-    std::string text;
-    bool timed = true;
-    long notificationTime = 0; // the tick time when setText was called.  this is in milliseconds.
-    long timeLimit = 0; // display ends when current tick - notificationTime > timeLimit.  this is in milliseconds.
-    ableem::Color textColor = {255, 255, 255, 255}; // brightWhite
-    FontEnum fontEnum = FONT_22_MED;
+    NotificationBubble bubble;
 
-    // timelimit is in milliseconds.  a timeLimit of 0 = no limit.
-    void setText(std::string _text, long _timeLimit, const ableem::Color &_textColor, FontEnum fontEnum);
-    void setText(std::string _text, long _timeLimit);
-
-    void tickTock();
+    // timeLimit is in milliseconds; 0 = stays until the next setText
+    void setText(const std::string &text, long timeLimit);
+    void render(Gui &gui, long now, int top);
+    bool visible() const { return bubble.visible(); }
+    int height() const { return bubble.height(); }
 };
 
 //******************
@@ -33,7 +34,7 @@ struct NotificationLines {
     std::vector<NotificationLine> lines;
     NotificationLine &operator[](int i) { return lines[i]; };
 
-    void createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight,
-                              int separationBetweenLines);
-    void tickTock();
+    void create(int count);
+    // draws the visible lines one under the other from `top`, 8 px apart; returns the y below the last
+    int render(Gui &gui, long now, int top);
 };

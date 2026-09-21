@@ -18,6 +18,7 @@
 #include "../controls/evoui_centerlabel.h"
 #include "../controls/evoui_stateselector.h"
 #include "../../core/main.h"
+#include "../../core/model/timing.h"
 #include <vector>
 #include <memory>
 #include "../../gui/gui.h"
@@ -143,7 +144,7 @@ public:
     // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.
     void reloadGames();
 
-    NotificationLines notificationLines; // top two lines of the screen
+    NotificationLines notificationLines; // the messages, bubbles under the scan's at the top-right
 
     // the scan's progress, one line at the very bottom of the screen: applyScanUpdate() (called from loop(),
     // once a frame) turns each ScanUpdate from app.scans().poll() into this line's text, and reloads the

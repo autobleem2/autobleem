@@ -366,7 +366,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
                 carousel.selected = nextGame;
                 app.audio().cursor.play();
                 notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
-                                             DefaultShowingTimeout, brightWhite, FONT_22_MED);
+                                             DefaultShowingTimeout);
                 carousel.setInitialPositions(carousel.selected);
                 updateMeta();
                 menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
@@ -374,7 +374,7 @@ void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, tr
                 // no change
                 app.audio().cancel.play();
                 notificationLines[1].setText(toUpperCopy(carousel.games[carousel.selected]->title.substr(0, 1)),
-                                             DefaultShowingTimeout, brightWhite, FONT_22_MED);
+                                             DefaultShowingTimeout);
             }
         }
     }

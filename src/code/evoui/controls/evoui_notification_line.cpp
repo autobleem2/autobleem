@@ -1,73 +1,47 @@
 #include "evoui_notification_line.h"
-#include "../screens/evoui_launcher.h"
 #include "../../gui/gui.h"
 
 using namespace std;
 
-//*******************************
-// NotificationLine::setText
-//*******************************
-void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds, const ableem::Color &_textColor,
-                               FontEnum _fontEnum) {
-    text = _text;
-    timed = (_timeLimitInMilliSeconds != 0);
-    notificationTime = Gui::getInstance()->platform().ticks(); // tick count when setText called
-    if (notificationTime ==
-        0) // if by chance it's 0.  0 flags that the timeLimit has been reached and to turn off the display
-        ++notificationTime;
-    timeLimit = _timeLimitInMilliSeconds;
-    textColor = _textColor;
-    fontEnum = _fontEnum;
-};
-
-//*******************************
-// NotificationLine::setText
-//*******************************
-void NotificationLine::setText(string _text, long _timeLimitInMilliSeconds) {
-    setText(_text, _timeLimitInMilliSeconds, textColor, fontEnum);
-};
-
-//*******************************
-// NotificationLine::tickTock
-//*******************************
-void NotificationLine::tickTock() {
-    auto gui = Gui::getInstance();
-    if (timed) {
-        if (notificationTime != 0) {
-            long currentTimeTicks = gui->platform().ticks();
-            if (currentTimeTicks - notificationTime > timeLimit) // if time limit reached
-                notificationTime = 0;                            // turn off the display
-        }
-        if (notificationTime != 0)
-            gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER,
-                                             true);
-    } else // not timed - keep display on
-        gui->text().renderText_WithColor(gui->assets().themeFonts[fontEnum], text, x, y, textColor, XALIGN_CENTER,
-                                         true);
+namespace {
+const int Gap = 8; // between stacked bubbles
 }
 
 //*******************************
-// NotificationLines::createAndSetDefaults
+// NotificationLine::setText
 //*******************************
-void NotificationLines::createAndSetDefaults(int count, int x_start, int y_start, FontEnum fontEnum, int fontHeight,
-                                             int separationBetweenLines) {
+void NotificationLine::setText(const string &text, long timeLimit) {
+    bubble.show(text, "", 0, 0, timeLimit);
+}
+
+//*******************************
+// NotificationLine::render
+//*******************************
+void NotificationLine::render(Gui &gui, long now, int top) {
+    bubble.top = top;
+    bubble.render(gui, now);
+}
+
+//*******************************
+// NotificationLines::create
+//*******************************
+void NotificationLines::create(int count) {
+    lines.clear();
     for (int line = 0; line < count; ++line) {
         NotificationLine notificationLine;
-        notificationLine.fontEnum = fontEnum;
-        notificationLine.textColor = brightWhite;
-        notificationLine.x = x_start;
-        notificationLine.y = y_start + (line * (fontHeight + separationBetweenLines));
-        notificationLine.timed = true;
-        notificationLine.timeLimit = DefaultShowingTimeout;
-
+        notificationLine.bubble.fitWidth = true;
         lines.push_back(notificationLine);
     }
 }
 
 //*******************************
-// NotificationLines::tickTock
+// NotificationLines::render
 //*******************************
-void NotificationLines::tickTock() {
-    for (auto &line : lines)
-        line.tickTock();
+int NotificationLines::render(Gui &gui, long now, int top) {
+    for (NotificationLine &line : lines) {
+        line.render(gui, now, top);
+        if (line.visible())
+            top += line.height() + Gap;
+    }
+    return top;
 }
