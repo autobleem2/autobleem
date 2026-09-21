@@ -120,7 +120,7 @@ void GuiHardwareInfo::render() {
         const Line &line = lines[i];
         if (line.heading) {
             gui->text().renderLabelBox(0, y);
-            gui->text().renderTextLine(line.label, -y, 0, XALIGN_CENTER, 0, font);
+            gui->text().renderTextLine(line.label, -y, 0, XALIGN_LEFT, 0, font);
         } else {
             gui->text().renderTextLineToColumns(line.label, gui->text().elide(font, line.value, valueWidth), 0, valueX,
                                                 -y, 0, font);

@@ -3,6 +3,7 @@
 //
 
 #include "gui_keyboard.h"
+#include <algorithm>
 #include "gui_about.h"
 #include <string>
 #include "../gui.h"
@@ -38,90 +39,72 @@ void GuiKeyboard::render() {
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderHeader(label);
-    gui->text().renderLabelBox(1, yoffset);
+    PanelStyle style = gui->panelStyle();
+    const ableem::Rect content = gui->classicContent();
+    Fonts &fonts = gui->assets().themeFonts;
 
-    //*******************************
-    // drawRectangle lambda
-    //*******************************
-    auto drawRectangle = [&](ableem::Rect &rect) {
-        renderer.setDrawColor(TextRenderer::toColor(app.theme().classic().textColor, 255));
-        renderer.setBlendMode(ableem::BlendMode::Blend);
-        renderer.drawRect(rect);
-        ableem::Rect rectSelection2;
-        rectSelection2.x = rect.x + 1;
-        rectSelection2.y = rect.y + 1;
-        rectSelection2.w = rect.w - 2;
-        rectSelection2.h = rect.h - 2;
-        renderer.drawRect(rectSelection2);
-    };
-
-    string displayResult;
-    if (displayAsterisksInstead)
-        displayResult = string(result.size(), '*');
-    else
-        displayResult = result;
-    displayResult.insert(cursorIndex, "#");
-    gui->text().renderTextLine(displayResult, 1, yoffset, XALIGN_CENTER);
-
-    ableem::Rect rect2 = gui->text().getOpscreenRectOfTheme();
-    int fontHeight = gui->assets().themeFont.lineHeight();
-
-    if (L2_cursor_shift || usingUsbKeyboard) {
-        ableem::Rect rectEditbox = gui->text().getFontTextRect(gui->assets().themeFont, displayResult);
-        rectEditbox.x = gui->text().align_xPosition(XALIGN_CENTER, 0, rectEditbox.w);
-        rectEditbox.y = (1 * rectEditbox.h) + yoffset; // line 1 (0 == top)
-
-        // compute the bounding box around the cursor (#)
-        ableem::Size textBeforeCursorSize;
-        // get the size of the text before the cursor
-        if (cursorIndex > 0) {
-            textBeforeCursorSize =
-                gui->text().getFontTextSize(gui->assets().themeFont, displayResult.substr(0, cursorIndex));
+    // the text field: a band across the panel with the text in the launcher's medium font and a caret
+    // where the cursor is (a bar; the old '#' character is history)
+    string displayResult = displayAsterisksInstead ? string(result.size(), '*') : result;
+    const ableem::Font &fieldFont = fonts[FONT_22_MED];
+    const int fieldH = 48;
+    ableem::Rect field(content.x + PanelStyle::RowInset, yoffset + 6, content.w - 2 * PanelStyle::RowInset, fieldH);
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(ableem::Color(255, 255, 255, 14));
+    renderer.fillRect(field);
+    renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 160));
+    renderer.drawRect(field);
+    const int textX = field.x + 16;
+    const int textY = field.y + (fieldH - fieldFont.lineHeight()) / 2;
+    gui->text().renderText_WithColor(fieldFont, displayResult, textX, textY, style.text, XALIGN_LEFT);
+    {
+        const int before = cursorIndex > 0 ? gui->text().textWidth(fieldFont, displayResult.substr(0, cursorIndex)) : 0;
+        // the caret: solid while the cursor is being moved (L2 held, or a USB keyboard), blinking otherwise
+        const bool on = L2_cursor_shift || usingUsbKeyboard || (gui->platform().ticks() / 500) % 2 == 0;
+        if (on) {
+            renderer.setDrawColor(style.text);
+            renderer.fillRect(ableem::Rect(textX + before, textY + 2, 2, fieldFont.lineHeight() - 4));
         }
-        // get the cursor size
-        ableem::Size cursorSize = gui->text().getFontTextSize(gui->assets().themeFont, "#");
-        // bounding box rectangle around the # cursor
-        ableem::Rect cursorRect{rectEditbox.x + textBeforeCursorSize.w, rectEditbox.y, // x, y position
-                                cursorSize.w, cursorSize.h};                           // w, h
-
-        drawRectangle(cursorRect);
     }
 
+    // the keys: a grid centred in what is left, each a tile with its character, the selected one on a band
+    // with the text-colour edge; the caps shift shows on the keys themselves
     if (!usingUsbKeyboard) {
-        for (int x = 0; x < numColumns; x++) {
-            for (int y = 0; y < numRows; y++) {
-                ableem::Rect rectSelection;
-                rectSelection.x = rect2.x + indentOffset;
-                rectSelection.y = yoffset + fontHeight * (y + 3);
-                rectSelection.w = rect2.w - (indentOffset + indentOffset);
-                rectSelection.h = fontHeight;
-
-                int buttonWidth = (rectSelection.w / 10) - (indentOffset + indentOffset);
-                int buttonHeight = rectSelection.h - 2;
-
-                rectSelection.w = buttonWidth;
-                rectSelection.h = buttonHeight;
-
-                rectSelection.x = rectSelection.x + ((buttonWidth + 11) * x);
-
-                const ableem::ThemeFill &key = app.theme().classic().keyboardKey;
-                renderer.setDrawColor(TextRenderer::toColor(key.color, key.alpha));
+        const int gridTop = field.y + fieldH + 24;
+        const int gridBottom = content.y + content.h - 12;
+        const int gap = 8;
+        const int keyW = min(96, (content.w - 2 * PanelStyle::RowInset - gap * (numColumns - 1)) / numColumns);
+        const int keyH = min(72, (gridBottom - gridTop - gap * (numRows - 1)) / numRows);
+        const int gridW = keyW * numColumns + gap * (numColumns - 1);
+        const int gridH = keyH * numRows + gap * (numRows - 1);
+        const int gridX = content.x + (content.w - gridW) / 2;
+        const int gridY = gridTop + max(0, (gridBottom - gridTop - gridH) / 2);
+        const ableem::Font &keyFont = fonts[FONT_22_MED];
+        for (int y = 0; y < numRows; y++) {
+            for (int x = 0; x < numColumns; x++) {
+                ableem::Rect key(gridX + x * (keyW + gap), gridY + y * (keyH + gap), keyW, keyH);
+                const bool selected = !L2_cursor_shift && selx == x && sely == y;
                 renderer.setBlendMode(ableem::BlendMode::Blend);
-                renderer.fillRect(rectSelection);
-
+                if (selected) {
+                    renderer.setDrawColor(ableem::Color(style.text.r, style.text.g, style.text.b, 60));
+                    renderer.fillRect(key);
+                    renderer.setDrawColor(style.text);
+                    renderer.drawRect(key);
+                } else {
+                    renderer.setDrawColor(ableem::Color(255, 255, 255, 18));
+                    renderer.fillRect(key);
+                    renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 110));
+                    renderer.drawRect(key);
+                }
                 string text = rows[y][x];
-                if (L1_caps_shift) {
+                if (L1_caps_shift)
                     text = ucase(text);
-                }
-
-                gui->text().renderTextChar(text, 3 + y, yoffset, rectSelection.x + 10);
-
-                // display rectangle around current character
-                if (!L2_cursor_shift) { // don't draw rectangle if in move cursor mode
-                    if ((selx == x) && (sely == y)) {
-                        drawRectangle(rectSelection);
-                    }
-                }
+                if (text == " ")
+                    text = "â£"; // the open box: the space key
+                const int tw = gui->text().textWidth(keyFont, text);
+                gui->text().renderText_WithColor(keyFont, text, key.x + (keyW - tw) / 2,
+                                                 key.y + (keyH - keyFont.lineHeight()) / 2,
+                                                 selected ? style.text : style.secondary, XALIGN_LEFT);
             }
         }
     }
@@ -131,8 +114,8 @@ void GuiKeyboard::render() {
                           " |");
     } else {
         gui->renderStatus("|@X| " + _("Select") + "  |@T|  " + _("Backspace") + "  |@L1| " + _("Caps") + "  |@L2| " +
-                          _("Move cursor") + "(#)" + " |@S| " + _("Space") + "      |@Start| " + _("Confirm") +
-                          "  |@O| " + _("Cancel") + " |");
+                          _("Move cursor") + " |@S| " + _("Space") + "      |@Start| " + _("Confirm") + "  |@O| " +
+                          _("Cancel") + " |");
     }
     renderer.present();
 }

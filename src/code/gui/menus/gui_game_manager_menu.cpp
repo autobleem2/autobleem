@@ -17,11 +17,10 @@ using namespace std;
 // GuiManager::init
 //*******************************
 void GuiManager::init() {
-    useSmallerFont = true;
-    GuiMenuBase::init(); // call the base class init()
-    // the rows sit to the right of the preview pane: title, then the folder, elided to what is left
+    GuiMenuBase::init(); // call the base class init(): the classic font, like every other list
+    // the rows stop at the detail pane: the title, then the folder, each elided to its column
     xoffset_L = 0;
-    xoffset_R = 380;
+    xoffset_R = 420;
     selectionBoxXOffset = 0;
     selectionRightEdge = GameDetailPane::rowsRight(*gui);
     previewFor = -1;
