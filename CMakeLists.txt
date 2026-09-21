@@ -275,6 +275,10 @@ add_library(ab_classic STATIC
         src/code/gui/screens/gui_about.h
         src/code/gui/screens/gui_confirm.cpp
         src/code/gui/screens/gui_confirm.h
+        src/code/gui/screens/gui_action_menu.cpp
+        src/code/gui/screens/gui_action_menu.h
+        src/code/gui/screens/gui_facts_page.cpp
+        src/code/gui/screens/gui_facts_page.h
         src/code/gui/screens/gui_hardware_info.cpp
         src/code/gui/screens/gui_hardware_info.h
         src/code/gui/screens/gui_keyboard.cpp
