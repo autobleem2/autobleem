@@ -633,14 +633,22 @@ def pcsx_version_key(version):
     a bare r26 -> (26, 0); pcsx-ab's 20260920-fc8c992 (the date and the commit - that repository has no
     tags) -> (20260920, 0). A commit hash has no order, so two builds the key cannot tell apart (the same
     day's pcsx-ab builds) are ordered by when they were published (PUBLISHED_AT) - the first publish of
-    a second same-day build kept the older one, whose hash happened to sort higher."""
-    m = re.match(r"^r(\d+)(?:-(\d+)-g[0-9a-f]+)?", version)
-    if not m:
-        m = re.match(r"^(\d{8})-[0-9a-f]+$", version)
-        if not m:
-            return (0, 0, PUBLISHED_AT.get(version, 0), version)
-        return (int(m.group(1)), 0, PUBLISHED_AT.get(version, 0), version)
-    return (int(m.group(1)), int(m.group(2) or 0), PUBLISHED_AT.get(version, 0), version)
+    a second same-day build kept the older one, whose hash happened to sort higher.
+
+    Our own tags on top of upstream's, r26-alpha1 and the r26-alpha1-3-g... describes after it, sort above
+    every plain r26-N-g... build: the tag was cut after them, and once it exists every later describe
+    carries its label (the label, then the commits past it). Before this, r26-alpha1 keyed as (26, 0), lost
+    to r26-60 and the index deleted the alpha it had just been given."""
+    m = re.match(r"^r(\d+)(?:-(\d+)-g[0-9a-f]+)?$", version)
+    if m:
+        return (int(m.group(1)), 0, "", int(m.group(2) or 0), PUBLISHED_AT.get(version, 0), version)
+    m = re.match(r"^r(\d+)-([a-z]+\d*)(?:-(\d+)-g[0-9a-f]+)?$", version)
+    if m:
+        return (int(m.group(1)), 1, m.group(2), int(m.group(3) or 0), PUBLISHED_AT.get(version, 0), version)
+    m = re.match(r"^(\d{8})-[0-9a-f]+$", version)
+    if m:
+        return (int(m.group(1)), 0, "", 0, PUBLISHED_AT.get(version, 0), version)
+    return (0, 0, "", 0, PUBLISHED_AT.get(version, 0), version)
 
 
 def index_pcsx(repo, base_url, name="pcsx-abnxt"):
