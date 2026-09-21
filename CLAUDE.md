@@ -83,8 +83,10 @@ identical `gameIni` blocks there and moves with the rest at step 9.
 `swapOutAfterLaunch()` - the halves both interceptors used to duplicate - and the create/list/rename/remove
 the memory-card screens use. Nothing outside it constructs an `ableem::MemcardManager`.
 
-`ResumePointService` (`core/services/resume_point.*`) owns the save-state slots under a game's
-`!SaveStates` folder - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
+`ResumePointService` (`core/services/resume_point.*`) owns the save-state slots in a game's `ssFolder` -
+**`Games/!SaveStates/<game folder name>/`** (internal games: `/<id>/`), central since 1.x and keyed by the
+folder's *name*, so a game moved into a sub-folder keeps its states and its own card (2026-09-21, see
+`docs/legacy-1x-analysis.md`) - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
 `exitedCleanly`, plus `prepareForLaunch`/`saveAfterLaunch` that the PCSX interceptor used to hold. Its
 header documents the file layout. Two naming quirks callers depend on: slot 0's picture has no number in
 its name, and `lastPicture()` uses slot 0's picture name whichever slot it finds.
@@ -1666,7 +1668,8 @@ USB stick root = `/media` on the PSC:
 /media/Autobleem/rc/*.sh          boot/launch glue (see payload/Autobleem/rc)
 /media/Autobleem/lib/libs.tar.gz  shared libs unpacked to /tmp/lib at boot; lib/apps, lib/retroarch, lib/modules
                                   are the site's libs pack (the Apps' libraries -> /tmp/applib, RetroArch's, xpad.ko)
-/media/Games/                     user games, one folder per game; !SaveStates/, !MemCards/ sub-dirs
+/media/Games/                     user games, one folder per game, sub-folders allowed; Games/!SaveStates/<folder name>/
+                                  (every game's states + its own card, central) and Games/!MemCards/ (the shared cards)
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
 /media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui), autobleem.log (plog,
                                   rolling), launch.log / pcsx.log (the launch scripts' and pcsx-ab's), ui_menu.log
