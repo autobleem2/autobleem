@@ -60,6 +60,7 @@ KD_GRAPHICS = 1
 FBIOGET_VSCREENINFO = 0x4600
 FBIOGET_FSCREENINFO = 0x4602
 FBIOGET_CON2FBMAP = 0x460F
+FBIOPAN_DISPLAY = 0x4606
 
 
 def console_framebuffer(tty_path, default):
@@ -86,10 +87,25 @@ def console_framebuffer(tty_path, default):
     return default
 
 
+def refresh(fd, var):
+    """Tell the driver the frame changed: a pan to (0, 0) - what the kernel console does when it scrolls.
+    A laptop panel with self-refresh (PSR on Intel eDP) repaints only when the driver flags the front
+    buffer, and a plain write into /dev/fb0 does not - the frames of the first-boot screen sat unseen in
+    memory on a ThinkPad, the console frozen on its last text line (the picture flashed up for a moment
+    at the restart, when the panel finally refreshed)."""
+    if fcntl is None or not var:
+        return
+    try:
+        fcntl.ioctl(fd, FBIOPAN_DISPLAY, bytearray(var), True)
+    except OSError:
+        pass
+
+
 def framebuffer_geometry(fd):
-    """(width, height, bpp, stride, size) of the framebuffer, or None: the visible resolution from
+    """(width, height, bpp, stride, size, var) of the framebuffer, or None: the visible resolution from
     FBIOGET_VSCREENINFO and the real line length and memory size from FBIOGET_FSCREENINFO - sysfs's
-    virtual_size may be taller than the screen and stride is not always there."""
+    virtual_size may be taller than the screen and stride is not always there. var is the raw screen info,
+    what refresh() pans with."""
     if fcntl is None:
         return None
     try:
@@ -104,7 +120,7 @@ def framebuffer_geometry(fd):
         smem_len = struct.unpack_from("I", bytes(fix), 16 + ulong)[0]
         line_length = struct.unpack_from("I", bytes(fix), 16 + ulong + 16 + 8)[0]
         if xres and yres and bpp in (16, 24, 32) and line_length >= xres * bpp // 8:
-            return xres, yres, bpp, line_length, smem_len
+            return xres, yres, bpp, line_length, smem_len, bytes(var)
     except OSError:
         pass
     return None
@@ -785,12 +801,13 @@ def main():
         fb = open(args.fb, "r+b", buffering=0)
         geometry = framebuffer_geometry(fb.fileno())
         if geometry:
-            width, height, bpp, stride, fb_size = geometry
+            width, height, bpp, stride, fb_size, fb_var = geometry
         else:
             width, height = (int(v) for v in sysfs("virtual_size", "1920,1080").split(","))
             bpp = int(sysfs("bits_per_pixel", "32"))
             stride = int(sysfs("stride", str(width * bpp // 8)))
             fb_size = stride * height
+            fb_var = b""
         sys.stderr.write("autobleem-install-ui: %s %dx%d %d bpp, stride %d, %d bytes%s\n"
                          % (args.fb, width, height, bpp, stride, fb_size, "" if geometry else " (from sysfs)"))
         if stride * height > fb_size:
@@ -815,6 +832,7 @@ def main():
         if fb is not None:
             fb.seek(0)
             fb.write(canvas.buf)
+            refresh(fb.fileno(), fb_var)
 
     def render_to_file():
         if not args.render:
