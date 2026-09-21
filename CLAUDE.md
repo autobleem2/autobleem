@@ -607,11 +607,15 @@ the cover databases out (`make_rpi_package.sh --with-covers` puts them back; `in
 from the site's `db/`), and the installer takes the cores as one tarball (`rpi/cores/`, `ci/build_cores.sh`
 - a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
 download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. **CI feeds the
-site, for the Pi only** (2026-09-20, the owner's scope): `ci.yml`'s `site` job on a `v*` tag publishes the
-two Pi tarballs to `releases/<tag>/` and builds + publishes both images, rootless, on the self-hosted
-runner (`/home/claude/autobleem-repo` mounted into the job container as `REPO_DIR`); `site-refresh.yml`
-(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. Both are written
-and unrun: nothing in Actions runs until the runner is registered (the owner's PAT, `docs/ci-plan.md`).
+site for every platform** (2026-09-21, widened from the Pi-only scope of the day before on the owner's
+request): `ci.yml`'s `site` job publishes on every push to develop - the five launcher packages as the
+pre-release `v2.0.0-pre0-<sha>` and both emulators' packages under `emu/` - and on a `v*` tag the same
+under the tag's name plus both Pi images, rootless, on the self-hosted runner (`/home/claude/autobleem-repo`
+mounted into the job container as `REPO_DIR`); `docs/ci.md` has the job's shape. `site-refresh.yml`
+(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. All of it is written
+and unrun: nothing in Actions runs until `AB_CI_ENABLED` is set and the runner is registered (the owner's
+PAT, `docs/ci-plan.md`) - until then the by-hand sequence in `docs/ci.md` is how a pre-release is refreshed
+(done 2026-09-21 for all five platforms: `v2.0.0-pre0-a09927c`).
 The console zip is not on the site and its cover databases still come from the Docker image's baked copy
 (the console has no network, so the zip must carry them) - deliberately left as is.
 
