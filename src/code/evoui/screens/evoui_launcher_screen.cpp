@@ -157,6 +157,7 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet i
     if (!noForce) {
         showOptions();
     }
+    settleEmptyRoster();
 }
 
 //*******************************
@@ -248,6 +249,7 @@ void GuiLauncher::reloadGames() {
         menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
 
     scanRosterChangedSinceReload = false;
+    settleEmptyRoster();
 }
 
 //*******************************
@@ -559,6 +561,7 @@ void GuiLauncher::loadAssets() {
     if (carousel.selectedIsValid()) {
         menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
     }
+    settleEmptyRoster();
 }
 
 //*******************************
@@ -809,6 +812,23 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
         menuText->visible = true;
         carousel.moveMainCover(state == LauncherScreenState::Games);
     }
+}
+
+//*******************************
+// GuiLauncher::settleEmptyRoster
+//*******************************
+// With no game in the set there is nothing to start: the menu row opens on the settings icon (the only
+// one showOptions enables then), which hides the play button, and Up (and Circle) keep it open - see
+// loop_joyMoveUp / loop_circleButton_Pressed. Called wherever the roster may have changed.
+void GuiLauncher::settleEmptyRoster() {
+    if (!carousel.games.empty() || state != LauncherScreenState::Games)
+        return;
+    if (menu == nullptr || playButton == nullptr)
+        return; // loadAssets switches the set once before the elements exist; it calls again at its end
+    const int now = gui->platform().ticks();
+    menu->transition = TR_MENUON;
+    switchState(LauncherScreenState::Set, now);
+    motionStart = 0;
 }
 
 //*******************************

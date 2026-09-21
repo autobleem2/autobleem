@@ -235,6 +235,10 @@ void GuiLauncher::loop_joyMoveUp() {
         return;
     }
     if (state == LauncherScreenState::Set) {
+        if (carousel.games.empty()) {
+            app.audio().cancel.play(); // nothing up there to go to (settleEmptyRoster)
+            return;
+        }
         if (menu->animationStarted == 0) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);
@@ -442,6 +446,10 @@ void GuiLauncher::loop_startButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_circleButton_Pressed() {
     if (state == LauncherScreenState::Set) {
+        if (carousel.games.empty()) {
+            app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
+            return;
+        }
         if (menu->animationStarted == 0) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);

@@ -231,6 +231,9 @@ public:
 
     LauncherScreenState state = LauncherScreenState::Games;
     void switchState(LauncherScreenState state, int time);
+    // an empty set has nothing to play: the icon row (the settings icon) is the only place, the play
+    // button hidden and Up refused until the roster has a game again - see settleEmptyRoster()
+    void settleEmptyRoster();
     // the options row for the selected game: every icon for a PS1 game, settings + game editor for a
     // RetroArch game, settings alone for an App or an empty carousel (was forceSettingsOnly/showAllOptions)
     void showOptions();
