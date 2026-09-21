@@ -107,7 +107,7 @@ def start(usb, port, show, tool=None):
         exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
         app_dir = os.path.join(usb, 'Apps', tool)
         driven = os.path.join(app_dir, tool + '-drive.exe')
-        first_screen = {'pscbios': 'GuiPscBiosMain', 'abflashkit': 'GuiActionMenu'}[tool]
+        first_screen = {'pscbios': 'GuiPscBiosMain', 'abflashkit': 'GuiConfirm'}[tool]
         lang = os.path.join(REPO, 'apps', tool, 'resources', 'lang')
     else:
         exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
