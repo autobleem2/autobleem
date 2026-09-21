@@ -351,6 +351,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/controls/evoui_zoom_btn.h
         src/code/evoui/controls/evoui_notification_line.cpp
         src/code/evoui/controls/evoui_notification_line.h
+        src/code/evoui/controls/evoui_notification_bubble.cpp
+        src/code/evoui/controls/evoui_notification_bubble.h
         src/code/evoui/screens/evoui_app_start.cpp
         src/code/evoui/screens/evoui_app_start.h
         src/code/evoui/screens/evoui_btn_guide.cpp

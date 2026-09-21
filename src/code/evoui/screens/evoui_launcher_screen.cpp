@@ -255,32 +255,41 @@ void GuiLauncher::reloadGames() {
 //*******************************
 // the untranslated stage/detail/done/total from ScanUpdate, turned into the one line shown at the bottom of
 // the screen - the same wording SplashScanProgress used to put on the splash for a blocking scan.
-string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
+void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string &detail) const {
+    // the count on the title when there is one ("Scanning 12/40"), the file or folder as the detail
+    const string count = update.total > 0 ? " " + to_string(update.done) + "/" + to_string(update.total) : string();
+    detail = update.detail;
     switch (update.stage) {
     case ScanStage::Scanning:
-        return _("Scanning...");
-    case ScanStage::Game: {
-        int percent = update.total > 0 ? (update.done * 100 / update.total) : 0;
-        return _("Scanning") + " " + to_string(update.done) + "/" + to_string(update.total) + " (" +
-               to_string(percent) + "%): " + update.detail;
-    }
+        title = _("Scanning...");
+        break;
+    case ScanStage::Game:
+        title = _("Scanning") + count;
+        break;
     case ScanStage::DecompressingEcm:
-        return update.detail.empty() ? _("Decompressing ecm:") : update.detail;
+        title = _("Decompressing ecm:");
+        break;
     case ScanStage::UpdatingDatabase:
-        return _("Updating regional.db...");
+        title = _("Updating regional.db...");
+        detail.clear();
+        break;
     case ScanStage::GameFailedVerify:
-        return _("Game failed to verify:") + " " + DirEntry::getFileNameFromPath(update.detail);
+        title = _("Game failed to verify:");
+        detail = DirEntry::getFileNameFromPath(update.detail);
+        break;
     case ScanStage::MovingFile:
-        return _("Moving :") + " " + update.detail;
+        title = _("Moving :");
+        break;
     case ScanStage::MergingDiscs:
-        return _("Merging discs:") + " " + update.detail;
+        title = _("Merging discs:");
+        break;
     case ScanStage::ScanningRoms:
-        return _("Scanning ROMs") + " " + to_string(update.done) + "/" + to_string(update.total) + ": " + update.detail;
+        title = _("Scanning ROMs") + count;
+        break;
     case ScanStage::FetchingBoxArt:
-        return _("Fetching box art") + " " + to_string(update.done) + "/" + to_string(update.total) + ": " +
-               update.detail;
+        title = _("Fetching box art") + count;
+        break;
     }
-    return "";
 }
 
 //*******************************
@@ -292,25 +301,22 @@ string GuiLauncher::scanStatusText(const ScanUpdate &update) const {
 // settled correctly, so reusing it here is both simpler and safer than a second code path for the same job.
 void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     if (update.progressed) {
-        scanStatusLine.setText(scanStatusText(update), 0); // 0 = no timeout: stays up while scanning
-    }
-
-    if (!update.lastFailedGamePath.empty()) {
-        notificationLines[1].setText(_("Game failed to verify:") + " " +
-                                         DirEntry::getFileNameFromPath(update.lastFailedGamePath),
-                                     DefaultShowingTimeout);
+        string title, detail;
+        scanStatusText(update, title, detail);
+        // the bar only for a counted stage; 0 = the bubble stays until the next message or the summary
+        scanBubble.show(title, detail, update.done, update.total, 0);
     }
 
     if (!update.addedGames.empty() || !update.updatedGames.empty() || !update.removedGameIds.empty())
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
-        string text = _("Scan complete:") + " " + to_string(update.finishedGameCount) + " " + _("games");
+        string text = to_string(update.finishedGameCount) + " " + _("games");
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
         if (update.finishedRomCount > 0)
             text += ", " + to_string(update.finishedRomCount) + " " + _("ROMs");
-        scanStatusLine.setText(text, DefaultShowingTimeout);
+        scanBubble.show(_("Scan complete:"), text, 0, 0, 2 * DefaultShowingTimeout); // the summary, then gone
         scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
     }
 
@@ -413,13 +419,6 @@ void GuiLauncher::loadAssets() {
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.createAndSetDefaults(2, 10, 10, FONT_22_MED, 24, 8);
 
-    scanStatusLine.x = 10;
-    scanStatusLine.y = SCREEN_HEIGHT - 30;
-    scanStatusLine.fontEnum = FONT_22_MED;
-    scanStatusLine.textColor = brightWhite;
-    scanStatusLine.text = "";
-    scanStatusLine.timed = true;
-    scanStatusLine.notificationTime = 0; // nothing to show until the first ScanUpdate arrives
     scanRosterChangedSinceReload = false;
 
     fadeAlpha = 255;
@@ -655,7 +654,7 @@ void GuiLauncher::render() {
     gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, hintColor);
 
     notificationLines.tickTock();
-    scanStatusLine.tickTock();
+    scanBubble.render(*gui, time);
 
     for (auto &obj : frontElemets)
         obj->render();

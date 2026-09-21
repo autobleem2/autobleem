@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../controls/evoui_notification_line.h"
+#include "../controls/evoui_notification_bubble.h"
 #include "../../gui/gui_screen.h"
 #include "../../app.h"
 #include "../../core/services/scan_service.h"
@@ -148,9 +149,11 @@ public:
     // the scan's progress, one line at the very bottom of the screen: applyScanUpdate() (called from loop(),
     // once a frame) turns each ScanUpdate from app.scans().poll() into this line's text, and reloads the
     // carousel via reloadGames() whenever the PS1 roster changed and no scroll animation is in the way.
-    NotificationLine scanStatusLine;
+    // the scan's progress, in the top-right corner while it runs; its summary a while after, then gone
+    NotificationBubble scanBubble;
     void applyScanUpdate(const ScanUpdate &update);
-    std::string scanStatusText(const ScanUpdate &update) const;
+    // the bubble's title and detail for a scan update
+    void scanStatusText(const ScanUpdate &update, std::string &title, std::string &detail) const;
     bool scanRosterChangedSinceReload = false; // set by applyScanUpdate, cleared once reloadGames() runs
 
     bool powerOffShift = false;
