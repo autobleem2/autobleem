@@ -1674,6 +1674,13 @@ and the `SDL_app` window was never matched) - fixed the same day; the resume-slo
 clean return from a game (`filename.txt` in the game's `!SaveStates`), which the splash runner simulates when
 the file is there.
 
+**The DebugDriver** (2026-09-21, `lib_ableem/include/ableem/ui/debug_driver.h`) is how the UI is tested: a dev
+build started with `AB_DEBUG_PORT=<port>` (and `AB_NO_SPLASH=1`) takes pad/keyboard input and hands frames back
+over a socket - `press x`, `down l2`, `key escape`, `text abc`, `shot a.png`, `screen` (the class name of the
+screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_drive.py start|run|sheet|stop` is
+the client (`run "menu 5; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
+with the window hidden. `win_drive.ps1` is the old way and stays for the console tools.
+
 **Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
 `X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
 `Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
