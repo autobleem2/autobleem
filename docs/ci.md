@@ -87,12 +87,16 @@ merged before the runner exists, and the pipeline can be paused without touching
   `dist/` folders; the artifacts drop file modes, the job puts the x bit back). The version is `plan`'s:
   the tag on a tag, else `AB_VERSION_FALLBACK` from CMakeLists.txt + the short sha, passed to `ci/build.sh`
   as `AB_GIT_VERSION`/`AB_GIT_HASH` (a bare `git describe --always` in a tagless checkout would name the
-  build by its hash alone, which the site would take for a stable release). On a `v*` tag the same publish
-  goes under the tag's name (a plain tag = the latest stable release), the two Pi images are built and
-  published, and `release` collects the artifacts into a **draft** GitHub release (`gh release create
-  --notes-from-tag`) - publish it from the Releases page once the notes are right. "Run workflow" takes
-  the runner (`self-hosted` / `github`), a subset of the cross targets, and `publish` for a by-hand
-  pre-release publish.
+  build by its hash alone, which the site would take for a stable release). The console's stick installer
+  bundle is made there too (`ci/build.sh win` leaves `AutoBleemInstaller.exe` in `dist/win/`,
+  `tools/make_installer_bundle.sh --exe` zips it with the psc tarball), and then the three images - the two
+  Pi images (rootless) and the PC stick's (`make_pc_image.sh --mount`, the job's container is privileged
+  for it) - are built from the packages and published, replacing the previous pre-release's; the dispatch
+  input `images` skips them. On a `v*` tag the same publish goes under the tag's name (a plain tag = the
+  latest stable release) and `release` collects the artifacts into a **draft** GitHub release (`gh release
+  create --notes-from-tag`) - publish it from the Releases page once the notes are right. "Run workflow"
+  takes the runner (`self-hosted` / `github`), a subset of the cross targets, `publish` for a by-hand
+  pre-release publish and `images`.
 - Pull requests always run on GitHub's runners: a self-hosted runner on a public repository must never run a
   fork's code. Keep *Settings -> Actions -> General -> "Require approval for all outside collaborators"* on.
 - Artifacts: `native` 7 days, the packages 30 days, the release forever.

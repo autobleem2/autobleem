@@ -608,9 +608,11 @@ from the site's `db/`), and the installer takes the cores as one tarball (`rpi/c
 - a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
 download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. **CI feeds the
 site for every platform** (2026-09-21, widened from the Pi-only scope of the day before on the owner's
-request): `ci.yml`'s `site` job publishes on every push to develop - the five launcher packages as the
-pre-release `v2.0.0-pre0-<sha>` and both emulators' packages under `emu/` - and on a `v*` tag the same
-under the tag's name plus both Pi images, rootless, on the self-hosted runner (`/home/claude/autobleem-repo`
+request): `ci.yml`'s `site` job publishes on every push to develop - the five launcher packages and the
+console's stick installer bundle (`ci/build.sh win` ships `AutoBleemInstaller.exe`, `make_installer_bundle.sh
+--exe` zips it with the psc tarball) as the pre-release `v2.0.0-pre0-<sha>`, both emulators' packages under
+`emu/`, then the three images (the Pi pair rootless, the PC stick's `--mount` in a privileged container) -
+and on a `v*` tag the same under the tag's name, on the self-hosted runner (`/home/claude/autobleem-repo`
 mounted into the job container as `REPO_DIR`); `docs/ci.md` has the job's shape. `site-refresh.yml`
 (monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. All of it is written
 and unrun: nothing in Actions runs until `AB_CI_ENABLED` is set and the runner is registered (the owner's

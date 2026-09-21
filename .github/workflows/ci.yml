@@ -7,11 +7,13 @@
 # emulators' own dist/ folders travel as artifacts too, for their packages on the site.
 #
 # What a push to develop ends in (the self-hosted runner, the site being the build server's tree): the
-# five launcher packages published as the pre-release v2.0.0-pre0-<sha> (replacing the previous one - the
-# launcher's "latest" update channel is that pre-release) and the two emulators' packages under emu/. A v*
-# tag ends in the same publish under the tag's name (a plain tag = the latest stable release), the two Pi
-# images built and published, and a draft GitHub release. This is the by-hand sequence of 2026-09-21
-# (CLAUDE.md, "The download repository") as a workflow.
+# five launcher packages and the console's stick installer bundle published as the pre-release
+# v2.0.0-pre0-<sha> (replacing the previous one - the launcher's "latest" update channel is that
+# pre-release), the two emulators' packages under emu/, and the three images - the two Pi images and the
+# PC stick's - built from those packages and published (rpi-imager/images/, pc/images/; they replace the
+# previous pre-release's). A v* tag ends in the same publish under the tag's name (a plain tag = the latest
+# stable release) and a draft GitHub release. This is the by-hand sequence of 2026-09-21 (CLAUDE.md, "The
+# download repository") as a workflow.
 #
 # Runners: the self-hosted one on the build server by default, GitHub's ubuntu-24.04 when asked for
 # (workflow_dispatch "runner"), and *always* GitHub's for pull requests - a self-hosted runner on a public
@@ -40,6 +42,10 @@ on:
         description: publish the packages to the site as the pre-release (self-hosted only)
         type: boolean
         default: false
+      images:
+        description: build and publish the three images as well (~25 min on the server)
+        type: boolean
+        default: true
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -181,15 +187,18 @@ jobs:
         run: |
           ls -lR dist
           gh release create "${GITHUB_REF_NAME}" --title "AutoBleem ${GITHUB_REF_NAME}" --notes-from-tag --draft \
-            dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/pcusb/*.tar.gz dist/win/*.zip dist/win/*.exe
+            dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/pcusb/*.tar.gz dist/win/*.zip dist/win/AutoBleemSetup-*.exe
 
-  # The download site (CLAUDE.md, "The download repository"): the five launcher packages go to
-  # releases/<version>/ - a -pre* version replaces the previous pre-release, a plain tag becomes the latest
-  # release (repo_index.py) - and the two emulators' packages, made by each repository's
-  # tools/make_packages.sh from the dist/ folders the cross jobs uploaded, go under emu/. On a tag the two
-  # Pi images are built from the tarballs, rootless, right there (tools/make_rpi_image.sh --rootless, ~7
-  # min each) and go to rpi-imager/images/. Self-hosted only: the site is the build server's
-  # /home/claude/autobleem-repo, mounted into the job.
+  # The download site (CLAUDE.md, "The download repository"): the five launcher packages and the console's
+  # stick installer bundle (the exe the win job built + the psc tarball, tools/make_installer_bundle.sh
+  # --exe) go to releases/<version>/ - a -pre* version replaces the previous pre-release, a plain tag
+  # becomes the latest release (repo_index.py) - and the two emulators' packages, made by each repository's
+  # tools/make_packages.sh from the dist/ folders the cross jobs uploaded, go under emu/. Then the images,
+  # unless a dispatch said not to: the two Pi images from the tarballs, rootless (tools/make_rpi_image.sh
+  # --rootless, ~7 min each), to rpi-imager/images/, and the PC stick's from the pcusb tarball
+  # (tools/make_pc_image.sh --mount: mmdebstrap as root, which is why the container is privileged - the
+  # server's kernel refuses newuidmap in a container) to pc/images/. Self-hosted only: the site is the
+  # build server's /home/claude/autobleem-repo, mounted into the job.
   site:
     name: publish to the site
     if: >-
@@ -204,6 +213,7 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+      options: --privileged
       volumes:
         - /home/claude/autobleem-repo:/srv/autobleem-repo
     env:
@@ -223,11 +233,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: dist
+      - name: The console's stick installer bundle
+        if: hashFiles('dist/win/AutoBleemInstaller.exe') != '' && hashFiles('dist/psc/*.tar.gz') != ''
+        run: tools/make_installer_bundle.sh dist/psc/autobleem-psc-*.tar.gz --exe dist/win/AutoBleemInstaller.exe --out dist/installer
       - name: Publish the launcher packages
         run: |
           files=()
           for f in dist/psc/*.tar.gz dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/pcusb/*.tar.gz \
-                   dist/win/*.exe dist/win/*.zip; do
+                   dist/win/AutoBleemSetup-*.exe dist/win/*.zip dist/installer/*.zip; do
             [ -f "$f" ] && files+=("$f")
           done
           tools/repo_publish.sh --local release "$VERSION" "${files[@]}"
@@ -251,13 +264,19 @@ jobs:
           tools/repo_publish.sh --local pcsx-ab "$(ls pcsx-ab/dist/packages/*.json | sed 's/.*pcsx-ab-\(.*\)\.json/\1/')" pcsx-ab/dist/packages/*
           (cd pcsx-abnxt && tools/make_packages.sh)
           tools/repo_publish.sh --local pcsx "$(ls pcsx-abnxt/dist/packages/*.json | sed 's/.*pcsx-abnxt-\(.*\)\.json/\1/')" pcsx-abnxt/dist/packages/*
-      - name: Build the images
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Build the Pi images
+        if: github.event_name != 'workflow_dispatch' || inputs.images
         run: |
           tools/make_rpi_image.sh --rootless --arch armhf --package dist/rpi/autobleem-rpi.tar.gz \
               --work build_rpi_image --out build_rpi_image/out
           tools/make_rpi_image.sh --rootless --arch arm64 --package dist/rpi64/autobleem-rpi-arm64.tar.gz \
               --work build_rpi_image --out build_rpi_image/out
-      - name: Publish the images
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish the Pi images
+        if: github.event_name != 'workflow_dispatch' || inputs.images
         run: tools/repo_publish.sh --local image "$VERSION" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json
+      - name: Build the PC stick image
+        if: github.event_name != 'workflow_dispatch' || inputs.images
+        run: tools/make_pc_image.sh --mount --package dist/pcusb/autobleem-pcusb-i386.tar.gz --work build_pc_image --out build_pc_image/out
+      - name: Publish the PC stick image
+        if: github.event_name != 'workflow_dispatch' || inputs.images
+        run: tools/repo_publish.sh --local pc-image "$VERSION" build_pc_image/out/*.img.xz
