@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -77,6 +77,7 @@ Downloading the update=Güncelleme indiriliyor
 Edit game parameters=Oyun parametrelerini düzenle
 Edit Memory Card information=Hafıza kartı bilgisini düzenle
 EmulationStation=EmulationStation
+Emulator=Emülatör
 Emulator config MENU=Emülatör yapılandırma MENÜSÜ
 Enter=Onayla
 Enter new card name=Yeni kart adı girin
@@ -122,8 +123,8 @@ HIGH SCORE=EN YÜKSEK SKOR
 Hostname=Ana bilgisayar adı
 In Game=Oyun İçinde
 In Retroarch Game=RetroArch Oyununda
-INTERNAL=DAHILİ
 Internal=Dahili
+INTERNAL=DAHILİ
 Internal Games=Dahili Oyunlar
 Kernel=Çekirdek
 Keyboard=Klavye
@@ -266,6 +267,7 @@ USB Games=USB Oyunları
 Use controller=Kumandayı kullan
 Use Font from Theme:=Temanın yazı tipini kullan:
 Version=Sürüm
+Video=Görüntü
 Video driver=Video sürücüsü
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=UYARI: KAPAK VERİTABANI BULUNAMADI. HERHANGİ BİR TUŞA BASIN.
 WAVE=DALGA

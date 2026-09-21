@@ -3,6 +3,7 @@
 //
 #pragma once
 #include "../gui_screen.h"
+#include "../game_detail_pane.h"
 #include "../../app.h"
 #include "../../core/main.h"
 #include "../../core/model/ps_game.h"
@@ -23,4 +24,5 @@ public:
     bool changed = false; // the flag was toggled - the caller reloads a Lightgun set
     using GuiScreen::GuiScreen;
     ableem::Texture cover;
+    GameDetailPane pane;
 };

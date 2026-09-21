@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -77,6 +77,7 @@ Downloading the update=Ladataan päivitystä
 Edit game parameters=Muokkaa pelin parametrejä
 Edit Memory Card information=Muokkaa muistikortin
 EmulationStation=EmulationStation
+Emulator=Emulaattori
 Emulator config MENU=Emulaattorin konfigurointivalikko
 Enter=Enter
 Enter new card name=Kirjoita uudsi kortin nimi
@@ -122,8 +123,8 @@ HIGH SCORE=PARAS TULOS
 Hostname=Isäntänimi
 In Game=Pelissä
 In Retroarch Game=RetroArch pelissä
-INTERNAL=SISÄINEN
 Internal=Sisäinen
+INTERNAL=SISÄINEN
 Internal Games=Sisäiset Pelit
 Kernel=Ydin
 Keyboard=Näppäimistö
@@ -266,6 +267,7 @@ USB Games=USB Pelit
 Use controller=Käytä ohjainta
 Use Font from Theme:=Käytä teeman fonttia:
 Version=Versio
+Video=Kuva
 Video driver=Videoajuri
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=VAROITUS: COVER DB EI LÖYTYNYT. PAINA MITÄ TAHANSA NÄPPÄINTÄ.
 WAVE=AALTO

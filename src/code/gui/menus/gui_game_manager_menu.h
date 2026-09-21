@@ -4,6 +4,7 @@
 #pragma once
 
 #include "gui_two_column_string_menu.h"
+#include "../game_detail_pane.h"
 #include "../../app.h"
 #include "../../core/model/ps_game.h"
 #include <ableem/ui/texture.h>
@@ -41,5 +42,5 @@ private:
     int previewFor = -1;
     ableem::Texture previewCover;
     ableem::Texture previewSnap;
-    static const int PreviewWidth = 300; // what the rows leave free on the left
+    GameDetailPane pane; // the selected game's cover, screenshot and facts, on the right
 };

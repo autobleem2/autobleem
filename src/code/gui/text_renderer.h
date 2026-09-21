@@ -163,12 +163,19 @@ public:
     int renderTextLineToColumns(const std::string &textLeft, const std::string &textRight, int xLeft, int xRight,
                                 int line, int yoffset = 0, ableem::Font font = ableem::Font());
 
+    // an option row: the text, and a |@Check| / |@Uncheck| marker at the row's right edge - the panel's, or
+    // `rightEdge` when given (a screen with a pane on the right)
     int renderTextLineOptions(const std::string &text, int line, int yoffset = 0, XAlignment xAlign = XALIGN_LEFT,
-                              int xoffset = 0);
+                              int xoffset = 0, int rightEdge = 0);
+    // a value right-aligned to the row's right edge (the panel's, or `rightEdge`), on row `line` (or at an
+    // absolute y when line < 0, as renderTextLine takes it)
+    void renderRowValue(const std::string &value, int line, int yoffset, int rightEdge = 0,
+                        ableem::Font font = ableem::Font());
 
     // the selected row, in PanelStyle's look (the band and the bar at the panel's edge); the row's height is
     // the font's line height
-    void renderSelectionBox(int line, int yoffset, int xoffset = 0, ableem::Font font = ableem::Font());
+    void renderSelectionBox(int line, int yoffset, int xoffset = 0, ableem::Font font = ableem::Font(),
+                            int rightEdge = 0);
 
     // a heading row between the rows: PanelStyle's faint band
     void renderLabelBox(int line, int yoffset);

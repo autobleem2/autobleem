@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -77,6 +77,7 @@ Downloading the update=Pobieranie aktualizacji
 Edit game parameters=Edytuj parametry gry
 Edit Memory Card information=Edytuj informacje Karty Pamięci
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=MENU kofiguracji emulatora
 Enter=Wejdź
 Enter new card name=Podaj nową nazwę karty
@@ -122,8 +123,8 @@ HIGH SCORE=NAJLEPSZY WYNIK
 Hostname=Nazwa hosta
 In Game=W Grze
 In Retroarch Game=W grze Retroarch
-INTERNAL=WEWNĘTRZNA
 Internal=Wewnętrzna
+INTERNAL=WEWNĘTRZNA
 Internal Games=Wewnętrzne Gry
 Kernel=Jądro
 Keyboard=Klawiatura
@@ -266,6 +267,7 @@ USB Games=Gry USB
 Use controller=Użyj kontrolera
 Use Font from Theme:=Użyj czcionki z motywu:
 Version=Wersja
+Video=Obraz
 Video driver=Sterownik wideo
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=UWAGA: BRAK BAZY OKŁADEK. NACIŚNIJ DOWOLNY PRZYCISK
 WAVE=FALA

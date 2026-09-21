@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define OPT_LIGHTGUN 4
+#define OPT_LIGHTGUN 1
 
 //*******************************
 // GuiEditorRA::init
@@ -25,30 +25,30 @@ void GuiEditorRA::init() {
 //*******************************
 void GuiEditorRA::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
-    int line = 0;
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderHeader(gameData->title);
+    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameData->title,
+                                                      gui->classicPanel().w - 2 * PanelStyle::RowInset));
 
-    gui->text().renderTextLine(_("File:") + " " + DirEntry::getFileNameFromPath(gameData->image_path), line++, yoffset,
-                               XALIGN_CENTER);
-    gui->text().renderTextLine(_("Core:") + " " + gameData->core_name, line++, yoffset, XALIGN_CENTER);
-    line++;
+    pane.cover = cover;
+    pane.facts.clear();
+    pane.facts.emplace_back(_("File:"), DirEntry::getFileNameFromPath(gameData->image_path));
+    pane.facts.emplace_back(_("Core:"), gameData->core_name);
+    if (!gameData->publisher.empty())
+        pane.facts.emplace_back(_("Published by:"), gameData->publisher);
+    if (gameData->year > 0)
+        pane.facts.emplace_back(_("Year:"), to_string(gameData->year));
+    pane.render(*gui);
 
+    const int right = GameDetailPane::rowsRight(*gui);
+    gui->text().renderLabelBox(0, yoffset);
+    gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
+    gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
     gui->text().renderTextLineOptions(
         _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
-        OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
-    gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 300);
+        OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);
 
     gui->renderStatus("|@O| " + _("Back") + "|");
-
-    ableem::Rect rect;
-    rect.x = app.theme().classic().editorCover.x;
-    rect.y = app.theme().classic().editorCover.y;
-    rect.w = 226;
-    rect.h = 226;
-    renderer.copy(cover, nullptr, &rect);
-
     renderer.present();
 }
 

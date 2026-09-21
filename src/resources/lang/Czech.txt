@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -77,6 +77,7 @@ Downloading the update=Stahování aktualizace
 Edit game parameters=Upravit parametry hry
 Edit Memory Card information=Upravit informace Paměťové karty
 EmulationStation=EmulationStation
+Emulator=Emulátor
 Emulator config MENU=Konfigurace emulátoru MENU
 Enter=Spustit
 Enter new card name=Zadejte nový název karty
@@ -122,8 +123,8 @@ HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=Název hostitele
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-INTERNAL=INTERNÍ
 Internal=Interní
+INTERNAL=INTERNÍ
 Internal Games=Interní hry
 Kernel=Jádro
 Keyboard=Klávesnice
@@ -266,6 +267,7 @@ USB Games=Hry na USB
 Use controller=Použít ovladač
 Use Font from Theme:=Použít písmo z motivu:
 Version=Verze
+Video=Obraz
 Video driver=Ovladač videa
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=POZOR: NENAŠLA SE DATABÁZE OBALŮ NA HRY. STLAČTE LIBOVOLNOU KLÁVESU.
 WAVE=VLNA

@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -77,6 +77,7 @@ Downloading the update=正在下载更新
 Edit game parameters=编辑游戏参数
 Edit Memory Card information=编辑记忆卡信息
 EmulationStation=EmulationStation
+Emulator=模拟器
 Emulator config MENU=模拟器配置菜单
 Enter=确定
 Enter new card name=输入新卡名称
@@ -122,8 +123,8 @@ HIGH SCORE=最高分
 Hostname=主机名
 In Game=游戏中
 In Retroarch Game=RetroArch 游戏中
-INTERNAL=内置
 Internal=内置
+INTERNAL=内置
 Internal Games=内置游戏
 Kernel=内核
 Keyboard=键盘
@@ -266,6 +267,7 @@ USB Games=USB 游戏
 Use controller=使用手柄
 Use Font from Theme:=使用主题字体：
 Version=版本
+Video=视频
 Video driver=视频驱动
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=警告：未找到封面数据库。按任意键继续。
 WAVE=波次

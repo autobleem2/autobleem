@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 0 / Total: 272
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -77,6 +77,7 @@ Downloading the update=Downloading the update
 Edit game parameters=Edit game parameters
 Edit Memory Card information=Edit Memory Card information
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Emulator config MENU
 Enter=Enter
 Enter new card name=Enter new card name
@@ -111,8 +112,8 @@ Game History=Game History
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
-Games=Games
 games=games
+Games=Games
 GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
@@ -122,8 +123,8 @@ HIGH SCORE=HIGH SCORE
 Hostname=Hostname
 In Game=In Game
 In Retroarch Game=In Retroarch Game
-INTERNAL=INTERNAL
 Internal=Internal
+INTERNAL=INTERNAL
 Internal Games=Internal Games
 Kernel=Kernel
 Keyboard=Keyboard
@@ -266,6 +267,7 @@ USB Games=USB Games
 Use controller=Use controller
 Use Font from Theme:=Use Font from Theme:
 Version=Version
+Video=Video
 Video driver=Video driver
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.
 WAVE=WAVE

@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -77,6 +77,7 @@ Downloading the update=Téléchargement de la mise à jour
 Edit game parameters=Modifier Paramètres de Jeu
 Edit Memory Card information=Modifier Paramètres de Carte Mémoire
 EmulationStation=EmulationStation
+Emulator=Émulateur
 Emulator config MENU=Menu de configuration de l'émulateur
 Enter=Entrée
 Enter new card name=Nouveau nom de la carte
@@ -122,8 +123,8 @@ HIGH SCORE=MEILLEUR SCORE
 Hostname=Nom d'hôte
 In Game=En cours de jeu
 In Retroarch Game=Dans un jeu RetroArch
-INTERNAL=INTERNE
 Internal=Interne
+INTERNAL=INTERNE
 Internal Games=Jeux internes
 Kernel=Noyau
 Keyboard=Clavier
@@ -266,6 +267,7 @@ USB Games=Jeux USB
 Use controller=Utiliser la manette
 Use Font from Theme:=Utiliser la police du thème :
 Version=Version
+Video=Vidéo
 Video driver=Pilote vidéo
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ATTANTION : PAS DE BDD DE JAQUETTE TROUVÉES. APPUYER SUR UNE TOUCHE
 WAVE=VAGUE

@@ -11,27 +11,25 @@
 
 using namespace std;
 
-#define OPT_FIRST 5
-#define OPT_FAVORITE 5
-#define OPT_LIGHTGUN 6
-#define OPT_PLAY_USING_RA 7
-#define OPT_LOCK 8
-#define OPT_HIGHRES 9
-#define OPT_SPEEDHACK 10
-#define OPT_SCANLINES 11
-#define OPT_SCANLINELV 12
-#define OPT_CLOCK_PSX 13
-#define OPT_FRAMESKIP 14
-#define OPT_PLUGIN 15
-#define OPT_INTERPOLATION 16
-#define OPT_BOOTLOGO 17
-#define OPT_SMOOTHING 18 // pcsx-abnxt only
-#define OPT_SONYHACKS 19 // pcsx-abnxt only
-#define OPT_LAST 17
-#define OPT_LAST_NXT 19
+#define OPT_FIRST 0
+#define OPT_FAVORITE 0
+#define OPT_LIGHTGUN 1
+#define OPT_PLAY_USING_RA 2
+#define OPT_LOCK 3
+#define OPT_HIGHRES 4
+#define OPT_SPEEDHACK 5
+#define OPT_SCANLINES 6
+#define OPT_SCANLINELV 7
+#define OPT_CLOCK_PSX 8
+#define OPT_FRAMESKIP 9
+#define OPT_PLUGIN 10
+#define OPT_INTERPOLATION 11
+#define OPT_BOOTLOGO 12
+#define OPT_SMOOTHING 13 // pcsx-abnxt only
+#define OPT_SONYHACKS 14 // pcsx-abnxt only
 
 //*******************************
-// GuiEditor::nxtEmulator / lastOption
+// GuiEditor::nxtEmulator
 //*******************************
 bool GuiEditor::nxtEmulator() const {
     auto &values = app.config().inifile.values;
@@ -39,8 +37,67 @@ bool GuiEditor::nxtEmulator() const {
     return it != values.end() && it->second == "pcsx-abnxt";
 }
 
-int GuiEditor::lastOption() const {
-    return nxtEmulator() ? OPT_LAST_NXT : OPT_LAST;
+//*******************************
+// GuiEditor::buildRows / selectedRow / moveSelection
+//*******************************
+void GuiEditor::buildRows() {
+    const bool internal = settings.internal;
+    IniFile &gameIni = settings.ini;
+    const PcsxSettings &pcsx = settings.pcsx;
+    rows.clear();
+    auto heading = [&](const string &label) { rows.push_back({Row::Kind::Heading, label, "", false, -1}); };
+    auto boolRow = [&](const string &label, bool on, int opt) {
+        rows.push_back({Row::Kind::Bool, label, "", on, opt});
+    };
+    auto valueRow = [&](const string &label, const string &value, int opt) {
+        rows.push_back({Row::Kind::Value, label, value, false, opt});
+    };
+
+    heading(_("Game"));
+    boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE);
+    boolRow(_("Lightgun Game:"), gameData->lightgun, OPT_LIGHTGUN);
+    boolRow(_("Play using RA:"),
+            (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
+                                                       : gameIni.values["play_using_ra"] == "true",
+            OPT_PLAY_USING_RA);
+    boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
+
+    heading(_("Video"));
+    boolRow(_("High res:"), pcsx.highres == 1, OPT_HIGHRES);
+    boolRow(_("Scanlines:"), pcsx.scanlines == 1, OPT_SCANLINES);
+    valueRow(_("Scanline Level:"), to_string(pcsx.scanlineLevel), OPT_SCANLINELV);
+    valueRow(_("Frameskip:"), to_string(pcsx.frameskip), OPT_FRAMESKIP);
+    if (!internal)
+        valueRow(_("Plugin:"), pcsx.gpu, OPT_PLUGIN);
+    if (nxtEmulator()) // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
+        valueRow(_("Smoothing:"), GameSettingsService::SmoothingNames[pcsx.smoothing], OPT_SMOOTHING);
+
+    heading(_("Emulator"));
+    boolRow(_("SpeedHack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
+    valueRow(_("Clock:"), to_string(pcsx.clock), OPT_CLOCK_PSX);
+    valueRow(_("Spu Interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
+    boolRow(_("Boot logo:"), pcsx.bootLogo != 0, OPT_BOOTLOGO);
+    if (nxtEmulator()) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
+        boolRow(_("Sony hacks:"), pcsx.sonyHacks, OPT_SONYHACKS);
+}
+
+int GuiEditor::selectedRow() const {
+    for (size_t i = 0; i < rows.size(); i++)
+        if (rows[i].opt == selOption)
+            return static_cast<int>(i);
+    return -1;
+}
+
+void GuiEditor::moveSelection(int step) {
+    int i = selectedRow();
+    if (i < 0)
+        i = step > 0 ? -1 : static_cast<int>(rows.size());
+    for (int j = i + step; j >= 0 && j < static_cast<int>(rows.size()); j += step) {
+        if (rows[j].opt >= 0) {
+            selOption = rows[j].opt;
+            return;
+        }
+    }
 }
 
 //*******************************
@@ -144,128 +201,69 @@ void GuiEditor::render() {
     IniFile &gameIni = settings.ini;
     const PcsxSettings &pcsx = settings.pcsx;
 
-    int line = 0;
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameIni.values["title"],
                                                       gui->classicPanel().w - 2 * PanelStyle::RowInset));
 
-    // Game.ini
+    // the pane on the right: the cover and the game's facts
+    pane.cover = cover;
+    pane.facts.clear();
+    pane.facts.emplace_back(_("Published by:"), gameIni.values["publisher"]);
+    pane.facts.emplace_back(_("Year:"), gameIni.values["year"]);
+    pane.facts.emplace_back(_("Players"), gameIni.values["players"]);
+    pane.facts.emplace_back(_("Folder:"), internal ? gameData->folder : gameIni.entry);
+    pane.facts.emplace_back(_("Memory Card:"), gameIni.values["memcard"] == "SONY"
+                                                   ? string(_("Internal"))
+                                                   : gameIni.values["memcard"] + " (" + _("Custom") + ")");
+    pane.render(*gui);
 
-    if (!internal) {
-        gui->text().renderTextLine(_("Folder:") + " " + gameIni.entry, line++, yoffset, XALIGN_CENTER);
-    } else {
-        gui->text().renderTextLine(_("Folder:") + " " + gameData->folder, line++, yoffset, XALIGN_CENTER);
+    // the option rows on the left, their switch or value at the pane's edge; as many as fit, the rest
+    // scroll with the cursor
+    buildRows();
+    const int right = GameDetailPane::rowsRight(*gui);
+    const ableem::Font &font = gui->assets().themeFont;
+    const int fit = gui->classicRowsThatFit(font);
+    const int total = static_cast<int>(rows.size());
+    const int sel = selectedRow();
+    if (sel >= 0) {
+        if (sel < firstVisible)
+            firstVisible = sel;
+        if (sel >= firstVisible + fit)
+            firstVisible = sel - fit + 1;
+        // a heading right above the selected row comes along, so a group is never headless at the top
+        if (firstVisible > 0 && firstVisible == sel && rows[sel - 1].opt < 0 && sel < firstVisible + fit)
+            firstVisible--;
     }
-
-    gui->text().renderTextLine(_("Published by:") + " " + gameIni.values["publisher"], line++, yoffset, XALIGN_CENTER);
-
-    gui->text().renderTextLine(_("Year:") + " " + gameIni.values["year"] + "   " + _("Players") + ":" + " " +
-                                   gameIni.values["players"],
-                               line++, yoffset, XALIGN_CENTER);
-
-    gui->text().renderTextLine(_("Memory Card:") + " " +
-                                   (gameIni.values["memcard"] == "SONY"
-                                        ? string(_("Internal"))
-                                        : gameIni.values["memcard"] + " " + "(" + _("Custom") + ")"),
-                               line++, yoffset, XALIGN_CENTER);
-
-    if (gameData->internal) {
-        gui->text().renderTextLineOptions(_("Favorite:") +
-                                              (gameData->favorite ? string("|@Check|") : string("|@Uncheck|")),
-                                          OPT_FAVORITE, yoffset, XALIGN_LEFT, 300);
-    } else {
-        gui->text().renderTextLineOptions(
-            _("Favorite:") + (gameIni.values["favorite"] == "1" ? string("|@Check|") : string("|@Uncheck|")),
-            OPT_FAVORITE, yoffset, XALIGN_LEFT, 300);
+    firstVisible = max(0, min(firstVisible, max(0, total - fit)));
+    for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
+        const Row &row = rows[i];
+        if (row.kind == Row::Kind::Heading) {
+            gui->text().renderLabelBox(line, yoffset);
+            gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
+            continue;
+        }
+        if (row.opt == selOption)
+            gui->text().renderSelectionBox(line, yoffset, 0, ableem::Font(), right);
+        if (row.kind == Row::Kind::Bool) {
+            gui->text().renderTextLineOptions(row.label + (row.on ? string("|@Check|") : string("|@Uncheck|")), line,
+                                              yoffset, XALIGN_LEFT, 0, right);
+        } else {
+            gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
+            gui->text().renderRowValue(row.value, line, yoffset, right);
+        }
     }
-
-    gui->text().renderTextLineOptions(_("Lightgun Game:") +
-                                          (gameData->lightgun ? string("|@Check|") : string("|@Uncheck|")),
-                                      OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
-
-    if (gameData->internal || gameData->lightgun) {
-        gui->text().renderTextLineOptions(_("Play using RA:") +
-                                              (gameData->play_using_ra ? string("|@Check|") : string("|@Uncheck|")),
-                                          OPT_PLAY_USING_RA, yoffset, XALIGN_LEFT, 300);
-    } else {
-        gui->text().renderTextLineOptions(_("Play using RA:") + (gameIni.values["play_using_ra"] == "true"
-                                                                     ? string("|@Check|")
-                                                                     : string("|@Uncheck|")),
-                                          OPT_PLAY_USING_RA, yoffset, XALIGN_LEFT, 300);
-    }
-
-    // pcsx.cfg
-
-    gui->text().renderTextLineOptions(
-        _("Lock data:") + (gameIni.values["automation"] == "0" ? string("|@Check|") : string("|@Uncheck|")), OPT_LOCK,
-        yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("High res:") + (pcsx.highres == 1 ? string("|@Check|") : string("|@Uncheck|")),
-                                      OPT_HIGHRES, yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("SpeedHack:") +
-                                          (pcsx.speedhack == 1 ? string("|@Check|") : string("|@Uncheck|")),
-                                      OPT_SPEEDHACK, yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("Scanlines:") +
-                                          (pcsx.scanlines == 1 ? string("|@Check|") : string("|@Uncheck|")),
-                                      OPT_SCANLINES, yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("Scanline Level:") + " " + to_string(pcsx.scanlineLevel), OPT_SCANLINELV,
-                                      yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("Clock:") + " " + to_string(pcsx.clock), OPT_CLOCK_PSX, yoffset, XALIGN_LEFT,
-                                      300);
-
-    gui->text().renderTextLineOptions(_("Frameskip:") + " " + to_string(pcsx.frameskip), OPT_FRAMESKIP, yoffset,
-                                      XALIGN_LEFT, 300);
-
-    if (!internal) {
-        gui->text().renderTextLineOptions(_("Plugin:") + " " + pcsx.gpu, OPT_PLUGIN, yoffset, XALIGN_LEFT, 300);
-    }
-
-    gui->text().renderTextLineOptions(_("Spu Interpolation:") + " " + to_string(pcsx.interpolation), OPT_INTERPOLATION,
-                                      yoffset, XALIGN_LEFT, 300);
-
-    gui->text().renderTextLineOptions(_("Boot logo:") +
-                                          (pcsx.bootLogo != 0 ? string("|@Check|") : string("|@Uncheck|")),
-                                      OPT_BOOTLOGO, yoffset, XALIGN_LEFT, 300);
-
-    if (nxtEmulator()) {
-        // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
-        gui->text().renderTextLineOptions(_("Smoothing:") + " " + GameSettingsService::SmoothingNames[pcsx.smoothing],
-                                          OPT_SMOOTHING, yoffset, XALIGN_LEFT, 300);
-        // Sony's per-title overrides (the console's emulator had them) for the disc's serial; off unless a
-        // game asks for them
-        gui->text().renderTextLineOptions(_("Sony hacks:") +
-                                              (pcsx.sonyHacks ? string("|@Check|") : string("|@Uncheck|")),
-                                          OPT_SONYHACKS, yoffset, XALIGN_LEFT, 300);
-    }
-
-    gui->text().renderSelectionBox(selOption, yoffset, 300);
+    gui->renderScrollMarkers(firstVisible > 0, firstVisible + fit < total);
 
     string guiMenu = "|@T| " + _("Rename");
-
     if (!internal) {
         guiMenu += "  |@S| " + _("Change memory card") + " ";
-
         if (gameIni.values["memcard"] == "SONY") {
             guiMenu += "|@Start| " + _("Share memory card") + "  ";
         }
     }
-
     guiMenu += " |@O| " + _("Back") + "|";
-
     gui->renderStatus(guiMenu);
-
-    ableem::Rect rect;
-    rect.x = app.theme().classic().editorCover.x;
-    rect.y = app.theme().classic().editorCover.y;
-    rect.w = 226;
-    rect.h = 226;
-
-    renderer.copy(cover, nullptr, &rect);
 
     renderer.present();
 }
@@ -293,20 +291,14 @@ void GuiEditor::loop() {
                 if (gui->input().dpadDown()) {
                     do {
                         app.audio().cursor.play();
-                        selOption++;
-                        if (selOption > lastOption()) {
-                            selOption = lastOption();
-                        }
+                        moveSelection(1);
                         render();
                     } while (fastForwardUntilAnotherEvent(120));
                 }
                 if (gui->input().dpadUp()) {
                     do {
                         app.audio().cursor.play();
-                        selOption--;
-                        if (selOption < OPT_FIRST) {
-                            selOption = OPT_FIRST;
-                        }
+                        moveSelection(-1);
                         render();
                     } while (fastForwardUntilAnotherEvent(120));
                 }

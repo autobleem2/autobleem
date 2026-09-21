@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -77,6 +77,7 @@ Downloading the update=Laddar ner uppdateringen
 Edit game parameters=Redigera spelparametrar
 Edit Memory Card information=Redigera minneskortsinformation
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Emulator-inställningsmeny
 Enter=Mata in
 Enter new card name=Ange namn på nytt kort
@@ -122,8 +123,8 @@ HIGH SCORE=BÄSTA RESULTAT
 Hostname=Värdnamn
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interna spel
 Kernel=Kärna
 Keyboard=Tangentbord
@@ -266,6 +267,7 @@ USB Games=USB-spel
 Use controller=Använd handkontroll
 Use Font from Theme:=Använd temats teckensnitt:
 Version=Version
+Video=Bild
 Video driver=Videodrivrutin
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=VARNING: INGEN COVER DB HITTADES. TRYCK PÅ VALFRI KNAPP.
 WAVE=VÅG

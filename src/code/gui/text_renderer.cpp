@@ -384,7 +384,8 @@ int TextRenderer::renderTextLineToColumns(const string &textLeft, const string &
 //*******************************
 // TextRenderer::renderTextLineOptions
 //*******************************
-int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffset, XAlignment xAlign, int xoffset) {
+int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffset, XAlignment xAlign, int xoffset,
+                                        int rightEdge) {
     string text = _text;
 
     // if there is a check or uncheck icon, flag which one and remove the emoji toekn from the string
@@ -410,7 +411,8 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
     Rect opscreen = getOpscreenRectOfTheme();
     int fontHeight = themeFont_.lineHeight();
 
-    int x = opscreen.x + opscreen.w - PanelStyle::RowInset - 8 - getCheckIconWidth() + checkIconRightMargin_;
+    const int right = rightEdge > 0 ? rightEdge : opscreen.x + opscreen.w - PanelStyle::RowInset - 8;
+    int x = right - getCheckIconWidth() + checkIconRightMargin_;
     int y = (fontHeight * line) + yoffset;
     if (line < 0)
         y = -line; // an absolute y, as renderTextLine takes it
@@ -424,9 +426,23 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
 }
 
 //*******************************
+// TextRenderer::renderRowValue
+//*******************************
+void TextRenderer::renderRowValue(const string &value, int line, int yoffset, int rightEdge, ableem::Font font) {
+    if (!font.valid())
+        font = themeFont_;
+    Rect opscreen = getOpscreenRectOfTheme();
+    const int right = rightEdge > 0 ? rightEdge : opscreen.x + opscreen.w - PanelStyle::RowInset - 8;
+    int y = (font.lineHeight() * line) + yoffset;
+    if (line < 0)
+        y = -line;
+    renderText(font, value, ableem::GuiBase::ScreenWidth - right, y, XALIGN_RIGHT);
+}
+
+//*******************************
 // TextRenderer::renderSelectionBox
 //*******************************
-void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font font) {
+void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem::Font font, int rightEdge) {
     if (!font.valid())
         font = themeFont_;
 
@@ -435,7 +451,7 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
     Rect rectSelection;
     rectSelection.x = opscreen.x + 1 + xoffset;
     rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 2 - xoffset;
+    rectSelection.w = (rightEdge > 0 ? rightEdge + 12 : opscreen.x + opscreen.w - 1) - rectSelection.x;
     rectSelection.h = fontHeight;
 
     PanelStyle::fromTheme(theme_.launcher()).selection(renderer_, rectSelection);

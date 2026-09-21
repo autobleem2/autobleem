@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -77,6 +77,7 @@ Downloading the update=Telecargament de la mesa a jorn
 Edit game parameters=Modificar los paramètres del jòc
 Edit Memory Card information=Modificar las informacions de la carta memòria
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Menú config de l'emulator
 Enter=Dintrar
 Enter new card name=Picatz un nòu nom per la carta
@@ -122,8 +123,8 @@ HIGH SCORE=MELHOR MARCA
 Hostname=Nom d'òste
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-INTERNAL=INTÈRNA
 Internal=Intèrna
+INTERNAL=INTÈRNA
 Internal Games=Jòcs intèrnes
 Kernel=Nucli
 Keyboard=Clavièr
@@ -266,6 +267,7 @@ USB Games=Jòcs USB
 Use controller=Utilizar la manèta
 Use Font from Theme:=Utilizar la polissa del tèma:
 Version=Version
+Video=Vidèo
 Video driver=Pilòt vidèo
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ATENCION : CAP DE COBÈRTURA PAS TROBADA. QUICHATZ UN BOTON
 WAVE=ONDADA

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -77,6 +77,7 @@ Downloading the update=Update downloaden
 Edit game parameters=Bewerk game parameters
 Edit Memory Card information=Bewerk memory card informatie
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Emulator configuratiemenu
 Enter=Enter
 Enter new card name=Nieuwe kaart naam
@@ -122,8 +123,8 @@ HIGH SCORE=HOOGSTE SCORE
 Hostname=Hostnaam
 In Game=In game
 In Retroarch Game=In RetroArch game
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interne games
 Kernel=Kernel
 Keyboard=Toetsenbord
@@ -266,6 +267,7 @@ USB Games=USB games
 Use controller=Controller gebruiken
 Use Font from Theme:=Lettertype van thema gebruiken:
 Version=Versie
+Video=Beeld
 Video driver=Videostuurprogramma
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=WAARSCHUWING: GEEN COVER DATABASE GEVONDEN. DRUK OP KNOP
 WAVE=GOLF

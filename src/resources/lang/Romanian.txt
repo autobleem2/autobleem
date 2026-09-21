@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -77,6 +77,7 @@ Downloading the update=Se descarcă actualizarea
 Edit game parameters=Editeaza parametri jocului
 Edit Memory Card information=Editeaza informatia despre Cardul de Memorie
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Meniu de configurare al emulatorului
 Enter=Aplica
 Enter new card name=Adauga un nume de card nou
@@ -122,8 +123,8 @@ HIGH SCORE=SCOR MAXIM
 Hostname=Nume gazdă
 In Game=In joc
 In Retroarch Game=In jocul RetroArch
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Jocuri Interne
 Kernel=Kernel
 Keyboard=Tastatură
@@ -266,6 +267,7 @@ USB Games=Jocuri USB
 Use controller=Folosește controlerul
 Use Font from Theme:=Folosește fontul temei:
 Version=Versiune
+Video=Video
 Video driver=Driver video
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=Atentie: Nu a fost gasit nici un COVER DB.Apasa orice buton.
 WAVE=VAL

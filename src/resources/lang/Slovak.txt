@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -77,6 +77,7 @@ Downloading the update=Sťahovanie aktualizácie
 Edit game parameters=Upraviť parametre hry
 Edit Memory Card information=Upraviť informácie Pamäťovej karty
 EmulationStation=EmulationStation
+Emulator=Emulátor
 Emulator config MENU=Menu Emulátora
 Enter=Spustiť
 Enter new card name=Zadajte nový názov karty
@@ -122,8 +123,8 @@ HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=Názov hostiteľa
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-INTERNAL=ORIGINÁLNE
 Internal=Originálne
+INTERNAL=ORIGINÁLNE
 Internal Games=Originálne hry
 Kernel=Jadro
 Keyboard=Klávesnica
@@ -266,6 +267,7 @@ USB Games=USB Hry
 Use controller=Použiť ovládač
 Use Font from Theme:=Použiť písmo z motívu:
 Version=Verzia
+Video=Obraz
 Video driver=Ovládač videa
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=POZOR: NENAŠLA SA DATABÁZA OBALOV NA HRY. STLAČTE ĽUBOVOĽNÚ KLÁVESU.
 WAVE=VLNA

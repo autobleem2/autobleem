@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 270
+# Untranslated: 2 / Total: 272
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -77,6 +77,7 @@ Downloading the update=Henter opdateringen
 Edit game parameters=Rediger spilparametre
 Edit Memory Card information=Rediger memory card-information
 EmulationStation=EmulationStation
+Emulator=Emulator
 Emulator config MENU=Emulator-konfigurationsmenu
 Enter=Enter
 Enter new card name=Indtast nyt kort navn
@@ -122,8 +123,8 @@ HIGH SCORE=HØJESTE SCORE
 Hostname=Værtsnavn
 In Game=I spillet
 In Retroarch Game=I RetroArch-spil
-INTERNAL=INTERN
 Internal=Intern
+INTERNAL=INTERN
 Internal Games=Interne spil
 Kernel=Kerne
 Keyboard=Tastatur
@@ -266,6 +267,7 @@ USB Games=USB-spil
 Use controller=Brug controller
 Use Font from Theme:=Brug temaets skrifttype:
 Version=Version
+Video=Video
 Video driver=Videodriver
 WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ADVARSEL: INGEN COVER DB FUNDET. TRYK PÅ EN TAST.
 WAVE=BØLGE
