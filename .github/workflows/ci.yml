@@ -1,15 +1,22 @@
 # The build pipeline: every job is `ci/build.sh <target>` inside the autobleem-build image (see docker/), so
 # what CI does is exactly what `docker/run.sh ci/build.sh <target>` does on the build server or any Docker
 # host. `native` (the tests, the language files, clang-format, clang-tidy) runs on every push and pull
-# request; the four cross builds run on develop/master, on tags and on request; a v* tag ends in a GitHub
-# release with the console zip, the two Pi tarballs, the Windows launcher zip and UpdateRoms. The cross jobs
-# check out pcsx-ab (autobleem/pcsx-ab2) next to this tree: ci/build.sh builds the emulator first and the
-# packages ship that build, not the checked-in binaries.
+# request; the five cross builds run on develop/master, on tags and on request. The cross jobs check out
+# both emulators next to this tree - pcsx-ab (autobleem/pcsx-ab2) and pcsx-abnxt (autobleem/pcsx-abnxt) -
+# and ci/build.sh builds them first, so the packages ship those builds, not the checked-in binaries; the
+# emulators' own dist/ folders travel as artifacts too, for their packages on the site.
+#
+# What a push to develop ends in (the self-hosted runner, the site being the build server's tree): the
+# five launcher packages published as the pre-release v2.0.0-pre0-<sha> (replacing the previous one - the
+# launcher's "latest" update channel is that pre-release) and the two emulators' packages under emu/. A v*
+# tag ends in the same publish under the tag's name (a plain tag = the latest stable release), the two Pi
+# images built and published, and a draft GitHub release. This is the by-hand sequence of 2026-09-21
+# (CLAUDE.md, "The download repository") as a workflow.
 #
 # Runners: the self-hosted one on the build server by default, GitHub's ubuntu-24.04 when asked for
 # (workflow_dispatch "runner"), and *always* GitHub's for pull requests - a self-hosted runner on a public
 # repository must never execute a fork's code. The Actions settings should require approval for outside
-# collaborators' workflows as well.
+# collaborators' workflows as well. Publishing needs the site, so it is self-hosted only.
 name: CI
 
 on:
@@ -26,9 +33,13 @@ on:
         options: [self-hosted, github]
         default: self-hosted
       targets:
-        description: cross targets (space separated; empty = all four)
+        description: cross targets (space separated; empty = all five)
         type: string
         default: ''
+      publish:
+        description: publish the packages to the site as the pre-release (self-hosted only)
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -61,18 +72,40 @@ jobs:
           path: dist/native/
           retention-days: 7
 
-  # which cross targets to build: the dispatch input's list, else all four
+  # which cross targets to build (the dispatch input's list, else all five), and the version every package
+  # carries: the tag on a tag, else v2.0.0-pre0-<sha> - the pre-release naming the site and the launcher's
+  # update channel know (CMakeLists.txt's AB_VERSION_FALLBACK is the "v2.0.0-pre0"; this repository has no
+  # tags on develop, and a bare `git describe --always` would name the build by its hash alone, which the
+  # site would take for a stable release)
   plan:
     if: vars.AB_CI_ENABLED == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.targets.outputs.json }}
+      version: ${{ steps.version.outputs.version }}
+      git_version: ${{ steps.version.outputs.git_version }}
+      git_hash: ${{ steps.version.outputs.git_hash }}
     steps:
+      - uses: actions/checkout@v4
       - id: targets
         run: |
           t="${{ inputs.targets }}"
-          [ -n "$t" ] || t="psc rpi rpi64 win"
+          [ -n "$t" ] || t="psc rpi rpi64 pcusb win"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+      - id: version
+        run: |
+          hash="$(git rev-parse --short HEAD)"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "git_version=" >> "$GITHUB_OUTPUT"   # the checkout has the tag: ci/build.sh's git describe names it
+            echo "git_hash=" >> "$GITHUB_OUTPUT"
+          else
+            base="$(sed -n 's/^set(AB_VERSION_FALLBACK "\(.*\)")$/\1/p' CMakeLists.txt)"
+            [ -n "$base" ] || base=v2.0.0-pre0
+            echo "version=${base}-${hash}" >> "$GITHUB_OUTPUT"
+            echo "git_version=${base}" >> "$GITHUB_OUTPUT"
+            echo "git_hash=${hash}" >> "$GITHUB_OUTPUT"
+          fi
 
   cross:
     name: ${{ matrix.target }}
@@ -90,6 +123,12 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     env:
       AB_PCSX_DIR: ${{ github.workspace }}/pcsx-ab
+      AB_PCSXNXT_DIR: ${{ github.workspace }}/pcsx-abnxt
+      # empty on a tag (git describe does it), the pre-release facts otherwise - ci/build.sh's version()
+      AB_GIT_VERSION: ${{ needs.plan.outputs.git_version }}
+      AB_GIT_HASH: ${{ needs.plan.outputs.git_hash }}
+      AB_GIT_BRANCH: ${{ github.ref_name }}
+      AB_GIT_DIRTY: 'false'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,6 +138,12 @@ jobs:
         with:
           repository: autobleem/pcsx-ab2
           path: pcsx-ab
+      - uses: actions/checkout@v4
+        with:
+          repository: autobleem/pcsx-abnxt
+          path: pcsx-abnxt
+          submodules: recursive
+          fetch-depth: 0   # its REV is git describe against upstream's r26 tag
       - name: Build and package
         working-directory: autobleem
         run: ci/build.sh ${{ matrix.target }}
@@ -106,6 +151,16 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: autobleem/dist/${{ matrix.target }}/
+          retention-days: 30
+      # the emulators' stripped dist/ (pcsx-ab + plugins, skin, lang) for their own packages in `site`;
+      # win has no emulator build in the image (pcsx-ab's Windows build is MSYS2 on a PC)
+      - uses: actions/upload-artifact@v4
+        if: matrix.target != 'win'
+        with:
+          name: emu-${{ matrix.target }}
+          path: |
+            pcsx-ab/build_${{ matrix.target }}/dist/
+            pcsx-abnxt/build_${{ matrix.target }}/dist/
           retention-days: 30
 
   release:
@@ -126,17 +181,23 @@ jobs:
         run: |
           ls -lR dist
           gh release create "${GITHUB_REF_NAME}" --title "AutoBleem ${GITHUB_REF_NAME}" --notes-from-tag --draft \
-            dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/win/*.zip
+            dist/psc/*.zip dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/pcusb/*.tar.gz dist/win/*.zip dist/win/*.exe
 
-  # The download site (CLAUDE.md, "The download repository" - scoped to the Pi for now, the owner's call): on a
-  # tag, the two Pi tarballs go to releases/<tag>/ on the site and the two images are built from them,
-  # rootless, right there (tools/make_rpi_image.sh --rootless, ~7 min each) and go to rpi-imager/images/.
-  # Self-hosted only: the site is the build server's /home/claude/autobleem-repo, mounted into the job.
-  # A -pre* tag replaces the previous pre-release, a plain tag becomes the latest release (repo_index.py).
+  # The download site (CLAUDE.md, "The download repository"): the five launcher packages go to
+  # releases/<version>/ - a -pre* version replaces the previous pre-release, a plain tag becomes the latest
+  # release (repo_index.py) - and the two emulators' packages, made by each repository's
+  # tools/make_packages.sh from the dist/ folders the cross jobs uploaded, go under emu/. On a tag the two
+  # Pi images are built from the tarballs, rootless, right there (tools/make_rpi_image.sh --rootless, ~7
+  # min each) and go to rpi-imager/images/. Self-hosted only: the site is the build server's
+  # /home/claude/autobleem-repo, mounted into the job.
   site:
     name: publish to the site
-    if: startsWith(github.ref, 'refs/tags/v') && inputs.runner != 'github'
-    needs: [native, cross]
+    if: >-
+      inputs.runner != 'github' &&
+      (startsWith(github.ref, 'refs/tags/v') ||
+       (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
+       (github.event_name == 'workflow_dispatch' && inputs.publish))
+    needs: [native, plan, cross]
     runs-on: self-hosted
     container:
       image: ghcr.io/autobleem/autobleem-build:latest
@@ -147,18 +208,56 @@ jobs:
         - /home/claude/autobleem-repo:/srv/autobleem-repo
     env:
       REPO_DIR: /srv/autobleem-repo
+      VERSION: ${{ needs.plan.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: autobleem/pcsx-ab2
+          path: pcsx-ab
+      - uses: actions/checkout@v4
+        with:
+          repository: autobleem/pcsx-abnxt
+          path: pcsx-abnxt
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: dist
-      - name: Publish the Pi packages
-        run: tools/repo_publish.sh --local release "${GITHUB_REF_NAME}" dist/rpi/*.tar.gz dist/rpi64/*.tar.gz
+      - name: Publish the launcher packages
+        run: |
+          files=()
+          for f in dist/psc/*.tar.gz dist/rpi/*.tar.gz dist/rpi64/*.tar.gz dist/pcusb/*.tar.gz \
+                   dist/win/*.exe dist/win/*.zip; do
+            [ -f "$f" ] && files+=("$f")
+          done
+          tools/repo_publish.sh --local release "$VERSION" "${files[@]}"
+      # emu-<target> holds pcsx-ab/build_<target>/dist and pcsx-abnxt/build_<target>/dist as the cross
+      # job laid them out; put back where each make_packages.sh looks. Artifacts drop file modes, and
+      # the tar keeps what it finds: the emulator gets its x bit back here
+      - name: Publish the emulators' packages
+        run: |
+          for t in psc rpi rpi64 pcusb; do
+            [ -d "dist/emu-$t" ] || continue
+            for emu in pcsx-ab pcsx-abnxt; do
+              if [ -d "dist/emu-$t/$emu/build_$t/dist" ]; then
+                mkdir -p "$emu/build_$t"
+                rm -rf "$emu/build_$t/dist"
+                cp -a "dist/emu-$t/$emu/build_$t/dist" "$emu/build_$t/dist"
+                chmod +x "$emu/build_$t/dist/pcsx-ab"
+              fi
+            done
+          done
+          (cd pcsx-ab && tools/make_packages.sh)
+          tools/repo_publish.sh --local pcsx-ab "$(ls pcsx-ab/dist/packages/*.json | sed 's/.*pcsx-ab-\(.*\)\.json/\1/')" pcsx-ab/dist/packages/*
+          (cd pcsx-abnxt && tools/make_packages.sh)
+          tools/repo_publish.sh --local pcsx "$(ls pcsx-abnxt/dist/packages/*.json | sed 's/.*pcsx-abnxt-\(.*\)\.json/\1/')" pcsx-abnxt/dist/packages/*
       - name: Build the images
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           tools/make_rpi_image.sh --rootless --arch armhf --package dist/rpi/autobleem-rpi.tar.gz \
               --work build_rpi_image --out build_rpi_image/out
           tools/make_rpi_image.sh --rootless --arch arm64 --package dist/rpi64/autobleem-rpi-arm64.tar.gz \
               --work build_rpi_image --out build_rpi_image/out
       - name: Publish the images
-        run: tools/repo_publish.sh --local image "${GITHUB_REF_NAME}" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: tools/repo_publish.sh --local image "$VERSION" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json
