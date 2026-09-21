@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 35
+INDEX_VERSION = 36
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -114,13 +114,18 @@ PUBLISHED_AT = {}
 
 def version_key(tag):
     """v2.0.0-pre0-933bd2f -> sortable; a tag with a suffix sorts before the same version without one;
-    a trailing commit hash is ignored and the publish time decides instead."""
+    a trailing commit hash is ignored and the publish time decides instead. The pre-release labels rank
+    pre < alpha < beta < rc (then their number): v2.0.0-alpha1 is newer than any v2.0.0-pre0-<sha>
+    development build, which the plain string order had the other way round (2026-09-21)."""
     m = re.match(r"^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-(.*))?$", tag)
     if not m:
-        return (0, 0, 0, 0, tag, PUBLISHED_AT.get(tag, 0))
+        return (0, 0, 0, 0, (0, 0, tag), PUBLISHED_AT.get(tag, 0))
     major, minor, patch, suffix = m.groups()
     label = re.sub(r"-[0-9a-f]{7,40}$", "", suffix or "")
-    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, label, PUBLISHED_AT.get(tag, 0))
+    ranks = {"pre": 0, "alpha": 1, "beta": 2, "rc": 3}
+    lm = re.match(r"^(pre|alpha|beta|rc)(\d*)$", label)
+    label_key = (ranks[lm.group(1)], int(lm.group(2) or 0), "") if lm else (4, 0, label)
+    return (int(major), int(minor), int(patch or 0), 0 if suffix else 1, label_key, PUBLISHED_AT.get(tag, 0))
 
 
 def note_published(folder):
