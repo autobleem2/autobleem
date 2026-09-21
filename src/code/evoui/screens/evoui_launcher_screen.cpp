@@ -624,6 +624,7 @@ GuiLauncher::~GuiLauncher() {
 //*******************************
 // render method called every loop
 void GuiLauncher::render() {
+    gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
     if (sselector != nullptr) {
         sselector->frame = menu->savestate;
     }

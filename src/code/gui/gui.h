@@ -117,10 +117,14 @@ public:
     // first shown, at the bottom when below the last
     void renderScrollMarkers(bool moreAbove, bool moreBelow);
 
+    // the "please wait" screen a program shows around a blocking call it cannot tick from (the tools'
+    // network scan, the flasher, the exit): the theme's background and logo, the spinner, the message
     void drawText(const std::string &text, const string &topLine = "");
 
 private:
     void drawBusyFrame();
+    // the ring of dots turning about (cx, cy) with `message` under it - the busy frames and drawText share it
+    void drawSpinner(int cx, int cy, const std::string &message);
 
     ThemeAssets assets_;
     TextRenderer text_; // after assets_: it holds references to the theme font and the button textures

@@ -3,6 +3,7 @@
 //
 
 #include "gui.h"
+#include <algorithm>
 #include <cmath>
 #include "screens/gui_splash.h"
 #include "../app_base.h"
@@ -163,6 +164,15 @@ void Gui::display(bool resume) {
     }
     platform().setScaleQuality(2);
 
+    if (resume) {
+        // back from a game: the theme and every cover reload before the launcher can draw - the spinner
+        // on black meanwhile (GuiLauncher::render ends it with its first frame)
+        beginBusy(_("Loading..."), [this]() {
+            renderer().setDrawColor(Color(0, 0, 0, 255));
+            renderer().clear();
+            renderer().present();
+        });
+    }
     loadAssets();
 
     if (!resume) {
@@ -222,20 +232,22 @@ void Gui::tickBusy() {
 }
 
 void Gui::drawBusyFrame() {
-    const unsigned int now = platform().ticks();
-    busyLastFrame_ = now;
+    busyLastFrame_ = platform().ticks();
     // the pads' events pile up meanwhile; nothing reads them until the job is done
     renderer().setDrawColor(Color(0, 0, 0, 255));
     renderer().clear();
     if (busyBackdrop_.valid())
         renderer().copy(busyBackdrop_, nullptr, nullptr);
-    PanelStyle style = panelStyle();
-    style.dim(renderer());
+    panelStyle().dim(renderer());
+    drawSpinner(ScreenWidth / 2, ScreenHeight / 2 - 20, busyMessage_);
+    renderer().present();
+}
 
-    // the spinner: twelve dots on a ring, the brightest leading, turning a dot every 70 ms
-    const int cx = ScreenWidth / 2, cy = ScreenHeight / 2 - 20;
+void Gui::drawSpinner(int cx, int cy, const string &message) {
+    // twelve dots on a ring, the brightest leading, turning a dot every 70 ms
+    PanelStyle style = panelStyle();
     const int radius = 30, dot = 8;
-    const int lead = static_cast<int>((now - busyStarted_) / 70) % 12;
+    const int lead = static_cast<int>(platform().ticks() / 70) % 12;
     renderer().setBlendMode(ableem::BlendMode::Blend);
     for (int i = 0; i < 12; i++) {
         const int behind = (lead - i + 12) % 12; // 0 for the leading dot, 11 for the one just ahead of it
@@ -246,10 +258,9 @@ void Gui::drawBusyFrame() {
         renderer().setDrawColor(Color(style.text.r, style.text.g, style.text.b, static_cast<unsigned char>(alpha)));
         renderer().fillRect(Rect(x, y, dot, dot));
     }
-    if (!busyMessage_.empty())
-        text_.renderText_WithColor(assets_.themeFonts[FONT_22_MED], busyMessage_, cx, cy + radius + 24, style.text,
+    if (!message.empty())
+        text_.renderText_WithColor(assets_.themeFonts[FONT_22_MED], message, cx, cy + radius + 24, style.text,
                                    XALIGN_CENTER);
-    renderer().present();
 }
 
 //*******************************
@@ -358,7 +369,12 @@ void Gui::renderStatus(const string &text, int /*posy*/) {
 void Gui::drawText(const string &text, const string &topLine) {
     renderBackground();
     renderLogo(false);
-    renderStatus(text);
-    renderStatus(topLine, 5);
+    // the spinner under the logo (the logo rect is the theme's; below it, or the lower third of the screen)
+    const int below = assets_.logoRect.y + assets_.logoRect.h;
+    const int cy = std::min(ScreenHeight - 90, std::max(below + 60, ScreenHeight * 2 / 3));
+    drawSpinner(ScreenWidth / 2, cy, text);
+    if (!topLine.empty())
+        text_.renderText_WithColor(assets_.themeFonts[FONT_20_BOLD], topLine, ScreenWidth / 2, 12, panelStyle().text,
+                                   XALIGN_CENTER);
     renderer().present();
 }
