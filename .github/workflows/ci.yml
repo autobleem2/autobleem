@@ -273,10 +273,14 @@ jobs:
               --work build_rpi_image --out build_rpi_image/out
       - name: Publish the Pi images
         if: github.event_name != 'workflow_dispatch' || inputs.images
-        run: tools/repo_publish.sh --local image "$VERSION" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json
+        run: |
+          tools/repo_publish.sh --local image "$VERSION" build_rpi_image/out/*.img.xz build_rpi_image/out/rpi_imager_repo.json
+          rm -f build_rpi_image/out/*.img.xz build_rpi_image/*.img   # the server's disk is small; the base images stay cached
       - name: Build the PC stick image
         if: github.event_name != 'workflow_dispatch' || inputs.images
         run: tools/make_pc_image.sh --mount --package dist/pcusb/autobleem-pcusb-i386.tar.gz --work build_pc_image --out build_pc_image/out
       - name: Publish the PC stick image
         if: github.event_name != 'workflow_dispatch' || inputs.images
-        run: tools/repo_publish.sh --local pc-image "$VERSION" build_pc_image/out/*.img.xz
+        run: |
+          tools/repo_publish.sh --local pc-image "$VERSION" build_pc_image/out/*.img.xz
+          rm -rf build_pc_image   # a few GB of root-owned scratch (mmdebstrap's), which only root - this job - can remove
