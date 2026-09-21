@@ -225,7 +225,12 @@ TEST_CASE("an update keeps the user's settings and themes, removes the scan fing
     CHECK(before.hasCovers[1]);
     string error;
     REQUIRE_MESSAGE(fx.run(error), error);
-    CHECK(fx.tmp.readFile("Documents/AutoBleem/System/config.ini") == "theme=aergb\n");
+    {
+        // the settings kept, the PS1 emulator every install lands on set (capitalised: the launcher's writer)
+        const string cfg = fx.tmp.readFile("Documents/AutoBleem/System/config.ini");
+        CHECK(cfg.find("Theme=aergb") != string::npos);
+        CHECK(cfg.find("Emulator=pcsx-abnxt") != string::npos);
+    }
     CHECK(fx.tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{edited}");
     CHECK(fx.has("Themes/default/theme.json")); // a shipped theme not there yet still comes in
     CHECK(fx.has("Games/Tekken 3/Tekken 3.cue"));

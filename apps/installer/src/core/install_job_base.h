@@ -23,6 +23,9 @@ std::string trimmed(const std::string &s);
 std::string firstLine(const std::string &text);
 std::string sidecarHash(const std::string &text); // "abc  name" -> "abc" (a sha256sum sidecar)
 std::string humanSize(uint64_t bytes);
+// one key of a config.ini set (the file created when there is none): what an install forces, the user's
+// other settings kept - through ableem::IniFile, so the file comes out as the launcher itself writes it
+bool setIniValue(const std::string &path, const std::string &key, const std::string &value);
 
 //******************
 // InstallJobBase

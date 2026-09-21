@@ -1033,7 +1033,7 @@ the launch scripts, `pcsx.cfg`, `ResumePointService`'s files and `LaunchService`
 emulator keeps, and the binary keeps the name `pcsx-ab` in the payloads.
 
 **Both ship, the user picks** (2026-09-20, the owner's ask): Options -> **"PS1 Emulator"** (`config.ini`
-`emulator` = `pcsx-ab` | `pcsx-abnxt`, `pcsx-ab` the default and the fallback for any other value - `Config`),
+`emulator` = `pcsx-abnxt` | `pcsx-ab`, **`pcsx-abnxt` the default** on every build and the fallback for any other value since 2026-09-21 (the owner's call; it was `pcsx-ab`) - `Config`),
 which `LaunchService::launchPcsx` passes as the **10th argument** of `launch.sh`; the console's and the Pi's
 scripts run `Autobleem/bin/emu/pcsx-ab` or **`Autobleem/bin/emunxt/pcsx-ab`** (the same binary name and
 `plugins/` layout, `emunxt-arm64/` for the 64-bit Pi as `emu-arm64/`) and fall back to `emu/` when the

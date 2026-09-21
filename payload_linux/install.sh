@@ -1374,6 +1374,16 @@ $STAGE_DIR/Autobleem/bin/autobleem
     if [ -f "$app_dest/config.ini.keep" ]; then
         run mv -f "$app_dest/config.ini.keep" "$app_dest/config.ini"
     fi
+    # the PS1 emulator every install lands on (the owner's rule, 2026-09-21): pcsx-abnxt, whatever the kept
+    # config.ini said - the key replaced in place, or added when the file has none
+    if [ -f "$app_dest/config.ini" ]; then
+        log "PS1 emulator set to pcsx-abnxt"
+        if grep -qi '^emulator=' "$app_dest/config.ini"; then
+            run sed -i 's/^[Ee]mulator=.*/Emulator=pcsx-abnxt/' "$app_dest/config.ini"
+        else
+            run sh -c "printf '\nEmulator=pcsx-abnxt\\n' >> '$app_dest/config.ini'"
+        fi
+    fi
 
     # a new launcher's first start rescans everything (the owner's rule, 2026-09-20): a scanner change
     # (new Game.ini keys, a merge rule, box art) must reach the games already there, and the fingerprints

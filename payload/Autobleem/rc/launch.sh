@@ -24,7 +24,7 @@ fi
 # shipped) or pcsx-abnxt (Autobleem/bin/emunxt, the next one); the binary is pcsx-ab in either folder.
 # $11 is config.ini's "language" (English, Polski, ...): pcsx-abnxt draws its own screens (the disc picker)
 # in it from its lang/<Name>.txt - the classic pcsx-ab knows no such option, so only nxt gets it
-case "${10:-pcsx-ab}" in
+case "${10:-pcsx-abnxt}" in
   pcsx-abnxt) EMU_DIR=/media/Autobleem/bin/emunxt ;;
   *)          EMU_DIR=/media/Autobleem/bin/emu ;;
 esac

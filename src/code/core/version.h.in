@@ -13,4 +13,25 @@ constexpr const char *BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";  // UTC
 // "v2.0.0-pre0 (master@a83777b*)" - what the splash, the About screen and the log banner show
 constexpr const char *FULL_VERSION = "@GIT_VERSION@ (@GIT_BRANCH@" "@" "@GIT_HASH@@GIT_DIRTY_FLAG@)";
 
+// a pre-release build ("-pre", "-alpha", "-beta", "-rc" in the tag): the update channel defaults to
+// "latest" on one (Config), the site's index lists it as a development build
+inline bool isPreRelease() {
+    const char *v = VERSION;
+    static const char *const markers[] = {"-pre", "-alpha", "-beta", "-rc"};
+    for (const char *marker : markers) {
+        const char *at = v;
+        while (*at) {
+            const char *a = at, *m = marker;
+            while (*a && *m && *a == *m) {
+                a++;
+                m++;
+            }
+            if (!*m)
+                return true;
+            at++;
+        }
+    }
+    return false;
+}
+
 } // namespace Version

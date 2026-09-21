@@ -182,6 +182,10 @@ private:
             writeText(at(ConfigIni), savedConfig);
             say("  config.ini kept as it was");
         }
+        // the PS1 emulator every install lands on (the owner's rule, 2026-09-21): pcsx-abnxt, whatever the
+        // stick's config.ini said before
+        if (setIniValue(at(ConfigIni), "emulator", "pcsx-abnxt"))
+            say("  PS1 emulator set to pcsx-abnxt");
         for (const char *dir : {"Games", "Games/!SaveStates", "Games/!MemCards", "System", "System/Databases",
                                 "System/Logs", "Apps", "Themes"})
             DirEntry::createDirs(at(dir));

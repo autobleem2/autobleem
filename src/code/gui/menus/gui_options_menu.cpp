@@ -104,7 +104,7 @@ void GuiOptions::fill() {
 
     heading(_("Emulation"));
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
-    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-ab", "pcsx-abnxt"}));
+    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
     lines.emplace_back(CFG_WIDESCREEN, _("Widescreen:"), "aspect", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_GFX_FILTER, _("GFX Filter:"), "mip", true, vector<string>({"true", "false"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,

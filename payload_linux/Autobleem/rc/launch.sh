@@ -35,7 +35,7 @@ RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
 # which emulator: pcsx-ab (Autobleem/bin/emu, the one AutoBleem has always shipped) or pcsx-abnxt
 # (Autobleem/bin/emunxt, the next one); the binary is pcsx-ab in either folder
-case "${10:-pcsx-ab}" in
+case "${10:-pcsx-abnxt}" in
   pcsx-abnxt) EMU_DIR="$DATA_MOUNT/Autobleem/bin/emunxt" ;;
   *)          EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu" ;;
 esac

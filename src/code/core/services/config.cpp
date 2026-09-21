@@ -43,12 +43,13 @@ Config::Config() {
         inifile.values["aspect"] = "false";
         aDefaultWasSet = true;
     }
-    // which PS1 emulator a game starts in (Options -> "PS1 Emulator"): pcsx-ab, the one AutoBleem has always
-    // shipped (Autobleem/bin/emu), or pcsx-abnxt, the next one (Autobleem/bin/emunxt) - the launch scripts
-    // get the name as their last argument. Both read the same pcsx.cfg and memory cards; a resume point
-    // written by one does not load in the other (different save-state versions), the game then starts fresh.
+    // which PS1 emulator a game starts in (Options -> "PS1 Emulator"): pcsx-abnxt, the next one
+    // (Autobleem/bin/emunxt) - the default on every build since 2026-09-21 - or pcsx-ab, the one AutoBleem
+    // has always shipped (Autobleem/bin/emu); the launch scripts get the name as their last argument. Both
+    // read the same pcsx.cfg and memory cards; a resume point written by one does not load in the other
+    // (different save-state versions), the game then starts fresh.
     if (inifile.values["emulator"] != "pcsx-ab" && inifile.values["emulator"] != "pcsx-abnxt") {
-        inifile.values["emulator"] = "pcsx-ab";
+        inifile.values["emulator"] = "pcsx-abnxt";
         aDefaultWasSet = true;
     }
     if (inifile.values["jewel"] == "") {
@@ -77,8 +78,7 @@ Config::Config() {
     // the launcher's online update check (UpdateService, Options -> "Updates"): off | stable | latest.
     // A pre-release build follows the pre-releases by default, a release build the releases.
     if (inifile.values["updates"] == "") {
-        inifile.values["updates"] =
-            std::string(Version::VERSION).find("-pre") != std::string::npos ? "latest" : "stable";
+        inifile.values["updates"] = Version::isPreRelease() ? "latest" : "stable";
         aDefaultWasSet = true;
     }
     // the classic screens' font: the theme's, unless "themefont" is off and "font" names a .ttf/.otf from

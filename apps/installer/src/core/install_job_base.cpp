@@ -1,6 +1,7 @@
 #include "core/install_job_base.h"
 
 #include <ableem/engine/filesystem.h>
+#include <ableem/engine/ini_file.h>
 #include <ableem/engine/log.h>
 #include <ableem/engine/sha256.h>
 #include <ableem/engine/strings.h>
@@ -22,6 +23,17 @@ string readText(const string &path) {
     stringstream ss;
     ss << in.rdbuf();
     return ss.str();
+}
+
+bool setIniValue(const string &path, const string &key, const string &value) {
+    ableem::IniFile ini;
+    if (DirEntry::exists(path))
+        ini.load(path);
+    if (ini.section.empty())
+        ini.section = "General";
+    ini.values[key] = value;
+    ini.save(path);
+    return DirEntry::exists(path);
 }
 
 bool writeText(const string &path, const string &text) {

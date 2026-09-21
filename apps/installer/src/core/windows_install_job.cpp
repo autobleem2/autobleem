@@ -118,6 +118,10 @@ private:
             DirEntry::removeFile(at("System/games.fingerprint"));
             DirEntry::removeFile(at("System/roms.fingerprint"));
         }
+        // the PS1 emulator every install lands on (the owner's rule, 2026-09-21): pcsx-abnxt, whatever a
+        // config.ini already here said
+        if (info.installed && setIniValue(at(ConfigIni), "emulator", "pcsx-abnxt"))
+            say("  PS1 emulator set to pcsx-abnxt");
         return true;
     }
 

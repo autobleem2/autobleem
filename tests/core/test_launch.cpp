@@ -132,7 +132,7 @@ TEST_CASE("PCSX is started through rc/launch.sh with the nine arguments the scri
                                       "0",                                       // aspect
                                       "0",                                       // filter
                                       "NA",                                      // pad
-                                      "pcsx-ab",                                 // emulator (the default)
+                                      "pcsx-abnxt",                              // emulator (the default)
                                       "English"});                               // language (the default)
     CHECK(game->ssFolder == lib.tmp.at("Games/Tekken 3/sstates"));               // normalised in place, as always
 
@@ -154,12 +154,12 @@ TEST_CASE("the aspect and filter arguments come from config.ini") {
 
 TEST_CASE("the emulator argument is config.ini's choice between pcsx-ab and pcsx-abnxt") {
     Launching lib;
-    lib.configure("Emulator=pcsx-abnxt\n");
+    lib.configure("Emulator=pcsx-ab\n");
     PsGamePtr game = lib.usbGame();
 
     lib.service->launch(game, EmuMode::Pcsx, -1);
 
-    CHECK(lib.runner.only().args[9] == "pcsx-abnxt");
+    CHECK(lib.runner.only().args[9] == "pcsx-ab");
 }
 
 TEST_CASE("the language argument is config.ini's language, by the name of its lang file") {
@@ -480,10 +480,10 @@ struct DirectLaunching : Launching {
 
 TEST_CASE("direct mode: the PS1 emulator itself - pcsx-ab in launch.sh's run directory, pcsx-abnxt by its options") {
     DirectLaunching lib;
-    lib.configure("Aspect=true\nMip=false\n");
+    lib.configure("Aspect=true\nMip=false\nEmulator=pcsx-ab\n");
     PsGamePtr game = lib.usbGame();
 
-    SUBCASE("a fresh start with pcsx-ab (the default): the run directory laid out with directory links") {
+    SUBCASE("a fresh start with pcsx-ab (Options' choice): the run directory laid out with directory links") {
         string linksSeen;
         lib.runner.whileRunning = [&] {
             // while the emulator runs: .pcsx is the save-state folder, bios the PS1 BIOS folder
@@ -505,7 +505,7 @@ TEST_CASE("direct mode: the PS1 emulator itself - pcsx-ab in launch.sh's run dir
         CHECK_FALSE(ableem::DirEntry::exists(lib.tmp.at("System/runpcsx/.pcsx")));
         CHECK(ableem::DirEntry::exists(lib.tmp.at("Games/Tekken 3/sstates/pcsx.cfg")));
     }
-    SUBCASE("Options' PS1 Emulator picks pcsx-abnxt, run from its folder with -dotdir/-biosdir/-fullscreen") {
+    SUBCASE("pcsx-abnxt (the default), run from its folder with -dotdir/-biosdir/-fullscreen") {
         lib.configure("Aspect=true\nMip=false\nEmulator=pcsx-abnxt\n");
         lib.service->launch(game, EmuMode::Pcsx, -1);
         const FakeProcessRunner::Call &call = lib.runner.only();

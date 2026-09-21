@@ -329,7 +329,14 @@ TEST_CASE("an update replaces what the package ships and keeps the user's files 
 
     CHECK(fx.tmp.readFile("stick/Autobleem/bin/autobleem/autobleem-gui") == "ELF v2.0.1");
     CHECK(fx.tmp.readFile("stick/VERSION") == "v2.0.1\n");
-    CHECK(fx.tmp.readFile("stick/Autobleem/bin/autobleem/config.ini") == "theme=aergb\nlanguage=Polish\n");
+    // the user's settings kept, and the PS1 emulator every install lands on set (the file rewritten as
+    // the launcher writes it: capitalised keys)
+    {
+        const string cfg = fx.tmp.readFile("stick/Autobleem/bin/autobleem/config.ini");
+        CHECK(cfg.find("Theme=aergb") != string::npos);
+        CHECK(cfg.find("Language=Polish") != string::npos);
+        CHECK(cfg.find("Emulator=pcsx-abnxt") != string::npos);
+    }
     CHECK(fx.has("Games/Crash/Crash.cue"));
     CHECK(fx.has("Games/!MemCards/Crash/card1.mcd"));
     CHECK(fx.has("System/Databases/regional.db"));
@@ -539,7 +546,11 @@ TEST_CASE("an AutoBleem 1.0 / NG stick is brought to the new layout before the u
     CHECK_FALSE(fx.has("Apps/retroboot"));
     // and the update itself went through, the old settings kept
     CHECK(fx.tmp.readFile("stick/Autobleem/bin/autobleem/autobleem-gui") == "ELF v2.0.0-pre0-abc1234");
-    CHECK(fx.tmp.readFile("stick/Autobleem/bin/autobleem/config.ini") == "theme=aergb\n");
+    {
+        const string cfg = fx.tmp.readFile("stick/Autobleem/bin/autobleem/config.ini");
+        CHECK(cfg.find("Theme=aergb") != string::npos);
+        CHECK(cfg.find("Emulator=pcsx-abnxt") != string::npos);
+    }
     CHECK(fx.out.said("retroarch -> RetroArch/bin"));
 
     // a second run finds the new layout and does not migrate again
