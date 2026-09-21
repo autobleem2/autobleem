@@ -410,31 +410,8 @@ void GuiLauncher::loop_selectButton_Pressed() {
         motionStart = 0;
     }
     if (state == LauncherScreenState::Games) {
-        if (powerOffShift) {
-            if (selection.set == GameSet::PS1)
-                loop_chooseGameDir();
-            else if (selection.set == GameSet::RetroArch)
-                loop_chooseRAPlaylist();
-            else
-                return; // if L2 is pressed then Select should only work if current_set is PS1 or RetroArch
-        } else {
-            // switch to next Select Mode
-            app.audio().cursor.play();
-
-            selection.set = nextGameSet(selection.set);
-            if (selection.set == GameSet::Lightgun && app.gameQuery().lightgunGames().empty()) {
-                selection.set = nextGameSet(selection.set); // nothing flagged: the set is not offered
-            }
-
-            switchSet(selection.set, false);
-            showSetName();
-            if (carousel.selected != -1 && carousel.selectedIsValid()) {
-                updateMeta();
-                menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
-            } else {
-                updateMeta();
-            }
-        }
+        app.audio().cursor.play();
+        loop_chooseSet(); // with or without L2: the one picker for sets, folders and playlists
     }
 }
 

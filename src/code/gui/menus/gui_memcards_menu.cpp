@@ -21,7 +21,7 @@ void GuiMemcards::init() {
 //*******************************
 // returns the status line at the bottom
 string GuiMemcards::getStatusLine() {
-    return _("Card") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "   |@L1|/|@R1| " +
+    return _("Card") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "   |@L2|/|@R2| " +
            _("Page") + "   |@X| " + _("Rename") + "  |@S| " + _("New card") + "   |@T| " + _("Delete") + "  |@O| " +
            _("Back") + "|";
 }

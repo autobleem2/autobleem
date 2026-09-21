@@ -80,8 +80,7 @@ public:
 
     // a button is pressed
     void loop_joyButton_Pressed();
-    void loop_chooseGameDir();
-    void loop_chooseRAPlaylist();
+    void loop_chooseSet(); // Select: the set picker (tabs PlayStation / RetroArch / Apps, the groups inside)
     void loop_selectButton_Pressed();
     void loop_startButton_Pressed();
     void loop_circleButton_Pressed();

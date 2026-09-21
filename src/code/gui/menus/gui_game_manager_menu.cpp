@@ -117,7 +117,7 @@ std::string GuiManager::getTitle() {
 // GuiManager::getStatusLine
 //*******************************
 string GuiManager::getStatusLine() {
-    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L1|/|@R1| " +
+    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L2|/|@R2| " +
            _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete game") + "  |@T| " + _("Flush covers") +
            " |@O| " + _("Back") + " |";
 }

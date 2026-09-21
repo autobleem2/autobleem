@@ -33,10 +33,10 @@ public:
     void doCross_Pressed() override;  // default = leave menu.  cancel = false.
 
     // horizontal lists of choices like the options menu will probably override these virtuals
-    void doL1_Pressed() override { doPageUp(); }   // default = page up
-    void doR1_Pressed() override { doPageDown(); } // default = page down
-    void doL2_Pressed() override { doHome(); }     // default = home
-    void doR2_Pressed() override { doEnd(); }      // default = end
+    void doL1_Pressed() override { doHome(); }     // the first row
+    void doR1_Pressed() override { doEnd(); }      // the last row
+    void doL2_Pressed() override { doPageUp(); }   // a page up - L2/R2 page on every list
+    void doR2_Pressed() override { doPageDown(); } // a page down
 
     // keyboard
     void doKeyDown() override;                       // move down one line
@@ -186,7 +186,7 @@ template <typename LineDataType> std::string GuiMenuBase<LineDataType>::getTitle
 //*******************************
 // the default status line for menus.  override if needed.
 template <typename LineDataType> std::string GuiMenuBase<LineDataType>::getStatusLine() {
-    return _("Entry") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "    |@L1|/|@R1| " +
+    return _("Entry") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "    |@L2|/|@R2| " +
            _("Page") + "   |@X| " + _("Select") + "   |@O| " + _("Back") + " |";
 }
 

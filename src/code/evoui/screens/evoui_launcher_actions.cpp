@@ -5,6 +5,7 @@
 // the carousel afterwards. The event loop that dispatches to these is launcher_input.cpp.
 //
 #include "evoui_launcher.h"
+#include "evoui_set_picker.h"
 #include "../../gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
 #include "../../gui/screens/gui_confirm.h"
@@ -34,155 +35,25 @@
 using namespace std;
 
 //*******************************
-// GuiLauncher::loop_chooseGameDir
+// GuiLauncher::loop_chooseSet
 //*******************************
-void GuiLauncher::loop_chooseGameDir() {
-    // pop game dir menu
+// Select: the one screen for what the carousel shows - the PlayStation / RetroArch / Apps tabs and the
+// groups in each (was Select cycling the sets and L2+Select opening a folder or playlist picker)
+void GuiLauncher::loop_chooseSet() {
     powerOffShift = false;
-    SubDirRowInfos gameRowInfos;
-    app.library().usbGames().loadSubDirRows(&gameRowInfos);
-    if (gameRowInfos.size() == 0) {
-        return; // no games!
-    }
-    GuiGameDirMenu guiGameDirMenu(*gui);
-
-    // add All Games and Internal Games only if origames is true in the config.ini
-    int offsetToGamesSubDirs{0};
-    bool showInternalGames = app.gameQuery().showInternalGames();
-    if (showInternalGames) {
-        // show internal is enabled.  show usbgames + internal, and show internal only menu items.
-        PsGames gamesList = app.gameQuery().ps1GamesInSubDirRow(0);
-        int usbOnly = gamesList.size();
-        gamesList += app.gameQuery().internalGames();
-        guiGameDirMenu.lines.emplace_back(_("All Games") + " ( " + to_string(gamesList.size()) + ")");
-        guiGameDirMenu.lines.emplace_back(_("Internal Games") + " ( " + to_string(gamesList.size() - usbOnly) +
-                                          ")"); // 20 games
-        offsetToGamesSubDirs = 2;
-    } else {
-        // show internal is disabled.  top game row 0 shows all usb games from /Games down.
-        offsetToGamesSubDirs = 0;
-    }
-
-    // add the /Games dir and all the game sub directories
-    bool top = true;
-    for (auto &rowInfo : gameRowInfos) {
-        if (top) {
-            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') +
-                                              _("USB Games") + // display "USB Games" instead of "Games"
-                                              " ( " + to_string(rowInfo.numGames) + ")");
-            top = false;
-        } else {
-            guiGameDirMenu.lines.emplace_back(string(rowInfo.indentLevel * 4, ' ') + rowInfo.rowName + " ( " +
-                                              to_string(rowInfo.numGames) + ")");
-        }
-    }
-
-    // add Favorite Games at the bottom
-    int favoritesIndex = guiGameDirMenu.lines.size(); // favorites is the last line
-    PsGames gamesList = app.gameQuery().favorites();
-    guiGameDirMenu.lines.emplace_back(_("Favorite Games") + " ( " + to_string(gamesList.size()) + ")");
-
-    // add History Games at the bottom
-    int historyIndex = guiGameDirMenu.lines.size(); // history is the last line
-    gamesList = app.gameQuery().history();
-    guiGameDirMenu.lines.emplace_back(_("Game History") + " ( " + to_string(gamesList.size()) + ")");
-
-    // set initial selected row
-    int nextSel = offsetToGamesSubDirs; // set to game dir as default
-    if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
-        nextSel = offsetToGamesSubDirs + selection.usbGameDirIndex;
-    } else {
-        if (selection.ps1SelectState == Ps1SelectState::Favorites)
-            nextSel = favoritesIndex; // favorites is the next to the last line
-        else if (selection.ps1SelectState == Ps1SelectState::History)
-            nextSel = historyIndex; // history is the last line
-        else {
-            if (showInternalGames)
-                nextSel = static_cast<int>(selection.ps1SelectState); // AllGames is on row 0, InternalOnly is on row 1
-            else {
-                PLOG_ERROR << "loop_chooseGameDir() called with \"origames\" off and selection.ps1SelectState = "
-                           << static_cast<int>(selection.ps1SelectState);
-            }
-        }
-    }
-
-    guiGameDirMenu.selected = nextSel;
-
-    // display the menu and return when user made selection or canceled
-    guiGameDirMenu.show();
-    forgetHeldModifiers(); // reached with L2 held; its release went to the menu
-    bool cancelled = guiGameDirMenu.cancelled;
-
-    // set the select state to the user selection
-    if (!cancelled) {
-        if (showInternalGames && guiGameDirMenu.selected < offsetToGamesSubDirs)
-            // rows 0 and 1 of the menu are AllGames and InternalOnly, in that order
-            selection.ps1SelectState = static_cast<Ps1SelectState>(guiGameDirMenu.selected);
-        else if (guiGameDirMenu.selected == favoritesIndex)
-            selection.ps1SelectState = Ps1SelectState::Favorites;
-        else if (guiGameDirMenu.selected == historyIndex)
-            selection.ps1SelectState = Ps1SelectState::History;
-        else {
-            selection.ps1SelectState = Ps1SelectState::GamesSubdir;
-            selection.usbGameDirIndex = guiGameDirMenu.selected - offsetToGamesSubDirs;
-            selection.usbGameDirName = "";
-            if (selection.usbGameDirIndex < gameRowInfos.size())
-                selection.usbGameDirName = gameRowInfos[selection.usbGameDirIndex].rowName;
-        }
-    }
-
-    if (cancelled)
+    GuiSetPicker picker(*gui);
+    picker.selection = selection;
+    picker.raPlaylists = raPlaylists;
+    renderer.captureNextFrame();
+    render();
+    picker.background = renderer.lastCapture();
+    picker.show();
+    forgetHeldModifiers(); // reached with L2 held, maybe; its release went to the picker
+    if (picker.cancelled)
         return;
+
+    selection = picker.selection;
     switchSet(selection.set, true);
-    menuHead->setText(headers[0], fgColor);
-    menuText->setText(texts[0], fgColor);
-    showSetName();
-    if (carousel.selected != -1 && carousel.selectedIsValid()) {
-        updateMeta();
-        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
-    } else {
-        updateMeta();
-    }
-}
-
-//*******************************
-// GuiLauncher::loop_chooseRAPlaylist
-//*******************************
-void GuiLauncher::loop_chooseRAPlaylist() {
-    if (!DirEntry::exists(Env::getPathToRetroarchDir())) {
-        return;
-    }
-    if (raPlaylists.empty()) {
-        return;
-    }
-    powerOffShift = false;
-    GuiPlaylists playlists(*gui);
-    playlists.playlists = raPlaylists;
-
-    // set the selected menu line to be the current playlist
-    int nextSel = 0;
-    int i = 0;
-    for (string plist : playlists.playlists) {
-        if (plist == selection.raPlaylistName) {
-            nextSel = i;
-            break;
-        }
-        i++;
-    }
-    playlists.selected = nextSel;
-
-    playlists.show();
-    forgetHeldModifiers(); // reached with L2 held; its release went to the menu
-    bool cancelled = playlists.cancelled;
-    int selected = playlists.selected;
-
-    if (cancelled)
-        return;
-
-    selection.raPlaylistIndex = selected;
-    selection.raPlaylistName = raPlaylists[selected];
-    selection.set = GameSet::RetroArch;
-    switchSet(selection.set, false);
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();

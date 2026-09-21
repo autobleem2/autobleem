@@ -50,9 +50,7 @@ void GuiBtnGuide::render() {
     row("|@S|", _("Run using RetroArch"));
     row("|@R1| / |@L1|", _("Quick scroll to next letter"));
     row("|@Start|", _("Random Game"));
-    row("|@Select|", _("Next Game Platform"));
-    row("|@L2| + |@Select|", _("Change USB Games Sub-Directory"));
-    row("|@L2| + |@Select|", _("Change RetroArch Playlist"));
+    row("|@Select|", _("Choose the games shown: PlayStation, RetroArch or Apps and the group"));
     row("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"));
     section(_("In Game"));
     row("|@Select| + |@Start|", _("Emulator config MENU"));

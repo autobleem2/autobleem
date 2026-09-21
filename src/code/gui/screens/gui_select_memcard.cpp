@@ -84,7 +84,7 @@ void GuiSelectMemcard::render() {
     }
     gui->renderScrollMarkers(firstVisible > 0, lastVisible < static_cast<int>(cards.size()));
 
-    gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1|/|@R1| " +
+    gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L2|/|@R2| " +
                       _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");
     renderer.present();
 }
@@ -130,7 +130,7 @@ void GuiSelectMemcard::loop() {
 
                 break;
             case Event::Type::ButtonDown:
-                if (e.button == Button::R1) {
+                if (e.button == Button::R2) {
 
                     app.audio().home_up.play();
                     selected += maxVisible;
@@ -141,7 +141,7 @@ void GuiSelectMemcard::loop() {
                     lastVisible = firstVisible + maxVisible;
                     render();
                 };
-                if (e.button == Button::L1) {
+                if (e.button == Button::L2) {
 
                     app.audio().home_down.play();
                     selected -= maxVisible;

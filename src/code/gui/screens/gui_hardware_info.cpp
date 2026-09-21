@@ -133,7 +133,7 @@ void GuiHardwareInfo::render() {
     if (count > rowsThatFit) {
         const int page = firstVisible / rowsThatFit + 1;
         const int pages = (count + rowsThatFit - 1) / rowsThatFit;
-        status += "   |@L1| |@R1| " + _("Page") + " " + to_string(page) + "/" + to_string(pages);
+        status += "   |@L2|/|@R2| " + _("Page") + " " + to_string(page) + "/" + to_string(pages);
     }
     gui->renderStatus(status);
     renderer.present();
@@ -167,9 +167,9 @@ void GuiHardwareInfo::loop() {
                     scrollBy(rowsThatFit);
                 break;
             case Event::Type::ButtonDown:
-                if (e.button == Button::L1)
+                if (e.button == Button::L2)
                     scrollBy(-rowsThatFit);
-                else if (e.button == Button::R1)
+                else if (e.button == Button::R2)
                     scrollBy(rowsThatFit);
                 else if (e.button == Button::Circle) {
                     app.audio().cancel.play();

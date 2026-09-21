@@ -45,7 +45,7 @@ void GuiTextPage::render() {
     gui->renderScrollMarkers(firstLine > 0, lastLineShown < static_cast<int>(lines.size()));
     string status = "|@O| " + _("Back");
     if (firstLine > 0 || lastLineShown < static_cast<int>(lines.size()))
-        status = "|@L1|/|@R1| " + _("Page") + "   " + status;
+        status = "|@L2|/|@R2| " + _("Page") + "   " + status;
     gui->renderStatus(status);
     renderer.present();
 }
@@ -76,9 +76,9 @@ void GuiTextPage::loop() {
                 else if (gui->input().dpadUp())
                     move = -1;
             } else if (e.type == Event::Type::ButtonDown) {
-                if (e.button == Button::R1)
+                if (e.button == Button::R2)
                     move = rowsThatFit;
-                else if (e.button == Button::L1)
+                else if (e.button == Button::L2)
                     move = -rowsThatFit;
             } else if (e.type == Event::Type::KeyDown) {
                 if (e.key == Key::Down)
