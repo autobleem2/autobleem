@@ -1959,8 +1959,11 @@ history is at github.com/screemerpl/cbleemsync). Commit per logical refactor ste
 
 `manuals/<lang>/autobleem-user-manual.md` (English and Polish for now) is the user manual in a small Markdown
 subset (headings, lists, tables, `![caption](path)` figures, `> ` notes, `<!-- pagebreak -->`), built by
-**`tools/build_manuals.py`** into `build_manuals/<lang>/*.html` and `*.pdf` (headless Chrome/Edge prints the
-PDF; `--html` skips it; `manuals/style.css` is the look, the site's palette). The screenshots are
+**`tools/build_manuals.py`** into `build_manuals/<lang>/*-<lang>.html` and `*.pdf` (headless Chrome/Edge prints the
+PDF; `--html` skips it; `manuals/style.css` is the look, the site's palette). **`tools/repo_publish.sh manuals
+build_manuals/*/*.pdf`** puts the PDFs on the site (`manuals/`, a "User manual" panel under "Every platform" -
+`index_manuals`, `MANUAL_LANGUAGES`); rebuild and republish after any manual change. Facts to keep right: a stock
+console reads **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not mentioned. The screenshots are
 `manuals/images/<lang>/*.jpg`, taken by **`tools/manual_shots.py`** through the DebugDriver on the Windows
 dev build (`--lang Polski --show`; needs `make_win.sh` and `tools/make_usb.py usb`): it walks the launcher,
 PSC-Bios and ABFlashKit through their screens with the stick's `config.ini` switched to each language, and

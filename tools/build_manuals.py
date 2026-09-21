@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""The user manuals: manuals/<lang>/*.md (a small Markdown) -> build_manuals/<lang>/*.html (+ the images) ->
-the same as PDF, rendered by Chrome or Edge in headless mode. Nothing but the standard library on our side.
+"""The user manuals: manuals/<lang>/*.md (a small Markdown) -> build_manuals/<lang>/*-<lang>.html (+ the images) ->
+the same as PDF (tools/repo_publish.sh manuals build_manuals/*/*.pdf puts the PDFs on the site), rendered by Chrome or Edge in headless mode. Nothing but the standard library on our side.
 
     python tools/build_manuals.py            # every manual, HTML and PDF
     python tools/build_manuals.py --html     # HTML only (no browser needed)
@@ -214,7 +214,7 @@ def main(argv):
                 continue
             md = open(os.path.join(src_dir, name), encoding='utf-8').read()
             body, title, headings = convert(md)
-            stem = name[:-3]
+            stem = '%s-%s' % (name[:-3], lang)   # the language in the name: the site keeps them in one folder
             html_path = os.path.join(out_dir, stem + '.html')
             open(html_path, 'w', encoding='utf-8').write(page(body, title, headings, lang, css))
             print('%s/%s.html' % (lang, stem))

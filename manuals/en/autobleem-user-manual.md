@@ -32,13 +32,16 @@ the tools that come with it.
 
 ### 2.1 PlayStation Classic
 
-You need a Windows PC, a USB stick (USB 2.0, 8 GB or more - FAT32 or exFAT; the installer formats it if you
-ask) and the stock console. AutoBleem runs from the stick without any change to the console.
+You need a Windows PC, a USB stick (USB 2.0, 8 GB or more; the installer formats it if you ask) and the
+stock console. AutoBleem runs from the stick without any change to the console. The stick must be
+**FAT32** for a stock console - its kernel cannot read exFAT. Only a console with the AutoBleem kernel
+installed (ABFlashKit, chapter 6) also boots from an exFAT stick, which lifts FAT32's 4 GB file limit.
 
 1. Download **AutoBleemInstaller-<version>.zip** from the PlayStation Classic panel of the site and unpack
    it anywhere. It holds `AutoBleemInstaller.exe` and the AutoBleem package it installs.
 2. Plug the stick in and start `AutoBleemInstaller.exe`. Pick the drive at the top. Tick what you want:
-   - **Format the stick** - only for a fresh stick (everything on it is erased).
+   - **Format the stick** - only for a fresh stick (everything on it is erased). Pick FAT32 unless the console
+     has the AutoBleem kernel.
    - **Cover databases** - the box art and details of the PS1 library (ticked by default; about 300 MB).
    - **RetroArch** - RetroArch with its cores, the extra applications (Doom, Quake, Amiga, ...) and the
      libretro assets, for the other systems' games. Off by default; it can be added later by running the
@@ -197,7 +200,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 | Hardware Information | The machine: system, CPU, storage, network, display, the pads. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6). |
 | Options | AutoBleem's settings (section 3.5). |
 | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
-| About | Credits and licence. Start there hides a small game. |
+| About | Credits and licence. |
 | Power Off | Shuts the machine down, after a confirmation. |
 
 ![The system menu](../images/en/system-menu.jpg)

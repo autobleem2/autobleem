@@ -32,13 +32,16 @@ dołączone narzędzia.
 
 ### 2.1 PlayStation Classic
 
-Potrzebujesz komputera z Windows, pendrive'a (USB 2.0, 8 GB lub więcej - FAT32 albo exFAT; instalator go
-sformatuje, jeśli poprosisz) i konsoli. AutoBleem działa z pendrive'a bez żadnej zmiany w konsoli.
+Potrzebujesz komputera z Windows, pendrive'a (USB 2.0, 8 GB lub więcej; instalator go sformatuje, jeśli
+poprosisz) i konsoli. AutoBleem działa z pendrive'a bez żadnej zmiany w konsoli. Pendrive musi być
+**FAT32** dla fabrycznej konsoli - jej kernel nie czyta exFAT. Tylko konsola z zainstalowanym kernelem
+AutoBleem (ABFlashKit, rozdział 6) uruchamia się także z pendrive'a exFAT, co znosi limit 4 GB na plik w FAT32.
 
 1. Pobierz **AutoBleemInstaller-<wersja>.zip** z panelu PlayStation Classic na stronie i rozpakuj gdziekolwiek.
    W środku jest `AutoBleemInstaller.exe` i pakiet AutoBleem, który instaluje.
 2. Włóż pendrive i uruchom `AutoBleemInstaller.exe`. Wybierz dysk u góry. Zaznacz, co chcesz:
-   - **Formatowanie pendrive'a** - tylko dla nowego pendrive'a (wszystko na nim zostanie skasowane).
+   - **Formatowanie pendrive'a** - tylko dla nowego pendrive'a (wszystko na nim zostanie skasowane). Wybierz
+     FAT32, chyba że konsola ma kernel AutoBleem.
    - **Bazy okładek** - grafika i opisy biblioteki PS1 (zaznaczone domyślnie; ok. 300 MB).
    - **RetroArch** - RetroArch z rdzeniami, dodatkowe aplikacje (Doom, Quake, Amiga, ...) i zasoby libretro,
      dla gier z innych systemów. Domyślnie wyłączone; można dodać później, uruchamiając instalator ponownie.
@@ -198,7 +201,7 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 | Informacje o sprzęcie | Maszyna: system, CPU, dyski, sieć, ekran, pady. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6). |
 | Opcje | Ustawienia AutoBleem (punkt 3.5). |
 | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
-| O programie | Autorzy i licencja. Start ukrywa tam małą grę. |
+| O programie | Autorzy i licencja. |
 | Wyłącz | Wyłącza maszynę, po potwierdzeniu. |
 
 ![Menu systemowe](../images/pl/system-menu.jpg)

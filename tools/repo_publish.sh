@@ -29,6 +29,8 @@
 #   tools/repo_publish.sh pcsx r26-20-gb9801962 ../pcsx-abnxt/dist/packages/*   -> emu/pcsx-abnxt/<version>/ (the pcsx-abnxt
 #                                                                                 repository's tools/make_packages.sh; newest kept)
 #   tools/repo_publish.sh pcsx-ab 20260920-fc8c992 ../pcsx-ab2/dist/packages/*  -> emu/pcsx-ab/<version>/ (the same, the classic emulator)
+#   tools/repo_publish.sh manuals build_manuals/*/*.pdf                        -> manuals/ (the user manuals, one PDF
+#                                                                                 per language - tools/build_manuals.py)
 #   tools/repo_publish.sh db db/covers*.db                                     -> db/
 #   tools/repo_publish.sh assets                                               -> assets/ (tools/repo_assets.py)
 #   tools/repo_publish.sh index                                                just regenerate the index
@@ -85,6 +87,7 @@ case "$KIND" in
     samples)   [ $# -ge 1 ] || usage 1; DEST="samples" ;;
     pcsx)      [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-abnxt/$VERSION" ;;
     pcsx-ab)   [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="emu/pcsx-ab/$VERSION" ;;
+    manuals)   [ $# -ge 1 ] || usage 1; DEST="manuals" ;;
     db)        [ $# -ge 1 ] || usage 1; DEST="db" ;;
     assets)    DEST="assets" ;;
     index)     DEST="" ;;

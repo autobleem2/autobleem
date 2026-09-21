@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 36
+INDEX_VERSION = 37
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -733,6 +733,22 @@ def index_db(repo, base_url):
     return [file_entry(repo, base_url, p) for p in data_files(os.path.join(repo, "db"))]
 
 
+MANUAL_LANGUAGES = {"en": "English", "pl": "Polski"}
+MANUAL_RE = re.compile(r"^(?P<stem>.+)-(?P<lang>[a-z]{2})\.pdf$")
+
+
+def index_manuals(repo, base_url):
+    """manuals/<name>-<lang>.pdf (tools/build_manuals.py) -> [(language name, file entry)], English first."""
+    found = []
+    for path in data_files(os.path.join(repo, "manuals")):
+        m = MANUAL_RE.match(os.path.basename(path))
+        if m:
+            found.append((m.group("lang"), file_entry(repo, base_url, path)))
+    order = list(MANUAL_LANGUAGES)
+    found.sort(key=lambda x: (order.index(x[0]) if x[0] in order else len(order), x[0]))
+    return [(MANUAL_LANGUAGES.get(lang, lang), f) for lang, f in found]
+
+
 #*******************************
 # the landing page
 #*******************************
@@ -794,7 +810,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None, pc=None, pcsx=None):
+                 psc_apps=None, psc_bios=None, pc=None, pcsx=None, manuals=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -1071,8 +1087,13 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
         out.append("</div>")
 
     # ---- shared build inputs ----
-    if dbs or samples or pcsx:
+    if dbs or samples or pcsx or manuals:
         out.append("<h2 class=\"plat\" id=\"inputs\">Every platform</h2>")
+    if manuals:
+        out.append("<div class=\"panel\" id=\"manuals\"><h2>User manual</h2>"
+                   "<p>Installing AutoBleem on every platform, the launcher and its screens, refreshing a console "
+                   "stick's ROMs on a PC, the console tools - one PDF per language (<a href=\"/manuals/\">manuals/</a>).</p>")
+        out.append(table([row(lang, f) for lang, f in manuals], ("Language", "File", "")) + "</div>")
     for name, heading, blurb in EMULATORS:
         builds_of = (pcsx or {}).get(name)
         if not builds_of:
@@ -1431,10 +1452,11 @@ def main():
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
     samples = index_samples(repo, base_url)
+    manuals = index_manuals(repo, base_url)
     pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
     pcsx = {name: b for name, b in pcsx.items() if b}
     pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images, "win": win}
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx, manuals)),
                        ("rpi-install.html", render_rpi_install(base_url, images)),
                        ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)
@@ -1442,9 +1464,9 @@ def main():
             f.write(page)
         os.replace(tmp, os.path.join(repo, name))
     print("%s: %d releases, %d RetroArch builds, %d cores tarballs, %d PSC RetroArch builds, %s PSC cores, %d image sets, "
-          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack" % (
+          "%d PC RetroArch builds, %d PC cores tarballs, %d PC image sets, %d databases, %s sample pack, %d manuals" % (
         repo, len(releases), len(builds), len(cores), len(psc_builds), "1" if psc_cores else "0", len(images),
-        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0"))
+        len(pc_builds), len(pc_cores), len(pc_images), len(dbs), "1" if samples else "0", len(manuals)))
 
 
 if __name__ == "__main__":
