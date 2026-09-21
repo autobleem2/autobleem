@@ -74,7 +74,7 @@ public:
         bool ok = dataTree(error) && covers(error);
         if (ok && opt.retroarch)
             ok = retroarch(error) && cores(error);
-        if (ok && opt.bios && (opt.retroarch || info.hasRetroArch))
+        if (ok && opt.bios)
             ok = bios(error);
         if (ok && opt.samples)
             ok = samples(error);
@@ -286,8 +286,18 @@ private:
         phase("BIOS files");
         if (stopped(error))
             return false;
-        // RetroArch's system directory is its own tree's: the cores look there
-        return fetchBiosPack("win/bios/latest.json", at("RetroArch/bin/system"), error);
+        // RetroArch's system directory is its own tree's: the cores look there. Without RetroArch nothing
+        // reads it but the PlayStation emulator's two files (installPs1Bios), so the rest of the pack is
+        // not fetched
+        const bool withRetroArch = opt.retroarch || info.hasRetroArch;
+        if (!withRetroArch)
+            say("  PlayStation only (no RetroArch): just the two files the emulator needs");
+        const string systemDir = at("RetroArch/bin/system");
+        if (!fetchBiosPack("win/bios/latest.json", systemDir, error,
+                           withRetroArch ? BiosFilter() : BiosFilter(isPs1BiosFile)))
+            return false;
+        installPs1Bios(systemDir, at("System/Bios"));
+        return true;
     }
 
     //******************
@@ -375,7 +385,7 @@ vector<string> WindowsInstallJob::phasesFor(const WindowsInstallOptions &options
         phases.push_back("RetroArch");
         phases.push_back("RetroArch cores");
     }
-    if (options.bios && (options.retroarch || info.hasRetroArch))
+    if (options.bios)
         phases.push_back("BIOS files");
     if (options.samples)
         phases.push_back("Sample games");

@@ -176,7 +176,7 @@ Section /o "RetroArch, for the other systems' games (about 1.5 GB)" SecRetroArch
   WriteRegDWORD HKCU "${REGKEY}" "OptRetroArch" 1
 SectionEnd
 
-Section /o "BIOS files the emulator cores need (about 230 MB)" SecBios
+Section "BIOS files (PlayStation; every core's too with RetroArch, about 300 MB)" SecBios
   WriteRegDWORD HKCU "${REGKEY}" "OptBios" 1
 SectionEnd
 
@@ -232,7 +232,7 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SecProgram} "The launcher, its themes and resources."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecCovers} "Cover art and titles for the PlayStation library, for the three regions (downloaded)."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecRetroArch} "libretro's RetroArch with every core, so the launcher plays the other systems' games too (downloaded)."
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecBios} "The BIOS files the cores need, fetched by AutoBleem's list from RetroBIOS (needs RetroArch)."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecBios} "The PlayStation BIOS the emulator runs games with (about 1 MB) - and, with RetroArch, the BIOS files its cores need (about 300 MB). Fetched by AutoBleem's list from RetroBIOS."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecSamples} "A few freely redistributable games, so the shelf is not empty."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 

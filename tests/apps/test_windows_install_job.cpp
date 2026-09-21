@@ -107,14 +107,19 @@ struct Fixture {
             tmp.writeFile("site/" + name + ".sha256", Sha256::ofFile(tmp.at("site/" + name)) + "  " + name + "\n");
             site.files[string(Site) + "/db/" + name + ".sha256"] = tmp.at("site/" + name + ".sha256");
         }
-        // the BIOS list: one file
-        tmp.writeFile("site/scph5501.bin", "bios!");
-        site.files[string(Site) + "/bios/scph5501.bin"] = tmp.at("site/scph5501.bin");
-        tmp.writeFile("site/biospack.txt", "# the list\n" + Sha256::ofFile(tmp.at("site/scph5501.bin")) + " 5 " + Site +
-                                               "/bios/scph5501.bin scph5501.bin\n");
+        // the BIOS list: the two PlayStation files and one of a core's
+        string list = "# the list\n";
+        for (const char *name : {"scph5501.bin", "scph5500.bin", "disksys.rom"}) {
+            tmp.writeFile(string("site/") + name, string("bios ") + name);
+            site.files[string(Site) + "/bios/" + name] = tmp.at(string("site/") + name);
+            list += Sha256::ofFile(tmp.at(string("site/") + name)) + " " +
+                    to_string(DirEntry::fileSize(tmp.at(string("site/") + name))) + " " + Site + "/bios/" + name + " " +
+                    (string(name) == "disksys.rom" ? "Nintendo - Famicom Disk System/" : "") + name + "\n";
+        }
+        tmp.writeFile("site/biospack.txt", list);
         site.files[string(Site) + "/win/bios/biospack.txt"] = tmp.at("site/biospack.txt");
         {
-            string j = json("biospack.txt", tmp.at("site/biospack.txt"), ", \"count\": 1, \"total_bytes\": 5");
+            string j = json("biospack.txt", tmp.at("site/biospack.txt"), ", \"count\": 3, \"total_bytes\": 48");
             size_t at = j.find("http://site/biospack.txt");
             j.replace(at, strlen("http://site/biospack.txt"), string(Site) + "/win/bios/biospack.txt");
             tmp.writeFile("site/bios.json", j);
@@ -256,9 +261,12 @@ TEST_CASE("RetroArch and its cores from the download repository, then the BIOS f
     CHECK(cfg.find("quit_on_close_content = \"2\"") != string::npos);
     CHECK(cfg.find("rgui_browser_directory = \"") != string::npos);
     CHECK(cfg.find("RetroArch\\roms\"") != string::npos);
-    // the BIOS file into RetroArch's own system dir
-    CHECK(fx.tmp.readFile("Documents/AutoBleem/RetroArch/bin/system/scph5501.bin") == "bios!");
-    CHECK(fx.out.said("1 fetched, 0 already there, 0 failed"));
+    // the whole pack into RetroArch's own system dir, and the PlayStation pair under the emulator's names
+    CHECK(fx.tmp.readFile("Documents/AutoBleem/RetroArch/bin/system/scph5501.bin") == "bios scph5501.bin");
+    CHECK(fx.has("RetroArch/bin/system/Nintendo - Famicom Disk System/disksys.rom"));
+    CHECK(fx.out.said("3 fetched, 0 already there, 0 failed"));
+    CHECK(fx.tmp.readFile("Documents/AutoBleem/System/Bios/romw.bin") == "bios scph5501.bin");
+    CHECK(fx.tmp.readFile("Documents/AutoBleem/System/Bios/romJP.bin") == "bios scph5500.bin");
     // the samples, RetroArch's part laid out for the Windows tree
     CHECK(fx.has("Games/Tetrade/Tetrade.cue"));
     CHECK(fx.has("SAMPLES.md"));
@@ -308,16 +316,26 @@ TEST_CASE("without a build on the site, libretro's own archive and one zip per c
     CHECK(cores.out.said("1 fetched, 1 failed"));
 }
 
-TEST_CASE("the BIOS files need RetroArch; the samples without it skip the other systems") {
+TEST_CASE("without RetroArch the BIOS step fetches the PlayStation files alone; the samples skip the other systems") {
     Fixture fx;
     fx.options.bios = true;
     fx.options.samples = true;
     fx.options.coversJapan = fx.options.coversUsa = fx.options.coversPal = false;
+    // the user's own NTSC-U BIOS is there already: kept, the Japanese one filled in
+    fx.tmp.writeFile("Documents/AutoBleem/System/Bios/romw.bin", "mine");
     WindowsInstallInfo before = WindowsInstallJob::inspect(fx.options);
     CHECK(WindowsInstallJob::phasesFor(fx.options, before) ==
-          vector<string>{"Data folder", "Sample games", "Finishing"});
+          vector<string>{"Data folder", "BIOS files", "Sample games", "Finishing"});
     string error;
     REQUIRE_MESSAGE(fx.run(error), error);
+    CHECK(fx.out.said("PlayStation only"));
+    CHECK(fx.has("RetroArch/bin/system/scph5501.bin"));
+    CHECK(fx.has("RetroArch/bin/system/scph5500.bin"));
+    CHECK_FALSE(fx.has("RetroArch/bin/system/Nintendo - Famicom Disk System/disksys.rom"));
+    CHECK(fx.out.said("2 fetched, 0 already there, 0 failed"));
+    CHECK(fx.tmp.readFile("Documents/AutoBleem/System/Bios/romw.bin") == "mine");
+    CHECK(fx.out.said("keeping the existing romw.bin"));
+    CHECK(fx.tmp.readFile("Documents/AutoBleem/System/Bios/romJP.bin") == "bios scph5500.bin");
     CHECK(fx.has("Games/Tetrade/Tetrade.cue"));
     CHECK_FALSE(fx.has("RetroArch/roms/Nintendo - Nintendo Entertainment System/Nova.nes"));
     CHECK(fx.out.said("need RetroArch"));

@@ -137,7 +137,7 @@ bool InstallJobBase::untar(const string &tarball, const string &dest, string &er
 //*******************************
 // InstallJobBase::fetchBiosPack
 //*******************************
-bool InstallJobBase::fetchBiosPack(const string &catalogRel, const string &dir, string &error) {
+bool InstallJobBase::fetchBiosPack(const string &catalogRel, const string &dir, string &error, const BiosFilter &only) {
     string text;
     PackCatalog cat;
     if (!fetchCatalog(catalogRel, text, error) || !cat.parse(text)) {
@@ -169,10 +169,14 @@ bool InstallJobBase::fetchBiosPack(const string &catalogRel, const string &dir, 
         it.size = strtoull(line.substr(a + 1, b - a - 1).c_str(), nullptr, 10);
         it.url = line.substr(b + 1, c - b - 1);
         it.path = line.substr(c + 1);
-        if (TarArchive::isSafeName(it.path))
+        if (TarArchive::isSafeName(it.path) && (!only || only(it.path)))
             items.push_back(it);
     }
-    say("  " + to_string(items.size()) + " files, " + humanSize(cat.totalBytes) + " - what is there already is kept");
+    if (only)
+        say("  " + to_string(items.size()) + " files - what is there already is kept");
+    else
+        say("  " + to_string(items.size()) + " files, " + humanSize(cat.totalBytes) +
+            " - what is there already is kept");
     int fetched = 0, kept = 0, failed = 0;
     for (size_t i = 0; i < items.size(); i++) {
         if (stopped(error))
@@ -217,4 +221,31 @@ bool InstallJobBase::fetchBiosPack(const string &catalogRel, const string &dir, 
     say("  " + to_string(fetched) + " fetched, " + to_string(kept) + " already there, " + to_string(failed) +
         " failed");
     return true;
+}
+
+//*******************************
+// InstallJobBase::isPs1BiosFile
+//*******************************
+bool InstallJobBase::isPs1BiosFile(const string &path) {
+    return path == "scph5501.bin" || path == "scph5500.bin";
+}
+
+//*******************************
+// InstallJobBase::installPs1Bios
+//*******************************
+void InstallJobBase::installPs1Bios(const string &systemDir, const string &biosDir) {
+    DirEntry::createDirs(biosDir);
+    for (const auto &pair : {make_pair("romw.bin", "scph5501.bin"), make_pair("romJP.bin", "scph5500.bin")}) {
+        const string dest = biosDir + "/" + pair.first, src = systemDir + "/" + pair.second;
+        if (DirEntry::exists(dest)) {
+            say(string("  keeping the existing ") + pair.first);
+        } else if (!DirEntry::exists(src)) {
+            say(string("  no ") + pair.second + " - the PlayStation emulator has no " + pair.first +
+                " and will use its built-in BIOS");
+        } else if (DirEntry::copyFile(src, dest)) {
+            say(string("  PlayStation BIOS: ") + pair.second + " -> System/Bios/" + pair.first);
+        } else {
+            say(string("  could not copy ") + pair.second + " to " + dest);
+        }
+    }
 }

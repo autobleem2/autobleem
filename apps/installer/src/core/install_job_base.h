@@ -13,6 +13,7 @@
 #include <ableem/engine/update_catalog.h>
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -49,8 +50,16 @@ protected:
                const ableem::TarArchive::Filter &filter = ableem::TarArchive::Filter(), const std::string &prefix = "");
     // the BIOS pack: <catalogRel> (a PackCatalog naming the list) -> the list, one line per file
     // "<sha256> <size> <url> <path>" -> each file under `dir`, kept when size and sha256 match, a lost one
-    // reported and gone past; false only on a stop or a lost list
-    bool fetchBiosPack(const std::string &catalogRel, const std::string &dir, std::string &error);
+    // reported and gone past; false only on a stop or a lost list. `only`, when given, picks the files by
+    // their path in the list (a PS1-only install wants the two PlayStation files, not the ~300 MB pack)
+    using BiosFilter = std::function<bool(const std::string &path)>;
+    bool fetchBiosPack(const std::string &catalogRel, const std::string &dir, std::string &error,
+                       const BiosFilter &only = BiosFilter());
+    // the two files pcsx-ab wants under System/Bios by the console's names - romw.bin (SCPH-5501, NTSC-U)
+    // for every game, romJP.bin (SCPH-5500) for a Japanese one - copied from the pack in `systemDir`
+    // unless the user has put their own there (the originals stay for RetroArch's cores)
+    void installPs1Bios(const std::string &systemDir, const std::string &biosDir);
+    static bool isPs1BiosFile(const std::string &path);
 
     Downloader &dl;
     InstallListener &out;
