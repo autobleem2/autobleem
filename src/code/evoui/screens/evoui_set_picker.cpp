@@ -12,12 +12,12 @@ using namespace std;
 namespace {
 const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
-const int TabsHeight = 96; // the tab strip at the top, in the header's place
+const int TabsHeight = 112; // the tab strip at the top, in the header's place: the icon, the label, the rule
 const int FooterHeight = PanelStyle::FooterHeight;
 const int RowHeight = 44;
 const int RowInset = PanelStyle::RowInset;
 const int TabWidth = 150;
-const int IconSize = 60; // the tab icons, the 30 px evoimg ones drawn at twice their size
+const int IconSize = 56; // the tab icons (evoimg/tab_*.png, tools/make_evoimg_icons.py)
 } // namespace
 
 //*******************************
@@ -27,9 +27,9 @@ void GuiSetPicker::init() {
     style = gui->panelStyle();
     const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
     tabs.clear();
-    tabs.push_back({_("PlayStation"), ableem::Texture::loadFile(renderer, img + "ps1.png"), {}, 0, 0});
-    tabs.push_back({_("RetroArch"), ableem::Texture::loadFile(renderer, img + "ra.png"), {}, 0, 0});
-    tabs.push_back({_("Apps"), ableem::Texture::loadFile(renderer, img + "usb.png"), {}, 0, 0});
+    tabs.push_back({_("PlayStation"), ableem::Texture::loadFile(renderer, img + "tab_playstation.png"), {}, 0, 0});
+    tabs.push_back({_("RetroArch"), ableem::Texture::loadFile(renderer, img + "tab_retroarch.png"), {}, 0, 0});
+    tabs.push_back({_("Apps"), ableem::Texture::loadFile(renderer, img + "tab_apps.png"), {}, 0, 0});
     buildTabs();
     cancelled = true;
 }
@@ -186,7 +186,7 @@ void GuiSetPicker::render() {
     // the tab strip: three icons across the top, the current one on a band with a bar under it
     const int stripX = panel.x + (panel.w - TabWidth * static_cast<int>(tabs.size())) / 2;
     for (size_t i = 0; i < tabs.size(); i++) {
-        const ableem::Rect cell(stripX + TabWidth * static_cast<int>(i), panel.y + 1, TabWidth, TabsHeight - 9);
+        const ableem::Rect cell(stripX + TabWidth * static_cast<int>(i), panel.y + 1, TabWidth, TabsHeight - 10);
         const bool current = static_cast<int>(i) == tab;
         if (current) {
             renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -204,7 +204,7 @@ void GuiSetPicker::render() {
         gui->text().renderText_WithColor(
             fonts[FONT_15_BOLD], tabs[i].title,
             cell.x + cell.w / 2 - gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
-            cell.y + 10 + IconSize + 2, current ? style.text : style.secondary, XALIGN_LEFT);
+            cell.y + 10 + IconSize + 4, current ? style.text : style.secondary, XALIGN_LEFT);
     }
     style.rule(renderer, panel, panel.y + TabsHeight - 8);
 
