@@ -31,7 +31,8 @@ void GuiTextPage::render() {
     size_t i = firstLine;
     for (; i < lines.size(); i++) {
         const string &line = lines[i];
-        const int height = (line.empty() || centred) ? lineHeight : max(lineHeight, font.columnHeight(line, width));
+        const int height =
+            (line.empty() || centred) ? lineHeight : max(lineHeight, gui->text().wrappedHeight(font, line, width));
         if (y + height > bottom)
             break;
         if (line.empty() || centred) {

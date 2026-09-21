@@ -24,7 +24,7 @@ void GuiConfirm::render() {
     const ableem::Font &font = fonts[FONT_22_MED];
     // the question wrapped to the panel
     const int textWidth = width - 2 * (PanelStyle::RowInset + 8);
-    const int textHeight = font.columnHeight(label, textWidth);
+    const int textHeight = gui->text().wrappedHeight(font, label, textWidth);
     const int height = PanelStyle::HeaderHeight + 12 + textHeight + 24 + PanelStyle::FooterHeight;
     ableem::Rect panel((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height);
     style.sheet(renderer, panel);

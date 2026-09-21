@@ -49,7 +49,12 @@ public:
                          XAlignment xAlign = XALIGN_LEFT);
     int renderFittedText_WithColor(FontType type, int maxSize, int minSize, const std::string &text, int x, int y,
                                    int maxWidth, ableem::Color textColor, XAlignment xAlign = XALIGN_LEFT);
-    // a paragraph wrapped to width pixels (no |@X| markers); returns the height drawn
+    // a paragraph wrapped to width pixels (no |@X| markers): at spaces, and a word wider than the column
+    // broken between characters (a URL, a run of "=" - SDL_FontCache's own column wrap lets those run past
+    // the edge); tabs count as spaces. wrapLines() is the split, wrappedHeight() what it will take
+    std::vector<std::string> wrapLines(const ableem::Font &font, const std::string &text, int width);
+    int wrappedHeight(const ableem::Font &font, const std::string &text, int width);
+    // the paragraph drawn line by line; returns the height drawn
     int renderWrappedText(const ableem::Font &font, const std::string &text, int x, int y, int width,
                           ableem::Color textColor);
     // the text if it fits maxWidth in this font, else as much of it as does with "..." on the end

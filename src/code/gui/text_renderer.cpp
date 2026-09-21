@@ -526,14 +526,65 @@ int TextRenderer::renderFittedText_WithColor(FontType type, int maxSize, int min
 //*******************************
 // TextRenderer::renderWrappedText
 //*******************************
+vector<string> TextRenderer::wrapLines(const ableem::Font &font, const string &text, int width) {
+    vector<string> lines;
+    // the words, a tab a space; a word wider than the column is cut into pieces that fit
+    vector<string> words;
+    string word;
+    auto flushWord = [&]() {
+        if (word.empty())
+            return;
+        while (width > 0 && font.width(word) > width && word.size() > 1) {
+            size_t cut = word.size();
+            do {
+                cut--;
+                while (cut > 0 && (static_cast<unsigned char>(word[cut]) & 0xC0) == 0x80)
+                    cut--; // a whole UTF-8 char
+            } while (cut > 1 && font.width(word.substr(0, cut)) > width);
+            if (cut == 0)
+                break;
+            words.push_back(word.substr(0, cut));
+            word = word.substr(cut);
+        }
+        words.push_back(word);
+        word.clear();
+    };
+    for (char c : text) {
+        if (c == ' ' || c == '\t')
+            flushWord();
+        else
+            word += c;
+    }
+    flushWord();
+
+    string line;
+    for (const string &w : words) {
+        string candidate = line.empty() ? w : line + " " + w;
+        if (!line.empty() && font.width(candidate) > width) {
+            lines.push_back(line);
+            line = w;
+        } else {
+            line = candidate;
+        }
+    }
+    if (!line.empty() || lines.empty())
+        lines.push_back(line);
+    return lines;
+}
+
+int TextRenderer::wrappedHeight(const ableem::Font &font, const string &text, int width) {
+    return static_cast<int>(wrapLines(font, text, width).size()) * font.lineHeight();
+}
+
 int TextRenderer::renderWrappedText(const ableem::Font &font, const string &text, int x, int y, int width,
                                     ableem::Color textColor) {
-    if (shadow_.enabled && Shadow::isLight(textColor)) {
-        static const int offsets[][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
-        for (const auto &offset : offsets)
-            font.drawColumn(renderer_, x + offset[0], y + offset[1], width, shadow_.color, text);
+    int cy = y;
+    for (const string &line : wrapLines(font, text, width)) {
+        if (!line.empty())
+            renderText_WithColor(font, line, x, cy, textColor, XALIGN_LEFT);
+        cy += font.lineHeight();
     }
-    return font.drawColumn(renderer_, x, y, width, textColor, text);
+    return cy - y;
 }
 
 //*******************************

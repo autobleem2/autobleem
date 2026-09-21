@@ -153,7 +153,7 @@ void GuiAbout::render() {
     auto sectionHeight = [&](const Section &sec) {
         int h = sec.heading.empty() ? 0 : 26;
         for (const string &line : sec.lines)
-            h += max(20, textFont.columnHeight(line, columnWidth));
+            h += max(20, gui->text().wrappedHeight(textFont, line, columnWidth));
         return h + 14;
     };
     int total = 0;
