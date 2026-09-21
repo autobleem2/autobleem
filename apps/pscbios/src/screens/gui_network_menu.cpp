@@ -34,17 +34,28 @@ void GuiNetworkMenu::refresh() {
 
 void GuiNetworkMenu::fill() {
     lines.clear();
-    lines.emplace_back(_("Wi-Fi Connection:"));
-    lines.emplace_back(_("SSID:") + "  " + config.ssid);
-    lines.emplace_back(_("Password:") + "  " +
-                       (displayAsterisksInsteadOfPassword ? string(config.password.size(), '*') : config.password));
-    lines.emplace_back(_("Driver mode:") + "  " + config.driverMode);
-    lines.emplace_back("");
-    lines.emplace_back(_("Write Configuration/Restart Network"));
-    lines.emplace_back("");
-    lines.emplace_back(_("Restart Network"));
-    lines.emplace_back(_("IP Address:") + " " + ipAddress);
-    lines.emplace_back(_("Timezone:") + " " + timezone);
+    values.clear();
+    auto row = [&](const string &label, const string &value) {
+        lines.push_back(label);
+        values.push_back(value);
+    };
+    row(_("SSID:"), config.ssid);
+    row(_("Password:"), displayAsterisksInsteadOfPassword ? string(config.password.size(), '*') : config.password);
+    row(_("Driver mode:"), config.driverMode);
+    row(_("Timezone:"), timezone);
+    row(_("IP Address:"), ipAddress);
+    row(_("Write Configuration/Restart Network"), "");
+    row(_("Restart Network"), "");
+}
+
+//*******************************
+// GuiNetworkMenu::renderLineIndexOnRow
+//*******************************
+// the label at the left, the value at the row's right edge
+void GuiNetworkMenu::renderLineIndexOnRow(int index, int row) {
+    gui->text().renderTextLine(lines[index], row, yoffset, XALIGN_LEFT, 0, font);
+    if (!values[index].empty())
+        gui->text().renderRowValue(values[index], row, yoffset, 0, font);
 }
 
 //*******************************
@@ -63,18 +74,18 @@ void GuiNetworkMenu::render() {
 string GuiNetworkMenu::getStatusLine() {
     switch (selected) {
     case Ssid:
-        return "   |@X| " + _("Edit SSID") + "   |@T| " + _("Scan SSID") + "   |@O| " + _("Cancel") + " |";
+        return "|@X| " + _("Edit SSID") + "   |@T| " + _("Scan SSID") + "   |@O| " + _("Back");
     case Password:
-        return "   |@X| " + _("Edit Password") + "   |@O| " + _("Cancel") + " |";
+        return "|@X| " + _("Edit Password") + "   |@O| " + _("Back");
     case WriteFile:
-        return "   |@X| " + _("Write Config/Restart Network") + "   |@O| " + _("Cancel") + " |";
+        return "|@X| " + _("Write Config/Restart Network") + "   |@O| " + _("Back");
     case InitNetwork:
-        return "   |@X| " + _("Restart Network") + "   |@O| " + _("Cancel") + " |";
+        return "|@X| " + _("Restart Network") + "   |@O| " + _("Back");
     case DriverMode:
     case TimeZone:
-        return "   |@X| " + _("Change") + "   |@O| " + _("Cancel") + " |";
+        return "|@X| " + _("Change") + "   |@O| " + _("Back");
     default:
-        return "   |@O| " + _("Cancel") + " |";
+        return "|@O| " + _("Back");
     }
 }
 
@@ -166,14 +177,22 @@ void GuiNetworkMenu::writeConfig() {
     PscBios::get().console().configureWifi(config.ssid, config.password, config.driverMode);
 }
 
-// what the tool has always shown around a restart: the two splashes are the only feedback abnet gives
+// the two messages are the only feedback abnet gives: the spinner over this screen, with each in turn
 void GuiNetworkMenu::restartNetwork() {
-    Gui::splash(_("Reinitializing Network"));
-    gui->platform().delay(2000);
+    showBusy(_("Reinitializing Network"), 2000);
     PscBios::get().console().restartNetwork();
-    Gui::splash(_("Restarted Wi-Fi  With SSID:") + " " + config.ssid);
-    gui->platform().delay(2000);
+    showBusy(_("Restarted Wi-Fi  With SSID:") + " " + config.ssid, 2000);
     refresh();
+}
+
+void GuiNetworkMenu::showBusy(const string &message, int ms) {
+    gui->beginBusy(message, [this]() { render(); });
+    const unsigned int until = gui->platform().ticks() + ms;
+    while (gui->platform().ticks() < until) {
+        gui->busyTick();
+        gui->platform().delay(20);
+    }
+    gui->endBusy();
 }
 
 void GuiNetworkMenu::pickTimezone() {

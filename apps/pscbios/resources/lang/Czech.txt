@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapování (k dispozici):
  - Mapping (Not found)= - Mapování (nenalezeno)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Pokud ovladač nereaguje na tlačítka nebo jsou páčky nastaveny špatně, přenastavte ho v sekci mapování
 About=
 Active=Aktivní
+Back=
 Bluetooth controller pairing=Párování ovladače přes Bluetooth
 Bluetooth information:=Informace o Bluetooth:
 Buttons:=Tlačítka:
-Cancel=
 Cancel mapping=Zrušit mapování
 Change=Změnit
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Připojit DualShock3 přes Bluetooth (bezdrátově)
 Connect other gamepad by Bluetooth=Připojit jiný gamepad přes Bluetooth
+Controller=
 Current Time:=Aktuální čas:
 Dongle status:=Stav adaptéru:
 Driver mode:=Režim ovladače:
@@ -37,7 +38,6 @@ Exit=Ukončit
 Found=Nalezen
 Game controller DB:=Databáze ovladačů:
 Game Controller information:=Informace o herních ovladačích:
-Game controller information:=Informace o herních ovladačích:
 Game Controllers number:=Počet ovladačů:
 Gamepad configuration changed.=Konfigurace gamepadů se změnila.
 Gamepad configuration changed. Mapping interrupted.=Konfigurace gamepadů se změnila. Mapování přerušeno.
@@ -88,6 +88,7 @@ Setup Gamepads=Nastavit gamepady
 Setup/Test Game Controller or update mapping=Nastavit/otestovat ovladač nebo aktualizovat mapování
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Tato část konfigurace hardwaru zatím není k dispozici.
@@ -98,7 +99,6 @@ Update mapping=Aktualizovat mapování
 Updating mapping=Aktualizace mapování
 Waiting for IP Address...=Čekání na IP adresu...
 We are working on implementing Bluetooth pairing on console for a next release=Na párování přes Bluetooth přímo na konzoli pracujeme pro příští verzi
-Wi-Fi Connection:=Připojení Wi-Fi:
 WiFi information:=Informace o WiFi:
 WiFi Settings=Nastavení WiFi
 Write Config/Restart Network=Zapsat konfiguraci/restartovat síť

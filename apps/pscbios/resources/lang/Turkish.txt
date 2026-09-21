@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Eşleme (mevcut):
  - Mapping (Not found)= - Eşleme (bulunamadı)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Kumanda düğmelere tepki vermiyorsa veya analog çubuklar yanlış ayarlandıysa, eşleme bölümünden yeniden yapılandırın
 About=
 Active=Etkin
+Back=
 Bluetooth controller pairing=Bluetooth kumanda eşleştirme
 Bluetooth information:=Bluetooth bilgileri:
 Buttons:=Düğmeler:
-Cancel=
 Cancel mapping=Eşlemeyi iptal et
 Change=Değiştir
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=DualShock3'ü Bluetooth ile bağla (kablosuz)
 Connect other gamepad by Bluetooth=Başka bir kumandayı Bluetooth ile bağla
+Controller=
 Current Time:=Şu anki saat:
 Dongle status:=Adaptör durumu:
 Driver mode:=Sürücü modu:
@@ -37,7 +38,6 @@ Exit=Çıkış
 Found=Bulundu
 Game controller DB:=Kumanda veritabanı:
 Game Controller information:=Kumanda bilgileri:
-Game controller information:=Kumanda bilgileri:
 Game Controllers number:=Kumanda sayısı:
 Gamepad configuration changed.=Kumanda yapılandırması değişti.
 Gamepad configuration changed. Mapping interrupted.=Kumanda yapılandırması değişti. Eşleme kesildi.
@@ -88,6 +88,7 @@ Setup Gamepads=Kumandaları ayarla
 Setup/Test Game Controller or update mapping=Kumandayı ayarla/test et veya eşlemeyi güncelle
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Donanım yapılandırmasının bu bölümü henüz kullanılamıyor.
@@ -98,7 +99,6 @@ Update mapping=Eşlemeyi güncelle
 Updating mapping=Eşleme güncelleniyor
 Waiting for IP Address...=IP adresi bekleniyor...
 We are working on implementing Bluetooth pairing on console for a next release=Konsolda Bluetooth eşleştirme üzerinde sonraki sürüm için çalışıyoruz
-Wi-Fi Connection:=Wi-Fi bağlantısı:
 WiFi information:=WiFi bilgileri:
 WiFi Settings=WiFi ayarları
 Write Config/Restart Network=Yapılandırmayı yaz/ağı yeniden başlat

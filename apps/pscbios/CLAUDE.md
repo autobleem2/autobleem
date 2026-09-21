@@ -38,10 +38,17 @@ src/core/       pscbios_core (SDL-free, links ab_core; the tests link it)
   pad_mapping.*       PadMapping - the wizard's logic: the 25 standard elements, detectChange(), the stick-half
                       merge (finalElements), the mapping line; the 2020 right-stick bug is fixed here
   network_status.*    NetworkStatus - the main screen's facts, one refresh() per RefreshInterval
-src/screens/    the screens, on ab_classic (GuiScreen, GuiStringMenu, GuiConfirm, GuiKeyboard, GuiTextPage, GuiAbout)
-  gui_pscbios_main.*  the opening screen; Select = WiFi (kernel only), Square = gamepads, Triangle = About, Circle = quit
-  gui_network_menu.*  the WiFi settings; gui_ssid_scan_menu.* holds both pickers (SSID scan, timezone)
-  gui_gamepad_menu.*  the gamepad section; gui_pad_config.* the wizard; pscbios_pages.* the static texts
+src/screens/    the screens, on ab_classic (GuiFactsPage, GuiStringMenu, GuiConfirm, GuiKeyboard, GuiTextPage, GuiAbout)
+  gui_pscbios_main.*  the opening screen, a GuiFactsPage (sections: time, WiFi, ethernet, Bluetooth, the controllers
+                      with their mapping and the mapping file); Select = WiFi (kernel only), Square = gamepads,
+                      Triangle = About, Circle = quit
+  gui_network_menu.*  the WiFi settings: seven option rows (label left, value right - a compact panel), the two
+                      actions among them; the restart's two messages are the busy spinner over the panel.
+                      gui_ssid_scan_menu.* holds both pickers (SSID scan, timezone)
+  gui_gamepad_menu.*  the gamepad section, a compact three-row list; gui_pad_config.* the wizard: the facts, the
+                      stage's message and (while mapping) the entries in two columns down the left of the panel,
+                      the DualShock picture at the right, the front buttons as RESET/OPEN/POWER chips in the footer;
+                      pscbios_pages.* the static texts (the About credits with GuiAbout::HeadingMark headings)
 src/pscbios_app.*     PscBios : AppBase - holds the ConsoleBackend; run() shows the main screen
 src/main.cpp          EnvironmentSetup::forTool, the backend choice (FakeBackend under AB_DEBUG_HOST), logs
 resources/            what ships in Apps/pscbios next to the binary: app.ini, run.sh, readme.txt, icon.png,
@@ -93,8 +100,10 @@ Part of the root build: `make_win.sh` builds `pscbios.exe` (target `pscbios`, `a
 copies the binary plus `resources/` into `payload/Apps/pscbios/`. Not built for the Pi.
 
 Visual test on Windows: `python tools/make_usb.py usb` stages `usb/Apps/pscbios/` (resources + the exe);
-`powershell -File tools\win_drive.ps1 -Usb <usb> -Tool pscbios -Sequence "b;2;k;1;x;2;o;2"` drives it
-(logs in `usb/System/Logs/pscbios.log` and `pscbios_out.txt`). The FakeBackend answers everything; a
+`python tools/ab_drive.py start --tool pscbios` then `run "press select; wait_screen GuiNetworkMenu; shot
+a.png"` drives it through the DebugDriver (AppBase starts it for every program since 2026-09-21; the
+screen names are `GuiPscBiosMain`, `GuiNetworkMenu`, `GuiSsidScanMenu`, `GuiTimezoneSelect`,
+`GuiGamepadMenu`, `GuiPadConfig`, `GuiTextPage`, `GuiAbout`); logs in `usb/System/Logs/pscbios.log`. The FakeBackend answers everything; a
 `configure`/`restart`/`setTimezone` is logged and reflected in what it then reports. The wizard needs a
 real pad (the keyboard-as-pad is not a joystick) - it shows "NO GAME CONTROLLERS OPENED" without one.
 
@@ -107,3 +116,6 @@ real pad (the keyboard-as-pad is not a joystick) - it shows "NO GAME CONTROLLERS
 - The mapping is saved to the file the launcher loads (`Input::currentMappingPath()`), never to the
   tool's own folder, and the launcher actually loads it now (it never called `loadMappings` before).
 - Dead code gone: `bluetool`, the BT menu, `cfgprocessor`, `DebugTimer`, the theme/sony copies.
+- The shared look (2026-09-21, the root CLAUDE.md's "UI styling standards"): the facts page, compact
+  option lists with the values at the right edge, chips for the front buttons, Back everywhere leaving
+  loses nothing; the gamepad menu's copy of the controller list is gone (the opening screen has it).

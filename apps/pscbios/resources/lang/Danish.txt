@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapping (tilgængelig):
  - Mapping (Not found)= - Mapping (ikke fundet)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Hvis controlleren ikke reagerer på knapper, eller styrepindene er sat forkert op, brug mapping-afsnittet til at konfigurere den igen
 About=
 Active=Aktiv
+Back=
 Bluetooth controller pairing=Parring af Bluetooth-controller
 Bluetooth information:=Bluetooth-oplysninger:
 Buttons:=Knapper:
-Cancel=
 Cancel mapping=Annuller mapping
 Change=Skift
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Tilslut DualShock3 via Bluetooth (trådløst)
 Connect other gamepad by Bluetooth=Tilslut en anden gamepad via Bluetooth
+Controller=
 Current Time:=Aktuel tid:
 Dongle status:=Dongle-status:
 Driver mode:=Drivertilstand:
@@ -37,7 +38,6 @@ Exit=Afslut
 Found=Fundet
 Game controller DB:=Controllerdatabase:
 Game Controller information:=Controlleroplysninger:
-Game controller information:=Controlleroplysninger:
 Game Controllers number:=Antal controllere:
 Gamepad configuration changed.=Gamepad-konfigurationen er ændret.
 Gamepad configuration changed. Mapping interrupted.=Gamepad-konfigurationen er ændret. Mapping afbrudt.
@@ -88,6 +88,7 @@ Setup Gamepads=Opsæt gamepads
 Setup/Test Game Controller or update mapping=Opsæt/test controller eller opdater mapping
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Denne del af hardwarekonfigurationen er ikke tilgængelig endnu.
@@ -98,7 +99,6 @@ Update mapping=Opdater mapping
 Updating mapping=Opdaterer mapping
 Waiting for IP Address...=Venter på IP-adresse...
 We are working on implementing Bluetooth pairing on console for a next release=Vi arbejder på Bluetooth-parring på konsollen til en kommende version
-Wi-Fi Connection:=Wi-Fi-forbindelse:
 WiFi information:=WiFi-oplysninger:
 WiFi Settings=WiFi-indstillinger
 Write Config/Restart Network=Skriv konfiguration/genstart netværk

@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mappatura (disponibile):
  - Mapping (Not found)= - Mappatura (non trovata)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Se il controller non risponde ai tasti o gli stick analogici sono configurati male, usa la sezione mappatura per riconfigurarlo
 About=Informazioni sul
 Active=Attivo
+Back=
 Bluetooth controller pairing=Associazione controller Bluetooth
 Bluetooth information:=Informazioni Bluetooth:
 Buttons:=Tasti:
-Cancel=Annulla
 Cancel mapping=Annulla mappatura
 Change=Cambia
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Collega DualShock3 via Bluetooth (senza fili)
 Connect other gamepad by Bluetooth=Collega un altro gamepad via Bluetooth
+Controller=
 Current Time:=Ora Corrente:
 Dongle status:=Stato del dongle:
 Driver mode:=Modalita' driver:
@@ -37,7 +38,6 @@ Exit=Esci
 Found=Trovato
 Game controller DB:=Database controller:
 Game Controller information:=Informazioni sui controller:
-Game controller information:=Informazioni sui controller:
 Game Controllers number:=Numero di controller:
 Gamepad configuration changed.=Configurazione dei gamepad cambiata.
 Gamepad configuration changed. Mapping interrupted.=Configurazione dei gamepad cambiata. Mappatura interrotta.
@@ -88,6 +88,7 @@ Setup Gamepads=Configura gamepad
 Setup/Test Game Controller or update mapping=Configura/prova un controller o aggiorna la mappatura
 SSID:=SSID:
 Support via Discord:=Supporto via Discord:
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Questa sezione della configurazione hardware non è ancora disponibile.
@@ -98,7 +99,6 @@ Update mapping=Aggiorna mappatura
 Updating mapping=Aggiornamento della mappatura
 Waiting for IP Address...=In attesa dell'Indirizzo IP...
 We are working on implementing Bluetooth pairing on console for a next release=Stiamo lavorando all'associazione Bluetooth sulla console per una prossima versione
-Wi-Fi Connection:=Connessione Wi-Fi:
 WiFi information:=Informazioni WiFi:
 WiFi Settings=Impostazioni WiFi
 Write Config/Restart Network=Scrivi Configurazione/Riavvia Rete

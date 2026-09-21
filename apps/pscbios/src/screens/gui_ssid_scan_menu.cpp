@@ -12,10 +12,10 @@ using namespace std;
 //*******************************
 void GuiSsidScanMenu::init() {
     GuiMenuBase::init();
-    Gui::splash(_("Scanning networks"));
+    gui->drawText(_("Scanning networks"));
     lines = PscBios::get().console().scanSsids();
     if (lines.empty()) {
-        Gui::splash(_("No networks found"));
+        gui->drawText(_("No networks found"));
         gui->platform().delay(2000);
     }
 }
@@ -23,8 +23,8 @@ void GuiSsidScanMenu::init() {
 string GuiSsidScanMenu::getStatusLine() {
     string menu;
     if (!lines.empty())
-        menu += "|@X|   " + _("Select") + "    ";
-    return menu + "|@O|   " + _("Cancel");
+        menu += "|@X| " + _("Select") + "   ";
+    return menu + "|@O| " + _("Back");
 }
 
 void GuiSsidScanMenu::doCross_Pressed() {
@@ -47,7 +47,7 @@ void GuiSsidScanMenu::doCircle_Pressed() {
 //*******************************
 void GuiTimezoneSelect::init() {
     GuiMenuBase::init();
-    Gui::splash(_("Loading timezones..."));
+    gui->drawText(_("Loading timezones..."));
     lines = PscBios::get().console().listTimezones();
 }
 

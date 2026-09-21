@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - 映射（可用）：
  - Mapping (Not found)= - 映射（未找到）
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. 如果手柄按键无反应或摇杆设置错误，请在映射部分重新配置
 About=
 Active=已启用
+Back=
 Bluetooth controller pairing=蓝牙手柄配对
 Bluetooth information:=蓝牙信息：
 Buttons:=按键：
-Cancel=
 Cancel mapping=取消映射
 Change=更改
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=通过蓝牙连接 DualShock3（无线模式）
 Connect other gamepad by Bluetooth=通过蓝牙连接其他手柄
+Controller=
 Current Time:=当前时间：
 Dongle status:=适配器状态：
 Driver mode:=驱动模式：
@@ -37,7 +38,6 @@ Exit=退出
 Found=已找到
 Game controller DB:=手柄数据库：
 Game Controller information:=手柄信息：
-Game controller information:=手柄信息：
 Game Controllers number:=手柄数量：
 Gamepad configuration changed.=手柄配置已更改。
 Gamepad configuration changed. Mapping interrupted.=手柄配置已更改。映射已中断。
@@ -88,6 +88,7 @@ Setup Gamepads=设置手柄
 Setup/Test Game Controller or update mapping=设置/测试手柄或更新映射
 SSID:=SSID：
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=此部分硬件配置尚不可用。
@@ -98,7 +99,6 @@ Update mapping=更新映射
 Updating mapping=正在更新映射
 Waiting for IP Address...=正在等待 IP 地址...
 We are working on implementing Bluetooth pairing on console for a next release=我们正在为下一版本开发主机上的蓝牙配对功能
-Wi-Fi Connection:=Wi-Fi 连接：
 WiFi information:=WiFi 信息：
 WiFi Settings=WiFi 设置
 Write Config/Restart Network=写入配置/重启网络

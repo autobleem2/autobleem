@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mappning (tillgänglig):
  - Mapping (Not found)= - Mappning (hittades inte)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Om handkontrollen inte reagerar på knappar eller spakarna är fel inställda, använd mappningsavsnittet för att konfigurera om den
 About=
 Active=Aktiv
+Back=
 Bluetooth controller pairing=Parkoppling av Bluetooth-handkontroll
 Bluetooth information:=Bluetooth-information:
 Buttons:=Knappar:
-Cancel=
 Cancel mapping=Avbryt mappning
 Change=Ändra
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Anslut DualShock3 via Bluetooth (trådlöst)
 Connect other gamepad by Bluetooth=Anslut annan handkontroll via Bluetooth
+Controller=
 Current Time:=Aktuell tid:
 Dongle status:=Dongelstatus:
 Driver mode:=Drivrutinsläge:
@@ -37,7 +38,6 @@ Exit=Avsluta
 Found=Hittad
 Game controller DB:=Handkontrollsdatabas:
 Game Controller information:=Information om handkontroller:
-Game controller information:=Information om handkontroller:
 Game Controllers number:=Antal handkontroller:
 Gamepad configuration changed.=Handkontrollskonfigurationen ändrades.
 Gamepad configuration changed. Mapping interrupted.=Handkontrollskonfigurationen ändrades. Mappningen avbröts.
@@ -88,6 +88,7 @@ Setup Gamepads=Ställ in handkontroller
 Setup/Test Game Controller or update mapping=Ställ in/testa handkontroll eller uppdatera mappning
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Den här delen av hårdvarukonfigurationen är inte tillgänglig ännu.
@@ -98,7 +99,6 @@ Update mapping=Uppdatera mappning
 Updating mapping=Uppdaterar mappning
 Waiting for IP Address...=Väntar på IP-adress...
 We are working on implementing Bluetooth pairing on console for a next release=Vi arbetar på Bluetooth-parkoppling på konsolen till en kommande version
-Wi-Fi Connection:=Wi-Fi-anslutning:
 WiFi information:=WiFi-information:
 WiFi Settings=WiFi-inställningar
 Write Config/Restart Network=Skriv konfiguration/starta om nätverk

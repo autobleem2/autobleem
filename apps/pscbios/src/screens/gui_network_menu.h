@@ -1,6 +1,8 @@
 //
 // GuiNetworkMenu: the WiFi settings - the SSID (typed, or picked from a scan), the password, the driver
-// mode, writing them for the kernel and restarting the network, the address it got, and the timezone.
+// mode, the timezone, the address the console got, and the two actions: writing the settings for the
+// kernel and restarting the network, or a restart alone. Option rows in the shared look: the label at
+// the left, the value at the row's right edge; a compact panel, being seven rows.
 //
 #pragma once
 
@@ -9,6 +11,7 @@
 #include "core/ssid_config.h"
 
 #include <string>
+#include <vector>
 
 //********************
 // GuiNetworkMenu
@@ -19,9 +22,10 @@ public:
 
     void init() override;
     void render() override;
+    void renderLineIndexOnRow(int index, int row) override;
     std::string getTitle() override { return _("Edit Network WPA WiFi Credentials"); }
     std::string getStatusLine() override;
-    bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].empty(); }
+    bool skipSelectingThisLineWhenMovingByOne(int index) override { return index == IpAddress; }
 
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
@@ -32,9 +36,10 @@ public:
     static const unsigned int RefreshInterval = 2000; // ms between re-reads of the address and timezone
 
 private:
-    enum Row { Text = 0, Ssid, Password, DriverMode, Blank1, WriteFile, Blank2, InitNetwork, IpAddress, TimeZone };
+    enum Row { Ssid = 0, Password, DriverMode, TimeZone, IpAddress, WriteFile, InitNetwork };
     SsidConfig config;
     std::string ipAddress, timezone;
+    std::vector<std::string> values; // one per row of `lines`, "" for an action row
     unsigned int lastRefresh = 0;
 
     void refresh(); // the address and the timezone from the console
@@ -45,4 +50,5 @@ private:
     void editPassword();
     void scanSsid();
     void pickTimezone();
+    void showBusy(const std::string &message, int ms); // the spinner over this screen, for `ms`
 };

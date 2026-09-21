@@ -3,7 +3,7 @@
 //
 #include "pscbios_pages.h"
 #include "core/main.h"
-#include "core/version.h" // generated into the build tree
+#include "gui/screens/gui_about.h"
 
 using namespace std;
 
@@ -11,24 +11,24 @@ using namespace std;
 // pscbiosCredits
 //*******************************
 vector<string> pscbiosCredits() {
-    auto heading = [](const string &text) { return ".-= " + text + " =-."; }; // the decoration is not translated
-    return {"PSC BIOS " + string(Version::FULL_VERSION),
-            "----------------",
-            heading(_("Code C++ and shell scripts")),
-            "screemer(AutoBleem), madmonkey(Hakchi)",
-            " ",
+    auto heading = [](const string &text) { return GuiAbout::HeadingMark + text; };
+    return {heading(_("Code C++ and shell scripts")),
+            "screemer (AutoBleem), madmonkey (Hakchi)",
             heading(_("Linux Kernel Patching")),
             "screemer, madmonkey",
-            " ",
             heading(_("Testing")),
             "MagnusRC, xboxiso, Azazel, Solidius, SupaSAIAN, Kingherb, saptis",
             heading(_("Localization support")),
-            "nex(German), Azazel(Polish), gadsby(Turkish), GeekAndy(Dutch), Pardubak(Slovak), SupaSAIAN(Spanish), "
-            "Mate(Czech)",
-            "Sasha(Italian), Jakejj(BR_Portuguese), jolny(Swedish), StepJefli(Danish), alucard73 / MagnusRC(French), "
-            "Quenti(Occitan), ",
-            " ",
-            _("Support via Discord:") + " https://discord.gg/AHUS3RM",
+            "nex (German), Azazel (Polish), gadsby (Turkish), GeekAndy (Dutch), Pardubak (Slovak), SupaSAIAN "
+            "(Spanish), Mate (Czech), Sasha (Italian), Jakejj (BR Portuguese), jolny (Swedish), StepJefli (Danish), "
+            "alucard73 / MagnusRC (French), Quenti (Occitan)"};
+}
+
+//*******************************
+// pscbiosFoot
+//*******************************
+vector<string> pscbiosFoot() {
+    return {_("Support via Discord:") + " https://discord.gg/AHUS3RM",
             _("This is free software. It works AS IS and We take no responsibility for any issues or damage.")};
 }
 

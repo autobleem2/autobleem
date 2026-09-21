@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapowanie (dostępne):
  - Mapping (Not found)= - Mapowanie (nie znaleziono)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Jeśli kontroler nie reaguje na przyciski albo gałki są źle ustawione, skonfiguruj go ponownie w sekcji mapowania
 About=O programie
 Active=Aktywny
+Back=
 Bluetooth controller pairing=Parowanie kontrolera Bluetooth
 Bluetooth information:=Informacja Bluetooth:
 Buttons:=Przyciski:
-Cancel=Anuluj
 Cancel mapping=Anuluj mapowanie
 Change=Zmień
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Podłącz DualShock3 przez Bluetooth (bezprzewodowo)
 Connect other gamepad by Bluetooth=Podłącz inny gamepad przez Bluetooth
+Controller=
 Current Time:=Aktualny czas:
 Dongle status:=Urządzenie USB:
 Driver mode:=Tryb sterownika:
@@ -37,7 +38,6 @@ Exit=Wyjście
 Found=Znaleziono
 Game controller DB:=Baza kontrolerów:
 Game Controller information:=Informacje o kontrolerach:
-Game controller information:=Informacje o kontrolerach:
 Game Controllers number:=Liczba kontrolerów:
 Gamepad configuration changed.=Konfiguracja gamepadów uległa zmianie.
 Gamepad configuration changed. Mapping interrupted.=Konfiguracja gamepadów uległa zmianie. Mapowanie przerwane.
@@ -88,6 +88,7 @@ Setup Gamepads=Konfiguruj gamepady
 Setup/Test Game Controller or update mapping=Skonfiguruj/przetestuj kontroler lub zaktualizuj mapowanie
 SSID:=SSID:
 Support via Discord:=Wsparcie poprzez discord
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Ta część konfiguracji sprzętu nie jest jeszcze dostępna.
@@ -98,7 +99,6 @@ Update mapping=Aktualizuj mapowanie
 Updating mapping=Aktualizowanie mapowania
 Waiting for IP Address...=Oczekiwanie na adres IP…
 We are working on implementing Bluetooth pairing on console for a next release=Pracujemy nad parowaniem Bluetooth na konsoli w następnej wersji
-Wi-Fi Connection:=Połączenie poprzez WiFi:
 WiFi information:=Informacja o WiFi:
 WiFi Settings=Ustawienia WiFi
 Write Config/Restart Network=Zapisz konfigurację/Restartuj siec

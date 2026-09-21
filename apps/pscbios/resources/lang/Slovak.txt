@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapovanie (k dispozícii):
  - Mapping (Not found)= - Mapovanie (nenájdené)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Ak ovládač nereaguje na tlačidlá alebo sú páčky nastavené zle, prenastavte ho v sekcii mapovania
 About=O programe
 Active=Aktívny
+Back=
 Bluetooth controller pairing=Párovanie ovládača cez Bluetooth
 Bluetooth information:=Informácie o Bluetooth:
 Buttons:=Tlačítka:
-Cancel=Zrušiť
 Cancel mapping=Zrušiť mapovanie
 Change=Zmeniť
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Pripojiť DualShock3 cez Bluetooth (bezdrôtovo)
 Connect other gamepad by Bluetooth=Pripojiť iný gamepad cez Bluetooth
+Controller=
 Current Time:=Aktuálny čas:
 Dongle status:=Stav Dongle:
 Driver mode:=Režim ovládača:
@@ -37,7 +38,6 @@ Exit=Skončiť
 Found=Nájdené
 Game controller DB:=Databáza ovládačov:
 Game Controller information:=Informácie o ovládači:
-Game controller information:=Informácie o herných ovládačoch:
 Game Controllers number:=Počet ovládačov:
 Gamepad configuration changed.=Konfigurácia gamepadov sa zmenila.
 Gamepad configuration changed. Mapping interrupted.=Konfigurácia gamepadov sa zmenila. Mapovanie prerušené.
@@ -88,6 +88,7 @@ Setup Gamepads=Nastaviť gamepady
 Setup/Test Game Controller or update mapping=Nastaviť/otestovať ovládač alebo aktualizovať mapovanie
 SSID:=SSID:
 Support via Discord:=Podpora na Discorde:
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Táto časť konfigurácie hardvéru zatiaľ nie je k dispozícii.
@@ -98,7 +99,6 @@ Update mapping=Aktualizujte mapovanie
 Updating mapping=Aktualizácia mapovania
 Waiting for IP Address...=Čaká sa na IP adresu...
 We are working on implementing Bluetooth pairing on console for a next release=Na párovaní cez Bluetooth priamo na konzole pracujeme pre ďalšiu verziu
-Wi-Fi Connection:=Pripojenie Wi-Fi:
 WiFi information:=Informácie o WiFi:
 WiFi Settings=WiFi Nastavenia
 Write Config/Restart Network=Zapísať konfiguračný súbor / Reštartovať sieť

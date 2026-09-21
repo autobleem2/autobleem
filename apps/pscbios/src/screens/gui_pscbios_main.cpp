@@ -20,16 +20,7 @@ using namespace std;
 //*******************************
 void GuiPscBiosMain::init() {
     kernel = PscBios::get().console().kernelInstalled();
-    refresh();
-}
-
-//*******************************
-// GuiPscBiosMain::refresh
-//*******************************
-void GuiPscBiosMain::refresh() {
-    lastRefresh = gui->platform().ticks();
-    if (kernel)
-        status.refresh(PscBios::get().console());
+    GuiFactsPage::init();
 }
 
 //*******************************
@@ -44,64 +35,80 @@ string GuiPscBiosMain::clockText() {
 }
 
 //*******************************
-// GuiPscBiosMain::render
+// GuiPscBiosMain::collect
 //*******************************
-void GuiPscBiosMain::render() {
-    renderer.clear();
-    gui->renderBackground();
-    gui->renderTextBar();
-    int offset = gui->renderHeader(_("Playstation Classic Hardware Information"));
-    TextRenderer &text = gui->text();
-
-    int controllerLine = 1;
+// the sections; the keys are the 2020 tool's (translated), a trailing colon dropped where the heading
+// band or the value column makes it redundant
+vector<InfoSection> GuiPscBiosMain::collect() {
+    auto plain = [](string text) {
+        while (!text.empty() && (text.back() == ':' || text.back() == ' '))
+            text.pop_back();
+        return text;
+    };
+    vector<InfoSection> sections;
     if (kernel) {
-        controllerLine = 15;
-        text.renderTextLine(_("Current Time:") + "  " + clockText() + "    (" + status.timezone + ")", 1, offset);
-        text.renderTextLine(_("WiFi information:"), 3, offset);
-        text.renderTextLine("   " + _("Dongle status:") + "  " +
-                                NetworkStatus::dongleStatus(status.wirelessFound, status.wirelessActive),
-                            4, offset);
-        text.renderTextLine("   " + _("IP configuration:") + "  " +
-                                NetworkStatus::addressText(status.wirelessFound, status.wirelessAddr),
-                            5, offset);
-        text.renderTextLine(_("Ethernet information:"), 7, offset);
-        text.renderTextLine("   " + _("Dongle status:") + "  " +
-                                NetworkStatus::dongleStatus(status.ethFound, status.ethActive),
-                            8, offset);
-        text.renderTextLine("   " + _("IP configuration:") + "  " +
-                                NetworkStatus::addressText(status.ethFound, status.ethAddr),
-                            9, offset);
-        text.renderTextLine(_("Bluetooth information:"), 11, offset);
-        text.renderTextLine("   " + _("Dongle status:") + "  " +
-                                NetworkStatus::dongleStatus(status.btActive, status.btActive),
-                            12, offset);
-        text.renderTextLine("   " + _("Interface details:") + "  " + status.btName, 13, offset);
+        status.refresh(PscBios::get().console());
+        sections.push_back(
+            {_("System"), {{plain(_("Current Time:")), clockText()}, {plain(_("Timezone:")), status.timezone}}});
+        sections.push_back(
+            {plain(_("WiFi information:")),
+             {{plain(_("Dongle status:")), NetworkStatus::dongleStatus(status.wirelessFound, status.wirelessActive)},
+              {plain(_("IP configuration:")), NetworkStatus::addressText(status.wirelessFound, status.wirelessAddr)}}});
+        sections.push_back(
+            {plain(_("Ethernet information:")),
+             {{plain(_("Dongle status:")), NetworkStatus::dongleStatus(status.ethFound, status.ethActive)},
+              {plain(_("IP configuration:")), NetworkStatus::addressText(status.ethFound, status.ethAddr)}}});
+        sections.push_back(
+            {plain(_("Bluetooth information:")),
+             {{plain(_("Dongle status:")), NetworkStatus::dongleStatus(status.btActive, status.btActive)},
+              {plain(_("Interface details:")), status.btName}}});
     }
 
     const int joysticks = ableem::Joystick::count();
-    text.renderTextLine(_("Game Controller information:"), controllerLine, offset);
-    text.renderTextLine("   " + _("Game Controllers number:") + " " + to_string(gui->input().activePadCount()) + "/" +
-                            to_string(joysticks),
-                        controllerLine + 1, offset);
-    for (int i = 0; i < joysticks && i < 4; i++) {
+    InfoSection pads{plain(_("Game Controller information:")), {}};
+    pads.rows.push_back(
+        {plain(_("Game Controllers number:")), to_string(gui->input().activePadCount()) + "/" + to_string(joysticks)});
+    string mappingFile = gui->input().currentMappingPath();
+    pads.rows.push_back({plain(_("Game controller DB:")), mappingFile.empty() ? _("SDL's built-in") : mappingFile});
+    for (int i = 0; i < joysticks; i++) {
         string name = ableem::Joystick::nameForIndex(i);
         if (ableem::Joystick::isGameControllerAtIndex(i))
-            name += _(" - Mapping (Available):") + ableem::Joystick::controllerNameForIndex(i);
+            name += _(" - Mapping (Available):") + " " + ableem::Joystick::controllerNameForIndex(i);
         else
             name += _(" - Mapping (Not found)");
-        text.renderTextLine("     #" + to_string(i) + " " + name, controllerLine + 2 + i, offset);
+        pads.rows.push_back({_("Controller") + " " + to_string(i + 1), name});
     }
-    if (joysticks > 4)
-        text.renderTextLine("..", controllerLine + 6, offset);
+    sections.push_back(pads);
+    return sections;
+}
 
+//*******************************
+// GuiPscBiosMain::extraHints / onButton
+//*******************************
+string GuiPscBiosMain::extraHints() {
     string menu;
     if (status.wirelessFound && kernel)
         menu += "|@Select| " + _("WiFi Settings") + "   ";
-    menu += "|@S| " + _("Setup Gamepads") + "   ";
-    menu += "|@T| " + _("About") + "   ";
-    menu += "|@O| " + _("Cancel") + "   ";
-    gui->renderStatus(menu);
-    renderer.present();
+    menu += "|@S| " + _("Setup Gamepads") + "   |@T| " + _("About");
+    return menu;
+}
+
+bool GuiPscBiosMain::onButton(ableem::Button button) {
+    switch (button) {
+    case Button::Square:
+        openGamepadMenu();
+        return true;
+    case Button::Triangle:
+        openAbout();
+        return true;
+    case Button::Select:
+        if (!kernel)
+            return false;
+        openNetworkMenu();
+        return true;
+    default:
+        return false;
+    }
 }
 
 //*******************************
@@ -111,7 +118,6 @@ void GuiPscBiosMain::openNetworkMenu() {
     app.audio().cursor.play();
     GuiNetworkMenu menu(*gui);
     menu.show();
-    refresh();
 }
 
 void GuiPscBiosMain::openGamepadMenu() {
@@ -124,43 +130,6 @@ void GuiPscBiosMain::openAbout() {
     app.audio().cursor.play();
     GuiAbout about(*gui);
     about.credits = pscbiosCredits();
+    about.foot = pscbiosFoot();
     about.show();
-}
-
-//*******************************
-// GuiPscBiosMain::loop
-//*******************************
-void GuiPscBiosMain::loop() {
-    menuVisible = true;
-    while (menuVisible) {
-        if (gui->platform().ticks() - lastRefresh >= RefreshInterval)
-            refresh();
-        render();
-
-        Event e;
-        while (gui->input().poll(e)) {
-            if (e.type == Event::Type::Quit)
-                menuVisible = false;
-            if (e.type != Event::Type::ButtonDown)
-                continue;
-            switch (e.button) {
-            case Button::Circle:
-                app.audio().cancel.play();
-                menuVisible = false;
-                break;
-            case Button::Square:
-                openGamepadMenu();
-                break;
-            case Button::Triangle:
-                openAbout();
-                break;
-            case Button::Select:
-                if (kernel)
-                    openNetworkMenu();
-                break;
-            default:
-                break;
-            }
-        }
-    }
 }

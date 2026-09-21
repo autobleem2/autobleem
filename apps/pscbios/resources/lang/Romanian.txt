@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapare (disponibilă):
  - Mapping (Not found)= - Mapare (negăsită)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Dacă controlerul nu reacționează la butoane sau manetele sunt configurate greșit, folosiți secțiunea de mapare pentru a-l reconfigura
 About=
 Active=Activ
+Back=
 Bluetooth controller pairing=Asociere controler Bluetooth
 Bluetooth information:=Informații Bluetooth:
 Buttons:=Butoane:
-Cancel=
 Cancel mapping=Anulează maparea
 Change=Schimbă
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Conectare DualShock3 prin Bluetooth (fără fir)
 Connect other gamepad by Bluetooth=Conectare alt gamepad prin Bluetooth
+Controller=
 Current Time:=Ora curentă:
 Dongle status:=Stare adaptor:
 Driver mode:=Mod driver:
@@ -37,7 +38,6 @@ Exit=Ieșire
 Found=Detectat
 Game controller DB:=Bază de date controlere:
 Game Controller information:=Informații controlere:
-Game controller information:=Informații controlere:
 Game Controllers number:=Număr de controlere:
 Gamepad configuration changed.=Configurația gamepadurilor s-a schimbat.
 Gamepad configuration changed. Mapping interrupted.=Configurația gamepadurilor s-a schimbat. Mapare întreruptă.
@@ -88,6 +88,7 @@ Setup Gamepads=Configurare gamepaduri
 Setup/Test Game Controller or update mapping=Configurați/testați un controler sau actualizați maparea
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Această secțiune a configurării hardware nu este încă disponibilă.
@@ -98,7 +99,6 @@ Update mapping=Actualizare mapare
 Updating mapping=Se actualizează maparea
 Waiting for IP Address...=Se așteaptă adresa IP...
 We are working on implementing Bluetooth pairing on console for a next release=Lucrăm la asocierea Bluetooth pe consolă pentru o versiune viitoare
-Wi-Fi Connection:=Conexiune Wi-Fi:
 WiFi information:=Informații WiFi:
 WiFi Settings=Setări WiFi
 Write Config/Restart Network=Scrie configurația/repornește rețeaua

@@ -1,7 +1,7 @@
 //
 // GuiGamepadMenu: the gamepad section - the mapping wizard, and the two pages that explain DualShock 3
-// and Bluetooth pairing; below the menu, which mapping file is in use and every joystick with whether
-// SDL has a mapping for it.
+// and Bluetooth pairing. A compact three-row list; the controllers and the mapping file in use are on
+// the opening screen.
 //
 #pragma once
 
@@ -15,9 +15,8 @@ public:
     explicit GuiGamepadMenu(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override;
-    void render() override;
     std::string getTitle() override { return _("Gamepad Support Configuration"); }
-    std::string getStatusLine() override { return "|@X|" + _("Select") + "   |@O|" + _("Cancel"); }
+    std::string getStatusLine() override { return "|@X| " + _("Select") + "   |@O| " + _("Back"); }
 
     void doCircle_Pressed() override;
     void doCross_Pressed() override;

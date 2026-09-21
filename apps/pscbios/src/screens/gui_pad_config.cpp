@@ -35,18 +35,17 @@ void GuiPadConfig::init() {
 //*******************************
 // GuiPadConfig::chooseFont
 //*******************************
-// This page was laid out for the 2020 tool's 14 px font: the mapping list alone is 26 rows under an 8-row
-// header. A theme's classic font is 20 px or more, which puts the end of the list below the status bar - so
-// the page is drawn in the classic font at the largest size (the theme's at most, 12 at least) that fits every
-// row above the bar.
+// The left column is the facts (4 rows), the message (3 rows wrapped) and, while mapping, the 26 entries in
+// two columns of 13 - 20 rows. The classic font at the theme's size (18 at most - a smaller one reads
+// better next to the numbers) unless that runs past the footer, then the largest size down to 12 at
+// which every row fits the panel's content.
 void GuiPadConfig::chooseFont() {
-    const int top = 10;
-    const int bottom = gui->text().getTextRectOfTheme().y;
-    const int themeSize = app.theme().classic().font.size;
-    pageFont = gui->assets().themeFont;
+    const ableem::Rect content = gui->classicContent();
+    const int themeSize = min(18, static_cast<int>(app.theme().classic().font.size.value));
+    pageFont = gui->assets().classicFontAtSize(themeSize);
     for (int size = themeSize; size >= 12; size--) {
         pageFont = gui->assets().classicFontAtSize(size);
-        if (top + PageRows * pageFont.lineHeight() <= bottom)
+        if (PageRows * pageFont.lineHeight() <= content.h - 8)
             break;
     }
 }
@@ -180,14 +179,32 @@ void GuiPadConfig::saveMapping() {
 }
 
 //*******************************
+// GuiPadConfig::pictureRect
+//*******************************
+// the DualShock picture (drawn 420x425 in the 2020 tool) at the right of the panel's content, scaled down
+// when the content is not that tall; the overlays below are in the picture's own 420x425 coordinates
+ableem::Rect GuiPadConfig::pictureRect() const {
+    const ableem::Rect content = gui->classicContent();
+    int h = min(425, content.h - 8);
+    int w = 420 * h / 425;
+    return Rect(content.x + content.w - PanelStyle::RowInset - 8 - w, content.y + (content.h - h) / 2, w, h);
+}
+
+//*******************************
 // GuiPadConfig::renderPadPicture
 //*******************************
-// the DualShock picture at (430, 200) 420x425, with the pressed buttons and the sticks' positions drawn
-// over it; while mapping, the element being asked for is what lights up instead
+// the DualShock picture with the pressed buttons and the sticks' positions drawn over it; while mapping,
+// the element being asked for is what lights up instead
 void GuiPadConfig::renderPadPicture(const ControllerState &liveState) {
-    Rect picture(430, 200, 420, 425);
+    const Rect picture = pictureRect();
     if (padImage.valid())
         renderer.copy(padImage, nullptr, &picture);
+    // the overlays were placed on the picture drawn at (430, 200) 420x425
+    const float k = static_cast<float>(picture.h) / 425.0f;
+    auto at = [&](int x, int y, int w, int h) {
+        return Rect(picture.x + static_cast<int>((x - 430) * k), picture.y + static_cast<int>((y - 200) * k),
+                    max(1, static_cast<int>(w * k)), max(1, static_cast<int>(h * k)));
+    };
 
     ControllerState state = liveState;
     bool showSticks = true;
@@ -212,27 +229,42 @@ void GuiPadConfig::renderPadPicture(const ControllerState &liveState) {
                                          {508, 471, 22, 26}, {486, 452, 26, 23}, {526, 452, 26, 23}};
     for (int i = 0; i < 15; i++)
         if (state.buttons[i])
-            renderer.fillRect(Rect(positions[i][0], positions[i][1], positions[i][2], positions[i][3]));
+            renderer.fillRect(at(positions[i][0], positions[i][1], positions[i][2], positions[i][3]));
 
     if (showSticks) {
-        renderer.fillRect(Rect(571 + state.axes[0] * 20 / 32768, 515 + state.axes[1] * 20 / 32768, 16, 16));
-        renderer.fillRect(Rect(693 + state.axes[2] * 20 / 32768, 515 + state.axes[3] * 20 / 32768, 16, 16));
+        renderer.fillRect(at(571 + state.axes[0] * 20 / 32768, 515 + state.axes[1] * 20 / 32768, 16, 16));
+        renderer.fillRect(at(693 + state.axes[2] * 20 / 32768, 515 + state.axes[3] * 20 / 32768, 16, 16));
     }
     // the triggers fill up from the bottom
     int left = state.axes[4] * 47 / 32768;
-    renderer.fillRect(Rect(498, 237 + 46 - left, 51, 1 + left));
+    renderer.fillRect(at(498, 237 + 46 - left, 51, 1 + left));
     int right = state.axes[5] * 47 / 32768;
-    renderer.fillRect(Rect(730, 237 + 46 - right, 51, 1 + right));
+    renderer.fillRect(at(730, 237 + 46 - right, 51, 1 + right));
 }
 
 //*******************************
 // GuiPadConfig::renderElements
 //*******************************
-void GuiPadConfig::renderElements() {
+// the mapping entries as "name  value" rows in two columns from y; returns the y below them
+int GuiPadConfig::renderElements(int x, int y, int width) {
     const vector<PadMapping::Element> &list = stage == Stage::Mapping ? elements : finals;
-    int row = 8;
-    for (const PadMapping::Element &element : list)
-        gui->text().renderTextLine(element.apiName + ":" + element.value, row++, 10, XALIGN_LEFT, 0, pageFont);
+    const ableem::Color secondary = gui->panelStyle().secondary;
+    const ableem::Color text = gui->panelStyle().text;
+    const int perColumn = (static_cast<int>(list.size()) + 1) / 2;
+    const int columnWidth = (width - 16) / 2;
+    const int top = y;
+    for (size_t i = 0; i < list.size(); i++) {
+        const PadMapping::Element &element = list[i];
+        const int column = static_cast<int>(i) / perColumn;
+        const int cx = x + column * (columnWidth + 16);
+        const int cy = top + (static_cast<int>(i) % perColumn) * pageFont.lineHeight();
+        const bool asking = stage == Stage::Mapping && i == current;
+        if (asking)
+            gui->panelStyle().selection(renderer, Rect(cx - 8, cy, columnWidth + 8, pageFont.lineHeight()));
+        gui->text().renderText_WithColor(pageFont, element.apiName, cx, cy, asking ? text : secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(pageFont, element.value, cx + columnWidth * 6 / 10, cy, text, XALIGN_LEFT);
+    }
+    return top + perColumn * pageFont.lineHeight();
 }
 
 //*******************************
@@ -249,9 +281,19 @@ void GuiPadConfig::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    const int offset = 10;
+    gui->renderHeader(_("Gamepad configuration details"));
     TextRenderer &text = gui->text();
-    text.renderTextLine(_("Gamepad configuration details"), 0, offset, XALIGN_CENTER, 0, pageFont);
+    const PanelStyle style = gui->panelStyle();
+    const ableem::Rect content = gui->classicContent();
+    const Rect picture = pictureRect();
+    const int x = content.x + PanelStyle::RowInset + 8;
+    const int width = picture.x - 24 - x;
+    const int lineHeight = pageFont.lineHeight();
+    int y = content.y + 4;
+    auto row = [&](const string &line, const ableem::Color &color) {
+        text.renderText_WithColor(pageFont, text.elide(pageFont, line, width), x, y, color, XALIGN_LEFT);
+        y += lineHeight;
+    };
 
     if (stage == Stage::Mapping) {
         string moved = PadMapping::detectChange(initialState, joystick.state(), elements);
@@ -259,74 +301,76 @@ void GuiPadConfig::render() {
             takeInput(moved);
     }
 
+    // the facts: the pad, its inputs, the raw buttons and hats, the axes eight to a row
     const ableem::JoystickState &state = joystick.state();
-    text.renderTextLine(joystickTitle(), 1, offset, XALIGN_LEFT, 0, pageFont);
-    text.renderTextLine(_("Gamepad input configuration:") + " A:" + to_string(state.axes.size()) +
-                            "  B:" + to_string(state.buttons.size()) + " D:" + to_string(state.hats.size()),
-                        2, offset, XALIGN_LEFT, 0, pageFont);
+    row(joystickTitle(), style.text);
+    row(_("Gamepad input configuration:") + " A:" + to_string(state.axes.size()) +
+            "  B:" + to_string(state.buttons.size()) + " D:" + to_string(state.hats.size()),
+        style.secondary);
     string buttons = _("Buttons:") + " ";
     for (bool pressed : state.buttons)
         buttons += string(pressed ? "1" : "0") + " ";
     buttons += " " + _("Hats:") + " ";
     for (unsigned hat : state.hats)
         buttons += to_string(hat) + " ";
-    text.renderTextLine(buttons, 3, offset, XALIGN_LEFT, 0, pageFont);
-    // the axes as a signed percentage each, fifteen to a row
+    row(buttons, style.secondary);
     string axes;
-    int row = 4;
     for (size_t i = 0; i < state.axes.size(); i++) {
         int percent = state.axes[i] * 100 / 32767;
         string padded = to_string(abs(percent));
         padded.insert(0, 3 - min<size_t>(3, padded.size()), '0');
         axes += string(i < 9 ? " " : "") + "#" + to_string(i + 1) + ":" + (percent < 0 ? "-" : " ") + padded + " ";
-        if ((i + 1) % 15 == 0 || i + 1 == state.axes.size()) {
-            text.renderTextLine(axes, row++, offset, XALIGN_LEFT, 0, pageFont);
+        if ((i + 1) % 8 == 0 || i + 1 == state.axes.size()) {
+            row(axes, style.secondary);
             axes.clear();
         }
     }
 
+    // the message for the stage, wrapped to the column
+    y += lineHeight / 2;
+    string first, second;
     switch (stage) {
     case Stage::Test:
-        text.renderTextLine(
-            _("NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default "
-              "position."),
-            7, offset, XALIGN_CENTER, 0, pageFont);
-        text.renderTextLine(_("You can test your controller"), 8, offset, XALIGN_CENTER, 0, pageFont);
+        first = _("NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default "
+                  "position.");
+        second = _("You can test your controller");
         break;
-    case Stage::Mapping: {
-        renderElements();
-        string ask;
+    case Stage::Mapping:
         switch (elements[current].scan) {
         case PadMapping::Scan::Digital:
-            ask = _("Press a button highlighted or (OPEN) if not avaliable.");
+            first = _("Press a button highlighted or (OPEN) if not avaliable.");
             break;
         case PadMapping::Scan::Trigger:
-            ask = _("Press a trigger highlighted fully or (OPEN) if not avaliable.");
+            first = _("Press a trigger highlighted fully or (OPEN) if not avaliable.");
             break;
         case PadMapping::Scan::Analog:
-            ask = _("Move your sticks to state shown or press (OPEN) if stick position not avaliable.");
+            first = _("Move your sticks to state shown or press (OPEN) if stick position not avaliable.");
             break;
         }
-        text.renderTextLine(ask, 7, offset, XALIGN_CENTER, 0, pageFont);
-        text.renderTextLine(_("Updating mapping"), 8, offset, XALIGN_CENTER, 0, pageFont);
+        second = _("Updating mapping");
         break;
-    }
     case Stage::Save:
-        renderElements();
-        text.renderTextLine(_("Mapping Complete - press (OPEN) to save. (POWER) to cancel."), 7, offset, XALIGN_CENTER,
-                            0, pageFont);
-        text.renderTextLine(_("Please test a new mapping"), 8, offset, XALIGN_CENTER, 0, pageFont);
+        first = _("Mapping Complete - press (OPEN) to save. (POWER) to cancel.");
+        second = _("Please test a new mapping");
         break;
     }
+    y += max(lineHeight, text.renderWrappedText(pageFont, first, x, y, width, style.text));
+    y += max(lineHeight, text.renderWrappedText(pageFont, second, x, y, width, style.secondary));
+    y += lineHeight / 2;
+
+    if (stage != Stage::Test)
+        renderElements(x, y, width);
 
     renderPadPicture(joystick.controllerState());
 
+    // the console's front buttons, as chips
     if (stage == Stage::Test)
-        gui->renderStatus("(RESET) " + _("Next pad") + "   (OPEN) " + _("Update mapping") + "   (POWER) " + _("Exit"));
+        gui->renderStatus("|@Reset| " + _("Next pad") + "   |@Open| " + _("Update mapping") + "   |@Power| " +
+                          _("Exit"));
     else if (stage == Stage::Mapping)
-        gui->renderStatus("(OPEN) " + _("No button on controller") + "  (POWER) " + _("Cancel mapping"));
+        gui->renderStatus("|@Open| " + _("No button on controller") + "   |@Power| " + _("Cancel mapping"));
     else
-        gui->renderStatus("(OPEN) " + _("Save") + "  (POWER) " + _("Cancel mapping"));
+        gui->renderStatus("|@Open| " + _("Save") + "   |@Power| " + _("Cancel mapping"));
     renderer.present();
 }
 

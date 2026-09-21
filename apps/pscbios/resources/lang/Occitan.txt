@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Mapatge (disponible) :
  - Mapping (Not found)= - Mapatge (pas trobat)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Se la maneta respond pas als botons o se los sticks son mal reglats, utilizatz la seccion mapatge per la reconfigurar
 About=
 Active=Actiu
+Back=
 Bluetooth controller pairing=Apariament de maneta Bluetooth
 Bluetooth information:=Informacions Bluetooth :
 Buttons:=Botons :
-Cancel=
 Cancel mapping=Anullar lo mapatge
 Change=Modificar
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Connectar una DualShock3 en Bluetooth (sens fial)
 Connect other gamepad by Bluetooth=Connectar una autra maneta en Bluetooth
+Controller=
 Current Time:=Ora actuala :
 Dongle status:=Estat del dongle :
 Driver mode:=Mòde del pilòt :
@@ -37,7 +38,6 @@ Exit=Quitar
 Found=Detectat
 Game controller DB:=Basa de manetas :
 Game Controller information:=Informacions sus las manetas :
-Game controller information:=Informacions sus las manetas :
 Game Controllers number:=Nombre de manetas :
 Gamepad configuration changed.=Configuracion de las manetas modificada.
 Gamepad configuration changed. Mapping interrupted.=Configuracion de las manetas modificada. Mapatge interromput.
@@ -88,6 +88,7 @@ Setup Gamepads=Configurar las manetas
 Setup/Test Game Controller or update mapping=Configurar/testar una maneta o metre a jorn son mapatge
 SSID:=SSID :
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Aquesta partida de la configuracion materiala es pas encara disponibla.
@@ -98,7 +99,6 @@ Update mapping=Metre a jorn lo mapatge
 Updating mapping=Mesa a jorn del mapatge
 Waiting for IP Address...=En espèra d'una adreça IP...
 We are working on implementing Bluetooth pairing on console for a next release=L'apariament Bluetooth sus la consòla es en cors de desvolopament per una version que ven
-Wi-Fi Connection:=Connexion Wi-Fi :
 WiFi information:=Informacions WiFi :
 WiFi Settings=Paramètres WiFi
 Write Config/Restart Network=Escriure la config/reaviar la ret

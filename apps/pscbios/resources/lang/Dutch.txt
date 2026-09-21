@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Toewijzing (beschikbaar):
  - Mapping (Not found)= - Toewijzing (niet gevonden)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Reageert de controller niet op knoppen of staan de sticks verkeerd ingesteld, gebruik dan het toewijzingsonderdeel om hem opnieuw in te stellen
 About=
 Active=Actief
+Back=
 Bluetooth controller pairing=Bluetooth-controller koppelen
 Bluetooth information:=Bluetooth-informatie:
 Buttons:=Knoppen:
-Cancel=
 Cancel mapping=Toewijzing annuleren
 Change=Wijzigen
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=DualShock3 via Bluetooth verbinden (draadloos)
 Connect other gamepad by Bluetooth=Andere gamepad via Bluetooth verbinden
+Controller=
 Current Time:=Huidige tijd:
 Dongle status:=Dongle-status:
 Driver mode:=Drivermodus:
@@ -37,7 +38,6 @@ Exit=Afsluiten
 Found=Gevonden
 Game controller DB:=Controllerdatabase:
 Game Controller information:=Controllerinformatie:
-Game controller information:=Controllerinformatie:
 Game Controllers number:=Aantal controllers:
 Gamepad configuration changed.=Gamepadconfiguratie gewijzigd.
 Gamepad configuration changed. Mapping interrupted.=Gamepadconfiguratie gewijzigd. Toewijzing afgebroken.
@@ -88,6 +88,7 @@ Setup Gamepads=Gamepads instellen
 Setup/Test Game Controller or update mapping=Controller instellen/testen of toewijzing bijwerken
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Dit deel van de hardwareconfiguratie is nog niet beschikbaar.
@@ -98,7 +99,6 @@ Update mapping=Toewijzing bijwerken
 Updating mapping=Toewijzing wordt bijgewerkt
 Waiting for IP Address...=Wachten op IP-adres...
 We are working on implementing Bluetooth pairing on console for a next release=We werken aan Bluetooth-koppelen op de console voor een volgende versie
-Wi-Fi Connection:=Wifi-verbinding:
 WiFi information:=Wifi-informatie:
 WiFi Settings=Wifi-instellingen
 Write Config/Restart Network=Config. wegschrijven/netwerk herstarten

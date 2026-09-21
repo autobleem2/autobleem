@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 102
+# Untranslated: 1 / Total: 102
 
  - Mapping (Available):= - Määritys (saatavilla):
  - Mapping (Not found)= - Määritys (ei löydy)
@@ -12,15 +12,16 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Jos ohjain ei reagoi painikkeisiin tai tatit on asetettu väärin, määritä se uudelleen määritysosiossa
 About=
 Active=Aktiivinen
+Back=
 Bluetooth controller pairing=Bluetooth-ohjaimen pariliitos
 Bluetooth information:=Bluetooth-tiedot:
 Buttons:=Painikkeet:
-Cancel=
 Cancel mapping=Peruuta määritys
 Change=Muuta
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Yhdistä DualShock3 Bluetoothilla (langaton)
 Connect other gamepad by Bluetooth=Yhdistä muu ohjain Bluetoothilla
+Controller=
 Current Time:=Nykyinen aika:
 Dongle status:=Sovittimen tila:
 Driver mode:=Ajuritila:
@@ -37,7 +38,6 @@ Exit=Poistu
 Found=Löytyi
 Game controller DB:=Ohjaintietokanta:
 Game Controller information:=Ohjaintiedot:
-Game controller information:=Ohjaintiedot:
 Game Controllers number:=Ohjainten määrä:
 Gamepad configuration changed.=Ohjainkokoonpano muuttui.
 Gamepad configuration changed. Mapping interrupted.=Ohjainkokoonpano muuttui. Määritys keskeytettiin.
@@ -88,6 +88,7 @@ Setup Gamepads=Määritä ohjaimet
 Setup/Test Game Controller or update mapping=Määritä/testaa ohjain tai päivitä määritys
 SSID:=SSID:
 Support via Discord:=
+System=
 Testing=
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=
 This section of hardware configuration is not available yet.=Tämä laitteistomäärityksen osa ei ole vielä käytettävissä.
@@ -98,7 +99,6 @@ Update mapping=Päivitä määritys
 Updating mapping=Päivitetään määritystä
 Waiting for IP Address...=Odotetaan IP-osoitetta...
 We are working on implementing Bluetooth pairing on console for a next release=Työstämme Bluetooth-pariliitosta konsolilla seuraavaan versioon
-Wi-Fi Connection:=Wi-Fi-yhteys:
 WiFi information:=WiFi-tiedot:
 WiFi Settings=WiFi-asetukset
 Write Config/Restart Network=Kirjoita asetukset/käynnistä verkko uudelleen
