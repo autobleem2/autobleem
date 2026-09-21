@@ -462,13 +462,13 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
 //*******************************
 // TextRenderer::renderLabelBox
 //*******************************
-void TextRenderer::renderLabelBox(int line, int yoffset) {
+void TextRenderer::renderLabelBox(int line, int yoffset, int rightEdge) {
     int fontHeight = themeFont_.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
     rectSelection.x = opscreen.x + 1;
     rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 2;
+    rectSelection.w = (rightEdge > 0 ? rightEdge + 12 : opscreen.x + opscreen.w - 1) - rectSelection.x;
     rectSelection.h = fontHeight;
 
     PanelStyle::fromTheme(theme_.launcher()).label(renderer_, rectSelection);

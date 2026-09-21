@@ -179,8 +179,9 @@ public:
     void renderSelectionBox(int line, int yoffset, int xoffset = 0, ableem::Font font = ableem::Font(),
                             int rightEdge = 0);
 
-    // a heading row between the rows: PanelStyle's faint band
-    void renderLabelBox(int line, int yoffset);
+    // a heading row between the rows: PanelStyle's faint band, to the panel's right edge or `rightEdge`
+    // (a screen with a pane on the right passes where its rows stop, as for renderSelectionBox)
+    void renderLabelBox(int line, int yoffset, int rightEdge = 0);
 
     void renderTextChar(const std::string &text, int line, int yoffset, int posx);
 

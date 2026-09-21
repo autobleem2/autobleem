@@ -239,7 +239,7 @@ void GuiEditor::render() {
     for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
         const Row &row = rows[i];
         if (row.kind == Row::Kind::Heading) {
-            gui->text().renderLabelBox(line, yoffset);
+            gui->text().renderLabelBox(line, yoffset, right);
             gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
             continue;
         }

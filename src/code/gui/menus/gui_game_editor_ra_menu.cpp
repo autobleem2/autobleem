@@ -41,7 +41,7 @@ void GuiEditorRA::render() {
     pane.render(*gui);
 
     const int right = GameDetailPane::rowsRight(*gui);
-    gui->text().renderLabelBox(0, yoffset);
+    gui->text().renderLabelBox(0, yoffset, right);
     gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
     gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
     gui->text().renderTextLineOptions(
