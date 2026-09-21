@@ -1877,6 +1877,18 @@ package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignore
   single-argument constructor, `static_cast` not C casts, `= default` for a trivial special member,
   `make_unique`/`make_shared` over `reset(new ...)` - clang-tidy (`tools/lint.sh`) flags each of these.
 
+## Licence
+
+GPL-3.0-or-later since 2026-09-21 (`LICENSE`; `docs/licensing-plan.md` has the analysis - GPLv2 is not
+possible, the 0.9.1 and AutoBleem-NG code is GPLv3). `THIRD_PARTY_NOTICES.md` is **generated** by
+`tools/make_third_party_notices.py` from the vendored licence files - rerun it when anything under
+`lib_ableem/third_party`, `tests/third_party`, the fonts or `libs.tar.gz` changes; the package scripts copy
+it and `LICENSE` next to the launcher. `TRADEMARKS.md` keeps the name, logo and theme artwork out of the
+grant. Nothing proprietary may go under `payload/` or `src/resources/`: the themes' fonts are OFL, their UI
+sounds, launcher images and the default music are generated (`tools/make_theme_{sounds,images,music}.py`);
+`ab2/ab.ogg`, `aergb/mel.ogg`, every `play_text.png` and the themes' backgrounds are the owner's / the
+theme authors' own work.
+
 ## Git
 
 Repo was `git init`ed on 2026-09-15 from the final source snapshot (no upstream history here; the public

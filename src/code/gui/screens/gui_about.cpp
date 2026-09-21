@@ -69,7 +69,10 @@ vector<string> GuiAbout::autobleemCredits() {
         "libretro-database (Sony - PlayStation.rdb), libretro-thumbnails",
         " ",
         _("Support via Discord:") + " https://discord.gg/AHUS3RM",
-        _("This is free software. It works AS IS and We take no responsibility for any issues or damage."),
+        // GPLv3 5(d): an interactive program shows its licence - the "Appropriate Legal Notices"
+        "Copyright (C) 2018-2026 screemer and the AutoBleem contributors",
+        _("Free software under the GNU GPL v3 or later - no warranty. Source and licence:") +
+            " github.com/autobleem/AutoBleem2",
         //_("Download latest:") + " https://github.com/autobleem/AutoBleem"
     };
 }

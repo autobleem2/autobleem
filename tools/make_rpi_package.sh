@@ -105,6 +105,7 @@ if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     upx -q --best --lzma "$APP/autobleem-gui"
 fi
 cp -a "$REPO/src/resources/." "$APP/"
+cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"  # the GPL and the notices travel with the binary
 
 # internal.db is the PlayStation Classic's own game list. An appliance has no built-in games (AB_APPLIANCE) and
 # never reads it, so shipping it would only be confusing.

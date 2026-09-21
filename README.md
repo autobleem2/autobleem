@@ -140,9 +140,18 @@ to each game (`!SaveStates`, `!MemCards`). Themes go in `themes/`, as folders or
 
 AutoBleem is by screemer, with the AutoBleem team and the community on Discord. AutoBleem-NG (Axanar,
 cornelk and contributors) for the features ported back. RetroBoot by genderbent, cores by KMDFManic.
-BleemSync (ModMyClassic) for parts of the early boot scripts. Vendored: SQLite (public domain), nlohmann
-json (MIT), miniz (MIT), plog (MIT), libchdr with lzma/zlib/zstd, doctest (MIT), SDL_FontCache (MIT),
-unecm (Neill Corlett, GPLv2), Noto Sans SC and Selawik (SIL OFL).
+BleemSync (ModMyClassic) for parts of the early boot scripts.
 
 This tool is made to be used with legally owned games only. It does not alter any file on the console's
-internal storage. License: see `LICENSE`.
+internal storage.
+
+## License
+
+AutoBleem is free software under the **GNU General Public License, version 3 or later** - see `LICENSE`.
+Copyright (C) 2018-2026 screemer and the AutoBleem contributors. Every program in the packages (the
+launcher, the console tools, UpdateRoms, the installers) is built from this tree under that licence; the
+emulators and RetroArch are separate GPL programs from their own repositories, linked from
+`THIRD_PARTY_NOTICES.md`, which lists every third-party component shipped or linked and its licence
+(SQLite, nlohmann json, miniz, plog, libchdr with lzma/zlib/zstd, SDL_FontCache, unecm, the SDL2 libraries,
+the fonts under the SIL OFL, ...). The name, the logo and the theme artwork are not part of the licence
+grant - `TRADEMARKS.md` says what a fork may and may not keep.

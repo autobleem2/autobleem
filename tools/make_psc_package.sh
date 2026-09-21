@@ -64,6 +64,7 @@ cp -a "$REPO/payload/." "$STAGE/"
 APP="$STAGE/Autobleem/bin/autobleem"
 mkdir -p "$APP" "$STAGE/Autobleem/bin/db"
 cp -a "$REPO/src/resources/." "$APP/"
+cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"  # the GPL and the notices travel with the binary
 cp -a "$BUILD_DIR/autobleem-gui" "$APP/autobleem-gui"
 # absplash: the full-screen picture the launch scripts show around RetroArch (src/tools/absplash.cpp;
 # its pictures are src/resources/splash/, copied with the resources above)

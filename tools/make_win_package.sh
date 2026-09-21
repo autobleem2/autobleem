@@ -151,6 +151,7 @@ if [ -n "$PRODUCT_DIR" ]; then
     APP="$PKG/AutoBleem"
     mkdir -p "$APP"
     cp -a "$REPO/src/resources/." "$APP/"
+    cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"  # the GPL and the notices travel with the binary
     rm -f "$APP/internal.db" "$APP/run.sh"   # the console's own
     cp "$PRODUCT_DIR/autobleem-gui.exe" "$APP/"
     "$STRIP" "$APP/autobleem-gui.exe"
@@ -191,6 +192,7 @@ rm -rf "$PKG"
 APP="$PKG/launcher/AutoBleem/bin/autobleem"
 mkdir -p "$APP"
 cp -a "$REPO/src/resources/." "$APP/"
+cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"
 cp "$BUILD_DIR/autobleem-gui.exe" "$APP/"
 "$STRIP" "$APP/autobleem-gui.exe"
 pack "$APP/autobleem-gui.exe"
