@@ -136,13 +136,6 @@ int AutoBleem::run() {
     if (!openLibrary()) {
         return EXIT_FAILURE;
     }
-#ifdef AB_DEBUG_HOST
-    // AB_DEBUG_PORT=<port>: the DebugDriver takes pad and keyboard input over a socket and hands frames
-    // back - tools/ab_drive.py drives the launcher through it for automated looks at the UI
-    if (const char *port = getenv("AB_DEBUG_PORT"))
-        ableem::DebugDriver::start(*Gui::getInstance(), atoi(port));
-#endif
-
     string pathToGamesDir = Env::getPathToGamesDir();
 
     MemcardManager memcardOperation(pathToGamesDir);

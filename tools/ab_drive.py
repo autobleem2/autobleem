@@ -5,6 +5,8 @@ keyboard and a screenshot over a socket, for automated looks at the UI without t
   python tools/ab_drive.py start [--usb DIR] [--port N] [--show]   start the dev build on the usb tree with
                                                                    AB_DEBUG_PORT and no splash; hidden
                                                                    (--show: visible)
+                                 [--tool pscbios|abflashkit]        ...a console tool instead (from
+                                                                   usb/Apps/<tool>, staged by make_usb.py)
   python tools/ab_drive.py stop                                    a Quit event, then the process is killed
   python tools/ab_drive.py run "<script>"                          commands separated by ';', e.g.
                                    "down l2; press r2; up l2; wait 300; shot menu.png; press o"
@@ -100,14 +102,23 @@ class Driver:
         self.sock.close()
 
 
-def start(usb, port, show):
-    exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
-    app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
+def start(usb, port, show, tool=None):
+    if tool:
+        exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
+        app_dir = os.path.join(usb, 'Apps', tool)
+        driven = os.path.join(app_dir, tool + '-drive.exe')
+        first_screen = {'pscbios': 'GuiPscBiosMain', 'abflashkit': 'GuiActionMenu'}[tool]
+        lang = os.path.join(REPO, 'apps', tool, 'resources', 'lang')
+    else:
+        exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
+        app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
+        driven = os.path.join(app_dir, 'autobleem-gui-drive.exe')
+        first_screen = 'GuiLauncher'
+        lang = os.path.join(REPO, 'src', 'resources', 'lang')
     # its own copy of the exe next to the resources: the owner's own instance may be running the other
-    driven = os.path.join(app_dir, 'autobleem-gui-drive.exe')
     shutil.copy(exe, driven)
     # the language files change with the strings; the rest of the resources are make_usb.py's
-    lang = os.path.join(REPO, 'src', 'resources', 'lang')
+    os.makedirs(os.path.join(app_dir, 'lang'), exist_ok=True)
     for name in os.listdir(lang):
         shutil.copy(os.path.join(lang, name), os.path.join(app_dir, 'lang', name))
     env = dict(os.environ)
@@ -131,7 +142,7 @@ def start(usb, port, show):
         raise RuntimeError('the driver did not answer')
     if not show:
         d.cmd('window hide')
-    d.wait_screen('GuiLauncher', 60)
+    d.wait_screen(first_screen, 60)
     d.close()
     print(f'started pid {proc.pid} on port {port}' + ('' if show else ', hidden'))
 
@@ -182,7 +193,8 @@ def main(argv):
         show = '--show' in args
         if '--usb' in args:
             usb = args[args.index('--usb') + 1]
-        start(usb, port, show)
+        tool = args[args.index('--tool') + 1] if '--tool' in args else None
+        start(usb, port, show, tool)
         return 0
     if cmd == 'stop':
         stop(port)

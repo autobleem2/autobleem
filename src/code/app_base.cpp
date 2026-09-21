@@ -1,4 +1,6 @@
 #include "app_base.h"
+#include <ableem/ui/debug_driver.h>
+#include <cstdlib>
 #include "core/services/system.h"
 
 using namespace std;
@@ -21,6 +23,14 @@ AppBase::AppBase(const string &windowTitle) {
         gui_->drawText(_("POWERING OFF... PLEASE WAIT"));
         System::powerOff();
     });
+
+#ifdef AB_DEBUG_HOST
+    // AB_DEBUG_PORT=<port>: the DebugDriver takes pad and keyboard input over a socket and hands frames
+    // back - tools/ab_drive.py drives the launcher and the console tools through it for automated looks
+    // at the UI
+    if (const char *port = getenv("AB_DEBUG_PORT"))
+        ableem::DebugDriver::start(*gui_, atoi(port));
+#endif
 }
 
 //*******************************
