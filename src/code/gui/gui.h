@@ -105,8 +105,14 @@ public:
     void busyTick();
     void endBusy();
     static void tickBusy();
-    // the classic panel: the theme's menu panel rect, its bottom at the status line's foot
+    // the classic panel: the theme's menu panel rect, its bottom at the status line's foot - or, while a
+    // compact panel is set, that one
     ableem::Rect classicPanel();
+    // A short list (Memory Cards, the memory card picker, a tool's menu) draws in a compact panel centred
+    // on the screen instead of the full one, like a dialog: 800 wide, as tall as its `rows` rows of `font`
+    // plus the header and the footer. Set before the screen draws, cleared after present()
+    void setCompactPanel(int rows, const ableem::Font &font);
+    void clearCompactPanel();
     // the part of it between the header and the footer band: where a screen's rows go
     ableem::Rect classicContent();
     // the footer band at the bottom of the classic panel (PanelStyle::FooterHeight tall)
@@ -128,6 +134,8 @@ private:
 
     ThemeAssets assets_;
     TextRenderer text_; // after assets_: it holds references to the theme font and the button textures
+    bool compact_ = false;
+    ableem::Rect compactPanel_;
     bool busy_ = false;
     std::string busyMessage_;
     ableem::Texture busyBackdrop_;

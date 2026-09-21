@@ -68,6 +68,8 @@ Rect TextRenderer::getFontTextRect(const ableem::Font &font, const char *text, i
 // TextRenderer::getOpscreenRectOfTheme
 //*******************************
 Rect TextRenderer::getOpscreenRectOfTheme() {
+    if (panelOverride_ != nullptr)
+        return *panelOverride_;
     const ableem::ThemePanel &panel = theme_.classic().menuPanel;
     Rect rect;
     rect.x = panel.x;

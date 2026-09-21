@@ -55,14 +55,15 @@ public:
     std::vector<LineDataType> lines; // these are the menu lines
     virtual int getVerticalSize() { return lines.size(); }
 
-    int selected = 0;            // the current selected index
-    int maxVisible = 8;          // the rows that fit the panel's content at the font's height (init())
-    int selectionBoxXOffset = 0; // a menu whose rows start to the right of something sets this
-    int selectionRightEdge = 0;  // ...and one whose rows stop before something (a pane on the right) this
-    int firstVisibleIndex = 0;   // current visible range on page
-    int lastVisibleIndex = 7;    // current visible range on page
-    int firstRow = 0;            // the first row of the menu item lines, right under the header
-    int yoffset = 0;             // y offset for the line (y=fontHeight*line + yoffset).  set by renderLogo()
+    int selected = 0;                 // the current selected index
+    int maxVisible = 8;               // the rows that fit the panel's content at the font's height (init())
+    int selectionBoxXOffset = 0;      // a menu whose rows start to the right of something sets this
+    int selectionRightEdge = 0;       // ...and one whose rows stop before something (a pane on the right) this
+    static const int CompactRows = 8; // up to this many rows the list draws as a compact centred panel
+    int firstVisibleIndex = 0;        // current visible range on page
+    int lastVisibleIndex = 7;         // current visible range on page
+    int firstRow = 0;                 // the first row of the menu item lines, right under the header
+    int yoffset = 0;                  // y offset for the line (y=fontHeight*line + yoffset).  set by renderLogo()
 
     // this is useful in menus that have blank lines like gui_networkMenu.cpp
     virtual bool skipSelectingThisLineWhenMovingByOne(int index) { return false; }
@@ -159,6 +160,10 @@ template <typename LineDataType> void GuiMenuBase<LineDataType>::renderSelection
 template <typename LineDataType> void GuiMenuBase<LineDataType>::render() {
     renderer.clear();
     gui->renderBackground();
+    // a short list without a pane beside it draws as a compact panel centred on the screen
+    const bool compact = getVerticalSize() <= CompactRows && selectionRightEdge == 0;
+    if (compact)
+        gui->setCompactPanel(getVerticalSize(), font);
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());
 
@@ -172,6 +177,8 @@ template <typename LineDataType> void GuiMenuBase<LineDataType>::render() {
 
     gui->renderStatus(getStatusLine());
     renderer.present();
+    if (compact)
+        gui->clearCompactPanel();
 }
 
 //*******************************

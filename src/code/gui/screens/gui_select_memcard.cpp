@@ -54,6 +54,9 @@ void GuiSelectMemcard::init() {
 void GuiSelectMemcard::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
+    const bool compact = cards.size() <= 8;
+    if (compact)
+        gui->setCompactPanel(static_cast<int>(cards.size()), gui->assets().themeFont);
     gui->renderTextBar();
     int yoffset = gui->renderHeader(_("Select memory card"));
 
@@ -87,6 +90,8 @@ void GuiSelectMemcard::render() {
     gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L2|/|@R2| " +
                       _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");
     renderer.present();
+    if (compact)
+        gui->clearCompactPanel();
 }
 
 //*******************************

@@ -305,7 +305,22 @@ PanelStyle Gui::panelStyle() {
     return PanelStyle::fromTheme(AppBase::get().theme().launcher());
 }
 
+void Gui::setCompactPanel(int rows, const ableem::Font &font) {
+    const int width = 800;
+    const int height = PanelStyle::HeaderHeight + std::max(1, rows) * font.lineHeight() + 8 + PanelStyle::FooterHeight;
+    compactPanel_ = Rect((ScreenWidth - width) / 2, (ScreenHeight - height) / 2, width, height);
+    compact_ = true;
+    text_.setPanelOverride(&compactPanel_);
+}
+
+void Gui::clearCompactPanel() {
+    compact_ = false;
+    text_.setPanelOverride(nullptr);
+}
+
 Rect Gui::classicPanel() {
+    if (compact_)
+        return compactPanel_;
     Rect panel = text_.getOpscreenRectOfTheme();
     // the footer band ends where the theme's status line used to end
     const int statusFoot = AppBase::get().theme().classic().statusBar.textY + PanelStyle::FooterHeight - 14;

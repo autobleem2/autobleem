@@ -94,8 +94,10 @@ public:
         return getFontTextRect(font, text.c_str(), x, y);
     }
 
+    // the classic panel's rect: the theme's menu panel, or the compact panel Gui set for a short list
     ableem::Rect getOpscreenRectOfTheme();
     ableem::Rect getTextRectOfTheme();
+    void setPanelOverride(const ableem::Rect *rect) { panelOverride_ = rect; }
 
     int getCheckIconWidth(); // returns the width of the check icon texture.  used to compute the x position.
     static int align_xPosition(XAlignment xAlign, int x, int width);
@@ -201,4 +203,5 @@ private:
     std::map<std::string, ableem::Texture> &emojis_;
     Shadow shadow_;
     int checkIconRightMargin_ = 0;
+    const ableem::Rect *panelOverride_ = nullptr;
 };
