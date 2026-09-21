@@ -8,6 +8,7 @@
 #include <ableem/engine/retroarch_cores.h>
 #include <ableem/engine/retroarch_scanner.h>
 
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <map>
@@ -388,6 +389,8 @@ void ScanService::applyVerifiedGame(const ScannedGame &game, ScanUpdate &update)
     // add it back to match what is actually stored
     int id = 0;
     bool existed = db.findGameIdByPath(game.fullPath + sep, &id);
+    if (!existed && claimMovedGame(game, &id))
+        existed = true; // the row is this game's again, at its new path
     if (!existed) {
         id = db.maxGameId() + 1;
         db.insertGame(id, game.title, game.publisher, game.players, game.year, game.fullPath + sep,
@@ -413,6 +416,49 @@ void ScanService::applyVerifiedGame(const ScannedGame &game, ScanUpdate &update)
 }
 
 //*******************************
+// ScanService::claimMovedGame
+//*******************************
+// The key is the folder's name plus its disc file names: a folder dragged into a sub-folder of Games/ (or
+// back out) keeps both, and together they tell one game from another better than a name alone - two
+// different games in folders of the same name have different image files. A folder that was *renamed*
+// is not matched (a new game; its states stay under the old name in !SaveStates, as always).
+bool ScanService::claimMovedGame(const ScannedGame &game, int *id) {
+    string folderName = DirEntry::getFileNameFromPath(game.fullPath);
+    vector<string> discs = game.discNames;
+    sort(discs.begin(), discs.end());
+
+    for (auto it = vanished_.begin(); it != vanished_.end(); ++it) {
+        if (it->folderName != folderName)
+            continue;
+        vector<string> theirs = it->discNames;
+        sort(theirs.begin(), theirs.end());
+        if (theirs != discs)
+            continue;
+
+        if (!library_.usbGames().updateGamePath(it->gameId, game.fullPath + sep)) {
+            PLOG_WARNING << "ScanService: could not move game id " << it->gameId << " to " << game.fullPath;
+            return false;
+        }
+        PLOG_INFO << "ScanService: game id " << it->gameId << " (" << folderName << ") moved to " << game.fullPath;
+        *id = it->gameId;
+        vanished_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+//*******************************
+// ScanService::deleteUnclaimedVanished
+//*******************************
+void ScanService::deleteUnclaimedVanished(ScanUpdate &update) {
+    for (const VanishedGame &gone : vanished_) {
+        if (library_.usbGames().deleteGame(gone.gameId))
+            update.removedGameIds.push_back(gone.gameId);
+    }
+    vanished_.clear();
+}
+
+//*******************************
 // ScanService::poll
 //*******************************
 ScanUpdate ScanService::poll() {
@@ -429,16 +475,24 @@ ScanUpdate ScanService::poll() {
         case WorkerEvent::Kind::ScanStarted: {
             update.active = true;
 
+            // a previous scan that never reported Finished (it cannot happen, but) would leave rows here
+            deleteUnclaimedVanished(update);
+
             // currentPaths are bare UsbGame::fullPath values (no trailing separator); PATH always has
             // one (see applyVerifiedGame) - add it back so the comparison below means what it looks like
             set<string> current;
             for (const string &path : event.currentPaths)
                 current.insert(path + sep);
 
+            // the rows whose folder is not where it was are not deleted yet: one may turn up at another
+            // path as the same game, moved (claimMovedGame) - the rest go when the scan finishes
             for (const GamePath &row : library_.usbGames().loadGamePaths()) {
                 if (current.find(row.path) == current.end()) {
-                    if (library_.usbGames().deleteGame(row.gameId))
-                        update.removedGameIds.push_back(row.gameId);
+                    VanishedGame gone;
+                    gone.gameId = row.gameId;
+                    gone.folderName = DirEntry::getFileNameFromPath(DirEntry::removeSeparatorFromEndOfPath(row.path));
+                    gone.discNames = library_.usbGames().loadDiscNames(row.gameId);
+                    vanished_.push_back(std::move(gone));
                 }
             }
             break;
@@ -478,6 +532,10 @@ ScanUpdate ScanService::poll() {
             break;
 
         case WorkerEvent::Kind::Finished: {
+            // the vanished rows no moved game claimed are really gone - before the sub-dir rows are
+            // rebuilt from what is left
+            deleteUnclaimedVanished(update);
+
             // writeSubDirRows/writeAutobleemList look games up by UsbGame::fullPath (no trailing
             // separator) - strip the one loadGamePaths() rows always carry so the keys match
             map<string, int> idByPath;

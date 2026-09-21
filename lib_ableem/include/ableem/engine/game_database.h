@@ -99,6 +99,10 @@ public:
     bool updateGame(int id, std::string title, std::string publisher, int players, int year, std::string sspath,
                     std::string memcard);
     bool replaceDiscs(int id, const std::vector<std::string> &discNames); // deletes then re-inserts, in one transaction
+    // a game whose folder moved elsewhere under Games/ (the scan matched the vanished row to the new folder
+    // by folder name and disc names) keeps its row: only PATH changes, so id/history/last_played stay
+    bool updateGamePath(int id, const std::string &path);
+    std::vector<std::string> loadDiscNames(int id); // the DISC rows' BASENAMEs, in disc order; empty on error
 
     GameRecords loadUsbGames();      // regional.db; Game.ini flags are merged in. empty on error.
     GameRecords loadInternalGames(); // internal.db

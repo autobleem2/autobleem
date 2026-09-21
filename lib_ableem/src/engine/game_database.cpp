@@ -79,6 +79,12 @@ static const char SELECT_MAX_GAME_ID[] = "SELECT COALESCE(MAX(GAME_ID), 0) FROM 
 static const char UPDATE_GAME[] = "UPDATE GAME SET GAME_TITLE_STRING=?, PUBLISHER_NAME=?, PLAYERS=?, \
                                    RELEASE_YEAR=?, SSPATH=?, MEMCARD=? WHERE GAME_ID=?";
 
+// used by: updateGamePath - a game folder moved elsewhere under Games/ keeps its row (id, history, last_played)
+static const char UPDATE_GAME_PATH[] = "UPDATE GAME SET PATH=? WHERE GAME_ID=?";
+
+// used by: loadDiscNames
+static const char SELECT_DISC_NAMES[] = "SELECT BASENAME FROM DISC WHERE GAME_ID=? ORDER BY DISC_NUMBER";
+
 // used by: replaceDiscs
 static const char DELETE_DISCS_FOR_GAME[] = "DELETE FROM DISC WHERE GAME_ID=?";
 
@@ -630,6 +636,32 @@ bool GameDatabase::insertDisc(int id, int discNum, string discName) {
     stmt.bind(2, discNum);
     stmt.bind(3, discName);
     return stmt.step() == SQLITE_DONE;
+}
+
+//*******************************
+// GameDatabase::updateGamePath
+//*******************************
+bool GameDatabase::updateGamePath(int id, const string &path) {
+    Stmt stmt(db, UPDATE_GAME_PATH, "updateGamePath");
+    if (!stmt.ok())
+        return false;
+    stmt.bind(1, path);
+    stmt.bind(2, id);
+    return stmt.step() == SQLITE_DONE;
+}
+
+//*******************************
+// GameDatabase::loadDiscNames
+//*******************************
+vector<string> GameDatabase::loadDiscNames(int id) {
+    vector<string> names;
+    Stmt stmt(db, SELECT_DISC_NAMES, "loadDiscNames");
+    if (!stmt.ok())
+        return names;
+    stmt.bind(1, id);
+    while (stmt.row())
+        names.push_back(stmt.colText(0));
+    return names;
 }
 
 //*******************************

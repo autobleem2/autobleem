@@ -108,3 +108,33 @@ TEST_CASE("clearSubDirTables empties SUBDIR_ROWS without touching GAME") {
 
     CHECK(lib.library.usbGames().countGames() == 1); // GAME/DISC survive
 }
+
+TEST_CASE("updateGamePath moves a game's row to another folder, keeping its id and play history") {
+    GameLibraryFixture lib;
+    lib.addUsbGame(1, "Crash Bandicoot");
+    lib.library.usbGames().updateHistory(1, 2);
+    lib.library.usbGames().updateDatePlayed(1, 777);
+
+    string newPath = lib.tmp.at("Games/Platformers/Crash Bandicoot") + "/";
+    CHECK(lib.library.usbGames().updateGamePath(1, newPath));
+
+    int id = 0;
+    CHECK(lib.library.usbGames().findGameIdByPath(newPath, &id));
+    CHECK(id == 1);
+    CHECK_FALSE(lib.library.usbGames().findGameIdByPath(lib.tmp.at("Games/Crash Bandicoot") + "/", &id));
+
+    auto games = lib.library.usbGames().loadUsbGames();
+    REQUIRE(games.size() == 1);
+    CHECK(games[0].history == 2);
+    CHECK(games[0].last_played == 777);
+}
+
+TEST_CASE("loadDiscNames returns a game's disc file names in disc order, and nothing for an unknown id") {
+    GameLibraryFixture lib;
+    lib.addUsbGame(1, "Twisted Metal");
+    lib.library.usbGames().replaceDiscs(1, {"Twisted Metal (Disc 1)", "Twisted Metal (Disc 2)"});
+
+    CHECK(lib.library.usbGames().loadDiscNames(1) ==
+          vector<string>{"Twisted Metal (Disc 1)", "Twisted Metal (Disc 2)"});
+    CHECK(lib.library.usbGames().loadDiscNames(99).empty());
+}

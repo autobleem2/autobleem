@@ -17,6 +17,7 @@
 #include <ableem/engine/serial_scanner.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <fstream>
 #include <chrono>
 #include <string>
@@ -294,6 +295,73 @@ TEST_CASE("a game folder that disappears is removed from regional.db on the next
     auto games = fx.library.usbGames().loadUsbGames();
     REQUIRE(games.size() == 1);
     CHECK(games[0].title == "Crash Bandicoot");
+}
+
+TEST_CASE("a game folder moved into a sub-folder keeps its row - id, history and last_played") {
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");
+    test_support::makeFakeGame(fx.gamesDir(), "Spyro", "SLUS_012.35");
+    ScanUpdate first = fx.runAndPoll();
+    REQUIRE(first.addedGames.size() == 2);
+    int crashId = 0;
+    for (const auto &g : first.addedGames)
+        if (g->title == "Crash Bandicoot")
+            crashId = g->gameId;
+    REQUIRE(crashId != 0);
+    fx.library.usbGames().updateHistory(crashId, 1);
+    fx.library.usbGames().updateDatePlayed(crashId, 999);
+
+    // what a user does on the PC: drag the folder into a new sub-folder of Games/
+    string sub = fx.tmp.makeSubDir("Games/Platformers");
+    REQUIRE(rename((fx.gamesDir() + ableem::sep + "Crash Bandicoot").c_str(),
+                   (sub + ableem::sep + "Crash Bandicoot").c_str()) == 0);
+
+    ScanUpdate second = fx.runAndPoll();
+    CHECK(second.removedGameIds.empty());
+    CHECK(second.addedGames.empty());
+    REQUIRE(second.updatedGames.size() == 2); // both rescanned in place, the moved one at its new path
+    CHECK(fx.library.usbGames().countGames() == 2);
+
+    int id = 0;
+    CHECK(fx.library.usbGames().findGameIdByPath(sub + ableem::sep + "Crash Bandicoot" + ableem::sep, &id));
+    CHECK(id == crashId);
+    for (const auto &g : fx.library.usbGames().loadUsbGames()) {
+        if (g.gameId != crashId)
+            continue;
+        CHECK(g.history == 1);
+        CHECK(g.last_played == 999);
+        CHECK(ableem::DirEntry::removeSeparatorFromEndOfPath(g.folder) == sub + ableem::sep + "Crash Bandicoot");
+    }
+}
+
+TEST_CASE("a different game appearing under a vanished folder's name is a new game, and the old row goes") {
+    ScanServiceFixture fx;
+    test_support::makeFakeGame(fx.gamesDir(), "Crash Bandicoot", "SLUS_012.34");
+    ScanUpdate first = fx.runAndPoll();
+    REQUIRE(first.addedGames.size() == 1);
+    int oldId = first.addedGames[0]->gameId;
+
+    // the folder is replaced by another game whose image files are named differently
+    ableem::DirEntry::removeDirAndContents(fx.gamesDir() + ableem::sep + "Crash Bandicoot");
+    string sub = fx.tmp.makeSubDir("Games/Other");
+    test_support::makeFakeGame(sub, "Crash Bandicoot", "SLUS_099.99");
+    // same folder name, different disc file name
+    string folder = sub + ableem::sep + "Crash Bandicoot";
+    REQUIRE(rename((folder + ableem::sep + "Crash Bandicoot.bin").c_str(),
+                   (folder + ableem::sep + "Other.bin").c_str()) == 0);
+    REQUIRE(rename((folder + ableem::sep + "Crash Bandicoot.cue").c_str(),
+                   (folder + ableem::sep + "Other.cue").c_str()) == 0);
+    {
+        std::ofstream cue(folder + ableem::sep + "Other.cue", std::ios::binary);
+        cue << "FILE \"Other.bin\" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n";
+    }
+
+    ScanUpdate second = fx.runAndPoll();
+    REQUIRE(second.removedGameIds.size() == 1);
+    CHECK(second.removedGameIds[0] == oldId);
+    REQUIRE(second.addedGames.size() == 1);
+    CHECK(second.addedGames[0]->gameId != oldId);
+    CHECK(fx.library.usbGames().countGames() == 1);
 }
 
 TEST_CASE("a game that fails verify() is dropped from regional.db") {

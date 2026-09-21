@@ -192,12 +192,30 @@ private:
         int romCount = 0;
     };
 
+    //******************
+    // VanishedGame
+    //******************
+    // a GAME row whose folder the scan did not find where the database says it is. Kept aside from
+    // ScanStarted until Finished: a verified game at a *new* path with the same folder name and the same
+    // disc file names is that game moved (into or out of a sub-folder of Games/) and takes the row over -
+    // id, history and last_played included - instead of becoming a new game; whatever is still unclaimed
+    // when the scan finishes is deleted. See claimMovedGame().
+    struct VanishedGame {
+        int gameId = 0;
+        std::string folderName; // the last component of PATH
+        std::vector<std::string> discNames;
+    };
+
     class Listener;
     friend class Listener;
 
     void pushEvent(WorkerEvent event);
     void threadMain();
     void applyVerifiedGame(const ScannedGame &game, ScanUpdate &update);
+    // a verified game the database does not know by path: if it is one of the vanished rows moved, that
+    // row's PATH is rewritten to the new folder and its id returned (true); false for a genuinely new game
+    bool claimMovedGame(const ScannedGame &game, int *id);
+    void deleteUnclaimedVanished(ScanUpdate &update);
     // the ROM pass: every playlist a system folder yields, merged over what is there. Returns the game count.
     int scanRetroArchRoms(Listener &listener, std::vector<std::string> &playlistsWritten);
     // the PS1 covers the scan did not find, from libretro's server - where the platform goes online at all
@@ -219,6 +237,9 @@ private:
 
     std::mutex queueMutex_;
     std::vector<WorkerEvent> queue_;
+
+    // main-thread-only (poll()): the rows a running scan has not found yet - see VanishedGame
+    std::vector<VanishedGame> vanished_;
 
     // worker-thread-only state for the watcher's debounce - see checkForChanges()
     ableem::GamesFingerprint lastScannedFingerprint_;
