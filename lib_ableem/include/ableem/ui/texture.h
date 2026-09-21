@@ -48,6 +48,10 @@ public:
 
     // an empty path gives an invalid Texture at once, no error logged - "no picture" is a normal answer
     static Texture loadFile(Renderer &renderer, const std::string &path);
+    // the bounding box of the image file's non-transparent pixels (alpha > 0), in its own pixels - what a
+    // layout aligns to when the art sits inside a transparent margin; the whole image when it cannot be
+    // read or has no alpha
+    static Rect opaqueBounds(const std::string &path);
     // decodes an in-memory image (e.g. a cover PNG blob read from a database)
     static Texture loadMemory(Renderer &renderer, const void *data, unsigned int size);
     // a render target texture (used for the carousel cover compositing)

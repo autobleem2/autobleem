@@ -1,7 +1,9 @@
 #include "ableem/ui/texture.h"
 #include "ableem/ui/renderer.h"
 #include "sdl_common.h"
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <ableem/engine/log.h>
 
@@ -48,6 +50,37 @@ Texture Texture::loadFile(Renderer &renderer, const std::string &path) {
         PLOG_ERROR << "Could not load texture: " << path << " (" << IMG_GetError() << ")";
     }
     return Texture(t);
+}
+
+Rect Texture::opaqueBounds(const std::string &path) {
+    SDL_Surface *loaded = IMG_Load(path.c_str());
+    if (!loaded)
+        return Rect();
+    SDL_Surface *s = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_ARGB8888, 0);
+    SDL_FreeSurface(loaded);
+    if (!s)
+        return Rect();
+    // converted to ARGB, an image without alpha is opaque throughout: the whole of it
+    Rect bounds(0, 0, s->w, s->h);
+    {
+        int minX = s->w, minY = s->h, maxX = -1, maxY = -1;
+        const unsigned char *pixels = static_cast<const unsigned char *>(s->pixels);
+        for (int y = 0; y < s->h; y++) {
+            const uint32_t *row = reinterpret_cast<const uint32_t *>(pixels + y * s->pitch);
+            for (int x = 0; x < s->w; x++) {
+                if ((row[x] >> 24) != 0) {
+                    minX = std::min(minX, x);
+                    maxX = std::max(maxX, x);
+                    minY = std::min(minY, y);
+                    maxY = std::max(maxY, y);
+                }
+            }
+        }
+        if (maxX >= 0)
+            bounds = Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+    }
+    SDL_FreeSurface(s);
+    return bounds;
 }
 
 Texture Texture::loadMemory(Renderer &renderer, const void *data, unsigned int size) {

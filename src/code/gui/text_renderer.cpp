@@ -410,7 +410,7 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
     Rect opscreen = getOpscreenRectOfTheme();
     int fontHeight = themeFont_.lineHeight();
 
-    int x = opscreen.x + opscreen.w - PanelStyle::RowInset - 8 - getCheckIconWidth();
+    int x = opscreen.x + opscreen.w - PanelStyle::RowInset - 8 - getCheckIconWidth() + checkIconRightMargin_;
     int y = (fontHeight * line) + yoffset;
     if (line < 0)
         y = -line; // an absolute y, as renderTextLine takes it

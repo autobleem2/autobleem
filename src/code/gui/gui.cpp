@@ -119,6 +119,7 @@ void Gui::loadAssets(bool reloadMusic) {
     shadow.enabled = !textShadow.set || textShadow;
     text_.setShadow(shadow);
     text_.setFonts(&assets_.themeFonts);
+    text_.setCheckIconRightMargin(assets_.checkIconRightMargin);
 }
 
 //*******************************

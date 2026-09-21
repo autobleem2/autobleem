@@ -33,6 +33,9 @@ public:
 
     // the font set fittingFont() draws from - the theme's launcher fonts; Gui hands it over on every load
     void setFonts(Fonts *fonts) { fonts_ = fonts; }
+    // the transparent margin right of the check switch's art (ThemeAssets measures it): the switch is
+    // drawn that much further right so its visible edge meets the row's right edge, where the values are
+    void setCheckIconRightMargin(int margin) { checkIconRightMargin_ = margin; }
 
     //*******************************
     // fitted and wrapped text
@@ -190,4 +193,5 @@ private:
     ableem::Font &themeFont_;
     std::map<std::string, ableem::Texture> &emojis_;
     Shadow shadow_;
+    int checkIconRightMargin_ = 0;
 };

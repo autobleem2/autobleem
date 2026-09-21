@@ -74,6 +74,14 @@ void ThemeAssets::load() {
     buttonTextureMap["R2"] = Texture::loadFile(renderer_, b.r2);
     buttonTextureMap["Check"] = Texture::loadFile(renderer_, b.check);
     buttonTextureMap["Uncheck"] = Texture::loadFile(renderer_, b.uncheck);
+    checkIconRightMargin = 0;
+    auto rightMargin = [](const string &path, const Texture &texture) {
+        ableem::Rect bounds = Texture::opaqueBounds(path);
+        ableem::Size whole = texture.size();
+        return (bounds.w > 0 && whole.w > 0) ? whole.w - (bounds.x + bounds.w) : 0;
+    };
+    checkIconRightMargin =
+        max(rightMargin(b.check, buttonTextureMap["Check"]), rightMargin(b.uncheck, buttonTextureMap["Uncheck"]));
     buttonTextureMap["Esc"] = Texture::loadFile(renderer_, b.esc);
     buttonTextureMap["Enter"] = Texture::loadFile(renderer_, b.enter);
     buttonTextureMap["Tab"] = Texture::loadFile(renderer_, b.tab);
