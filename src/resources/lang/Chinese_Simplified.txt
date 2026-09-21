@@ -236,6 +236,7 @@ Slot=槽位
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=空格
 SpeedHack:=速度优化：
 SPREAD SHOT=散射

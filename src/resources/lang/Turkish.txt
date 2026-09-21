@@ -236,6 +236,7 @@ Slot=Slot
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Boşluk
 SpeedHack:=Hız Hilesi:
 SPREAD SHOT=YAYILI ATEŞ

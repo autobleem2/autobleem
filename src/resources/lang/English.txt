@@ -236,6 +236,7 @@ Slot=Slot
 Smoothing:=Smoothing:
 SoC=SoC
 Software Update=Software Update
+Sony hacks:=Sony hacks:
 Space=Space
 SpeedHack:=SpeedHack:
 SPREAD SHOT=SPREAD SHOT

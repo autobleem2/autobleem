@@ -236,6 +236,7 @@ Slot=Lòc
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Espaci
 SpeedHack:=Hack velocitat :
 SPREAD SHOT=TIR ESPARPALHAT

@@ -236,6 +236,7 @@ Slot=Slot
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Spazio
 SpeedHack:=SpeedHack:
 SPREAD SHOT=COLPO A VENTAGLIO

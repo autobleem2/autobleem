@@ -236,6 +236,7 @@ Slot=point de reprise
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Espace
 SpeedHack:=SpeedHack :
 SPREAD SHOT=TIR EN ÉVENTAIL

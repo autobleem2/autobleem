@@ -1047,7 +1047,13 @@ either way, so the row is only carried through there. **A game editor row that e
 HQ3x, the emulator's own menu row of the same name; `pcsx.cfg` `soft_filter` 0-4, hex like the levels;
 `GameSettingsService::setSmoothing`, `PcsxSettings::smoothing`, `SmoothingNames`) - rendered and reachable
 (`GuiEditor::lastOption()`) only while `config.ini`'s `emulator` is `pcsx-abnxt`, because the classic
-pcsx-ab ignores the key; the language files carry `Smoothing:` (English and Polish translated).
+pcsx-ab ignores the key; the language files carry `Smoothing:` (English and Polish translated). The same
+for **"Sony hacks"** (a checkbox after it, `pcsx.cfg` `sonyhacks` 0/1, `setSonyHacks`, `PcsxSettings::sonyHacks`,
+`Sony hacks:` in the language files): pcsx-abnxt applies the configuration part of Sony's per-title hacks
+(SPU interpolation, SPU thread, interlace, region) for the disc's real serial over the cfg - a lever for a
+game that misbehaves, off unless a game asks. pcsx-abnxt `r26-alpha1` (2026-09-21) is the first alpha on the
+download repository, and `tools/repo_index.py`'s `pcsx_version_key` knows such tags sort above the numbered
+`r26-N-g...` builds before them (it pruned the alpha on its first publish).
 
 **The emulator speaks the launcher's language** (2026-09-20, the owner's rule: every language the launcher
 has, Chinese included - not Sony's 13 PNG sets): pcsx-abnxt's own screens (its disc picker and the two

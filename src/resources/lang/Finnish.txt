@@ -236,6 +236,7 @@ Slot=Paikka
 Smoothing:=
 SoC=
 Software Update=
+Sony hacks:=
 Space=Väli
 SpeedHack:=Nopeuden Muutin:
 SPREAD SHOT=HAJALAUKAUS

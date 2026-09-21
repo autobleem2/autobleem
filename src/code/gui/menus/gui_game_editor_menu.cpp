@@ -26,8 +26,9 @@ using namespace std;
 #define OPT_INTERPOLATION 16
 #define OPT_BOOTLOGO 17
 #define OPT_SMOOTHING 18 // pcsx-abnxt only
+#define OPT_SONYHACKS 19 // pcsx-abnxt only
 #define OPT_LAST 17
-#define OPT_LAST_NXT 18
+#define OPT_LAST_NXT 19
 
 //*******************************
 // GuiEditor::nxtEmulator / lastOption
@@ -108,6 +109,10 @@ void GuiEditor::processOptionChange(bool direction) {
 
     case OPT_SMOOTHING:
         svc.setSmoothing(settings, pcsx.smoothing + step);
+        break;
+
+    case OPT_SONYHACKS:
+        svc.setSonyHacks(settings, direction);
         break;
     }
 }
@@ -232,6 +237,11 @@ void GuiEditor::render() {
         // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
         gui->text().renderTextLineOptions(_("Smoothing:") + " " + GameSettingsService::SmoothingNames[pcsx.smoothing],
                                           OPT_SMOOTHING, yoffset, XALIGN_LEFT, 300);
+        // Sony's per-title overrides (the console's emulator had them) for the disc's serial; off unless a
+        // game asks for them
+        gui->text().renderTextLineOptions(_("Sony hacks:") +
+                                              (pcsx.sonyHacks ? string("|@Check|") : string("|@Uncheck|")),
+                                          OPT_SONYHACKS, yoffset, XALIGN_LEFT, 300);
     }
 
     gui->text().renderSelectionBox(selOption, yoffset, 300);
