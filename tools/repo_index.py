@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 33
+INDEX_VERSION = 35
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -230,12 +230,26 @@ def index_releases(repo, base_url):
                 continue
             files = {}
             others = []
+            # two files of one kind in a folder: a package carried over from the previous pre-release and
+            # the same kind published for real afterwards (2026-09-21: the Windows set, twice). The newer
+            # file is the release's, the older one goes - it was only ever a stand-in
             for path in data_files(folder):
                 entry = file_entry(repo, base_url, path)
                 for kind, pattern, _ in PACKAGE_KINDS:
-                    if pattern.match(entry["name"]) and kind not in files:
+                    if not pattern.match(entry["name"]):
+                        continue
+                    if kind in files:
+                        have = os.path.join(folder, files[kind]["name"])
+                        loser = have if os.path.getmtime(have) < os.path.getmtime(path) else path
+                        print("dropping %s: superseded (%s)" % (os.path.basename(loser), kind))
+                        for suffix in ("", ".sha256"):
+                            if os.path.isfile(loser + suffix):
+                                os.remove(loser + suffix)
+                        if loser == have:
+                            files[kind] = entry
+                    else:
                         files[kind] = entry
-                        break
+                    break
                 else:
                     others.append(entry)
             if not files and not others:
