@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 265
+# Untranslated: 0 / Total: 269
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -71,7 +71,7 @@ Do not ask about this one again=Do not ask about this one again
 Do you want to save memcards data ?=Do you want to save memcards data ?
 Download it and run the installer - a few minutes=Download it and run the installer - a few minutes
 Downloaded=Downloaded
-Downloaded into System/Updates - a Raspberry Pi would run the installer now=Downloaded into System/Updates - a Raspberry Pi would run the installer now
+Downloaded into System/Updates - an appliance would run the installer now=Downloaded into System/Updates - an appliance would run the installer now
 Downloading the update=Downloading the update
 Edit game parameters=Edit game parameters
 Edit Memory Card information=Edit Memory Card information
@@ -109,10 +109,9 @@ Game History=Game History
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
-Games=Games
 games=games
+Games=Games
 GFX Filter:=GFX Filter:
-PS1 Emulator:=PS1 Emulator:
 Go back=Go back
 Graphics=Graphics
 Hardware=Hardware
@@ -179,6 +178,7 @@ Power Off=Power Off
 POWER SHOT=POWER SHOT
 POWERING OFF... PLEASE WAIT=POWERING OFF... PLEASE WAIT
 Processor=Processor
+PS1 Emulator:=PS1 Emulator:
 Published by:=Published by:
 Quick scroll to next letter=Quick scroll to next letter
 Quit emulation - back to AutoBleem=Quit emulation - back to AutoBleem
@@ -249,6 +249,7 @@ System=System
 System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)=System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)
 Temperature=Temperature
 Testing=Testing
+The installer could not be started - it is in System/Updates=The installer could not be started - it is in System/Updates
 Theme Default=Theme Default
 This is free software. It works AS IS and We take no responsibility for any issues or damage.=This is free software. It works AS IS and We take no responsibility for any issues or damage.
 Unknown Core (AutoDetect)=Unknown Core (AutoDetect)
