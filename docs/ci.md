@@ -56,7 +56,12 @@ ls dist/psc
 
 Measured on the server (2 cores), 2026-09-19: `native` 180 s (tests 37/37, format, tidy), `psc` ~3 min
 (with pcsx-ab), `rpi` and `rpi64` ~3.5 min each, `win` ~5 min; a full `all` about a quarter of an hour once
-the build directories exist.
+the build directories exist. By hand, what the workflow's `site` job does after a build (2026-09-21, the
+whole pre-release refreshed this way): `tools/repo_publish.sh --local release v2.0.0-pre0-<sha> dist/*/...`
+for the five packages, then each emulator's `tools/make_packages.sh` in its tree and `repo_publish.sh --local
+pcsx-ab|pcsx <version> ../<emu>/dist/packages/*`. The server's trees are rsync copies without `.git`:
+`AB_GIT_VERSION=v2.0.0-pre0 AB_GIT_HASH=<sha>` for the launcher and `AB_GIT_DESCRIBE=<git describe>` for
+pcsx-abnxt go in the environment, through `docker/run.sh`'s `AB_*` pass-through.
 
 `docker/run.sh` mounts the checkout at its own path and runs as you. A build's output stays in `build_*/` and
 `dist/`; `docker/run.sh` alone gives a shell in the image. `docker/README.md` has the image's layout.
@@ -72,11 +77,26 @@ merged before the runner exists, and the pipeline can be paused without touching
   changes on develop/master, or by hand ("Run workflow", optionally with every layer rebuilt). The package
   has to be public (or the repo's `GITHUB_TOKEN` allowed to read it) for GitHub-hosted jobs to pull it: once,
   under the organisation's Packages -> autobleem-build -> Package settings.
-- **`.github/workflows/ci.yml`**: `native` on every push and pull request; `psc`/`rpi`/`rpi64`/`win` on
-  pushes to develop/master, on `v*` tags and by hand; on a tag, `release` collects the five artifacts into a
-  **draft** GitHub release named after the tag (`gh release create --notes-from-tag`) - publish it from the
-  Releases page once the notes are right. "Run workflow" takes the runner (`self-hosted` / `github`) and a
-  subset of the cross targets.
+- **`.github/workflows/ci.yml`**: `native` on every push and pull request; `psc`/`rpi`/`rpi64`/`pcusb`/`win`
+  on pushes to develop/master, on `v*` tags and by hand, each with both emulators checked out next to the
+  tree (`autobleem/pcsx-ab2`, `autobleem/pcsx-abnxt` with its submodules and tags - its `REV` is `git
+  describe`) and their `dist/` uploaded as `emu-<target>` artifacts. **A push to develop publishes** (the
+  `site` job, self-hosted only, since 2026-09-21): the five launcher packages to `releases/v2.0.0-pre0-<sha>/`
+  - the pre-release, replacing the previous one, which is the launcher's "latest" update channel - and the
+  two emulators' packages under `emu/` (each repository's `tools/make_packages.sh` over the artifacts'
+  `dist/` folders; the artifacts drop file modes, the job puts the x bit back). The version is `plan`'s:
+  the tag on a tag, else `AB_VERSION_FALLBACK` from CMakeLists.txt + the short sha, passed to `ci/build.sh`
+  as `AB_GIT_VERSION`/`AB_GIT_HASH` (a bare `git describe --always` in a tagless checkout would name the
+  build by its hash alone, which the site would take for a stable release). The console's stick installer
+  bundle is made there too (`ci/build.sh win` leaves `AutoBleemInstaller.exe` in `dist/win/`,
+  `tools/make_installer_bundle.sh --exe` zips it with the psc tarball), and then the three images - the two
+  Pi images (rootless) and the PC stick's (`make_pc_image.sh --mount`, the job's container is privileged
+  for it) - are built from the packages and published, replacing the previous pre-release's; the dispatch
+  input `images` skips them. On a `v*` tag the same publish goes under the tag's name (a plain tag = the
+  latest stable release) and `release` collects the artifacts into a **draft** GitHub release (`gh release
+  create --notes-from-tag`) - publish it from the Releases page once the notes are right. "Run workflow"
+  takes the runner (`self-hosted` / `github`), a subset of the cross targets, `publish` for a by-hand
+  pre-release publish and `images`.
 - Pull requests always run on GitHub's runners: a self-hosted runner on a public repository must never run a
   fork's code. Keep *Settings -> Actions -> General -> "Require approval for all outside collaborators"* on.
 - Artifacts: `native` 7 days, the packages 30 days, the release forever.

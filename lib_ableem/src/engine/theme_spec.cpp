@@ -334,6 +334,7 @@ bool ThemeSpec::load(const string &path) {
             readColor(*c, "text", launcher.colors.text);
             readColor(*c, "secondary", launcher.colors.secondary);
             readColor(*c, "hint", launcher.colors.hint);
+            readColor(*c, "selection", launcher.colors.selection);
         }
     }
 
@@ -489,6 +490,7 @@ bool ThemeSpec::save(const string &path) const {
             putColor(c, "text", launcher.colors.text);
             putColor(c, "secondary", launcher.colors.secondary);
             putColor(c, "hint", launcher.colors.hint);
+            putColor(c, "selection", launcher.colors.selection);
             putObject(l, "colors", c);
         }
         putObject(j, "launcher", l);
@@ -547,6 +549,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeColor(launcher.colors.text, base.launcher.colors.text);
     mergeColor(launcher.colors.secondary, base.launcher.colors.secondary);
     mergeColor(launcher.colors.hint, base.launcher.colors.hint);
+    mergeColor(launcher.colors.selection, base.launcher.colors.selection);
 
     // every file field, in one go
     vector<string *> mine = fileFields();

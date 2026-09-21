@@ -399,6 +399,9 @@ std::string Input::mappingForDeviceIndex(int index) const {
 }
 
 void Input::probePads() {
+    // (SDL_HINT_JOYSTICK_HIDAPI=0 was tried here, 2026-09-21, against the Pi 400's pad re-enumerating for
+    // three seconds after every open - through evdev the same pad came up with another GUID and a mapping
+    // with Triangle and Square swapped; reverted, the delay is still open)
     SDL_InitSubSystem(SDL_INIT_JOYSTICK);
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     if (!impl->pads.empty()) {

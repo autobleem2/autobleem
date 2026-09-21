@@ -549,7 +549,10 @@ stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`emu/pcsx-abnxt/<v
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay. **Since INDEX_VERSION 22 a package kind the new pre-release does not bring is carried
 over** from the one it replaces (a publish of the console's packages alone no longer drops the Pi's, and
-the other way round - two sessions publishing into the pre-release did exactly that on 2026-09-20).
+the other way round - two sessions publishing into the pre-release did exactly that on 2026-09-20). Since
+INDEX_VERSION 35 a carried-over package goes when its kind is published for real afterwards (the newer file
+of the two wins; before that the folder kept both and the page showed the older, alphabetically first one -
+the Windows set of 2026-09-21).
 
 **The web pages are generated, not stored**: `tools/repo_index.py` holds `PAGE_CSS` and renders
 `index.html` (the landing page, **by platform since 2026-09-20** - PlayStation Classic, Raspberry Pi, PC,
@@ -606,11 +609,17 @@ the cover databases out (`make_rpi_package.sh --with-covers` puts them back; `in
 from the site's `db/`), and the installer takes the cores as one tarball (`rpi/cores/`, `ci/build_cores.sh`
 - a download of buildbot's cores and bundles, no compiling) before falling back to buildbot's per-core
 download. The `c3a684c` pre-release (the two Pi tarballs) and its image set are on the site. **CI feeds the
-site, for the Pi only** (2026-09-20, the owner's scope): `ci.yml`'s `site` job on a `v*` tag publishes the
-two Pi tarballs to `releases/<tag>/` and builds + publishes both images, rootless, on the self-hosted
-runner (`/home/claude/autobleem-repo` mounted into the job container as `REPO_DIR`); `site-refresh.yml`
-(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. Both are written
-and unrun: nothing in Actions runs until the runner is registered (the owner's PAT, `docs/ci-plan.md`).
+site for every platform** (2026-09-21, widened from the Pi-only scope of the day before on the owner's
+request): `ci.yml`'s `site` job publishes on every push to develop - the five launcher packages and the
+console's stick installer bundle (`ci/build.sh win` ships `AutoBleemInstaller.exe`, `make_installer_bundle.sh
+--exe` zips it with the psc tarball) as the pre-release `v2.0.0-pre0-<sha>`, both emulators' packages under
+`emu/`, then the three images (the Pi pair rootless, the PC stick's `--mount` in a privileged container) -
+and on a `v*` tag the same under the tag's name, on the self-hosted runner (`/home/claude/autobleem-repo`
+mounted into the job container as `REPO_DIR`); `docs/ci.md` has the job's shape. `site-refresh.yml`
+(monthly, or `workflow_dispatch`) rebuilds RetroArch and re-downloads the cores tarballs. All of it is written
+and unrun: nothing in Actions runs until `AB_CI_ENABLED` is set and the runner is registered (the owner's
+PAT, `docs/ci-plan.md`) - until then the by-hand sequence in `docs/ci.md` is how a pre-release is refreshed
+(done 2026-09-21 for all five platforms: `v2.0.0-pre0-a09927c`).
 The console zip is not on the site and its cover databases still come from the Docker image's baked copy
 (the console has no network, so the zip must carry them) - deliberately left as is.
 
@@ -1774,7 +1783,16 @@ and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
 its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-slot picker writes "Slot n" on its
-2.7x copy of the icon - unset = the original spot, so older themes are untouched. ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+2.7x copy of the icon - unset = the original spot, so older themes are untouched. `launcher.colors.selection`
+(2026-09-21) is the picker's colour for the selected slot: a halo in it around the tile (the tile's own alpha, drawn
+larger twice with additive blending, so it follows any tile's shape) and the other tiles dimmed; unset = the original
+red tint of the selected tile, which only ever showed on a white tile (ab2's cyan tile made it invisible). **Open: the
+pad is dead for 1-3 s after every game (and at boot) on the Pi 400** - its multi-mode "PS4/PC/PS3/Android" pad
+re-enumerates right after the launcher opens it (the log: disconnect, back as an "Xbox 360" pad a second later, back
+as itself three seconds after that), which is SDL's hidapi driver probing the pad's HID reports.
+`SDL_HINT_JOYSTICK_HIDAPI=0` (evdev instead) stopped the re-enumeration but the same pad then came up with another
+GUID and a mapping with Triangle/Square swapped - reverted the same day; a fix has to keep hidapi's mapping (a
+gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all). ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).

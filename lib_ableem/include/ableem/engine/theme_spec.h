@@ -161,9 +161,11 @@ struct LauncherTheme {
         std::string medium, bold;
     } fonts;
     // hint: the footer's "Enter" / "Cancel" / "Button Guide" labels next to the button icons; unset means
-    // they take the secondary colour (light hint text gets the dark halo like every other light text)
+    // they take the secondary colour (light hint text gets the dark halo like every other light text).
+    // selection: the resume-slot picker's colour for the selected slot (a halo around its tile, the others
+    // dimmed); unset means the original red tint of the slot's tile, invisible on a tile that is not white
     struct Colors {
-        ThemeColor text, secondary, hint;
+        ThemeColor text, secondary, hint, selection;
     } colors;
 };
 

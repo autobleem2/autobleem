@@ -97,16 +97,38 @@ void PsStateSelector::render() {
                                    XALIGN_CENTER);
         }
 
+        // the selected slot: with the theme's selection colour, the other tiles go dim and the selected
+        // one keeps its colours behind a halo in that colour - the tile's own shape, a little larger,
+        // added twice behind it, so it follows whatever the theme's tile looks like; a theme without the
+        // colour gets the original red tint of the selected tile (which only shows on a white tile)
+        const ThemeColor &selection = App::get().theme().launcher().colors.selection;
+        const ableem::Color white(255, 255, 255);
+
         for (int i = 0; i < 4; i++) {
             output.x = x + (118 * scale) * i;
+            input = ableem::Rect(0, 0, 118, 118);
 
-            if (selSlot == i) {
+            if (selSlot == i && selection.set) {
+                frame.setBlendMode(ableem::BlendMode::Add);
+                frame.setColorMod(TextRenderer::toColor(selection, 255));
+                for (int ring = 2; ring >= 1; ring--) {
+                    int grow = static_cast<int>(ring * 3 * scale + 0.5f);
+                    ableem::Rect halo(output.x - grow, output.y - grow, output.w + 2 * grow, output.h + 2 * grow);
+                    frame.setAlphaMod(ring == 2 ? 70 : 120);
+                    renderer.copy(frame, &input, &halo);
+                }
+                frame.setAlphaMod(255);
+                frame.setBlendMode(ableem::BlendMode::Blend);
+                frame.setColorMod(white);
+            } else if (selSlot == i) {
                 frame.setColorMod(ableem::Color(255, 128, 128));
+            } else if (selection.set) {
+                frame.setColorMod(ableem::Color(120, 120, 120));
             } else {
-                frame.setColorMod(ableem::Color(255, 255, 255));
+                frame.setColorMod(white);
             }
             renderer.copy(frame, &input, &output);
-            frame.setColorMod(ableem::Color(255, 255, 255));
+            frame.setColorMod(white);
 
             if (slotImg[i].valid()) {
                 ableem::Size s = slotImg[i].size();
