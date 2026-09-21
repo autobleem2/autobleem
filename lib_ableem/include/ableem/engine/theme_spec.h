@@ -145,6 +145,9 @@ struct LauncherTheme {
     struct Hints {
         std::string cross, circle, triangle;
     } hints; // the button hints in the footer
+    // the frame the footer's hint row is laid out in (centred, at the largest font that fits); unset means
+    // the pill most themes paint at the bottom right, x 560..1240, y 624..696
+    ThemeRect hintBar;
     struct MenuIcons {
         std::string settings, guide, memcard, resume;
         // where the save state's picture is pasted on the resume icon, in the icon's own pixels (the icon

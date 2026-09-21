@@ -507,19 +507,12 @@ void GuiLauncher::loadAssets() {
     arrow->visible = false;
 
     xButton = addStaticElement(new PsObj("xbtn", theme.hints.cross));
-    xButton->x = 605;
-    xButton->y = 640;
     xButton->visible = true;
-
     oButton = addStaticElement(new PsObj("obtn", theme.hints.circle));
-    oButton->x = 765;
-    oButton->y = 640;
     oButton->visible = true;
-
     tButton = addStaticElement(new PsObj("tbtn", theme.hints.triangle));
-    tButton->x = 910;
-    tButton->y = 640;
     tButton->visible = true;
+    layoutHints(); // positions the three, and the chips and labels next to them
 
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
@@ -620,6 +613,63 @@ GuiLauncher::~GuiLauncher() {
 }
 
 //*******************************
+// GuiLauncher::layoutHints
+//*******************************
+// The five hints - Enter, Cancel, Button Guide, L2+R2 Options, Start Random - centred in the theme's hintBar
+// (the pill most themes paint at the bottom right) at the largest font from 22 down to 14 at which the row
+// fits the frame in the current language; below that the gaps close up. The v1 theme pack's frames all
+// hold the row at 16 in English.
+void GuiLauncher::layoutHints() {
+    const LauncherTheme &theme = app.theme().launcher();
+    ableem::Rect bar(560, 624, 680, 72);
+    if (theme.hintBar.set)
+        bar = ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
+    const int inset = 16;
+    const int iconGap = 6; // icon to its label
+
+    hints = {{xButton, "", _("Enter")},
+             {oButton, "", _("Cancel")},
+             {tButton, "", _("Button Guide")},
+             {nullptr, "|@L2+R2|", _("Options")},
+             {nullptr, "|@Start|", _("Random")}};
+    PanelStyle style = gui->panelStyle();
+    auto iconWidth = [&](const Hint &h) {
+        return h.icon != nullptr ? h.icon->w : style.buttonsWidth(*gui, h.markers) - 6; // buttons() adds a gap
+    };
+
+    static const int sizes[] = {22, 20, 18, 16, 14};
+    int gap = 28;
+    int total = 0;
+    for (int size : sizes) {
+        hintFont = size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
+        total = -gap;
+        for (const Hint &h : hints)
+            total += iconWidth(h) + iconGap + gui->text().textWidth(hintFont, h.label) + gap;
+        if (total <= bar.w - 2 * inset)
+            break;
+    }
+    while (total > bar.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
+        total -= 4 * 2;
+        gap -= 2;
+    }
+
+    int x = bar.x + max(inset, (bar.w - total) / 2);
+    hintLabelY = bar.y + (bar.h - hintFont.lineHeight()) / 2;
+    hintChipY = bar.y + (bar.h - 30) / 2;
+    for (Hint &h : hints) {
+        const int iconW = iconWidth(h);
+        if (h.icon != nullptr) {
+            h.icon->x = x;
+            h.icon->y = bar.y + (bar.h - h.icon->h) / 2;
+        } else {
+            h.chipX = x;
+        }
+        h.labelX = x + iconW + iconGap;
+        x = h.labelX + gui->text().textWidth(hintFont, h.label) + gap;
+    }
+}
+
+//*******************************
 // GuiLauncher::render
 //*******************************
 // render method called every loop
@@ -649,10 +699,13 @@ void GuiLauncher::render() {
 
     menu->render();
 
-    auto font24 = gui->assets().themeFonts[FONT_22_MED];
-    gui->text().renderText_WithColor(font24, _("Enter"), 638, 640, hintColor);
-    gui->text().renderText_WithColor(font24, _("Cancel"), 800, 640, hintColor);
-    gui->text().renderText_WithColor(font24, _("Button Guide"), 945, 640, hintColor);
+    // the hint row: the icons are static elements (drawn above), the chips and labels go here
+    PanelStyle style = gui->panelStyle();
+    for (const Hint &hint : hints) {
+        if (hint.icon == nullptr)
+            style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
+        gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
+    }
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);

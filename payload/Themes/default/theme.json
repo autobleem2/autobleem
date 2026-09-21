@@ -78,6 +78,7 @@
     "metaPanelSlides": true,
     "textShadow": true,
     "arrow": "images/arrow.png",
+    "hintBar": { "x": 360, "y": 632, "w": 900, "h": 56 },
     "hints": {
       "cross": "images/hint_cross.png",
       "circle": "images/hint_circle.png",

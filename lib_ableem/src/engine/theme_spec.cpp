@@ -302,6 +302,9 @@ bool ThemeSpec::load(const string &path) {
             readRect(*p, launcher.snapPanel.x, launcher.snapPanel.y, launcher.snapPanel.w, launcher.snapPanel.h,
                      launcher.snapPanel.set);
         readStr(*l, "arrow", launcher.arrow);
+        if (const json *p = child(*l, "hintBar"))
+            readRect(*p, launcher.hintBar.x, launcher.hintBar.y, launcher.hintBar.w, launcher.hintBar.h,
+                     launcher.hintBar.set);
         if (const json *h = child(*l, "hints")) {
             readStr(*h, "cross", launcher.hints.cross);
             readStr(*h, "circle", launcher.hints.circle);
@@ -449,6 +452,14 @@ bool ThemeSpec::save(const string &path) const {
             l["snapPanel"] = p;
         }
         putStr(l, "arrow", launcher.arrow);
+        if (launcher.hintBar.set) {
+            ordered_json p = ordered_json::object();
+            p["x"] = launcher.hintBar.x;
+            p["y"] = launcher.hintBar.y;
+            p["w"] = launcher.hintBar.w;
+            p["h"] = launcher.hintBar.h;
+            l["hintBar"] = p;
+        }
         {
             ordered_json h = ordered_json::object();
             putStr(h, "cross", launcher.hints.cross);
@@ -544,6 +555,7 @@ void ThemeSpec::mergeOver(const ThemeSpec &base) {
     mergeSet(launcher.metaPanelSlides, base.launcher.metaPanelSlides);
     mergeSet(launcher.textShadow, base.launcher.textShadow);
     mergeSet(launcher.snapPanel, base.launcher.snapPanel);
+    mergeSet(launcher.hintBar, base.launcher.hintBar);
     mergeSet(launcher.menuIcons.resumePicture, base.launcher.menuIcons.resumePicture);
     mergeSet(launcher.menuIcons.resumeSlotLabel, base.launcher.menuIcons.resumeSlotLabel);
     mergeColor(launcher.colors.text, base.launcher.colors.text);

@@ -136,17 +136,23 @@ vector<PanelStyle::HintItem> PanelStyle::parseHints(const string &line, string &
 //*******************************
 // PanelStyle::button / buttons
 //*******************************
+// the face buttons' images: the launcher's hint icons for X/O/T (the theme's buttons when a theme has
+// none), the theme's square; an invalid texture for every other key, which is drawn as a chip
+static ableem::Texture faceIcon(ThemeAssets &assets, const string &key) {
+    if (key == "X")
+        return assets.hintCross.valid() ? assets.hintCross : assets.buttonTextureMap["X"];
+    if (key == "O")
+        return assets.hintCircle.valid() ? assets.hintCircle : assets.buttonTextureMap["O"];
+    if (key == "T")
+        return assets.hintTriangle.valid() ? assets.hintTriangle : assets.buttonTextureMap["T"];
+    if (key == "S")
+        return assets.buttonTextureMap["S"];
+    return ableem::Texture();
+}
+
 int PanelStyle::button(Gui &gui, const string &key, int x, int y, int height) const {
     ThemeAssets &assets = gui.assets();
-    ableem::Texture icon;
-    if (key == "X")
-        icon = assets.hintCross.valid() ? assets.hintCross : assets.buttonTextureMap["X"];
-    else if (key == "O")
-        icon = assets.hintCircle.valid() ? assets.hintCircle : assets.buttonTextureMap["O"];
-    else if (key == "T")
-        icon = assets.hintTriangle.valid() ? assets.hintTriangle : assets.buttonTextureMap["T"];
-    else if (key == "S")
-        icon = assets.buttonTextureMap["S"];
+    ableem::Texture icon = faceIcon(assets, key);
     if (icon.valid()) {
         ableem::Size s = icon.size();
         Rect dst(x, y + (height - s.h) / 2, s.w, s.h);
@@ -173,7 +179,27 @@ int PanelStyle::button(Gui &gui, const string &key, int x, int y, int height) co
     return chipW;
 }
 
+int PanelStyle::buttonWidth(Gui &gui, const string &key, int height) const {
+    ThemeAssets &assets = gui.assets();
+    ableem::Texture icon = faceIcon(assets, key);
+    if (icon.valid())
+        return icon.size().w;
+    (void)height;
+    string name = key;
+    for (char &c : name)
+        c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+    return gui.text().textWidth(assets.themeFonts[FONT_15_BOLD], name) + 14;
+}
+
 int PanelStyle::buttons(Gui &gui, const string &markers, int x, int y, int height) const {
+    return layoutButtons(gui, markers, x, y, height, true);
+}
+
+int PanelStyle::buttonsWidth(Gui &gui, const string &markers, int height) const {
+    return layoutButtons(gui, markers, 0, 0, height, false);
+}
+
+int PanelStyle::layoutButtons(Gui &gui, const string &markers, int x, int y, int height, bool draw) const {
     const ableem::Font &font = gui.assets().themeFonts[FONT_20_BOLD];
     const int startX = x;
     size_t pos = 0;
@@ -185,11 +211,12 @@ int PanelStyle::buttons(Gui &gui, const string &markers, int x, int y, int heigh
         if (a != string::npos) {
             plain = plain.substr(a, plain.find_last_not_of(' ') - a + 1);
             if (plain == "/" || plain == "+") {
-                gui.text().renderText_WithColor(font, plain, x + 6, y + (height - font.lineHeight()) / 2, secondary,
-                                                XALIGN_LEFT);
+                if (draw)
+                    gui.text().renderText_WithColor(font, plain, x + 6, y + (height - font.lineHeight()) / 2, secondary,
+                                                    XALIGN_LEFT);
                 x += gui.text().textWidth(font, plain) + 12;
             } else {
-                x += button(gui, plain, x, y, height) + 6;
+                x += (draw ? button(gui, plain, x, y, height) : buttonWidth(gui, plain, height)) + 6;
             }
         }
         if (open == string::npos)
@@ -197,7 +224,8 @@ int PanelStyle::buttons(Gui &gui, const string &markers, int x, int y, int heigh
         size_t close = markers.find('|', open + 2);
         if (close == string::npos)
             break;
-        x += button(gui, markers.substr(open + 2, close - open - 2), x, y, height) + 6;
+        const string key = markers.substr(open + 2, close - open - 2);
+        x += (draw ? button(gui, key, x, y, height) : buttonWidth(gui, key, height)) + 6;
         pos = close + 1;
     }
     return x - startX;

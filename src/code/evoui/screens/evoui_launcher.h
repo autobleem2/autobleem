@@ -175,6 +175,18 @@ public:
     PsObj *xButton = nullptr;
     PsObj *oButton = nullptr;
     PsObj *tButton = nullptr;
+    // the footer's hint row: an icon (a theme image for X/O/T, chips for the rest) and a label each, laid
+    // out by layoutHints() in the theme's hintBar at the largest font that fits the language
+    struct Hint {
+        PsObj *icon;         // the theme's hint image, positioned by layoutHints(); or
+        std::string markers; // the chips, "|@L2+R2|" - drawn by render()
+        std::string label;
+        int labelX = 0, chipX = 0;
+    };
+    std::vector<Hint> hints;
+    ableem::Font hintFont;
+    int hintLabelY = 0, hintChipY = 0;
+    void layoutHints();
     std::unique_ptr<PsMenu> menu;
     PsStateSelector *sselector = nullptr;
 

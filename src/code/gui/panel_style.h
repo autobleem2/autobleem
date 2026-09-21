@@ -83,4 +83,10 @@ public:
     // a marker string as the button guide writes it - "|@L2| + |@Select|", "|@X| / |@O|", "RESET" - drawn as
     // icons, chips and the text between them; returns the width
     int buttons(Gui &gui, const std::string &markers, int x, int y, int height = 30) const;
+    // the width the two above would draw, without drawing - for laying a row out first
+    int buttonWidth(Gui &gui, const std::string &key, int height = 30) const;
+    int buttonsWidth(Gui &gui, const std::string &markers, int height = 30) const;
+
+private:
+    int layoutButtons(Gui &gui, const std::string &markers, int x, int y, int height, bool draw) const;
 };
