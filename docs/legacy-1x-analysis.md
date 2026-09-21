@@ -142,7 +142,8 @@ Nothing in the recovered history changes 2.x's code. What is left is small, and 
    `replace` ref is local unless pushed (`git push origin 'refs/replace/*'` would share it). Optional.
 3. **Check the game editor on `ab2`** (18 rows in a 560-high panel) and raise `menuPanel.h` if a row
    is cut off. Ten minutes.
-4. **Moving a game into a sub-folder must keep everything** (the owner's original reason for the
+4. **Done 2026-09-21** (`041ab7e`, and the ROM-scan speed-up the same evening, `0c75eb4`): moving a game
+   into a sub-folder keeps everything (the owner's original reason for the
    2021 `platform_mac.ini`). What survives a move today: the save states, resume pictures and the game's
    own "SONY" card (`Games/!SaveStates/<folder name>/`, keyed by the folder's *name*, so its place in the
    tree is irrelevant), the shared cards (`Games/!MemCards/`) and the card choice, favorite, lightgun,
@@ -170,6 +171,8 @@ Nothing in the recovered history changes 2.x's code. What is left is small, and 
      already refuses to delete a shared one). Keying the folder by serial instead would fix it but move
      every existing stick's states; not worth it for a corner case.
 5. **Nothing to port from `Eris_merge`, `refactoring` or `ci`.**
+6. A "Move to folder..." action in the Game Manager (pick a sub-folder or make one, `rename()` the
+   game's folder, `updateGamePath`) - deferred: the owner wants to rework the Game Manager first.
 
 ## How this was established (for the next time)
 
