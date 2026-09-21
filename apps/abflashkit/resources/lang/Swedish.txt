@@ -1,13 +1,14 @@
 # AutoBleem Swedish Translation - abflashkit
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 29
+# Untranslated: 0 / Total: 31
 
 All done - when the screen goes black replace power cord=Klart - när skärmen blir svart, sätt i strömkabeln igen
+All four partitions to LBOOT.EPB on the stick, for a restore later=Alla fyra partitioner till LBOOT.EPB på minnet, för en senare återställning
+Back the console up to the stick, install the AutoBleem kernel and reboot=Säkerhetskopiera konsolen till minnet, installera AutoBleem-kärnan och starta om
 Backup complete=Säkerhetskopian är klar
 Backup failed=Säkerhetskopieringen misslyckades
 Checking LBOOT for vanilla kernel. Decompressing...=Kontrollerar LBOOT efter originalkärnan. Packar upp...
 Creating backup....=Skapar säkerhetskopia....
-Exiting...=Avslutar...
 Flash Kernel=Flasha kärnan
 Flashing KERNEL IMAGE=Flashar KÄRNAVBILDEN
 Full backup=Fullständig säkerhetskopia
@@ -17,6 +18,7 @@ Non AutoBleem Backup found. Please use valid AB backup=En säkerhetskopia som in
 Overwrite the existing backup?=Skriv över den befintliga säkerhetskopian?
 Please wait...=Vänta...
 Quit=Avsluta
+Reboot into Sony's recovery, which restores the console from LBOOT.EPB=Starta om i Sonys återställning, som återställer konsolen från LBOOT.EPB
 Recovery interrupted=Återställningen avbröts
 Recovery Mode On=Återställningsläge på
 Restore Mode=Återställningsläge

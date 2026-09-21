@@ -59,7 +59,10 @@ src/core/       abflashkit_core (SDL-free, links ab_core; the tests link it)
                       tool forked one it never reaped) and NullLed (logs)
   flash_actions.*     FlashKitActions - flash()/fullBackup()/restore() step by step, through a FlashUi
                       (status line, confirm, wait) so the tests run them to the end against the fakes
-src/screens/gui_flashkit_main.*  the one screen: the status bar, and the FlashUi over gui->drawText/GuiConfirm
+src/screens/gui_flashkit_main.*  the one screen: a GuiActionMenu of the three actions (name + a line of what it
+                      does, the version at the header's right), and the FlashUi: each status line is the busy
+                      spinner's message over the dimmed menu (Gui::beginBusy), a question a GuiConfirm, a pause
+                      keeps the spinner turning; the last status stays 1.5 s before the menu is back
 src/abflashkit_app.*  AbFlashKit : AppBase - holds the Flasher and the Led, knows the paths
 src/main.cpp          EnvironmentSetup::forTool, the flasher/led choice, logs
 resources/            app.ini, run.sh, readme.txt, icon.png, lang/ (Polski from the 2020 tool)
@@ -85,8 +88,9 @@ builds it for the console, checks it, packs it and copies the binary plus `resou
 `payload/Apps/abflashkit/` (binary name `abflashkit` since the port; `run.sh` matches). Not built for the Pi.
 
 Visual test on Windows: `python tools/make_usb.py usb` stages `usb/Apps/abflashkit/`;
-`powershell -File tools\win_drive.ps1 -Usb <usb> -Tool abflashkit -Sequence "s;8;t;4;x;3;x;3;x;12"` does a
-full backup, a restore (three confirmations, then the fake "reboot" closes the tool) - logs in
+`python tools/ab_drive.py start --tool abflashkit` then `run "press down; press x; wait 8000; shot a.png"`
+does a full backup through the DebugDriver (the menu is `GuiActionMenu` on the driver's screen stack, a
+question `GuiConfirm`; Up/Down pick the action, Cross runs it, Circle quits) - logs in
 `usb/System/Logs/abflashkit.log`. There is no `kernel/` in the staged folder, so a Flash on the dev host
 reports "Invalid backup or invalid kernel image" and "reboots"; drop a `kernel/boot.img` + `boot.md5` into
 `usb/Apps/abflashkit/` to see the whole flash sequence.

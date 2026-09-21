@@ -1,13 +1,14 @@
 # AutoBleem Dutch Translation - abflashkit
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 29
+# Untranslated: 0 / Total: 31
 
 All done - when the screen goes black replace power cord=Klaar - als het scherm zwart wordt, steek de stroomkabel opnieuw in
+All four partitions to LBOOT.EPB on the stick, for a restore later=Alle vier partities naar LBOOT.EPB op de stick, om later te herstellen
+Back the console up to the stick, install the AutoBleem kernel and reboot=Maak een back-up van de console op de stick, installeer de AutoBleem-kernel en herstart
 Backup complete=Back-up voltooid
 Backup failed=Back-up mislukt
 Checking LBOOT for vanilla kernel. Decompressing...=LBOOT controleren op de originele kernel. Uitpakken...
 Creating backup....=Back-up maken....
-Exiting...=Afsluiten...
 Flash Kernel=Kernel flashen
 Flashing KERNEL IMAGE=KERNEL-IMAGE wordt geflasht
 Full backup=Volledige back-up
@@ -17,6 +18,7 @@ Non AutoBleem Backup found. Please use valid AB backup=Back-up gevonden die niet
 Overwrite the existing backup?=Bestaande back-up overschrijven?
 Please wait...=Even geduld...
 Quit=Afsluiten
+Reboot into Sony's recovery, which restores the console from LBOOT.EPB=Herstart naar Sony's herstelmodus, die de console terugzet vanuit LBOOT.EPB
 Recovery interrupted=Herstel afgebroken
 Recovery Mode On=Herstelmodus aan
 Restore Mode=Herstelmodus

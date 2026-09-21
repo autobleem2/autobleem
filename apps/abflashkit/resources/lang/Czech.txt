@@ -1,13 +1,14 @@
 # AutoBleem Czech Translation - abflashkit
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 29
+# Untranslated: 0 / Total: 31
 
 All done - when the screen goes black replace power cord=Hotovo - až obrazovka zčerná, znovu zapojte napájecí kabel
+All four partitions to LBOOT.EPB on the stick, for a restore later=Všechny čtyři oddíly do LBOOT.EPB na flash disku pro pozdější obnovu
+Back the console up to the stick, install the AutoBleem kernel and reboot=Zálohovat konzoli na flash disk, nainstalovat jádro AutoBleem a restartovat
 Backup complete=Záloha dokončena
 Backup failed=Záloha se nezdařila
 Checking LBOOT for vanilla kernel. Decompressing...=Kontrola původního jádra v LBOOT. Rozbalování...
 Creating backup....=Vytváření zálohy....
-Exiting...=Ukončování...
 Flash Kernel=Nahrát jádro
 Flashing KERNEL IMAGE=Nahrávání OBRAZU JÁDRA
 Full backup=Úplná záloha
@@ -17,6 +18,7 @@ Non AutoBleem Backup found. Please use valid AB backup=Nalezena záloha, která 
 Overwrite the existing backup?=Přepsat stávající zálohu?
 Please wait...=Čekejte prosím...
 Quit=Ukončit
+Reboot into Sony's recovery, which restores the console from LBOOT.EPB=Restartovat do obnovy Sony, která konzoli obnoví z LBOOT.EPB
 Recovery interrupted=Obnova přerušena
 Recovery Mode On=Režim obnovy zapnut
 Restore Mode=Režim obnovy

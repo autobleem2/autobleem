@@ -1,13 +1,14 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 29
+# Untranslated: 0 / Total: 31
 
 All done - when the screen goes black replace power cord=All done - when the screen goes black replace power cord
+All four partitions to LBOOT.EPB on the stick, for a restore later=All four partitions to LBOOT.EPB on the stick, for a restore later
+Back the console up to the stick, install the AutoBleem kernel and reboot=Back the console up to the stick, install the AutoBleem kernel and reboot
 Backup complete=Backup complete
 Backup failed=Backup failed
 Checking LBOOT for vanilla kernel. Decompressing...=Checking LBOOT for vanilla kernel. Decompressing...
 Creating backup....=Creating backup....
-Exiting...=Exiting...
 Flash Kernel=Flash Kernel
 Flashing KERNEL IMAGE=Flashing KERNEL IMAGE
 Full backup=Full backup
@@ -17,6 +18,7 @@ Non AutoBleem Backup found. Please use valid AB backup=Non AutoBleem Backup foun
 Overwrite the existing backup?=Overwrite the existing backup?
 Please wait...=Please wait...
 Quit=Quit
+Reboot into Sony's recovery, which restores the console from LBOOT.EPB=Reboot into Sony's recovery, which restores the console from LBOOT.EPB
 Recovery interrupted=Recovery interrupted
 Recovery Mode On=Recovery Mode On
 Restore Mode=Restore Mode

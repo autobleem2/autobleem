@@ -1,13 +1,14 @@
 # AutoBleem French Translation - abflashkit
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 0 / Total: 29
+# Untranslated: 0 / Total: 31
 
 All done - when the screen goes black replace power cord=Terminé - quand l'écran devient noir, rebranchez le câble d'alimentation
+All four partitions to LBOOT.EPB on the stick, for a restore later=Les quatre partitions dans LBOOT.EPB sur la clé, pour une restauration ultérieure
+Back the console up to the stick, install the AutoBleem kernel and reboot=Sauvegarder la console sur la clé, installer le noyau AutoBleem et redémarrer
 Backup complete=Sauvegarde terminée
 Backup failed=Échec de la sauvegarde
 Checking LBOOT for vanilla kernel. Decompressing...=Vérification du noyau d'origine dans LBOOT. Décompression...
 Creating backup....=Création de la sauvegarde....
-Exiting...=Fermeture...
 Flash Kernel=Flasher le noyau
 Flashing KERNEL IMAGE=Flashage de l'IMAGE DU NOYAU
 Full backup=Sauvegarde complète
@@ -17,6 +18,7 @@ Non AutoBleem Backup found. Please use valid AB backup=Sauvegarde non AutoBleem 
 Overwrite the existing backup?=Écraser la sauvegarde existante ?
 Please wait...=Veuillez patienter...
 Quit=Quitter
+Reboot into Sony's recovery, which restores the console from LBOOT.EPB=Redémarrer dans la récupération Sony, qui restaure la console depuis LBOOT.EPB
 Recovery interrupted=Restauration interrompue
 Recovery Mode On=Mode restauration activé
 Restore Mode=Mode restauration
