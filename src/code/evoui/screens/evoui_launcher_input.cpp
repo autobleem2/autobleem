@@ -400,6 +400,15 @@ void GuiLauncher::loop_nextGameFirstLetter() {
 // GuiLauncher::loop_selectButtonPressed
 //*******************************
 void GuiLauncher::loop_selectButton_Pressed() {
+    // with the game menu's icon row open, Select (and L2+Select) still change the set: the row closes
+    // first, the way Up closes it, and the switch goes on from the Games state
+    if (state == LauncherScreenState::Set) {
+        if (menu->animationStarted != 0)
+            return;
+        menu->transition = TR_MENUON;
+        switchState(LauncherScreenState::Games, time);
+        motionStart = 0;
+    }
     if (state == LauncherScreenState::Games) {
         if (powerOffShift) {
             if (selection.set == GameSet::PS1)

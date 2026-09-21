@@ -780,13 +780,11 @@ void GuiLauncher::showOptions() {
     menu->selOption = 0;
     menu->x = 640 - 118 / 2;
     menu->ox = menu->x;
-    menu->xoff[0] = 0;
-    menu->xoff[1] = 0;
-    menu->xoff[2] = 0;
-    menu->xoff[3] = 0;
     menu->direction = 0;
     menu->duration = 100;
-    menu->animationStarted = 0;
+    // at rest for the state the launcher is in (a row rebuilt while it was closing - Select from the open
+    // row switching to a set of another kind - used to stay half-closed with its icon half-zoomed)
+    menu->settle(state == LauncherScreenState::Set, state == LauncherScreenState::Set ? 440 : 520);
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 }

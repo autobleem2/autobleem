@@ -33,6 +33,26 @@ void PsMenu::freeAssets() {
 #define ICON_GAP 130.0f
 
 //*******************************
+// PsMenu::settle
+//*******************************
+void PsMenu::settle(bool open, int restY) {
+    animationStarted = 0;
+    y = oy = targety = restY;
+    active = open;
+    for (int i = 0; i < 4; i++) {
+        optionscales[i] = 1.0f;
+        xoff[i] = 0;
+        yoff[i] = 0;
+    }
+    if (open) {
+        optionscales[selOption] = maxZoom;
+        const int grown = static_cast<int>(118 * maxZoom) - 118;
+        xoff[selOption] = -(grown / 2);
+        yoff[selOption] = -(grown / 2);
+    }
+}
+
+//*******************************
 // PsMenu::update
 //*******************************
 void PsMenu::update(long time) {

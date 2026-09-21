@@ -38,6 +38,10 @@ public:
     int targety = 0;
     int duration = 0;
     bool active = false;
+    // the row at rest at `restY` with no animation running: every icon at its size, the selected one
+    // zoomed when the row is open (`open`) - what a rebuild of the row (GuiLauncher::showOptions) settles
+    // it to, so cutting an animation short leaves nothing half-way
+    void settle(bool open, int restY);
 
     // which of the four icons are shown, left to right - always a prefix: settings alone for an App,
     // settings + game editor for a RetroArch game, all four for a PS1 game (GuiLauncher::showOptions)

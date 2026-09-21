@@ -20,8 +20,8 @@ GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) -
 GuiLauncher itself, so a script may press at once - and `menu <item>` opens the L2+R2 system menu and
 picks an item by its 0-based index.
 
-The launcher is started with the exe from build_win/ copied into the usb tree first (the resources next to
-it are what tools/make_usb.py staged).
+The launcher is started from a copy of build_win/'s exe (autobleem-gui-drive.exe, next to the resources
+tools/make_usb.py staged), so the owner's own instance of autobleem-gui.exe can keep running.
 """
 import os
 import shutil
@@ -103,12 +103,14 @@ class Driver:
 def start(usb, port, show):
     exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
     app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
-    shutil.copy(exe, os.path.join(app_dir, 'autobleem-gui.exe'))
+    # its own copy of the exe next to the resources: the owner's own instance may be running the other
+    driven = os.path.join(app_dir, 'autobleem-gui-drive.exe')
+    shutil.copy(exe, driven)
     env = dict(os.environ)
     env['AB_DEBUG_PORT'] = str(port)
     env['AB_NO_SPLASH'] = '1'  # straight to the launcher (GuiSplash honours it on a dev host)
     env['PATH'] = r'C:\msys64\ucrt64\bin;' + env.get('PATH', '')
-    proc = subprocess.Popen([os.path.join(app_dir, 'autobleem-gui.exe'), usb], cwd=app_dir, env=env,
+    proc = subprocess.Popen([driven, usb], cwd=app_dir, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     with open(pid_file(port), 'w') as f:
         f.write(str(proc.pid))
