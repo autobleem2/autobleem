@@ -25,6 +25,12 @@ void GuiSplash::render() {
 
     renderer.copy(gui->assets().backgroundImg, nullptr, &gui->assets().backgroundRect);
     renderer.copy(gui->assets().logo, nullptr, &gui->assets().logoRect);
+    // Texture is a shared handle: these are the very textures every classic screen draws its background
+    // and logo with (Gui::renderBackground/renderLogo), so the fade's alpha must not outlive this frame -
+    // show() renders once before loop(), and loop() may return at once (AB_NO_SPLASH), which used to
+    // leave both at alpha 0 and every panel until the next asset reload on plain black
+    gui->assets().backgroundImg.setAlphaMod(255);
+    gui->assets().logo.setAlphaMod(255);
 
     const ableem::ThemeStatusBar &bar = app.theme().classic().statusBar;
     int bg_alpha = bar.alpha * alpha / 255;
@@ -96,16 +102,7 @@ void GuiSplash::loop() {
                         alpha = 0;
                     }
                 } else {
-                    // render() ties the background/logo alpha to `alpha` for the fade. Texture is a shared
-                    // handle - backgroundImg/logo are the same ones every classic screen draws with
-                    // gui->renderBackground()/renderLogo() - so leaving them at alpha 0 here would make every
-                    // one of those render invisible from now on; the old code never had this problem because
-                    // it always ended a fade at alpha 255, never faded back out. Put both back to normal
-                    // before handing off to the launcher. Music volume is left alone throughout - it is not
-                    // tied to this fade.
-                    gui->assets().backgroundImg.setAlphaMod(255);
-                    gui->assets().logo.setAlphaMod(255);
-                    break;
+                    break; // faded out; render() has put the shared textures back to alpha 255 already
                 }
             }
             start = gui->platform().ticks();
