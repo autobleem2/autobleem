@@ -33,7 +33,7 @@ void GuiMcManager::loadAssets() {
 
     pencilPos.w = 42;
     pencilPos.h = 42;
-    pencilPos.x = mc1XStart;
+    pencilPos.x = gridRect(1).x + PencilInset;
     pencilPos.y = 150;
     pencilColumn = 0;
     pencilRow = 0;
@@ -76,16 +76,17 @@ void GuiMcManager::pencilRight() {
     }
 }
 
+ableem::Rect GuiMcManager::gridRect(int card) const {
+    const ableem::Rect content = Gui::getInstance()->classicContent();
+    const int y = content.y + 44; // the card's name goes in the band above
+    const int margin = 60;
+    return ableem::Rect(card == 1 ? content.x + margin : content.x + content.w - margin - GridW, y, GridW, GridH);
+}
+
 void GuiMcManager::renderPencil(int memcard, int col, int row) {
-    const int pencilShiftX = 80;
-    const int pencilShiftY = 80;
-    if (memcard == 1) {
-        pencilPos.x = mc1XStart + (col * pencilShiftX);
-    }
-    if (memcard == 2) {
-        pencilPos.x = mc2XStart + (col * pencilShiftX);
-    }
-    pencilPos.y = mcYStart + (row * pencilShiftY);
+    const ableem::Rect grid = gridRect(memcard);
+    pencilPos.x = grid.x + PencilInset + col * Slot;
+    pencilPos.y = grid.y + PencilInset + row * Slot;
     renderer.copy(mcPencil, nullptr, &pencilPos);
 }
 
@@ -112,38 +113,19 @@ void GuiMcManager::renderStatic() {
                       "|@X| " + _("Reload cards") + "   | " + "|@T| " + _("Delete") + " | " + "|@S| " + _("Copy") +
                       " | " + "|@O| " + _("Back") + "|");
 
-    // Draw dot matrix image
-    ableem::Rect input, output;
-    ableem::Size gridSize = mcGrid.size();
-    input.w = output.w = gridSize.w;
-    input.h = output.h = gridSize.h;
-    input.x = 0, input.y = 0;
-    output.x = 80;
-    output.y = 80;
-    renderer.copy(mcGrid, &input, &output);
-    output.x = 940;
-    output.y = 80;
-    renderer.copy(mcGrid, &input, &output);
+    // the two dot matrices
+    for (int card = 1; card <= 2; card++) {
+        ableem::Rect output = gridRect(card);
+        renderer.copy(mcGrid, nullptr, &output);
+    }
 }
 
 void GuiMcManager::renderMemCardIcons(int memcard) {
-    const int xStartMC1 = 80, xStartMC2 = 940, yStart = 80, xDecal = 10, yDecal = 10, xShift = 80, yShift = 80;
+    const ableem::Rect grid = gridRect(memcard);
+    CardEdit *currentCard = memcard == 1 ? memcard1.get() : memcard2.get();
     ableem::Rect output;
     output.h = 75;
     output.w = 75;
-
-    int start;
-    CardEdit *currentCard;
-    if (memcard == 1) {
-        start = xStartMC1;
-        currentCard = memcard1.get();
-    }
-
-    if (memcard == 2) {
-        start = xStartMC2;
-        currentCard = memcard2.get();
-    }
-
     for (int i = 0; i < 15; i++) {
         int col = i % 3;
         int line = i / 3;
@@ -151,8 +133,8 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
         if ((pencilMemcard == memcard) && (pencilRow == line) && (pencilColumn == col)) {
             frame = animFrame;
         }
-        output.x = start + (xShift * col) + xDecal;
-        output.y = yStart + (yShift * line) + yDecal;
+        output.x = grid.x + IconInset + Slot * col;
+        output.y = grid.y + IconInset + Slot * line;
         if (currentCard->image().isUsed(i)) {
             renderer.copy(currentCard->icon(i, frame), nullptr, &output);
         }
@@ -174,14 +156,37 @@ void GuiMcManager::renderMetaInfo() {
     string gameID = card->image().gameId(pencilColumn + pencilRow * 3);
     string pCode = card->image().productCode(pencilColumn + pencilRow * 3);
 
-    string nextSlot = to_string(card->image().nextSlot(pencilColumn + pencilRow * 3));
+    PanelStyle style = gui->panelStyle();
+    Fonts &fonts = gui->assets().themeFonts;
+    // XALIGN_CENTER centres on the screen; these centre on a given x
+    auto centred = [&](const ableem::Font &font, const string &text, int cx, int y, const ableem::Color &color) {
+        gui->text().renderText_WithColor(font, text, cx - gui->text().textWidth(font, text) / 2, y, color, XALIGN_LEFT);
+    };
 
-    gui->text().renderTextLine(title, -500, 1, XALIGN_CENTER, true, fontJIS);
-    gui->text().renderTextLine(gameID, 3, 1, XALIGN_CENTER, true);
-    gui->text().renderTextLine(pCode, 4, 1, XALIGN_CENTER, true);
+    // the card names, over their grids
+    for (int c = 1; c <= 2; c++) {
+        const ableem::Rect grid = gridRect(c);
+        const string &name = c == 1 ? leftCardName : rightCardName;
+        const bool active = pencilMemcard == c;
+        centred(fonts[FONT_20_BOLD], gui->text().elide(fonts[FONT_20_BOLD], name, grid.w), grid.x + grid.w / 2,
+                grid.y - 34, active ? style.text : style.secondary);
+    }
 
-    gui->text().renderTextLine(leftCardName, -500, 1, XALIGN_LEFT, true);
-    gui->text().renderTextLine(rightCardName, -500, 1, XALIGN_RIGHT, true);
+    // the save under the pencil: its title (in the Japanese-capable font), game id and product code as
+    // label/value pairs in the middle, between the grids
+    const ableem::Rect left = gridRect(1), right = gridRect(2);
+    const int midX = left.x + left.w + 24;
+    const int midW = right.x - 24 - midX;
+    int y = left.y + 20;
+    auto fact = [&](const string &label, const string &value, const ableem::Font &valueFont) {
+        centred(fonts[FONT_15_BOLD], label, midX + midW / 2, y, style.secondary);
+        y += 18;
+        centred(valueFont, gui->text().elide(valueFont, value, midW), midX + midW / 2, y, style.text);
+        y += valueFont.lineHeight() + 14;
+    };
+    fact(_("Title"), title, fontJIS);
+    fact(_("Game ID"), gameID, fonts[FONT_20_BOLD]);
+    fact(_("Product code"), pCode, fonts[FONT_20_BOLD]);
 }
 
 void GuiMcManager::render() {

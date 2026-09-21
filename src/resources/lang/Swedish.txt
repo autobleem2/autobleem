@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -104,16 +104,17 @@ Free=Ledigt
 free of=ledigt av
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Fri programvara under GNU GPL v3 eller senare - ingen garanti. Källkod och licens:
 Free space=Ledigt utrymme
-GAME=SPEL
 Game=Spel
+GAME=SPEL
 Game data=Speldata
 Game failed to verify:=Spelverifiering misslyckades:
 Game History=Spelhistorik
+Game ID=Spel-id
 Game Manager=Spelbibliotek
 Game manager - Select game=Spelbibliotek - Välj spel
 GAME OVER=SPELET ÄR SLUT
-games=spel
 Games=Spel
+games=spel
 GFX Filter:=Grafikfilter:
 Graphics=Grafik
 Hardware=Hårdvara
@@ -131,6 +132,7 @@ Keyboard=Tangentbord
 Language:=Språk:
 Last Played:=Senast spelad:
 Later=Senare
+Launcher=Startprogram
 LIFE LOST=LIV FÖRLORAT
 Lightgun Game:=Lightgun-spel:
 Link Block=Länkblock
@@ -181,6 +183,7 @@ Power Off=Stäng av
 POWER SHOT=KRAFTSKOTT
 POWERING OFF... PLEASE WAIT=STÄNGER AV... VÄNLIGEN VÄNTA
 Processor=Processor
+Product code=Produktkod
 PS1 Emulator:=PS1-emulator:
 Published by:=Utgivet av:
 Quick scroll to next letter=Snabbscrolla till nästa bokstav
@@ -254,6 +257,7 @@ Temperature=Temperatur
 Testing=Testning
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunde inte startas - det ligger i System/Updates
 Theme Default=Temats standard
+Title=Titel
 Unknown Core (AutoDetect)=Okänd kärna (AutoDetect)
 Update available=Uppdatering tillgänglig
 Update failed=Uppdateringen misslyckades

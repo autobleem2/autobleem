@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -104,16 +104,17 @@ Free=Voľné
 free of=voľných z
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Slobodný softvér pod GNU GPL v3 alebo novšou - bez záruky. Zdrojový kód a licencia:
 Free space=Voľné miesto
-GAME=HRA
 Game=Hra
+GAME=HRA
 Game data=Dáta hier
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game History=História hry
+Game ID=ID hry
 Game Manager=Správca hier
 Game manager - Select game=Správca hry - Vybrať hru
 GAME OVER=KONIEC HRY
-games=hry
 Games=Hry
+games=hry
 GFX Filter:=Grafický filter:
 Graphics=Grafika
 Hardware=Hardvér
@@ -131,6 +132,7 @@ Keyboard=Klávesnica
 Language:=Jazyk:
 Last Played:=Naposledy hrané:
 Later=Neskôr
+Launcher=Spúšťač
 LIFE LOST=STRATA ŽIVOTA
 Lightgun Game:=Hra Lightgun:
 Link Block=Spojiť blok
@@ -181,6 +183,7 @@ Power Off=Vypnúť
 POWER SHOT=SILNÁ STRELA
 POWERING OFF... PLEASE WAIT=VYPÍNAM... ČAKAJTE PROSÍM
 Processor=Procesor
+Product code=Kód produktu
 PS1 Emulator:=Emulátor PS1:
 Published by:=Vydavateľ:
 Quick scroll to next letter=Rýchlo prejsť na nasledujúci znak
@@ -254,6 +257,7 @@ Temperature=Teplota
 Testing=Testovanie
 The installer could not be started - it is in System/Updates=Inštalátor sa nepodarilo spustiť - je v System/Updates
 Theme Default=Predvolené motívu
+Title=Názov
 Unknown Core (AutoDetect)=Neznáme jadro (AutoDetect)
 Update available=Dostupná aktualizácia
 Update failed=Aktualizácia zlyhala

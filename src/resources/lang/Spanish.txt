@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -104,16 +104,17 @@ Free=Libre
 free of=libres de
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Software libre bajo la GNU GPL v3 o posterior - sin garantía. Código fuente y licencia:
 Free space=Espacio libre
-GAME=JUEGO
 Game=Juego
+GAME=JUEGO
 Game data=Datos de juegos
 Game failed to verify:=El juego no se pudo verificar:
 Game History=Historial de Juego
+Game ID=ID del juego
 Game Manager=Administrador de Juegos
 Game manager - Select game=Administrador de juegos - Elige juego
 GAME OVER=FIN DEL JUEGO
-games=juegos
 Games=Juegos
+games=juegos
 GFX Filter:=Filtro GFX:
 Graphics=Graficos
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Teclado
 Language:=Idioma:
 Last Played:=Ultima Partida:
 Later=Más tarde
+Launcher=Lanzador
 LIFE LOST=VIDA PERDIDA
 Lightgun Game:=Juego de Pistola:
 Link Block=Link Block
@@ -181,6 +183,7 @@ Power Off=Apagar
 POWER SHOT=DISPARO POTENTE
 POWERING OFF... PLEASE WAIT=APAGANDO... POR FAVOR ESPERA
 Processor=Procesador
+Product code=Código de producto
 PS1 Emulator:=Emulador PS1:
 Published by:=Publicado por:
 Quick scroll to next letter=Desplazamiento rapido a la siguiente letra
@@ -254,6 +257,7 @@ Temperature=Temperatura
 Testing=Testers
 The installer could not be started - it is in System/Updates=No se pudo iniciar el instalador - está en System/Updates
 Theme Default=Predeterminado del tema
+Title=Título
 Unknown Core (AutoDetect)=Core Desconocido (AutoDetectar)
 Update available=Actualización disponible
 Update failed=La actualización falló

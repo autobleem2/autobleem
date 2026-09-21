@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -104,16 +104,17 @@ Free=Boş
 free of=boş, toplam
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=GNU GPL v3 veya sonrası altında özgür yazılım - garanti yok. Kaynak kodu ve lisans:
 Free space=Boş alan
-GAME=OYUN
 Game=Oyun
+GAME=OYUN
 Game data=Oyun verileri
 Game failed to verify:=Oyun doğrulanamadı:
 Game History=Oyun Geçmişi
+Game ID=Oyun kimliği
 Game Manager=Oyun Yöneticisi
 Game manager - Select game=Oyun yöneticisi - Oyun seçin
 GAME OVER=OYUN BİTTİ
-games=oyun
 Games=Oyunlar
+games=oyun
 GFX Filter:=GFX Filtresi:
 Graphics=Grafik
 Hardware=Donanım
@@ -131,6 +132,7 @@ Keyboard=Klavye
 Language:=Dil:
 Last Played:=Son Oynanma:
 Later=Sonra
+Launcher=Başlatıcı
 LIFE LOST=CAN KAYBEDİLDİ
 Lightgun Game:=Işıklı Silah Oyunu:
 Link Block=Bağ Bloku
@@ -181,6 +183,7 @@ Power Off=Kapat
 POWER SHOT=GÜÇLÜ ATIŞ
 POWERING OFF... PLEASE WAIT=KAPATILIYOR... LÜTFEN BEKLEYİN
 Processor=İşlemci
+Product code=Ürün kodu
 PS1 Emulator:=PS1 Emülatörü:
 Published by:=Yayımlayan:
 Quick scroll to next letter=Sonraki harfe hızlı kaydır
@@ -254,6 +257,7 @@ Temperature=Sıcaklık
 Testing=Deneme
 The installer could not be started - it is in System/Updates=Yükleyici başlatılamadı - System/Updates içinde
 Theme Default=Tema Varsayılanı
+Title=Başlık
 Unknown Core (AutoDetect)=Bilinmeyen Çekirdek (Otomatik Algıla)
 Update available=Güncelleme mevcut
 Update failed=Güncelleme başarısız

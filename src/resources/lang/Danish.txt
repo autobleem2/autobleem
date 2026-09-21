@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -104,16 +104,17 @@ Free=Fri
 free of=ledige af
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Fri software under GNU GPL v3 eller nyere - ingen garanti. Kildekode og licens:
 Free space=Ledig plads
-GAME=SPIL
 Game=Spil
+GAME=SPIL
 Game data=Spildata
 Game failed to verify:=Spilverificering mislykkedes:
 Game History=Spilhistorik
+Game ID=Spil-id
 Game Manager=Spilbibliotek
 Game manager - Select game=Spilbibliotek - Vælg spil
 GAME OVER=SPILLET SLUT
-games=spil
 Games=Spil
+games=spil
 GFX Filter:=Grafik Filter:
 Graphics=Grafik
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Tastatur
 Language:=Sprog:
 Last Played:=Sidst spillet:
 Later=Senere
+Launcher=Launcher
 LIFE LOST=LIV MISTET
 Lightgun Game:=Lightgun-spil:
 Link Block=Link Blok
@@ -181,6 +183,7 @@ Power Off=Sluk
 POWER SHOT=KRAFTSKUD
 POWERING OFF... PLEASE WAIT=SLUKKER... VENT VENLIGST
 Processor=Processor
+Product code=Produktkode
 PS1 Emulator:=PS1-emulator:
 Published by:=Udgivet af:
 Quick scroll to next letter=Hurtig scroll til næste bogstav
@@ -254,6 +257,7 @@ Temperature=Temperatur
 Testing=Test
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunne ikke startes - det ligger i System/Updates
 Theme Default=Temaets standard
+Title=Titel
 Unknown Core (AutoDetect)=Ukendt kerne (Autodetekt)
 Update available=Opdatering tilgængelig
 Update failed=Opdatering mislykkedes

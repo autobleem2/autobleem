@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -104,16 +104,17 @@ Free=Vapaa
 free of=vapaana, yhteensä
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Vapaa ohjelmisto GNU GPL v3 -lisenssillä tai uudemmalla - ei takuuta. Lähdekoodi ja lisenssi:
 Free space=Vapaa tila
-GAME=PELI
 Game=Peli
+GAME=PELI
 Game data=Pelien tiedot
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game History=Pelihistoria
+Game ID=Pelin tunnus
 Game Manager=Pelien hallinta
 Game manager - Select game=Pelien hallinta - Valitse peli
 GAME OVER=PELI PÄÄTTYI
-games=pelit
 Games=Pelit
+games=pelit
 GFX Filter:=GFX-Suodatin:
 Graphics=Grafiikat
 Hardware=Laitteisto
@@ -131,6 +132,7 @@ Keyboard=Näppäimistö
 Language:=Kieli:
 Last Played:=Viimeksi pelattu:
 Later=Myöhemmin
+Launcher=Käynnistin
 LIFE LOST=ELÄMÄ MENETETTY
 Lightgun Game:=Lightgun-peli:
 Link Block=Linkki Esto
@@ -181,6 +183,7 @@ Power Off=Sammuta
 POWER SHOT=TEHOLAUKAUS
 POWERING OFF... PLEASE WAIT=SAMMUTETAAN... ODOTA HETKI
 Processor=Suoritin
+Product code=Tuotekoodi
 PS1 Emulator:=PS1-emulaattori:
 Published by:=Julkaissut:
 Quick scroll to next letter=Selaa nopeasti seuraavaan kirjaimeen
@@ -254,6 +257,7 @@ Temperature=Lämpötila
 Testing=Testausta
 The installer could not be started - it is in System/Updates=Asennusohjelmaa ei voitu käynnistää - se on kansiossa System/Updates
 Theme Default=Teeman oletus
+Title=Nimi
 Unknown Core (AutoDetect)=Tuntematon ydin (Automaattisesti havaittu)
 Update available=Päivitys saatavilla
 Update failed=Päivitys epäonnistui

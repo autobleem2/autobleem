@@ -6,6 +6,8 @@
 #include <string>
 #include "../../gui/gui.h"
 
+#include <algorithm>
+
 using namespace std;
 
 //*******************************
@@ -16,34 +18,48 @@ void GuiBtnGuide::render() {
     gui->renderBackground();
 
     gui->renderTextBar();
-    int yoffset = gui->renderHeader(_("Button Guide"));
+    gui->renderHeader(_("Button Guide"));
 
-    int xLeft = 300;
-    int xRight = 520;
-    int line = 0;
-    auto font = gui->assets().themeFonts[FONT_20_BOLD];
-
-    auto renderTextLineToColumns = [&](const string &textLeft, const string &textRight) {
-        gui->text().renderTextLineToColumns(textLeft, textRight, xLeft, xRight, line++, yoffset, font);
+    // three sections as heading bands; each row the buttons in a column at the left and what they do,
+    // wrapped to the panel, beside it - a long translation takes two lines instead of running off
+    PanelStyle style = gui->panelStyle();
+    const ableem::Rect content = gui->classicContent();
+    const ableem::Font &buttonFont = gui->assets().themeFonts[FONT_20_BOLD];
+    const ableem::Font &textFont = gui->assets().themeFont;
+    const int xButtons = content.x + PanelStyle::RowInset + 8;
+    const int xText = xButtons + 250;
+    const int textWidth = content.x + content.w - PanelStyle::RowInset - 8 - xText;
+    const int rowHeight = max(30, textFont.lineHeight() + 2);
+    int y = content.y;
+    auto section = [&](const string &title) {
+        style.label(renderer, ableem::Rect(content.x + 1, y, content.w - 2, rowHeight));
+        gui->text().renderText_WithColor(buttonFont, title, xButtons, y + (rowHeight - buttonFont.lineHeight()) / 2,
+                                         style.text, XALIGN_LEFT);
+        y += rowHeight;
+    };
+    auto row = [&](const string &buttons, const string &what) {
+        const int textHeight = max(rowHeight, textFont.columnHeight(what, textWidth));
+        gui->text().renderText(buttonFont, buttons, xButtons, y + (rowHeight - 30) / 2, XALIGN_LEFT);
+        gui->text().renderWrappedText(textFont, what, xText, y + (rowHeight - textFont.lineHeight()) / 2, textWidth,
+                                      style.text);
+        y += textHeight;
     };
 
-    renderTextLineToColumns("|@X| / |@O|", _("Select or cancel highlighted option"));
-    renderTextLineToColumns("|@S|", _("Run using RetroArch"));
-    renderTextLineToColumns("|@R1| / |@L1|", _("Quick scroll to next letter"));
-    renderTextLineToColumns("|@Start|", _("Random Game"));
-    renderTextLineToColumns("|@Select|", _("Next Game Platform"));
-    renderTextLineToColumns("|@L2| + |@Select|", _("Change USB Games Sub-Directory"));
-    renderTextLineToColumns("|@L2| + |@Select|", _("Change RetroArch Playlist"));
-    line++;
-    renderTextLineToColumns("", _("In Game"));
-    renderTextLineToColumns("|@Select| + |@Start|", _("Emulator config MENU"));
-    renderTextLineToColumns(_("RESET"), _("Quit emulation - back to AutoBleem"));
-    line++;
-    renderTextLineToColumns("", _("In Retroarch Game"));
-    renderTextLineToColumns("|@Select| + |@Start|", _("Open Retroarch Menu"));
-    renderTextLineToColumns(_("POWER"), _("Exit to EvoUI"));
-    line++;
-    renderTextLineToColumns("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"));
+    section(_("Launcher"));
+    row("|@X| / |@O|", _("Select or cancel highlighted option"));
+    row("|@S|", _("Run using RetroArch"));
+    row("|@R1| / |@L1|", _("Quick scroll to next letter"));
+    row("|@Start|", _("Random Game"));
+    row("|@Select|", _("Next Game Platform"));
+    row("|@L2| + |@Select|", _("Change USB Games Sub-Directory"));
+    row("|@L2| + |@Select|", _("Change RetroArch Playlist"));
+    row("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"));
+    section(_("In Game"));
+    row("|@Select| + |@Start|", _("Emulator config MENU"));
+    row(_("RESET"), _("Quit emulation - back to AutoBleem"));
+    section(_("In Retroarch Game"));
+    row("|@Select| + |@Start|", _("Open Retroarch Menu"));
+    row(_("POWER"), _("Exit to EvoUI"));
 
     gui->renderStatus("|@O| " + _("Back") + "|");
     renderer.present();

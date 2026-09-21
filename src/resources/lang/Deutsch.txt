@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -104,16 +104,17 @@ Free=Frei
 free of=frei von
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Freie Software unter der GNU GPL v3 oder neuer - ohne Gewähr. Quellcode und Lizenz:
 Free space=Freier Speicher
-GAME=SPIEL
 Game=Spiel
+GAME=SPIEL
 Game data=Spieldaten
 Game failed to verify:=Spielverifizierung fehlgeschlagen:
 Game History=Spielverlauf
+Game ID=Spiel-ID
 Game Manager=Spiele Manager
 Game manager - Select game=Spielemanager - Spiel auswählen
 GAME OVER=SPIEL VORBEI
-games=spiele
 Games=Spiele
+games=spiele
 GFX Filter:=Glättefilter:
 Graphics=Grafik
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Tastatur
 Language:=Sprache:
 Last Played:=Zuletzt gespielt:
 Later=Später
+Launcher=Launcher
 LIFE LOST=LEBEN VERLOREN
 Lightgun Game:=Lightgun-Spiel:
 Link Block=Verknüpfungsblock
@@ -181,6 +183,7 @@ Power Off=Ausschalten
 POWER SHOT=KRAFTSCHUSS
 POWERING OFF... PLEASE WAIT=HERUNTERFAHREN... BITTE WARTEN
 Processor=Prozessor
+Product code=Produktcode
 PS1 Emulator:=PS1-Emulator:
 Published by:=Veröffentlicht von:
 Quick scroll to next letter=Zum nächsten Buchstaben springen
@@ -254,6 +257,7 @@ Temperature=Temperatur
 Testing=Testen
 The installer could not be started - it is in System/Updates=Der Installer konnte nicht gestartet werden - er liegt in System/Updates
 Theme Default=Theme-Standard
+Title=Titel
 Unknown Core (AutoDetect)=Unbekannter Kern (AutoErkennung)
 Update available=Update verfügbar
 Update failed=Update fehlgeschlagen

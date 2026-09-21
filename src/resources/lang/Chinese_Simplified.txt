@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -104,16 +104,17 @@ Free=可用
 free of=可用，共
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=自由软件，遵循 GNU GPL v3 或更高版本 - 不提供任何担保。源代码与许可证：
 Free space=可用空间
-GAME=游戏
 Game=游戏
+GAME=游戏
 Game data=游戏数据
 Game failed to verify:=游戏验证失败：
 Game History=游戏历史
+Game ID=游戏 ID
 Game Manager=游戏管理器
 Game manager - Select game=游戏管理器 - 选择游戏
 GAME OVER=游戏结束
-games=游戏
 Games=游戏
+games=游戏
 GFX Filter:=图像滤镜：
 Graphics=图形
 Hardware=硬件
@@ -131,6 +132,7 @@ Keyboard=键盘
 Language:=语言：
 Last Played:=上次游玩：
 Later=稍后
+Launcher=启动器
 LIFE LOST=失去生命
 Lightgun Game:=光枪游戏：
 Link Block=链接块
@@ -181,6 +183,7 @@ Power Off=关机
 POWER SHOT=强力射击
 POWERING OFF... PLEASE WAIT=正在关机... 请稍候
 Processor=处理器
+Product code=产品代码
 PS1 Emulator:=PS1 模拟器：
 Published by:=发行商：
 Quick scroll to next letter=快速滚动到下一个字母
@@ -254,6 +257,7 @@ Temperature=温度
 Testing=测试
 The installer could not be started - it is in System/Updates=无法启动安装程序 - 它位于 System/Updates
 Theme Default=主题默认
+Title=标题
 Unknown Core (AutoDetect)=未知核心（自动检测）
 Update available=有可用更新
 Update failed=更新失败

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -104,16 +104,17 @@ Free=Liure
 free of=liures sus
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Logicial liure jos GNU GPL v3 o ulteriora - sens garantida. Fonts e licéncia:
 Free space=Espaci liure
-GAME=JÒC
 Game=Jòc
+GAME=JÒC
 Game data=Donadas dels jòcs
 Game failed to verify:=Verificacion del jòc fracassada :
 Game History=Istoric dels jòcs
+Game ID=ID del jòc
 Game Manager=Gestionari de jòcs
 Game manager - Select game=Gestionari de jòcs - Causir un jòc
 GAME OVER=PARTIDA ACABADA
-games=jòcs
 Games=Jòcs
+games=jòcs
 GFX Filter:=Filtre GFX :
 Graphics=Grafics
 Hardware=Material
@@ -131,6 +132,7 @@ Keyboard=Clavièr
 Language:=Lenga :
 Last Played:=Darrièra partida :
 Later=Mai tard
+Launcher=Lançador
 LIFE LOST=VIDA PERDUDA
 Lightgun Game:=Jòc Lightgun:
 Link Block=Link end Block
@@ -181,6 +183,7 @@ Power Off=Atudar
 POWER SHOT=TIR PODEROS
 POWERING OFF... PLEASE WAIT=EXTINCION... ESPERATZ
 Processor=Processor
+Product code=Còdi produch
 PS1 Emulator:=Emulator PS1:
 Published by:=Editat per :
 Quick scroll to next letter=Davalada rapida fins a la letra seguenta
@@ -254,6 +257,7 @@ Temperature=Temperatura
 Testing=Ensag
 The installer could not be started - it is in System/Updates=L'installador a pas pogut èsser aviat - es dins System/Updates
 Theme Default=Defaut del tèma
+Title=Títol
 Unknown Core (AutoDetect)=Còr desconegut (AutoDetect)
 Update available=Mesa a jorn disponibla
 Update failed=Fracàs de la mesa a jorn

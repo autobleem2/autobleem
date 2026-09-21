@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -104,16 +104,17 @@ Free=Liber
 free of=liberi din
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Software liber sub GNU GPL v3 sau ulterioară - fără garanție. Sursă și licență:
 Free space=Spatiu liber
-GAME=Joc
 Game=Joc
+GAME=Joc
 Game data=Datele jocurilor
 Game failed to verify:=Verificarea jocului a esuat:
 Game History=Istoric Jocuri
+Game ID=ID joc
 Game Manager=Manager jocuri
 Game manager - Select game=Manager jocuri - selecteaza joc
 GAME OVER=JOC TERMINAT
-games=Jocuri
 Games=Jocuri
+games=Jocuri
 GFX Filter:=Filtru GFX:
 Graphics=Grafica
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Tastatură
 Language:=Limba:
 Last Played:=Ultima data jucat:
 Later=Mai târziu
+Launcher=Lansator
 LIFE LOST=VIATA PIERDUTA
 Lightgun Game:=Joc Lightgun:
 Link Block=Bloc de Legatura
@@ -181,6 +183,7 @@ Power Off=Power Off
 POWER SHOT=FOC PUTERNIC
 POWERING OFF... PLEASE WAIT=Powering Off...Te rog asteapta
 Processor=Procesor
+Product code=Cod produs
 PS1 Emulator:=Emulator PS1:
 Published by:=Publicat de:
 Quick scroll to next letter=Navigare rapida la urmatoarea litera
@@ -254,6 +257,7 @@ Temperature=Temperatură
 Testing=Testare
 The installer could not be started - it is in System/Updates=Programul de instalare nu a putut fi pornit - se află în System/Updates
 Theme Default=Implicit al temei
+Title=Titlu
 Unknown Core (AutoDetect)=Nucleu Necunoscut (Autodetectare)
 Update available=Actualizare disponibilă
 Update failed=Actualizarea a eșuat

@@ -49,9 +49,10 @@ private:
     void pencilRight();
 
     std::unique_ptr<CardEdit> memcard1, memcard2;
-    const int mc1XStart = 150;
-    const int mc2XStart = 1010;
-    const int mcYStart = 150;
+    // the two grids (256x420) sit inside the panel's content, one at each side, the card names over
+    // them; the icons and the pencil are placed from the grids' origins
+    static const int GridW = 256, GridH = 420, Slot = 80, IconInset = 10, PencilInset = 70;
+    ableem::Rect gridRect(int card) const; // 1 = left, 2 = right
 
     int pencilColumn;
     int pencilRow;

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 272
+# Untranslated: 4 / Total: 276
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -104,16 +104,17 @@ Free=Vrij
 free of=vrij van
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Vrije software onder de GNU GPL v3 of nieuwer - geen garantie. Broncode en licentie:
 Free space=Vrije ruimte
-GAME=GAME
 Game=Game
+GAME=GAME
 Game data=Spelgegevens
 Game failed to verify:=Game verificatie mislukt:
 Game History=Game geschiedenis
+Game ID=Spel-id
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Selecteer game
 GAME OVER=GAME OVER
-games=games
 Games=Spellen
+games=games
 GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Toetsenbord
 Language:=Taal:
 Last Played:=Laatst gespeeld:
 Later=Later
+Launcher=Launcher
 LIFE LOST=LEVEN VERLOREN
 Lightgun Game:=Lightgun-spel:
 Link Block=Link Blok
@@ -181,6 +183,7 @@ Power Off=Uitschakelen
 POWER SHOT=KRACHTSCHOT
 POWERING OFF... PLEASE WAIT=UITSCHAKELEN... EVEN GEDULD
 Processor=Processor
+Product code=Productcode
 PS1 Emulator:=PS1-emulator:
 Published by:=Gepubliceerd door:
 Quick scroll to next letter=Snel scrollen naar volgende letter
@@ -254,6 +257,7 @@ Temperature=Temperatuur
 Testing=Testen
 The installer could not be started - it is in System/Updates=Het installatieprogramma kon niet worden gestart - het staat in System/Updates
 Theme Default=Standaard van thema
+Title=Titel
 Unknown Core (AutoDetect)=Onbekende core (AutoDetectie)
 Update available=Update beschikbaar
 Update failed=Update mislukt

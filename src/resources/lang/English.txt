@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 272
+# Untranslated: 0 / Total: 276
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -104,16 +104,17 @@ Free=Free
 free of=free of
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Free software under the GNU GPL v3 or later - no warranty. Source and licence:
 Free space=Free space
-Game=Game
 GAME=GAME
+Game=Game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
+Game ID=Game ID
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
-games=games
 Games=Games
+games=games
 GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
@@ -131,6 +132,7 @@ Keyboard=Keyboard
 Language:=Language:
 Last Played:=Last Played:
 Later=Later
+Launcher=Launcher
 LIFE LOST=LIFE LOST
 Lightgun Game:=Lightgun Game:
 Link Block=Link Block
@@ -181,6 +183,7 @@ Power Off=Power Off
 POWER SHOT=POWER SHOT
 POWERING OFF... PLEASE WAIT=POWERING OFF... PLEASE WAIT
 Processor=Processor
+Product code=Product code
 PS1 Emulator:=PS1 Emulator:
 Published by:=Published by:
 Quick scroll to next letter=Quick scroll to next letter
@@ -254,6 +257,7 @@ Temperature=Temperature
 Testing=Testing
 The installer could not be started - it is in System/Updates=The installer could not be started - it is in System/Updates
 Theme Default=Theme Default
+Title=Title
 Unknown Core (AutoDetect)=Unknown Core (AutoDetect)
 Update available=Update available
 Update failed=Update failed
