@@ -1822,6 +1822,57 @@ replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
 
+## UI styling standards (2026-09-21, the `feature/ui-fixes` pass)
+
+Every screen but the launcher's own carousel frame draws in **one look**, and new screens must too:
+
+- **`PanelStyle`** (`gui/panel_style.*`) is the look: the screen behind dimmed (`dim`, black 110), a sheet
+  (black 200) with a 1 px edge in the launcher theme's *secondary* colour, a **header** (`header`: the title in
+  `FONT_28_BOLD` at `RowInset` (24) + 18 from the top, a rule 8 px above the header's 74 px end), rows,
+  and a **footer** band (`FooterHeight` 54). Colours come from `launcher.colors` (`text`, `secondary`,
+  `hint`) - never hard-coded. `Gui::panelStyle()` resolves it for the current theme.
+- **Two panel shapes.** A *full* panel (the classic screens: Options, the editors, Game Manager, Memory
+  Cards, Hardware Information, the keyboard, pages): `Gui::renderTextBar()` + `renderHeader(title)` +
+  rows + `renderStatus(hints)`; its rect is the theme's `classic.menuPanel` down to the status line
+  (`Gui::classicPanel()`), rows live in `classicContent()`, the footer in `classicFooter()`. A *compact*
+  panel centred on the screen (the system menu, the set picker, the update prompt, Confirm): 800 wide,
+  as tall as its rows, `PanelStyle::Margin` (40) from the edges, the launcher's captured frame under it
+  (`renderer.captureNextFrame(); render(); background = renderer.lastCapture()`). A dialog with one
+  question is compact, never full.
+- **Rows.** Text at `RowInset + 8` (32 px) from the panel's edge - the header's text x. The classic
+  screens' rows use the theme's classic font at its own line height, one under the other, **as many as
+  fit** (`Gui::classicRowsThatFit(font)`), scrolling a row at a time with **markers**
+  (`Gui::renderScrollMarkers` - triangles at the content's right edge). The selected row is
+  `renderSelectionBox`: a band in the text colour at alpha 38 with a 5 px bar at the panel's left edge
+  (`PanelStyle::selection`); a heading between rows is `renderLabelBox` (a faint band). Compact panels
+  use `PanelStyle::RowHeight` (60: `FONT_22_MED` title + `FONT_15_BOLD` description) or 44 for a
+  single-line row.
+- **Values right-aligned.** An option row is its label at the left and its value at the row's right
+  edge: a boolean's switch (`renderTextLineOptions`, the theme's on/off image with its transparent margin
+  measured so the art meets the edge) or text (`renderRowValue`). A screen with a pane on the right
+  passes the pane's `rowsRight` as the edge.
+- **The detail pane** (`gui/game_detail_pane.*`, 360 wide) is the right side of any screen about one
+  game: the cover on a plate, a screenshot when there is one, then facts as `FONT_15_BOLD` label over
+  `FONT_20_BOLD` value, a rule to its left.
+- **Footers are structured** and drawn by `PanelStyle::footer` from the `"|@X| Label  |@O| Label"`
+  protocol (`parseHints`): the hints **sorted** Cross, Circle, Triangle, Square, Start, Select, L1/R1,
+  L2/R2, keyboard keys; icons 30 px (the launcher's hint images for X/O/T, the theme's buttons for the
+  rest); labels in the largest launcher font that fits; a counter ("Game 3/21") at the right edge in the
+  secondary colour. **Labels**: Circle is "Back" wherever leaving loses nothing, "Cancel" only where
+  Cross commits; Cross names its action; sentence case ("Delete game"). **Paging is L2/R2 everywhere**,
+  L1/R1 go to the first/last row (or switch tabs where there are tabs).
+- **Fonts.** Titles/labels: the launcher pair (`themeFonts[FONT_28_BOLD/22_MED/20_BOLD/15_BOLD]`, Open
+  Sans); classic rows: the theme's classic font (`assets().themeFont`, Saira / Selawik); never a
+  hard-coded ttf path - the shipped ones are `Env::getPathToFontsDir()`'s.
+- **Waiting.** A long job on the main thread runs inside `Gui::beginBusy(message, redraw)` /
+  `endBusy()` with `Gui::tickBusy()` in its loops (the spinner over the dimmed screen); a blocking call
+  with no loop goes through `Gui::drawText(message)` (background, logo, spinner). Background work
+  reports in the launcher's `NotificationBubble` (top-right, slides in and out), never in a status line.
+- **Every string on screen is `_()`** and lands in all 16 language files in the same commit
+  (`tools/lang_tools.py extract`/`update`, then translate); no `=` in a key.
+- **Testing a screen** is `tools/ab_drive.py` (`start --show`, `run "menu 5; wait_screen GuiOptions; shot
+  a.png"`, `sheet`, `stop`); every screen's class name is what `wait_screen` takes.
+
 ## Conventions and gotchas
 
 - **A game launch gives the display up.** `AutoBleem::launchGame()` closes the audio, flushes the pads and,
