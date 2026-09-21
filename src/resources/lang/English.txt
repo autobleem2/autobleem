@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 279
+# Untranslated: 0 / Total: 284
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -76,6 +76,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Downlo
 Downloading the update=Downloading the update
 Edit game parameters=Edit game parameters
 Edit Memory Card information=Edit Memory Card information
+Emulation=Emulation
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Emulator config MENU
@@ -113,8 +114,8 @@ Game ID=Game ID
 Game Manager=Game Manager
 Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
-games=games
 Games=Games
+games=games
 GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
@@ -124,6 +125,7 @@ HIGH SCORE=HIGH SCORE
 Hostname=Hostname
 In Game=In Game
 In Retroarch Game=In Retroarch Game
+Interface=Interface
 INTERNAL=INTERNAL
 Internal=Internal
 Internal Games=Internal Games
@@ -133,6 +135,7 @@ Language:=Language:
 Last Played:=Last Played:
 Later=Later
 Launcher=Launcher
+Library=Library
 LIFE LOST=LIFE LOST
 Lightgun Game:=Lightgun Game:
 Lightgun Games=Lightgun Games
@@ -244,6 +247,7 @@ Smoothing:=Smoothing:
 SoC=SoC
 Software Update=Software Update
 Sony hacks:=Sony hacks:
+Sound=Sound
 Space=Space
 SpeedHack:=SpeedHack:
 SPREAD SHOT=SPREAD SHOT
@@ -266,6 +270,7 @@ Update available=Update available
 Update failed=Update failed
 Update now=Update now
 Update RA Config:=Update RA Config:
+Updates=Updates
 Updates are off - turn them on in Options=Updates are off - turn them on in Options
 Updates:=Updates:
 Updating regional.db...=Updating regional.db...

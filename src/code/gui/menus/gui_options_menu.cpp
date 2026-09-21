@@ -86,37 +86,49 @@ void GuiOptions::fill() {
     string saveCurrentLang = app.lang().currentLanguage();
     app.lang().load(Env::getPathToLangDir(), "English");
 
+    // the rows in groups, each under a heading row (CFG_HEADING - drawn as a band, skipped by the cursor)
+    auto heading = [&](const string &name) { lines.emplace_back(CFG_HEADING, name); };
+    heading(_("Interface"));
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
+    lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
+    lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
+    lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
+    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
+                       getTimeoutValues());
+
+    heading(_("Sound"));
+    lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
+    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background Music:"), "nomusic", true,
+                       vector<string>({"true", "false"}));
+
+    heading(_("Emulation"));
+    // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
+    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-ab", "pcsx-abnxt"}));
+    lines.emplace_back(CFG_WIDESCREEN, _("Widescreen:"), "aspect", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_GFX_FILTER, _("GFX Filter:"), "mip", true, vector<string>({"true", "false"}));
+    lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
+                       vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
+
+    heading(_("Library"));
 #ifdef AB_HAS_INTERNAL_GAMES
     // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
     // false there)
     lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true,
                        vector<string>({"false", "true"}));
 #endif
-    lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
-    lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
-    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background Music:"), "nomusic", true,
-                       vector<string>({"true", "false"}));
-    lines.emplace_back(CFG_WIDESCREEN, _("Widescreen:"), "aspect", true, vector<string>({"false", "true"}));
-    // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
-    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-ab", "pcsx-abnxt"}));
-    lines.emplace_back(CFG_GFX_FILTER, _("GFX Filter:"), "mip", true, vector<string>({"true", "false"}));
-    lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
-                       vector<string>({"false", "true"}));
     // only where the platform can fetch at all (download_command in its ini) - the console cannot
     if (!Env::downloadCommand().empty())
         lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
+    if (lines.back().id == CFG_HEADING)
+        lines.pop_back(); // a console: nothing under it
 #if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN))
     // the online update's channel (UpdateService): off, the stable releases, or the latest pre-release.
     // The real targets only (the owner's call, 2026-09-20) - a dev host tests the flow with the default
+    heading(_("Updates"));
     lines.emplace_back(CFG_UPDATES, _("Updates:"), "updates", false, vector<string>({"stable", "latest", "off"}));
 #endif
-    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
-                       getTimeoutValues());
-    lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
-    lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
 
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
 }
@@ -158,6 +170,12 @@ void GuiOptions::render() {
         if (i < 0)
             continue;
         const int y = firstLineY + fontHeight * row;
+        if (lines[i].id == CFG_HEADING) {
+            gui->text().renderLabelBox(0, y);
+            gui->text().renderTextLine(app.lang().translate(lines[i].descriptionToTranslate), -y, 0, XALIGN_LEFT, 0,
+                                       font);
+            continue;
+        }
         if (i == selected)
             gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
         renderOptionRow(lines[i], y);
@@ -175,6 +193,30 @@ void GuiOptions::init() {
     GuiOptionsMenuBase::init(); // call the base class init()
     lines.clear();
     fill();
+    selected = 0;
+    settleOnOption(1);
+}
+
+//*******************************
+// GuiOptions::settleOnOption / doKeyDown / doKeyUp
+//*******************************
+// the cursor never rests on a heading: after a move it goes on in the same direction, round the ends
+void GuiOptions::settleOnOption(int direction) {
+    const int count = getVerticalSize();
+    for (int i = 0; i < count && lines[selected].id == CFG_HEADING; i++)
+        selected = (selected + direction + count) % count;
+    if (selected < firstVisibleIndex || selected > lastVisibleIndex)
+        computePagePosition();
+}
+
+void GuiOptions::doKeyDown() {
+    GuiOptionsMenuBase::doKeyDown();
+    settleOnOption(1);
+}
+
+void GuiOptions::doKeyUp() {
+    GuiOptionsMenuBase::doKeyUp();
+    settleOnOption(-1);
 }
 
 //*******************************

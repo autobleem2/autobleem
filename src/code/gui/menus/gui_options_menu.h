@@ -28,6 +28,7 @@ enum {
 };
 #define CFG_LAST CFG_FONT
 #define CFG_SIZE (CFG_LAST + 1)
+#define CFG_HEADING (-1) // a group heading row: not an option, never selected
 
 //********************
 // GuiOptions
@@ -37,9 +38,17 @@ public:
     explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
-    // the rows packed at the font's height, scrolling when more than fit (the base's paging)
+    // the rows packed at the font's height, scrolling when more than fit (the base's paging), in groups
+    // under heading rows the cursor skips
     void render() override;
+    bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].id == CFG_HEADING; }
+    void doKeyDown() override;
+    void doKeyUp() override;
 
+private:
+    void settleOnOption(int direction);
+
+public:
     std::vector<std::string> getThemes();
     std::vector<std::string> getFonts(); // "--" (the theme's) and every .ttf/.otf in Fonts::userFontDirs
     std::vector<std::string> getJewels();
