@@ -34,11 +34,13 @@ void GuiConfirm::render() {
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    int y = style.header(*gui, panel, _("Please confirm")) + 12;
+    int y = style.header(*gui, panel, title.empty() ? _("Please confirm") : title) + 12;
     gui->text().renderWrappedText(font, label, panel.x + PanelStyle::RowInset + 8, y, textWidth, style.text);
     style.footer(*gui,
                  ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
-                 {{{"X"}, _("Confirm")}, {{"O"}, _("Cancel")}}, "", false);
+                 {{{"X"}, confirmLabel.empty() ? _("Confirm") : confirmLabel},
+                  {{"O"}, cancelLabel.empty() ? _("Cancel") : cancelLabel}},
+                 "", false);
 
     gui->text().setShadow(classicShadow);
     renderer.present();

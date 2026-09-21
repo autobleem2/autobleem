@@ -103,6 +103,8 @@ public:
     // hand (the theme loader, the carousel's texture loads) and is a no-op when nothing is busy.
     void beginBusy(const std::string &message, const std::function<void()> &redraw);
     void busyTick();
+    // a bar under the spinner's message, done/total (total 0 = no bar); drawn by the next busyTick
+    void setBusyProgress(int done, int total);
     void endBusy();
     static void tickBusy();
     // the classic panel: the theme's menu panel rect, its bottom at the status line's foot - or, while a
@@ -137,6 +139,7 @@ private:
     bool compact_ = false;
     ableem::Rect compactPanel_;
     bool busy_ = false;
+    int busyDone_ = 0, busyTotal_ = 0;
     std::string busyMessage_;
     ableem::Texture busyBackdrop_;
     unsigned int busyStarted_ = 0, busyLastFrame_ = 0;

@@ -21,6 +21,8 @@ public:
     virtual void status(const std::string &text) = 0; // a line on the screen
     virtual bool confirm(const std::string &question) = 0;
     virtual void wait(int ms) = 0; // a pause the user is meant to read the status in
+    // how far the action is, done of total steps (the backup's partitions count one each); total 0 = no bar
+    virtual void progress(int /*done*/, int /*total*/) {}
 };
 
 //******************

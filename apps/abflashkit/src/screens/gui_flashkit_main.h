@@ -25,10 +25,12 @@ public:
     void status(const std::string &text) override;
     bool confirm(const std::string &question) override;
     void wait(int ms) override;
+    void progress(int done, int total) override;
 
 private:
     GuiActionMenu menu;
-    bool busy = false; // the spinner is up (an action is running)
+    bool busy = false;                       // the spinner is up (an action is running)
+    int progressDone = 0, progressTotal = 0; // the bar under the spinner, kept across the status lines
     void run(FlashKitActions::Outcome (FlashKitActions::*action)());
     std::string lastStatus;
 };

@@ -46,6 +46,9 @@ void GuiFlashKitMain::status(const string &text) {
         gui->endBusy();
     gui->beginBusy(text, [this]() { render(); });
     busy = true;
+    if (progressTotal > 0)
+        gui->setBusyProgress(progressDone, progressTotal); // the bar stays through the messages
+    gui->busyTick();
 }
 
 bool GuiFlashKitMain::confirm(const string &question) {
@@ -59,6 +62,15 @@ bool GuiFlashKitMain::confirm(const string &question) {
     if (!lastStatus.empty())
         status(lastStatus); // the spinner comes back with the step in progress
     return dialog.result;
+}
+
+void GuiFlashKitMain::progress(int done, int total) {
+    progressDone = done;
+    progressTotal = total;
+    if (busy) {
+        gui->setBusyProgress(done, total);
+        gui->busyTick();
+    }
 }
 
 void GuiFlashKitMain::wait(int ms) {
@@ -78,6 +90,7 @@ void GuiFlashKitMain::run(FlashKitActions::Outcome (FlashKitActions::*action)())
     FlashKitActions actions(tool.flasher(), tool.led(), *this, tool.backupPath(), tool.kernelDir(), tool.scratchDir(),
                             tool.validMarker());
     lastStatus.clear();
+    progressDone = progressTotal = 0;
     FlashKitActions::Outcome outcome = (actions.*action)();
     PLOG_INFO << "Action " << FlashKitActions::name(outcome);
     // the last status stays readable for a moment before the menu is back

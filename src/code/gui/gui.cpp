@@ -204,6 +204,7 @@ void Gui::releaseDisplay() {
 //*******************************
 void Gui::beginBusy(const string &message, const std::function<void()> &redraw) {
     busyMessage_ = message;
+    busyDone_ = busyTotal_ = 0;
     renderer().captureNextFrame();
     redraw(); // presents, and the capture is that frame
     busyBackdrop_ = renderer().lastCapture();
@@ -227,6 +228,12 @@ void Gui::endBusy() {
     busyBackdrop_ = Texture();
 }
 
+void Gui::setBusyProgress(int done, int total) {
+    busyDone_ = done;
+    busyTotal_ = total;
+    busyLastFrame_ = 0; // the next tick draws it
+}
+
 void Gui::tickBusy() {
     getInstance()->busyTick();
 }
@@ -238,8 +245,23 @@ void Gui::drawBusyFrame() {
     renderer().clear();
     if (busyBackdrop_.valid())
         renderer().copy(busyBackdrop_, nullptr, nullptr);
-    panelStyle().dim(renderer());
+    PanelStyle style = panelStyle();
+    style.dim(renderer());
     drawSpinner(ScreenWidth / 2, ScreenHeight / 2 - 20, busyMessage_);
+    if (busyTotal_ > 0) {
+        // the bar under the message, as the notification bubble draws its own
+        const int width = 400, height = 6;
+        // under the message, which drawSpinner puts 24 px below the ring (radius 30) around ScreenHeight/2 - 20
+        const int messageY = ScreenHeight / 2 - 20 + 30 + 24;
+        ableem::Rect track(ScreenWidth / 2 - width / 2, messageY + assets_.themeFonts[FONT_22_MED].lineHeight() + 12,
+                           width, height);
+        renderer().setBlendMode(ableem::BlendMode::Blend);
+        renderer().setDrawColor(Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
+        renderer().fillRect(track);
+        renderer().setDrawColor(style.text);
+        renderer().fillRect(
+            ableem::Rect(track.x, track.y, width * std::min(busyDone_, busyTotal_) / busyTotal_, height));
+    }
     renderer().present();
 }
 

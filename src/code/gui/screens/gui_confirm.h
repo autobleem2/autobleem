@@ -15,6 +15,8 @@ public:
     void loop() override;
 
     std::string label = "";
+    std::string title;                     // the header; empty = "Please confirm"
+    std::string confirmLabel, cancelLabel; // the footer's hints; empty = "Confirm" / "Cancel"
     bool result = false;
 
     using GuiScreen::GuiScreen;

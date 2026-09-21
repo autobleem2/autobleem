@@ -59,10 +59,18 @@ FlashKitActions::Outcome FlashKitActions::flash() {
 
     led_.setMode(LedMode::BlinkGreen);
     ui_.status(_("Creating backup...."));
+    // the steps: the backup's partitions one each, then validate, recovery on, the kernel, the payload,
+    // recovery off
+    const vector<LbootBackup::Partition> partitions = LbootBackup::partitionsForFlash();
+    const int total = static_cast<int>(partitions.size()) + 5;
+    int done = 0;
+    ui_.progress(done, total);
     // an existing backup is kept: it is the one the recovery would restore, made before any flash
     if (!backupExists()) {
-        if (!flasher_.createBackup(LbootBackup::partitionsForFlash(), backupPath_,
-                                   [this](const string &text) { ui_.status(text); })) {
+        if (!flasher_.createBackup(partitions, backupPath_, [&](const string &text) {
+                ui_.status(text);
+                ui_.progress(++done, total);
+            })) {
             ui_.status(_("Invalid backup or invalid kernel image"));
             ui_.wait(3000);
             led_.setMode(LedMode::Green);
@@ -71,20 +79,27 @@ FlashKitActions::Outcome FlashKitActions::flash() {
     }
     flasher_.sync();
 
+    done = static_cast<int>(partitions.size());
     ui_.status(_("Validating backup...   Please wait..."));
+    ui_.progress(done, total);
     bool ok = flasher_.validateBackup(backupPath_) && flasher_.validateKernel(kernelDir_);
     if (ok) {
         led_.setMode(LedMode::Red);
+        ui_.progress(++done, total);
         ui_.wait(2000);
         ui_.status(_("Setting recovery mode: on"));
         flasher_.setRecoveryMode(true, kernelDir_);
+        ui_.progress(++done, total);
         ui_.status(_("Flashing KERNEL IMAGE"));
         flasher_.flashKernel(kernelDir_);
+        ui_.progress(++done, total);
         ui_.status(_("Updating payload"));
         flasher_.installPayload(kernelDir_);
+        ui_.progress(++done, total);
         led_.setMode(LedMode::Green);
         ui_.status(_("Setting recovery mode: off"));
         flasher_.setRecoveryMode(false, kernelDir_);
+        ui_.progress(++done, total);
         ui_.wait(2000);
         ui_.status(_("All done - when the screen goes black replace power cord"));
     } else {
@@ -108,8 +123,14 @@ FlashKitActions::Outcome FlashKitActions::fullBackup() {
     ui_.status(_("Creating backup...."));
     if (backupExists())
         DirEntry::removeFile(backupPath_);
-    bool ok = flasher_.createBackup(LbootBackup::partitionsForFullBackup(), backupPath_,
-                                    [this](const string &text) { ui_.status(text); });
+    const vector<LbootBackup::Partition> partitions = LbootBackup::partitionsForFullBackup();
+    const int total = static_cast<int>(partitions.size());
+    int done = 0;
+    ui_.progress(done, total);
+    bool ok = flasher_.createBackup(partitions, backupPath_, [&](const string &text) {
+        ui_.status(text);
+        ui_.progress(++done, total);
+    });
     flasher_.sync();
     led_.setMode(LedMode::Green);
     ui_.status(ok ? _("Backup complete") : _("Backup failed"));
