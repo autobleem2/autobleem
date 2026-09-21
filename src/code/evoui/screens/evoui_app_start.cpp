@@ -20,7 +20,7 @@ std::string GuiAppStart::getStringLine(const std::string &str, int lineNo) {
 }
 
 void GuiAppStart::init() {
-    font = Fonts::openNewSharedCachedFont(Environment::getWorkingPath() + sep + "november.ttf", 20, renderer);
+    font = Fonts::openNewSharedCachedFont(Env::getPathToFontsDir() + sep + "OpenSans-Medium.ttf", 20, renderer);
     // Try to load app.ini
     appName = game->title;
 
