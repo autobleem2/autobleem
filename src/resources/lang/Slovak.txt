@@ -233,6 +233,7 @@ Showing: Retroarch=Zobrazujem: Retroarch
 Showing: USB Games Directory:=Zobrazujem: Adresár hier USB:
 Skip this version=
 Slot=Pozícia
+Smoothing:=
 SoC=
 Software Update=
 Space=Medzera

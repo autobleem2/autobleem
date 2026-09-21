@@ -233,6 +233,7 @@ Showing: Retroarch=Gösteriliyor: Retroarch
 Showing: USB Games Directory:=Gösteriliyor: USB Oyunlar Dizini:
 Skip this version=
 Slot=Slot
+Smoothing:=
 SoC=
 Software Update=
 Space=Boşluk

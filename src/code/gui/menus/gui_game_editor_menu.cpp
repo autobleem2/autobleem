@@ -25,7 +25,22 @@ using namespace std;
 #define OPT_PLUGIN 15
 #define OPT_INTERPOLATION 16
 #define OPT_BOOTLOGO 17
+#define OPT_SMOOTHING 18 // pcsx-abnxt only
 #define OPT_LAST 17
+#define OPT_LAST_NXT 18
+
+//*******************************
+// GuiEditor::nxtEmulator / lastOption
+//*******************************
+bool GuiEditor::nxtEmulator() const {
+    auto &values = app.config().inifile.values;
+    auto it = values.find("emulator");
+    return it != values.end() && it->second == "pcsx-abnxt";
+}
+
+int GuiEditor::lastOption() const {
+    return nxtEmulator() ? OPT_LAST_NXT : OPT_LAST;
+}
 
 //*******************************
 // GuiEditor::processOptionChange
@@ -89,6 +104,10 @@ void GuiEditor::processOptionChange(bool direction) {
 
     case OPT_BOOTLOGO:
         svc.setBootLogo(settings, direction);
+        break;
+
+    case OPT_SMOOTHING:
+        svc.setSmoothing(settings, pcsx.smoothing + step);
         break;
     }
 }
@@ -209,6 +228,12 @@ void GuiEditor::render() {
                                           (pcsx.bootLogo != 0 ? string("|@Check|") : string("|@Uncheck|")),
                                       OPT_BOOTLOGO, yoffset, XALIGN_LEFT, 300);
 
+    if (nxtEmulator()) {
+        // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
+        gui->text().renderTextLineOptions(_("Smoothing:") + " " + GameSettingsService::SmoothingNames[pcsx.smoothing],
+                                          OPT_SMOOTHING, yoffset, XALIGN_LEFT, 300);
+    }
+
     gui->text().renderSelectionBox(selOption, yoffset, 300);
 
     string guiMenu = "|@T| " + _("Rename");
@@ -260,8 +285,8 @@ void GuiEditor::loop() {
                     do {
                         app.audio().cursor.play();
                         selOption++;
-                        if (selOption > OPT_LAST) {
-                            selOption = OPT_LAST;
+                        if (selOption > lastOption()) {
+                            selOption = lastOption();
                         }
                         render();
                     } while (fastForwardUntilAnotherEvent(120));

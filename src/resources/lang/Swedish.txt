@@ -233,6 +233,7 @@ Showing: Retroarch=Visar: RetroArch
 Showing: USB Games Directory:=Visar: USB-spel i mapp:
 Skip this version=
 Slot=Plats
+Smoothing:=
 SoC=
 Software Update=
 Space=Mellanslag

@@ -233,6 +233,7 @@ Showing: Retroarch=Showing: Retroarch
 Showing: USB Games Directory:=Showing: USB Games Directory:
 Skip this version=Skip this version
 Slot=Slot
+Smoothing:=Smoothing:
 SoC=SoC
 Software Update=Software Update
 Space=Space

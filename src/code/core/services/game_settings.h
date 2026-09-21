@@ -25,7 +25,8 @@ struct PcsxSettings {
     int scanlines = 0;
     int scanlineLevel = 0;
     int interpolation = 0;
-    int bootLogo = 1; // pcsx.cfg SlowBoot: the BIOS boot logo shown before the game; no line = shown
+    int bootLogo = 1;  // pcsx.cfg SlowBoot: the BIOS boot logo shown before the game; no line = shown
+    int smoothing = 0; // pcsx.cfg soft_filter, pcsx-abnxt's Smoothing: 0 none, 1 scale2x, 2 eagle2x, 3 hq2x, 4 hq3x
     std::string gpu;
 };
 
@@ -97,10 +98,14 @@ public:
     // SlowBoot: off skips the BIOS shell (a homebrew's custom logo can crash pcsx-ab's boot); RetroArch
     // gets it as pcsx_rearmed_show_bios_bootlogo (LaunchService)
     void setBootLogo(GameSettings &s, bool on);
+    // soft_filter: pcsx-abnxt's software scaler on the PSX frame (its menu's "Smoothing"); the classic
+    // pcsx-ab ignores the key, so the editor shows the row only with pcsx-abnxt selected
+    void setSmoothing(GameSettings &s, int mode);                  // 0..4, see SmoothingNames
     void setGpuPlugin(GameSettings &s, const std::string &plugin); // USB only: "builtin_gpu" or "gpu_peops.so"
 
     static const char *const BuiltinGpu;
     static const char *const PeopsGpu;
+    static const char *const SmoothingNames[5]; // "None", "Scale2x", "Eagle2x", "HQ2x", "HQ3x"
 
 private:
     // where the pcsx.cfg is: the game's folder, or the !SaveStates folder for an internal game

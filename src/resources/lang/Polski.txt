@@ -233,6 +233,7 @@ Showing: Retroarch=Wyświetla: Retroarch
 Showing: USB Games Directory:=Wyświetla: Folder Gier z USB:
 Skip this version=
 Slot=Slot
+Smoothing:=Wygładzanie:
 SoC=
 Software Update=
 Space=Spacja

@@ -1042,7 +1042,12 @@ does not load in the other (save-state versions differ) - the game starts fresh.
 pcsx-abnxt into `emunxt/` from `AB_PCSXNXT_DIR` / `../pcsx-abnxt` next to pcsx-ab; `make_rpi_package.sh`,
 `install.sh`, the PC installer's update list and `install_autobleem.py` know the folder. The checked-in
 `emunxt/` binaries are `r26-24-g0f4727f1` (console, Pi armhf, Pi arm64); on a PC a game launch is a splash
-either way, so the row is only carried through there.
+either way, so the row is only carried through there. **A game editor row that exists for nxt alone**
+(2026-09-21): "Smoothing" - pcsx-abnxt's software scaler on the PSX frame (None / Scale2x / Eagle2x / HQ2x /
+HQ3x, the emulator's own menu row of the same name; `pcsx.cfg` `soft_filter` 0-4, hex like the levels;
+`GameSettingsService::setSmoothing`, `PcsxSettings::smoothing`, `SmoothingNames`) - rendered and reachable
+(`GuiEditor::lastOption()`) only while `config.ini`'s `emulator` is `pcsx-abnxt`, because the classic
+pcsx-ab ignores the key; the language files carry `Smoothing:` (English and Polish translated).
 
 **The emulator speaks the launcher's language** (2026-09-20, the owner's rule: every language the launcher
 has, Chinese included - not Sony's 13 PNG sets): pcsx-abnxt's own screens (its disc picker and the two

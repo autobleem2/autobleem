@@ -29,6 +29,8 @@ public:
     bool changes = false; // the game was renamed
 
     void processOptionChange(bool direction);
+    bool nxtEmulator() const; // Options -> PS1 Emulator is pcsx-abnxt: its own rows (Smoothing) are shown
+    int lastOption() const;   // the last row the cursor reaches
 
     using GuiScreen::GuiScreen;
     ableem::Texture cover;

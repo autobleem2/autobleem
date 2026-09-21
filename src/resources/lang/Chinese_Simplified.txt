@@ -233,6 +233,7 @@ Showing: Retroarch=显示：RetroArch
 Showing: USB Games Directory:=显示：USB 游戏目录：
 Skip this version=
 Slot=槽位
+Smoothing:=
 SoC=
 Software Update=
 Space=空格

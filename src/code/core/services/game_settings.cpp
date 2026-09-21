@@ -14,6 +14,7 @@ using namespace std;
 
 const char *const GameSettingsService::BuiltinGpu = "builtin_gpu";
 const char *const GameSettingsService::PeopsGpu = "gpu_peops.so";
+const char *const GameSettingsService::SmoothingNames[5] = {"None", "Scale2x", "Eagle2x", "HQ2x", "HQ3x"};
 
 namespace {
 
@@ -97,6 +98,7 @@ void GameSettingsService::refreshPcsx(GameSettings &s) const {
     p.interpolation = strtol(processor.getValue(path, "spu_config.iUseInterpolation").c_str(), nullptr, 16);
     string slowBoot = processor.getValue(path, "SlowBoot");
     p.bootLogo = slowBoot.empty() ? 1 : atoi(slowBoot.c_str()); // pcsx-ab's own default is 1
+    p.smoothing = clampTo(strtol(processor.getValue(path, "soft_filter").c_str(), nullptr, 16), 0, 4); // no line = none
 }
 
 //*******************************
@@ -255,6 +257,13 @@ void GameSettingsService::setInterpolation(GameSettings &s, int mode) {
 //*******************************
 void GameSettingsService::setBootLogo(GameSettings &s, bool on) {
     replaceCfgLine(s, "SlowBoot", to_string(on ? 1 : 0));
+}
+
+//*******************************
+// GameSettingsService::setSmoothing
+//*******************************
+void GameSettingsService::setSmoothing(GameSettings &s, int mode) {
+    replaceCfgLine(s, "soft_filter", toHex(clampTo(mode, 0, 4)));
 }
 
 //*******************************
