@@ -51,7 +51,7 @@ public:
     std::string getTitle() override { return _("Configuration"); }
     std::string getStatusLine() override;
 
-    std::string getLineText(const OptionsInfo &info) override;
+    std::string valueText(const OptionsInfo &info, const std::string &value) override;
     std::string doPrevNextOption(OptionsInfo &info, bool next) override;
     std::string doPrevNextOption(bool next) override { return GuiOptionsMenuBase::doPrevNextOption(next); }
     std::string doRandomOption() override; // only a few lines will use this.  most will just return.

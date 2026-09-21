@@ -158,9 +158,9 @@ void GuiOptions::render() {
         if (i < 0)
             continue;
         const int y = firstLineY + fontHeight * row;
-        gui->text().renderTextLineOptions(getLineText(lines[i]), -y, 0, XALIGN_LEFT);
         if (i == selected)
             gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
+        renderOptionRow(lines[i], y);
     }
     gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);
 
@@ -178,20 +178,12 @@ void GuiOptions::init() {
 }
 
 //*******************************
-// void GuiOptions::getLineText
+// GuiOptions::valueText
 //*******************************
-std::string GuiOptions::getLineText(const OptionsInfo &info) {
-    std::string temp = app.lang().translate(info.descriptionToTranslate) + " ";
-    auto value = app.config().inifile.values[info.iniKey];
-    if (info.keyIsBoolean) {
-        temp += getBooleanSymbolText(info, value);
-    } else if (info.id == CFG_FONT && (value.empty() || value == "--")) {
-        temp += _("Theme Default");
-    } else {
-        temp += value; // append the current text value in the options list
-    }
-
-    return temp;
+std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
+    if (info.id == CFG_FONT && (value.empty() || value == "--"))
+        return _("Theme Default");
+    return value;
 }
 
 //*******************************

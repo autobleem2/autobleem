@@ -43,11 +43,35 @@ std::string GuiOptionsMenuBase::getLineText(const OptionsInfo &info) {
 }
 
 //*******************************
+// void GuiOptionsMenuBase::renderOptionRow()
+//*******************************
+// the label at the row's left, the value at its right edge: a boolean's check switch (where
+// renderTextLineOptions puts it), any other value as text right-aligned to the same edge
+void GuiOptionsMenuBase::renderOptionRow(const OptionsInfo &info, int y) {
+    const string label = app.lang().translate(info.descriptionToTranslate);
+    const string value = app.config().inifile.values[info.iniKey];
+    if (info.keyIsBoolean) {
+        gui->text().renderTextLineOptions(label + " " + getBooleanSymbolText(info, value), -y, 0, XALIGN_LEFT);
+        return;
+    }
+    gui->text().renderTextLine(label, -y, 0, XALIGN_LEFT, 0, font);
+    const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
+    const int right = panel.x + panel.w - PanelStyle::RowInset - 8;
+    gui->text().renderText(font, valueText(info, value), SCREEN_WIDTH - right, y, XALIGN_RIGHT);
+}
+
+//*******************************
+// void GuiOptionsMenuBase::valueText()
+//*******************************
+string GuiOptionsMenuBase::valueText(const OptionsInfo &, const string &value) {
+    return value;
+}
+
+//*******************************
 // void GuiOptionsMenuBase::renderLineIndexOnRow()
 //*******************************
 void GuiOptionsMenuBase::renderLineIndexOnRow(int index, int row) {
-    string line = getLineText(lines[index]);
-    int height = gui->text().renderTextLineOptions(line, row, yoffset, XALIGN_LEFT);
+    renderOptionRow(lines[index], yoffset + font.lineHeight() * row);
 }
 
 //*******************************

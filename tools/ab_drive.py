@@ -33,7 +33,10 @@ import time
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
-PID_FILE = os.path.join(REPO, 'build_win', 'ab_drive.pid')
+
+
+def pid_file(port):
+    return os.path.join(REPO, 'build_win', f'ab_drive-{port}.pid')
 
 
 class Driver:
@@ -107,7 +110,7 @@ def start(usb, port, show):
     env['PATH'] = r'C:\msys64\ucrt64\bin;' + env.get('PATH', '')
     proc = subprocess.Popen([os.path.join(app_dir, 'autobleem-gui.exe'), usb], cwd=app_dir, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    with open(PID_FILE, 'w') as f:
+    with open(pid_file(port), 'w') as f:
         f.write(str(proc.pid))
     # the driver comes up after the library is open (a few seconds on a first scan)
     for _ in range(300):
@@ -135,10 +138,10 @@ def stop(port):
         time.sleep(0.5)
     except OSError:
         pass
-    if os.path.exists(PID_FILE):
-        pid = int(open(PID_FILE).read().strip())
+    if os.path.exists(pid_file(port)):
+        pid = int(open(pid_file(port)).read().strip())
         subprocess.call(['taskkill', '/PID', str(pid), '/F'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        os.remove(PID_FILE)
+        os.remove(pid_file(port))
     print('stopped')
 
 
