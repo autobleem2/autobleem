@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 0 / Total: 279
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -124,8 +124,8 @@ HIGH SCORE=HIGH SCORE
 Hostname=Hostname
 In Game=In Game
 In Retroarch Game=In Retroarch Game
-Internal=Internal
 INTERNAL=INTERNAL
+Internal=Internal
 Internal Games=Internal Games
 Kernel=Kernel
 Keyboard=Keyboard
@@ -249,6 +249,7 @@ SpeedHack:=SpeedHack:
 SPREAD SHOT=SPREAD SHOT
 Spu Interpolation:=Spu Interpolation:
 Starting the installer...=Starting the installer...
+Startup=Startup
 Storage=Storage
 Support via Discord:=Support via Discord:
 Surprise=Surprise

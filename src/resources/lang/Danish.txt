@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -249,6 +249,7 @@ SpeedHack:=SpeedHack:
 SPREAD SHOT=SPREDNINGSSKUD
 Spu Interpolation:=SPU-interpolation:
 Starting the installer...=Starter installationsprogrammet...
+Startup=
 Storage=Lager
 Support via Discord:=Support Discord:
 Surprise=Overraskelse

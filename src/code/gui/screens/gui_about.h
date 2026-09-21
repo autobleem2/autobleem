@@ -25,8 +25,12 @@ public:
     ableem::Texture logo;
     ableem::Font font;
     using GuiScreen::GuiScreen;
-    // the lines under the logo; AutoBleem's credits when the caller leaves it empty (a tool sets its own)
+    // the lines under the logo; AutoBleem's credits when the caller leaves it empty (a tool sets its own).
+    // A line starting with HeadingMark is a section heading; the lines after it are the section's
     std::vector<std::string> credits;
+    std::vector<std::string> foot; // the lines above the footer (support, copyright, licence)
+    static const std::string HeadingMark;
+    static std::vector<std::string> autobleemFoot();
     static std::vector<std::string> autobleemCredits();
 
 private:

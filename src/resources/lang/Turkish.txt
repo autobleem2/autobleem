@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -249,6 +249,7 @@ SpeedHack:=Hız Hilesi:
 SPREAD SHOT=YAYILI ATEŞ
 Spu Interpolation:=SPU İnterpolasyonu:
 Starting the installer...=Yükleyici başlatılıyor...
+Startup=
 Storage=Depolama
 Support via Discord:=Discord üzerinden destek:
 Surprise=Sürpriz

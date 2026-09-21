@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -249,6 +249,7 @@ SpeedHack:=Hack velocitat :
 SPREAD SHOT=TIR ESPARPALHAT
 Spu Interpolation:=Interpolacion Spu :
 Starting the installer...=Aviada de l'installador...
+Startup=
 Storage=Emmagazinatge
 Support via Discord:=Sosten via Discord :
 Surprise=Susprisa

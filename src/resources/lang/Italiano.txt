@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -249,6 +249,7 @@ SpeedHack:=SpeedHack:
 SPREAD SHOT=COLPO A VENTAGLIO
 Spu Interpolation:=Interpolazione Spu:
 Starting the installer...=Avvio dell'installer...
+Startup=
 Storage=Archiviazione
 Support via Discord:=Supporto via Discord:
 Surprise=Sorpresa

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -249,6 +249,7 @@ SpeedHack:=Nopeuden Muutin:
 SPREAD SHOT=HAJALAUKAUS
 Spu Interpolation:=SPU-interpolointi:
 Starting the installer...=Käynnistetään asennusohjelmaa...
+Startup=
 Storage=Tallennustila
 Support via Discord:=Tuki Discordin kautta:
 Surprise=Yllätys

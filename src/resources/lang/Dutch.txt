@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -249,6 +249,7 @@ SpeedHack:=SpeedHack:
 SPREAD SHOT=SPREISCHOT
 Spu Interpolation:=SPU interpolatie:
 Starting the installer...=Installatieprogramma starten...
+Startup=
 Storage=Opslag
 Support via Discord:=Support ons via Discord:
 Surprise=Verrassing

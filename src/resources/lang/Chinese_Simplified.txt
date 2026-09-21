@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -249,6 +249,7 @@ SpeedHack:=速度优化：
 SPREAD SHOT=散射
 Spu Interpolation:=SPU 插值：
 Starting the installer...=正在启动安装程序...
+Startup=启动脚本
 Storage=存储
 Support via Discord:=Discord 支持：
 Surprise=惊喜

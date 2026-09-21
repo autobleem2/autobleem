@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 278
+# Untranslated: 1 / Total: 279
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -249,6 +249,7 @@ SpeedHack:=SpeedHack:
 SPREAD SHOT=TIRO EM LEQUE
 Spu Interpolation:=Interpolação Spu:
 Starting the installer...=Iniciando o instalador...
+Startup=
 Storage=Armazenamento
 Support via Discord:=Suporte via Discord:
 Surprise=Surpresa
