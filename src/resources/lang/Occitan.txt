@@ -233,6 +233,7 @@ Showing: Retroarch=Afichatge : Retroarch
 Showing: USB Games Directory:=Afichatge : Repertòri de jòcs USB :
 Skip this version=
 Slot=Lòc
+Smoothing:=
 SoC=
 Software Update=
 Space=Espaci

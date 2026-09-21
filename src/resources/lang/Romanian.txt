@@ -233,6 +233,7 @@ Showing: Retroarch=Se arata: Retroarch
 Showing: USB Games Directory:=Se arata: Director Jocuri USB:
 Skip this version=
 Slot=Port
+Smoothing:=
 SoC=
 Software Update=
 Space=Spatiu

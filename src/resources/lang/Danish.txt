@@ -233,6 +233,7 @@ Showing: Retroarch=Viser: Retroarch
 Showing: USB Games Directory:=Viser: USB-spilmappe:
 Skip this version=
 Slot=Slot
+Smoothing:=
 SoC=
 Software Update=
 Space=Space

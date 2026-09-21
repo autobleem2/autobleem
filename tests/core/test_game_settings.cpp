@@ -302,6 +302,25 @@ TEST_CASE("the boot logo is SlowBoot, shown when the cfg has no line, and the li
     CHECK(!contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "SlowBoot = 0"));
 }
 
+TEST_CASE("the smoothing is soft_filter, none when the cfg has no line, clamped to the five scalers") {
+    Editing lib;
+    lib.writeAllUsbCfgs(); // no soft_filter line, like every cfg from before pcsx-abnxt
+    GameSettings s = lib.service->open(lib.usbGame());
+    CHECK(s.pcsx.smoothing == 0);
+
+    lib.service->setSmoothing(s, 4); // hq3x
+    CHECK(s.pcsx.smoothing == 4);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "soft_filter = 4"));
+    CHECK(contains(lib.tmp.readFile("Games/!SaveStates/Driver 2/pcsx.cfg"), "soft_filter = 4"));
+
+    lib.service->setSmoothing(s, 5); // past hq3x stays hq3x, below none stays none
+    CHECK(s.pcsx.smoothing == 4);
+    lib.service->setSmoothing(s, -1);
+    CHECK(s.pcsx.smoothing == 0);
+    CHECK(contains(lib.tmp.readFile("Games/Driver 2/pcsx.cfg"), "soft_filter = 0"));
+    CHECK(std::string(GameSettingsService::SmoothingNames[4]) == "HQ3x");
+}
+
 TEST_CASE("the GPU plugin line is Gpu3, and only a USB game has one") {
     Editing lib;
     lib.writeAllUsbCfgs();

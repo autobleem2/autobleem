@@ -233,6 +233,7 @@ Showing: Retroarch=Näytetään: RetroArch
 Showing: USB Games Directory:=Näytetään: USB Pelien Kansio:
 Skip this version=
 Slot=Paikka
+Smoothing:=
 SoC=
 Software Update=
 Space=Väli
