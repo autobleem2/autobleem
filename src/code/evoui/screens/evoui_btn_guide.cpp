@@ -39,7 +39,7 @@ void GuiBtnGuide::render() {
     };
     auto row = [&](const string &buttons, const string &what) {
         const int textHeight = max(rowHeight, textFont.columnHeight(what, textWidth));
-        gui->text().renderText(buttonFont, buttons, xButtons, y + (rowHeight - 30) / 2, XALIGN_LEFT);
+        style.buttons(*gui, buttons, xButtons, y + (rowHeight - 30) / 2);
         gui->text().renderWrappedText(textFont, what, xText, y + (rowHeight - textFont.lineHeight()) / 2, textWidth,
                                       style.text);
         y += textHeight;

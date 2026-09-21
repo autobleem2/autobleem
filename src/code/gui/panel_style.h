@@ -74,4 +74,13 @@ public:
                 const std::string &status = "", bool withRule = true) const;
     // the same from the protocol string
     void footer(Gui &gui, const ableem::Rect &footer, const std::string &line, bool withRule = true) const;
+
+    // one button as the footer draws it at (x, y), `height` tall: the face buttons (X, O, T, S) as the
+    // theme's 30 px images, every named button (Start, Select, L1..R2, Esc, Enter, Tab, or any word such as
+    // RESET) as a chip - a small dark box with a light edge and the name in small bold capitals - so a
+    // "START" reads at the size of the icons next to it. Returns the width drawn.
+    int button(Gui &gui, const std::string &key, int x, int y, int height = 30) const;
+    // a marker string as the button guide writes it - "|@L2| + |@Select|", "|@X| / |@O|", "RESET" - drawn as
+    // icons, chips and the text between them; returns the width
+    int buttons(Gui &gui, const std::string &markers, int x, int y, int height = 30) const;
 };

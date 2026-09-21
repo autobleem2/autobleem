@@ -8,6 +8,7 @@
 #include <ableem/engine/theme_spec.h>
 
 #include <algorithm>
+#include <cctype>
 
 using namespace std;
 using ableem::Color;
@@ -133,6 +134,76 @@ vector<PanelStyle::HintItem> PanelStyle::parseHints(const string &line, string &
 }
 
 //*******************************
+// PanelStyle::button / buttons
+//*******************************
+int PanelStyle::button(Gui &gui, const string &key, int x, int y, int height) const {
+    ThemeAssets &assets = gui.assets();
+    ableem::Texture icon;
+    if (key == "X")
+        icon = assets.hintCross.valid() ? assets.hintCross : assets.buttonTextureMap["X"];
+    else if (key == "O")
+        icon = assets.hintCircle.valid() ? assets.hintCircle : assets.buttonTextureMap["O"];
+    else if (key == "T")
+        icon = assets.hintTriangle.valid() ? assets.hintTriangle : assets.buttonTextureMap["T"];
+    else if (key == "S")
+        icon = assets.buttonTextureMap["S"];
+    if (icon.valid()) {
+        ableem::Size s = icon.size();
+        Rect dst(x, y + (height - s.h) / 2, s.w, s.h);
+        gui.renderer().copy(icon, nullptr, &dst);
+        return s.w;
+    }
+    // a chip: the name in capitals, a box around it
+    string name = key;
+    for (char &c : name)
+        c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+    const ableem::Font &font = assets.themeFonts[FONT_15_BOLD];
+    const int tw = gui.text().textWidth(font, name);
+    const int chipH = height - 6;
+    const int chipW = tw + 14;
+    Rect chip(x, y + (height - chipH) / 2, chipW, chipH);
+    ableem::Renderer &renderer = gui.renderer();
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(Color(255, 255, 255, 24));
+    renderer.fillRect(chip);
+    renderer.setDrawColor(Color(secondary.r, secondary.g, secondary.b, 200));
+    renderer.drawRect(chip);
+    gui.text().renderText_WithColor(font, name, chip.x + 7, chip.y + (chipH - font.lineHeight()) / 2, text,
+                                    XALIGN_LEFT);
+    return chipW;
+}
+
+int PanelStyle::buttons(Gui &gui, const string &markers, int x, int y, int height) const {
+    const ableem::Font &font = gui.assets().themeFonts[FONT_20_BOLD];
+    const int startX = x;
+    size_t pos = 0;
+    while (pos < markers.size()) {
+        size_t open = markers.find("|@", pos);
+        // the text before the marker (a "/", a "+", or a plain word like RESET)
+        string plain = markers.substr(pos, open == string::npos ? string::npos : open - pos);
+        size_t a = plain.find_first_not_of(' ');
+        if (a != string::npos) {
+            plain = plain.substr(a, plain.find_last_not_of(' ') - a + 1);
+            if (plain == "/" || plain == "+") {
+                gui.text().renderText_WithColor(font, plain, x + 6, y + (height - font.lineHeight()) / 2, secondary,
+                                                XALIGN_LEFT);
+                x += gui.text().textWidth(font, plain) + 12;
+            } else {
+                x += button(gui, plain, x, y, height) + 6;
+            }
+        }
+        if (open == string::npos)
+            break;
+        size_t close = markers.find('|', open + 2);
+        if (close == string::npos)
+            break;
+        x += button(gui, markers.substr(open + 2, close - open - 2), x, y, height) + 6;
+        pos = close + 1;
+    }
+    return x - startX;
+}
+
+//*******************************
 // PanelStyle::footer
 //*******************************
 namespace {
@@ -158,14 +229,14 @@ void PanelStyle::footer(Gui &gui, const Rect &footer, const vector<HintItem> &gi
     TextRenderer &text = gui.text();
     const int iconH = 30;
     const int y = footer.y + 14;
-    auto iconFor = [&](const string &key) -> ableem::Texture {
-        if (key == "X")
-            return assets.hintCross.valid() ? assets.hintCross : assets.buttonTextureMap["X"];
-        if (key == "O")
-            return assets.hintCircle.valid() ? assets.hintCircle : assets.buttonTextureMap["O"];
-        if (key == "T")
-            return assets.hintTriangle.valid() ? assets.hintTriangle : assets.buttonTextureMap["T"];
-        return assets.buttonTextureMap[key];
+    // what a button takes: a face button its 30 px image, a named one its chip
+    auto buttonWidth = [&](const string &key) {
+        if (key == "X" || key == "O" || key == "T" || key == "S")
+            return 30;
+        string name = key;
+        for (char &c : name)
+            c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
+        return text.textWidth(assets.themeFonts[FONT_15_BOLD], name) + 14;
     };
     // the status at the right edge, in the secondary colour; the hints get what is left
     int right = footer.x + footer.w - RowInset;
@@ -181,7 +252,7 @@ void PanelStyle::footer(Gui &gui, const Rect &footer, const vector<HintItem> &gi
         int w = 0;
         for (const HintItem &h : hints) {
             for (const string &icon : h.icons)
-                w += iconFor(icon).valid() ? iconH + 6 : 0;
+                w += buttonWidth(icon) + 6;
             w += 2 + text.textWidth(font, h.label) + gap;
         }
         return w - gap;
@@ -199,15 +270,8 @@ void PanelStyle::footer(Gui &gui, const Rect &footer, const vector<HintItem> &gi
     const int fontH = font.lineHeight();
     int x = footer.x + RowInset;
     for (const HintItem &h : hints) {
-        for (const string &key : h.icons) {
-            ableem::Texture icon = iconFor(key);
-            if (!icon.valid())
-                continue;
-            ableem::Size s = icon.size();
-            Rect dst(x, y + (iconH - s.h) / 2, s.w, s.h);
-            gui.renderer().copy(icon, nullptr, &dst);
-            x += iconH + 6;
-        }
+        for (const string &key : h.icons)
+            x += button(gui, key, x, y, iconH) + 6;
         x += 2;
         text.renderText_WithColor(font, h.label, x, y + (iconH - fontH) / 2, hint, XALIGN_LEFT);
         x += text.textWidth(font, h.label) + gap;
