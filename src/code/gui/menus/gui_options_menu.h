@@ -52,6 +52,8 @@ public:
     std::string getStatusLine() override;
 
     std::string valueText(const OptionsInfo &info, const std::string &value) override;
+    // the reload a changed row needs (theme, language, font, music), with the spinner over the panel
+    void reloadFor(int id, const std::string &nextValue);
     std::string doPrevNextOption(OptionsInfo &info, bool next) override;
     std::string doPrevNextOption(bool next) override { return GuiOptionsMenuBase::doPrevNextOption(next); }
     std::string doRandomOption() override; // only a few lines will use this.  most will just return.

@@ -2,6 +2,7 @@
 // Carousel: the row of covers, out of GuiLauncher.
 //
 #include "carousel.h"
+#include "../gui/gui.h"
 #include "../core/model/timing.h"
 
 #include <algorithm>
@@ -115,6 +116,7 @@ void Carousel::setInitialPositions(int selectedIndex) {
         } else if (item.visible) {
             item.wanted = true;
             item.loadTex(gui_.renderer()); // a no-op for a texture already there
+            Gui::tickBusy();
         } else if (!item.wanted) {
             item.freeTex();
         }

@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -8,6 +8,7 @@ About AutoBleem=O aplikaci AutoBleem
 Address=Adresa
 All Games=Všechny hry
 An update is available=Je k dispozici aktualizace
+Applying settings...=Použití nastavení...
 Architecture=Architektura
 Are you sure you want to delete=Opravdu chcete smazat
 Are you sure you want to flush all covers?=Opravdu chcete smazat všechny obaly?
@@ -121,8 +122,8 @@ HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=Název hostitele
 In Game=Ve hře
 In Retroarch Game=Ve hře RetroArch
-Internal=Interní
 INTERNAL=INTERNÍ
+Internal=Interní
 Internal Games=Interní hry
 Kernel=Jádro
 Keyboard=Klávesnice
@@ -136,6 +137,7 @@ Link end Block=Konec propojeného bloku
 LIVES=ŽIVOTY
 Load average=Průměrná zátěž
 Loading ... Please Wait ...=Nahrávám ... Čekejte prosím ...
+Loading...=Načítání...
 Localization support=Podpora lokalizace
 Lock data:=Zamknout data:
 Look for new, changed or removed games=Vyhledá nové, změněné nebo odebrané hry

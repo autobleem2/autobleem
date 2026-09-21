@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -8,6 +8,7 @@ About AutoBleem=À propos d'AutoBleem
 Address=Adresse
 All Games=Tous les jeux
 An update is available=Une mise à jour est disponible
+Applying settings...=Application des réglages...
 Architecture=Architecture
 Are you sure you want to delete=Êtes-vous sûr de vouloir supprimer
 Are you sure you want to flush all covers?=Êtes-vous sûr de vouloir vider toutes les jaquettes ?
@@ -121,8 +122,8 @@ HIGH SCORE=MEILLEUR SCORE
 Hostname=Nom d'hôte
 In Game=En cours de jeu
 In Retroarch Game=Dans un jeu RetroArch
-Internal=Interne
 INTERNAL=INTERNE
+Internal=Interne
 Internal Games=Jeux internes
 Kernel=Noyau
 Keyboard=Clavier
@@ -136,6 +137,7 @@ Link end Block=Bloc de fin de liaison
 LIVES=VIES
 Load average=Charge moyenne
 Loading ... Please Wait ...=Veuillez patienter ...
+Loading...=Chargement...
 Localization support=Support de localisation
 Lock data:=Verrouiller les données:
 Look for new, changed or removed games=Rechercher les jeux nouveaux, modifiés ou supprimés

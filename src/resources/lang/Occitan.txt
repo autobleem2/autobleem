@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -8,6 +8,7 @@ About AutoBleem=A prepaus d'AutoBleem
 Address=Adreça
 All Games=Totes los jòcs
 An update is available=Una mesa a jorn es disponibla
+Applying settings...=Aplicacion dels reglatges...
 Architecture=Arquitectura
 Are you sure you want to delete=Sètz segur que volètz suprimir
 Are you sure you want to flush all covers?=Volètz vertadièrament suprimir totas las cobèrturas ?
@@ -121,8 +122,8 @@ HIGH SCORE=MELHOR MARCA
 Hostname=Nom d'òste
 In Game=Jòcs intèrnes
 In Retroarch Game=Dins un jòc RetroArch
-Internal=Intèrna
 INTERNAL=INTÈRNA
+Internal=Intèrna
 Internal Games=Jòcs intèrnes
 Kernel=Nucli
 Keyboard=Clavièr
@@ -136,6 +137,7 @@ Link end Block=Fin de blòc ligat
 LIVES=VIDAS
 Load average=Carga mejana
 Loading ... Please Wait ...=Cargament ... Esperatz ...
+Loading...=Cargament...
 Localization support=Assisténcia localizacion
 Lock data:=Verrolhar las donadas :
 Look for new, changed or removed games=Cercar de jòcs novèls, modificats o suprimits

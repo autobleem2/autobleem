@@ -3,6 +3,7 @@
 //
 
 #include "gui.h"
+#include <cmath>
 #include "screens/gui_splash.h"
 #include "../app_base.h"
 #include <unistd.h>
@@ -186,6 +187,69 @@ void Gui::releaseDisplay() {
     text_.clearTextCache();
     assets_.unload(); // before the renderer goes: SDL frees the textures with it
     GuiBase::releaseDisplay();
+}
+
+//*******************************
+// Gui::beginBusy / busyTick / endBusy / tickBusy
+//*******************************
+void Gui::beginBusy(const string &message, const std::function<void()> &redraw) {
+    busyMessage_ = message;
+    renderer().captureNextFrame();
+    redraw(); // presents, and the capture is that frame
+    busyBackdrop_ = renderer().lastCapture();
+    busy_ = true;
+    busyStarted_ = platform().ticks();
+    busyLastFrame_ = 0;
+    drawBusyFrame();
+}
+
+void Gui::busyTick() {
+    if (!busy_)
+        return;
+    const unsigned int now = platform().ticks();
+    if (busyLastFrame_ != 0 && now - busyLastFrame_ < 40)
+        return;
+    drawBusyFrame();
+}
+
+void Gui::endBusy() {
+    busy_ = false;
+    busyBackdrop_ = Texture();
+}
+
+void Gui::tickBusy() {
+    getInstance()->busyTick();
+}
+
+void Gui::drawBusyFrame() {
+    const unsigned int now = platform().ticks();
+    busyLastFrame_ = now;
+    // the pads' events pile up meanwhile; nothing reads them until the job is done
+    renderer().setDrawColor(Color(0, 0, 0, 255));
+    renderer().clear();
+    if (busyBackdrop_.valid())
+        renderer().copy(busyBackdrop_, nullptr, nullptr);
+    PanelStyle style = panelStyle();
+    style.dim(renderer());
+
+    // the spinner: twelve dots on a ring, the brightest leading, turning a dot every 70 ms
+    const int cx = ScreenWidth / 2, cy = ScreenHeight / 2 - 20;
+    const int radius = 30, dot = 8;
+    const int lead = static_cast<int>((now - busyStarted_) / 70) % 12;
+    renderer().setBlendMode(ableem::BlendMode::Blend);
+    for (int i = 0; i < 12; i++) {
+        const int behind = (lead - i + 12) % 12; // 0 for the leading dot, 11 for the one just ahead of it
+        const int alpha = 255 - behind * 19;
+        const double a = i * 3.14159265 / 6.0;
+        const int x = cx + static_cast<int>(radius * cos(a)) - dot / 2;
+        const int y = cy + static_cast<int>(radius * sin(a)) - dot / 2;
+        renderer().setDrawColor(Color(style.text.r, style.text.g, style.text.b, static_cast<unsigned char>(alpha)));
+        renderer().fillRect(Rect(x, y, dot, dot));
+    }
+    if (!busyMessage_.empty())
+        text_.renderText_WithColor(assets_.themeFonts[FONT_22_MED], busyMessage_, cx, cy + radius + 24, style.text,
+                                   XALIGN_CENTER);
+    renderer().present();
 }
 
 //*******************************

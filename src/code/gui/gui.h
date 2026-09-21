@@ -10,6 +10,8 @@
 #include "../core/services/system.h"
 #include "gui_font.h"
 #include "panel_style.h"
+
+#include <functional>
 #include "text_renderer.h"
 #include "theme_assets.h"
 #include "../core/services/environment.h"
@@ -92,6 +94,17 @@ public:
 
     // the shared look, resolved from the current theme
     PanelStyle panelStyle();
+
+    // A busy state for a long job that runs on the main thread (applying settings, reloading the theme,
+    // deleting a game): beginBusy keeps the screen as it is - `redraw` renders and presents it once, and
+    // that frame is the backdrop - and busyTick(), called from inside the job wherever it loops, draws the
+    // backdrop dimmed with a spinner and the message over it (at most every 40 ms, so a tight loop is not
+    // slowed). endBusy drops the backdrop. Gui::tickBusy() is the static form for code without a Gui at
+    // hand (the theme loader, the carousel's texture loads) and is a no-op when nothing is busy.
+    void beginBusy(const std::string &message, const std::function<void()> &redraw);
+    void busyTick();
+    void endBusy();
+    static void tickBusy();
     // the classic panel: the theme's menu panel rect, its bottom at the status line's foot
     ableem::Rect classicPanel();
     // the part of it between the header and the footer band: where a screen's rows go
@@ -107,6 +120,12 @@ public:
     void drawText(const std::string &text, const string &topLine = "");
 
 private:
+    void drawBusyFrame();
+
     ThemeAssets assets_;
     TextRenderer text_; // after assets_: it holds references to the theme font and the button textures
+    bool busy_ = false;
+    std::string busyMessage_;
+    ableem::Texture busyBackdrop_;
+    unsigned int busyStarted_ = 0, busyLastFrame_ = 0;
 };

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -8,6 +8,7 @@ About AutoBleem=Om AutoBleem
 Address=Adresse
 All Games=Alle spil
 An update is available=En opdatering er tilgængelig
+Applying settings...=Anvender indstillinger...
 Architecture=Arkitektur
 Are you sure you want to delete=Er du sikker på, du vil slette
 Are you sure you want to flush all covers?=Er du sikker på, at du vil rydde alle covers?
@@ -121,8 +122,8 @@ HIGH SCORE=HØJESTE SCORE
 Hostname=Værtsnavn
 In Game=I spillet
 In Retroarch Game=I RetroArch-spil
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne spil
 Kernel=Kerne
 Keyboard=Tastatur
@@ -136,6 +137,7 @@ Link end Block=Link Slut Blok
 LIVES=LIV
 Load average=Gennemsnitlig belastning
 Loading ... Please Wait ...=Indlæser ... Vent venligst ...
+Loading...=Indlæser...
 Localization support=Oversættelse
 Lock data:=Lås data:
 Look for new, changed or removed games=Søg efter nye, ændrede eller fjernede spil

@@ -265,6 +265,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
     bool exitCode = option.exitCode;
 
     if (exitCode == 0) {
+        // the theme, fonts and every cover reload: the spinner over the options panel meanwhile
+        gui->beginBusy(_("Applying settings..."), [&option]() { option.render(); });
         app.applyOnlineSetting(); // "Fetch box art online" may have changed
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting(); // "Updates" (the channel) may have changed
@@ -314,6 +316,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
         }
 
         state = LauncherScreenState::Games;
+        gui->endBusy();
     } else {
         render();
     }

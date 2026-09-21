@@ -2,6 +2,7 @@
 // ThemeAssets: the asset half of what Gui used to be.
 //
 #include "theme_assets.h"
+#include "gui.h" // Gui::tickBusy, the spinner between the loads
 #include "../core/services/environment.h"
 #include "../core/main.h"
 
@@ -44,6 +45,7 @@ void ThemeAssets::load() {
     logoRect.h = classic.logo.h;
 
     backgroundImg = Texture::loadFile(renderer_, classic.background);
+    Gui::tickBusy();
     // drawn at its own size from the top-left corner (the theme's is the screen's); the splash used to be
     // the only place setting this, which left every program without a splash with no background at all
     ableem::Size backgroundSize = backgroundImg.size();
@@ -61,6 +63,7 @@ void ThemeAssets::load() {
         cdJewel = Texture();
     }
 
+    Gui::tickBusy();
     const auto &b = classic.buttons;
     buttonTextureMap["O"] = Texture::loadFile(renderer_, b.circle);
     buttonTextureMap["X"] = Texture::loadFile(renderer_, b.cross);
@@ -108,8 +111,10 @@ void ThemeAssets::load() {
         classicFont = medium = bold = cjk;
     }
     classicFontFile_ = classicFont;
+    Gui::tickBusy();
     themeFont = Fonts::openNewSharedCachedFont(classicFont, classic.font.size, renderer_);
     themeFonts.openAllFonts(medium, bold, renderer_);
+    Gui::tickBusy();
 }
 
 //*******************************

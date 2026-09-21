@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -8,6 +8,7 @@ About AutoBleem=Over AutoBleem
 Address=Adres
 All Games=Alle games
 An update is available=Er is een update beschikbaar
+Applying settings...=Instellingen toepassen...
 Architecture=Architectuur
 Are you sure you want to delete=Weet je zeker dat je wilt verwijderen
 Are you sure you want to flush all covers?=Weet je zeker dat je alle covers wilt wissen?
@@ -121,8 +122,8 @@ HIGH SCORE=HOOGSTE SCORE
 Hostname=Hostnaam
 In Game=In game
 In Retroarch Game=In RetroArch game
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interne games
 Kernel=Kernel
 Keyboard=Toetsenbord
@@ -136,6 +137,7 @@ Link end Block=Link Eind Blok
 LIVES=LEVENS
 Load average=Gemiddelde belasting
 Loading ... Please Wait ...=Laden... Even geduld ...
+Loading...=Laden...
 Localization support=Vertaling
 Lock data:=Lock data:
 Look for new, changed or removed games=Zoek naar nieuwe, gewijzigde of verwijderde games

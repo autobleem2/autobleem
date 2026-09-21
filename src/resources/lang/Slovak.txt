@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -8,6 +8,7 @@ About AutoBleem=O aplikácii AutoBleem
 Address=Adresa
 All Games=Všetky hry
 An update is available=Je dostupná aktualizácia
+Applying settings...=Aplikujú sa nastavenia...
 Architecture=Architektúra
 Are you sure you want to delete=Ste si istý, že chcete zmazať
 Are you sure you want to flush all covers?=Naozaj chcete zmazať všetky obaly?
@@ -121,8 +122,8 @@ HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=Názov hostiteľa
 In Game=V hre
 In Retroarch Game=V Retroarch hre
-Internal=Originálne
 INTERNAL=ORIGINÁLNE
+Internal=Originálne
 Internal Games=Originálne hry
 Kernel=Jadro
 Keyboard=Klávesnica
@@ -136,6 +137,7 @@ Link end Block=Spojiť koniec bloku
 LIVES=ŽIVOTY
 Load average=Priemerná záťaž
 Loading ... Please Wait ...=Nahrávam ... Čakajte prosím ...
+Loading...=Načítava sa...
 Localization support=Podpora lokalizácie
 Lock data:=Uzamknúť zmeny:
 Look for new, changed or removed games=Vyhľadáť nové, zmenené alebo odstránené hry

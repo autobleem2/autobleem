@@ -196,21 +196,26 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
     string nextValue = GuiOptionsMenuBase::doPrevNextOption(info, next);
 
     // after doing the default these need special action afterwards
-    if (id == CFG_THEME) {
-        gui->loadAssets();
-        font = gui->assets().themeFont; // get the new font for the menu
-    } else if (id == CFG_LANG) {
-        app.lang().load(Env::getPathToLangDir(), nextValue);
-        gui->loadAssets(false); // the fonts may change with the language (Chinese)
-        font = gui->assets().themeFont;
-    } else if (id == CFG_THEME_FONT || id == CFG_FONT) {
-        gui->loadAssets(false); // the classic font follows the choice
-        font = gui->assets().themeFont;
-    } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
-        gui->loadAssets();
-    }
-
+    reloadFor(id, nextValue);
     return nextValue;
+}
+
+//*******************************
+// GuiOptions::reloadFor
+//*******************************
+// what a changed row makes the screen reload: the theme (everything), the language (the fonts may change
+// with it - Chinese), a font choice, the music; with the spinner over the panel while it happens
+void GuiOptions::reloadFor(int id, const string &nextValue) {
+    const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
+    const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || id == CFG_FONT;
+    if (!theme && !fonts)
+        return;
+    gui->beginBusy(_("Loading..."), [this]() { render(); });
+    if (id == CFG_LANG)
+        app.lang().load(Env::getPathToLangDir(), nextValue);
+    gui->loadAssets(theme);         // the music only with a theme change
+    font = gui->assets().themeFont; // get the new font for the menu
+    gui->endBusy();
 }
 
 //*******************************
@@ -238,20 +243,7 @@ string GuiOptions::doOptionIndex(unsigned int index) {
         string nextValue = GuiOptionsMenuBase::doOptionIndex(index);
 
         // after doing the default these need special action afterwards
-        if (id == CFG_THEME) {
-            gui->loadAssets();
-            font = gui->assets().themeFont; // get the new font for the menu
-        } else if (id == CFG_LANG) {
-            app.lang().load(Env::getPathToLangDir(), nextValue);
-            gui->loadAssets(false);
-            font = gui->assets().themeFont;
-        } else if (id == CFG_THEME_FONT || id == CFG_FONT) {
-            gui->loadAssets(false);
-            font = gui->assets().themeFont;
-        } else if (id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC) {
-            gui->loadAssets();
-        }
-
+        reloadFor(id, nextValue);
         return nextValue;
     } else
         return "";

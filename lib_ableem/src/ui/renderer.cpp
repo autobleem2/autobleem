@@ -45,6 +45,10 @@ struct Renderer::Impl {
     int width = 0, height = 0; // the logical canvas
     float scale = 1.0f;        // output pixels per logical pixel
 
+    // the one-off capture (see Renderer::captureNextFrame)
+    bool captureRequested = false;
+    Texture capture;
+
     // the frame cache (see Renderer::setFrameCache)
     struct FrameCache {
         std::mutex mutex;
@@ -224,8 +228,31 @@ bool Renderer::saveLastFrame(const std::string &path) {
     return rc == 0;
 }
 
+void Renderer::captureNextFrame() {
+    impl->captureRequested = true;
+}
+
+Texture Renderer::lastCapture() const {
+    return impl->capture;
+}
+
 void Renderer::present() {
     debugShot(impl->renderer);
+    if (impl->captureRequested) {
+        impl->captureRequested = false;
+        int w = 0, h = 0;
+        if (SDL_GetRendererOutputSize(impl->renderer, &w, &h) == 0) {
+            std::vector<unsigned char> pixels(static_cast<size_t>(w) * h * 4);
+            if (SDL_RenderReadPixels(impl->renderer, nullptr, SDL_PIXELFORMAT_ARGB8888, pixels.data(), w * 4) == 0) {
+                SDL_Texture *t =
+                    SDL_CreateTexture(impl->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, w, h);
+                if (t) {
+                    SDL_UpdateTexture(t, nullptr, pixels.data(), w * 4);
+                    impl->capture = Texture(t);
+                }
+            }
+        }
+    }
     {
         // the frame cache: a copy of what is about to be shown, for saveLastFrame()
         std::lock_guard<std::mutex> lock(impl->frame.mutex);

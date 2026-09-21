@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -8,6 +8,7 @@ About AutoBleem=About AutoBleem
 Address=Address
 All Games=All Games
 An update is available=An update is available
+Applying settings...=Applying settings...
 Architecture=Architecture
 Are you sure you want to delete=Are you sure you want to delete
 Are you sure you want to flush all covers?=Are you sure you want to flush all covers?
@@ -102,8 +103,8 @@ Free=Free
 free of=free of
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Free software under the GNU GPL v3 or later - no warranty. Source and licence:
 Free space=Free space
-GAME=GAME
 Game=Game
+GAME=GAME
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
@@ -121,8 +122,8 @@ HIGH SCORE=HIGH SCORE
 Hostname=Hostname
 In Game=In Game
 In Retroarch Game=In Retroarch Game
-Internal=Internal
 INTERNAL=INTERNAL
+Internal=Internal
 Internal Games=Internal Games
 Kernel=Kernel
 Keyboard=Keyboard
@@ -136,6 +137,7 @@ Link end Block=Link end Block
 LIVES=LIVES
 Load average=Load average
 Loading ... Please Wait ...=Loading ... Please Wait ...
+Loading...=Loading...
 Localization support=Localization support
 Lock data:=Lock data:
 Look for new, changed or removed games=Look for new, changed or removed games

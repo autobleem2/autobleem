@@ -153,8 +153,9 @@ void GuiManager::doSquare_Pressed() {
 
     if (delGame) {
         PLOG_INFO << "Trying to delete " << gameName;
-        gui->renderStatus(_("Please wait ... deleting") + " " + gameName);
+        gui->beginBusy(_("Please wait ... deleting") + " " + gameName, [this]() { render(); });
         auto result = app.gameCatalog().deleteUsbGame(*game);
+        gui->endBusy();
         if (result.removed) {
             // the !SaveStates folder can be shared, so it is only offered when nothing else uses it
             if (result.saveStateFolderIsNowUnused) {
@@ -194,9 +195,9 @@ void GuiManager::doTriangle_Pressed() {
 
     if (delCovers) {
         PLOG_INFO << "Trying to delete covers";
-        gui->renderStatus(_("Please wait ... deleting covers..."));
-
+        gui->beginBusy(_("Please wait ... deleting covers..."), [this]() { render(); });
         PLOG_INFO << "Flushed " << app.gameCatalog().flushAllCovers() << " covers";
+        gui->endBusy();
 
         app.scans().requestScan();
         menuVisible = false;

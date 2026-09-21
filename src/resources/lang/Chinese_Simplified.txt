@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -8,6 +8,7 @@ About AutoBleem=关于 AutoBleem
 Address=地址
 All Games=所有游戏
 An update is available=有可用更新
+Applying settings...=正在应用设置...
 Architecture=架构
 Are you sure you want to delete=确定要删除吗
 Are you sure you want to flush all covers?=确定要清除所有封面吗？
@@ -121,8 +122,8 @@ HIGH SCORE=最高分
 Hostname=主机名
 In Game=游戏中
 In Retroarch Game=RetroArch 游戏中
-Internal=内置
 INTERNAL=内置
+Internal=内置
 Internal Games=内置游戏
 Kernel=内核
 Keyboard=键盘
@@ -136,6 +137,7 @@ Link end Block=链接结束块
 LIVES=生命
 Load average=平均负载
 Loading ... Please Wait ...=加载中……请稍候……
+Loading...=正在加载...
 Localization support=本地化支持
 Lock data:=锁定数据：
 Look for new, changed or removed games=查找新增、更改或移除的游戏

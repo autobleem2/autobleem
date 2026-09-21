@@ -37,6 +37,11 @@ public:
     bool saveLastFrame(const std::string &path);
     unsigned long frameCount() const;
 
+    // the next present() keeps its frame as a texture (output pixels, drawn over the whole target with
+    // copy(tex)) - the backdrop a busy overlay draws on while a long job runs
+    void captureNextFrame();
+    Texture lastCapture() const;
+
     void setDrawColor(Color c);
     Color drawColor() const;
     void setBlendMode(BlendMode mode);

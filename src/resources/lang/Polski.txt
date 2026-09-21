@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -8,6 +8,7 @@ About AutoBleem=O programie AutoBleem
 Address=Adres
 All Games=Wszystkie Gry
 An update is available=Dostępna jest aktualizacja
+Applying settings...=Stosowanie ustawień...
 Architecture=Architektura
 Are you sure you want to delete=Czy na pewno chcesz usunąć
 Are you sure you want to flush all covers?=Czy na pewno chcesz wyczyścić wszystkie okładki?
@@ -121,8 +122,8 @@ HIGH SCORE=NAJLEPSZY WYNIK
 Hostname=Nazwa hosta
 In Game=W Grze
 In Retroarch Game=W grze Retroarch
-Internal=Wewnętrzna
 INTERNAL=WEWNĘTRZNA
+Internal=Wewnętrzna
 Internal Games=Wewnętrzne Gry
 Kernel=Jądro
 Keyboard=Klawiatura
@@ -136,6 +137,7 @@ Link end Block=Blok Koncowy
 LIVES=ŻYCIA
 Load average=Obciążenie
 Loading ... Please Wait ...=Ładuję ... Proszę czekać ...
+Loading...=Wczytywanie...
 Localization support=Tłumaczenie
 Lock data:=Blokuj zmiany:
 Look for new, changed or removed games=Wyszukaj nowe, zmienione lub usunięte gry

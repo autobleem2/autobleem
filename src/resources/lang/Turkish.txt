@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -8,6 +8,7 @@ About AutoBleem=AutoBleem Hakkında
 Address=Adres
 All Games=Tüm Oyunlar
 An update is available=Bir güncelleme mevcut
+Applying settings...=Ayarlar uygulanıyor...
 Architecture=Mimari
 Are you sure you want to delete=Silmek istediğine emin misin
 Are you sure you want to flush all covers?=Tüm kapakları temizlemek istediğinizden emin misiniz?
@@ -121,8 +122,8 @@ HIGH SCORE=EN YÜKSEK SKOR
 Hostname=Ana bilgisayar adı
 In Game=Oyun İçinde
 In Retroarch Game=RetroArch Oyununda
-Internal=Dahili
 INTERNAL=DAHILİ
+Internal=Dahili
 Internal Games=Dahili Oyunlar
 Kernel=Çekirdek
 Keyboard=Klavye
@@ -136,6 +137,7 @@ Link end Block=Bağ Bitiş Bloku
 LIVES=CAN
 Load average=Ortalama yük
 Loading ... Please Wait ...=Yükleniyor ... Lütfen Bekleyin ...
+Loading...=Yükleniyor...
 Localization support=Yerelleştirme desteği
 Lock data:=Veriyi kilitle:
 Look for new, changed or removed games=Yeni, değişen veya kaldırılan oyunları ara

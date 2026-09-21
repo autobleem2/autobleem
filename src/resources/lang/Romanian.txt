@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -8,6 +8,7 @@ About AutoBleem=Despre AutoBleem
 Address=Adresă
 All Games=Toate jocurile
 An update is available=Este disponibilă o actualizare
+Applying settings...=Se aplică setările...
 Architecture=Arhitectură
 Are you sure you want to delete=Esti sigur ca vrei sa stergi
 Are you sure you want to flush all covers?=Esti sigur ca vrei sa stergi toate cover-urile?
@@ -121,8 +122,8 @@ HIGH SCORE=SCOR MAXIM
 Hostname=Nume gazdă
 In Game=In joc
 In Retroarch Game=In jocul RetroArch
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Jocuri Interne
 Kernel=Kernel
 Keyboard=Tastatură
@@ -136,6 +137,7 @@ Link end Block=Sfarsit Bloc de Legatura
 LIVES=VIETI
 Load average=Încărcare medie
 Loading ... Please Wait ...=Incarca...Te rog asteapta...
+Loading...=Se încarcă...
 Localization support=Suport localizare
 Lock data:=Restrictioneaza acessul la date:
 Look for new, changed or removed games=Cauta jocuri noi, modificate sau eliminate

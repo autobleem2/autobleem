@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -8,6 +8,7 @@ About AutoBleem=Tietoja AutoBleemistä
 Address=Osoite
 All Games=Kaikki pelit
 An update is available=Päivitys on saatavilla
+Applying settings...=Otetaan asetukset käyttöön...
 Architecture=Arkkitehtuuri
 Are you sure you want to delete=Haluatko varmasti poistaa
 Are you sure you want to flush all covers?=Haluatko varmasti tyhjentää kaikki kannet?
@@ -121,8 +122,8 @@ HIGH SCORE=PARAS TULOS
 Hostname=Isäntänimi
 In Game=Pelissä
 In Retroarch Game=RetroArch pelissä
-Internal=Sisäinen
 INTERNAL=SISÄINEN
+Internal=Sisäinen
 Internal Games=Sisäiset Pelit
 Kernel=Ydin
 Keyboard=Näppäimistö
@@ -136,6 +137,7 @@ Link end Block=Linkin päätylohko
 LIVES=ELÄMÄT
 Load average=Keskimääräinen kuorma
 Loading ... Please Wait ...=Ladataan ... Odota hetki ...
+Loading...=Ladataan...
 Localization support=Lokalisointituki
 Lock data:=Lukitse data:
 Look for new, changed or removed games=Etsi uusia, muuttuneita tai poistettuja pelejä

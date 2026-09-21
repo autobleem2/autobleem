@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -8,6 +8,7 @@ About AutoBleem=Om AutoBleem
 Address=Adress
 All Games=Alla spel
 An update is available=En uppdatering finns tillgänglig
+Applying settings...=Tillämpar inställningar...
 Architecture=Arkitektur
 Are you sure you want to delete=Är du säker på att du vill radera
 Are you sure you want to flush all covers?=Är du säker på att du vill nollställa alla omslag?
@@ -121,8 +122,8 @@ HIGH SCORE=BÄSTA RESULTAT
 Hostname=Värdnamn
 In Game=I spel
 In Retroarch Game=I RetroArch-spel
-Internal=Intern
 INTERNAL=INTERN
+Internal=Intern
 Internal Games=Interna spel
 Kernel=Kärna
 Keyboard=Tangentbord
@@ -136,6 +137,7 @@ Link end Block=Slutblock länk
 LIVES=LIV
 Load average=Genomsnittlig belastning
 Loading ... Please Wait ...=Laddar ... Vänligen vänta ...
+Loading...=Läser in...
 Localization support=Lokaliseringshjälp
 Lock data:=Lås data:
 Look for new, changed or removed games=Sök efter nya, ändrade eller borttagna spel

@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 268
+# Untranslated: 0 / Total: 270
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -8,6 +8,7 @@ About AutoBleem=Acerca de AutoBleem
 Address=Dirección
 All Games=Todos los Juegos
 An update is available=Hay una actualización disponible
+Applying settings...=Aplicando los ajustes...
 Architecture=Arquitectura
 Are you sure you want to delete=Estas seguro que quieres borrar
 Are you sure you want to flush all covers?=¿Estas seguro que quieres eliminar todas las caratulas?
@@ -121,8 +122,8 @@ HIGH SCORE=PUNTUACION MAXIMA
 Hostname=Nombre de host
 In Game=En Juego
 In Retroarch Game=En Juego de Retoarch
-Internal=Interno
 INTERNAL=INTERNO
+Internal=Interno
 Internal Games=Juegos Internos
 Kernel=Kernel
 Keyboard=Teclado
@@ -136,6 +137,7 @@ Link end Block=Link end Block
 LIVES=VIDAS
 Load average=Carga media
 Loading ... Please Wait ...=Cargando ... Por favor espera ...
+Loading...=Cargando...
 Localization support=Traductores
 Lock data:=Bloquear datos:
 Look for new, changed or removed games=Busca juegos nuevos, modificados o eliminados
