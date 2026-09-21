@@ -100,7 +100,7 @@ void GuiKeyboard::render() {
                 if (L1_caps_shift)
                     text = ucase(text);
                 if (text == " ")
-                    text = "â£"; // the open box: the space key
+                    text = _("Space"); // the space key reads as a word
                 const int tw = gui->text().textWidth(keyFont, text);
                 gui->text().renderText_WithColor(keyFont, text, key.x + (keyW - tw) / 2,
                                                  key.y + (keyH - keyFont.lineHeight()) / 2,
