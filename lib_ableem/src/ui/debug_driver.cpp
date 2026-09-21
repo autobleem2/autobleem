@@ -317,7 +317,7 @@ string DebugDriver::currentScreen() {
 //*******************************
 bool DebugDriver::start(GuiBase &gui, int port) {
     static unique_ptr<Server> server; // lives as long as the process: the thread never ends
-    server.reset(new Server(gui, port));
+    server = make_unique<Server>(gui, port);
     if (!server->listen()) {
         PLOG_ERROR << "DebugDriver: cannot listen on 127.0.0.1:" << port;
         server.reset();
