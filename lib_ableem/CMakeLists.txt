@@ -110,6 +110,7 @@ add_library(ableem ${ABLEEM_LIB_KIND}
         src/ui/joystick.cpp
         src/ui/gui_base.cpp
         src/ui/gui_screen.cpp
+        src/ui/debug_driver.cpp
         src/ui/SDL_FontCache.c
         src/ui/SDL_FontCache.h
         src/ui/psc_event_filter.c
@@ -123,6 +124,9 @@ target_include_directories(ableem
         )
 
 target_link_libraries(ableem PUBLIC ableem_engine)
+if (WIN32)
+    target_link_libraries(ableem PRIVATE ws2_32) # the DebugDriver's socket
+endif()
 
 if (ABLEEM_EMBEDDED_TARGET)
     target_compile_definitions(ableem PRIVATE ABLEEM_EMBEDDED_TARGET)

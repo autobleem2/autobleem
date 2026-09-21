@@ -12,7 +12,7 @@ void GuiAbout::init() {
     std::shared_ptr<Gui> gui(Gui::getInstance());
     fx.renderer = &renderer;
     // the credits' small font: the launcher's medium face (about.ttf, an SST copy, went with the Sony fonts)
-    font = Fonts::openNewSharedCachedFont(Env::getPathToFontsDir() + sep + "OpenSans-Medium.ttf", 16, renderer);
+    font = Fonts::openNewSharedCachedFont(Env::getPathToFontsDir() + sep + "OpenSans-Medium.ttf", 15, renderer);
     logo = ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "ablogo.png");
 
     string sdir = Env::getWorkingPath() + sep + "surprise_game" + sep;
@@ -104,7 +104,7 @@ void GuiAbout::render() {
 
     fx.render(gui->platform().ticks());
 
-    int yoffset = 135;
+    int yoffset = 128;
     ableem::Rect rect;
     rect.x = SCREEN_WIDTH / 2 - 100;
     rect.y = 5;

@@ -1,4 +1,7 @@
 #include "ableem/ui/input.h"
+
+#include <deque>
+#include <mutex>
 #include "ableem/ui/platform.h"
 #include "sdl_common.h"
 #include "psc_event_filter.h"
@@ -182,6 +185,20 @@ struct Input::Impl {
     bool keyboardAsPad;
     bool powerKeyAsKey = false;
     bool dpadState[4] = {false, false, false, false};
+    std::mutex injectedMutex;
+    std::deque<Event> injected; // what inject() queued, handed out ahead of SDL's events
+    bool takeInjected(Event &out) {
+        std::lock_guard<std::mutex> lock(injectedMutex);
+        if (injected.empty())
+            return false;
+        out = injected.front();
+        injected.pop_front();
+        return true;
+    }
+    bool injectedPending() {
+        std::lock_guard<std::mutex> lock(injectedMutex);
+        return !injected.empty();
+    }
     std::vector<std::string> mappingPaths;
     std::string currentMappingPath;
     std::vector<std::unique_ptr<Pad>> pads;
@@ -238,8 +255,27 @@ Input::~Input() {
     delete impl;
 }
 
+void Input::inject(const Event &e) {
+    std::lock_guard<std::mutex> lock(impl->injectedMutex);
+    impl->injected.push_back(e);
+}
+
 bool Input::poll(Event &out) {
     out = Event();
+    if (impl->takeInjected(out)) {
+        if (out.type == Event::Type::DpadDown || out.type == Event::Type::DpadUp) {
+            const bool down = out.type == Event::Type::DpadDown;
+            if (out.button == Button::DpadUp)
+                impl->dpadState[DUP] = down;
+            else if (out.button == Button::DpadDown)
+                impl->dpadState[DDOWN] = down;
+            else if (out.button == Button::DpadLeft)
+                impl->dpadState[DLEFT] = down;
+            else if (out.button == Button::DpadRight)
+                impl->dpadState[DRIGHT] = down;
+        }
+        return true;
+    }
     SDL_Event e;
     if (!SDL_PollEvent(&e))
         return false;
@@ -335,6 +371,8 @@ void Input::flushEvents() {
 }
 
 bool Input::padEventPending() const {
+    if (impl->injectedPending())
+        return true;
     SDL_PumpEvents();
     SDL_Event e;
     int n = SDL_PeepEvents(&e, 1, SDL_PEEKEVENT, SDL_CONTROLLERAXISMOTION, SDL_CONTROLLERDEVICEREMAPPED);

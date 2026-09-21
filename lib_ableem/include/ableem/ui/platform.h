@@ -59,6 +59,10 @@ public:
     // (SDL_RestoreWindow + SDL_RaiseWindow). No-ops without a window.
     void minimizeWindow();
     void restoreWindow();
+    // the window off the screen and back (SDL_HideWindow/SDL_ShowWindow): the DebugDriver's way of testing
+    // without a window in the way - rendering and the frame cache go on while hidden
+    void hideWindow();
+    void showWindow();
 
     // called by Input::poll() when the console power button or Esc is seen. the app is expected to show a
     // message and actually power off/exit; the library has no policy of its own here.

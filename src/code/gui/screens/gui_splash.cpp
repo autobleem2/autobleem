@@ -6,6 +6,9 @@
 #include "../gui.h"
 #include "core/version.h" // generated into the build tree
 #include "../../core/model/timing.h"
+#include "../../core/services/environment.h"
+
+#include <cstdlib>
 using namespace std;
 
 //*******************************
@@ -43,6 +46,13 @@ void GuiSplash::render() {
 //*******************************
 void GuiSplash::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
+#ifdef AB_DEBUG_HOST
+    // AB_NO_SPLASH=1: straight through - the DebugDriver's tests (tools/ab_drive.py) start that way
+    if (const char *skip = getenv("AB_NO_SPLASH")) {
+        if (*skip == '1')
+            return;
+    }
+#endif
 
     alpha = 0;
     phase = Phase::Settle;

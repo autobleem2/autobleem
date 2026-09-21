@@ -221,6 +221,18 @@ void Platform::restoreWindow() {
     SDL_RaiseWindow(impl->window);
 }
 
+void Platform::hideWindow() {
+    if (impl->window)
+        SDL_HideWindow(impl->window);
+}
+
+void Platform::showWindow() {
+    if (!impl->window)
+        return;
+    SDL_ShowWindow(impl->window);
+    SDL_RaiseWindow(impl->window);
+}
+
 void Platform::setScaleQuality(int quality) {
     char buf[2] = {static_cast<char>('0' + quality), 0};
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, buf);

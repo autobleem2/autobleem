@@ -109,6 +109,10 @@ public:
     // pulls one event off the queue, translating it and updating internal dpad/pad state as a side effect.
     // returns false when the queue is empty.
     bool poll(Event &out);
+    // queues an event as if it had come from a pad or keyboard: poll() hands it out before anything SDL
+    // has, and a d-pad event moves the d-pad state as a real one would. Thread-safe - the DebugDriver
+    // calls it from its own thread.
+    void inject(const Event &e);
 
     void flushEvents(); // discard everything currently queued (SDL_PumpEvents + SDL_FlushEvents)
 

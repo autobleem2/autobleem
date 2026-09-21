@@ -2,6 +2,7 @@
 // AutoBleem: the program - App plus the loop that runs it.
 //
 #include "autobleem.h"
+#include <ableem/ui/debug_driver.h>
 #include "core/services/system.h"
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
@@ -135,6 +136,12 @@ int AutoBleem::run() {
     if (!openLibrary()) {
         return EXIT_FAILURE;
     }
+#ifdef AB_DEBUG_HOST
+    // AB_DEBUG_PORT=<port>: the DebugDriver takes pad and keyboard input over a socket and hands frames
+    // back - tools/ab_drive.py drives the launcher through it for automated looks at the UI
+    if (const char *port = getenv("AB_DEBUG_PORT"))
+        ableem::DebugDriver::start(*Gui::getInstance(), atoi(port));
+#endif
 
     string pathToGamesDir = Env::getPathToGamesDir();
 

@@ -29,6 +29,14 @@ public:
     void clear();
     void present();
 
+    // the frame cache (the DebugDriver's): with it on, present() keeps a copy of every frame it shows;
+    // saveLastFrame() writes the newest one as BMP or PNG (by extension) and frameCount() says how many
+    // frames were presented - both callable from another thread. Off by default: reading the frame back
+    // costs a few ms.
+    void setFrameCache(bool enabled);
+    bool saveLastFrame(const std::string &path);
+    unsigned long frameCount() const;
+
     void setDrawColor(Color c);
     Color drawColor() const;
     void setBlendMode(BlendMode mode);

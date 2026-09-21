@@ -32,11 +32,9 @@ public:
     // by the time render() finishes the user may have already pushed the button one or more times
     bool fastForwardUntilAnotherEvent(unsigned int ticksPerFastForwardRepeat = 200);
 
-    void show() {
-        init();
-        render();
-        loop();
-    }
+    // init, one render, then the loop until menuVisible goes false; the screen's class name is on the
+    // DebugDriver's screen stack meanwhile (its `screen` command)
+    void show();
 
     // controller dpad/joystick pressed
     virtual void doJoyUp() {}

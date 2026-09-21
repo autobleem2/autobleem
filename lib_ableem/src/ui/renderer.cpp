@@ -1,4 +1,6 @@
 #include "ableem/ui/renderer.h"
+#include <SDL2/SDL_image.h>
+#include <mutex>
 #include "ableem/ui/platform.h"
 #include "ableem/ui/texture.h"
 #include "sdl_common.h"
@@ -42,6 +44,15 @@ struct Renderer::Impl {
     SDL_Renderer *renderer = nullptr;
     int width = 0, height = 0; // the logical canvas
     float scale = 1.0f;        // output pixels per logical pixel
+
+    // the frame cache (see Renderer::setFrameCache)
+    struct FrameCache {
+        std::mutex mutex;
+        bool enabled = false;
+        std::vector<unsigned char> pixels; // ARGB8888, `pitch` bytes a row
+        int w = 0, h = 0, pitch = 0;
+        unsigned long frames = 0;
+    } frame;
 
     // frame statistics (see Renderer::statsEnabled)
     struct Stats {
@@ -182,8 +193,54 @@ static void debugShot(SDL_Renderer *renderer) {
     SDL_FreeSurface(s);
 }
 
+//*******************************
+// the frame cache
+//*******************************
+void Renderer::setFrameCache(bool enabled) {
+    std::lock_guard<std::mutex> lock(impl->frame.mutex);
+    impl->frame.enabled = enabled;
+}
+
+unsigned long Renderer::frameCount() const {
+    std::lock_guard<std::mutex> lock(impl->frame.mutex);
+    return impl->frame.frames;
+}
+
+bool Renderer::saveLastFrame(const std::string &path) {
+    std::lock_guard<std::mutex> lock(impl->frame.mutex);
+    Impl::FrameCache &f = impl->frame;
+    if (f.pixels.empty())
+        return false;
+    SDL_Surface *s =
+        SDL_CreateRGBSurfaceWithFormatFrom(f.pixels.data(), f.w, f.h, 32, f.pitch, SDL_PIXELFORMAT_ARGB8888);
+    if (!s)
+        return false;
+    int rc;
+    if (path.size() > 4 && path.compare(path.size() - 4, 4, ".png") == 0)
+        rc = IMG_SavePNG(s, path.c_str());
+    else
+        rc = SDL_SaveBMP(s, path.c_str());
+    SDL_FreeSurface(s);
+    return rc == 0;
+}
+
 void Renderer::present() {
     debugShot(impl->renderer);
+    {
+        // the frame cache: a copy of what is about to be shown, for saveLastFrame()
+        std::lock_guard<std::mutex> lock(impl->frame.mutex);
+        Impl::FrameCache &f = impl->frame;
+        f.frames++;
+        int w = 0, h = 0;
+        if (f.enabled && SDL_GetRendererOutputSize(impl->renderer, &w, &h) == 0) {
+            const int pitch = w * 4;
+            f.pixels.resize(static_cast<size_t>(pitch) * h);
+            f.w = w;
+            f.h = h;
+            f.pitch = pitch;
+            SDL_RenderReadPixels(impl->renderer, nullptr, SDL_PIXELFORMAT_ARGB8888, f.pixels.data(), pitch);
+        }
+    }
     SDL_RenderPresent(impl->renderer);
     if (!statsEnabled())
         return;

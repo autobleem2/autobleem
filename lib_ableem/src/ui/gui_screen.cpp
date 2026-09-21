@@ -1,6 +1,20 @@
 #include "ableem/ui/gui_screen.h"
+#include "ableem/ui/debug_driver.h"
+
+#include <typeinfo>
 
 namespace ableem {
+
+//*******************************
+// GuiScreen::show
+//*******************************
+void GuiScreen::show() {
+    DebugDriver::pushScreen(typeid(*this).name());
+    init();
+    render();
+    loop();
+    DebugDriver::popScreen();
+}
 
 //*******************************
 // GuiScreen::loop
