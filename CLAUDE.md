@@ -547,7 +547,10 @@ stick's Apps folder - `repo_publish.sh psc-libs|psc-apps`), **`emu/pcsx-abnxt/<v
 sets alike - `repo_index.py` deletes the older ones), only the newest RetroArch build is kept, stable
 releases stay. **Since INDEX_VERSION 22 a package kind the new pre-release does not bring is carried
 over** from the one it replaces (a publish of the console's packages alone no longer drops the Pi's, and
-the other way round - two sessions publishing into the pre-release did exactly that on 2026-09-20).
+the other way round - two sessions publishing into the pre-release did exactly that on 2026-09-20). Since
+INDEX_VERSION 35 a carried-over package goes when its kind is published for real afterwards (the newer file
+of the two wins; before that the folder kept both and the page showed the older, alphabetically first one -
+the Windows set of 2026-09-21).
 
 **The web pages are generated, not stored**: `tools/repo_index.py` holds `PAGE_CSS` and renders
 `index.html` (the landing page, **by platform since 2026-09-20** - PlayStation Classic, Raspberry Pi, PC,
