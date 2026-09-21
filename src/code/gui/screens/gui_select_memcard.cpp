@@ -29,7 +29,7 @@ void GuiSelectMemcard::init() {
             cards.push_back("[2] " + mc);
         }
     }
-    maxVisible = app.theme().classic().menuLines;
+    maxVisible = gui->classicRowsThatFit(gui->assets().themeFont);
     firstVisible = 0;
     lastVisible = firstVisible + maxVisible;
 
@@ -70,7 +70,7 @@ void GuiSelectMemcard::render() {
         lastVisible++;
     }
 
-    int pos = 1;
+    int pos = 0;
     for (int i = firstVisible; i < lastVisible; i++) {
         if (i >= cards.size()) {
             break;
@@ -80,8 +80,9 @@ void GuiSelectMemcard::render() {
     }
 
     if (!cards.size() == 0) {
-        gui->text().renderSelectionBox(selected - firstVisible + 1, yoffset);
+        gui->text().renderSelectionBox(selected - firstVisible, yoffset);
     }
+    gui->renderScrollMarkers(firstVisible > 0, lastVisible < static_cast<int>(cards.size()));
 
     gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1|/|@R1| " +
                       _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");

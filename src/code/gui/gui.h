@@ -98,6 +98,11 @@ public:
     ableem::Rect classicContent();
     // the footer band at the bottom of the classic panel (PanelStyle::FooterHeight tall)
     ableem::Rect classicFooter();
+    // how many rows of `font` fit the content rect, one under the other at the font's line height
+    int classicRowsThatFit(const ableem::Font &font);
+    // the scroll markers at the content's edges: a triangle at the top when rows are hidden above the
+    // first shown, at the bottom when below the last
+    void renderScrollMarkers(bool moreAbove, bool moreBelow);
 
     void drawText(const std::string &text, const string &topLine = "");
 

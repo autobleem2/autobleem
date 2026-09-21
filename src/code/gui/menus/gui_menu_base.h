@@ -56,7 +56,7 @@ public:
     virtual int getVerticalSize() { return lines.size(); }
 
     int selected = 0;            // the current selected index
-    int maxVisible = 8;          // the number of lines that can fit on the display (theme dependent)
+    int maxVisible = 8;          // the rows that fit the panel's content at the font's height (init())
     int selectionBoxXOffset = 0; // a menu whose rows start to the right of something (a preview pane) sets this
     int firstVisibleIndex = 0;   // current visible range on page
     int lastVisibleIndex = 7;    // current visible range on page
@@ -78,18 +78,15 @@ public:
 //*******************************
 template <typename LineDataType> void GuiMenuBase<LineDataType>::init() {
     font = gui->assets().themeFont;
-
-    maxVisible = app.theme().classic().menuLines;
-
     if (useSmallerFont) {
         // sometimes the left column will overwrite into the right column.
         // and the second column sometimes go off the right side.
         font = gui->assets().themeFonts[FONT_15_BOLD]; // use a smaller font
-        // compute the larger number of rows we can now display
-        int themeFontSize = app.theme().classic().font.size;
-        maxVisible = static_cast<int>(static_cast<float>(themeFontSize) / 15.0f * static_cast<float>(maxVisible));
-        lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
     }
+    // the rows pack at the font's height and scroll a row at a time when there are more than fit
+    // (the theme's menuLines used to say how many; the panel decides now)
+    maxVisible = gui->classicRowsThatFit(font);
+    lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
 }
 
 //*******************************
@@ -169,6 +166,7 @@ template <typename LineDataType> void GuiMenuBase<LineDataType>::render() {
     }
     renderLines();
     renderSelectionBox();
+    gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < getVerticalSize() - 1);
 
     gui->renderStatus(getStatusLine());
     renderer.present();

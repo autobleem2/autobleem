@@ -145,35 +145,24 @@ void GuiOptions::render() {
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());
 
-    // the rows go from below the title to the bottom of the panel, spread evenly; a page is as many as
-    // fit at the font's height, and the base's paging (computePagePosition/adjustPageBy) does the rest
-    const ableem::Rect content = gui->classicContent();
+    // the rows pack under the header at the font's height, as many as the panel holds (init()), and
+    // scroll a row at a time through the base's paging (computePagePosition/adjustPageBy)
     const int fontHeight = font.lineHeight();
     const int firstLineY = yoffset + fontHeight * firstRow;
-    const int lastLineY = content.y + content.h - fontHeight - 4;
-    const int fits = max(1, (lastLineY - firstLineY) / fontHeight + 1);
-    if (maxVisible != fits) {
-        maxVisible = fits;
-        firstRender = true; // the page bounds are for the old count
-    }
     if (firstRender) {
         computePagePosition();
         firstRender = false;
     }
     const int count = getVerticalSize();
-    const int visible = count == 0 ? 0 : min(maxVisible, count - max(0, firstVisibleIndex)); // rows drawn
-    int rowSpacing = fontHeight;
-    if (visible > 1)
-        rowSpacing = max(fontHeight, (lastLineY - firstLineY) / (visible - 1));
-
     for (int i = firstVisibleIndex, row = 0; i <= lastVisibleIndex && i < count; i++, row++) {
         if (i < 0)
             continue;
-        const int y = firstLineY + rowSpacing * row;
+        const int y = firstLineY + fontHeight * row;
         gui->text().renderTextLineOptions(getLineText(lines[i]), -y, 0, XALIGN_LEFT);
         if (i == selected)
             gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
     }
+    gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);
 
     gui->renderStatus(getStatusLine());
     renderer.present();

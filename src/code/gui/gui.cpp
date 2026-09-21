@@ -249,6 +249,21 @@ Rect Gui::classicFooter() {
     return Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight);
 }
 
+int Gui::classicRowsThatFit(const ableem::Font &font) {
+    const int lineHeight = font.valid() ? font.lineHeight() : assets_.themeFont.lineHeight();
+    return std::max(1, (classicContent().h - 4) / std::max(1, lineHeight));
+}
+
+void Gui::renderScrollMarkers(bool moreAbove, bool moreBelow) {
+    PanelStyle style = panelStyle();
+    Rect content = classicContent();
+    const int cx = content.x + content.w - PanelStyle::RowInset;
+    if (moreAbove)
+        style.scrollMarker(renderer(), cx, content.y - 4, -1);
+    if (moreBelow)
+        style.scrollMarker(renderer(), cx, content.y + content.h - 6, 1);
+}
+
 //*******************************
 // Gui::renderTextBar
 //*******************************

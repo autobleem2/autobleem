@@ -37,8 +37,7 @@ public:
     explicit GuiOptions(ableem::GuiBase &_gui) : GuiOptionsMenuBase(_gui) {}
 
     void init() override;
-    // the rows spread evenly over the panel, as many a page as the font's height allows - not the
-    // theme's menuLines, which was written for the menus that pack their rows
+    // the rows packed at the font's height, scrolling when more than fit (the base's paging)
     void render() override;
 
     std::vector<std::string> getThemes();

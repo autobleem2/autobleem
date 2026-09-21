@@ -106,11 +106,9 @@ void GuiHardwareInfo::render() {
 
     // the rows go from below the header to the bottom of the panel, as in the Options menu
     const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
-    const ableem::Rect content = gui->classicContent();
     const int fontHeight = font.lineHeight();
     const int firstLineY = yoffset;
-    const int lastLineY = content.y + content.h - fontHeight - 4;
-    rowsThatFit = max(1, (lastLineY - firstLineY) / fontHeight + 1);
+    rowsThatFit = gui->classicRowsThatFit(font);
     firstVisible = min(firstVisible, maxFirstVisible());
 
     // the values start a third of the way across; a long one (a path) is cut to what fits
@@ -128,6 +126,8 @@ void GuiHardwareInfo::render() {
                                                 -y, 0, font);
         }
     }
+
+    gui->renderScrollMarkers(firstVisible > 0, firstVisible + rowsThatFit < count);
 
     string status = "|@O| " + _("Go back");
     if (count > rowsThatFit) {

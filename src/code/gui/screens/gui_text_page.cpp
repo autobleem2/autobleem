@@ -22,16 +22,31 @@ void GuiTextPage::render() {
     const int x = panel.x + 10;
     const int width = panel.w - 20;
     const ableem::Color color = TextRenderer::toColor(app.theme().classic().textColor, 255);
+    // the lines from `firstLine` down, each wrapped, until the content rect is full
+    const ableem::Rect content = gui->classicContent();
+    const int bottom = content.y + content.h - 4;
+    rowsThatFit = max(1, (bottom - yoffset) / lineHeight);
+    firstLine = max(0, min(firstLine, static_cast<int>(lines.size()) - 1));
     int y = yoffset;
-    for (const string &line : lines) {
+    size_t i = firstLine;
+    for (; i < lines.size(); i++) {
+        const string &line = lines[i];
+        const int height = (line.empty() || centred) ? lineHeight : max(lineHeight, font.columnHeight(line, width));
+        if (y + height > bottom)
+            break;
         if (line.empty() || centred) {
             gui->text().renderTextLine(line, -y, 0, centred ? XALIGN_CENTER : XALIGN_LEFT);
-            y += lineHeight;
         } else {
-            y += max(lineHeight, gui->text().renderWrappedText(font, line, x, y, width, color));
+            gui->text().renderWrappedText(font, line, x, y, width, color);
         }
+        y += height;
     }
-    gui->renderStatus("|@O| " + _("Go back"));
+    lastLineShown = static_cast<int>(i); // one past the last drawn
+    gui->renderScrollMarkers(firstLine > 0, lastLineShown < static_cast<int>(lines.size()));
+    string status = "|@O| " + _("Go back");
+    if (firstLine > 0 || lastLineShown < static_cast<int>(lines.size()))
+        status = "|@L1|/|@R1| " + _("Page") + "   " + status;
+    gui->renderStatus(status);
     renderer.present();
 }
 
@@ -50,6 +65,37 @@ void GuiTextPage::loop() {
                 (e.type == Event::Type::KeyDown && e.key == Key::Escape)) {
                 app.audio().cancel.play();
                 menuVisible = false;
+            }
+            // scrolling: a line with the d-pad, a page with L1/R1 (or the keyboard's Page Up/Down)
+            const int last = static_cast<int>(lines.size());
+            const bool more = lastLineShown < last;
+            int move = 0;
+            if (e.type == Event::Type::DpadDown) {
+                if (gui->input().dpadDown())
+                    move = 1;
+                else if (gui->input().dpadUp())
+                    move = -1;
+            } else if (e.type == Event::Type::ButtonDown) {
+                if (e.button == Button::R1)
+                    move = rowsThatFit;
+                else if (e.button == Button::L1)
+                    move = -rowsThatFit;
+            } else if (e.type == Event::Type::KeyDown) {
+                if (e.key == Key::Down)
+                    move = 1;
+                else if (e.key == Key::Up)
+                    move = -1;
+                else if (e.key == Key::PageDown)
+                    move = rowsThatFit;
+                else if (e.key == Key::PageUp)
+                    move = -rowsThatFit;
+            }
+            if (move > 0 && more) {
+                app.audio().cursor.play();
+                firstLine = min(firstLine + move, last - 1);
+            } else if (move < 0 && firstLine > 0) {
+                app.audio().cursor.play();
+                firstLine = max(0, firstLine + move);
             }
         }
     }
