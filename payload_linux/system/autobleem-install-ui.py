@@ -36,6 +36,7 @@ import select
 import struct
 import sys
 import time
+import traceback
 import zlib
 import pickle
 
@@ -56,6 +57,57 @@ BLACK = (0, 0, 0)
 KDSETMODE = 0x4B3A
 KD_TEXT = 0
 KD_GRAPHICS = 1
+FBIOGET_VSCREENINFO = 0x4600
+FBIOGET_FSCREENINFO = 0x4602
+FBIOGET_CON2FBMAP = 0x460F
+
+
+def console_framebuffer(tty_path, default):
+    """The framebuffer the kernel console on that tty draws on (FBIOGET_CON2FBMAP), as /dev/fbN. A laptop
+    with two GPUs has two framebuffers, and fb0 is not always the one on the panel: the first PC-stick boot
+    on such a machine froze on its last line of text - tty8 switched to graphics mode while every frame went
+    to a framebuffer nobody could see."""
+    m = re.match(r".*?(\d+)$", tty_path or "")
+    if fcntl is None or not m:
+        return default
+    for path in (default, "/dev/fb0", "/dev/fb1"):
+        try:
+            fd = os.open(path, os.O_RDONLY)
+        except OSError:
+            continue
+        try:
+            buf = bytearray(struct.pack("II", int(m.group(1)), 0))
+            fcntl.ioctl(fd, FBIOGET_CON2FBMAP, buf, True)
+            return "/dev/fb%d" % struct.unpack("II", bytes(buf))[1]
+        except OSError:
+            continue
+        finally:
+            os.close(fd)
+    return default
+
+
+def framebuffer_geometry(fd):
+    """(width, height, bpp, stride, size) of the framebuffer, or None: the visible resolution from
+    FBIOGET_VSCREENINFO and the real line length and memory size from FBIOGET_FSCREENINFO - sysfs's
+    virtual_size may be taller than the screen and stride is not always there."""
+    if fcntl is None:
+        return None
+    try:
+        var = bytearray(160)
+        fcntl.ioctl(fd, FBIOGET_VSCREENINFO, var, True)
+        xres, yres, xres_v, yres_v, xoff, yoff, bpp = struct.unpack_from("7I", bytes(var))
+        fix = bytearray(128)
+        fcntl.ioctl(fd, FBIOGET_FSCREENINFO, fix, True)
+        # char id[16]; unsigned long smem_start; u32 smem_len, type, type_aux, visual; u16 xpanstep,
+        # ypanstep, ywrapstep; (pad); u32 line_length - the unsigned long is the userland's size
+        ulong = struct.calcsize("L")
+        smem_len = struct.unpack_from("I", bytes(fix), 16 + ulong)[0]
+        line_length = struct.unpack_from("I", bytes(fix), 16 + ulong + 16 + 8)[0]
+        if xres and yres and bpp in (16, 24, 32) and line_length >= xres * bpp // 8:
+            return xres, yres, bpp, line_length, smem_len
+    except OSError:
+        pass
+    return None
 
 
 #*******************************
@@ -728,10 +780,21 @@ def main():
                     return f.read().strip()
             except OSError:
                 return default
-        width, height = (int(v) for v in sysfs("virtual_size", "1920,1080").split(","))
-        bpp = int(sysfs("bits_per_pixel", "32"))
-        stride = int(sysfs("stride", str(width * bpp // 8)))
+        if args.tty:
+            args.fb = console_framebuffer(args.tty, args.fb)
         fb = open(args.fb, "r+b", buffering=0)
+        geometry = framebuffer_geometry(fb.fileno())
+        if geometry:
+            width, height, bpp, stride, fb_size = geometry
+        else:
+            width, height = (int(v) for v in sysfs("virtual_size", "1920,1080").split(","))
+            bpp = int(sysfs("bits_per_pixel", "32"))
+            stride = int(sysfs("stride", str(width * bpp // 8)))
+            fb_size = stride * height
+        sys.stderr.write("autobleem-install-ui: %s %dx%d %d bpp, stride %d, %d bytes%s\n"
+                         % (args.fb, width, height, bpp, stride, fb_size, "" if geometry else " (from sysfs)"))
+        if stride * height > fb_size:
+            height = fb_size // stride
 
     canvas = Canvas(width, height, bpp, stride)
     scale = height / 1080.0
@@ -767,10 +830,12 @@ def main():
             f.write(out)
 
     status = 0
+    failed = True
     try:
         if args.mode != "progress":
             status = run_dialog(args, screen, present, tty)
             render_to_file()
+            failed = status not in (0, 3)
             return status
         present()
         stdin = sys.stdin.buffer
@@ -813,9 +878,13 @@ def main():
         screen.percent = 100
         present()
         render_to_file()
+        failed = False
+    except Exception:
+        traceback.print_exc()
+        status = 2
     finally:
         if tty is not None:
-            if args.text_mode:
+            if args.text_mode or failed:
                 try:
                     fcntl.ioctl(tty, KDSETMODE, KD_TEXT)
                 except OSError:
