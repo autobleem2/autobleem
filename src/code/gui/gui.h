@@ -86,14 +86,18 @@ public:
     // rows. renderHeader returns the y the rows start at; renderTextBar draws the sheet alone.
     void renderTextBar();
     int renderHeader(const std::string &title);
-    // the status line as the panel's footer: left-aligned at the inset, in the hint colour, |@X| markers
-    // and all; posy overrides the theme's text y
+    // the status line as the panel's footer, in the shared look (PanelStyle::footer): "Card 1/12" at the
+    // right edge, the "|@X| Label" hints from the left. `pos` is what the old status bar took and is ignored.
     void renderStatus(const std::string &text, int pos = -1);
 
     // the shared look, resolved from the current theme
     PanelStyle panelStyle();
     // the classic panel: the theme's menu panel rect, its bottom at the status line's foot
     ableem::Rect classicPanel();
+    // the part of it between the header and the footer band: where a screen's rows go
+    ableem::Rect classicContent();
+    // the footer band at the bottom of the classic panel (PanelStyle::FooterHeight tall)
+    ableem::Rect classicFooter();
 
     void drawText(const std::string &text, const string &topLine = "");
 

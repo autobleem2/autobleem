@@ -196,9 +196,10 @@ void Gui::renderFreeSpace() {
     PanelStyle style = panelStyle();
     Rect panel = classicPanel();
     const string line = _("Free space") + " : " + System::getAvailableSpace();
-    const int y = panel.y + 18 + (assets_.themeFonts[FONT_28_BOLD].lineHeight() - assets_.themeFont.lineHeight()) / 2;
-    text_.renderText(assets_.themeFont, line, ableem::GuiBase::ScreenWidth - (panel.x + panel.w - PanelStyle::RowInset),
-                     y, XALIGN_RIGHT, &style.secondary);
+    const ableem::Font &font = assets_.themeFonts[FONT_22_MED];
+    const int y = panel.y + 18 + (assets_.themeFonts[FONT_28_BOLD].lineHeight() - font.lineHeight()) / 2;
+    text_.renderText_WithColor(font, line, panel.x + panel.w - PanelStyle::RowInset - text_.textWidth(font, line), y,
+                               style.text, XALIGN_LEFT);
 }
 
 //*******************************
@@ -225,16 +226,27 @@ int Gui::renderLogo(bool small) {
 // Gui::panelStyle / classicPanel
 //*******************************
 PanelStyle Gui::panelStyle() {
-    return PanelStyle::fromTheme(AppBase::get().theme().launcher(), &assets_);
+    return PanelStyle::fromTheme(AppBase::get().theme().launcher());
 }
 
 Rect Gui::classicPanel() {
     Rect panel = text_.getOpscreenRectOfTheme();
-    // the footer: the status line's y plus its height, the sheet ending a little under it
-    const int statusFoot = AppBase::get().theme().classic().statusBar.textY + assets_.themeFont.lineHeight() + 12;
+    // the footer band ends where the theme's status line used to end
+    const int statusFoot = AppBase::get().theme().classic().statusBar.textY + PanelStyle::FooterHeight - 14;
     if (statusFoot > panel.y + panel.h)
         panel.h = statusFoot - panel.y;
     return panel;
+}
+
+Rect Gui::classicContent() {
+    Rect panel = classicPanel();
+    return Rect(panel.x, panel.y + PanelStyle::HeaderHeight, panel.w,
+                panel.h - PanelStyle::HeaderHeight - PanelStyle::FooterHeight);
+}
+
+Rect Gui::classicFooter() {
+    Rect panel = classicPanel();
+    return Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight);
 }
 
 //*******************************
@@ -256,14 +268,8 @@ int Gui::renderHeader(const string &title) {
 //*******************************
 // Gui::renderStatus
 //*******************************
-void Gui::renderStatus(const string &text, int posy) {
-    PanelStyle style = panelStyle();
-    Rect panel = classicPanel();
-    int y = AppBase::get().theme().classic().statusBar.textY;
-    if (posy != -1)
-        y = posy;
-    style.rule(renderer(), panel, y - 10);
-    text_.renderText(assets_.themeFont, text, panel.x + PanelStyle::RowInset, y, XALIGN_LEFT, &style.hint);
+void Gui::renderStatus(const string &text, int /*posy*/) {
+    panelStyle().footer(*this, classicFooter(), text);
 }
 
 //*******************************

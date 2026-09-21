@@ -11,14 +11,36 @@ using namespace std;
 //*******************************
 // GuiConfirm::render
 //*******************************
+// A compact dialog in the shared look (PanelStyle), centred over the dimmed screen: the header, the
+// question wrapped to the panel, the two hints
 void GuiConfirm::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
-    gui->renderTextBar();
-    int yoffset = gui->renderHeader(_("Please confirm"));
-    gui->text().renderTextLine(label, 1, yoffset, XALIGN_CENTER);
+    PanelStyle style = gui->panelStyle();
+    style.dim(renderer);
 
-    gui->renderStatus("|@X| " + _("Confirm") + "  |@O| " + _("Cancel") + " |");
+    const int width = 800;
+    Fonts &fonts = gui->assets().themeFonts;
+    const ableem::Font &font = fonts[FONT_22_MED];
+    // the question wrapped to the panel
+    const int textWidth = width - 2 * (PanelStyle::RowInset + 8);
+    const int textHeight = font.columnHeight(label, textWidth);
+    const int height = PanelStyle::HeaderHeight + 12 + textHeight + 24 + PanelStyle::FooterHeight;
+    ableem::Rect panel((SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height);
+    style.sheet(renderer, panel);
+
+    const TextRenderer::Shadow classicShadow = gui->text().shadow();
+    TextRenderer::Shadow shadow;
+    shadow.enabled = style.textShadow;
+    gui->text().setShadow(shadow);
+
+    int y = style.header(*gui, panel, _("Please confirm")) + 12;
+    gui->text().renderWrappedText(font, label, panel.x + PanelStyle::RowInset + 8, y, textWidth, style.text);
+    style.footer(*gui,
+                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+                 {{{"X"}, _("Confirm")}, {{"O"}, _("Cancel")}}, "", false);
+
+    gui->text().setShadow(classicShadow);
     renderer.present();
 }
 

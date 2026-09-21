@@ -147,10 +147,10 @@ void GuiOptions::render() {
 
     // the rows go from below the title to the bottom of the panel, spread evenly; a page is as many as
     // fit at the font's height, and the base's paging (computePagePosition/adjustPageBy) does the rest
-    const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
+    const ableem::Rect content = gui->classicContent();
     const int fontHeight = font.lineHeight();
     const int firstLineY = yoffset + fontHeight * firstRow;
-    const int lastLineY = panel.y + panel.h - fontHeight - 4;
+    const int lastLineY = content.y + content.h - fontHeight - 4;
     const int fits = max(1, (lastLineY - firstLineY) / fontHeight + 1);
     if (maxVisible != fits) {
         maxVisible = fits;

@@ -359,7 +359,7 @@ int TextRenderer::renderTextLine(const string &text, int line, int yoffset, XAli
 
     Rect opscreen = getOpscreenRectOfTheme();
     int fontHeight = font.lineHeight();
-    int x = opscreen.x + 10 + xoffset;
+    int x = opscreen.x + PanelStyle::RowInset + 8 + xoffset; // level with the header's title
     int y = (fontHeight * line) + yoffset;
 
     if (line < 0) {
@@ -410,7 +410,7 @@ int TextRenderer::renderTextLineOptions(const string &_text, int line, int yoffs
     Rect opscreen = getOpscreenRectOfTheme();
     int fontHeight = themeFont_.lineHeight();
 
-    int x = opscreen.x + opscreen.w - 10 - getCheckIconWidth();
+    int x = opscreen.x + opscreen.w - PanelStyle::RowInset - 8 - getCheckIconWidth();
     int y = (fontHeight * line) + yoffset;
     if (line < 0)
         y = -line; // an absolute y, as renderTextLine takes it

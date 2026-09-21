@@ -30,15 +30,14 @@ public:
     static const int Margin = 40;       // the panel from the screen's edge
     static const int SelectionBar = 5;  // the bar at the selected row's left edge
 
-    // the launcher theme's colours and hint icons, resolved the way GuiLauncher resolves them (white / grey
-    // where the theme says nothing, the hint colour falling back to the secondary one)
-    static PanelStyle fromTheme(const ableem::LauncherTheme &theme, const ThemeAssets *assets = nullptr);
+    // the launcher theme's colours, resolved the way GuiLauncher resolves them (white / grey where the theme
+    // says nothing, the hint colour falling back to the secondary one)
+    static PanelStyle fromTheme(const ableem::LauncherTheme &theme);
 
     ableem::Color text{255, 255, 255, 255};
     ableem::Color secondary{100, 100, 100, 255};
     ableem::Color hint{100, 100, 100, 255};
     bool textShadow = true; // the launcher's halo under every text on the panel
-    ableem::Texture crossIcon, circleIcon, triangleIcon;
 
     // the screen behind the panel, darkened
     void dim(ableem::Renderer &renderer) const;
@@ -54,7 +53,22 @@ public:
     void label(ableem::Renderer &renderer, const ableem::Rect &rect) const;
     // a small triangle at (cx, cy) pointing up (direction -1) or down (1): more rows that way
     void scrollMarker(ableem::Renderer &renderer, int cx, int cy, int direction) const;
-    // the hints, icon then label, from (x, y) rightwards; returns the x after the last one
-    using Hint = std::pair<const ableem::Texture *, std::string>;
-    int hints(Gui &gui, int x, int y, const std::vector<Hint> &hints) const;
+    // a footer hint: one or more button icons ("X", "O", "T", "S", "Start", "Select", "L1", "R1", "L2", "R2",
+    // "Esc", "Enter", "Tab" - the launcher's hint icons for the first three, the theme's button textures
+    // for the rest) and its label
+    struct HintItem {
+        std::vector<std::string> icons;
+        std::string label;
+    };
+    // the status-line protocol every screen writes - "Card 1/12   |@L1|/|@R1| Page  |@X| Rename  |@O| Go back |"
+    // - taken apart: the text before the first marker is the status (a counter, drawn at the footer's right
+    // edge), each marker and the text up to the next one is a hint, a marker whose text is empty or a
+    // separator ("/", "|") joins the next hint's icons
+    static std::vector<HintItem> parseHints(const std::string &line, std::string &status);
+    // the footer: the rule along the top of `footer` (FooterHeight tall, the panel's width), the hints from
+    // the left inset in the largest of the launcher's fonts they fit in, the status at the right edge
+    void footer(Gui &gui, const ableem::Rect &footer, const std::vector<HintItem> &hints,
+                const std::string &status = "", bool withRule = true) const;
+    // the same from the protocol string
+    void footer(Gui &gui, const ableem::Rect &footer, const std::string &line, bool withRule = true) const;
 };

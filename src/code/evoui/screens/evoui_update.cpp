@@ -94,8 +94,8 @@ void GuiUpdatePrompt::render() {
         rowY += RowHeight;
     }
 
-    style.hints(*gui, panel.x + RowInset, panel.y + panel.h - footerHeight + 14,
-                {{&style.crossIcon, _("Select")}, {&style.circleIcon, _("Later")}});
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - footerHeight, panel.w, footerHeight),
+                 {{{"X"}, _("Select")}, {{"O"}, _("Later")}}, "", false);
 
     gui->text().setShadow(classicShadow);
     renderer.present();

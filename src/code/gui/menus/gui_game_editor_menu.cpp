@@ -147,7 +147,8 @@ void GuiEditor::render() {
     int line = 0;
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderHeader(gameIni.values["title"]);
+    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameIni.values["title"],
+                                                      gui->classicPanel().w - 2 * PanelStyle::RowInset));
 
     // Game.ini
 

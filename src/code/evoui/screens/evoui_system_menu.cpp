@@ -92,8 +92,8 @@ void GuiSystemMenu::render() {
         style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
 
     // the footer: the launcher's own button hints
-    style.hints(*gui, panel.x + RowInset, panel.y + panel.h - FooterHeight + 14,
-                {{&style.crossIcon, _("Select")}, {&style.circleIcon, _("Close")}});
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
+                 {{{"X"}, _("Select")}, {{"O"}, _("Close")}}, "", false);
 
     gui->text().setShadow(classicShadow);
     renderer.present();

@@ -106,15 +106,16 @@ void GuiHardwareInfo::render() {
 
     // the rows go from below the header to the bottom of the panel, as in the Options menu
     const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
+    const ableem::Rect content = gui->classicContent();
     const int fontHeight = font.lineHeight();
     const int firstLineY = yoffset;
-    const int lastLineY = panel.y + panel.h - fontHeight - 4;
+    const int lastLineY = content.y + content.h - fontHeight - 4;
     rowsThatFit = max(1, (lastLineY - firstLineY) / fontHeight + 1);
     firstVisible = min(firstVisible, maxFirstVisible());
 
     // the values start a third of the way across; a long one (a path) is cut to what fits
     const int valueX = panel.w * 35 / 100;
-    const int valueWidth = panel.w - valueX - 30;
+    const int valueWidth = panel.w - valueX - PanelStyle::RowInset - 8;
     const int count = static_cast<int>(lines.size());
     for (int i = firstVisible, row = 0; i < count && row < rowsThatFit; i++, row++) {
         const int y = firstLineY + fontHeight * row;
@@ -123,7 +124,7 @@ void GuiHardwareInfo::render() {
             gui->text().renderLabelBox(0, y);
             gui->text().renderTextLine(line.label, -y, 0, XALIGN_CENTER, 0, font);
         } else {
-            gui->text().renderTextLineToColumns(line.label, gui->text().elide(font, line.value, valueWidth), 10, valueX,
+            gui->text().renderTextLineToColumns(line.label, gui->text().elide(font, line.value, valueWidth), 0, valueX,
                                                 -y, 0, font);
         }
     }
