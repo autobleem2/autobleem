@@ -93,7 +93,7 @@ void GuiSystemMenu::render() {
 
     // the footer: the launcher's own button hints
     style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 {{{"X"}, _("Select")}, {{"O"}, _("Close")}}, "", false);
+                 {{{"X"}, _("Select")}, {{"O"}, _("Back")}}, "", false);
 
     gui->text().setShadow(classicShadow);
     renderer.present();

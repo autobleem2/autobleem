@@ -108,9 +108,9 @@ void GuiMcManager::renderStatic() {
     gui->renderBackground();
     gui->renderTextBar();
     gui->renderHeader(_("Memory Card Manager"));
-    gui->renderStatus("|@Start| " + _("Select Right Card") + " | |@Select| " + _("Defragment Card") + "   | " +
-                      "|@X| " + _("Reload Cards") + "   | " + "|@T| " + _("Delete") + " | " + "|@S| " + _("Copy") +
-                      " | " + "|@O| " + _("Go back") + "|");
+    gui->renderStatus("|@Start| " + _("Select right card") + " | |@Select| " + _("Defragment card") + "   | " +
+                      "|@X| " + _("Reload cards") + "   | " + "|@T| " + _("Delete") + " | " + "|@S| " + _("Copy") +
+                      " | " + "|@O| " + _("Back") + "|");
 
     // Draw dot matrix image
     ableem::Rect input, output;

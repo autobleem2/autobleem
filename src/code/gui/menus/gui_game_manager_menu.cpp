@@ -122,8 +122,8 @@ std::string GuiManager::getTitle() {
 //*******************************
 string GuiManager::getStatusLine() {
     return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L1|/|@R1| " +
-           _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete Game") + "  |@T| " + _("Flush covers") +
-           " |@O| " + _("Close") + " |";
+           _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete game") + "  |@T| " + _("Flush covers") +
+           " |@O| " + _("Back") + " |";
 }
 
 //*******************************

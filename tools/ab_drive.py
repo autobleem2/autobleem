@@ -106,6 +106,10 @@ def start(usb, port, show):
     # its own copy of the exe next to the resources: the owner's own instance may be running the other
     driven = os.path.join(app_dir, 'autobleem-gui-drive.exe')
     shutil.copy(exe, driven)
+    # the language files change with the strings; the rest of the resources are make_usb.py's
+    lang = os.path.join(REPO, 'src', 'resources', 'lang')
+    for name in os.listdir(lang):
+        shutil.copy(os.path.join(lang, name), os.path.join(app_dir, 'lang', name))
     env = dict(os.environ)
     env['AB_DEBUG_PORT'] = str(port)
     env['AB_NO_SPLASH'] = '1'  # straight to the launcher (GuiSplash honours it on a dev host)

@@ -45,7 +45,7 @@ void GuiBtnGuide::render() {
     line++;
     renderTextLineToColumns("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"));
 
-    gui->renderStatus("|@O| " + _("Go back") + "|");
+    gui->renderStatus("|@O| " + _("Back") + "|");
     renderer.present();
 }
 

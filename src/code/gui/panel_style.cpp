@@ -7,6 +7,8 @@
 
 #include <ableem/engine/theme_spec.h>
 
+#include <algorithm>
+
 using namespace std;
 using ableem::Color;
 using ableem::Rect;
@@ -133,10 +135,25 @@ vector<PanelStyle::HintItem> PanelStyle::parseHints(const string &line, string &
 //*******************************
 // PanelStyle::footer
 //*******************************
-void PanelStyle::footer(Gui &gui, const Rect &footer, const vector<HintItem> &hints, const string &status,
+namespace {
+// the shared order of the footer's hints, by the hint's first button
+int buttonRank(const string &icon) {
+    static const char *order[] = {"X", "O", "T", "S", "Start", "Select", "L1", "R1", "L2", "R2", "Enter", "Esc", "Tab"};
+    for (size_t i = 0; i < sizeof(order) / sizeof(order[0]); i++)
+        if (icon == order[i])
+            return static_cast<int>(i);
+    return 100;
+}
+} // namespace
+
+void PanelStyle::footer(Gui &gui, const Rect &footer, const vector<HintItem> &given, const string &status,
                         bool withRule) const {
     if (withRule)
         rule(gui.renderer(), footer, footer.y);
+    vector<HintItem> hints = given;
+    stable_sort(hints.begin(), hints.end(), [](const HintItem &a, const HintItem &b) {
+        return buttonRank(a.icons.empty() ? "" : a.icons[0]) < buttonRank(b.icons.empty() ? "" : b.icons[0]);
+    });
     ThemeAssets &assets = gui.assets();
     TextRenderer &text = gui.text();
     const int iconH = 30;

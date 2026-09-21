@@ -185,7 +185,7 @@ template <typename LineDataType> std::string GuiMenuBase<LineDataType>::getTitle
 // the default status line for menus.  override if needed.
 template <typename LineDataType> std::string GuiMenuBase<LineDataType>::getStatusLine() {
     return _("Entry") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "    |@L1|/|@R1| " +
-           _("Page") + "   |@X| " + _("Select") + "   |@O| " + _("Close") + " |";
+           _("Page") + "   |@X| " + _("Select") + "   |@O| " + _("Back") + " |";
 }
 
 //*******************************

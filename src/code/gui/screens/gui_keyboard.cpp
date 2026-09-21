@@ -127,11 +127,11 @@ void GuiKeyboard::render() {
     }
 
     if (usingUsbKeyboard) {
-        gui->renderStatus("|@Tab| " + _("Use Controller") + "  |@Enter| " + _("Confirm") + "  |@Esc| " + _("Cancel") +
+        gui->renderStatus("|@Tab| " + _("Use controller") + "  |@Enter| " + _("Confirm") + "  |@Esc| " + _("Cancel") +
                           " |");
     } else {
         gui->renderStatus("|@X| " + _("Select") + "  |@T|  " + _("Backspace") + "  |@L1| " + _("Caps") + "  |@L2| " +
-                          _("Move Cursor") + "(#)" + " |@S| " + _("Space") + "      |@Start| " + _("Confirm") +
+                          _("Move cursor") + "(#)" + " |@S| " + _("Space") + "      |@Start| " + _("Confirm") +
                           "  |@O| " + _("Cancel") + " |");
     }
     renderer.present();

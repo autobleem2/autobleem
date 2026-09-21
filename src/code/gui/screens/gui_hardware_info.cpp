@@ -129,7 +129,7 @@ void GuiHardwareInfo::render() {
 
     gui->renderScrollMarkers(firstVisible > 0, firstVisible + rowsThatFit < count);
 
-    string status = "|@O| " + _("Go back");
+    string status = "|@O| " + _("Back");
     if (count > rowsThatFit) {
         const int page = firstVisible / rowsThatFit + 1;
         const int pages = (count + rowsThatFit - 1) / rowsThatFit;

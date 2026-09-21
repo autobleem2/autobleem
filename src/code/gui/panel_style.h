@@ -66,7 +66,10 @@ public:
     // separator ("/", "|") joins the next hint's icons
     static std::vector<HintItem> parseHints(const std::string &line, std::string &status);
     // the footer: the rule along the top of `footer` (FooterHeight tall, the panel's width), the hints from
-    // the left inset in the largest of the launcher's fonts they fit in, the status at the right edge
+    // the left inset in the largest of the launcher's fonts they fit in, the status at the right edge. The
+    // hints are drawn in the one order every screen shares, whatever order they were given in: Cross,
+    // Circle, Triangle, Square, Start, Select, L1/R1, L2/R2, then the keyboard's keys - so a footer reads
+    // "what Cross does, how to get out, then the rest" on every screen
     void footer(Gui &gui, const ableem::Rect &footer, const std::vector<HintItem> &hints,
                 const std::string &status = "", bool withRule = true) const;
     // the same from the protocol string

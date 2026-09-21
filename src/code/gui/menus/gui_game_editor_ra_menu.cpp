@@ -40,7 +40,7 @@ void GuiEditorRA::render() {
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 300);
     gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 300);
 
-    gui->renderStatus("|@O| " + _("Go back") + "|");
+    gui->renderStatus("|@O| " + _("Back") + "|");
 
     ableem::Rect rect;
     rect.x = app.theme().classic().editorCover.x;

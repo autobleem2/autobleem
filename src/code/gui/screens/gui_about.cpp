@@ -118,7 +118,7 @@ void GuiAbout::render() {
         line++;
     }
 
-    gui->renderStatus("|@O| " + _("Go back") + " |@Start| " + _("Surprise"), 680);
+    gui->renderStatus("|@O| " + _("Back") + " |@Start| " + _("Surprise"), 680);
     renderer.present();
 }
 
@@ -145,7 +145,7 @@ void GuiAbout::renderSurprise() {
     game.render(renderer, gui->text(), font, sprites);
 
     if (game.gameOver()) {
-        gui->renderStatus("|@Start| " + _("Go back") + " |@Select| " + _("Restart"), 680);
+        gui->renderStatus("|@Start| " + _("Back") + " |@Select| " + _("Restart"), 680);
     } else {
         gui->renderStatus("|@Start| " + _("Exit game") + " |@Select| " + _("Restart"), 680);
     }

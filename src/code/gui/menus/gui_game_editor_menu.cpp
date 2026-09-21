@@ -248,14 +248,14 @@ void GuiEditor::render() {
     string guiMenu = "|@T| " + _("Rename");
 
     if (!internal) {
-        guiMenu += "  |@S| " + _("Change MC") + " ";
+        guiMenu += "  |@S| " + _("Change memory card") + " ";
 
         if (gameIni.values["memcard"] == "SONY") {
-            guiMenu += "|@Start| " + _("Share MC") + "  ";
+            guiMenu += "|@Start| " + _("Share memory card") + "  ";
         }
     }
 
-    guiMenu += " |@O| " + _("Go back") + "|";
+    guiMenu += " |@O| " + _("Back") + "|";
 
     gui->renderStatus(guiMenu);
 

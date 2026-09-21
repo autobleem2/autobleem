@@ -43,7 +43,7 @@ void GuiTextPage::render() {
     }
     lastLineShown = static_cast<int>(i); // one past the last drawn
     gui->renderScrollMarkers(firstLine > 0, lastLineShown < static_cast<int>(lines.size()));
-    string status = "|@O| " + _("Go back");
+    string status = "|@O| " + _("Back");
     if (firstLine > 0 || lastLineShown < static_cast<int>(lines.size()))
         status = "|@L1|/|@R1| " + _("Page") + "   " + status;
     gui->renderStatus(status);
