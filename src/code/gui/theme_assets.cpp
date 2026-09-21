@@ -25,6 +25,7 @@ void ThemeAssets::unload() {
     cdJewel = Texture();
     bigBoxFrame = Texture();
     buttonTextureMap.clear();
+    hintCross = hintCircle = hintTriangle = Texture();
 }
 
 //*******************************
@@ -76,6 +77,9 @@ void ThemeAssets::load() {
     buttonTextureMap["Esc"] = Texture::loadFile(renderer_, b.esc);
     buttonTextureMap["Enter"] = Texture::loadFile(renderer_, b.enter);
     buttonTextureMap["Tab"] = Texture::loadFile(renderer_, b.tab);
+    hintCross = Texture::loadFile(renderer_, launcher.hints.cross);
+    hintCircle = Texture::loadFile(renderer_, launcher.hints.circle);
+    hintTriangle = Texture::loadFile(renderer_, launcher.hints.triangle);
 
     // a theme without launcher fonts (and a default theme without them either) gets the shipped pair -
     // Open Sans Medium/Bold (OFL), the stand-in for the console's SST since 2026-09-21

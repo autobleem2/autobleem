@@ -16,8 +16,7 @@ void GuiBtnGuide::render() {
     gui->renderBackground();
 
     gui->renderTextBar();
-    // -50 is because the "button guide" line is too low and the lines go below the bottom of the rectangle
-    int yoffset = gui->renderLogo(true) - 50;
+    int yoffset = gui->renderHeader(_("Button Guide"));
 
     int xLeft = 300;
     int xRight = 520;
@@ -28,8 +27,6 @@ void GuiBtnGuide::render() {
         gui->text().renderTextLineToColumns(textLeft, textRight, xLeft, xRight, line++, yoffset, font);
     };
 
-    renderTextLineToColumns("", "-=" + _("Button Guide") + "=-");
-    line++;
     renderTextLineToColumns("|@X| / |@O|", _("Select or cancel highlighted option"));
     renderTextLineToColumns("|@S|", _("Run using RetroArch"));
     renderTextLineToColumns("|@R1| / |@L1|", _("Quick scroll to next letter"));
@@ -38,11 +35,11 @@ void GuiBtnGuide::render() {
     renderTextLineToColumns("|@L2| + |@Select|", _("Change USB Games Sub-Directory"));
     renderTextLineToColumns("|@L2| + |@Select|", _("Change RetroArch Playlist"));
     line++;
-    renderTextLineToColumns("", "-=" + _("In Game") + "=-");
+    renderTextLineToColumns("", _("In Game"));
     renderTextLineToColumns("|@Select| + |@Start|", _("Emulator config MENU"));
     renderTextLineToColumns(_("RESET"), _("Quit emulation - back to AutoBleem"));
     line++;
-    renderTextLineToColumns("", "-=" + _("In Retroarch Game") + "=-");
+    renderTextLineToColumns("", _("In Retroarch Game"));
     renderTextLineToColumns("|@Select| + |@Start|", _("Open Retroarch Menu"));
     renderTextLineToColumns(_("POWER"), _("Exit to EvoUI"));
     line++;

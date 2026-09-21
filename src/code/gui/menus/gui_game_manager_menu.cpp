@@ -48,11 +48,9 @@ void GuiManager::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    yoffset = gui->renderLogo(true);
+    yoffset = gui->renderHeader(getTitle());
 
     gui->renderFreeSpace(); // this is why this menu's render is special instead of using the base class
-
-    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
 
     renderLines();
     renderSelectionBox();
@@ -116,7 +114,7 @@ void GuiManager::renderPreview() {
 // GuiManager::getTitle
 //*******************************
 std::string GuiManager::getTitle() {
-    return "-=" + _("Game manager - Select game") + "=-";
+    return _("Game manager - Select game");
 }
 
 //*******************************

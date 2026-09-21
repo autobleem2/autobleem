@@ -37,9 +37,8 @@ void GuiKeyboard::init() {
 void GuiKeyboard::render() {
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
+    int yoffset = gui->renderHeader(label);
     gui->text().renderLabelBox(1, yoffset);
-    gui->text().renderTextLine("-= " + label + " =-", 0, yoffset, XALIGN_CENTER);
 
     //*******************************
     // drawRectangle lambda

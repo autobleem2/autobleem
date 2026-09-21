@@ -9,6 +9,7 @@
 #include <memory>
 #include "../core/services/system.h"
 #include "gui_font.h"
+#include "panel_style.h"
 #include "text_renderer.h"
 #include "theme_assets.h"
 #include "../core/services/environment.h"
@@ -76,11 +77,23 @@ public:
 
     void renderBackground();
 
+    // the theme's logo at its place (the splash); small = nothing drawn any more, just where the rows start
+    // (the classic screens used to put a third-size logo at the panel's corner; renderHeader replaced it)
     int renderLogo(bool small);
 
+    // the classic screens' panel in the shared look (PanelStyle): the screen dimmed, the sheet over the
+    // theme's menu panel rect extended down to the status line, and the header's title ruled off from the
+    // rows. renderHeader returns the y the rows start at; renderTextBar draws the sheet alone.
+    void renderTextBar();
+    int renderHeader(const std::string &title);
+    // the status line as the panel's footer: left-aligned at the inset, in the hint colour, |@X| markers
+    // and all; posy overrides the theme's text y
     void renderStatus(const std::string &text, int pos = -1);
 
-    void renderTextBar();
+    // the shared look, resolved from the current theme
+    PanelStyle panelStyle();
+    // the classic panel: the theme's menu panel rect, its bottom at the status line's foot
+    ableem::Rect classicPanel();
 
     void drawText(const std::string &text, const string &topLine = "");
 

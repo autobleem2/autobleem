@@ -15,7 +15,7 @@ public:
     explicit GuiSsidScanMenu(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override;
-    std::string getTitle() override { return "-=" + _("Select WiFi Network to connect") + "=-"; }
+    std::string getTitle() override { return _("Select WiFi Network to connect"); }
     std::string getStatusLine() override;
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
@@ -32,7 +32,7 @@ public:
     explicit GuiTimezoneSelect(ableem::GuiBase &_gui) : GuiStringMenu(_gui) {}
 
     void init() override;
-    std::string getTitle() override { return "-=" + _("Select Time Zone for Your Location") + "=-"; }
+    std::string getTitle() override { return _("Select Time Zone for Your Location"); }
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
 

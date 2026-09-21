@@ -28,9 +28,8 @@ void GuiEditorRA::render() {
     int line = 0;
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
+    int yoffset = gui->renderHeader(gameData->title);
 
-    gui->text().renderTextLine("-=" + gameData->title + "=-", line++, yoffset, XALIGN_CENTER);
     gui->text().renderTextLine(_("File:") + " " + DirEntry::getFileNameFromPath(gameData->image_path), line++, yoffset,
                                XALIGN_CENTER);
     gui->text().renderTextLine(_("Core:") + " " + gameData->core_name, line++, yoffset, XALIGN_CENTER);

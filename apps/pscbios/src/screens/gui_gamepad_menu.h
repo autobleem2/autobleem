@@ -16,7 +16,7 @@ public:
 
     void init() override;
     void render() override;
-    std::string getTitle() override { return "-=" + _("Gamepad Support Configuration") + "=-"; }
+    std::string getTitle() override { return _("Gamepad Support Configuration"); }
     std::string getStatusLine() override { return "|@X|" + _("Select") + "   |@O|" + _("Cancel"); }
 
     void doCircle_Pressed() override;

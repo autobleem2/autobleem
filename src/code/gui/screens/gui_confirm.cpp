@@ -15,9 +15,8 @@ void GuiConfirm::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine("-=" + _("Please confirm") + "=-", 0, yoffset, XALIGN_CENTER);
-    gui->text().renderTextLine(label, 2, yoffset, XALIGN_CENTER);
+    int yoffset = gui->renderHeader(_("Please confirm"));
+    gui->text().renderTextLine(label, 1, yoffset, XALIGN_CENTER);
 
     gui->renderStatus("|@X| " + _("Confirm") + "  |@O| " + _("Cancel") + " |");
     renderer.present();

@@ -2,6 +2,7 @@
 // TextRenderer: the text/token/rect half of what Gui used to be.
 //
 #include "text_renderer.h"
+#include "panel_style.h"
 #include "../core/services/system.h"
 
 #include <cassert>
@@ -322,8 +323,11 @@ void TextRenderer::clearTextCache() {
 // TextRenderer::renderText
 // renders/draws the line of text and emoji icons at the chosen position on the screen.  returns the height.
 //*******************************
-int TextRenderer::renderText(const ableem::Font &font, const string &text, int x, int y, XAlignment xAlign) {
+int TextRenderer::renderText(const ableem::Font &font, const string &text, int x, int y, XAlignment xAlign,
+                             const Color *color) {
     AllTextOrEmojiTokenInfo allTokenInfo(*this, font, text);
+    if (color != nullptr)
+        allTokenInfo.setTextColor(*color);
     allTokenInfo.render(x, y, xAlign);
 
     return allTokenInfo.totalSize.h; // return the height
@@ -429,14 +433,12 @@ void TextRenderer::renderSelectionBox(int line, int yoffset, int xoffset, ableem
     int fontHeight = font.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
-    rectSelection.x = opscreen.x + 5 + xoffset;
+    rectSelection.x = opscreen.x + 1 + xoffset;
     rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 10 - xoffset;
+    rectSelection.w = opscreen.w - 2 - xoffset;
     rectSelection.h = fontHeight;
 
-    renderer_.setDrawColor(toColor(theme_.classic().textColor, 255));
-    renderer_.setBlendMode(ableem::BlendMode::Blend);
-    renderer_.drawRect(rectSelection);
+    PanelStyle::fromTheme(theme_.launcher()).selection(renderer_, rectSelection);
 }
 
 //*******************************
@@ -446,14 +448,12 @@ void TextRenderer::renderLabelBox(int line, int yoffset) {
     int fontHeight = themeFont_.lineHeight();
     Rect opscreen = getOpscreenRectOfTheme();
     Rect rectSelection;
-    rectSelection.x = opscreen.x + 5;
+    rectSelection.x = opscreen.x + 1;
     rectSelection.y = yoffset + fontHeight * (line);
-    rectSelection.w = opscreen.w - 10;
+    rectSelection.w = opscreen.w - 2;
     rectSelection.h = fontHeight;
 
-    renderer_.setDrawColor(toColor(theme_.classic().labelColor, theme_.classic().keyboardKey.alpha));
-    renderer_.setBlendMode(ableem::BlendMode::Blend);
-    renderer_.fillRect(rectSelection);
+    PanelStyle::fromTheme(theme_.launcher()).label(renderer_, rectSelection);
 }
 
 //*******************************

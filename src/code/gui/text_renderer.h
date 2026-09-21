@@ -143,7 +143,9 @@ public:
     //*******************************
 
     // renders/draws the line of text and emoji icons at the chosen position on the screen.  returns the height.
-    int renderText(const ableem::Font &font, const std::string &text, int x, int y, XAlignment xAlign = XALIGN_LEFT);
+    // `color` (optional) is the text's colour instead of the font's own; the markers keep theirs
+    int renderText(const ableem::Font &font, const std::string &text, int x, int y, XAlignment xAlign = XALIGN_LEFT,
+                   const ableem::Color *color = nullptr);
 
     // if background == true it draws a solid grey box around/behind the text
     // this routine does not support emoji icons.  text only.
@@ -161,8 +163,11 @@ public:
     int renderTextLineOptions(const std::string &text, int line, int yoffset = 0, XAlignment xAlign = XALIGN_LEFT,
                               int xoffset = 0);
 
+    // the selected row, in PanelStyle's look (the band and the bar at the panel's edge); the row's height is
+    // the font's line height
     void renderSelectionBox(int line, int yoffset, int xoffset = 0, ableem::Font font = ableem::Font());
 
+    // a heading row between the rows: PanelStyle's faint band
     void renderLabelBox(int line, int yoffset);
 
     void renderTextChar(const std::string &text, int line, int yoffset, int posx);

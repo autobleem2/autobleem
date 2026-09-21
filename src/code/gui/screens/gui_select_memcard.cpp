@@ -55,8 +55,7 @@ void GuiSelectMemcard::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine("-=" + _("Select memory card") + "=-", 0, yoffset, XALIGN_CENTER);
+    int yoffset = gui->renderHeader(_("Select memory card"));
 
     if (selected >= cards.size()) {
         selected = cards.size() - 1;

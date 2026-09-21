@@ -191,8 +191,14 @@ void Gui::releaseDisplay() {
 // Gui::renderFreeSpace
 //*******************************
 void Gui::renderFreeSpace() {
-    const ableem::ThemePoint &pos = AppBase::get().theme().classic().freeSpaceText;
-    text_.renderText(assets_.themeFont, _("Free space") + " : " + System::getAvailableSpace(), pos.x, pos.y);
+    // at the header's right edge, in the secondary colour, level with the title (the theme's
+    // classic.freeSpaceText used to place it; the panel's header decides now)
+    PanelStyle style = panelStyle();
+    Rect panel = classicPanel();
+    const string line = _("Free space") + " : " + System::getAvailableSpace();
+    const int y = panel.y + 18 + (assets_.themeFonts[FONT_28_BOLD].lineHeight() - assets_.themeFont.lineHeight()) / 2;
+    text_.renderText(assets_.themeFont, line, ableem::GuiBase::ScreenWidth - (panel.x + panel.w - PanelStyle::RowInset),
+                     y, XALIGN_RIGHT, &style.secondary);
 }
 
 //*******************************
@@ -211,46 +217,53 @@ int Gui::renderLogo(bool small) {
     if (!small) {
         renderer().copy(assets_.logo, nullptr, &assets_.logoRect);
         return 0;
-    } else {
-        Rect rect;
-        rect.x = AppBase::get().theme().classic().menuPanel.x;
-        rect.y = AppBase::get().theme().classic().menuPanel.y;
-        rect.w = assets_.logoRect.w / 3;
-        rect.h = assets_.logoRect.h / 3;
-        renderer().copy(assets_.logo, nullptr, &rect);
-        return rect.y + rect.h;
     }
+    return classicPanel().y + PanelStyle::HeaderHeight;
 }
 
 //*******************************
-// Gui::renderStatus
+// Gui::panelStyle / classicPanel
 //*******************************
-void Gui::renderStatus(const string &text, int posy) {
-    const ableem::ThemeStatusBar &bar = AppBase::get().theme().classic().statusBar;
+PanelStyle Gui::panelStyle() {
+    return PanelStyle::fromTheme(AppBase::get().theme().launcher(), &assets_);
+}
 
-    renderer().setDrawColor(TextRenderer::toColor(bar.color, bar.alpha));
-    renderer().setBlendMode(ableem::BlendMode::Blend);
-    Rect rect = text_.getTextRectOfTheme();
-    renderer().fillRect(rect);
-
-    int y = bar.textY;
-    if (posy != -1)
-        y = posy; // override the bottom status y position.  so far this has never been used.
-
-    text_.renderText(assets_.themeFont, text, 0, y, XALIGN_CENTER);
+Rect Gui::classicPanel() {
+    Rect panel = text_.getOpscreenRectOfTheme();
+    // the footer: the status line's y plus its height, the sheet ending a little under it
+    const int statusFoot = AppBase::get().theme().classic().statusBar.textY + assets_.themeFont.lineHeight() + 12;
+    if (statusFoot > panel.y + panel.h)
+        panel.h = statusFoot - panel.y;
+    return panel;
 }
 
 //*******************************
 // Gui::renderTextBar
 //*******************************
 void Gui::renderTextBar() {
-    const ableem::ThemePanel &panel = AppBase::get().theme().classic().menuPanel;
-    renderer().setDrawColor(TextRenderer::toColor(panel.color, panel.alpha));
-    renderer().setBlendMode(ableem::BlendMode::Blend);
+    PanelStyle style = panelStyle();
+    style.dim(renderer());
+    style.sheet(renderer(), classicPanel());
+}
 
-    Rect rect2 = text_.getOpscreenRectOfTheme();
+//*******************************
+// Gui::renderHeader
+//*******************************
+int Gui::renderHeader(const string &title) {
+    return panelStyle().header(*this, classicPanel(), title);
+}
 
-    renderer().fillRect(rect2);
+//*******************************
+// Gui::renderStatus
+//*******************************
+void Gui::renderStatus(const string &text, int posy) {
+    PanelStyle style = panelStyle();
+    Rect panel = classicPanel();
+    int y = AppBase::get().theme().classic().statusBar.textY;
+    if (posy != -1)
+        y = posy;
+    style.rule(renderer(), panel, y - 10);
+    text_.renderText(assets_.themeFont, text, panel.x + PanelStyle::RowInset, y, XALIGN_LEFT, &style.hint);
 }
 
 //*******************************

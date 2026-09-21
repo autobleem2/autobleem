@@ -60,7 +60,7 @@ public:
     int selectionBoxXOffset = 0; // a menu whose rows start to the right of something (a preview pane) sets this
     int firstVisibleIndex = 0;   // current visible range on page
     int lastVisibleIndex = 7;    // current visible range on page
-    int firstRow = 2;            // row 0 is the title.  this is the first row of the menu item lines
+    int firstRow = 0;            // the first row of the menu item lines, right under the header
     int yoffset = 0;             // y offset for the line (y=fontHeight*line + yoffset).  set by renderLogo()
 
     // this is useful in menus that have blank lines like gui_networkMenu.cpp
@@ -161,8 +161,7 @@ template <typename LineDataType> void GuiMenuBase<LineDataType>::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
+    yoffset = gui->renderHeader(getTitle());
 
     if (firstRender) {
         computePagePosition();

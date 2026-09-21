@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../../gui/gui_screen.h"
+#include "../../gui/panel_style.h"
 
 #include <string>
 #include <vector>
@@ -64,6 +65,5 @@ private:
     int visibleRows() const;
     void moveSelection(int step);
 
-    ableem::Color textColor, secondaryColor, hintColor;
-    ableem::Texture crossIcon, circleIcon;
+    PanelStyle style; // the shared look, resolved at init
 };

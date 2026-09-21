@@ -143,8 +143,7 @@ void GuiOptions::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
+    yoffset = gui->renderHeader(getTitle());
 
     // the rows go from below the title to the bottom of the panel, spread evenly; a page is as many as
     // fit at the font's height, and the base's paging (computePagePosition/adjustPageBy) does the rest

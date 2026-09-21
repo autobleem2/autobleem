@@ -7,12 +7,12 @@ using namespace std;
 
 namespace {
 // the panel: as tall as its rows need, up to the screen less a margin; more rows than fit scroll
-const int PanelWidth = 640;
-const int PanelMargin = 40;
-const int HeaderHeight = 74;
-const int FooterHeight = 54;
-const int RowHeight = 60;
-const int RowInset = 24; // the rows' text from the panel's edge
+const int PanelWidth = 800;
+const int PanelMargin = PanelStyle::Margin;
+const int HeaderHeight = PanelStyle::HeaderHeight;
+const int FooterHeight = PanelStyle::FooterHeight;
+const int RowHeight = PanelStyle::RowHeight;
+const int RowInset = PanelStyle::RowInset; // the rows' text from the panel's edge
 } // namespace
 
 //*******************************
@@ -39,17 +39,7 @@ void GuiSystemMenu::init() {
     firstVisible = 0;
     result = SystemMenuAction::None;
 
-    // the launcher's colours, resolved the way GuiLauncher resolves them
-    const ableem::LauncherTheme &theme = app.theme().launcher();
-    textColor = ableem::Color(255, 255, 255, 255);
-    secondaryColor = ableem::Color(100, 100, 100, 255);
-    if (theme.colors.text.set)
-        textColor = TextRenderer::toColor(theme.colors.text, 255);
-    if (theme.colors.secondary.set)
-        secondaryColor = TextRenderer::toColor(theme.colors.secondary, 255);
-    hintColor = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secondaryColor;
-    crossIcon = ableem::Texture::loadFile(renderer, theme.hints.cross);
-    circleIcon = ableem::Texture::loadFile(renderer, theme.hints.circle);
+    style = gui->panelStyle();
 }
 
 //*******************************
@@ -69,74 +59,41 @@ void GuiSystemMenu::render() {
         renderer.copy(background, nullptr, nullptr);
     else
         gui->renderBackground();
-    renderer.setBlendMode(ableem::BlendMode::Blend);
-    renderer.setDrawColor(ableem::Color(0, 0, 0, 110));
-    renderer.fillRect();
+    style.dim(renderer);
 
     const int rows = visibleRows();
     const int panelHeight = HeaderHeight + rows * RowHeight + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-
-    // the panel: a dark sheet with a one-pixel edge in the secondary colour, the header ruled off from the rows
-    renderer.setDrawColor(ableem::Color(0, 0, 0, 200));
-    renderer.fillRect(panel);
-    renderer.setDrawColor(ableem::Color(secondaryColor.r, secondaryColor.g, secondaryColor.b, 160));
-    renderer.drawRect(panel);
-    renderer.fillRect(ableem::Rect(panel.x + RowInset, panel.y + HeaderHeight - 8, panel.w - 2 * RowInset, 1));
+    style.sheet(renderer, panel);
 
     // every text on this screen gets the launcher's halo, like the launcher's own
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
-    const ableem::Opt<bool> &textShadow = app.theme().launcher().textShadow;
-    shadow.enabled = !textShadow.set || textShadow;
+    shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
     Fonts &fonts = gui->assets().themeFonts;
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("System"), panel.x + RowInset, panel.y + 18, textColor,
-                                     XALIGN_LEFT);
-
-    int rowY = panel.y + HeaderHeight;
+    int rowY = style.header(*gui, panel, _("System"));
     for (int i = firstVisible; i < firstVisible + rows && i < static_cast<int>(items.size()); i++) {
-        if (i == selected) {
-            renderer.setDrawColor(ableem::Color(textColor.r, textColor.g, textColor.b, 38));
-            renderer.fillRect(ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
-            renderer.setDrawColor(textColor);
-            renderer.fillRect(ableem::Rect(panel.x + 1, rowY, 5, RowHeight));
-        }
+        if (i == selected)
+            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? textColor : secondaryColor, XALIGN_LEFT);
+                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         secondaryColor, XALIGN_LEFT);
+                                         style.secondary, XALIGN_LEFT);
         rowY += RowHeight;
     }
 
     // scroll markers: a small triangle at the top or bottom edge of the rows when more are that way
-    renderer.setDrawColor(textColor);
-    auto marker = [&](int cy, int direction) {
-        const int cx = panel.x + panel.w - RowInset;
-        for (int i = 0; i < 5; i++)
-            renderer.fillRect(ableem::Rect(cx - i, cy + direction * i, 2 * i + 1, 1));
-    };
+    const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        marker(panel.y + HeaderHeight - 4, -1);
+        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
     if (firstVisible + rows < static_cast<int>(items.size()))
-        marker(panel.y + HeaderHeight + rows * RowHeight + 2, 1);
+        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
 
     // the footer: the launcher's own button hints
-    const int hintY = panel.y + panel.h - FooterHeight + 14;
-    int hintX = panel.x + RowInset;
-    auto hint = [&](const ableem::Texture &icon, const string &label) {
-        if (icon.valid()) {
-            ableem::Size s = icon.size();
-            ableem::Rect dst(hintX, hintY + (28 - s.h) / 2, s.w, s.h);
-            renderer.copy(icon, nullptr, &dst);
-            hintX += s.w + 8;
-        }
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], label, hintX, hintY, hintColor, XALIGN_LEFT);
-        hintX += gui->text().textWidth(fonts[FONT_22_MED], label) + 36;
-    };
-    hint(crossIcon, _("Select"));
-    hint(circleIcon, _("Close"));
+    style.hints(*gui, panel.x + RowInset, panel.y + panel.h - FooterHeight + 14,
+                {{&style.crossIcon, _("Select")}, {&style.circleIcon, _("Close")}});
 
     gui->text().setShadow(classicShadow);
     renderer.present();

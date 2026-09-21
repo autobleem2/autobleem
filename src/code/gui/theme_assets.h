@@ -46,6 +46,8 @@ public:
     // what a RetroArch game's or an App's cover is composed into, where a PS1 game gets the jewel case
     ableem::Texture bigBoxFrame;
     std::map<std::string, ableem::Texture> buttonTextureMap; // "X", "O", "Start", "Check", ... -> its texture
+    // the launcher's footer hints (theme.json launcher.hints), what PanelStyle draws in a panel's footer
+    ableem::Texture hintCross, hintCircle, hintTriangle;
 
 private:
     // the theme's own file for `texname`, or the default theme's when it has none

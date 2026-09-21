@@ -19,7 +19,7 @@ public:
 
     void init() override;
     void render() override;
-    std::string getTitle() override { return "-=" + _("Edit Network WPA WiFi Credentials") + "=-"; }
+    std::string getTitle() override { return _("Edit Network WPA WiFi Credentials"); }
     std::string getStatusLine() override;
     bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].empty(); }
 

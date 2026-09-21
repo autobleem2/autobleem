@@ -287,6 +287,8 @@ add_library(ab_classic STATIC
         src/code/gui/starfx.h
         src/code/gui/surprise_game.cpp
         src/code/gui/surprise_game.h
+        src/code/gui/panel_style.cpp
+        src/code/gui/panel_style.h
         src/code/gui/text_renderer.cpp
         src/code/gui/text_renderer.h
         src/code/gui/theme_assets.cpp

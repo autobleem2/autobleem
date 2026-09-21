@@ -8,9 +8,9 @@
 using namespace std;
 
 namespace {
-const int PanelWidth = 720;
-const int RowHeight = 60;
-const int RowInset = 24;
+const int PanelWidth = 800;
+const int RowHeight = PanelStyle::RowHeight;
+const int RowInset = PanelStyle::RowInset;
 const int LineHeight = 30;
 
 // "42.1 MB"
@@ -25,33 +25,16 @@ string human(uint64_t bytes) {
     return buf;
 }
 
-// the launcher's colours, resolved the way GuiLauncher resolves them
-void launcherColors(AppBase &app, ableem::Color &text, ableem::Color &secondary, ableem::Color &hint) {
-    const ableem::LauncherTheme &theme = app.theme().launcher();
-    text = ableem::Color(255, 255, 255, 255);
-    secondary = ableem::Color(100, 100, 100, 255);
-    if (theme.colors.text.set)
-        text = TextRenderer::toColor(theme.colors.text, 255);
-    if (theme.colors.secondary.set)
-        secondary = TextRenderer::toColor(theme.colors.secondary, 255);
-    hint = theme.colors.hint.set ? TextRenderer::toColor(theme.colors.hint, 255) : secondary;
-}
-
-// the dimmed launcher under a dark panel with a one-pixel edge; returns the panel's rect
-ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Texture &background,
-                       const ableem::Color &secondary, int height) {
+// the dimmed launcher under the panel; returns the panel's rect
+ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Texture &background, const PanelStyle &style,
+                       int height) {
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else
         gui.renderBackground();
-    renderer.setBlendMode(ableem::BlendMode::Blend);
-    renderer.setDrawColor(ableem::Color(0, 0, 0, 110));
-    renderer.fillRect();
+    style.dim(renderer);
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - height) / 2, PanelWidth, height};
-    renderer.setDrawColor(ableem::Color(0, 0, 0, 200));
-    renderer.fillRect(panel);
-    renderer.setDrawColor(ableem::Color(secondary.r, secondary.g, secondary.b, 160));
-    renderer.drawRect(panel);
+    style.sheet(renderer, panel);
     return panel;
 }
 } // namespace
@@ -71,68 +54,48 @@ void GuiUpdatePrompt::init() {
     items.push_back({UpdateChoice::Skip, _("Skip this version"), _("Do not ask about this one again")});
     selected = 0;
     result = UpdateChoice::Later;
-    launcherColors(app, textColor, secondaryColor, hintColor);
-    const ableem::LauncherTheme &theme = app.theme().launcher();
-    crossIcon = ableem::Texture::loadFile(renderer, theme.hints.cross);
-    circleIcon = ableem::Texture::loadFile(renderer, theme.hints.circle);
+    style = gui->panelStyle();
 }
 
 //*******************************
 // GuiUpdatePrompt::render
 //*******************************
 void GuiUpdatePrompt::render() {
-    const int headerHeight = 74 + static_cast<int>(lines.size()) * LineHeight + 12;
-    const int footerHeight = 54;
+    // the header holds the title and the version lines under it; the rule sits under those
+    const int headerHeight = PanelStyle::HeaderHeight + static_cast<int>(lines.size()) * LineHeight + 12;
+    const int footerHeight = PanelStyle::FooterHeight;
     const int panelHeight = headerHeight + static_cast<int>(items.size()) * RowHeight + footerHeight;
-    ableem::Rect panel = drawPanel(renderer, *gui, background, secondaryColor, panelHeight);
+    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
-    const ableem::Opt<bool> &textShadow = app.theme().launcher().textShadow;
-    shadow.enabled = !textShadow.set || textShadow;
+    shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
     Fonts &fonts = gui->assets().themeFonts;
     gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("Update available"), panel.x + RowInset, panel.y + 18,
-                                     textColor, XALIGN_LEFT);
+                                     style.text, XALIGN_LEFT);
     int y = panel.y + 66;
     for (const string &line : lines) {
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], line, panel.x + RowInset + 8, y, secondaryColor,
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], line, panel.x + RowInset + 8, y, style.secondary,
                                          XALIGN_LEFT);
         y += LineHeight;
     }
-    renderer.setDrawColor(ableem::Color(secondaryColor.r, secondaryColor.g, secondaryColor.b, 160));
-    renderer.fillRect(ableem::Rect(panel.x + RowInset, panel.y + headerHeight - 8, panel.w - 2 * RowInset, 1));
+    style.rule(renderer, panel, panel.y + headerHeight - 8);
 
     int rowY = panel.y + headerHeight;
     for (int i = 0; i < static_cast<int>(items.size()); i++) {
-        if (i == selected) {
-            renderer.setDrawColor(ableem::Color(textColor.r, textColor.g, textColor.b, 38));
-            renderer.fillRect(ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
-            renderer.setDrawColor(textColor);
-            renderer.fillRect(ableem::Rect(panel.x + 1, rowY, 5, RowHeight));
-        }
+        if (i == selected)
+            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? textColor : secondaryColor, XALIGN_LEFT);
+                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         secondaryColor, XALIGN_LEFT);
+                                         style.secondary, XALIGN_LEFT);
         rowY += RowHeight;
     }
 
-    const int hintY = panel.y + panel.h - footerHeight + 14;
-    int hintX = panel.x + RowInset;
-    auto hint = [&](const ableem::Texture &icon, const string &label) {
-        if (icon.valid()) {
-            ableem::Size s = icon.size();
-            ableem::Rect dst(hintX, hintY + (28 - s.h) / 2, s.w, s.h);
-            renderer.copy(icon, nullptr, &dst);
-            hintX += s.w + 8;
-        }
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], label, hintX, hintY, hintColor, XALIGN_LEFT);
-        hintX += gui->text().textWidth(fonts[FONT_22_MED], label) + 36;
-    };
-    hint(crossIcon, _("Select"));
-    hint(circleIcon, _("Later"));
+    style.hints(*gui, panel.x + RowInset, panel.y + panel.h - footerHeight + 14,
+                {{&style.crossIcon, _("Select")}, {&style.circleIcon, _("Later")}});
 
     gui->text().setShadow(classicShadow);
     renderer.present();
@@ -184,8 +147,7 @@ void GuiUpdatePrompt::loop() {
 // GuiUpdateProgress::init
 //*******************************
 void GuiUpdateProgress::init() {
-    ableem::Color hint;
-    launcherColors(app, textColor, secondaryColor, hint);
+    style = gui->panelStyle();
     shownSince = 0;
 }
 
@@ -194,12 +156,11 @@ void GuiUpdateProgress::init() {
 //*******************************
 void GuiUpdateProgress::render() {
     const int panelHeight = 190;
-    ableem::Rect panel = drawPanel(renderer, *gui, background, secondaryColor, panelHeight);
+    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
-    const ableem::Opt<bool> &textShadow = app.theme().launcher().textShadow;
-    shadow.enabled = !textShadow.set || textShadow;
+    shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
     Fonts &fonts = gui->assets().themeFonts;
@@ -231,16 +192,16 @@ void GuiUpdateProgress::render() {
         title = "";
         break;
     }
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + RowInset, panel.y + 24, textColor,
+    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + RowInset, panel.y + 24, style.text,
                                      XALIGN_LEFT);
     if (!detail.empty())
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], detail, panel.x + RowInset, panel.y + 74, secondaryColor,
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], detail, panel.x + RowInset, panel.y + 74, style.secondary,
                                          XALIGN_LEFT);
     if (fraction >= 0) {
         ableem::Rect bar(panel.x + RowInset, panel.y + 124, panel.w - 2 * RowInset, 22);
-        renderer.setDrawColor(ableem::Color(secondaryColor.r, secondaryColor.g, secondaryColor.b, 120));
+        renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
         renderer.drawRect(bar);
-        renderer.setDrawColor(textColor);
+        renderer.setDrawColor(style.text);
         renderer.fillRect(ableem::Rect(bar.x + 2, bar.y + 2, static_cast<int>((bar.w - 4) * fraction), bar.h - 4));
     }
 

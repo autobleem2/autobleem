@@ -102,13 +102,12 @@ void GuiHardwareInfo::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
-    gui->text().renderTextLine(_("Hardware Information"), 0, yoffset, XALIGN_CENTER, 0, font);
+    int yoffset = gui->renderHeader(_("Hardware Information"));
 
-    // the rows go from below the title to the bottom of the panel, as in the Options menu
+    // the rows go from below the header to the bottom of the panel, as in the Options menu
     const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
     const int fontHeight = font.lineHeight();
-    const int firstLineY = yoffset + fontHeight * 2;
+    const int firstLineY = yoffset;
     const int lastLineY = panel.y + panel.h - fontHeight - 4;
     rowsThatFit = max(1, (lastLineY - firstLineY) / fontHeight + 1);
     firstVisible = min(firstVisible, maxFirstVisible());

@@ -49,7 +49,7 @@ public:
 
     void fill();
 
-    std::string getTitle() override { return "-=" + _("Configuration") + "=-"; }
+    std::string getTitle() override { return _("Configuration"); }
     std::string getStatusLine() override;
 
     std::string getLineText(const OptionsInfo &info) override;

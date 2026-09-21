@@ -27,9 +27,8 @@ void GuiGamepadMenu::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    yoffset = gui->renderLogo(true);
+    yoffset = gui->renderHeader(getTitle());
     TextRenderer &text = gui->text();
-    text.renderTextLine(getTitle(), 0, yoffset, XALIGN_CENTER);
     if (firstRender) {
         computePagePosition();
         firstRender = false;

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../../gui/gui_screen.h"
+#include "../../gui/panel_style.h"
 #include "../../core/services/update_service.h"
 
 #include <string>
@@ -42,8 +43,7 @@ private:
     std::vector<Item> items;
     std::vector<std::string> lines; // what the update is
     int selected = 0;
-    ableem::Color textColor, secondaryColor, hintColor;
-    ableem::Texture crossIcon, circleIcon;
+    PanelStyle style;
 };
 
 //******************
@@ -66,5 +66,5 @@ public:
 private:
     UpdateService::Status status;
     unsigned long shownSince = 0; // an outcome stays readable for a moment before the screen closes
-    ableem::Color textColor, secondaryColor;
+    PanelStyle style;
 };

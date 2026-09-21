@@ -50,9 +50,8 @@ void GuiPscBiosMain::render() {
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
-    int offset = gui->renderLogo(true);
+    int offset = gui->renderHeader(_("Playstation Classic Hardware Information"));
     TextRenderer &text = gui->text();
-    text.renderTextLine("-=" + _("Playstation Classic Hardware Information") + "=-", 0, offset, XALIGN_CENTER);
 
     int controllerLine = 1;
     if (kernel) {

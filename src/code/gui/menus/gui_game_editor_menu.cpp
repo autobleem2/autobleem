@@ -147,11 +147,9 @@ void GuiEditor::render() {
     int line = 0;
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderLogo(true);
+    int yoffset = gui->renderHeader(gameIni.values["title"]);
 
     // Game.ini
-
-    gui->text().renderTextLine("-=" + gameIni.values["title"] + "=-", line++, yoffset, XALIGN_CENTER);
 
     if (!internal) {
         gui->text().renderTextLine(_("Folder:") + " " + gameIni.entry, line++, yoffset, XALIGN_CENTER);
