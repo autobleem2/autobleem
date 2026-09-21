@@ -7,6 +7,11 @@
 #                              tests, the language check and the format check
 #   ./make_win.sh --product    the Windows product (AB_TARGET=win) into build_win_product/, Release: what
 #                              the installer ships. The tests run there too; the checks are the dev build's.
+#   ./make_win.sh --no-tests   skip ctest (the suites still build) - the language and format checks stay
+#
+# sccache (mingw-w64-ucrt-x86_64-sccache) sits in front of gcc when it is installed: it does nothing for a
+# sequential edit-build cycle (ninja is already incremental) but makes a --clean, a branch switch or a
+# rebuild after a header change mostly cache hits. AB_NO_SCCACHE=1 opts out.
 #
 # CHD support builds the vendored libchdr (lib_ableem/third_party/libchdr) on every host. It is passed
 # explicitly because a build_win/ configured before it was vendored had AB_ENABLE_CHD=OFF cached, and a
@@ -14,22 +19,37 @@
 set -e
 cd "$(dirname "$0")"
 
-if [ "$1" = "--product" ]; then
+PRODUCT=0
+RUN_TESTS=1
+for arg in "$@"; do
+    case "$arg" in
+        --product) PRODUCT=1 ;;
+        --no-tests) RUN_TESTS=0 ;;
+        *) echo "unknown option: $arg" >&2; exit 2 ;;
+    esac
+done
+
+LAUNCHER=()
+if [ -z "$AB_NO_SCCACHE" ] && command -v sccache >/dev/null 2>&1; then
+    LAUNCHER=(-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache)
+fi
+
+if [ "$PRODUCT" = 1 ]; then
     mkdir -p build_win_product
     cd build_win_product
-    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DAB_TARGET=win -DAB_ENABLE_CHD=ON ../
+    cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DAB_TARGET=win -DAB_ENABLE_CHD=ON "${LAUNCHER[@]}" ../
     ninja
-    ctest --output-on-failure
+    if [ "$RUN_TESTS" = 1 ]; then ctest --output-on-failure; fi
     exit 0
 fi
 
 mkdir -p build_win
 cd build_win
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAB_ENABLE_CHD=ON -DAB_TARGET=dev ../
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAB_ENABLE_CHD=ON -DAB_TARGET=dev     "${LAUNCHER[@]}" ../
 ninja
 
 # the suite is fast and catches a broken ab_core before the app is ever started
-ctest --output-on-failure
+if [ "$RUN_TESTS" = 1 ]; then ctest --output-on-failure; fi
 
 # every language file has every _("...") key and nothing malformed (tools/lang_tools.py update fixes the former);
 # the console tools under apps/ keep their own lang/ folders, validated against their own sources
