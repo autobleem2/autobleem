@@ -89,20 +89,20 @@ def raw_sector(number, data):
     return body.ljust(SECTOR, b'\x00')
 
 
-def make_iso(sectors=24):
+def make_iso(sectors=24, serial_file=SERIAL_FILE, title=TITLE):
     root_sector = 18
     cnf_sector = 19
     serial_sector = 20
-    system_cnf = ('BOOT = cdrom:\\%s;1\r\nTCB = 4\r\nEVENT = 10\r\nSTACK = 801FFFF0\r\n' % SERIAL_FILE).encode('ascii')
+    system_cnf = ('BOOT = cdrom:\\%s;1\r\nTCB = 4\r\nEVENT = 10\r\nSTACK = 801FFFF0\r\n' % serial_file).encode('ascii')
 
     root = dir_record('\x00', root_sector, DATA, True) + dir_record('\x01', root_sector, DATA, True)
-    root += dir_record(SERIAL_FILE + ';1', serial_sector, 4, False)
+    root += dir_record(serial_file + ';1', serial_sector, 4, False)
     root += dir_record('SYSTEM.CNF;1', cnf_sector, len(system_cnf), False)
 
     pvd = bytearray()
     pvd += b'\x01' + b'CD001' + b'\x01\x00'
     pvd += b'PLAYSTATION'.ljust(32)                 # system identifier
-    pvd += TITLE.upper().replace(' ', '').encode('ascii').ljust(32)   # volume identifier
+    pvd += title.upper().replace(' ', '').encode('ascii')[:32].ljust(32)   # volume identifier
     pvd += bytes(8)
     pvd += both_endian32(sectors)                   # volume space size
     pvd += bytes(32)
@@ -134,16 +134,49 @@ def make_iso(sectors=24):
     return bytes(image)
 
 
-def make_fake_game(games_dir):
-    folder = os.path.join(games_dir, TITLE)
-    if os.path.exists(os.path.join(folder, TITLE + '.bin')):
+def make_fake_game(games_dir, title=TITLE, serial_file=SERIAL_FILE):
+    folder = os.path.join(games_dir, title)
+    if os.path.exists(os.path.join(folder, title + '.bin')):
         return
     os.makedirs(folder, exist_ok=True)
-    with open(os.path.join(folder, TITLE + '.bin'), 'wb') as f:
-        f.write(make_iso())
-    with open(os.path.join(folder, TITLE + '.cue'), 'w', newline='\n') as f:
-        f.write('FILE "%s.bin" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n' % TITLE)
+    with open(os.path.join(folder, title + '.bin'), 'wb') as f:
+        f.write(make_iso(serial_file=serial_file, title=title))
+    with open(os.path.join(folder, title + '.cue'), 'w', newline='\n') as f:
+        f.write('FILE "%s.bin" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n' % title)
     print('fake game:', folder)
+
+
+# --games N: more fake games, spread over sub-folders so the set picker and the folder rows have
+# something to show, each with its own serial (SLUS_012.34, .35, ...); the folder name is the title (the
+# cover databases here are stubs)
+FAKE_FOLDERS = ['', 'Action', 'Action/Platformers', 'RPG', 'Puzzle']
+FAKE_TITLES = ['Fake Game', 'Crash Dummies', 'Spyro the Fake', 'Tekken Faux', 'Final Fakesy', 'Gran Fakismo',
+               'Metal Gear Fake', 'Tomb Faker', 'Ridge Faker', 'Wipeout Fake', 'Castlevania Faux', 'Resident Fake',
+               'Silent Fake', 'Tony Fake Pro Skater', 'Crash Team Faking', 'Spyro Fake 2', 'Ape Fake',
+               'Parappa the Faker', 'Vagrant Fake', 'Chrono Faux', 'Fake Fantasy Tactics', 'Bust a Fake',
+               'Klonoa Fake', 'Mega Fake X4', 'Suikoden Faux', 'Xenofakes', 'Faketris', 'Point Fake',
+               'Rayman Fake', 'Oddfake']
+
+
+def make_fake_games(games_dir, count):
+    for i in range(count):
+        title = FAKE_TITLES[i % len(FAKE_TITLES)] + ('' if i < len(FAKE_TITLES) else ' %d' % (i // len(FAKE_TITLES) + 1))
+        sub = FAKE_FOLDERS[i % len(FAKE_FOLDERS)]
+        serial = 'SLUS_%03d.%02d' % (12 + i // 100, (34 + i) % 100)
+        make_fake_game(os.path.join(games_dir, sub) if sub else games_dir, title, serial)
+
+
+def make_fake_memcards(games_dir):
+    """three memory card sets from the blank cards in src/resources/memcard, for the memory card screens"""
+    template = os.path.join(REPO, 'src', 'resources', 'memcard')
+    for name in ('Fighting games', 'RPG saves', 'Kids'):
+        folder = os.path.join(games_dir, '!MemCards', name)
+        if os.path.exists(folder):
+            continue
+        os.makedirs(folder)
+        for card in ('card1.mcd', 'card2.mcd'):
+            shutil.copy2(os.path.join(template, card), os.path.join(folder, card))
+        print('fake memory cards:', folder)
 
 
 def make_cover_db(path):
@@ -206,6 +239,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('usb', help='the USB root to create or refresh')
     ap.add_argument('--fresh', action='store_true', help='delete the tree first')
+    ap.add_argument('--games', type=int, default=1, help='how many fake PS1 games (over a few sub-folders; default 1)')
     ap.add_argument('--build', default=os.path.join(REPO, 'build_win'), help='where autobleem-gui.exe is (default build_win)')
     args = ap.parse_args()
     usb = os.path.abspath(args.usb)
@@ -264,7 +298,8 @@ def main():
 
     games = os.path.join(usb, 'Games')
     os.makedirs(games, exist_ok=True)
-    make_fake_game(games)
+    make_fake_games(games, max(1, args.games))
+    make_fake_memcards(games)
     make_fake_retroarch(usb)
 
     # UpdateRoms, the PC-side scanner, in the stick's root as a release lays it out (the DLLs come from
