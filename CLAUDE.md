@@ -1954,3 +1954,16 @@ theme authors' own work.
 
 Repo was `git init`ed on 2026-09-15 from the final source snapshot (no upstream history here; the public
 history is at github.com/screemerpl/cbleemsync). Commit per logical refactor step. `.gitattributes` forces LF.
+
+## User manuals (`manuals/`, 2026-09-21)
+
+`manuals/<lang>/autobleem-user-manual.md` (English and Polish for now) is the user manual in a small Markdown
+subset (headings, lists, tables, `![caption](path)` figures, `> ` notes, `<!-- pagebreak -->`), built by
+**`tools/build_manuals.py`** into `build_manuals/<lang>/*.html` and `*.pdf` (headless Chrome/Edge prints the
+PDF; `--html` skips it; `manuals/style.css` is the look, the site's palette). The screenshots are
+`manuals/images/<lang>/*.jpg`, taken by **`tools/manual_shots.py`** through the DebugDriver on the Windows
+dev build (`--lang Polski --show`; needs `make_win.sh` and `tools/make_usb.py usb`): it walks the launcher,
+PSC-Bios and ABFlashKit through their screens with the stick's `config.ini` switched to each language, and
+captures the UpdateRoms/installer windows by title when they are open. A changed screen means rerunning the
+shots for every language; a new language is a folder under `manuals/` plus its `LANGS` entry. `build_manuals/`
+is git-ignored; the PDFs are not checked in.

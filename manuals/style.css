@@ -1,0 +1,35 @@
+/* The user manuals' look: the site's navy/cyan palette, Selawik/Segoe, A4 pages with the figures scaled to
+   the text width. tools/build_manuals.py inlines this into every HTML it writes. */
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+html { font-family: "Selawik", "Segoe UI", "Noto Sans", Arial, sans-serif; font-size: 11pt; color: #14202e; }
+body { max-width: 900px; margin: 0 auto; padding: 24px; line-height: 1.45; background: #fff; }
+h1 { font-size: 26pt; color: #0b2a4a; margin: 0 0 6px; }
+h2 { font-size: 17pt; color: #0b2a4a; border-bottom: 2px solid #1aa6d6; padding-bottom: 4px; margin: 28px 0 10px; page-break-after: avoid; }
+h3 { font-size: 13pt; color: #123c66; margin: 20px 0 6px; page-break-after: avoid; }
+h4 { font-size: 11.5pt; color: #123c66; margin: 14px 0 4px; }
+p { margin: 6px 0 10px; }
+a { color: #0b6fa8; text-decoration: none; }
+code { font-family: Consolas, "Courier New", monospace; font-size: 10pt; background: #eef3f8; padding: 1px 4px; border-radius: 3px; }
+pre { background: #0e1d2c; color: #e8f0f7; padding: 10px 14px; border-radius: 6px; font-size: 9.5pt; overflow-x: auto; page-break-inside: avoid; }
+pre code { background: none; color: inherit; padding: 0; }
+ul, ol { margin: 4px 0 10px 24px; padding: 0; }
+li { margin: 2px 0; }
+table { border-collapse: collapse; width: 100%; margin: 8px 0 14px; font-size: 10pt; page-break-inside: avoid; }
+th, td { border: 1px solid #c9d6e2; padding: 5px 8px; vertical-align: top; text-align: left; }
+th { background: #e6eef6; color: #0b2a4a; }
+figure { margin: 12px 0 16px; text-align: center; page-break-inside: avoid; }
+figure img { max-width: 100%; border: 1px solid #b9c7d6; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+figcaption { font-size: 9.5pt; color: #4a5b6d; margin-top: 4px; font-style: italic; }
+.note { border-left: 4px solid #1aa6d6; background: #eaf6fb; padding: 8px 12px; margin: 10px 0 14px; border-radius: 0 4px 4px 0; }
+hr { border: 0; border-top: 1px solid #c9d6e2; margin: 18px 0; }
+.cover { text-align: center; padding: 60px 0 40px; page-break-after: always; }
+.cover h1 { font-size: 34pt; }
+.cover .version { color: #4a5b6d; font-size: 12pt; }
+.toc { page-break-after: always; }
+.toc h2 { border: 0; }
+.toc ul { list-style: none; margin-left: 0; }
+.toc li.l2 { font-weight: 600; margin-top: 6px; }
+.toc li.l3 { margin-left: 20px; font-weight: normal; }
+.pagebreak { page-break-after: always; }
+footer { margin-top: 30px; padding-top: 8px; border-top: 1px solid #c9d6e2; color: #6b7a8a; font-size: 9pt; text-align: center; }
+@media print { body { padding: 0; max-width: none; } h2 { page-break-before: always; } .toc h2, .cover h1 { page-break-before: auto; } }

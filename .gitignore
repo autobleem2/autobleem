@@ -105,3 +105,4 @@ __pycache__/
 # the packs tools/pack_psc_apps.py and friends write
 /dist/
 /build_win_product/
+/build_manuals/
