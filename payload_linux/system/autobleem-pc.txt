@@ -7,6 +7,13 @@
 #
 # WiFi is not set here: with no network cable plugged in, the first boot asks for a WiFi network on the screen.
 
+# How the setup is shown. gfx draws its screens graphically (the AutoBleem logo with the questions and the
+# progress bars under it); text draws the same screens as text on the console, raspi-config's look - for a
+# PC where the graphical screen stays black or garbled. Left unset, the first boot asks (graphical after
+# 30 seconds with no answer). The choice is kept in /etc/autobleem/installer-ui on the Linux partition, and
+# the launcher's online updates draw with the same screen.
+#installer=gfx
+
 # Size of the Linux system partition, in GiB. Everything else on the stick becomes the AUTOBLEEM games
 # partition (exFAT - plug the stick into any computer and drop games on it). 8 is plenty. 0 leaves the
 # partition as it is.

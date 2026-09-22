@@ -158,7 +158,15 @@ WiFi, SSH), or - with no presets - Raspberry Pi OS asks for a keyboard layout an
 `autobleem-firstboot.service` takes over the screen and keyboard (it switches to its own console, tty8) and
 shows the whole first boot as one graphical screen - the AutoBleem logo with a panel under it: the questions
 as menus and fields, the waits as messages, then the installer's progress (two bars and its last lines).
-It:
+The same screens exist as **text** on the console, in raspi-config's look (a blue background, grey windows,
+the bars and the output box drawn with characters): the PC stick's first boot **asks which of the two to
+use** first thing - graphical is recommended and taken after 30 seconds with no answer; choose text when
+the graphical screen stays black or garbled on that PC (the question comes back on every attempt, so a
+reboot out of a black screen is enough to change the answer). A Pi is not asked (the graphical screen
+works there); `installer=gfx|text` in `autobleem.txt` presets it on either. The choice is kept in
+`/etc/autobleem/installer-ui`, and the launcher's online updates draw with the same screen. A graphical
+screen that fails outright falls back to the text one, which is then remembered; without `python3` the
+prompts are plain text. It:
 
 1. waits for the network. **No network?** It asks: it lists the WiFi networks it can see, you pick one and
    type the password (or type a hidden network's name, or plug in an Ethernet cable and press `e`). There

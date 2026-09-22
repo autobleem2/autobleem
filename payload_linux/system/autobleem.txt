@@ -9,6 +9,12 @@
 # network-config file next to this one), or edit that network-config file yourself - it has a commented
 # WiFi example. With neither, the first boot asks for a WiFi network on the screen.
 
+# How the setup is shown. gfx (the default on a Pi, nothing is asked) draws its screens graphically - the
+# AutoBleem logo with the questions and the progress bars under it; text draws the same screens as text on
+# the console, raspi-config's look. Kept in /etc/autobleem/installer-ui on the Linux partition; the
+# launcher's online updates draw with the same screen.
+#installer=gfx
+
 # Size of the Linux system partition, in GiB. Everything else on the card becomes the AUTOBLEEM games
 # partition (exFAT - plug the card into a PC and drop games on it). 8 is plenty: RetroArch is built from
 # source there. 0 leaves the partition as it is.

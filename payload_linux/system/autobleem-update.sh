@@ -44,12 +44,18 @@ PY
 [ "$ra_file" = "-" ] && ra_file=""
 log "pending: AutoBleem ${ab_version} (${ab_file:-no package}), RetroArch ${ra_version} (${ra_file:-no build})"
 
-# the screen: the first boot's, when it is there and there is a framebuffer; plain text otherwise
+# The screen: the first boot's program, drawing the way the first boot chose - /etc/autobleem/installer-ui
+# says gfx (the logo and bars on the framebuffer) or text (the same as text on the console); a missing
+# file means gfx, and gfx without a framebuffer means text. Plain output only without the program.
+UI_MODE_FILE=/etc/autobleem/installer-ui
 UI_OK=0
-if [ -f "$UI" ] && [ -e /dev/fb0 ] && command -v python3 >/dev/null 2>&1; then
+BACKEND=fb
+if [ -f "$UI" ] && command -v python3 >/dev/null 2>&1; then
     UI_OK=1
+    [ "$(tr -d '[:space:]' <"$UI_MODE_FILE" 2>/dev/null)" = text ] && BACKEND=text
+    [ "$BACKEND" = fb ] && [ ! -e /dev/fb0 ] && BACKEND=text
 fi
-ui() { python3 "$UI" --logo "$LOGO" --tty "$TTY" "$@"; }
+ui() { python3 "$UI" --backend "$BACKEND" --logo "$LOGO" --tty "$TTY" --backtitle "AutoBleem - update" "$@"; }
 
 # what to run: the new package's install.sh over the unpacked tree, or the installed release's for a
 # RetroArch-only update
