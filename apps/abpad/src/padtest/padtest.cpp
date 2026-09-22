@@ -458,6 +458,14 @@ int main(int argc, char *argv[]) {
                 printf("[%d] %s\n", i, name ? name : "(no name)");
                 printf("     %d buttons, %d axes, %d hats\n", SDL_JoystickNumButtons(pads[i]),
                        SDL_JoystickNumAxes(pads[i]), SDL_JoystickNumHats(pads[i]));
+                // the GUID by both routes an app may take. Chocolate Doom finds its pad by comparing
+                // SDL_JoystickGetDeviceGUID(i) with the one saved in its configuration, so a wrong
+                // answer here is a pad the game cannot find however well everything else works.
+                char guidText[64] = {};
+                SDL_JoystickGetGUIDString(SDL_JoystickGetDeviceGUID(i), guidText, sizeof(guidText));
+                printf("     device guid %s\n", guidText);
+                SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(pads[i]), guidText, sizeof(guidText));
+                printf("     open guid   %s\n", guidText);
             }
         }
         printf("\nreading - press things\n");

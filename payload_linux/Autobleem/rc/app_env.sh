@@ -23,6 +23,24 @@ export AB_APP_DIR AB_ROOT
 mkdir -p "$AB_LOG_DIR" 2>/dev/null
 
 # ---------------------------------------------------------------------------------------------
+# A home on the stick.
+#
+# An App left alone writes its settings and saves wherever the distribution tells it to - Chocolate
+# Doom announces "Using /root/.local/share/chocolate-doom/ for configuration and saves" - which on a
+# console means writing to the machine's own storage, and that is not ours to write to. It matters
+# less on a Pi or a PC, where the root filesystem is the user's own, but the behaviour is the same
+# everywhere on purpose: an App's saves belong beside the games, on the partition that gets backed
+# up and carried about, not in a dot-directory of whatever account the launcher happens to run as.
+# ---------------------------------------------------------------------------------------------
+HOME="$AB_ROOT/Home"
+XDG_DATA_HOME="$HOME/.local/share"
+XDG_CONFIG_HOME="$HOME/.config"
+XDG_CACHE_HOME="$HOME/.cache"
+XDG_STATE_HOME="$HOME/.local/state"
+export HOME XDG_DATA_HOME XDG_CONFIG_HOME XDG_CACHE_HOME XDG_STATE_HOME
+mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME" 2>/dev/null
+
+# ---------------------------------------------------------------------------------------------
 # The virtual gamepad.
 #
 # abpadd reads the pads through SDL's GameController API with our own database - the same code and
