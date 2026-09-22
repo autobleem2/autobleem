@@ -2,11 +2,18 @@
 # older than the runner supports; the container brings its own userland). It talks to the host's Docker
 # through the socket, which is how the workflows' `container:` jobs and docker/build-image.sh run.
 #
-#   cp .env.example .env      # fill in ACCESS_TOKEN (a fine-grained PAT with "Administration: read/write"
-#                             # on the repo - the runner registers and re-registers itself with it) and
-#                             # RUNNER_WORK (a directory the user running compose can create)
-#   docker compose up -d      # the runner appears under Settings -> Actions -> Runners
+# ORG-SCOPED to autobleem2: one runner serves every repo's `self-hosted` jobs (the emulators' `publish`,
+# the launcher's `site`/`image`/`site-refresh`), instead of one runner per repo.
+#
+#   cp .env.example .env      # fill in ACCESS_TOKEN (a PAT that can register org runners for autobleem2 -
+#                             # a classic PAT with `admin:org`, or a fine-grained PAT scoped to the
+#                             # autobleem2 org with "Self-hosted runners: read and write") and RUNNER_WORK
+#                             # (a directory the user running compose can create)
+#   docker compose up -d      # the runner appears under the org's Settings -> Actions -> Runners
 #   docker compose logs -f
+#
+# The org must allow these repos to use the runner: Settings -> Actions -> Runner groups -> Default ->
+# allow pcsx-ab, pcsx-abnxt (and the launcher), or all repositories.
 #
 # RUNNER_WORK is used as the same path inside and outside the container: a job's `container:` mounts the
 # workspace by host path through the socket, so the runner's view and the daemon's view have to agree.
@@ -16,8 +23,8 @@ services:
     container_name: autobleem-runner
     restart: unless-stopped
     environment:
-      REPO_URL: https://github.com/autobleem/AutoBleem2
-      RUNNER_SCOPE: repo
+      RUNNER_SCOPE: org
+      ORG_NAME: autobleem2
       RUNNER_NAME: psc-build
       LABELS: linux,x64,psc-build
       RUNNER_WORKDIR: ${RUNNER_WORK}

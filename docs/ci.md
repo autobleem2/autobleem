@@ -104,24 +104,31 @@ merged before the runner exists, and the pipeline can be paused without touching
 ## The self-hosted runner
 
 A container on the build server (`docker/runner/compose.yml`, image `myoung34/github-runner`), talking to
-the host's Docker through the socket:
+the host's Docker through the socket. It is **org-scoped** to `autobleem2`, so one runner serves every
+repo's `self-hosted` jobs (the emulators' `publish`, the launcher's `site`/`image`/`site-refresh`) instead
+of one runner per repo:
 
 ```bash
 ssh psc-build
 cd autobleem/docker/runner
-cp .env.example .env               # ACCESS_TOKEN = a fine-grained PAT for autobleem/AutoBleem2 with
-                                   # "Administration: read and write" (the runner registers itself with it);
+cp .env.example .env               # ACCESS_TOKEN = a PAT that can register org runners for autobleem2:
+                                   # a classic PAT with the `admin:org` scope, or a fine-grained PAT scoped
+                                   # to the autobleem2 org with "Self-hosted runners: read and write".
                                    # RUNNER_WORK = the work directory (default under the claude user's home)
 mkdir -p $(sed -n 's/^RUNNER_WORK=//p' .env)
 docker compose up -d
-docker compose logs -f             # "Listening for Jobs" - and it shows under Settings -> Actions -> Runners
+docker compose logs -f             # "Listening for Jobs" - and it shows under the org's
+                                   # Settings -> Actions -> Runners
 ```
 
-What the compose file fixes and why: `RUNNER_WORK` is the same path inside and outside the container
-(a job's `container:` mounts the workspace by *host* path through the socket); the cover databases are
-mounted read-only at `/srv/autobleem-covers` and named in `AB_COVERS_DIR` for `image.yml`; labels
-`linux,x64,psc-build`. The server has two cores and 3.8 GB, so the runner takes one job at a time - the
-whole set is ~20 min with warm build directories, more from a clean checkout; `runner: github` on a dispatch moves it to GitHub's 4-core machines.
+What the compose file fixes and why: `RUNNER_SCOPE: org` + `ORG_NAME: autobleem2` register one runner for
+the whole org; `RUNNER_WORK` is the same path inside and outside the container (a job's `container:` mounts
+the workspace by *host* path through the socket); the cover databases are mounted read-only at
+`/srv/autobleem-covers` and named in `AB_COVERS_DIR` for `image.yml`; labels `linux,x64,psc-build` (a job's
+`runs-on: self-hosted` matches the runner's automatic `self-hosted` label). The server has two cores and
+3.8 GB, so the runner takes one job at a time; `runner: github` on a dispatch moves a build to GitHub's
+4-core machines. **Org runners must be allowed for the repos that use them**: the org's Settings -> Actions
+-> Runner groups -> Default group -> allow `pcsx-ab`, `pcsx-abnxt` (and the launcher), or all repositories.
 
 Housekeeping: `docker system prune -f` now and then (build cache grows with every image rebuild), and
 `docker compose pull && docker compose up -d` in `docker/runner/` to update the runner.
