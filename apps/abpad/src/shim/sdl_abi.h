@@ -165,6 +165,34 @@ struct JoyHatEvent {
     Uint8 padding2;
 };
 
+struct ControllerAxisEvent {
+    Uint32 type;
+    Uint32 timestamp;
+    Sint32 which;
+    Uint8 axis;
+    Uint8 padding1;
+    Uint8 padding2;
+    Uint8 padding3;
+    Sint16 value;
+    Uint16 padding4;
+};
+
+struct ControllerButtonEvent {
+    Uint32 type;
+    Uint32 timestamp;
+    Sint32 which;
+    Uint8 button;
+    Uint8 state;
+    Uint8 padding1;
+    Uint8 padding2;
+};
+
+struct ControllerDeviceEvent {
+    Uint32 type;
+    Uint32 timestamp;
+    Sint32 which;
+};
+
 struct JoyDeviceEvent {
     Uint32 type;
     Uint32 timestamp;
@@ -183,6 +211,9 @@ union Event {
     JoyButtonEvent jbutton;
     JoyHatEvent jhat;
     JoyDeviceEvent jdevice;
+    ControllerAxisEvent caxis;
+    ControllerButtonEvent cbutton;
+    ControllerDeviceEvent cdevice;
     QuitEvent quit;
     Uint8 padding[56];
 };

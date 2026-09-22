@@ -157,6 +157,37 @@ void ShimState::diff(int pad, const RawPadState &before, const RawPadState &afte
 }
 
 //*******************************
+// ShimState::diffController - the same change, in the game controller view
+//*******************************
+// SDL raises both a joystick event and a controller event for one press on a pad it has a mapping
+// for, so the shim does too: an app that reads either API sees what it expects, and an app that
+// happens to read both is not surprised by one of them being silent.
+void ShimState::diffController(int pad, const ControllerState &before, const ControllerState &after) {
+    for (int i = 0; i < ButtonElementCount; ++i) {
+        Element element = static_cast<Element>(i);
+        if (before.button(element) != after.button(element)) {
+            ShimEvent event;
+            event.kind =
+                after.button(element) ? ShimEvent::Kind::ControllerButtonDown : ShimEvent::Kind::ControllerButtonUp;
+            event.pad = pad;
+            event.index = i; // Element's order is SDL_CONTROLLER_BUTTON_*'s order
+            events_.push_back(event);
+        }
+    }
+    for (int i = 0; i < AxisElementCount; ++i) {
+        Element element = static_cast<Element>(FirstAxisElement + i);
+        if (before.axis(element) != after.axis(element)) {
+            ShimEvent event;
+            event.kind = ShimEvent::Kind::ControllerAxisMotion;
+            event.pad = pad;
+            event.index = i;
+            event.value = after.axis(element);
+            events_.push_back(event);
+        }
+    }
+}
+
+//*******************************
 // ShimState::update
 //*******************************
 void ShimState::update() {
@@ -180,18 +211,31 @@ void ShimState::update() {
         return; // a torn or foreign block: keep the last good state rather than jerk the pad
     }
 
+    // an app that waits for a device event before opening anything has to be told the pads are here
+    if (!announcedPads_ && eventsEnabled_) {
+        for (int pad = 0; pad < profile_.players; ++pad) {
+            ShimEvent event;
+            event.kind = ShimEvent::Kind::ControllerAdded;
+            event.pad = pad;
+            events_.push_back(event);
+        }
+        announcedPads_ = true;
+    }
+
     for (int pad = 0; pad < profile_.players; ++pad) {
         // a pad that is not plugged in reads centred and unpressed, rather than disappearing
         ControllerState controller;
         if (pad < snapshot.padCount && snapshot.connected[pad]) {
             controller = snapshot.pads[pad];
         }
+        ControllerState previous = controller_[pad];
         controller_[pad] = controller;
 
         RawPadState after = buildRawState(*layout_, controller);
         if (eventsEnabled_) {
             if (profile_.wantsJoystick()) {
                 diff(pad, raw_[pad], after);
+                diffController(pad, previous, controller);
             }
             if (profile_.wantsKeyboard()) {
                 for (int i = 0; i < ElementCount; ++i) {
@@ -243,6 +287,14 @@ const RawPadState &ShimState::raw(int pad) {
         return nothing;
     }
     return raw_[pad];
+}
+
+const ControllerState &ShimState::controller(int pad) {
+    static const ControllerState nothing;
+    if (pad < 0 || pad >= MaxPads) {
+        return nothing;
+    }
+    return controller_[pad];
 }
 
 bool ShimState::nextEvent(ShimEvent &out) {

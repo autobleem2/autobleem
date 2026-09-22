@@ -215,6 +215,57 @@ void removePad(Slot *slots, SDL_JoystickID instance) {
 }
 
 //*******************************
+// writeMappings - the mapping the daemon actually resolved, for apps the shim cannot reach
+//*******************************
+// An SDL2 app that uses the GameController API never calls the joystick entry points, so the shim is
+// invisible to it - but it still wants our pad. SDL_GAMECONTROLLERCONFIG_FILE is how to give it one,
+// and what goes in that file matters: pointing an app at gamecontrollerdb.txt would be wrong, because
+// a file entry *overrides* SDL's built-in table, and for a pad SDL already knows (a DualShock through
+// hidapi) the built-in entry is the right one and ours may be a stale line for another of its modes.
+//
+// So we write back what SDL resolved for the pads that are actually here - built-in, from our
+// database, or the guess made for a pad nobody has mapped - and an app loading that file ends up with
+// exactly the mapping the launcher is using. Rewritten whenever the pads change.
+void writeMappings(const string &path, Slot *slots) {
+    if (path.empty()) {
+        return;
+    }
+    string text = "# written by abpadd: the mapping in use for each pad that is plugged in now.\n"
+                  "# Point an app at this with SDL_GAMECONTROLLERCONFIG_FILE.\n";
+    int written = 0;
+    for (int i = 0; i < MaxPads; ++i) {
+        if (!slots[i].occupied()) {
+            continue;
+        }
+        char *mapping = SDL_GameControllerMapping(slots[i].controller);
+        if (!mapping) {
+            continue;
+        }
+        text += mapping;
+        text += "\n";
+        SDL_free(mapping);
+        ++written;
+    }
+
+    string temporary = path + ".tmp";
+    FILE *file = fopen(temporary.c_str(), "w");
+    if (!file) {
+        say("abpadd: cannot write %s", temporary.c_str());
+        return;
+    }
+    fwrite(text.data(), 1, text.size(), file);
+    fclose(file);
+#ifndef _WIN32
+    chmod(temporary.c_str(), 0644); // an App may not be us
+#endif
+    if (rename(temporary.c_str(), path.c_str()) != 0) {
+        say("abpadd: cannot replace %s", path.c_str());
+        return;
+    }
+    chatter("abpadd: %d mapping(s) written to %s", written, path.c_str());
+}
+
+//*******************************
 // readPad
 //*******************************
 ControllerState readPad(SDL_GameController *controller) {
@@ -379,6 +430,7 @@ int main(int argc, char *argv[]) {
     string shmPath = defaultShmPath();
     const char *dbFromEnvironment = getenv("AB_PAD_DB");
     string dbPaths = dbFromEnvironment ? dbFromEnvironment : "";
+    string mappingsPath;
     int rate = 250; // Hz - far more than any game reads its pad at, and a rounding error of a core
     long watchPid = 0;
     bool probeOnly = false;
@@ -391,6 +443,8 @@ int main(int argc, char *argv[]) {
             shmPath = argv[++i];
         } else if (argument == "--db" && hasNext) {
             dbPaths = dbPaths.empty() ? argv[++i] : dbPaths + ":" + argv[++i];
+        } else if (argument == "--mappings" && hasNext) {
+            mappingsPath = argv[++i];
         } else if (argument == "--rate" && hasNext) {
             rate = atoi(argv[++i]);
         } else if (argument == "--watch-pid" && hasNext) {
@@ -402,10 +456,14 @@ int main(int argc, char *argv[]) {
         } else if (argument == "--verbose") {
             g_verbose = true;
         } else {
-            say("usage: abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ]");
-            say("              [--probe] [--watch] [--verbose]");
+            say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
+            say("              [--rate HZ] [--probe] [--watch] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
+    }
+    if (mappingsPath.empty()) {
+        const char *fromEnvironment = getenv("AB_PAD_MAPPINGS");
+        mappingsPath = (fromEnvironment && *fromEnvironment) ? fromEnvironment : shmPath + ".mappings";
     }
     if (rate < 20) {
         rate = 20;
@@ -477,6 +535,8 @@ int main(int argc, char *argv[]) {
             publishPadIdentity(*shared, i, slots[i].name.c_str(), slots[i].guid.c_str());
         }
     }
+    writeMappings(mappingsPath, slots);
+    say("abpadd: mappings for the pads in use are in %s", mappingsPath.c_str());
 
     const Uint32 interval = static_cast<Uint32>(1000 / rate);
     while (!g_stop) {
@@ -492,9 +552,11 @@ int main(int argc, char *argv[]) {
                         publishPadIdentity(*shared, i, slots[i].name.c_str(), slots[i].guid.c_str());
                     }
                 }
+                writeMappings(mappingsPath, slots);
                 break;
             case SDL_JOYDEVICEREMOVED:
                 removePad(slots, event.jdevice.which);
+                writeMappings(mappingsPath, slots);
                 break;
             case SDL_QUIT:
                 g_stop = 1;

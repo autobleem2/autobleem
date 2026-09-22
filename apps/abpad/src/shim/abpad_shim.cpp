@@ -21,7 +21,9 @@
 #include "shim/sdl_abi.h"
 #include "shim/shim_state.h"
 
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 using namespace abpad;
 
@@ -97,6 +99,11 @@ bool writeSdl1(const ShimEvent &event, sdl1::Event *out) {
     case ShimEvent::Kind::Quit:
         out->quit.type = sdl1::Quit;
         return true;
+    case ShimEvent::Kind::ControllerButtonDown:
+    case ShimEvent::Kind::ControllerButtonUp:
+    case ShimEvent::Kind::ControllerAxisMotion:
+    case ShimEvent::Kind::ControllerAdded:
+        return false; // SDL 1.2 has no game controller API to raise these in
     }
     return false;
 }
@@ -129,6 +136,24 @@ bool writeSdl2(const ShimEvent &event, sdl2::Event *out) {
         out->key.state = static_cast<Uint8>(event.kind == ShimEvent::Kind::KeyDown ? 1 : 0);
         out->key.keysym.scancode = event.key.sdl2Scancode;
         out->key.keysym.sym = event.key.sdl2Keycode;
+        return true;
+    case ShimEvent::Kind::ControllerButtonDown:
+    case ShimEvent::Kind::ControllerButtonUp:
+        out->cbutton.type = (event.kind == ShimEvent::Kind::ControllerButtonDown) ? sdl2::ControllerButtonDown
+                                                                                  : sdl2::ControllerButtonUp;
+        out->cbutton.which = event.pad;
+        out->cbutton.button = static_cast<Uint8>(event.index);
+        out->cbutton.state = static_cast<Uint8>(event.kind == ShimEvent::Kind::ControllerButtonDown ? 1 : 0);
+        return true;
+    case ShimEvent::Kind::ControllerAxisMotion:
+        out->caxis.type = sdl2::ControllerAxisMotion;
+        out->caxis.which = event.pad;
+        out->caxis.axis = static_cast<Uint8>(event.index);
+        out->caxis.value = static_cast<Sint16>(event.value);
+        return true;
+    case ShimEvent::Kind::ControllerAdded:
+        out->cdevice.type = sdl2::ControllerDeviceAdded;
+        out->cdevice.which = event.pad; // on ADDED this is a device index, and the indices are ours
         return true;
     case ShimEvent::Kind::Quit:
         out->quit.type = sdl2::Quit;
@@ -319,6 +344,140 @@ int SDL_JoystickEventState(int state) {
         real(state);
     }
     return shimState.wantsEvents() ? 1 : 0;
+}
+
+//*******************************
+// the game controller view of the same virtual pads
+//*******************************
+// An SDL2 app that uses this API never calls the joystick entry points, so without these it would
+// reach past the shim to the real pad - a different pad from the one every other app is given, with
+// a different layout and none of the profile remapping, keyboard mode or hotkey. So the same virtual
+// pads are offered here too. This view needs no layout: SDL's controller model *is* the model the
+// daemon publishes, so the answers come straight from it.
+//
+// Every function taking a handle has to be here, or the app would hand our pointer to the real SDL.
+// Two are deliberately absent - SDL_GameControllerGetBindForButton and ...ForAxis return a struct by
+// value whose ABI is not worth guessing, and nothing we have met calls them. Modern SDL rejects a
+// handle it does not know rather than following it, so a miss is an error and not a crash.
+
+int SDL_IsGameController(int index) {
+    ShimState &state = shim();
+    if (!state.active()) {
+        using Fn = int (*)(int);
+        Fn real = REAL("SDL_IsGameController", Fn);
+        return real ? real(index) : 0;
+    }
+    return (index >= 0 && index < state.padCount()) ? 1 : 0;
+}
+
+const char *SDL_GameControllerNameForIndex(int index) {
+    if (!shim().active()) {
+        using Fn = const char *(*)(int);
+        Fn real = REAL("SDL_GameControllerNameForIndex", Fn);
+        return real ? real(index) : nullptr;
+    }
+    return (index >= 0 && index < shim().padCount()) ? virtualName() : nullptr;
+}
+
+void *SDL_GameControllerOpen(int index) {
+    ShimState &state = shim();
+    if (!state.active()) {
+        using Fn = void *(*)(int);
+        Fn real = REAL("SDL_GameControllerOpen", Fn);
+        return real ? real(index) : nullptr;
+    }
+    if (index < 0 || index >= state.padCount()) {
+        return nullptr;
+    }
+    state.update();
+    g_joysticks[index].magic = FakeMagic;
+    g_joysticks[index].index = index;
+    g_opened[index] = true;
+    state.log("abpad: the app opened controller %d", index);
+    return &g_joysticks[index];
+}
+
+void SDL_GameControllerClose(void *handle) {
+    int index = indexOf(handle);
+    if (index < 0) {
+        using Fn = void (*)(void *);
+        Fn real = REAL("SDL_GameControllerClose", Fn);
+        if (real) {
+            real(handle);
+        }
+        return;
+    }
+    g_opened[index] = false;
+}
+
+const char *SDL_GameControllerName(void *handle) {
+    return indexOf(handle) < 0 ? nullptr : virtualName();
+}
+
+int SDL_GameControllerGetAttached(void *handle) {
+    return indexOf(handle) >= 0 ? 1 : 0;
+}
+
+void *SDL_GameControllerGetJoystick(void *handle) {
+    // the joystick behind our controller is our joystick, so the two views stay one pad
+    return indexOf(handle) < 0 ? nullptr : handle;
+}
+
+void *SDL_GameControllerFromInstanceID(int instance) {
+    if (!shim().active()) {
+        using Fn = void *(*)(int);
+        Fn real = REAL("SDL_GameControllerFromInstanceID", Fn);
+        return real ? real(instance) : nullptr;
+    }
+    if (instance < 0 || instance >= shim().padCount()) {
+        return nullptr;
+    }
+    return &g_joysticks[instance];
+}
+
+Uint8 SDL_GameControllerGetButton(void *handle, int button) {
+    int index = indexOf(handle);
+    if (index < 0 || button < 0 || button >= ButtonElementCount) {
+        return 0;
+    }
+    shim().update();
+    return shim().controller(index).button(static_cast<Element>(button)) ? 1 : 0;
+}
+
+Sint16 SDL_GameControllerGetAxis(void *handle, int axis) {
+    int index = indexOf(handle);
+    if (index < 0 || axis < 0 || axis >= AxisElementCount) {
+        return 0;
+    }
+    shim().update();
+    return shim().controller(index).axis(static_cast<Element>(FirstAxisElement + axis));
+}
+
+void SDL_GameControllerUpdate() {
+    shim().update();
+}
+
+int SDL_GameControllerEventState(int state) {
+    return SDL_JoystickEventState(state);
+}
+
+// the caller frees this with SDL_free, so it has to come from SDL's own allocator
+char *SDL_GameControllerMapping(void *handle) {
+    if (indexOf(handle) < 0) {
+        return nullptr;
+    }
+    std::string line = shim().layout().mapping.toLine();
+    using Alloc = void *(*)(size_t);
+    Alloc allocate = REAL("SDL_malloc", Alloc);
+    char *copy = static_cast<char *>(allocate ? allocate(line.size() + 1) : malloc(line.size() + 1));
+    if (copy) {
+        memcpy(copy, line.c_str(), line.size() + 1);
+    }
+    return copy;
+}
+
+int SDL_GameControllerRumble(void *handle, Uint16 low, Uint16 high, Uint32 milliseconds) {
+    return indexOf(handle) < 0 ? -1 : 0; // the virtual pad does not shake, and says so politely
 }
 
 //*******************************

@@ -58,7 +58,8 @@ So, by app:
 |---|---|
 | SDL 1.2, any input style | the joystick interposition (the only lever there is) |
 | SDL2, raw joystick API | the joystick interposition |
-| SDL2, GameController API | `SDL_GAMECONTROLLERCONFIG` now; the `SDL_GameController*` interposition later |
+| statically linked, GameController | `SDL_GAMECONTROLLERCONFIG_FILE` pointed at the daemon's mappings file |
+| SDL2, GameController API | the `SDL_GameController*` interposition - the same virtual pad as everyone else |
 | keyboard-only, either SDL | the shim's keyboard mode (pad pushed as key events) |
 | statically linked SDL | nothing from outside - see "Later" |
 
@@ -133,6 +134,21 @@ Why not the alternatives:
 | `payload/Autobleem/rc/app_env.sh` | Starts `abpadd` for the app's lifetime, exports `LD_PRELOAD`, `AB_PAD_DB`, `AB_PAD_SHM`, `AB_PAD_PROFILE`, and `SDL_GAMECONTROLLERCONFIG` for SDL2 GameController apps. |
 | `Apps/<name>/pad.ini` | The app's profile. Absent = the default profile next to `app_env.sh`. |
 
+**The mappings file.** For an app the preload cannot reach - one statically linked against SDL - the
+daemon also writes the mapping it resolved for each pad that is plugged in, to be handed over with
+`SDL_GAMECONTROLLERCONFIG_FILE`. What goes in that file matters: pointing an app at our
+`gamecontrollerdb.txt` would be *wrong*, because a file entry overrides SDL's built-in table, and for
+a pad SDL already knows - a DualShock through hidapi - the built-in entry is the right one while ours
+may be a stale line for another of that pad's modes. Writing back what SDL actually resolved avoids
+the whole question.
+
+**Run it as root.** SDL reaches a modern pad through hidapi, which needs `/dev/hidraw*`, and those are
+root-only; without them it falls back to evdev, where the same physical pad has a different GUID
+(SDL stamps the driver into it - a trailing `h`), a different layout, and may match a quite different
+database line. The launcher runs as root, so anything less makes the daemon resolve the pad
+differently from the launcher - the one thing it exists not to do. `abpadd` says so if it cannot get
+at hidraw, and `--probe` names the driver each pad came through.
+
 ### What the shim answers
 
 *Joystick mode* - the app is shown one (or two) pads in the chosen layout and nothing else:
@@ -176,7 +192,12 @@ key.dpup = Up
 5. Keyboard mode: the profile's keys pushed as key events in whichever ABI.
 6. `app_env.sh`, the default profile and a profile per known app; `abpadd` and the shim shipped in the
    console package and the Pi one.
-7. The `SDL_GameController*` entry points, if the console's apps turn out to need them.
+7. ~~The `SDL_GameController*` entry points~~ - **done**, and brought forward rather than left to an
+   "if needed": an SDL2 app using that API would otherwise reach past the shim to the real pad and be
+   the one app with a different pad, a different layout and none of the profile's remapping, keyboard
+   mode or hotkey. Both views are now the same virtual pad. The controller view needs no layout - SDL's
+   controller model *is* what the daemon publishes - and both a joystick and a controller event are
+   raised for one press, as SDL itself does.
 8. A launcher-side page: which pads the daemon sees and what an app is shown.
 
 ## Testing it without a console

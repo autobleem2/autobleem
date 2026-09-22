@@ -24,7 +24,19 @@ namespace abpad {
 // ShimEvent - something that happened, before it is written in either SDL's words
 //*******************************
 struct ShimEvent {
-    enum class Kind { ButtonDown, ButtonUp, AxisMotion, HatMotion, KeyDown, KeyUp, Quit };
+    enum class Kind {
+        ButtonDown, // the joystick view
+        ButtonUp,
+        AxisMotion,
+        HatMotion,
+        ControllerButtonDown, // the game controller view of the same press
+        ControllerButtonUp,
+        ControllerAxisMotion,
+        ControllerAdded,
+        KeyDown,
+        KeyUp,
+        Quit
+    };
 
     Kind kind = Kind::Quit;
     int pad = 0;
@@ -52,6 +64,9 @@ public:
     void update();
 
     const RawPadState &raw(int pad);
+    // the pad as SDL's GameController API describes it - what an app using that API is answered with,
+    // straight from the daemon, since that view has no layout to it
+    const ControllerState &controller(int pad);
     bool nextEvent(ShimEvent &out);
     bool wantsEvents() const { return eventsEnabled_; }
     void setWantsEvents(bool enabled) { eventsEnabled_ = enabled; }
@@ -64,6 +79,7 @@ private:
     ShimState();
     void loadProfile();
     void diff(int pad, const RawPadState &before, const RawPadState &after);
+    void diffController(int pad, const ControllerState &before, const ControllerState &after);
 
     bool active_ = false;
     bool eventsEnabled_ = true;
@@ -80,6 +96,9 @@ private:
     RawPadState raw_[MaxPads];
     ControllerState controller_[MaxPads];
     bool lastHeld_[MaxPads][ElementCount] = {}; // keyboard mode: what was down last time round
+    RawPadState rawBefore_[MaxPads];
+    ControllerState controllerBefore_[MaxPads];
+    bool announcedPads_ = false;
     bool hotkeyWasHeld_ = false;
     std::deque<ShimEvent> events_;
     FILE *log_ = nullptr;

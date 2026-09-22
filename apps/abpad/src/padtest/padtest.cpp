@@ -293,10 +293,77 @@ int runMapper(SDL_Joystick *pad, const char *writePath, int holdSeconds) {
 
 } // namespace
 
+//*******************************
+// --gc: the same pad through SDL's GameController API
+//*******************************
+// The other half of the shim's surface. An app using this API never calls the joystick entry points,
+// so it has to be exercised separately - and the answer should be the same pad either way, which is
+// the point of the shim covering both.
+int runController(int seconds) {
+    int count = SDL_NumJoysticks();
+    printf("SDL_NumJoysticks() = %d\n", count);
+    SDL_GameController *pads[MaxPadsShown] = {};
+    int opened = 0;
+    for (int i = 0; i < count && i < MaxPadsShown; ++i) {
+        if (!SDL_IsGameController(i)) {
+            printf("[%d] SDL_IsGameController says no\n", i);
+            continue;
+        }
+        pads[i] = SDL_GameControllerOpen(i);
+        if (!pads[i]) {
+            printf("[%d] will not open as a controller: %s\n", i, SDL_GetError());
+            continue;
+        }
+        const char *name = SDL_GameControllerName(pads[i]);
+        printf("[%d] controller: %s\n", i, name ? name : "(no name)");
+        ++opened;
+    }
+    if (opened == 0) {
+        printf("no game controllers\n");
+        return 1;
+    }
+
+    printf("\nreading the controller API - press things\n");
+    fflush(stdout);
+    Uint32 until = SDL_GetTicks() + static_cast<Uint32>(seconds) * 1000;
+    while (SDL_GetTicks() < until) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_CONTROLLERBUTTONDOWN || event.type == SDL_CONTROLLERBUTTONUP) {
+                printf(
+                    "pad %d  %s %s\n", event.cbutton.which,
+                    SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(event.cbutton.button)),
+                    event.type == SDL_CONTROLLERBUTTONDOWN ? "down" : "up");
+                fflush(stdout);
+            } else if (event.type == SDL_CONTROLLERAXISMOTION &&
+                       (event.caxis.value > 16000 || event.caxis.value < -16000)) {
+                printf("pad %d  %s = %d\n", event.caxis.which,
+                       SDL_GameControllerGetStringForAxis(static_cast<SDL_GameControllerAxis>(event.caxis.axis)),
+                       event.caxis.value);
+                fflush(stdout);
+            } else if (event.type == SDL_CONTROLLERDEVICEADDED) {
+                printf("controller %d arrived\n", event.cdevice.which);
+                fflush(stdout);
+            } else if (event.type == SDL_QUIT) {
+                printf("SDL_QUIT - the shim's hotkey\n");
+                until = 0;
+            }
+        }
+        SDL_Delay(16);
+    }
+    for (SDL_GameController *pad : pads) {
+        if (pad) {
+            SDL_GameControllerClose(pad);
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     int seconds = 0; // 0 = until the hotkey or ctrl-c
     bool plain = false;
     bool mapping = false;
+    bool controllerApi = false;
     int settleMs = 3000;
     int holdSeconds = 15;
     const char *writePath = nullptr;
@@ -307,6 +374,8 @@ int main(int argc, char *argv[]) {
             plain = true;
         } else if (strcmp(argv[i], "--map") == 0) {
             mapping = true;
+        } else if (strcmp(argv[i], "--gc") == 0) {
+            controllerApi = true;
         } else if (strcmp(argv[i], "--write") == 0 && i + 1 < argc) {
             writePath = argv[++i];
         } else if (strcmp(argv[i], "--settle") == 0 && i + 1 < argc) {
@@ -325,9 +394,15 @@ int main(int argc, char *argv[]) {
 #endif
 
     SDL_SetMainReady();
-    if (SDL_Init(SDL_INIT_JOYSTICK) != 0) {
+    if (SDL_Init(SDL_INIT_JOYSTICK | (controllerApi ? SDL_INIT_GAMECONTROLLER : 0)) != 0) {
         printf("SDL_Init failed: %s\n", SDL_GetError());
         return 1;
+    }
+
+    if (controllerApi) {
+        int result = runController(seconds > 0 ? seconds : 30);
+        SDL_Quit();
+        return result;
     }
 
     int count = SDL_NumJoysticks();
