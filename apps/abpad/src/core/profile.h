@@ -43,6 +43,11 @@ struct Profile {
     std::vector<Element> hotkey; // all held together; empty = no hotkey
     std::map<Element, std::string> keys;
     std::string logPath;
+    // These machines have no mouse, so a cursor on screen is never wanted - but an app is free to
+    // turn one on, and several do (SDLPoP shows one with its menu). Hidden unless a profile says
+    // otherwise, and independently of `mode`: an app that needs no help with its pad may still put
+    // a cursor on the television.
+    bool hideCursor = true;
 
     bool wantsJoystick() const { return mode == PadMode::Joystick || mode == PadMode::Both; }
     bool wantsKeyboard() const { return mode == PadMode::Keyboard || mode == PadMode::Both; }

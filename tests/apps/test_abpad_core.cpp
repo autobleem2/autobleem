@@ -450,3 +450,30 @@ TEST_CASE("a key a profile names, in both SDLs' numbers") {
         CHECK(keyCodeFromName("F0").valid() == false);
     }
 }
+
+TEST_CASE("the cursor is hidden unless a profile asks to keep it") {
+    Profile profile;
+    CHECK(profile.hideCursor); // these machines have no mouse
+
+    SUBCASE("a profile can ask for it back") {
+        for (const char *spelling : {"keep", "show", "visible", "on"}) {
+            Profile kept;
+            istringstream text(string("cursor = ") + spelling + "\n");
+            kept.loadStream(text);
+            CHECK(kept.hideCursor == false);
+        }
+    }
+
+    SUBCASE("and anything else means hide") {
+        istringstream text("cursor = hide\n");
+        profile.loadStream(text);
+        CHECK(profile.hideCursor);
+    }
+
+    SUBCASE("it is independent of the mode, because an app needing no pad help may still show one") {
+        istringstream text("mode = off\n");
+        profile.loadStream(text);
+        CHECK(profile.mode == PadMode::Off);
+        CHECK(profile.hideCursor);
+    }
+}

@@ -481,6 +481,57 @@ int SDL_GameControllerRumble(void *handle, Uint16 low, Uint16 high, Uint32 milli
 }
 
 //*******************************
+// the mouse cursor
+//*******************************
+// A console and a Pi appliance have no mouse, so a cursor drawn over the game is simply wrong - but
+// it is the *app* that asks for one, not the driver, and plenty of them do (SDLPoP turns one on with
+// its menu). So the request is refused: the cursor is hidden when the window appears and every
+// attempt to bring it back is answered by hiding it again.
+//
+// SDL 1.2 and SDL2 declare SDL_ShowCursor identically, so one function serves both; the window call
+// they hang it on differs, and those are separate symbols, so both can be here without a conflict.
+
+void hideCursorNow() {
+    using Fn = int (*)(int);
+    Fn real = REAL("SDL_ShowCursor", Fn);
+    if (real) {
+        real(0); // SDL_DISABLE, the same value in both
+    }
+}
+
+int SDL_ShowCursor(int toggle) {
+    using Fn = int (*)(int);
+    Fn real = REAL("SDL_ShowCursor", Fn);
+    if (shim().profile().hideCursor) {
+        if (real) {
+            real(0);
+        }
+        return 0; // and a query is told what is true: there is no cursor
+    }
+    return real ? real(toggle) : 0;
+}
+
+void *SDL_CreateWindow(const char *title, int x, int y, int w, int h, Uint32 flags) { // SDL2
+    using Fn = void *(*)(const char *, int, int, int, int, Uint32);
+    Fn real = REAL("SDL_CreateWindow", Fn);
+    void *window = real ? real(title, x, y, w, h, flags) : nullptr;
+    if (shim().profile().hideCursor) {
+        hideCursorNow(); // some drivers show one the moment there is a window to show it over
+    }
+    return window;
+}
+
+void *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags) { // SDL 1.2
+    using Fn = void *(*)(int, int, int, Uint32);
+    Fn real = REAL("SDL_SetVideoMode", Fn);
+    void *surface = real ? real(width, height, bpp, flags) : nullptr;
+    if (shim().profile().hideCursor) {
+        hideCursorNow();
+    }
+    return surface;
+}
+
+//*******************************
 // events
 //*******************************
 // The app's own events come through first - it still has a keyboard, a window and a clock - with the
