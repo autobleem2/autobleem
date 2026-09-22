@@ -53,6 +53,16 @@ installed (ABFlashKit, chapter 6) also boots from an exFAT stick, which lifts FA
 4. Take the stick out safely, plug it into the console's **second USB port** (the right one, player 2) and
    switch the console on. AutoBleem starts instead of the stock menu.
 
+**Switching on and off.** With the stick in, the console boots, blinks its light for a few seconds
+(AutoBleem is being picked up) and then goes to standby before anything is shown - that is the console's
+own way of staging an update, which is how AutoBleem gets to run. Press **Power** once and the launcher
+comes up. *Power Off* in the system menu, or the console's Power button, puts the console into
+**AutoBleem's standby**: the stick is disconnected first, then the light turns **red** - the sign that
+AutoBleem is working as intended - and the next press of Power brings the launcher straight back, in a
+few seconds. **While the light is red the stick can be pulled** and put into a PC without Windows asking
+to check it; put it back before pressing Power. Unplugging the console's power goes through the boot
+standby again next time.
+
 To **update** a stick, run a newer installer over it: your games, saves, settings and RetroArch content
 stay; only AutoBleem's own files are replaced. A stick made with AutoBleem 1.0 or AutoBleem-NG is brought
 to the new layout automatically.
@@ -201,7 +211,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 | Options | AutoBleem's settings (section 3.5). |
 | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | About | Credits and licence. |
-| Power Off | Shuts the machine down, after a confirmation. |
+| Power Off | After a confirmation: on the console AutoBleem's standby - the stick disconnected, the light red, Power brings the launcher back (section 2.1); on a Pi or PC the machine shuts down. |
 
 ![The system menu](../images/en/system-menu.jpg)
 

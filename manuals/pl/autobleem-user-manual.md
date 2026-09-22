@@ -52,6 +52,16 @@ AutoBleem (ABFlashKit, rozdział 6) uruchamia się także z pendrive'a exFAT, co
 4. Bezpiecznie odłącz pendrive, włóż go do **drugiego portu USB** konsoli (prawego, gracz 2) i włącz konsolę.
    Zamiast fabrycznego menu uruchamia się AutoBleem.
 
+**Włączanie i wyłączanie.** Z włożonym pendrivem konsola startuje, przez kilka sekund miga diodą
+(AutoBleem jest wykrywany) i przechodzi w stan czuwania, zanim cokolwiek się pokaże - tak konsola
+sama przygotowuje aktualizację i dzięki temu AutoBleem w ogóle może się uruchomić. Naciśnij raz
+**Power** i pojawi się launcher. *Wyłącz* w menu systemowym albo przycisk Power konsoli przełącza
+konsolę w **czuwanie AutoBleem**: najpierw odłączany jest pendrive, potem dioda świeci **na czerwono** -
+to znak, że AutoBleem działa tak, jak powinien - a następne naciśnięcie Power przywraca launcher w kilka
+sekund. **Gdy dioda jest czerwona, pendrive można wyjąć** i włożyć do PC bez pytania Windows o
+sprawdzenie dysku; włóż go z powrotem przed naciśnięciem Power. Po odłączeniu zasilania konsola
+następnym razem znów przechodzi przez czuwanie przy starcie.
+
 Żeby **zaktualizować** pendrive, uruchom na nim nowszy instalator: gry, zapisy, ustawienia i zawartość
 RetroArch zostają; wymieniane są tylko pliki samego AutoBleem. Pendrive zrobiony AutoBleem 1.0 albo
 AutoBleem-NG jest automatycznie przenoszony do nowego układu folderów.
@@ -202,7 +212,7 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 | Opcje | Ustawienia AutoBleem (punkt 3.5). |
 | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | O programie | Autorzy i licencja. |
-| Wyłącz | Wyłącza maszynę, po potwierdzeniu. |
+| Wyłącz | Po potwierdzeniu: na konsoli czuwanie AutoBleem - pendrive odłączony, dioda czerwona, Power przywraca launcher (punkt 2.1); na Pi lub PC maszyna się wyłącza. |
 
 ![Menu systemowe](../images/pl/system-menu.jpg)
 

@@ -1735,14 +1735,66 @@ Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFol
 or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
 an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
-in practice only ever `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item); starting a
-game and returning from one both loop back into the launcher in-process and never reach it. `selection.sh`
-reboots for anything else (a crash, a missing `autobleem_cfg.sh`), which brings AutoBleem back up. The stock
+`MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item) or `MENU_OPTION_POWEROFF` (see
+"The console's power off" below); starting a game and returning from one both loop back into the launcher
+in-process and never reach it. `boot.sh` loops `autobleem.sh` -> `selection.sh` since 2026-09-22, so both
+come back to the launcher without a reboot; `selection.sh` reboots for anything else (a crash, a missing
+`autobleem_cfg.sh` - the file is deleted once read), which brings AutoBleem back up. The stock
 SonyUI exit - `starter` mounted over `/usr/sony/bin/pcsx`, USB games linked into `/gaadata` with a `.lic`
 each (`link.sh`/`overmount.sh`/`startsony.sh`) - is gone with it (2026-09-18, as in AutoBleem-NG), and so is
 `.lic` handling in the scanner. RetroBoot's own update hook went the same day: `autobleem.sh` no longer
 runs `retroboot/bin/init.sh` at boot, and the `/tmp/.rbpatching` guards, `rb_patch_background.sh` and
 `rb_monitor.sh` are deleted - an RB_Patch dropped on the stick is not applied by AutoBleem any more.
+
+### The console's power off (2026-09-22) - and how the exploit chain really runs
+
+What the boot really is, from `tools/psc_mount_debug.sh`'s dumps (the two rounds are in the git log of this
+entry): the console is **systemd** (`halt`/`reboot`/`shutdown` are `systemctl`); `powermanage.service`
+(`/usr/bin/start_pman`) does its housekeeping and then **`echo mem > /sys/power/state` - the "1st
+suspend"**, the standby every boot goes through before the power button; `usbwatch.service`
+(`/usr/bin/usb_watch`) polls `blkid` every 2 s for a `SONY*`-labelled `sd[ab]1`, mounts it rw on `/media`,
+finds `/media/028c18a9-.../` (one of Sony's eight update ids), gpg-"verifies" `LUPDATA.BIN` into
+`/tmp/diag/028c.../start` and runs it - `red_led 14 0.2` (the 5.6 s blink) then `cd /media/Autobleem; source
+./start.sh` - so **our whole chain is sourced into a shell whose script lives on tmpfs**; the only thing of
+Sony's that ever holds the stick is that shell's cwd, which our `cd` moved there. The mount lands at ~6 s,
+the suspend during the blink: the stick is mounted rw all through the boot standby (its dirty flag set),
+and nothing of ours runs before it - that part is untouchable. Sony's own "power off" is `power_manage`
+(`/data/power/*` = `/dev/shm/power`, `touch prepare_suspend`, `echo mem`), a suspend as well; the board has
+no real halt, `shutdown -h now` (systemd, which unmounts `/media` cleanly first) reboots. **The USB bus is
+reset by every resume** - hub, pad and stick re-enumerate within 2 s (the stick keeps its name, usually) -
+and `power_manage` does not notice a suspend it did not start (`resume_count`/`usbreset_count` stay put).
+
+So the launcher's **Power Off is Sony's power off with the stick unmounted** (verified on the console the
+same day with `tools/psc_sleep_test.sh` before it was built): `App::requestPowerOff()` (the system menu's
+item and the power button - `AutoBleem`'s constructor re-wires `Platform::setPowerOffHandler` on
+`AB_PLATFORM_PSC`; every other build keeps `System::powerOff()`) sets `MENU_OPTION_POWEROFF` (7) and
+`Input::requestQuit()` - poll() returns Quit on every call from then on, every screen's loop closes on
+Quit, so the stack of screens unwinds and `AutoBleem::run()` leaves cleanly (databases closed, the scan
+joined), "POWERING OFF... PLEASE WAIT" on the screen. `rc/boot.sh` is a loop now (`cd $RC; ./autobleem.sh;
+cd /tmp; sh /tmp/selection.sh`), the udev rules file bind-mounted from `/tmp`, so nothing of ours is on the
+stick while `selection.sh` (a copy on tmpfs) runs its `standby()`: `rm System/.session`, `umount /media`
+(five tries; busy -> the holders into `System/Logs/standby.log` and a reboot), `abfatflag clean` when the
+flag is ours (below), **green off, red on**, `echo mem`, and after the power button: green on, 3 s for
+the bus, up to 30 s of `blkid` for the `SONY` partition, `mount` as usb_watch mounts it, `touch
+System/.session`, exit 0 -> the launcher again. No stick after 30 s -> reboot. The red LED alone is
+"AutoBleem's standby" (the manual says so: the sign it works as intended). RetroArch (`AB_SELECTION=4`)
+comes back through the same loop - `retroarch.sh` no longer re-runs `start.sh` nested.
+
+**The dirty flag** (`ableem::FatDirtyFlag`, `lib_ableem/engine/fat_dirty_flag.*`, tested; the CLI
+`abfatflag DEVICE [clean|dirty]` in `src/tools/`, shipped next to `absplash`): the boot sector byte at
+0x41 (FAT32) / 0x25 (FAT12/16) bit 0 - what Linux's fat driver sets on an rw mount and clears on umount,
+what Windows' "scan and fix" keys on - plus FAT[1]'s ClnShutBit on a clear, and exFAT's `VolumeFlags`
+bit 1 (excluded from the boot checksum). **The kernel never clears a flag it found set at mount time**
+(`fat_set_state`'s `sbi->dirty` gate; it says "Volume was not properly unmounted" and leaves it), so a
+stick pulled once during the boot standby would stay dirty for ever. `rc/checkstick.sh` (boot.sh, before
+the launcher, nothing open for writing yet): copies the tool to `/tmp`, and when `System/.session` is
+absent - the previous session ended through the standby - does `remount,ro` (the kernel clears a flag
+it owns right there), `abfatflag clean` if it is still dirty (then it is ours: `/tmp/ab_stick_owned`, and
+`abfatflag dirty` after the `remount,rw` to keep "mounted rw = dirty" true on disk), and `touch
+System/.session`. A session that ended any other way - the stick pulled while the launcher ran, a crash
+- leaves the marker, the flag stays, and Windows gets to repair real damage. `standby()` clears an owned
+flag after its umount and forgets the ownership after the fresh mount (the kernel owns it again).
+Nothing in any of this writes to the console's own storage (the owner's rule: `/data` included).
 
 ## Source map (`src/code/`)
 
@@ -1756,10 +1808,10 @@ defaults, which both the services and the screens need.
 | Version | `core/version.h` (generated) | `Version::VERSION` (the last git tag, else `AB_VERSION_FALLBACK` in CMakeLists - was `config.ini`'s `Version=` key, dropped on load now), `GIT_HASH`, `GIT_BRANCH`, `GIT_DIRTY`, `BUILD_TIMESTAMP`, `FULL_VERSION` (`v2.0.0-pre0 (master@a83777b*)`). Written by `cmake/generate_version.cmake` into `<build>/generated/core/` on every build (`ab_version` target; the header only changes when the facts do - `BUILD_TIMESTAMP` is kept from the existing header while tag, hash, branch and dirty flag are the same (2026-09-21), so it is when *this version* was first built, and a no-change ninja run is a no-op). The splash, About and the log's first line use it. Include as `"core/version.h"`. |
 | Entry | `main.cpp` | Strips `--sysinfo`, has `EnvironmentSetup::fromArguments()` configure `ableem::Environment`, registers `SDL_Quit`, then constructs the one `AutoBleem` and calls `run()`. |
 | `core/services/environment_setup.*` | `EnvironmentSetup` | The layouts a program can be started with (2026-09-18, was `main.cpp`'s `setupEnvironment()`): `fromRoot(root)` (everything under one root - the console's `/media`, the Pi's data partition, the 1-arg debug mode: `Games/`, `System/Databases/`, `Autobleem/bin/autobleem` as the resources dir, `Autobleem/bin/db`, `themes/`; the Sony data tree is the console's own or `<resources>/sony` under `AB_ROOT_RELATIVE_LAYOUT`), `fromDbAndGames()` (the 2-arg debug layout), `fromArguments()` (autobleem-gui's command line) and `forTool(argc, argv, name)` for a console tool in `Apps/<tool>` (optional root, `/media` by default on the console; pins `Env::getAppDir()` - the tool's own folder, `getPathToAppLangDir()` its `lang/` - before anything can chdir). Every one applies `PlatformConfig`. The only place besides `Env::platformName()` that spells `/media` or `/usr/sony`. Tested in `tests/core/test_environment_setup.cpp`. |
-| `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, requests a scan up front when `games.fingerprint` doesn't match (or is missing, or there are loose game files, or `gamelist.xml` is gone), starts `scans()` and shows the splash, then loops `GuiLauncher` directly - `MENU_OPTION_START` → `launchGame()` (watching paused around it) → back to the launcher; `MENU_OPTION_RETRO` exits the loop. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
+| `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, requests a scan up front when `games.fingerprint` doesn't match (or is missing, or there are loose game files, or `gamelist.xml` is gone), starts `scans()` and shows the splash, then loops `GuiLauncher` directly - `MENU_OPTION_START` → `launchGame()` (watching paused around it) → back to the launcher; `MENU_OPTION_RETRO` and `MENU_OPTION_POWEROFF` (the console's standby, `App::requestPowerOff()` - see "The console's power off") exit the loop. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
 | `app_base.*` | `AppBase` | The model of any program drawn with the classic UI: `Config`, `Lang`, `Theme`, `Clock`, the `Gui` singleton (whose window title it sets - `Gui::setWindowTitle` before the first `getInstance()`) and `AppAudio`. Top of `ab_classic`; every `GuiScreen`'s `app` member is one. `AppBase::get()` for the non-screens (Gui, Theme, AppAudio, Fonts). |
 | `app.*` | `App : AppBase` | AutoBleem's model on top of it: the `GameLibrary`, the `Session`, every service (including `ScanService`, `app.scans()`). Top of `ab_ui`. `App::get()` is a `static_cast` of `AppBase::get()`; a game-aware screen declares its own `App &app = App::get();` over `GuiScreen`'s `AppBase &app` (the seven that do: the two game editors, Game Manager, memory cards, playlists, select-memcard, `GuiLauncher`). |
-| `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
+| `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START`/`UPDATE`/`POWEROFF` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
 | `core/services/online_assets.*` | `OnlineAssets` | The scan's online side (2026-09-19): `probe()` (one request per instance), `fetch(url, file)` through the platform's `download_command` (`%u`/`%o`, `std::system`, a `.part` renamed on success), `ensureDatabases(rdbDir)` (the 40 MB `database-rdb.zip` unpacked when there is no `.rdb`), `fetchBoxArt(thumbnailsDir, db, label)` -> Fetched / AlreadyThere / Missing (remembered in `Named_Boxarts/.autobleem-missing.txt` after a re-probe) / Failed (the network went). `boxArtUrl()`/`urlEncode()` spell the libretro-thumbnails URL. `CommandRunner` is the test seam. Made per scan cycle by `ScanService` from what `setOnline()` was given (`App::applyOnlineSetting()`: config.ini `online` + `Env::downloadCommand()`). |
 | `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`, and - with RetroArch detected, `romScanEnabled()` - `ableem::RetroArchScanner` over the ROM folders with its own `CoreInfoTable`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread, has `RetroArchService` reload rewritten playlists, and returns a `ScanUpdate` (added/updated/removed games, `playlistsWritten`, progress, finished with the game and ROM counts). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce over both `games.fingerprint` and `roms.fingerprint`, checked every `ScanWatchInterval` when nothing was requested directly; `fingerprintsMatchDisk()` is the startup check. **A moved game keeps its row** (2026-09-21): the rows whose folder is not where the database says are kept aside at `ScanStarted` (`VanishedGame`: id, folder name, disc names), a verified game at a new path with the same folder name and disc file names claims one (`claimMovedGame` -> `GameDatabase::updateGamePath`, reported in `updatedGames`, so id/history/last_played and the carousel's selection survive a drag into a sub-folder), and the unclaimed are deleted at `Finished`; a *renamed* folder is a new game. The ROM pass gets `<state>/roms.scanstate` (`romScanStateFilePath()`) as the scanner's per-folder state, so a rescan skips every ROM folder nothing changed in. Owned by `App` (`app.scans()`, constructed with `&retroArch_`). |
 | `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
