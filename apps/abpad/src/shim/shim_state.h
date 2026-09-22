@@ -99,7 +99,11 @@ private:
     RawPadState rawBefore_[MaxPads];
     ControllerState controllerBefore_[MaxPads];
     bool announcedPads_ = false;
-    bool hotkeyWasHeld_ = false;
+    // The hotkey has to be *held*, not merely pressed: Start and Select are both live buttons in
+    // plenty of games, and a pad quitting the game because two of them were pressed together would
+    // be worse than having no way out at all.
+    unsigned hotkeyHeldCycles_ = 0;
+    bool hotkeyQuitSent_ = false;
     std::deque<ShimEvent> events_;
     FILE *log_ = nullptr;
 };

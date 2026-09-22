@@ -48,6 +48,10 @@ struct Profile {
     // otherwise, and independently of `mode`: an app that needs no help with its pad may still put
     // a cursor on the television.
     bool hideCursor = true;
+    // Both by default: an old game reads the d-pad or the stick and rarely both, and which one is
+    // not knowable from outside. Feeding each from the other costs nothing where the game reads only
+    // one, and says the same thing twice where it reads both.
+    MovementAid movement = MovementAid::Both;
 
     bool wantsJoystick() const { return mode == PadMode::Joystick || mode == PadMode::Both; }
     bool wantsKeyboard() const { return mode == PadMode::Keyboard || mode == PadMode::Both; }

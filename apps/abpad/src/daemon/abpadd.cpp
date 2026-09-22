@@ -14,6 +14,7 @@
 // a pad is mapped at all and what the launcher would call it.
 
 #include "core/mapping.h"
+#include "core/profile.h"
 #include "core/shared_state.h"
 #include "core/shm_block.h"
 
@@ -266,6 +267,55 @@ void writeMappings(const string &path, Slot *slots) {
 }
 
 //*******************************
+// QuitWatch - the way out that does not depend on the app agreeing
+//*******************************
+// The shim asks the app to quit when the hotkey is held, which is enough for an app that listens.
+// Some do not: they ignore SDL_QUIT, or they are wedged, or they have taken the screen and the
+// keyboard and there is nothing else to press. The daemon is the one part of this that is outside
+// the app and knows its pid, so it is the part that can end it - politely first, then not.
+class QuitWatch {
+public:
+    QuitWatch(const vector<Element> &hotkey, long pid) : hotkey_(hotkey), pid_(pid) {}
+
+    bool enabled() const { return pid_ > 0 && !hotkey_.empty(); }
+
+    // called once per cycle with every pad's state; true when the app is gone and we should stop
+    void check(const ControllerState *pads, const bool *connected, int padCount, int rate) {
+        if (!enabled()) {
+            return;
+        }
+        bool held = false;
+        for (int i = 0; i < padCount; ++i) {
+            held = held || (connected[i] && hotkeyHeld(hotkey_, pads[i]));
+        }
+        if (!held) {
+            cycles_ = 0;
+            return;
+        }
+
+        ++cycles_;
+        // the shim has had its go by now (it asks after about a second and a half); these are the
+        // two steps after that, so a single unbroken hold goes ask -> terminate -> kill
+        if (cycles_ == rate * 3) {
+            say("abpadd: the hotkey has been held - stopping the app (pid %ld)", pid_);
+#ifndef _WIN32
+            kill(static_cast<pid_t>(pid_), SIGTERM);
+#endif
+        } else if (cycles_ == rate * 5) {
+            say("abpadd: it did not stop - killing it");
+#ifndef _WIN32
+            kill(static_cast<pid_t>(pid_), SIGKILL);
+#endif
+        }
+    }
+
+private:
+    vector<Element> hotkey_;
+    long pid_;
+    int cycles_ = 0;
+};
+
+//*******************************
 // readPad
 //*******************************
 ControllerState readPad(SDL_GameController *controller) {
@@ -431,6 +481,7 @@ int main(int argc, char *argv[]) {
     const char *dbFromEnvironment = getenv("AB_PAD_DB");
     string dbPaths = dbFromEnvironment ? dbFromEnvironment : "";
     string mappingsPath;
+    string quitHotkey = "start+select";
     int rate = 250; // Hz - far more than any game reads its pad at, and a rounding error of a core
     long watchPid = 0;
     bool probeOnly = false;
@@ -443,6 +494,8 @@ int main(int argc, char *argv[]) {
             shmPath = argv[++i];
         } else if (argument == "--db" && hasNext) {
             dbPaths = dbPaths.empty() ? argv[++i] : dbPaths + ":" + argv[++i];
+        } else if (argument == "--quit-hotkey" && hasNext) {
+            quitHotkey = argv[++i];
         } else if (argument == "--mappings" && hasNext) {
             mappingsPath = argv[++i];
         } else if (argument == "--rate" && hasNext) {
@@ -457,7 +510,7 @@ int main(int argc, char *argv[]) {
             g_verbose = true;
         } else {
             say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
-            say("              [--rate HZ] [--probe] [--watch] [--verbose]");
+            say("              [--quit-hotkey a+b] [--rate HZ] [--probe] [--watch] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
     }
@@ -523,6 +576,11 @@ int main(int argc, char *argv[]) {
 #endif
     say("abpadd: publishing to %s", shmPath.c_str());
 
+    QuitWatch quitWatch(parseHotkey(quitHotkey), watchPid);
+    if (quitWatch.enabled()) {
+        say("abpadd: holding %s will stop the app (pid %ld)", quitHotkey.c_str(), watchPid);
+    }
+
     Slot slots[MaxPads];
     // whatever is already plugged in when we start, once it has stopped changing shape under us;
     // everything after that arrives as an event
@@ -577,6 +635,7 @@ int main(int argc, char *argv[]) {
             }
         }
         publishPads(*shared, pads, connected, highest);
+        quitWatch.check(pads, connected, highest, rate);
 
 #ifndef _WIN32
         // the App we were started for has gone: nothing left to serve

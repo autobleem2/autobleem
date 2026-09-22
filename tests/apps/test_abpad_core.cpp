@@ -477,3 +477,71 @@ TEST_CASE("the cursor is hidden unless a profile asks to keep it") {
         CHECK(profile.hideCursor);
     }
 }
+
+TEST_CASE("the d-pad and the stick stand in for each other") {
+    SUBCASE("a d-pad press moves the stick, which is what Doom reads") {
+        ControllerState state = pressing({Element::DpLeft});
+        applyMovementAid(state, MovementAid::DpadToStick);
+        CHECK(state.axis(Element::LeftX) == -32767);
+        CHECK(state.button(Element::DpLeft)); // and the d-pad still says so
+        CHECK(state.button(Element::DpRight) == false);
+    }
+
+    SUBCASE("a pushed stick presses the d-pad, which is what a hat-only game reads") {
+        ControllerState state;
+        state.set(Element::LeftY, static_cast<int16_t>(-30000));
+        applyMovementAid(state, MovementAid::StickToDpad);
+        CHECK(state.button(Element::DpUp));
+        CHECK(state.button(Element::DpDown) == false);
+        CHECK(state.axis(Element::LeftY) == -30000); // and the stick is left alone
+    }
+
+    SUBCASE("a real stick beats a d-pad standing in for one") {
+        ControllerState state = pressing({Element::DpRight});
+        state.set(Element::LeftX, static_cast<int16_t>(-30000)); // a hand on the stick, going left
+        applyMovementAid(state, MovementAid::Both);
+        CHECK(state.axis(Element::LeftX) == -30000);
+    }
+
+    SUBCASE("both directions at once still work") {
+        ControllerState state = pressing({Element::DpUp, Element::DpRight});
+        applyMovementAid(state, MovementAid::Both);
+        CHECK(state.axis(Element::LeftX) == 32767);
+        CHECK(state.axis(Element::LeftY) == -32767);
+    }
+
+    SUBCASE("both is not a loop: feeding one from the other does not feed back") {
+        ControllerState state = pressing({Element::DpUp});
+        applyMovementAid(state, MovementAid::Both);
+        ControllerState again = state;
+        applyMovementAid(again, MovementAid::Both);
+        CHECK(again == state);
+    }
+
+    SUBCASE("as-is leaves the pad exactly as the layout describes it") {
+        ControllerState state = pressing({Element::DpLeft});
+        ControllerState before = state;
+        applyMovementAid(state, MovementAid::AsIs);
+        CHECK(state == before);
+    }
+
+    SUBCASE("a resting pad stays resting") {
+        ControllerState state;
+        applyMovementAid(state, MovementAid::Both);
+        CHECK(state == ControllerState());
+    }
+
+    SUBCASE("the names a profile may use") {
+        CHECK(movementAidFromName("as-is") == MovementAid::AsIs);
+        CHECK(movementAidFromName("dpad-to-stick") == MovementAid::DpadToStick);
+        CHECK(movementAidFromName("stick-to-dpad") == MovementAid::StickToDpad);
+        CHECK(movementAidFromName("") == MovementAid::Both);
+        CHECK(string(movementAidName(MovementAid::DpadToStick)) == "dpad-to-stick");
+
+        Profile profile;
+        CHECK(profile.movement == MovementAid::Both); // the forgiving default
+        istringstream text("movement = stick-to-dpad\n");
+        profile.loadStream(text);
+        CHECK(profile.movement == MovementAid::StickToDpad);
+    }
+}

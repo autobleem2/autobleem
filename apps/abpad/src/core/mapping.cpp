@@ -283,6 +283,79 @@ bool ControllerState::operator==(const ControllerState &other) const {
 }
 
 //*******************************
+// movementAidFromName / movementAidName
+//*******************************
+MovementAid movementAidFromName(const string &name) {
+    if (name == "as-is" || name == "asis" || name == "off" || name == "none") {
+        return MovementAid::AsIs;
+    }
+    if (name == "dpad-to-stick" || name == "stick") {
+        return MovementAid::DpadToStick;
+    }
+    if (name == "stick-to-dpad" || name == "dpad" || name == "hat") {
+        return MovementAid::StickToDpad;
+    }
+    return MovementAid::Both;
+}
+
+const char *movementAidName(MovementAid aid) {
+    switch (aid) {
+    case MovementAid::AsIs:
+        return "as-is";
+    case MovementAid::DpadToStick:
+        return "dpad-to-stick";
+    case MovementAid::StickToDpad:
+        return "stick-to-dpad";
+    case MovementAid::Both:
+        break;
+    }
+    return "both";
+}
+
+//*******************************
+// applyMovementAid
+//*******************************
+void applyMovementAid(ControllerState &state, MovementAid aid) {
+    bool toStick = aid == MovementAid::DpadToStick || aid == MovementAid::Both;
+    bool toDpad = aid == MovementAid::StickToDpad || aid == MovementAid::Both;
+
+    if (toStick) {
+        // only where the stick is resting: a hand on the stick beats a d-pad standing in for one
+        if (state.axis(Element::LeftX) > -AxisButtonThreshold && state.axis(Element::LeftX) < AxisButtonThreshold) {
+            if (state.button(Element::DpLeft)) {
+                state.set(Element::LeftX, static_cast<int16_t>(-32767));
+            } else if (state.button(Element::DpRight)) {
+                state.set(Element::LeftX, static_cast<int16_t>(32767));
+            }
+        }
+        if (state.axis(Element::LeftY) > -AxisButtonThreshold && state.axis(Element::LeftY) < AxisButtonThreshold) {
+            if (state.button(Element::DpUp)) {
+                state.set(Element::LeftY, static_cast<int16_t>(-32767));
+            } else if (state.button(Element::DpDown)) {
+                state.set(Element::LeftY, static_cast<int16_t>(32767));
+            }
+        }
+    }
+
+    if (toDpad) {
+        // reading the stick *before* the step above would have made this a loop, so it reads the
+        // d-pad's own state and only ever adds to it
+        if (state.axis(Element::LeftX) <= -AxisButtonThreshold) {
+            state.set(Element::DpLeft, true);
+        }
+        if (state.axis(Element::LeftX) >= AxisButtonThreshold) {
+            state.set(Element::DpRight, true);
+        }
+        if (state.axis(Element::LeftY) <= -AxisButtonThreshold) {
+            state.set(Element::DpUp, true);
+        }
+        if (state.axis(Element::LeftY) >= AxisButtonThreshold) {
+            state.set(Element::DpDown, true);
+        }
+    }
+}
+
+//*******************************
 // guessMapping
 //*******************************
 PadMapping guessMapping(const string &guid, const string &name, int buttonCount, int axisCount, int hatCount) {

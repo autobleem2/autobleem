@@ -179,6 +179,8 @@ void Profile::loadStream(istream &in) {
             players = (count < 1) ? 1 : (count > MaxPads ? MaxPads : count);
         } else if (key == "hotkey") {
             hotkey = parseHotkey(lowered(value));
+        } else if (key == "movement" || key == "dpad") {
+            movement = movementAidFromName(lowered(value));
         } else if (key == "cursor") {
             string want = lowered(value);
             hideCursor = !(want == "keep" || want == "show" || want == "visible" || want == "on");

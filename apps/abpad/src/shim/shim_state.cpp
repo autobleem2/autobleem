@@ -12,6 +12,11 @@ using namespace std;
 
 namespace abpad {
 
+// update() runs once per frame of whatever the app is doing, so this is a count of frames rather
+// than a duration - about a second and a half at anything from 30 fps up, and longer on a game that
+// crawls, which is the right way round: a struggling game should be harder to quit by accident.
+constexpr unsigned HotkeyHoldCycles = 60;
+
 //*******************************
 // ShimState::get
 //*******************************
@@ -56,8 +61,8 @@ ShimState::ShimState() {
     for (int pad = 0; pad < MaxPads; ++pad) {
         raw_[pad] = buildRawState(*layout_, ControllerState());
     }
-    log("abpad: %s, %d pad(s) as \"%s\", from %s", padModeName(profile_.mode), profile_.players, layout_->name.c_str(),
-        shmPath_.c_str());
+    log("abpad: %s, %d pad(s) as \"%s\", movement %s, from %s", padModeName(profile_.mode), profile_.players,
+        layout_->name.c_str(), movementAidName(profile_.movement), shmPath_.c_str());
 }
 
 //*******************************
@@ -81,6 +86,10 @@ void ShimState::loadProfile() {
     const char *virtualPad = getenv("AB_PAD_VIRTUAL");
     if (virtualPad && *virtualPad) {
         profile_.virtualPad = virtualPadKindFromName(virtualPad);
+    }
+    const char *movement = getenv("AB_PAD_MOVEMENT");
+    if (movement && *movement) {
+        profile_.movement = movementAidFromName(movement);
     }
     const char *players = getenv("AB_PAD_PLAYERS");
     if (players && *players) {
@@ -233,6 +242,7 @@ void ShimState::update() {
         if (pad < snapshot.padCount && snapshot.connected[pad]) {
             controller = snapshot.pads[pad];
         }
+        applyMovementAid(controller, profile_.movement);
         ControllerState previous = controller_[pad];
         controller_[pad] = controller;
 
@@ -264,18 +274,25 @@ void ShimState::update() {
         raw_[pad] = after;
     }
 
-    // the hotkey on any pad, on the way down only: several of these apps have no way out otherwise
+    // The hotkey on any pad, held rather than pressed. Several of these apps have no way out, and
+    // the ones that do put it behind a menu that a pad cannot always reach - but Start and Select are
+    // live buttons in most games, so a moment's overlap must not end the game. Held long enough, the
+    // app is *asked* to quit; keep holding and abpadd, which knows the app's pid, ends it whether it
+    // agreed or not. One gesture, escalating, so a person who just wants out holds until it goes.
     bool held = false;
     for (int pad = 0; pad < profile_.players; ++pad) {
         held = held || hotkeyHeld(profile_.hotkey, controller_[pad]);
     }
-    if (held && !hotkeyWasHeld_) {
-        log("abpad: the hotkey was pressed - asking the app to quit");
+    if (!held) {
+        hotkeyHeldCycles_ = 0;
+        hotkeyQuitSent_ = false;
+    } else if (++hotkeyHeldCycles_ >= HotkeyHoldCycles && !hotkeyQuitSent_) {
+        log("abpad: the hotkey was held - asking the app to quit");
         ShimEvent event;
         event.kind = ShimEvent::Kind::Quit;
         events_.push_back(event);
+        hotkeyQuitSent_ = true;
     }
-    hotkeyWasHeld_ = held;
 
     // an app that never reads its events must not grow a queue for ever
     while (events_.size() > 256) {

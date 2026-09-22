@@ -121,6 +121,29 @@ struct ControllerState {
     bool operator!=(const ControllerState &other) const { return !(*this == other); }
 };
 
+//*******************************
+// MovementAid - the d-pad and the left stick, each standing in for the other
+//*******************************
+// Old games read one or the other and not both. Chocolate Doom is configured with
+// joystick_x_axis/joystick_y_axis and never looks at a hat, so a d-pad press does nothing in it;
+// plenty of others read only a hat and ignore a stick entirely. Neither can be fixed by choosing a
+// different virtual layout, because the layout decides what the pad *has*, not what the game reads.
+//
+// So the two are cross-fed: a d-pad press moves the stick, a pushed stick presses the d-pad, or both.
+// It is safe to do both at once because the two say the same thing, and a game reading both gets one
+// direction twice rather than a contradiction. A real stick always wins over a d-pad standing in for
+// one, so nothing is taken away from a game that reads the stick properly.
+enum class MovementAid {
+    AsIs,        // the pad as the layout describes it
+    DpadToStick, // a d-pad press also moves the left stick - what Doom needs
+    StickToDpad, // the left stick also presses the d-pad - what a hat-only game needs
+    Both,
+};
+
+MovementAid movementAidFromName(const std::string &name); // an unknown name is Both
+const char *movementAidName(MovementAid aid);
+void applyMovementAid(ControllerState &state, MovementAid aid);
+
 // A mapping line for a pad no gamecontrollerdb.txt knows, so that an unknown pad is playable rather
 // than invisible: SDL only offers a pad as a GameController when it has a mapping for it, so the
 // daemon makes one up and hands it to SDL_GameControllerAddMapping. The buttons in the order the
