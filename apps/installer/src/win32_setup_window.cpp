@@ -8,6 +8,8 @@
 #include "win32_setup_window.h"
 #include "win32_platform.h"
 
+#include "core/version.h"
+
 #include <ableem/engine/filesystem.h>
 #include <ableem/engine/log.h>
 
@@ -525,10 +527,11 @@ int runSetupWindow(const WindowsInstallOptions &defaults, bool autoStart) {
     wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     RegisterClassA(&wc);
 
-    HWND hwnd =
-        CreateWindowExW(0, L"AutoBleemWinSetup", autoStart ? L"AutoBleem 2 - setting up" : L"AutoBleem 2 - setup",
-                        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Width,
-                        600, nullptr, nullptr, wc.hInstance, &w);
+    HWND hwnd = CreateWindowExW(
+        0, L"AutoBleemWinSetup",
+        wide("AutoBleem 2 " + string(Version::VERSION) + (autoStart ? " - setting up" : " - setup")).c_str(),
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Width, 600, nullptr,
+        nullptr, wc.hInstance, &w);
     if (!hwnd) {
         PLOG_ERROR << "CreateWindow failed: " << GetLastError();
         return 1;

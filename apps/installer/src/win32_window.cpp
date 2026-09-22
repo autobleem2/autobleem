@@ -9,6 +9,8 @@
 #include "win32_window.h"
 #include "win32_platform.h"
 
+#include "core/version.h"
+
 #include <ableem/engine/log.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -606,9 +608,11 @@ int runInstallerWindow(const InstallOptions &defaults) {
     wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
     RegisterClassA(&wc);
 
-    HWND hwnd = CreateWindowExW(0, L"AutoBleemInstaller", L"AutoBleem 2 - install onto a PlayStation Classic stick",
-                                WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT,
-                                Width, 600, nullptr, nullptr, wc.hInstance, &w);
+    HWND hwnd = CreateWindowExW(
+        0, L"AutoBleemInstaller",
+        wide("AutoBleem 2 " + string(Version::VERSION) + " - install onto a PlayStation Classic stick").c_str(),
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, Width, 600, nullptr,
+        nullptr, wc.hInstance, &w);
     if (!hwnd) {
         PLOG_ERROR << "CreateWindow failed: " << GetLastError();
         return 1;

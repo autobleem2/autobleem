@@ -8,6 +8,7 @@
 #include "../pscbios_app.h"
 #include "gui/gui.h"
 #include "gui/screens/gui_about.h"
+#include "core/version.h"
 
 #include <ableem/ui/joystick.h>
 
@@ -46,6 +47,7 @@ vector<InfoSection> GuiPscBiosMain::collect() {
         return text;
     };
     vector<InfoSection> sections;
+    sections.push_back({plain(_("AutoBleem")), {{plain(_("Version")), Version::FULL_VERSION}}});
     if (kernel) {
         status.refresh(PscBios::get().console());
         sections.push_back(

@@ -25,6 +25,13 @@ uses the **same grammar**, driven by its git tag:
   `pcsx_version_key` / `psc_version_key` hacks go away.
 - **Upstream base never lost**: a fork's own tag is the AutoBleem version; its upstream base (notaz r26,
   RetroArch 1.22.2) rides in the `+build` metadata and in `manifest.json` (see §3).
+- **Unified applies to *releases*, not to development.** A coordinated `vX.Y.Z` tag is what makes every
+  component match. Develop/nightly builds carry their own `-dev.<sha>` per component (which naturally
+  differ), and a developer may build any **mix** — a "dirty" assembly of whatever is checked out or newest —
+  on request. The assembly enforces one version only for a tagged release; for a dev/dirty build it composes
+  whatever component versions it is given (latest dev of each, or a locally built component), stamps the
+  result `-dev` and records each component's actual version in the manifest. Nothing forces the whole suite
+  to rev together during day-to-day work.
 
 ## 2. How each repo derives it
 
