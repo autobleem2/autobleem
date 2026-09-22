@@ -97,9 +97,14 @@ bool ShimState::isSdl2() {
 #ifdef _WIN32
         sdl2_ = 1;
 #else
-        // the loaded SDL is asked, not guessed: only SDL2 has a game controller API, so if that
-        // symbol is anywhere past us in the search order this is an SDL2 process
-        sdl2_ = dlsym(RTLD_NEXT, "SDL_GameControllerAddMapping") != nullptr ? 1 : 0;
+        // The loaded SDL is asked, not guessed - but asked the right way round. Looking for a
+        // GameController symbol would be wrong on a system where libSDL-1.2.so.0 is sdl12-compat,
+        // which implements the SDL 1.2 API *on top of* SDL2: both libraries are then in the process,
+        // the SDL2 symbol is found, and an SDL 1.2 app gets answered in SDL2's event structures.
+        // So the question is "is there an SDL 1.2 here?" instead: SDL_SetVideoMode exists only in
+        // SDL 1.2 (and in sdl12-compat, which is the point), and an app that has one is an app
+        // speaking that ABI whatever else is loaded beside it.
+        sdl2_ = dlsym(RTLD_NEXT, "SDL_SetVideoMode") != nullptr ? 0 : 1;
 #endif
         log("abpad: the app's SDL is %s", sdl2_ ? "SDL2" : "SDL 1.2");
     }

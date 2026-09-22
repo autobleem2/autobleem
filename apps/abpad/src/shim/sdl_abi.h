@@ -96,6 +96,13 @@ union Event {
 //*******************************
 namespace sdl2 {
 
+// SDL_JoystickGUID, declared exactly as SDL declares it. Passing and returning it is then the
+// compiler's business and not a guess: the same declaration gives the same ABI, on AArch64 where a
+// 16-byte composite goes in a register pair and on ARM32 where it goes through a hidden pointer.
+struct JoystickGuid {
+    Uint8 data[16];
+};
+
 enum EventType {
     Quit = 0x100,
     KeyDown = 0x300,

@@ -577,6 +577,64 @@ int SDL_JoystickCurrentPowerLevel(void *handle) {
 }
 
 //*******************************
+// the pad's GUID
+//*******************************
+// Chocolate Doom looks a pad up by GUID to find its own saved configuration for it, and it asks the
+// handle. Left alone, that handle went to the real SDL - which does not know it - and the app got
+// nothing back to key its configuration on. The virtual pad has a GUID of its own (the layout's, the
+// wired Xbox 360 pad's), so it can simply answer.
+
+sdl2::JoystickGuid virtualGuid() {
+    sdl2::JoystickGuid guid = {};
+    const std::string &text = shim().layout().guid;
+    for (size_t i = 0; i + 1 < text.size() && i / 2 < sizeof(guid.data); i += 2) {
+        auto digit = [](char c) -> int {
+            if (c >= '0' && c <= '9') {
+                return c - '0';
+            }
+            if (c >= 'a' && c <= 'f') {
+                return c - 'a' + 10;
+            }
+            if (c >= 'A' && c <= 'F') {
+                return c - 'A' + 10;
+            }
+            return 0;
+        };
+        guid.data[i / 2] = static_cast<Uint8>(digit(text[i]) * 16 + digit(text[i + 1]));
+    }
+    return guid;
+}
+
+sdl2::JoystickGuid SDL_JoystickGetGUID(void *handle) {
+    if (indexOf(handle) < 0) {
+        using Fn = sdl2::JoystickGuid (*)(void *);
+        Fn real = REAL("SDL_JoystickGetGUID", Fn);
+        return real ? real(handle) : sdl2::JoystickGuid{};
+    }
+    return virtualGuid();
+}
+
+sdl2::JoystickGuid SDL_JoystickGetDeviceGUID(int index) {
+    ShimState &state = shim();
+    if (!state.active()) {
+        using Fn = sdl2::JoystickGuid (*)(int);
+        Fn real = REAL("SDL_JoystickGetDeviceGUID", Fn);
+        return real ? real(index) : sdl2::JoystickGuid{};
+    }
+    return (index >= 0 && index < state.padCount()) ? virtualGuid() : sdl2::JoystickGuid{};
+}
+
+int SDL_GameControllerTypeForIndex(int index) {
+    ShimState &state = shim();
+    if (!state.active()) {
+        using Fn = int (*)(int);
+        Fn real = REAL("SDL_GameControllerTypeForIndex", Fn);
+        return real ? real(index) : 0;
+    }
+    return (index >= 0 && index < state.padCount()) ? 1 : 0; // SDL_CONTROLLER_TYPE_XBOX360
+}
+
+//*******************************
 // the mouse cursor
 //*******************************
 // A console and a Pi appliance have no mouse, so a cursor drawn over the game is simply wrong - but
