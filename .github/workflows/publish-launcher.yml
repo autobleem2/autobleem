@@ -52,7 +52,9 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/autobleem2/autobleem-build:latest
-      credentials: { username: ${{ github.actor }}, password: ${{ secrets.GITHUB_TOKEN }} }
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
