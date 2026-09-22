@@ -25,18 +25,18 @@ $RC/backup.sh
 # the stick's dirty flag, before anything of ours writes to it
 $RC/checkstick.sh
 
-# the wake-up picture (selection.sh shows it from the resume until the launcher's window is up), from
-# tmpfs: the stick is not mounted yet then
-cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
-
-# the launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
+# The launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
 # RetroArch session and the launcher is started over; a reboot never returns. It runs from a copy on
-# tmpfs with the cwd there, so nothing of ours is on the stick while it unmounts it.
-cp -f $RC/selection.sh /tmp/selection.sh
+# tmpfs with the cwd there, so nothing of ours is on the stick while it unmounts it - the copy is taken
+# every time round, so a stick updated during a standby is what runs at the next power off; the wake-up
+# picture (absplash, shown from the resume until the launcher's window is up) goes to tmpfs with it, the
+# stick not being mounted at the wake.
 while true; do
     cd $RC
     ./autobleem.sh
+    cp -f $RC/selection.sh /tmp/selection.sh
+    cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
+    cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
     cd /tmp
     sh /tmp/selection.sh || break
 done

@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+using ableem::DirEntry;
 using std::string;
 using std::vector;
 
@@ -160,16 +161,30 @@ TEST_CASE("fromWindowsInstall: the registry's data root first, then the pointer 
         CHECK(EnvironmentSetup::fromWindowsInstall(facts).empty());
     }
 
-    SUBCASE("the shipped themes are copied into the data tree once, a user's edit kept") {
+    SUBCASE("the shipped themes are copied into the data tree, and again when the program's copy changes") {
         tmp.writeFile("Program Files/AutoBleem/Themes/ab2/theme.json", "{shipped}");
         tmp.writeFile("Program Files/AutoBleem/Themes/ab2/images/bg.png", "png");
+        tmp.writeFile("Documents/AutoBleem/Themes/mine/theme.json", "{mine}"); // the user's own
         const string root = EnvironmentSetup::fromWindowsInstall(facts);
         CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{shipped}");
         CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/images/bg.png") == "png");
+        CHECK(DirEntry::exists(tmp.at("Documents/AutoBleem/Themes/ab2/.shipped")));
 
+        // an edit is kept while the shipped theme is what it was...
         tmp.writeFile("Documents/AutoBleem/Themes/ab2/theme.json", "{edited}");
-        tmp.writeFile("Program Files/AutoBleem/Themes/ab2/theme.json", "{updated}");
         EnvironmentSetup::fromWindowsInstall(facts);
         CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{edited}");
+
+        // ... and replaced when the program's copy changed (a release with a theme change)
+        tmp.writeFile("Program Files/AutoBleem/Themes/ab2/theme.json", "{updated}");
+        EnvironmentSetup::fromWindowsInstall(facts);
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{updated}");
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/mine/theme.json") == "{mine}");
+
+        // a copy from before the stamp existed is refreshed once
+        DirEntry::removeFile(tmp.at("Documents/AutoBleem/Themes/ab2/.shipped"));
+        tmp.writeFile("Documents/AutoBleem/Themes/ab2/theme.json", "{old install}");
+        EnvironmentSetup::fromWindowsInstall(facts);
+        CHECK(tmp.readFile("Documents/AutoBleem/Themes/ab2/theme.json") == "{updated}");
     }
 }

@@ -223,7 +223,7 @@ i zapisuje. Każda zmiana działa od razu.
 
 | Grupa / ustawienie | Co robi |
 |---|---|
-| **Interfejs**: Motyw AutoBleem | Wygląd. Motywy leżą w `Themes/`; zip z motywem wrzucony tam jest rozpakowywany przy następnym wejściu. |
+| **Interfejs**: Motyw AutoBleem | Wygląd. Motywy leżą w `Themes/`; zip z motywem wrzucony tam jest rozpakowywany przy następnym wejściu. Motywy dostarczane z AutoBleem są odświeżane przy każdej aktualizacji - żeby zmienić któryś, najpierw skopiuj go pod nową nazwą. |
 | Styl okładki | Ramka pudełka rysowana wokół okładek PS1. |
 | Język | Język launchera, od razu (17 języków). |
 | Czcionka z motywu / Czcionka | Czcionka klasycznych ekranów: z motywu albo dowolny `.ttf`/`.otf` z `resources/fonts`, `RetroArch/fonts` lub folderu motywu. |

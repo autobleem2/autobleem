@@ -222,7 +222,7 @@ saves. Every change is applied at once.
 
 | Group / setting | What it does |
 |---|---|
-| **Interface**: AutoBleem Theme | The look. Themes live in `Themes/`; a theme zip dropped there is unpacked on the next visit. |
+| **Interface**: AutoBleem Theme | The look. Themes live in `Themes/`; a theme zip dropped there is unpacked on the next visit. The themes AutoBleem ships are refreshed with every update - to customise one, copy it under a new name first. |
 | Cover Style | The jewel-case frame drawn around PS1 covers. |
 | Language | The launcher's language, applied at once (17 languages). |
 | Use Font from Theme / Font | The classic screens' font: the theme's, or any `.ttf`/`.otf` from `resources/fonts`, `RetroArch/fonts` or the theme's folder. |

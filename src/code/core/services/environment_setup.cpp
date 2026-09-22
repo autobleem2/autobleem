@@ -10,6 +10,9 @@
 #endif
 
 #include <ableem/engine/log.h>
+#include <ableem/engine/md5.h>
+
+#include <fstream>
 
 using namespace std;
 
@@ -65,6 +68,36 @@ void copyTree(const string &from, const string &to) {
             DirEntry::copyFile(src, dst);
     }
 }
+
+// what a shipped theme folder holds - every file's relative name, size and MD5 - as one line, so the data
+// tree's copy can tell whether the program's copy changed under it
+void digestTree(const string &dir, const string &prefix, ableem::Md5 &md5) {
+    for (const DirEntry &e : DirEntry::diru(dir)) {
+        if (e.isDir) {
+            digestTree(dir + sep + e.name, prefix + e.name + "/", md5);
+            continue;
+        }
+        const string path = dir + sep + e.name;
+        const string line =
+            prefix + e.name + ":" + to_string(DirEntry::fileSize(path)) + ":" + ableem::Md5::ofFile(path) + "\n";
+        md5.update(reinterpret_cast<const unsigned char *>(line.data()), line.size());
+    }
+}
+
+string themeDigest(const string &dir) {
+    ableem::Md5 md5;
+    digestTree(dir, "", md5);
+    return md5.hexDigest();
+}
+
+const char *const ShippedStamp = ".shipped"; // in the data tree's copy: the digest it was copied from
+
+string readStamp(const string &themeDir) {
+    ifstream is(themeDir + sep + ShippedStamp);
+    string line;
+    getline(is, line);
+    return line;
+}
 } // namespace
 
 string EnvironmentSetup::fromWindowsInstall(const HostFacts &facts) {
@@ -94,13 +127,27 @@ string EnvironmentSetup::fromWindowsInstall(const HostFacts &facts) {
             return "";
         }
     }
-    // the shipped themes, once: the launcher reads them from the data tree (a user drops their own next
-    // to these), the program folder keeps the copy an update refreshes
+    // The shipped themes: the launcher reads them from the data tree (a user drops their own next to
+    // these), the program folder keeps the copy an update refreshes - and since 2026-09-22 the data
+    // tree's copy follows it: a shipped theme is copied again whenever the program's copy differs from
+    // what the data tree's copy was made from (its .shipped stamp - a copy without one, from before, is
+    // refreshed once). Until then an installed launcher kept reading the first install's themes and a
+    // theme change in a release never reached it (ab2's resume-slot glow). A user's edit of a shipped
+    // theme lasts until the next release changes that theme; their own themes are their own.
     const string shippedThemes = facts.programDir + sep + "Themes";
     if (DirEntry::isDirectory(shippedThemes)) {
         for (const DirEntry &t : DirEntry::diru_DirsOnly(shippedThemes)) {
-            if (!DirEntry::exists(root + sep + "Themes" + sep + t.name))
-                copyTree(shippedThemes + sep + t.name, root + sep + "Themes" + sep + t.name);
+            const string from = shippedThemes + sep + t.name, to = root + sep + "Themes" + sep + t.name;
+            const string digest = themeDigest(from);
+            if (DirEntry::exists(to)) {
+                if (readStamp(to) == digest)
+                    continue;
+                PLOG_INFO << "Theme " << t.name << " changed with the program - refreshing the data tree's copy";
+                DirEntry::removeDirAndContents(to);
+            }
+            copyTree(from, to);
+            ofstream os(to + sep + ShippedStamp);
+            os << digest << endl;
         }
     }
 

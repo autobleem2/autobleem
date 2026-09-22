@@ -34,6 +34,8 @@ cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 # own storage. Returns 0 with the stick mounted again, 1 when it is not back within 30 s.
 standby() {
     DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
+    SLOG=/tmp/standby.log
+    echo "$(date) standby: dev=$DEV" > $SLOG
     rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
     sync
     n=0
@@ -66,9 +68,12 @@ standby() {
 
     # the AutoBleem picture from now until the launcher's window is up (it removes /tmp/.abload itself,
     # as after RetroArch) - the ten seconds of the bus, the mount and the launcher's start were black
+    echo "$(date) resumed" >> $SLOG
     if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
         touch /tmp/.abload
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abload --timeout 40 &
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abload --timeout 40 > /tmp/absplash.log 2>&1 &
+    else
+        echo "no absplash on tmpfs" >> $SLOG
     fi
 
     sleep 3 # the USB bus re-enumerates after the resume
@@ -86,6 +91,8 @@ standby() {
     fi
     rm -f /tmp/ab_stick_owned # a fresh mount: the kernel owns the flag again (clean at mount, or not ours)
     touch /media/System/.session
+    echo "$(date) mounted $DEV after $i s" >> $SLOG
+    { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
     return 0
 }
 

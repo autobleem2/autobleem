@@ -893,7 +893,12 @@ target): the launcher, pcsx-ab, RetroArch. `AB_TARGET=win` is a real target, not
   `<data>/System` (the program folder is not the user's to write). `EnvironmentSetup::fromWindowsInstall(
   HostFacts)`: the data root is the registry's `DataRoot` (what the installer wrote), else `dataroot.txt`
   next to the exe (a portable copy), else `<Documents>\AutoBleem`; the tree is made and the shipped
-  `<program>/Themes` copied in once; `fromArguments()` with no argument is that on `AB_PLATFORM_WIN`.
+  `<program>/Themes` copied in - once at first, and since 2026-09-22 again whenever the program's copy
+  differs from what the data tree's copy was made from (a `.shipped` stamp with a digest of every
+  file's name, size and MD5; a copy without the stamp is refreshed once): the owner's installed launcher
+  kept reading the first install's ab2 and never saw the resume-slot glow. A user's edit of a shipped
+  theme lasts until a release changes that theme (the manual says to copy it under a new name);
+  `fromArguments()` with no argument is that on `AB_PLATFORM_WIN`.
   `WindowsHost` (`core/services/windows_host.*`) reads the facts (`GetModuleFileNameW`, `RegGetValueW`,
   `SHGetKnownFolderPath`); the decision is tested on every host with hand-filled facts. `win.ini`:
   `RetroArch/bin` with `.dll` cores, `launch_mode=direct`, `pcsx_dir=emu`, `pcsxnxt_dir=emunxt`, no
