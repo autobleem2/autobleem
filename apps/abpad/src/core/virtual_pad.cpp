@@ -56,8 +56,8 @@ const char *virtualPadKindName(VirtualPadKind kind) {
 //*******************************
 // buildRawState
 //*******************************
-PhysicalState buildRawState(const VirtualLayout &layout, const ControllerState &controller) {
-    PhysicalState raw;
+RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &controller) {
+    RawPadState raw;
     raw.buttons.assign(layout.buttonCount, false);
     raw.axes.assign(layout.axisCount, 0);
     raw.hats.assign(layout.hatCount, 0);

@@ -72,52 +72,65 @@ reaches every app at once.
 
 ## The decision
 
-**An `LD_PRELOAD` interposer, `libabpad.so`, that owns the pad and shows the app a pad it knows.**
+**A daemon that is the virtual gamepad, and an `LD_PRELOAD` shim that serves it to each app.**
 
-The shim reads the physical pads itself from **evdev** (`/dev/input/event*`), resolves them through
-the launcher's `gamecontrollerdb.txt` exactly as the launcher does, and presents the app **one
-synthetic joystick in a well-known layout** (the wired X360 pad by default) - or a keyboard, or
-both. The app's own SDL never sees a real pad: the joystick entry points are answered by us.
+`abpadd` is the one process that reads the pads. It runs SDL2 and reads every pad through the
+**GameController API** with our `gamecontrollerdb.txt` - so a pad resolves in an App exactly as it
+resolves in the launcher and in pcsx, by construction, because it is the same code reading the same
+file. It publishes each player's controller state in shared memory. `libabpad.so`, preloaded into the
+app, reads that and answers the app's joystick calls with a pad the app knows - the wired X360 pad by
+default - or with key presses, or both.
 
-**One library, not two.** SDL 1.2 and SDL2 share symbol *names* with different meanings
-(`SDL_JoystickName` takes an index in SDL 1.2 and a handle in SDL2; the event structs are unrelated),
-so the shim decides which ABI it is serving at its first intercepted call -
-`dlsym(RTLD_NEXT, "SDL_GameControllerAddMapping")` answers it - and branches. That keeps `app_env.sh`
-free of detection and means a new app needs no thought at all.
+**Why the daemon is a separate process and not just a library.** Reading the pad through SDL2 needs a
+libSDL2 in the process doing the reading. An SDL 1.2 app cannot have one: both libraries export
+`SDL_Init`, `SDL_PollEvent`, `SDL_NumJoysticks`, `SDL_JoystickOpen` and the rest, and the dynamic
+linker binds each reference to whichever object comes first, so an SDL1 app could end up calling SDL2
+code with SDL1 expectations - memory corruption, not merely wrong input. The escapes are `dlmopen`
+into a private link-map namespace (glibc-specific, exotic, and the console is glibc 2.24) or a
+privately renamed SDL2 linked into the shim. A second process is cheaper than either and needs no
+tricks at all, and it buys one reader of the hardware instead of one per app.
 
-Why not the two alternatives:
+What that leaves in the app's process is a shim with **no SDL, no evdev and no mapping logic** - it
+reads a struct and answers questions - which is the right amount of code to have living inside
+somebody else's game loop.
 
-- **A `uinput` virtual device** (a daemon creating a real kernel device the app just finds) is the
-  more general answer - it would reach non-SDL apps too - and the AutoBleem kernel has
-  `CONFIG_INPUT_UINPUT=y`. But a **stock-firmware** console is the common case and we do not know
-  that its kernel has uinput at all; and even where it works, the *real* pad stays visible next to
-  the virtual one, so an app taking joystick 0 still takes the wrong one unless we hide the real
-  node. Worth having later for non-SDL apps (see "Later"), not as the mechanism.
+**Hotplug and players are the daemon's problem, not the app's.** `abpadd` watches SDL's device events
+and keeps a slot per player, so player two unplugging does not shuffle player three into their place,
+and a pad plugged in mid-game simply starts working. The shim, meanwhile, shows the app a **fixed**
+number of pads (the profile's `players`), present from the first call to the last: an unplugged pad
+reads centred and unpressed. SDL 1.2 has no notion of a joystick arriving or leaving, and plenty of
+SDL2-era ports handle it badly, so no app is ever asked to cope with one.
+
+**A pad no database knows is still playable.** SDL only offers a pad as a GameController when it has a
+mapping for its GUID, so an unknown pad would otherwise be invisible. The daemon guesses a mapping
+from the pad's shape, hands it to `SDL_GameControllerAddMapping`, and everything downstream carries on
+as if the database had known it.
+
+An app **statically linked against SDL** cannot be interposed at all - its calls never reach a symbol
+we can replace. `app_env.sh` detects that and leaves it alone; uinput would be the only route.
+
+Why not the alternatives:
+
+- **A `uinput` virtual device** (a kernel device the app just finds) is the more general answer - it
+  would reach non-SDL apps too - and the AutoBleem kernel has `CONFIG_INPUT_UINPUT=y`. But a
+  **stock-firmware** console is the common case and we do not know that its kernel has uinput at all;
+  and even where it works the *real* pad stays visible next to the virtual one, so an app taking
+  joystick 0 still takes the wrong one unless we hide the real node. Worth having later for non-SDL
+  and statically linked apps (see "Later"), not as the mechanism.
 - **Patching SDL 1.2 / SDL2 in the libs pack** would work (we ship them) but only for apps that use
-  *our* copy, it is invisible to anyone reading the app's folder, and it cannot be configured per
-  app. A preload is the same power, per app, reversible, and legible.
-
-## Reading the pad: the one piece of real difficulty
-
-A `gamecontrollerdb.txt` line is written in **SDL's** numbering - `b3` means "the fourth button SDL
-enumerated for this device", not an evdev key code. Reading evdev ourselves means reproducing SDL's
-enumeration order: its Linux joystick driver walks a fixed list of `BTN_*` codes, and the `ABS_*`
-axes in code order with `ABS_HAT0X..ABS_HAT3Y` pulled out as hats. That order is table-driven, has
-been stable across SDL 2.0.x, and is **pure logic with no I/O** - so it is the part that gets unit
-tests, and the rest of the shim stays thin.
-
-The device's GUID is formed the same way SDL forms it, from `EVIOCGID`: bus, vendor, product and
-version as little-endian 16-bit values each followed by a zero pair - which is exactly how
-`030000004c050000da0c000011010000` decodes (bus 0003, vendor 054c, product 0cda, version 0111). So
-the shim matches db lines by GUID, and the pad the **pscbios wizard** mapped is the pad the apps get.
+  *our* copy, it is invisible to anyone reading the app's folder, and it cannot be configured per app.
+- **Reading evdev in the shim** and applying the mapping line ourselves - the first design here - is
+  self-contained and needs no daemon, but it reimplements SDL's evdev numbering and its axis scaling,
+  and a copy of somebody else's logic is a copy that can drift from it.
 
 ## The pieces
 
 | piece | what it is |
 |---|---|
-| `apps/abpad/src/core/` | `abpad_core`: the evdev enumeration order, the GUID, the `gamecontrollerdb` line parser, the virtual-pad layouts, the profile file, the physical-to-virtual translation and the pad-to-key translation. No I/O, no SDL, tested from `tests/apps/test_abpad_core.cpp`. |
-| `apps/abpad/src/shim/` | The interposer: the evdev reader, the ABI detection, and the SDL entry points for both ABIs. |
-| `payload/Autobleem/rc/app_env.sh` | Exports `LD_PRELOAD`, `AB_PAD_DB`, `AB_PAD_PROFILE`, and `SDL_GAMECONTROLLERCONFIG` for SDL2 GameController apps. |
+| `apps/abpad/src/core/` | `abpad_core`: the element vocabulary and controller state, the gamecontrollerdb line a virtual layout is written as, the layouts themselves, the shared-memory contract, the per-app profile and the key table. No I/O, no SDL, tested from `tests/apps/test_abpad_core.cpp`. |
+| `apps/abpad/src/daemon/` | `abpadd`, the virtual gamepad: SDL2 + our database, hotplug, a slot per player, the shared block. `--probe` prints what SDL makes of every pad, `--watch` prints what is being published - between them they answer "is it the daemon or the app?" without a debugger. |
+| `apps/abpad/src/shim/` | `libabpad.so`, preloaded: reads the block and answers the app's SDL. One library for both ABIs, which it tells apart at its first intercepted call (`dlsym(RTLD_NEXT, "SDL_GameControllerAddMapping")` answers it) - so `app_env.sh` needs no detection and a new app needs no thought. |
+| `payload/Autobleem/rc/app_env.sh` | Starts `abpadd` for the app's lifetime, exports `LD_PRELOAD`, `AB_PAD_DB`, `AB_PAD_SHM`, `AB_PAD_PROFILE`, and `SDL_GAMECONTROLLERCONFIG` for SDL2 GameController apps. |
 | `Apps/<name>/pad.ini` | The app's profile. Absent = the default profile next to `app_env.sh`. |
 
 ### What the shim answers
@@ -153,17 +166,18 @@ key.dpup = Up
 
 ## Steps
 
-1. `abpad_core` + its tests: the SDL evdev enumeration table, the GUID, the db line parser, the
-   virtual layouts, the profile parser, the translation from a physical pad's raw state to the
-   virtual pad's, and from the virtual pad to key events. Windows-testable, no device needed.
-2. The shim: evdev reading, ABI detection, the SDL2 joystick entry points and the event queue.
-   Built for psc and rpi.
-3. The SDL 1.2 half of the same entry points.
-4. `app_env.sh` and the profile defaults; the shim shipped in the console package
-   (`Autobleem/lib/`), a default profile per known app.
-5. The `SDL_GameController*` entry points, if the console's apps turn out to need them.
-6. A launcher-side page: which pads the shim will see and what an app is shown (the Hardware
-   Information screen already lists the pads and their mappings).
+1. `abpad_core` + its tests: the elements and controller state, the mapping line and the virtual
+   layouts, the shared-memory contract, the profile, the key table. **Done.**
+2. `abpadd`: SDL2 with our database, hotplug with a slot per player, the shared block, `--probe` and
+   `--watch`. **Done** - runs on the dev host against a real pad.
+3. `libabpad.so`: the shared block read, the virtual pads served, the SDL2 joystick entry points and
+   the event queue, the hotkey.
+4. The SDL 1.2 half of the same entry points, behind the ABI detection.
+5. Keyboard mode: the profile's keys pushed as key events in whichever ABI.
+6. `app_env.sh`, the default profile and a profile per known app; `abpadd` and the shim shipped in the
+   console package and the Pi one.
+7. The `SDL_GameController*` entry points, if the console's apps turn out to need them.
+8. A launcher-side page: which pads the daemon sees and what an app is shown.
 
 ## Testing it without a console
 

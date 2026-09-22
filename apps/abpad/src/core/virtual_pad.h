@@ -41,7 +41,7 @@ VirtualPadKind virtualPadKindFromName(const std::string &name);
 const char *virtualPadKindName(VirtualPadKind kind);
 
 // the controller state as the virtual pad's own raw buttons, axes and hats
-PhysicalState buildRawState(const VirtualLayout &layout, const ControllerState &controller);
+RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &controller);
 
 } // namespace abpad
 

@@ -1,16 +1,16 @@
 #ifndef ABPAD_MAPPING_H
 #define ABPAD_MAPPING_H
 
-// A gamecontrollerdb.txt mapping, and what it turns a physical pad's raw state into.
+// The vocabulary the whole of abpad speaks: SDL's game controller model.
 //
-// The vocabulary is SDL's game controller model - the same twenty-one elements a mapping line names
-// - because that is the one description of a pad both ends of the shim can agree on: the physical
-// pad is read *through* a mapping line, the virtual pad is written *through* another one (a virtual
-// layout is itself just a mapping line, see virtual_pad.h). Nothing here touches a file descriptor.
+// The daemon reads every pad through SDL2's own GameController API with our gamecontrollerdb.txt, so
+// nothing here parses a device or resolves a mapping - SDL does both, which is what makes a pad
+// resolve in an App exactly as it resolves in the launcher. What is left is the shape of the answer
+// (ControllerState), the shape of the question an app asks its SDL (RawPadState: buttons, axes and
+// hats), and enough of a gamecontrollerdb line to *describe* a pad - because a virtual layout is
+// written as one (see virtual_pad.h) and because an unmapped pad is given one (guessMapping).
 
 #include <cstdint>
-#include <iosfwd>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -44,6 +44,8 @@ enum class Element {
 
 constexpr int ElementCount = static_cast<int>(Element::Count);
 constexpr int FirstAxisElement = static_cast<int>(Element::LeftX);
+constexpr int ButtonElementCount = FirstAxisElement;
+constexpr int AxisElementCount = ElementCount - FirstAxisElement;
 
 bool isAxis(Element element);
 const char *elementName(Element element);         // the name a mapping line uses ("leftshoulder")
@@ -82,16 +84,16 @@ struct PadMapping {
     Binding &operator[](Element element) { return bindings[static_cast<int>(element)]; }
 
     bool empty() const;
-    // "guid,name,a:b0,...,platform:Linux," - what SDL would accept back
+    // "guid,name,a:b0,...,platform:Linux," - what SDL_GameControllerAddMapping takes
     std::string toLine() const;
     // false for a comment, a blank line or a line without a guid and a name
     static bool parseLine(const std::string &line, PadMapping &out);
 };
 
 //*******************************
-// PhysicalState - a pad as the device reports it, in SDL's numbering (see evdev_order.h)
+// RawPadState - a pad as an app's SDL describes one: what the shim answers with
 //*******************************
-struct PhysicalState {
+struct RawPadState {
     std::vector<bool> buttons;
     std::vector<int16_t> axes;
     std::vector<uint8_t> hats; // 1 up, 2 right, 4 down, 8 left
@@ -102,44 +104,29 @@ struct PhysicalState {
 };
 
 //*******************************
-// ControllerState - the pad as the mapping describes it: what both ends of the shim speak
+// ControllerState - a pad as SDL's GameController API describes one: what the daemon publishes
 //*******************************
 struct ControllerState {
-    bool buttons[FirstAxisElement] = {};
-    int16_t axes[ElementCount - FirstAxisElement] = {};
+    bool buttons[ButtonElementCount] = {};
+    int16_t axes[AxisElementCount] = {};
 
     bool button(Element element) const;
     int16_t axis(Element element) const;
+    // true for a button, and for an axis pulled past the threshold - what a hotkey and keyboard mode
+    // both want to ask
+    bool held(Element element) const;
     void set(Element element, bool pressed);
     void set(Element element, int16_t value);
     bool operator==(const ControllerState &other) const;
     bool operator!=(const ControllerState &other) const { return !(*this == other); }
 };
 
-// read a physical pad through its mapping
-ControllerState applyMapping(const PadMapping &mapping, const PhysicalState &state);
-
-//*******************************
-// MappingDb - gamecontrollerdb.txt, looked up by GUID
-//*******************************
-class MappingDb {
-public:
-    void loadStream(std::istream &in); // merges; a later line for the same GUID wins, as SDL does
-    bool loadFile(const std::string &path);
-    // the platform is not checked: the file the launcher loads is the one the console runs, and the
-    // pscbios wizard writes its line with platform:Linux
-    bool find(const std::string &guid, PadMapping &out) const;
-    size_t size() const { return byGuid_.size(); }
-
-private:
-    std::map<std::string, PadMapping> byGuid_;
-};
-
-// what an unknown pad is read as, so that a pad nobody mapped is still playable: the buttons in the
-// order the device reports them onto A, B, X, Y, the shoulders and Back/Start, the first two axes as
-// the left stick, the next two as the right, and hat 0 as the d-pad (or axes 0/1 when there is no hat
-// and no more than two axes - which is the shape of a d-pad-only pad like the PSC's).
-PadMapping guessMapping(int buttonCount, int axisCount, int hatCount);
+// A mapping line for a pad no gamecontrollerdb.txt knows, so that an unknown pad is playable rather
+// than invisible: SDL only offers a pad as a GameController when it has a mapping for it, so the
+// daemon makes one up and hands it to SDL_GameControllerAddMapping. The buttons in the order the
+// device reports them onto A, B, X, Y, the shoulders and Back/Start; hat 0 as the d-pad, or axes 0/1
+// when there is no hat and no more than two axes - which is the shape of the PSC's own pad.
+PadMapping guessMapping(const std::string &guid, const std::string &name, int buttonCount, int axisCount, int hatCount);
 
 } // namespace abpad
 

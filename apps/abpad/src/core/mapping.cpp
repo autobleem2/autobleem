@@ -1,8 +1,6 @@
 #include "core/mapping.h"
 
 #include <cstdlib>
-#include <fstream>
-#include <istream>
 #include <sstream>
 
 using namespace std;
@@ -225,17 +223,17 @@ string PadMapping::toLine() const {
 }
 
 //*******************************
-// PhysicalState accessors
+// RawPadState accessors
 //*******************************
-bool PhysicalState::button(int index) const {
+bool RawPadState::button(int index) const {
     return index >= 0 && index < static_cast<int>(buttons.size()) && buttons[index];
 }
 
-int16_t PhysicalState::axis(int index) const {
+int16_t RawPadState::axis(int index) const {
     return (index >= 0 && index < static_cast<int>(axes.size())) ? axes[index] : 0;
 }
 
-uint8_t PhysicalState::hat(int index) const {
+uint8_t RawPadState::hat(int index) const {
     return (index >= 0 && index < static_cast<int>(hats.size())) ? hats[index] : 0;
 }
 
@@ -250,6 +248,10 @@ bool ControllerState::button(Element element) const {
 int16_t ControllerState::axis(Element element) const {
     int index = static_cast<int>(element) - FirstAxisElement;
     return (index >= 0 && index < ElementCount - FirstAxisElement) ? axes[index] : 0;
+}
+
+bool ControllerState::held(Element element) const {
+    return isAxis(element) ? axis(element) >= AxisButtonThreshold : button(element);
 }
 
 void ControllerState::set(Element element, bool pressed) {
@@ -280,127 +282,13 @@ bool ControllerState::operator==(const ControllerState &other) const {
     return true;
 }
 
-namespace {
-
-// the value a binding reads on the physical pad, as an axis (-32768..32767)
-int16_t readAsAxis(const Binding &binding, const PhysicalState &state) {
-    int value = 0;
-    switch (binding.kind) {
-    case Binding::Kind::Button:
-        value = state.button(binding.index) ? 32767 : 0;
-        break;
-    case Binding::Kind::Axis:
-        value = state.axis(binding.index);
-        if (binding.half > 0) {
-            value = (value > 0) ? value : 0;
-        } else if (binding.half < 0) {
-            // the negative half read as a positive amount of travel, which is what a trigger wants
-            value = (value < 0) ? -value : 0;
-        }
-        break;
-    case Binding::Kind::Hat:
-        value = ((state.hat(binding.index) & binding.hatMask) == binding.hatMask) ? 32767 : 0;
-        break;
-    case Binding::Kind::None:
-        return 0;
-    }
-    if (binding.inverted) {
-        value = -value;
-    }
-    if (value > 32767) {
-        value = 32767;
-    }
-    if (value < -32768) {
-        value = -32768;
-    }
-    return static_cast<int16_t>(value);
-}
-
-// the same binding read as a button
-bool readAsButton(const Binding &binding, const PhysicalState &state) {
-    switch (binding.kind) {
-    case Binding::Kind::Button:
-        return state.button(binding.index);
-    case Binding::Kind::Hat:
-        return binding.hatMask != 0 && (state.hat(binding.index) & binding.hatMask) == binding.hatMask;
-    case Binding::Kind::Axis: {
-        int16_t value = state.axis(binding.index);
-        if (binding.inverted) {
-            value = static_cast<int16_t>(-value);
-        }
-        if (binding.half > 0) {
-            return value >= AxisButtonThreshold;
-        }
-        if (binding.half < 0) {
-            return value <= -AxisButtonThreshold;
-        }
-        return value >= AxisButtonThreshold || value <= -AxisButtonThreshold;
-    }
-    case Binding::Kind::None:
-        return false;
-    }
-    return false;
-}
-
-} // namespace
-
-//*******************************
-// applyMapping
-//*******************************
-ControllerState applyMapping(const PadMapping &mapping, const PhysicalState &state) {
-    ControllerState controller;
-    for (int i = 0; i < ElementCount; ++i) {
-        const Binding &binding = mapping.bindings[i];
-        if (!binding.bound()) {
-            continue;
-        }
-        Element element = static_cast<Element>(i);
-        if (isAxis(element)) {
-            controller.set(element, readAsAxis(binding, state));
-        } else {
-            controller.set(element, readAsButton(binding, state));
-        }
-    }
-    return controller;
-}
-
-//*******************************
-// MappingDb::loadStream / loadFile / find
-//*******************************
-void MappingDb::loadStream(istream &in) {
-    string line;
-    while (getline(in, line)) {
-        PadMapping mapping;
-        if (PadMapping::parseLine(line, mapping)) {
-            byGuid_[mapping.guid] = mapping;
-        }
-    }
-}
-
-bool MappingDb::loadFile(const string &path) {
-    ifstream in(path.c_str());
-    if (!in.is_open()) {
-        return false;
-    }
-    loadStream(in);
-    return true;
-}
-
-bool MappingDb::find(const string &guid, PadMapping &out) const {
-    map<string, PadMapping>::const_iterator found = byGuid_.find(guid);
-    if (found == byGuid_.end()) {
-        return false;
-    }
-    out = found->second;
-    return true;
-}
-
 //*******************************
 // guessMapping
 //*******************************
-PadMapping guessMapping(int buttonCount, int axisCount, int hatCount) {
+PadMapping guessMapping(const string &guid, const string &name, int buttonCount, int axisCount, int hatCount) {
     PadMapping mapping;
-    mapping.name = "Unmapped pad";
+    mapping.guid = guid;
+    mapping.name = name.empty() ? "Unmapped pad" : name;
     mapping.platform = "Linux";
 
     // the face buttons and the rest in the order the device reports them - no better guess exists
