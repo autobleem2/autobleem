@@ -72,6 +72,18 @@ cp -a "$BUILD_DIR/absplash" "$APP/absplash"
 # abfatflag: the stick's dirty flag, for rc/checkstick.sh and the standby in rc/selection.sh
 cp -a "$BUILD_DIR/abfatflag" "$APP/abfatflag"
 
+# the virtual gamepad (docs/virtual-gamepad-plan.md): the daemon that reads the pads and the shim an
+# App is preloaded with. Both are optional at run time - rc/app_env.sh checks for them and an App runs
+# without them as it always did - so a build that somehow lacks them is a warning, not a failure.
+ABPAD="$STAGE/Autobleem/bin/abpad"
+mkdir -p "$ABPAD"
+if [ -f "$BUILD_DIR/apps/abpad/abpadd" ] && [ -f "$BUILD_DIR/apps/abpad/libabpad.so" ]; then
+    cp -a "$BUILD_DIR/apps/abpad/abpadd" "$BUILD_DIR/apps/abpad/libabpad.so" "$ABPAD/"
+else
+    echo "WARNING: no abpad in $BUILD_DIR/apps/abpad - Apps will run without the virtual gamepad" >&2
+fi
+
+
 # the console tools, each over its resources (what make_psc.sh copies into payload/Apps by hand)
 for tool in pscbios abflashkit; do
     mkdir -p "$STAGE/Apps/$tool"

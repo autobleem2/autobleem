@@ -79,7 +79,8 @@ if [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
 	export AB_PAD_LOG
 	export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
 
-	[ -f "$AB_PAD_DIR/pad.default.ini" ] && export AB_PAD_DEFAULTS="$AB_PAD_DIR/pad.default.ini"
+	AB_PAD_DEFAULTS_FILE=/media/Autobleem/rc/pad.default.ini
+	[ -f "$AB_PAD_DEFAULTS_FILE" ] && export AB_PAD_DEFAULTS="$AB_PAD_DEFAULTS_FILE"
 	[ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
 
 	# For an App the preload cannot reach - one statically linked against SDL - the mapping the daemon

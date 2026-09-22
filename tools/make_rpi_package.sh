@@ -105,6 +105,18 @@ if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     upx -q --best --lzma "$APP/autobleem-gui"
 fi
 cp -a "$REPO/src/resources/." "$APP/"
+
+# the virtual gamepad (docs/virtual-gamepad-plan.md): the daemon that reads the pads and the shim an
+# App is preloaded with. Both are optional at run time - rc/app_env.sh checks for them and an App runs
+# without them as it always did - so a build that somehow lacks them is a warning, not a failure.
+ABPAD="$STAGE/Autobleem/bin/abpad"
+mkdir -p "$ABPAD"
+if [ -f "$BUILD_DIR/apps/abpad/abpadd" ] && [ -f "$BUILD_DIR/apps/abpad/libabpad.so" ]; then
+    cp -a "$BUILD_DIR/apps/abpad/abpadd" "$BUILD_DIR/apps/abpad/libabpad.so" "$ABPAD/"
+else
+    echo "WARNING: no abpad in $BUILD_DIR/apps/abpad - Apps will run without the virtual gamepad" >&2
+fi
+
 cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"  # the GPL and the notices travel with the binary
 
 # internal.db is the PlayStation Classic's own game list. An appliance has no built-in games (AB_APPLIANCE) and

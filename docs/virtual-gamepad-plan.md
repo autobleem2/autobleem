@@ -182,23 +182,23 @@ key.dpup = Up
 
 ## Steps
 
-1. `abpad_core` + its tests: the elements and controller state, the mapping line and the virtual
-   layouts, the shared-memory contract, the profile, the key table. **Done.**
-2. `abpadd`: SDL2 with our database, hotplug with a slot per player, the shared block, `--probe` and
-   `--watch`. **Done** - runs on the dev host against a real pad.
-3. `libabpad.so`: the shared block read, the virtual pads served, the SDL2 joystick entry points and
-   the event queue, the hotkey.
-4. The SDL 1.2 half of the same entry points, behind the ABI detection.
-5. Keyboard mode: the profile's keys pushed as key events in whichever ABI.
-6. `app_env.sh`, the default profile and a profile per known app; `abpadd` and the shim shipped in the
-   console package and the Pi one.
-7. ~~The `SDL_GameController*` entry points~~ - **done**, and brought forward rather than left to an
-   "if needed": an SDL2 app using that API would otherwise reach past the shim to the real pad and be
-   the one app with a different pad, a different layout and none of the profile's remapping, keyboard
-   mode or hotkey. Both views are now the same virtual pad. The controller view needs no layout - SDL's
-   controller model *is* what the daemon publishes - and both a joystick and a controller event are
-   raised for one press, as SDL itself does.
-8. A launcher-side page: which pads the daemon sees and what an app is shown.
+1. `abpad_core` + its tests. **Done.**
+2. `abpadd`: SDL2 with our database, hotplug with a slot per player, the shared block, `--probe`,
+   `--watch`, and the mappings file for an app the preload cannot reach. **Done.**
+3. `libabpad.so`: the shared block read, the virtual pads served, the joystick entry points, the event
+   queue, the hotkey. **Done.**
+4. The SDL 1.2 half of those entry points, behind the ABI detection. **Done**, and the detection was
+   rewritten to ask "is there an SDL 1.2 here?" rather than look for an SDL2 symbol - see the decision
+   above for why sdl12-compat makes the other way round unsafe.
+5. Keyboard mode: the profile's keys pushed as key events. **Written, never exercised** - it is what
+   would make a keyboard-only DOS port playable, and no App tried so far has needed it.
+6. `app_env.sh` on both platforms, the default profile, the home on the stick, and the packages
+   shipping `Autobleem/bin/abpad/`. **Done.**
+7. The `SDL_GameController*` entry points. **Done**, and brought forward rather than left to an "if
+   needed": an app using that API would otherwise be the one app with a different pad.
+8. A launcher-side page: which pads the daemon sees and what an App is shown. **Not done.**
+9. The console. `abpad` builds for psc in CMake and the packages carry it, but it has never been
+   compiled with the psc toolchain nor run on a console. **This is the step that matters next.**
 
 ## Testing it without a console
 
