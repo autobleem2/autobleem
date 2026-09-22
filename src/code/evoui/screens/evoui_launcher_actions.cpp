@@ -625,11 +625,14 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
 #elif defined(AB_PLATFORM_WIN)
-    // the downloaded installer, silently and with the launcher restarted after: it waits for this
-    // process to leave (the launcher's mutex, main.cpp) before it touches the program folder
+    // the downloaded installer, shown (not /S - the owner asked: a silent background update looked like
+    // nothing happened) and with the launcher restarted after. /RESTART alone: the setup wizard's progress
+    // is on screen while it works, and it waits for this process to leave (the launcher's mutex, main.cpp)
+    // before it touches the program folder
     {
         const string setup = Env::getPathToSystemDir() + sep + "Updates" + sep + outcome.info.autobleem.name;
-        if (System::startDetached(setup, {"/S", "/RESTART"})) {
+        if (System::startDetached(setup, {"/RESTART"})) {
+            gui->drawText(_("The update is downloaded - the installer is opening..."));
             app.session().menuOption = MENU_OPTION_UPDATE;
             menuVisible = false;
         } else {
