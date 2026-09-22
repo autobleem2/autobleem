@@ -99,15 +99,15 @@ TEST_CASE("AbnetBackend does not scan without a WiFi interface that is up") {
         CHECK(cmd != "/bin/abnet scan");
 }
 
-TEST_CASE("AbnetBackend drives the kernel's bt_* subcommands and parses the device lines") {
+TEST_CASE("AbnetBackend pairs via the bt bluetoothctl helper and parses the device lines") {
     ScriptedShell shell;
-    answers["/bin/abnet bt_up "] = "yes";
-    listings["/bin/abnet bt_scan "] = {"00:1B:DC:0F:11:22 Wireless Controller", "E4:17:D8:AA:BB:CC 8BitDo Pro 2",
-                                       "not a device line", "AA:BB:CC:DD:EE:FF"};
-    listings["/bin/abnet bt_paired "] = {"A0:AB:51:33:44:55 Xbox Wireless Controller"};
-    answers["/bin/abnet bt_pair \"00:1B:DC:0F:11:22\""] = "ok";
-    answers["/bin/abnet bt_remove \"A0:AB:51:33:44:55\""] = "ok";
-    AbnetBackend backend(scriptedRun, scriptedRunLines, true);
+    answers["/bin/abnet bt_up "] = "yes"; // adapter check stays on abnet (works on the old kernel too)
+    listings["sh bt scan"] = {"00:1B:DC:0F:11:22 Wireless Controller", "E4:17:D8:AA:BB:CC 8BitDo Pro 2",
+                              "not a device line", "AA:BB:CC:DD:EE:FF"};
+    listings["sh bt paired"] = {"A0:AB:51:33:44:55 Xbox Wireless Controller"};
+    answers["sh bt pair \"00:1B:DC:0F:11:22\""] = "ok";
+    answers["sh bt remove \"A0:AB:51:33:44:55\""] = "ok";
+    AbnetBackend backend(scriptedRun, scriptedRunLines, true, "bt");
 
     auto scanned = backend.btScan();
     REQUIRE(scanned.size() == 3); // the line without a mac is dropped
@@ -130,12 +130,12 @@ TEST_CASE("AbnetBackend drives the kernel's bt_* subcommands and parses the devi
 TEST_CASE("AbnetBackend does not touch Bluetooth without an adapter") {
     ScriptedShell shell;
     answers["/bin/abnet bt_up "] = "no";
-    listings["/bin/abnet bt_scan "] = {"00:1B:DC:0F:11:22 Something"};
-    AbnetBackend backend(scriptedRun, scriptedRunLines, true);
+    listings["sh bt scan"] = {"00:1B:DC:0F:11:22 Something"};
+    AbnetBackend backend(scriptedRun, scriptedRunLines, true, "bt");
     CHECK(backend.btScan().empty());
     CHECK(backend.btPairedDevices().empty());
     for (const string &cmd : ran)
-        CHECK(cmd != "/bin/abnet bt_scan ");
+        CHECK(cmd != "sh bt scan");
 }
 
 TEST_CASE("FakeBackend pairs and removes Bluetooth controllers, and can report no adapter") {

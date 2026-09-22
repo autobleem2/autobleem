@@ -8,7 +8,8 @@ do: **WiFi settings** (SSID typed or picked from a scan, password, driver mode, 
 the network restarted; the timezone), the **gamepad mapping wizard** (a pad tested raw, every standard
 input asked for in turn, the result written to the `gamecontrollerdb.txt` the launcher loads), a DualShock 3
 USB-pairing page, and an interactive **Bluetooth pairing screen** (`GuiBtPairing`, 2026-09-22) - scan, pick,
-pair/remove a DualShock 4 or other standard Bluetooth gamepad via the kernel's `abnet bt_*` subcommands.
+pair/remove a DualShock 4 or other standard Bluetooth gamepad via a shipped `bt` bluetoothctl wrapper, so it
+works on the original flashed kernel too (not just a freshly built one).
 Ported on 2026-09-18 from the 2020 standalone tool (a fork of the
 old AutoBleem GUI, kept in git history under `psctools/pscbios`) onto `lib_ableem` + `ab_core` +
 `ab_classic`; the root CLAUDE.md covers those and the build.
@@ -20,12 +21,13 @@ not in this repository:
 
 - `/bin/abnet list_ifaces | wlan_on | is_up <iface> | show_ip <iface> | scan | configure "<ssid>" "<pw>"
   | driver_mode <wext|nl80211> | restart | bt_up | bt_name`
-- `/bin/abnet bt_scan | bt_paired | bt_pair "<mac>" | bt_remove "<mac>"` - the Bluetooth pairing screen
-  (`GuiBtPairing`). `bt_scan`/`bt_paired` print one device per line as `<mac> <name>` (name may have spaces);
-  `bt_pair`/`bt_remove` print `ok` on success. The kernel script wraps `bluetoothctl` (power on, scan on,
-  `devices`, pair/trust/connect, remove) - **these four subcommands must be added to the kernel's abnet**
-  (they are new; `bt_up`/`bt_name` already exist). DualShock 3 is NOT here - it pairs over USB through the
-  sixaxis BlueZ plugin (the DualShock 3 page explains it).
+- `bluetoothctl` (and a running `bluetoothd`) for the Bluetooth pairing screen (`GuiBtPairing`). PSC-Bios
+  ships its own `bt` wrapper (`resources/bt`, run from `Env::getAppDir()`) that drives bluetoothctl:
+  `bt scan | paired | pair "<mac>" | remove "<mac>"` - `scan`/`paired` print `<mac> <name>` per line,
+  `pair`/`remove` print `ok`. **This deliberately does NOT use a new abnet subcommand**, so pairing works on
+  the ORIGINAL flashed kernel too (its overlay already carries bluez 5.50 + bluetoothd + the sixaxis
+  plugin), not only on a freshly built one. Only `bt_up`/`bt_name` (the adapter facts) go through abnet, and
+  those already exist. DualShock 3 is NOT here - it pairs over USB through the sixaxis BlueZ plugin.
 - `/bin/settime tz` (the current zone) and `settime tzone "<zone>"`; the zone list is `timedatectl list-timezones`.
 
 Plus two files: `/etc/autobleem/ssid.cfg` (three lines: SSID, password, driver mode - what `abnet

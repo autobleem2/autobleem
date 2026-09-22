@@ -3,11 +3,13 @@
 //
 #include "console_backend.h"
 #include "core/main.h"
+#include "core/services/environment.h"
 #include "core/services/system.h"
 
 #include <ableem/engine/log.h>
 
 #include <algorithm>
+#include <utility>
 
 using namespace std;
 
@@ -57,10 +59,12 @@ vector<BtDevice> parseBtDevices(const vector<string> &lines, bool paired) {
 }
 } // namespace
 
-AbnetBackend::AbnetBackend() : run_(runViaSystem), runLines_(runLinesViaSystem), kernel_(DirEntry::exists(Abnet)) {}
+AbnetBackend::AbnetBackend()
+    : run_(runViaSystem), runLines_(runLinesViaSystem), kernel_(DirEntry::exists(Abnet)),
+      btHelper_(Env::getAppDir() + sep + "bt") {}
 
-AbnetBackend::AbnetBackend(Runner run, LinesRunner runLines, bool kernel)
-    : run_(run), runLines_(runLines), kernel_(kernel) {}
+AbnetBackend::AbnetBackend(Runner run, LinesRunner runLines, bool kernel, string btHelper)
+    : run_(run), runLines_(runLines), kernel_(kernel), btHelper_(std::move(btHelper)) {}
 
 bool AbnetBackend::interfaceFound(const string &iface) {
     // "list_ifaces" answers with the names on one line
@@ -107,24 +111,29 @@ string AbnetBackend::btName() {
     return run_(string(Abnet) + " bt_name ");
 }
 
+// Bluetooth pairing goes through the shipped `bt` bluetoothctl wrapper, not abnet: it then works on the
+// original flashed kernel too (its overlay already has bluetoothctl + bluetoothd), not just a kernel with
+// new abnet subcommands. btUp()/btName() stay on abnet - the old abnet already answers those.
+// invoked as `sh <helper> ...`: the console's stick (FAT32 or exFAT) keeps no Unix exec bit, so scripts run
+// through sh.
 vector<BtDevice> AbnetBackend::btScan() {
     if (!btUp())
         return {};
-    return parseBtDevices(runLines_(string(Abnet) + " bt_scan "), false);
+    return parseBtDevices(runLines_("sh " + btHelper_ + " scan"), false);
 }
 
 vector<BtDevice> AbnetBackend::btPairedDevices() {
     if (!btUp())
         return {};
-    return parseBtDevices(runLines_(string(Abnet) + " bt_paired "), true);
+    return parseBtDevices(runLines_("sh " + btHelper_ + " paired"), true);
 }
 
 bool AbnetBackend::btPair(const string &mac) {
-    return run_(string(Abnet) + " bt_pair " + quoted(mac)) == "ok";
+    return run_("sh " + btHelper_ + " pair " + quoted(mac)) == "ok";
 }
 
 bool AbnetBackend::btRemove(const string &mac) {
-    return run_(string(Abnet) + " bt_remove " + quoted(mac)) == "ok";
+    return run_("sh " + btHelper_ + " remove " + quoted(mac)) == "ok";
 }
 
 string AbnetBackend::timezone() {

@@ -67,7 +67,9 @@ public:
     AbnetBackend();
     using Runner = std::string (*)(const std::string &cmd);
     using LinesRunner = std::vector<std::string> (*)(const std::string &cmd);
-    AbnetBackend(Runner run, LinesRunner runLines, bool kernel);
+    // btHelper is the path to the shipped `bt` bluetoothctl wrapper (defaults to the app dir's copy);
+    // the tests pass a fixed name so the command strings are predictable.
+    AbnetBackend(Runner run, LinesRunner runLines, bool kernel, std::string btHelper = "bt");
 
     bool kernelInstalled() override { return kernel_; }
     bool interfaceFound(const std::string &iface) override;
@@ -94,6 +96,7 @@ private:
     Runner run_;
     LinesRunner runLines_;
     bool kernel_;
+    std::string btHelper_; // the shipped `bt` bluetoothctl wrapper (app dir), for pairing on any kernel
 };
 
 //******************
