@@ -32,6 +32,7 @@
 #include <vector>
 
 #ifndef _WIN32
+#include <sys/stat.h>
 #include <unistd.h>
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -100,6 +101,39 @@ string guidOf(SDL_JoystickGUID guid) {
 }
 
 //*******************************
+// settle - give a pad that is about to re-enumerate the time to do it
+//*******************************
+// A multi-mode pad is taken over by SDL's hidapi driver a second or two after it is first opened: it
+// disappears and comes back with a different GUID and a different layout. SDL stamps the driver into
+// the GUID, so a trailing 'h' (0x68) means hidapi took it. Reporting before that settles describes a
+// device that is about to stop existing - which is exactly how the evdev view of a DualShock gets
+// mistaken for the real pad, and why the launcher (which runs on) and a tool that exits at once can
+// disagree about the same pad.
+void settle(int milliseconds) {
+    Uint32 until = SDL_GetTicks() + static_cast<Uint32>(milliseconds);
+    while (SDL_GetTicks() < until) {
+        SDL_Event drain;
+        while (SDL_PollEvent(&drain)) {
+        }
+        SDL_Delay(20);
+    }
+}
+
+// the driver SDL resolved the pad through, as its GUID records it
+const char *driverOf(const string &guid) {
+    if (guid.size() < 32) {
+        return "?";
+    }
+    switch (guid[28]) {
+    case '6':
+        return (guid[29] == '8') ? "hidapi" : "?";
+    default:
+        break;
+    }
+    return "evdev";
+}
+
+//*******************************
 // ensureMapping - a pad nobody has mapped is given a mapping rather than left invisible
 //*******************************
 // SDL only offers a pad as a GameController when its GUID is in the database, so a pad the database
@@ -160,7 +194,8 @@ void addPad(Slot *slots, int deviceIndex) {
             slots[i].instance = instance;
             slots[i].name = name ? name : "pad";
             slots[i].guid = guidOf(SDL_JoystickGetGUID(joystick));
-            say("abpadd: player %d is %s (%s)", i + 1, slots[i].name.c_str(), slots[i].guid.c_str());
+            say("abpadd: player %d is %s (%s, through %s)", i + 1, slots[i].name.c_str(), slots[i].guid.c_str(),
+                driverOf(slots[i].guid));
             return;
         }
     }
@@ -220,9 +255,36 @@ void loadMappings(const string &paths) {
 }
 
 //*******************************
+// warnIfNotPrivileged - the daemon has to see the pad the way the launcher sees it
+//*******************************
+// SDL reaches a modern pad through its hidapi driver, which needs /dev/hidraw*, and those are
+// root-only. Without them SDL silently falls back to evdev - where the same physical pad has a
+// different GUID, a different button layout and quite possibly a stale gamecontrollerdb line written
+// for some other mode of it. The launcher runs as root, so an unprivileged daemon would resolve the
+// pad differently from the launcher, which is the one thing this program exists not to do.
+void warnIfNotPrivileged() {
+#ifndef _WIN32
+    if (geteuid() == 0) {
+        return;
+    }
+    if (access("/dev/hidraw0", R_OK) == 0) {
+        return; // udev has opened them up; hidapi will work anyway
+    }
+    struct stat facts;
+    if (stat("/dev/hidraw0", &facts) != 0) {
+        return; // no hidraw devices at all - nothing to miss
+    }
+    say("abpadd: WARNING - not running as root and /dev/hidraw* is not readable, so SDL will fall");
+    say("        back to evdev. A pad may then resolve differently here than in the launcher.");
+#endif
+}
+
+//*******************************
 // probe - what SDL makes of every pad, and out
 //*******************************
 int probe() {
+    warnIfNotPrivileged();
+    settle(3000);
     say("abpadd: SDL sees %d joystick(s)", SDL_NumJoysticks());
     for (int i = 0; i < SDL_NumJoysticks(); ++i) {
         SDL_Joystick *joystick = SDL_JoystickOpen(i);
@@ -233,7 +295,7 @@ int probe() {
         string guid = guidOf(SDL_JoystickGetGUID(joystick));
         const char *name = SDL_JoystickName(joystick);
         say("  [%d] %s", i, name ? name : "(no name)");
-        say("       guid      %s", guid.c_str());
+        say("       guid      %s  (through %s)", guid.c_str(), driverOf(guid));
         say("       shape     %d buttons, %d axes, %d hats", SDL_JoystickNumButtons(joystick),
             SDL_JoystickNumAxes(joystick), SDL_JoystickNumHats(joystick));
         char *mapping = SDL_GameControllerMappingForGUID(SDL_JoystickGetGUID(joystick));
@@ -388,6 +450,8 @@ int main(int argc, char *argv[]) {
 #endif
 #endif
 
+    warnIfNotPrivileged();
+
     ShmBlock block;
     if (!block.create(shmPath, sizeof(SharedState))) {
         say("abpadd: %s", block.error().c_str());
@@ -402,7 +466,9 @@ int main(int argc, char *argv[]) {
     say("abpadd: publishing to %s", shmPath.c_str());
 
     Slot slots[MaxPads];
-    // whatever is already plugged in when we start; everything after that arrives as an event
+    // whatever is already plugged in when we start, once it has stopped changing shape under us;
+    // everything after that arrives as an event
+    settle(3000);
     for (int i = 0; i < SDL_NumJoysticks(); ++i) {
         addPad(slots, i);
     }
