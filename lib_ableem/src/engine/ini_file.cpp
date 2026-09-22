@@ -79,10 +79,13 @@ void IniFile::save(const string &_path) {
     // the partition still dirty) then leaves the old file, not an empty one that reads as "no settings"
     const string tmp = _path + ".tmp";
     ofstream os;
-    os.open(tmp);
+    // binary + a plain "\n": a text-mode stream writes CRLF on Windows; ini/cfg files stay LF (CLAUDE.md),
+    // and Game.ini's values feed pcsx.cfg / are read by the emulator, which must see no trailing '\r'
+    os.open(tmp, ios::out | ios::trunc | ios::binary);
     if (!DirEntry::checkWritable(os, tmp))
         return;
-    os << "[" << section << "]" << endl;
+    os << "[" << section << "]"
+       << "\n";
     for (auto &item : values) {
         string k = item.first;
         string v = item.second;
@@ -91,7 +94,7 @@ void IniFile::save(const string &_path) {
             Strings::cleanPublisherString(v);
         k[0] = toupper(k[0]);
 
-        os << k << "=" << v << endl;
+        os << k << "=" << v << "\n";
     }
     os.flush();
     os.close();

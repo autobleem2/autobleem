@@ -636,8 +636,15 @@ create_retroarch_tree() {
         run mkdir -p "$RA_ROOT/$d"
     done
     log "Creating the roms/ folders (one per system, named as RetroArch's playlists are)"
+    # the shared list the Windows installer also reads (src/resources/platform/roms_systems.cfg, staged into
+    # the app's resources); the inline RA_ROM_SYSTEMS is the fallback if the package predates it
+    local systems_file="$STAGE_DIR/Autobleem/bin/autobleem/platform/roms_systems.cfg"
+    local systems="$RA_ROM_SYSTEMS"
+    if [ -f "$systems_file" ]; then
+        systems="$(grep -v '^[[:space:]]*#' "$systems_file" | grep -v '^[[:space:]]*$')"
+    fi
     printf '%s
-' "$RA_ROM_SYSTEMS" | while IFS= read -r d; do
+' "$systems" | while IFS= read -r d; do
         [ -n "$d" ] || continue
         run mkdir -p "$RA_ROOT/roms/$d"
     done

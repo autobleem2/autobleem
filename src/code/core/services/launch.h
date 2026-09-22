@@ -87,6 +87,8 @@ private:
     enum class Path { Pcsx, RetroArch, App };
     static Path pathFor(const PsGame &game, EmuMode mode);
 
+    // copy a cfg file forcing LF line endings (the emulator reads it in text mode; CRLF breaks it)
+    static void copyCfgAsLf(const std::string &src, const std::string &dst);
     // the disc image handed to an emulator: <folder>/<base>, with .cue appended unless it is a .pbp or .chd
     static std::string discImageFor(const PsGame &game);
     // the image's base name with a .pbp extension dropped - what RetroArch names its saves after

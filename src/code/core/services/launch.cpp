@@ -8,10 +8,12 @@
 
 #include <ableem/engine/config_file_editor.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <unistd.h>
 #include <ableem/engine/log.h>
 
@@ -303,6 +305,29 @@ string LaunchService::raBaseNameFor(const PsGame &game) {
 }
 
 //*******************************
+// LaunchService::copyCfgAsLf
+//*******************************
+// Copy a cfg file forcing LF line endings: the emulator reads its config in text mode and a CRLF file (or
+// a stray carriage return on a value) breaks it. Falls back to a plain copy if the file cannot be read.
+void LaunchService::copyCfgAsLf(const string &src, const string &dst) {
+    ifstream in(src, ios::in | ios::binary);
+    if (!in.is_open()) {
+        DirEntry::copy(src, dst);
+        return;
+    }
+    string content((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
+    in.close();
+    content.erase(std::remove(content.begin(), content.end(), '\r'), content.end());
+    ofstream out(dst, ios::out | ios::trunc | ios::binary);
+    if (!out.is_open()) {
+        DirEntry::copy(src, dst);
+        return;
+    }
+    out << content;
+    out.close();
+}
+
+//*******************************
 // LaunchService::launchPcsx
 //*******************************
 void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
@@ -355,11 +380,14 @@ void LaunchService::launchPcsx(PsGame &game, int resumePoint) {
 
     if (Env::directLaunch() && !game.internal) {
         // the per-game pcsx.cfg belongs next to the save states, where pcsx-ab reads it - the scripts do
-        // this copy themselves
+        // this copy themselves. Forced to LF, never a plain byte copy: pcsx-ab/pcsx-abnxt read the cfg in
+        // text mode and reject a CRLF file (fread != ftell), and a trailing carriage return would spoil
+        // "Bios = SET_BY_PCSX" - so a game cfg that is CRLF (an older install, or edited in Notepad) is
+        // normalised on the way in.
         string cfg = game.folder + sep + PCSX_CFG;
         if (DirEntry::exists(cfg)) {
             DirEntry::createDirs(game.ssFolder);
-            DirEntry::copy(cfg, game.ssFolder + sep + PCSX_CFG);
+            copyCfgAsLf(cfg, game.ssFolder + sep + PCSX_CFG);
         }
     }
 

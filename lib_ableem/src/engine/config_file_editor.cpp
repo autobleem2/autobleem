@@ -54,6 +54,11 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
 
         while (getline(file, line)) {
 
+            // a CRLF file read in text mode strips the \r on Windows but not on Linux, so drop it here:
+            // the file is rewritten as pure LF below, and no line may carry a stray \r into the emulator
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+
             string::size_type pos = 0;
             string lcaseline = line;
             string lcasepattern = property;
@@ -75,10 +80,13 @@ void ConfigFileEditor::replaceProperty(string fullCfgFilePath, string property, 
             fileUpdated = true;
         }
         if (fileUpdated) {
-            file.open(fullCfgFilePath, ios::out | ios::trunc);
+            // binary + a plain "\n": a text-mode stream turns every newline into CRLF on Windows, and a cfg
+            // the emulator reads must stay LF - pcsx-ab/pcsx-abnxt reject a CRLF pcsx.cfg (fread != ftell in
+            // text mode, and a trailing '\r' spoils "Bios = SET_BY_PCSX"). CLAUDE.md: cfg files stay LF.
+            file.open(fullCfgFilePath, ios::out | ios::trunc | ios::binary);
 
             for (const auto &i : lines) {
-                file << i << endl;
+                file << i << "\n";
             }
             file.flush();
             file.close();

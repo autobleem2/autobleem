@@ -366,8 +366,10 @@ TEST_CASE("a pcsx.cfg with CRLF line endings reads clean values") {
     CHECK(s.pcsx.clock == 1);
     string written = lib.tmp.readFile("Games/Driver 2/pcsx.cfg");
     CHECK(contains(written, "psx_clock = 1"));
-    CHECK(contains(
-        written, "Gpu3 = builtin_gpu\r")); // untouched lines keep their \r; the rewritten one gets the platform's endl
+    // the whole file is normalised to LF on write - a CRLF pcsx.cfg breaks pcsx-ab/pcsx-abnxt (they read
+    // it in text mode and a trailing '\r' spoils "Bios = SET_BY_PCSX"), so no carriage return may survive
+    CHECK(contains(written, "Gpu3 = builtin_gpu\n"));
+    CHECK(written.find('\r') == string::npos);
 }
 
 TEST_CASE("a pcsx.cfg without the key gets the line appended") {
