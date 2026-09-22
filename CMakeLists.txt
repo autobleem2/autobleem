@@ -430,6 +430,11 @@ configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 add_executable(absplash src/tools/absplash.cpp)
 target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
 
+# abfatflag: the FAT/exFAT dirty flag of the stick, read and cleared by the console's rc scripts around the
+# standby (src/tools/abfatflag.cpp); the engine only
+add_executable(abfatflag src/tools/abfatflag.cpp)
+target_link_libraries(abfatflag ableem_engine)
+
 
 # the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
 # ab_classic; the appliances and the Windows product have no PSC kernel to configure or flash

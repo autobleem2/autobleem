@@ -864,6 +864,7 @@ def stage_install(root: Path, opts, dry_run: bool):
     payload_ab = REPO_ROOT / 'payload' / 'Autobleem'
     resources = REPO_ROOT / 'src' / 'resources'
     dist_binary = REPO_ROOT / 'build_psc' / 'dist' / 'autobleem-gui'
+    dist_helpers = [REPO_ROOT / 'build_psc' / 'dist' / n for n in ('absplash', 'abfatflag')]  # src/tools/
     db_dir = REPO_ROOT / 'db'
     payload_apps = REPO_ROOT / 'payload' / 'Apps'
     payload_themes = REPO_ROOT / 'payload' / 'Themes'
@@ -917,6 +918,12 @@ def stage_install(root: Path, opts, dry_run: bool):
                 os.chmod(dst, os.stat(dst).st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
             except OSError:
                 pass
+        for helper in dist_helpers:
+            if helper.is_file():
+                if dry_run:
+                    log(f'[DRYRUN] would copy {helper} -> {dst.parent / helper.name}')
+                else:
+                    shutil.copy2(helper, dst.parent / helper.name)
 
     covers = sorted(db_dir.glob('covers*.db')) if db_dir.is_dir() else []
     if not covers:

@@ -58,8 +58,9 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
-# the launcher and the console tools under apps/, each where its build leaves it
-BINARIES="autobleem-gui apps/pscbios/pscbios apps/abflashkit/abflashkit"
+# the launcher, its two helpers (absplash, abfatflag - src/tools/) and the console tools under apps/, each
+# where its build leaves it
+BINARIES="autobleem-gui absplash abfatflag apps/pscbios/pscbios apps/abflashkit/abflashkit"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
     $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {
@@ -76,7 +77,10 @@ $SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES" | tar xzf - --no-same-per
 # unpacks it in memory at start. AB_NO_UPX=1 skips it - a packed binary is no use to gdb.
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
-    for bin in $BINARIES; do upx -q --best --lzma build_psc/dist/$bin; done
+    for bin in $BINARIES; do
+        [ "$bin" = abfatflag ] && continue # 10 KB, which upx refuses
+        upx -q --best --lzma build_psc/dist/$bin
+    done
 fi
 # the tools go straight into the payload's Apps folders (with their resources), the launcher stays in
 # dist/ for the release script to pick up
