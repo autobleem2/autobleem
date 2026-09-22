@@ -436,6 +436,10 @@ add_executable(abfatflag src/tools/abfatflag.cpp)
 target_link_libraries(abfatflag ableem_engine)
 
 
+# abpad: the virtual gamepad shim's logic. Built everywhere - the tests need it on a dev host and the
+# shim itself is built for the targets that have Apps (docs/virtual-gamepad-plan.md)
+add_subdirectory(apps/abpad)
+
 # the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
 # ab_classic; the appliances and the Windows product have no PSC kernel to configure or flash
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
