@@ -272,7 +272,42 @@ own low cadence.
   → Packages → Change visibility → Public. `image.yml` keys off `repository_owner`, so once the launcher
   itself migrates it will push there automatically.
 
-### Minimal path to a first green pilot run
+- **2026-09-22 — pilot is GREEN.** `autobleem2/pcsx-ab` `build.yml` ran end to end on hosted runners:
+  `plan` + the four Linux targets (`psc/rpi/rpi64/pcusb`, parallel) + the native `windows` job + `package`,
+  producing the full package set (`pcsx-ab-<v>-{psc,rpi-armhf,rpi-arma64,pcusb}.tar.gz`, `…-win64.zip`,
+  `…​.json`) — including the **first-ever CI Windows build**. Two real bugs fixed on the way, each a genuine
+  repo problem, not just CI: (1) the shell scripts were committed from Windows as `100644`, so `ci/build.sh`
+  hit "Permission denied" on Linux (fixed to `100755` for all scripts — also fixes fresh clones); (2)
+  sccache's built-in GitHub-Actions-cache backend calls the **retired legacy artifact-cache API (v1)** and
+  fails every build with "services aren't available" — replaced with a local `SCCACHE_DIR` persisted by
+  `actions/cache@v4` (the current cache service), keyed per target, so caching still speeds builds and a
+  cache miss is a cold compile, never a failure. `publish` stays self-hosted/tag-or-dispatch only.
+  **These same two fixes must be applied to every other repo's workflow** (pcsx-abnxt next).
+
+- **2026-09-22 — releases + node24 + cache proven.** Added a `release` job to both emulators: a `v*` tag
+  attaches all five packages (four Linux tarballs + `win64.zip`) plus the json manifest to a **public GitHub
+  Release** on the repo, hyphenated tags marked pre-release, on a hosted runner (`GITHUB_TOKEN`, no
+  self-hosted runner). Pinned the actions to their node24 majors (`checkout@v7`, `cache@v6`,
+  `upload-artifact@v7`, `download-artifact@v8`) - clean logs, no Node-20 warnings. First public release cut:
+  **`autobleem2/pcsx-ab` `v2.0.0-alpha1`** (pre-release, 6 assets). The `actions/cache`-backed sccache is
+  warming (Linux targets now build in well under a minute). Both emulators' `develop` and `master` carry all
+  of this; `master` is the release line. **The download home for an emulator is its repo's Releases page**;
+  the site `emu/` publish stays the separate product path (needs the self-hosted runner, not yet registered).
+
+- **2026-09-22 — pcsx-abnxt enabled, with a fork-aware gitflow.** Unlike pcsx-ab (a linear snapshot), abnxt's
+  `master` mirrored upstream notaz/pcsx_rearmed (75 commits past `release r26`) while `develop` held all
+  AutoBleem work + `build.yml` - genuinely diverged, no fast-forward. Canonical gitflow set up (owner's
+  choice): the upstream-tracking `master` was preserved as a new **`upstream`** branch (for pulling notaz
+  fixes), and `master` was repointed to `develop` as our production line. So all three repos now read the
+  same: **master = default/production, develop = integration, feature/* off develop, release/* + `v*` tags
+  on master**; abnxt additionally keeps `upstream` = the notaz mirror. The fork's five upstream CI workflows
+  (`ci-libretro`, `ci-linux{,-armhf,-arm64}`, `ci-libretro-emscripten`) were removed from develop/master and
+  **disabled repo-wide** (`gh workflow disable`) so the `upstream` mirror branch can't spawn them. abnxt
+  pulls the shared image fine (the org-member `GITHUB_TOKEN` has access even though the package is not
+  anonymously public), and its `build.yml` (submodules recursive, `git describe` versions) runs the same
+  plan + the tag `release` job.
+
+### Minimal path to a first green pilot run (DONE)
 1. Owner (build server): build + push the image to `ghcr.io/autobleem2/autobleem-build`; make the package public.
 2. Owner: set repo variable `AB_CI_ENABLED=true` on `autobleem2/pcsx-ab`.
 3. Dispatch `build.yml` with `runner: github`, `publish: false` — hosted-only, no self-hosted runner needed.
