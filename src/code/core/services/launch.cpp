@@ -170,6 +170,26 @@ LaunchPlan LaunchService::planRetroArch(const string &file, const string &core) 
 }
 
 //*******************************
+// LaunchService::planRetroArchMenu / launchRetroArchMenu
+//*******************************
+LaunchPlan LaunchService::planRetroArchMenu() {
+    LaunchPlan plan;
+    plan.exe = retroArchExecutable();
+    plan.cwd = Env::getPathToRetroarchDir();
+    plan.args = {"--config", raConfigFile(), "--fullscreen"};
+    return plan;
+}
+
+void LaunchService::launchRetroArchMenu() {
+    LaunchPlan plan = planRetroArchMenu();
+    if (plan.exe.empty()) {
+        PLOG_WARNING << "no RetroArch binary to run";
+        return;
+    }
+    runner_.run(plan);
+}
+
+//*******************************
 // LaunchService::planApp
 //*******************************
 LaunchPlan LaunchService::planApp(const PsGame &game) {
@@ -207,6 +227,9 @@ string LaunchService::selectionScriptFile() {
 // LaunchService::writeSelectionScript
 //*******************************
 void LaunchService::writeSelectionScript() {
+    if (Env::directLaunch()) {
+        return; // no rc script runs after the launcher on a desktop - and no rc directory to write into
+    }
     ofstream os;
     string path = selectionScriptFile();
     os.open(path);
@@ -236,9 +259,7 @@ LaunchService::Path LaunchService::pathFor(const PsGame &game, EmuMode mode) {
 // LaunchService::launch
 //*******************************
 void LaunchService::launch(PsGamePtr &game, EmuMode mode, int resumePoint) {
-    if (!Env::directLaunch()) {
-        writeSelectionScript(); // nothing sources it when no script runs
-    }
+    writeSelectionScript();
 
     switch (pathFor(*game, mode)) {
     case Path::Pcsx:

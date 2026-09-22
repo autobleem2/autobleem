@@ -24,3 +24,10 @@ std::string LaunchPlan::toString() const {
 void ForkProcessRunner::run(const LaunchPlan &plan) {
     System::runAndWait(plan.exe, plan.args, plan.cwd);
 }
+
+//*******************************
+// WinProcessRunner::run
+//*******************************
+void WinProcessRunner::run(const LaunchPlan &plan) {
+    System::runAndWait(plan.exe, plan.args, plan.cwd, whileWaiting_);
+}

@@ -208,6 +208,12 @@ bool Platform::hasDisplay() const {
     return impl->window != nullptr;
 }
 
+void Platform::raiseWindow() {
+    if (!impl->window)
+        return;
+    SDL_RaiseWindow(impl->window);
+}
+
 void Platform::minimizeWindow() {
     if (!impl->window)
         return;

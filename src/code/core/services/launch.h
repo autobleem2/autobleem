@@ -28,7 +28,8 @@
 //           PC stick, the dev host
 //   direct  the emulator itself, no shell: pcsx-ab from Env::pcsxDir() with its -dotdir/-biosdir options,
 //           RetroArch from the first Env::retroArchBinaries() that exists, both full screen - the Windows
-//           product, where there is no shell to run a script in. No selection script is written either.
+//           product, where there is no shell to run a script in. No selection script is written either
+//           (writeSelectionScript() is a no-op there).
 // planPcsx()/planRetroArch() build the LaunchPlan for either; launch() runs it.
 //
 // Owned by App (App::launcher()).
@@ -77,6 +78,10 @@ public:
                         const std::string &aspect, const std::string &filter) const;
     static LaunchPlan planRetroArch(const std::string &file, const std::string &core);
     static LaunchPlan planApp(const PsGame &game);
+    // RetroArch with nothing loaded - its own menu, full screen (what the system menu's RetroArch item
+    // means in direct mode; the console and the Pi leave the launcher and their rc/retroarch.sh does it)
+    static LaunchPlan planRetroArchMenu();
+    void launchRetroArchMenu();
 
 private:
     enum class Path { Pcsx, RetroArch, App };

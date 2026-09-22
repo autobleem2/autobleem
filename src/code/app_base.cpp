@@ -24,13 +24,12 @@ AppBase::AppBase(const string &windowTitle) {
         System::powerOff();
     });
 
-#ifdef AB_DEBUG_HOST
     // AB_DEBUG_PORT=<port>: the DebugDriver takes pad and keyboard input over a socket and hands frames
     // back - tools/ab_drive.py drives the launcher and the console tools through it for automated looks
-    // at the UI
+    // at the UI. In every build (the Windows product is driven the same way, from its own program folder
+    // against the installed data tree); nothing listens unless the variable is set.
     if (const char *port = getenv("AB_DEBUG_PORT"))
         ableem::DebugDriver::start(*gui_, atoi(port));
-#endif
 }
 
 //*******************************

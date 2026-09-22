@@ -55,8 +55,10 @@ public:
     bool hasDisplay() const;
 
     // On a desktop, where another program opens its own window over ours instead of needing the display
-    // to itself: the window out of the way for the run (SDL_MinimizeWindow) and back, on top, after it
-    // (SDL_RestoreWindow + SDL_RaiseWindow). No-ops without a window.
+    // to itself: ours back on top, with the focus, once that program has gone (SDL_RaiseWindow); and the
+    // window out of the way (SDL_MinimizeWindow) and back (SDL_RestoreWindow + raise) - the DebugDriver's
+    // `window min|restore`. No-ops without a window.
+    void raiseWindow();
     void minimizeWindow();
     void restoreWindow();
     // the window off the screen and back (SDL_HideWindow/SDL_ShowWindow): the DebugDriver's way of testing

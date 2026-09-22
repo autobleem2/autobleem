@@ -52,7 +52,8 @@ unique_ptr<ProcessRunner> AutoBleem::makeProcessRunner() {
 #if defined(AB_DEBUG_HOST)
     return unique_ptr<ProcessRunner>(new SplashProcessRunner());
 #elif defined(AB_PLATFORM_WIN)
-    return unique_ptr<ProcessRunner>(new WinProcessRunner());
+    // the window stays up behind the emulator's: its events are pumped (and dropped) through the run
+    return unique_ptr<ProcessRunner>(new WinProcessRunner([]() { Gui::getInstance()->input().flushEvents(); }));
 #else
     return unique_ptr<ProcessRunner>(new ForkProcessRunner());
 #endif
@@ -78,10 +79,9 @@ bool AutoBleem::openLibrary() {
 }
 
 //*******************************
-// AutoBleem::launchGame
+// AutoBleem::runOutside
 //*******************************
-void AutoBleem::launchGame() {
-    PLOG_INFO << "Starting game";
+void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     gui_->finish(); // fades the music out and closes the mixer
 
     gui_->input().flushPads();
@@ -91,38 +91,30 @@ void AutoBleem::launchGame() {
     if (runner_->needsExclusiveDisplay()) {
         gui_->releaseDisplay();
     }
-    // on a desktop the emulator opens its own window over ours: ours goes out of the way for the run
-    if (runner_->minimisesLauncherWindow()) {
-        gui_->minimizeWindow();
+    // on a desktop the emulator opens its own window over ours, which stays: the picture the console's
+    // absplash shows around a RetroArch run is what is under the emulator's window, and what shows the
+    // moment that window goes - not the desktop, and not a carousel that is not ready to be used yet
+    if (runner_->keepsLauncherWindow()) {
+        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
     }
 
-    launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
+    body();
 
-    if (runner_->minimisesLauncherWindow()) {
-        gui_->restoreWindow();
-    }
-
-    bool reloadFavHist{false};
-    if (session_.runningGame->foreign)
-        reloadFavHist = true;
-    else if (session_.emuMode != EmuMode::Pcsx)
-        reloadFavHist = true;
-
-    if (reloadFavHist) {
-        retroArch_.reloadFavoritesAndHistory(); // they could have changed
+    if (runner_->keepsLauncherWindow()) {
+        gui_->showSplashPicture("autobleem.jpg");
+        gui_->raiseWindow(); // Windows hands the focus back to us by itself; this makes sure of it
     }
 
     // a moment for the machine to settle before the window comes back: on the PSC the GPU frees the
     // emulator's memory a few seconds after the process is gone, and a RetroArch 1.22.2 session (its XMB
     // alone holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at
     // 300 ms and at 1 s (twice, after Quake; the third rebuild at ~4 s held), so 2 s here and the
-    // rebuild-on-loss in run() for the rest
-    bool wasRetroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
-    usleep((wasRetroArch ? 2000 : 300) * 1000);
+    // rebuild-on-loss in run() for the rest. A desktop keeps its window and needs none of that.
+    if (runner_->needsExclusiveDisplay()) {
+        usleep((retroArch ? 2000 : 300) * 1000);
+    }
 
     gui_->input().probePads();
-    session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
-    session_.startingGame = false;
     // remove all events if something left
     gui_->input().flushEvents();
 
@@ -135,6 +127,41 @@ void AutoBleem::launchGame() {
     // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
     // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
     unlink("/tmp/.abload");
+}
+
+//*******************************
+// AutoBleem::launchGame
+//*******************************
+void AutoBleem::launchGame() {
+    PLOG_INFO << "Starting game";
+    const bool retroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
+    runOutside(retroArch, [this]() { launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint); });
+
+    bool reloadFavHist{false};
+    if (session_.runningGame->foreign)
+        reloadFavHist = true;
+    else if (session_.emuMode != EmuMode::Pcsx)
+        reloadFavHist = true;
+
+    if (reloadFavHist) {
+        retroArch_.reloadFavoritesAndHistory(); // they could have changed
+    }
+
+    session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
+    session_.startingGame = false;
+}
+
+//*******************************
+// AutoBleem::runRetroArchMenu
+//*******************************
+// The system menu's RetroArch item where there is no rc/retroarch.sh to leave to (the Windows product):
+// RetroArch's own menu in front of the launcher, and its playlists re-read after - the user may have
+// scanned content in there.
+void AutoBleem::runRetroArchMenu() {
+    PLOG_INFO << "Starting RetroArch's menu";
+    runOutside(true, [this]() { launcher_.launchRetroArchMenu(); });
+    retroArch_.reloadPlaylists();
+    retroArch_.reloadFavoritesAndHistory();
 }
 
 //*******************************
@@ -249,9 +276,18 @@ int AutoBleem::run() {
             continue;
         }
 
-        // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item, or a
-        // future one like it); Circle alone in the launcher is a no-op - there is nothing else to show -
-        // so any other return from show() is unexpected and the safest thing is to just show it again
+        // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item): on a
+        // desktop that is RetroArch run in front of us and the launcher again after; on the console and the
+        // Pi the process leaves and rc/retroarch.sh takes over
+        if (session_.menuOption == MENU_OPTION_RETRO && Env::directLaunch()) {
+            scans().setWatching(false);
+            runRetroArchMenu();
+            scans().setWatching(true);
+            session_.menuOption = MENU_OPTION_IDLE;
+            continue;
+        }
+        // Circle alone in the launcher is a no-op - there is nothing else to show - so any other return
+        // from show() is unexpected and the safest thing is to just show it again
         if (session_.menuOption == MENU_OPTION_RETRO || session_.menuOption == MENU_OPTION_UPDATE) {
             break;
         }

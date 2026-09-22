@@ -68,10 +68,12 @@ public:
     // a Pi with no compositor the window is the DRM master and the emulator cannot open the display while it
     // exists). display(true) afterwards notices the window is gone, brings it back and reloads the assets.
     void releaseDisplay();
-    // The desktop's alternative: the window minimised for the run and raised again after it - nothing is
-    // dropped or reloaded (a WinProcessRunner launch, see ProcessRunner::minimisesLauncherWindow()).
-    void minimizeWindow() { platform().minimizeWindow(); }
-    void restoreWindow() { platform().restoreWindow(); }
+    // The desktop's alternative (a WinProcessRunner launch, ProcessRunner::keepsLauncherWindow()): the
+    // window stays, showing one of the pictures in the resources' splash/ folder (the console's absplash
+    // shows the same ones) while the emulator's window is over it, and is raised again after - nothing
+    // is dropped or reloaded.
+    void showSplashPicture(const std::string &name);
+    void raiseWindow() { platform().raiseWindow(); }
     // the text drawing: lines, columns, option rows with their check icons, the |@X| button markers
     TextRenderer &text() { return text_; }
 

@@ -7,6 +7,7 @@
 #include "environment.h" // for AB_DEBUG_HOST
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -20,8 +21,10 @@ public:
     // fork + exec 'exe' with 'args' (argv[0] is added for you) and wait, started in 'cwd' when one is given.
     // returns exit code, -1 if it could not run. This is the only fork/exec in the code base - everything
     // that starts a process goes through here (CreateProcess on Windows, where the child gets no console
-    // window of its own).
-    static int runAndWait(const std::string &exe, const std::vector<std::string> &args, const std::string &cwd = "");
+    // window of its own). `whileWaiting`, when given, is called every 100 ms of the wait - the Windows
+    // product keeps its window's events pumped with it while an emulator runs in front of it.
+    static int runAndWait(const std::string &exe, const std::vector<std::string> &args, const std::string &cwd = "",
+                          const std::function<void()> &whileWaiting = {});
     // starts a program and does not wait: the Windows product's update, which the launcher hands the
     // installer and leaves. True when it started.
     static bool startDetached(const std::string &exe, const std::vector<std::string> &args);

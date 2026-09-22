@@ -5,6 +5,7 @@
 //
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -35,9 +36,10 @@ public:
     // runner that draws *on* the launcher's window instead (the dev host's splash) answers false.
     virtual bool needsExclusiveDisplay() const { return true; }
 
-    // true when the launcher's window should be minimised for the run and raised again after it (a
-    // desktop with a window manager - the Windows product); the emulator opens its own window over it
-    virtual bool minimisesLauncherWindow() const { return false; }
+    // true when the launcher's window stays up for the run, behind the emulator's own (a desktop with a
+    // window manager - the Windows product): it shows a picture meanwhile and is raised again after,
+    // never minimised - a minimised window did not come back reliably, and the desktop showed between
+    virtual bool keepsLauncherWindow() const { return false; }
 };
 
 //******************
@@ -55,9 +57,15 @@ public:
 // WinProcessRunner
 //******************
 // The Windows product's: the same System::runAndWait (CreateProcess there), but the display stays ours -
-// the window is minimised for the run instead of destroyed.
+// the window stays up behind the emulator's, with `whileWaiting` (the composition root gives it the event
+// pump) called through the run so Windows never takes the launcher for hung.
 class WinProcessRunner : public ForkProcessRunner {
 public:
+    explicit WinProcessRunner(std::function<void()> whileWaiting) : whileWaiting_(std::move(whileWaiting)) {}
+    void run(const LaunchPlan &plan) override;
     bool needsExclusiveDisplay() const override { return false; }
-    bool minimisesLauncherWindow() const override { return true; }
+    bool keepsLauncherWindow() const override { return true; }
+
+private:
+    std::function<void()> whileWaiting_;
 };

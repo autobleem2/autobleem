@@ -310,6 +310,23 @@ void Gui::renderBackground() {
 }
 
 //*******************************
+// Gui::showSplashPicture
+//*******************************
+// One frame of a picture across the whole screen - splash/retroarch.jpg, splash/autobleem.jpg - drawn
+// on black when the file is missing, so the frame is never the carousel an emulator is about to cover.
+void Gui::showSplashPicture(const string &name) {
+    renderer().setDrawColor(Color(0, 0, 0, 255));
+    renderer().clear();
+    const string path = Env::getWorkingPath() + sep + "splash" + sep + name;
+    if (DirEntry::exists(path)) {
+        Texture picture = Texture::loadFile(renderer(), path);
+        Rect full(0, 0, ScreenWidth, ScreenHeight);
+        renderer().copy(picture, nullptr, &full);
+    }
+    renderer().present();
+}
+
+//*******************************
 // Gui::renderLogo
 //*******************************
 int Gui::renderLogo(bool small) {

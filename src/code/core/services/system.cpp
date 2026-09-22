@@ -84,7 +84,8 @@ wstring commandLineFor(const string &exe, const vector<string> &args) {
 // waited for unless `wait` is false; the exit code (0 when not waited for), -1 when it could not start.
 // CREATE_NO_WINDOW: a console program (cmd, curl) gets no console window of its own; a GUI program is
 // unaffected.
-int createProcessAndWait(const wstring &commandLine, const wstring &dir, const string &what, bool wait = true) {
+int createProcessAndWait(const wstring &commandLine, const wstring &dir, const string &what, bool wait = true,
+                         const function<void()> &whileWaiting = {}) {
     vector<wchar_t> buffer(commandLine.begin(), commandLine.end());
     buffer.push_back(L'\0');
 
@@ -104,7 +105,13 @@ int createProcessAndWait(const wstring &commandLine, const wstring &dir, const s
         PLOG_INFO << what << " started";
         return 0;
     }
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    if (whileWaiting) {
+        while (WaitForSingleObject(pi.hProcess, 100) == WAIT_TIMEOUT) {
+            whileWaiting();
+        }
+    } else {
+        WaitForSingleObject(pi.hProcess, INFINITE);
+    }
     DWORD code = 0;
     GetExitCodeProcess(pi.hProcess, &code);
     CloseHandle(pi.hProcess);
@@ -331,7 +338,8 @@ string System::execUnixCommand(const char *cmd) {
 //*******************************
 // fork + exec the program and wait for it to finish.
 // returns the exit status of the program, or -1 if it could not be started.
-int System::runAndWait(const string &exe, const vector<string> &args, const string &cwd) {
+int System::runAndWait(const string &exe, const vector<string> &args, const string &cwd,
+                       const function<void()> &whileWaiting) {
     string line = "CMD line to execute: '" + exe + "'";
     for (const string &arg : args) {
         line += " '" + arg + "'";
@@ -342,7 +350,7 @@ int System::runAndWait(const string &exe, const vector<string> &args, const stri
     PLOG_INFO << line;
 
 #ifdef _WIN32
-    return createProcessAndWait(commandLineFor(exe, args), wide(cwd), exe);
+    return createProcessAndWait(commandLineFor(exe, args), wide(cwd), exe, true, whileWaiting);
 #else
     // argv[0] is the program itself, then the args, then a null terminator
     vector<const char *> argv;
@@ -367,7 +375,18 @@ int System::runAndWait(const string &exe, const vector<string> &args, const stri
     }
 
     int status = 0;
-    if (waitpid(pid, &status, 0) == -1) {
+    if (whileWaiting) {
+        // polled, so the caller's hook runs meanwhile
+        pid_t done = 0;
+        while ((done = waitpid(pid, &status, WNOHANG)) == 0) {
+            whileWaiting();
+            usleep(100 * 1000);
+        }
+        if (done == -1) {
+            PLOG_WARNING << "waitpid() failed: " << strerror(errno);
+            return -1;
+        }
+    } else if (waitpid(pid, &status, 0) == -1) {
         PLOG_WARNING << "waitpid() failed: " << strerror(errno);
         return -1;
     }
