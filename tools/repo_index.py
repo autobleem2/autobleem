@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 39
+INDEX_VERSION = 40
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -87,6 +87,8 @@ PSC_LIBS_RE = re.compile(r"^libs-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 WIN_RETROARCH_RE = re.compile(r"^retroarch-win64-(?P<version>[0-9][0-9.]*)\.tar\.gz$")
 WIN_CORES_RE = re.compile(r"^cores-win64-(?P<date>[0-9]{8})\.tar\.gz$")
 PSC_APPS_RE = re.compile(r"^apps-psc-(?P<date>[0-9]{8})\.tar\.gz$")
+# the from-source kernel-flasher payload (boot.img + abrootfs.tgz), PREVIEW - not yet hardware-tested
+PSC_KERNEL_RE = re.compile(r"^kernel-psc-(?P<date>[0-9]{8})\.tar\.gz$")
 SAMPLES_RE = re.compile(r"^samples-(?P<date>[0-9]{8})\.tar\.gz$")
 # the emulators' packages under emu/<name>/<version>/ (each repository's tools/make_packages.sh)
 PCSX_RE = re.compile(r"^(?P<name>pcsx-ab|pcsx-abnxt)-(?P<version>.+)-(?P<plat>psc|rpi-armhf|rpi-arm64|pcusb|win64)\.(tar\.gz|zip)$")
@@ -416,6 +418,13 @@ def index_psc_libs(repo, base_url):
     """psc/libs/: the runtime libraries RetroBoot's apps and AutoBleem's Apps need beyond the firmware
     (retroarch-psc's tools/pack_retroboot_libs.py)."""
     return index_psc_dated(repo, base_url, "libs", PSC_LIBS_RE, "library pack")
+
+
+def index_psc_kernel(repo, base_url):
+    """psc/kernel/: the from-source kernel-flasher payload (boot.img + abrootfs.tgz) rebuilt by
+    autobleem/psc-kernel-payload, packed by tools/repo_publish.sh psc-kernel as kernel-psc-<date>.tar.gz.
+    PREVIEW - not yet booted on a console."""
+    return index_psc_dated(repo, base_url, "kernel", PSC_KERNEL_RE, "kernel payload")
 
 
 def index_psc_bios(repo, base_url):
@@ -810,7 +819,7 @@ footer{color:var(--dim);font-size:.8rem;text-align:center;margin-top:2rem}
 
 
 def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples=None, psc_libs=None,
-                 psc_apps=None, psc_bios=None, pc=None, pcsx=None, manuals=None):
+                 psc_apps=None, psc_bios=None, pc=None, pcsx=None, manuals=None, psc_kernel=None):
     """The page: a section per platform, each with what a user installs from (the image, the package)
     and, under it, the build inputs - what the installer, the image build or the CI fetch: RetroArch
     builds, cores, the Pi tarball with install.sh, the cover databases."""
@@ -932,12 +941,18 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                    "Persia, Shadow Warrior, Wolfenstein 3D, each self-contained%s.</li>"
                    "<li><b>BIOS list</b> (<code>RetroArch/bios</code>) - the installer fetches the BIOS files from "
                    "RetroBIOS by this list, file by file. No BIOS file is on this site%s.</li>"
+                   "%s"
                    "</ul>"
                    % (links("/psc/retroarch/latest.json", b.get("manifest") if psc_builds else None, "manifest.json"),
                       links("/psc/cores/latest.json", psc_cores.get("manifest") if psc_cores else None),
                       links("/psc/libs/latest.json", psc_libs.get("manifest") if psc_libs else None),
                       links("/psc/apps/latest.json", psc_apps.get("manifest") if psc_apps else None),
-                      links("/psc/bios/latest.json", None)))
+                      links("/psc/bios/latest.json", None),
+                      ("<li><b>Kernel flasher payload</b> <em>(preview)</em> - the AutoBleem kernel and rootfs "
+                       "overlay (<code>boot.img</code> + <code>abrootfs.tgz</code>) rebuilt from source by "
+                       "autobleem/psc-kernel-payload (Buildroot; newer BlueZ + WiFi drivers). "
+                       "<b>Not yet booted on a console - do not flash unless you have an LBOOT.EPB backup.</b>%s</li>"
+                       % links("/psc/kernel/latest.json", psc_kernel.get("manifest"))) if psc_kernel else ""))
         out += release_block(("psc-fs",))
         if rows:
             out.append(table(rows))
@@ -1452,6 +1467,7 @@ def main():
     psc_libs = index_psc_libs(repo, base_url)
     psc_apps = index_psc_apps(repo, base_url)
     psc_bios = index_psc_bios(repo, base_url)
+    psc_kernel = index_psc_kernel(repo, base_url)
     win = index_win(repo, base_url)
     images = index_images(repo, base_url)
     dbs = index_db(repo, base_url)
@@ -1460,7 +1476,7 @@ def main():
     pcsx = {name: index_pcsx(repo, base_url, name) for name, _, _ in EMULATORS}
     pcsx = {name: b for name, b in pcsx.items() if b}
     pc = {"builds": pc_builds, "cores": pc_cores, "images": pc_images, "win": win}
-    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx, manuals)),
+    for name, page in (("index.html", render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc_cores, samples, psc_libs, psc_apps, psc_bios, pc, pcsx, manuals, psc_kernel)),
                        ("rpi-install.html", render_rpi_install(base_url, images)),
                        ("pc-install.html", render_pc_install(base_url, pc_images))):
         tmp = os.path.join(repo, ".%s.tmp" % name)

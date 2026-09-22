@@ -79,6 +79,7 @@ case "$KIND" in
     psc-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="psc/retroarch/$VERSION" ;;
     psc-cores) [ $# -ge 1 ] || usage 1; DEST="psc/cores" ;;
     psc-libs)  [ $# -ge 1 ] || usage 1; DEST="psc/libs" ;;
+    psc-kernel) [ $# -ge 1 ] || usage 1; DEST="psc/kernel" ;;
     psc-apps)  [ $# -ge 1 ] || usage 1; DEST="psc/apps" ;;
     psc-bios)  [ $# -ge 1 ] || usage 1; DEST="psc/bios" ;;
     win-retroarch) [ $# -ge 2 ] || usage 1; VERSION="$1"; shift; DEST="win/retroarch/$VERSION" ;;
