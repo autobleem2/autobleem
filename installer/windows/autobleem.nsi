@@ -142,7 +142,13 @@ Section "AutoBleem (required)" SecProgram
   RMDir /r "$INSTDIR\lang"
   RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\emu"
-  File /r "${STAGE}/*.*"   ; a forward slash: the Linux makensis (the image) takes no backslash here
+  ; the Linux makensis (the image) takes no backslash in a File spec, the Windows one no forward slash
+!ifdef NSIS_WIN32_MAKENSIS
+  !searchreplace STAGE_WIN "${STAGE}" "/" "\"
+  File /r "${STAGE_WIN}\*.*"
+!else
+  File /r "${STAGE}/*.*"
+!endif
   WriteRegStr HKCU "${REGKEY}" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${REGKEY}" "DataRoot" "$DataRoot"
   WriteRegStr HKCU "${REGKEY}" "Version" "${VERSION}"
