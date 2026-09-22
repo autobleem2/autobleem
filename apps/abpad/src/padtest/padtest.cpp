@@ -327,7 +327,7 @@ int runController(int seconds) {
 #endif
 #if SDL_VERSION_ATLEAST(2, 0, 6)
         printf("     vendor=%04x product=%04x type=%d\n", SDL_GameControllerGetVendor(pads[i]),
-               SDL_GameControllerGetProduct(pads[i]), (int)SDL_GameControllerGetType(pads[i]));
+               SDL_GameControllerGetProduct(pads[i]), static_cast<int>(SDL_GameControllerGetType(pads[i])));
 #endif
         char *mapping = SDL_GameControllerMapping(pads[i]);
         if (mapping) {
