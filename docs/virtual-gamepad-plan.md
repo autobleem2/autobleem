@@ -205,7 +205,13 @@ can: `make_rpi.sh` cross-builds ARM on this machine and a Pi runs the preload fo
 
 - **uinput**, once it is known whether a stock console has it: it reaches non-SDL apps and statically
   linked ones, and a virtual *keyboard* device would make keyboard mode work for those too.
-- The same shim is useful on the Pi and the PC stick, where the Apps idea does not exist yet.
+- **`Apps/` on the Pi and the PC stick**, which this is what makes possible. The ports already made
+  for the console - opentyrian, quake, sdlpop, wolf4sdl, eduke32 - are ARM Linux SDL binaries; what
+  stops them being useful on a Pi is the same thing that makes them awkward on the console, that they
+  were built against somebody else's pad. With the daemon reading the Pi's pad through the same
+  database and the shim showing each binary the pad it expects, they run there as they run here, and
+  the launcher's Apps set becomes worth having on both. A 32-bit Pi runs the console's armhf binaries
+  directly; a 64-bit one needs them rebuilt, which is the porters' problem, not this one's.
 
 ## Open questions for the console
 

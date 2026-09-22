@@ -1,4 +1,4 @@
-#include "daemon/shm_block.h"
+#include "core/shm_block.h"
 
 #include <cstdlib>
 #include <cstring>

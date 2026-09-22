@@ -15,7 +15,7 @@
 
 #include "core/mapping.h"
 #include "core/shared_state.h"
-#include "daemon/shm_block.h"
+#include "core/shm_block.h"
 
 #define SDL_MAIN_HANDLED // a console program: SDL must not rename our main
 #include <SDL2/SDL.h>
