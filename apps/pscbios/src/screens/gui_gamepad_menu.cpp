@@ -2,6 +2,7 @@
 // GuiGamepadMenu: the gamepad section.
 //
 #include "gui_gamepad_menu.h"
+#include "gui_bt_pairing.h"
 #include "gui_pad_config.h"
 #include "pscbios_pages.h"
 #include "gui/gui.h"
@@ -40,10 +41,8 @@ void GuiGamepadMenu::doCross_Pressed() {
         break;
     }
     case BluetoothPairing: {
-        GuiTextPage page(*gui);
-        page.title = _("Bluetooth controller pairing");
-        page.lines = bluetoothPairingLines();
-        page.show();
+        GuiBtPairing pairing(*gui);
+        pairing.show();
         break;
     }
     default:

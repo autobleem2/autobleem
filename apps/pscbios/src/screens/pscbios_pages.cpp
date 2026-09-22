@@ -59,15 +59,3 @@ vector<string> dualshock3PairingLines() {
             "  " + _("NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on "
                      "the controller and it will work in AutoBleem")};
 }
-
-//*******************************
-// bluetoothPairingLines
-//*******************************
-vector<string> bluetoothPairingLines() {
-    return {_("This section of hardware configuration is not available yet."),
-            "",
-            _("We are working on implementing Bluetooth pairing on console for a next release"),
-            _("Until then please use BlueTool by DanTheMan (Included in the package)"),
-            "",
-            "  " + _("NOTE 1: After pairing in BlueTool controller is automatically mapped until you unpair it")};
-}

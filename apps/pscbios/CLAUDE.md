@@ -6,8 +6,10 @@ The console's hardware configuration tool, started by the launcher's *Hardware I
 dongles with their addresses, the pads and whether SDL has a mapping for each - and three things it can
 do: **WiFi settings** (SSID typed or picked from a scan, password, driver mode, written for the kernel and
 the network restarted; the timezone), the **gamepad mapping wizard** (a pad tested raw, every standard
-input asked for in turn, the result written to the `gamecontrollerdb.txt` the launcher loads), and two
-pages on DualShock 3 / Bluetooth pairing. Ported on 2026-09-18 from the 2020 standalone tool (a fork of the
+input asked for in turn, the result written to the `gamecontrollerdb.txt` the launcher loads), a DualShock 3
+USB-pairing page, and an interactive **Bluetooth pairing screen** (`GuiBtPairing`, 2026-09-22) - scan, pick,
+pair/remove a DualShock 4 or other standard Bluetooth gamepad via the kernel's `abnet bt_*` subcommands.
+Ported on 2026-09-18 from the 2020 standalone tool (a fork of the
 old AutoBleem GUI, kept in git history under `psctools/pscbios`) onto `lib_ableem` + `ab_core` +
 `ab_classic`; the root CLAUDE.md covers those and the build.
 
@@ -18,6 +20,12 @@ not in this repository:
 
 - `/bin/abnet list_ifaces | wlan_on | is_up <iface> | show_ip <iface> | scan | configure "<ssid>" "<pw>"
   | driver_mode <wext|nl80211> | restart | bt_up | bt_name`
+- `/bin/abnet bt_scan | bt_paired | bt_pair "<mac>" | bt_remove "<mac>"` - the Bluetooth pairing screen
+  (`GuiBtPairing`). `bt_scan`/`bt_paired` print one device per line as `<mac> <name>` (name may have spaces);
+  `bt_pair`/`bt_remove` print `ok` on success. The kernel script wraps `bluetoothctl` (power on, scan on,
+  `devices`, pair/trust/connect, remove) - **these four subcommands must be added to the kernel's abnet**
+  (they are new; `bt_up`/`bt_name` already exist). DualShock 3 is NOT here - it pairs over USB through the
+  sixaxis BlueZ plugin (the DualShock 3 page explains it).
 - `/bin/settime tz` (the current zone) and `settime tzone "<zone>"`; the zone list is `timedatectl list-timezones`.
 
 Plus two files: `/etc/autobleem/ssid.cfg` (three lines: SSID, password, driver mode - what `abnet

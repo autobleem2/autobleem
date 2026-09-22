@@ -21,6 +21,8 @@ add_executable(pscbios
         src/main.cpp
         src/pscbios_app.cpp
         src/pscbios_app.h
+        src/screens/gui_bt_pairing.cpp
+        src/screens/gui_bt_pairing.h
         src/screens/gui_gamepad_menu.cpp
         src/screens/gui_gamepad_menu.h
         src/screens/gui_network_menu.cpp

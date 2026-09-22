@@ -99,6 +99,64 @@ TEST_CASE("AbnetBackend does not scan without a WiFi interface that is up") {
         CHECK(cmd != "/bin/abnet scan");
 }
 
+TEST_CASE("AbnetBackend drives the kernel's bt_* subcommands and parses the device lines") {
+    ScriptedShell shell;
+    answers["/bin/abnet bt_up "] = "yes";
+    listings["/bin/abnet bt_scan "] = {"00:1B:DC:0F:11:22 Wireless Controller", "E4:17:D8:AA:BB:CC 8BitDo Pro 2",
+                                       "not a device line", "AA:BB:CC:DD:EE:FF"};
+    listings["/bin/abnet bt_paired "] = {"A0:AB:51:33:44:55 Xbox Wireless Controller"};
+    answers["/bin/abnet bt_pair \"00:1B:DC:0F:11:22\""] = "ok";
+    answers["/bin/abnet bt_remove \"A0:AB:51:33:44:55\""] = "ok";
+    AbnetBackend backend(scriptedRun, scriptedRunLines, true);
+
+    auto scanned = backend.btScan();
+    REQUIRE(scanned.size() == 3); // the line without a mac is dropped
+    CHECK(scanned[0].mac == "00:1B:DC:0F:11:22");
+    CHECK(scanned[0].name == "Wireless Controller");
+    CHECK_FALSE(scanned[0].paired);
+    CHECK(scanned[2].mac == "AA:BB:CC:DD:EE:FF");
+    CHECK(scanned[2].name == "AA:BB:CC:DD:EE:FF"); // a mac with no name keeps the mac as its name
+
+    auto paired = backend.btPairedDevices();
+    REQUIRE(paired.size() == 1);
+    CHECK(paired[0].paired);
+    CHECK(paired[0].name == "Xbox Wireless Controller");
+
+    CHECK(backend.btPair("00:1B:DC:0F:11:22"));
+    CHECK(backend.btRemove("A0:AB:51:33:44:55"));
+    CHECK_FALSE(backend.btPair("de:ad:be:ef:00:00")); // no scripted "ok" -> failure
+}
+
+TEST_CASE("AbnetBackend does not touch Bluetooth without an adapter") {
+    ScriptedShell shell;
+    answers["/bin/abnet bt_up "] = "no";
+    listings["/bin/abnet bt_scan "] = {"00:1B:DC:0F:11:22 Something"};
+    AbnetBackend backend(scriptedRun, scriptedRunLines, true);
+    CHECK(backend.btScan().empty());
+    CHECK(backend.btPairedDevices().empty());
+    for (const string &cmd : ran)
+        CHECK(cmd != "/bin/abnet bt_scan ");
+}
+
+TEST_CASE("FakeBackend pairs and removes Bluetooth controllers, and can report no adapter") {
+    FakeBackend fake;
+    CHECK(fake.btUp());
+    CHECK(fake.btScan().size() == 3);
+    REQUIRE(fake.btPairedDevices().size() == 1); // the Xbox pad is already paired
+    CHECK(fake.btPairedDevices()[0].name == "Xbox Wireless Controller");
+
+    CHECK(fake.btPair("00:1B:DC:0F:11:22")); // pair a DS4
+    CHECK(fake.btPairedDevices().size() == 2);
+    CHECK(fake.btRemove("A0:AB:51:33:44:55")); // forget the Xbox pad
+    CHECK(fake.btPairedDevices().size() == 1);
+    CHECK_FALSE(fake.btPair("no:such:mac"));
+
+    fake.btAdapter_ = false;
+    CHECK_FALSE(fake.btUp());
+    CHECK(fake.btName().empty());
+    CHECK(fake.btScan().size() == 3); // the fake still lists its devices; the screen gates on btUp()
+}
+
 TEST_CASE("NetworkStatus gathers the main screen's facts from the backend") {
     FakeBackend fake;
     NetworkStatus status;
