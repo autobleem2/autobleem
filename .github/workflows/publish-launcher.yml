@@ -1,7 +1,9 @@
-# Publish the launcher as its own per-platform artifact (autobleem-gui + resources), for the assembly step
-# (autobleem-appliance) to compose with the separately-published emulators/themes - the compile-once/
-# assemble-many model. This does NOT build the old monolithic package; it builds only the launcher binary
-# (AB_NO_PCSX=1 uses the checked-in emulators, so no emulator repos are needed) and ships launcher-<platform>.
+# Publish the launcher as its own per-platform artifact, for the assembly step (autobleem-appliance) to
+# compose with the separately-published emulators/payload/themes - the compile-once/assemble-many model.
+# This does NOT build the old monolithic package; it builds only the launcher tree (AB_NO_PCSX=1 uses the
+# checked-in emulators, so no emulator repos are needed) and ships launcher-<platform>.tar.gz laid out as
+# the launcher's own part of Autobleem/bin: autobleem/ (autobleem-gui + its resources) and abpad/ (the
+# virtual-gamepad daemon + preload shim). Assembly extracts it straight into Autobleem/bin.
 # Gated by AB_CI_ENABLED.
 name: publish-launcher
 
@@ -66,15 +68,25 @@ jobs:
             pcusb) D=build_pcusb; P=pcusb ;;
           esac
           V="${{ needs.plan.outputs.version }}"
-          rm -rf launcher out && mkdir -p launcher out
-          cp "$D/autobleem-gui" launcher/
-          upx -q --best --lzma launcher/autobleem-gui || true
-          cp -a src/resources/. launcher/
-          rm -f launcher/internal.db
-          cp LICENSE THIRD_PARTY_NOTICES.md launcher/ 2>/dev/null || true
-          tar -czf "out/launcher-$P-$V.tar.gz" -C launcher .
+          # the artifact mirrors the launcher's own part of the on-device Autobleem/bin tree, so assembly
+          # (autobleem-appliance) just extracts it into Autobleem/bin: autobleem/ (the gui + its resources)
+          # and abpad/ (the virtual-gamepad daemon + preload shim). The emulators, payload, themes and cover
+          # databases are other components' artifacts.
+          rm -rf stage out && mkdir -p stage/autobleem stage/abpad out
+          cp "$D/autobleem-gui" stage/autobleem/
+          upx -q --best --lzma stage/autobleem/autobleem-gui || true
+          cp -a src/resources/. stage/autobleem/
+          rm -f stage/autobleem/internal.db          # an appliance has no built-in games
+          cp LICENSE THIRD_PARTY_NOTICES.md stage/autobleem/ 2>/dev/null || true
+          # abpad: the virtual gamepad that stands in for a pad an ported App expects (Autobleem/bin/abpad)
+          if [ -f "$D/apps/abpad/abpadd" ] && [ -f "$D/apps/abpad/libabpad.so" ]; then
+            cp "$D/apps/abpad/abpadd" "$D/apps/abpad/libabpad.so" stage/abpad/
+          else
+            echo "::warning::no abpad built in $D/apps/abpad - Apps would run without the virtual gamepad"
+          fi
+          tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
           echo "plat=$P" >> "$GITHUB_OUTPUT"
-          ls -l out
+          find stage -type f | sort; ls -l out
       - uses: actions/upload-artifact@v7
         with:
           name: launcher-${{ steps.stage.outputs.plat }}

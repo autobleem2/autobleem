@@ -39,6 +39,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+# pkg-config, too. CMAKE_FIND_ROOT_PATH_MODE_PACKAGE does not govern it: pkg_check_modules() shells out
+# to whatever pkg-config is on PATH, which on an MSYS2 host answers about MSYS2's own libraries. That is
+# how a cross build of Chocolate Doom picked up the host SDL2 and, with it, -Dmain=SDL_main - so its
+# main() compiled as SDL_main and nothing linked. Pointing pkg-config at the sysroot (at a directory
+# that need not even exist) makes it answer "not found", which is the truth and is harmless.
+set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
+unset(ENV{PKG_CONFIG_PATH})
 
 # The root CMakeLists.txt's "^arm" branch sets the console's CPU flags (-march=armv8-a+simd, hard float, -Os,
 # -s) on CMAKE_C_FLAGS/CMAKE_CXX_FLAGS itself and would overwrite anything put there here. The original

@@ -76,6 +76,9 @@ ab_add_test(test_tar_archive core/test_tar_archive.cpp)
 ab_add_test(test_update_catalog_packs core/test_update_catalog_packs.cpp)
 ab_add_test(test_harness core/test_env_fixture.cpp)
 
+# abpad_core is built for every target, so its suite runs wherever the tests do
+ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
+
 # the console tools' suites (apps/), linking each tool's SDL-free core - built where the tools are
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_pscbios_core apps/test_pscbios_core.cpp LIBS pscbios_core)
