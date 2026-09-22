@@ -52,6 +52,18 @@ public:
     // by ScanService's worker thread so a background scan never competes with a running emulator for CPU.
     static void lowerCurrentThreadPriority();
 
+    // The text console behind our window, on a machine where the launcher *is* the session - an
+    // appliance on bare KMS, with no compositor and a getty's leftovers on the tty underneath.
+    // Whenever we give the display up for a game, SDL puts that tty back into text mode and whatever
+    // was last printed on it reappears: a login prompt, a systemd line, the tail of a script. Blanking
+    // it means the hand-over reads as black rather than as somebody else's terminal.
+    //
+    // blankConsole() clears the tty and stops it drawing; restoreConsole() puts it back, and is
+    // registered with atexit so a crash does not leave a machine that looks switched off. Both do
+    // nothing where there is no Linux VT to speak of.
+    static void blankConsole();
+    static void restoreConsole();
+
     // the free and total bytes of the filesystem 'path' is on (statvfs / GetDiskFreeSpaceEx); false when
     // the path is not there
     static bool diskSpace(const std::string &path, uint64_t &freeBytes, uint64_t &totalBytes);

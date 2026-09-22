@@ -2,6 +2,13 @@
 // System: the process and console helpers.
 //
 #include "system.h"
+
+#if defined(__linux__) && !defined(AB_DEBUG_HOST)
+#include <fcntl.h>
+#include <linux/kd.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#endif
 #include "../main.h"
 
 #include <array>
@@ -426,3 +433,61 @@ unsigned int System::getRandomNumber() {
 unsigned int System::getRandomIndex(unsigned int size) {
     return getRandomNumber() % size;
 }
+
+//*******************************
+// blankConsole / restoreConsole
+//*******************************
+#if defined(__linux__) && !defined(AB_DEBUG_HOST)
+
+namespace {
+
+// The VT the launcher runs on. /dev/tty0 is whichever is current, which is the one we are on, and
+// works whether the session was started on tty1 or moved with chvt.
+int openConsole() {
+    return open("/dev/tty0", O_RDWR | O_NOCTTY);
+}
+
+bool g_consoleBlanked = false;
+
+} // namespace
+
+void System::blankConsole() {
+    int fd = openConsole();
+    if (fd < 0) {
+        return; // no VT here - a desktop, a container, an ssh session
+    }
+    // clear it and hide the cursor first: KD_GRAPHICS stops the console *drawing*, but what it has
+    // already put in the framebuffer would otherwise still be on the screen
+    static const char clear[] = "\033[H\033[2J\033[3J\033[?25l";
+    ssize_t written = write(fd, clear, sizeof(clear) - 1);
+    (void)written;
+    if (ioctl(fd, KDSETMODE, KD_GRAPHICS) == 0 && !g_consoleBlanked) {
+        g_consoleBlanked = true;
+        atexit(System::restoreConsole); // never leave a machine looking dead
+    }
+    close(fd);
+}
+
+void System::restoreConsole() {
+    if (!g_consoleBlanked) {
+        return;
+    }
+    int fd = openConsole();
+    if (fd < 0) {
+        return;
+    }
+    ioctl(fd, KDSETMODE, KD_TEXT);
+    static const char show[] = "\033[?25h";
+    ssize_t written = write(fd, show, sizeof(show) - 1);
+    (void)written;
+    close(fd);
+    g_consoleBlanked = false;
+}
+
+#else
+
+void System::blankConsole() {}
+
+void System::restoreConsole() {}
+
+#endif

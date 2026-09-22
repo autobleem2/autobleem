@@ -16,6 +16,13 @@
 
 using namespace std;
 
+#ifdef AB_APPLIANCE
+// How long the waiting picture is held before the display is handed to the game. It is not a delay
+// for its own sake: without it the picture is drawn and taken away in the same instant and the
+// hand-over looks like a flicker. A game takes seconds to come up, so this is not felt.
+constexpr int WaitingPictureDuration = 400; // ms
+#endif
+
 //*******************************
 // AutoBleem::AutoBleem
 //*******************************
@@ -89,7 +96,26 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     // Without a compositor - a Raspberry Pi on KMS/DRM - our window is the DRM master and pcsx-ab's
     // SDL_Init(VIDEO) fails while it exists, so the window goes too; display(true) below rebuilds it.
     if (runner_->needsExclusiveDisplay()) {
+#ifdef AB_APPLIANCE
+        // An appliance - a Pi or the PC stick - is the whole session: bare KMS, no compositor, and a
+        // text console on the tty underneath. Two things follow, and neither applies to the console
+        // (Weston mediates there, which is what lets absplash hold a picture over a running game).
+        //
+        // First, the waiting picture has to be shown *before* the display goes, because there is only
+        // one DRM master: a separate splash process holding it would stop the emulator starting, and
+        // waiting for the launcher's window to come back would deadlock against it. So the last thing
+        // we scan out is the picture, and it is what stands there while the game loads.
+        //
+        // Second, giving the display up puts the tty back into text mode, and whatever was last
+        // printed on it comes back - a login prompt, a systemd line, the tail of a script. Blanked,
+        // the gap reads as black instead of as somebody else's terminal.
+        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
+        usleep(WaitingPictureDuration * 1000); // long enough to be seen rather than flicker
         gui_->releaseDisplay();
+        System::blankConsole();
+#else
+        gui_->releaseDisplay();
+#endif
     }
     // on a desktop the emulator opens its own window over ours, which stays: the picture the console's
     // absplash shows around a RetroArch run is what is under the emulator's window, and what shows the
@@ -111,6 +137,12 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     // 300 ms and at 1 s (twice, after Quake; the third rebuild at ~4 s held), so 2 s here and the
     // rebuild-on-loss in run() for the rest. A desktop keeps its window and needs none of that.
     if (runner_->needsExclusiveDisplay()) {
+#ifdef AB_APPLIANCE
+        // the game has just put the tty back into text mode on its way out, so blank it again: this
+        // is the other half of the hand-over, and the wait below would otherwise be spent looking at
+        // a console rather than at black
+        System::blankConsole();
+#endif
         usleep((retroArch ? 2000 : 300) * 1000);
     }
 
