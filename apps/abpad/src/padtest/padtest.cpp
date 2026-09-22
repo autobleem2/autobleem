@@ -316,6 +316,24 @@ int runController(int seconds) {
         }
         const char *name = SDL_GameControllerName(pads[i]);
         printf("[%d] controller: %s\n", i, name ? name : "(no name)");
+        // the questions a modern app asks before it will read anything - EDuke32 will not touch a
+        // pad whose HasButton/HasAxis say no, so a pad that answers wrongly here reads as empty
+#if SDL_VERSION_ATLEAST(2, 0, 14)
+        printf("     HasButton(A)=%d HasButton(DPAD_UP)=%d HasAxis(LEFTX)=%d HasAxis(TRIGGERRIGHT)=%d\n",
+               SDL_GameControllerHasButton(pads[i], SDL_CONTROLLER_BUTTON_A),
+               SDL_GameControllerHasButton(pads[i], SDL_CONTROLLER_BUTTON_DPAD_UP),
+               SDL_GameControllerHasAxis(pads[i], SDL_CONTROLLER_AXIS_LEFTX),
+               SDL_GameControllerHasAxis(pads[i], SDL_CONTROLLER_AXIS_TRIGGERRIGHT));
+#endif
+#if SDL_VERSION_ATLEAST(2, 0, 6)
+        printf("     vendor=%04x product=%04x type=%d\n", SDL_GameControllerGetVendor(pads[i]),
+               SDL_GameControllerGetProduct(pads[i]), (int)SDL_GameControllerGetType(pads[i]));
+#endif
+        char *mapping = SDL_GameControllerMapping(pads[i]);
+        if (mapping) {
+            printf("     mapping: %.90s...\n", mapping);
+            SDL_free(mapping);
+        }
         ++opened;
     }
     if (opened == 0) {

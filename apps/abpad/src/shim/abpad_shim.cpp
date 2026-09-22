@@ -480,6 +480,102 @@ int SDL_GameControllerRumble(void *handle, Uint16 low, Uint16 high, Uint32 milli
     return indexOf(handle) < 0 ? -1 : 0; // the virtual pad does not shake, and says so politely
 }
 
+// The rest of the handle-taking calls, which newer SDL added and newer apps use. EDuke32 asks
+// SDL_GameControllerHasAxis and ...HasButton before it will read anything; unanswered, those go to
+// the real SDL with our handle, which rightly does not know it, and the app concludes the pad has no
+// controls at all. A pad that reads as empty is worse than no pad, so they are answered here.
+
+int SDL_GameControllerHasAxis(void *handle, int axis) {
+    return (indexOf(handle) >= 0 && axis >= 0 && axis < AxisElementCount) ? 1 : 0;
+}
+
+int SDL_GameControllerHasButton(void *handle, int button) {
+    return (indexOf(handle) >= 0 && button >= 0 && button < ButtonElementCount) ? 1 : 0;
+}
+
+int SDL_GameControllerHasRumble(void *handle) {
+    return 0; // nothing to shake
+}
+
+int SDL_GameControllerHasRumbleTriggers(void *handle) {
+    return 0;
+}
+
+const char *SDL_GameControllerGetSerial(void *handle) {
+    return nullptr; // a serial number the virtual pad does not have, said plainly
+}
+
+Uint16 SDL_GameControllerGetVendor(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x045e; // Microsoft, to match the pad we claim to be
+}
+
+Uint16 SDL_GameControllerGetProduct(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x028e; // the wired Xbox 360 pad
+}
+
+Uint16 SDL_GameControllerGetProductVersion(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x0110;
+}
+
+int SDL_GameControllerGetType(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 1; // SDL_CONTROLLER_TYPE_XBOX360
+}
+
+int SDL_GameControllerGetPlayerIndex(void *handle) {
+    return indexOf(handle);
+}
+
+void SDL_GameControllerSetPlayerIndex(void *handle, int player) {
+    // the player a pad is is the daemon's to decide, and it decided when it gave out the slots
+}
+
+int SDL_GameControllerSetLED(void *handle, Uint8 red, Uint8 green, Uint8 blue) {
+    return indexOf(handle) < 0 ? -1 : 0;
+}
+
+int SDL_GameControllerRumbleTriggers(void *handle, Uint16 left, Uint16 right, Uint32 milliseconds) {
+    return indexOf(handle) < 0 ? -1 : 0;
+}
+
+// and the joystick-side equivalents, for an app that asks the same questions of the other view
+int SDL_JoystickHasRumble(void *handle) {
+    return 0;
+}
+
+const char *SDL_JoystickGetSerial(void *handle) {
+    return nullptr;
+}
+
+Uint16 SDL_JoystickGetVendor(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x045e;
+}
+
+Uint16 SDL_JoystickGetProduct(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x028e;
+}
+
+Uint16 SDL_JoystickGetProductVersion(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 0x0110;
+}
+
+int SDL_JoystickGetType(void *handle) {
+    return indexOf(handle) < 0 ? 0 : 1; // SDL_JOYSTICK_TYPE_GAMECONTROLLER
+}
+
+int SDL_JoystickGetPlayerIndex(void *handle) {
+    return indexOf(handle);
+}
+
+void SDL_JoystickSetPlayerIndex(void *handle, int player) {}
+
+int SDL_JoystickRumble(void *handle, Uint16 low, Uint16 high, Uint32 milliseconds) {
+    return indexOf(handle) < 0 ? -1 : 0;
+}
+
+int SDL_JoystickCurrentPowerLevel(void *handle) {
+    return indexOf(handle) < 0 ? -1 : 5; // SDL_JOYSTICK_POWER_WIRED
+}
+
 //*******************************
 // the mouse cursor
 //*******************************
