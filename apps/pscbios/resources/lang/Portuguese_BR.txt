@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 7 / Total: 114
 
  - Mapping (Available):= - Mapeamento (disponível):
  - Mapping (Not found)= - Mapeamento (não encontrado)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Se o controle não responder aos botões ou os analógicos estiverem errados, use a seção de mapeamento para reconfigurar
 About=Sobre o Produto
 Active=Ativo
+Already paired=Já pareado
 Back=
 Bluetooth controller pairing=Pareamento de controle Bluetooth
 Bluetooth information:=Informações do Bluetooth:
@@ -21,6 +22,7 @@ Change=Mudar
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Conectar DualShock3 por Bluetooth (sem fio)
 Connect other gamepad by Bluetooth=Conectar outro controle por Bluetooth
+connected=conectado
 Controller=
 Current Time:=Dia/Hora atual:
 Dongle status:=Status do Conector:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Detalhes da Interface:
 IP Address:=Endereço IP:
 IP configuration:=Configurações de IP:
+Keep the controller in pairing mode=Mantenha o controle no modo de pareamento
 Linux Kernel Patching=Patches do kernel Linux
 Loading timezones...=Carregando fusos horários...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mapeamento concluído - pressione (OPEN) para salvar, (POWER) para cancelar.
 Mapping stored to database=Mapeamento salvo no banco de dados
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Mova os analógicos como mostrado ou pressione (OPEN) se essa posição não existir.
+new=novo
 Next pad=Próximo controle
+No Bluetooth adapter found.=Nenhum adaptador Bluetooth encontrado.
 No button on controller=O controle não tem esse botão
 NO GAME CONTROLLERS OPENED=NENHUM CONTROLE ABERTO
 NO GAMEPADS CONNECTED=NENHUM CONTROLE CONECTADO
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=NOTA 3: Não é preciso fazer isso nesta tela. O pareamento por USB funciona em qualquer tela assim que o console está ligado.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=NOTA 4: O pareamento fica salvo no console; da próxima vez basta pressionar PlayStation Home no controle e ele funcionará no AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=NOTA: Antes de mapear, verifique que nenhum botão está pressionado e que todos os analógicos estão na posição de repouso.
+Pair=Parear
+paired=pareado
+Pairing=Pareando
 Password:=Senha:
 Playstation Classic Hardware Information=Informações de Hardware do Playstation Clássico
 Please test a new mapping=Teste o novo mapeamento
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Conecte um adaptador Bluetooth USB ao console e abra esta tela novamente.
 Press a button highlighted or (OPEN) if not avaliable.=Pressione o botão destacado ou (OPEN) se ele não existir.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Pressione até o fim o gatilho destacado ou (OPEN) se ele não existir.
+Put your controller in pairing mode=Coloque o controle no modo de pareamento
 Reinitializing Network=Reinicializando Rede
+Remove=Remover
+Remove pairing for=Remover o pareamento de
+Removing=Removendo
 Restart Network=Reiniciar Rede
 Restart Networking Now?=Reiniciar Rede Agora?
 Restarted Wi-Fi  With SSID:=Wi-Fi reiniciado com o SSID:
 Save=Salvar
+Scan=Buscar
+Scan for controllers=Buscar controles
 Scan SSID=Escanear SSID
+Scanning for controllers...=Buscando controles...
 Scanning networks=Escaneando Redes
 SDL's built-in=interno do SDL
 Select=Selecionar

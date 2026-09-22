@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Eşleme (mevcut):
  - Mapping (Not found)= - Eşleme (bulunamadı)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Kumanda düğmelere tepki vermiyorsa veya analog çubuklar yanlış ayarlandıysa, eşleme bölümünden yeniden yapılandırın
 About=
 Active=Etkin
+Already paired=Zaten eşleştirildi
 Back=
 Bluetooth controller pairing=Bluetooth kumanda eşleştirme
 Bluetooth information:=Bluetooth bilgileri:
@@ -21,6 +22,7 @@ Change=Değiştir
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=DualShock3'ü Bluetooth ile bağla (kablosuz)
 Connect other gamepad by Bluetooth=Başka bir kumandayı Bluetooth ile bağla
+connected=bağlı
 Controller=
 Current Time:=Şu anki saat:
 Dongle status:=Adaptör durumu:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Arayüz ayrıntıları:
 IP Address:=IP adresi:
 IP configuration:=IP yapılandırması:
+Keep the controller in pairing mode=Kumandayı eşleştirme modunda tutun
 Linux Kernel Patching=Linux çekirdek yamaları
 Loading timezones...=Saat dilimleri yükleniyor...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Eşleme tamamlandı - kaydetmek için (OPEN), iptal için (POWER).
 Mapping stored to database=Eşleme veritabanına kaydedildi
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Çubukları gösterilen konuma getirin veya bu konum yoksa (OPEN) tuşuna basın.
+new=yeni
 Next pad=Sonraki kumanda
+No Bluetooth adapter found.=Bluetooth bağdaştırıcısı bulunamadı.
 No button on controller=Kumandada bu düğme yok
 NO GAME CONTROLLERS OPENED=AÇIK KUMANDA YOK
 NO GAMEPADS CONNECTED=BAĞLI KUMANDA YOK
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=NOT 3: Bu işlemi bu ekranda yapmanız gerekmez. USB eşleştirme, konsol açılır açılmaz her ekranda çalışır.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=NOT 4: Eşleştirme bilgisi konsola kaydedilir; bir sonraki sefer kumandada PlayStation Home'a basmanız yeterlidir, AutoBleem'de çalışır
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=NOT: Eşlemeden önce hiçbir düğmenin basılı olmadığından ve tüm analog çubukların boşta olduğundan emin olun.
+Pair=Eşleştir
+paired=eşleştirildi
+Pairing=Eşleştiriliyor:
 Password:=Parola:
 Playstation Classic Hardware Information=PlayStation Classic donanım bilgileri
 Please test a new mapping=Lütfen yeni eşlemeyi test edin
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Konsola bir USB Bluetooth adaptörü takın, ardından bu ekranı yeniden açın.
 Press a button highlighted or (OPEN) if not avaliable.=Vurgulanan düğmeye basın, yoksa (OPEN) tuşuna basın.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Vurgulanan tetiğe sonuna kadar basın, yoksa (OPEN) tuşuna basın.
+Put your controller in pairing mode=Kumandanızı eşleştirme moduna alın
 Reinitializing Network=Ağ yeniden başlatılıyor
+Remove=Kaldır
+Remove pairing for=Eşleştirmeyi kaldır:
+Removing=Kaldırılıyor:
 Restart Network=Ağı yeniden başlat
 Restart Networking Now?=Ağ şimdi yeniden başlatılsın mı?
 Restarted Wi-Fi  With SSID:=Wi-Fi şu SSID ile yeniden başlatıldı:
 Save=Kaydet
+Scan=Tara
+Scan for controllers=Kumandaları tara
 Scan SSID=SSID tara
+Scanning for controllers...=Kumandalar taranıyor...
 Scanning networks=Ağlar taranıyor
 SDL's built-in=SDL yerleşik
 Select=

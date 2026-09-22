@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Mapping (tilgængelig):
  - Mapping (Not found)= - Mapping (ikke fundet)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Hvis controlleren ikke reagerer på knapper, eller styrepindene er sat forkert op, brug mapping-afsnittet til at konfigurere den igen
 About=
 Active=Aktiv
+Already paired=Allerede parret
 Back=
 Bluetooth controller pairing=Parring af Bluetooth-controller
 Bluetooth information:=Bluetooth-oplysninger:
@@ -21,6 +22,7 @@ Change=Skift
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Tilslut DualShock3 via Bluetooth (trådløst)
 Connect other gamepad by Bluetooth=Tilslut en anden gamepad via Bluetooth
+connected=forbundet
 Controller=
 Current Time:=Aktuel tid:
 Dongle status:=Dongle-status:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Interfacedetaljer:
 IP Address:=IP-adresse:
 IP configuration:=IP-konfiguration:
+Keep the controller in pairing mode=Hold controlleren i parringstilstand
 Linux Kernel Patching=Linux-kernel-patches
 Loading timezones...=Indlæser tidszoner...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mapping fuldført - tryk (OPEN) for at gemme, (POWER) for at annullere.
 Mapping stored to database=Mapping gemt i databasen
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Flyt styrepindene som vist, eller tryk (OPEN), hvis positionen ikke findes.
+new=ny
 Next pad=Næste pad
+No Bluetooth adapter found.=Ingen Bluetooth-adapter fundet.
 No button on controller=Knappen findes ikke på controlleren
 NO GAME CONTROLLERS OPENED=INGEN CONTROLLER ÅBNET
 NO GAMEPADS CONNECTED=INGEN GAMEPADS TILSLUTTET
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=BEMÆRK 3: Proceduren behøver ikke udføres på dette skærmbillede. USB-parring virker overalt, så snart konsollen er tændt.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=BEMÆRK 4: Parringen gemmes i konsollen; næste gang er et tryk på PlayStation Home på controlleren nok, og den virker i AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=BEMÆRK: Sørg for, at ingen knapper er trykket ned før mapping, og at alle styrepinde står i hvilestilling.
+Pair=Par
+paired=parret
+Pairing=Parrer
 Password:=Adgangskode:
 Playstation Classic Hardware Information=Hardwareoplysninger for PlayStation Classic
 Please test a new mapping=Test den nye mapping
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Slut en USB-Bluetooth-adapter til konsollen, og åbn denne skærm igen.
 Press a button highlighted or (OPEN) if not avaliable.=Tryk på den fremhævede knap, eller (OPEN), hvis den ikke findes.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Tryk den fremhævede trigger helt i bund, eller (OPEN), hvis den ikke findes.
+Put your controller in pairing mode=Sæt din controller i parringstilstand
 Reinitializing Network=Geninitialiserer netværk
+Remove=Fjern
+Remove pairing for=Fjern parring for
+Removing=Fjerner
 Restart Network=Genstart netværk
 Restart Networking Now?=Genstart netværket nu?
 Restarted Wi-Fi  With SSID:=Wi-Fi genstartet med SSID:
 Save=Gem
+Scan=Søg
+Scan for controllers=Søg efter controllere
 Scan SSID=Søg efter SSID
+Scanning for controllers...=Søger efter controllere...
 Scanning networks=Søger efter netværk
 SDL's built-in=SDL's indbyggede
 Select=

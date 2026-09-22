@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Zuordnung (vorhanden):
  - Mapping (Not found)= - Zuordnung (nicht gefunden)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Reagiert der Controller nicht auf Tasten oder sind die Analogsticks falsch belegt - im Bereich Zuordnung neu konfigurieren
 About=
 Active=Aktiv
+Already paired=Bereits gekoppelt
 Back=
 Bluetooth controller pairing=Bluetooth-Controller koppeln
 Bluetooth information:=Bluetooth-Informationen:
@@ -21,6 +22,7 @@ Change=Ändern
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=DualShock3 per Bluetooth verbinden (kabellos)
 Connect other gamepad by Bluetooth=Anderes Gamepad per Bluetooth verbinden
+connected=verbunden
 Controller=
 Current Time:=Aktuelle Zeit:
 Dongle status:=Dongle-Status:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Schnittstellendetails:
 IP Address:=IP-Adresse:
 IP configuration:=IP-Konfiguration:
+Keep the controller in pairing mode=Halte den Controller im Kopplungsmodus
 Linux Kernel Patching=Linux-Kernel-Patches
 Loading timezones...=Zeitzonen werden geladen...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Zuordnung abgeschlossen - (OPEN) zum Speichern, (POWER) zum Abbrechen.
 Mapping stored to database=Zuordnung in der Datenbank gespeichert
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Die Sticks wie gezeigt bewegen oder (OPEN) drücken, wenn diese Stick-Position nicht vorhanden ist.
+new=neu
 Next pad=Nächstes Pad
+No Bluetooth adapter found.=Kein Bluetooth-Adapter gefunden.
 No button on controller=Keine solche Taste am Controller
 NO GAME CONTROLLERS OPENED=KEIN GAME-CONTROLLER GEÖFFNET
 NO GAMEPADS CONNECTED=KEINE GAMEPADS ANGESCHLOSSEN
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=HINWEIS 3: Dieser Ablauf muss nicht in diesem Bildschirm erfolgen. Die USB-Kopplung funktioniert in jedem Bildschirm, sobald die Konsole eingeschaltet ist.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=HINWEIS 4: Die Kopplung wird in der Konsole gespeichert - beim nächsten Mal genügt die PlayStation-Home-Taste am Controller, und er funktioniert in AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=HINWEIS: Vor der Zuordnung darf keine Taste gedrückt sein, und alle Analogsticks müssen in der Ruhestellung stehen.
+Pair=Koppeln
+paired=gekoppelt
+Pairing=Kopple
 Password:=Passwort:
 Playstation Classic Hardware Information=PlayStation Classic Hardware-Informationen
 Please test a new mapping=Bitte die neue Zuordnung testen
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Stecke einen USB-Bluetooth-Adapter in die Konsole und öffne diesen Bildschirm erneut.
 Press a button highlighted or (OPEN) if not avaliable.=Die markierte Taste drücken oder (OPEN), wenn sie nicht vorhanden ist.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Den markierten Trigger ganz durchdrücken oder (OPEN), wenn er nicht vorhanden ist.
+Put your controller in pairing mode=Versetze deinen Controller in den Kopplungsmodus
 Reinitializing Network=Netzwerk wird neu initialisiert
+Remove=Entfernen
+Remove pairing for=Kopplung entfernen für
+Removing=Entferne
 Restart Network=Netzwerk neu starten
 Restart Networking Now?=Netzwerk jetzt neu starten?
 Restarted Wi-Fi  With SSID:=WLAN neu gestartet mit SSID:
 Save=Speichern
+Scan=Suchen
+Scan for controllers=Nach Controllern suchen
 Scan SSID=SSIDs suchen
+Scanning for controllers...=Suche nach Controllern...
 Scanning networks=Netzwerke werden gesucht
 SDL's built-in=SDL-Standard
 Select=

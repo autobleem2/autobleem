@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Mappning (tillgänglig):
  - Mapping (Not found)= - Mappning (hittades inte)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Om handkontrollen inte reagerar på knappar eller spakarna är fel inställda, använd mappningsavsnittet för att konfigurera om den
 About=
 Active=Aktiv
+Already paired=Redan parkopplad
 Back=
 Bluetooth controller pairing=Parkoppling av Bluetooth-handkontroll
 Bluetooth information:=Bluetooth-information:
@@ -21,6 +22,7 @@ Change=Ändra
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Anslut DualShock3 via Bluetooth (trådlöst)
 Connect other gamepad by Bluetooth=Anslut annan handkontroll via Bluetooth
+connected=ansluten
 Controller=
 Current Time:=Aktuell tid:
 Dongle status:=Dongelstatus:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Gränssnittsdetaljer:
 IP Address:=IP-adress:
 IP configuration:=IP-konfiguration:
+Keep the controller in pairing mode=Håll handkontrollen i parkopplingsläge
 Linux Kernel Patching=Patchar för Linux-kärnan
 Loading timezones...=Läser in tidszoner...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mappningen är klar - tryck (OPEN) för att spara, (POWER) för att avbryta.
 Mapping stored to database=Mappningen sparades i databasen
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=För spakarna till det visade läget eller tryck (OPEN) om läget inte finns.
+new=ny
 Next pad=Nästa handkontroll
+No Bluetooth adapter found.=Ingen Bluetooth-adapter hittades.
 No button on controller=Knappen finns inte på handkontrollen
 NO GAME CONTROLLERS OPENED=INGEN HANDKONTROLL ÖPPNAD
 NO GAMEPADS CONNECTED=INGA HANDKONTROLLER ANSLUTNA
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=OBS 3: Proceduren behöver inte göras på den här skärmen. USB-parkoppling fungerar överallt så snart konsolen är på.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=OBS 4: Parkopplingen sparas i konsolen; nästa gång räcker ett tryck på PlayStation Home på handkontrollen, så fungerar den i AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=OBS: Se till att ingen knapp är nedtryckt före mappningen och att alla spakar är i viloläge.
+Pair=Parkoppla
+paired=parkopplad
+Pairing=Parkopplar
 Password:=Lösenord:
 Playstation Classic Hardware Information=Hårdvaruinformation för PlayStation Classic
 Please test a new mapping=Testa den nya mappningen
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Anslut en USB-Bluetooth-adapter till konsolen och öppna den här skärmen igen.
 Press a button highlighted or (OPEN) if not avaliable.=Tryck på den markerade knappen, eller (OPEN) om den saknas.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Tryck in den markerade avtryckaren helt, eller (OPEN) om den saknas.
+Put your controller in pairing mode=Sätt handkontrollen i parkopplingsläge
 Reinitializing Network=Initierar om nätverket
+Remove=Ta bort
+Remove pairing for=Ta bort parkoppling för
+Removing=Tar bort
 Restart Network=Starta om nätverket
 Restart Networking Now?=Starta om nätverket nu?
 Restarted Wi-Fi  With SSID:=Wi-Fi omstartat med SSID:
 Save=Spara
+Scan=Sök
+Scan for controllers=Sök efter handkontroller
 Scan SSID=Sök SSID
+Scanning for controllers...=Söker efter handkontroller...
 Scanning networks=Söker nätverk
 SDL's built-in=SDL:s inbyggda
 Select=

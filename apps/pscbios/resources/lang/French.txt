@@ -1,6 +1,6 @@
 # AutoBleem French Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Mappage (disponible) :
  - Mapping (Not found)= - Mappage (introuvable)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Si la manette ne réagit pas aux boutons ou si les sticks sont mal réglés, utilisez la section mappage pour la reconfigurer
 About=
 Active=Actif
+Already paired=Déjà appairé
 Back=
 Bluetooth controller pairing=Appairage de manette Bluetooth
 Bluetooth information:=Informations Bluetooth :
@@ -21,6 +22,7 @@ Change=Modifier
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Connecter une DualShock3 en Bluetooth (sans fil)
 Connect other gamepad by Bluetooth=Connecter une autre manette en Bluetooth
+connected=connecté
 Controller=
 Current Time:=Heure actuelle :
 Dongle status:=État du dongle :
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Détails de l'interface :
 IP Address:=Adresse IP :
 IP configuration:=Configuration IP :
+Keep the controller in pairing mode=Gardez la manette en mode appairage
 Linux Kernel Patching=Patches du noyau Linux
 Loading timezones...=Chargement des fuseaux horaires...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mappage terminé - (OPEN) pour enregistrer, (POWER) pour annuler.
 Mapping stored to database=Mappage enregistré dans la base
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Placez les sticks comme indiqué ou appuyez sur (OPEN) si cette position n'existe pas.
+new=nouveau
 Next pad=Manette suivante
+No Bluetooth adapter found.=Aucun adaptateur Bluetooth détecté.
 No button on controller=Bouton absent sur la manette
 NO GAME CONTROLLERS OPENED=AUCUNE MANETTE OUVERTE
 NO GAMEPADS CONNECTED=AUCUNE MANETTE CONNECTÉE
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=NOTE 3 : Cette procédure ne doit pas forcément se faire sur cet écran. L'appairage USB fonctionne partout dès que la console est allumée.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=NOTE 4 : L'appairage est mémorisé par la console ; la prochaine fois, un appui sur PlayStation Home suffit pour utiliser la manette dans AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=NOTE : Avant le mappage, vérifiez qu'aucun bouton n'est enfoncé et que tous les sticks sont au repos.
+Pair=Appairer
+paired=appairé
+Pairing=Appairage de
 Password:=Mot de passe :
 Playstation Classic Hardware Information=Informations matérielles de la PlayStation Classic
 Please test a new mapping=Veuillez tester le nouveau mappage
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Branchez un dongle Bluetooth USB sur la console, puis rouvrez cet écran.
 Press a button highlighted or (OPEN) if not avaliable.=Appuyez sur le bouton en surbrillance, ou sur (OPEN) s'il n'existe pas.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Enfoncez à fond la gâchette en surbrillance, ou (OPEN) si elle n'existe pas.
+Put your controller in pairing mode=Mettez votre manette en mode appairage
 Reinitializing Network=Réinitialisation du réseau
+Remove=Retirer
+Remove pairing for=Supprimer l'appairage de
+Removing=Suppression de
 Restart Network=Redémarrer le réseau
 Restart Networking Now?=Redémarrer le réseau maintenant ?
 Restarted Wi-Fi  With SSID:=Wi-Fi redémarré avec le SSID :
 Save=Enregistrer
+Scan=Rechercher
+Scan for controllers=Rechercher des manettes
 Scan SSID=Rechercher les SSID
+Scanning for controllers...=Recherche de manettes...
 Scanning networks=Recherche des réseaux
 SDL's built-in=intégrée à SDL
 Select=

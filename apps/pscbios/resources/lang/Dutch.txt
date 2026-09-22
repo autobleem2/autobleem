@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Toewijzing (beschikbaar):
  - Mapping (Not found)= - Toewijzing (niet gevonden)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Reageert de controller niet op knoppen of staan de sticks verkeerd ingesteld, gebruik dan het toewijzingsonderdeel om hem opnieuw in te stellen
 About=
 Active=Actief
+Already paired=Al gekoppeld
 Back=
 Bluetooth controller pairing=Bluetooth-controller koppelen
 Bluetooth information:=Bluetooth-informatie:
@@ -21,6 +22,7 @@ Change=Wijzigen
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=DualShock3 via Bluetooth verbinden (draadloos)
 Connect other gamepad by Bluetooth=Andere gamepad via Bluetooth verbinden
+connected=verbonden
 Controller=
 Current Time:=Huidige tijd:
 Dongle status:=Dongle-status:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Interfacedetails:
 IP Address:=IP-adres:
 IP configuration:=IP-configuratie:
+Keep the controller in pairing mode=Houd de controller in de koppelmodus
 Linux Kernel Patching=Linux-kernelpatches
 Loading timezones...=Tijdzones laden...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Toewijzing voltooid - druk op (OPEN) om op te slaan, (POWER) om te annuleren.
 Mapping stored to database=Toewijzing opgeslagen in de database
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Beweeg de sticks zoals getoond of druk op (OPEN) als die stickpositie niet bestaat.
+new=nieuw
 Next pad=Volgende pad
+No Bluetooth adapter found.=Geen Bluetooth-adapter gevonden.
 No button on controller=Deze knop zit niet op de controller
 NO GAME CONTROLLERS OPENED=GEEN CONTROLLER GEOPEND
 NO GAMEPADS CONNECTED=GEEN GAMEPADS AANGESLOTEN
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=OPMERKING 3: Dit hoeft niet in dit scherm. USB-koppelen werkt in elk scherm zodra de console aanstaat.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=OPMERKING 4: De koppeling wordt in de console bewaard; de volgende keer is een druk op PlayStation Home op de controller genoeg en werkt hij in AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=OPMERKING: Zorg dat er vóór het toewijzen geen knop is ingedrukt en dat alle sticks in de ruststand staan.
+Pair=Koppelen
+paired=gekoppeld
+Pairing=Koppelen van
 Password:=Wachtwoord:
 Playstation Classic Hardware Information=PlayStation Classic hardware-informatie
 Please test a new mapping=Test de nieuwe toewijzing
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Sluit een USB-Bluetooth-adapter aan op de console en open dit scherm opnieuw.
 Press a button highlighted or (OPEN) if not avaliable.=Druk op de gemarkeerde knop, of op (OPEN) als die er niet is.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Druk de gemarkeerde trigger volledig in, of op (OPEN) als die er niet is.
+Put your controller in pairing mode=Zet je controller in de koppelmodus
 Reinitializing Network=Netwerk wordt opnieuw geïnitialiseerd
+Remove=Verwijderen
+Remove pairing for=Koppeling verwijderen voor
+Removing=Verwijderen van
 Restart Network=Netwerk herstarten
 Restart Networking Now?=Netwerk nu herstarten?
 Restarted Wi-Fi  With SSID:=Wifi herstart met SSID:
 Save=Opslaan
+Scan=Zoeken
+Scan for controllers=Zoeken naar controllers
 Scan SSID=SSID zoeken
+Scanning for controllers...=Zoeken naar controllers...
 Scanning networks=Netwerken zoeken
 SDL's built-in=ingebouwd in SDL
 Select=

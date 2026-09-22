@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Määritys (saatavilla):
  - Mapping (Not found)= - Määritys (ei löydy)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Jos ohjain ei reagoi painikkeisiin tai tatit on asetettu väärin, määritä se uudelleen määritysosiossa
 About=
 Active=Aktiivinen
+Already paired=Jo paritettu
 Back=
 Bluetooth controller pairing=Bluetooth-ohjaimen pariliitos
 Bluetooth information:=Bluetooth-tiedot:
@@ -21,6 +22,7 @@ Change=Muuta
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Yhdistä DualShock3 Bluetoothilla (langaton)
 Connect other gamepad by Bluetooth=Yhdistä muu ohjain Bluetoothilla
+connected=yhdistetty
 Controller=
 Current Time:=Nykyinen aika:
 Dongle status:=Sovittimen tila:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Liitännän tiedot:
 IP Address:=IP-osoite:
 IP configuration:=IP-määritys:
+Keep the controller in pairing mode=Pidä ohjain paritustilassa
 Linux Kernel Patching=Linux-ytimen korjaukset
 Loading timezones...=Ladataan aikavyöhykkeitä...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Määritys valmis - tallenna painamalla (OPEN), peruuta painamalla (POWER).
 Mapping stored to database=Määritys tallennettu tietokantaan
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Siirrä tatit näytettyyn asentoon tai paina (OPEN), jos asentoa ei ole.
+new=uusi
 Next pad=Seuraava ohjain
+No Bluetooth adapter found.=Bluetooth-sovitinta ei löytynyt.
 No button on controller=Ohjaimessa ei ole tätä painiketta
 NO GAME CONTROLLERS OPENED=YHTÄÄN OHJAINTA EI OLE AVATTU
 NO GAMEPADS CONNECTED=YHTÄÄN OHJAINTA EI OLE KYTKETTY
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=HUOMAUTUS 3: Toimenpidettä ei tarvitse tehdä tässä näkymässä. USB-pariliitos toimii missä tahansa näkymässä heti, kun konsoli on päällä.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=HUOMAUTUS 4: Pariliitos tallentuu konsoliin; seuraavalla kerralla riittää PlayStation Home -painikkeen painallus ohjaimessa, ja se toimii AutoBleemissä
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=HUOMAUTUS: Varmista ennen määritystä, ettei mikään painike ole painettuna ja että kaikki tatit ovat lepoasennossa.
+Pair=Parita
+paired=paritettu
+Pairing=Paritetaan
 Password:=Salasana:
 Playstation Classic Hardware Information=PlayStation Classicin laitteistotiedot
 Please test a new mapping=Testaa uusi määritys
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Kytke USB-Bluetooth-sovitin konsoliin ja avaa tämä näyttö uudelleen.
 Press a button highlighted or (OPEN) if not avaliable.=Paina korostettua painiketta tai (OPEN), jos sitä ei ole.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Paina korostettu liipaisin pohjaan tai (OPEN), jos sitä ei ole.
+Put your controller in pairing mode=Aseta ohjain paritustilaan
 Reinitializing Network=Alustetaan verkkoa uudelleen
+Remove=Poista
+Remove pairing for=Poista pariliitos kohteelle
+Removing=Poistetaan
 Restart Network=Käynnistä verkko uudelleen
 Restart Networking Now?=Käynnistetäänkö verkko uudelleen nyt?
 Restarted Wi-Fi  With SSID:=Wi-Fi käynnistetty uudelleen SSID:llä:
 Save=Tallenna
+Scan=Etsi
+Scan for controllers=Etsi ohjaimia
 Scan SSID=Etsi SSID
+Scanning for controllers...=Etsitään ohjaimia...
 Scanning networks=Etsitään verkkoja
 SDL's built-in=SDL:n sisäinen
 Select=

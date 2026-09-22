@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - 映射（可用）：
  - Mapping (Not found)= - 映射（未找到）
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. 如果手柄按键无反应或摇杆设置错误，请在映射部分重新配置
 About=
 Active=已启用
+Already paired=已配对
 Back=
 Bluetooth controller pairing=蓝牙手柄配对
 Bluetooth information:=蓝牙信息：
@@ -21,6 +22,7 @@ Change=更改
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=通过蓝牙连接 DualShock3（无线模式）
 Connect other gamepad by Bluetooth=通过蓝牙连接其他手柄
+connected=已连接
 Controller=
 Current Time:=当前时间：
 Dongle status:=适配器状态：
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=接口详情：
 IP Address:=IP 地址：
 IP configuration:=IP 配置：
+Keep the controller in pairing mode=让手柄保持在配对模式
 Linux Kernel Patching=Linux 内核补丁
 Loading timezones...=正在加载时区...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=映射完成 - 按 (OPEN) 保存，按 (POWER) 取消。
 Mapping stored to database=映射已保存到数据库
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=请把摇杆推到所示位置；若没有该位置，请按 (OPEN)。
+new=新设备
 Next pad=下一个手柄
+No Bluetooth adapter found.=未找到蓝牙适配器。
 No button on controller=手柄上没有此按键
 NO GAME CONTROLLERS OPENED=未打开任何手柄
 NO GAMEPADS CONNECTED=未连接任何手柄
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=注 3：不必在此画面进行。只要主机开机，USB 配对在任何画面都有效。
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=注 4：配对信息保存在主机中，下次只需按手柄上的 PlayStation Home 键即可在 AutoBleem 中使用
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=注意：映射前请确认没有按下任何按键，并且所有摇杆都处于回中位置。
+Pair=配对
+paired=已配对
+Pairing=正在配对
 Password:=密码：
 Playstation Classic Hardware Information=PlayStation Classic 硬件信息
 Please test a new mapping=请测试新的映射
+Plug a USB Bluetooth dongle into the console, then open this screen again.=请将 USB 蓝牙适配器插入主机，然后重新打开此界面。
 Press a button highlighted or (OPEN) if not avaliable.=请按高亮显示的按键；若没有该按键，请按 (OPEN)。
 Press a trigger highlighted fully or (OPEN) if not avaliable.=请把高亮显示的扳机按到底；若没有该扳机，请按 (OPEN)。
+Put your controller in pairing mode=请让手柄进入配对模式
 Reinitializing Network=正在重新初始化网络
+Remove=移除
+Remove pairing for=移除配对
+Removing=正在移除
 Restart Network=重启网络
 Restart Networking Now?=现在重启网络吗？
 Restarted Wi-Fi  With SSID:=Wi-Fi 已重启，SSID：
 Save=保存
+Scan=扫描
+Scan for controllers=扫描手柄
 Scan SSID=扫描 SSID
+Scanning for controllers...=正在扫描手柄...
 Scanning networks=正在扫描网络
 SDL's built-in=SDL 内置
 Select=

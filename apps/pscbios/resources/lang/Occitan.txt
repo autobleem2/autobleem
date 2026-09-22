@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 10 / Total: 114
 
  - Mapping (Available):= - Mapatge (disponible) :
  - Mapping (Not found)= - Mapatge (pas trobat)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Se la maneta respond pas als botons o se los sticks son mal reglats, utilizatz la seccion mapatge per la reconfigurar
 About=
 Active=Actiu
+Already paired=Ja apariat
 Back=
 Bluetooth controller pairing=Apariament de maneta Bluetooth
 Bluetooth information:=Informacions Bluetooth :
@@ -21,6 +22,7 @@ Change=Modificar
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Connectar una DualShock3 en Bluetooth (sens fial)
 Connect other gamepad by Bluetooth=Connectar una autra maneta en Bluetooth
+connected=connectat
 Controller=
 Current Time:=Ora actuala :
 Dongle status:=Estat del dongle :
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Detalhs de l'interfàcia :
 IP Address:=Adreça IP :
 IP configuration:=Configuracion IP :
+Keep the controller in pairing mode=Gardatz la manèta en mòde d'apariament
 Linux Kernel Patching=Pedaçatges del nucli Linux
 Loading timezones...=Cargament dels fuses oraris...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mapatge acabat - (OPEN) per enregistrar, (POWER) per anullar.
 Mapping stored to database=Mapatge enregistrat dins la basa
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Plaçatz los sticks coma indicat o quichatz (OPEN) se aquesta posicion existís pas.
+new=novèl
 Next pad=Maneta seguenta
+No Bluetooth adapter found.=Cap d'adaptador Bluetooth pas trobat.
 No button on controller=Boton absent sus la maneta
 NO GAME CONTROLLERS OPENED=CAP DE MANETA DOBÈRTA
 NO GAMEPADS CONNECTED=CAP DE MANETA CONNECTADA
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=NÒTA 3 : Aquesta procedura se deu pas forçadament far sus aqueste ecran. L'apariament USB fonciona pertot tre que la consòla es alucada.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=NÒTA 4 : L'apariament es memorizat per la consòla ; lo còp que ven, una quichada sus PlayStation Home sufís per utilizar la maneta dins AutoBleem
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=NÒTA : Abans lo mapatge, verificatz que cap de boton es pas quichat e que totes los sticks son al repaus.
+Pair=Apariar
+paired=apariat
+Pairing=Apariament de
 Password:=Senhal :
 Playstation Classic Hardware Information=Informacions materialas de la PlayStation Classic
 Please test a new mapping=Testatz lo mapatge novèl
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Brancatz un adaptador Bluetooth USB a la consòla, puèi tornatz dobrir aqueste ecran.
 Press a button highlighted or (OPEN) if not avaliable.=Quichatz lo boton en susbrilhança, o (OPEN) s'existís pas.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Quichatz a fons la gaseta en susbrilhança, o (OPEN) s'existís pas.
+Put your controller in pairing mode=Metètz vòstra manèta en mòde d'apariament
 Reinitializing Network=Reïnicializacion de la ret
+Remove=Levar
+Remove pairing for=Levar l'apariament de
+Removing=Supression de
 Restart Network=Reaviar la ret
 Restart Networking Now?=Reaviar la ret ara ?
 Restarted Wi-Fi  With SSID:=Wi-Fi reaviat amb lo SSID :
 Save=Enregistrar
+Scan=Cercar
+Scan for controllers=Cercar de manètas
 Scan SSID=Cercar los SSID
+Scanning for controllers...=Recèrca de manètas...
 Scanning networks=Recèrca de las rets
 SDL's built-in=integrada a SDL
 Select=

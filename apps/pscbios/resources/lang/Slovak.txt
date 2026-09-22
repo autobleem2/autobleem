@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation - pscbios
 # Format: English Text=Translated Text (an empty value falls through to the main GUI's file)
-# Untranslated: 1 / Total: 102
+# Untranslated: 7 / Total: 114
 
  - Mapping (Available):= - Mapovanie (k dispozícii):
  - Mapping (Not found)= - Mapovanie (nenájdené)
@@ -12,6 +12,7 @@
 6. If the controller does not react for buttons or analog sticks are setup wrong - use mapping section to reconfigure=6. Ak ovládač nereaguje na tlačidlá alebo sú páčky nastavené zle, prenastavte ho v sekcii mapovania
 About=O programe
 Active=Aktívny
+Already paired=Už spárované
 Back=
 Bluetooth controller pairing=Párovanie ovládača cez Bluetooth
 Bluetooth information:=Informácie o Bluetooth:
@@ -21,6 +22,7 @@ Change=Zmeniť
 Code C++ and shell scripts=
 Connect DualShock3 by Bluetooth (Wireless mode)=Pripojiť DualShock3 cez Bluetooth (bezdrôtovo)
 Connect other gamepad by Bluetooth=Pripojiť iný gamepad cez Bluetooth
+connected=pripojené
 Controller=
 Current Time:=Aktuálny čas:
 Dongle status:=Stav Dongle:
@@ -49,13 +51,16 @@ In AutoBleem DualShock/SixAxis type controller are automatically paired if you h
 Interface details:=Podrobnosti o rozhraní:
 IP Address:=IP adresa:
 IP configuration:=Konfigurácia IP:
+Keep the controller in pairing mode=Nechajte ovládač v režime párovania
 Linux Kernel Patching=Úpravy linuxového jadra
 Loading timezones...=Načítavam časové pásma...
 Localization support=
 Mapping Complete - press (OPEN) to save. (POWER) to cancel.=Mapovanie dokončené - stlačte (OPEN) na uloženie, (POWER) na zrušenie.
 Mapping stored to database=Mapovanie uložené do databázy
 Move your sticks to state shown or press (OPEN) if stick position not avaliable.=Nastavte páčky podľa obrázka alebo stlačte (OPEN), ak taká poloha neexistuje.
+new=nový
 Next pad=Ďalší Gamepad
+No Bluetooth adapter found.=Nenašiel sa žiadny adaptér Bluetooth.
 No button on controller=Ovládač toto tlačidlo nemá
 NO GAME CONTROLLERS OPENED=NIE JE OTVORENÝ ŽIADNY OVLÁDAČ
 NO GAMEPADS CONNECTED=NIE JE PRIPOJENÝ ŽIADNY GAMEPAD
@@ -67,17 +72,28 @@ NOTE 2: In case you pair the controller back to PS3 or other console you have to
 NOTE 3: You do not need to do this procedure in this screen. USB pairing works on any screen as soon console is powered on.=POZNÁMKA 3: Postup nemusíte robiť na tejto obrazovke. Párovanie cez USB funguje na ktorejkoľvek obrazovke, len čo je konzola zapnutá.
 NOTE 4: Pairing information is saved in console, so next time just press PlayStation Home on the controller and it will work in AutoBleem=POZNÁMKA 4: Spárovanie sa ukladá v konzole; nabudúce stačí na ovládači stlačiť PlayStation Home a bude v AutoBleem fungovať
 NOTE: Make sure none of the buttons are pressed before mapping and all analog sticks are in default position.=POZNÁMKA: Pred mapovaním sa uistite, že nie je stlačené žiadne tlačidlo a všetky páčky sú v pokojovej polohe.
+Pair=Spárovať
+paired=spárované
+Pairing=Párovanie
 Password:=Heslo:
 Playstation Classic Hardware Information=nformácie o hardvéri Playstation Classic
 Please test a new mapping=Vyskúšajte nové mapovanie
+Plug a USB Bluetooth dongle into the console, then open this screen again.=Pripojte ku konzole USB Bluetooth adaptér a znova otvorte túto obrazovku.
 Press a button highlighted or (OPEN) if not avaliable.=Stlačte zvýraznené tlačidlo, alebo (OPEN), ak ho ovládač nemá.
 Press a trigger highlighted fully or (OPEN) if not avaliable.=Stlačte zvýraznenú spúšť naplno, alebo (OPEN), ak ju ovládač nemá.
+Put your controller in pairing mode=Prepnite ovládač do režimu párovania
 Reinitializing Network=Reinicializujem sieť
+Remove=Odstrániť
+Remove pairing for=Odstrániť párovanie pre
+Removing=Odstraňovanie
 Restart Network=Reštartujte sieť
 Restart Networking Now?=Chcete reštartovať sieť teraz?
 Restarted Wi-Fi  With SSID:=Reštartované Wi-Fi s SSID:
 Save=Uložiť
+Scan=Hľadať
+Scan for controllers=Hľadať ovládače
 Scan SSID=Hľadanie SSID
+Scanning for controllers...=Hľadanie ovládačov...
 Scanning networks=Hľadanie sietí
 SDL's built-in=vstavaná v SDL
 Select=Vybrať
