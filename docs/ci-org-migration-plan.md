@@ -251,6 +251,33 @@ Once `pcsx-ab` is green, `pcsx-abnxt` is a near-copy (add `submodules: recursive
 describe`), then the launcher, then `retroarch-psc` / `psc-kernel-payload` with their own images on their
 own low cadence.
 
+## 9. Progress log
+
+- **2026-09-22 — pilot repos transferred + made public.** `autobleem/pcsx-ab2` → **`autobleem2/pcsx-ab`**
+  (transferred, renamed, now **public**), `autobleem/pcsx-abnxt` → `autobleem2/pcsx-abnxt`,
+  `autobleem/libpicofe` → `autobleem2/libpicofe` (both already public). Descriptions/topics set; local remotes
+  repointed. Old URLs redirect. `pcsx-ab` secret-scanned clean (30 commits + tree); GPL-3.0 `LICENSE` added
+  (core sources are GPLv2-or-later, so GPL-3 is valid by the "or later" option; `COPYING` kept) and README
+  refreshed. Both emulator `build.yml` pilots committed and pushed (inert, `AB_CI_ENABLED`-gated).
+- **2026-09-22 — gitflow on `pcsx-ab`.** `master` fast-forwarded to the develop tip (no releases yet) and
+  set as the **default branch** (matching `pcsx-abnxt`/`libpicofe` and the AutoBleem project convention:
+  master = production/default, develop = integration, `feature/*` off develop, `release/*` → master + tag).
+  The two merged `feature/*` branches were pruned. The `build.yml` triggers already fit: develop push =
+  pre-release/nightly, `v*` tag on master = release.
+- **BLOCKER — the toolchain image is not on GHCR.** `ghcr.io/autobleem2/autobleem-build` (and the old
+  `autobleem/…`) return 404: the image has only ever existed in the build server's local Docker (the
+  workflows have never run). The pilot's hosted jobs pull that image, so **it must be built and pushed to
+  `ghcr.io/autobleem2/autobleem-build` and made public** before any green run. One server command
+  (`docker/build-image.sh --tag ghcr.io/autobleem2/autobleem-build` + `docker push --all-tags`), then Org
+  → Packages → Change visibility → Public. `image.yml` keys off `repository_owner`, so once the launcher
+  itself migrates it will push there automatically.
+
+### Minimal path to a first green pilot run
+1. Owner (build server): build + push the image to `ghcr.io/autobleem2/autobleem-build`; make the package public.
+2. Owner: set repo variable `AB_CI_ENABLED=true` on `autobleem2/pcsx-ab`.
+3. Dispatch `build.yml` with `runner: github`, `publish: false` — hosted-only, no self-hosted runner needed.
+   The self-hosted runner + PAT are needed only later for the `publish` job (tag/dispatch-publish).
+
 ## 8. Open decisions for the owner (§7 question)
 
 1. **Rename set** — accept `AutoBleem2→autobleem`, `pcsx-ab2→pcsx-ab`? (Redirects make it safe; strings get
