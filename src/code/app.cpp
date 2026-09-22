@@ -24,6 +24,18 @@ App::App(std::unique_ptr<ProcessRunner> runner) : AppBase("AutoBleem"), runner_(
 App::~App() = default;
 
 //*******************************
+// App::requestPowerOff
+//*******************************
+void App::requestPowerOff() {
+#ifdef AB_PLATFORM_PSC
+    session_.menuOption = MENU_OPTION_POWEROFF;
+    gui_->input().requestQuit();
+#else
+    System::powerOff();
+#endif
+}
+
+//*******************************
 // App::applyOnlineSetting
 //*******************************
 void App::applyOnlineSetting() {

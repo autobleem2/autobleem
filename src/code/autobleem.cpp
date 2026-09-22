@@ -19,7 +19,16 @@ using namespace std;
 //*******************************
 // AutoBleem::AutoBleem
 //*******************************
-AutoBleem::AutoBleem() : App(makeProcessRunner()) {}
+AutoBleem::AutoBleem() : App(makeProcessRunner()) {
+#ifdef AB_PLATFORM_PSC
+    // the console's power button: AppBase wired it to a halt; the launcher's power off is the standby
+    // (App::requestPowerOff) - the tools under apps/ keep the halt
+    gui_->platform().setPowerOffHandler([this]() {
+        gui_->drawText(_("POWERING OFF... PLEASE WAIT"));
+        requestPowerOff();
+    });
+#endif
+}
 
 #ifdef AB_DEBUG_HOST
 namespace {
@@ -202,6 +211,10 @@ int AutoBleem::run() {
             launcherScreen.show();
             quitRequested = launcherScreen.quitRequested;
         }
+        if (session_.menuOption == MENU_OPTION_POWEROFF) {
+            launcher_.writeSelectionScript(); // the console's rc/selection.sh does the standby
+            break;
+        }
         if (quitRequested) {
             if (gui_->platform().isDevHost() || ++displayLost > 3) {
                 break; // the window's own close button - see GuiLauncher::loop()'s comment - or hopeless
@@ -248,7 +261,11 @@ int AutoBleem::run() {
     // close the databases before the gui goes away.
     gameLibrary.close();
 
-    Gui::splash(_("Loading ... Please Wait ..."));
+    if (session_.menuOption == MENU_OPTION_POWEROFF) {
+        gui_->drawText(_("POWERING OFF... PLEASE WAIT")); // the standby follows within a second
+    } else {
+        Gui::splash(_("Loading ... Please Wait ..."));
+    }
     gui_->finish();
 
     return EXIT_SUCCESS;

@@ -184,6 +184,8 @@ struct Input::Impl {
     Platform &platform;
     bool keyboardAsPad;
     bool powerKeyAsKey = false;
+    bool quitRequested = false; // requestQuit(): poll() returns Quit on every other call from then on
+    bool quitArmed = false;     // ... and false in between, so a "while (poll(e))" drain loop ends
     bool dpadState[4] = {false, false, false, false};
     std::mutex injectedMutex;
     std::deque<Event> injected; // what inject() queued, handed out ahead of SDL's events
@@ -262,6 +264,16 @@ void Input::inject(const Event &e) {
 
 bool Input::poll(Event &out) {
     out = Event();
+    if (impl->quitRequested) {
+        // a Quit, then "nothing queued", then a Quit again: every screen drains its events with
+        // while (poll(e)) and closes on a Quit - a Quit on every call would never let that loop end
+        // (seen on the console, 2026-09-22: the launcher hung on "POWERING OFF")
+        impl->quitArmed = !impl->quitArmed;
+        if (!impl->quitArmed)
+            return false;
+        out.type = Event::Type::Quit;
+        return true;
+    }
     if (impl->takeInjected(out)) {
         if (out.type == Event::Type::DpadDown || out.type == Event::Type::DpadUp) {
             const bool down = out.type == Event::Type::DpadDown;
@@ -368,6 +380,14 @@ bool Input::poll(Event &out) {
 void Input::flushEvents() {
     SDL_PumpEvents();
     SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+}
+
+void Input::requestQuit() {
+    impl->quitRequested = true;
+}
+
+bool Input::quitRequested() const {
+    return impl->quitRequested;
 }
 
 bool Input::padEventPending() const {

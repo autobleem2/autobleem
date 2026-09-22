@@ -116,6 +116,15 @@ public:
 
     void flushEvents(); // discard everything currently queued (SDL_PumpEvents + SDL_FlushEvents)
 
+    // from now on poll() hands out a Quit event on every other call (and "nothing queued" in between, so
+    // a while (poll(e)) drain ends), whatever else is queued: every screen's loop closes on Quit, so a
+    // request made deep inside nested screens (the power button, handled inside poll() itself) unwinds
+    // the whole stack of screens back to the program's loop, which can then end cleanly - databases
+    // closed, threads joined - instead of exit()ing from the handler. Not cleared by flushEvents();
+    // quitRequested() is how that loop tells the request from a window's close button.
+    void requestQuit();
+    bool quitRequested() const;
+
     // true if a controller axis/hat event (or, with the keyboard as the pad, a key event) is sitting in the
     // queue right now, without consuming it. used to implement "repeat while held" key-repeat style loops
     // (see GuiScreen::fastForwardUntilAnotherEvent).

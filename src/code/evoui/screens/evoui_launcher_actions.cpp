@@ -530,7 +530,7 @@ void GuiLauncher::loop_openSystemMenu() {
         confirm.show();
         if (confirm.result) {
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-            System::powerOff();
+            app.requestPowerOff(); // the console's standby (AutoBleem::run() leaves), a halt elsewhere
         }
         break;
     }

@@ -15,8 +15,17 @@
 // must not change. IDLE is the resting default and also what a plain "close the app" leaves behind -
 // selection.sh's own default (start_autobleem, i.e. come straight back here) is the right thing for that.
 // UPDATE (2026-09-20) is the online update: the launcher has downloaded the new package(s) into
-// System/Updates and leaves so the Pi's session loop can run autobleem-update over them.
-enum MenuOption { MENU_OPTION_IDLE = 1, MENU_OPTION_RETRO = 4, MENU_OPTION_START = 5, MENU_OPTION_UPDATE = 6 };
+// System/Updates and leaves so the Pi's session loop can run autobleem-update over them. POWEROFF
+// (2026-09-22) is the console's power off: the launcher leaves and rc/selection.sh unmounts the stick and
+// suspends the console (what Sony's own power off does, with the stick unmounted so it can be pulled) -
+// the power button wakes it and the launcher is started over. Nothing but the console uses it.
+enum MenuOption {
+    MENU_OPTION_IDLE = 1,
+    MENU_OPTION_RETRO = 4,
+    MENU_OPTION_START = 5,
+    MENU_OPTION_UPDATE = 6,
+    MENU_OPTION_POWEROFF = 7
+};
 
 // which emulator/launcher path to use for the game about to start
 enum class EmuMode { Pcsx, RetroArch, Launcher };

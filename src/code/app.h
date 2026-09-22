@@ -59,6 +59,12 @@ public:
 #endif
     Session &session() { return session_; }
 
+    // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and
+    // AutoBleem::run() leaves with MENU_OPTION_POWEROFF for rc/selection.sh's standby; everywhere else it
+    // is System::powerOff() as before (a halt on an appliance, exit on a PC). The power button and the
+    // system menu's item both come here.
+    void requestPowerOff();
+
 protected:
     ableem::GameLibrary gameLibrary;
     Session session_;
