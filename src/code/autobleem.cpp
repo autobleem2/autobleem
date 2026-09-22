@@ -163,6 +163,7 @@ int AutoBleem::run() {
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
     gui_->display(false);
+    unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since

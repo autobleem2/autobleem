@@ -64,6 +64,13 @@ standby() {
     echo 1 > /sys/class/leds/green/brightness
     echo 0 > /sys/class/leds/red/brightness
 
+    # the AutoBleem picture from now until the launcher's window is up (it removes /tmp/.abload itself,
+    # as after RetroArch) - the ten seconds of the bus, the mount and the launcher's start were black
+    if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
+        touch /tmp/.abload
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abload --timeout 40 &
+    fi
+
     sleep 3 # the USB bus re-enumerates after the resume
     i=0
     while [ $i -lt 30 ]; do
@@ -73,7 +80,10 @@ standby() {
         i=$((i + 1))
         sleep 1
     done
-    [ -n "$DEV" ] || return 1
+    if [ -z "$DEV" ]; then
+        rm -f /tmp/.abload
+        return 1
+    fi
     rm -f /tmp/ab_stick_owned # a fresh mount: the kernel owns the flag again (clean at mount, or not ours)
     touch /media/System/.session
     return 0

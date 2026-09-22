@@ -1776,7 +1776,10 @@ stick while `selection.sh` (a copy on tmpfs) runs its `standby()`: `rm System/.s
 (five tries; busy -> the holders into `System/Logs/standby.log` and a reboot), `abfatflag clean` when the
 flag is ours (below), **green off, red on**, `echo mem`, and after the power button: green on, 3 s for
 the bus, up to 30 s of `blkid` for the `SONY` partition, `mount` as usb_watch mounts it, `touch
-System/.session`, exit 0 -> the launcher again. No stick after 30 s -> reboot. The red LED alone is
+System/.session`, exit 0 -> the launcher again - under the AutoBleem picture (`absplash` and
+`splash/autobleem.jpg` copied to `/tmp` by boot.sh, shown from the resume until the launcher's
+`display(false)` unlinks `/tmp/.abload`, as after RetroArch; the ten seconds were black and looked like a
+console that did not start). No stick after 30 s -> reboot. The red LED alone is
 "AutoBleem's standby" (the manual says so: the sign it works as intended). RetroArch (`AB_SELECTION=4`)
 comes back through the same loop - `retroarch.sh` no longer re-runs `start.sh` nested.
 
