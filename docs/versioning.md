@@ -64,7 +64,7 @@ A user (and a bug report) must be able to read the version off the screen, on ev
 | **Launcher** | Splash screen + About screen (already: `Version::FULL_VERSION`). Keep. |
 | **Console tools** (pscbios, abflashkit) | Their About/opening screen footer — the same `version.h` the launcher uses while co-built; their own after the split. |
 | **PC tools** (updateroms, installer) | The window title bar and/or the first-boot/setup screen header. |
-| **Emulators** (pcsx-ab, pcsx-abnxt) | The emulator's own menu — a "Version" line (their menu/about screen), and the first line of their log. |
+| **Emulators** (pcsx-ab, pcsx-abnxt) | Already shown in-menu: pcsx-ab draws `build: <date> <time> <REV>` (`menu.c`), pcsx-abnxt draws `pcsx-abnxt <REV>` on the menu bar (`ab_menu.c`). `REV` is `git describe`, so a tagged build shows the semver (`v2.0.0`). No change needed for visibility; only the *scheme* (the dev-build form) aligns in §6. |
 | **RetroArch (console build)** | Already shows RetroArch's version; our build stamp goes in `retroarch.version` and the log. |
 
 Rule for new UI: the version is drawn in a consistent, unobtrusive spot (a footer or an About/System line),
