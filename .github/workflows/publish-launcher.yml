@@ -2,8 +2,9 @@
 # compose with the separately-published emulators/payload/themes - the compile-once/assemble-many model.
 # This does NOT build the old monolithic package; it builds only the launcher tree (AB_NO_PCSX=1 uses the
 # checked-in emulators, so no emulator repos are needed) and ships launcher-<platform>.tar.gz laid out as
-# the launcher's own part of Autobleem/bin: autobleem/ (autobleem-gui + its resources) and abpad/ (the
-# virtual-gamepad daemon + preload shim). Assembly extracts it straight into Autobleem/bin.
+# the payload the launcher repo contributes: Autobleem/bin/autobleem (autobleem-gui + resources),
+# Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) and Themes/ (the five themes ship with the
+# launcher - they stay in payload/Themes in the repo, no theme pack). Assembly extracts it over the payload.
 # Gated by AB_CI_ENABLED.
 name: publish-launcher
 
@@ -70,25 +71,30 @@ jobs:
             pcusb) D=build_pcusb; P=pcusb ;;
           esac
           V="${{ needs.plan.outputs.version }}"
-          # the artifact mirrors the launcher's own part of the on-device Autobleem/bin tree, so assembly
-          # (autobleem-appliance) just extracts it into Autobleem/bin: autobleem/ (the gui + its resources)
-          # and abpad/ (the virtual-gamepad daemon + preload shim). The emulators, payload, themes and cover
-          # databases are other components' artifacts.
-          rm -rf stage out && mkdir -p stage/autobleem stage/abpad out
-          cp "$D/autobleem-gui" stage/autobleem/
-          upx -q --best --lzma stage/autobleem/autobleem-gui || true
-          cp -a src/resources/. stage/autobleem/
-          rm -f stage/autobleem/internal.db          # an appliance has no built-in games
-          cp LICENSE THIRD_PARTY_NOTICES.md stage/autobleem/ 2>/dev/null || true
-          # abpad: the virtual gamepad that stands in for a pad an ported App expects (Autobleem/bin/abpad)
+          # the artifact mirrors the payload root the launcher repo contributes, so assembly
+          # (autobleem-appliance) just extracts it over the staged payload:
+          #   Autobleem/bin/autobleem  the gui + its resources
+          #   Autobleem/bin/abpad      the virtual-gamepad daemon + preload shim
+          #   Themes                   the five themes (owner's rule: themes stay in the repo, no theme pack)
+          # The emulators, the payload skeleton, and the install-time downloads (cover DBs, samples) are
+          # other components' artifacts / site fetches, not this one.
+          BIN=stage/Autobleem/bin
+          rm -rf stage out && mkdir -p "$BIN/autobleem" "$BIN/abpad" stage/Themes out
+          cp "$D/autobleem-gui" "$BIN/autobleem/"
+          upx -q --best --lzma "$BIN/autobleem/autobleem-gui" || true
+          cp -a src/resources/. "$BIN/autobleem/"
+          rm -f "$BIN/autobleem/internal.db"          # an appliance has no built-in games
+          cp LICENSE THIRD_PARTY_NOTICES.md "$BIN/autobleem/" 2>/dev/null || true
           if [ -f "$D/apps/abpad/abpadd" ] && [ -f "$D/apps/abpad/libabpad.so" ]; then
-            cp "$D/apps/abpad/abpadd" "$D/apps/abpad/libabpad.so" stage/abpad/
+            cp "$D/apps/abpad/abpadd" "$D/apps/abpad/libabpad.so" "$BIN/abpad/"
           else
             echo "::warning::no abpad built in $D/apps/abpad - Apps would run without the virtual gamepad"
           fi
+          cp -a payload/Themes/. stage/Themes/
+          find stage -type f -name placeholder -delete
           tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
           echo "plat=$P" >> "$GITHUB_OUTPUT"
-          find stage -type f | sort; ls -l out
+          echo "top: $(tar tzf out/launcher-$P-$V.tar.gz | sed 's#/.*##' | sort -u | tr '\n' ' ')"; ls -l out
       - uses: actions/upload-artifact@v7
         with:
           name: launcher-${{ steps.stage.outputs.plat }}
