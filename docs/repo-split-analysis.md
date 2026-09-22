@@ -137,6 +137,59 @@ Note `autobleem-console-tools` and `autobleem-pc-tools` could also be a single `
 submodule the core; two binaries each) if four C++ repos is one too many — the console vs PC split is by
 target, not by dependency.
 
+## 6b. Build & assembly model — compile once, assemble per-target (owner direction, 2026-09-22)
+
+The split is not only about tidy repos; its real payoff is a **compile-once / assemble-many** pipeline that
+cuts both compile time and final-artifact time. This reframes what each repo *produces* and how releases are
+built.
+
+**1. Every component publishes versioned, per-arch artifacts, with assets external.** Each project builds
+independently on its own CI and publishes pre-compiled artifacts (a tarball/zip per target + a manifest) to
+GitHub Releases and the download site — exactly the pattern the emulators already use (`emu/pcsx-ab/`,
+`emu/pcsx-abnxt/`). The launcher, console-tools, pc-tools, themes, retroarch-psc and samples all do the same.
+Binaries and assets are their own artifacts, not re-embedded in every build.
+
+**2. A thin assembly step composes each payload/image from pre-built artifacts — no recompilation.** For a
+target it fetches only the components that target needs and arranges them into the release tree, then
+packages. Nothing compiles here, so it is fast and it naturally skips what a target does not use:
+
+| Component | PSC | Pi (armhf/arm64) | PC-USB (i386) | Windows |
+|---|---|---|---|---|
+| launcher | ✓ | ✓ | ✓ | ✓ |
+| pcsx-ab / pcsx-abnxt | ✓ | ✓ | ✓ | ✓ |
+| **console-tools** (pscbios, abflashkit) | ✓ | — | — | — |
+| **pc-tools** (updateroms, installer) | updateroms staged on the stick | — | — | ✓ installer |
+| retroarch-psc | ✓ | — (Pi builds RA on-device) | — | — |
+| themes / samples | ✓ | ✓ | ✓ | ✓ |
+| kernel payload (abflashkit) | ✓ | — | — | — |
+
+The console pulls the console tools + kernel payload + our RetroArch; the Pi and PC-USB pull neither.
+Crucially, **CI never compiles the console tools for a Pi build** — assembly just doesn't fetch them. That is
+the compile-time saving, on top of each component building once (with its own sccache) instead of the
+launcher rebuilding the emulators for every package.
+
+**3. Image builds start from a cached, uncompressed base and compress last (fast, or not at all).** Today
+`make_rpi_image.sh` / `make_pc_image.sh` download + decompress a base OS every run and xz-compress the output
+— compression is the long pole. Instead:
+- Bake the **decompressed** base OS (Raspberry Pi OS Lite per arch; the mmdebstrap i386 root) into a layer of
+  `autobleem-build` (or a sibling image), so an image build starts from a ready, injectable base — no
+  re-download, no re-decompress.
+- Inject the assembled payload + first-boot files (the rootless `debugfs`/`mcopy` path we already use, or a
+  loop mount).
+- Compress **last and optionally**: `xz -0/-1` (quick) for dev, or leave the `.img` uncompressed for testing;
+  only a tagged release uses a higher level.
+
+**What this changes in the split:**
+- **`autobleem-repo` becomes the artifact registry** the assembly reads from — the emulator `emu/` layout
+  generalises to every component (`launcher/`, `console-tools/`, `themes/`, …).
+- **`autobleem-build` grows a second job:** publish not just the toolchain image but the **cached base-OS
+  images** the assembly injects into.
+- **`autobleem-appliance` is really the *assembly* repo:** it consumes artifacts and produces the USB zips and
+  `.img` files per target, and also holds the installer scripts (`install.sh`, first-boot UI). Assembly and
+  installer can be one repo or split later; the composition role is the new, central one.
+- The component repos lose their packaging/image scripts (those move to assembly) and keep only "build my
+  binary + publish my artifact."
+
 ## 7. Migration mechanics
 
 - **Preserve history per subtree.** Use `git filter-repo --path <dir> --path <dir2>` (or `git subtree split`)
@@ -166,7 +219,8 @@ target, not by dependency.
 1. **Cleanup (in place):** delete the stale `payload_rpi/`, and the stray `pcsx-ab-fastboot` file.
 2. **`autobleem-build`** — extract the image + toolchains + `ci/`. Point the two emulators (and everything
    below) at it. Also removes the emulators' duplicated toolchain copies. Highest leverage: every C++ repo
-   benefits.
+   benefits. Later, it also publishes the **cached uncompressed base-OS images** the assembly injects into
+   (§6b.3).
 3. **`autobleem-repo`** — extract the site/ops tooling (clean, no build coupling; unblocks publishing from
    every repo, including the emulators already waiting on it).
 4. **`autobleem-core`** — carve out `lib_ableem` + `ab_core` + `ab_classic` (the one-time `ab_classic`/`ab_ui`
@@ -174,8 +228,12 @@ target, not by dependency.
 5. **Migrate `autobleem` (the slimmed launcher)** into `autobleem2`, now submoduling `autobleem-core` and
    consuming `autobleem-build` + `autobleem-repo` — this is the launcher migration the runner is waiting on.
 6. **`autobleem-console-tools`, `autobleem-pc-tools`** — split the apps out, each submoduling `autobleem-core`.
-7. **`autobleem-appliance`** — extract the Pi/PC installers + image builders.
-8. **Content repos** (`-themes`, `-manuals`, `-samples`) — lowest urgency, do as convenient.
+7. **`autobleem-appliance`** (the **assembly** repo) — the payload/image composition (§6b.2–3): pull each
+   component's published per-arch artifact, compose the per-target release tree, package the USB zips and
+   `.img` files, plus the installer scripts. This is where the compile-once model pays off — it recompiles
+   nothing. It comes *after* the components publish artifacts (so steps 2–6 first).
+8. **Content repos** (`-themes`, `-manuals`, `-samples`) — publish their own artifacts for the assembly to
+   pull; lowest urgency, do as convenient.
 
 Steps 4–6 are the deeper refactor; if time-boxed, steps 2–3 + migrating the launcher *whole* (apps included)
 still unblocks the runner, and the core/tools split can follow. But since the submodule model is decided,
