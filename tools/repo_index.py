@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 36
+INDEX_VERSION = 37
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -1369,6 +1369,10 @@ def render_pc_install(base_url, images):
 
     out.append("<div class=\"panel\"><h2>What the first boot does</h2>"
                "<p>The first boot is the installation, on the screen, watched and answered with the keyboard:</p><ol>"
+               "<li>It asks whether to show the setup <strong>graphically</strong> (recommended, the AutoBleem "
+               "logo with the questions and progress bars under it) or as <strong>text</strong> on the console - "
+               "choose text if the graphical screen stays black on your PC; the choice is kept for the updates that "
+               "follow.</li>"
                "<li>With no network cable it asks for a WiFi network and its password.</li>"
                "<li>It asks whether to install <strong>RetroArch</strong> (the other systems - NES, SNES, Mega "
                "Drive, arcade and about a hundred more; close to a GB of downloads). A minute with no answer "

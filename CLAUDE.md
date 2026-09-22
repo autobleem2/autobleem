@@ -875,6 +875,22 @@ everything of the Pi's: the launcher on tty1 over kmsdrm, the exFAT data partiti
   so the VM shows the carousel and no more). Found on the way: **every Pi and PC-stick install had been
   losing its sample games** - the pack has had no `Games/` since Tetrade left and `tar` was told to extract
   it by name (fixed: the members come from the pack).
+- **The setup screen is the user's choice on a PC** (2026-09-22, the owner's ask after a stick whose first
+  boot retried the graphical screen boot after boot): `autobleem-install-ui.py --backend text` draws every
+  screen it has - the progress (heading, the phase bar, the step bar, the output box) and the three dialogs
+  - as text on the console in newt's look (whiptail / raspi-config: blue root, grey windows with a shadow,
+  red for the selected row and the focused `< OK >` / `< Cancel >` button, a blue field), with nothing but
+  the console's escape sequences (no curses, no terminfo; `AB_UI_ASCII=1` for a font without box-drawing
+  glyphs, `--render x.txt --size 100x30` for a look on the PC). The dialog text is re-flowed to the window.
+  `autobleem-firstboot.sh`'s `choose_ui_mode()`: on `pcusb` the first dialog - drawn with the text screen -
+  asks graphical (recommended, taken after 30 s) or text, **on every attempt** (a graphical screen that stays
+  black is exactly when the user reboots and wants the question back); a Pi is not asked (gfx as before);
+  `installer=gfx|text` in `autobleem.txt` presets either. The answer goes to **`/etc/autobleem/installer-ui`**,
+  which `autobleem-update.sh` reads, so the launcher's online updates draw with the same screen. The
+  fallback chain is gfx -> text -> plain `read` prompts (`downgrade_ui`, a gfx failure remembered as text);
+  `log`/`warn` print to the console only in plain mode (a screen owns it otherwise) and every failure path
+  ends in `bail` - the reason as a dialog, the bare console back, tty1 back. Tested on the build server
+  through a pty (keys in, the escape stream out); the screenshots the owner saw are that stream rendered.
 
 ## The Windows product (2026-09-20, `win`)
 

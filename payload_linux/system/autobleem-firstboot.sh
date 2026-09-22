@@ -10,6 +10,9 @@
 # for a WiFi network and password right here (the first real boot of the image had no network, install.sh
 # failed at apt and nobody could tell why without ssh - which needs the network). Then it runs install.sh
 # with the options from autobleem.txt on the boot partition, and reboots once that has succeeded.
+# Everything is drawn by autobleem-install-ui.py - graphically on the framebuffer, or as text on the
+# console in raspi-config's look: the PC stick's first boot asks which (choose_ui_mode), and the answer is
+# kept in /etc/autobleem/installer-ui for the launcher's online updates (autobleem-update).
 #
 # This is the "first or second boot" story from docs/rpi-image-and-update-plan.md: Raspberry Pi Imager's own
 # customisation (hostname, user, WiFi, SSH - cloud-init on this image) has run earlier in the same boot, so
@@ -41,15 +44,19 @@ fi
 OPTIONS_FILE="$BOOT_DIR/autobleem.txt"
 # how the dialogs name this computer - a PC user must never read "Pi"
 if [ "$PLATFORM" = pcusb ]; then MACHINE="this PC"; else MACHINE="this Pi"; fi
-INSTALL_LOG=/var/log/autobleem-firstboot-install.log   # install.sh's output, for a look after the fact (ssh)
 
-# the script's stdout is tty1; the journal only gets what log() sends it
+# The script's stdout is its console (tty8, see the service file). Once a screen is up (choose_ui_mode)
+# nothing is printed there any more - the screen's program owns it; the journal and the install log
+# get every line either way.
+INSTALL_LOG=/var/log/autobleem-firstboot-install.log   # install.sh's output, for a look after the fact (ssh)
 log() {
-    printf '\033[1;32m==>\033[0m %s\n' "$*"
+    [ "$UI_MODE" = plain ] && printf '\033[1;32m==>\033[0m %s\n' "$*"
+    printf '==> %s\n' "$*" >>"$INSTALL_LOG" 2>/dev/null || true
     logger -t autobleem-firstboot -- "$*" 2>/dev/null || true
 }
 warn() {
-    printf '\033[1;33m[!]\033[0m %s\n' "$*"
+    [ "$UI_MODE" = plain ] && printf '\033[1;33m[!]\033[0m %s\n' "$*"
+    printf '[!] %s\n' "$*" >>"$INSTALL_LOG" 2>/dev/null || true
     logger -t autobleem-firstboot -p user.warning -- "$*" 2>/dev/null || true
 }
 
@@ -66,29 +73,56 @@ give_tty_back() {
     chvt 1 >/dev/null 2>&1 || true
 }
 
-# the screen's program leaves tty8 in graphics mode (the success path reboots from the picture); the
-# failure path wants text back for its message (KDSETMODE = 0x4B3A, KD_TEXT = 0)
+# the screen's program leaves tty8 in graphics mode (the success path reboots from the picture) or, in
+# text mode, painted blue; the failure path and the plain prompts want the bare console back
+# (KDSETMODE = 0x4B3A, KD_TEXT = 0)
 text_mode() {
     python3 - <<'PY' 2>/dev/null || true
 import fcntl, os
 f = os.open("/dev/tty8", os.O_RDWR)
 fcntl.ioctl(f, 0x4B3A, 0)
 PY
+    printf '\033[0m\033[2J\033[H\033[?25h' >/dev/tty8 2>/dev/null || true
 }
 
 #*******************************
 # the screen: dialogs
 #*******************************
-# Every question and every wait goes through these. With the screen's program and a framebuffer (an image
-# built by tools/make_rpi_image.sh) they are drawn under the logo, keys read from the console; otherwise
-# they are the plain-text prompts they always were. The console stays in graphics mode from the first
-# dialog to the reboot; text_mode() brings the text back for a failure message.
+# Every question and every wait goes through these. The screen's program draws them - as pixels on the
+# framebuffer under the logo (UI_MODE=gfx), or as text on the console in raspi-config's look (UI_MODE=
+# text) - and reads the keys from the console; without it they are plain prompts (UI_MODE=plain). Which
+# one is choose_ui_mode's decision; a program that fails drops to the next simpler one (downgrade_ui).
+# The console stays in the screen's hands from the first dialog to the reboot; text_mode() brings the
+# bare console back for a failure message.
 UI="$IMAGE_DIR/autobleem-install-ui.py"
-UI_OK=0
-if [ -f "$UI" ] && [ -c /dev/fb0 ] && command -v python3 >/dev/null 2>&1; then
-    UI_OK=1
-fi
-ui() { python3 "$UI" --logo "$IMAGE_DIR/splash.png" --tty /dev/tty8 "$@"; }
+UI_MODE=plain
+# The screen the user chose, kept for the updates that follow: the launcher's online update re-runs the
+# installer through autobleem-update, which draws with the same screen (nobody is asked then). gfx or
+# text; a missing file means gfx with the text screen as the fallback.
+UI_MODE_FILE=/etc/autobleem/installer-ui
+BACKTITLE="AutoBleem - first boot setup"
+
+ui() {
+    local backend=fb
+    [ "$UI_MODE" = text ] && backend=text
+    python3 "$UI" --backend "$backend" --logo "$IMAGE_DIR/splash.png" --tty /dev/tty8 --backtitle "$BACKTITLE" "$@"
+}
+ui_available() { [ -f "$UI" ] && command -v python3 >/dev/null 2>&1; }
+
+set_ui_mode() {
+    UI_MODE="$1"
+    mkdir -p "$(dirname "$UI_MODE_FILE")" 2>/dev/null || true
+    printf '%s\n' "$1" >"$UI_MODE_FILE" 2>/dev/null || true
+}
+
+# the screen's program failed (exit code other than 0 / 3): the next simpler screen. A graphical screen
+# that fails here would fail the same way for an update, so text is what gets remembered.
+downgrade_ui() {
+    case "$UI_MODE" in
+        gfx)  warn "the graphical screen failed - the text screen from here on"; set_ui_mode text ;;
+        text) warn "the text screen failed - plain prompts from here on"; UI_MODE=plain; text_mode ;;
+    esac
+}
 
 # ui_message TITLE [LINE...] [--wait S]: shown, and left on the screen while the script works
 ui_message() {
@@ -97,10 +131,10 @@ ui_message() {
     while [ $# -gt 0 ]; do
         case "$1" in --wait) extra+=(--wait "$2"); shift 2 ;; *) lines+=(--text "$1"); shift ;; esac
     done
-    if [ "$UI_OK" -eq 1 ]; then
+    while [ "$UI_MODE" != plain ]; do
         ui message --title "$title" "${lines[@]}" "${extra[@]}" 2>>"$INSTALL_LOG" && return 0
-        UI_OK=0; text_mode
-    fi
+        downgrade_ui
+    done
     printf '\n   %s\n' "$title"
     local l
     for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
@@ -122,15 +156,15 @@ ui_menu() {
             *) items+=("$1"); shift ;;
         esac
     done
-    if [ "$UI_OK" -eq 1 ]; then
-        local -a args=()
-        local it rc
-        for it in "${items[@]}"; do args+=(--item "$it"); done
+    local -a args=()
+    local it rc
+    for it in "${items[@]}"; do args+=(--item "$it"); done
+    while [ "$UI_MODE" != plain ]; do
         ui menu --title "$title" "${lines[@]}" "${args[@]}" "${extra[@]}" 2>>"$INSTALL_LOG"
         rc=$?
         [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] && return 0
-        UI_OK=0; text_mode      # the screen's program failed: the text prompts from here on
-    fi
+        downgrade_ui
+    done
     printf '\n   %s\n' "$title"
     local l
     for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
@@ -158,13 +192,13 @@ ui_input() {
             *) lines+=(--text "$1"); shift ;;
         esac
     done
-    if [ "$UI_OK" -eq 1 ]; then
-        local rc
+    local rc
+    while [ "$UI_MODE" != plain ]; do
         ui input --title "$title" "${lines[@]}" "${extra[@]}" 2>>"$INSTALL_LOG"
         rc=$?
         [ "$rc" -eq 0 ] || [ "$rc" -eq 3 ] && return 0
-        UI_OK=0; text_mode
-    fi
+        downgrade_ui
+    done
     printf '\n   %s\n' "$title"
     local l
     for l in "${lines[@]}"; do [ "$l" = --text ] || printf '   %s\n' "$l"; done
@@ -175,6 +209,57 @@ ui_input() {
         read -rp "   > ${default:+[$default] }" value
     fi
     printf '%s\n' "${value:-$default}"
+}
+
+# Which screen: autobleem.txt's installer= when set, else - on the PC stick - a question, asked with the
+# text screen on every attempt (a graphical screen that stays black is exactly the case where the user
+# reboots and wants to be asked again; a fresh unattended boot takes the recommended graphical one after
+# the timeout); a Pi takes what was chosen before, else the graphical screen, which works as it is there.
+# The choice is written to UI_MODE_FILE for the updates that follow.
+choose_ui_mode() {
+    local stored="" want="" answer
+    [ -f "$UI_MODE_FILE" ] && stored="$(tr -d '[:space:]' <"$UI_MODE_FILE")"
+    case "$stored" in gfx|text) ;; *) stored="" ;; esac
+    case "${OPT[installer]:-}" in
+        gfx|graphical|graphics) want=gfx ;;
+        text|tui)               want=text ;;
+        "")                     ;;
+        *) warn "autobleem.txt: installer=${OPT[installer]} is not gfx or text - ignored" ;;
+    esac
+    if [ -z "$want" ]; then
+        if [ "$PLATFORM" = pcusb ] && ui_available; then
+            UI_MODE=text
+            answer="$(ui_menu "How should the setup be shown?" \
+                "The setup can draw its screens graphically - the AutoBleem logo with the questions and" \
+                "the progress under it - or as text, the way this window is. Graphical is recommended;" \
+                "choose Text if the graphical screen stays black or garbled on $MACHINE. The choice is" \
+                "kept, and the updates that follow use the same screen." \
+                -- "g=Graphical (recommended)" "t=Text" --default "$([ "$stored" = text ] && echo t || echo g)" --timeout 30)"
+            case "$answer" in t|T) want=text ;; *) want=gfx ;; esac
+        else
+            want="${stored:-gfx}"
+        fi
+    fi
+    set_ui_mode "$want"
+    log "screen: $UI_MODE"
+    # what this machine can actually draw with: the graphical screen needs a framebuffer (not remembered
+    # - the file keeps the choice, not the hardware), either needs the program and python3
+    if [ "$UI_MODE" = gfx ] && [ ! -c /dev/fb0 ]; then
+        warn "no /dev/fb0 - the text screen instead"
+        UI_MODE=text
+    fi
+    ui_available || UI_MODE=plain
+}
+
+# a run that ends here without a reboot: the reason on the screen, the bare console and tty1 back, and
+# the next boot tries again
+bail() {
+    local title="$1"; shift
+    ui_message "$title" "$@" "It will try again on the next boot." \
+        "The details are in $INSTALL_LOG (log in on another console)." --wait 8
+    text_mode
+    give_tty_back
+    exit 1
 }
 
 # best-effort note in System/Logs, once the data partition exists to hold one
@@ -262,15 +347,15 @@ is_online() {
     wget -q --spider --timeout=5 --tries=1 https://deb.debian.org/ >/dev/null 2>&1
 }
 
-# waits up to $1 seconds, printing a dot a second
+# waits up to $1 seconds, printing a dot a second (with plain prompts; a screen shows its own message)
 wait_for_network() {
     local secs="${1:-30}" i
     for ((i = 0; i < secs; i++)); do
-        is_online && { printf '\n'; return 0; }
-        printf '.'
+        is_online && { [ "$UI_MODE" = plain ] && printf '\n'; return 0; }
+        [ "$UI_MODE" = plain ] && printf '.'
         sleep 1
     done
-    printf '\n'
+    [ "$UI_MODE" = plain ] && printf '\n'
     return 1
 }
 
@@ -473,13 +558,11 @@ fi
 log "attempt $attempts of $MAX_ATTEMPTS"
 
 read_options
+choose_ui_mode
 
 if ! ensure_network; then
-    text_mode
     warn "no network - AutoBleem setup will try again on the next boot"
-    sleep 3
-    give_tty_back
-    exit 1
+    bail "No network" "AutoBleem could not reach the internet."
 fi
 
 # a Pi has no battery clock: its time is the image's build date until NTP sets it, and apt refuses
@@ -509,24 +592,17 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
     mkdir -p "$IMAGE_DIR"
     if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR" "$(basename "$UNPACK_DIR")/install.sh"; then
         warn "cannot extract install.sh from $PACKAGE - will retry next boot"
-        sleep 3
-        give_tty_back
-        exit 1
+        bail "Setup failed" "Could not extract the installer from $(basename "$PACKAGE")."
     fi
     root_gib="${OPT[root_gib]:-8}"
     if [ "$root_gib" != 0 ] && [ "$root_gib" != none ]; then
         log "Growing the root filesystem to ${root_gib} GiB before unpacking"
         ui_message "Preparing the system partition..." "Growing it to ${root_gib} GiB."
-        if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only 2>&1 | tee -a "$INSTALL_LOG"; then
-            # the dialog left the screen in graphics mode: text back, or the message is never seen (the
-            # first PC-stick boot sat on "Preparing the system partition" with the reason only in the log)
-            ui_message "Setup failed" "Could not grow the system partition. It will try again on the next boot." \
-                "The details are in $INSTALL_LOG (log in on another console)." --wait 8
-            text_mode
+        if ! bash "$UNPACK_DIR/install.sh" --yes --grow-root "$root_gib" --grow-only >>"$INSTALL_LOG" 2>&1; then
+            # the reason on the screen, not only in the log (the first PC-stick boot sat on "Preparing the
+            # system partition" with the reason only there)
             warn "could not grow the root filesystem - will retry next boot. Log: $INSTALL_LOG"
-            sleep 3
-            give_tty_back
-            exit 1
+            bail "Setup failed" "Could not grow the system partition."
         fi
     fi
     # gzip's trailer carries the unpacked size, so this costs no decompression pass
@@ -536,18 +612,15 @@ if [ ! -f "$EXTRACTED_MARKER" ]; then
     if [ "$free_mib" -lt "$need_mib" ]; then
         warn "only ${free_mib} MiB free on the root filesystem, the package needs ${need_mib} MiB to unpack - will retry next boot"
         note_in_data_logs "autobleem-firstboot: only ${free_mib} MiB free under $IMAGE_DIR, need ${need_mib} MiB (root_gib=$root_gib in $OPTIONS_FILE)"
-        sleep 5
-        give_tty_back
-        exit 1
+        bail "Setup failed" "Only ${free_mib} MiB free on the system partition; the package needs ${need_mib} MiB to unpack." \
+            "(root_gib=$root_gib in $OPTIONS_FILE)"
     fi
     log "Unpacking $PACKAGE (${need_mib} MiB)"
     ui_message "Unpacking AutoBleem..." "${need_mib} MiB"
     if ! tar xzf "$PACKAGE" -C "$IMAGE_DIR"; then
         warn "extract failed - will retry next boot"
         rm -rf "$UNPACK_DIR"
-        sleep 3
-        give_tty_back
-        exit 1
+        bail "Setup failed" "Could not unpack $(basename "$PACKAGE")."
     fi
     touch "$EXTRACTED_MARKER"
 fi
@@ -560,6 +633,9 @@ if [ ! -f "$INSTALLER" ]; then
     warn "no install.sh under $UNPACK_DIR - package layout unexpected, giving up"
     note_in_data_logs "autobleem-firstboot: no install.sh under $UNPACK_DIR after extracting $PACKAGE - package layout unexpected"
     disarm
+    ui_message "Setup failed" "No install.sh in $(basename "$PACKAGE") - the package is not laid out as expected." \
+        "AutoBleem's setup gives up; run install.sh by hand." --wait 8
+    text_mode
     give_tty_back
     exit 1
 fi
@@ -567,14 +643,14 @@ fi
 mapfile -t ARGS < <(install_args)
 log "Running install.sh ${ARGS[*]}"
 log "(this takes a while: packages, RetroArch, cores and BIOS downloads)"
-printf '\n'
+[ "$UI_MODE" = plain ] && printf '\n'
 {
     printf '=== %s: install.sh %s\n' "$(date)" "${ARGS[*]}"
 } >>"$INSTALL_LOG" 2>/dev/null || true
-# The installer's output goes through the screen (autobleem-install-ui.py: the logo, a bar per phase from
-# install.sh's @@phase lines, a bar for the download in progress, the last lines of output) - and, whole,
-# into the log. Without the screen's program or a framebuffer the output shows as plain text, as before.
-if [ "$UI_OK" -eq 1 ]; then
+# The installer's output goes through the screen (autobleem-install-ui.py: a bar per phase from
+# install.sh's @@phase lines, a bar for the download in progress, the last lines of output - under the
+# logo, or as text) - and, whole, into the log. With plain prompts the output shows as it comes.
+if [ "$UI_MODE" != plain ]; then
     run_installer() {
         AB_UI_MARKERS=1 bash "$INSTALLER" "${ARGS[@]}" 2>&1 | tee -a "$INSTALL_LOG" | ui progress
         return "${PIPESTATUS[0]}"
@@ -605,9 +681,6 @@ if run_installer; then
     reboot
 else
     rc=$?
-    text_mode
     warn "install.sh failed (exit $rc) - will retry next boot. Log: $INSTALL_LOG"
-    sleep 5
-    give_tty_back
-    exit 1
+    bail "Setup failed" "install.sh ended with an error (exit code $rc)."
 fi

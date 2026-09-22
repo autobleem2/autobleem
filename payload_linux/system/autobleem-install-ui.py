@@ -23,8 +23,15 @@ The questions of the first boot use the same screen (a panel under the logo, key
     ... input --title "Password" [--secret]       prints what was typed
     ... message --title "Waiting for the network" [--wait S]    draws and returns (the picture stays)
 Esc cancels a menu or an input: nothing printed, exit 3 (any other failure is exit 1, and the script falls
-back to its text prompts). The console stays in graphics mode between calls
-(--text-mode puts it back); the first-boot script's text prompts are the fallback without a framebuffer.
+back to the next simpler way of showing things). The console stays in graphics mode between calls
+(--text-mode puts it back).
+
+--backend text draws the same screens - the progress and the three dialogs - as text on the console
+instead of pixels on the framebuffer: the blue background, grey windows with a shadow and red highlights
+of newt, what whiptail and raspi-config draw with. For a PC whose framebuffer the graphical screen cannot
+use (the first boot of the PC stick asks which of the two to use), and the fallback everywhere when the
+graphical one fails. Nothing but the console's own escape sequences, so no terminfo and no curses.
+--render FILE with it writes the frame as plain text.
 """
 
 import argparse
@@ -56,6 +63,22 @@ BLACK = (0, 0, 0)
 KDSETMODE = 0x4B3A
 KD_TEXT = 0
 KD_GRAPHICS = 1
+
+# the text backend's colours, as SGR (foreground, background[, bold]) - newt's palette, the one whiptail
+# and raspi-config use: white on blue behind everything, grey windows with black text, red for what is
+# selected, a blue field to type into
+ROOT = (37, 44)
+ROOT_BOLD = (37, 44, 1)
+WINDOW = (30, 47)
+SHADOW = (30, 40)
+SELECTED = (37, 41, 1)
+BUTTON = (30, 46)
+ENTRY = (37, 44)
+BAR_FULL = (37, 44)
+OUTPUT = (37, 40)
+# the box-drawing characters every Linux console font has; AB_UI_ASCII=1 for a console that shows them wrong
+BOX = {"tl": "┌", "tr": "┐", "bl": "└", "br": "┘", "h": "─", "v": "│"}
+BOX_ASCII = {"tl": "+", "tr": "+", "bl": "+", "br": "+", "h": "-", "v": "|"}
 
 
 #*******************************
@@ -305,14 +328,26 @@ class Canvas:
 # the screen
 #*******************************
 class Screen:
+    """The progress state (phase, percentage, output lines) and, with a canvas, its framebuffer drawing.
+    The text backend keeps its state in one of these too, with no canvas, and draws it itself."""
     def __init__(self, canvas, logo, big, small, logo_cache=""):
         self.c = canvas
         self.big, self.small = big, small
+        self.phase, self.phase_index, self.phase_count = "Preparing", 0, 1
+        self.percent = None
+        self.percent_at = time.monotonic()
+        self.lines = []
+        self.transient = None
+        self.done = False
+        self.line_height = (small.height + 4) if small else 20
+        self.box_lines = 8
+        self.margin, self.logo_bottom, self.logo = 0, 0, None
+        if canvas is None:
+            return
         w, h = canvas.width, canvas.height
         self.margin = w // 8
         # the logo: its bright part, scaled to at most 40% of the height and 60% of the width, centred
         self.logo_bottom = h // 12
-        self.logo = None
         if logo and logo_cache:
             self.logo, self.logo_bottom = self.load_logo_cache(logo_cache, canvas)
         png = load_png(logo) if logo and self.logo is None else None
@@ -335,14 +370,24 @@ class Screen:
             self.logo_bottom = y + out_h + h // 24
             if logo_cache:
                 self.save_logo_cache(logo_cache, logo, canvas)
-        self.phase, self.phase_index, self.phase_count = "Preparing", 0, 1
-        self.percent = None
-        self.percent_at = time.monotonic()
-        self.lines = []
-        self.transient = None
-        self.done = False
-        self.line_height = (small.height + 4) if small else 20
-        self.box_lines = 8
+
+    def heading(self):
+        return "Setting up AutoBleem" if not self.done else "AutoBleem is installed - restarting"
+
+    def phase_label(self):
+        if self.phase_count:
+            return "%s  (step %d of %d)" % (self.phase, self.phase_index, self.phase_count)
+        return self.phase
+
+    def phase_permille(self):
+        return self.phase_index * 1000 // max(1, self.phase_count) if not self.done else 1000
+
+    def shown_lines(self, count):
+        """The last lines of output for a box of count lines, the rewriting progress line last."""
+        shown = list(self.lines[-(count - (1 if self.transient else 0)):]) if count > 0 else []
+        if self.transient:
+            shown.append(self.transient)
+        return shown
 
     # Decoding the PNG and scaling it is pure Python at a pixel a step: seconds on a Pi, paid by every
     # dialog the first boot opens (each is its own process). So the rows as they land in the framebuffer
@@ -384,14 +429,12 @@ class Screen:
         y = self.logo_bottom
         x0, bw = self.margin, w - 2 * self.margin
         # heading: the phase
-        heading = "Setting up AutoBleem" if not self.done else "AutoBleem is installed - restarting"
-        c.text(x0, y, heading, self.big, INK, BLACK)
+        c.text(x0, y, self.heading(), self.big, INK, BLACK)
         y += (self.big.height if self.big else 32) + h // 60
         # bar 1: the phases
-        label = "%s  (step %d of %d)" % (self.phase, self.phase_index, self.phase_count) if self.phase_count else self.phase
-        c.text(x0, y, label, self.small, DIM, BLACK)
+        c.text(x0, y, self.phase_label(), self.small, DIM, BLACK)
         y += self.line_height + 4
-        self._bar(x0, y, bw, self.phase_index * 1000 // max(1, self.phase_count) if not self.done else 1000)
+        self._bar(x0, y, bw, self.phase_permille())
         y += 28 + h // 40
         # bar 2: inside the phase
         if self.percent is not None:
@@ -408,9 +451,7 @@ class Screen:
         box_h = self.box_lines * self.line_height + 16
         c.fill(x0, y, bw, box_h, PANEL)
         c.frame(x0, y, bw, box_h, LINE, 2)
-        shown = list(self.lines[-(self.box_lines - (1 if self.transient else 0)):])
-        if self.transient:
-            shown.append(self.transient)
+        shown = self.shown_lines(self.box_lines)
         max_chars = (bw - 24) // (self.small.width if self.small else 8)
         ty = y + 8
         for line in shown:
@@ -485,6 +526,8 @@ class Dialog:
         self.footer = footer
         self.timeout = timeout            # seconds left to show, 0 = none
         self.rows = 10                    # list rows shown at once
+        self.buttons = False              # OK / Cancel buttons (the text backend's dialogs have them)
+        self.focus = "ok"                 # which of them Enter activates: "ok" or "cancel"
 
     def draw(self):
         s, c = self.s, self.s.c
@@ -574,14 +617,22 @@ class Keyboard:
                 if len(b) < 3:
                     self.pending = b""
                     return "esc"
-            code, self.pending = b[2:3], b[3:]
-            return {b"A": "up", b"B": "down", b"C": "right", b"D": "left"}.get(code, "")
+            # a CSI sequence: parameters (digits and ';') up to a final byte in 0x40..0x7e - Delete is
+            # "\x1b[3~", which must not leave a '~' behind for an input field
+            end = 2
+            while end < len(b) and not 0x40 <= b[end] <= 0x7E:
+                end += 1
+            code, self.pending = b[2:end + 1], b[end + 1:]
+            return {b"A": "up", b"B": "down", b"C": "right", b"D": "left", b"Z": "tab"}.get(code, "")
         if b[:1] == b"\x1b":
             self.pending = b[1:]
             return "esc"
         if b[:1] in (b"\r", b"\n"):
             self.pending = b[1:]
             return "enter"
+        if b[:1] == b"\t":
+            self.pending = b[1:]
+            return "tab"
         if b[:1] in (b"\x7f", b"\x08"):
             self.pending = b[1:]
             return "backspace"
@@ -598,7 +649,280 @@ class Keyboard:
         return ch if ch.isprintable() else ""
 
 
-def run_dialog(args, screen, present, tty):
+#*******************************
+# backends: the framebuffer, or the text console
+#*******************************
+class FbBackend:
+    """The screens as pixels: Screen.draw / Dialog.draw into the canvas, the canvas into the framebuffer."""
+    has_buttons = False
+
+    def __init__(self, canvas, fb):
+        self.canvas, self.fb = canvas, fb
+
+    def show(self, what):
+        what.draw()
+        if self.fb is not None:
+            self.fb.seek(0)
+            self.fb.write(self.canvas.buf)
+
+    def render_to_file(self, path):
+        c = self.canvas
+        with open(path, "wb") as f:
+            f.write(b"P6\n%d %d\n255\n" % (c.width, c.height))
+            out = bytearray()
+            for y in range(c.height):
+                for x in range(c.width):
+                    v = struct.unpack_from("<I", c.buf, y * c.stride + x * 4)[0]
+                    out += bytes(((v >> 16) & 255, (v >> 8) & 255, v & 255))
+            f.write(out)
+
+    def finish(self, text_mode):
+        pass
+
+
+class TextBackend:
+    """The same screens as text on the console, in newt's look (whiptail, raspi-config): a cell grid drawn
+    into with the window colours, sent to the tty as escape sequences - only the rows that changed since
+    the last frame, so the pulse of a bar costs a line, not a screen. The layout follows the framebuffer
+    screen's: the heading, a bar for the phases, a bar for the download in progress, the box with the
+    last lines; a dialog is a window with its text, list or field, OK/Cancel buttons and the footer."""
+    has_buttons = True
+
+    def __init__(self, fd, size=None, backtitle=""):
+        self.fd = fd
+        self.box = BOX_ASCII if os.environ.get("AB_UI_ASCII") == "1" else BOX
+        self.backtitle = backtitle
+        self.cols, self.rows = size or self.terminal_size(fd)
+        self.cells = []
+        self.emitted = {}
+        if fd is not None:
+            # the cursor hidden, the whole screen blue (the console erases with the current colours)
+            self.write("\x1b[?25l\x1b[0;%d;%dm\x1b[2J\x1b[H" % ROOT)
+
+    @staticmethod
+    def terminal_size(fd):
+        try:
+            import termios
+            rows, cols = struct.unpack("HHHH", fcntl.ioctl(fd, termios.TIOCGWINSZ, b"\0" * 8))[:2]
+            if rows >= 12 and cols >= 60:
+                return cols, rows
+        except Exception:
+            pass
+        return 80, 25
+
+    def write(self, s):
+        data = s.encode("utf-8")
+        while data:
+            n = os.write(self.fd, data)
+            data = data[n:]
+
+    # --- the cell grid ---
+    def clear(self):
+        self.cells = [[(" ", ROOT)] * self.cols for _ in range(self.rows)]
+        if self.backtitle:
+            self.put(1, 0, self.backtitle, ROOT_BOLD)
+
+    def put(self, x, y, s, attr):
+        if not 0 <= y < self.rows:
+            return
+        row = self.cells[y]
+        for i, ch in enumerate(s):
+            if 0 <= x + i < self.cols:
+                row[x + i] = (ch, attr)
+
+    def fill(self, x, y, w, h, attr, ch=" "):
+        for yy in range(y, y + h):
+            self.put(x, yy, ch * w, attr)
+
+    def frame(self, x, y, w, h, attr, title=""):
+        b = self.box
+        self.put(x, y, b["tl"] + b["h"] * (w - 2) + b["tr"], attr)
+        for yy in range(y + 1, y + h - 1):
+            self.put(x, yy, b["v"], attr)
+            self.put(x + w - 1, yy, b["v"], attr)
+        self.put(x, y + h - 1, b["bl"] + b["h"] * (w - 2) + b["br"], attr)
+        if title and len(title) + 4 <= w:
+            self.put(x + (w - len(title) - 2) // 2, y, " %s " % title, attr)
+
+    def window(self, x, y, w, h, title):
+        """A grey window with its shadow to the right and below, the title in the top edge."""
+        self.fill(x + 2, y + h, w, 1, SHADOW)
+        self.fill(x + w, y + 1, 2, h, SHADOW)
+        self.fill(x, y, w, h, WINDOW)
+        self.frame(x, y, w, h, WINDOW, title)
+
+    def bar(self, x, y, w, permille, text=""):
+        """A framed bar: the filled part white on blue, the text centred across both parts."""
+        self.frame(x, y, w, 3, WINDOW)
+        inner = w - 2
+        filled = inner * max(0, min(1000, permille)) // 1000
+        start = (inner - len(text)) // 2
+        for i in range(inner):
+            ch = text[i - start] if 0 <= i - start < len(text) else " "
+            self.put(x + 1 + i, y + 1, ch, BAR_FULL if i < filled else WINDOW)
+
+    def pulse(self, x, y, w):
+        self.frame(x, y, w, 3, WINDOW)
+        inner = w - 2
+        span = max(1, inner // 5)
+        t = time.monotonic() % 2.0
+        pos = int((inner - span) * (t if t < 1.0 else 2.0 - t))
+        self.fill(x + 1, y + 1, inner, 1, WINDOW)
+        self.fill(x + 1 + pos, y + 1, span, 1, BAR_FULL)
+
+    @staticmethod
+    def sgr(attr):
+        return "\x1b[0;%d;%d%sm" % (attr[0], attr[1], ";1" if len(attr) > 2 else "")
+
+    def flush(self):
+        out = []
+        for y, row in enumerate(self.cells):
+            # the bottom-right cell is left alone: writing it makes the console scroll
+            cells = row if y < self.rows - 1 else row[:-1]
+            parts, cur = [], None
+            for ch, attr in cells:
+                if attr != cur:
+                    parts.append(self.sgr(attr))
+                    cur = attr
+                parts.append(ch)
+            line = "".join(parts)
+            if self.emitted.get(y) != line:
+                self.emitted[y] = line
+                out.append("\x1b[%d;1H%s" % (y + 1, line))
+        if out and self.fd is not None:
+            self.write("".join(out) + "\x1b[0m")
+
+    # --- the screens ---
+    def show(self, what):
+        if isinstance(what, Dialog):
+            self.draw_dialog(what)
+        else:
+            self.draw_progress(what)
+        self.flush()
+
+    def draw_progress(self, s):
+        self.clear()
+        w = min(self.cols - 6, 100)
+        box_lines = max(5, min(14, self.rows - 4 - 16))
+        h = 16 + box_lines
+        x, y = (self.cols - w) // 2, max(1, (self.rows - h) // 2)
+        self.window(x, y, w, h, s.heading())
+        ix, iw = x + 3, w - 6
+        ty = y + 2
+        self.put(ix, ty, s.phase_label()[:iw], WINDOW)
+        ty += 1
+        self.bar(ix, ty, iw, s.phase_permille(), "%d%%" % (s.phase_permille() // 10))
+        ty += 4
+        self.put(ix, ty, "This step" if s.percent is not None else "This step - working...", WINDOW)
+        if s.percent is not None:
+            self.bar(ix, ty + 1, iw, s.percent * 10, "%d%%" % s.percent)
+        else:
+            self.pulse(ix, ty + 1, iw)
+        ty += 5
+        self.frame(ix, ty, iw, box_lines + 2, WINDOW)
+        self.fill(ix + 1, ty + 1, iw - 2, box_lines, OUTPUT)
+        for i, line in enumerate(s.shown_lines(box_lines)):
+            self.put(ix + 2, ty + 1 + i, line[:iw - 4], OUTPUT)
+
+    def draw_dialog(self, d):
+        self.clear()
+        longest = max([len(d.title) + 4, len(d.footer) + 8] + [len(l) for l in d.lines]
+                      + [len(self.item_text(k, l)) + 4 for k, l in d.items])
+        w = max(60, min(self.cols - 8, longest + 8))
+        iw = w - 6
+        lines = self.reflow(d.lines, iw)
+        list_rows = min(d.rows, len(d.items), max(3, self.rows - 12 - len(lines)))
+        h = 3 + len(lines) + (list_rows + 1 if list_rows else 0) + (2 if d.field is not None else 0) \
+            + (2 if d.buttons else 0) + 2
+        x, y = (self.cols - w) // 2, max(1, (self.rows - h) // 2)
+        self.window(x, y, w, h, d.title)
+        ix = x + 3
+        ty = y + 2
+        for line in lines:
+            self.put(ix, ty, line, WINDOW)
+            ty += 1
+        if list_rows:
+            ty += 1
+            first = max(0, min(d.selected - list_rows // 2, len(d.items) - list_rows))
+            for i in range(first, first + list_rows):
+                text = self.item_text(*d.items[i])[:iw - 2]
+                if i == d.selected:
+                    self.fill(ix, ty, iw, 1, SELECTED)
+                    self.put(ix + 1, ty, text, SELECTED)
+                else:
+                    self.put(ix + 1, ty, text, WINDOW)
+                ty += 1
+            if len(d.items) > list_rows:
+                counter = "%d/%d" % (d.selected + 1, len(d.items))
+                self.put(ix + iw - len(counter), ty - 1, counter, WINDOW)
+        if d.field is not None:
+            ty += 1
+            shown = ("*" * len(d.field)) if d.secret else d.field
+            shown = shown[-(iw - 4):] + "_"
+            self.fill(ix, ty, iw, 1, ENTRY)
+            self.put(ix + 1, ty, shown, ENTRY)
+            ty += 1
+        if d.buttons:
+            ty += 1
+            ok, cancel = "<   OK   >", "< Cancel >"
+            bx = x + (w - len(ok) - len(cancel) - 4) // 2
+            self.put(bx, ty, ok, SELECTED if d.focus == "ok" else BUTTON)
+            self.put(bx + len(ok) + 4, ty, cancel, SELECTED if d.focus == "cancel" else BUTTON)
+            ty += 1
+        footer = d.footer
+        if d.timeout:
+            footer = "%s   (%d s)" % (footer, d.timeout) if footer else "%d s" % d.timeout
+        self.put(ix, y + h - 2, footer[:iw], WINDOW)
+
+    @staticmethod
+    def reflow(lines, width):
+        """The dialog's text lines re-flowed to the window: the script breaks its text for the wide console
+        and the framebuffer layout, so the lines are joined into a paragraph (an empty line separates
+        paragraphs) and broken again at spaces to at most width characters."""
+        out, words = [], []
+
+        def flush():
+            cur = ""
+            for word in words:
+                if cur and len(cur) + 1 + len(word) > width:
+                    out.append(cur)
+                    cur = word
+                else:
+                    cur = (cur + " " + word) if cur else word
+            if cur:
+                out.append(cur)
+            del words[:]
+
+        for line in lines:
+            if line.strip():
+                words.extend(line.split())
+            else:
+                flush()
+                out.append("")
+        flush()
+        return out
+
+    @staticmethod
+    def item_text(key, label):
+        return ("%-3s %s" % (key + ")", label)) if key else "    " + label
+
+    def render_to_file(self, path):
+        with open(path, "w", encoding="utf-8") as f:
+            for row in self.cells:
+                f.write("".join(ch for ch, _ in row).rstrip() + "\n")
+
+    def finish(self, text_mode):
+        """--text-mode: a clean console for whatever comes next; otherwise the frame stays, the cursor
+        parked in the bottom-left corner in case the caller prints something."""
+        if self.fd is None:
+            return
+        if text_mode:
+            self.write("\x1b[0m\x1b[2J\x1b[H\x1b[?25h")
+        else:
+            self.write("\x1b[0m\x1b[%d;1H" % self.rows)
+
+
+def run_dialog(args, screen, backend, tty):
     """menu / input / message. Prints the answer on stdout; exit 0, or 3 when cancelled with Esc."""
     items = []
     for it in getattr(args, "item", None) or []:
@@ -610,13 +934,13 @@ def run_dialog(args, screen, present, tty):
     footer = {"menu": "Up/Down or a letter to choose, Enter to confirm",
               "input": "Type, Backspace to correct, Enter to confirm", "message": ""}[args.mode]
     dialog = Dialog(screen, args.title, args.text or [], items, field, args.secret, footer)
+    dialog.buttons = backend.has_buttons and args.mode != "message"
     if args.mode == "menu" and args.default:
         for i, (key, _) in enumerate(items):
             if key == args.default:
                 dialog.selected = i
     deadline = time.monotonic() + args.timeout if args.timeout else None
-    dialog.draw()
-    present(dialog)
+    backend.show(dialog)
     if args.mode == "message":
         if args.wait:
             time.sleep(args.wait)
@@ -631,8 +955,7 @@ def run_dialog(args, screen, present, tty):
         # the answer is taken: say so on the screen before handing it back - the script's next step can
         # take a while to show anything, and a silent panel invites a second press
         dialog.footer, dialog.timeout = "Please wait...", 0
-        dialog.draw()
-        present(dialog)
+        backend.show(dialog)
         print(answer)
         return status
 
@@ -648,17 +971,20 @@ def run_dialog(args, screen, present, tty):
             key = kb.read(0.5)
             if key is None:
                 if deadline is not None and time.monotonic() - last_draw >= 1.0:
-                    dialog.draw()
-                    present(dialog)
+                    backend.show(dialog)
                     last_draw = time.monotonic()
                 continue
             if key == "esc":
                 return accept("", 3)
             if key == "enter":
+                if dialog.buttons and dialog.focus == "cancel":
+                    return accept("", 3)
                 if args.mode == "menu":
                     return accept(items[dialog.selected][0] if items else "")
                 return accept(dialog.field)
-            if args.mode == "menu":
+            if dialog.buttons and key in ("left", "right", "tab"):
+                dialog.focus = "cancel" if dialog.focus == "ok" else "ok"
+            elif args.mode == "menu":
                 if key == "up" and items:
                     dialog.selected = (dialog.selected - 1) % len(items)
                 elif key == "down" and items:
@@ -674,8 +1000,7 @@ def run_dialog(args, screen, present, tty):
                     dialog.field = dialog.field[:-1]
                 elif key and len(key) == 1:
                     dialog.field += key
-            dialog.draw()
-            present(dialog)
+            backend.show(dialog)
             last_draw = time.monotonic()
     finally:
         kb.restore()
@@ -691,12 +1016,16 @@ def main():
     ap.add_argument("--fb", default="/dev/fb0")
     ap.add_argument("--tty", default="", help="the console: switched to graphics mode, and where the keys come from")
     ap.add_argument("--render", default="", help="write the final frame to this PPM file instead of the framebuffer")
-    ap.add_argument("--size", default="", help="WxH for --render (default 1920x1080)")
+    ap.add_argument("--size", default="", help="WxH for --render (default 1920x1080; columns x rows, 100x30, for --backend text)")
     ap.add_argument("--fps", type=float, default=4.0)
     ap.add_argument("--fonts", default=FONT_DIR, help="where the PSF console fonts are")
     ap.add_argument("--text-mode", action="store_true",
                     help="put the console back in text mode at exit (the default keeps the picture: the next "
                          "dialog or the reboot takes over)")
+    ap.add_argument("--backend", choices=("fb", "text"), default="fb",
+                    help="fb: pixels on the framebuffer (the default); text: the same screens as text on the "
+                         "console, in newt's look")
+    ap.add_argument("--backtitle", default="", help="text backend: the line in the top-left corner")
     sub = ap.add_subparsers(dest="mode")
     sub.add_parser("progress", help="the installer's output on stdin (the default)")
     for name in ("menu", "input", "message"):
@@ -717,62 +1046,65 @@ def main():
         args.secret = False
     FONT_DIR = args.fonts
 
-    if args.render:
-        width, height = (int(v) for v in (args.size or "1920x1080").split("x"))
-        bpp, stride = 32, width * 4
-        fb = None
-    else:
-        def sysfs(name, default):
-            try:
-                with open("/sys/class/graphics/%s/%s" % (os.path.basename(args.fb), name)) as f:
-                    return f.read().strip()
-            except OSError:
-                return default
-        width, height = (int(v) for v in sysfs("virtual_size", "1920,1080").split(","))
-        bpp = int(sysfs("bits_per_pixel", "32"))
-        stride = int(sysfs("stride", str(width * bpp // 8)))
-        fb = open(args.fb, "r+b", buffering=0)
-
-    canvas = Canvas(width, height, bpp, stride)
-    scale = height / 1080.0
-    big = find_font(32 if scale >= 0.9 else 24)
-    small = find_font(20 if scale >= 0.9 else 16) or find_font(16)
-    screen = Screen(canvas, args.logo, big, small, args.logo + ".cache" if args.logo and fb is not None else "")
-
     tty = None
-    if args.tty and fb is not None and fcntl is not None:
-        try:
+    if args.backend == "text":
+        if args.render:
+            cols, rows = (int(v) for v in (args.size or "100x30").split("x"))
+            backend = TextBackend(None, (cols, rows), args.backtitle)
+        else:
+            if fcntl is None or not args.tty:
+                print("the text backend needs --tty", file=sys.stderr)
+                return 1
             tty = os.open(args.tty, os.O_RDWR)
-            fcntl.ioctl(tty, KDSETMODE, KD_GRAPHICS)
-        except OSError:
-            tty = None
+            # a graphical dialog before this one may have left the console in graphics mode
+            try:
+                fcntl.ioctl(tty, KDSETMODE, KD_TEXT)
+            except OSError:
+                pass
+            backend = TextBackend(tty, None, args.backtitle)
+        screen = Screen(None, "", None, None)
+    else:
+        if args.render:
+            width, height = (int(v) for v in (args.size or "1920x1080").split("x"))
+            bpp, stride = 32, width * 4
+            fb = None
+        else:
+            def sysfs(name, default):
+                try:
+                    with open("/sys/class/graphics/%s/%s" % (os.path.basename(args.fb), name)) as f:
+                        return f.read().strip()
+                except OSError:
+                    return default
+            width, height = (int(v) for v in sysfs("virtual_size", "1920,1080").split(","))
+            bpp = int(sysfs("bits_per_pixel", "32"))
+            stride = int(sysfs("stride", str(width * bpp // 8)))
+            fb = open(args.fb, "r+b", buffering=0)
 
-    def present(what=screen):
-        what.draw()
-        if fb is not None:
-            fb.seek(0)
-            fb.write(canvas.buf)
+        canvas = Canvas(width, height, bpp, stride)
+        scale = height / 1080.0
+        big = find_font(32 if scale >= 0.9 else 24)
+        small = find_font(20 if scale >= 0.9 else 16) or find_font(16)
+        screen = Screen(canvas, args.logo, big, small, args.logo + ".cache" if args.logo and fb is not None else "")
+        backend = FbBackend(canvas, fb)
+
+        if args.tty and fb is not None and fcntl is not None:
+            try:
+                tty = os.open(args.tty, os.O_RDWR)
+                fcntl.ioctl(tty, KDSETMODE, KD_GRAPHICS)
+            except OSError:
+                tty = None
 
     def render_to_file():
-        if not args.render:
-            return
-        with open(args.render, "wb") as f:
-            f.write(b"P6\n%d %d\n255\n" % (width, height))
-            out = bytearray()
-            for y in range(height):
-                for x in range(width):
-                    off = y * stride + x * 4
-                    v = struct.unpack_from("<I", canvas.buf, off)[0]
-                    out += bytes(((v >> 16) & 255, (v >> 8) & 255, v & 255))
-            f.write(out)
+        if args.render:
+            backend.render_to_file(args.render)
 
     status = 0
     try:
         if args.mode != "progress":
-            status = run_dialog(args, screen, present, tty)
+            status = run_dialog(args, screen, backend, tty)
             render_to_file()
             return status
-        present()
+        backend.show(screen)
         stdin = sys.stdin.buffer
         pending = b""
         last_draw = time.monotonic()
@@ -805,17 +1137,18 @@ def main():
                             feed(screen, chunk.decode("utf-8", "replace"), True)
             now = time.monotonic()
             if now - last_draw >= interval:
-                present()
+                backend.show(screen)
                 last_draw = now
         if pending.strip():
             feed(screen, pending.decode("utf-8", "replace"), False)
         screen.done = True
         screen.percent = 100
-        present()
+        backend.show(screen)
         render_to_file()
     finally:
+        backend.finish(args.text_mode)
         if tty is not None:
-            if args.text_mode:
+            if args.text_mode and args.backend == "fb":
                 try:
                     fcntl.ioctl(tty, KDSETMODE, KD_TEXT)
                 except OSError:
