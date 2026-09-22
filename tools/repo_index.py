@@ -52,7 +52,7 @@ import sys
 from datetime import datetime, timezone
 
 # bump on every change: tools/repo_publish.sh only replaces the copy the repository runs with a newer one
-INDEX_VERSION = 40
+INDEX_VERSION = 42
 
 # the release packages, by the name they carry (tools/make_*_package.sh, ci/build.sh)
 PACKAGE_KINDS = [
@@ -951,8 +951,10 @@ def render_index(base_url, releases, builds, cores, images, dbs, psc_builds, psc
                       ("<li><b>Kernel flasher payload</b> <em>(preview)</em> - the AutoBleem kernel and rootfs "
                        "overlay (<code>boot.img</code> + <code>abrootfs.tgz</code>) rebuilt from source by "
                        "autobleem/psc-kernel-payload (Buildroot; newer BlueZ + WiFi drivers). "
-                       "<b>Not yet booted on a console - do not flash unless you have an LBOOT.EPB backup.</b>%s</li>"
-                       % links("/psc/kernel/latest.json", psc_kernel.get("manifest"))) if psc_kernel else ""))
+                       "<b>Not yet booted on a console - do not flash unless you have an LBOOT.EPB backup.</b> "
+                       "Download <a class=\"dl\" href=\"%s\">%s</a> (%s)%s</li>"
+                       % (e(psc_kernel["url"]), e(psc_kernel["name"]), human(psc_kernel["size"]),
+                          links("/psc/kernel/latest.json", psc_kernel.get("manifest")))) if psc_kernel else ""))
         out += release_block(("psc-fs",))
         if rows:
             out.append(table(rows))
