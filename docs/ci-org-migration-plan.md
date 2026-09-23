@@ -334,6 +334,18 @@ own low cadence.
   programs, `autobleem-appliance` assembles the console's package, and `psc-kernel-payload` builds on a
   hosted runner.
 
+- **2026-09-23 - the download page redesigned; development builds.** The page (autobleem-repo
+  `tools/repo_index.py`) is a slim bar + short banner, per-platform tabs with an Install table and folded
+  build inputs, one table style with release / pre-release / dev pills; the kernel flasher payload is a row.
+  The owner approved the look - the rules are in autobleem-repo's `CLAUDE.md`. **Development builds**: each
+  component's develop CI keeps a rolling `nightly` pre-release (autobleem-build's
+  `.github/actions/nightly-release`: the tag moved to the commit, the assets replaced; the launcher's
+  `publish-launcher.yml` now builds on develop pushes too, named by `git describe`), and
+  autobleem-appliance's `assemble.yml` has a `nightly` channel (schedule 03:17 UTC, or a dispatch with
+  channel=nightly) that assembles from those (`AB_SOURCE_TAG=nightly`) and publishes to the site's
+  `nightly/<version>/` - the page's "dev" pill, three kept, never an update channel. A scheduled run
+  skips a night on which no component's nightly changed (the folder's `sources.json` fingerprint).
+
 ### Minimal path to a first green pilot run (DONE)
 1. Owner (build server): build + push the image to `ghcr.io/autobleem2/autobleem-build`; make the package public.
 2. Owner: set repo variable `AB_CI_ENABLED=true` on `autobleem2/pcsx-ab`.
