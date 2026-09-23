@@ -2,6 +2,7 @@
 #include <doctest/doctest.h>
 
 #include "core/installer_job.h"
+#include "core/legacy_layout.h"
 
 #include <ableem/engine/filesystem.h>
 #include <ableem/engine/sha256.h>
@@ -80,6 +81,8 @@ string makePackage(TempDir &tmp, const string &version) {
     b.dir("./Autobleem").dir("./Autobleem/bin").dir("./Autobleem/bin/autobleem");
     b.file("./Autobleem/bin/autobleem/autobleem-gui", "ELF " + version, 0755);
     b.file("./Autobleem/bin/autobleem/config.ini", "theme=ab2\nlanguage=English\n");
+    b.file("./Autobleem/bin/autobleem/platform/roms_systems.cfg",
+           "# the systems\nNintendo - Nintendo Entertainment System\n  \nSega - Mega Drive - Genesis\r\n");
     b.file("./Autobleem/bin/emu/pcsx-ab", "ELF pcsx", 0755);
     b.file("./Autobleem/rc/launch.sh", "#!/bin/sh\n", 0755);
     b.file("./Autobleem/lib/libs.tar.gz", "gz");
@@ -570,4 +573,95 @@ TEST_CASE("a new RetroArch build over a RetroBoot-era retroarch.cfg sets its own
     string cfg = fx.tmp.readFile("stick/RetroArch/bin/retroarch.cfg");
     CHECK(cfg == "video_smooth = \"true\"\nxmb_theme = \"7\"\nmenu_driver = \"xmb\"\nquit_on_close_content = \"2\"\n");
     CHECK(fx.out.said("2 keys of this RetroArch build set in it"));
+}
+
+TEST_CASE("old ES-style ROM folders become the RetroArch database names the scan reads") {
+    TempDir tmp("installer");
+    const string roms = tmp.makeSubDir("roms");
+    tmp.writeFile("roms/nes/Nova.nes", "nes");
+    tmp.writeFile("roms/megadrive/Sonic.md", "md");
+    // famicom and the database's own folder both there: merged, the file already in place wins
+    tmp.writeFile("roms/famicom/Zelda.nes", "famicom zelda");
+    tmp.writeFile("roms/Nintendo - Nintendo Entertainment System/Zelda.nes", "kept zelda");
+    // a case-only rename (daphne -> Daphne)
+    tmp.writeFile("roms/daphne/dl.zip", "laser");
+    // no confident database: left alone
+    tmp.writeFile("roms/psx/Game.cue", "cue");
+    vector<string> said;
+    const int n = LegacyLayout::convertRomFolders(roms, [&](const string &l) { said.push_back(l); });
+    CHECK(n == 4);
+    CHECK(tmp.readFile("roms/Nintendo - Nintendo Entertainment System/Nova.nes") == "nes");
+    CHECK(tmp.readFile("roms/Nintendo - Nintendo Entertainment System/Zelda.nes") == "kept zelda");
+    CHECK(tmp.readFile("roms/Sega - Mega Drive - Genesis/Sonic.md") == "md");
+    CHECK(tmp.readFile("roms/Daphne/dl.zip") == "laser");
+    CHECK(tmp.readFile("roms/psx/Game.cue") == "cue");
+    CHECK_FALSE(DirEntry::exists(roms + "/nes"));
+    CHECK_FALSE(DirEntry::exists(roms + "/famicom"));
+    CHECK_FALSE(DirEntry::exists(roms + "/megadrive"));
+    // a second pass has nothing to do
+    CHECK(LegacyLayout::convertRomFolders(roms, [](const string &) {}) == 0);
+}
+
+TEST_CASE("with RetroArch every listed system gets its roms folder - an old folder renamed, nothing else touched") {
+    Fixture fx;
+    fx.options.retroarch = true;
+    // a stick an older installer left: RetroArch in the new layout, a ROM in an ES-style folder
+    fx.tmp.writeFile("stick/RetroArch/roms/nes/Nova.nes", "nes");
+    fx.tmp.writeFile("stick/RetroArch/roms/Sega - Mega Drive - Genesis/Sonic.md", "mine");
+    string error;
+    REQUIRE_MESSAGE(fx.run(error), error);
+    CHECK(fx.tmp.readFile("stick/RetroArch/roms/Nintendo - Nintendo Entertainment System/Nova.nes") == "nes");
+    CHECK_FALSE(fx.has("RetroArch/roms/nes"));
+    CHECK(fx.tmp.readFile("stick/RetroArch/roms/Sega - Mega Drive - Genesis/Sonic.md") == "mine");
+    CHECK(fx.out.said("roms/: 0 system folder(s) made, 2 already there"));
+
+    // a fresh stick: both folders made
+    Fixture fresh;
+    fresh.options.retroarch = true;
+    REQUIRE_MESSAGE(fresh.run(error), error);
+    CHECK(DirEntry::isDirectory(fresh.root + "/RetroArch/roms/Nintendo - Nintendo Entertainment System"));
+    CHECK(DirEntry::isDirectory(fresh.root + "/RetroArch/roms/Sega - Mega Drive - Genesis"));
+    CHECK(fresh.out.said("roms/: 2 system folder(s) made, 0 already there"));
+
+    // without RetroArch, chosen or on the stick, no roms folders at all
+    Fixture none;
+    REQUIRE_MESSAGE(none.run(error), error);
+    CHECK_FALSE(none.has("RetroArch/roms"));
+}
+
+TEST_CASE("UpdateRoms: the installer's own copy first; a broken site copy leaves the stick's; the run is logged") {
+    // an UpdateRoms/ folder beside the installer (the bundle's) - used, the site not asked
+    {
+        Fixture fx;
+        fx.tmp.writeFile("pkg/UpdateRoms/UpdateRoms.exe", "MZ bundled");
+        fx.tmp.writeFile("pkg/UpdateRoms/README.txt", "readme");
+        string error;
+        REQUIRE_MESSAGE(fx.run(error), error);
+        CHECK(fx.tmp.readFile("stick/UpdateRoms/UpdateRoms.exe") == "MZ bundled");
+        CHECK(fx.site.count("UpdateRoms-") == 0);
+        CHECK(fx.out.said("UpdateRoms from this installer's folder"));
+    }
+    // the site's zip holds no UpdateRoms.exe: the stick keeps the one it had
+    {
+        Fixture fx;
+        fx.tmp.writeFile("stick/UpdateRoms/UpdateRoms.exe", "MZ old");
+        ableem::ZipWriter zip;
+        REQUIRE(zip.open(fx.tmp.at("site/UpdateRoms-v2.0.0-pre0-abc1234.zip")));
+        zip.addBytes("UpdateRoms/README.txt", "no program here");
+        REQUIRE(zip.close());
+        const string ur =
+            json("UpdateRoms-v2.0.0-pre0-abc1234.zip", fx.tmp.at("site/UpdateRoms-v2.0.0-pre0-abc1234.zip"));
+        const string fs = json("autobleem-psc-v2.0.0-pre0-abc1234.tar.gz", fx.options.packageFile);
+        fx.tmp.writeFile("site/unstable.json", "{\"version\": \"v2.0.0-pre0-abc1234\", \"prerelease\": true, "
+                                               "\"files\": {\"psc-fs\": " +
+                                                   fs + ", \"updateroms\": " + ur + "}}");
+        string error;
+        REQUIRE_MESSAGE(fx.run(error), error);
+        CHECK(fx.tmp.readFile("stick/UpdateRoms/UpdateRoms.exe") == "MZ old");
+        CHECK(fx.out.said("the stick keeps what it had"));
+        // the run's record on the stick
+        const string log = fx.tmp.readFile("stick/System/Logs/installer.log");
+        CHECK(log.find("AutoBleemInstaller: ") == 0);
+        CHECK(log.find("the stick keeps what it had") != string::npos);
+    }
 }

@@ -3,6 +3,7 @@
 #include <ableem/engine/filesystem.h>
 #include <ableem/engine/log.h>
 
+#include <algorithm>
 #include <fstream>
 #include <regex>
 #include <sstream>
@@ -115,7 +116,118 @@ bool rewriteFile(const string &path, const function<string(const string &)> &rew
     return true;
 }
 
+// the ES-style folder names AutoBleem 1.0 / RetroBoot sticks carry, and the RetroArch database each one is -
+// the same table as tools/install_autobleem.py's ROMS_LAYOUT_MAP (psx, atari800, the *h hack folders and
+// videos have no confident database and are left as they are)
+struct RomFolder {
+    const char *old;
+    const char *database;
+};
+const RomFolder RomFolders[] = {
+    {"3do", "The 3DO Company - 3DO"},
+    {"a2600", "Atari - 2600"},
+    {"a5200", "Atari - 5200"},
+    {"a7800", "Atari - 7800"},
+    {"amiga", "Commodore - Amiga"},
+    {"amstradcpc", "Amstrad - CPC"},
+    {"arcade", "FBNeo - Arcade Games"},
+    {"atarijaguar", "Atari - Jaguar"},
+    {"atarilynx", "Atari - Lynx"},
+    {"atarist", "Atari - ST"},
+    {"c64", "Commodore - 64"},
+    {"colecovision", "Coleco - ColecoVision"},
+    {"daphne", "Daphne"},
+    {"dosbox", "DOS"},
+    {"dreamcast", "Sega - Dreamcast"},
+    {"famicom", "Nintendo - Nintendo Entertainment System"},
+    {"fba2012", "FBNeo - Arcade Games"},
+    {"fds", "Nintendo - Family Computer Disk System"},
+    {"gameandwatch", "Handheld Electronic Game"},
+    {"gamegear", "Sega - Game Gear"},
+    {"gb", "Nintendo - Game Boy"},
+    {"gba", "Nintendo - Game Boy Advance"},
+    {"gbc", "Nintendo - Game Boy Color"},
+    {"genesis", "Sega - Mega Drive - Genesis"},
+    {"intellivision", "Mattel - Intellivision"},
+    {"mame", "MAME"},
+    {"mastersystem", "Sega - Master System - Mark III"},
+    {"megadrive", "Sega - Mega Drive - Genesis"},
+    {"msx", "Microsoft - MSX"},
+    {"n64", "Nintendo - Nintendo 64"},
+    {"naomi", "Sega - NAOMI"},
+    {"nds", "Nintendo - Nintendo DS"},
+    {"neogeo", "FBNeo - Arcade Games"},
+    {"neogeocd", "SNK - Neo Geo CD"},
+    {"nes", "Nintendo - Nintendo Entertainment System"},
+    {"ngp", "SNK - Neo Geo Pocket"},
+    {"ngpc", "SNK - Neo Geo Pocket Color"},
+    {"odyssey2", "Magnavox - Odyssey2"},
+    {"pcengine", "NEC - PC Engine - TurboGrafx 16"},
+    {"pcenginecd", "NEC - PC Engine CD - TurboGrafx-CD"},
+    {"psp", "Sony - PlayStation Portable"},
+    {"saturn", "Sega - Saturn"},
+    {"scummvm", "ScummVM"},
+    {"sega32x", "Sega - 32X"},
+    {"segacd", "Sega - Mega-CD - Sega CD"},
+    {"sfc", "Nintendo - Super Nintendo Entertainment System"},
+    {"sg1000", "Sega - SG-1000"},
+    {"snes", "Nintendo - Super Nintendo Entertainment System"},
+    {"snesh", "Nintendo - Super Nintendo Entertainment System Hacks"},
+    {"supergrafx", "NEC - PC Engine SuperGrafx"},
+    {"tg-cd", "NEC - PC Engine CD - TurboGrafx-CD"},
+    {"tg16", "NEC - PC Engine - TurboGrafx 16"},
+    {"virtualboy", "Nintendo - Virtual Boy"},
+    {"wonderswan", "Bandai - WonderSwan"},
+    {"zxspectrum", "Sinclair - ZX Spectrum +3"},
+};
+
+string lower(string s) {
+    for (char &c : s)
+        c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+    return s;
+}
+
 } // namespace
+
+//*******************************
+// LegacyLayout::convertRomFolders
+//*******************************
+int LegacyLayout::convertRomFolders(const string &romsDir, const Say &say) {
+    if (!DirEntry::isDirectory(romsDir))
+        return 0;
+    int converted = 0;
+    vector<string> claimed; // databases an earlier entry of this pass renamed a folder onto
+    for (const RomFolder &f : RomFolders) {
+        const string src = findCi(romsDir, f.old);
+        const string target = romsDir + "/" + f.database;
+        if (src.empty() || !DirEntry::isDirectory(src) || src == target)
+            continue;
+        const string existing = findCi(romsDir, f.database);
+        const bool taken = find(claimed.begin(), claimed.end(), lower(f.database)) != claimed.end();
+        if (!existing.empty() && existing == src) {
+            // the same name in another case (daphne -> Daphne): on FAT that needs a stop on the way
+            const string tmp = src + ".ab_rename_tmp";
+            if (DirEntry::renameFile(src, tmp) && DirEntry::renameFile(tmp, target)) {
+                claimed.push_back(lower(f.database));
+                converted++;
+            }
+        } else if (existing.empty() && !taken) {
+            if (DirEntry::renameFile(src, target)) {
+                claimed.push_back(lower(f.database));
+                converted++;
+            }
+        } else {
+            // both there (famicom and nes, say): merge, the files already in the database's folder win
+            string error;
+            if (moveMerge(src, existing.empty() ? target : existing, true, error))
+                converted++;
+            else
+                say("  " + error);
+        }
+        say("  roms/" + src.substr(romsDir.size() + 1) + " -> roms/" + f.database);
+    }
+    return converted;
+}
 
 //*******************************
 // LegacyLayout::rewritePaths

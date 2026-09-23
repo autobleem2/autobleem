@@ -74,6 +74,13 @@ public:
     bool go(string &error) {
         phases = InstallerJob::phasesFor(opt, info);
         DirEntry::createDirs(scratch);
+        // the run's own record on the stick, so a report from a tester can be read afterwards
+        if (DirEntry::isDirectory(root) && DirEntry::createDirs(at("System/Logs"))) {
+            logPath = at("System/Logs/installer.log");
+            ofstream(logPath, ios::binary | ios::trunc)
+                << "AutoBleemInstaller: " << opt.packageFile << " (" << info.packageVersion << ") onto " << root
+                << (info.installed ? ", an update of " + info.installedVersion : string(", a fresh install")) << "\n";
+        }
         bool ok =
             package(error) && prepare(error) && legacy(error) && unpack(error) && updateRoms(error) && covers(error);
         if (ok && opt.retroarch)
@@ -189,20 +196,45 @@ private:
         for (const char *dir : {"Games", "Games/!SaveStates", "Games/!MemCards", "System", "System/Databases",
                                 "System/Logs", "Apps", "Themes"})
             DirEntry::createDirs(at(dir));
+        if (opt.retroarch || info.hasRetroArch)
+            romFolders();
         say("  done");
         return true;
+    }
+
+    // RetroArch/roms: an AutoBleem 1.0 / RetroBoot stick's ES-style folders (nes, snes, ...) renamed to the
+    // RetroArch database names the launcher's scan reads, then one folder per system made where missing
+    // (the package's platform/roms_systems.cfg, the list the Pi and Windows installers use) - on an update
+    // too, which fixes a stick an older installer left that way and touches nothing already there
+    void romFolders() {
+        const string roms = at("RetroArch/roms");
+        DirEntry::createDirs(roms);
+        const int converted = LegacyLayout::convertRomFolders(roms, [this](const string &l) { say(l); });
+        if (converted > 0)
+            say("  " + to_string(converted) + " old ROM folder(s) renamed for the launcher's scan");
+        createRomFolders(at("Autobleem/bin/autobleem/platform/roms_systems.cfg"), roms);
     }
 
     //******************
     // 3b. UpdateRoms
     //******************
-    // the PC-side ROM scanner, into <stick>/UpdateRoms/ from the release this package belongs to - the
-    // console has no network, so the ROMs' box art and names come from a PC run of it. Not having it is
-    // no reason to stop.
+    // the PC-side ROM scanner, into <stick>/UpdateRoms/ - the console has no network, so the ROMs' box art
+    // and names come from a PC run of it. The copy that came with this installer (an UpdateRoms/ folder next
+    // to it, from the same release as the package) first; else the site's, from the release this package
+    // belongs to. The stick's copy is replaced only once a new one is complete. Not having it is no reason
+    // to stop.
     bool updateRoms(string &error) {
         phase("UpdateRoms");
         if (stopped(error))
             return false;
+        const string bundled = opt.packageFile.substr(0, opt.packageFile.find_last_of("/\\") + 1) + "UpdateRoms";
+        if (DirEntry::exists(bundled + "/UpdateRoms.exe")) {
+            if (placeUpdateRoms(bundled))
+                say("  UpdateRoms from this installer's folder");
+            else
+                say("  could not copy UpdateRoms from this installer's folder - going on without it");
+            return true;
+        }
         const UpdateFile *file = nullptr;
         ReleaseCatalog unstable, stable;
         string text, why;
@@ -231,12 +263,34 @@ private:
             error.clear();
             return true;
         }
-        if (DirEntry::isDirectory(at("UpdateRoms")))
-            DirEntry::removeDirAndContents(at("UpdateRoms"));
-        if (!ZipArchive::extract(zip, root))
-            say("  could not unpack " + file->name + " - going on without it");
+        const string unpacked = scratch + "/updateroms";
+        DirEntry::removeDirAndContents(unpacked);
+        if (!ZipArchive::extract(zip, unpacked) || !placeUpdateRoms(unpacked + "/UpdateRoms"))
+            say("  could not unpack " + file->name + " - the stick keeps what it had");
+        else
+            say("  " + file->name);
+        DirEntry::removeDirAndContents(unpacked);
         DirEntry::removeFile(zip);
         return true;
+    }
+
+    // <src>'s files (UpdateRoms.exe, README.txt) become the stick's UpdateRoms/, replacing what was there -
+    // only when src really holds the program, so a broken source never leaves the stick without one
+    bool placeUpdateRoms(const string &src) {
+        if (!DirEntry::exists(src + "/UpdateRoms.exe"))
+            return false;
+        const string dest = at("UpdateRoms");
+        const string staged = at("UpdateRoms.new");
+        DirEntry::removeDirAndContents(staged);
+        DirEntry::createDirs(staged);
+        for (const DirEntry &e : DirEntry::diru_FilesOnly(src))
+            if (!DirEntry::copyFile(src + "/" + e.name, staged + "/" + e.name)) {
+                DirEntry::removeDirAndContents(staged);
+                return false;
+            }
+        if (DirEntry::isDirectory(dest))
+            DirEntry::removeDirAndContents(dest);
+        return DirEntry::renameFile(staged, dest);
     }
 
     //******************

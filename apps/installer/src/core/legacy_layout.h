@@ -32,6 +32,12 @@ public:
     // converts in place; every step is a line to `say`. False with `error` when a move fails.
     static bool migrate(const std::string &root, const Say &say, std::string &error);
 
+    // RetroArch/roms/<old ES-style name> (nes, snes, gba, megadrive, ... - AutoBleem 1.0 / RetroBoot) renamed
+    // to the RetroArch database name the launcher's scan recognises ("Nintendo - Nintendo Entertainment
+    // System"), merged into it when both exist (a file already there is kept). Safe on any stick, any number
+    // of times (tools/install_autobleem.py's ROMS_LAYOUT_MAP). The number of folders converted.
+    static int convertRomFolders(const std::string &romsDir, const Say &say);
+
     // the path rewrites for a text file (retroarch.cfg, a playlist, an app's script); the text as it
     // should be - the same when nothing applies
     static std::string rewritePaths(const std::string &text);

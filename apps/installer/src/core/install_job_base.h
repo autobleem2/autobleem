@@ -63,11 +63,17 @@ protected:
     // unless the user has put their own there (the originals stay for RetroArch's cores)
     void installPs1Bios(const std::string &systemDir, const std::string &biosDir);
     static bool isPs1BiosFile(const std::string &path);
+    // <romsDir>/<system>/ - one empty folder per system in `listFile` (the shared platform/roms_systems.cfg,
+    // RetroArch's database names), made only where missing, so a user has somewhere to drop each system's
+    // games and Import Content -> Scan Directory sorts them into the matching playlist
+    void createRomFolders(const std::string &listFile, const std::string &romsDir);
 
     Downloader &dl;
     InstallListener &out;
     InstallerJob::ShouldStop stop;
     std::string repoUrl, scratch;
+    // every line say() prints is appended here too when set - the install's own record, kept on the target
+    std::string logPath;
     std::vector<std::string> phases;
     int phaseIndex = 0;
 };

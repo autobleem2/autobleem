@@ -203,35 +203,9 @@ private:
         writeText(at(RetroArchVersionFile), version + "\n");
         for (const char *d : {"cores", "playlists", "saves", "states", "system", "thumbnails", "screenshots"})
             DirEntry::createDirs(bin + "/" + d);
-        createRomFolders();
+        // shared with payload_linux/install.sh: <program>/platform/roms_systems.cfg (the product ships it)
+        createRomFolders(opt.programDir + "/platform/roms_systems.cfg", at("RetroArch/roms"));
         return writeRetroArchCfg(error);
-    }
-
-    //******************
-    // RetroArch/roms/<system>/ - one empty folder per system, so a user has somewhere to drop each
-    // system's games (Import Content -> Scan Directory sorts them into the matching playlist). The list is
-    // shared with payload_linux/install.sh: <program>/platform/roms_systems.cfg (the product ships it).
-    //******************
-    void createRomFolders() {
-        const string list = opt.programDir + "/platform/roms_systems.cfg";
-        const string text = readText(list);
-        if (text.empty()) {
-            say("  (no roms_systems.cfg - the per-system folders were not created)");
-            return;
-        }
-        int made = 0;
-        istringstream in(text);
-        string line;
-        while (getline(in, line)) {
-            while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
-                line.pop_back();
-            size_t start = line.find_first_not_of(" \t");
-            if (start == string::npos || line[start] == '#')
-                continue;
-            if (DirEntry::createDirs(at("RetroArch/roms/" + line.substr(start))))
-                made++;
-        }
-        say("  " + to_string(made) + " roms/ folders ready (one per system)");
     }
 
     // retroarch.cfg, only when there is none: RetroArch keeps it up to date itself and the launcher edits

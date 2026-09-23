@@ -89,6 +89,10 @@ void InstallJobBase::phase(const string &title) {
 void InstallJobBase::say(const string &line) {
     out.onLine(line);
     PLOG_INFO << line;
+    if (!logPath.empty()) {
+        ofstream log(logPath, ios::binary | ios::app);
+        log << line << "\n";
+    }
 }
 
 //*******************************
@@ -260,4 +264,31 @@ void InstallJobBase::installPs1Bios(const string &systemDir, const string &biosD
             say(string("  could not copy ") + pair.second + " to " + dest);
         }
     }
+}
+
+//*******************************
+// InstallJobBase::createRomFolders
+//*******************************
+void InstallJobBase::createRomFolders(const string &listFile, const string &romsDir) {
+    const string text = readText(listFile);
+    if (text.empty()) {
+        say("  (no roms_systems.cfg - the per-system folders were not created)");
+        return;
+    }
+    int made = 0, there = 0;
+    istringstream in(text);
+    string line;
+    while (getline(in, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
+            line.pop_back();
+        const size_t start = line.find_first_not_of(" \t");
+        if (start == string::npos || line[start] == '#')
+            continue;
+        const string dir = romsDir + "/" + line.substr(start);
+        if (DirEntry::isDirectory(dir))
+            there++;
+        else if (DirEntry::createDirs(dir))
+            made++;
+    }
+    say("  roms/: " + to_string(made) + " system folder(s) made, " + to_string(there) + " already there");
 }
