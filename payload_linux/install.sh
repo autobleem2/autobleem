@@ -1377,6 +1377,11 @@ $STAGE_DIR/Autobleem/bin/autobleem
     # chmod there is either a no-op or refused by the driver. Neither is a reason to stop.
     run chmod +x "$app_dest/autobleem-gui" "$DATA_MOUNT/Autobleem/bin/emu/pcsx-ab" "$DATA_MOUNT/Autobleem/bin/emunxt/pcsx-ab" || true
     run chmod +x "$DATA_MOUNT/Autobleem/rc/"*.sh || true
+    # the package's version, which the launcher's update check compares with the site's (Env::productVersion
+    # reads <data>/VERSION) - on every install and update, so it always names what is installed
+    if [ -f "$STAGE_DIR/VERSION" ]; then
+        run cp "$STAGE_DIR/VERSION" "$DATA_MOUNT/VERSION"
+    fi
 
     if [ -f "$app_dest/config.ini.keep" ]; then
         run mv -f "$app_dest/config.ini.keep" "$app_dest/config.ini"
