@@ -18,7 +18,11 @@ TP = os.path.join(REPO, 'autobleem-core', 'lib_ableem', 'third_party')  # the su
 
 
 def read(rel):
-    with open(os.path.join(REPO, rel), encoding='utf-8', errors='replace') as f:
+    # lib_ableem/ and tests/third_party live in the autobleem-core submodule since 2026-09-23
+    path = os.path.join(REPO, rel)
+    if not os.path.exists(path):
+        path = os.path.join(REPO, 'autobleem-core', rel)
+    with open(path, encoding='utf-8', errors='replace') as f:
         return f.read().strip('\n')
 
 
@@ -106,7 +110,17 @@ SECTIONS = [
      read('lib_ableem/third_party/libchdr/deps/zstd-1.5.6/LICENSE')),
     ('LZMA SDK', 'lib_ableem/third_party/libchdr/deps/lzma-24.05 and lib_ableem/third_party/lzma-7z (the 7z reader)',
      'Public domain', read('lib_ableem/third_party/libchdr/deps/lzma-24.05/LICENSE')),
-    ('SDL_FontCache', 'lib_ableem/src/ui/SDL_FontCache.c/.h - text rendering', 'MIT',
+    ('Mbed TLS', 'third_party/mbedtls (3.6.7) - TLS in abfetch, the console\'s update downloader', 'Apache-2.0',
+     'Copyright The Mbed TLS Contributors. Mbed TLS is offered under Apache-2.0 OR GPL-2.0-or-later; AutoBleem '
+     'takes it under Apache-2.0 (compatible with GPL-3.0). Only a subset of library/ is vendored, unmodified, '
+     'with a configuration of our own (third_party/mbedtls/autobleem_config.h).\n\n' +
+     read('third_party/mbedtls/LICENSE')),
+    ('Mozilla CA certificate bundle', 'src/tools/abfetch/cacert.pem - shipped next to abfetch on the console',
+     'MPL-2.0',
+     'The root certificates of Mozilla\'s NSS (certdata.txt), as extracted by the curl project '
+     '(https://curl.se/docs/caextract.html), unmodified. This Source Code Form is subject to the terms of the '
+     'Mozilla Public License, v. 2.0; a copy is at https://mozilla.org/MPL/2.0/.'),
+    ('SDL_FontCache','lib_ableem/src/ui/SDL_FontCache.c/.h - text rendering', 'MIT',
      'Copyright (c) 2019 Jonathan Dearborn\n\n' + header_block('lib_ableem/src/ui/SDL_FontCache.h',
                                                                 r'Permission is hereby granted', r'THE SOFTWARE\.')),
     ('SDL2, SDL2_image, SDL2_mixer, SDL2_ttf',
