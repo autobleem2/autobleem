@@ -86,7 +86,7 @@ the memory-card screens use. Nothing outside it constructs an `ableem::MemcardMa
 `ResumePointService` (`core/services/resume_point.*`) owns the save-state slots in a game's `ssFolder` -
 **`Games/!SaveStates/<game folder name>/`** (internal games: `/<id>/`), central since 1.x and keyed by the
 folder's *name*, so a game moved into a sub-folder keeps its states and its own card (2026-09-21, see
-`docs/legacy-1x-analysis.md`) - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
+autobleem-main's `docs/archive/legacy-1x-analysis.md`) - `slotIsActive`/`pictureForSlot`/`lastPicture`/`storePictureForSlot`/`removeSlot`/
 `exitedCleanly`, plus `prepareForLaunch`/`saveAfterLaunch` that the PCSX interceptor used to hold. Its
 header documents the file layout. Two naming quirks callers depend on: slot 0's picture has no number in
 its name, and `lastPicture()` uses slot 0's picture name whichever slot it finds.
