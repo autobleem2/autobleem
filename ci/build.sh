@@ -258,14 +258,11 @@ build_win() {
     fi
     # the console's stick installer (apps/installer, a plain Win32 program) as the exe alone: the bundle
     # with the console package next to it is made once the psc target's package exists
-    # (tools/make_installer_bundle.sh --exe, the workflow's site job), stripped and packed the way the
-    # bundle script does it
+    # (tools/make_installer_bundle.sh --exe, the workflow's site job), stripped the way the bundle script
+    # does it - never UPX-packed: Defender quarantines a packed, unsigned exe as Trojan:Win32/Wacatac.C!ml
     if [ -f build_mingw/apps/installer/AutoBleemInstaller.exe ]; then
         cp build_mingw/apps/installer/AutoBleemInstaller.exe dist/win/AutoBleemInstaller.exe
         x86_64-w64-mingw32-strip dist/win/AutoBleemInstaller.exe 2>/dev/null || strip dist/win/AutoBleemInstaller.exe || true
-        if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
-            upx -q --best --lzma dist/win/AutoBleemInstaller.exe >/dev/null || true
-        fi
     fi
     dist_note win
 }

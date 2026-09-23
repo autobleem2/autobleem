@@ -4,7 +4,7 @@
 #   autobleem-win-<v>.zip    AutoBleem/bin/autobleem/: autobleem-gui.exe + src/resources + the SDL2 DLLs and
 #                            libwinpthread-1.dll - the launcher for a PC, run as
 #                            "autobleem-gui.exe <usb root>" (see CLAUDE.md, "Running on PC")
-#   UpdateRoms-<v>.zip       UpdateRoms/: UpdateRoms.exe (static, stripped, UPX) + README.txt - the folder for
+#   UpdateRoms-<v>.zip       UpdateRoms/: UpdateRoms.exe (static, stripped) + README.txt - the folder for
 #                            a stick's root (tools/make_updateroms_bundle.sh makes the same from MSYS2)
 #
 # and, with --product DIR (a build configured with -DAB_TARGET=win - make_win.sh --product, ci/build.sh win),
@@ -25,7 +25,8 @@
 #
 # The DLLs come from the SDL2 mingw development packages at AB_MINGW_SDL2 (/opt/mingw-sdl2 in the image)
 # and Debian's mingw-w64 runtime - or, on MSYS2 (--product from make_win.sh), from the UCRT64 bin dir next
-# to the compiler. AB_NO_UPX=1 leaves the exes unpacked.
+# to the compiler. No exe is UPX-packed: Defender quarantines a packed, unsigned exe as Trojan:Win32/Wacatac.C!ml
+# (the unpacked one scans clean).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"
@@ -46,7 +47,6 @@ done
 [ -n "$VERSION" ] || VERSION="$(git describe --tags --exclude nightly --always --dirty 2>/dev/null || echo dev)"
 SDL="${AB_MINGW_SDL2:-/opt/mingw-sdl2}"
 STRIP="$(command -v x86_64-w64-mingw32-strip || command -v strip)"
-pack() { if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then upx -q --best --lzma "$1" >/dev/null; fi; }
 
 # the runtime DLLs next to an exe: SDL2's four and winpthread, from the mingw devkit (the image) or from
 # the MSYS2 environment the compiler came from
@@ -155,14 +155,12 @@ if [ -n "$PRODUCT_DIR" ]; then
     rm -f "$APP/internal.db" "$APP/run.sh"   # the console's own
     cp "$PRODUCT_DIR/autobleem-gui.exe" "$APP/"
     "$STRIP" "$APP/autobleem-gui.exe"
-    pack "$APP/autobleem-gui.exe"
     runtime_dlls "$APP"
     # the setup helper: the data tree from the download repository (the NSIS installer runs it, and the
     # Start Menu's "AutoBleem Setup"); static, so it needs no DLL
     if [ -f "$PRODUCT_DIR/apps/installer/AutoBleemWinSetup.exe" ]; then
         cp "$PRODUCT_DIR/apps/installer/AutoBleemWinSetup.exe" "$APP/"
         "$STRIP" "$APP/AutoBleemWinSetup.exe"
-        pack "$APP/AutoBleemWinSetup.exe"
     else
         echo "    (no apps/installer/AutoBleemWinSetup.exe in $PRODUCT_DIR - the package has no setup helper)"
     fi
@@ -195,7 +193,6 @@ cp -a "$REPO/src/resources/." "$APP/"
 cp "$REPO/LICENSE" "$REPO/THIRD_PARTY_NOTICES.md" "$APP/"
 cp "$BUILD_DIR/autobleem-gui.exe" "$APP/"
 "$STRIP" "$APP/autobleem-gui.exe"
-pack "$APP/autobleem-gui.exe"
 # winpthread: the one GCC runtime DLL the exe still needs (libgcc/libstdc++ are linked in)
 runtime_dlls "$APP"
 find "$APP" -type f -name placeholder -delete
@@ -211,7 +208,6 @@ mkdir -p "$UR"
 cp "$BUILD_DIR/apps/updateroms/UpdateRoms.exe" "$UR/"
 cp -a "$REPO/apps/updateroms/resources/." "$UR/"
 "$STRIP" "$UR/UpdateRoms.exe"
-pack "$UR/UpdateRoms.exe"
 ZIP="$REPO/$OUT/UpdateRoms-$VERSION.zip"
 zipdir "$PKG/updateroms" "$ZIP"
 echo "==> $ZIP ($(du -h "$ZIP" | cut -f1))"
