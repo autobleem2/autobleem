@@ -3,13 +3,13 @@
 //
 
 #include "evoui_meta.h"
-#include "../../core/model/timing.h"
-#include "../../core/model/ps_game.h"
-#include "../../core/services/system.h"
+#include "core/model/timing.h"
+#include "core/model/ps_game.h"
+#include "core/services/system.h"
 #include "../../app.h"
-#include "../../core/main.h"
-#include "../../core/main.h"
-#include "../../core/services/environment.h"
+#include "core/main.h"
+#include "core/main.h"
+#include "core/services/environment.h"
 
 using namespace std;
 

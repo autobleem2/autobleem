@@ -1,10 +1,10 @@
 //
 // GuiEditorRA: the game editor for a RetroArch game - the one thing it can set is the light-gun flag.
 //
-#include "gui_game_editor_ra_menu.h"
-#include "../gui.h"
+#include "gui/menus/gui_game_editor_ra_menu.h"
+#include "gui/gui.h"
 #include "../../app.h"
-#include "../../core/services/environment.h"
+#include "core/services/environment.h"
 
 using namespace std;
 

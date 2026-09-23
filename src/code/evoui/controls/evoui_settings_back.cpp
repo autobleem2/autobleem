@@ -3,8 +3,8 @@
 //
 
 #include "evoui_settings_back.h"
-#include "../../core/model/timing.h"
-#include "../../gui/gui.h"
+#include "core/model/timing.h"
+#include "gui/gui.h"
 
 //*******************************
 // PsSettingsBack::setCurLen

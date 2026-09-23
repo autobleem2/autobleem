@@ -3,10 +3,10 @@
 // The handlers that open another screen or start a game are in launcher_actions.cpp.
 //
 #include "evoui_launcher.h"
-#include "../../gui/gui.h"
-#include "../../gui/screens/gui_confirm.h"
+#include "gui/gui.h"
+#include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
-#include "../../core/model/timing.h"
+#include "core/model/timing.h"
 
 #include <algorithm>
 #include <iostream>

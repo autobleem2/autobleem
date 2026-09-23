@@ -4,9 +4,9 @@
 //
 
 #include "evoui_launcher.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
-#include "../../gui/screens/gui_confirm.h"
+#include "gui/screens/gui_confirm.h"
 #include <algorithm>
 #include <iostream>
 #include "evoui_mc_manager.h"

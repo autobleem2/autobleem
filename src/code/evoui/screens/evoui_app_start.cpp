@@ -4,8 +4,8 @@
 // hand-drawn lines over the background).
 //
 #include "evoui_app_start.h"
-#include "../../gui/gui.h"
-#include "../../core/services/environment.h"
+#include "gui/gui.h"
+#include "core/services/environment.h"
 
 #include <algorithm>
 #include <fstream>

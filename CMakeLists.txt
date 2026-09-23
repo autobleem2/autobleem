@@ -144,161 +144,38 @@ if (AB_ENABLE_CLANG_TIDY)
         message(WARNING "AB_ENABLE_CLANG_TIDY is on but clang-tidy was not found")
     endif()
 endif()
-set(ABLEEM_ENABLE_CHD ${AB_ENABLE_CHD} CACHE BOOL "" FORCE)
-add_subdirectory(lib_ableem)
+# autobleem-core (the submodule, github.com/autobleem2/autobleem-core): lib_ableem (the SDL-free engine and
+# the SDL ui library), ab_core (the model and services - no SDL, no screens), ab_classic (the classic UI any
+# program draws with: Gui, AppBase, the splash/confirm/keyboard/about/hardware-info screens, the list menus)
+# and ab_installer (the stick installer the console's own updater runs). The one copy the launcher and the
+# tool repos share since 2026-09-23 - the launcher kept its own until then. Its version stamp (core/version.h)
+# is this repository's git describe (AB_VERSION_SOURCE_DIR defaults to the top-level project).
+set(AB_VERSION_FALLBACK "v2.0.0-pre0")
+# the tests' switch is shared: core's suites build with the launcher's (both off on the cross toolchains)
+option(AB_BUILD_TESTS "Build the unit tests (autobleem-core's and the launcher's own)" ON)
+set(AB_CORE_UI ON CACHE BOOL "" FORCE)
+add_subdirectory(autobleem-core)
 
 if (NOT AB_ENABLE_CHD)
     message(STATUS "CHD support disabled")
     add_compile_definitions(AB_NO_CHD)
 endif()
-
-# ab_core: the app's model and services layer, the first of the three targets the 2026-09 refactor split src/code into.
-# It links ableem_engine and nothing else, so the linker - not a convention - is what keeps it free of SDL and
-# of screens. That is what makes it testable without a window.
-#
-# It starts small on purpose: only files that already have no Gui and no App::get() in them could move here
-# without a content change. theme.*, scanner.* and util_time.* are core-shaped but each still reaches the UI
-# or the composition root, so they stay in the app target until a later step gives them a seam. ab_ui and ab_evoui are not split out yet either - Gui::menuSelection()
-# constructs GuiLauncher while ~20 launcher files use Gui, so the two would be a link cycle rather than a
-# layering. Phase C step 14 (menuSelection -> ClassicMenuScreen) is what removes that cycle.
-add_library(ab_core STATIC
-        src/code/core/main.h
-        src/code/core/model/game_set.h
-        src/code/core/model/ps_game.cpp
-        src/code/core/model/ps_game.h
-        src/code/core/model/session.h
-        src/code/core/model/timing.h
-        src/code/core/services/config.cpp
-        src/code/core/services/environment.cpp
-        src/code/core/services/environment.h
-        src/code/core/services/environment_setup.cpp
-        src/code/core/services/environment_setup.h
-        src/code/core/services/windows_host.cpp
-        src/code/core/services/windows_host.h
-        src/code/core/services/clock.cpp
-        src/code/core/services/clock.h
-        src/code/core/services/config.h
-        src/code/core/services/game_catalog.cpp
-        src/code/core/services/game_catalog.h
-        src/code/core/services/game_query.cpp
-        src/code/core/services/game_query.h
-        src/code/core/services/game_settings.cpp
-        src/code/core/services/lightgun.cpp
-        src/code/core/services/game_settings.h
-        src/code/core/services/launch.cpp
-        src/code/core/services/launch.h
-        src/code/core/services/memcard.cpp
-        src/code/core/services/memcard.h
-        src/code/core/services/platform_config.cpp
-        src/code/core/services/platform_config.h
-        src/code/core/services/process_runner.cpp
-        src/code/core/services/process_runner.h
-        src/code/core/services/resume_point.cpp
-        src/code/core/services/resume_point.h
-        src/code/core/services/retroarch.cpp
-        src/code/core/services/retroarch.h
-        src/code/core/services/scan_service.cpp
-        src/code/core/services/scan_service.h
-        src/code/core/services/online_assets.cpp
-        src/code/core/services/online_assets.h
-        src/code/core/services/system.cpp
-        src/code/core/services/system.h
-        src/code/core/services/system_info.cpp
-        src/code/core/services/system_info.h
-        src/code/core/services/theme.cpp
-        src/code/core/services/theme.h
-        src/code/core/services/theme_converter.cpp
-        src/code/core/services/theme_converter.h
-        src/code/core/services/theme_installer.cpp
-        src/code/core/services/theme_installer.h
-        )
-target_link_libraries(ab_core ableem_engine)
 if (AB_ONLINE_UPDATE)
     message(STATUS "Online update: on")
     add_compile_definitions(AB_ONLINE_UPDATE)
-    target_sources(ab_core PRIVATE
-            src/code/core/services/update_service.cpp
-            src/code/core/services/update_service.h)
-endif()
-if (WIN32)
-    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop;
-    # WindowsHost: the Documents folder (SHGetKnownFolderPath) and the registry
-    target_link_libraries(ab_core iphlpapi ws2_32 shell32 ole32 advapi32)
 endif()
 
-# core/version.h: the version, commit and build time, regenerated on every build (see the script). The
-# fallback is what a tree without git tags reports; it used to be config.ini's Version= key.
-set(AB_VERSION_FALLBACK "v2.0.0-pre0")
-add_custom_target(ab_version
-        COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DBINARY_DIR=${CMAKE_BINARY_DIR}
-                -DVERSION_FALLBACK=${AB_VERSION_FALLBACK} -P ${CMAKE_SOURCE_DIR}/cmake/generate_version.cmake
-        BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/core/version.h
-        COMMENT "core/version.h from git")
-add_dependencies(ab_core ab_version)
-target_include_directories(ab_core PUBLIC ${CMAKE_BINARY_DIR}/generated)
-
-# ab_core's tests. Host builds only - there is no reason to cross-compile them, and both cross toolchain files
-# (toolchains/psc, toolchains/rpi) switch AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
-# in the same commit (the refactor's rule, see CLAUDE.md "Tests").
-option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
+# the launcher's own tests (abpad) on core's harness, and the theme converter host tool riding on the same
+# switch (it ships nowhere)
 if (AB_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 
     # theme_convert <themesDir>: the ThemeInstaller over every zip and the ThemeConverter over every theme
-    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load. A host tool, so it rides on the
-    # tests' switch; it ships nowhere.
+    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load
     add_executable(theme_convert tools/theme_convert/main.cpp)
-    target_include_directories(theme_convert PRIVATE src/code)
     target_link_libraries(theme_convert ab_core)
 endif()
-
-# ab_classic: the classic UI as a library any program can draw with - Gui (the window, the theme's assets,
-# the text renderer), AppBase (config.ini, the language, the theme, the clock, the UI audio: the model
-# every classic screen holds as `app`), the screens that need nothing but that model (splash, confirm,
-# keyboard, about, hardware information) and the list-menu framework. Links ab_core and ableem. The console
-# tools under apps/ link this and nothing above it; nothing in here knows a game exists.
-add_library(ab_classic STATIC
-        src/code/app_base.cpp
-        src/code/app_base.h
-        src/code/gui/app_audio.cpp
-        src/code/gui/app_audio.h
-        src/code/gui/gui.cpp
-        src/code/gui/gui.h
-        src/code/gui/gui_font.cpp
-        src/code/gui/gui_font.h
-        src/code/gui/gui_screen.h
-        src/code/gui/menus/gui_menu_base.h
-        src/code/gui/menus/gui_string_menu.h
-        src/code/gui/menus/gui_two_column_string_menu.h
-        src/code/gui/screens/gui_about.cpp
-        src/code/gui/screens/gui_about.h
-        src/code/gui/screens/gui_confirm.cpp
-        src/code/gui/screens/gui_confirm.h
-        src/code/gui/screens/gui_action_menu.cpp
-        src/code/gui/screens/gui_action_menu.h
-        src/code/gui/screens/gui_facts_page.cpp
-        src/code/gui/screens/gui_facts_page.h
-        src/code/gui/screens/gui_hardware_info.cpp
-        src/code/gui/screens/gui_hardware_info.h
-        src/code/gui/screens/gui_keyboard.cpp
-        src/code/gui/screens/gui_keyboard.h
-        src/code/gui/screens/gui_splash.cpp
-        src/code/gui/screens/gui_splash.h
-        src/code/gui/screens/gui_text_page.cpp
-        src/code/gui/screens/gui_text_page.h
-        src/code/gui/starfx.cpp
-        src/code/gui/starfx.h
-        src/code/gui/surprise_game.cpp
-        src/code/gui/surprise_game.h
-        src/code/gui/panel_style.cpp
-        src/code/gui/panel_style.h
-        src/code/gui/text_renderer.cpp
-        src/code/gui/text_renderer.h
-        src/code/gui/theme_assets.cpp
-        src/code/gui/theme_assets.h
-)
-target_link_libraries(ab_classic ab_core ableem)
 
 # ab_ui: AutoBleem's model on top of the classic UI - App (the game library, the session, every game
 # service) and the classic screens that edit games, memory cards and the options. Links ab_classic. Nothing
@@ -325,6 +202,7 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_playlists_menu.h
 )
 target_link_libraries(ab_ui ab_classic)
+target_include_directories(ab_ui PUBLIC src/code)
 
 # ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
 # sub-screens, and under controls/ the PsObj family of animated elements it is built from.
@@ -399,7 +277,7 @@ if (AB_TARGET STREQUAL "win")
     # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
     # System/Logs/autobleem.log), with the icon and a version block (src/win/autobleem.rc; the numbers from
     # the last tag at configure time - core/version.h stays the truth about the build)
-    execute_process(COMMAND git describe --tags --abbrev=0 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    execute_process(COMMAND git describe --tags --abbrev=0 --exclude nightly WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE AB_RC_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     if (NOT AB_RC_TAG)
         set(AB_RC_TAG ${AB_VERSION_FALLBACK})
@@ -440,16 +318,5 @@ target_link_libraries(abfatflag ableem_engine)
 # shim itself is built for the targets that have Apps (docs/virtual-gamepad-plan.md)
 add_subdirectory(apps/abpad)
 
-# the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
-# ab_classic; the appliances and the Windows product have no PSC kernel to configure or flash
-if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
-    add_subdirectory(apps/pscbios)
-    add_subdirectory(apps/abflashkit)
-endif()
-
-# UpdateRoms: the PC-side ROM scanner for a stick in a card reader, and the installer, which makes the
-# stick from a PC - PC programs (the targets have the launcher's own scan)
-if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "win")
-    add_subdirectory(apps/updateroms)
-    add_subdirectory(apps/installer)
-endif()
+# the console tools (PSC-Bios, ABFlashKit) are autobleem2/autobleem-console-tools, UpdateRoms and the PC
+# installers autobleem2/autobleem-pc-tools - each built and released by its own repository

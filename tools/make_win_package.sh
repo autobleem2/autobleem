@@ -204,6 +204,8 @@ zipdir "$PKG/launcher" "$ZIP"
 echo "==> $ZIP ($(du -h "$ZIP" | cut -f1))"
 
 # --- UpdateRoms ----------------------------------------------------------------------------------------------
+# autobleem-pc-tools builds and releases it (pc-tools-win64); only an old build tree still has one here
+[ -f "$BUILD_DIR/apps/updateroms/UpdateRoms.exe" ] || exit 0
 UR="$PKG/updateroms/UpdateRoms"
 mkdir -p "$UR"
 cp "$BUILD_DIR/apps/updateroms/UpdateRoms.exe" "$UR/"

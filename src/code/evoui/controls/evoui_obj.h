@@ -7,7 +7,7 @@
 #include <ableem/ui/renderer.h>
 #include <ableem/ui/texture.h>
 #include <string>
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 //******************
 // PsObj

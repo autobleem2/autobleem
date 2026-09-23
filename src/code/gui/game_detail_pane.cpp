@@ -2,7 +2,7 @@
 // GameDetailPane: the editors' and Game Manager's right-hand pane. See the header.
 //
 #include "game_detail_pane.h"
-#include "gui.h"
+#include "gui/gui.h"
 
 using namespace std;
 

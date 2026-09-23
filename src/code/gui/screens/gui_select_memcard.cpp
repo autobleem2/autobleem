@@ -5,10 +5,10 @@
 #include "gui_select_memcard.h"
 
 #include <string>
-#include "../gui.h"
-#include "../../core/main.h"
-#include "gui_confirm.h"
-#include "gui_keyboard.h"
+#include "gui/gui.h"
+#include "core/main.h"
+#include "gui/screens/gui_confirm.h"
+#include "gui/screens/gui_keyboard.h"
 using namespace std;
 
 //*******************************

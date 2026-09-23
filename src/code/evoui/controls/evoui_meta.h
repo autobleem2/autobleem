@@ -5,8 +5,8 @@
 #pragma once
 
 #include "evoui_obj.h"
-#include "../../core/model/ps_game.h"
-#include "../../gui/gui_font.h"
+#include "core/model/ps_game.h"
+#include "gui/gui_font.h"
 
 class PsGame;
 

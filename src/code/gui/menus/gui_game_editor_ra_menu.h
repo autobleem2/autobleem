@@ -2,11 +2,11 @@
 // GuiEditorRA: the game editor for a RetroArch game - the one thing it can set is the light-gun flag.
 //
 #pragma once
-#include "../gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
-#include "../../core/main.h"
-#include "../../core/model/ps_game.h"
+#include "core/main.h"
+#include "core/model/ps_game.h"
 
 //********************
 // GuiEditorRA

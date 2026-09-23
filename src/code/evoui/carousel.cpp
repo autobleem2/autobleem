@@ -2,8 +2,8 @@
 // Carousel: the row of covers, out of GuiLauncher.
 //
 #include "carousel.h"
-#include "../gui/gui.h"
-#include "../core/model/timing.h"
+#include "gui/gui.h"
+#include "core/model/timing.h"
 
 #include <algorithm>
 #include <cmath>

@@ -87,7 +87,7 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
 # the launcher, its two helpers (absplash, abfatflag - src/tools/) and the console tools under apps/, each
 # where its build leaves it
-BINARIES="autobleem-gui absplash abfatflag apps/pscbios/pscbios apps/abflashkit/abflashkit"
+BINARIES="autobleem-gui absplash abfatflag"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
     $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {

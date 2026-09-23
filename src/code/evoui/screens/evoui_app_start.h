@@ -7,8 +7,8 @@
 
 #include "../../app.h"
 #include "../../gui/game_detail_pane.h"
-#include "../../gui/gui_screen.h"
-#include "../../core/model/ps_game.h"
+#include "gui/gui_screen.h"
+#include "core/model/ps_game.h"
 
 #include <string>
 #include <vector>

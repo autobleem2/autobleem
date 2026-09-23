@@ -138,8 +138,6 @@ build_native() {
     ctest --test-dir build_sys --output-on-failure -j "$JOBS"
     banner "native: language files"
     python3 tools/lang_tools.py validate
-    python3 tools/lang_tools.py --src-dir apps/pscbios/src --lang-dir apps/pscbios/resources/lang validate
-    python3 tools/lang_tools.py --src-dir apps/abflashkit/src --lang-dir apps/abflashkit/resources/lang validate
     banner "native: clang-format"
     bash tools/format.sh --check
     if [ -z "${AB_NO_LINT:-}" ]; then
@@ -162,7 +160,7 @@ build_psc() {
     ninja -C build_psc -j "$JOBS"
     banner "psc: the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
     local bin
-    for bin in autobleem-gui absplash abfatflag apps/pscbios/pscbios apps/abflashkit/abflashkit apps/abpad/abpadd apps/abpad/libabpad.so; do
+    for bin in autobleem-gui absplash abfatflag apps/abpad/abpadd apps/abpad/libabpad.so; do
         bash tools/check_psc_binary.sh "build_psc/$bin" "$toolchain"
     done
     banner "psc: package"

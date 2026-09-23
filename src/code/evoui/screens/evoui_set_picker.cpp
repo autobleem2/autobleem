@@ -2,8 +2,8 @@
 // GuiSetPicker: the launcher's "which games" screen. See the header.
 //
 #include "evoui_set_picker.h"
-#include "../../core/services/environment.h"
-#include "../../gui/gui.h"
+#include "core/services/environment.h"
+#include "gui/gui.h"
 
 #include <algorithm>
 

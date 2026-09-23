@@ -5,7 +5,7 @@
 
 #include <vector>
 #include <string>
-#include "../gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../../app.h"
 
 #define MC_CUSTOM 0

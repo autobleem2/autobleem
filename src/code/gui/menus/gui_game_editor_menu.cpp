@@ -3,11 +3,11 @@
 //
 
 #include "gui_game_editor_menu.h"
-#include "../gui.h"
-#include "../screens/gui_keyboard.h"
+#include "gui/gui.h"
+#include "gui/screens/gui_keyboard.h"
 #include "../screens/gui_select_memcard.h"
-#include "../../core/main.h"
-#include "../../core/services/environment.h"
+#include "core/main.h"
+#include "core/services/environment.h"
 
 using namespace std;
 

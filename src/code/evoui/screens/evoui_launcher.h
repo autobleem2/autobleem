@@ -5,9 +5,9 @@
 
 #include "../controls/evoui_notification_line.h"
 #include "../controls/evoui_notification_bubble.h"
-#include "../../gui/gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../../app.h"
-#include "../../core/services/scan_service.h"
+#include "core/services/scan_service.h"
 #include "../controls/evoui_obj.h"
 #include "../controls/evoui_settings_back.h"
 #include "../controls/evoui_zoom_btn.h"
@@ -17,11 +17,11 @@
 #include "../controls/evoui_menu.h"
 #include "../controls/evoui_centerlabel.h"
 #include "../controls/evoui_stateselector.h"
-#include "../../core/main.h"
-#include "../../core/model/timing.h"
+#include "core/main.h"
+#include "core/model/timing.h"
 #include <vector>
 #include <memory>
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 // which sub-screen of the launcher is showing
 enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };

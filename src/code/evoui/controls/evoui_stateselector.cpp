@@ -3,7 +3,7 @@
 //
 
 #include "evoui_stateselector.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 #include "../screens/evoui_launcher.h"
 #include "../../app.h"
 

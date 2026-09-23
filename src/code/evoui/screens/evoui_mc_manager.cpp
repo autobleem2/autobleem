@@ -7,10 +7,10 @@
 #include <memory>
 #include <string>
 #include <iostream>
-#include "../../gui/gui.h"
-#include "../../gui/screens/gui_confirm.h"
+#include "gui/gui.h"
+#include "gui/screens/gui_confirm.h"
 #include "../../gui/screens/gui_select_memcard.h"
-#include "../../core/services/environment.h"
+#include "core/services/environment.h"
 #include <ableem/engine/log.h>
 
 void GuiMcManager::init() {

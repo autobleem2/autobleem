@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui_string_menu.h"
+#include "gui/menus/gui_string_menu.h"
 #include <vector>
 #include <string>
 

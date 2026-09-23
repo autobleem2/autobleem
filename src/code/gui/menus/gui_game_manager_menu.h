@@ -3,10 +3,10 @@
 //
 #pragma once
 
-#include "gui_two_column_string_menu.h"
+#include "gui/menus/gui_two_column_string_menu.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
-#include "../../core/model/ps_game.h"
+#include "core/model/ps_game.h"
 #include <ableem/ui/texture.h>
 
 //********************

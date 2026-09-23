@@ -2,7 +2,7 @@
 // CardEdit: a memory card as the memory-card manager shows it.
 //
 #include "card_edit.h"
-#include "../core/services/environment.h"
+#include "core/services/environment.h"
 
 #include <fstream>
 #include <iostream>

@@ -51,11 +51,8 @@ ninja
 # the suite is fast and catches a broken ab_core before the app is ever started
 if [ "$RUN_TESTS" = 1 ]; then ctest --output-on-failure; fi
 
-# every language file has every _("...") key and nothing malformed (tools/lang_tools.py update fixes the former);
-# the console tools under apps/ keep their own lang/ folders, validated against their own sources
+# every language file has every _("...") key and nothing malformed (tools/lang_tools.py update fixes the former)
 python ../tools/lang_tools.py validate
-python ../tools/lang_tools.py --src-dir ../apps/pscbios/src --lang-dir ../apps/pscbios/resources/lang validate
-python ../tools/lang_tools.py --src-dir ../apps/abflashkit/src --lang-dir ../apps/abflashkit/resources/lang validate
 
 # every source is clang-formatted (tools/format.sh rewrites the ones that are not)
 bash ../tools/format.sh --check
