@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 #include "gui_game_editor_menu.h"
-#include "../screens/gui_confirm.h"
+#include "gui/screens/gui_confirm.h"
 #include "../../app.h"
 #include <ableem/engine/log.h>
 

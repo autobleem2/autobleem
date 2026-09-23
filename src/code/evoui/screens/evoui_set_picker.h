@@ -9,9 +9,9 @@
 #pragma once
 
 #include "../../app.h"
-#include "../../core/model/game_set.h"
-#include "../../gui/gui_screen.h"
-#include "../../gui/panel_style.h"
+#include "core/model/game_set.h"
+#include "gui/gui_screen.h"
+#include "gui/panel_style.h"
 
 #include <string>
 #include <vector>

@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "../../gui/gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../card_edit.h"
 #include <ableem/ui/texture.h>
 #include <ableem/ui/font.h>

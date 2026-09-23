@@ -4,7 +4,7 @@
 
 #include "evoui_btn_guide.h"
 #include <string>
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 #include <algorithm>
 

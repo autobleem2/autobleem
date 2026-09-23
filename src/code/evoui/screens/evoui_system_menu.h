@@ -5,8 +5,8 @@
 //
 #pragma once
 
-#include "../../gui/gui_screen.h"
-#include "../../gui/panel_style.h"
+#include "gui/gui_screen.h"
+#include "gui/panel_style.h"
 
 #include <string>
 #include <vector>

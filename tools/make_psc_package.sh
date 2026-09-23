@@ -84,17 +84,21 @@ else
 fi
 
 
-# the console tools, each over its resources (what make_psc.sh copies into payload/Apps by hand)
+# the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
+# launcher took core as a submodule (2026-09-23): autobleem-appliance's assemble-psc.sh puts them on the
+# stick; this zip carries them only when a build tree still has them
+PACK=("$APP/autobleem-gui" "$APP/absplash") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
 for tool in pscbios abflashkit; do
+    [ -f "$BUILD_DIR/apps/$tool/$tool" ] && [ -d "$REPO/apps/$tool/resources" ] || continue
     mkdir -p "$STAGE/Apps/$tool"
     cp -a "$REPO/apps/$tool/resources/." "$STAGE/Apps/$tool/"
     cp -a "$BUILD_DIR/apps/$tool/$tool" "$STAGE/Apps/$tool/$tool"
+    PACK+=("$STAGE/Apps/$tool/$tool") # a fresh build; payload/Apps' own copies come packed already
 done
 
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
-    # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
-    for bin in "$APP/autobleem-gui" "$APP/absplash" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit"; do
+    for bin in "${PACK[@]}"; do
         upx -q --best --lzma "$bin" >/dev/null
     done
 fi
@@ -131,8 +135,7 @@ if [ -f "$VERSION_H" ]; then
         ab_full="$ab_version${ab_hash:+-$ab_hash}"
         [ "$ab_dirty" = true ] && ab_full="$ab_full-dirty"
     fi
-    printf '%s
-' "$ab_full" > "$STAGE/VERSION"
+    printf '%s\n' "$ab_full" > "$STAGE/VERSION"
     echo "==> version $ab_full"
 else
     echo "    (no $VERSION_H - the package carries no VERSION file)"

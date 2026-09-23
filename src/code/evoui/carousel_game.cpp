@@ -3,12 +3,12 @@
 //
 
 #include "carousel_game.h"
-#include "../gui/gui.h"
+#include "gui/gui.h"
 #include "../app.h"
-#include "../core/services/retroarch.h"
+#include "core/services/retroarch.h"
 #include <unistd.h>
 #include <iostream>
-#include "../core/services/environment.h"
+#include "core/services/environment.h"
 #include <ableem/engine/log.h>
 
 using namespace std;

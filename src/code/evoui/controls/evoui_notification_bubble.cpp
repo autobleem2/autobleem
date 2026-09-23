@@ -2,8 +2,8 @@
 // NotificationBubble: the launcher's top-right corner panels - the scan's, the messages'. See the header.
 //
 #include "evoui_notification_bubble.h"
-#include "../../gui/gui.h"
-#include "../../core/model/timing.h"
+#include "gui/gui.h"
+#include "core/model/timing.h"
 
 #include <algorithm>
 

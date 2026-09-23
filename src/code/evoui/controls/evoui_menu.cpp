@@ -3,7 +3,7 @@
 //
 
 #include "evoui_menu.h"
-#include "../../core/model/timing.h"
+#include "core/model/timing.h"
 using namespace std;
 
 //*******************************

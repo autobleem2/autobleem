@@ -6,7 +6,7 @@
 
 #include <ableem/ui/texture.h>
 #include "evoui_obj.h"
-#include "../../core/main.h"
+#include "core/main.h"
 #include <string>
 
 #define TR_MENUON 0

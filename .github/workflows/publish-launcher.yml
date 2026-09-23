@@ -42,7 +42,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, submodules: recursive }
       - id: t
         run: |
           t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
@@ -71,7 +71,7 @@ jobs:
       SCCACHE_CACHE_SIZE: 2G
     steps:
       - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, submodules: recursive }
       # sccache with a local on-disk cache persisted across runs by actions/cache. NOT sccache's built-in
       # gha backend: GitHub retired the legacy artifact-cache API (v1) it calls. actions/cache@v6 uses the
       # current service, and ci/build.sh already runs sccache from PATH honouring SCCACHE_DIR. Caches are

@@ -1,9 +1,9 @@
 #include "gui_memcards_menu.h"
 #include <string>
-#include "../gui.h"
-#include "../../core/main.h"
-#include "../screens/gui_confirm.h"
-#include "../screens/gui_keyboard.h"
+#include "gui/gui.h"
+#include "core/main.h"
+#include "gui/screens/gui_confirm.h"
+#include "gui/screens/gui_keyboard.h"
 
 using namespace std;
 

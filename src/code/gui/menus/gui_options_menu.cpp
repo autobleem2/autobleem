@@ -1,9 +1,9 @@
 #include "gui_options_menu.h"
 #include <algorithm>
-#include "../../core/services/system.h"
-#include "../../core/services/environment.h"
-#include "../../core/services/theme_converter.h"
-#include "../../core/services/theme_installer.h"
+#include "core/services/system.h"
+#include "core/services/environment.h"
+#include "core/services/theme_converter.h"
+#include "core/services/theme_installer.h"
 
 using namespace std;
 

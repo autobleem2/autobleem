@@ -8,7 +8,7 @@
 //
 #pragma once
 
-#include "../../gui/panel_style.h"
+#include "gui/panel_style.h"
 
 #include <string>
 

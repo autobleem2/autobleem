@@ -14,7 +14,7 @@ import re
 import sys
 
 REPO = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-TP = os.path.join(REPO, 'lib_ableem', 'third_party')
+TP = os.path.join(REPO, 'autobleem-core', 'lib_ableem', 'third_party')  # the submodule
 
 
 def read(rel):

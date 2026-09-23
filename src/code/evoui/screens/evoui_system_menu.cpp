@@ -1,5 +1,5 @@
 #include "evoui_system_menu.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 #include <algorithm>
 

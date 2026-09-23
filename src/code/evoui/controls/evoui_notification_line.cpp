@@ -1,5 +1,5 @@
 #include "evoui_notification_line.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 using namespace std;
 

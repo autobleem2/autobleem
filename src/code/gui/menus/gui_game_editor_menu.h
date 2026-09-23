@@ -3,15 +3,15 @@
 //
 #pragma once
 
-#include "../gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../game_detail_pane.h"
 
 #include <string>
 #include <vector>
 #include "../../app.h"
-#include "../../core/main.h"
-#include "../../core/model/ps_game.h"
-#include "../../core/services/game_settings.h"
+#include "core/main.h"
+#include "core/model/ps_game.h"
+#include "core/services/game_settings.h"
 
 //********************
 // GuiEditor

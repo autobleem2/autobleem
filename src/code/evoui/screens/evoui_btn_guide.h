@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../../gui/gui_screen.h"
+#include "gui/gui_screen.h"
 #include <ableem/ui/texture.h>
 
 //******************

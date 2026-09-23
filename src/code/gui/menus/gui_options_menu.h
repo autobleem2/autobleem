@@ -4,7 +4,7 @@
 #pragma once
 
 #include "gui_options_menu_base.h"
-#include "../gui.h"
+#include "gui/gui.h"
 #include <string>
 #include <vector>
 

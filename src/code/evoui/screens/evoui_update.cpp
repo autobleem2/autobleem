@@ -1,6 +1,6 @@
 #include "evoui_update.h"
 #include "../../app.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
 
 #include <algorithm>
 #include <ctime>

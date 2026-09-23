@@ -5,7 +5,7 @@
 #pragma once
 
 #include "carousel_game.h"
-#include "../core/model/ps_game.h"
+#include "core/model/ps_game.h"
 
 #include <ableem/ableem.h>
 
