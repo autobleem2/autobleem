@@ -966,13 +966,22 @@ System/.session`, exit 0 -> the launcher again - under the AutoBleem picture (`a
 console that did not start). No stick after 30 s -> reboot. The red LED alone is
 "AutoBleem's standby" (the manual says so: the sign it works as intended). RetroArch (`AB_SELECTION=4`)
 comes back through the same loop - `retroarch.sh` no longer re-runs `start.sh` nested.
-**On the AutoBleem kernel** (2026-09-23, a tester's report: Power Off just restarted AutoBleem) the overlay's
-`/etc/autobleem/rndis` brings up a USB network gadget (RNDIS) on the power port at every boot; while it is up
-the port keeps the system awake and `echo mem > /sys/power/state` fails at once - which `standby()` took for
-a wake. The gadget (`/sys/class/android_usb/android0/enable`) goes off for the standby and comes back through
-the overlay's own `rndis restart`; the write's result is checked, a refusal retried twice and logged to
-`System/Logs/standby.log` with the held wakelocks and the kernel's PM lines. Diagnosed from the shipped
-overlay and the kernel config (`PM_WAKELOCKS`, `PM_AUTOSLEEP`), not yet run on a console.
+**On the AutoBleem kernel** (2026-09-23, a tester's report: Power Off just restarted AutoBleem - then, with
+the first fix, hung on a black screen with the green LED). The overlay's `/etc/autobleem/rndis` brings up a
+USB network gadget (RNDIS) on the power port at every boot; `standby()` turns it off
+(`/sys/class/android_usb/android0/enable`) and back on through the overlay's own `rndis restart` - **in the
+background**, because its `start()` ends in `tcpsvd` (the FTP server), which stays in the foreground and
+never returns. The gadget was not what refused the suspend, though: the kernel's own log (retests with the
+tester, 2026-09-23) said `musb_bus_suspend: trying to suspend as a_host while active` / `Device usb1 failed
+to suspend async: error -16` - the tester's stick sat on a hub in the **micro-USB (power) port**, which the
+AutoBleem kernel runs as an OTG host (the stock kernel has no host mode there), and that host refuses
+suspend-to-RAM while it serves a device. `shutdown -h now` (what 1.x did) only runs the drivers' shutdown
+hooks, so nothing can refuse it. So: the write's result is checked, a refusal retried twice (logged to
+`System/Logs/standby.log` with the wakelocks and the kernel's reason lines), and after the third
+`poweroff_instead()` mounts the stick again (it never went away), appends the log, sets the red LED and
+runs `shutdown -h now` - POWER is then a cold boot, not a quick wake. Confirmed by the tester the same
+day, from the OTG hub and from a front port. **Never read `/sys/power/wakeup_count` in these scripts**: it
+blocks while a wakeup event is in progress, which hung a diagnostic build on the red LED.
 
 **The dirty flag** (`ableem::FatDirtyFlag`, `lib_ableem/engine/fat_dirty_flag.*`, tested; the CLI
 `abfatflag DEVICE [clean|dirty]` in `src/tools/`, shipped next to `absplash`): the boot sector byte at

@@ -29,6 +29,25 @@ echo Custom PCSX
 cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
 
+# When the kernel will not suspend at all: a real power off, as AutoBleem 1.x did it. A USB host on the
+# micro-USB (power) port - the AutoBleem kernel's OTG, a hub with the stick on it - refuses suspend-to-RAM
+# while it serves a device ("trying to suspend as a_host while active", usb1 error -16); shutdown only
+# runs the drivers' shutdown hooks, so nothing can refuse it. The POWER button is then a cold boot, not a
+# quick wake. The stick is still attached (no suspend happened): mounted again for the log, and systemd
+# unmounts it cleanly on the way down.
+poweroff_instead() {
+    echo "$(date) no standby on this console - powering off instead" >> $SLOG
+    if mount "$DEV" /media 2>> $SLOG; then
+        { cat $SLOG; echo; } >> $LOG
+        sync
+    fi
+    echo 0 > /sys/class/leds/green/brightness
+    echo 1 > /sys/class/leds/red/brightness
+    shutdown -h now
+    sleep 120 # never back here: the launcher must not start again while the system goes down
+    reboot
+}
+
 # The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
 # wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
 # coming back dirty (Windows' "scan and fix"). The red LED alone is the AutoBleem standby; the USB bus is
@@ -83,8 +102,10 @@ standby() {
     try=1
     until echo mem > /sys/power/state 2>> $SLOG; do
         echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
-        dmesg | tail -20 | grep -iE 'PM:|suspend|wakeup|wake_lock|abort|active' >> $SLOG
-        [ $try -ge 3 ] && break
+        dmesg | tail -60 | grep -iE 'failed to suspend|while active|early wake|abort|wakeup pending' >> $SLOG
+        if [ $try -ge 3 ]; then
+            poweroff_instead
+        fi
         try=$((try + 1))
         sleep 2
     done
@@ -93,7 +114,9 @@ standby() {
     if [ $GADGET_ON = 1 ]; then
         # the overlay's own script brings it back as it came up at boot (the gadget, rndis0's address, ssh)
         if [ -x /etc/autobleem/rndis ] || [ -f /etc/autobleem/rndis ]; then
-            bash /etc/autobleem/rndis restart > /dev/null 2>&1
+            # in the background: the overlay's start() ends in tcpsvd (its FTP server), which stays in the
+            # foreground and never returns - waited for, it hung the wake with the green LED and a black screen
+            ( bash /etc/autobleem/rndis restart > /dev/null 2>&1 & )
         else
             echo 1 > $GADGET
         fi
@@ -142,10 +165,6 @@ update() {
         echo "$(date) no abupdate on the stick - the update is not installed" >> $ULOG
         return
     fi
-    # abfetch (the launcher's own downloader) and its CA bundle go along: abupdate fetches UpdateRoms with
-    # it, and the folder they are in is being replaced
-    cp -f /media/Autobleem/bin/autobleem/abfetch /tmp/abfetch 2>/dev/null && chmod +x /tmp/abfetch
-    cp -f /media/Autobleem/bin/autobleem/cacert.pem /tmp/cacert.pem 2>/dev/null
     if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
         touch /tmp/.abupdating
         LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abupdating --timeout 900 > /dev/null 2>&1 &
@@ -153,10 +172,9 @@ update() {
     echo "$(date) installing the downloaded update" >> $ULOG
     cd /tmp
     LD_LIBRARY_PATH=/tmp/lib /tmp/abupdate /media >> $ULOG 2>&1
-    status=$? # before the date below: a command substitution sets $? too
-    echo "$(date) abupdate exit status $status" >> $ULOG
+    echo "$(date) abupdate exit status $?" >> $ULOG
     sync
-    rm -f /tmp/.abupdating /tmp/abupdate /tmp/abfetch /tmp/cacert.pem
+    rm -f /tmp/.abupdating /tmp/abupdate
     # the emulator copy above was the old one (autobleem.sh unpacks the new libraries itself)
     cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx 2>/dev/null && chmod +x /tmp/pcsx
 }
