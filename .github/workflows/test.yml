@@ -1,6 +1,6 @@
 # The launcher's test gate: ci/build.sh native (a host build, every unit-test suite, the language files'
 # validation, the format check and clang-tidy) on every push and pull request, on a GitHub-hosted runner.
-# It was ci.yml's `native` job; ci.yml (the monolith's build-and-publish pipeline) is disabled since the
+# It was ci.yml's `native` job; ci.yml (the monolith's build-and-publish pipeline, deleted 2026-09-23) went when the
 # compile-once model took over (publish-launcher.yml + autobleem2/autobleem-appliance), which left the
 # launcher with no test run at all. Gated by AB_CI_ENABLED.
 name: test

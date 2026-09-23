@@ -123,9 +123,10 @@ void GuiOptions::fill() {
         lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
     if (lines.back().id == CFG_HEADING)
         lines.pop_back(); // a console: nothing under it
-#if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN))
+#if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN) || defined(AB_PLATFORM_PSC))
     // the online update's channel (UpdateService): the download site's releases, its pre-release (testing),
-    // its newest development build (nightly), or off. The real targets only (the owner's call, 2026-09-20) -
+    // its newest development build (nightly), or off. The real targets only (the owner's call, 2026-09-20;
+    // the console since 2026-09-23 - it checks only with a network, see App::applyUpdateSetting) -
     // a dev host tests the flow with the default
     heading(_("Updates"));
     lines.emplace_back(CFG_UPDATES, _("Updates:"), "updates", false,

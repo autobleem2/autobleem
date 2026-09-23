@@ -5,12 +5,15 @@
 # back up through Sony's boot standby. AutoBleem::run() writes AB_SELECTION into autobleem_cfg.sh on its
 # way out (LaunchService::writeSelectionScript):
 #   4  exit to RetroArch (the launcher's L2+R2 system menu): RetroArch's own menu, then the launcher again
+#   6  install the update the launcher downloaded into System/Updates (a console with a network - the
+#      AutoBleem kernel's WiFi): abupdate lays it over the stick, then the new launcher starts
 #   7  power off: the standby below, then the launcher again when the power button wakes the console
 # After a crash, or a first boot where it never ran, the file is not there - then there is no selection
 # and the reboot is what happens. The file is removed once read, so a crash after a standby is not
 # taken for another power off.
 
 SEL_RETROARCH=4
+SEL_UPDATE=6
 SEL_POWEROFF=7
 
 RC=/media/Autobleem/rc
@@ -127,9 +130,39 @@ standby() {
     return 0
 }
 
+# The update the launcher downloaded: abupdate (the PC installer's own code, autobleem-core's InstallerJob)
+# replaces what the package ships - Autobleem/bin, the rc scripts, the console tools, the shipped themes -
+# and keeps everything of the user's. It runs from tmpfs because Autobleem/bin/autobleem is what it
+# replaces; the AutoBleem picture is on the screen meanwhile. Either way the launcher comes back: the new
+# one, or - on a failure, which update.log explains - the old one with System/Updates kept.
+update() {
+    ULOG=/media/System/Logs/update.log
+    cp -f /media/Autobleem/bin/autobleem/abupdate /tmp/abupdate 2>/dev/null && chmod +x /tmp/abupdate
+    if [ ! -x /tmp/abupdate ]; then
+        echo "$(date) no abupdate on the stick - the update is not installed" >> $ULOG
+        return
+    fi
+    if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
+        touch /tmp/.abupdating
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abupdating --timeout 900 > /dev/null 2>&1 &
+    fi
+    echo "$(date) installing the downloaded update" >> $ULOG
+    cd /tmp
+    LD_LIBRARY_PATH=/tmp/lib /tmp/abupdate /media >> $ULOG 2>&1
+    echo "$(date) abupdate exit status $?" >> $ULOG
+    sync
+    rm -f /tmp/.abupdating /tmp/abupdate
+    # the emulator copy above was the old one (autobleem.sh unpacks the new libraries itself)
+    cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx 2>/dev/null && chmod +x /tmp/pcsx
+}
+
 case "$AB_SELECTION" in
 "$SEL_RETROARCH")
     $RC/retroarch.sh
+    exit 0
+    ;;
+"$SEL_UPDATE")
+    update
     exit 0
     ;;
 "$SEL_POWEROFF")

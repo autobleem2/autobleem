@@ -1,4 +1,4 @@
-; AutoBleem for Windows - the NSIS installer (docs/pc-targets-plan.md, phase C2).
+; AutoBleem for Windows - the NSIS installer (autobleem-main/docs/pc-targets-plan.md, phase C2).
 ;
 ; Per user, no administrator rights: the program goes to %LOCALAPPDATA%\Programs\AutoBleem, the data tree
 ; (games, settings, themes, RetroArch) to a folder of the user's choosing - Documents\AutoBleem by default.

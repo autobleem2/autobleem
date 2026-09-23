@@ -108,7 +108,7 @@ the download repository under `emu/`.
 
 | Target | How |
 |---|---|
-| PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. Releases come from the Docker image (`docs/ci.md`: `docker/run.sh ci/build.sh psc`), which also builds both emulators from their checkouts next to this tree. |
+| PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. Releases come from the Docker image (`https://github.com/autobleem2/autobleem-main/blob/develop/docs/ci.md`: `docker/run.sh ci/build.sh psc`), which also builds both emulators from their checkouts next to this tree. |
 | Raspberry Pi (32-bit) | `./make_rpi.sh` with the SysGCC toolchain, then `tools/make_rpi_package.sh` for the installable tarball. |
 | Windows (development) | `./make_win.sh` from an MSYS2 UCRT64 shell: builds, runs the tests, validates the language files, checks formatting. `python tools/make_usb.py usb` stages a fake USB root; `tools/win_drive.ps1` drives the exe from the keyboard for smoke tests. |
 | Linux / macOS (native) | `make_sys.sh`. |

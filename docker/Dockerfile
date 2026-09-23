@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 #
 # autobleem-build: one image that cross-compiles AutoBleem (and pcsx-ab) for every target, plus the native
-# Linux build the unit tests and the lint/format checks run in. See docs/ci-plan.md for the reasoning and
+# Linux build the unit tests and the lint/format checks run in. See autobleem-main/docs/archive/ci-plan.md for the reasoning and
 # docker/README.md for how to use it. Build it with docker/build-image.sh (it stages the cover databases into
 # the build context first), run a build in it with docker/run.sh.
 #

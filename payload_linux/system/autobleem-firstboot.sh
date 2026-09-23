@@ -14,7 +14,7 @@
 # console in raspi-config's look: the PC stick's first boot asks which (choose_ui_mode), and the answer is
 # kept in /etc/autobleem/installer-ui for the launcher's online updates (autobleem-update).
 #
-# This is the "first or second boot" story from docs/rpi-image-and-update-plan.md: Raspberry Pi Imager's own
+# This is the "first or second boot" story from autobleem-main/docs/rpi-image-and-update-plan.md: Raspberry Pi Imager's own
 # customisation (hostname, user, WiFi, SSH - cloud-init on this image) has run earlier in the same boot, so
 # with WiFi preset here nothing is asked. A run that cannot finish (the Pi was switched off at the network
 # question, install.sh failed) simply happens again on the next boot - the script is idempotent and re-arms itself by

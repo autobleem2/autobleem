@@ -44,16 +44,15 @@ string(TOUPPER "${AB_TARGET}" _ab_target_upper)
 message(STATUS "Building for target ${AB_TARGET} (AB_PLATFORM_${_ab_target_upper})")
 add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 
-# The launcher's online update (core/services/update_service.*, the update dialogs): the appliances, the
-# Windows product and the dev hosts check the download repository for a newer AutoBleem/RetroArch and fetch
-# it; the console updates from a stick, offline, and carries none of this code - its branch below switches
-# it off.
-option(AB_ONLINE_UPDATE "Build the online update check and download (everything but the console)" ON)
+# The launcher's online update (core/services/update_service.*, the update dialogs): every target checks the
+# download repository for a newer AutoBleem (and RetroArch, on the appliances) and fetches it. The console
+# too since 2026-09-23 - only when it has a network (the AutoBleem kernel's WiFi; a stock console never has
+# one), with the kernel payload's curl, and src/tools/abupdate lays the package over the stick.
+option(AB_ONLINE_UPDATE "Build the online update check and download" ON)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (AB_TARGET STREQUAL "psc")
 	message(STATUS "Building for ARM (the console)")
-	set(AB_ONLINE_UPDATE OFF) # the console has no network: its updater is offline (see the option above)
 	# The console is a Cortex-A35 (ARMv8-A, run in AArch32) with NEON. GCC 8+ spells that armv8-a+simd;
 	# an older GCC - the Stretch gcc-6 the Docker image builds with, the newest whose libstdc++ matches the
 	# console's glibc 2.24 - takes the -mfpu spelling (its old branch here was armv7ve without NEON).
@@ -312,6 +311,12 @@ target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
 # standby (src/tools/abfatflag.cpp); the engine only
 add_executable(abfatflag src/tools/abfatflag.cpp)
 target_link_libraries(abfatflag ableem_engine)
+
+# abupdate: the console's own update - rc/selection.sh runs it (from tmpfs) after the launcher left with
+# MENU_OPTION_UPDATE, and it lays System/Updates' stick package over the stick with autobleem-core's
+# InstallerJob, the PC installer's own code (src/tools/abupdate.cpp); no SDL
+add_executable(abupdate src/tools/abupdate.cpp)
+target_link_libraries(abupdate ab_installer Threads::Threads)
 
 
 # abpad: the virtual gamepad shim's logic. Built everywhere - the tests need it on a dev host and the
