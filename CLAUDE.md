@@ -1520,8 +1520,9 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   package ships that emulator. New scripts: `tools/make_psc_package.sh` (the console zip - the release
   script `make_psc.sh` always assumed; it also **regenerates `libs.tar.gz`** from the image's SDL build,
   keeping iconv/ogg/vorbis) and `tools/make_win_package.sh` (launcher zip with the four SDL DLLs +
-  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). The workflows: `.github/workflows/image.yml` (the
-  image, self-hosted only - the cover DBs are there - pushed to `ghcr.io/autobleem/autobleem-build`) and
+  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). The workflows: the image is built and pushed by
+  **`autobleem2/autobleem-build`**'s own `image.yml` (since 2026-09-23 - that repo is the Dockerfile's one
+  source; this tree's `docker/` is a stale copy without llvm-mingw, and its `image.yml` is gone) and
   `ci.yml` (`native` on every push/PR; the cross targets on develop/master/tags/dispatch; a `v*` tag ->
   draft release with the five packages; PRs always on GitHub-hosted runners). The self-hosted runner is
   `docker/runner/compose.yml`. Verified 2026-09-19 on the server: all five targets green (37/37 tests,
