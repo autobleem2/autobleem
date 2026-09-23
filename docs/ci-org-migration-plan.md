@@ -152,6 +152,17 @@ cover DBs / build the PC image as root with `mmdebstrap`). Everything that only 
 runners. Net effect vs today: `native` and `cross` default to `ubuntu-24.04`; the server stops compiling and
 just publishes.
 
+**To do - page updates through CI (the owner's ask, 2026-09-23).** `autobleem2/autobleem-repo` gets a
+workflow of its own, so changing the download page is a commit and nothing more: on a push to `master` that
+touches `tools/repo_index.py`, `tools/repo_assets.py` or `tools/repo_publish.sh` (and on
+`workflow_dispatch`), a self-hosted job runs `tools/repo_publish.sh --local index` (plus `assets` when
+`repo_assets.py` changed) in a sibling `autobleem-build` container with `/home/claude/autobleem-repo`
+bind-mounted - the same pattern the emulators' `publish` jobs use. A job running from a git checkout keeps
+the generator's three-way merge base moving, and the root-owned-files problem is already handled
+(`--local` as root hands the tree back to its owner). No pull-request trigger, since the job runs on the
+self-hosted runner. Until it exists, a page change is published by hand from a checkout (autobleem-repo's
+`CLAUDE.md`, which also holds the rules for the pages' look).
+
 ## 4. The concrete string/settings changes the migration needs
 
 Once repos are transferred/renamed:
