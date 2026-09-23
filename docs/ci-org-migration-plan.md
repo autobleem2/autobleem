@@ -388,7 +388,7 @@ Steps (one commit each, the rule of this plan):
 1. **autobleem-repo: no carry-over; a file of another version is not the release's.** `index_releases` stops
    moving packages between pre-releases, and a package whose name carries a version other than its folder's
    goes to `other_files` (kept on disk, never offered as the release's kind).
-2. **Launcher: `Version::DESCRIBE`** (`git describe --tags --exclude nightly --match 'v*'`: the tag at a
+2. **Launcher: `Version::DESCRIBE`** (`git describe --tags --exclude nightly`: the tag at a
    tag, `v2.0.0-alpha2-6-gba7365c` between tags - exactly the site's release and nightly folder names), in
    the launcher's and autobleem-core's `generate_version.cmake`; the installed version the update check
    compares is that.
@@ -399,6 +399,14 @@ Steps (one commit each, the rule of this plan):
    (`stable` -> `release`, `latest` -> `testing`); Options -> "Updates" offers the four and is shown on every
    platform with an update path (Pi, PC stick, Windows), in all 16 languages; `test_update_service.cpp`
    covers the channels and the describe comparison.
+4a. **The stick install/update logic moves into core.** What AutoBleemInstaller does to a stick with a
+   package - unpack `psc-fs` over it keeping everything of the user's (config.ini, games, saves, cards,
+   ROMs), the legacy-layout conversion, the ROM folders, UpdateRoms - is `installer_core` in
+   autobleem-pc-tools today; it moves into autobleem-core (the engine side: `TarArchive`, the catalogs) as a
+   `StickInstaller` both the PC installer and the console's own updater (step 8) call. The launcher still
+   keeps its own copy of core (`src/code/core`, `lib_ableem`) while the tool repos use autobleem-core as a
+   submodule; this step lands the logic in both, and making the launcher consume autobleem-core as a
+   submodule too (one copy) is the follow-up worth doing before more shared code accumulates.
 4. **PSC installer: a channel dropdown.** AutoBleemInstaller (autobleem-pc-tools; the launcher's
    `apps/installer` copy kept identical) downloads the stick package (`psc-fs`) and UpdateRoms from the chosen
    channel's catalog and shows the stick's installed version (its `VERSION`) against the channel's; the
@@ -417,6 +425,22 @@ Steps (one commit each, the rule of this plan):
    VirtualBox.
 7. **Docs:** the manuals' update and install sections, CLAUDE.md's "The online update", the
    `update-version-match` memory note (the rule it records is gone).
+8. **The console updates itself when it is online** (the owner's ask, 2026-09-23: the AutoBleem kernel gives
+   it WiFi - pscbios - and the RNDIS gadget). Built into the psc launcher, but **active only when the launcher
+   senses a working connection**: a probe of the download site at start and before each daily check (no
+   route / no answer = the feature stays silent; a stock-kernel console never sees it). The channel,
+   Options -> "Updates", the prompt and the download are the Pi's `UpdateService`, keyed `psc-fs` - the
+   stick package is already in every release's and nightly's catalog, so the CI side is only making sure
+   `psc-fs` stays published with every channel (it is). The apply cannot run inside the launcher (it
+   replaces the launcher's own files): the launcher exits with `MENU_OPTION_UPDATE`, `rc/selection.sh`
+   (already a copy on tmpfs, the stick not busy - the standby's design) runs a small updater built from
+   step 4a's `StickInstaller` over the downloaded package, then loops back into the new launcher; a failure
+   leaves the old files and logs to `System/Logs/update.log`. To settle first: **what fetches on the
+   console** - busybox wget (HTTP only - the site's plain `:9090` mirror, with the sha256 from the catalog
+   still checked), a curl added to the kernel payload (adding a tool is within the overlay's rules), or a
+   fetch in-process; and what an update does to a stick RetroArch/cores/Apps already on it (untouched, as
+   the PC installer's update keeps them). Needs `AB_ONLINE_UPDATE` for psc behind the probe, and the console
+   pass on real hardware before it is on by default.
 
 Later, noted: a nightly whose launcher did not change keeps the launcher's describe as its folder name, so
 an installed nightly sees no update when only an emulator changed (name the folder by date + hash, or
