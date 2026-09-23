@@ -362,3 +362,63 @@ own low cadence.
    as personal-account Apps sources?
 4. **Nightly cadence** — is `push`-to-develop publishing enough (current behaviour), or also a timed
    `schedule` nightly for quiet days?
+
+## 10. Update channels, the PSC installer and the PC-stick flasher (2026-09-23)
+
+The pipeline now publishes three channels - **release** (`releases/latest.json`, a stable `v*`), **testing**
+(`releases/unstable.json`, the one pre-release) and **nightly** (`nightly/latest.json`, the newest development
+build) - and Raspberry Pi Imager gets one list per channel (`rpi-imager/os_list{,-testing,-nightly}.json`).
+Everything that updates itself or installs from the site still spoke the pre-split language. The owner's
+decisions: the PC-stick flasher may require administrator rights (writing a raw disk cannot be done per
+user - the one exception to the per-user rule); the PSC installer needs **no offline fallback** (it always
+downloads from the chosen channel).
+
+Found broken, not only outdated:
+
+- **The launcher re-offers its own version** on the old "latest" channel: it calls itself
+  `Version::VERSION-GIT_HASH` (`v2.0.0-alpha2-5d7629b`) while the site's folders are now the bare tag
+  (`v2.0.0-alpha2`) - the old `<VERSION>-<hash>` folder rule the split pipeline no longer follows.
+- **A carried-over package made a release offer another version's file**: the pre-release carry-over moved
+  alpha1's Windows files into `releases/v2.0.0-alpha2/`, so a Windows launcher would download alpha1's
+  `AutoBleemSetup` as "v2.0.0-alpha2" and loop. Carry-over existed because packages were published one
+  kind at a time; the appliance now publishes every kind of a release together.
+
+Steps (one commit each, the rule of this plan):
+
+1. **autobleem-repo: no carry-over; a file of another version is not the release's.** `index_releases` stops
+   moving packages between pre-releases, and a package whose name carries a version other than its folder's
+   goes to `other_files` (kept on disk, never offered as the release's kind).
+2. **Launcher: `Version::DESCRIBE`** (`git describe --tags --exclude nightly --match 'v*'`: the tag at a
+   tag, `v2.0.0-alpha2-6-gba7365c` between tags - exactly the site's release and nightly folder names), in
+   the launcher's and autobleem-core's `generate_version.cmake`; the installed version the update check
+   compares is that.
+3. **Launcher: the channels.** `UpdateService` takes `release | testing | nightly | off` (`release` ->
+   `releases/latest.json`, `testing` -> `unstable.json` falling back to `latest.json`, `nightly` ->
+   `nightly/latest.json`); config.ini `updates`' default follows the build (a stable tag -> release, a
+   `-alpha/-beta/-rc/-pre` tag -> testing, a build between tags -> nightly), the old values migrate
+   (`stable` -> `release`, `latest` -> `testing`); Options -> "Updates" offers the four and is shown on every
+   platform with an update path (Pi, PC stick, Windows), in all 16 languages; `test_update_service.cpp`
+   covers the channels and the describe comparison.
+4. **PSC installer: a channel dropdown.** AutoBleemInstaller (autobleem-pc-tools; the launcher's
+   `apps/installer` copy kept identical) downloads the stick package (`psc-fs`) and UpdateRoms from the chosen
+   channel's catalog and shows the stick's installed version (its `VERSION`) against the channel's; the
+   package is no longer bundled - `assemble-psc.sh` ships `AutoBleemInstaller-<v>.zip` as the exe and its
+   README only. The other downloads (RetroArch, cores, libs, apps, BIOS, covers) are channel-less catalogs.
+5. **PC-stick flasher for Windows** (autobleem-pc-tools, the installer's look): a removable disk, a channel,
+   the `.img.xz` (`pc/images/` for release/testing, the nightly's `pc-i386` image) downloaded and sha256
+   checked, decompressed on the fly (the LZMA SDK's xz decoder vendored next to its 7z reader), written to
+   `\\.\PhysicalDriveN` after locking and dismounting its volumes, read back and compared, ejected; fixed and
+   system disks refused, size and model shown, a second confirmation. Manifest `requireAdministrator`.
+   Shipped in the pc-tools zip and published on the page's PC-stick panel next to the image; `dd` from Linux
+   stays documented.
+6. **Proof on hardware/VM:** one real online update of a Pi (or the PC-stick VM) from an assembled package
+   through `autobleem-update` -> `install.sh --update` (never run with an appliance-built package yet); one
+   Windows self-update (C3) against the testing channel; a PC stick written by the flasher booted in
+   VirtualBox.
+7. **Docs:** the manuals' update and install sections, CLAUDE.md's "The online update", the
+   `update-version-match` memory note (the rule it records is gone).
+
+Later, noted: a nightly whose launcher did not change keeps the launcher's describe as its folder name, so
+an installed nightly sees no update when only an emulator changed (name the folder by date + hash, or
+compare `sources.json`); a switch to an older channel is offered as an "update" (kept - switching channels
+is the point).
