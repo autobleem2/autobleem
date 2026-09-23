@@ -209,7 +209,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with: { pattern: launcher-*, path: out, merge-multiple: true }
-      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@master
+      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
         with:
           files: out/*.tar.gz
           version: ${{ needs.plan.outputs.version }}
