@@ -145,17 +145,31 @@ jobs:
           cp -a payload/Themes/. stage/Themes/
           if [ "${{ matrix.target }}" = psc ]; then
             # the psc skeleton this repo owns and nothing else has: the exploit dir, Autobleem/{rc,start.sh},
-            # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - still
-            # the checked-in archive; regenerating it from this same job's SDL build is a follow-up, not
-            # done here), Docs/ and Games/. RetroArch/ and Apps/ are deliberately left out: the assembler
+            # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - see
+            # below), Docs/ and Games/. RetroArch/ and Apps/ are deliberately left out: the assembler
             # bundles neither - RetroArch, its cores/libs/apps packs and the BIOS files are all fetched by
             # AutoBleemInstaller.exe at install time (the PC has network, the console never will), and Apps/
             # (pscbios, abflashkit) is autobleem-console-tools' own artifact.
             find payload -maxdepth 1 -mindepth 1 ! -name Apps ! -name RetroArch ! -name Autobleem ! -name Themes \
               -exec cp -a {} stage/ \;
             cp -a payload/Autobleem/rc payload/Autobleem/start.sh stage/Autobleem/
-            mkdir -p stage/Autobleem/lib
-            cp payload/Autobleem/lib/libs.tar.gz stage/Autobleem/lib/
+            # libs.tar.gz: the SDL2 family the launcher was just built against (the image's /opt/psc/sdl2 -
+            # SDL2 2.0.12, image/mixer 2.6.3, ttf 2.20.2) replaces the checked-in archive's 2019/2020 SDL2
+            # libs; the rest of it (libiconv, libogg, libvorbis*) stays, macOS ._* forks and the "name 2"
+            # duplicates go. tools/make_psc_package.sh does the same. The checked-in archive alone does not
+            # run this launcher: its SDL2_mixer 2.0.x has no Mix_LoadWAV symbol (a macro there), and the
+            # launcher dies at start with "undefined symbol: Mix_LoadWAV".
+            SDL_LIB=/opt/psc/sdl2/lib
+            ls "$SDL_LIB"/libSDL2-2.0.so.0.* "$SDL_LIB"/libSDL2_mixer-2.0.so.0.* >/dev/null \
+              || { echo "::error::no SDL2 build in $SDL_LIB - cannot make libs.tar.gz"; exit 1; }
+            LIBS="$PWD/stage-libs"; rm -rf "$LIBS"; mkdir -p "$LIBS" stage/Autobleem/lib
+            tar -xzf payload/Autobleem/lib/libs.tar.gz -C "$LIBS" --exclude='._*' --exclude='* *' --exclude='libSDL2*'
+            cp -P "$SDL_LIB"/libSDL2*.so* "$LIBS/"
+            (cd "$LIBS" && tar -czf "$OLDPWD/stage/Autobleem/lib/libs.tar.gz" --owner=0 --group=0 .)
+            rm -rf "$LIBS"
+            tar -tzf stage/Autobleem/lib/libs.tar.gz | grep -q 'libSDL2_mixer-2.0.so.0.[1-9][0-9][0-9]' \
+              || { echo "::error::libs.tar.gz has no SDL2_mixer 2.x (x >= 1)"; exit 1; }
+            echo "libs.tar.gz: $(tar -tzf stage/Autobleem/lib/libs.tar.gz | grep -E '\.so\.[0-9]+\.[0-9]+' | sed 's|^\./||' | tr '\n' ' ')"
           fi
           find stage -type f -name placeholder -delete
           tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
