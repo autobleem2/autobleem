@@ -80,25 +80,37 @@ jobs:
         id: stage
         run: |
           set -e
-          case "${{ matrix.target }}" in
-            rpi)   D=build_rpi;   P=rpi-armhf ;;
-            rpi64) D=build_rpi64; P=rpi-arm64 ;;
-            pcusb) D=build_pcusb; P=pcusb ;;
-          esac
           V="${{ needs.plan.outputs.version }}"
           # the artifact mirrors the payload root the launcher repo contributes, so assembly
-          # (autobleem-appliance) just extracts it over the staged payload:
-          #   Autobleem/bin/autobleem  the gui + its resources
+          # extracts it straight over the staged payload:
+          #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag on psc)
           #   Autobleem/bin/abpad      the virtual-gamepad daemon + preload shim
           #   Themes                   the five themes (owner's rule: themes stay in the repo, no theme pack)
-          # The emulators, the payload skeleton, and the install-time downloads (cover DBs, samples) are
+          # The emulators, the payload skeleton (payload_linux/ or payload/), the console tools
+          # (pscbios/abflashkit), and the install-time downloads (cover DBs, samples, RetroArch-psc) are
           # other components' artifacts / site fetches, not this one.
           BIN=stage/Autobleem/bin
           rm -rf stage out && mkdir -p "$BIN/autobleem" "$BIN/abpad" stage/Themes out
-          cp "$D/autobleem-gui" "$BIN/autobleem/"
-          upx -q --best --lzma "$BIN/autobleem/autobleem-gui" || true
-          cp -a src/resources/. "$BIN/autobleem/"
-          rm -f "$BIN/autobleem/internal.db"          # an appliance has no built-in games
+          if [ "${{ matrix.target }}" = psc ]; then
+            D=build_psc; P=psc
+            # absplash (the full-screen picture around a launch) and abfatflag (the stick's dirty flag) are
+            # psc-only tools built alongside the launcher - the Linux appliances have neither.
+            cp "$D/autobleem-gui" "$D/absplash" "$D/abfatflag" "$BIN/autobleem/"
+            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" "$BIN/autobleem/absplash" || true
+            cp -a src/resources/. "$BIN/autobleem/"
+            # internal.db KEPT here (unlike the Linux appliances): the console has built-in games
+            # (AB_HAS_INTERNAL_GAMES is psc/dev only)
+          else
+            case "${{ matrix.target }}" in
+              rpi)   D=build_rpi;   P=rpi-armhf ;;
+              rpi64) D=build_rpi64; P=rpi-arm64 ;;
+              pcusb) D=build_pcusb; P=pcusb ;;
+            esac
+            cp "$D/autobleem-gui" "$BIN/autobleem/"
+            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" || true
+            cp -a src/resources/. "$BIN/autobleem/"
+            rm -f "$BIN/autobleem/internal.db"          # an appliance has no built-in games
+          fi
           cp LICENSE THIRD_PARTY_NOTICES.md "$BIN/autobleem/" 2>/dev/null || true
           if [ -f "$D/apps/abpad/abpadd" ] && [ -f "$D/apps/abpad/libabpad.so" ]; then
             cp "$D/apps/abpad/abpadd" "$D/apps/abpad/libabpad.so" "$BIN/abpad/"
