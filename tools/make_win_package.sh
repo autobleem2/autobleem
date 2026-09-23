@@ -43,7 +43,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
 done
-[ -n "$VERSION" ] || VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"
+[ -n "$VERSION" ] || VERSION="$(git describe --tags --exclude nightly --always --dirty 2>/dev/null || echo dev)"
 SDL="${AB_MINGW_SDL2:-/opt/mingw-sdl2}"
 STRIP="$(command -v x86_64-w64-mingw32-strip || command -v strip)"
 pack() { if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then upx -q --best --lzma "$1" >/dev/null; fi; }

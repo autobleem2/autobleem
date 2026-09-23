@@ -25,7 +25,7 @@ else()
             WORKING_DIRECTORY ${SOURCE_DIR} OUTPUT_VARIABLE GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     execute_process(COMMAND git rev-parse --abbrev-ref HEAD
             WORKING_DIRECTORY ${SOURCE_DIR} OUTPUT_VARIABLE GIT_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-    execute_process(COMMAND git describe --tags --abbrev=0
+    execute_process(COMMAND git describe --tags --abbrev=0 --exclude nightly
             WORKING_DIRECTORY ${SOURCE_DIR} OUTPUT_VARIABLE GIT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     # diff-index trusts the index's cached stat info; without a refresh first, a file whose mtime changed
     # (a merge, a checkout, another git build - MSYS2's git and Git for Windows keep different stat data) is

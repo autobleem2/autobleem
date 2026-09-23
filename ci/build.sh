@@ -44,7 +44,7 @@ version() {
         v="${AB_GIT_VERSION:-dev}-${AB_GIT_HASH}"
         [ "${AB_GIT_DIRTY:-}" = true ] && v="$v-dirty"
     else
-        v="$(git describe --tags --always --dirty 2>/dev/null || true)"
+        v="$(git describe --tags --exclude nightly --always --dirty 2>/dev/null || true)"
         [ -n "$v" ] || v="${AB_GIT_VERSION:-dev}"
     fi
     echo "$v"

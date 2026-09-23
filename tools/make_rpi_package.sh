@@ -132,7 +132,7 @@ if [ -f "$VERSION_H" ]; then
     ab_version="$(sed -n 's/^constexpr const char \*VERSION = "\([^"]*\)".*/\1/p' "$VERSION_H")"
     ab_hash="$(sed -n 's/^constexpr const char \*GIT_HASH = "\([^"]*\)".*/\1/p' "$VERSION_H")"
     ab_dirty="$(sed -n 's/^constexpr bool GIT_DIRTY = \([a-z]*\);.*/\1/p' "$VERSION_H")"
-    if [ "$ab_dirty" = false ] && git -C "$REPO" describe --tags --exact-match HEAD >/dev/null 2>&1; then
+    if [ "$ab_dirty" = false ] && git -C "$REPO" describe --tags --exclude nightly --exact-match HEAD >/dev/null 2>&1; then
         ab_full="$ab_version"
     else
         ab_full="$ab_version${ab_hash:+-$ab_hash}"

@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
 done
-[ -n "$VERSION" ] || VERSION="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"
+[ -n "$VERSION" ] || VERSION="$(git describe --tags --exclude nightly --always --dirty 2>/dev/null || echo dev)"
 [ -f "$BUILD_DIR/autobleem-gui" ] || { echo "no $BUILD_DIR/autobleem-gui - build the console target first" >&2; exit 1; }
 
 COVERS="${AB_COVERS_DB_DIR:-$REPO/db}"
@@ -125,7 +125,7 @@ if [ -f "$VERSION_H" ]; then
     ab_version="$(sed -n 's/^constexpr const char \*VERSION = "\([^"]*\)".*/\1/p' "$VERSION_H")"
     ab_hash="$(sed -n 's/^constexpr const char \*GIT_HASH = "\([^"]*\)".*/\1/p' "$VERSION_H")"
     ab_dirty="$(sed -n 's/^constexpr bool GIT_DIRTY = \([a-z]*\);.*/\1/p' "$VERSION_H")"
-    if [ "$ab_dirty" = false ] && git -C "$REPO" describe --tags --exact-match HEAD >/dev/null 2>&1; then
+    if [ "$ab_dirty" = false ] && git -C "$REPO" describe --tags --exclude nightly --exact-match HEAD >/dev/null 2>&1; then
         ab_full="$ab_version"
     else
         ab_full="$ab_version${ab_hash:+-$ab_hash}"
