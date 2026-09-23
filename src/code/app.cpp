@@ -51,15 +51,19 @@ void App::applyOnlineSetting() {
 // What the site's release.json calls this build's package and what is installed here. A Pi: "rpi" or
 // "rpi64" by the CPU, RetroArch's version from the stamp install.sh writes; the PC stick is "pcusb" with
 // the i386 RetroArch. Where RetroArch's catalog is on the site comes from the platform ini
-// (retroarch_catalog, Env::retroArchCatalog()). A dev host tests the flow with AB_UPDATE_PLATFORM (a
-// release key such as rpi) and AB_UPDATE_RETROARCH_VERSION in the environment; without them it looks for
-// the "win" package and checks no RetroArch.
+// (retroarch_catalog, Env::retroArchCatalog()). The console is "psc-fs" (the stick package abupdate lays
+// over the stick; its RetroArch is the PC installer's business), checked only when it has a default route.
+// A dev host tests the flow with AB_UPDATE_PLATFORM (a release key such as rpi) and
+// AB_UPDATE_RETROARCH_VERSION in the environment; without them it looks for the "win" package and checks no
+// RetroArch.
 void App::applyUpdateSetting() {
     UpdateService::Config c;
     c.repoUrl = Env::repoUrl();
     c.channel = cfg_.inifile.values["updates"];
     c.installedVersion = Version::DESCRIBE; // the site's name for this build's release or nightly folder
-    c.fetchCommand = Env::downloadCommand();
+    // the catalogs through the scan's command (with its short timeout) where there is one; the console has
+    // none - its scan stays offline - and uses the update's own
+    c.fetchCommand = Env::downloadCommand().empty() ? Env::updateDownloadCommand() : Env::downloadCommand();
     c.downloadCommand = Env::updateDownloadCommand();
     c.stateFile = Env::getPathToSystemDir() + sep + "update.json";
     c.updatesDir = Env::getPathToSystemDir() + sep + "Updates";
@@ -85,6 +89,11 @@ void App::applyUpdateSetting() {
     // the installer exe (AutoBleemSetup-<v>.exe, the site's "win-setup"); RetroArch is libretro's own
     // there and not ours to update (no arch = no RetroArch check)
     c.platformKey = "win-setup";
+#elif defined(AB_PLATFORM_PSC)
+    // a stock console has no network at all; the AutoBleem kernel brings WiFi (PSC-Bios sets it up) and its
+    // USB network to a PC, which is no way out - only a default route counts
+    c.platformKey = "psc-fs";
+    c.networkUp = [] { return System::hasDefaultRoute(); };
 #else
     const char *platform = getenv("AB_UPDATE_PLATFORM");
     c.platformKey = platform != nullptr && *platform != 0 ? platform : "win";

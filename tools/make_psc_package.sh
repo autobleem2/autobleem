@@ -71,6 +71,8 @@ cp -a "$BUILD_DIR/autobleem-gui" "$APP/autobleem-gui"
 cp -a "$BUILD_DIR/absplash" "$APP/absplash"
 # abfatflag: the stick's dirty flag, for rc/checkstick.sh and the standby in rc/selection.sh
 cp -a "$BUILD_DIR/abfatflag" "$APP/abfatflag"
+# abupdate: the console's own update (rc/selection.sh runs it over what the launcher downloaded)
+cp -a "$BUILD_DIR/abupdate" "$APP/abupdate"
 
 # the virtual gamepad (docs/virtual-gamepad-plan.md): the daemon that reads the pads and the shim an
 # App is preloaded with. Both are optional at run time - rc/app_env.sh checks for them and an App runs
@@ -87,7 +89,7 @@ fi
 # the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
 # launcher took core as a submodule (2026-09-23): autobleem-appliance's assemble-psc.sh puts them on the
 # stick; this zip carries them only when a build tree still has them
-PACK=("$APP/autobleem-gui" "$APP/absplash") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
+PACK=("$APP/autobleem-gui" "$APP/absplash" "$APP/abupdate") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
 for tool in pscbios abflashkit; do
     [ -f "$BUILD_DIR/apps/$tool/$tool" ] && [ -d "$REPO/apps/$tool/resources" ] || continue
     mkdir -p "$STAGE/Apps/$tool"
@@ -144,7 +146,7 @@ fi
 # git's directory keepers have no business on a stick; the executable bit does not survive a zip made on
 # Windows, which is why rc/autobleem.sh chmods what it runs, but from here it can be right
 find "$STAGE" -type f -name placeholder -delete
-chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit" \
+chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit" \
          "$STAGE"/Autobleem/*.sh "$STAGE"/Autobleem/rc/*.sh "$STAGE"/Apps/*/*.sh 2>/dev/null || true
 
 echo "==> $ZIP"

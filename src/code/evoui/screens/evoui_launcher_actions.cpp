@@ -568,6 +568,13 @@ void GuiLauncher::loop_softwareUpdate() {
     }
     if (updates.status().phase == UpdateService::Phase::Downloading)
         return;
+    if (updates.config().networkUp && !updates.config().networkUp()) {
+        // the console without WiFi (or without the AutoBleem kernel, which brings it): nothing to ask
+        GuiConfirm confirm(*gui);
+        confirm.label = _("Not connected");
+        confirm.show();
+        return;
+    }
     updates.startCheck(::time(nullptr));
     {
         GuiUpdateProgress progress(*gui);
@@ -583,8 +590,9 @@ void GuiLauncher::loop_softwareUpdate() {
 // GuiLauncher::offerUpdate
 //*******************************
 // The question, and what follows a yes: the download with its bar, then - on a Pi - out to the session
-// loop with MENU_OPTION_UPDATE, which runs autobleem-update over System/Updates; a dev host stops at the
-// downloaded files, there is no installer to run on it.
+// loop with MENU_OPTION_UPDATE, which runs autobleem-update over System/Updates, and on the console out to
+// rc/selection.sh, which runs abupdate over it; a dev host stops at the downloaded files, there is no
+// installer to run on it.
 void GuiLauncher::offerUpdate(bool fromMenu) {
     UpdateService &updates = app.updates();
     const time_t now = ::time(nullptr); // GuiLauncher::time is the frame clock
@@ -620,8 +628,9 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     }
     if (outcome.phase != UpdateService::Phase::Downloaded)
         return;
-#if defined(AB_APPLIANCE)
-    // the session loop takes it from here (payload_linux/system/autobleem-session.sh)
+#if defined(AB_APPLIANCE) || defined(AB_PLATFORM_PSC)
+    // the session loop takes it from here (payload_linux/system/autobleem-session.sh; the console's
+    // rc/boot.sh -> selection.sh -> abupdate)
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
 #elif defined(AB_PLATFORM_WIN)
