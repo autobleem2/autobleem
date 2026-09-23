@@ -22,9 +22,9 @@ on:
   workflow_dispatch:
     inputs:
       targets:
-        description: launcher targets (space separated; rpi rpi64 pcusb psc)
+        description: launcher targets (space separated; rpi rpi64 pcusb psc win)
         type: string
-        default: 'rpi rpi64 pcusb psc'
+        default: 'rpi rpi64 pcusb psc win'
 
 concurrency:
   group: publish-launcher-${{ github.ref }}
@@ -45,7 +45,7 @@ jobs:
         with: { fetch-depth: 0 }
       - id: t
         run: |
-          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc"
+          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
       - id: v
         run: |
@@ -91,6 +91,21 @@ jobs:
         run: |
           set -e
           V="${{ needs.plan.outputs.version }}"
+          if [ "${{ matrix.target }}" = win ]; then
+            # the Windows product's share: the program folder make_win_package.sh --product staged (the
+            # full-screen exe, resources, DLLs, Themes, dataroot.txt.example) as AutoBleem/, and the NSIS script
+            # + icon as nsis/ - autobleem-appliance's assemble-win.sh adds both PS1 emulators (their win64
+            # releases) and AutoBleemWinSetup.exe (autobleem-pc-tools') and builds AutoBleemSetup-<v>.exe
+            PK=build_mingw_product/package/AutoBleem
+            [ -f "$PK/autobleem-gui.exe" ] || { echo "::error::no $PK/autobleem-gui.exe"; exit 1; }
+            rm -rf stage out && mkdir -p stage/nsis out
+            cp -a "$PK" stage/AutoBleem
+            rm -rf stage/AutoBleem/AutoBleemWinSetup.exe stage/AutoBleem/emu stage/AutoBleem/emunxt
+            cp installer/windows/autobleem.nsi src/win/autobleem.ico stage/nsis/
+            tar -czf "out/launcher-win64-$V.tar.gz" -C stage .
+            echo "plat=win64" >> "$GITHUB_OUTPUT"; ls -l out
+            exit 0
+          fi
           # the artifact mirrors the payload root the launcher repo contributes, so assembly
           # extracts it straight over the staged payload:
           #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag on psc)
