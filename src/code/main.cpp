@@ -107,8 +107,14 @@ static int runAutobleem(int argc, char *argv[]) {
     DirEntry::createDir(Env::getPathToLogsDir());
     ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
 
-    // the first thing in a log anyone sends in: which build this is
-    PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
+    // the package's version, for every program started from here (the emulators, the console tools) to show
+    // as the launcher does - Env::productVersion()
+    Env::exportProductVersion();
+
+    // the first thing in a log anyone sends in: which build this is - the package's version, then the
+    // launcher's own commit
+    PLOG_INFO << "AutoBleem " << Env::productVersion() << " (launcher " << Version::GIT_BRANCH << "@"
+              << Version::GIT_HASH << Version::GIT_DIRTY_FLAG << ", built " << Version::BUILD_TIMESTAMP << " UTC), "
               << Env::platformName();
     for (int i = 0; i < argc; i++)
         PLOG_INFO << "  argv[" << i << "] = " << argv[i];
