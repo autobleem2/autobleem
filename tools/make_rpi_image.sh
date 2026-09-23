@@ -2,7 +2,7 @@
 #
 # Build a Raspberry Pi Imager-flashable AutoBleem image: an official Raspberry Pi OS Lite image (armhf or
 # arm64) with an AutoBleem package tarball and a first-boot service injected - nothing inside the base image
-# is modified beyond that (no chroot, no package pre-install: see docs/rpi-image-and-update-plan.md, "what
+# is modified beyond that (no chroot, no package pre-install: see autobleem-main/docs/rpi-image-and-update-plan.md, "what
 # stays out of scope for this round"). Raspberry Pi Imager's own OS customisation (hostname, user, WiFi,
 # SSH, locale) keeps working unmodified, because the image's own first-boot mechanism (cloud-init or
 # firstrun.sh, whichever the base image ships) is never touched; autobleem-firstboot.service runs after it,
@@ -299,7 +299,7 @@ decompress_base_image() {
 # mount_image / unmount_image
 #*******************************
 # Both partitions are mounted: the payload goes under /opt on the root filesystem (the FAT boot partition
-# is small and shared with the kernel/firmware - see docs/rpi-image-and-update-plan.md), and the boot
+# is small and shared with the kernel/firmware - see autobleem-main/docs/rpi-image-and-update-plan.md), and the boot
 # partition gets two small edits: cmdline.txt loses the word "resize" (see inject_boot_files) and gains
 # autobleem.txt (the first-boot options, editable from any PC).
 LOOP_DEV=""

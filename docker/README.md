@@ -4,7 +4,7 @@
 (tests, clang-format/clang-tidy), the Raspberry Pi 32-bit and 64-bit cross compilers, mingw-w64 for
 Windows, and the PlayStation Classic toolchain (a Debian Stretch sysroot, gcc-6 and the SDL2 family built
 from source - AutoBleem-NG's recipe). The cover databases are baked in, so a console package is complete
-wherever the image runs. `docs/ci-plan.md` has the reasoning; the `Dockerfile` header lists the stages.
+wherever the image runs. `https://github.com/autobleem2/autobleem-main/blob/develop/docs/archive/ci-plan.md` has the reasoning; the `Dockerfile` header lists the stages.
 
 Nothing here is built on the Windows PC: the image is built and used on a Docker host (the build server,
 a GitHub Actions runner).

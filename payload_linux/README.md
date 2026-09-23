@@ -18,7 +18,7 @@ stick image (`tools/make_pc_image.sh`) is the next step; until then, install Deb
 
     tar xzf autobleem-pcusb-i386.tar.gz && cd autobleem-pcusb && sudo bash install.sh
 
-Starting from a blank SD card? `docs/pi-install-guide.md` walks through flashing the OS, first boot and
+Starting from a blank SD card? `https://github.com/autobleem2/autobleem-main/blob/develop/docs/pi-install-guide.md` walks through flashing the OS, first boot and
 running the installer, start to finish. This page is the fuller reference once you're there.
 
 ## Status
@@ -65,7 +65,7 @@ pcsx-ab is checked in under `payload_linux/Autobleem/bin/emu/` (32-bit) and `pay
 
 Copy the tarball for your Pi's architecture over (`scp`, or just put it on a USB stick).
 
-Or build both on the build server's Docker image - `docker/run.sh ci/build.sh rpi rpi64`, see `docs/ci.md` -
+Or build both on the build server's Docker image - `docker/run.sh ci/build.sh rpi rpi64`, see `https://github.com/autobleem2/autobleem-main/blob/develop/docs/ci.md` -
 which also builds pcsx-ab from the same run and includes the real cover databases (a package built on a PC
 checkout has only the stubs in `db/`, so scanned games get no covers from that fallback).
 
