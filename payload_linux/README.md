@@ -115,11 +115,14 @@ answer at most two questions (which WiFi; RetroArch or PS1-only), and watch Auto
 above remains the fully proven path - see the "Status" table for how far this one has been exercised.
 
 **The ready-made images are on AutoBleem's download site.** In Raspberry Pi Imager: *App Options*
-(the gear, or Ctrl+Shift+X) *-> Content Repository -> Use custom* and enter
+(the gear, or Ctrl+Shift+X) *-> Content Repository -> Use custom* and enter one of
 
-    https://autobleem.retromenele.pl/rpi-imager/os_list.json
+    https://autobleem.retromenele.pl/rpi-imager/os_list.json           the latest release
+    https://autobleem.retromenele.pl/rpi-imager/os_list-testing.json   the build being tested
+    https://autobleem.retromenele.pl/rpi-imager/os_list-nightly.json   the newest development build
 
-(or start it as `rpi-imager --repo <that URL>`); AutoBleem then appears in the *Operating System* list
+(a list exists only while its channel has images - the site's Raspberry Pi tab shows which; or start
+Imager as `rpi-imager --repo <that URL>`); AutoBleem then appears in the *Operating System* list
 for both 32-bit and 64-bit, with Imager's own customisation screen (user, WiFi, SSH) on top. Or download
 an `.img.xz` from <https://autobleem.retromenele.pl/> and flash it with *Use custom*. The site's
 [Raspberry Pi page](https://autobleem.retromenele.pl/rpi-install.html) says which image fits which Pi.

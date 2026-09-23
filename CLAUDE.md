@@ -535,9 +535,11 @@ nginx keeps port 80, and no root was needed; Caddy renews it) and on 9090 as pla
 publish, but only when its `INDEX_VERSION` is at least the published one's - a `--local` run from the
 server's stale rsync tree once regenerated the page without the manual link). The tree:
 `releases/<tag>/` (the five packages, `SHA256SUMS`, `release.json`) with `releases/latest.json` (newest
-stable) and `unstable.json` (the one pre-release), `rpi-imager/os_list.json` + `images/<v>/` (Raspberry Pi
-Imager's "Add repository" URL - `<repo>/rpi-imager/os_list.json` - with the `rpi_imager_repo.json`
-placeholders filled in), `rpi/retroarch/<tag>/` + `latest.json`, **`psc/retroarch/<tag>/` + `latest.json`** (2026-09-20: the
+stable) and `unstable.json` (the one pre-release), `rpi-imager/images/<v>/` and Raspberry Pi Imager's
+"Add repository" URLs, **one per channel** since 2026-09-23 (the owner's ask): `rpi-imager/os_list.json`
+(a stable release only - absent until the first one), `os_list-testing.json` (the pre-release set) and
+`os_list-nightly.json` (the newest `nightly/<v>/` build's Pi images) - each a `rpi_imager_repo.json` with
+the placeholders filled in; the page's Pi tab lists those that exist, each with a Copy button, `rpi/retroarch/<tag>/` + `latest.json`, **`psc/retroarch/<tag>/` + `latest.json`** (2026-09-20: the
 console's RetroArch from `github.com/autobleem/retroarch-psc` - its `make publish` runs `repo_publish.sh
 psc-retroarch <tag> retroarch-psc-<tag>.zip manifest.json`; the tag is `v<RetroArch version>-<build>`,
 `psc_version_key` orders it, the newest kept as for the Pi builds), **`psc/cores/cores-psc-<date>.tar.gz`**
