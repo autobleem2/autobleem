@@ -56,9 +56,24 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      SCCACHE_DIR: /sccache
+      SCCACHE_CACHE_SIZE: 2G
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
+      # sccache with a local on-disk cache persisted across runs by actions/cache. NOT sccache's built-in
+      # gha backend: GitHub retired the legacy artifact-cache API (v1) it calls. actions/cache@v6 uses the
+      # current service, and ci/build.sh already runs sccache from PATH honouring SCCACHE_DIR. Caches are
+      # per-repo and per-branch, evicted after 7 days unused - so the launcher's Caches page only fills once
+      # this workflow has run. The rolling key (per-target + sha, prefix restore) warms each build from the
+      # newest cache for that target.
+      - name: Restore sccache cache
+        uses: actions/cache@v6
+        with:
+          path: /sccache
+          key: sccache-launcher-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: sccache-launcher-${{ matrix.target }}-
       - name: Build the launcher (${{ matrix.target }})
         run: ci/build.sh ${{ matrix.target }}
       - name: Stage the launcher artifact
