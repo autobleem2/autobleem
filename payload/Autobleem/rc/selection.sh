@@ -59,12 +59,43 @@ standby() {
         sync
     fi
 
+    # The AutoBleem kernel's overlay starts a USB network (RNDIS, /etc/autobleem/rndis) on the power port at
+    # boot. While that gadget is up the port keeps the system awake, so suspend-to-RAM was refused at once -
+    # the write returned straight away, which read as a wake here and started the launcher over. Off for the
+    # standby, back on after it. The stock firmware has no gadget up; nothing changes there.
+    GADGET=/sys/class/android_usb/android0/enable
+    GADGET_ON=0
+    if [ -w $GADGET ] && [ "$(cat $GADGET 2>/dev/null)" = 1 ]; then
+        GADGET_ON=1
+        echo 0 > $GADGET
+        echo "$(date) USB gadget (RNDIS) off for the standby" >> $SLOG
+        sleep 1
+    fi
+
     echo 0 > /sys/class/leds/green/brightness
     echo 1 > /sys/class/leds/red/brightness
     sync
-    echo mem > /sys/power/state
+    # a refused suspend fails the write (EBUSY, a wakeup source held); a real one returns after the wake.
+    # Refused: what held it goes to the log, and two more tries for a passing wakelock.
+    try=1
+    until echo mem > /sys/power/state 2>> $SLOG; do
+        echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
+        dmesg | tail -20 | grep -iE 'PM:|suspend|wakeup|wake_lock|abort|active' >> $SLOG
+        [ $try -ge 3 ] && break
+        try=$((try + 1))
+        sleep 2
+    done
     echo 1 > /sys/class/leds/green/brightness
     echo 0 > /sys/class/leds/red/brightness
+    if [ $GADGET_ON = 1 ]; then
+        # the overlay's own script brings it back as it came up at boot (the gadget, rndis0's address, ssh)
+        if [ -x /etc/autobleem/rndis ] || [ -f /etc/autobleem/rndis ]; then
+            bash /etc/autobleem/rndis restart > /dev/null 2>&1
+        else
+            echo 1 > $GADGET
+        fi
+        echo "$(date) USB gadget (RNDIS) back on" >> $SLOG
+    fi
 
     # the AutoBleem picture from now until the launcher's window is up (it removes /tmp/.abload itself,
     # as after RetroArch) - the ten seconds of the bus, the mount and the launcher's start were black
