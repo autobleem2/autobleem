@@ -307,6 +307,22 @@ own low cadence.
   anonymously public), and its `build.yml` (submodules recursive, `git describe` versions) runs the same
   plan + the tag `release` job.
 
+- **2026-09-23 — Tier 1 transfer complete.** `retroarch-psc` and `psc-kernel-payload` (from the old
+  `autobleem` org) moved into `autobleem2` and made **public** after the audit (history secret-scanned clean;
+  no proprietary blobs - `psc-kernel-payload` is 36 text files, `retroarch-psc`'s font carries its OFL).
+  The plan's "not migrated" list was wrong about one repo: **`psc-kernel` is a real build input** -
+  `psc-kernel-payload` builds the kernel (Buildroot's `linux` package is off) from `sources/psc-kernel`,
+  the MT8167 4.4.22 vendor fork no upstream has, and the `boot.img` we publish owes GPL-2 source. So
+  `screemerpl/psc-kernel` → **`autobleem2/psc-kernel`** (public, default branch `master`), with the three
+  gcc>=10 build fixes that had lived only in the build server's checkout pushed to `master`, and
+  `psc-kernel-payload` now carries it as a real submodule. `psc-bluez` is *not* an input (the build uses
+  upstream BlueZ; the old sixaxis patch is an archived reference) - moved back, private under `screemerpl`.
+  The split repos also gained CI on 2026-09-23: `autobleem-build` owns the image workflow (the launcher's
+  stale copy is gone; the cover databases come from the site's `db/`), the tools' test suites moved from
+  `autobleem-core` into the tool repos on a shared harness, `autobleem-pc-tools` packages its three Win32
+  programs, `autobleem-appliance` assembles the console's package, and `psc-kernel-payload` builds on a
+  hosted runner.
+
 ### Minimal path to a first green pilot run (DONE)
 1. Owner (build server): build + push the image to `ghcr.io/autobleem2/autobleem-build`; make the package public.
 2. Owner: set repo variable `AB_CI_ENABLED=true` on `autobleem2/pcsx-ab`.
