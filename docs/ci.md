@@ -9,7 +9,7 @@ or on GitHub's runners. `docs/ci-plan.md` was the plan; this is the operator's p
 | `ci/build.sh` target | build dir | toolchain | what lands in `dist/<target>/` |
 |---|---|---|---|
 | `native` | `build_sys/` | the image's gcc + Debian SDL2 | nothing to ship - runs ctest, `lang_tools.py validate`, `format.sh --check`, `lint.sh` |
-| `psc` | `build_psc/` | `toolchains/psc/PSCtoolchainV8.cmake` over `/opt/psc` (Stretch sysroot, gcc-6, SDL2 2.0.12 built in the image) | `autobleem-psc-<v>.zip` - the USB stick's root (`tools/make_psc_package.sh`) |
+| `psc` | `build_psc/` | `toolchains/psc/PSCtoolchainV8.cmake` over `/opt/psc` (Stretch sysroot, gcc-6, SDL2 2.0.14 built in the image) | `autobleem-psc-<v>.zip` - the USB stick's root (`tools/make_psc_package.sh`) |
 | `rpi` | `build_rpi/` | `toolchains/rpi/RPitoolchain.cmake` (Debian `arm-linux-gnueabihf`) | `autobleem-rpi.tar.gz` (`tools/make_rpi_package.sh`) |
 | `rpi64` | `build_rpi64/` | `toolchains/rpi64/RPi64toolchain.cmake` (Debian `aarch64-linux-gnu`) | `autobleem-rpi-arm64.tar.gz` |
 | `pcusb` | `build_pcusb/` | `toolchains/pcusb/PcUsbToolchain.cmake` (Debian `i686-linux-gnu`, `-march=i686`, the image's `pcusb` stage) | `autobleem-pcusb-i386.tar.gz` - the 32-bit PC stick (`tools/make_rpi_package.sh --arch i386`); its unit tests run in the image, i386 being native there |

@@ -127,11 +127,13 @@ COPY db/coversJ.db db/coversP.db db/coversU.db /opt/autobleem/db/
 #              libstdc++ 6.0.22, plus the -dev packages SDL2 and pcsx-ab need
 #   gcc-6/     Stretch's amd64 gcc-6/g++-6 cross packages, extracted; the newest GCC whose libstdc++ ABI
 #              matches that glibc (Bookworm's arm-linux-gnueabihf gcc would need glibc 2.34+ on the console)
-#   sdl2/      SDL2 2.0.12 + image 2.6.3 + mixer 2.6.3 + ttf 2.20.2 built here against the sysroot - the
-#              versions and backends of the console's libs.tar.gz; what a release ships in it
+#   sdl2/      SDL2 2.0.14 + image 2.6.3 + mixer 2.6.3 + ttf 2.20.2 built here against the sysroot - the
+#              versions and backends of the console's libs.tar.gz; what a release ships in it. 2.0.14 is the
+#              ceiling: the last SDL with a wl_shell window (2.0.16 dropped it and zxdg_shell_v6), and the
+#              console's Weston 1.11 has no xdg_wm_base; 2.0.20+ also wants libwayland >= 1.18 (the console: 1.12)
 #   bin/       armv8-sony-linux-gnueabihf-{gcc,g++,cpp} wrappers adding --sysroot, the binutils as links
 FROM db AS psc
-ARG SDL2_VERSION=2.0.12
+ARG SDL2_VERSION=2.0.14
 ARG SDL2_IMAGE_VERSION=2.6.3
 ARG SDL2_MIXER_VERSION=2.6.3
 ARG SDL2_TTF_VERSION=2.20.2
@@ -280,14 +282,16 @@ RUN printf '%s\n' \
     'set(ENV{PKG_CONFIG_SYSROOT_DIR} "/opt/psc/sysroot")' \
     > /opt/psc/toolchain.cmake
 
-# SDL2 - the console's libSDL2-2.0.so.0.12.0 rebuilt: autotools (a CMake-built 2.0.12 left the console at a
-# black screen in NG's testing), Wayland (shared) + dummy video, GLES 1/2 through EGL, ALSA (shared) +
-# disk + dummy audio, udev hot-plug; no X11, KMSDRM, RPi, Vulkan, PulseAudio, JACK, sndio, DBus, IBus.
+# SDL2 - the console's libSDL2 (2.0.12 until 2026-09-23, 2.0.14 since - verified on a console): autotools (a
+# CMake-built 2.0.12 left the console at a black screen in NG's testing), Wayland (shared) + dummy video,
+# GLES 1/2 through EGL, ALSA (shared) + disk + dummy audio, udev hot-plug; no X11, KMSDRM, RPi, Vulkan, OSS
+# (the console has none), PulseAudio, JACK, sndio, DBus, IBus. The tarball from libsdl.org/release: GitHub
+# has release assets from 2.0.20 on only. (A stale copy - autobleem2/autobleem-build is the image's source.)
 # The SDL family installs to its own prefix so its .pc/.cmake files hold real paths; the sysroot gets
 # links to it so a build that only knows the sysroot (toolchains/psc/cmake/FindSDL2.cmake) sees
 # usr/lib/libSDL2.so and usr/include/SDL2 there.
 RUN cd /tmp && \
-    wget -q https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/SDL2-${SDL2_VERSION}.tar.gz && \
+    wget -q https://www.libsdl.org/release/SDL2-${SDL2_VERSION}.tar.gz && \
     tar -xzf SDL2-${SDL2_VERSION}.tar.gz && cd SDL2-${SDL2_VERSION} && \
     PKG_CONFIG_LIBDIR=/opt/psc/sysroot/usr/lib/arm-linux-gnueabihf/pkgconfig:/opt/psc/sysroot/usr/share/pkgconfig \
     PKG_CONFIG_SYSROOT_DIR=/opt/psc/sysroot \
@@ -298,7 +302,7 @@ RUN cd /tmp && \
         --disable-video-x11 --enable-video-wayland --enable-wayland-shared --disable-video-wayland-qt-touch \
         --disable-video-kmsdrm --disable-video-rpi --disable-video-vivante --disable-video-vulkan \
         --enable-video-opengl --enable-video-opengles --enable-video-opengles1 --enable-video-opengles2 \
-        --enable-alsa --enable-alsa-shared --disable-pulseaudio --disable-jack --disable-sndio \
+        --enable-alsa --enable-alsa-shared --disable-oss --disable-pulseaudio --disable-jack --disable-sndio \
         --enable-libudev --enable-diskaudio --enable-dummyaudio --enable-video-dummy \
         --disable-dbus --disable-ibus --disable-rpath && \
     make -j"$(nproc)" && make install && \

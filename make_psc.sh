@@ -19,12 +19,12 @@ set -e
 # ---------------------------------------------------------------------------------------------
 # Superseded by the Docker image. This script builds against the 2019 Sony toolchain at
 # /opt/toolchain, whose sysroot carries SDL2 **2.0.4** - while the console actually runs our own
-# **2.0.12**, unpacked from Autobleem/lib/libs.tar.gz at boot. So lib_ableem may use anything SDL
-# 2.0.12 has (the screenshot capture uses SDL_CreateRGBSurfaceWithFormat, which is 2.0.5) and this
+# **2.0.14**, unpacked from Autobleem/lib/libs.tar.gz at boot. So lib_ableem may use anything SDL
+# 2.0.14 has (the screenshot capture uses SDL_CreateRGBSurfaceWithFormat, which is 2.0.5) and this
 # toolchain cannot link it. The failure is a pile of undefined references, which reads like a broken
 # tree rather than a stale sysroot - hence this notice rather than letting it run into that.
 #
-# The image's own toolchain builds SDL2 2.0.12 from source, the same version the console runs, so it
+# The image's own toolchain builds SDL2 2.0.14 from source, the same version the console runs, so it
 # has no such gap, and it is what releases are built with:
 #
 #     ssh psc-build; cd ~/autobleem; docker/run.sh ci/build.sh psc
@@ -34,7 +34,7 @@ set -e
 # ---------------------------------------------------------------------------------------------
 if [ -z "${AB_FORCE_SONY_TOOLCHAIN:-}" ]; then
     echo "make_psc.sh builds against the 2019 Sony toolchain, whose SDL2 is 2.0.4 - older than the" >&2
-    echo "2.0.12 the console actually runs, and too old to link what lib_ableem uses today." >&2
+    echo "2.0.14 the console actually runs, and too old to link what lib_ableem uses today." >&2
     echo >&2
     echo "Build the console in the image instead:" >&2
     echo "    docker/run.sh ci/build.sh psc        (on psc-build, in ~/autobleem)" >&2

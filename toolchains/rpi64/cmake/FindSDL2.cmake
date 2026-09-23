@@ -43,7 +43,7 @@ endif()
 
 # The version, read from the headers this toolchain actually compiles against rather than left unset.
 # A third-party project may ask for a minimum - Chocolate Doom wants SDL2 2.0.14 - and with no version
-# reported that check passes vacuously everywhere, including on the console, whose SDL2 is 2.0.12. It
+# reported that check passes vacuously everywhere, including on the console, whose SDL2 is 2.0.14. It
 # is better to fail at configure time with a version mismatch than at run time with a missing symbol.
 foreach(_ab_sdl2_dir "${_ab_rpi64_devkit_include}/SDL2" "${_ab_rpi64_devkit_include}")
     if (EXISTS "${_ab_sdl2_dir}/SDL_version.h")
