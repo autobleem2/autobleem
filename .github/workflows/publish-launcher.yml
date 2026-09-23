@@ -19,9 +19,9 @@ on:
   workflow_dispatch:
     inputs:
       targets:
-        description: launcher targets (space separated; rpi rpi64 pcusb)
+        description: launcher targets (space separated; rpi rpi64 pcusb psc)
         type: string
-        default: 'rpi rpi64 pcusb'
+        default: 'rpi rpi64 pcusb psc'
 
 concurrency:
   group: publish-launcher-${{ github.ref }}
@@ -42,7 +42,7 @@ jobs:
         with: { fetch-depth: 0 }
       - id: t
         run: |
-          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb"
+          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
       - id: v
         run: |
