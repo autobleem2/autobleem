@@ -1224,6 +1224,18 @@ release whose `psc-fs` is this package, its `updateroms` zip into `<stick>/Updat
 line, not a failure) and **names the stick SONY** (`ensureVolumeLabel`, the status line says so). What is
 left is in `TODO.md`.
 
+**Three tester reports fixed** (2026-09-23; the installer's release source is `autobleem2/autobleem-pc-tools`,
+`apps/installer` here is kept identical): the per-system `RetroArch/roms/<system>/` folders are made from the
+package's `platform/roms_systems.cfg` whenever RetroArch is chosen or on the stick, on updates too, only the
+missing ones (`InstallJobBase::createRomFolders`, shared with the Windows job, which already did it); an
+AutoBleem 1.0 / RetroBoot stick's ES-style ROM folders (`nes`, `snes`, `megadrive`, ...) are renamed to the
+RetroArch database names the scan reads (`LegacyLayout::convertRomFolders`, the port of
+`install_autobleem.py`'s `ROMS_LAYOUT_MAP` - merge when both exist, case-only renames through a stop for FAT),
+on every install so a stick an older installer converted is fixed too; and **UpdateRoms** comes from an
+`UpdateRoms/` folder beside the installer first (the bundle carries it since alpha2 - same release, no
+network), the site's otherwise, unpacked in scratch and swapped in only when complete - it used to be deleted
+before the new one was unpacked. Every run writes `<stick>/System/Logs/installer.log`.
+
 ## The virtual gamepad for Apps (`apps/abpad/`, 2026-09-22)
 
 The third-party Apps on a stick were compiled by other people against other pads, so they take the
@@ -1886,6 +1898,13 @@ System/.session`, exit 0 -> the launcher again - under the AutoBleem picture (`a
 console that did not start). No stick after 30 s -> reboot. The red LED alone is
 "AutoBleem's standby" (the manual says so: the sign it works as intended). RetroArch (`AB_SELECTION=4`)
 comes back through the same loop - `retroarch.sh` no longer re-runs `start.sh` nested.
+**On the AutoBleem kernel** (2026-09-23, a tester's report: Power Off just restarted AutoBleem) the overlay's
+`/etc/autobleem/rndis` brings up a USB network gadget (RNDIS) on the power port at every boot; while it is up
+the port keeps the system awake and `echo mem > /sys/power/state` fails at once - which `standby()` took for
+a wake. The gadget (`/sys/class/android_usb/android0/enable`) goes off for the standby and comes back through
+the overlay's own `rndis restart`; the write's result is checked, a refusal retried twice and logged to
+`System/Logs/standby.log` with the held wakelocks and the kernel's PM lines. Diagnosed from the shipped
+overlay and the kernel config (`PM_WAKELOCKS`, `PM_AUTOSLEEP`), not yet run on a console.
 
 **The dirty flag** (`ableem::FatDirtyFlag`, `lib_ableem/engine/fat_dirty_flag.*`, tested; the CLI
 `abfatflag DEVICE [clean|dirty]` in `src/tools/`, shipped next to `absplash`): the boot sector byte at
