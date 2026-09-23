@@ -200,10 +200,11 @@ jobs:
     steps:
       - uses: autobleem2/autobleem-build/.github/actions/signpath-sign@develop
         with:
+          enabled: ${{ vars.AB_SIGNING_ENABLED == 'true' && github.event_name != 'pull_request' }}
           artifact: launcher-win64-unsigned
           path: stage
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ github.event_name != 'pull_request' && vars.SIGNPATH_ORGANIZATION_ID || '' }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
           signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           required: ${{ startsWith(github.ref, 'refs/tags/v') }}
