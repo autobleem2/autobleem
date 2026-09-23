@@ -154,7 +154,7 @@ jobs:
               -exec cp -a {} stage/ \;
             cp -a payload/Autobleem/rc payload/Autobleem/start.sh stage/Autobleem/
             # libs.tar.gz: the SDL2 family the launcher was just built against (the image's /opt/psc/sdl2 -
-            # SDL2 2.0.12, image/mixer 2.6.3, ttf 2.20.2) replaces the checked-in archive's 2019/2020 SDL2
+            # SDL2 2.0.14, image/mixer 2.6.3, ttf 2.20.2) replaces the checked-in archive's 2019/2020 SDL2
             # libs; the rest of it (libiconv, libogg, libvorbis*) stays, macOS ._* forks and the "name 2"
             # duplicates go. tools/make_psc_package.sh does the same. The checked-in archive alone does not
             # run this launcher: its SDL2_mixer 2.0.x has no Mix_LoadWAV symbol (a macro there), and the
