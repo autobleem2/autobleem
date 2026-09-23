@@ -1320,7 +1320,32 @@ The test Apps are deliberately **not** in this repository: Freedoom may be redis
 Jackrabbit shareware may not, and neither question is settled by us building them. A fetch-and-build
 recipe is the clean route if they are ever to ship.
 
-## Console tools (`apps/`, 2026-09-18) - and one PC tool
+## Where the code lives (2026-09-23) - read this before the two sections below
+
+The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`
+submodule** (`github.com/autobleem2/autobleem-core`, checked out at `autobleem-core/`): the one copy the
+launcher and the tool repos share. Everything the sections below place at `lib_ableem/...`,
+`src/code/core/...`, `src/code/app_base.*` or the classic `src/code/gui/...` files (Gui, ThemeAssets,
+TextRenderer, Fonts, AppAudio, the splash/confirm/keyboard/about/hardware-info screens, the list-menu
+framework) is under `autobleem-core/` now, at the same relative path; the version script and `version.h.in`
+too (it stamps *this* repository's git describe - `AB_VERSION_SOURCE_DIR`). What stays here: `ab_ui` (App
+and the game-aware classic screens - `src/code/app.*`, `gui/game_detail_pane.*`, the editors, Game Manager,
+memory cards, playlists, Options), `ab_evoui`, the executable, `src/tools/`, `apps/abpad/`, `payload*/`,
+`src/resources/`, the tools and scripts. A launcher source includes core as `"core/..."`, `"gui/..."` from
+`src/code` (`ab_ui` has `src/code` as its include root). **A change to shared code is a commit in
+autobleem-core, then a submodule bump here** (and in autobleem-console-tools / autobleem-pc-tools). The tests:
+core's suites build from `autobleem-core/tests/` through the same `AB_BUILD_TESTS`, this repo's own are
+abpad's on core's harness. Clone with `--recurse-submodules` (the workflows check out `submodules:
+recursive`).
+
+**The console tools and the PC programs are not built here any more**: PSC-Bios and ABFlashKit are
+`autobleem2/autobleem-console-tools`, UpdateRoms, AutoBleemInstaller and AutoBleemWinSetup
+`autobleem2/autobleem-pc-tools` (the installer's job, `InstallerJob`/`WindowsInstallJob`, is core's
+`ab_installer`), each with its own CI and release; autobleem-appliance assembles them into the stick and the
+Windows product. The next section is their history in this tree; their current docs are those repos'
+CLAUDE.md files.
+
+## Console tools (`apps/`, 2026-09-18) - and one PC tool - moved out on 2026-09-23 (see above)
 
 `apps/installer/` (2026-09-20) and `apps/updateroms/` (2026-09-19) are the odd ones out: **PC** programs. The
 installer is described under "RetroArch for the console" and in its own CLAUDE.md. UpdateRoms is a program, `UpdateRoms.exe`, built on the dev
