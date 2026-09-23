@@ -43,6 +43,9 @@ struct Reply {
     string tail;
 };
 
+using Replies = vector<Reply>; // spelled out at each server: a bare {{...}} is ambiguous with the deleted copy
+                               // constructor on some compilers
+
 class LoopbackServer {
 public:
     explicit LoopbackServer(vector<Reply> replies) : replies_(std::move(replies)) {
@@ -257,7 +260,7 @@ TEST_CASE("ChunkedDecoder: whole, byte by byte, with extensions and trailers") {
 TEST_CASE("fetch: a body with a Content-Length lands in the file") {
     TempDir tmp("abfetch");
     const string body(100000, 'x');
-    LoopbackServer server({{ok(body)}});
+    LoopbackServer server(Replies{{ok(body)}});
     string error;
     CHECK(fetch(optionsFor(server.url("/pkg.tar.gz"), tmp.at("out.part")), error) == Ok);
     CHECK(tmp.readFile("out.part") == body);
@@ -268,8 +271,8 @@ TEST_CASE("fetch: a body with a Content-Length lands in the file") {
 
 TEST_CASE("fetch: a chunked body, in pieces") {
     TempDir tmp("abfetch");
-    LoopbackServer server(
-        {{"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello", 50, "\r\n6\r\n world\r\n0\r\n\r\n"}});
+    LoopbackServer server(Replies{
+        {"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello", 50, "\r\n6\r\n world\r\n0\r\n\r\n"}});
     string error;
     CHECK(fetch(optionsFor(server.url("/x"), tmp.at("out")), error) == Ok);
     CHECK(tmp.readFile("out") == "hello world");
@@ -277,7 +280,7 @@ TEST_CASE("fetch: a chunked body, in pieces") {
 
 TEST_CASE("fetch: no length at all - the close is the end") {
     TempDir tmp("abfetch");
-    LoopbackServer server({{"HTTP/1.0 200 OK\r\n\r\nuntil the end"}});
+    LoopbackServer server(Replies{{"HTTP/1.0 200 OK\r\n\r\nuntil the end"}});
     string error;
     CHECK(fetch(optionsFor(server.url("/x"), tmp.at("out")), error) == Ok);
     CHECK(tmp.readFile("out") == "until the end");
@@ -285,8 +288,8 @@ TEST_CASE("fetch: no length at all - the close is the end") {
 
 TEST_CASE("fetch: redirects are followed, relative ones against the answering URL") {
     TempDir tmp("abfetch");
-    LoopbackServer server({{"HTTP/1.1 302 Found\r\nLocation: latest.json\r\nContent-Length: 0\r\n\r\n"},
-                           {"HTTP/1.1 100 Continue\r\n\r\n" + ok("{}")}});
+    LoopbackServer server(Replies{{"HTTP/1.1 302 Found\r\nLocation: latest.json\r\nContent-Length: 0\r\n\r\n"},
+                                  {"HTTP/1.1 100 Continue\r\n\r\n" + ok("{}")}});
     string error;
     CHECK(fetch(optionsFor(server.url("/nightly/old.json"), tmp.at("out")), error) == Ok);
     CHECK(tmp.readFile("out") == "{}");
@@ -298,7 +301,7 @@ TEST_CASE("fetch: redirects are followed, relative ones against the answering UR
 TEST_CASE("fetch: too many redirects") {
     TempDir tmp("abfetch");
     const Reply loop{"HTTP/1.1 301 Moved\r\nLocation: /again\r\n\r\n"};
-    LoopbackServer server({loop, loop, loop});
+    LoopbackServer server(Replies{loop, loop, loop});
     Options options = optionsFor(server.url("/"), tmp.at("out"));
     options.maxRedirects = 2;
     string error;
@@ -308,7 +311,7 @@ TEST_CASE("fetch: too many redirects") {
 
 TEST_CASE("fetch: an HTTP error writes nothing") {
     TempDir tmp("abfetch");
-    LoopbackServer server({{"HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nnot found"}});
+    LoopbackServer server(Replies{{"HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nnot found"}});
     string error;
     CHECK(fetch(optionsFor(server.url("/missing"), tmp.at("out")), error) == HttpError);
     CHECK(error.find("404") != string::npos);
@@ -317,7 +320,7 @@ TEST_CASE("fetch: an HTTP error writes nothing") {
 
 TEST_CASE("fetch: a short body is a failure and its file goes") {
     TempDir tmp("abfetch");
-    LoopbackServer server({{"HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\nonly this much"}});
+    LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 1000\r\n\r\nonly this much"}});
     string error;
     CHECK(fetch(optionsFor(server.url("/x"), tmp.at("out.part")), error) == Incomplete);
     CHECK(error.find("14 of 1000") != string::npos);
@@ -326,7 +329,7 @@ TEST_CASE("fetch: a short body is a failure and its file goes") {
 
 TEST_CASE("fetch: a stall gives up after the stall timeout") {
     TempDir tmp("abfetch");
-    LoopbackServer server({{"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabc", 3000, "defghij"}});
+    LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabc", 3000, "defghij"}});
     Options options = optionsFor(server.url("/x"), tmp.at("out"));
     options.stallTimeout = 1;
     string error;
@@ -341,13 +344,13 @@ TEST_CASE("fetch: nothing listening, a malformed answer, bad input") {
     string error;
     int port = 0;
     {
-        LoopbackServer server({}); // bound, then closed: nothing listens there any more
+        LoopbackServer server(Replies{}); // bound, then closed: nothing listens there any more
         port = stoi(server.url("").substr(17));
     }
     CHECK(fetch(optionsFor("http://127.0.0.1:" + to_string(port) + "/", tmp.at("out")), error) == NetworkError);
 
     {
-        LoopbackServer server({{"this is not HTTP\r\n\r\n"}});
+        LoopbackServer server(Replies{{"this is not HTTP\r\n\r\n"}});
         CHECK(fetch(optionsFor(server.url("/"), tmp.at("out")), error) == Incomplete);
     }
     CHECK(fetch(optionsFor("gopher://x/", tmp.at("out")), error) == BadUsage);
