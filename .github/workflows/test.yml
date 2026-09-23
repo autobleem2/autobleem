@@ -1,0 +1,43 @@
+# The launcher's test gate: ci/build.sh native (a host build, every unit-test suite, the language files'
+# validation, the format check and clang-tidy) on every push and pull request, on a GitHub-hosted runner.
+# It was ci.yml's `native` job; ci.yml (the monolith's build-and-publish pipeline) is disabled since the
+# compile-once model took over (publish-launcher.yml + autobleem2/autobleem-appliance), which left the
+# launcher with no test run at all. Gated by AB_CI_ENABLED.
+name: test
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: native (tests, format, lint)
+    if: vars.AB_CI_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/autobleem2/autobleem-build:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      SCCACHE_DIR: /sccache
+      SCCACHE_CACHE_SIZE: 2G
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # git describe needs the tags
+      - name: Restore sccache cache
+        uses: actions/cache@v6
+        with:
+          path: /sccache
+          key: sccache-launcher-native-${{ github.sha }}
+          restore-keys: sccache-launcher-native-
+      - name: Build, test, check
+        run: ci/build.sh native
