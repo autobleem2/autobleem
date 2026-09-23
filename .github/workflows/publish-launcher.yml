@@ -16,6 +16,9 @@ name: publish-launcher
 on:
   push:
     tags: ['v*']
+    # develop too, for the rolling `nightly` pre-release the appliance's development build is assembled from
+    branches: [develop]
+    paths-ignore: ['docs/**', '**.md', 'manuals/**']
   workflow_dispatch:
     inputs:
       targets:
@@ -47,7 +50,9 @@ jobs:
       - id: v
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          else echo "version=$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"; fi
+          # a branch build is named as the launcher names itself (generate_version.cmake): the last v* tag,
+          # the commits past it and the commit - v2.0.0-alpha2-5-gabc1234 - so the file says what it is
+          else echo "version=$(git describe --tags --match 'v*' 2>/dev/null || echo "$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)")" >> "$GITHUB_OUTPUT"; fi
 
   build:
     needs: plan
@@ -162,3 +167,20 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
             --title "AutoBleem ${GITHUB_REF_NAME}" --generate-notes $prerelease out/*.tar.gz || \
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" out/*.tar.gz --clobber
+
+  # the rolling development build: every successful build of develop replaces the assets of the `nightly`
+  # pre-release (autobleem-build's nightly-release action), which autobleem-appliance's nightly assembly
+  # fetches the way it fetches a v* release. A partial manual run (fewer targets) would leave the others out,
+  # so only a push publishes it.
+  nightly:
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { pattern: launcher-*, path: out, merge-multiple: true }
+      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@master
+        with:
+          files: out/*.tar.gz
+          version: ${{ needs.plan.outputs.version }}
