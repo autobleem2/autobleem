@@ -318,6 +318,13 @@ target_link_libraries(abfatflag ableem_engine)
 add_executable(abupdate src/tools/abupdate.cpp)
 target_link_libraries(abupdate ab_installer Threads::Threads)
 
+# abfetch: the console's own HTTPS downloader (src/tools/abfetch) - the online update fetches with it from
+# the stick instead of relying on a curl in the kernel payload. The console and the dev hosts (its tests,
+# and trying the console's update on a PC); the other targets fetch with their system's curl
+if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
+    add_subdirectory(src/tools/abfetch)
+endif()
+
 
 # abpad: the virtual gamepad shim's logic. Built everywhere - the tests need it on a dev host and the
 # shim itself is built for the targets that have Apps (docs/virtual-gamepad-plan.md)

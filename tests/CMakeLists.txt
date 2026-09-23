@@ -4,3 +4,8 @@ include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 
 # abpad, the virtual gamepad for Apps (apps/abpad)
 ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
+
+# abfetch, the console's own downloader (src/tools/abfetch - built for psc and the dev hosts)
+if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
+    ab_add_test(test_abfetch tools/test_abfetch.cpp LIBS abfetch_core)
+endif()
