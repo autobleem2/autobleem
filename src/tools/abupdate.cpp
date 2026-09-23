@@ -10,7 +10,8 @@
 // with the package given: what the package ships is replaced (the launcher, the emulators, the rc scripts,
 // the console tools, the shipped themes, Docs/), everything of the user's stays (games, saves, memory cards,
 // config.ini's settings, RetroArch and its cores, the cover databases). UpdateRoms for the stick's PC side
-// comes from the site through the download command (curl, from the kernel payload). Its record is
+// comes from the site through the download command - abfetch, the launcher's own downloader, from the
+// folder this program runs in (selection.sh copies both to tmpfs; nothing of the kernel payload's). Its record is
 // ROOT/System/Logs/installer.log; stdout goes to update.log (selection.sh). Exit 0 when the stick is updated
 // (System/Updates is removed then), 1 when not - the stick then keeps what it had, apart from a failure
 // half way through the unpacking, which the next update or the PC installer repairs.
@@ -23,6 +24,9 @@
 
 #include <cstdio>
 #include <cstring>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 #include <iostream>
 #include <string>
 
@@ -31,6 +35,21 @@ using ableem::DirEntry;
 using ableem::PendingUpdate;
 
 namespace {
+
+// the folder this program is in, with a trailing '/' ("" when it cannot be told - then abfetch is looked
+// for in the current directory, which selection.sh makes /tmp)
+string ownDir() {
+#ifdef _WIN32
+    return "";
+#else
+    char buffer[4096];
+    ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (length <= 0)
+        return "";
+    string path(buffer, static_cast<size_t>(length));
+    return path.substr(0, path.rfind('/') + 1);
+#endif
+}
 
 class Printer : public InstallListener {
 public:
@@ -52,8 +71,9 @@ int main(int argc, char **argv) {
     if (argc < 2)
         return usage();
     string root = InstallerJob::normalizeRoot(argv[1]);
-    // curl from the AutoBleem kernel's payload: fail on an HTTP error, follow redirects, give up on a stall
-    string download = "curl -sfL --connect-timeout 20 --speed-time 60 --speed-limit 1024 -o \"%o\" \"%u\"";
+    // abfetch next to this program (fails on an HTTP error, follows redirects, gives up on a stall), with
+    // its cacert.pem beside it
+    string download = "\"" + ownDir() + "abfetch\" --connect-timeout 20 --stall-timeout 60 -o \"%o\" \"%u\"";
     InstallOptions options;
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "--download") == 0 && i + 1 < argc)

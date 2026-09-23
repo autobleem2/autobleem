@@ -898,7 +898,9 @@ an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
 `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item), `MENU_OPTION_UPDATE` (the
 online update the launcher downloaded: `abupdate` from tmpfs lays it over the stick - autobleem-main's
-`docs/history/online-update.md`) or `MENU_OPTION_POWEROFF` (see "The console's power off" below); starting a game and returning from one both loop back into the launcher
+`docs/history/online-update.md`; the launcher and `abupdate` fetch with **`abfetch`** (`src/tools/abfetch`,
+our own HTTP/1.1 client over the vendored mbedTLS 3.6 in `third_party/mbedtls`, TLS 1.2, `cacert.pem` next to
+it, certificate dates deliberately not checked - no battery clock), never with the kernel payload's curl) or `MENU_OPTION_POWEROFF` (see "The console's power off" below); starting a game and returning from one both loop back into the launcher
 in-process and never reach it. `boot.sh` loops `autobleem.sh` -> `selection.sh` since 2026-09-22, so both
 come back to the launcher without a reboot; `selection.sh` reboots for anything else (a crash, a missing
 `autobleem_cfg.sh` - the file is deleted once read), which brings AutoBleem back up. The stock

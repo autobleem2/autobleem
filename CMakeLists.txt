@@ -47,7 +47,8 @@ add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 # The launcher's online update (core/services/update_service.*, the update dialogs): every target checks the
 # download repository for a newer AutoBleem (and RetroArch, on the appliances) and fetches it. The console
 # too since 2026-09-23 - only when it has a network (the AutoBleem kernel's WiFi; a stock console never has
-# one), with the kernel payload's curl, and src/tools/abupdate lays the package over the stick.
+# one), with src/tools/abfetch - its own downloader, on the stick - and src/tools/abupdate lays the package
+# over the stick.
 option(AB_ONLINE_UPDATE "Build the online update check and download" ON)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")

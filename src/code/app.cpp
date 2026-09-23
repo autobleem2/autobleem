@@ -62,9 +62,12 @@ void App::applyUpdateSetting() {
     c.channel = cfg_.inifile.values["updates"];
     c.installedVersion = Version::DESCRIBE; // the site's name for this build's release or nightly folder
     // the catalogs through the scan's command (with its short timeout) where there is one; the console has
-    // none - its scan stays offline - and uses the update's own
-    c.fetchCommand = Env::downloadCommand().empty() ? Env::updateDownloadCommand() : Env::downloadCommand();
-    c.downloadCommand = Env::updateDownloadCommand();
+    // none - its scan stays offline - and uses the update's own. %r is the launcher's own folder, where the
+    // console's downloader (abfetch) is: the command is run from wherever the launcher happens to be
+    string updateCommand = Env::updateDownloadCommand();
+    Strings::replaceAll(updateCommand, "%r", Env::getWorkingPath());
+    c.fetchCommand = Env::downloadCommand().empty() ? updateCommand : Env::downloadCommand();
+    c.downloadCommand = updateCommand;
     c.stateFile = Env::getPathToSystemDir() + sep + "update.json";
     c.updatesDir = Env::getPathToSystemDir() + sep + "Updates";
     c.retroarchCatalog = Env::retroArchCatalog();

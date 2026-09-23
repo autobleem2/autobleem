@@ -142,6 +142,10 @@ update() {
         echo "$(date) no abupdate on the stick - the update is not installed" >> $ULOG
         return
     fi
+    # abfetch (the launcher's own downloader) and its CA bundle go along: abupdate fetches UpdateRoms with
+    # it, and the folder they are in is being replaced
+    cp -f /media/Autobleem/bin/autobleem/abfetch /tmp/abfetch 2>/dev/null && chmod +x /tmp/abfetch
+    cp -f /media/Autobleem/bin/autobleem/cacert.pem /tmp/cacert.pem 2>/dev/null
     if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
         touch /tmp/.abupdating
         LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abupdating --timeout 900 > /dev/null 2>&1 &
@@ -152,7 +156,7 @@ update() {
     status=$? # before the date below: a command substitution sets $? too
     echo "$(date) abupdate exit status $status" >> $ULOG
     sync
-    rm -f /tmp/.abupdating /tmp/abupdate
+    rm -f /tmp/.abupdating /tmp/abupdate /tmp/abfetch /tmp/cacert.pem
     # the emulator copy above was the old one (autobleem.sh unpacks the new libraries itself)
     cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx 2>/dev/null && chmod +x /tmp/pcsx
 }

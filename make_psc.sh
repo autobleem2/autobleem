@@ -85,9 +85,9 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
-# the launcher, its three helpers (absplash, abfatflag, abupdate - src/tools/) and the console tools under apps/, each
+# the launcher, its four helpers (absplash, abfatflag, abupdate, abfetch - src/tools/) and the console tools under apps/, each
 # where its build leaves it
-BINARIES="autobleem-gui absplash abfatflag abupdate"
+BINARIES="autobleem-gui absplash abfatflag abupdate abfetch"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
     $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {
@@ -99,7 +99,7 @@ done
 echo "==> fetching results"
 rm -rf build_psc/dist
 mkdir -p build_psc/dist
-$SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES" | tar xzf - --no-same-permissions -C build_psc/dist
+$SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES cacert.pem" | tar xzf - --no-same-permissions -C build_psc/dist # + abfetch's CA bundle
 # UPX takes the stripped binary to a third of its size (3.1 MB -> 1 MB on the Pi build); the console
 # unpacks it in memory at start. AB_NO_UPX=1 skips it - a packed binary is no use to gdb.
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then

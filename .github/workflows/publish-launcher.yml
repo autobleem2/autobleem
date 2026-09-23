@@ -108,7 +108,7 @@ jobs:
           fi
           # the artifact mirrors the payload root the launcher repo contributes, so assembly
           # extracts it straight over the staged payload:
-          #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag/abupdate on psc)
+          #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag/abupdate/abfetch on psc)
           #   Autobleem/bin/abpad      the virtual-gamepad daemon + preload shim
           #   Themes                   the five themes (owner's rule: themes stay in the repo, no theme pack)
           # The emulators, the payload skeleton (payload_linux/ or payload/), the console tools
@@ -120,8 +120,9 @@ jobs:
             D=build_psc; P=psc
             # absplash (the full-screen picture around a launch) and abfatflag (the stick's dirty flag) are
             # psc-only tools built alongside the launcher - the Linux appliances have neither.
-            cp "$D/autobleem-gui" "$D/absplash" "$D/abfatflag" "$D/abupdate" "$BIN/autobleem/"
-            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" "$BIN/autobleem/absplash" "$BIN/autobleem/abupdate" || true
+            cp "$D/autobleem-gui" "$D/absplash" "$D/abfatflag" "$D/abupdate" "$D/abfetch" "$BIN/autobleem/"
+            cp src/tools/abfetch/cacert.pem "$BIN/autobleem/" # abfetch's CA bundle (the update downloads with it)
+            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" "$BIN/autobleem/absplash" "$BIN/autobleem/abupdate" "$BIN/autobleem/abfetch" || true
             cp -a src/resources/. "$BIN/autobleem/"
             # internal.db KEPT here (unlike the Linux appliances): the console has built-in games
             # (AB_HAS_INTERNAL_GAMES is psc/dev only)

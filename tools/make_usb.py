@@ -255,6 +255,11 @@ def main():
         shutil.copy2(exe, app)
     else:
         print('note: no', exe, '- build first (make_win.sh), then run this again or let the build task copy it')
+    # the console's update helpers, next to the launcher as on a stick: abfetch (+ its CA bundle) fetches,
+    # abupdate lays the downloaded package over the stick - so the console's update can be tried on a PC
+    for helper in ('abfetch.exe', 'cacert.pem', 'abupdate.exe'):
+        if os.path.exists(os.path.join(args.build, helper)):
+            shutil.copy2(os.path.join(args.build, helper), app)
 
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
     replace_tree(os.path.join(REPO, 'payload', 'Themes'), os.path.join(usb, 'Themes'))
