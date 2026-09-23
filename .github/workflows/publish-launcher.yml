@@ -62,7 +62,7 @@ jobs:
         target: ${{ fromJSON(needs.plan.outputs.targets) }}
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/autobleem2/autobleem-build:latest
+      image: ghcr.io/autobleem2/autobleem-build:${{ startsWith(github.ref, 'refs/tags/v') && 'latest' || 'develop' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
