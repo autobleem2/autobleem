@@ -58,8 +58,8 @@ ShimState::ShimState() {
         return;
     }
 
-    for (int pad = 0; pad < MaxPads; ++pad) {
-        raw_[pad] = buildRawState(*layout_, ControllerState());
+    for (RawPadState &raw : raw_) {
+        raw = buildRawState(*layout_, ControllerState());
     }
     log("abpad: %s, %d pad(s) as \"%s\", movement %s, from %s", padModeName(profile_.mode), profile_.players,
         layout_->name.c_str(), movementAidName(profile_.movement), shmPath_.c_str());
