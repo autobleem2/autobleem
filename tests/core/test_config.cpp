@@ -53,6 +53,29 @@ TEST_CASE("Config keeps a known emulator and falls back to pcsx-abnxt for anythi
     CHECK(Config().inifile.values["emulator"] == "pcsx-abnxt");
 }
 
+TEST_CASE("Config: the update channel - the three the site has, the old names migrated") {
+    TempDir tmp("config_updates");
+    EnvFixture env;
+    env.setWorkingPath(tmp.path());
+
+    // the channels before the site had three: stable is the release list, latest the pre-release
+    tmp.writeFile("config.ini", "[General]\nUpdates=stable\n");
+    CHECK(Config().inifile.values["updates"] == "release");
+    CHECK(reloadFromDisk(tmp).values["updates"] == "release");
+    tmp.writeFile("config.ini", "[General]\nUpdates=latest\n");
+    CHECK(Config().inifile.values["updates"] == "testing");
+
+    for (const char *channel : {"release", "testing", "nightly", "off"}) {
+        tmp.writeFile("config.ini", string("[General]\nUpdates=") + channel + "\n");
+        CHECK(Config().inifile.values["updates"] == channel);
+    }
+
+    // none set: one of the three, following the build
+    tmp.writeFile("config.ini", "[General]\nLanguage=English\n");
+    const string def = Config().inifile.values["updates"];
+    CHECK((def == "release" || def == "testing" || def == "nightly"));
+}
+
 TEST_CASE("Config keeps what the file already says") {
     TempDir tmp("config_existing");
     EnvFixture env;

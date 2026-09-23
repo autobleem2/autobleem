@@ -3,11 +3,16 @@
 // download repository, and fetching it when the user says yes. Built only with AB_ONLINE_UPDATE (CMake:
 // on for the Pi and the dev hosts, off for the console, whose updater is an offline stick affair).
 //
-// The check: the site's releases/latest.json (the "stable" channel) or releases/unstable.json ("latest" -
-// the one pre-release), and rpi/retroarch/latest.json, fetched through the platform's download command in
-// a worker thread; a version that is not the installed one is an update (the site keeps one pre-release,
-// so "different" is "newer"). Once at start and then every CheckInterval, unless config.ini's "updates" is
-// off; the user's "skip this version" / "remind me tomorrow" live in <usb>/System/update.json.
+// The check: the channel's list on the site - "release" releases/latest.json (the newest stable), "testing"
+// releases/unstable.json (the one pre-release; the stable list when there is none), "nightly"
+// nightly/latest.json (the newest development build; else testing's, else release's) - and the platform's
+// RetroArch list, fetched through the platform's download command in a worker thread. A version that is not
+// the installed one is an update: the site names a release folder by its tag and a nightly folder by the
+// launcher's git describe, and the installed version is this build's git describe (Version::DESCRIBE), so
+// the two are the same string exactly when this is that build (the site keeps one of each, so "different"
+// is "newer" - or another channel's, which is what switching channels is for). The old channel names still
+// work ("stable" = release, "latest" = testing). Once at start and then every CheckInterval, unless
+// config.ini's "updates" is off; "skip this version" / "remind me tomorrow" live in <usb>/System/update.json.
 //
 // The download: each needed tarball into <usb>/System/Updates/, sha256-checked against the catalog, then
 // pending.json for the Pi's autobleem-update script (the launcher exits with MENU_OPTION_UPDATE and the
@@ -23,6 +28,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 //******************
 // UpdateInfo
@@ -42,12 +48,11 @@ class UpdateService {
 public:
     struct Config {
         std::string repoUrl;     // "https://autobleem.retromenele.pl"
-        std::string channel;     // "off" | "stable" | "latest"
+        std::string channel;     // "off" | "release" | "testing" | "nightly" (or the old "stable" | "latest")
         std::string platformKey; // the release.json files key: "rpi", "rpi64", "win", ...
         std::string arch;        // the retroarch latest.json key: "armhf", "arm64", "i386"; "" = no RetroArch check
         std::string retroarchCatalog; // that latest.json, relative to repoUrl ("rpi/retroarch/latest.json"); "" = none
-        std::string installedVersion; // "v2.0.0-pre0-df68521" (tag-hash) - what the site's version is compared to
-        std::string installedStable;  // "v2.0.0-pre0" - the tag alone, for the stable channel
+        std::string installedVersion; // git describe ("v2.0.0-alpha2", "v2.0.0-alpha2-6-gba7365c")
         std::string installedRetroArch; // "" = RetroArch not installed (no check)
         std::string fetchCommand;       // the platform's download command, %u %o (short timeout is fine)
         std::string downloadCommand;    // the same without a timeout, for the tarballs
@@ -91,7 +96,8 @@ public:
     const ableem::UpdateState &state() const { return state_; }
 
     // the pure parts, for the tests
-    static std::string channelFile(const std::string &channel);
+    static std::string channelFile(const std::string &channel);               // the channel's own list
+    static std::vector<std::string> channelFiles(const std::string &channel); // it, then its fallbacks
     static UpdateInfo compare(const Config &config, const ableem::ReleaseCatalog *release,
                               const ableem::RetroArchCatalog *retroarch);
     static std::string commandFor(const std::string &commandTemplate, const std::string &url,

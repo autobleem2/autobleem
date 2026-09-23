@@ -5,6 +5,9 @@ namespace Version {
 
 constexpr const char *VERSION = "@GIT_VERSION@";              // the last git tag, or the fallback CMakeLists names
 constexpr const char *GIT_HASH = "@GIT_HASH@";                // short commit hash, "unknown" without git
+// git describe: the tag at a tag ("v2.0.0-alpha2"), "v2.0.0-alpha2-6-gba7365c" between tags - the name the
+// download site gives this build's release or nightly folder, what the update check compares
+constexpr const char *DESCRIBE = "@GIT_DESCRIBE@";
 constexpr const char *GIT_BRANCH = "@GIT_BRANCH@";
 constexpr bool GIT_DIRTY = @GIT_DIRTY@;                       // uncommitted changes in the tree that was built
 constexpr const char *GIT_DIRTY_FLAG = "@GIT_DIRTY_FLAG@";    // "*" when dirty
@@ -14,7 +17,7 @@ constexpr const char *BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";  // UTC
 constexpr const char *FULL_VERSION = "@GIT_VERSION@ (@GIT_BRANCH@" "@" "@GIT_HASH@@GIT_DIRTY_FLAG@)";
 
 // a pre-release build ("-pre", "-alpha", "-beta", "-rc" in the tag): the update channel defaults to
-// "latest" on one (Config), the site's index lists it as a development build
+// "testing" on one (Config), the site's index lists it as a pre-release
 inline bool isPreRelease() {
     const char *v = VERSION;
     static const char *const markers[] = {"-pre", "-alpha", "-beta", "-rc"};
@@ -32,6 +35,17 @@ inline bool isPreRelease() {
         }
     }
     return false;
+}
+
+// a build between tags (git describe went past the last tag): a development build - the update channel
+// defaults to "nightly" on one
+inline bool isBetweenTags() {
+    const char *a = DESCRIBE, *b = VERSION;
+    while (*a && *a == *b) {
+        a++;
+        b++;
+    }
+    return *a != *b;
 }
 
 } // namespace Version

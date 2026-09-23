@@ -87,15 +87,14 @@ struct FakeSite {
     }
 };
 
-UpdateService::Config config(const TempDir &tmp, const string &channel = "latest") {
+UpdateService::Config config(const TempDir &tmp, const string &channel = "testing") {
     UpdateService::Config c;
     c.repoUrl = "http://site";
     c.channel = channel;
     c.platformKey = "rpi";
     c.arch = "armhf";
     c.retroarchCatalog = "rpi/retroarch/latest.json";
-    c.installedStable = "v2.0.0-pre0";
-    c.installedVersion = "v2.0.0-pre0-83fe6d1";
+    c.installedVersion = "v2.0.0-pre0-83fe6d1"; // this build's git describe
     c.installedRetroArch = "v1.22.1";
     c.fetchCommand = "fetch %u %o";
     c.downloadCommand = "fetch %u %o";
@@ -186,7 +185,7 @@ TEST_CASE("UpdateService::compare: what counts as newer") {
     RetroArchCatalog ra;
     REQUIRE(ra.parse(RetroArchJson));
 
-    SUBCASE("latest channel: the tag-hash differs -> AutoBleem update; RetroArch stamp differs -> update") {
+    SUBCASE("the site's version is not this build's describe -> AutoBleem update; RetroArch stamp differs -> update") {
         UpdateInfo info = UpdateService::compare(config(tmp), &release, &ra);
         CHECK(info.autobleemVersion == "v2.0.0-pre0-df68521");
         CHECK(info.autobleem.name == "autobleem-rpi.tar.gz");
@@ -200,13 +199,14 @@ TEST_CASE("UpdateService::compare: what counts as newer") {
         c.installedRetroArch = "v1.22.2";
         CHECK_FALSE(UpdateService::compare(c, &release, &ra).any());
     }
-    SUBCASE("stable channel compares the tag alone") {
-        UpdateService::Config c = config(tmp, "stable");
-        c.installedStable = "v2.0.0-pre0-df68521"; // what the stable list would say
-        UpdateInfo info = UpdateService::compare(c, &release, nullptr);
-        CHECK(info.autobleemVersion == "");
-        c.installedStable = "v1.9.0";
-        CHECK(UpdateService::compare(c, &release, nullptr).autobleemVersion == "v2.0.0-pre0-df68521");
+    SUBCASE("every channel compares the describe: a build at the release's tag is that release") {
+        for (const char *channel : {"release", "testing", "nightly"}) {
+            UpdateService::Config c = config(tmp, channel);
+            c.installedVersion = "v2.0.0-pre0-df68521"; // the site's folder name for this very build
+            CHECK(UpdateService::compare(c, &release, nullptr).autobleemVersion == "");
+            c.installedVersion = "v1.9.0";
+            CHECK(UpdateService::compare(c, &release, nullptr).autobleemVersion == "v2.0.0-pre0-df68521");
+        }
     }
     SUBCASE("no package for this platform -> no AutoBleem update") {
         UpdateService::Config c = config(tmp);
@@ -230,8 +230,17 @@ TEST_CASE("UpdateService::compare: what counts as newer") {
         c.arch = "x86";
         CHECK(UpdateService::compare(c, &release, &ra).retroarchVersion == "");
     }
-    CHECK(UpdateService::channelFile("latest") == "releases/unstable.json");
+    CHECK(UpdateService::channelFile("release") == "releases/latest.json");
+    CHECK(UpdateService::channelFile("testing") == "releases/unstable.json");
+    CHECK(UpdateService::channelFile("nightly") == "nightly/latest.json");
+    // the names before the three channels
     CHECK(UpdateService::channelFile("stable") == "releases/latest.json");
+    CHECK(UpdateService::channelFile("latest") == "releases/unstable.json");
+    // what stands in when a channel has nothing on the site
+    CHECK(UpdateService::channelFiles("nightly") ==
+          vector<string>{"nightly/latest.json", "releases/unstable.json", "releases/latest.json"});
+    CHECK(UpdateService::channelFiles("testing") == vector<string>{"releases/unstable.json", "releases/latest.json"});
+    CHECK(UpdateService::channelFiles("release") == vector<string>{"releases/latest.json"});
     CHECK(UpdateService::commandFor("curl -o \"%o\" \"%u\"", "http://x/y", "/tmp/out") ==
           "curl -o \"/tmp/out\" \"http://x/y\"");
 }
@@ -335,7 +344,21 @@ TEST_CASE("UpdateService: the check against the site, and what the user's answer
         CHECK_FALSE(s.info.any());
         CHECK_FALSE(service.shouldPrompt(1000));
     }
-    SUBCASE("latest channel with no pre-release on the site falls back to the stable list") {
+    SUBCASE("nightly reads nightly/latest.json, and the pre-release when there is no nightly") {
+        site.files["http://site/nightly/latest.json"] =
+            string(ReleaseJson).replace(string(ReleaseJson).find("v2.0.0-pre0-df68521"), 19, "v2.0.0-pre0-3-g1234567");
+        service.configure(config(tmp, "nightly"));
+        service.startCheck(1000);
+        UpdateService::Status s = waitFor(service);
+        CHECK(s.info.autobleemVersion == "v2.0.0-pre0-3-g1234567");
+        CHECK(site.fetched("http://site/nightly/latest.json") == 1);
+        CHECK(site.fetched("http://site/releases/unstable.json") == 0);
+        site.files.erase("http://site/nightly/latest.json");
+        service.startCheck(1000 + UpdateService::CheckInterval);
+        s = waitFor(service);
+        CHECK(s.info.autobleemVersion == "v2.0.0-pre0-df68521");
+    }
+    SUBCASE("testing with no pre-release on the site falls back to the release list") {
         site.files.erase("http://site/releases/unstable.json");
         site.files["http://site/releases/latest.json"] =
             string(ReleaseJson).replace(string(ReleaseJson).find("v2.0.0-pre0-df68521"), 19, "v2.1.0");

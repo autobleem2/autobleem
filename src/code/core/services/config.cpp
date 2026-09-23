@@ -75,10 +75,17 @@ Config::Config() {
         inifile.values["online"] = "true";
         aDefaultWasSet = true;
     }
-    // the launcher's online update check (UpdateService, Options -> "Updates"): off | stable | latest.
-    // A pre-release build follows the pre-releases by default, a release build the releases.
-    if (inifile.values["updates"] == "") {
-        inifile.values["updates"] = Version::isPreRelease() ? "latest" : "stable";
+    // the launcher's online update check (UpdateService, Options -> "Updates"): off | release | testing |
+    // nightly - the download site's three channels. The default follows the build: a development build (git
+    // describe past its tag) the nightlies, a pre-release the pre-releases, a release the releases. The two
+    // older names are migrated (stable = release, latest = testing).
+    std::string &updates = inifile.values["updates"];
+    if (updates == "stable" || updates == "latest") {
+        updates = updates == "stable" ? "release" : "testing";
+        aDefaultWasSet = true;
+    }
+    if (updates == "") {
+        updates = Version::isBetweenTags() ? "nightly" : Version::isPreRelease() ? "testing" : "release";
         aDefaultWasSet = true;
     }
     // the classic screens' font: the theme's, unless "themefont" is off and "font" names a .ttf/.otf from

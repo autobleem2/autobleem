@@ -124,10 +124,12 @@ void GuiOptions::fill() {
     if (lines.back().id == CFG_HEADING)
         lines.pop_back(); // a console: nothing under it
 #if defined(AB_ONLINE_UPDATE) && (defined(AB_APPLIANCE) || defined(AB_PLATFORM_WIN))
-    // the online update's channel (UpdateService): off, the stable releases, or the latest pre-release.
-    // The real targets only (the owner's call, 2026-09-20) - a dev host tests the flow with the default
+    // the online update's channel (UpdateService): the download site's releases, its pre-release (testing),
+    // its newest development build (nightly), or off. The real targets only (the owner's call, 2026-09-20) -
+    // a dev host tests the flow with the default
     heading(_("Updates"));
-    lines.emplace_back(CFG_UPDATES, _("Updates:"), "updates", false, vector<string>({"stable", "latest", "off"}));
+    lines.emplace_back(CFG_UPDATES, _("Updates:"), "updates", false,
+                       vector<string>({"release", "testing", "nightly", "off"}));
 #endif
 
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);

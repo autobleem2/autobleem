@@ -82,7 +82,20 @@ bool UpdateService::enabled() const {
 // UpdateService::channelFile
 //*******************************
 string UpdateService::channelFile(const string &channel) {
-    return channel == "latest" ? "releases/unstable.json" : "releases/latest.json";
+    return channelFiles(channel).front();
+}
+
+//*******************************
+// UpdateService::channelFiles
+//*******************************
+// The lists a channel reads, in order: its own, then what stands in when the site has none of it - no
+// pre-release is testing's newest release, no nightly is nightly's newest pre-release or release.
+vector<string> UpdateService::channelFiles(const string &channel) {
+    if (channel == "nightly")
+        return {"nightly/latest.json", "releases/unstable.json", "releases/latest.json"};
+    if (channel == "testing" || channel == "latest")
+        return {"releases/unstable.json", "releases/latest.json"};
+    return {"releases/latest.json"}; // "release", and the old "stable"
 }
 
 //*******************************
@@ -98,17 +111,16 @@ string UpdateService::commandFor(const string &commandTemplate, const string &ur
 //*******************************
 // UpdateService::compare
 //*******************************
-// What is newer than what is installed. AutoBleem: the site's version against the tag-hash (latest) or
-// the tag (stable) - a pre-release build on the stable channel sees the stable release as an update, which
-// is the point of switching channels. RetroArch: only where one is installed (a stamp to compare with) and
-// the catalog has a build for this architecture.
+// What is newer than what is installed. AutoBleem: the site's version against this build's git describe,
+// on every channel - a build on another channel's list sees that list's build as an update, which is the
+// point of switching channels. RetroArch: only where one is installed (a stamp to compare with) and the
+// catalog has a build for this architecture.
 UpdateInfo UpdateService::compare(const Config &config, const ReleaseCatalog *release,
                                   const RetroArchCatalog *retroarch) {
     UpdateInfo info;
     if (release != nullptr && !release->version.empty()) {
-        const string installed = config.channel == "latest" ? config.installedVersion : config.installedStable;
         const UpdateFile *file = release->fileFor(config.platformKey);
-        if (file != nullptr && release->version != installed) {
+        if (file != nullptr && release->version != config.installedVersion) {
             info.autobleemVersion = release->version;
             info.autobleem = *file;
         }
@@ -180,14 +192,15 @@ void UpdateService::checkThread() {
 
     const string base = config_.repoUrl + "/";
     const string scratch = config_.updatesDir + sep + "check.json";
-    if (fetchText(base + channelFile(config_.channel), scratch, text) && release.parse(text)) {
-        haveRelease = true;
-    } else if (config_.channel == "latest" && fetchText(base + channelFile("stable"), scratch, text) &&
-               release.parse(text)) {
-        haveRelease = true; // no pre-release on the site: the newest stable is the latest there is
-    } else {
-        error = "cannot read the release list";
+    // the channel's list, else the one standing in for it (no pre-release: the newest release, ...)
+    for (const string &list : channelFiles(config_.channel)) {
+        if (fetchText(base + list, scratch, text) && release.parse(text)) {
+            haveRelease = true;
+            break;
+        }
     }
+    if (!haveRelease)
+        error = "cannot read the release list";
     if (!config_.installedRetroArch.empty() && !config_.arch.empty() && !config_.retroarchCatalog.empty()) {
         if (fetchText(base + config_.retroarchCatalog, scratch, text) && retroarch.parse(text))
             haveRetroArch = true;

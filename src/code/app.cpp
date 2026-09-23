@@ -58,8 +58,7 @@ void App::applyUpdateSetting() {
     UpdateService::Config c;
     c.repoUrl = Env::repoUrl();
     c.channel = cfg_.inifile.values["updates"];
-    c.installedStable = Version::VERSION;
-    c.installedVersion = string(Version::VERSION) + "-" + Version::GIT_HASH;
+    c.installedVersion = Version::DESCRIBE; // the site's name for this build's release or nightly folder
     c.fetchCommand = Env::downloadCommand();
     c.downloadCommand = Env::updateDownloadCommand();
     c.stateFile = Env::getPathToSystemDir() + sep + "update.json";
