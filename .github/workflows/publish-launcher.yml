@@ -102,8 +102,8 @@ jobs:
             cp -a "$PK" stage/AutoBleem
             rm -rf stage/AutoBleem/AutoBleemWinSetup.exe stage/AutoBleem/emu stage/AutoBleem/emunxt
             cp installer/windows/autobleem.nsi src/win/autobleem.ico stage/nsis/
-            tar -czf "out/launcher-win64-$V.tar.gz" -C stage .
-            echo "plat=win64" >> "$GITHUB_OUTPUT"; ls -l out
+            # uploaded unsigned below; sign-win signs autobleem-gui.exe and makes launcher-win64-<v>.tar.gz
+            echo "plat=win64" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # the artifact mirrors the payload root the launcher repo contributes, so assembly
@@ -177,14 +177,54 @@ jobs:
           echo "plat=$P" >> "$GITHUB_OUTPUT"
           echo "top: $(tar tzf out/launcher-$P-$V.tar.gz | sed 's#/.*##' | sort -u | tr '\n' ' ')"; ls -l out
       - uses: actions/upload-artifact@v7
+        if: matrix.target != 'win'
         with:
           name: launcher-${{ steps.stage.outputs.plat }}
           path: out/*.tar.gz
           retention-days: 30
+      - uses: actions/upload-artifact@v7
+        if: matrix.target == 'win'
+        with:
+          name: launcher-win64-unsigned
+          path: stage/
+          retention-days: 7
+
+  sign-win:
+    # autobleem-gui.exe's Authenticode signature through SignPath (.signpath/artifact-configuration.xml;
+    # autobleem-build's signpath-sign action has the rules): a v* tag must come back signed, a develop build
+    # ships unsigned when nobody approves it within the hour. Hosted runner, like every job before it.
+    needs: [plan, build]
+    if: contains(fromJSON(needs.plan.outputs.targets), 'win')
+    runs-on: ubuntu-24.04
+    permissions: { actions: read, contents: read }
+    steps:
+      - uses: autobleem2/autobleem-build/.github/actions/signpath-sign@develop
+        with:
+          artifact: launcher-win64-unsigned
+          path: stage
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ github.event_name != 'pull_request' && vars.SIGNPATH_ORGANIZATION_ID || '' }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          required: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Pack
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          tar -czf "out/launcher-win64-${{ needs.plan.outputs.version }}.tar.gz" -C stage .
+          ls -l out
+      - uses: actions/upload-artifact@v7
+        with:
+          name: launcher-win64
+          path: out/*.tar.gz
+          retention-days: 30
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [plan, build]
+    # sign-win is skipped by a manual run without win - that must not skip this too
+    if: >-
+      !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' &&
+      (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
     runs-on: ubuntu-24.04
     permissions: { contents: write }
     steps:
@@ -203,8 +243,10 @@ jobs:
   # fetches the way it fetches a v* release. A partial manual run (fewer targets) would leave the others out,
   # so only a push publishes it.
   nightly:
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    needs: [plan, build]
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/develop' && github.event_name == 'push' &&
+      needs.build.result == 'success' && (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
     runs-on: ubuntu-24.04
     permissions: { contents: write }
     steps:
