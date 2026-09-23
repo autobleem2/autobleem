@@ -8,7 +8,9 @@
 using namespace std;
 
 namespace {
-const int PanelWidth = 800;
+const int PanelWidth = 800; // at least - wider for a long line
+const int MaxPanelWidth = SCREEN_WIDTH - 2 * PanelStyle::Margin;
+const int TextInset = PanelStyle::RowInset + 8; // a line's x in the panel, and its right margin
 const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
 const int LineHeight = 30;
@@ -25,15 +27,24 @@ string human(uint64_t bytes) {
     return buf;
 }
 
+// as wide as the widest of `texts` needs (a nightly's name is long: v2.0.0-alpha2-42-g7f26785-nebaa06), from
+// PanelWidth up to the screen's margins; a line still too long is elided when drawn
+int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &texts) {
+    int widest = 0;
+    for (const auto &t : texts)
+        widest = max(widest, gui.text().textWidth(*t.first, t.second));
+    return min(MaxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
+}
+
 // the dimmed launcher under the panel; returns the panel's rect
 ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Texture &background, const PanelStyle &style,
-                       int height) {
+                       int width, int height) {
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else
         gui.renderBackground();
     style.dim(renderer);
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - height) / 2, PanelWidth, height};
+    ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
     style.sheet(renderer, panel);
     return panel;
 }
@@ -65,20 +76,28 @@ void GuiUpdatePrompt::render() {
     const int headerHeight = PanelStyle::HeaderHeight + static_cast<int>(lines.size()) * LineHeight + 12;
     const int footerHeight = PanelStyle::FooterHeight;
     const int panelHeight = headerHeight + static_cast<int>(items.size()) * RowHeight + footerHeight;
-    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelHeight);
+    Fonts &fonts = gui->assets().themeFonts;
+    vector<pair<const ableem::Font *, string>> texts;
+    for (const string &line : lines)
+        texts.emplace_back(&fonts[FONT_22_MED], line);
+    for (const Item &item : items) {
+        texts.emplace_back(&fonts[FONT_22_MED], item.title);
+        texts.emplace_back(&fonts[FONT_15_BOLD], item.description);
+    }
+    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelWidthFor(*gui, texts), panelHeight);
+    const int textWidth = panel.w - 2 * TextInset;
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    Fonts &fonts = gui->assets().themeFonts;
     gui->text().renderText_WithColor(fonts[FONT_28_BOLD], _("Update available"), panel.x + RowInset, panel.y + 18,
                                      style.text, XALIGN_LEFT);
     int y = panel.y + 66;
     for (const string &line : lines) {
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], line, panel.x + RowInset + 8, y, style.secondary,
-                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], line, textWidth),
+                                         panel.x + TextInset, y, style.secondary, XALIGN_LEFT);
         y += LineHeight;
     }
     style.rule(renderer, panel, panel.y + headerHeight - 8);
@@ -156,13 +175,6 @@ void GuiUpdateProgress::init() {
 //*******************************
 void GuiUpdateProgress::render() {
     const int panelHeight = 190;
-    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelHeight);
-
-    const TextRenderer::Shadow classicShadow = gui->text().shadow();
-    TextRenderer::Shadow shadow;
-    shadow.enabled = style.textShadow;
-    gui->text().setShadow(shadow);
-
     Fonts &fonts = gui->assets().themeFonts;
     string title, detail;
     double fraction = -1; // < 0: no bar
@@ -192,11 +204,21 @@ void GuiUpdateProgress::render() {
         title = "";
         break;
     }
+    ableem::Rect panel =
+        drawPanel(renderer, *gui, background, style,
+                  panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
+
+    const TextRenderer::Shadow classicShadow = gui->text().shadow();
+    TextRenderer::Shadow shadow;
+    shadow.enabled = style.textShadow;
+    gui->text().setShadow(shadow);
+
     gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + RowInset, panel.y + 24, style.text,
                                      XALIGN_LEFT);
     if (!detail.empty())
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], detail, panel.x + RowInset, panel.y + 74, style.secondary,
-                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED],
+                                         gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * RowInset),
+                                         panel.x + RowInset, panel.y + 74, style.secondary, XALIGN_LEFT);
     if (fraction >= 0) {
         ableem::Rect bar(panel.x + RowInset, panel.y + 124, panel.w - 2 * RowInset, 22);
         renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
