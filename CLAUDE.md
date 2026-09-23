@@ -629,8 +629,9 @@ launches; `core_extension` - `.dll` on Windows, what `CoreInfoTable` and the def
 `ABLEEM_EMBEDDED_TARGET` is on for psc/rpi/pcusb. `win` is the Windows product (the NSIS installer, a real
 target; `make_win.sh --product`), `pcusb` the 32-bit Debian PC stick - both done (autobleem-main's `docs/pc-targets-plan.md`,
 the sections above).
-The other per-target switches: the console tools (`apps/pscbios`, `apps/abflashkit`) build for psc/dev, the PC
-programs (`apps/updateroms`, `apps/installer`) for dev/win, `AB_ONLINE_UPDATE` is off for psc.
+The other per-target switches: the console tools and the PC programs are built in their own repositories
+now (autobleem-console-tools, autobleem-pc-tools); `AB_ONLINE_UPDATE` is on for every target since
+2026-09-23 - the console checks only with a network (autobleem-main's `docs/history/online-update.md`).
 
 Six targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
 app's SDL-free model+services layer, links `ableem_engine`), **`ab_classic`** (2026-09-18: `app_base.*` and
@@ -674,13 +675,18 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   package ships that emulator. New scripts: `tools/make_psc_package.sh` (the console zip - the release
   script `make_psc.sh` always assumed; it also **regenerates `libs.tar.gz`** from the image's SDL build,
   keeping iconv/ogg/vorbis) and `tools/make_win_package.sh` (launcher zip with the four SDL DLLs +
-  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). The workflows: the image is built and pushed by
-  **`autobleem2/autobleem-build`**'s own `image.yml` (since 2026-09-23 - that repo is the Dockerfile's one
-  source; this tree's `docker/` is a stale copy without llvm-mingw, and its `image.yml` is gone) and
-  `ci.yml` (`native` on every push/PR; the cross targets on develop/master/tags/dispatch; a `v*` tag ->
-  draft release with the five packages; PRs always on GitHub-hosted runners). The self-hosted runner is
-  `docker/runner/compose.yml`. Verified 2026-09-19 on the server: all five targets green (37/37 tests,
-  format, tidy), packages inspected; **not yet run through GitHub Actions**. **Run on a console
+  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows today** (2026-09-23, the compile-once
+  model - autobleem-main's `docs/ci-org-migration-plan.md`): the image is built and pushed by
+  **`autobleem2/autobleem-build`**'s own `image.yml`, from develop and master pushes (that repo is the
+  Dockerfile's one source; this tree's `docker/` is a stale copy without llvm-mingw); here, **`test.yml`**
+  is the test gate (`ci/build.sh native` on a hosted runner, every push and pull request) and
+  **`publish-launcher.yml`** builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop
+  pushes and `v*` tags, and keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance**
+  assembles the packages and images from it and the other components' releases, and publishes them.
+  The monolith's `ci.yml` (everything built here, the packages published from here) and `site-refresh.yml`
+  (the site's RetroArch and cores - autobleem-build's `retroarch.yml` does that now) were deleted on
+  2026-09-23. All gated by `AB_CI_ENABLED`. Verified 2026-09-19 on the server: all five targets green
+  (37/37 tests, format, tidy), packages inspected. **Run on a console
   2026-09-19**: the psc package's launcher, `libs.tar.gz` and pcsx-ab went onto the owner's stick (the
   previous set kept in `E:\tmp\stick-prev`), and the launcher started with all covers - the first hardware
   run of any console build of this repo. Two bugs the console then showed, both fixed the same day: pcsx-ab
@@ -890,8 +896,9 @@ Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFol
 or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
 an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
-`MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item) or `MENU_OPTION_POWEROFF` (see
-"The console's power off" below); starting a game and returning from one both loop back into the launcher
+`MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item), `MENU_OPTION_UPDATE` (the
+online update the launcher downloaded: `abupdate` from tmpfs lays it over the stick - autobleem-main's
+`docs/history/online-update.md`) or `MENU_OPTION_POWEROFF` (see "The console's power off" below); starting a game and returning from one both loop back into the launcher
 in-process and never reach it. `boot.sh` loops `autobleem.sh` -> `selection.sh` since 2026-09-22, so both
 come back to the launcher without a reboot; `selection.sh` reboots for anything else (a crash, a missing
 `autobleem_cfg.sh` - the file is deleted once read), which brings AutoBleem back up. The stock
