@@ -72,11 +72,12 @@ Both workflows are behind one switch: the repository variable **`AB_CI_ENABLED`*
 variables -> Actions -> Variables*). Until it is `true`, every run is skipped - so the workflows can be
 merged before the runner exists, and the pipeline can be paused without touching the files.
 
-- **`.github/workflows/image.yml`** builds the image on the self-hosted runner (the cover databases it bakes
-  in are only there) and pushes `ghcr.io/autobleem/autobleem-build:latest` + `:<sha>`. Runs when `docker/**`
-  changes on develop/master, or by hand ("Run workflow", optionally with every layer rebuilt). The package
-  has to be public (or the repo's `GITHUB_TOKEN` allowed to read it) for GitHub-hosted jobs to pull it: once,
-  under the organisation's Packages -> autobleem-build -> Package settings.
+- **The image** is built by **`autobleem2/autobleem-build`**'s `image.yml` (moved there 2026-09-23; that
+  repo owns the Dockerfile - this tree's `docker/` is a stale copy): on the self-hosted runner for the host's
+  layer cache, the cover databases fetched from the site's `db/` against their `.sha256`, pushed as
+  `ghcr.io/autobleem2/autobleem-build:latest` + `:<sha>` on master or by hand. The package grants the
+  autobleem-build repo write access under the organisation's Packages -> autobleem-build -> Package settings
+  -> Manage Actions access.
 - **`.github/workflows/ci.yml`**: `native` on every push and pull request; `psc`/`rpi`/`rpi64`/`pcusb`/`win`
   on pushes to develop/master, on `v*` tags and by hand, each with both emulators checked out next to the
   tree (`autobleem/pcsx-ab2`, `autobleem/pcsx-abnxt` with its submodules and tags - its `REV` is `git
