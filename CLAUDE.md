@@ -1168,7 +1168,15 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
   `System/Logs/AB_*.txt` and are unit-buffered so the last lines survive a crash. A `PLOG_*` inside an
   unbraced `if` wants braces (the macro is itself an if/else; `-Wdangling-else` says so).
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
-  (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it.
+  (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it. **Never `readsome()`** to read a
+  file: it returns only what is already buffered, and libc++ (llvm-mingw, what the Windows programs are
+  built with) never reports anything on a fresh stream - `DirEntry::copy` wrote every file empty and called
+  it a success until 2026-09-23 (a 0-byte `UpdateRoms.exe` on every stick the installer touched); GCC builds
+  never showed it. `read()` + `gcount()`, as `DirEntry::copy` does now.
+- **Every version a user sees is the package's** (`Env::productVersion()` - `$AB_VERSION`, else a `VERSION`
+  file at the data root / next to the program / a folder up, else `Version::DESCRIBE`); never show
+  `Version::VERSION` or `FULL_VERSION` on screen. The launcher exports `AB_VERSION` for what it starts.
+  autobleem-main's `docs/versioning.md` §4 has the rule.
 - Scripts that edit sources from Python must pass `encoding='utf-8'` (CLAUDE.md got mangled once).
 - Shell scripts and cfg/ini files must stay **LF** (enforced by `.gitattributes`). Do not let the Windows
   editor convert them.

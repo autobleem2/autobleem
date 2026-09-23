@@ -110,60 +110,37 @@ SoC.
 
 ## Port to Atari VCS 800 as a sideloaded app reading a USB stick
 
-**Status:** researched, not started.
+**Status:** researched against the real OS (2026-09-22); has its own plan now -
+[`docs/atari-vcs-plan.md`](atari-vcs-plan.md). A tester with a unit is available. **Not started; one
+on-hardware test gates the whole shape.**
 
-The Atari VCS 800 is a real, confirmed device: an AMD "Bobcat"/Zen-based embedded APU (R1606G, x86_64,
-Radeon Vega 3 graphics), 8 GB RAM, 32 GB flash, running a Debian-based OS Atari calls **Atari Mode** - a
-locked-down launcher UI - with a separate **PC Mode** that boots an entirely different OS from an external
-drive (disconnect the drive, it boots back into Atari Mode). [Atari's own support
-docs](https://support.atari.com/hc/en-us/articles/17386515521563-Operating-System) and
-[technical specs](https://support.atari.com/hc/en-us/articles/17386531014043-Technical-Specifications)
-confirm the hardware and OS; community sources describe homebrew/sideloaded content as distributed via
-**AppImage** (the standard single-file Linux app format) and note that plugging in a USB drive is what
-"unlocks the open Sandbox" for sideloading, with no separate developer registration needed for that.
+The Atari VCS 800 is the 2021 console: AMD R1606G (x86-64, Radeon Vega 3), 8 GB RAM, 32 GB eMMC.
+**Atari Mode** is the stock locked-down launcher where third-party software is sideloaded as a `.bundle`
+run by a `homebrew-daemon` in a sandbox; **PC Mode** boots a different OS from an external drive (unplug it,
+back to Atari Mode). The owner downloaded Atari's recovery image (`atari-flasher-ab-upgrade.img`); unpacking
+its payload (`atari.img.gz` -> a GPT with A/B EFI, A/B dm-verity rootfs, `var`, 10.9 GB storage) and reading
+the rootfs gave first-hand ground truth - the plan doc has the full table. Highlights:
 
-This idea is specifically "AutoBleem as a tile inside Atari Mode's own launcher, reading games off a USB
-stick" - not the same as booting PC Mode from a USB drive, which is really just a generic x86_64 PC in an
-Atari-shaped box and would be the [PC Linux USB idea above](#pc-linux-build-that-bootsruns-from-a-usb-stick-like-the-original-console)
-with one specific, well-known, already-mainline-supported GPU (amdgpu/Mesa) instead of arbitrary hardware -
-notably *easier* than that idea on the driver-compatibility front, if it ever came to that.
-
-- **What already works, unchanged:** `make_sys.sh` already builds a native Linux x86_64 `autobleem-gui`
-  (see the PC-Linux-USB idea above), and `EnvironmentSetup::fromRoot()` (1-arg command line) is exactly
-  "point me at a USB-stick-shaped root and I'll find Games/, System/Databases/, themes/ under it" -
-  precisely what "reads a USB stick" needs, no new environment/path logic. Gamepad input goes through
-  `ableem::Input`/`Joystick` over SDL2's normal joystick/game-controller API
-  (`lib_ableem/include/ableem/ui/joystick.h`), which should see Atari's Bluetooth Classic/Modern
-  controllers as ordinary SDL controllers the same way it already does on Windows/Linux/Pi - Atari's own
-  material describes both controllers as "PC compatible."
-- **What's genuinely new and unverified (no public SDK access to check these without a devkit or a unit):**
-  1. **How a sandboxed AppImage actually gets its window/screen.** Atari Mode's own launcher almost
-     certainly owns the display (some compositor, X11 or Wayland - not confirmed which); a sideloaded app
-     is unlikely to get raw DRM/KMS master the way the Pi appliance does, so this would run as an ordinary
-     windowed/fullscreen-windowed SDL2 app under whatever session Atari Mode provides, not as a boot-owning
-     appliance - simpler in one way (no systemd/tty1 plumbing to write) but means the direct-KMS trick from
-     the PC-Linux-USB idea doesn't apply here.
-  2. **Filesystem access to an arbitrary USB stick from inside the sandbox** - whether a sideloaded AppImage
-     can read any mounted USB drive by path, or only a specific app-private storage folder Atari's sandbox
-     hands it. This decides whether `fromRoot()` can point straight at the stick or whether the games need
-     to live inside the app's own sandboxed data directory instead (still workable, just a different root).
-  3. **Whether the sandbox allows spawning a second process** - `LaunchService`/`System::runAndWait` fork
-     and exec pcsx-ab as a separate binary next to the launcher; if AppImage sideloads run under any kind of
-     per-app process/container isolation that blocks executing a sibling bint binary, PCSX launches would need
-     a different mechanism (or the whole thing would need to be one static binary with PCSX linked in,
-     unlike every other AutoBleem target today).
-  4. **pcsx-ab's own x86_64 buildability** - `pcsx-rearmed-develop` is developed and tested there for ARM
-     targets (console, Pi); whether it already has a working plain x86_64 Linux build (interpreter core, no
-     ARM dynarec, same situation as any desktop Linux build) needs checking in that repo, not this one.
-- **Complexity: L**, *if* items 1-3 above turn out to be permissive (ordinary windowed SDL2 app, USB path
-  access, normal process spawning all allowed) - then this is mostly packaging (`make_sys.sh` build +
-  resources into an AppImage) plus verifying pcsx-ab builds for x86_64, no new subsystems. **Jumps to XL**
-  if the sandbox turns out to restrict any of those (would need e.g. a different launch mechanism for PCSX,
-  or a rethink of where "the USB stick" lives from the app's point of view).
-- **Open questions before building:** getting hands-on with an actual VCS 800 unit (or at minimum,
-  developer documentation beyond the public support site - Atari's own "Developers" support page exists but
-  wasn't readable during this research pass) is the real blocker to answering points 1-3 above; everything
-  else is groundwork this repo already has.
+- **OS: Apertis v2021 (= Debian Buster amd64), by Collabora**; **Weston (Wayland) kiosk-shell + Xwayland**,
+  1920x1080 - the *same* Wayland stack the PSC already runs on. **SDL2 2.0.16 preinstalled**, and it is
+  Atari's **patched SDL2** with built-in SDL_GameController mappings for both pads; OpenGL + Vulkan
+  preinstalled. So the app and input layers work essentially unchanged (`make_sys.sh` already builds native
+  x86-64; `EnvironmentSetup::fromRoot()` is the one-root layout; fullscreen exists from the Windows product).
+- **The decisive finding (answers the old open questions): the sideload sandbox blocks the USB premise.**
+  Per the OS's own `homebrew-daemon` docs, a bundle sees only its own files (read-only), a private per-user
+  `$HOME` (read/write, isolated, wiped per new user), `/tmp`, and HID devices in `/dev` - "don't assume
+  access to any other directories." A USB stick mounted at `/media/...` is outside the container, so an
+  Atari-Mode bundle **cannot be assumed to read a USB game library**. Process spawning within the bundle is
+  fine, so a *bundled* pcsx-ab runs and saves into `$HOME`. The SDK is public
+  ([bundle-gen](https://github.com/atari-vcs/bundle-gen), `ghcr.io/atari-vcs/vcs-build-container`,
+  [native-example-bundle](https://github.com/atari-vcs/native-example-bundle)); no devkit needed.
+- **Two paths, in the plan:** (A) an Atari-Mode `.bundle` with data in `$HOME` - works, but self-contained,
+  no USB library unless the gating test says otherwise; (B) a **PC-Mode USB appliance** - the real
+  "read the stick" experience, which is just the PC-Linux-USB idea above on this one known, mainline GPU
+  (amdgpu/Mesa), the easy case of it.
+- **Complexity:** L for either path if the app/pad/USB probe passes on hardware; the remaining new work is a
+  native x86-64 appliance target + a native pcsx-ab Linux build + `bundle-gen` packaging (Path A) or the
+  PC-Linux-USB appliance retargeted to the VCS (Path B). See the plan for steps and the gating test.
 
 ---
 
