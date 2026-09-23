@@ -149,7 +149,8 @@ update() {
     echo "$(date) installing the downloaded update" >> $ULOG
     cd /tmp
     LD_LIBRARY_PATH=/tmp/lib /tmp/abupdate /media >> $ULOG 2>&1
-    echo "$(date) abupdate exit status $?" >> $ULOG
+    status=$? # before the date below: a command substitution sets $? too
+    echo "$(date) abupdate exit status $status" >> $ULOG
     sync
     rm -f /tmp/.abupdating /tmp/abupdate
     # the emulator copy above was the old one (autobleem.sh unpacks the new libraries itself)
