@@ -5,7 +5,12 @@
 # the payload the launcher repo contributes: Autobleem/bin/autobleem (autobleem-gui + resources),
 # Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) and Themes/ (the five themes ship with the
 # launcher - they stay in payload/Themes in the repo, no theme pack). Assembly extracts it over the payload.
-# Gated by AB_CI_ENABLED.
+# The psc target's artifact also carries the psc skeleton (payload/'s exploit dir, Autobleem/rc,
+# Autobleem/start.sh, Autobleem/lib/libs.tar.gz, Docs/, Games/) - autobleem-appliance's assemble-psc.sh has
+# nowhere else to get it from, since payload/ lives only in this repo. Deliberately NOT included: RetroArch/
+# (AutoBleemInstaller.exe fetches RetroArch, its cores/libs/apps packs and the BIOS files from the site at
+# install time - the PC has network, the console never will) and Apps/ (autobleem-console-tools' own
+# artifact). Gated by AB_CI_ENABLED.
 name: publish-launcher
 
 on:
@@ -118,6 +123,20 @@ jobs:
             echo "::warning::no abpad built in $D/apps/abpad - Apps would run without the virtual gamepad"
           fi
           cp -a payload/Themes/. stage/Themes/
+          if [ "${{ matrix.target }}" = psc ]; then
+            # the psc skeleton this repo owns and nothing else has: the exploit dir, Autobleem/{rc,start.sh},
+            # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - still
+            # the checked-in archive; regenerating it from this same job's SDL build is a follow-up, not
+            # done here), Docs/ and Games/. RetroArch/ and Apps/ are deliberately left out: the assembler
+            # bundles neither - RetroArch, its cores/libs/apps packs and the BIOS files are all fetched by
+            # AutoBleemInstaller.exe at install time (the PC has network, the console never will), and Apps/
+            # (pscbios, abflashkit) is autobleem-console-tools' own artifact.
+            find payload -maxdepth 1 -mindepth 1 ! -name Apps ! -name RetroArch ! -name Autobleem ! -name Themes \
+              -exec cp -a {} stage/ \;
+            cp -a payload/Autobleem/rc payload/Autobleem/start.sh stage/Autobleem/
+            mkdir -p stage/Autobleem/lib
+            cp payload/Autobleem/lib/libs.tar.gz stage/Autobleem/lib/
+          fi
           find stage -type f -name placeholder -delete
           tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
           echo "plat=$P" >> "$GITHUB_OUTPUT"
