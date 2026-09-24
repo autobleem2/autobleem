@@ -96,9 +96,25 @@ Args=--fullscreen
 Lib=lib/{key}
 # optional environment variables, NAME=value separated by ';' (Env.<key>= adds or overrides per platform)
 Env=SDL_AUDIODRIVER=alsa;TYRIAN_DATA=data
+# whether the App runs with our virtual pad mapper (abpadd + the libabpad.so preload,
+# docs/virtual-gamepad-plan.md); absent = true, what every App before the key had
+VirtualPad=true
 # unchanged: needs the AutoBleem kernel
 Kernel=false
 ```
+
+**`VirtualPad=`** (decided 2026-09-24) is the App's own statement about the pad mapper:
+
+- `true`: the App is meant to be played through it; the default, and what every App before the key had.
+- `false`: the App reads the pads its own way (it ships its own mapping, or has no use for a pad), and
+  `app_env.sh` starts neither the daemon nor the preload for it.
+
+The launcher passes it as `AB_APP_VIRTUAL_PAD=1|0` (`AppManifest::usesVirtualPad()`); a `run.sh` started
+by hand reads it from the ini the same way.
+
+**Repositories** (decided 2026-09-24): an App's source repository is named **`app_<name>`**
+(`app_opentyrian`), an extension's **`ext_<name>`** (`ext_store`). The folder it installs to keeps the bare
+name (`Apps/opentyrian/`, `Extensions/store/`).
 
 Comments are `#` lines (`IniFile` knows no `;` comments), and keys are case-insensitive: `IniFile`
 lower-cases them. That is why the environment is one `Env=` list rather than a key per variable, whose

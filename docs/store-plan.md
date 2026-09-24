@@ -43,7 +43,7 @@ behind it:
    - it is a plugin with `Background=true`, so its downloads go on while the carousel is showing;
    - it is **a separate download**, never bundled with a release, and the user installs it by hand like
      every extension;
-   - it lives in its own repository (proposed `autobleem2/autobleem-store`, with autobleem-core as a
+   - it lives in its own repository (`autobleem2/ext_store` - an extension's repository is named `ext_<name>` - with autobleem-core as a
      submodule);
    - it never offers or installs extensions.
 2. **Every target.** It is built for `psc`, `rpi` (32-bit), `rpi64`, `pcusb` and `win`.
@@ -84,7 +84,7 @@ behind it:
   - `Downloader` and `abfetch --continue`;
   - `AppInstaller` and `GameInstaller`;
   - a generic detail pane in `ab_classic`.
-- **In autobleem-store**:
+- **In ext_store**:
   - the formats, `StoreCatalog` and `StoreSourceTsv`;
   - `StoreService`;
   - the screen, `GuiStore`;
@@ -253,7 +253,7 @@ rebuilt on it.
 
 ### The site (autobleem-repo)
 
-- **The Store itself** is published like the launcher's components: `autobleem-store-<platform>-<v>.zip`,
+- **The Store itself** is published like the launcher's components: `ext_store-<platform>-<v>.zip`,
   laid out as `Extensions/store/...`, from its repository's CI.
 - **The catalog**: `repo_publish.sh store <platform> <zip|png|json>...` puts files under
   `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
@@ -271,7 +271,7 @@ The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the 
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
 
-1. **Not done.** autobleem-store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
+1. **Not done.** ext_store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
    the five targets), `StoreCatalog` and `StoreSourceTsv` (header, header-less, grouping, malformed
    lines), with tests.
 2. **Not done.** Core + launcher: `Downloader` extracted from `UpdateService` (whose tests keep passing);
@@ -279,10 +279,10 @@ exists.
 3. **Not done.** Core: `GameInstaller` and `AppInstaller` over staging, with tests (zip/7z/tar.gz, a
    nested folder, a bare `.bin`, multi-disc, an unsafe name, no `app.ini`, not enough space, an update
    keeping `pad.ini`).
-4. **Not done.** autobleem-store: `StoreService` (sources, merge, `installed.json`, the queue worker,
+4. **Not done.** ext_store: `StoreService` (sources, merge, `installed.json`, the queue worker,
    `poll`/`suspend`/`resume`/`shutdown`, the `ExtensionHost` calls; tests with a fake host). Tests with a recording `CommandRunner` and a local catalog.
 5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of
-   it). autobleem-store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
+   it). ext_store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
    Windows build, run from the launcher's Extensions list, against a local catalog (`python -m
    http.server`).
 6. **Not done.** The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
