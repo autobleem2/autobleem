@@ -47,9 +47,16 @@ switches the session script over, so the old session still tee'd `AB_out.txt` to
 | 5 min idle at the carousel | **0 KiB, 0 files** |
 | a rescan with no game changed (set off by a text file dropped into `RetroArch/roms`) | 11 KiB: the test file, `roms.fingerprint` (a real change), `AB_out.txt` (the old session's tee), and two avoidable ones - `.online-probe` downloaded/renamed/deleted per scan cycle, and the covers dbs opened read-write - **both fixed** the same night (runtime dir, read-only). No `Game.ini`, regional.db, `.m3u`, playlist or dump |
 | first start of the new build | `config.ini` once (the two new keys), one `Game.ini` (a one-off update to that folder's file) |
+| **after the restart** (new session script, `/run/autobleem`): a boot to the carousel | **4 KiB (8 sectors), no file** - the mount's own volume flag |
+| a PS1 game (pcsx-abnxt) + a slot kept, and a RetroArch game - pcsx-abnxt **without** `abfeatures` (the packages did not ship it - `make_packages.sh` lists its files by name; **fixed** in both emulators) | 2666 KiB: the exit state written as `.000` in `!SaveStates` and copied again into the slot, its PNG twice, `filename.txt`/`lastcdimg.txt` created and deleted; RetroArch: `retroarch.cfg` (its save on exit + our restore), `core_info.cache` and the core options (first run only - not seen again), the `.lrtl` runtime log (**turned off**, `content_runtime_log=false` in the append file) |
+| the same, with `abfeatures` put in place by hand | 2201 KiB, 9 files: **the slot kept (`.001.res` + its picture) - the exit state went to `/run/autobleem/exit`, nothing temporary on the stick**; the card (the game wrote it); regional.db (last played, history); `lastcdimg.txt` once (it was missing); RetroArch: `retroarch.cfg` twice (`rapersist` on: RetroArch saves on exit, then our keys are put back) and the `.lrtl` (off from the next nightly) |
 
-Still to do: `stick_writes.sh` for a boot, a PS1 game and a RetroArch game after the restart (someone at
-the pad), and on a console; verify on RetroArch 1.22 that
+What is left per game is user state: the kept slot, the card, last played/history - and, with "Persist
+RetroArch config" on (the default), RetroArch's own save of `retroarch.cfg` plus our restore. With it off
+RetroArch writes nothing of its own.
+
+Still to do: resuming from a kept slot (`AB_LOAD_STATE`, not exercised yet) and the same numbers on a
+console; verify on RetroArch 1.22 that
 `--appendconfig` + the restore behave as `configuration.c` says; verify the exit dir on a console with a
 real game (the Windows build of pcsx-abnxt compiles it, but could not be exercised without a BIOS).
 
