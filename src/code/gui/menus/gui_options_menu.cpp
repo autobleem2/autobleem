@@ -106,7 +106,6 @@ void GuiOptions::fill() {
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
     lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
     lines.emplace_back(CFG_WIDESCREEN, _("Widescreen:"), "aspect", true, vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_GFX_FILTER, _("GFX Filter:"), "mip", true, vector<string>({"true", "false"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
@@ -258,8 +257,11 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
     gui->beginBusy(_("Loading..."), [this]() { render(); });
     if (id == CFG_LANG)
         app.lang().load(Env::getPathToLangDir(), nextValue);
-    gui->loadAssets(theme);         // the music only with a theme change
-    font = gui->assets().themeFont; // get the new font for the menu
+    gui->loadAssets(theme); // the music only with a theme change
+    // the new font (and the new theme's panel) decide how many rows fit: take the font and re-count the
+    // rows as init() did, then page to the cursor again - rendering with the old count overran the panel
+    GuiOptionsMenuBase::init();
+    computePagePosition();
     gui->endBusy();
 }
 
