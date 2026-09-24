@@ -35,6 +35,11 @@
 
 using namespace std;
 
+namespace {
+// the console's hardware tool, an extension shipped with the console package: Extensions/pscbios/
+const char *const PscBiosExtension = "pscbios";
+} // namespace
+
 //*******************************
 // GuiLauncher::loop_chooseSet
 //*******************************
@@ -484,27 +489,29 @@ void GuiLauncher::loop_openSystemMenu() {
     }
 
     case SystemMenuAction::HardwareInfo: {
-        // the console runs the PSC-Bios app from the Apps folder (it also sets up the pads and wifi
-        // there); a Pi or a PC has no such app, and a console without it installed gets the same
-        // built-in screen instead of nothing
-        string pscBios = Env::getPathToAppsDir() + sep + "pscbios" + sep + "run.sh";
-#ifdef AB_ROOT_RELATIVE_LAYOUT
-        const bool runPscBios = false;
-#else
-        const bool runPscBios = DirEntry::exists(pscBios);
+        // the console's PSC-Bios - the facts, and the WiFi, the time zone and the pads set up - an extension
+        // shipped with the console package (Extensions/pscbios/, 2026-09-24; it was an App before). Wherever it
+        // cannot run - a Pi or a PC (it is built for the console only), a console without it, one built for
+        // another AutoBleem or disabled after a crash - the built-in screen, rather than nothing
+        ExtensionRuntime::Refusal why = ExtensionRuntime::Refusal::NotFound;
+#ifdef AB_ONLINE_UPDATE
+        app.extensionCatalog().scan();
+        if (app.extensionCatalog().find(PscBiosExtension) != nullptr) {
+            why = app.extensions().run(PscBiosExtension, System::hasDefaultRoute());
+            forgetHeldModifiers(); // its screens ran their own loops
+            gui->input().flushEvents();
+            applyExtensionRequests();
+            if (why != ExtensionRuntime::Refusal::None) {
+                PLOG_WARNING << "PSC-Bios did not run (" << static_cast<int>(why) << ")";
+            }
+        }
 #endif
-        if (!runPscBios) {
+        if (why == ExtensionRuntime::Refusal::Failed) {
+            notificationLines[1].setText("PSC-Bios " + _("closed with an error"), 2 * DefaultShowingTimeout);
+        } else if (why != ExtensionRuntime::Refusal::None) {
             GuiHardwareInfo infoScreen(*gui);
             infoScreen.show();
-            break;
         }
-        app.audio().close();
-        gui->input().flushPads();
-        System::runAndWait(pscBios, {});
-        gui->input().flushEvents();
-        gui->input().probePads();
-        app.audio().restart();
-        app.audio().playMusic();
         break;
     }
 

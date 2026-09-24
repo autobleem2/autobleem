@@ -47,7 +47,8 @@ LAUNCHER = [
     ('rescan', 'menu 0; wait 700'),
 ]
 PSCBIOS = [
-    ('pscbios-main', 'wait 600'),
+    # PSC-Bios is an extension (2026-09-24): the launcher's Hardware Information item opens it
+    ('pscbios-main', 'menu 4; wait_screen GuiPscBiosMain; wait 600'),
     ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
     ('pscbios-gamepads', 'press o; wait 400; press s; wait_screen GuiGamepadMenu; wait 400'),
     ('pscbios-wizard', 'press x; wait 1200'),
@@ -127,7 +128,7 @@ def main(argv):
         print('== %s' % name)
         set_language(name)
         shoot(None, LAUNCHER, out_dir, show)
-        shoot('pscbios', PSCBIOS, out_dir, show)
+        shoot(None, PSCBIOS, out_dir, show)
         shoot('abflashkit', ABFLASHKIT, out_dir, show)
     set_language('English')
     # the two Win32 programs, when the owner has them open
