@@ -45,7 +45,7 @@ poweroff_instead() {
     echo 1 > /sys/class/leds/red/brightness
     shutdown -h now
     sleep 120 # never back here: the launcher must not start again while the system goes down
-    reboot
+    systemctl reboot
 }
 
 # The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
@@ -199,4 +199,4 @@ esac
 sync
 umount /media 2>/dev/null
 sync
-reboot
+systemctl reboot

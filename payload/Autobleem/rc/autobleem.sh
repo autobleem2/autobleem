@@ -5,7 +5,7 @@
 mkdir -p /tmp/lib
 cp /media/Autobleem/lib/libs.tar.gz /tmp/lib
 cd /tmp/lib
-tar xvzf libs.tar.gz
+gunzip -c libs.tar.gz | tar xvf -   # busybox tar may lack -z (the new kernel payload's does)
 
 cd /media/Autobleem/bin/autobleem
 ./run.sh

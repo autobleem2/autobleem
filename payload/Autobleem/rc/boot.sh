@@ -41,4 +41,4 @@ while true; do
     sh /tmp/selection.sh || break
 done
 sync
-reboot
+systemctl reboot   # systemd's: a busybox reboot over it only signals init and returns
