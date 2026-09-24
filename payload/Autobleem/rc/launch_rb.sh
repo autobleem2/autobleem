@@ -40,13 +40,21 @@ led()
 # the splashes: absplash shows a picture in the same full-screen window the launcher and RetroArch use.
 # The launch picture stays until RetroArch's log says its video is up (/tmp/.ra_up is touched then);
 # the return picture until the launcher's window is back (it removes /tmp/.abload itself).
+# "Up" is RetroArch 1.22's "[Video] Found display server" line: video_driver_init_internal() prints it
+# right after the video driver's init returned - the window and the GL context exist - whatever the
+# driver (under Wayland the server it names is "null"). RetroArch logs nothing without --verbose,
+# hence the flag below; RetroBoot's "Found display driver" never appears in 1.22's output, so the
+# splash used to sit out its whole timeout. The second after it covers the first frame; the 30 s are
+# the fallback (a retroarch.cfg with frontend_log_level above 1 hides the line) and RetroArch's exit
+# ends the wait at once.
 show_launch_splash()
 {
 	[ -x "$ABSPLASH" ] || return
 	rm -f /tmp/.ra_up
 	"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 &
 	N=0
-	while ! grep -q "Found display driver" "$BIN/logs/retroarch.log" 2>/dev/null; do
+	while ! grep -q "\[Video\] Found display server" "$BIN/logs/retroarch.log" 2>/dev/null; do
+		[ -e /tmp/.ra_up ] && return
 		usleep 250000
 		N=$((N+1))
 		[ $N -ge 120 ] && break
@@ -99,11 +107,11 @@ if [ -n "$2" ]; then
 	esac
 	echo "Using core $CORE"
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" -L "$CORE" "$1" > "$BIN/logs/retroarch.log" 2>&1
+	"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" -L "$CORE" "$1" > "$BIN/logs/retroarch.log" 2>&1
 	LVL=$?
 else
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" > "$BIN/logs/retroarch.log" 2>&1
+	"$BIN/retroarch" --verbose --config "$BIN/retroarch.cfg" > "$BIN/logs/retroarch.log" 2>&1
 	LVL=$?
 fi
 echo "retroarch exited with status $LVL"
