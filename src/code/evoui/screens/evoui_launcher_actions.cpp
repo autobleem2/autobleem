@@ -75,7 +75,7 @@ void GuiLauncher::loop_chooseSet() {
 // GuiLauncher::loop_crossButtonPressed_STATE_GAMES
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
-    if (carousel.games.empty()) {
+    if (carousel.games.empty() || refuseLicenceProtected()) {
         return;
     }
 
@@ -373,6 +373,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
+            if (refuseLicenceProtected()) {
+                return;
+            }
             if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;

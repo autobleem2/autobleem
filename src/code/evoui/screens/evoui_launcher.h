@@ -246,6 +246,9 @@ public:
     void showOptions();
     // the selected game as the emulator sees it: a PS1 game, even from the Lightgun set
     bool selectedIsPs1() const;
+    // the selected game is a PSN PS1 Classic still under its licence's DRM (the scan found it): it is not
+    // started - pcsx-ab would read noise - and this says why; true when the start was refused
+    bool refuseLicenceProtected();
     // the selected game's screenshot in the theme's launcher.snapPanel, when the theme has one
     void loadSnap();
     void renderSnap();

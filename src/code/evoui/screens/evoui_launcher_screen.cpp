@@ -120,6 +120,18 @@ bool GuiLauncher::selectedIsPs1() const {
 }
 
 //*******************************
+// GuiLauncher::refuseLicenceProtected
+//*******************************
+bool GuiLauncher::refuseLicenceProtected() {
+    if (!selectedIsPs1() || !carousel.games[carousel.selected]->licenceProtected)
+        return false;
+    app.audio().cancel.play();
+    notificationLines[1].setText(_("This game is protected by its PSN licence and cannot be started"),
+                                 2 * DefaultShowingTimeout);
+    return true;
+}
+
+//*******************************
 // GuiLauncher::rememberSelection
 //*******************************
 // Hands the carousel's position back to the Session, so pressing Start later reopens it where it was.
