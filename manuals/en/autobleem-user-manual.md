@@ -387,8 +387,10 @@ What AutoBleem's catalog offers is also listed on the download site, `https://au
 **Your own games on your network**: `abstored`, the Store's LAN server, serves a folder of PS1 games to
 the Store on the same network. It runs on any Linux machine - a Raspberry Pi, a home server - and only reads
 the folder. Start it with `abstored <games folder>`, open `http://<that machine>:8124/` in a browser to see
-what it serves and any problems it found, and add `http://<that machine>:8124/store.tsv` as a source. Its
-README (`ext_store/server/` in the source) has the details.
+what it serves and any problems it found, and add `http://<that machine>:8124/store.tsv` as a source. Ready
+programs for Linux and Windows are on the Store's page, in its **LAN server** tab; setting it up as a service
+is `INSTALL-linux.md` (`ext_store/server/` in the source). **LAN Share** (section 5.2) puts games and discs
+from a PC on such a server.
 
 <!-- pagebreak -->
 
@@ -430,7 +432,9 @@ cancels. A USB keyboard types at any time: Enter confirms, Esc cancels.
 
 <!-- pagebreak -->
 
-## 5. UpdateRoms - refreshing a console stick on the PC
+## 5. On the PC
+
+### 5.1 UpdateRoms - refreshing a console stick
 
 The PlayStation Classic has no network, so the RetroArch lists and box art of its stick are made on the PC:
 **UpdateRoms** does on the PC what the launcher's scan does on a Pi, with the PC's network and the console's
@@ -452,6 +456,39 @@ paths, so the console boots and finds everything in place.
 Run it again after every change to the ROM folders; a folder nothing changed in is skipped, so a re-run is
 quick. The log is `System/Logs/updateroms.log`. A Raspberry Pi card in a card reader can be refreshed the
 same way (`UpdateRoms.exe <drive> --target rpi`), though a Pi does it by itself when it has a network.
+
+### 5.2 LAN Share - your games and discs on the server on your network
+
+**LAN Share** (`LanShare.exe`, on the Store's page in its **LAN server** tab) puts your PS1 games on the
+Store's server on your home network - an `abstored` on a Raspberry Pi, a NAS or another PC - and reads a PS1
+disc in the PC's CD/DVD drive for it. The Store on the console, the Pi or the PC then installs them from there.
+Nothing to install; the settings are kept in `%LOCALAPPDATA%\AutoBleem LAN Share\`.
+
+![The LAN Share window](../images/en/lanshare.jpg)
+
+1. **The server**: enter its address (`http://<its address>:<port>`, as the Store has it) and press
+   **Connect**. Its games and any problems its scan found are listed on the left. To put games on it, give
+   one of:
+   - **Share** - the server's games folder as it is shared on the network (Samba), e.g. `\\raspberrypi\games`:
+     LAN Share copies the games there and asks the server to scan. The server itself stays read only.
+   - **Token** - when the server was started with `--allow-uploads`: its token (the server prints it at start
+     and keeps it in `<state>/upload-token`). LAN Share uploads over HTTP, and a stopped upload goes on where
+     it stopped.
+2. **Games on this PC**: choose a folder of games (one folder per game), tick games and press **Publish the
+   ticked games**. **On the server** says whether the server has a game already (by its serial, else by its
+   title); such a game is never sent twice. **Tick those not on the server** ticks the rest.
+3. **A disc**: put a PS1 disc in the drive and press **Read a disc and publish it**. The disc is read whole
+   into a `.bin` + `.cue` (and an `.sbi` for a LibCrypt game, when the drive gives the subchannel), named
+   after its title, checked against the known good dump (when the databases are chosen) and published. For
+   a game on several discs tick **The game has more than one disc**: LAN Share asks for each next disc and
+   publishes them together as one game.
+4. **Remove from the server...** takes the selected games off the server. Nothing is deleted: each is moved
+   into a `.removed` folder next to the server's games, and moving it back puts it back.
+
+The **Databases** - AutoBleem's covers folder (`coversU/P/J.db`) and RetroArch's `Sony - PlayStation.rdb` -
+give the titles and the check of a read disc; both are optional. **Also share the games on this PC with the
+Store** (off by default) serves the folder on this PC to the Store directly. The first time, Windows asks about
+its firewall: allow private networks only.
 
 <!-- pagebreak -->
 

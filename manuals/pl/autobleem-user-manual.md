@@ -390,8 +390,10 @@ To, co oferuje katalog AutoBleem, jest też na stronie pobierania, `https://auto
 **Własne gry w sieci domowej**: `abstored`, serwer sieciowy Sklepu, udostępnia folder gier PS1 Sklepowi w
 tej samej sieci. Działa na dowolnym Linuksie - Raspberry Pi, domowym serwerze - i tylko czyta folder. Uruchom
 go poleceniem `abstored <folder gier>`, otwórz w przeglądarce `http://<ta maszyna>:8124/`, żeby zobaczyć, co
-udostępnia i jakie problemy znalazł, i dodaj `http://<ta maszyna>:8124/store.tsv` jako źródło. Szczegóły są
-w jego README (`ext_store/server/` w źródłach).
+udostępnia i jakie problemy znalazł, i dodaj `http://<ta maszyna>:8124/store.tsv` jako źródło. Gotowe
+programy dla Linuksa i Windows są na stronie Sklepu, w zakładce **LAN server**; instrukcja instalacji jako
+usługi to `INSTALL-linux.md` (`ext_store/server/` w źródłach). Gry i płyty z PC wgrywa na taki serwer
+**LAN Share** (rozdział 5.2).
 
 <!-- pagebreak -->
 
@@ -433,7 +435,9 @@ zatwierdza, Kółko anuluje. Klawiatura USB pisze w każdej chwili: Enter zatwie
 
 <!-- pagebreak -->
 
-## 5. UpdateRoms - odświeżanie pendrive'a konsoli na PC
+## 5. Na PC
+
+### 5.1 UpdateRoms - odświeżanie pendrive'a konsoli
 
 PlayStation Classic nie ma sieci, więc listy RetroArch i okładki jego pendrive'a powstają na PC:
 **UpdateRoms** robi na PC to, co na Pi robi skan launchera - z siecią komputera i ze ścieżkami konsoli, tak
@@ -455,6 +459,37 @@ PlayStation Classic nie ma sieci, więc listy RetroArch i okładki jego pendrive
 Uruchamiaj go po każdej zmianie w folderach ROM-ów; folder, w którym nic się nie zmieniło, jest pomijany,
 więc kolejne uruchomienie jest szybkie. Log to `System/Logs/updateroms.log`. Kartę Raspberry Pi w czytniku
 można odświeżyć tak samo (`UpdateRoms.exe <dysk> --target rpi`), choć Pi robi to sam, gdy ma sieć.
+
+### 5.2 LAN Share - własne gry i płyty na serwer w sieci
+
+**LAN Share** (`LanShare.exe`, na stronie Sklepu w zakładce **LAN server**) wgrywa twoje gry PS1 na serwer
+Sklepu w sieci domowej - `abstored` na Raspberry Pi, NAS-ie albo innym komputerze - i czyta płytę PS1 z napędu
+CD/DVD komputera. Sklep na konsoli, Pi albo PC instaluje je potem stamtąd. Niczego nie trzeba instalować;
+ustawienia są w `%LOCALAPPDATA%\AutoBleem LAN Share\`.
+
+![Okno LAN Share](../images/pl/lanshare.jpg)
+
+1. **Serwer**: wpisz jego adres (`http://<jego adres>:<port>`, jak w Sklepie) i naciśnij **Connect**. Po
+   lewej pojawią się jego gry i problemy, które znalazł jego skan. Żeby wgrywać gry, podaj jedno z dwóch:
+   - **Share** - folder gier serwera udostępniony w sieci (Samba), np. `\\raspberrypi\games`: LAN Share
+     kopiuje tam gry i prosi serwer o skan. Serwer zostaje tylko do odczytu.
+   - **Token** - gdy serwer uruchomiono z `--allow-uploads`: jego token (serwer wypisuje go przy starcie i
+     trzyma w `<state>/upload-token`). LAN Share wysyła gry przez HTTP; przerwane wysyłanie jest wznawiane.
+2. **Gry z tego PC**: wybierz folder z grami (jeden folder na grę), zaznacz gry i naciśnij **Publish the
+   ticked games**. Kolumna **On the server** mówi, czy serwer już ma daną grę (po numerze seryjnym, inaczej
+   po tytule); takiej gry LAN Share nie wysyła drugi raz. **Tick those not on the server** zaznacza resztę.
+3. **Płyta**: włóż płytę PS1 i naciśnij **Read a disc and publish it**. Płyta jest czytana w całości do
+   `.bin` + `.cue` (i `.sbi` dla gry z zabezpieczeniem LibCrypt, gdy napęd podaje podkanał), nazywana
+   tytułem, sprawdzana ze znanym wzorcowym zrzutem (gdy wybrano bazy) i wgrywana. Dla gry na kilku płytach
+   zaznacz **The game has more than one disc** - LAN Share poprosi o każdą kolejną i wgra całość jako jedną
+   grę.
+4. **Remove from the server...** zdejmuje zaznaczone gry z serwera. Nic nie jest kasowane: każda trafia do
+   folderu `.removed` obok gier serwera, a przeniesienie jej z powrotem ją przywraca.
+
+Bazy (**Databases**) - folder okładek AutoBleem (`coversU/P/J.db`) i `Sony - PlayStation.rdb` z RetroArch -
+dają tytuły i sprawdzenie przeczytanej płyty; obie są opcjonalne. **Also share the games on this PC with the
+Store** (domyślnie wyłączone) udostępnia Sklepowi folder z tego PC bezpośrednio. Przy pierwszym razie Windows
+pyta o zaporę: zezwól tylko na sieci prywatne.
 
 <!-- pagebreak -->
 
