@@ -1,10 +1,12 @@
-# The Store (plan)
+# The AutoBleem Store (plan)
 
-**Status (2026-09-24):** planned, nothing built. This file describes a screen that downloads and installs
-Apps and games from inside the launcher. It came out of a look at Project Eris' "PSC Store"
-(`github.com/hampter-mods/pscstore-release`, release-only, closed source). What we take from it is the idea,
-not the code: a controller-driven library you can add to without pulling the stick, and a tab-separated list
-of download URLs that the user owns.
+**Status (2026-09-24):** planned, nothing built. The Store downloads and installs Apps and games without
+pulling the stick. It is the **first AutoBleem extension** (`docs/extensions-plan.md`): a program built on
+the AutoBleem SDK, unpacked onto the stick by hand and run from the System menu's Extensions list.
+
+It came out of a look at Project Eris' "PSC Store" (`github.com/hampter-mods/pscstore-release`,
+release-only, closed source). What we take from it is the idea, not the code: a controller-driven library
+you can add to without pulling the stick, and a tab-separated list of download URLs that the user owns.
 
 ## What PSC Store does, and what we take
 
@@ -25,7 +27,7 @@ behind it:
 - It needs Eris networking and a USB WiFi adapter.
 
 **We take:**
-- the in-launcher screen and the background queue;
+- a controller-driven screen with a download queue;
 - the user-owned TSV sources, as a first-class feature (see the decisions below).
 
 **We do not take:**
@@ -35,41 +37,47 @@ behind it:
 
 ## The decisions (the owner, 2026-09-24)
 
-1. **One screen, `GuiStore`, reached from the System menu** (L2+R2 -> "Store"). It is a launcher screen like
-   Memory Cards or Game Manager, not an App.
-2. **Every target.** The store is part of the launcher on `psc`, `rpi` (32-bit), `rpi64`, `pcusb` and
-   `win`, not a console feature.
+1. **The Store is an extension, "AutoBleem Store"**: `Extensions/store/`, started from System menu ->
+   Extensions. The user installs it by hand, like every extension. It lives in its own repository
+   (proposed `autobleem2/autobleem-store`, with autobleem-core as a submodule, laid out like
+   autobleem-console-tools). The Store never offers or installs extensions.
+2. **Every target.** It is built for `psc`, `rpi` (32-bit), `rpi64`, `pcusb` and `win`.
    - The screen and its sources are the same everywhere.
    - What differs per target is data: which catalog it reads (`store/<platform>/`) and which download
      command it runs (`PlatformConfig`).
    - The console needs a network for downloading, and has one only with the AutoBleem kernel's WiFi, as for
-     the update. Without it the screen still opens: it browses what is cached and says "Not connected".
-3. **Our Apps format is a store item.** An App is shipped as one zip per App per platform
-   (`opentyrian-psc-<version>.zip` holding `Apps/opentyrian/...`) and installs to `Apps/<name>/`. Updates
-   and removal are the store's too.
+     the update. Without it the Store still opens: it browses what is cached and says "Not connected".
+3. **Our Apps format is a store item.** The App folder is multi-platform (`docs/app-format-plan.md`):
+   one `Apps/<name>/` holds every platform's binary in `bin/<key>/`, and `app.ini` says which is which.
+   The Store downloads the one-platform package for this machine (`opentyrian-psc-<version>.zip`) and
+   *merges* it into the folder, never deleting another platform's binaries. Updates and removal are the
+   store's too.
 4. **TSV sources are not limited.** They are how legal games from private sources get distributed
    (a homebrew publisher, a rights holder, the user's own server).
    - Any number of sources, local files or remote URLs, any host, http or https.
    - Every item kind a source can name, Apps included.
    - No allowlist, no on/off switch, no filtering of what a line points at.
    - We ship no sources but our own catalog, and the screen labels which source an item came from.
-5. **A clean implementation - no Project Eris or PSC Store code** (a standing rule). Nothing of theirs is
-   used: no source, binary, script, database, TSV sample, artwork or text, not even their patched
-   third-party components. Their public descriptions are read to understand *what* the feature does.
-   Everything here is designed and written from scratch on our own code (`UpdateService`, `ThemeInstaller`,
-   the scanner, the archive readers). Should their TSV columns ever be accepted, that is a mapping written
-   from a published description of the format, not from their code.
+5. **A clean implementation - no Project Eris or PSC Store code** (a standing rule, autobleem-main's
+   `decisions.md`). Nothing of theirs is used: no source, binary, script, database, TSV sample, artwork or
+   text, not even their patched third-party components. Their public descriptions are read to understand
+   *what* the feature does. Everything here is designed and written from scratch on our own code
+   (`UpdateService`, `ThemeInstaller`, the scanner, the archive readers).
 6. **No installs pushed over the network.** The store only *pulls*: nothing listens on a port, and there
    is no web page, no upload and no pairing. Copying to the stick or the data partition stays the way
    to bring your own files.
 
 ## The pieces
 
-Everything SDL-free goes in **autobleem-core**, so it is a core commit first and then a submodule bump here:
-- the formats go in `lib_ableem` (the engine, where the JSON library lives);
-- the services go in `ab_core`.
-
-Each service ships with its tests in the same commit. The screen lives here, in `ab_evoui`.
+- **In autobleem-core** (the SDK, usable by the launcher too), each with its tests:
+  - `Downloader` and `abfetch --continue`;
+  - `AppInstaller` and `GameInstaller`;
+  - a generic detail pane in `ab_classic`.
+- **In autobleem-store**:
+  - the formats, `StoreCatalog` and `StoreSourceTsv`;
+  - `StoreService`;
+  - the screen, `GuiStore`;
+  - the extension's packaging.
 
 ### Item kinds
 
@@ -81,14 +89,14 @@ Each service ships with its tests in the same commit. The screen lives here, in 
 | later: `theme` | `Themes/<name>/` (`ThemeInstaller`, as a dropped zip is today) | our catalog; TSV |
 
 The kind is a string in both formats, so a new kind is a new installer and no format change. An older
-launcher skips kinds it does not know.
+Store skips kinds it does not know.
 
-### Our catalog (engine: `StoreCatalog`)
+### Our catalog (`StoreCatalog`)
 
 `<repo_url>/store/<platform>/catalog.json` is built by the site's `repo_index.py` (the `index_store`
 function to be written). `<platform>` is `Env::platformName()` plus the architecture where it matters:
-`psc`, `rpi`, `rpi64`, `pcusb`, `win`. It is the same key set `UpdateService` already derives in
-`app.cpp`.
+`psc`, `rpi`, `rpi64`, `pcusb`, `win`. It is the same key set `UpdateService` already derives in the
+launcher's `app.cpp`. `repo_url` comes from the platform ini.
 
 ```json
 {"schema": 1, "platform": "psc", "date": "2026-10-01",
@@ -108,7 +116,7 @@ function to be written). `<platform>` is `Env::platformName()` plus the architec
   `Autobleem/lib/apps`, so `pack/psc-libs` maps to the existing `psc/libs/latest.json`.
 - A catalog item always carries a `sha256`.
 
-### TSV sources (engine: `StoreSourceTsv`)
+### TSV sources (`StoreSourceTsv`)
 
 A source is a UTF-8 text file with tab-separated values, one file (not one item) per line:
 
@@ -124,8 +132,8 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
 - **Columns are named by a header line** (the first non-comment line whose fields include `url`), so they
   come in any order and more can be added. Unknown columns are ignored.
 - **Without a header**, a line is `title<TAB>url[<TAB>size]`, `kind` is `ps1`, and a bare list of links
-  works. This is our own format. It is not designed to be compatible with PSC Store's, and no file of theirs is
-  used to test against (decision 5).
+  works. This is our own format. It is not designed to be compatible with PSC Store's, and no file of
+  theirs is used to test against (decision 5).
 - **Lines with the same `kind` + `title` are one item**, with `disc` ordering the files. An item's
   `version`, `serial`, `image` and `description` come from whichever of its lines has them.
 - `size` and `sha256` are optional:
@@ -136,37 +144,39 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
 
 **Where sources come from:**
 - every `*.tsv` in `System/Store/sources/` (drop one on the stick);
-- every URL listed in `System/Store/sources.txt`, one per line. The screen adds one with the on-screen
-  keyboard, or it can be edited on a PC. A remote TSV is re-fetched when the screen opens, at most every
+- every URL listed in `System/Store/sources.txt`, one per line. The Store adds one with the on-screen
+  keyboard, or it can be edited on a PC. A remote TSV is re-fetched when the Store opens, at most every
   few minutes, and the last good copy is kept in the cache.
 
-### Downloading (core: `Downloader`, `StoreService`)
+### Downloading (`Downloader` in core, `StoreService`)
 
-- **`Downloader`** is `UpdateService::downloadFile` taken out and shared. It writes to `<name>.part`,
-  checks the size and sha256, then renames; progress is the `.part` file's size as it grows. It runs the
-  platform's command through the existing `CommandRunner` seam.
+- **`Downloader`** is `UpdateService::downloadFile` taken out into core and shared. It writes to
+  `<name>.part`, checks the size and sha256, then renames; progress is the `.part` file's size as it grows.
+  It runs the platform's command through the existing `CommandRunner` seam.
 - **Resume**: a PS1 game is 300-700 MB, and a console's USB WiFi nano adapter is slow.
   - `abfetch` gains `--continue`: `Range: bytes=<size of .part>-`, append on `206`, start over on `200`.
   - The platform inis get a `store_download_command` that uses it (`abfetch --continue` on the console,
     `curl -C -` elsewhere). It falls back to `update_download_command` when unset.
-- **`StoreService`** (owned by `App`, `app.store()`):
+  - `%r` in these commands is the launcher's resources folder, where `abfetch` ships. It is resolved
+    through `Env`, not the extension's working directory.
+- **`StoreService`** (owned by the extension's `ExtensionApp`):
   - merges our catalog and the sources into one list;
   - knows what is installed (`System/Store/installed.json`: id, kind, version, source, where);
-  - runs **the queue on one worker thread at the lowest OS priority**, like the scan
-    (`System::lowerCurrentThreadPriority()`).
-  - `poll()` is called once a frame from `GuiLauncher::loop()` next to `pollUpdates()`, so a download
-    keeps going while the user is back in the carousel, and its progress shows in a `NotificationBubble`
-    under the scan's.
-  - The queue is saved (`System/Store/queue.json`), so a power-off or the console's standby only pauses it.
-  - **Paused around a game launch**, the same way the scan's watching is: the emulator gets the CPU and
-    the USB bus.
-- **Network**: `System::hasDefaultRoute()` on every Linux target (today only the console's update uses it);
-  on Windows it is true. With no network the queue waits, and "Not connected" shows on the screen.
+  - runs **the queue on one worker thread at the lowest OS priority**, like the launcher's scan
+    (`System::lowerCurrentThreadPriority()`). `poll()` is called once a frame by the Store's screen.
+  - **Downloads run while the Store is open** (the extension model: the launcher waits while an extension
+    runs). Leaving with a download active asks first ("Downloads are in progress. Leave anyway? They
+    continue the next time the Store is opened.").
+  - The queue is saved (`System/Store/queue.json`), so leaving, a power-off or the console's standby only
+    pauses it. A background companion that keeps downloading in the carousel is a *later* item of the
+    extensions plan.
+- **Network**: `System::hasDefaultRoute()` on every Linux target; on Windows it is true. With no network
+  the queue waits, and "Not connected" shows on the screen.
 - **Space**: before a download, `System::getAvailableSpace()` of the target filesystem is compared with
   the item's size times two (the archive plus what comes out of it). It is refused with a message when
   short. The console's FAT32 file limit (4 GB) is below any PS1 disc.
 
-### Installing (core: `AppInstaller`, `GameInstaller`)
+### Installing (`AppInstaller`, `GameInstaller` in core)
 
 Both unpack into **`System/Store/staging/<id>/`**, on the same filesystem as the target, so the last step
 is a rename. Nothing half-written ever appears under `Games/`, where the scan's watcher would pick it up.
@@ -182,23 +192,31 @@ is a rename. Nothing half-written ever appears under `Games/`, where the scan's 
   2. Writes a `.cue` for a bare `.bin`, using the scanner's existing cue repair.
   3. Merges a multi-disc item into one folder, `Games/<title>/`. The title is `Strings`-sanitised, and a
      clash gets ` (2)`.
-  4. Calls `app.scans().requestScan()`. The scan then verifies it, finds the serial, fills the metadata,
-     cover and `.m3u`, and the carousel reloads.
+  4. The Store writes **`rescan`** to its extension result. Back in the launcher, the scan verifies the
+     game, finds the serial, fills the metadata, cover and `.m3u`, and the carousel reloads.
 - **`AppInstaller`** follows `ThemeInstaller`:
-  1. The root of the archive, or its one folder, must contain an `app.ini`, otherwise the install is
-     refused.
-  2. The new folder replaces `Apps/<name>/`, keeping any `pad.ini` the user edited.
+  1. The root of the archive, or its one folder, must contain an `app.ini` that `AppManifest` resolves
+     for this machine, otherwise the install is refused.
+  2. The package is laid over `Apps/<name>/`: the shared files and the ini are replaced, other platforms'
+     `bin/<key>/` and `lib/<key>/` are kept (unless the version changed - see the app format plan), and a
+     `pad.ini` the user edited is kept.
   3. The App's data is under `Home/` (`app_env.sh`), so an update or a removal never loses a save.
-  - `app.ini` gains a `Version=` key (read by `GameQueryService::apps()` too). An update is offered when
-    the catalog's version differs from the installed one.
-- **Removal**: an App's folder, or a game through `GameCatalogService::deleteUsbGame()`, the Game Manager's
-  path. The game's `!SaveStates` stays unless the user confirms it, as in Game Manager.
+  4. The result gets **`reload-apps`**.
+  - `app.ini` gains a `Version=` key (read by the launcher's `GameQueryService::apps()` too). An update is
+    offered when the catalog's version differs from the installed one.
+- **Removal**: an App's folder, or a game's folder (with `rescan`). The game's `!SaveStates` stays unless
+  the user confirms it, as in the launcher's Game Manager.
+- Both installers live in core so the launcher can use them too, for example for an archive dropped into
+  `Games/` or `Apps/` (not planned).
 
-### The screen (`evoui/screens/evoui_store.*`, `GuiStore`)
+### The screen (`GuiStore`, in the extension)
 
-It is a *full* panel by the UI standard (`CLAUDE.md`, "UI styling standards"), with the detail pane on the
-right. The pane shows the cover (the item's `image`, fetched into `System/Store/cache/`, or a local
-thumbnail by title), then source, version, size, author, licence and status.
+It is a *full* panel by the UI standard (the launcher's `CLAUDE.md`, "UI styling standards"), drawn with
+the SDK's components in the user's theme. The detail pane on the right shows the cover (the item's
+`image`, fetched into `System/Store/cache/`, or a local thumbnail by title), then source, version, size,
+author, licence and status. The launcher's `GameDetailPane` is in `ab_ui`, outside the SDK, so a generic
+pane (a picture, then label/value facts) moves down into `ab_classic` for this, and the launcher's pane is
+rebuilt on it.
 
 - **Tabs, switched with L1/R1:**
   - **Apps**
@@ -211,20 +229,20 @@ thumbnail by title), then source, version, size, author, licence and status.
   - Cross: Install / Update / Cancel download, by state.
   - Triangle: Remove.
   - Square: sort (name / source / size).
-  - Select: find by letter (the launcher's jump).
-  - Circle: Back.
+  - Select: find by letter.
+  - Circle: Back (asks first when downloads are running).
 - An item already present is marked installed: by `installed.json`, or matched by serial for a game the
   user put on the stick themselves.
-- The System menu gets `SystemMenuAction::Store`, "Store" / "Download apps and games". It is present on
-  every target (no `#ifdef`), and its description says "Not connected" when there is no route.
-- Every string goes through `_()` and into all 16 language files in the same commit.
+- Every string goes through `_()`, in the Store's own `lang/` files, all 16 languages in the same commit.
 
 ### The site (autobleem-repo)
 
-- `repo_publish.sh store <platform> <zip|png|json>...` puts files under `store/<platform>/`.
-  `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title, author, licence,
-  description, requires). The page does not have to show the store; if it does, it fits into the approved
-  look.
+- **The Store itself** is published like the launcher's components: `autobleem-store-<platform>-<v>.zip`,
+  laid out as `Extensions/store/...`, from its repository's CI.
+- **The catalog**: `repo_publish.sh store <platform> <zip|png|json>...` puts files under
+  `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
+  author, licence, description, requires). The page does not have to show the store; if it does, it fits
+  into the approved look.
 - **Apps**: `tools/pack_psc_apps.py` gets a `--per-app` mode that writes one zip per App instead of the
   one dated pack. The pack stays for the PC installer.
 - **Games on our catalog** are homebrew or freeware whose licence allows hosting, each with its licence in
@@ -232,39 +250,43 @@ thumbnail by title), then source, version, size, author, licence and status.
 
 ## Steps
 
-Each step is one commit, or a core commit plus a submodule bump. Steps 1-4 and 7 are testable on a PC
-before any screen exists.
+The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the extension mechanism
+(`docs/extensions-plan.md`, steps 1-4) come first. Each step here is one commit
+(or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
+exists.
 
-1. **Not done.** Engine: `StoreCatalog` (JSON) and `StoreSourceTsv` (the TSV format above: header,
-   header-less, grouping, malformed lines), with tests.
-2. **Not done.** `abfetch --continue` (Range/206/200) with tests; `Downloader` extracted from
-   `UpdateService` (whose tests keep passing); `store_download_command` in the five platform inis.
+1. **Not done.** autobleem-store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
+   the five targets), `StoreCatalog` and `StoreSourceTsv` (header, header-less, grouping, malformed
+   lines), with tests.
+2. **Not done.** Core + launcher: `Downloader` extracted from `UpdateService` (whose tests keep passing);
+   `abfetch --continue` (Range/206/200) with tests; `store_download_command` in the five platform inis.
 3. **Not done.** Core: `GameInstaller` and `AppInstaller` over staging, with tests (zip/7z/tar.gz, a
    nested folder, a bare `.bin`, multi-disc, an unsafe name, no `app.ini`, not enough space, an update
    keeping `pad.ini`).
-4. **Not done.** Core: `StoreService`: sources, merge, `installed.json`, the queue worker,
-   pause/resume, `poll()`. Tests with a recording `CommandRunner` and a local catalog.
-5. **Not done.** The launcher: the System menu item, `GuiStore`, the bubble, pausing around launches,
-   the 16 languages. Walked through with `tools/ab_drive.py` on the Windows build against a local catalog
-   (`file://` or a `python -m http.server`).
-6. **Not done.** The site: `store` in `repo_publish.sh`/`repo_index.py`, `pack_psc_apps.py --per-app`,
-   and the first items: OpenTyrian and the other seven console Apps for `psc`.
+4. **Not done.** autobleem-store: `StoreService` (sources, merge, `installed.json`, the queue worker,
+   pause/resume, `poll()`, the result requests). Tests with a recording `CommandRunner` and a local catalog.
+5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of
+   it). autobleem-store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
+   Windows build, run from the launcher's Extensions list, against a local catalog (`python -m
+   http.server`).
+6. **Not done.** The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
+   `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
+   `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
    (the App sources are the tier-2 `screemerpl` repositories, see autobleem-main's `todo.md`). Each is
    packaged by that repository's CI and published to `store/<platform>/`.
 8. **Not done.** On hardware (the tester checklist): the console on the AutoBleem kernel's WiFi (an App,
-   a two-disc game from a TSV, resume after a standby), a Pi 400, the PC stick, Windows.
-9. **Not done.** The manuals (a "Store" section, the TSV format for source owners) and `CLAUDE.md`.
+   a two-disc game from a TSV, a resume after a standby), a Pi 400, the PC stick, Windows.
+9. **Not done.** The manuals (a "Store" section, the TSV format for source owners) and the CLAUDE.md files.
 
 ## Open questions
 
-- **Apps on Windows and on the Pi/PC stick.** `app_env.sh` exists on the Linux targets, and "`Apps/` on
-  the Pi and the PC stick" is still a *later* item in autobleem-main's `todo.md`. Windows has no
-  `app_env` equivalent. Until step 7, a target's catalog may simply have no Apps, and the tab says so.
+- **Apps beyond the console** depend on `docs/app-format-plan.md` (the multi-platform folder, the
+  Windows direct launch). Until it and step 7 are done, a target's catalog may simply have no Apps, and the
+  tab says so.
 - **A notice when a source is added?** Decision 4 rules out a gate. A one-line "you are responsible for
   what your sources contain" under the Sources tab is not a gate; the owner's call.
-- **The name.** Nothing is sold. "Store" is what users know from Eris; the alternative is something
-  like "Get more".
+- **The name.** Nothing is sold. "AutoBleem Store" is the owner's working name.
 - **Checking a whole source list for dead links** (a HEAD per URL) costs a request per line. For now a
   dead link shows up when it is downloaded.
 
@@ -272,4 +294,4 @@ before any screen exists.
 
 - The `rom:<system>` and `theme` kinds.
 - Search by keyboard.
-- Showing a source's items inside the carousel before they are installed (greyed boxes).
+- Downloads that continue in the carousel, through the extensions plan's background companion.
