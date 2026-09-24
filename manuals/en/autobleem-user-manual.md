@@ -515,12 +515,18 @@ runs another custom firmware (BleemSync, Project Eris): restore it to stock firs
 
 ## 7. If something goes wrong
 
-- **Logs**: `System/Logs/` on the stick, card or data folder - `autobleem.log` (the launcher),
-  `launch.log` and `pcsx.log` (a PS1 game's start and the emulator's output), `retroarch_crash.log`
-  (RetroArch left with an error), `update.log` (an online update), `updateroms.log` (UpdateRoms).
+- **Logs**: AutoBleem keeps its logs in memory, so the stick is not written to all the time - they reach
+  `System/Logs/` on the stick, card or data folder only when something went wrong: a crash of the launcher,
+  of a PS1 game or of RetroArch saves them to `System/Logs/crash-<n>/` (the last three are kept), and the
+  launcher says so once when it comes back. To keep every log, switch on *Options -> Diagnostics -> Keep
+  logs on the stick* (from the next start), or create an empty file `System/Logs/keep` on a PC. On a Pi or
+  a PC, *Hardware Information* shows where the logs are and Square saves them to `System/Logs/saved-<n>/`.
+  The files: `autobleem.log` (the launcher), `launch.log` and `pcsx.log` (a PS1 game's start and the
+  emulator's output), `retroarch.log`, and - always on the stick - `update.log` (an online update) and
+  `updateroms.log` (UpdateRoms).
 - **A game is not on the shelf**: check the folder layout (one folder per game, the image formats of
-  section 3.9); `System/Logs/gamesThatFailedVerifyCheck.txt` lists what the scan refused and why. Re-Scan
-  in the system menu runs the scan again.
+  section 3.9). The *Game Manager* lists the folders the scan refused after the games, marked *Not added*,
+  with the reason; Square deletes such a folder. Re-Scan in the system menu runs the scan again.
 - **No covers**: the cover databases were not installed (run the installer again with them ticked), or,
   for RetroArch games on a console, UpdateRoms has not been run on the PC.
 - **A pad does nothing or has its buttons mixed up**: PSC-Bios's gamepad wizard (a console) maps it; on a

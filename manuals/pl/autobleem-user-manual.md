@@ -521,12 +521,18 @@ fabrycznego.
 
 ## 7. Gdy coś nie działa
 
-- **Logi**: `System/Logs/` na pendrivie, karcie albo w folderze danych - `autobleem.log` (launcher),
-  `launch.log` i `pcsx.log` (start gry PS1 i wyjście emulatora), `retroarch_crash.log` (RetroArch zakończył
-  się błędem), `update.log` (aktualizacja z sieci), `updateroms.log` (UpdateRoms).
-- **Gry nie ma na półce**: sprawdź układ folderów (jeden folder na grę, formaty obrazów z punktu 3.9);
-  `System/Logs/gamesThatFailedVerifyCheck.txt` wymienia, co skan odrzucił i dlaczego. *Skanuj gry ponownie*
-  w menu systemowym uruchamia skan jeszcze raz.
+- **Logi**: AutoBleem trzyma logi w pamięci, żeby nie zapisywać pendrive'a bez przerwy - do `System/Logs/`
+  na pendrivie, karcie albo w folderze danych trafiają tylko wtedy, gdy coś poszło nie tak: awaria
+  launchera, gry PS1 albo RetroArch zapisuje je do `System/Logs/crash-<n>/` (zostają trzy ostatnie), a
+  launcher mówi o tym raz, gdy wraca. Żeby zachowywać wszystkie logi, włącz *Opcje -> Diagnostyka ->
+  Zachowuj logi na pendrivie* (od następnego uruchomienia) albo utwórz na PC pusty plik `System/Logs/keep`.
+  Na Pi i PC strona *Informacje Sprzętowe* pokazuje, gdzie są logi, a Kwadrat zapisuje je do
+  `System/Logs/saved-<n>/`. Pliki: `autobleem.log` (launcher), `launch.log` i `pcsx.log` (start gry PS1 i
+  wyjście emulatora), `retroarch.log`, oraz - zawsze na pendrivie - `update.log` (aktualizacja z sieci) i
+  `updateroms.log` (UpdateRoms).
+- **Gry nie ma na półce**: sprawdź układ folderów (jeden folder na grę, formaty obrazów z punktu 3.9).
+  *Menadżer gier* pokazuje za grami foldery, które skan odrzucił, z dopiskiem *Nie dodano* i przyczyną;
+  Kwadrat usuwa taki folder. *Skanuj gry ponownie* w menu systemowym uruchamia skan jeszcze raz.
 - **Brak okładek**: nie zainstalowano baz okładek (uruchom instalator ponownie z zaznaczonymi bazami)
   albo - dla gier RetroArch na konsoli - nie uruchomiono UpdateRoms na PC.
 - **Pad nie działa albo ma pomieszane przyciski**: kreator mapowania w PSC-Bios (konsola) go mapuje; na

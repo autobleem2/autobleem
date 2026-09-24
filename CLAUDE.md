@@ -160,7 +160,8 @@ Still to do, in order:
 2. ~~Centralize the hard-coded paths in `Env`~~ - done (2026-09-18). The engine side, the theme loaders, the
    launch scripts and RetroArch paths (`LaunchService`) and `backup_internal.sh` went first; the last one,
    `config.ini`'s `Cfg=` key (the selection script as an absolute console path, which the Pi installer had
-   to rewrite per install), is gone: `LaunchService::selectionScriptFile()` is `<rc>/autobleem_cfg.sh`, and
+   to rewrite per install), is gone: `LaunchService::selectionScriptFile()` is `<runtime>/autobleem_cfg.sh`
+   (was `<rc>/` until the quiet-stick work of 2026-09-24), and
    `Config` drops a stale `cfg` key on load. `EnvironmentSetup` (core) and `main.cpp`'s `/autobleem` check are the only places left that
    spell a console path; `RetroArchService::mapPlaylistPath()`'s `/media` is the
    console playlist *format*, not this machine's layout.
@@ -557,7 +558,9 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   (`ScanStage::Scanning/Game/DecompressingEcm/UpdatingDatabase/GameFailedVerify`). The app's listener is
   `SplashScanProgress` (`gui/scan_progress.*`): `Gui::splash(_(...))` per stage, and the 3 s pause after a
   failed verify. `AutoBleem::rescan` constructs the `GameScanner` with one.
-  `UsbGame::verify()` reasons are plain English (only written to `gamesThatFailedVerifyCheck.txt`).
+  `UsbGame::verify()` reasons are plain English: the scanner keeps them in `failedGames`, regional.db's
+  `FAILED_GAMES` holds them, and the Game Manager lists and translates them (`gamesThatFailedVerifyCheck.txt`
+  is gone - "The quiet stick").
 - **`SerialScanner`** (`readSerial/readSerialFromImage/readSerialByWorkaround/serialFromMd5/normalizeSerial/
   serialToRegion`), **`IsoDirectoryReader::read`**, **`EcmDecoder::decode`** (+ `setProgressHandler`, which
   is how unecm.c's percentage messages reach the splash). Private: `cd_image_reader.h` (`CdImageReader`,
@@ -958,8 +961,12 @@ USB stick root = `/media` on the PSC:
 /media/Games/                     user games, one folder per game, sub-folders allowed; Games/!SaveStates/<folder name>/
                                   (every game's states + its own card, central) and Games/!MemCards/ (the shared cards)
 /media/System/Databases/          regional.db (USB games), internal.db (copy of stock DB + extra columns)
-/media/System/Logs/               AB_out.txt / AB_err.txt (stdout/stderr of autobleem-gui), autobleem.log (plog,
-                                  rolling), launch.log / pcsx.log (the launch scripts' and pcsx-ab's), ui_menu.log
+/media/System/Logs/               crash-<n>/ (a crash's logs, the last 3), saved-<n>/ (Hardware Information's Save
+                                  logs), standby.log (failures only), update.log, installer.log; everything else -
+                                  AB_out/AB_err, autobleem.log, launch/pcsx/retroarch.log - only with the `keep`
+                                  marker there (see "The quiet stick")
+/tmp/autobleem/                   the runtime dir (RAM): logs/, autobleem_cfg.sh (the selection), ra-append.cfg,
+                                  ra-core-options.cfg, exit/ (the emulator's resume point), extensions.active
 /media/System/lightguns.txt       RetroArch games flagged as light-gun games, one image path per line
 /media/System/Bios|Preferences|Region|UI/   rc/backup.sh's copies of the console's own files, made at boot
 /media/Themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/<name>/ launchable apps (app.ini + run.sh)
@@ -980,7 +987,7 @@ audio backends - the console has no X and no OSS; see "SDL2 on the console") →
 clock, so "Last played" is shown).
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
 or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
-an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `rc/autobleem_cfg.sh`
+an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `<runtime>/autobleem_cfg.sh`
 (`AB_SELECTION=...`) which `rc/selection.sh` reads after `AutoBleem::run()`'s loop actually exits the process -
 `MENU_OPTION_RETRO` (the L2+R2 system menu's RetroArch/EmulationStation item), `MENU_OPTION_UPDATE` (the
 online update the launcher downloaded: `abupdate` from tmpfs lays it over the stick - autobleem-main's
@@ -1219,6 +1226,48 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
 - **Testing a screen** is `tools/ab_drive.py` (`start --show`, `run "menu 5; wait_screen GuiOptions; shot
   a.png"`, `sheet`, `stop`); every screen's class name is what `wait_screen` takes.
 
+## The quiet stick (2026-09-24, `docs/quiet-stick-plan.md`)
+
+**The data root is written only when the user's state changes** - a save, a card, a kept resume slot, a
+setting the player changed, a game added or removed. Everything else is in RAM or not written at all.
+Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt and autobleem-appliance (not merged yet; the
+work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a console or a Pi yet -
+`tools/stick_writes.sh start|stop` measures a scenario there.
+
+- **Write only what changed.** `DirEntry::writeFileIfChanged(path, contents)` (compare, then `.tmp` +
+  replace) is under `IniFile::save`, `ConfigFileEditor` (`replaceProperties`: one write per batch, an empty
+  line removes a key), the playlists, fingerprints, `.m3u`, EmulationStation's gamelist, the cue repair.
+  regional.db: `UPDATE GAME` matches no row when nothing differs, `replaceDiscs` and the sub-dir tables
+  compare first, the history writes only the ranks that move. Config saves once.
+- **The runtime dir** (`Env::getPathToRuntimeDir()`, platform ini `runtime_dir`, `$AB_RUNTIME_DIR` from the
+  scripts): `/tmp/autobleem` on the console, `/run/autobleem` (systemd `RuntimeDirectory`) on the Linux
+  targets, `System/Runtime` elsewhere. It holds the logs (`logs/`), the selection hand-over, RetroArch's
+  append file and core-options copy, the emulator's exit dir, the extensions' crash guard.
+- **Logs**: `Env::getPathToLogsDir()` = `<runtime>/logs`, or `System/Logs` when kept -
+  `Env::keepLogsRequested()`: the `System/Logs/keep` marker, config.ini `keeplogs` (Options -> Diagnostics,
+  which makes/removes the marker), `$AB_KEEP_LOGS=1`. `rc/ab_log.sh` (identical in `payload/` and
+  `payload_linux/`, checked by `test_app_resolve`) is the scripts' side; `ab_persist_logs REASON` copies a
+  crash's logs to `System/Logs/crash-<n>/` (last 3, a `.new` marker the launcher announces once -
+  `Env::takeNewCrashLogs()`). Hardware Information: a Logs section, Square = `Env::copyLogsToStick()`.
+- **The selection** (`autobleem_cfg.sh`) is in the runtime dir and written only when the launcher leaves;
+  `selection.sh` takes anything but 4/6/7 for a crash (persists the logs before its reboot).
+- **RetroArch** is no longer set up by rewriting its files: `LaunchService::prepareRaAppend` writes
+  `<runtime>/ra-append.cfg` (`config_save_on_exit` from config.ini `rapersist` - Options "Persist RetroArch
+  config" - plus the game's settings; core options in a RAM copy named by `core_options_path`), the scripts
+  pass `--appendconfig`. RetroArch 1.22 saves appended values into `retroarch.cfg` when it saves, so
+  `restoreAppended()` puts each of ours back afterwards; what the player changed stays.
+- **The emulator** says what it takes in an `abfeatures` file next to its binary (pcsx-abnxt: `exitdir`,
+  `memcarddir`, `loadstate`; the classic pcsx-ab has none yet): `AB_EXIT_DIR` (the resume point of the way
+  out in `<runtime>/exit`, `ResumePointService::setExitDir` reads it there and copies only a kept slot),
+  `AB_MEMCARD_DIR` (the set played in place, `MemcardService::setDirForLaunch` - no swap),
+  `AB_LOAD_STATE` (the kept slot read where it is). Without the file everything works as before.
+- **Refused games** are regional.db's `FAILED_GAMES` (`GameDatabase::replaceFailedGames`), listed in the
+  Game Manager after the games ("Not added", the reason in the pane, Square deletes the folder).
+- **Guard**: `autobleem-core/tests/core/test_quiet_stick.cpp` over `tests/support/tree_snapshot.*` (size +
+  mtime of every file) - a second start, an unchanged save, a no-change rescan (a refused game, a two-disc
+  game, a RetroArch tree included) must leave the tree alone. Keep it green: **anything that runs per boot,
+  per scan or per launch writes through `writeFileIfChanged` or to the runtime dir.**
+
 ## Conventions and gotchas
 
 - **A game launch gives the display up.** `AutoBleem::launchGame()` closes the audio, flushes the pads and,
@@ -1260,11 +1309,12 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
   `ableem::Log::initConsoleOnly()` first thing - a `PLOG_*` before any init is silently dropped, which is
   how a bad command line's USAGE line used to vanish - and `Log::addFile()` once the logs directory is
   known; the tests' main stops at `initConsoleOnly()`. Every line goes to stdout *and* to
-  `System/Logs/autobleem.log`, rolling 1 MB x 3, as `HH:MM:SS LEVEL [function:line] message`; the file's
+  `autobleem.log` in the logs dir (`Env::getPathToLogsDir()`: `<runtime>/logs` in RAM, 256 KB x 2 - or
+  `System/Logs`, 1 MB x 3, with "Keep logs on the stick"), as `HH:MM:SS LEVEL [function:line] message`; the file's
   first line is the build (`Version::FULL_VERSION`). **There is no `cout` anywhere** - the screens, the ui
   library and the demo log the same way (diagnostic chatter is `PLOG_DEBUG`, off in release builds);
   `tools/theme_convert`'s `cout` is that CLI's output, not a log. Console `stdout`/`stderr` still go to
-  `System/Logs/AB_*.txt` and are unit-buffered so the last lines survive a crash. A `PLOG_*` inside an
+  `AB_*.txt` in the logs dir and are unit-buffered so the last lines survive a crash. A `PLOG_*` inside an
   unbraced `if` wants braces (the macro is itself an if/else; `-Wdangling-else` says so).
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
   (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it. **Never `readsome()`** to read a

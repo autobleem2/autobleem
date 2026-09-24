@@ -12,6 +12,37 @@ already fight (`checkstick.sh`). Idle, boot and a no-change scan should write no
 This plan is based on a full audit of the rc scripts (console and Linux), the launcher and autobleem-core,
 pcsx-ab, pcsx-abnxt and RetroArch's shipped config (2026-09-24). File:line references are as of that day.
 
+## Status (2026-09-24)
+
+Branch `feature/quiet-stick` in autobleem (launcher), autobleem-core, pcsx-abnxt and autobleem-appliance,
+pushed, **not merged**. CLAUDE.md's "The quiet stick" section describes the result.
+
+| Step | State |
+|---|---|
+| 0 guard tests, `tools/stick_writes.sh` | done; `test_quiet_stick` green. **Device numbers not taken yet** |
+| 1.1-1.6 logs in RAM, keep switch, crash capture, Save logs | done (launcher, core, both payload trees) |
+| 1.7 pcsx-abnxt line-buffered stdout | done (pcsx-abnxt) |
+| 1.8 Linux targets: RuntimeDirectory, journald volatile | done (autobleem-appliance) |
+| 2.1-2.8 write only what changed (ini, cfg, scan, db, history, rc) | done |
+| 2.9 refused games in the Game Manager | done |
+| 3.1 selection hand-over in RAM, written on leaving only | done |
+| 3.2 exit resume point in RAM (`AB_EXIT_DIR`) | done for pcsx-abnxt; **classic pcsx-ab: not yet** (no local build) |
+| 3.3 memory-card set in place (`AB_MEMCARD_DIR`), slot read in place (`AB_LOAD_STATE`) | done for pcsx-abnxt; classic: not yet |
+| 3.4-3.5 RetroArch via `--appendconfig`, Persist RetroArch config | done |
+| 3.6 extensions' crash guard in RAM | done |
+| 3.7 App cache in RAM | done (with 1.5) |
+| 4 CLAUDE.md, manuals (en/pl) | done; manual PDFs not rebuilt/published |
+
+Found and fixed on the way: a broken cue the scan cannot heal was rewritten at every scan; the first scan
+wrote `Game.ini` values the second one normalised (Favorite/Lightgun/Play_using_ra/publisher); a
+selection left over from a game hid a later crash from `selection.sh`; RetroArch changes the player made
+during a game were thrown away by the old `.bak` restore.
+
+Still to do: the classic pcsx-ab's share of 3.2/3.3 (ab_exit_dir etc. as in pcsx-abnxt, on the build
+server); `stick_writes.sh` on the console and a Pi, the numbers here; verify on RetroArch 1.22 that
+`--appendconfig` + the restore behave as `configuration.c` says; verify the exit dir on a console with a
+real game (the Windows build of pcsx-abnxt compiles it, but could not be exercised without a BIOS).
+
 ## What is written today
 
 The worst offenders by volume and frequency, measured by reading the code (not by a tracer - Phase 0 does
