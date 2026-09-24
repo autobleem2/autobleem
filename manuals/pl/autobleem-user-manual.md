@@ -210,6 +210,7 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 | Menedżer gier | Gry PS1 jako lista z folderami: usuwanie gry, czyszczenie okładek. |
 | Informacje o sprzęcie | Maszyna: system, CPU, dyski, sieć, ekran, pady. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6). |
 | Opcje | Ustawienia AutoBleem (punkt 3.5). |
+| Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
 | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | O programie | Autorzy i licencja. |
 | Wyłącz | Po potwierdzeniu: na konsoli czuwanie AutoBleem - pendrive odłączony, dioda czerwona, Power przywraca launcher (punkt 2.1); na Pi lub PC maszyna się wyłącza. |
@@ -352,6 +353,46 @@ emulator działa na wbudowanym BIOS-ie HLE, który wiele gier toleruje, a niekt�
   ustawienia zostają; po aktualizacji launcher raz skanuje ponownie.
 - **PlayStation Classic**: uruchom nowszy `AutoBleemInstaller.exe` na pendrivie (punkt 2.1).
 
+### 3.12 Rozszerzenia i Sklep AutoBleem
+
+**Rozszerzenia** dodają do launchera własne ekrany. Mieszkają w `Extensions/<nazwa>/` na pendrivie (na
+Raspberry Pi na partycji danych, w Windows w folderze danych); żeby zainstalować rozszerzenie, rozpakuj tam
+jego zip. **L2 + R2 → Rozszerzenia** pokazuje ich listę: Krzyżyk uruchamia, Trójkąt wyłącza lub włącza
+ponownie. Rozszerzenie, które potrzebuje sieci, nie uruchomi się bez niej, a takie, które zatrzymało
+launcher, zostaje wyłączone - lista o tym mówi.
+
+![Lista rozszerzeń](../images/pl/extensions.jpg)
+
+**Sklep AutoBleem** to pierwsze rozszerzenie: aplikacje i gry instalowane jednym przyciskiem, na każdym
+systemie, na którym działa AutoBleem (PlayStation Classic potrzebuje WiFi z kernela AutoBleem). Ma cztery
+karty, L1 / R1 przełączają:
+
+- **Aplikacje** i **Gry**: to, co oferują źródła, każda pozycja z obrazkiem, wersją, rozmiarem i źródłem.
+  Krzyżyk instaluje (albo aktualizuje, albo próbuje ponownie), Trójkąt usuwa to, co zainstalował Sklep.
+  L2 / R2 lub Lewo / Prawo zmieniają stronę, **Select** pokazuje jedno źródło naraz, **Start** szuka w
+  tytułach.
+- **Pobrania**: co się pobiera, czeka, nie udało się lub jest zainstalowane. Pobieranie trwa w tle, także
+  po wyjściu ze Sklepu; uruchomienie gry lub wyłączenie tylko je wstrzymuje, a przerwane pobieranie wznawia
+  się od miejsca, w którym stanęło. Zainstalowana gra pojawia się na półce po najbliższym skanie, z
+  obrazkiem ze Sklepu jako okładką.
+- **Źródła**: skąd pochodzą listy - własny katalog AutoBleem, lista TSV wrzucona do
+  `System/Extensions/store/sources/` i adresy dodane przez **Dodaj adres źródła**. Krzyżyk na dodanym przez
+  ciebie źródle pozwala zmienić jego nazwę, zmienić adres, przełączyć między `http://` a `https://` albo je
+  usunąć.
+
+![Karta Aplikacje w Sklepie](../images/pl/store-apps.jpg)
+
+![Menu źródła](../images/pl/store-source-menu.jpg)
+
+To, co oferuje katalog AutoBleem, jest też na stronie pobierania, `https://autobleem.retromenele.pl/store/`.
+**Za zawartość dodanych przez ciebie źródeł odpowiadasz ty.**
+
+**Własne gry w sieci domowej**: `abstored`, serwer sieciowy Sklepu, udostępnia folder gier PS1 Sklepowi w
+tej samej sieci. Działa na dowolnym Linuksie - Raspberry Pi, domowym serwerze - i tylko czyta folder. Uruchom
+go poleceniem `abstored <folder gier>`, otwórz w przeglądarce `http://<ta maszyna>:8124/`, żeby zobaczyć, co
+udostępnia i jakie problemy znalazł, i dodaj `http://<ta maszyna>:8124/store.tsv` jako źródło. Szczegóły są
+w jego README (`ext_store/server/` w źródłach).
+
 <!-- pagebreak -->
 
 ## 4. Ekrany
@@ -381,9 +422,12 @@ Trójkąt na półce: wszystkie przyciski każdego ekranu na jednej stronie.
 
 ### 4.4 Klawiatura ekranowa
 
-Wszędzie, gdzie wpisuje się nazwę - nowy zestaw kart pamięci, tytuł gry, hasło WiFi - ta sama klawiatura:
-kierunki przesuwają, Krzyżyk wpisuje, Trójkąt kasuje, Kwadrat to spacja, L1 zmienia wielkość liter, L2
-przesuwa kursor, Start zatwierdza, Kółko anuluje. Klawiatura USB pisze bezpośrednio.
+Wszędzie, gdzie wpisuje się tekst - zestaw kart pamięci, tytuł gry, hasło WiFi, adres źródła - ta sama
+klawiatura, ułożona jak w telefonie: litery, strona symboli (`/ \ : ? & = % @ #` i reszta tego, czego
+potrzebuje adres lub hasło) i dwie strony liter z akcentami, a w dolnym rzędzie Shift, klawisz strony,
+Spacja, Backspace i Potwierdź. Kierunki przesuwają, Krzyżyk wpisuje, Trójkąt kasuje, Kwadrat to spacja,
+**L1** to Shift (dwa razy: stałe duże litery), **R1** następna strona, **L2 / R2** przesuwają kursor, Start
+zatwierdza, Kółko anuluje. Klawiatura USB pisze w każdej chwili: Enter zatwierdza, Esc anuluje.
 
 ![Klawiatura ekranowa](../images/pl/keyboard.jpg)
 
@@ -416,8 +460,10 @@ można odświeżyć tak samo (`UpdateRoms.exe <dysk> --target rpi`), choć Pi ro
 
 ## 6. Narzędzia konsolowe (PlayStation Classic)
 
-Dwie aplikacje w zestawie Aplikacje na pendrivie PlayStation Classic. Obie rysują w motywie i języku
-launchera i obie obsługuje się padem - a w kreatorze mapowania przednimi przyciskami konsoli.
+Dwa narzędzia na pendrivie PlayStation Classic. Oba rysują w motywie i języku launchera i oba obsługuje
+się padem - a w kreatorze mapowania przednimi przyciskami konsoli. **PSC-Bios** to rozszerzenie dołączone do
+pakietu konsoli: otwiera je *Informacje o sprzęcie* w menu systemowym i jest na liście rozszerzeń.
+**ABFlashKit** to aplikacja w zestawie Aplikacje.
 
 ### 6.1 PSC-Bios
 

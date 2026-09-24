@@ -284,7 +284,9 @@ def main():
     staged = os.path.join(args.build, 'extensions')
     if os.path.isdir(staged):
         for name in sorted(os.listdir(staged)):
-            replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
+            # an extension has its extension.ini; store-server (abstored, a program of its own) is not one
+            if os.path.isfile(os.path.join(staged, name, 'extension.ini')):
+                replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
 
     db_dir = os.path.join(usb, 'Autobleem', 'bin', 'db')
     os.makedirs(db_dir, exist_ok=True)

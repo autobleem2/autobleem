@@ -5,6 +5,11 @@ manuals/images/<lang>/. Run after `make_win.sh` and `python tools/make_usb.py us
 
     python tools/manual_shots.py                # English and Polish
     python tools/manual_shots.py --lang English --show
+    python tools/manual_shots.py --only keyboard,store-apps   # just these screens
+
+The Store's screens need the Store built (-DAB_EXTENSION_DIRS=<ext_store>) and staged by make_usb.py; they show
+the published rpi catalog (AB_STORE_CATALOG, overridable) and the stick's own sources
+(usb/System/Extensions/store/sources.txt) as they are.
 
 The stick's config.ini (usb/Autobleem/bin/autobleem/config.ini) is switched to each language for its run and
 put back to English. The UpdateRoms and installer windows are plain Win32 programs without the driver: those
@@ -45,7 +50,15 @@ LAUNCHER = [
     ('app-start', 'press o; wait 300; press o; wait 300; press select; wait_screen GuiSetPicker; press r1; press r1; wait 300; press x; wait 900; press x; wait_screen GuiAppStart; wait 500'),
     ('launcher-apps', 'press o; wait 500'),
     ('rescan', 'menu 0; wait 700'),
+    # the Extensions list and the AutoBleem Store
+    ('extensions', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu 6; wait_screen GuiExtensions; wait 400'),
+    ('store-apps', 'wait 500; press x; wait_screen GuiStore; wait 3000'),
+    ('store-sources', 'press l1; wait 1500'),
+    ('store-source-menu', 'press up; press up; press x; wait_screen GuiActionMenu; wait 400'),
 ]
+# the catalog the Store's shots show: the published one with the Apps in it
+STORE_CATALOG = 'https://autobleem.retromenele.pl/store/rpi/catalog.json'
+
 PSCBIOS = [
     ('pscbios-main', 'wait 600'),
     ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
@@ -77,7 +90,10 @@ def to_jpeg(png, jpg):
 
 
 def shoot(tool, screens, out_dir, show):
+    if not screens:
+        return
     start = DRIVE + ['start', '--port', PORT] + (['--show'] if show else []) + (['--tool', tool] if tool else [])
+    os.environ.setdefault('AB_STORE_CATALOG', STORE_CATALOG)
     run(start)
     try:
         for name, script in screens:
@@ -118,6 +134,11 @@ $bmp.Save("%s", [System.Drawing.Imaging.ImageFormat]::Png)
 def main(argv):
     langs = dict(LANGS)
     show = '--show' in argv
+    only = set(argv[argv.index('--only') + 1].split(',')) if '--only' in argv else None
+
+    def pick(screens):
+        return [sc for sc in screens if only is None or sc[0] in only]
+
     if '--lang' in argv:
         name = argv[argv.index('--lang') + 1]
         langs = {k: v for k, v in LANGS.items() if v == name}
@@ -126,10 +147,12 @@ def main(argv):
         os.makedirs(out_dir, exist_ok=True)
         print('== %s' % name)
         set_language(name)
-        shoot(None, LAUNCHER, out_dir, show)
-        shoot('pscbios', PSCBIOS, out_dir, show)
-        shoot('abflashkit', ABFLASHKIT, out_dir, show)
+        shoot(None, pick(LAUNCHER), out_dir, show)
+        shoot('pscbios', pick(PSCBIOS), out_dir, show)
+        shoot('abflashkit', pick(ABFLASHKIT), out_dir, show)
     set_language('English')
+    if only is not None:
+        return 0
     # the two Win32 programs, when the owner has them open
     shared = os.path.join(OUT, 'shared')
     os.makedirs(shared, exist_ok=True)
