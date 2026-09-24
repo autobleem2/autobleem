@@ -110,6 +110,8 @@ static int runAutobleem(int argc, char *argv[]) {
     // the package's version, for every program started from here (the emulators, the console tools) to show
     // as the launcher does - Env::productVersion()
     Env::exportProductVersion();
+    // which binaries of a multi-platform App this machine runs, for a run.sh started by hand
+    Env::writePlatformKeysFile();
 
     // the first thing in a log anyone sends in: which build this is - the package's version, then the
     // launcher's own commit
