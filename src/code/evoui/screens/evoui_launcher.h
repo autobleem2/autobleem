@@ -162,6 +162,8 @@ public:
     void applyExtensionRequests();
     // the system menu's Extensions item: the list, then the chosen one run
     void loop_openExtensions();
+    // the system menu's Scanner processors item: the sequences sorted, a scan when anything changed
+    void loop_openProcessors();
 
     bool powerOffShift = false;
 

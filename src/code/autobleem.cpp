@@ -315,8 +315,10 @@ int AutoBleem::run() {
         launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_START) {
-            scans().setWatching(false); // the emulator gets the CPU, not the scanner
+            scans().setWatching(false);           // the emulator gets the CPU, not the scanner
+            scans().setProcessorsSuspended(true); // nor the stick: a processor rewriting a disc image stops
             launchGame();
+            scans().setProcessorsSuspended(false);
             scans().setWatching(true);
             session_.menuOption = MENU_OPTION_IDLE;
             continue;
@@ -327,7 +329,9 @@ int AutoBleem::run() {
         // Pi the process leaves and rc/retroarch.sh takes over
         if (session_.menuOption == MENU_OPTION_RETRO && Env::directLaunch()) {
             scans().setWatching(false);
+            scans().setProcessorsSuspended(true);
             runRetroArchMenu();
+            scans().setProcessorsSuspended(false);
             scans().setWatching(true);
             session_.menuOption = MENU_OPTION_IDLE;
             continue;

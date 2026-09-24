@@ -247,6 +247,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_system_menu.cpp
         src/code/evoui/screens/evoui_extensions.cpp
         src/code/evoui/screens/evoui_extensions.h
+        src/code/evoui/screens/evoui_processors.cpp
+        src/code/evoui/screens/evoui_processors.h
         src/code/evoui/screens/evoui_set_picker.cpp
         src/code/evoui/screens/evoui_set_picker.h
         src/code/evoui/screens/evoui_system_menu.h

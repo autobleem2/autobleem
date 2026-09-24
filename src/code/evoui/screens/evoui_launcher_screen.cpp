@@ -314,6 +314,26 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
 // re-running is cheap, and it is the one place duplicates-across-folders and sub-dir rows already get
 // settled correctly, so reusing it here is both simpler and safer than a second code path for the same job.
 void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
+    // a scanner processor at work: its title (and the game) on top, its stage under it, its percent as the
+    // bar; its counter joins the title
+    if (update.processorProgressed) {
+        const ProcessorActivity &p = update.processor;
+        string title = p.item.empty() ? p.title : p.title + " - " + p.item;
+        if (p.total > 0)
+            title += " " + to_string(p.done) + "/" + to_string(p.total);
+        scanBubble.show(title, p.stage, p.percent < 0 ? 0 : p.percent, p.percent < 0 ? 0 : 100, 0);
+    }
+    // "Unzip: <warning>" / "Unzip, Crash: <warning>"; "Unzip failed (Crash) - see processors.log"
+    for (const ProcessorNotice &n : update.processorNotices) {
+        string text;
+        if (n.failed)
+            text = n.title + " " + _("failed") + (n.item.empty() ? "" : " (" + n.item + ")") + " - " +
+                   _("see processors.log");
+        else
+            text = n.title + (n.item.empty() ? "" : ", " + n.item) + ": " + n.message;
+        notificationLines[1].setText(text, 2 * DefaultShowingTimeout);
+    }
+
     if (update.progressed) {
         string title, detail;
         scanStatusText(update, title, detail);

@@ -30,6 +30,8 @@ void GuiSystemMenu::init() {
         {SystemMenuAction::HardwareInfo, _("Hardware Information"), _("Controller and system information")});
     items.push_back({SystemMenuAction::Options, _("Options"), _("Customize AutoBleem settings")});
     items.push_back({SystemMenuAction::Extensions, _("Extensions"), _("Run an installed extension")});
+    items.push_back({SystemMenuAction::Processors, _("Scanner processors"),
+                     _("Put the scan's processors in order, switch them on or off")});
 #ifdef AB_ONLINE_UPDATE
     items.push_back({SystemMenuAction::SoftwareUpdate, _("Software Update"),
                      updateAvailable ? _("An update is available") : _("Check the download site for a newer version")});
