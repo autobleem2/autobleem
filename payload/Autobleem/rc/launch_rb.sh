@@ -67,7 +67,7 @@ prepare()
 {
 	mkdir -p "$BIOS" "$ROMS" "$BIN/logs" "$BIN/playlists" "$BIN/saves" "$BIN/savestates" \
 	         "$BIN/screenshots" "$BIN/config" /tmp/ra_cache
-	chmod +x "$BIN/retroarch"
+	[ -x "$BIN/retroarch" ] || chmod +x "$BIN/retroarch"
 	# the PS1 BIOS from the console itself, for pcsx_rearmed / swanstation
 	if [ -f /gaadata/system/bios/romw.bin ]; then
 		[ -f "$BIOS/scph5500.bin" ] || cp /gaadata/system/bios/romJP.bin "$BIOS/scph5500.bin"

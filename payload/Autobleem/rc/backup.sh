@@ -14,8 +14,12 @@ mkdir -p /media/System/Logs
 mkdir -p /media/System/UI
 
 
-# AutoBleem's own PS1 database for RetroArch, when RetroArch is on the stick (RetroArch/bin is its tree)
-[ -d /media/RetroArch/bin/database/rdb ] && cp /media/Autobleem/bin/autobleem/AutoBleem.rdb /media/RetroArch/bin/database/rdb/
+# AutoBleem's own PS1 database for RetroArch, when RetroArch is on the stick (RetroArch/bin is its tree) -
+# copied when it is new or different, not on every boot
+RDB=/media/Autobleem/bin/autobleem/AutoBleem.rdb
+if [ -d /media/RetroArch/bin/database/rdb ] && [ -f "$RDB" ]; then
+  cmp -s "$RDB" /media/RetroArch/bin/database/rdb/AutoBleem.rdb 2>/dev/null || cp "$RDB" /media/RetroArch/bin/database/rdb/
+fi
 
 
 # Copy the BIOS files to USB
@@ -38,9 +42,6 @@ mkdir -p /media/System/UI
 
 # Copy ui error log
 [ ! -f /media/System/UI/error.log ] && cp /data/sony/ui/* /media/System/UI
-
-# Init the ui_menu.log
-[ ! -f /media/System/Logs/ui_menu.log ] && touch /media/System/Logs/ui_menu.log
 
 mkdir -p /tmp/gaadatatmp /tmp/datatmp
 # Create gaadata on tmpfs

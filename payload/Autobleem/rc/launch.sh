@@ -11,11 +11,11 @@ exec >> "$LOGS/launch.log" 2>&1
 echo "=== launch.sh $(date '+%Y-%m-%d %H:%M:%S')"
 echo "args: $@"
 
-# copy configuration to it's place
+# copy configuration to it's place - when it differs: this runs on every launch
 if [[ $5 == *"/gaadata"* ]]; then
   echo "Internal game"
 else
-  cp "$5/pcsx.cfg" "$1/pcsx.cfg"
+  cmp -s "$5/pcsx.cfg" "$1/pcsx.cfg" 2>/dev/null || cp "$5/pcsx.cfg" "$1/pcsx.cfg"
 fi
 
 

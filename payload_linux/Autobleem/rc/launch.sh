@@ -57,8 +57,9 @@ echo "AUTOBLEEM: starting PS1 game"
 echo "Cmd: $*"
 
 # the per-game pcsx.cfg belongs next to the save states, the way the console's launch.sh puts it there
+# (only when it differs - every launch comes here)
 if [ -f "$GAME_FOLDER/pcsx.cfg" ] && [ -n "$SS_FOLDER" ]; then
-    cp -f "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg"
+    cmp -s "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg" 2>/dev/null || cp -f "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg"
 fi
 
 #*******************************
