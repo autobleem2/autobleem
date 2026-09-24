@@ -19,6 +19,9 @@
 #ifdef AB_PLATFORM_WIN
 #include <windows.h>
 #endif
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 using namespace std;
 
@@ -69,6 +72,22 @@ static int runAutobleem(int argc, char *argv[]) {
     // the console appender first, so a bad command line is reported; the file appender once the environment
     // knows where the logs directory is
     ableem::Log::initConsoleOnly();
+
+#ifndef _WIN32
+    // PROOF (proof/plugin branch): headless - load the plugin, let it log and call into this executable
+    if (const char *proof = getenv("AB_PLUGIN_PROOF_PING")) {
+        void *module = dlopen(proof, RTLD_NOW | RTLD_LOCAL);
+        if (!module) {
+            PLOG_ERROR << "[proof] dlopen(" << proof << ") failed: " << dlerror();
+            return 2;
+        }
+        typedef int (*ProofPing)(plog::IAppender *);
+        ProofPing ping = reinterpret_cast<ProofPing>(dlsym(module, "ab_proof_ping"));
+        int answer = ping ? ping(plog::get()) : -1;
+        PLOG_INFO << "[proof] ab_proof_ping returned " << answer;
+        return answer == 42 ? 0 : 3;
+    }
+#endif
 
     // SDL_Init/InitSubSystem/TTF_Init/Mix_Init all happen inside ableem::Platform, constructed the first time
     // the Gui singleton is created (inside App's constructor, below). Registering SDL_Quit here (before that

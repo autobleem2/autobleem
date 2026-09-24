@@ -10,6 +10,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <unistd.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 #include <ableem/engine/log.h>
 #include <ableem/engine/update_catalog.h>
 #include "core/version.h"
@@ -255,6 +260,30 @@ int AutoBleem::run() {
     scans().start();
     if (!fingerprintOnDiskMatches || !gamelistXmlExists || thereAreRawGameFilesInGamesDir) {
         scans().requestScan();
+    }
+
+    // PROOF (proof/plugin branch): load the plugin AB_PLUGIN_PROOF names and let it show its dialog
+    if (const char *proof = getenv("AB_PLUGIN_PROOF")) {
+        typedef int (*ProofRun)(ableem::GuiBase *, plog::IAppender *);
+#ifdef _WIN32
+        HMODULE module =
+            LoadLibraryExA(proof, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        ProofRun run = module ? reinterpret_cast<ProofRun>(GetProcAddress(module, "ab_proof_run")) : nullptr;
+        if (!module) {
+            PLOG_ERROR << "[proof] LoadLibrary(" << proof << ") failed: " << GetLastError();
+        }
+#else
+        void *module = dlopen(proof, RTLD_NOW | RTLD_LOCAL);
+        ProofRun run = module ? reinterpret_cast<ProofRun>(dlsym(module, "ab_proof_run")) : nullptr;
+        if (!module) {
+            PLOG_ERROR << "[proof] dlopen(" << proof << ") failed: " << dlerror();
+        }
+#endif
+        if (run) {
+            PLOG_INFO << "[proof] calling ab_proof_run";
+            int answer = run(gui_.get(), plog::get());
+            PLOG_INFO << "[proof] the plugin returned " << answer;
+        }
     }
 
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -

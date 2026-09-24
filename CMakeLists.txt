@@ -273,6 +273,26 @@ target_link_libraries(autobleem-gui
          ${CMAKE_DL_LIBS}
 )
 
+# PROOF (proof/plugin branch, docs/extensions-plan.md step 1): the executable exports its symbols so a
+# plugin can bind to the launcher's own copy of the SDK; ab_proof_plugin is loaded from AB_PLUGIN_PROOF
+set_target_properties(autobleem-gui PROPERTIES ENABLE_EXPORTS ON)
+if (MINGW)
+    target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
+endif()
+add_library(ab_proof_plugin MODULE tools/proof/proof_plugin.cpp)
+# not the target itself: that would hand the plugin the executable's static libraries, a second copy of the
+# SDK. Windows: the executable's import library only; Linux: nothing - dlopen binds to the executable's own
+add_dependencies(ab_proof_plugin autobleem-gui)
+if (WIN32)
+    target_link_libraries(ab_proof_plugin PRIVATE $<TARGET_LINKER_FILE:autobleem-gui>)
+endif()
+target_include_directories(ab_proof_plugin PRIVATE
+        $<TARGET_PROPERTY:ab_classic,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:ab_core,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:ableem,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:ableem_engine,INTERFACE_INCLUDE_DIRECTORIES>)
+target_compile_definitions(ab_proof_plugin PRIVATE $<TARGET_PROPERTY:ab_core,INTERFACE_COMPILE_DEFINITIONS>)
+
 if (AB_TARGET STREQUAL "win")
     # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
     # System/Logs/autobleem.log), with the icon and a version block (src/win/autobleem.rc; the numbers from
