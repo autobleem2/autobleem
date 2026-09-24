@@ -268,6 +268,11 @@ def main():
     os.makedirs(processors, exist_ok=True)
     if not os.path.exists(os.path.join(processors, 'README.txt')):
         shutil.copy(os.path.join(REPO, 'payload', 'System', 'Processors', 'README.txt'), processors)
+    # and the extensions' (their folders come from the build, below)
+    extensions = os.path.join(usb, 'Extensions')
+    os.makedirs(extensions, exist_ok=True)
+    if not os.path.exists(os.path.join(extensions, 'README.txt')):
+        shutil.copy(os.path.join(REPO, 'payload', 'Extensions', 'README.txt'), extensions)
     if os.path.isdir(os.path.join(REPO, 'payload', 'Apps')):
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
 
