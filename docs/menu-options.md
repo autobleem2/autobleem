@@ -74,6 +74,22 @@ Cross saves and leaves, Circle leaves without saving, Start picks a random theme
 
 Triangle renames the game, Square changes its memory card, Start shares a new card, Circle leaves.
 
+**A game's own config** (2026-09-24). A PS1 game's PCSX settings have one source at a time. Normally that is
+the launcher's pcsx.cfg: the game folder's, or `!SaveStates/<id>/` for an internal game. Once an
+emulator's menu has used *Save settings for this game*, it is the game's own `.pcsx/pcsx.custom.cfg` in
+its `!SaveStates` folder. Both pcsx-ab and pcsx-abnxt load pcsx.cfg and then the custom file over it, and
+they only ever save to the custom file.
+
+While the custom file exists, the editor adds a *Saved in the emulator* heading and an **Unlock the
+settings** row, and shows the Video and Emulator rows greyed out with the values the emulator will use.
+Those rows can be selected but not changed. Cross on Unlock asks for confirmation, then deletes the custom
+file (`GameSettingsService::unlock` / `PcsxConfig::unlock`), and the rows are pcsx.cfg's again.
+
+A saved screen shape (`g_scaler3`) and filter (`plat_target.hwfilter`) beat the global Widescreen option
+and the editor's Filter row. An old `autobleem.cfg` or `cfg/<label>-<id>.cfg`, from the retired "Save
+AutoBleem config" entries, becomes the custom file the first time the game is opened or launched. If there
+are several, the newest one wins.
+
 ## RetroArch game editor
 
 One row: Lightgun Game. Circle leaves.

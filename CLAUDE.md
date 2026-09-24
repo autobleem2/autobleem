@@ -97,6 +97,14 @@ has no file - plus the nine `pcsx.cfg` values), and one setter per editor option
 encoding PCSX expects (0/1 flags decimal, levels hex, every `!SaveStates` copy via `ConfigFileEditor`).
 The favorite/play-using-RA toggles live here (Game.ini for USB, internal.db for internal). `GuiEditor` is
 now only the screen: callers set `gameData` and `show()`.
+**A game's PCSX config has one source** (2026-09-24, `PcsxConfig`, `core/services/pcsx_config.*`): the
+launcher's pcsx.cfg, or - once an emulator's menu saved "Save settings for this game" - the game's own
+`!SaveStates/<folder>/.pcsx/pcsx.custom.cfg`, which both emulators load over pcsx.cfg and are the only
+writers of. `PcsxConfig::value()` is what the launch and the editor read (the custom line first);
+`GameSettings::custom` makes every setter a no-op and the editor greys its Video/Emulator rows behind an
+"Unlock the settings" row (`GameSettingsService::unlock` deletes the file). A legacy `autobleem.cfg` /
+`cfg/<label>-<id>.cfg` (the retired "Save AutoBleem config") becomes the custom file on open or launch
+(`migrateLegacy`, the newest wins), and edits no longer touch `cfg/*.cfg`.
 
 `LaunchService` (`core/services/launch.*`) is a game launch start to finish - what `App::launchGame` and
 the three `EmuInterceptor`s (PCSX, RetroArch, Apps) did between them: `writeSelectionScript()`, then
@@ -1049,7 +1057,7 @@ defaults, which both the services and the screens need.
 | `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
 | `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
 | `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
-| `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. Owned by `App` (`app.gameSettings()`). |
+| `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. A game with its own config (`PcsxConfig`) is read-only until `unlock()`. Owned by `App` (`app.gameSettings()`). |
 | `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
 | `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), the core for an entry from its `ableem::CoreInfoTable` (`info/*.info` + `platform/<platform>.cores.cfg`, `coresCfgPath()`), Favorites/History, `reloadPlaylists()` after the scan rewrote them, and `ensureMetadata()` - publisher/year/players from `<rdb dir>/<playlist>.rdb` by label, read once per playlist on first use and dropped again (Favorites/History copy from the source playlist). Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
 | `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
@@ -1102,7 +1110,9 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
   fit** (`Gui::classicRowsThatFit(font)`), scrolling a row at a time with **markers**
   (`Gui::renderScrollMarkers` - triangles at the content's right edge). The selected row is
   `renderSelectionBox`: a band in the text colour at alpha 38 with a 5 px bar at the panel's left edge
-  (`PanelStyle::selection`); a heading between rows is `renderLabelBox` (a faint band). Compact panels
+  (`PanelStyle::selection`); a heading between rows is `renderLabelBox` (a faint band). A row that cannot be changed is drawn, then greyed over
+  with `renderDisabledBox` (`PanelStyle::disabled`, black at alpha 150) - still selectable, so the cursor
+  can pass it. Compact panels
   use `PanelStyle::RowHeight` (60: `FONT_22_MED` title + `FONT_15_BOLD` description) or 44 for a
   single-line row.
 - **Values right-aligned.** An option row is its label at the left and its value at the row's right

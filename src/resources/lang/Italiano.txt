@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Cancella la cartella !SaveState per il gioco
 Delete card=Cancella card
 Delete game=Elimina gioco
 Delete games, flush covers=Cancella giochi, svuota le cover
+Delete the settings saved in the emulator and use AutoBleem's again?=Eliminare le impostazioni salvate nell'emulatore e tornare a quelle di AutoBleem?
 Display and input=Schermo e input
 Display mode=Modalità schermo
 Do not ask about this one again=Non chiedere più per questa versione
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch non e' installato
 ROMs=ROM
 Run using RetroArch=Esegui con RetroArch
 Safely power off the console=Spegni la console in sicurezza
+Saved in the emulator=Salvate nell'emulatore
 Scan complete:=Scansione completata:
 Scanline Level:=Livello Scanline:
 Scanlines:=Scanline:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Impossibile avviare
 Theme Default=Predefinito del tema
 Title=Titolo
 Unknown Core (AutoDetect)=Core Sconosciuto (AutoDetect)
+Unlock=Sblocca
+Unlock the settings=Sblocca le impostazioni
 Update available=Aggiornamento disponibile
 Update failed=Aggiornamento non riuscito
 Update now=Aggiorna ora

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Slet !SaveState-mappen for spillet
 Delete card=Slet kort
 Delete game=Slet spil
 Delete games, flush covers=Slet spil, ryd covers
+Delete the settings saved in the emulator and use AutoBleem's again?=Slet indstillingerne gemt i emulatoren og brug AutoBleems igen?
 Display and input=Skærm og input
 Display mode=Skærmtilstand
 Do not ask about this one again=Spørg ikke igen om denne version
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch er ikke installeret
 ROMs=ROM'er
 Run using RetroArch=Kør med RetroArch
 Safely power off the console=Sluk konsollen sikkert
+Saved in the emulator=Gemt i emulatoren
 Scan complete:=Scanning fuldført:
 Scanline Level:=Scanline-niveau:
 Scanlines:=Scanlines:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Installationsprogra
 Theme Default=Temaets standard
 Title=Titel
 Unknown Core (AutoDetect)=Ukendt kerne (Autodetekt)
+Unlock=Lås op
+Unlock the settings=Lås indstillingerne op
 Update available=Opdatering tilgængelig
 Update failed=Opdatering mislykkedes
 Update now=Opdater nu

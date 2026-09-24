@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Verwijder !SaveState-map voor game
 Delete card=Verwijder kaart
 Delete game=Spel verwijderen
 Delete games, flush covers=Games verwijderen, covers wissen
+Delete the settings saved in the emulator and use AutoBleem's again?=De in de emulator opgeslagen instellingen verwijderen en weer die van AutoBleem gebruiken?
 Display and input=Beeld en invoer
 Display mode=Beeldmodus
 Do not ask about this one again=Niet meer vragen voor deze versie
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch is niet geïnstalleerd
 ROMs=ROM's
 Run using RetroArch=Uitvoeren met RetroArch
 Safely power off the console=Console veilig uitschakelen
+Saved in the emulator=Opgeslagen in de emulator
 Scan complete:=Scan voltooid:
 Scanline Level:=Scanline niveau:
 Scanlines:=Scanlines:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Het installatieprog
 Theme Default=Standaard van thema
 Title=Titel
 Unknown Core (AutoDetect)=Onbekende core (AutoDetectie)
+Unlock=Ontgrendelen
+Unlock the settings=Instellingen ontgrendelen
 Update available=Update beschikbaar
 Update failed=Update mislukt
 Update now=Nu bijwerken

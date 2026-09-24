@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=删除游戏的 !SaveState 文件夹
 Delete card=删除卡
 Delete game=删除游戏
 Delete games, flush covers=删除游戏、清除封面
+Delete the settings saved in the emulator and use AutoBleem's again?=删除在模拟器中保存的设置并重新使用 AutoBleem 的设置？
 Display and input=显示与输入
 Display mode=显示模式
 Do not ask about this one again=不再询问此版本
@@ -215,6 +216,7 @@ RetroArch is not installed=未安装 RetroArch
 ROMs=ROM
 Run using RetroArch=使用 RetroArch 运行
 Safely power off the console=安全关闭主机
+Saved in the emulator=已在模拟器中保存
 Scan complete:=扫描完成：
 Scanline Level:=扫描线强度：
 Scanlines:=扫描线：
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=无法启动安装�
 Theme Default=主题默认
 Title=标题
 Unknown Core (AutoDetect)=未知核心（自动检测）
+Unlock=解锁
+Unlock the settings=解锁设置
 Update available=有可用更新
 Update failed=更新失败
 Update now=立即更新

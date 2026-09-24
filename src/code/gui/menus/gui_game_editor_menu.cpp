@@ -4,6 +4,7 @@
 
 #include "gui_game_editor_menu.h"
 #include "gui/gui.h"
+#include "gui/screens/gui_confirm.h"
 #include "gui/screens/gui_keyboard.h"
 #include "../screens/gui_select_memcard.h"
 #include "core/main.h"
@@ -28,6 +29,7 @@ using namespace std;
 #define OPT_SMOOTHING 13 // pcsx-abnxt only
 #define OPT_SONYHACKS 14 // pcsx-abnxt only
 #define OPT_FILTER 15
+#define OPT_UNLOCK 16 // only while the game has its own config
 
 //*******************************
 // GuiEditor::nxtEmulator
@@ -63,6 +65,14 @@ void GuiEditor::buildRows() {
             OPT_PLAY_USING_RA);
     boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
 
+    // the game has its own config, saved in an emulator's menu: the rows below show its values, greyed,
+    // until the settings are unlocked (PcsxConfig)
+    const size_t firstPcsxRow = rows.size() + (settings.custom ? 2 : 0);
+    if (settings.custom) {
+        heading(_("Saved in the emulator"));
+        valueRow(_("Unlock the settings"), "", OPT_UNLOCK);
+    }
+
     heading(_("Video"));
     boolRow(_("High res:"), pcsx.highres == 1, OPT_HIGHRES);
     boolRow(_("Scanlines:"), pcsx.scanlines == 1, OPT_SCANLINES);
@@ -84,6 +94,11 @@ void GuiEditor::buildRows() {
     boolRow(_("Boot logo:"), pcsx.bootLogo != 0, OPT_BOOTLOGO);
     if (nxtEmulator()) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
         boolRow(_("Sony hacks:"), pcsx.sonyHacks, OPT_SONYHACKS);
+
+    if (settings.custom) {
+        for (size_t i = firstPcsxRow; i < rows.size(); i++)
+            rows[i].locked = rows[i].opt >= 0;
+    }
 }
 
 int GuiEditor::selectedRow() const {
@@ -97,12 +112,28 @@ void GuiEditor::moveSelection(int step) {
     int i = selectedRow();
     if (i < 0)
         i = step > 0 ? -1 : static_cast<int>(rows.size());
+    // a locked row can be landed on - the list scrolls with the cursor, and its values are worth reading -
+    // but not changed (processOptionChange)
     for (int j = i + step; j >= 0 && j < static_cast<int>(rows.size()); j += step) {
         if (rows[j].opt >= 0) {
             selOption = rows[j].opt;
             return;
         }
     }
+}
+
+//*******************************
+// GuiEditor::unlockSettings
+//*******************************
+void GuiEditor::unlockSettings() {
+    shared_ptr<Gui> gui(Gui::getInstance());
+    GuiConfirm confirm(*gui);
+    confirm.label = _("Delete the settings saved in the emulator and use AutoBleem's again?");
+    confirm.show();
+    if (!confirm.result)
+        return;
+    app.gameSettings().unlock(settings);
+    selOption = OPT_HIGHRES; // the unlock row is gone; the cursor lands on the first of the rows it freed
 }
 
 //*******************************
@@ -113,6 +144,9 @@ void GuiEditor::processOptionChange(bool direction) {
     GameSettingsService &svc = app.gameSettings();
     const PcsxSettings &pcsx = settings.pcsx;
     int step = direction ? 1 : -1;
+    int sel = selectedRow();
+    if (sel >= 0 && rows[sel].locked)
+        return; // the game's own config speaks for it (the service would do nothing either)
 
     switch (selOption) {
     case OPT_FAVORITE:
@@ -261,10 +295,12 @@ void GuiEditor::render() {
             gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
             gui->text().renderRowValue(row.value, line, yoffset, right);
         }
+        if (row.locked)
+            gui->text().renderDisabledBox(line, yoffset, right);
     }
     gui->renderScrollMarkers(firstVisible > 0, firstVisible + fit < total);
 
-    string guiMenu = "|@T| " + _("Rename");
+    string guiMenu = selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
     if (!internal) {
         guiMenu += "  |@S| " + _("Change memory card") + " ";
         if (gameIni.values["memcard"] == "SONY") {
@@ -374,6 +410,11 @@ void GuiEditor::loop() {
                         app.audio().cancel.play();
                     }
                 };
+
+                if (e.button == Button::Cross && selOption == OPT_UNLOCK) {
+                    app.audio().cursor.play();
+                    unlockSettings();
+                }
 
                 if (e.button == Button::Circle) {
                     app.audio().cancel.play();

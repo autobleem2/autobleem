@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Oyun için !SaveState klasörünü sil
 Delete card=Kartı sil
 Delete game=Oyunu sil
 Delete games, flush covers=Oyunları sil, kapakları temizle
+Delete the settings saved in the emulator and use AutoBleem's again?=Emülatörde kaydedilen ayarlar silinip yeniden AutoBleem ayarları kullanılsın mı?
 Display and input=Ekran ve giriş
 Display mode=Ekran modu
 Do not ask about this one again=Bu sürüm için bir daha sorma
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch yüklü değil
 ROMs=ROM'lar
 Run using RetroArch=RetroArch ile Çalıştır
 Safely power off the console=Konsolu güvenle kapat
+Saved in the emulator=Emülatörde kaydedildi
 Scan complete:=Tarama tamamlandı:
 Scanline Level:=Tarama Satırı Seviyesi:
 Scanlines:=Scanning...
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Yükleyici başlat�
 Theme Default=Tema Varsayılanı
 Title=Başlık
 Unknown Core (AutoDetect)=Bilinmeyen Çekirdek (Otomatik Algıla)
+Unlock=Kilidi aç
+Unlock the settings=Ayarların kilidini aç
 Update available=Güncelleme mevcut
 Update failed=Güncelleme başarısız
 Update now=Şimdi güncelle

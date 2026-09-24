@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Radera !SaveState mapp för spel
 Delete card=Radera kort
 Delete game=Ta bort spel
 Delete games, flush covers=Ta bort spel, rensa omslag
+Delete the settings saved in the emulator and use AutoBleem's again?=Radera inställningarna som sparats i emulatorn och använd AutoBleems igen?
 Display and input=Skärm och inmatning
 Display mode=Skärmläge
 Do not ask about this one again=Fråga inte igen om den här versionen
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch är inte installerat
 ROMs=ROM-filer
 Run using RetroArch=Kör med RetroArch
 Safely power off the console=Stäng av konsolen säkert
+Saved in the emulator=Sparat i emulatorn
 Scan complete:=Skanning klar:
 Scanline Level:=Scanline-nivå:
 Scanlines:=Scanlines:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Installationsprogra
 Theme Default=Temats standard
 Title=Titel
 Unknown Core (AutoDetect)=Okänd kärna (AutoDetect)
+Unlock=Lås upp
+Unlock the settings=Lås upp inställningarna
 Update available=Uppdatering tillgänglig
 Update failed=Uppdateringen misslyckades
 Update now=Uppdatera nu

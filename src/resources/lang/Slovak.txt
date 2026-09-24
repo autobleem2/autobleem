@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Odstrániť !SaveState priečinok pre hru
 Delete card=Zmazať kartu
 Delete game=Zmazať hru
 Delete games, flush covers=Zmazať hry, vyčistiť obaly
+Delete the settings saved in the emulator and use AutoBleem's again?=Vymazať nastavenia uložené v emulátore a znova použiť nastavenia AutoBleemu?
 Display and input=Obraz a vstup
 Display mode=Režim obrazu
 Do not ask about this one again=Na túto verziu sa už nepýtať
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch nie je nainštalovaný
 ROMs=ROMy
 Run using RetroArch=Spustiť cez RetroArch
 Safely power off the console=Bezpečne vypnúť konzolu
+Saved in the emulator=Uložené v emulátore
 Scan complete:=Skenovanie dokončené:
 Scanline Level:=Úroveň obrazových riadkov:
 Scanlines:=Obrazové riadky:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Inštalátor sa nep
 Theme Default=Predvolené motívu
 Title=Názov
 Unknown Core (AutoDetect)=Neznáme jadro (AutoDetect)
+Unlock=Odomknúť
+Unlock the settings=Odomknúť nastavenia
 Update available=Dostupná aktualizácia
 Update failed=Aktualizácia zlyhala
 Update now=Aktualizovať teraz

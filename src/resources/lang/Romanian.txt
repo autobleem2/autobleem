@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Sterge folderul !SaveState al jocului
 Delete card=Sterge card
 Delete game=Șterge jocul
 Delete games, flush covers=Sterge jocuri, curata coperti
+Delete the settings saved in the emulator and use AutoBleem's again?=Ștergi setările salvate în emulator și folosești din nou setările AutoBleem?
 Display and input=Afișaj și intrare
 Display mode=Mod de afișare
 Do not ask about this one again=Nu mai întreba despre această versiune
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch nu este instalat
 ROMs=ROM-uri
 Run using RetroArch=Rulează cu RetroArch
 Safely power off the console=Opreste consola in siguranta
+Saved in the emulator=Salvat în emulator
 Scan complete:=Scanare finalizata:
 Scanline Level:=Nivel ScanLine:
 Scanlines:=Scanlines:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Programul de instal
 Theme Default=Implicit al temei
 Title=Titlu
 Unknown Core (AutoDetect)=Nucleu Necunoscut (Autodetectare)
+Unlock=Deblochează
+Unlock the settings=Deblochează setările
 Update available=Actualizare disponibilă
 Update failed=Actualizarea a eșuat
 Update now=Actualizează acum
