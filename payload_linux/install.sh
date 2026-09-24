@@ -1334,7 +1334,7 @@ create_tree() {
     log "Creating the AutoBleem tree under $DATA_MOUNT"
     local d
     for d in Autobleem/bin/autobleem Autobleem/bin/db Autobleem/bin/emu Autobleem/bin/emunxt Autobleem/rc \
-             Games System/Bios System/Databases System/Logs Themes Apps; do
+             Games System/Bios System/Databases System/Logs System/Processors Themes Apps; do
         run mkdir -p "$DATA_MOUNT/$d"
     done
     RA_ROOT="$DATA_MOUNT/RetroArch"
@@ -1372,6 +1372,11 @@ $STAGE_DIR/Autobleem/bin/autobleem
         [ -d "$STAGE_DIR/$d" ] || continue
         run cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
     done
+    # the scanner processors' folder (the launcher's docs/scanner-processors-plan.md): its README once - the
+    # user may have edited it, and the processors in there are theirs, never the package's
+    if [ -f "$STAGE_DIR/System/Processors/README.txt" ] && [ ! -f "$DATA_MOUNT/System/Processors/README.txt" ]; then
+        run cp "$STAGE_DIR/System/Processors/README.txt" "$DATA_MOUNT/System/Processors/README.txt"
+    fi
 
     # exFAT has no permission bits of its own - the mount's umask=000 already makes everything 0777 - so a
     # chmod there is either a no-op or refused by the driver. Neither is a reason to stop.
