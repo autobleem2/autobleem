@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Suprimir lo dossièr !SaveStates del jòc
 Delete card=Suprimir la carta
 Delete game=Suprimir lo jòc
 Delete games, flush covers=Suprimir de jòcs, voidar las cobèrtas
+Delete the settings saved in the emulator and use AutoBleem's again?=Suprimir los paramètres enregistrats dins l'emulador e tornar prendre los d'AutoBleem ?
 Display and input=Afichatge e entradas
 Display mode=Mòde d'afichatge
 Do not ask about this one again=Demandar pas mai per aquesta version
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch es pas installat
 ROMs=ROMs
 Run using RetroArch=Lançar amb RetroArch
 Safely power off the console=Atudar la consòla en tota seguretat
+Saved in the emulator=Enregistrat dins l'emulador
 Scan complete:=Escandalhatge acabat :
 Scanline Level:=Nivèl d'escansion
 Scanlines:=Linhas d'escansion :
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=L'installador a pas
 Theme Default=Defaut del tèma
 Title=Títol
 Unknown Core (AutoDetect)=Còr desconegut (AutoDetect)
+Unlock=Desblocar
+Unlock the settings=Desblocar los paramètres
 Update available=Mesa a jorn disponibla
 Update failed=Fracàs de la mesa a jorn
 Update now=Metre a jorn ara

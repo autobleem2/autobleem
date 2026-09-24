@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Delete !SaveState folder for game
 Delete card=Delete card
 Delete game=Delete game
 Delete games, flush covers=Delete games, flush covers
+Delete the settings saved in the emulator and use AutoBleem's again?=Delete the settings saved in the emulator and use AutoBleem's again?
 Display and input=Display and input
 Display mode=Display mode
 Do not ask about this one again=Do not ask about this one again
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch is not installed
 ROMs=ROMs
 Run using RetroArch=Run using RetroArch
 Safely power off the console=Safely power off the console
+Saved in the emulator=Saved in the emulator
 Scan complete:=Scan complete:
 Scanline Level:=Scanline Level:
 Scanlines:=Scanlines:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=The installer could
 Theme Default=Theme Default
 Title=Title
 Unknown Core (AutoDetect)=Unknown Core (AutoDetect)
+Unlock=Unlock
+Unlock the settings=Unlock the settings
 Update available=Update available
 Update failed=Update failed
 Update now=Update now

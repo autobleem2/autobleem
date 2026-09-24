@@ -258,6 +258,13 @@ The **game editor** shows the game's details on the right and its settings on th
 
 Triangle renames the game, Square changes its memory card, Start shares a new card. Circle saves and leaves.
 
+**Settings saved in the emulator.** The emulator's own menu has *Save settings for this game*. Once a game
+has settings saved there, they are the ones it plays with, and the game editor shows its Video and
+Emulator rows greyed out, with those values, under the heading *Saved in the emulator*. To go back to the
+game editor's settings, pick **Unlock the settings** and confirm: this deletes the settings the emulator
+saved, and the rows can be changed again. Both emulators, `pcsx-ab` and `pcsx-abnxt`, read and write the
+same saved settings.
+
 ![The game editor](../images/en/game-editor.jpg)
 
 ### 3.7 Memory cards and save states

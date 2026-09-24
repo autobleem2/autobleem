@@ -259,6 +259,13 @@ gry), **Karta pamięci** (jej karta) i **Wznów** (jej stany gry). Krzyżyk otwi
 Trójkąt zmienia nazwę gry, Kwadrat zmienia jej kartę pamięci, Start udostępnia nową kartę. Kółko zapisuje i
 wychodzi.
 
+**Ustawienia zapisane w emulatorze.** Własne menu emulatora ma pozycję *Save settings for this game*. Gdy
+gra ma tam zapisane ustawienia, to z nimi jest uruchamiana, a edytor gry pokazuje jej wiersze Obraz i
+Emulator wyszarzone, z tymi wartościami, pod nagłówkiem *Zapisane w emulatorze*. Aby wrócić do ustawień z
+edytora gry, wybierz **Odblokuj ustawienia** i potwierdź: ustawienia zapisane przez emulator zostaną
+usunięte, a wiersze znów da się zmieniać. Oba emulatory, `pcsx-ab` i `pcsx-abnxt`, czytają i zapisują te
+same ustawienia.
+
 ![Edytor gry](../images/pl/game-editor.jpg)
 
 ### 3.7 Karty pamięci i stany gry

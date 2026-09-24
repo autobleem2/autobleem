@@ -33,6 +33,9 @@ public:
     bool changes = false; // the game was renamed
 
     void processOptionChange(bool direction);
+    // Cross on the "Unlock the settings" row: after a confirmation, the game's own config (saved in an
+    // emulator's menu) is deleted and its pcsx.cfg rows are AutoBleem's to edit again (PcsxConfig)
+    void unlockSettings();
     bool nxtEmulator() const; // Options -> PS1 Emulator is pcsx-abnxt: its own rows (Smoothing) are shown
 
     // the rows as they read on screen: heading bands ("Game", "Video", "Emulator") between the options,
@@ -42,9 +45,10 @@ public:
     struct Row {
         enum class Kind { Heading, Bool, Value } kind;
         std::string label;
-        std::string value; // Value rows
-        bool on = false;   // Bool rows
-        int opt = -1;      // the OPT_ id; -1 for a heading
+        std::string value;   // Value rows
+        bool on = false;     // Bool rows
+        int opt = -1;        // the OPT_ id; -1 for a heading
+        bool locked = false; // the game has its own config (settings.custom): greyed, not changeable
     };
     std::vector<Row> rows;
     int firstVisible = 0;

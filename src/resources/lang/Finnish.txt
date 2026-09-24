@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 287
+# Untranslated: 0 / Total: 291
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -66,6 +66,7 @@ Delete !SaveState folder for game=Poista pelin !SaveState kansio
 Delete card=Poista kortti
 Delete game=Poista peli
 Delete games, flush covers=Poista pelejä, tyhjennä kansikuvat
+Delete the settings saved in the emulator and use AutoBleem's again?=Poistetaanko emulaattoriin tallennetut asetukset ja käytetään taas AutoBleemin asetuksia?
 Display and input=Näyttö ja syöte
 Display mode=Näyttötila
 Do not ask about this one again=Älä kysy tästä versiosta uudelleen
@@ -215,6 +216,7 @@ RetroArch is not installed=RetroArch ei ole asennettu
 ROMs=ROMit
 Run using RetroArch=Käynnistä RetroArchilla
 Safely power off the console=Sammuta konsoli turvallisesti
+Saved in the emulator=Tallennettu emulaattoriin
 Scan complete:=Skannaus valmis:
 Scanline Level:=Skannaustaso:
 Scanlines:=Skannauslinjat:
@@ -269,6 +271,8 @@ The installer could not be started - it is in System/Updates=Asennusohjelmaa ei 
 Theme Default=Teeman oletus
 Title=Nimi
 Unknown Core (AutoDetect)=Tuntematon ydin (Automaattisesti havaittu)
+Unlock=Avaa lukitus
+Unlock the settings=Avaa asetusten lukitus
 Update available=Päivitys saatavilla
 Update failed=Päivitys epäonnistui
 Update now=Päivitä nyt
