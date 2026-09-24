@@ -109,6 +109,9 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
+    // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
+    lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
+                       vector<string>({"false", "true"}));
 
     heading(_("Library"));
 #ifdef AB_HAS_INTERNAL_GAMES

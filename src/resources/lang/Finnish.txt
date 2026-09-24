@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -188,6 +188,7 @@ Open Retroarch Menu=Avaa RetroArch valikko
 Operating system=Käyttöjärjestelmä
 Options=Vaihtoehdot
 Page=Sivu
+Persist RetroArch config:=Säilytä RetroArchin asetukset:
 Platform=Alusta
 Play all PSX games with RA:=Pelaa kaikki PSX-pelit RA:lla:
 Play using RA:=Pelaa RA:lla:

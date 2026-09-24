@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -188,6 +188,7 @@ Open Retroarch Menu=Deschide Meniul RetroArch
 Operating system=Sistem de operare
 Options=Optiuni
 Page=Pagina
+Persist RetroArch config:=Păstrează config. RetroArch:
 Platform=Platformă
 Play all PSX games with RA:=Joaca toate jocurile PSX cu RA:
 Play using RA:=Joaca folosind RA:

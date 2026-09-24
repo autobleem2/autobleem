@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -188,6 +188,7 @@ Open Retroarch Menu=Åbn RetroArch-menu
 Operating system=Styresystem
 Options=Indstillinger
 Page=Side
+Persist RetroArch config:=Gem RetroArch-konfiguration:
 Platform=Platform
 Play all PSX games with RA:=Spil alle PSX-spil med RA:
 Play using RA:=Spil med RA:

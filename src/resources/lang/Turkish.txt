@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -188,6 +188,7 @@ Open Retroarch Menu=RetroArch Menüsünü Aç
 Operating system=İşletim sistemi
 Options=Seçenekler
 Page=Sayfa
+Persist RetroArch config:=RetroArch ayarlarını koru:
 Platform=Platform
 Play all PSX games with RA:=Tüm PSX oyunlarını RA ile oyna:
 Play using RA:=RA ile oyna:

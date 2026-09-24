@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -188,6 +188,7 @@ Open Retroarch Menu=Abrir Menu do RetroArch
 Operating system=Sistema operacional
 Options=Opções
 Page=Página
+Persist RetroArch config:=Manter config. do RetroArch:
 Platform=Plataforma
 Play all PSX games with RA:=Jogue todos os jogos PSX com RA:
 Play using RA:=Jogar usando RA:

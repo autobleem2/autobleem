@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -188,6 +188,7 @@ Open Retroarch Menu=Open RetroArch menu
 Operating system=Besturingssysteem
 Options=Options
 Page=Pagina
+Persist RetroArch config:=RetroArch-configuratie bewaren:
 Platform=Platform
 Play all PSX games with RA:=Speel alle PSX games met RA:
 Play using RA:=Speel met RA:

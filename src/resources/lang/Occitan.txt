@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -188,6 +188,7 @@ Open Retroarch Menu=Dobrir lo menú RetroArch
 Operating system=Sistèma operatiu
 Options=Opcions
 Page=Pagina
+Persist RetroArch config:=Gardar la config RetroArch :
 Platform=Plataforma
 Play all PSX games with RA:=Jogar a totes los jòcs PSX amb RA :
 Play using RA:=Jogar amb RA :

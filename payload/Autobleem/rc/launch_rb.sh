@@ -21,6 +21,9 @@ ROMS=$RA/roms
 . /media/Autobleem/rc/ab_log.sh
 LOGS=$AB_LOG_DIR
 RALOG=$LOGS/retroarch.log
+# what the launcher starts RetroArch with on top of retroarch.cfg - config_save_on_exit (Options ->
+# "Persist RetroArch config") and a game's own settings - in RAM (LaunchService::prepareRaAppend)
+RA_APPEND=$AB_RUNTIME_DIR/ra-append.cfg
 ABSPLASH=/media/Autobleem/bin/autobleem/absplash
 ABPICS=/media/Autobleem/bin/autobleem/splash
 
@@ -55,6 +58,16 @@ show_launch_splash()
 	done
 	sleep 1
 	touch /tmp/.ra_up
+}
+
+# retroarch with its config, and the launcher's additions when there are any
+retroarch_run()
+{
+	if [ -f "$RA_APPEND" ]; then
+		"$BIN/retroarch" --config "$BIN/retroarch.cfg" --appendconfig "$RA_APPEND" "$@"
+	else
+		"$BIN/retroarch" --config "$BIN/retroarch.cfg" "$@"
+	fi
 }
 
 show_return_splash()
@@ -101,11 +114,11 @@ if [ -n "$2" ]; then
 	esac
 	echo "Using core $CORE"
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" -L "$CORE" "$1" > "$RALOG" 2>&1
+	retroarch_run -L "$CORE" "$1" > "$RALOG" 2>&1
 	LVL=$?
 else
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" > "$RALOG" 2>&1
+	retroarch_run > "$RALOG" 2>&1
 	LVL=$?
 fi
 echo "retroarch exited with status $LVL"

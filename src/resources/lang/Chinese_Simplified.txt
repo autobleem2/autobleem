@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -188,6 +188,7 @@ Open Retroarch Menu=打开 RetroArch 菜单
 Operating system=操作系统
 Options=选项
 Page=页
+Persist RetroArch config:=保存RetroArch配置：
 Platform=平台
 Play all PSX games with RA:=所有 PSX 游戏用 RA 运行：
 Play using RA:=用 RA 运行：

@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -188,6 +188,7 @@ Open Retroarch Menu=Ouvrir le menu RetroArch
 Operating system=Système d'exploitation
 Options=Options
 Page=Page
+Persist RetroArch config:=Conserver la config RetroArch :
 Platform=Plateforme
 Play all PSX games with RA:=Jouer à tous les jeux PSX avec RA :
 Play using RA:=Jouer avec RA :

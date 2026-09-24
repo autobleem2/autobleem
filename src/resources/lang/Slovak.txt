@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -188,6 +188,7 @@ Open Retroarch Menu=Otvoriť ponuku Retroarch
 Operating system=Operačný systém
 Options=Nastavenia
 Page=Strana
+Persist RetroArch config:=Uchovať nastavenia RetroArch:
 Platform=Platforma
 Play all PSX games with RA:=Hrať všetky PSX hry cez RA:
 Play using RA:=Hrať cez RA:

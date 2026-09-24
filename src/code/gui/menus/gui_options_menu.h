@@ -24,9 +24,10 @@ enum {
     CFG_LANG,
     CFG_THEME_FONT,
     CFG_FONT,
-    CFG_KEEPLOGS
+    CFG_KEEPLOGS,
+    CFG_RA_PERSIST
 };
-#define CFG_LAST CFG_KEEPLOGS
+#define CFG_LAST CFG_RA_PERSIST
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 

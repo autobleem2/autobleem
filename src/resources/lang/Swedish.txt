@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 314
+# Untranslated: 0 / Total: 315
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -188,6 +188,7 @@ Open Retroarch Menu=Öppna RetroArch-meny
 Operating system=Operativsystem
 Options=Alternativ
 Page=Sida
+Persist RetroArch config:=Behåll RetroArch-inställningar:
 Platform=Plattform
 Play all PSX games with RA:=Spela alla PSX-spel med RA:
 Play using RA:=Spela med RA:
