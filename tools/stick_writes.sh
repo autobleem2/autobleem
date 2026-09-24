@@ -5,7 +5,8 @@
 #   stick_writes.sh start [MOUNT]   remember the partition's written-sectors counter, and watch the files
 #                                   with inotifywait when the machine has it (the Pi: inotify-tools)
 #   ... do the scenario: boot, idle, a rescan, a game and back, a standby ...
-#   stick_writes.sh stop            KiB written since start, and the files touched (when watched)
+#   stick_writes.sh stop            KiB written since start, and the files touched (when watched) - a file
+#                                   kept open and appended to (a log, a database) shows as MODIFY
 #
 # MOUNT defaults to /media (the console), else /media/autobleem (a Pi / the PC stick). The counter is the
 # partition's own (/sys/class/block/<part>/stat, field 7: 512-byte sectors written) - it counts everything,
@@ -39,7 +40,7 @@ start)
     echo "START=$(sectors "$MOUNT")" >> "$STATE"
     rm -f "$EVENTS"
     if command -v inotifywait > /dev/null 2>&1; then
-        inotifywait -m -r -q -e close_write,moved_to,create,delete --format '%e %w%f' "$MOUNT" > "$EVENTS" 2>/dev/null &
+        inotifywait -m -r -q -e modify,close_write,moved_to,create,delete --format '%e %w%f' "$MOUNT" > "$EVENTS" 2>/dev/null &
         echo "WATCH=$!" >> "$STATE"
     fi
     echo "measuring writes to $MOUNT - run the scenario, then: $0 stop"
