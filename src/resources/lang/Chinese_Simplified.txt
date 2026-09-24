@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -268,6 +268,7 @@ Tab=标签页
 Temperature=温度
 Testing=测试
 The installer could not be started - it is in System/Updates=无法启动安装程序 - 它位于 System/Updates
+The update is downloaded - the installer is opening...=更新已下载 - 正在打开安装程序...
 Theme Default=主题默认
 Title=标题
 Unknown Core (AutoDetect)=未知核心（自动检测）

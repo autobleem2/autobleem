@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -268,6 +268,7 @@ Tab=Karta
 Temperature=Teplota
 Testing=Testovanie
 The installer could not be started - it is in System/Updates=Inštalátor sa nepodarilo spustiť - je v System/Updates
+The update is downloaded - the installer is opening...=Aktualizácia je stiahnutá - otvára sa inštalátor...
 Theme Default=Predvolené motívu
 Title=Názov
 Unknown Core (AutoDetect)=Neznáme jadro (AutoDetect)

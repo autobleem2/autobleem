@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -268,6 +268,7 @@ Tab=Reiter
 Temperature=Temperatur
 Testing=Testen
 The installer could not be started - it is in System/Updates=Der Installer konnte nicht gestartet werden - er liegt in System/Updates
+The update is downloaded - the installer is opening...=Das Update ist heruntergeladen - der Installer wird geöffnet...
 Theme Default=Theme-Standard
 Title=Titel
 Unknown Core (AutoDetect)=Unbekannter Kern (AutoErkennung)

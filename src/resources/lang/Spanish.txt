@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -268,6 +268,7 @@ Tab=Pestaña
 Temperature=Temperatura
 Testing=Testers
 The installer could not be started - it is in System/Updates=No se pudo iniciar el instalador - está en System/Updates
+The update is downloaded - the installer is opening...=La actualización se ha descargado - abriendo el instalador...
 Theme Default=Predeterminado del tema
 Title=Título
 Unknown Core (AutoDetect)=Core Desconocido (AutoDetectar)

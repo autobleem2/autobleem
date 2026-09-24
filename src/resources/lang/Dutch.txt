@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -268,6 +268,7 @@ Tab=Tabblad
 Temperature=Temperatuur
 Testing=Testen
 The installer could not be started - it is in System/Updates=Het installatieprogramma kon niet worden gestart - het staat in System/Updates
+The update is downloaded - the installer is opening...=De update is gedownload - het installatieprogramma wordt geopend...
 Theme Default=Standaard van thema
 Title=Titel
 Unknown Core (AutoDetect)=Onbekende core (AutoDetectie)

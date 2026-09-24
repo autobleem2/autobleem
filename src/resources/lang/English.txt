@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -107,8 +107,8 @@ Free=Free
 free of=free of
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Free software under the GNU GPL v3 or later - no warranty. Source and licence:
 Free space=Free space
-Game=Game
 GAME=GAME
+Game=Game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game History=Game History
@@ -268,6 +268,7 @@ Tab=Tab
 Temperature=Temperature
 Testing=Testing
 The installer could not be started - it is in System/Updates=The installer could not be started - it is in System/Updates
+The update is downloaded - the installer is opening...=The update is downloaded - the installer is opening...
 Theme Default=Theme Default
 Title=Title
 Unknown Core (AutoDetect)=Unknown Core (AutoDetect)

@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -268,6 +268,7 @@ Tab=Sekme
 Temperature=Sıcaklık
 Testing=Deneme
 The installer could not be started - it is in System/Updates=Yükleyici başlatılamadı - System/Updates içinde
+The update is downloaded - the installer is opening...=Güncelleme indirildi - yükleyici açılıyor...
 Theme Default=Tema Varsayılanı
 Title=Başlık
 Unknown Core (AutoDetect)=Bilinmeyen Çekirdek (Otomatik Algıla)

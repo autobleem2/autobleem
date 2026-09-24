@@ -2,7 +2,7 @@
 """
 The language files: src/resources/lang/<Language>.txt, one "English text=Translated text" per line.
 
-    python tools/lang_tools.py extract              # English.txt from every _("...") in src/code
+    python tools/lang_tools.py extract              # English.txt from every _("...") in SRC_DIRS
     python tools/lang_tools.py update               # every other file gets English.txt's keys (missing -> empty)
     python tools/lang_tools.py update --remove-obsolete
     python tools/lang_tools.py validate [FILE...]   # format, duplicates, keys not in English.txt; exit 1 on a problem
@@ -22,27 +22,34 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-SRC_DIR = REPO / 'src' / 'code'
+# the launcher's own code and the shared code in the autobleem-core submodule (ab_core, ab_classic, lib_ableem),
+# whose screens and services the launcher shows too; a directory that is not there (no submodule) is skipped
+SRC_DIRS = [
+    REPO / 'src' / 'code',
+    REPO / 'autobleem-core' / 'src' / 'code',
+    REPO / 'autobleem-core' / 'lib_ableem' / 'src',
+]
 LANG_DIR = REPO / 'src' / 'resources' / 'lang'
 SOURCE = 'English'
 
 
-def extract_strings(src_dir: Path) -> set:
+def extract_strings(src_dirs) -> set:
     """every _("...") in the C++ sources: a literal, or adjacent literals the way clang-format splits a long
     one ("..." "..."), joined; a _( inside another identifier (runLines_("x")) is not one; comments skipped"""
     call = re.compile(r'(?<![A-Za-z0-9_])_\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)')
     literal = re.compile(r'"((?:[^"\\]|\\.)*)"')
     strings = set()
-    for ext in ('*.cpp', '*.h'):
-        for path in src_dir.rglob(ext):
-            lines = []
-            for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
-                cut = line.find('//')
-                lines.append(line if cut == -1 else line[:cut])
-            for pieces in call.findall('\n'.join(lines)):
-                text = ''.join(literal.findall(pieces)).replace('\\"', '"')
-                if text:
-                    strings.add(text)
+    paths = [path for src_dir in src_dirs if src_dir.is_dir()
+             for ext in ('*.cpp', '*.h') for path in src_dir.rglob(ext)]
+    for path in paths:
+        lines = []
+        for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
+            cut = line.find('//')
+            lines.append(line if cut == -1 else line[:cut])
+        for pieces in call.findall('\n'.join(lines)):
+            text = ''.join(literal.findall(pieces)).replace('\\"', '"')
+            if text:
+                strings.add(text)
     return strings
 
 
@@ -87,7 +94,8 @@ def write_key_value(path: Path, translations: dict, language: str, total: int = 
         f.write(f'# AutoBleem {language} Translation\n')
         f.write('# Format: English Text=Translated Text\n')
         f.write(f'# Untranslated: {untranslated} / Total: {total}\n\n')
-        for key in sorted(translations, key=str.lower):
+        # case-insensitive, then by case, so INTERNAL/Internal come out in the same order on every run
+        for key in sorted(translations, key=lambda k: (k.lower(), k)):
             f.write(f'{key}={translations[key]}\n')
 
 
@@ -96,7 +104,11 @@ def language_files(lang_dir: Path):
 
 
 def cmd_extract(args):
-    strings = extract_strings(Path(args.src_dir))
+    src_dirs = [Path(d) for d in args.src_dir] if args.src_dir else SRC_DIRS
+    for d in src_dirs:
+        if not d.is_dir():
+            print(f'{d}: not there, skipped', file=sys.stderr)
+    strings = extract_strings(src_dirs)
     path = Path(args.lang_dir) / f'{SOURCE}.txt'
     write_key_value(path, {s: s for s in strings}, SOURCE)
     print(f'{path}: {len(strings)} strings')
@@ -204,7 +216,7 @@ def cmd_merge(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--src-dir', default=str(SRC_DIR))
+    parser.add_argument('--src-dir', action='append', help='a source tree to scan (repeatable); default: SRC_DIRS')
     parser.add_argument('--lang-dir', default=str(LANG_DIR))
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('extract').set_defaults(func=cmd_extract)

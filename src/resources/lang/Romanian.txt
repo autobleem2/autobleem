@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -268,6 +268,7 @@ Tab=Filă
 Temperature=Temperatură
 Testing=Testare
 The installer could not be started - it is in System/Updates=Programul de instalare nu a putut fi pornit - se află în System/Updates
+The update is downloaded - the installer is opening...=Actualizarea a fost descărcată - se deschide programul de instalare...
 Theme Default=Implicit al temei
 Title=Titlu
 Unknown Core (AutoDetect)=Nucleu Necunoscut (Autodetectare)

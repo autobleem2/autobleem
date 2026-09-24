@@ -21,7 +21,7 @@ Markers such as `|@X|` or `|@Start|` in a string are replaced by button pictures
 `tools/lang_tools.py` keeps the files in step with the source:
 
 ```
-python tools/lang_tools.py extract          # English.txt from every _("...") in src/code
+python tools/lang_tools.py extract          # English.txt from every _("...") in src/code and autobleem-core
 python tools/lang_tools.py update           # gives every language English's keys (new ones empty)
 python tools/lang_tools.py compare Polski   # lists what Polski still lacks
 python tools/lang_tools.py validate         # what make_win.sh runs: format, duplicates, keys not in English

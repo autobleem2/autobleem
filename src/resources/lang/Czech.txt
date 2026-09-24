@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 291
+# Untranslated: 0 / Total: 292
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -268,6 +268,7 @@ Tab=Záložka
 Temperature=Teplota
 Testing=Testování
 The installer could not be started - it is in System/Updates=Instalátor se nepodařilo spustit - je v System/Updates
+The update is downloaded - the installer is opening...=Aktualizace je stažena - otevírá se instalátor...
 Theme Default=Výchozí motivu
 Title=Název
 Unknown Core (AutoDetect)=Neznámé jádro (Automaticky)
