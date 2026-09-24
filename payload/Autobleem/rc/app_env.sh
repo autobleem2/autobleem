@@ -22,8 +22,9 @@
 # ---------------------------------------------------------------------------------------------
 [ -n "$AB_APP_DIR" ] || AB_APP_DIR=$(cd "$(dirname "$0")" && pwd)
 [ -n "$AB_ROOT" ] || AB_ROOT=$(cd "$AB_APP_DIR/../.." && pwd)
-AB_LOG_DIR="$AB_ROOT/System/Logs"
-export AB_APP_DIR AB_ROOT
+# the launcher's logs dir (RAM unless the logs are kept - rc/ab_log.sh); an App started by hand logs on the stick
+[ -n "$AB_LOG_DIR" ] || AB_LOG_DIR="$AB_ROOT/System/Logs"
+export AB_APP_DIR AB_ROOT AB_LOG_DIR
 mkdir -p "$AB_LOG_DIR" 2>/dev/null
 
 # ---------------------------------------------------------------------------------------------
@@ -94,7 +95,7 @@ export LD_LIBRARY_PATH
 HOME="$AB_ROOT/Home"
 XDG_DATA_HOME="$HOME/.local/share"
 XDG_CONFIG_HOME="$HOME/.config"
-XDG_CACHE_HOME="$HOME/.cache"
+XDG_CACHE_HOME="${AB_RUNTIME_DIR:-/tmp/autobleem}/cache" # a cache is not a save: RAM, not the stick
 XDG_STATE_HOME="$HOME/.local/state"
 export HOME XDG_DATA_HOME XDG_CONFIG_HOME XDG_CACHE_HOME XDG_STATE_HOME
 mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME" 2>/dev/null

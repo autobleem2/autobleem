@@ -2,8 +2,8 @@
 
 # What happens after autobleem-gui exits. boot.sh runs this from a copy on tmpfs, with the cwd on tmpfs,
 # and starts the launcher over when it returns 0; anything else ends in a reboot, which brings AutoBleem
-# back up through Sony's boot standby. AutoBleem::run() writes AB_SELECTION into autobleem_cfg.sh on its
-# way out (LaunchService::writeSelectionScript):
+# back up through Sony's boot standby. AutoBleem::run() writes AB_SELECTION into autobleem_cfg.sh in the
+# runtime dir (RAM, rc/ab_log.sh) on its way out (LaunchService::writeSelectionScript):
 #   4  exit to RetroArch (the launcher's L2+R2 system menu): RetroArch's own menu, then the launcher again
 #   6  install the update the launcher downloaded into System/Updates (a console with a network - the
 #      AutoBleem kernel's WiFi): abupdate lays it over the stick, then the new launcher starts
@@ -17,11 +17,16 @@ SEL_UPDATE=6
 SEL_POWEROFF=7
 
 RC=/media/Autobleem/rc
-LOG=/media/System/Logs/standby.log
+. $RC/ab_log.sh
+# a standby that worked is logged with the rest of the run (RAM unless kept); what went wrong - the stick
+# busy, no standby at all - goes to the stick, where it is still there after the reboot that follows
+LOG=$AB_LOG_DIR/standby.log
+FAILLOG=/media/System/Logs/standby.log
 
 AB_SELECTION=0
-[ -f $RC/autobleem_cfg.sh ] && . $RC/autobleem_cfg.sh
-rm -f $RC/autobleem_cfg.sh
+[ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ] && . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
+rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
+rm -f $RC/autobleem_cfg.sh # where a launcher before the quiet-stick plan wrote it
 echo Selection: $AB_SELECTION
 
 # the emulator the launch script execs; a fresh copy on tmpfs every boot
@@ -38,7 +43,7 @@ cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 poweroff_instead() {
     echo "$(date) no standby on this console - powering off instead" >> $SLOG
     if mount "$DEV" /media 2>> $SLOG; then
-        { cat $SLOG; echo; } >> $LOG
+        { cat $SLOG; echo; } >> $FAILLOG
         sync
     fi
     echo 0 > /sys/class/leds/green/brightness
@@ -64,11 +69,11 @@ standby() {
     until umount /media; do
         n=$((n + 1))
         if [ $n -ge 5 ]; then
-            echo "standby: /media is busy - holders:" >> $LOG
+            echo "$(date) standby: /media is busy - holders:" >> $FAILLOG
             for d in /proc/[0-9]*; do
                 p=${d#/proc/}
-                case "$(readlink $d/cwd 2>/dev/null)" in /media*) echo "  $p cwd $(cat $d/comm)" >> $LOG ;; esac
-                ls -l $d/fd 2>/dev/null | grep -q /media && echo "  $p fd $(cat $d/comm)" >> $LOG
+                case "$(readlink $d/cwd 2>/dev/null)" in /media*) echo "  $p cwd $(cat $d/comm)" >> $FAILLOG ;; esac
+                ls -l $d/fd 2>/dev/null | grep -q /media && echo "  $p fd $(cat $d/comm)" >> $FAILLOG
             done
             return 1
         fi
@@ -193,6 +198,11 @@ case "$AB_SELECTION" in
         exit 0
     fi
     # /media busy, or no stick after the wake: the reboot brings whatever is plugged in back up
+    ;;
+*)
+    # no selection (or none the launcher leaves with): it did not leave the way it does - a crash, killed.
+    # Its logs are in RAM, which the reboot below empties, so they go to the stick first
+    ab_persist_logs "autobleem-gui ended without a selection (AB_SELECTION=$AB_SELECTION) - a crash?"
     ;;
 esac
 

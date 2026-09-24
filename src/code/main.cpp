@@ -61,8 +61,8 @@ static int runAutobleem(int argc, char *argv[]) {
     }
     (void)launcherMutex; // held until the process ends
 #endif
-    // stdout/stderr go to /media/System/Logs/AB_*.txt (see run.sh). without this they are block buffered and the
-    // last lines before a crash never reach the file, which is exactly when they are needed.
+    // stdout/stderr go to AB_out.txt/AB_err.txt in the logs dir (see run.sh). without this they are block buffered
+    // and the last lines before a crash never reach the file, which is exactly when they are needed.
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 
@@ -103,9 +103,15 @@ static int runAutobleem(int argc, char *argv[]) {
         }
         return EXIT_SUCCESS;
     }
-    // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well
-    DirEntry::createDir(Env::getPathToLogsDir());
-    ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
+    // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well. In RAM
+    // (<runtime>/logs, a quarter of the size) unless "Keep logs on the stick" is on - docs/quiet-stick-plan.md;
+    // a crash takes them to System/Logs (rc/ab_log.sh's ab_persist_logs)
+    Env::setKeepLogs(Env::keepLogsRequested());
+    Env::exportLogDirs();
+    if (Env::keepLogs())
+        ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
+    else
+        ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log", 256 * 1024, 2);
 
     // the package's version, for every program started from here (the emulators, the console tools) to show
     // as the launcher does - Env::productVersion()

@@ -22,6 +22,10 @@ RC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_MOUNT="$(cd "$RC_DIR/../.." && pwd)"
 RA_DIR="$DATA_MOUNT/RetroArch"   # RetroArch's standard tree, laid out by install.sh
 RA_CONFIG="$RA_DIR/retroarch.cfg"
+# what the launcher starts RetroArch with on top of retroarch.cfg - config_save_on_exit (Options ->
+# "Persist RetroArch config") and a game's own settings - in RAM (LaunchService::prepareRaAppend)
+RA_APPEND=()
+[ -f "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg" ] && RA_APPEND=(--appendconfig "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg")
 
 echo "AUTOBLEEM: starting RetroArch"
 echo "Image: $GAME_FILE"
@@ -60,4 +64,4 @@ if ! CORE_SO="$(core_path "$CORE")"; then
 fi
 
 echo "Using core: $CORE_SO"
-exec retroarch --config "$RA_CONFIG" -L "$CORE_SO" "$GAME_FILE"
+exec retroarch --config "$RA_CONFIG" "${RA_APPEND[@]}" -L "$CORE_SO" "$GAME_FILE"

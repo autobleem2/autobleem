@@ -33,9 +33,19 @@ public:
     void doDelete() override { doSquare_Pressed(); }
 
     PsGames psGames;
+    // the folders the scan found but did not add, after the games (regional.db's FAILED_GAMES - they used to
+    // be listed in gamesThatFailedVerifyCheck.txt): the folder, and why, in the detail pane; Square deletes one
+    ableem::FailedGames failed;
     static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }
+    // UsbGame::verify()'s reasons, which the scan keeps in English, in the language on screen
+    static std::string translatedReason(const std::string &reason);
 
 private:
+    bool onFailed() const { return selected >= static_cast<int>(psGames.size()); }
+    const ableem::FailedGame &selectedFailed() const { return failed[selected - psGames.size()]; }
+    void deleteFailedFolder();
+    void settleSelection(); // after a delete: the cursor inside the list again
+
     // the selected game's cover and screenshot, on the left where the editor puts its cover; loaded when
     // the selection changes (a Texture dies with this stack object, before any launch)
     void renderPreview();
