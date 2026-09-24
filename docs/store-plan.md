@@ -3,7 +3,8 @@
 **Status (2026-09-24):**
 - **Working on the Windows dev build**, from the launcher's Extensions list, against a local test site: the
   sources are read, an App and a game are installed, and the launcher rescans.
-- **Kept in a local repository**, `_work-extensions/ext_store`, until `autobleem2/ext_store` exists.
+- **In its repository**, `autobleem2/ext_store` (2026-09-24), built with the launcher through
+  `AB_EXTENSION_DIRS` until the SDK package exists.
 - **Still open**: the site's catalog and per-App packages (step 6), Apps for the other targets (step 7),
   hardware (step 8) and the manuals (step 9).
 
