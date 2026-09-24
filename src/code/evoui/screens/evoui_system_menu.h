@@ -23,6 +23,7 @@ enum class SystemMenuAction {
     GameManager,
     HardwareInfo,
     Options,
+    Extensions,     // the Extensions list (docs/extensions-plan.md), on every target
     SoftwareUpdate, // AB_ONLINE_UPDATE builds only
     About,
     PowerOff

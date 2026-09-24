@@ -53,6 +53,8 @@ void GuiLauncher::loop() {
                 carousel.loadOneMissingTexture();
         }
         applyScanUpdate(app.scans().poll());
+        app.extensions().poll();
+        applyExtensionRequests();
 #ifdef AB_ONLINE_UPDATE
         pollUpdates();
 #endif

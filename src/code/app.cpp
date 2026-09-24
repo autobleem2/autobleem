@@ -1,4 +1,5 @@
 #include "app.h"
+#include "gui/extension_host_base.h"
 #include "core/services/environment.h"
 #include "core/services/system.h"
 #include "core/version.h"
@@ -10,12 +11,67 @@
 
 using namespace std;
 
+namespace {
+//******************
+// LauncherExtensionHost
+//******************
+// What the launcher adds to an extension's host: its scan, and requests the launcher screen acts on in its
+// own frame (App::takeExtensionRequests) - the Apps set, config.ini, the notification bubble.
+class LauncherExtensionHost : public ExtensionHostBase {
+public:
+    LauncherExtensionHost(App &app, const ExtensionInfo &extension)
+        : ExtensionHostBase(app, extension, Env::getPathToExtensionsStateDir()), launcher(app) {}
+
+    void requestRescan() override {
+        PLOG_INFO << "[" << name() << "] asked for a rescan";
+        launcher.scans().requestScan();
+    }
+    void reloadApps() override { launcher.extensionRequests().reloadApps = true; }
+    void reloadConfig() override { launcher.extensionRequests().reloadConfig = true; }
+    void notify(const string &title, const string &detail, uint64_t done, uint64_t total) override {
+        App::ExtensionRequests &r = launcher.extensionRequests();
+        r.bubbleChanged = true;
+        r.bubbleVisible = true;
+        r.bubbleTitle = title;
+        r.bubbleDetail = detail;
+        r.bubbleDone = done;
+        r.bubbleTotal = total;
+    }
+    void clearNotification() override {
+        App::ExtensionRequests &r = launcher.extensionRequests();
+        r.bubbleChanged = true;
+        r.bubbleVisible = false;
+    }
+
+private:
+    App &launcher;
+};
+} // namespace
+
 //*******************************
 // App::App
 //*******************************
-App::App(std::unique_ptr<ProcessRunner> runner) : AppBase("AutoBleem"), runner_(std::move(runner)) {
+App::App(std::unique_ptr<ProcessRunner> runner)
+    : AppBase("AutoBleem"), runner_(std::move(runner)),
+      extensionCatalog_(Env::getPathToExtensionsDir(), Env::getPathToExtensionsStateDir(), Env::appPlatformKeys(),
+                        AppManifest::pluginExtension()),
+      extensions_(extensionCatalog_, pluginLoader_, [this](const ExtensionInfo &extension) {
+          return unique_ptr<ExtensionHost>(new LauncherExtensionHost(*this, extension));
+      }) {
     gameQuery_.setRetroArchGames(&retroArch_);
     gameQuery_.setLightguns(&lightguns_);
+}
+
+//*******************************
+// App::takeExtensionRequests
+//*******************************
+App::ExtensionRequests App::takeExtensionRequests() {
+    ExtensionRequests taken = extensionRequests_;
+    extensionRequests_.reloadApps = false;
+    extensionRequests_.reloadConfig = false;
+    extensionRequests_.bubbleChanged = false;
+    extensionRequests_.message.clear();
+    return taken;
 }
 
 //*******************************

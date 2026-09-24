@@ -331,13 +331,28 @@ Each step is one commit (a core commit plus a submodule bump where core changes)
      - the curated surface directory (`include/autobleem/sdk/`); until then the surface is every header
        of the three libraries;
      - `ab_add_extension` (step 3 builds it with the sample).
-3. **Not done.** A sample extension, `hello`, in the launcher repository (it links against the launcher's
-   executable, which core does not build): one themed screen, and a background `poll()` that shows a
-   notification. `ab_add_extension()` (`autobleem-core/cmake/ab_extension.cmake`) builds it. It is the
-   SDK's smoke test in CI on every target.
-4. **Not done.** The launcher: exported symbols (with the export list), `App` as `ExtensionHost`,
-   `GuiExtensions`, the System menu item, `suspend`/`resume` around launches, `shutdown`, the 16
-   languages. Walked through with `tools/ab_drive.py` on the Windows build with `hello` installed.
+3. **Done** (2026-09-24). `extensions/hello/` in the launcher repository (it links against the launcher's
+   executable, which core does not build): one themed screen (`GuiConfirm`), a background `poll()` that
+   shows a bubble for a few seconds, and a log line at every step of its life.
+   - `ab_add_extension()` (`autobleem-core/cmake/ab_extension.cmake`) builds it: the SDK's headers, none
+     of its code, `PLOG_DEFAULT_INSTANCE_ID=1`, the import library on Windows.
+   - It is staged as `<build>/extensions/hello/`; `tools/make_usb.py` copies it onto the dev stick.
+   - It is built on every target (the SDK's smoke test in CI) and never packaged.
+4. **Done on Windows** (2026-09-24).
+   - The launcher's executable exports its symbols (`ENABLE_EXPORTS`, `--export-all-symbols` with MinGW).
+   - `App` owns the catalog, the loader and the runtime; its `LauncherExtensionHost` routes
+     `requestRescan` to the scan, and the reloads and the bubble to `GuiLauncher` through
+     `App::takeExtensionRequests()`.
+   - `AutoBleem::run()` scans `Extensions/`, applies the crash guard (a notification line names the
+     extension it disabled) and starts the background ones. `runOutside()` suspends and resumes them
+     around a game, and they are shut down before the services go.
+   - `GuiLauncher` polls them every frame and stacks their bubble under the scan's.
+   - `GuiExtensions` (`evoui/screens/evoui_extensions.*`) is the System menu's new Extensions item.
+   - 14 strings in all 16 languages.
+   - Walked through with `tools/ab_drive.py`, which now runs a copy under the real name,
+     `drive/autobleem-gui.exe`: the start-up bubble, the list with a greyed "Not available for this
+     system" row, Hello's dialog, and its note back in the carousel.
+   - Still to do: the export list (a version script / `.def` file with the SDK surface only).
 5. **Not done.** CI: the ABI check (`abidiff` against the last release) and the SDK package per target.
 6. **Not done.** The first real extension, the **AutoBleem Store** (`docs/store-plan.md`), in its own
    repository, `autobleem2/ext_store`, published as a separate download for every target.

@@ -712,8 +712,11 @@ void GuiLauncher::render() {
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);
-    notificationLines.render(*gui, time,
-                             scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top);
+    int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
+    extensionBubble.top = belowScan;
+    extensionBubble.render(*gui, time);
+    notificationLines.render(
+        *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
 
     for (auto &obj : frontElemets)
         obj->render();

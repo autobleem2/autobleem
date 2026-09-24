@@ -274,11 +274,24 @@ exists.
 1. **Not done.** ext_store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
    the five targets), `StoreCatalog` and `StoreSourceTsv` (header, header-less, grouping, malformed
    lines), with tests.
-2. **Not done.** Core + launcher: `Downloader` extracted from `UpdateService` (whose tests keep passing);
-   `abfetch --continue` (Range/206/200) with tests; `store_download_command` in the five platform inis.
-3. **Not done.** Core: `GameInstaller` and `AppInstaller` over staging, with tests (zip/7z/tar.gz, a
-   nested folder, a bare `.bin`, multi-disc, an unsafe name, no `app.ini`, not enough space, an update
-   keeping `pad.ini`).
+2. **Done** (2026-09-24).
+   - `Downloader` (`core/services/downloader.*`) was extracted from `UpdateService`, whose tests pass
+     unchanged. It resumes a `.part` with the resume command, and drops a `.part` that a resume got
+     nowhere with.
+   - `abfetch --continue`/`-C`: Range requests; a 206 is appended, a 200 starts over, a 416 counts as
+     complete, and a stopped download keeps its bytes. Tested against the loopback server.
+   - `store_download_command` in the five platform inis (`abfetch --continue` on the console,
+     `curl -C -` elsewhere), and `Env::storeDownloadCommand()` with `%r` resolved and the update's command
+     as the fallback.
+3. **Done** (2026-09-24). `core/services/content_installer.*`:
+   - `ArchiveUnpacker` handles zip, tar.gz and 7z.
+   - `AppInstaller`: the `Apps/<name>/` layout, a root `app.ini` or the archive's one folder; refused when
+     the App cannot run here; another platform's package merges; a new `Version` drops every platform's
+     binaries; the user's `pad.ini` is kept.
+   - `GameInstaller`: archives and plain files, the disc files gathered from any depth, a `.cue` for a
+     bare `.bin`, a FAT-safe folder name with " (2)", and refusal when there is no disc image.
+   - Both go through staging, with a free-space check.
+   - Tested in `tests/core/test_content_installer.cpp`.
 4. **Not done.** ext_store: `StoreService` (sources, merge, `installed.json`, the queue worker,
    `poll`/`suspend`/`resume`/`shutdown`, the `ExtensionHost` calls; tests with a fake host). Tests with a recording `CommandRunner` and a local catalog.
 5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of

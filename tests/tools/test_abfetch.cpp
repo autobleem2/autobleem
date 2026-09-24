@@ -327,6 +327,73 @@ TEST_CASE("fetch: a short body is a failure and its file goes") {
     CHECK_FALSE(exists(tmp.at("out.part")));
 }
 
+TEST_CASE("buildRequest: a Range for the rest of a file, only when something is there") {
+    Url url;
+    REQUIRE(parseUrl("http://127.0.0.1:8080/big.chd", url));
+    CHECK(buildRequest(url).find("Range:") == string::npos);
+    CHECK(buildRequest(url, 0).find("Range:") == string::npos);
+    CHECK(buildRequest(url, 12345).find("\r\nRange: bytes=12345-\r\n") != string::npos);
+}
+
+TEST_CASE("fetch --continue: a 206 appends the rest to what is there") {
+    TempDir tmp("abfetch");
+    tmp.writeFile("game.part", "first half|");
+    LoopbackServer server(Replies{
+        {"HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 11-21/22\r\nContent-Length: 11\r\n\r\nsecond half"}});
+    Options options = optionsFor(server.url("/game.chd"), tmp.at("game.part"));
+    options.resume = true;
+    string error;
+    CHECK(fetch(options, error) == Ok);
+    CHECK(tmp.readFile("game.part") == "first half|second half");
+    auto requests = server.requests();
+    REQUIRE(requests.size() == 1);
+    CHECK(requests[0].find("\r\nRange: bytes=11-\r\n") != string::npos);
+}
+
+TEST_CASE("fetch --continue: a server without ranges (200) starts the file over") {
+    TempDir tmp("abfetch");
+    tmp.writeFile("game.part", "stale bytes");
+    LoopbackServer server(Replies{{ok("the whole file")}});
+    Options options = optionsFor(server.url("/game.chd"), tmp.at("game.part"));
+    options.resume = true;
+    string error;
+    CHECK(fetch(options, error) == Ok);
+    CHECK(tmp.readFile("game.part") == "the whole file");
+}
+
+TEST_CASE("fetch --continue: 416 means there was nothing left to send") {
+    TempDir tmp("abfetch");
+    tmp.writeFile("game.part", "all of it");
+    LoopbackServer server(Replies{{"HTTP/1.1 416 Range Not Satisfiable\r\nContent-Length: 0\r\n\r\n"}});
+    Options options = optionsFor(server.url("/game.chd"), tmp.at("game.part"));
+    options.resume = true;
+    string error;
+    CHECK(fetch(options, error) == Ok);
+    CHECK(tmp.readFile("game.part") == "all of it");
+}
+
+TEST_CASE("fetch --continue: a download that stops keeps what arrived, and the next one finishes it") {
+    TempDir tmp("abfetch");
+    Options options;
+    string error;
+    {
+        LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\nfirst part"}});
+        options = optionsFor(server.url("/game.chd"), tmp.at("game.part"));
+        options.resume = true;
+        CHECK(fetch(options, error) == Incomplete);
+    }
+    CHECK(tmp.readFile("game.part") == "first part"); // not removed: --continue keeps it
+    {
+        LoopbackServer server(Replies{{"HTTP/1.1 206 Partial Content\r\nContent-Length: 10\r\n\r\nand more.."}});
+        options.url = server.url("/game.chd");
+        CHECK(fetch(options, error) == Ok);
+        auto requests = server.requests();
+        REQUIRE(requests.size() == 1);
+        CHECK(requests[0].find("\r\nRange: bytes=10-\r\n") != string::npos);
+    }
+    CHECK(tmp.readFile("game.part") == "first partand more..");
+}
+
 TEST_CASE("fetch: a stall gives up after the stall timeout") {
     TempDir tmp("abfetch");
     LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabc", 3000, "defghij"}});

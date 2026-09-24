@@ -280,6 +280,12 @@ def main():
         else:
             print('note: no', tool_exe, '- build first for the', tool, 'visual test')
 
+    # the extensions the build staged (<build>/extensions/<name>/ - the hello sample): the Extensions list's test
+    staged = os.path.join(args.build, 'extensions')
+    if os.path.isdir(staged):
+        for name in sorted(os.listdir(staged)):
+            replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
+
     db_dir = os.path.join(usb, 'Autobleem', 'bin', 'db')
     os.makedirs(db_dir, exist_ok=True)
     for region in 'JPU':

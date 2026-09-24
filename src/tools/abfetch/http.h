@@ -36,8 +36,9 @@ bool parseUrl(const std::string &text, Url &url);
 // ("//host/x"), absolute-path ("/x") or relative ("x", against the answering URL's directory)
 std::string resolveLocation(const Url &base, const std::string &location);
 
-// GET, the Host header, Connection: close (one request per connection), no compression asked for
-std::string buildRequest(const Url &url);
+// GET, the Host header, Connection: close (one request per connection), no compression asked for; with
+// rangeFrom > 0 a "Range: bytes=<rangeFrom>-" as well - the rest of a file that is partly there (--continue)
+std::string buildRequest(const Url &url, unsigned long long rangeFrom = 0);
 
 //******************
 // ResponseHead
