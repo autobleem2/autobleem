@@ -9,20 +9,22 @@
 #                                (LaunchService::launchRetroArch's argv)
 #   launch_rb.sh                 RetroArch's own menu, nothing loaded (rc/retroarch.sh)
 #
-# What this script says goes to System/Logs/launch.log, a header per launch; RetroArch's own output
-# to RetroArch/bin/logs/retroarch.log (kept as retroarch_crash.log, with dmesg, when it died). A crash
-# comes straight back to the launcher - RetroBoot relaunched five times (the blinking red LED for 45 s).
+# What this script says goes to launch.log in the logs dir, RetroArch's own output to retroarch.log there -
+# both fresh for every launch, in RAM unless the logs are kept (rc/ab_log.sh); a crash takes them to
+# System/Logs/crash-<n> with the kernel's last lines. A crash comes straight back to the launcher -
+# RetroBoot relaunched five times (the blinking red LED for 45 s).
 
 RA=/media/RetroArch
 BIN=$RA/bin
 BIOS=$RA/bios
 ROMS=$RA/roms
-LOGS=/media/System/Logs
+. /media/Autobleem/rc/ab_log.sh
+LOGS=$AB_LOG_DIR
+RALOG=$LOGS/retroarch.log
 ABSPLASH=/media/Autobleem/bin/autobleem/absplash
 ABPICS=/media/Autobleem/bin/autobleem/splash
 
-mkdir -p "$LOGS"
-exec >> "$LOGS/launch.log" 2>&1
+exec > "$LOGS/launch.log" 2>&1
 echo "=== launch_rb.sh $(date '+%Y-%m-%d %H:%M:%S')"
 echo "Image: $1"
 echo "Core: $2"
@@ -46,7 +48,7 @@ show_launch_splash()
 	rm -f /tmp/.ra_up
 	"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 &
 	N=0
-	while ! grep -q "Found display driver" "$BIN/logs/retroarch.log" 2>/dev/null; do
+	while ! grep -q "Found display driver" "$RALOG" 2>/dev/null; do
 		usleep 250000
 		N=$((N+1))
 		[ $N -ge 120 ] && break
@@ -74,7 +76,7 @@ prepare()
 		[ -f "$BIOS/scph5501.bin" ] || cp /gaadata/system/bios/romw.bin "$BIOS/scph5501.bin"
 		[ -f "$BIOS/scph5502.bin" ] || cp /gaadata/system/bios/romw.bin "$BIOS/scph5502.bin"
 	fi
-	rm -f "$BIN/logs/retroarch.log"
+	rm -f "$RALOG"
 	# every directory retroarch.cfg leaves at "default" (favorites, history, the filters) resolves to
 	# $XDG_CONFIG_HOME/retroarch - pointed at RetroArch's own tree, as RetroBoot's XDG_CONFIG_HOME=/media
 	# did with its retroarch/ folder
@@ -99,11 +101,11 @@ if [ -n "$2" ]; then
 	esac
 	echo "Using core $CORE"
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" -L "$CORE" "$1" > "$BIN/logs/retroarch.log" 2>&1
+	"$BIN/retroarch" --config "$BIN/retroarch.cfg" -L "$CORE" "$1" > "$RALOG" 2>&1
 	LVL=$?
 else
 	show_launch_splash &
-	"$BIN/retroarch" --config "$BIN/retroarch.cfg" > "$BIN/logs/retroarch.log" 2>&1
+	"$BIN/retroarch" --config "$BIN/retroarch.cfg" > "$RALOG" 2>&1
 	LVL=$?
 fi
 echo "retroarch exited with status $LVL"
@@ -112,9 +114,7 @@ touch /tmp/.ra_up
 if [ $LVL -ne 0 ]; then
 	# keep the evidence and say so on the front LED, then back to the launcher
 	led 1 0
-	mv -f "$BIN/logs/retroarch.log" "$BIN/logs/retroarch_crash.log"
-	printf "\n--End of retroarch.log--\n\nOutput from dmesg:\n\n" >> "$BIN/logs/retroarch_crash.log"
-	dmesg >> "$BIN/logs/retroarch_crash.log"
+	ab_persist_logs "retroarch exited with status $LVL: ${1:-its own menu} ${2:+($2)}"
 	for i in 1 2 3 4; do
 		led 1 0
 		usleep 125000

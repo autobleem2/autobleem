@@ -11,12 +11,24 @@ set -uo pipefail
 DATA_MOUNT="${1:-/media/autobleem}"
 APP_DIR="$DATA_MOUNT/Autobleem/bin/autobleem"
 RC_DIR="$DATA_MOUNT/Autobleem/rc"
-LOG_DIR="$DATA_MOUNT/System/Logs"
 
 SEL_RETROARCH=4
 SEL_UPDATE=6      # the online update: the launcher downloaded it, autobleem-update applies it (install.sh --update)
 
-mkdir -p "$LOG_DIR"
+# Where this run's logs go (docs/quiet-stick-plan.md): RAM - systemd's /run/autobleem for this service
+# (RuntimeDirectory=autobleem), /tmp/autobleem when started some other way - unless the logs are kept on the
+# data partition (System/Logs/keep, the Options row). rc/ab_log.sh decides, the same file the console uses;
+# re-read on every pass, since the launcher may have changed its mind (it writes <runtime>/log_dir).
+export AB_ROOT="$DATA_MOUNT"
+export AB_RUNTIME_DIR="${RUNTIME_DIRECTORY:-/tmp/autobleem}"
+mkdir -p "$AB_RUNTIME_DIR" "$DATA_MOUNT/System/Logs"
+log_dir() {
+    unset AB_LOG_DIR
+    # shellcheck disable=SC1091
+    . "$RC_DIR/ab_log.sh"
+    LOG_DIR="$AB_LOG_DIR"
+}
+log_dir
 
 #*******************************
 # hdmi_audio
@@ -122,6 +134,7 @@ boot_splash_down
 while true; do
     cd "$APP_DIR" || exit 1
     hdmi_audio
+    log_dir
 
     # stdbuf keeps the tee'd copy as unbuffered as the app makes its own stdout, so a crash does not eat the
     # last lines - the same reason main.cpp sets ios::unitbuf
@@ -139,6 +152,10 @@ while true; do
         selection="${AB_SELECTION:-}"
     fi
     echo "autobleem-session: selection=${selection:-none}"
+    # no selection and a failure status: a crash - the logs are in RAM, keep them on the data partition
+    if [ -z "$selection" ] && [ "$status" -ne 0 ]; then
+        ab_persist_logs "autobleem-gui exited with status $status and no selection (a crash?)"
+    fi
 
     if [ "$selection" = "$SEL_RETROARCH" ] && [ -x "$RC_DIR/retroarch.sh" ]; then
         "$RC_DIR/retroarch.sh"

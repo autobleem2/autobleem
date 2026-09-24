@@ -116,7 +116,7 @@ void app(const TempDir &tmp, const string &name, const string &ini, const vector
 } // namespace
 
 TEST_CASE("the console's and the Linux payload's App scripts are one file each") {
-    for (const char *name : {"app_env.sh", "app_resolve.sh", "app_run.sh"}) {
+    for (const char *name : {"app_env.sh", "app_resolve.sh", "app_run.sh", "ab_log.sh"}) {
         INFO(name);
         CHECK(DirEntry::filesAreIdentical(string(AB_RC_DIR) + "/" + name, string(AB_LINUX_RC_DIR) + "/" + name));
     }

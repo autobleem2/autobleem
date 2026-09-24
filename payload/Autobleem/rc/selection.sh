@@ -12,12 +12,17 @@
 # and the reboot is what happens. The file is removed once read, so a crash after a standby is not
 # taken for another power off.
 
+SEL_NONE=0
 SEL_RETROARCH=4
 SEL_UPDATE=6
 SEL_POWEROFF=7
 
 RC=/media/Autobleem/rc
-LOG=/media/System/Logs/standby.log
+. $RC/ab_log.sh
+# a standby that worked is logged with the rest of the run (RAM unless kept); what went wrong - the stick
+# busy, no standby at all - goes to the stick, where it is still there after the reboot that follows
+LOG=$AB_LOG_DIR/standby.log
+FAILLOG=/media/System/Logs/standby.log
 
 AB_SELECTION=0
 [ -f $RC/autobleem_cfg.sh ] && . $RC/autobleem_cfg.sh
@@ -38,7 +43,7 @@ cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 poweroff_instead() {
     echo "$(date) no standby on this console - powering off instead" >> $SLOG
     if mount "$DEV" /media 2>> $SLOG; then
-        { cat $SLOG; echo; } >> $LOG
+        { cat $SLOG; echo; } >> $FAILLOG
         sync
     fi
     echo 0 > /sys/class/leds/green/brightness
@@ -64,11 +69,11 @@ standby() {
     until umount /media; do
         n=$((n + 1))
         if [ $n -ge 5 ]; then
-            echo "standby: /media is busy - holders:" >> $LOG
+            echo "$(date) standby: /media is busy - holders:" >> $FAILLOG
             for d in /proc/[0-9]*; do
                 p=${d#/proc/}
-                case "$(readlink $d/cwd 2>/dev/null)" in /media*) echo "  $p cwd $(cat $d/comm)" >> $LOG ;; esac
-                ls -l $d/fd 2>/dev/null | grep -q /media && echo "  $p fd $(cat $d/comm)" >> $LOG
+                case "$(readlink $d/cwd 2>/dev/null)" in /media*) echo "  $p cwd $(cat $d/comm)" >> $FAILLOG ;; esac
+                ls -l $d/fd 2>/dev/null | grep -q /media && echo "  $p fd $(cat $d/comm)" >> $FAILLOG
             done
             return 1
         fi
@@ -193,6 +198,11 @@ case "$AB_SELECTION" in
         exit 0
     fi
     # /media busy, or no stick after the wake: the reboot brings whatever is plugged in back up
+    ;;
+"$SEL_NONE")
+    # no selection: the launcher did not leave the way it does (a crash, killed) - its logs are in RAM, which
+    # the reboot below empties, so they go to the stick first
+    ab_persist_logs "autobleem-gui ended without a selection (a crash?)"
     ;;
 esac
 
