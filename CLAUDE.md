@@ -480,7 +480,9 @@ shows a processor's progress (`ScanUpdate::processor`), and a notification line 
 **Code**: core `ProcessorOutput` (engine), `System::runStreaming`, `ProcessorCatalog`, `ProcessorSequences`,
 `ProcessorState`, `ProcessorRunner` (`ProcessorProcess` is the test seam; `tests/support/proc_helper.cpp` a
 scriptable fake processor), `ScanService`; the launcher `evoui/screens/evoui_processors.*`. The built-in ECM
-decoding is untouched (the owner's call).
+decoding is untouched (the owner's call). **`tools/proc_check.py <folder> --games DIR --roms DIR`** is what an
+author runs before publishing: processor.ini, `--version`, the protocol per kind, leftovers, writes outside
+the target, idempotence and a stop-and-restart, all on scratch copies of the samples.
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 

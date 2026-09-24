@@ -2,7 +2,9 @@
 
 **Status (2026-09-24):** built - steps 1-8 on `feature/processors` (autobleem-core and the launcher) and in
 `proc_unzip`, verified on the Windows dev build end to end (unzip before the scan, the bubble, the sorting
-screen). Not yet run on a console or a Pi; step 9 (`tools/proc_check.py`) is still to do. What changed on the
+screen), and on Linux in the CI image. Step 9 (`tools/proc_check.py`) is done too. Not yet run on a console
+or a Pi. `proc_unzip` is public (`autobleem2/proc_unzip`, CI on, the develop `nightly` release has every
+platform's binary). What changed on the
 way is marked **Built:** below.
 
 ## The decisions (the owner, 2026-09-24)
@@ -390,11 +392,19 @@ One commit each; core changes are an autobleem-core commit plus a submodule bump
    files next to the archive, the archive deleted only after the last rename. Built for every platform key
    with miniz. `--ismine` answers from the archive's listing (a `.zip` with a `.cue`/`.bin`/`.chd`/`.pbp`
    inside for PS1; any single ROM for the ROM kind). It proves the whole chain on the console. *Done* in
-   `E:\Programming\_work-processors\proc_unzip` (local, `.zip` only, Windows built and self-tested; the
-   GitHub repository and the console/Pi builds are still to do).
+   `github.com/autobleem2/proc_unzip` (`.zip` only): its CI builds psc, linux-armhf, linux-arm64, linux-i386 and
+   windows-x86_64 in the shared image, runs the self-test natively and on i386, and packs one
+   `unzip-<version>.zip`.
 9. **`tools/proc_check.py`**: runs a processor against a scratch copy of a folder and validates its output
    and the contract rules it can see (atomic temp names left behind, a second run changing nothing,
    files touched outside the target) - what an author runs before publishing. Later a Store category.
+   *Done*: `python tools/proc_check.py <processor folder> --games <sample> --roms <sample>` checks
+   processor.ini, `--version`, and for each kind the samples can feed: `--ismine`'s answers, the protocol
+   (`#Starting` first, `#DONE`+0 or `#ERROR`+non-zero, chatter reported, silence against `Timeout=`), no
+   `*.part` left, nothing changed outside the target, a second run with nothing to do, and a run stopped
+   after its first progress line then restarted (atomicity). Its first run found a real bug in proc_unzip: a
+   stopped run's finished files blocked the restart ("already there") - now a file identical to the zip
+   entry (size + CRC) counts as done.
 
 ## Later, not in this plan
 
