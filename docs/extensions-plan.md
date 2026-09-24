@@ -82,6 +82,14 @@ in rather than hoped for:
       in a folder of its own when extensions are tested.
     - **A plugin logs through its own plog instance** (below): on Linux the plugin's default instance *is*
       the executable's, and chaining it into itself recursed until the stack overflowed.
+    - **The executable carries the whole SDK** (`--whole-archive` for ab_classic, ab_core, ableem,
+      ableem_engine; the Store found this). From a static library the linker takes only what something
+      references, so a plugin using what the launcher never calls - the installers - would fail to load.
+      The cost, unpacked: the console +7% (3.01 -> 3.21 MB), the Pis about the same, Windows 8.8 -> 9.2 MB.
+    - **No function-local static in an inline function of an SDK header** (the Store found this too). On
+      Windows such a static is one per DLL: the inline `Gui::getInstance()` gave the Store a second `Gui`, a
+      second window drawn where nobody looked. `getInstance()` is out of line now; a header audit found no
+      other. Linux never shows the problem, because the plugin's copy binds to the executable's.
 - **Still open**: Exporting every symbol grows the dynamic symbol table. The export list is limited to the
   SDK surface (a version script on Linux, a `.def` file on Windows) once that surface is fixed.
 - **The Windows product** links libstdc++ statically (`toolchains/mingw/MinGWtoolchain.cmake`). A plugin
