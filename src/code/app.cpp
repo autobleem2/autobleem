@@ -98,6 +98,7 @@ void App::applyOnlineSetting() {
     OnlineAssets::Config online;
     online.downloadCommand = Env::downloadCommand();
     scans_.setOnline(cfg_.inifile.values["online"] == "true", online);
+    scans_.setProcessorLanguage(cfg_.inifile.values["language"]); // the processors' AB_LANGUAGE
 }
 
 #ifdef AB_ONLINE_UPDATE

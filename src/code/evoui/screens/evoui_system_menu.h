@@ -24,6 +24,7 @@ enum class SystemMenuAction {
     HardwareInfo,
     Options,
     Extensions,     // the Extensions list (docs/extensions-plan.md), on every target
+    Processors,     // the scanner processors' sequences (docs/scanner-processors-plan.md)
     SoftwareUpdate, // AB_ONLINE_UPDATE builds only
     About,
     PowerOff

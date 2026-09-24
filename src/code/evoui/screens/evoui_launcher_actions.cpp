@@ -24,6 +24,7 @@
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
 #include "evoui_extensions.h"
+#include "evoui_processors.h"
 #ifdef AB_ONLINE_UPDATE
 #include "evoui_update.h"
 #include <ctime>
@@ -533,6 +534,10 @@ void GuiLauncher::loop_openSystemMenu() {
         loop_openExtensions();
         break;
 
+    case SystemMenuAction::Processors:
+        loop_openProcessors();
+        break;
+
     case SystemMenuAction::About: {
         GuiAbout aboutScreen(*gui);
         aboutScreen.show();
@@ -550,6 +555,29 @@ void GuiLauncher::loop_openSystemMenu() {
         break;
     }
     }
+}
+
+//*******************************
+// GuiLauncher::loop_openProcessors
+//*******************************
+// the sequences are what a running scan reads, so they are not edited under it; a change asks for a scan,
+// which is where it takes effect (and "Run again" is done)
+void GuiLauncher::loop_openProcessors() {
+    if (app.scans().scanning()) {
+        notificationLines[1].setText(_("Wait for the scan to finish"), DefaultShowingTimeout);
+        return;
+    }
+    bool changed = false;
+    {
+        GuiProcessors screen(*gui);
+        if (background != nullptr)
+            screen.background = background->tex;
+        screen.show();
+        changed = screen.changed();
+    }
+    forgetHeldModifiers();
+    if (changed)
+        app.scans().requestScan();
 }
 
 #ifdef AB_ONLINE_UPDATE
