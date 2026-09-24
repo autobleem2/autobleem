@@ -287,7 +287,9 @@ The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the 
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
 
-1. **Done, apart from the repository's CI** (2026-09-24).
+1. **Done** (2026-09-24; the repository's CI on 2026-09-25 - ext_store's `ci/build.sh` and `build.yml`: the
+   Store for psc/rpi/rpi64/pcusb/win and abstored for Linux and Windows, a nightly release, and the `site` job
+   that puts them on the Store page).
    - The formats live in the engine, because the JSON library is private to lib_ableem:
      `ableem::StoreCatalog` and `StoreSourceTsv` (`engine/store_catalog.*`), tested in
      `tests/core/test_store_catalog.cpp`. The JSON key `requires` is the field `dependsOn` (a C++20 keyword).
@@ -329,7 +331,12 @@ exists.
    - Walked through with `tools/ab_drive.py` against a local site (`AB_STORE_CATALOG`,
      `python -m http.server`): an App installed from the catalog, a game from a TSV source, the rescan
      after it.
-6. **Not done.** The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
+6. **Partly done** (2026-09-24/25): `store` in `repo_publish.sh`/`repo_index.py` and the Store page
+   (`store/index.html`); the Store's own packages there, per system, from its CI (`extensions/store/`), with
+   abstored and LAN Share in a LAN server tab (the LAN server work: autobleem-pc-tools
+   `docs/lan-share-plan.md`). Left: the Apps, one by one (the owner: each App is a porting session of its
+   own) - `pack_psc_apps.py --per-app` and the first items. The step as first written:
+   The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
    `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
@@ -337,7 +344,10 @@ exists.
    packaged by that repository's CI and published to `store/<platform>/`.
 8. **Not done.** On hardware (the tester checklist): the console on the AutoBleem kernel's WiFi (an App,
    a two-disc game from a TSV, a resume after a standby), a Pi 400, the PC stick, Windows.
-9. **Not done.** The manuals (a "Store" section, the TSV format for source owners) and the CLAUDE.md files.
+9. **Mostly done**: the manuals' Store section (3.12) and "On the PC" chapter (5.2 LAN Share), abstored's
+   README and INSTALL-linux.md, LAN Share's CLAUDE.md. Left: the TSV format written up for source owners.
+   The step as first written: the manuals (a "Store" section, the TSV format for source owners) and the
+   CLAUDE.md files.
 
 ## Open questions
 
