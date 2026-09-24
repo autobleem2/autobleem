@@ -312,7 +312,10 @@ int AutoBleem::run() {
             session_.menuOption = MENU_OPTION_START;
         }
 
-        launcher_.writeSelectionScript();
+        // for the rc scripts, when the process is about to leave - never for a game, which comes back here:
+        // a selection left over from one would hide a later crash from them (docs/quiet-stick-plan.md)
+        if (session_.menuOption != MENU_OPTION_START)
+            launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_START) {
             scans().setWatching(false); // the emulator gets the CPU, not the scanner

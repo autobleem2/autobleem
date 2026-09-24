@@ -2,8 +2,8 @@
 
 # What happens after autobleem-gui exits. boot.sh runs this from a copy on tmpfs, with the cwd on tmpfs,
 # and starts the launcher over when it returns 0; anything else ends in a reboot, which brings AutoBleem
-# back up through Sony's boot standby. AutoBleem::run() writes AB_SELECTION into autobleem_cfg.sh on its
-# way out (LaunchService::writeSelectionScript):
+# back up through Sony's boot standby. AutoBleem::run() writes AB_SELECTION into autobleem_cfg.sh in the
+# runtime dir (RAM, rc/ab_log.sh) on its way out (LaunchService::writeSelectionScript):
 #   4  exit to RetroArch (the launcher's L2+R2 system menu): RetroArch's own menu, then the launcher again
 #   6  install the update the launcher downloaded into System/Updates (a console with a network - the
 #      AutoBleem kernel's WiFi): abupdate lays it over the stick, then the new launcher starts
@@ -12,7 +12,6 @@
 # and the reboot is what happens. The file is removed once read, so a crash after a standby is not
 # taken for another power off.
 
-SEL_NONE=0
 SEL_RETROARCH=4
 SEL_UPDATE=6
 SEL_POWEROFF=7
@@ -25,8 +24,9 @@ LOG=$AB_LOG_DIR/standby.log
 FAILLOG=/media/System/Logs/standby.log
 
 AB_SELECTION=0
-[ -f $RC/autobleem_cfg.sh ] && . $RC/autobleem_cfg.sh
-rm -f $RC/autobleem_cfg.sh
+[ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ] && . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
+rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
+rm -f $RC/autobleem_cfg.sh # where a launcher before the quiet-stick plan wrote it
 echo Selection: $AB_SELECTION
 
 # the emulator the launch script execs; a fresh copy on tmpfs every boot
@@ -199,10 +199,10 @@ case "$AB_SELECTION" in
     fi
     # /media busy, or no stick after the wake: the reboot brings whatever is plugged in back up
     ;;
-"$SEL_NONE")
-    # no selection: the launcher did not leave the way it does (a crash, killed) - its logs are in RAM, which
-    # the reboot below empties, so they go to the stick first
-    ab_persist_logs "autobleem-gui ended without a selection (a crash?)"
+*)
+    # no selection (or none the launcher leaves with): it did not leave the way it does - a crash, killed.
+    # Its logs are in RAM, which the reboot below empties, so they go to the stick first
+    ab_persist_logs "autobleem-gui ended without a selection (AB_SELECTION=$AB_SELECTION) - a crash?"
     ;;
 esac
 

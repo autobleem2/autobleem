@@ -4,7 +4,7 @@
 #
 # AutoBleem::run()'s loop starts games and comes back in-process; the only thing that actually ends the
 # process is the L2+R2 system menu's "RetroArch / EmulationStation" item, which writes AB_SELECTION=4 into
-# rc/autobleem_cfg.sh (LaunchService::writeSelectionScript) on the way out. The console reboots at that point;
+# autobleem_cfg.sh in the runtime dir (LaunchService::writeSelectionScript) on the way out. The console reboots at that point;
 # a Pi has no reason to, so this loops instead: hand over to RetroArch, then come back to the launcher.
 set -uo pipefail
 
@@ -145,12 +145,15 @@ while true; do
     echo "autobleem-session: autobleem-gui exited with $status"
 
     selection=""
-    if [ -f "$RC_DIR/autobleem_cfg.sh" ]; then
-        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=...
+    if [ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ]; then
+        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=... - read once:
+        # a selection left over would hide the next crash
         # shellcheck disable=SC1091
-        . "$RC_DIR/autobleem_cfg.sh"
+        . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
         selection="${AB_SELECTION:-}"
+        rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
     fi
+    rm -f "$RC_DIR/autobleem_cfg.sh" # where a launcher before the quiet-stick plan wrote it
     echo "autobleem-session: selection=${selection:-none}"
     # no selection and a failure status: a crash - the logs are in RAM, keep them on the data partition
     if [ -z "$selection" ] && [ "$status" -ne 0 ]; then
@@ -165,8 +168,6 @@ while true; do
         else
             echo "autobleem-session: no autobleem-update on this system - re-run install.sh from a package once" >&2
         fi
-        # a stale selection must not run the update again on the next pass
-        rm -f "$RC_DIR/autobleem_cfg.sh"
     fi
 
     sync
