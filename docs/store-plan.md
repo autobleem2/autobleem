@@ -43,7 +43,7 @@ behind it:
    - it is a plugin with `Background=true`, so its downloads go on while the carousel is showing;
    - it is **a separate download**, never bundled with a release, and the user installs it by hand like
      every extension;
-   - it lives in its own repository (proposed `autobleem2/autobleem-store`, with autobleem-core as a
+   - it lives in its own repository (`autobleem2/ext_store` - an extension's repository is named `ext_<name>` - with autobleem-core as a
      submodule);
    - it never offers or installs extensions.
 2. **Every target.** It is built for `psc`, `rpi` (32-bit), `rpi64`, `pcusb` and `win`.
@@ -51,7 +51,9 @@ behind it:
    - What differs per target is data: which catalog it reads (`store/<platform>/`) and which download
      command it runs (`PlatformConfig`).
    - The console needs a network for downloading, and has one only with the AutoBleem kernel's WiFi, as for
-     the update. Without it the Store still opens: it browses what is cached and says "Not connected".
+     the update. The Store's `extension.ini` says `Network=required`, so **the launcher refuses to open it
+     offline**: its row in the Extensions list is greyed with "Needs a network connection" (the extensions
+     plan). On a console that means a stock kernel, or the AutoBleem kernel with its WiFi down.
 3. **Our Apps format is a store item.** The App folder is multi-platform (`docs/app-format-plan.md`):
    one `Apps/<name>/` holds every platform's binary in `bin/<key>/`, and `app.ini` says which is which.
    The Store downloads the one-platform package for this machine (`opentyrian-psc-<version>.zip`) and
@@ -82,7 +84,7 @@ behind it:
   - `Downloader` and `abfetch --continue`;
   - `AppInstaller` and `GameInstaller`;
   - a generic detail pane in `ab_classic`.
-- **In autobleem-store**:
+- **In ext_store**:
   - the formats, `StoreCatalog` and `StoreSourceTsv`;
   - `StoreService`;
   - the screen, `GuiStore`;
@@ -180,8 +182,12 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
     USB bus.
   - The queue is saved (`System/Store/queue.json`), so a power-off or the console's standby only pauses
     it. After a restart, a queue with work left resumes on its own.
-- **Network**: `System::hasDefaultRoute()` on every Linux target; on Windows it is true. With no network
-  the queue waits, and "Not connected" shows on the screen.
+- **Network**: `ExtensionHost::networkUp()` (`System::hasDefaultRoute()` on every Linux target; always
+  true on Windows).
+  - The Store cannot be opened offline (`Network=required`).
+  - Its background queue is still loaded at start-up. It waits while there is no route and resumes when
+    one appears, so a WiFi drop in the middle of a download is only a pause.
+  - If the network goes while the Store is open, the screen says "Not connected" and the queue waits.
 - **Space**: before a download, `System::getAvailableSpace()` of the target filesystem is compared with
   the item's size times two (the archive plus what comes out of it). It is refused with a message when
   short. The console's FAT32 file limit (4 GB) is below any PS1 disc.
@@ -247,7 +253,7 @@ rebuilt on it.
 
 ### The site (autobleem-repo)
 
-- **The Store itself** is published like the launcher's components: `autobleem-store-<platform>-<v>.zip`,
+- **The Store itself** is published like the launcher's components: `ext_store-<platform>-<v>.zip`,
   laid out as `Extensions/store/...`, from its repository's CI.
 - **The catalog**: `repo_publish.sh store <platform> <zip|png|json>...` puts files under
   `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
@@ -265,18 +271,31 @@ The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the 
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
 
-1. **Not done.** autobleem-store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
+1. **Not done.** ext_store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
    the five targets), `StoreCatalog` and `StoreSourceTsv` (header, header-less, grouping, malformed
    lines), with tests.
-2. **Not done.** Core + launcher: `Downloader` extracted from `UpdateService` (whose tests keep passing);
-   `abfetch --continue` (Range/206/200) with tests; `store_download_command` in the five platform inis.
-3. **Not done.** Core: `GameInstaller` and `AppInstaller` over staging, with tests (zip/7z/tar.gz, a
-   nested folder, a bare `.bin`, multi-disc, an unsafe name, no `app.ini`, not enough space, an update
-   keeping `pad.ini`).
-4. **Not done.** autobleem-store: `StoreService` (sources, merge, `installed.json`, the queue worker,
+2. **Done** (2026-09-24).
+   - `Downloader` (`core/services/downloader.*`) was extracted from `UpdateService`, whose tests pass
+     unchanged. It resumes a `.part` with the resume command, and drops a `.part` that a resume got
+     nowhere with.
+   - `abfetch --continue`/`-C`: Range requests; a 206 is appended, a 200 starts over, a 416 counts as
+     complete, and a stopped download keeps its bytes. Tested against the loopback server.
+   - `store_download_command` in the five platform inis (`abfetch --continue` on the console,
+     `curl -C -` elsewhere), and `Env::storeDownloadCommand()` with `%r` resolved and the update's command
+     as the fallback.
+3. **Done** (2026-09-24). `core/services/content_installer.*`:
+   - `ArchiveUnpacker` handles zip, tar.gz and 7z.
+   - `AppInstaller`: the `Apps/<name>/` layout, a root `app.ini` or the archive's one folder; refused when
+     the App cannot run here; another platform's package merges; a new `Version` drops every platform's
+     binaries; the user's `pad.ini` is kept.
+   - `GameInstaller`: archives and plain files, the disc files gathered from any depth, a `.cue` for a
+     bare `.bin`, a FAT-safe folder name with " (2)", and refusal when there is no disc image.
+   - Both go through staging, with a free-space check.
+   - Tested in `tests/core/test_content_installer.cpp`.
+4. **Not done.** ext_store: `StoreService` (sources, merge, `installed.json`, the queue worker,
    `poll`/`suspend`/`resume`/`shutdown`, the `ExtensionHost` calls; tests with a fake host). Tests with a recording `CommandRunner` and a local catalog.
 5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of
-   it). autobleem-store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
+   it). ext_store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
    Windows build, run from the launcher's Extensions list, against a local catalog (`python -m
    http.server`).
 6. **Not done.** The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,

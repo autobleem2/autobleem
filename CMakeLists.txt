@@ -245,6 +245,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_mc_manager.cpp
         src/code/evoui/screens/evoui_mc_manager.h
         src/code/evoui/screens/evoui_system_menu.cpp
+        src/code/evoui/screens/evoui_extensions.cpp
+        src/code/evoui/screens/evoui_extensions.h
         src/code/evoui/screens/evoui_set_picker.cpp
         src/code/evoui/screens/evoui_set_picker.h
         src/code/evoui/screens/evoui_system_menu.h
@@ -272,6 +274,21 @@ target_link_libraries(autobleem-gui
          ab_evoui
          ${CMAKE_DL_LIBS}
 )
+
+# the extensions (docs/extensions-plan.md): a plugin binds to the launcher's own copy of the SDK, so the
+# executable exports its symbols - -rdynamic on Linux; on Windows every symbol, with an import library
+# (libautobleem-gui.dll.a) the plugins link against. The file name is part of that: a plugin imports from
+# "autobleem-gui.exe" by name.
+set_target_properties(autobleem-gui PROPERTIES ENABLE_EXPORTS ON)
+if (MINGW)
+    target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
+endif()
+
+# hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Staged in
+# <build>/extensions/hello/; never packaged (tools/make_usb.py puts it on the dev stick)
+ab_add_extension(hello HOST autobleem-gui
+        SOURCES extensions/hello/hello.cpp
+        INI ${CMAKE_SOURCE_DIR}/extensions/hello/extension.ini)
 
 if (AB_TARGET STREQUAL "win")
     # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is

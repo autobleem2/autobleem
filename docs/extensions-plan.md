@@ -1,6 +1,7 @@
 # Extensions (plan)
 
-**Status (2026-09-24):** planned, nothing built. An **extension** is a **plugin**: a shared library
+**Status (2026-09-24):** the proof (step 1) is done on Windows and Linux x86_64, packed and unpacked,
+and statically checked for the console. The mechanism itself is not built yet. An **extension** is a **plugin**: a shared library
 (`.so`, or `.dll` on Windows) that the launcher loads into its own process. It builds its screens with our
 UI components in the user's theme, and may keep a service running in the background while the carousel is
 showing. Extensions are copied onto the stick by hand and run from one place, the System menu's
@@ -53,13 +54,40 @@ in rather than hoped for:
     produces an import library, `libautobleem-gui.dll.a`.
   - A plugin links against that library, and `LoadLibraryEx` looks for the plugin's own DLLs in its
     folder.
-- **Two things to prove first (step 1):**
-  1. **UPX.** The console and Pi binaries are packed with UPX (`make_psc.sh`, `tools/make_psc_package.sh`,
-     `tools/make_rpi_package.sh`). A `dlopen`'d library binding to a packed executable's exported symbols
-     has to be shown to work on the console. If it does not, the launcher is shipped unpacked (3 MB
-     instead of 1 MB), or the SDK part moves into a shared `libautobleem-sdk.so` next to it.
-  2. **Size.** Exporting every symbol grows the dynamic symbol table. The export list is limited to the
-     SDK surface (a version script on Linux, a `.def` file on Windows) once that surface is fixed.
+- **What the proof showed** (step 1, 2026-09-24; the `proof/plugin` branch, never merged):
+  - **Windows dev build**:
+    - A plugin DLL loaded with `LoadLibraryEx` drew the launcher's own `GuiConfirm` in the ab2 theme,
+      logged into `autobleem.log`, and read the launcher's live `Env` (the USB root the launcher was
+      given). One copy of the SDK, as designed.
+  - **Linux x86_64 (the image's native build)**:
+    - The plugin, `dlopen`'d with `RTLD_NOW | RTLD_LOCAL`, called the executable's `Env` and logged
+      through it.
+    - The same with the executable **UPX-packed** (5.6 MB -> 1.7 MB): packing does not get in the way.
+  - **The console build (gcc-6, glibc 2.24)**:
+    - The executable exports 3781 dynamic symbols at 2.9 MB unpacked, and the plugin links.
+    - Of the plugin's 59 undefined symbols, 11 are the executable's and the rest are libc/libstdc++/
+      libm/libgcc's. The 5 left over are the toolchain's weak references (`__gmon_start__`,
+      `_ITM_*`, `_Jv_RegisterClasses`, `__pthread_key_create`).
+    - The plugin needs GLIBC_2.4 / GLIBCXX_3.4.21, well inside the console's 2.24 / 3.4.22.
+    - **Still to run on a console and a Pi** (step 8, a tester): the console has no qemu here, so this
+      half is a static check.
+  - **Rules it produced**:
+    - **A plugin never links the SDK's static libraries.** Linking the executable's CMake target hands
+      them over, and the plugin gets a second copy of `Gui`, `Env` and the rest; the build caught it as
+      duplicate definitions. On Windows a plugin links only the import library
+      (`$<TARGET_LINKER_FILE:autobleem-gui>`); on Linux it links nothing.
+    - **On Windows the launcher's file name is part of the ABI**: the plugin imports from
+      `autobleem-gui.exe` by name. A copy running under another name (`tools/ab_drive.py`'s
+      `autobleem-gui-drive.exe`) cannot load plugins, so the DebugDriver runs a copy under the real name
+      in a folder of its own when extensions are tested.
+    - **A plugin logs through its own plog instance** (below): on Linux the plugin's default instance *is*
+      the executable's, and chaining it into itself recursed until the stack overflowed.
+- **Still open**: Exporting every symbol grows the dynamic symbol table. The export list is limited to the
+  SDK surface (a version script on Linux, a `.def` file on Windows) once that surface is fixed.
+- **The Windows product** links libstdc++ statically (`toolchains/mingw/MinGWtoolchain.cmake`). A plugin
+  built the same way would carry a second libstdc++. It has to be proven that a plugin binding
+  libstdc++'s symbols through the executable's import library works, before the `win` target gets
+  extensions; the dev build uses the shared `libstdc++-6.dll` and has no such question.
 
 ### The SDK surface and its ABI
 
@@ -106,6 +134,8 @@ class ExtensionHost {                    // what the launcher offers a plugin
                         uint64_t done, uint64_t total) = 0;  // the launcher's NotificationBubble
     virtual void clearNotification() = 0;
     virtual bool networkUp() = 0;        // System::hasDefaultRoute() where it means something
+    virtual plog::IAppender *logAppender() = 0;  // the launcher's log, tagged with this extension's name
+    virtual plog::Severity logSeverity() = 0;    // the launcher's level
 };
 
 class Extension {                        // what a plugin implements
@@ -123,6 +153,32 @@ extern "C" AB_EXTENSION_EXPORT Extension *ab_extension_create(ExtensionHost &hos
 ```
 
 `AB_EXTENSION(MyExtension)` is a macro that writes both C functions, so an author writes only the class.
+
+**Logging goes through the launcher's facility** (decided 2026-09-24):
+
+- An extension logs with the same `PLOG_INFO/WARNING/ERROR/DEBUG` macros as the launcher, and the
+  lines land in the launcher's own `System/Logs/autobleem.log` (and stdout), rolling as it rolls.
+- Each line is tagged with the extension's folder name (`[store]`), so one log tells launcher and
+  extension apart.
+- There is no separate log file, and no `cout`, as in the launcher.
+- **Why it has to be wired up**: plog is header-only, and its logger lives in a static template instance
+  per binary and per instance id. On Linux the plugin's instance 0 *is* the executable's (exported, bound
+  at load); on Windows a DLL keeps its own, with no appenders, so its lines would vanish.
+- **How**: an extension is compiled with `PLOG_DEFAULT_INSTANCE_ID=1` (`ab_add_extension` sets it), so its
+  `PLOG_*` macros write to logger instance 1.
+  - `ab_extension_create` (written by `AB_EXTENSION`) first calls
+    `plog::init<1>(host.logSeverity(), host.logAppender())`. That is plog's own way to chain a shared
+    library's logger into the program's.
+  - The executable never uses instance 1, and plugins are loaded `RTLD_LOCAL`, so each plugin's instance
+    is its own on both systems.
+  - Chaining instance 0 instead is what the proof tried first: on Linux it adds the launcher's logger to
+    itself, and the first line recursed until the stack overflowed.
+  - `ExtensionHost::logAppender()` returns the launcher's logger, wrapped so every line gets the
+    extension's tag.
+  - `ExtensionHost::logSeverity()` is the launcher's level, so a release build stays quiet for the
+    extension's `PLOG_DEBUG` too.
+- The launcher itself logs every load, ABI refusal, crash-guard action, network refusal and `run()`
+  start and end, under the same tag.
 `ExtensionHost` is implemented by the launcher (`ab_ui`'s `App`), which is how an extension reaches the
 scan and the Apps set without the SDK knowing what a launcher is.
 
@@ -180,14 +236,33 @@ Extensions/store/
 
 ```ini
 [extension]
-Name=AutoBleem Store                 ; shown in the list (a lang/ file may translate it)
+# shown in the list (a lang/ file may translate it)
+Name=AutoBleem Store
 Description=Download apps and games
 Author=AutoBleem team
 Version=1.0.0
-Plugin=bin/{key}/store               ; resolved by AppManifest's rule; .so / .dll is added per platform
+# resolved by AppManifest's rule; .so / .dll is added per platform
+Plugin=bin/{key}/store
 Icon=icon.png
-Background=true                      ; load at start-up and poll() every frame
+# load at start-up and poll() every frame
+Background=true
+# required | optional | none (the default): what the extension needs the network for
+Network=required
 ```
+
+**`Network=`** says whether the extension can run without a network (decided 2026-09-24):
+
+- `required`: it is useless offline.
+  - The launcher **refuses to run it** while there is no network: its row in the Extensions list is
+    greyed with "Needs a network connection", and Cross does nothing but play the cancel sound.
+  - The check is made when the list opens and again on Cross, through `ExtensionHost::networkUp()`.
+    That is `System::hasDefaultRoute()` on every Linux target. On the console, no route means offline:
+    a stock kernel never has one, and the AutoBleem kernel has one only with its WiFi up. On Windows it
+    is always true.
+  - A `Background=true` extension that needs the network is still loaded at start-up, so its queue can
+    resume once a route appears. Its `poll()` is expected to wait on `networkUp()` itself.
+- `optional`: it runs offline and does less (it says so itself).
+- `none`, or the key absent: the network does not matter to it.
 
 The ABI stamp is read from the library itself, never from the ini, so a hand-edited ini cannot claim a
 compatibility the binary does not have. An extension with no library for this machine is greyed:
@@ -203,7 +278,8 @@ compatibility the binary does not have. An extension with no library for this ma
   - calls `poll`, `suspend`, `resume` and `shutdown` on each.
 - **`GuiExtensions`** (`evoui/screens/evoui_extensions.*`) is a *compact* panel by the UI standard, like
   the system menu:
-  - one row per extension: its icon, name, and description (or why it cannot run);
+  - one row per extension: its icon, name, and description (or why it cannot run: not built for this
+    system, a different AutoBleem, disabled after a crash, or "Needs a network connection");
   - Cross runs it, Triangle enables a disabled one, Circle goes back, L2/R2 page;
   - with nothing installed: "No extensions installed" and a line saying where they go.
 - **The System menu** gets `SystemMenuAction::Extensions`, "Extensions" / "Run an installed extension",
@@ -222,6 +298,8 @@ offers one. There is no sandbox, and the plan does not pretend otherwise.
 
 ### For extension authors
 
+- **An extension's repository is named `ext_<name>`** (the owner's rule, 2026-09-24; Apps' are
+  `app_<name>`): `autobleem2/ext_store` installs to `Extensions/store/`.
 - A release publishes **`autobleem-sdk-<target>-<v>.tar.gz`**: the surface headers, the `ab_add_extension`
   CMake helper, the ABI stamp, and on Windows the launcher's import library.
 - An author builds in the autobleem-build image of the same channel (`:latest` for a release,
@@ -234,25 +312,50 @@ offers one. There is no sandbox, and the plan does not pretend otherwise.
 
 Each step is one commit (a core commit plus a submodule bump where core changes), with its tests.
 
-1. **Not done.** The proof, before any design lands:
-   - a throwaway plugin that opens one `GuiConfirm`, `dlopen`'d by the launcher built with
-     `ENABLE_EXPORTS`, run on the Windows dev build, on a Pi and on the console;
-   - on the console and the Pi with the binary UPX-packed, too;
-   - the size of the exported symbol table measured.
-   
-   The result decides the linking section: exports from the executable, or a shared SDK library.
-2. **Not done.** Core: the SDK surface (`include/autobleem/sdk/`), `AB_SDK_ABI` and the stamp,
-   `Extension`/`ExtensionHost`/`AB_EXTENSION`, `Env::getPathToExtensionsDir()`, `ExtensionService` with
-   `PluginLoader` and the crash guard (tests with in-process fakes), and `ab_add_extension`. The multi-
-   platform format's `AppManifest` (app format plan, step 1) comes first.
-3. **Not done.** A sample extension, `hello`, in autobleem-core's `examples/`: one themed screen, and a
-   background `poll()` that shows a notification. It is the SDK's smoke test in CI on every target.
-4. **Not done.** The launcher: exported symbols (with the export list), `App` as `ExtensionHost`,
-   `GuiExtensions`, the System menu item, `suspend`/`resume` around launches, `shutdown`, the 16
-   languages. Walked through with `tools/ab_drive.py` on the Windows build with `hello` installed.
+1. **Done, apart from hardware** (2026-09-24; "What the proof showed" above). Exports from the executable
+   it is: no shared SDK library. What is left is on hardware (a Pi and the console, packed and unpacked)
+   and goes with step 8.
+2. **Mostly done** (2026-09-24).
+   - Done:
+     - `Env::getPathToExtensionsDir()`/`getPathToExtensionsStateDir()`.
+     - In core: `PluginLoader` + `NativePluginLoader` (`core/services/plugin_loader.*`) and
+       `ExtensionCatalog` (`core/services/extension_catalog.*`: the ini through `AppManifest` with
+       `Plugin=`, `Network=`, `Background=`, the disabled list, the crash guard).
+     - In ab_classic: `gui/extension.h` (`Extension`, `ExtensionHost`, `AB_SDK_ABI`/`AB_SDK_STAMP` as a
+       macro, `AB_EXTENSION`), `gui/extension_runtime.*` (`ExtensionRuntime`: load + ABI check, run,
+       poll, suspend/resume, shutdown, the crash guard and exceptions around every call) and
+       `gui/extension_host_base.*` (the tagged log appender, the state dir, the network).
+     - Tests: `tests/core/test_extension_catalog.cpp` and `tests/classic/test_extension_runtime.cpp`
+       (fake plugins behind a fake loader).
+   - Still to do:
+     - the curated surface directory (`include/autobleem/sdk/`); until then the surface is every header
+       of the three libraries;
+     - `ab_add_extension` (step 3 builds it with the sample).
+3. **Done** (2026-09-24). `extensions/hello/` in the launcher repository (it links against the launcher's
+   executable, which core does not build): one themed screen (`GuiConfirm`), a background `poll()` that
+   shows a bubble for a few seconds, and a log line at every step of its life.
+   - `ab_add_extension()` (`autobleem-core/cmake/ab_extension.cmake`) builds it: the SDK's headers, none
+     of its code, `PLOG_DEFAULT_INSTANCE_ID=1`, the import library on Windows.
+   - It is staged as `<build>/extensions/hello/`; `tools/make_usb.py` copies it onto the dev stick.
+   - It is built on every target (the SDK's smoke test in CI) and never packaged.
+4. **Done on Windows** (2026-09-24).
+   - The launcher's executable exports its symbols (`ENABLE_EXPORTS`, `--export-all-symbols` with MinGW).
+   - `App` owns the catalog, the loader and the runtime; its `LauncherExtensionHost` routes
+     `requestRescan` to the scan, and the reloads and the bubble to `GuiLauncher` through
+     `App::takeExtensionRequests()`.
+   - `AutoBleem::run()` scans `Extensions/`, applies the crash guard (a notification line names the
+     extension it disabled) and starts the background ones. `runOutside()` suspends and resumes them
+     around a game, and they are shut down before the services go.
+   - `GuiLauncher` polls them every frame and stacks their bubble under the scan's.
+   - `GuiExtensions` (`evoui/screens/evoui_extensions.*`) is the System menu's new Extensions item.
+   - 14 strings in all 16 languages.
+   - Walked through with `tools/ab_drive.py`, which now runs a copy under the real name,
+     `drive/autobleem-gui.exe`: the start-up bubble, the list with a greyed "Not available for this
+     system" row, Hello's dialog, and its note back in the carousel.
+   - Still to do: the export list (a version script / `.def` file with the SDK surface only).
 5. **Not done.** CI: the ABI check (`abidiff` against the last release) and the SDK package per target.
 6. **Not done.** The first real extension, the **AutoBleem Store** (`docs/store-plan.md`), in its own
-   repository (proposed `autobleem2/autobleem-store`), published as a separate download for every target.
+   repository, `autobleem2/ext_store`, published as a separate download for every target.
 7. **Not done.** Documentation for extension authors (the surface, the life of a plugin, the ABI rules,
    building in the image, the UI standard they draw by), and an "Extensions" section in the manuals.
 8. **Not done.** On hardware (the tester checklist): `hello` and the Store on the console, a Pi, the PC

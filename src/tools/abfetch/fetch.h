@@ -28,6 +28,11 @@ struct Options {
     int connectTimeout = 20; // seconds, for each address tried
     int stallTimeout = 60;   // seconds without a byte before giving up (TLS handshake included)
     int maxRedirects = 5;
+    // --continue: what is already in `output` is kept and only the rest is asked for (a Range request);
+    // a server that answers 206 has it appended, one that answers 200 (no ranges) has the file started over,
+    // and 416 (nothing left to send) is taken as complete. A download that stops keeps what arrived, so
+    // the next --continue picks it up. Not for stdout.
+    bool resume = false;
 };
 
 Result fetch(const Options &options, std::string &error);

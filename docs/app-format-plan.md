@@ -1,6 +1,9 @@
 # Multi-platform Apps and extensions (plan)
 
-**Status (2026-09-24):** planned, nothing built. This file defines one folder format that carries a
+**Status (2026-09-24):** steps 1-2 and the launch half of step 3 are done: the rule is in core, the
+launcher lists and starts Apps by it, and the three rc scripts carry it. What is left: the Windows
+product's `Apps/` folder, converting the eight console Apps, and building OpenTyrian for every target.
+This file defines one folder format that carries a
 program for **every platform we build for, now and later**. The same folder holds several platforms'
 binaries side by side. Its ini says which binary is for which platform, and the launcher, `run.sh` and
 Windows all pick the right one by the same rule. It applies to both kinds of folder:
@@ -77,31 +80,56 @@ Version=2.1.20221123
 Image=icon.png
 Readme=readme.txt
 
-; the program, per platform key (paths relative to the folder)
+# the program, per platform key (paths relative to the folder)
 Exec.psc=bin/psc/opentyrian
 Exec.rpi64=bin/rpi64/opentyrian
 Exec.linux-armhf=bin/linux-armhf/opentyrian
 Exec.pcusb=bin/pcusb/opentyrian
 Exec.win=bin/win/opentyrian.exe
-; and/or one pattern for every key without its own Exec.<key> line ({key} = the key being tried);
-; an App following the bin/<key>/ convention needs only this line
+# and/or one pattern for every key without its own Exec.<key> line ({key} = the key being tried);
+# an App following the bin/<key>/ convention needs only this line
 Exec=bin/{key}/opentyrian
 
-Args=--fullscreen                ; optional, shared; Args.<key>= overrides it for one platform
-Lib=lib/{key}                    ; optional, added to the library path (Lib.<key>= overrides)
-Kernel=false                     ; unchanged: needs the AutoBleem kernel
+# optional, shared; Args.<key>= overrides it for one platform
+Args=--fullscreen
+# optional, added to the library path (Lib.<key>= overrides)
+Lib=lib/{key}
+# optional environment variables, NAME=value separated by ';' (Env.<key>= adds or overrides per platform)
+Env=SDL_AUDIODRIVER=alsa;TYRIAN_DATA=data
+# whether the App runs with our virtual pad mapper (abpadd + the libabpad.so preload,
+# docs/virtual-gamepad-plan.md); absent = true, what every App before the key had
+VirtualPad=true
+# unchanged: needs the AutoBleem kernel
+Kernel=false
 ```
 
-**The rule, in one sentence:** for each key in `Env::appPlatformKeys()`, in order, use `Exec.<key>` if
-the ini has it; otherwise use `Exec` with `{key}` replaced by that key. The first candidate whose file
-exists is the program.
+**`VirtualPad=`** (decided 2026-09-24) is the App's own statement about the pad mapper:
 
-- `.exe` is added on Windows when the file named has no extension and the `.exe` exists, so one
+- `true`: the App is meant to be played through it; the default, and what every App before the key had.
+- `false`: the App reads the pads its own way (it ships its own mapping, or has no use for a pad), and
+  `app_env.sh` starts neither the daemon nor the preload for it.
+
+The launcher passes it as `AB_APP_VIRTUAL_PAD=1|0` (`AppManifest::usesVirtualPad()`); a `run.sh` started
+by hand reads it from the ini the same way.
+
+**Repositories** (decided 2026-09-24): an App's source repository is named **`app_<name>`**
+(`app_opentyrian`), an extension's **`ext_<name>`** (`ext_store`). The folder it installs to keeps the bare
+name (`Apps/opentyrian/`, `Extensions/store/`).
+
+Comments are `#` lines (`IniFile` knows no `;` comments), and keys are case-insensitive: `IniFile`
+lower-cases them. That is why the environment is one `Env=` list rather than a key per variable, whose
+name would lose its case.
+
+**The rule, in one sentence:** for each key in `Env::appPlatformKeys()`, in order, use `Exec.<key>` if
+the ini has it; otherwise use `Exec` with `{key}` replaced by that key. The first candidate that is an
+existing file is the program.
+
+- `.exe` is added on Windows when the file named is not there as given and the `.exe` is, so one
   `Exec=bin/{key}/opentyrian` serves every platform.
 - An App with no candidate for this machine is **not listed** in the Apps set. The Store shows it as
   "Not available for this system".
-- `Args`, `Lib` and `Env.<VAR>=` (extra environment variables) resolve the same way: `.<key>` first, then
-  the plain key with `{key}` replaced.
+- `Args` and `Lib` resolve the same way for the key that matched: `.<key>` first, then the plain key with
+  `{key}` replaced. `Env=` is read first, then `Env.<key>=` overrides or adds variables.
 - `Startup=` (today's key) still works: an ini with no `Exec` is started through its `Startup` script, as
   now, on the platforms that have `sh`. It is how every existing App keeps working unchanged.
 
@@ -137,7 +165,8 @@ key that matched, or why nothing matched.
 - **Run by hand** (ssh, debugging) there is no launcher to resolve anything. `rc/app_env.sh` then resolves
   the ini itself, with the same rule written in `sh`, when `AB_APP_EXEC` is not already set:
   - the keys come from `$AB_PLATFORM_KEYS`, else from the file the launcher writes at start-up,
-    `<state>/platform_keys` (one line);
+    `System/platform_keys` (one line, space separated). The rule lives in `rc/app_resolve.sh`, which
+    `app_env.sh` sources;
   - a test runs both resolvers over the same fixture folders and compares the results, so the two cannot
     drift.
 
@@ -180,15 +209,23 @@ fields (`Name`, `Description`, `Background`).
 
 Each step is one commit (core first, then the submodule bump), with its tests.
 
-1. **Not done.** Core: `Env::appPlatformKeys()` (the table above, plus `app_platform_keys=` from the
-   platform ini), and `AppManifest` (the rule: `Exec.<key>`, `Exec` with `{key}`, `.exe`, `Args`/`Lib`/
-   `Env`, the `Startup` fallback), with tests over fixture folders.
-2. **Not done.** Launcher: `GameQueryService::apps()` lists only Apps with a candidate;
-   `LaunchService::planApp` runs through `AppManifest` with the environment above; `rc/app_run.sh`;
-   `app_env.sh` made platform-neutral, with its `sh` resolver and the comparison test. Existing Apps
-   (`Startup=run.sh`) are checked to start unchanged.
-3. **Not done.** Windows: the direct launch of `AB_APP_EXEC` with `PATH` and the environment; an `Apps/`
-   folder in the Windows product's data root.
+1. **Done** (2026-09-24). Core: `Env::appPlatformKeys()` (the table above, plus `app_platform_keys=` from
+   the platform ini), and `AppManifest` (`core/services/app_manifest.*`: `Exec.<key>`, `Exec` with
+   `{key}`, `.exe`, `Args`/`Lib`/`Env`, the `Startup` fallback), tested in `tests/core/test_app_manifest.cpp`.
+2. **Done** (2026-09-24).
+   - Core: `GameQueryService::apps()` lists only Apps with a candidate; `LaunchService::planApp` goes
+     through `AppManifest` with the `AB_APP_*` environment; `System::runAndWait` and `LaunchPlan` carry an
+     environment.
+   - The launcher writes `System/platform_keys` at start-up.
+   - Scripts: `rc/app_run.sh`, `rc/app_resolve.sh` (the `sh` copy of the rule), and one platform-neutral
+     `rc/app_env.sh`. Each is the same file in `payload/`, `payload_linux/` and autobleem-appliance's
+     `payload_linux/`.
+   - Tests: `tests/rc/test_app_resolve.cpp` holds the shell copy to the C++ answers and the two payload
+     copies identical; `test_launch`/`test_game_query` cover the new paths.
+   - Existing Apps (`Startup=run.sh` only) are started exactly as before.
+3. **Half done.** The direct launch of the resolved program with `Args`, `PATH` and the environment is in
+   (`planApp`, tested). Still to do: an `Apps/` folder in the Windows product's data root, and a first
+   Windows App run on the product.
 4. **Not done.** The eight console Apps converted (`tools/pack_psc_apps.py`): binaries to `bin/psc/`,
    `Exec=bin/{key}/<name>`, `run.sh` kept only where it does something. They repack per App for the Store.
 5. **Not done.** `ExtensionService` on `AppManifest` (with the extensions plan's step 1).

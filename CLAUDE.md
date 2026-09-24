@@ -367,6 +367,77 @@ The test Apps are deliberately **not** in this repository: Freedoom may be redis
 Jackrabbit shareware may not, and neither question is settled by us building them. A fetch-and-build
 recipe is the clean route if they are ever to ship.
 
+## Multi-platform Apps (2026-09-24, `docs/app-format-plan.md`)
+
+**One App folder, a binary per platform.**
+- `Apps/<name>/` keeps its shared files once (icon, data, `pad.ini`) and one binary per platform key in
+  `bin/<key>/`.
+- `app.ini` says which binary is which: `Exec.<key>=`, or one `Exec=bin/{key}/<name>` pattern.
+
+**Platform keys.**
+- `Env::appPlatformKeys()` is the ordered list this build accepts:
+  - the target's own key first: `psc`, `rpi`, `rpi64`, `pcusb`, `win`, `dev`;
+  - then its generic `linux-<arch>` / `windows-x86_64` key;
+  - then the platform ini's `app_platform_keys=`.
+- The console takes `psc` only, because nothing built against a current distribution loads there.
+
+**Resolving an App: one rule, `AppManifest` (`core/services/app_manifest.*`).**
+- The first key whose binary exists wins. `Args`/`Lib` resolve for that key. `Env=` is one
+  `NAME=value;...` line with `Env.<key>=` on top: `IniFile` lower-cases keys, so there is no key per
+  variable.
+- `GameQueryService::apps()` leaves out an App with nothing to run here.
+- `LaunchService::planApp` starts the App:
+  - through `rc/app_run.sh`, or its own `Startup=` script, with `AB_APP_DIR/EXEC/ARGS/LIB/KEY`,
+    `AB_PLATFORM(_KEYS)`, `AB_ROOT` and the ini's `Env` in the environment (`LaunchPlan::env`,
+    `System::runAndWait`'s `env`);
+  - directly on Windows (the resolved exe, `Args` split, `Lib` on `PATH`).
+- An ini with only `Startup=` is an App of the old kind and is started exactly as before.
+- `VirtualPad=true|false` (absent = true) says whether the App runs with the virtual pad mapper.
+  `AB_APP_VIRTUAL_PAD` carries it, and `app_env.sh` skips abpadd and the preload when it is off.
+- An App's source repository is named `app_<name>`, an extension's `ext_<name>` (the owner's rule).
+
+**The scripts.**
+- `rc/app_env.sh` is one file for every Linux target: the console's libs pack only where
+  `Autobleem/lib/apps` exists, `AB_APP_LIB` first on the library path, home on the stick, the virtual
+  gamepad.
+- A `run.sh` started by hand resolves the ini itself through `rc/app_resolve.sh`, the rule in `sh`+`awk`.
+  It reads the keys from `System/platform_keys`, which the launcher writes at start-up.
+- `tests/rc/test_app_resolve.cpp` holds the shell copy to `AppManifest`'s answers. It also keeps the
+  three scripts identical in `payload/` and `payload_linux/`. **autobleem-appliance's `payload_linux/`
+  carries the same three files**: change all three copies together.
+
+## Extensions (2026-09-24, `docs/extensions-plan.md`)
+
+**What an extension is.** A plugin, `Extensions/<name>/` with an `extension.ini`:
+- `Name`, `Description`, `Author`, `Version`, `Icon`;
+- `Plugin=bin/{key}/<name>`, resolved by `AppManifest`, with `.so`/`.dll` added;
+- `Background=true` to be polled every frame;
+- `Network=required|optional|none` - `required` is refused offline.
+
+It is installed by hand, run from the System menu's **Extensions** item (`GuiExtensions`), and never
+bundled with a release. Its source repository is named `ext_<name>`.
+
+**How it binds to the launcher.**
+- It links against the launcher's own copy of the SDK. `autobleem-gui` is built with `ENABLE_EXPORTS`
+  (`--export-all-symbols` on MinGW). On Windows a plugin imports from **`autobleem-gui.exe` by name**, so
+  never rename the executable; `tools/ab_drive.py` runs `drive/autobleem-gui.exe` for that reason.
+- A plugin never links the SDK's static libraries: `ab_add_extension()`
+  (`autobleem-core/cmake/ab_extension.cmake`) gives it the headers and, on Windows, the import library.
+- It logs through plog instance 1 (`PLOG_DEFAULT_INSTANCE_ID=1`), chained by `AB_EXTENSION` into the
+  launcher's log with an `[<name>]` tag. Chaining instance 0 recursed on Linux.
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` whenever the layout
+  of a class, or the signature of a function, an extension may use changes.
+
+**Where the code is.**
+- Core: `ExtensionCatalog` and `PluginLoader`.
+- ab_classic: `gui/extension.h`, `ExtensionRuntime` (the crash guard: `System/Extensions/.active`, and
+  `disabled.txt`) and `ExtensionHostBase`.
+- The launcher: `App` (its `LauncherExtensionHost`, `takeExtensionRequests()`),
+  `AutoBleem::run`/`runOutside` (start, crash guard, suspend/resume, shutdown) and `GuiLauncher`
+  (the poll and its `extensionBubble`).
+- `extensions/hello/` is the sample and smoke test, staged in `build_win/extensions/` and put on the dev
+  stick by `make_usb.py`.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

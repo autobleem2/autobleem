@@ -156,6 +156,13 @@ public:
     void scanStatusText(const ScanUpdate &update, std::string &title, std::string &detail) const;
     bool scanRosterChangedSinceReload = false; // set by applyScanUpdate, cleared once reloadGames() runs
 
+    // the extensions (docs/extensions-plan.md): their bubble under the scan's, and what they asked the
+    // launcher for (App::takeExtensionRequests) acted on once a frame, after their poll()
+    NotificationBubble extensionBubble;
+    void applyExtensionRequests();
+    // the system menu's Extensions item: the list, then the chosen one run
+    void loop_openExtensions();
+
     bool powerOffShift = false;
 
     bool r2Held = false; // with L2 held too the system menu opens, whichever was pressed first
