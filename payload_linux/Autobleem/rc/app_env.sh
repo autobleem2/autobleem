@@ -1,26 +1,75 @@
 #!/bin/sh
 #
-# Sourced by an App's run.sh before it starts its program - the Pi's version of the console's
-# rc/app_env.sh. The console's job there is the shared libraries RetroBoot's apps need; a Pi has a
-# real distribution underneath it and needs none of that, so what is left here is the virtual gamepad
-# (docs/virtual-gamepad-plan.md) and the environment an App is entitled to expect.
-#
-# An App's run.sh does:
+# Sourced before an App's program starts - by rc/app_run.sh (a multi-platform App without a run.sh of its
+# own) or by the App's own run.sh - on every Linux target: the console, the Pis, the PC stick. One file for
+# all of them (docs/app-format-plan.md); what differs is found, not configured. An App's run.sh does:
 #
 #     #!/bin/sh
 #     . "$(dirname "$0")/../../Autobleem/rc/app_env.sh"
 #     cd "$AB_APP_DIR" || exit 1
-#     exec ./the-game
+#     exec "$AB_APP_EXEC" "$@"        # a multi-platform App: what its app.ini names for this machine
+#     exec ./the-game                  # an App of the old kind: its one binary
 #
-# It is sourced, not run, so "$0" here is the *App's* run.sh - which is what lets the data partition
-# be found without anything being hardcoded, the same way the other rc scripts find it. An App is
-# assumed to live at <root>/Apps/<name>/, which is what the launcher's Apps set means by one.
+# It is sourced, not run, so "$0" is the App's run.sh - which is what lets the data root be found without
+# anything being hardcoded when the launcher did not say (an App is assumed to live at <root>/Apps/<name>/).
+#
+# What it sets up: the App's folder and root, which binary (app_resolve.sh), the libraries, a home on the
+# stick, and the virtual gamepad - one section each below.
 
-AB_APP_DIR=$(cd "$(dirname "$0")" && pwd)
-AB_ROOT=$(cd "$AB_APP_DIR/../.." && pwd)
+# ---------------------------------------------------------------------------------------------
+# Where. The launcher exports AB_APP_DIR and AB_ROOT (and the resolved AB_APP_*); a run.sh started by hand
+# finds them from its own path.
+# ---------------------------------------------------------------------------------------------
+[ -n "$AB_APP_DIR" ] || AB_APP_DIR=$(cd "$(dirname "$0")" && pwd)
+[ -n "$AB_ROOT" ] || AB_ROOT=$(cd "$AB_APP_DIR/../.." && pwd)
 AB_LOG_DIR="$AB_ROOT/System/Logs"
 export AB_APP_DIR AB_ROOT
 mkdir -p "$AB_LOG_DIR" 2>/dev/null
+
+# ---------------------------------------------------------------------------------------------
+# Which binary. The launcher resolved the App's app.ini already; by hand it is resolved here, by the same
+# rule (app_resolve.sh). An App of the old kind (no Exec= in its ini) resolves to nothing and runs its own
+# binary as it always did.
+# ---------------------------------------------------------------------------------------------
+if [ -z "$AB_APP_EXEC" ] && [ -f "$AB_ROOT/Autobleem/rc/app_resolve.sh" ]; then
+    . "$AB_ROOT/Autobleem/rc/app_resolve.sh"
+    ab_resolve_app
+fi
+
+# ---------------------------------------------------------------------------------------------
+# The libraries.
+#
+# The console: what the apps need beyond its firmware - SDL2_image/mixer/ttf, freetype, png, vorbis, ...
+# (the site's libs pack, unpacked by the installer into Autobleem/lib/apps) - linked into /tmp/applib on
+# first use, with the shorter soname links the loader looks for (the stick is FAT, it cannot hold a
+# symlink), and made the library path. Was RetroBoot's init_libs.sh / RB_LIBRARY_PATH. Only the console has
+# that folder; a Pi or a PC has a real distribution underneath and needs none of it.
+#
+# Every target: the App's own libraries for this platform (Lib= in its ini, AB_APP_LIB) go first.
+# ---------------------------------------------------------------------------------------------
+APPLIB=/tmp/applib
+APPLIB_SRC="$AB_ROOT/Autobleem/lib/apps"
+if [ -d "$APPLIB_SRC" ]; then
+    if [ ! -d "$APPLIB" ]; then
+        mkdir -p "$APPLIB"
+        for lib in "$APPLIB_SRC"/*.so*; do
+            [ -f "$lib" ] || continue
+            name=$(basename "$lib")
+            ln -sf "$lib" "$APPLIB/$name"
+            # libfoo.so.1.2.3 -> libfoo.so.1.2, libfoo.so.1, libfoo.so
+            short=$name
+            while extn=$(echo "$short" | sed -n '/\.[0-9][0-9]*$/s/.*\(\.[0-9][0-9]*\)$/\1/p'); [ -n "$extn" ]; do
+                short=$(basename "$short" "$extn")
+                [ -e "$APPLIB/$short" ] || ln -sf "$lib" "$APPLIB/$short"
+            done
+        done
+    fi
+    LD_LIBRARY_PATH=$APPLIB
+fi
+if [ -n "$AB_APP_LIB" ]; then
+    LD_LIBRARY_PATH="$AB_APP_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH
 
 # ---------------------------------------------------------------------------------------------
 # A home on the stick.
@@ -41,7 +90,7 @@ export HOME XDG_DATA_HOME XDG_CONFIG_HOME XDG_CACHE_HOME XDG_STATE_HOME
 mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME" 2>/dev/null
 
 # ---------------------------------------------------------------------------------------------
-# The virtual gamepad.
+# The virtual gamepad (docs/virtual-gamepad-plan.md).
 #
 # abpadd reads the pads through SDL's GameController API with our own database - the same code and
 # the same file the launcher uses, so a pad resolves in here exactly as it does out there - and

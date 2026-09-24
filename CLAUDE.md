@@ -367,6 +367,42 @@ The test Apps are deliberately **not** in this repository: Freedoom may be redis
 Jackrabbit shareware may not, and neither question is settled by us building them. A fetch-and-build
 recipe is the clean route if they are ever to ship.
 
+## Multi-platform Apps (2026-09-24, `docs/app-format-plan.md`)
+
+**One App folder, a binary per platform.**
+- `Apps/<name>/` keeps its shared files once (icon, data, `pad.ini`) and one binary per platform key in
+  `bin/<key>/`.
+- `app.ini` says which binary is which: `Exec.<key>=`, or one `Exec=bin/{key}/<name>` pattern.
+
+**Platform keys.**
+- `Env::appPlatformKeys()` is the ordered list this build accepts:
+  - the target's own key first: `psc`, `rpi`, `rpi64`, `pcusb`, `win`, `dev`;
+  - then its generic `linux-<arch>` / `windows-x86_64` key;
+  - then the platform ini's `app_platform_keys=`.
+- The console takes `psc` only, because nothing built against a current distribution loads there.
+
+**Resolving an App: one rule, `AppManifest` (`core/services/app_manifest.*`).**
+- The first key whose binary exists wins. `Args`/`Lib` resolve for that key. `Env=` is one
+  `NAME=value;...` line with `Env.<key>=` on top: `IniFile` lower-cases keys, so there is no key per
+  variable.
+- `GameQueryService::apps()` leaves out an App with nothing to run here.
+- `LaunchService::planApp` starts the App:
+  - through `rc/app_run.sh`, or its own `Startup=` script, with `AB_APP_DIR/EXEC/ARGS/LIB/KEY`,
+    `AB_PLATFORM(_KEYS)`, `AB_ROOT` and the ini's `Env` in the environment (`LaunchPlan::env`,
+    `System::runAndWait`'s `env`);
+  - directly on Windows (the resolved exe, `Args` split, `Lib` on `PATH`).
+- An ini with only `Startup=` is an App of the old kind and is started exactly as before.
+
+**The scripts.**
+- `rc/app_env.sh` is one file for every Linux target: the console's libs pack only where
+  `Autobleem/lib/apps` exists, `AB_APP_LIB` first on the library path, home on the stick, the virtual
+  gamepad.
+- A `run.sh` started by hand resolves the ini itself through `rc/app_resolve.sh`, the rule in `sh`+`awk`.
+  It reads the keys from `System/platform_keys`, which the launcher writes at start-up.
+- `tests/rc/test_app_resolve.cpp` holds the shell copy to `AppManifest`'s answers. It also keeps the
+  three scripts identical in `payload/` and `payload_linux/`. **autobleem-appliance's `payload_linux/`
+  carries the same three files**: change all three copies together.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

@@ -51,7 +51,9 @@ behind it:
    - What differs per target is data: which catalog it reads (`store/<platform>/`) and which download
      command it runs (`PlatformConfig`).
    - The console needs a network for downloading, and has one only with the AutoBleem kernel's WiFi, as for
-     the update. Without it the Store still opens: it browses what is cached and says "Not connected".
+     the update. The Store's `extension.ini` says `Network=required`, so **the launcher refuses to open it
+     offline**: its row in the Extensions list is greyed with "Needs a network connection" (the extensions
+     plan). On a console that means a stock kernel, or the AutoBleem kernel with its WiFi down.
 3. **Our Apps format is a store item.** The App folder is multi-platform (`docs/app-format-plan.md`):
    one `Apps/<name>/` holds every platform's binary in `bin/<key>/`, and `app.ini` says which is which.
    The Store downloads the one-platform package for this machine (`opentyrian-psc-<version>.zip`) and
@@ -180,8 +182,12 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
     USB bus.
   - The queue is saved (`System/Store/queue.json`), so a power-off or the console's standby only pauses
     it. After a restart, a queue with work left resumes on its own.
-- **Network**: `System::hasDefaultRoute()` on every Linux target; on Windows it is true. With no network
-  the queue waits, and "Not connected" shows on the screen.
+- **Network**: `ExtensionHost::networkUp()` (`System::hasDefaultRoute()` on every Linux target; always
+  true on Windows).
+  - The Store cannot be opened offline (`Network=required`).
+  - Its background queue is still loaded at start-up. It waits while there is no route and resumes when
+    one appears, so a WiFi drop in the middle of a download is only a pause.
+  - If the network goes while the Store is open, the screen says "Not connected" and the queue waits.
 - **Space**: before a download, `System::getAvailableSpace()` of the target filesystem is compared with
   the item's size times two (the archive plus what comes out of it). It is refused with a message when
   short. The console's FAT32 file limit (4 GB) is below any PS1 disc.

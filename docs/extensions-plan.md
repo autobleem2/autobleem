@@ -106,6 +106,8 @@ class ExtensionHost {                    // what the launcher offers a plugin
                         uint64_t done, uint64_t total) = 0;  // the launcher's NotificationBubble
     virtual void clearNotification() = 0;
     virtual bool networkUp() = 0;        // System::hasDefaultRoute() where it means something
+    virtual plog::IAppender *logAppender() = 0;  // the launcher's log, tagged with this extension's name
+    virtual plog::Severity logSeverity() = 0;    // the launcher's level
 };
 
 class Extension {                        // what a plugin implements
@@ -123,6 +125,26 @@ extern "C" AB_EXTENSION_EXPORT Extension *ab_extension_create(ExtensionHost &hos
 ```
 
 `AB_EXTENSION(MyExtension)` is a macro that writes both C functions, so an author writes only the class.
+
+**Logging goes through the launcher's facility** (decided 2026-09-24):
+
+- An extension logs with the same `PLOG_INFO/WARNING/ERROR/DEBUG` macros as the launcher, and the
+  lines land in the launcher's own `System/Logs/autobleem.log` (and stdout), rolling as it rolls.
+- Each line is tagged with the extension's folder name (`[store]`), so one log tells launcher and
+  extension apart.
+- There is no separate log file, and no `cout`, as in the launcher.
+- **Why it has to be wired up**: plog is header-only, and its logger lives in a static template instance
+  per binary. On Linux the plugin's copy binds to the executable's exported one; on Windows a DLL keeps
+  its own, with no appenders, so its lines would vanish.
+- **How**: `ab_extension_create` (written by `AB_EXTENSION`) first calls
+  `plog::init(host.logSeverity(), host.logAppender())`. That is plog's own documented way to chain a
+  shared library's logger into the program's, and it works the same on both systems.
+  - `ExtensionHost::logAppender()` returns the launcher's appender, wrapped so every line gets the
+    extension's tag.
+  - `ExtensionHost::logSeverity()` is the launcher's level, so a release build stays quiet for the
+    extension's `PLOG_DEBUG` too.
+- The launcher itself logs every load, ABI refusal, crash-guard action, network refusal and `run()`
+  start and end, under the same tag.
 `ExtensionHost` is implemented by the launcher (`ab_ui`'s `App`), which is how an extension reaches the
 scan and the Apps set without the SDK knowing what a launcher is.
 
@@ -180,14 +202,33 @@ Extensions/store/
 
 ```ini
 [extension]
-Name=AutoBleem Store                 ; shown in the list (a lang/ file may translate it)
+# shown in the list (a lang/ file may translate it)
+Name=AutoBleem Store
 Description=Download apps and games
 Author=AutoBleem team
 Version=1.0.0
-Plugin=bin/{key}/store               ; resolved by AppManifest's rule; .so / .dll is added per platform
+# resolved by AppManifest's rule; .so / .dll is added per platform
+Plugin=bin/{key}/store
 Icon=icon.png
-Background=true                      ; load at start-up and poll() every frame
+# load at start-up and poll() every frame
+Background=true
+# required | optional | none (the default): what the extension needs the network for
+Network=required
 ```
+
+**`Network=`** says whether the extension can run without a network (decided 2026-09-24):
+
+- `required`: it is useless offline.
+  - The launcher **refuses to run it** while there is no network: its row in the Extensions list is
+    greyed with "Needs a network connection", and Cross does nothing but play the cancel sound.
+  - The check is made when the list opens and again on Cross, through `ExtensionHost::networkUp()`.
+    That is `System::hasDefaultRoute()` on every Linux target. On the console, no route means offline:
+    a stock kernel never has one, and the AutoBleem kernel has one only with its WiFi up. On Windows it
+    is always true.
+  - A `Background=true` extension that needs the network is still loaded at start-up, so its queue can
+    resume once a route appears. Its `poll()` is expected to wait on `networkUp()` itself.
+- `optional`: it runs offline and does less (it says so itself).
+- `none`, or the key absent: the network does not matter to it.
 
 The ABI stamp is read from the library itself, never from the ini, so a hand-edited ini cannot claim a
 compatibility the binary does not have. An extension with no library for this machine is greyed:
@@ -203,7 +244,8 @@ compatibility the binary does not have. An extension with no library for this ma
   - calls `poll`, `suspend`, `resume` and `shutdown` on each.
 - **`GuiExtensions`** (`evoui/screens/evoui_extensions.*`) is a *compact* panel by the UI standard, like
   the system menu:
-  - one row per extension: its icon, name, and description (or why it cannot run);
+  - one row per extension: its icon, name, and description (or why it cannot run: not built for this
+    system, a different AutoBleem, disabled after a crash, or "Needs a network connection");
   - Cross runs it, Triangle enables a disabled one, Circle goes back, L2/R2 page;
   - with nothing installed: "No extensions installed" and a line saying where they go.
 - **The System menu** gets `SystemMenuAction::Extensions`, "Extensions" / "Run an installed extension",
