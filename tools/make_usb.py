@@ -263,6 +263,11 @@ def main():
 
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
     replace_tree(os.path.join(REPO, 'payload', 'Themes'), os.path.join(usb, 'Themes'))
+    # the scanner processors' folder and its README (once: the processors in it are the tester's)
+    processors = os.path.join(usb, 'System', 'Processors')
+    os.makedirs(processors, exist_ok=True)
+    if not os.path.exists(os.path.join(processors, 'README.txt')):
+        shutil.copy(os.path.join(REPO, 'payload', 'System', 'Processors', 'README.txt'), processors)
     if os.path.isdir(os.path.join(REPO, 'payload', 'Apps')):
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
 

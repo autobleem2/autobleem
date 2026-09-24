@@ -484,6 +484,11 @@ decoding is untouched (the owner's call). **`tools/proc_check.py <folder> --game
 author runs before publishing: processor.ini, `--version`, the protocol per kind, leftovers, writes outside
 the target, idempotence and a stop-and-restart, all on scratch copies of the samples.
 
+**The installers make the folder** (2026-09-25), with a `README.txt` saying what goes there, written only when
+it is missing: core's `ProcessorCatalog::ensureFolder()` from `InstallerJob` (the stick) and `WindowsInstallJob`,
+`payload_linux/install.sh` (here and in autobleem-appliance's copy), `payload/System/Processors/README.txt`
+for the console package, and `tools/make_usb.py`. The launcher itself never needs it: no folder, no processors.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`
