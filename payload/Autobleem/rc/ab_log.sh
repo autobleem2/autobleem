@@ -49,6 +49,11 @@ ab_persist_logs() {
         echo
         dmesg 2>/dev/null | tail -150
     } > "$ab_dir/reason.txt"
+    # the extensions' crash guard is in RAM too: where the next launcher looks for it after the reboot
+    if [ -f "$AB_RUNTIME_DIR/extensions.active" ]; then
+        mkdir -p "$AB_ROOT/System/Extensions"
+        cp -f "$AB_RUNTIME_DIR/extensions.active" "$AB_ROOT/System/Extensions/.active"
+    fi
     touch "$ab_dir/.new"
     for ab_old in "$ab_keep"/crash-*; do
         ab_k=${ab_old##*-}
