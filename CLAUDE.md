@@ -392,6 +392,9 @@ recipe is the clean route if they are ever to ship.
     `System::runAndWait`'s `env`);
   - directly on Windows (the resolved exe, `Args` split, `Lib` on `PATH`).
 - An ini with only `Startup=` is an App of the old kind and is started exactly as before.
+- `VirtualPad=true|false` (absent = true) says whether the App runs with the virtual pad mapper.
+  `AB_APP_VIRTUAL_PAD` carries it, and `app_env.sh` skips abpadd and the preload when it is off.
+- An App's source repository is named `app_<name>`, an extension's `ext_<name>` (the owner's rule).
 
 **The scripts.**
 - `rc/app_env.sh` is one file for every Linux target: the console's libs pack only where

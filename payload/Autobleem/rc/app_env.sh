@@ -31,10 +31,20 @@ mkdir -p "$AB_LOG_DIR" 2>/dev/null
 # rule (app_resolve.sh). An App of the old kind (no Exec= in its ini) resolves to nothing and runs its own
 # binary as it always did.
 # ---------------------------------------------------------------------------------------------
-if [ -z "$AB_APP_EXEC" ] && [ -f "$AB_ROOT/Autobleem/rc/app_resolve.sh" ]; then
+if [ -f "$AB_ROOT/Autobleem/rc/app_resolve.sh" ]; then
     . "$AB_ROOT/Autobleem/rc/app_resolve.sh"
-    ab_resolve_app
+    [ -n "$AB_APP_EXEC" ] || ab_resolve_app
+    # VirtualPad= in app.ini: whether this App runs with the virtual pad mapper below (absent = yes); the
+    # launcher passes it as AB_APP_VIRTUAL_PAD, by hand it is read here
+    if [ -z "$AB_APP_VIRTUAL_PAD" ] && [ -f "$AB_APP_DIR/app.ini" ]; then
+        case "$(ab_ini_value virtualpad | tr 'A-Z' 'a-z')" in
+            false | no | 0 | off) AB_APP_VIRTUAL_PAD=0 ;;
+            *) AB_APP_VIRTUAL_PAD=1 ;;
+        esac
+    fi
 fi
+[ -n "$AB_APP_VIRTUAL_PAD" ] || AB_APP_VIRTUAL_PAD=1
+export AB_APP_VIRTUAL_PAD
 
 # ---------------------------------------------------------------------------------------------
 # The libraries.
@@ -96,13 +106,14 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
 # the same file the launcher uses, so a pad resolves in here exactly as it does out there - and
 # libabpad.so, preloaded, shows the App a pad it understands whichever SDL API it reads. Neither is
 # required: an App whose folder has no pad.ini and a tree with no abpad installed simply run as they
-# always did.
+# always did, and an App whose app.ini says VirtualPad=false (it reads the pads its own way, or has no
+# use for one) is left alone entirely.
 #
 # The daemon is given this shell's pid to watch, so it goes when the App goes - including when the
 # App is exec'd over this shell, which keeps the same pid, and including when the App crashes.
 # ---------------------------------------------------------------------------------------------
 AB_PAD_DIR="$AB_ROOT/Autobleem/bin/abpad"
-if [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
+if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
     "$AB_PAD_DIR/abpadd" --watch-pid $$ > "$AB_LOG_DIR/abpadd.log" 2>&1 &
 
     # the daemon lets a pad settle before publishing (a multi-mode pad is taken over by hidapi a
