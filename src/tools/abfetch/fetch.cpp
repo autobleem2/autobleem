@@ -313,7 +313,10 @@ private:
 // the output, opened when a body starts; removed unless close() says it was all written
 class Sink {
 public:
-    explicit Sink(string path) : path_(std::move(path)) {}
+    // append: add to what is there (a 206 answer to --continue); keepPartial: a download that stops keeps
+    // what arrived (--continue), instead of the file being removed
+    Sink(string path, bool append, bool keepPartial)
+        : path_(std::move(path)), append_(append), keepPartial_(keepPartial) {}
     ~Sink() { discard(); }
     Sink(const Sink &) = delete;
     Sink &operator=(const Sink &) = delete;
@@ -326,7 +329,7 @@ public:
             file_ = stdout;
             return true;
         }
-        file_ = fopen(path_.c_str(), "wb");
+        file_ = fopen(path_.c_str(), append_ ? "ab" : "wb");
         opened_ = file_ != nullptr;
         return opened_;
     }
@@ -345,10 +348,12 @@ private:
         if (file_ != nullptr && file_ != stdout)
             fclose(file_);
         file_ = nullptr;
-        if (opened_ && !kept_)
+        if (opened_ && !kept_ && !keepPartial_)
             remove(path_.c_str());
     }
     string path_;
+    bool append_ = false;
+    bool keepPartial_ = false;
     FILE *file_ = nullptr;
     bool opened_ = false; // a file of ours exists (never stdout)
     bool kept_ = false;
@@ -367,6 +372,19 @@ Result fetch(const Options &options, string &error) {
         error = "not an http(s) URL: " + options.url;
         return BadUsage;
     }
+    // --continue: the size of what is already there is where the request starts
+    unsigned long long already = 0;
+    const bool resume = options.resume && options.output != "-";
+    if (resume) {
+        FILE *existing = fopen(options.output.c_str(), "rb");
+        if (existing != nullptr) {
+            if (fseek(existing, 0, SEEK_END) == 0) {
+                long long size = ftell(existing);
+                already = size > 0 ? static_cast<unsigned long long>(size) : 0;
+            }
+            fclose(existing);
+        }
+    }
     unique_ptr<Trust> trust;
     for (int hop = 0; hop <= options.maxRedirects; hop++) {
         if (url.tls() && !trust) {
@@ -378,7 +396,7 @@ Result fetch(const Options &options, string &error) {
         Result result = connection.open(url, options, trust.get(), error);
         if (result != Ok)
             return result;
-        if ((result = connection.sendAll(buildRequest(url), error)) != Ok)
+        if ((result = connection.sendAll(buildRequest(url, already), error)) != Ok)
             return result;
 
         // the head (skipping any 1xx interim response)
@@ -419,13 +437,16 @@ Result fetch(const Options &options, string &error) {
             }
             continue;
         }
+        if (resume && already > 0 && head.status == 416)
+            return Ok; // nothing left to send: the file was complete (the caller checks its size and sum)
         if (head.status < 200 || head.status >= 300) {
             error = "the server answered " + to_string(head.status) + " for " + url.str();
             return HttpError;
         }
 
-        // the body
-        Sink sink(options.output);
+        // the body: after what is there (206, the rest), or the whole file again (200, the server does not
+        // do ranges)
+        Sink sink(options.output, resume && already > 0 && head.status == 206, resume);
         if (!sink.open()) {
             error = "cannot write " + options.output + ": " + strerror(errno);
             return WriteError;
