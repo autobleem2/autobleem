@@ -425,6 +425,11 @@ bundled with a release. Its source repository is named `ext_<name>`.
   (`autobleem-core/cmake/ab_extension.cmake`) gives it the headers and, on Windows, the import library.
 - It logs through plog instance 1 (`PLOG_DEFAULT_INSTANCE_ID=1`), chained by `AB_EXTENSION` into the
   launcher's log with an `[<name>]` tag. Chaining instance 0 recursed on Linux.
+- A plugin is built with **hidden visibility** (`ab_add_extension`); only the two `AB_EXTENSION` entry points
+  are exported. With default visibility the Linux loader merges what two plugins both define (a static in
+  an inline or template function is a GNU "unique" symbol): the plugins shared one plog instance-1 logger,
+  and every line was logged once per extension, under each one's tag. `nm -D --defined-only` on a plugin
+  should list `ab_extension_abi`/`ab_extension_create` and no `u` symbols.
 - **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` whenever the layout
   of a class, or the signature of a function, an extension may use changes.
 
