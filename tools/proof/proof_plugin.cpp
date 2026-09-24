@@ -4,6 +4,7 @@
 // read from its Env - loaded by AutoBleem::run() when AB_PLUGIN_PROOF names it. docs/extensions-plan.md,
 // step 1.
 //
+#define PLOG_DEFAULT_INSTANCE_ID 1 // the launcher is instance 0: on Linux a plugin chaining 0 into itself recursed
 #include "gui/screens/gui_confirm.h"
 #include "core/services/environment.h"
 
@@ -17,7 +18,7 @@
 
 // headless: a line through the launcher's log, and a call into the executable's own code
 PROOF_EXPORT int ab_proof_ping(plog::IAppender *log) {
-    plog::init(plog::info, log);
+    plog::init<1>(plog::info, log);
     std::string keys;
     for (const std::string &k : Env::appPlatformKeys())
         keys += k + " ";
@@ -28,7 +29,7 @@ PROOF_EXPORT int ab_proof_ping(plog::IAppender *log) {
 
 // `log` is the launcher's logger: plog's own way of chaining a shared library into the program's log
 PROOF_EXPORT int ab_proof_run(ableem::GuiBase *gui, plog::IAppender *log) {
-    plog::init(plog::info, log);
+    plog::init<1>(plog::info, log);
     PLOG_INFO << "[proof] hello from the plugin; the launcher's platform keys start with "
               << Env::appPlatformKeys().front() << ", USB root " << Env::getPathToUSBRoot();
     GuiConfirm confirm(*gui);
