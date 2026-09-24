@@ -24,7 +24,9 @@ import io
 import json
 import os
 import sys
+import shutil
 import tarfile
+import zipfile
 
 OURS = {"pscbios", "abflashkit"}  # built here, in every release package
 
@@ -48,12 +50,56 @@ def read_ini(path):
     return values
 
 
+def pack_one(name, folder, ini, out, platform, date):
+    """<out>/<name>-<platform>-<version>.zip (Apps/<name>/... with the Unix modes kept), <name>.item.json -
+    the Store's descriptor, the site's index_store() fills in the sums - and <name>.png when the App has a
+    picture. The version is app.ini's Version=, else the date."""
+    version = ini.get("version") or date
+    zip_name = "%s-%s-%s.zip" % (name, platform, version)
+    zip_path = os.path.join(out, zip_name)
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for root, dirs, names in os.walk(folder):
+            dirs.sort()
+            for fn in sorted(names):
+                if fn.startswith("._") or fn == ".DS_Store":
+                    continue
+                path = os.path.join(root, fn)
+                rel = os.path.relpath(path, folder).replace(os.sep, "/")
+                info = zipfile.ZipInfo("Apps/%s/%s" % (name, rel),
+                                       datetime.datetime.fromtimestamp(os.path.getmtime(path)).timetuple()[:6])
+                mode = 0o755 if rel.endswith(".sh") or "." not in fn else 0o644
+                info.external_attr = (0o100000 | mode) << 16
+                info.compress_type = zipfile.ZIP_DEFLATED
+                with open(path, "rb") as f:
+                    z.writestr(info, f.read())
+    item = {"id": "app/%s" % name, "kind": "app", "title": ini.get("title", name), "version": version,
+            "author": ini.get("author", ""), "files": [{"name": zip_name}]}
+    for key in ("licence", "description"):
+        if ini.get(key):
+            item[key] = ini[key]
+    if platform == "psc":
+        item["requires"] = ["pack/psc-libs"]  # the console's Apps take their libraries from the libs pack
+    image = os.path.join(folder, ini.get("image", "")) if ini.get("image") else ""
+    if image and os.path.isfile(image):
+        shutil.copyfile(image, os.path.join(out, name + ".png"))
+        item["image"] = name + ".png"
+    with open(os.path.join(out, name + ".item.json"), "w", encoding="utf-8") as f:
+        json.dump(item, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    print("  %-14s %-40s %6.1f MB  %s" % (name, item["title"], os.path.getsize(zip_path) / 1e6, zip_name))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("apps_dir", help="the stick's Apps folder")
     ap.add_argument("--out", default="dist/release")
     ap.add_argument("--date", default=datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d"))
     ap.add_argument("--only", nargs="*", help="pack only these app folders")
+    ap.add_argument("--per-app", action="store_true",
+                    help="one zip per App for the AutoBleem Store instead of the one pack: <out>/<name>-<platform>-"
+                         "<version>.zip laid out as Apps/<name>/..., with <name>.item.json and its picture - what "
+                         "`repo_publish.sh store <platform>` takes (the launcher's docs/store-plan.md)")
+    ap.add_argument("--platform", default="psc", help="the platform key the per-app packages are for")
     args = ap.parse_args()
 
     apps = []
@@ -70,6 +116,10 @@ def main():
         sys.exit("no apps found under %s" % args.apps_dir)
 
     os.makedirs(args.out, exist_ok=True)
+    if args.per_app:
+        for name, folder, ini in apps:
+            pack_one(name, folder, ini, args.out, args.platform, args.date)
+        return
     tar_name = "apps-psc-%s.tar.gz" % args.date
     tar_path = os.path.join(args.out, tar_name)
     entries = []
