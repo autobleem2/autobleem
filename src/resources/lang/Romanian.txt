@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 306
+# Untranslated: 0 / Total: 307
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -284,6 +284,7 @@ Testing=Testare
 The installer could not be started - it is in System/Updates=Programul de instalare nu a putut fi pornit - se află în System/Updates
 The update is downloaded - the installer is opening...=Actualizarea a fost descărcată - se deschide programul de instalare...
 Theme Default=Implicit al temei
+This game is protected by its PSN licence and cannot be started=Acest joc este protejat de licenta PSN si nu poate fi pornit
 Title=Titlu
 Unknown Core (AutoDetect)=Nucleu Necunoscut (Autodetectare)
 Unlock=Deblochează

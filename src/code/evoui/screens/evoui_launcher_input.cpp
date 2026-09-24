@@ -528,6 +528,9 @@ void GuiLauncher::loop_squareButton_Pressed() {
             if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
                 return;
             }
+            if (refuseLicenceProtected()) {
+                return;
+            }
             app.session().startingGame = true;
             if (carousel.selectedIsValid()) {
                 app.session().runningGame = carousel.games[carousel.selected];
