@@ -100,8 +100,9 @@ shows.
 **Both ship, and you choose.** Every package carries both emulators (`Autobleem/bin/emu/` and
 `Autobleem/bin/emunxt/`, the same layout and binary name) and Options -> **"PS1 Emulator"** picks which one
 plays PS1 games, on the console, a Pi and the PC alike; `pcsx-ab` is the default until pcsx-abnxt has been
-through its compatibility pass. Settings and memory cards are shared; a resume point saved by one emulator
-does not load in the other (the game then starts from the beginning). Standalone packages of each are on
+through its compatibility pass. Settings, memory cards and resume points are shared: both write pcsx-ab's
+save-state layout, so a game left in one continues in the other - unless it ran on the HLE BIOS (no BIOS
+file), where it starts from the beginning instead. Standalone packages of each are on
 the download repository under `emu/`.
 
 ## Building

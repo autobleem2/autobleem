@@ -228,7 +228,7 @@ saves. Every change is applied at once.
 | Use Font from Theme / Font | The classic screens' font: the theme's, or any `.ttf`/`.otf` from `resources/fonts`, `RetroArch/fonts` or the theme's folder. |
 | Showing Timeout | How long the "Showing: ..." notification stays, in seconds (0 = for ever). |
 | **Sound**: Music, Background Music | Which track plays under the launcher (the theme's, or a file from `resources/music`), and whether one plays at all. |
-| **Emulation**: PS1 Emulator | `pcsx-abnxt` (the default: current PCSX-ReARMed with AutoBleem's additions) or `pcsx-ab` (the classic). A save state made by one does not load in the other. |
+| **Emulation**: PS1 Emulator | `pcsx-abnxt` (the default: current PCSX-ReARMed with AutoBleem's additions) or `pcsx-ab` (the classic). A resume point saved by one continues in the other, unless the game ran without a BIOS file. |
 | Widescreen | The PS1 emulator's picture shape for every game. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch's PS1 core. |
 | Update RA Config | AutoBleem writes its settings into RetroArch's config when it starts a game there. |
