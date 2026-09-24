@@ -441,7 +441,8 @@ bundled with a release. Its source repository is named `ext_<name>`.
   `AutoBleem::run`/`runOutside` (start, crash guard, suspend/resume, shutdown) and `GuiLauncher`
   (the poll and its `extensionBubble`).
 - `extensions/hello/` is the sample and smoke test, staged in `build_win/extensions/` and put on the dev
-  stick by `make_usb.py`.
+  stick by `make_usb.py`. It is built on a dev host only (`AB_BUILD_SAMPLE_EXTENSION`, off for every device
+  target): it never goes into a package or onto a device (the owner's call, 2026-09-24).
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 

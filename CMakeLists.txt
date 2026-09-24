@@ -292,11 +292,20 @@ target_link_options(autobleem-gui PRIVATE
         $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem> $<TARGET_FILE:ableem_engine>
         "LINKER:--no-whole-archive")
 
-# hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Staged in
-# <build>/extensions/hello/; never packaged (tools/make_usb.py puts it on the dev stick)
-ab_add_extension(hello HOST autobleem-gui
-        SOURCES extensions/hello/hello.cpp
-        INI ${CMAKE_SOURCE_DIR}/extensions/hello/extension.ini)
+# hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Built on a dev
+# host only (staged in <build>/extensions/hello/, put on the dev stick by tools/make_usb.py): never on a
+# device target, so no package or hand-made bundle can pick it up (the owner's call, 2026-09-24)
+if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "")
+    set(sample_default ON)
+else ()
+    set(sample_default OFF)
+endif ()
+option(AB_BUILD_SAMPLE_EXTENSION "Build hello, the SDK's sample extension (a dev host's)" ${sample_default})
+if (AB_BUILD_SAMPLE_EXTENSION)
+    ab_add_extension(hello HOST autobleem-gui
+            SOURCES extensions/hello/hello.cpp
+            INI ${CMAKE_SOURCE_DIR}/extensions/hello/extension.ini)
+endif ()
 
 # extensions from their own source folders - an ext_<name> repository's checkout, e.g. ../ext_store - built
 # with the launcher, the way in until the SDK package exists: each folder's CMakeLists.txt calls
