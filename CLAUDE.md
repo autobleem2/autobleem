@@ -1230,7 +1230,7 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
 
 **The data root is written only when the user's state changes** - a save, a card, a kept resume slot, a
 setting the player changed, a game added or removed. Everything else is in RAM or not written at all.
-Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt, pcsx-ab and autobleem-appliance (not merged yet; the
+Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt, pcsx-ab and autobleem-appliance (merged into develop 2026-09-24; the
 work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a console or a Pi yet -
 `tools/stick_writes.sh start|stop` measures a scenario there.
 

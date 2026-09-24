@@ -14,8 +14,8 @@ pcsx-ab, pcsx-abnxt and RetroArch's shipped config (2026-09-24). File:line refer
 
 ## Status (2026-09-24)
 
-Branch `feature/quiet-stick` in autobleem (launcher), autobleem-core, pcsx-abnxt, pcsx-ab and autobleem-appliance,
-pushed, **not merged**. CLAUDE.md's "The quiet stick" section describes the result.
+Worked on `feature/quiet-stick` in autobleem (launcher), autobleem-core, pcsx-abnxt, pcsx-ab and autobleem-appliance,
+**merged into develop** (2026-09-24). CLAUDE.md's "The quiet stick" section describes the result.
 
 | Step | State |
 |---|---|
