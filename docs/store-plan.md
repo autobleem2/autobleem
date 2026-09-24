@@ -331,18 +331,19 @@ exists.
    - Walked through with `tools/ab_drive.py` against a local site (`AB_STORE_CATALOG`,
      `python -m http.server`): an App installed from the catalog, a game from a TSV source, the rescan
      after it.
-6. **Partly done** (2026-09-24/25): `store` in `repo_publish.sh`/`repo_index.py` and the Store page
+6. **Done** (2026-09-24/25): `store` in `repo_publish.sh`/`repo_index.py` and the Store page
    (`store/index.html`); the Store's own packages there, per system, from its CI (`extensions/store/`), with
    abstored and LAN Share in a LAN server tab (the LAN server work: autobleem-pc-tools
-   `docs/lan-share-plan.md`). Left: the Apps, one by one (the owner: each App is a porting session of its
-   own) - `pack_psc_apps.py --per-app` and the first items. The step as first written:
+   `docs/lan-share-plan.md`); `pack_psc_apps.py --per-app` (autobleem-appliance) and the first items - the
+   eight console Apps of apps-psc-20260920 in `store/psc/`, next to Terminal. The step as first written:
    The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
    `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
    (the App sources are the tier-2 `screemerpl` repositories, see autobleem-main's `todo.md`). Each is
    packaged by that repository's CI and published to `store/<platform>/`.
-8. **Not done.** On hardware (the tester checklist): the console on the AutoBleem kernel's WiFi (an App,
+8. **A TODO for the testers** (the owner, 2026-09-25: autobleem-main's `docs/todo.md`, "Testers"). On hardware
+   (the tester checklist): the console on the AutoBleem kernel's WiFi (an App,
    a two-disc game from a TSV, a resume after a standby), a Pi 400, the PC stick, Windows.
 9. **Mostly done**: the manuals' Store section (3.12) and "On the PC" chapter (5.2 LAN Share), abstored's
    README and INSTALL-linux.md, LAN Share's CLAUDE.md. Left: the TSV format written up for source owners.
