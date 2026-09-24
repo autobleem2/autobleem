@@ -210,6 +210,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 | Hardware Information | The machine: system, CPU, storage, network, display, the pads. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6). |
 | Options | AutoBleem's settings (section 3.5). |
 | Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
+| Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). |
 | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | About | Credits and licence. |
 | Power Off | After a confirmation: on the console AutoBleem's standby - the stick disconnected, the light red, Power brings the launcher back (section 2.1); on a Pi or PC the machine shuts down. |
@@ -315,6 +316,7 @@ Games/
 ```
 
 - Formats: `.cue` + `.bin` (or `.img`), `.pbp`, `.chd` (zstd too), `.ecm` (decoded by the scan), `.iso`.
+  With the **Unzip** processor installed, a zipped game works too (section 3.13).
 - A multi-disc game is one folder with every disc in it; folders named `Game (Disc 1)`, `Game (Disc 2)`
   ... are merged into one `Game` folder by the scan.
 - Games dropped straight into `Games/` (loose files) are sorted into folders by the scan.
@@ -391,6 +393,31 @@ what it serves and any problems it found, and add `http://<that machine>:8124/st
 programs for Linux and Windows are on the Store's page, in its **LAN server** tab; setting it up as a service
 is `INSTALL-linux.md` (`ext_store/server/` in the source). **LAN Share** (section 5.2) puts games and discs
 from a PC on such a server.
+
+### 3.13 Scanner processors
+
+**Scanner processors** are small programs that every scan runs before it reads your games. One can turn a
+format AutoBleem does not read into one it does - a zipped game, for example - or change a game's data, such
+as a translation patch. They live in `System/Processors/<name>/` on the stick (on a Raspberry Pi its data
+partition, on Windows the data folder); to install one, unpack its folder there. The next scan runs it.
+
+- **Unzip** is the first one: it unpacks zipped PS1 games in `Games/` before the scan reads them, and zipped
+  ROMs one at a time (arcade sets stay zipped). It is at `https://github.com/autobleem2/proc_unzip`.
+- A processor that has already dealt with a game is not run on it again until the game changes.
+- While a processor works, the bubble at the top right shows what it is doing; a warning or a failure appears
+  on the line under it. `processors.log` in the logs folder has the details.
+- Starting a game or RetroArch stops a processor that changes files; the next scan finishes its work.
+
+**L2 + R2 → Scanner processors** shows them in the order they run, one tab for the PS1 games and one for the
+ROMs (L1 / R1). **Square** picks a processor up and Up / Down move it - the order matters: a processor that
+unpacks has to come before one that patches what was unpacked. **Cross** switches one off or on, **Triangle**
+has it look at every game again at the next scan, **Circle** goes back and starts a scan if you changed
+anything. A processor built for another machine stays on the list, greyed.
+
+![Scanner processors](../images/en/processors.jpg)
+
+Writing your own: the unzip processor's page explains everything a processor has to do, and
+`tools/proc_check.py` in AutoBleem's source checks one before you share it.
 
 <!-- pagebreak -->
 
