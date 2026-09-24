@@ -91,7 +91,8 @@ Apps payload.
 **pcsx-abnxt** ([autobleem/pcsx-abnxt](https://github.com/autobleem/pcsx-abnxt)) is its successor: a
 public fork of [notaz/pcsx_rearmed](https://github.com/notaz/pcsx_rearmed) at its current release (r26),
 with everything AutoBleem needs re-implemented on top - the console's front buttons (open, reset, power),
-the resume points and save-state pictures, the autosave ring, disc changes, the in-game menu, the
+the resume points and save-state pictures (in pcsx-ab's layout, so either emulator continues the other's),
+disc changes, the in-game menu, the
 filters, two pads, `SET_BY_PCSX` BIOS selection - so it brings what upstream gained in nine years: an
 aarch64 dynarec, lightrec on x86, the C-SIMD `gpu_neon`, lid emulation, CHD, a per-serial game database.
 Sony's per-title hacks are not ported wholesale; games are tested and a hack is ported when a regression
