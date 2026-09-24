@@ -2,7 +2,8 @@
 
 **Status (2026-09-24):** planned, nothing built. The Store downloads and installs Apps and games without
 pulling the stick. It is the **first AutoBleem extension** (`docs/extensions-plan.md`): a program built on
-the AutoBleem SDK, unpacked onto the stick by hand and run from the System menu's Extensions list.
+the AutoBleem SDK, loaded into the launcher as a plugin. It is a separate download, unpacked onto the
+stick by hand, and run from the System menu's Extensions list.
 
 It came out of a look at Project Eris' "PSC Store" (`github.com/hampter-mods/pscstore-release`,
 release-only, closed source). What we take from it is the idea, not the code: a controller-driven library
@@ -37,10 +38,14 @@ behind it:
 
 ## The decisions (the owner, 2026-09-24)
 
-1. **The Store is an extension, "AutoBleem Store"**: `Extensions/store/`, started from System menu ->
-   Extensions. The user installs it by hand, like every extension. It lives in its own repository
-   (proposed `autobleem2/autobleem-store`, with autobleem-core as a submodule, laid out like
-   autobleem-console-tools). The Store never offers or installs extensions.
+1. **The Store is an extension, "AutoBleem Store"** (the name stays, though nothing is sold):
+   - it lives in `Extensions/store/` and is started from System menu -> Extensions;
+   - it is a plugin with `Background=true`, so its downloads go on while the carousel is showing;
+   - it is **a separate download**, never bundled with a release, and the user installs it by hand like
+     every extension;
+   - it lives in its own repository (proposed `autobleem2/autobleem-store`, with autobleem-core as a
+     submodule);
+   - it never offers or installs extensions.
 2. **Every target.** It is built for `psc`, `rpi` (32-bit), `rpi64`, `pcusb` and `win`.
    - The screen and its sources are the same everywhere.
    - What differs per target is data: which catalog it reads (`store/<platform>/`) and which download
@@ -58,6 +63,10 @@ behind it:
    - Every item kind a source can name, Apps included.
    - No allowlist, no on/off switch, no filtering of what a line points at.
    - We ship no sources but our own catalog, and the screen labels which source an item came from.
+   - The Sources tab carries one static line, "You are responsible for what your sources contain". It is
+     a notice, not a gate: nothing has to be confirmed.
+   - Sources are not checked for dead links in advance (that would cost a request per line). A dead link
+     shows up when its item is downloaded.
 5. **A clean implementation - no Project Eris or PSC Store code** (a standing rule, autobleem-main's
    `decisions.md`). Nothing of theirs is used: no source, binary, script, database, TSV sample, artwork or
    text, not even their patched third-party components. Their public descriptions are read to understand
@@ -157,19 +166,20 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
   - `abfetch` gains `--continue`: `Range: bytes=<size of .part>-`, append on `206`, start over on `200`.
   - The platform inis get a `store_download_command` that uses it (`abfetch --continue` on the console,
     `curl -C -` elsewhere). It falls back to `update_download_command` when unset.
-  - `%r` in these commands is the launcher's resources folder, where `abfetch` ships. It is resolved
-    through `Env`, not the extension's working directory.
-- **`StoreService`** (owned by the extension's `ExtensionApp`):
+  - `%r` in these commands is the launcher's resources folder, where `abfetch` ships. It is the same
+    `Env::getWorkingPath()` the update uses, because the plugin runs inside the launcher.
+- **`StoreService`** (owned by the Store's `Extension` object, which lives as long as the launcher does):
   - merges our catalog and the sources into one list;
   - knows what is installed (`System/Store/installed.json`: id, kind, version, source, where);
   - runs **the queue on one worker thread at the lowest OS priority**, like the launcher's scan
-    (`System::lowerCurrentThreadPriority()`). `poll()` is called once a frame by the Store's screen.
-  - **Downloads run while the Store is open** (the extension model: the launcher waits while an extension
-    runs). Leaving with a download active asks first ("Downloads are in progress. Leave anyway? They
-    continue the next time the Store is opened.").
-  - The queue is saved (`System/Store/queue.json`), so leaving, a power-off or the console's standby only
-    pauses it. A background companion that keeps downloading in the carousel is a *later* item of the
-    extensions plan.
+    (`System::lowerCurrentThreadPriority()`).
+  - **Downloads go on after the Store's screen is closed.** The plugin's `poll()`, called once a frame from
+    the launcher, hands progress to `ExtensionHost::notify()`, which is a `NotificationBubble` under the
+    scan's. Finished installs are applied there as well.
+  - **Paused around a game launch** through `suspend()`/`resume()`, so the emulator gets the CPU and the
+    USB bus.
+  - The queue is saved (`System/Store/queue.json`), so a power-off or the console's standby only pauses
+    it. After a restart, a queue with work left resumes on its own.
 - **Network**: `System::hasDefaultRoute()` on every Linux target; on Windows it is true. With no network
   the queue waits, and "Not connected" shows on the screen.
 - **Space**: before a download, `System::getAvailableSpace()` of the target filesystem is compared with
@@ -192,8 +202,8 @@ is a rename. Nothing half-written ever appears under `Games/`, where the scan's 
   2. Writes a `.cue` for a bare `.bin`, using the scanner's existing cue repair.
   3. Merges a multi-disc item into one folder, `Games/<title>/`. The title is `Strings`-sanitised, and a
      clash gets ` (2)`.
-  4. The Store writes **`rescan`** to its extension result. Back in the launcher, the scan verifies the
-     game, finds the serial, fills the metadata, cover and `.m3u`, and the carousel reloads.
+  4. The Store calls **`ExtensionHost::requestRescan()`**. The launcher's scan verifies the game, finds
+     the serial, fills the metadata, cover and `.m3u`, and the carousel reloads.
 - **`AppInstaller`** follows `ThemeInstaller`:
   1. The root of the archive, or its one folder, must contain an `app.ini` that `AppManifest` resolves
      for this machine, otherwise the install is refused.
@@ -201,10 +211,10 @@ is a rename. Nothing half-written ever appears under `Games/`, where the scan's 
      `bin/<key>/` and `lib/<key>/` are kept (unless the version changed - see the app format plan), and a
      `pad.ini` the user edited is kept.
   3. The App's data is under `Home/` (`app_env.sh`), so an update or a removal never loses a save.
-  4. The result gets **`reload-apps`**.
+  4. The Store calls **`ExtensionHost::reloadApps()`**.
   - `app.ini` gains a `Version=` key (read by the launcher's `GameQueryService::apps()` too). An update is
     offered when the catalog's version differs from the installed one.
-- **Removal**: an App's folder, or a game's folder (with `rescan`). The game's `!SaveStates` stays unless
+- **Removal**: an App's folder, or a game's folder (followed by `requestRescan()`). The game's `!SaveStates` stays unless
   the user confirms it, as in the launcher's Game Manager.
 - Both installers live in core so the launcher can use them too, for example for an archive dropped into
   `Games/` or `Apps/` (not planned).
@@ -230,7 +240,7 @@ rebuilt on it.
   - Triangle: Remove.
   - Square: sort (name / source / size).
   - Select: find by letter.
-  - Circle: Back (asks first when downloads are running).
+  - Circle: Back. Downloads go on in the background.
 - An item already present is marked installed: by `installed.json`, or matched by serial for a game the
   user put on the stick themselves.
 - Every string goes through `_()`, in the Store's own `lang/` files, all 16 languages in the same commit.
@@ -264,7 +274,7 @@ exists.
    nested folder, a bare `.bin`, multi-disc, an unsafe name, no `app.ini`, not enough space, an update
    keeping `pad.ini`).
 4. **Not done.** autobleem-store: `StoreService` (sources, merge, `installed.json`, the queue worker,
-   pause/resume, `poll()`, the result requests). Tests with a recording `CommandRunner` and a local catalog.
+   `poll`/`suspend`/`resume`/`shutdown`, the `ExtensionHost` calls; tests with a fake host). Tests with a recording `CommandRunner` and a local catalog.
 5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of
    it). autobleem-store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
    Windows build, run from the launcher's Extensions list, against a local catalog (`python -m
@@ -284,14 +294,9 @@ exists.
 - **Apps beyond the console** depend on `docs/app-format-plan.md` (the multi-platform folder, the
   Windows direct launch). Until it and step 7 are done, a target's catalog may simply have no Apps, and the
   tab says so.
-- **A notice when a source is added?** Decision 4 rules out a gate. A one-line "you are responsible for
-  what your sources contain" under the Sources tab is not a gate; the owner's call.
-- **The name.** Nothing is sold. "AutoBleem Store" is the owner's working name.
-- **Checking a whole source list for dead links** (a HEAD per URL) costs a request per line. For now a
-  dead link shows up when it is downloaded.
+None left: the notice, the name and dead-link checking were decided on 2026-09-24 (decisions 1 and 4).
 
 ## Later
 
 - The `rom:<system>` and `theme` kinds.
 - Search by keyboard.
-- Downloads that continue in the carousel, through the extensions plan's background companion.

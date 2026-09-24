@@ -153,9 +153,14 @@ autobleem-main's `todo.md` for this script.
 
 ### Extensions
 
-`extension.ini` takes the same `Exec`/`Args`/`Lib`/`Env` keys through the same `AppManifest`. The
-`Exec.<platform>` key the extensions plan first described is exactly this rule. `ExtensionService` uses
-`AppManifest` and adds only the extension's own fields (`Api`, `Name`, `Description`).
+An extension is a plugin (a `.so`/`.dll` loaded into the launcher, `docs/extensions-plan.md`), so
+`extension.ini` names a library rather than a program: `Plugin=bin/{key}/store`, resolved by the same
+`AppManifest` rule over the same keys, with `.so` or `.dll` added per platform. `Args` and `Env` do not
+apply to something loaded in-process. A plugin's own libraries in `lib/<key>/` are found through its
+`$ORIGIN` RUNPATH, not `Lib`. `ExtensionService` uses `AppManifest` and adds only the extension's own
+fields (`Name`, `Description`, `Background`).
+- **PSC-Bios and ABFlashKit stay Apps** (decided 2026-09-24). They are converted like the other console
+  Apps (step 4), with only a `psc` binary.
 
 ### Packages and the Store
 
@@ -192,10 +197,8 @@ Each step is one commit (core first, then the submodule bump), with its tests.
 7. **Not done.** Documentation for App authors: the folder, the keys table, the ini, when to write a
    `run.sh`; the manuals' Apps section.
 
-## Open questions
+## Settled (2026-09-24)
 
-- **`linux-x86_64` on the PC stick**: the stick is i386 today. A 64-bit PC stick would be a new target key
-  (`pcusb64`) with `linux-x86_64` after it. Should the 32-bit stick also accept `linux-x86_64` on a 64-bit
-  CPU? No: its libraries are i386.
-- **Per-platform data** (rare, e.g. a shader cache): `Data.<key>=` could be added the same way. It is not
-  planned until an App needs it.
+- **The 32-bit PC stick does not accept `linux-x86_64`**, even on a 64-bit CPU: its libraries are i386.
+  A 64-bit PC stick would be a new target key (`pcusb64`) with `linux-x86_64` after it.
+- **No per-platform data keys** (`Data.<key>=`) until an App needs one.
