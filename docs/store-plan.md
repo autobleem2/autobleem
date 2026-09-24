@@ -1,6 +1,13 @@
 # The AutoBleem Store (plan)
 
-**Status (2026-09-24):** planned, nothing built. The Store downloads and installs Apps and games without
+**Status (2026-09-24):**
+- **Working on the Windows dev build**, from the launcher's Extensions list, against a local test site: the
+  sources are read, an App and a game are installed, and the launcher rescans.
+- **Kept in a local repository**, `_work-extensions/ext_store`, until `autobleem2/ext_store` exists.
+- **Still open**: the site's catalog and per-App packages (step 6), Apps for the other targets (step 7),
+  hardware (step 8) and the manuals (step 9).
+
+The Store downloads and installs Apps and games without
 pulling the stick. It is the **first AutoBleem extension** (`docs/extensions-plan.md`): a program built on
 the AutoBleem SDK, loaded into the launcher as a plugin. It is a separate download, unpacked onto the
 stick by hand, and run from the System menu's Extensions list.
@@ -271,9 +278,12 @@ The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the 
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
 
-1. **Not done.** ext_store: the repository (autobleem-core submodule, `ab_add_extension`, CI for
-   the five targets), `StoreCatalog` and `StoreSourceTsv` (header, header-less, grouping, malformed
-   lines), with tests.
+1. **Done, apart from the repository's CI** (2026-09-24).
+   - The formats live in the engine, because the JSON library is private to lib_ableem:
+     `ableem::StoreCatalog` and `StoreSourceTsv` (`engine/store_catalog.*`), tested in
+     `tests/core/test_store_catalog.cpp`. The JSON key `requires` is the field `dependsOn` (a C++20 keyword).
+   - The repository has no autobleem-core submodule yet: it is built by the launcher through
+     `AB_EXTENSION_DIRS` until the SDK package (extensions plan, step 5) lets it build on its own.
 2. **Done** (2026-09-24).
    - `Downloader` (`core/services/downloader.*`) was extracted from `UpdateService`, whose tests pass
      unchanged. It resumes a `.part` with the resume command, and drops a `.part` that a resume got
@@ -292,12 +302,24 @@ exists.
      bare `.bin`, a FAT-safe folder name with " (2)", and refusal when there is no disc image.
    - Both go through staging, with a free-space check.
    - Tested in `tests/core/test_content_installer.cpp`.
-4. **Not done.** ext_store: `StoreService` (sources, merge, `installed.json`, the queue worker,
-   `poll`/`suspend`/`resume`/`shutdown`, the `ExtensionHost` calls; tests with a fake host). Tests with a recording `CommandRunner` and a local catalog.
-5. **Not done.** Core: the generic detail pane in `ab_classic` (the launcher's `GameDetailPane` on top of
-   it). ext_store: `GuiStore`, 16 languages. Walked through with `tools/ab_drive.py` on the
-   Windows build, run from the launcher's Extensions list, against a local catalog (`python -m
-   http.server`).
+4. **Done** (2026-09-24). `StoreService` (ext_store `src/store_service.*`):
+   - the sources, cached;
+   - `installed.tsv` (not JSON: the JSON library is not in the SDK surface);
+   - `queue.txt`;
+   - one low-priority worker thread. Its downloads are stopped through core's new cancellable
+     `System::runShellCommand(line, cancelled)`: a process group on Linux, a job object on Windows. A pause
+     keeps the bytes and the place in the queue, and a cancel drops them.
+   - Tested against a fake site in `tests/test_store_service.cpp`: sources, install, update, remove, a
+     two-disc game, a failed checksum, pause and resume, stop and restart, cancel, offline.
+   - The state lives in the extension's own state directory, `System/Extensions/store/` (`sources/`,
+     `sources.txt`, `cache/`, `downloads/`, `staging/`), not the `System/Store/` this plan first named.
+5. **Done on Windows** (2026-09-24).
+   - `GuiStore`: Apps / Games / Downloads / Sources, the list and a detail pane of its own. The generic
+     `ab_classic` pane is still to do; it was not needed.
+   - 29 strings of its own in 16 languages, in its `lang/`, which the host loads over the launcher's.
+   - Walked through with `tools/ab_drive.py` against a local site (`AB_STORE_CATALOG`,
+     `python -m http.server`): an App installed from the catalog, a game from a TSV source, the rescan
+     after it.
 6. **Not done.** The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
    `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.

@@ -283,12 +283,30 @@ set_target_properties(autobleem-gui PROPERTIES ENABLE_EXPORTS ON)
 if (MINGW)
     target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
 endif()
+# ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
+# the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
+# installers) would find its symbols missing and fail to load. Ahead of the objects, so the normal link of
+# the same libraries later finds nothing left to add.
+target_link_options(autobleem-gui PRIVATE
+        "LINKER:--whole-archive"
+        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem> $<TARGET_FILE:ableem_engine>
+        "LINKER:--no-whole-archive")
 
 # hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Staged in
 # <build>/extensions/hello/; never packaged (tools/make_usb.py puts it on the dev stick)
 ab_add_extension(hello HOST autobleem-gui
         SOURCES extensions/hello/hello.cpp
         INI ${CMAKE_SOURCE_DIR}/extensions/hello/extension.ini)
+
+# extensions from their own source folders - an ext_<name> repository's checkout, e.g. ../ext_store - built
+# with the launcher, the way in until the SDK package exists: each folder's CMakeLists.txt calls
+# ab_add_extension(<name> HOST ${AB_EXTENSION_HOST} ...), and is staged in <build>/extensions/ like hello
+set(AB_EXTENSION_DIRS "" CACHE STRING "extension source folders to build with the launcher, ;-separated")
+set(AB_EXTENSION_HOST autobleem-gui)
+foreach (dir ${AB_EXTENSION_DIRS})
+    get_filename_component(dir_name "${dir}" NAME)
+    add_subdirectory("${dir}" "${CMAKE_BINARY_DIR}/extension-sources/${dir_name}")
+endforeach ()
 
 if (AB_TARGET STREQUAL "win")
     # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
