@@ -315,12 +315,26 @@ Each step is one commit (a core commit plus a submodule bump where core changes)
 1. **Done, apart from hardware** (2026-09-24; "What the proof showed" above). Exports from the executable
    it is: no shared SDK library. What is left is on hardware (a Pi and the console, packed and unpacked)
    and goes with step 8.
-2. **Not done.** Core: the SDK surface (`include/autobleem/sdk/`), `AB_SDK_ABI` and the stamp,
-   `Extension`/`ExtensionHost`/`AB_EXTENSION`, `Env::getPathToExtensionsDir()`, `ExtensionService` with
-   `PluginLoader` and the crash guard (tests with in-process fakes), and `ab_add_extension`. The multi-
-   platform format's `AppManifest` (app format plan, step 1) comes first.
-3. **Not done.** A sample extension, `hello`, in autobleem-core's `examples/`: one themed screen, and a
-   background `poll()` that shows a notification. It is the SDK's smoke test in CI on every target.
+2. **Mostly done** (2026-09-24).
+   - Done:
+     - `Env::getPathToExtensionsDir()`/`getPathToExtensionsStateDir()`.
+     - In core: `PluginLoader` + `NativePluginLoader` (`core/services/plugin_loader.*`) and
+       `ExtensionCatalog` (`core/services/extension_catalog.*`: the ini through `AppManifest` with
+       `Plugin=`, `Network=`, `Background=`, the disabled list, the crash guard).
+     - In ab_classic: `gui/extension.h` (`Extension`, `ExtensionHost`, `AB_SDK_ABI`/`AB_SDK_STAMP` as a
+       macro, `AB_EXTENSION`), `gui/extension_runtime.*` (`ExtensionRuntime`: load + ABI check, run,
+       poll, suspend/resume, shutdown, the crash guard and exceptions around every call) and
+       `gui/extension_host_base.*` (the tagged log appender, the state dir, the network).
+     - Tests: `tests/core/test_extension_catalog.cpp` and `tests/classic/test_extension_runtime.cpp`
+       (fake plugins behind a fake loader).
+   - Still to do:
+     - the curated surface directory (`include/autobleem/sdk/`); until then the surface is every header
+       of the three libraries;
+     - `ab_add_extension` (step 3 builds it with the sample).
+3. **Not done.** A sample extension, `hello`, in the launcher repository (it links against the launcher's
+   executable, which core does not build): one themed screen, and a background `poll()` that shows a
+   notification. `ab_add_extension()` (`autobleem-core/cmake/ab_extension.cmake`) builds it. It is the
+   SDK's smoke test in CI on every target.
 4. **Not done.** The launcher: exported symbols (with the export list), `App` as `ExtensionHost`,
    `GuiExtensions`, the System menu item, `suspend`/`resume` around launches, `shutdown`, the 16
    languages. Walked through with `tools/ab_drive.py` on the Windows build with `hello` installed.
