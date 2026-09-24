@@ -209,6 +209,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 | Game Manager | The PS1 games as a list with their folders: delete a game, flush the covers. |
 | Hardware Information | The machine: system, CPU, storage, network, display, the pads. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6). |
 | Options | AutoBleem's settings (section 3.5). |
+| Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
 | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | About | Credits and licence. |
 | Power Off | After a confirmation: on the console AutoBleem's standby - the stick disconnected, the light red, Power brings the launcher back (section 2.1); on a Pi or PC the machine shuts down. |
@@ -351,6 +352,44 @@ tolerate and some do not.
   games and settings stay; the launcher rescans once after an update.
 - **PlayStation Classic**: run a newer `AutoBleemInstaller.exe` over the stick (section 2.1).
 
+### 3.12 Extensions and the AutoBleem Store
+
+**Extensions** add their own screens to the launcher. They live in `Extensions/<name>/` on the stick (on a
+Raspberry Pi its data partition, on Windows the data folder); to install one, unpack its zip there.
+**L2 + R2 → Extensions** lists them: Cross runs one, Triangle turns it off or on again. An extension that
+needs the network is not started without one, and one that stopped the launcher is turned off - the list
+says so.
+
+![The Extensions list](../images/en/extensions.jpg)
+
+**The AutoBleem Store** is the first extension: Apps and games to install with one press, on every system
+AutoBleem runs on (a PlayStation Classic needs the AutoBleem kernel's WiFi). Its four tabs, L1 / R1 between
+them:
+
+- **Apps** and **Games**: what the sources offer, each with its picture, version, size and source. Cross
+  installs (or updates, or tries again), Triangle removes what the Store installed. L2 / R2 or Left / Right
+  turn pages, **Select** shows one source at a time, **Start** searches the titles.
+- **Downloads**: what is downloading, waiting, failed or installed. Downloads go on in the background, also
+  after you leave the Store; starting a game or powering off only pauses them, and a stopped download
+  resumes where it stopped. An installed game appears on the shelf after the next scan, with the Store's
+  picture as its cover.
+- **Sources**: where the lists come from - AutoBleem's own catalog, a TSV list dropped into
+  `System/Extensions/store/sources/`, and the addresses you add with **Add a source URL**. Cross on one you
+  added renames it, changes its address, switches it between `http://` and `https://`, or removes it.
+
+![The Store's Apps tab](../images/en/store-apps.jpg)
+
+![A source's menu](../images/en/store-source-menu.jpg)
+
+What AutoBleem's catalog offers is also listed on the download site, `https://autobleem.retromenele.pl/store/`.
+**You are responsible for what the sources you add contain.**
+
+**Your own games on your network**: `abstored`, the Store's LAN server, serves a folder of PS1 games to
+the Store on the same network. It runs on any Linux machine - a Raspberry Pi, a home server - and only reads
+the folder. Start it with `abstored <games folder>`, open `http://<that machine>:8124/` in a browser to see
+what it serves and any problems it found, and add `http://<that machine>:8124/store.tsv` as a source. Its
+README (`ext_store/server/` in the source) has the details.
+
 <!-- pagebreak -->
 
 ## 4. Screens
@@ -380,9 +419,12 @@ Triangle on the shelf: every button of every screen on one page.
 
 ### 4.4 The on-screen keyboard
 
-Wherever a name is typed - a new memory card set, a game's title, a WiFi password - the same keyboard:
-the directions move, Cross types, Triangle deletes, Square is a space, L1 shifts, L2 moves the cursor,
-Start confirms, Circle cancels. A USB keyboard types straight in.
+Wherever text is typed - a memory card set, a game's title, a WiFi password, a source's address - the same
+keyboard, laid out like a phone's: letters, a page of symbols (`/ \ : ? & = % @ #` and the rest an address
+or a password needs) and two pages of accented letters, with Shift, the page key, Space, Backspace and
+Confirm on the bottom row. The directions move, Cross types, Triangle deletes, Square is a space, **L1** is
+Shift (twice for caps lock), **R1** the next page, **L2 / R2** move the cursor, Start confirms, Circle
+cancels. A USB keyboard types at any time: Enter confirms, Esc cancels.
 
 ![The on-screen keyboard](../images/en/keyboard.jpg)
 
@@ -415,8 +457,10 @@ same way (`UpdateRoms.exe <drive> --target rpi`), though a Pi does it by itself 
 
 ## 6. The console tools (PlayStation Classic)
 
-Two applications in the Apps set of a PlayStation Classic stick. Both draw in the launcher's theme and
-language, and both are driven by the pad - and, in the gamepad wizard, by the console's front buttons.
+Two tools for a PlayStation Classic stick. Both draw in the launcher's theme and language, and both are
+driven by the pad - and, in the gamepad wizard, by the console's front buttons. **PSC-Bios** is an
+extension that comes with the console package: *Hardware Information* in the system menu opens it, and it
+is in the Extensions list. **ABFlashKit** is an App in the Apps set.
 
 ### 6.1 PSC-Bios
 
