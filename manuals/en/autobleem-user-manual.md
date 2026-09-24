@@ -229,7 +229,7 @@ saves. Every change is applied at once.
 | Showing Timeout | How long the "Showing: ..." notification stays, in seconds (0 = for ever). |
 | **Sound**: Music, Background Music | Which track plays under the launcher (the theme's, or a file from `resources/music`), and whether one plays at all. |
 | **Emulation**: PS1 Emulator | `pcsx-abnxt` (the default: current PCSX-ReARMed with AutoBleem's additions) or `pcsx-ab` (the classic). A save state made by one does not load in the other. |
-| Widescreen, GFX Filter | The PS1 emulator's display settings for every game. |
+| Widescreen | The PS1 emulator's picture shape for every game. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch's PS1 core. |
 | Update RA Config | AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | **Library**: Show Internal Games | The console's built-in games in the PlayStation lists (PlayStation Classic only). |
@@ -249,7 +249,9 @@ The **game editor** shows the game's details on the right and its settings on th
 - **Game**: *Favorite* (in the Favorite Games group), *Lightgun Game* (a light-gun game - it joins the
   Lightgun group and always runs in RetroArch, whose PS1 core has the GunCon), *Play using RA* (this game
   runs in RetroArch), *Lock data* (the scanner leaves the game's title, serial and disc list as you set them).
-- **Video**: high resolution, scanlines and their level, frame skip, the GPU plugin.
+- **Video**: high resolution, scanlines and their level, frame skip, the GPU plugin, and the *Filter* - how
+  the picture is scaled: Off (plain pixels), Linear (smoothed) or Sharp (crisp pixels without shimmer;
+  `pcsx-abnxt` only - the classic `pcsx-ab` and RetroArch show it as Off).
 - **Emulator**: SpeedHack, the CPU clock, SPU interpolation, the boot logo (off skips the BIOS shell - for a
   homebrew disc whose custom logo breaks the boot), and with `pcsx-abnxt` the *Smoothing* filter and the
   *Sony hacks* toggle.

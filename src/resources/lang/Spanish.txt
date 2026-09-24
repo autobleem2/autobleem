@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -96,6 +96,7 @@ Favorite:=Favorito:
 Fetch box art online:=Obtener carátulas en línea:
 Fetching box art=Obteniendo carátulas
 File:=Archivo:
+Filter:=Filtro:
 Final score=Puntuación final
 Flush covers=Eliminar caratulas
 Folder:=Carpeta:
@@ -116,7 +117,6 @@ Game manager - Select game=Administrador de juegos - Elige juego
 GAME OVER=FIN DEL JUEGO
 games=juegos
 Games=Juegos
-GFX Filter:=Filtro GFX:
 Graphics=Graficos
 Hardware=Hardware
 Hardware Information=Informacion de Hardware
@@ -139,6 +139,7 @@ Library=Biblioteca
 LIFE LOST=VIDA PERDIDA
 Lightgun Game:=Juego de Pistola:
 Lightgun Games=Juegos de pistola
+Linear=Lineal
 Link Block=Link Block
 Link end Block=Link end Block
 LIVES=VIDAS
@@ -165,6 +166,7 @@ None=Ninguno
 Not connected=No conectado
 Not installed=No instalado
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=AVISO: Al menos un mando conectado no ha sido reconocido. Configuralo en la pagina de Informacion de Hardware.
+Off=Desactivado
 OK=Aceptar
 OOPS! Game crashed. Resume point not available.=OOPS! Juego dañado. Punto de resumen no disponible.
 Open Retroarch Menu=Abre Menu de Retoarch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=ELIGE RANURA PARA GUARDAR
 Serial:=Serial:
 SETTINGS=AJUSTES
 Share memory card=Compartir memory card
+Sharp=Nítido
 Show Internal Games:=Mostrar Juegos Internos:
 Showing Timeout (0 for no timeout):=Tiempo de Muestra (0 sin tiempo):
 Showing: All Games=Mostrando: Todos los Juegos

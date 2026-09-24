@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -96,6 +96,7 @@ Favorite:=Favorit:
 Fetch box art online:=Hent covers online:
 Fetching box art=Henter covers
 File:=Fil:
+Filter:=Filter:
 Final score=Slutresultat
 Flush covers=Ryd covers
 Folder:=Mappe:
@@ -116,7 +117,6 @@ Game manager - Select game=Spilbibliotek - Vælg spil
 GAME OVER=SPILLET SLUT
 games=spil
 Games=Spil
-GFX Filter:=Grafik Filter:
 Graphics=Grafik
 Hardware=Hardware
 Hardware Information=Hardwareinformation
@@ -139,6 +139,7 @@ Library=Bibliotek
 LIFE LOST=LIV MISTET
 Lightgun Game:=Lightgun-spil:
 Lightgun Games=Lightgun-spil
+Linear=Lineær
 Link Block=Link Blok
 Link end Block=Link Slut Blok
 LIVES=LIV
@@ -165,6 +166,7 @@ None=Ingen
 Not connected=Ikke forbundet
 Not installed=Ikke installeret
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=BEMÆRK: Mindst én tilsluttet controller genkendes ikke. Brug siden Hardwareinformation til at konfigurere den.
+Off=Fra
 OK=OK
 OOPS! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
 Open Retroarch Menu=Åbn RetroArch-menu
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=VÆLG SLOT FOR AT GEMME
 Serial:=Serienummer:
 SETTINGS=INDSTILLINGER
 Share memory card=Del hukommelseskort
+Sharp=Skarp
 Show Internal Games:=Vis interne spil:
 Showing Timeout (0 for no timeout):=Vis timeout (0 ingen timeout):
 Showing: All Games=Viser: Alle spil

@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -96,6 +96,7 @@ Favorite:=收藏：
 Fetch box art online:=在线获取封面：
 Fetching box art=正在获取封面
 File:=文件：
+Filter:=滤镜:
 Final score=最终得分
 Flush covers=清除封面
 Folder:=文件夹：
@@ -116,7 +117,6 @@ Game manager - Select game=游戏管理器 - 选择游戏
 GAME OVER=游戏结束
 games=游戏
 Games=游戏
-GFX Filter:=图像滤镜：
 Graphics=图形
 Hardware=硬件
 Hardware Information=硬件信息
@@ -139,6 +139,7 @@ Library=游戏库
 LIFE LOST=失去生命
 Lightgun Game:=光枪游戏：
 Lightgun Games=光枪游戏
+Linear=线性
 Link Block=链接块
 Link end Block=链接结束块
 LIVES=生命
@@ -165,6 +166,7 @@ None=无
 Not connected=未连接
 Not installed=未安装
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=注意：至少有一个已连接的手柄未被识别。请在硬件信息页面进行设置。
+Off=关闭
 OK=确定
 OOPS! Game crashed. Resume point not available.=糟糕！游戏崩溃了。存档点不可用。
 Open Retroarch Menu=打开 RetroArch 菜单
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=选择保存状态的槽位
 Serial:=序列号：
 SETTINGS=设置
 Share memory card=共享记忆卡
+Sharp=锐利
 Show Internal Games:=显示内置游戏：
 Showing Timeout (0 for no timeout):=提示显示时长（0 为不消失）：
 Showing: All Games=显示：全部游戏

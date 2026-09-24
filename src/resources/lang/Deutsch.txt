@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -96,6 +96,7 @@ Favorite:=Favorit:
 Fetch box art online:=Cover online laden:
 Fetching box art=Cover werden geladen
 File:=Datei:
+Filter:=Filter:
 Final score=Endstand
 Flush covers=Cover leeren
 Folder:=Ordner:
@@ -116,7 +117,6 @@ Game manager - Select game=Spielemanager - Spiel auswählen
 GAME OVER=SPIEL VORBEI
 games=spiele
 Games=Spiele
-GFX Filter:=Glättefilter:
 Graphics=Grafik
 Hardware=Hardware
 Hardware Information=Hardwareinformationen
@@ -139,6 +139,7 @@ Library=Bibliothek
 LIFE LOST=LEBEN VERLOREN
 Lightgun Game:=Lightgun-Spiel:
 Lightgun Games=Lightgun-Spiele
+Linear=Linear
 Link Block=Verknüpfungsblock
 Link end Block=Verknüpfungsendblock
 LIVES=LEBEN
@@ -165,6 +166,7 @@ None=Keine
 Not connected=Nicht verbunden
 Not installed=Nicht installiert
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=HINWEIS: Mindestens ein angeschlossener Controller wird nicht erkannt. Richten Sie ihn auf der Seite Hardwareinformationen ein.
+Off=Aus
 OK=OK
 OOPS! Game crashed. Resume point not available.=HOPPLA! Spiel abgestürzt. Fortsetzungspunkt nicht verfügbar.
 Open Retroarch Menu=RetroArch-Menü öffnen
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=SLOT ZUM SPEICHERN AUSWÄHLEN
 Serial:=Seriennummer:
 SETTINGS=EINSTELLUNGEN
 Share memory card=Memory Card teilen
+Sharp=Scharf
 Show Internal Games:=Interne Spiele anzeigen:
 Showing Timeout (0 for no timeout):=Anzeige-Timeout (0 kein Timeout):
 Showing: All Games=Zeige: Alle Spiele

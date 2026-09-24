@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -96,6 +96,7 @@ Favorite:=Favorits :
 Fetch box art online:=Recuperar las cobertas en linha:
 Fetching box art=Recuperacion de las cobertas
 File:=Fichièr:
+Filter:=Filtre :
 Final score=Marca finala
 Flush covers=Suprimir las cobèrturas
 Folder:=Dorsièr :
@@ -116,7 +117,6 @@ Game manager - Select game=Gestionari de jòcs - Causir un jòc
 GAME OVER=PARTIDA ACABADA
 games=jòcs
 Games=Jòcs
-GFX Filter:=Filtre GFX :
 Graphics=Grafics
 Hardware=Material
 Hardware Information=Entresenhas de material
@@ -139,6 +139,7 @@ Library=Bibliotèca
 LIFE LOST=VIDA PERDUDA
 Lightgun Game:=Jòc Lightgun:
 Lightgun Games=Jòcs al pistolet
+Linear=Linear
 Link Block=Link end Block
 Link end Block=Fin de blòc ligat
 LIVES=VIDAS
@@ -165,6 +166,7 @@ None=Cap
 Not connected=Pas connectat
 Not installed=Pas installat
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=AVÍS : Al mens un contrarotlador connectat es pas reconegut. Configuratz-lo dins la pagina Entresenhas de material.
+Off=Desactivat
 OK=OK
 OOPS! Game crashed. Resume point not available.=Ops ! Lo jòc a agut un problèma. Lo punt de represa es pas disponible.
 Open Retroarch Menu=Dobrir lo menú RetroArch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=CAUSISSÈTZ UN LÒC PER SALVAGARDAR L'ESTAT
 Serial:=Numèro de seria :
 SETTINGS=PARAMÈTRES
 Share memory card=Partejar la carta memòria
+Sharp=Net
 Show Internal Games:=Afichar los jòcs intèrnes :
 Showing Timeout (0 for no timeout):=Afichatge Timeout (0 cap de timeout) :
 Showing: All Games=Afichatge : Totes los jòcs

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -96,6 +96,7 @@ Favorite:=Suosikki:
 Fetch box art online:=Hae kansikuvat verkosta:
 Fetching box art=Haetaan kansikuvia
 File:=Tiedosto:
+Filter:=Suodatin:
 Final score=Lopullinen pisteet
 Flush covers=Tyhjennä kannet
 Folder:=Kansio:
@@ -116,7 +117,6 @@ Game manager - Select game=Pelien hallinta - Valitse peli
 GAME OVER=PELI PÄÄTTYI
 games=pelit
 Games=Pelit
-GFX Filter:=GFX-Suodatin:
 Graphics=Grafiikat
 Hardware=Laitteisto
 Hardware Information=Laitteistotiedot
@@ -139,6 +139,7 @@ Library=Kirjasto
 LIFE LOST=ELÄMÄ MENETETTY
 Lightgun Game:=Lightgun-peli:
 Lightgun Games=Valopistoolipelit
+Linear=Lineaarinen
 Link Block=Linkki Esto
 Link end Block=Linkin päätylohko
 LIVES=ELÄMÄT
@@ -165,6 +166,7 @@ None=Ei mitään
 Not connected=Ei yhteyttä
 Not installed=Ei asennettu
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=HUOMIO: Vähintään yhtä liitettyä ohjainta ei tunnistettu. Määritä se Laitteistotiedot-sivulla.
+Off=Pois
 OK=OK
 OOPS! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
 Open Retroarch Menu=Avaa RetroArch valikko
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=VALITSE PAIKKA JATKO-PISTEELLE
 Serial:=Sarja:
 SETTINGS=ASETUKSET
 Share memory card=Jaa muistikortti
+Sharp=Terävä
 Show Internal Games:=Näytä Sisäiset Pelit:
 Showing Timeout (0 for no timeout):=Näytetään: aikakatkaisu (0 ei aikakatkaisua)
 Showing: All Games=Näytetään: Kaikki Pelit

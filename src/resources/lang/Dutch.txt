@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -96,6 +96,7 @@ Favorite:=Favoriet:
 Fetch box art online:=Hoesjes online ophalen:
 Fetching box art=Hoesjes ophalen
 File:=Bestand:
+Filter:=Filter:
 Final score=Eindscore
 Flush covers=Covers wissen
 Folder:=Map:
@@ -116,7 +117,6 @@ Game manager - Select game=Game manager - Selecteer game
 GAME OVER=GAME OVER
 games=games
 Games=Spellen
-GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
 Hardware Information=Hardware informatie
@@ -139,6 +139,7 @@ Library=Bibliotheek
 LIFE LOST=LEVEN VERLOREN
 Lightgun Game:=Lightgun-spel:
 Lightgun Games=Lightgun-spellen
+Linear=Lineair
 Link Block=Link Blok
 Link end Block=Link Eind Blok
 LIVES=LEVENS
@@ -165,6 +166,7 @@ None=Geen
 Not connected=Niet verbonden
 Not installed=Niet geïnstalleerd
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=LET OP: Ten minste één aangesloten controller wordt niet herkend. Gebruik de pagina Hardware-informatie om deze in te stellen.
+Off=Uit
 OK=OK
 OOPS! Game crashed. Resume point not available.=OEPS! Game is gecrasht. Hervattingspunt niet beschikbaar.
 Open Retroarch Menu=Open RetroArch menu
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=SELECTEER SLOT OM OP TE SLAAN
 Serial:=Serienummer:
 SETTINGS=INSTELLINGEN
 Share memory card=Geheugenkaart delen
+Sharp=Scherp
 Show Internal Games:=Toon interne games:
 Showing Timeout (0 for no timeout):=Toon timeout (0 geen timeout):
 Showing: All Games=Toont: Alle games

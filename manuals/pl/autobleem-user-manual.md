@@ -230,7 +230,7 @@ i zapisuje. Każda zmiana działa od razu.
 | Czas wyświetlania | Jak długo zostaje powiadomienie "Wyświetla: ..." w sekundach (0 = zawsze). |
 | **Dźwięk**: Muzyka, Muzyka w tle | Który utwór gra pod launcherem (z motywu albo plik z `resources/music`) i czy w ogóle gra. |
 | **Emulacja**: Emulator PS1 | `pcsx-abnxt` (domyślny: aktualny PCSX-ReARMed z dodatkami AutoBleem) albo `pcsx-ab` (klasyczny). Stan gry zapisany jednym nie wczyta się w drugim. |
-| Szeroki ekran, Filtr GFX | Ustawienia obrazu emulatora PS1 dla każdej gry. |
+| Szeroki ekran | Proporcje obrazu emulatora PS1 dla każdej gry. |
 | Graj we wszystkie gry PSX w RA | Każda gra PS1 startuje w rdzeniu PS1 RetroArch. |
 | Aktualizuj konfigurację RA | AutoBleem wpisuje swoje ustawienia do konfiguracji RetroArch, gdy uruchamia tam grę. |
 | **Biblioteka**: Pokaż gry wewnętrzne | Wbudowane gry konsoli na listach PlayStation (tylko PlayStation Classic). |
@@ -249,7 +249,9 @@ gry), **Karta pamięci** (jej karta) i **Wznów** (jej stany gry). Krzyżyk otwi
 - **Gra**: *Ulubiona* (w grupie Ulubione), *Gra na pistolet świetlny* (trafia do grupy pistoletu i zawsze
   chodzi w RetroArch, którego rdzeń PS1 ma GunCon), *Graj w RA* (ta gra chodzi w RetroArch), *Zablokuj dane*
   (skaner zostawia tytuł, numer seryjny i listę płyt tak, jak je ustawisz).
-- **Obraz**: wysoka rozdzielczość, scanlines i ich poziom, pomijanie klatek, wtyczka GPU.
+- **Obraz**: wysoka rozdzielczość, scanlines i ich poziom, pomijanie klatek, wtyczka GPU oraz *Filtr* -
+  jak obraz jest skalowany: Wyłączony (czyste piksele), Liniowy (wygładzony) albo Ostry (wyraźne piksele bez
+  migotania; tylko `pcsx-abnxt` - klasyczny `pcsx-ab` i RetroArch traktują go jak Wyłączony).
 - **Emulator**: SpeedHack, zegar CPU, interpolacja SPU, logo startowe (wyłączone pomija powłokę BIOS - dla
   płyty homebrew, której własne logo psuje start), a z `pcsx-abnxt` filtr *Wygładzanie* i przełącznik
   *Hacki Sony*.

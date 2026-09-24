@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -96,6 +96,7 @@ Favorite:=Setari preferate:
 Fetch box art online:=Preia coperțile online:
 Fetching box art=Se preiau coperțile
 File:=Fișier:
+Filter:=Filtru:
 Final score=Scor final
 Flush covers=Sterge cover-urile
 Folder:=Dosar:
@@ -116,7 +117,6 @@ Game manager - Select game=Manager jocuri - selecteaza joc
 GAME OVER=JOC TERMINAT
 games=Jocuri
 Games=Jocuri
-GFX Filter:=Filtru GFX:
 Graphics=Grafica
 Hardware=Hardware
 Hardware Information=Informatii Hardware
@@ -139,6 +139,7 @@ Library=Bibliotecă
 LIFE LOST=VIATA PIERDUTA
 Lightgun Game:=Joc Lightgun:
 Lightgun Games=Jocuri cu pistol
+Linear=Liniar
 Link Block=Bloc de Legatura
 Link end Block=Sfarsit Bloc de Legatura
 LIVES=VIETI
@@ -165,6 +166,7 @@ None=Niciunul
 Not connected=Neconectat
 Not installed=Neinstalat
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=ATENTIE: Cel putin un controller conectat nu este recunoscut. Configureaza-l din pagina Informatii Hardware.
+Off=Oprit
 OK=OK
 OOPS! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
 Open Retroarch Menu=Deschide Meniul RetroArch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=Selecteaza SLOT pentru a salva starea curenta
 Serial:=Serie:
 SETTINGS=Setari
 Share memory card=Partajează cardul de memorie
+Sharp=Clar
 Show Internal Games:=Arata Jocurile Interne:
 Showing Timeout (0 for no timeout):=Showing Timeout (0 no timeout):
 Showing: All Games=Se arata: Toate Jocurile

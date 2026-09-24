@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 284
+# Untranslated: 0 / Total: 287
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -96,6 +96,7 @@ Favorite:=Favorite:
 Fetch box art online:=Fetch box art online:
 Fetching box art=Fetching box art
 File:=File:
+Filter:=Filter:
 Final score=Final score
 Flush covers=Flush covers
 Folder:=Folder:
@@ -116,7 +117,6 @@ Game manager - Select game=Game manager - Select game
 GAME OVER=GAME OVER
 Games=Games
 games=games
-GFX Filter:=GFX Filter:
 Graphics=Graphics
 Hardware=Hardware
 Hardware Information=Hardware Information
@@ -139,6 +139,7 @@ Library=Library
 LIFE LOST=LIFE LOST
 Lightgun Game:=Lightgun Game:
 Lightgun Games=Lightgun Games
+Linear=Linear
 Link Block=Link Block
 Link end Block=Link end Block
 LIVES=LIVES
@@ -165,6 +166,7 @@ None=None
 Not connected=Not connected
 Not installed=Not installed
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.
+Off=Off
 OK=OK
 OOPS! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
 Open Retroarch Menu=Open Retroarch Menu
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=SELECT SLOT TO SAVE STATE
 Serial:=Serial:
 SETTINGS=SETTINGS
 Share memory card=Share memory card
+Sharp=Sharp
 Show Internal Games:=Show Internal Games:
 Showing Timeout (0 for no timeout):=Showing Timeout (0 for no timeout):
 Showing: All Games=Showing: All Games

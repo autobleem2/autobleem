@@ -27,6 +27,7 @@ using namespace std;
 #define OPT_BOOTLOGO 12
 #define OPT_SMOOTHING 13 // pcsx-abnxt only
 #define OPT_SONYHACKS 14 // pcsx-abnxt only
+#define OPT_FILTER 15
 
 //*******************************
 // GuiEditor::nxtEmulator
@@ -69,6 +70,10 @@ void GuiEditor::buildRows() {
     valueRow(_("Frameskip:"), to_string(pcsx.frameskip), OPT_FRAMESKIP);
     if (!internal)
         valueRow(_("Plugin:"), pcsx.gpu, OPT_PLUGIN);
+    // how the picture is scaled to the screen: pcsx-abnxt has all three, the classic pcsx-ab and RetroArch
+    // play Sharp as Off (LaunchService)
+    const string filterNames[] = {_("Off"), _("Linear"), _("Sharp")};
+    valueRow(_("Filter:"), filterNames[pcsx.filter], OPT_FILTER);
     if (nxtEmulator()) // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
         valueRow(_("Smoothing:"), GameSettingsService::SmoothingNames[pcsx.smoothing], OPT_SMOOTHING);
 
@@ -170,6 +175,10 @@ void GuiEditor::processOptionChange(bool direction) {
 
     case OPT_SONYHACKS:
         svc.setSonyHacks(settings, direction);
+        break;
+
+    case OPT_FILTER:
+        svc.setFilter(settings, pcsx.filter + step);
         break;
     }
 }

@@ -133,7 +133,7 @@ while true; do
 
     selection=""
     if [ -f "$RC_DIR/autobleem_cfg.sh" ]; then
-        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=..., AB_MIP=...
+        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=...
         # shellcheck disable=SC1091
         . "$RC_DIR/autobleem_cfg.sh"
         selection="${AB_SELECTION:-}"

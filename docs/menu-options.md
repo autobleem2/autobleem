@@ -49,7 +49,7 @@ Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Mem
 | Show Internal Games | Whether the console's built-in games appear in the PS1 lists (not on a Raspberry Pi). |
 | Cover Style | The jewel-case frame around covers. |
 | Music / Background Music | Which track plays, and whether one plays at all. Stepping through themes no longer restarts the track. |
-| Widescreen, GFX Filter | The PS1 emulator's display settings for every game. |
+| Widescreen | The PS1 emulator's aspect ratio for every game. (The picture filter is per game since 2026-09-24 - the game editor's Filter row.) |
 | PS1 Emulator | Which emulator plays PS1 games: `pcsx-ab`, the one AutoBleem has always shipped, or `pcsx-abnxt`, the next one (current upstream PCSX-ReARMed with AutoBleem's additions). Both use the same settings and memory cards; a resume point saved by one does not load in the other - the game then starts from its beginning. |
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
@@ -69,6 +69,7 @@ Cross saves and leaves, Circle leaves without saving, Start picks a random theme
 | Lightgun Game | The game is a light-gun game: it joins the Lightgun set and always runs in RetroArch (its pcsx_rearmed core has the guncon); switching it on switches Play using RA on, and keeps it on. |
 | Play using RA | This PS1 game runs in RetroArch. |
 | Lock data | The scanner leaves this game's Game.ini alone (its title, serial, region and disc list stay as you set them). |
+| Filter | How the picture is scaled to the screen: Off (plain pixels), Linear (smoothed) or Sharp (crisp pixels without shimmer). The game's pcsx.cfg `plat_target.hwfilter` (0/1/2) - the key pcsx-abnxt saves from its own menu - passed as `-filter`; the classic pcsx-ab has no Sharp and plays it as Off, and RetroArch's `video_smooth` is on for Linear only. |
 | High res, SpeedHack, Scanlines, Scanline Level, Clock, Frameskip, Plugin, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |
 
 Triangle renames the game, Square changes its memory card, Start shares a new card, Circle leaves.

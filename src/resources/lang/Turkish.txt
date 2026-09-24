@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -96,6 +96,7 @@ Favorite:=Favori:
 Fetch box art online:=Kapak resimlerini çevrimiçi al:
 Fetching box art=Kapak resimleri alınıyor
 File:=Dosya:
+Filter:=Filtre:
 Final score=Son skor
 Flush covers=Kapakları temizle
 Folder:=Klasör:
@@ -116,7 +117,6 @@ Game manager - Select game=Oyun yöneticisi - Oyun seçin
 GAME OVER=OYUN BİTTİ
 games=oyun
 Games=Oyunlar
-GFX Filter:=GFX Filtresi:
 Graphics=Grafik
 Hardware=Donanım
 Hardware Information=Donanım Bilgisi
@@ -139,6 +139,7 @@ Library=Kütüphane
 LIFE LOST=CAN KAYBEDİLDİ
 Lightgun Game:=Işıklı Silah Oyunu:
 Lightgun Games=Işıklı Silah Oyunları
+Linear=Doğrusal
 Link Block=Bağ Bloku
 Link end Block=Bağ Bitiş Bloku
 LIVES=CAN
@@ -165,6 +166,7 @@ None=Yok
 Not connected=Bağlı değil
 Not installed=Yüklü değil
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=UYARI: Bağlı en az bir kumanda tanınmıyor. Donanım Bilgisi sayfasından ayarlayın.
+Off=Kapalı
 OK=Tamam
 OOPS! Game crashed. Resume point not available.=HATA! Oyun çöktü. Devam noktası mevcut değil.
 Open Retroarch Menu=RetroArch Menüsünü Aç
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=KAYDETMEK İÇİN SLOT SEÇİN
 Serial:=Seri No:
 SETTINGS=AYARLAR
 Share memory card=Hafıza kartını paylaş
+Sharp=Keskin
 Show Internal Games:=Dahili Oyunları Göster:
 Showing Timeout (0 for no timeout):=Gösterim Zaman Aşımı (0 zaman aşımı yok):
 Showing: All Games=Gösteriliyor: Tüm Oyunlar

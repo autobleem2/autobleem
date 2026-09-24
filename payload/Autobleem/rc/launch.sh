@@ -33,6 +33,12 @@ if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
   EMU_DIR=/media/Autobleem/bin/emu
 fi
 echo "emulator: $EMU_DIR"
+# $8 is the game's filter as pcsx-abnxt numbers it (0 Off, 1 Linear, 2 Sharp) and nxt gets it as is; the
+# classic pcsx-ab counts the other way round (0 bilinear, 1 nearest) and has no Sharp, so Sharp is Off
+FILTER="${8:-0}"
+if [ "$EMU_DIR" != /media/Autobleem/bin/emunxt ]; then
+  if [ "$FILTER" = "1" ]; then FILTER=0; else FILTER=1; fi
+fi
 LANG_OPT=()
 if [ "$EMU_DIR" = /media/Autobleem/bin/emunxt ] && [ -n "${11:-}" ]; then
   LANG_OPT=(-language "${11}")
@@ -60,9 +66,9 @@ ln -s "$EMU_DIR/plugins" /tmp/runpcsx/plugins
 
 if [ "$6" == "0" ]
 then
-  /tmp/pcsx -filter $8 -ratio $7 -lang $3 -region 4 -enter 1 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
+  /tmp/pcsx -filter $FILTER -ratio $7 -lang $3 -region 4 -enter 1 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
 else
-  /tmp/pcsx -filter $8 -ratio $7 -lang $3 -region 4 -enter 1 -load $6 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
+  /tmp/pcsx -filter $FILTER -ratio $7 -lang $3 -region 4 -enter 1 -load $6 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
 fi
 rc=$?
 echo "pcsx-ab exited with status $rc" | tee -a "$LOGS/pcsx.log"

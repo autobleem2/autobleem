@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -96,6 +96,7 @@ Favorite:=Favori :
 Fetch box art online:=Récupérer les jaquettes en ligne :
 Fetching box art=Récupération des jaquettes
 File:=Fichier :
+Filter:=Filtre :
 Final score=Score final
 Flush covers=Vider les jaquettes
 Folder:=Dossier:
@@ -116,7 +117,6 @@ Game manager - Select game=Gestion des jeux - Choisir un jeu
 GAME OVER=PARTIE TERMINÉE
 games=jeux
 Games=Jeux
-GFX Filter:=Filtre graphique:
 Graphics=Graphismes
 Hardware=Matériel
 Hardware Information=Informations matérielles
@@ -139,6 +139,7 @@ Library=Bibliothèque
 LIFE LOST=VIE PERDUE
 Lightgun Game:=Jeu Lightgun:
 Lightgun Games=Jeux au pistolet
+Linear=Linéaire
 Link Block=Bloc de liaison
 Link end Block=Bloc de fin de liaison
 LIVES=VIES
@@ -165,6 +166,7 @@ None=Aucun
 Not connected=Non connecté
 Not installed=Non installé
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=AVIS : Au moins une manette connectée n'est pas reconnue. Configurez-la depuis la page Informations matérielles.
+Off=Désactivé
 OK=OK
 OOPS! Game crashed. Resume point not available.=OOPS ! Le jeu a planté. Point de reprise non disponible.
 Open Retroarch Menu=Ouvrir le menu RetroArch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=Sélectionné le point de reprise pour sauvegarder
 Serial:=Série :
 SETTINGS=Configuration
 Share memory card=Partager la carte mémoire
+Sharp=Net
 Show Internal Games:=Afficher les jeux internes :
 Showing Timeout (0 for no timeout):=Délai d'affichage (0 aucun délai) :
 Showing: All Games=Affichage : Tous les jeux

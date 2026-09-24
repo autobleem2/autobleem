@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -96,6 +96,7 @@ Favorite:=Oblíbené:
 Fetch box art online:=Stahovat obaly online:
 Fetching box art=Stahování obalů
 File:=Soubor:
+Filter:=Filtr:
 Final score=Konečné skóre
 Flush covers=Smazat obaly
 Folder:=Složka:
@@ -116,7 +117,6 @@ Game manager - Select game=Správce her - Vybrat hru
 GAME OVER=KONEC HRY
 games=hry
 Games=Hry
-GFX Filter:=Grafický filtr:
 Graphics=Grafika
 Hardware=Hardware
 Hardware Information=Informace o hardwaru
@@ -139,6 +139,7 @@ Library=Knihovna
 LIFE LOST=ZTRÁTA ŽIVOTA
 Lightgun Game:=Hra Lightgun:
 Lightgun Games=Hry se světelnou pistolí
+Linear=Lineární
 Link Block=Propojený blok
 Link end Block=Konec propojeného bloku
 LIVES=ŽIVOTY
@@ -165,6 +166,7 @@ None=Žádný
 Not connected=Nepřipojeno
 Not installed=Nenainstalováno
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=UPOZORNĚNÍ: Alespoň jeden připojený ovladač nebyl rozpoznán. Nastavte jej na stránce Informace o hardwaru.
+Off=Vypnuto
 OK=OK
 OOPS! Game crashed. Resume point not available.=Oh! Hra spadla. Bod obnovy není k dispozícii.
 Open Retroarch Menu=Otevřít nabídku RetroArch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=VYBERTE POZICI, NA KTEROU SE ULOŽÍ ROZEHRANÁ HRA
 Serial:=Serial:
 SETTINGS=NASTAVENÍ
 Share memory card=Sdílet paměťovou kartu
+Sharp=Ostrý
 Show Internal Games:=Zobrazit interní hry:
 Showing Timeout (0 for no timeout):=Časový limit zobrazení (0 bez limitu):
 Showing: All Games=Zobrazeno: Všechny hry

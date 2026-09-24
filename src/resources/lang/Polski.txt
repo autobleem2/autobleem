@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -96,6 +96,7 @@ Favorite:=Ulubione:
 Fetch box art online:=Pobieraj okładki z sieci:
 Fetching box art=Pobieranie okładek
 File:=Plik:
+Filter:=Filtr:
 Final score=Wynik końcowy
 Flush covers=Wyczyść okładki
 Folder:=Folder:
@@ -116,7 +117,6 @@ Game manager - Select game=Manadżer gier - Wybierz grę
 GAME OVER=KONIEC GRY
 games=gry
 Games=Gry
-GFX Filter:=Filtr grafiki:
 Graphics=Grafika
 Hardware=Sprzęt
 Hardware Information=Informacje Sprzętowe
@@ -139,6 +139,7 @@ Library=Biblioteka
 LIFE LOST=UTRATA ŻYCIA
 Lightgun Game:=Gra Lightgun:
 Lightgun Games=Gry Lightgun
+Linear=Liniowy
 Link Block=Polaczony Blok
 Link end Block=Blok Koncowy
 LIVES=ŻYCIA
@@ -165,6 +166,7 @@ None=Brak
 Not connected=Nie połączono
 Not installed=Nie zainstalowano
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=UWAGA: Co najmniej jeden podłączony kontroler nie został rozpoznany. Skonfiguruj go na stronie Informacje o sprzęcie.
+Off=Wyłączony
 OK=OK
 OOPS! Game crashed. Resume point not available.=UUPS! Wysypało grę. Punkt wznowienia niedostępny.
 Open Retroarch Menu=Otwiera Menu Retroarch
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=WYBIERZ SLOT DO ZAPISU
 Serial:=Serial:
 SETTINGS=USTAWIENIA
 Share memory card=Udostępnij kartę pamięci
+Sharp=Ostry
 Show Internal Games:=Pokazuj Wewnętrzne Gry:
 Showing Timeout (0 for no timeout):=Czas Wyświetlania (0 ciągle)
 Showing: All Games=Wyświetla: Wszystkie Gry

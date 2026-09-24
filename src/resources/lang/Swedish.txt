@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 5 / Total: 284
+# Untranslated: 5 / Total: 287
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -96,6 +96,7 @@ Favorite:=Favorit:
 Fetch box art online:=Hämta omslag online:
 Fetching box art=Hämtar omslag
 File:=Fil:
+Filter:=Filter:
 Final score=Slutresultat
 Flush covers=Nollställ omslag
 Folder:=Mapp:
@@ -116,7 +117,6 @@ Game manager - Select game=Spelbibliotek - Välj spel
 GAME OVER=SPELET ÄR SLUT
 games=spel
 Games=Spel
-GFX Filter:=Grafikfilter:
 Graphics=Grafik
 Hardware=Hårdvara
 Hardware Information=Hårdvaruinformation
@@ -139,6 +139,7 @@ Library=Bibliotek
 LIFE LOST=LIV FÖRLORAT
 Lightgun Game:=Lightgun-spel:
 Lightgun Games=Lightgun-spel
+Linear=Linjär
 Link Block=Länkblock
 Link end Block=Slutblock länk
 LIVES=LIV
@@ -165,6 +166,7 @@ None=Ingen
 Not connected=Inte ansluten
 Not installed=Inte installerad
 NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup.=OBS: Minst en ansluten handkontroll känns inte igen. Ställ in den på sidan Hårdvaruinformation.
+Off=Av
 OK=OK
 OOPS! Game crashed. Resume point not available.=Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
 Open Retroarch Menu=Öppna RetroArch-meny
@@ -231,6 +233,7 @@ SELECT SLOT TO SAVE STATE=VÄLJ SPARPUNKT ATT SPARA TILL
 Serial:=Serial:
 SETTINGS=INSTÄLLNINGAR
 Share memory card=Dela minneskort
+Sharp=Skarp
 Show Internal Games:=Visa interna spel:
 Showing Timeout (0 for no timeout):=Visningstimeout (0 ingen timeout):
 Showing: All Games=Visar: Alla spel
