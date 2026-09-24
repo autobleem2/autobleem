@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -52,6 +52,7 @@ Copy=Copiar
 Core:=Core:
 Cores=Còrs
 Cover Style:=Estil cobèrtura :
+Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
 Custom=Personalizada
 Custom Memory Cards=Cartas memòria personalizadas
@@ -68,6 +69,7 @@ Delete card=Suprimir la carta
 Delete game=Suprimir lo jòc
 Delete games, flush covers=Suprimir de jòcs, voidar las cobèrtas
 Delete the settings saved in the emulator and use AutoBleem's again?=Suprimir los paramètres enregistrats dins l'emulador e tornar prendre los d'AutoBleem ?
+Diagnostics=Diagnostic
 Disable=Desactivar
 Disabled=Desactivada
 Display and input=Afichatge e entradas
@@ -105,6 +107,7 @@ File:=Fichièr:
 Filter:=Filtre :
 Final score=Marca finala
 Flush covers=Suprimir las cobèrturas
+Folder=Dorsièr
 Folder:=Dorsièr :
 Font:=Polissa:
 Frameskip:=Frameskip :
@@ -136,6 +139,7 @@ INTERNAL=INTÈRNA
 Internal=Intèrna
 Internal Games=Jòcs intèrnes
 It could not be loaded=Se podiá pas cargar
+Keep logs on the stick:=Gardar los jornals sus la clau :
 Kernel=Nucli
 Keyboard=Clavièr
 Language:=Lenga :
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Cargament ... Esperatz ...
 Loading...=Cargament...
 Localization support=Assisténcia localizacion
 Lock data:=Verrolhar las donadas :
+Logs=Jornals
 Look for new, changed or removed games=Cercar de jòcs novèls, modificats o suprimits
 Memory=Memòria
 MEMORY CARD=CARTA MEMÒRIA
@@ -227,7 +232,9 @@ Run=Aviar
 Run an installed extension=Aviar una extension installada
 Run using RetroArch=Lançar amb RetroArch
 Safely power off the console=Atudar la consòla en tota seguretat
+Save logs=Enregistrar los jornals
 Saved in the emulator=Enregistrat dins l'emulador
+Saved to=Enregistrats dins
 Scan complete:=Escandalhatge acabat :
 Scanline Level:=Nivèl d'escansion
 Scanlines:=Linhas d'escansion :

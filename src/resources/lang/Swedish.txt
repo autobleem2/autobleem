@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -52,6 +52,7 @@ Copy=Kopiera
 Core:=Core:
 Cores=Kärnor
 Cover Style:=Omslagsstil:
+Crash logs:=Kraschloggar:
 Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
 Custom=Anpassad
 Custom Memory Cards=Anpassade minneskort
@@ -68,6 +69,7 @@ Delete card=Radera kort
 Delete game=Ta bort spel
 Delete games, flush covers=Ta bort spel, rensa omslag
 Delete the settings saved in the emulator and use AutoBleem's again?=Radera inställningarna som sparats i emulatorn och använd AutoBleems igen?
+Diagnostics=Diagnostik
 Disable=Inaktivera
 Disabled=Inaktiverad
 Display and input=Skärm och inmatning
@@ -105,6 +107,7 @@ File:=Fil:
 Filter:=Filter:
 Final score=Slutresultat
 Flush covers=Nollställ omslag
+Folder=Mapp
 Folder:=Mapp:
 Font:=Teckensnitt:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interna spel
 It could not be loaded=Den kunde inte läsas in
+Keep logs on the stick:=Behåll loggar på minnet:
 Kernel=Kärna
 Keyboard=Tangentbord
 Language:=Språk:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Laddar ... Vänligen vänta ...
 Loading...=Läser in...
 Localization support=Lokaliseringshjälp
 Lock data:=Lås data:
+Logs=Loggar
 Look for new, changed or removed games=Sök efter nya, ändrade eller borttagna spel
 Memory=Minne
 MEMORY CARD=MINNESKORT
@@ -227,7 +232,9 @@ Run=Kör
 Run an installed extension=Kör ett installerat tillägg
 Run using RetroArch=Kör med RetroArch
 Safely power off the console=Stäng av konsolen säkert
+Save logs=Spara loggar
 Saved in the emulator=Sparat i emulatorn
+Saved to=Sparade i
 Scan complete:=Skanning klar:
 Scanline Level:=Scanline-nivå:
 Scanlines:=Scanlines:

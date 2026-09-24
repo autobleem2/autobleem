@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -52,6 +52,7 @@ Copy=Kopírovať
 Core:=Jadro:
 Cores=Jadrá
 Cover Style:=Štýl obalu:
+Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 Custom=Vlastné
 Custom Memory Cards=Vlastné Pamäťové karty
@@ -68,6 +69,7 @@ Delete card=Zmazať kartu
 Delete game=Zmazať hru
 Delete games, flush covers=Zmazať hry, vyčistiť obaly
 Delete the settings saved in the emulator and use AutoBleem's again?=Vymazať nastavenia uložené v emulátore a znova použiť nastavenia AutoBleemu?
+Diagnostics=Diagnostika
 Disable=Vypnúť
 Disabled=Vypnuté
 Display and input=Obraz a vstup
@@ -105,6 +107,7 @@ File:=Súbor:
 Filter:=Filter:
 Final score=Konečné skóre
 Flush covers=Zmazané obaly
+Folder=Priečinok
 Folder:=Priečinok:
 Font:=Písmo:
 Frameskip:=Preskočenie snímok:
@@ -136,6 +139,7 @@ INTERNAL=ORIGINÁLNE
 Internal=Originálne
 Internal Games=Originálne hry
 It could not be loaded=Nepodarilo sa ho načítať
+Keep logs on the stick:=Uchovávať logy na kľúči:
 Kernel=Jadro
 Keyboard=Klávesnica
 Language:=Jazyk:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Nahrávam ... Čakajte prosím ...
 Loading...=Načítava sa...
 Localization support=Podpora lokalizácie
 Lock data:=Uzamknúť zmeny:
+Logs=Logy
 Look for new, changed or removed games=Vyhľadáť nové, zmenené alebo odstránené hry
 Memory=Pamäť
 MEMORY CARD=PAMÄŤOVÁ KARTA
@@ -227,7 +232,9 @@ Run=Spustiť
 Run an installed extension=Spustiť nainštalované rozšírenie
 Run using RetroArch=Spustiť cez RetroArch
 Safely power off the console=Bezpečne vypnúť konzolu
+Save logs=Uložiť logy
 Saved in the emulator=Uložené v emulátore
+Saved to=Uložené do
 Scan complete:=Skenovanie dokončené:
 Scanline Level:=Úroveň obrazových riadkov:
 Scanlines:=Obrazové riadky:

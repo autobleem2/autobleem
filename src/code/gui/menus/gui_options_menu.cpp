@@ -132,6 +132,12 @@ void GuiOptions::fill() {
                        vector<string>({"release", "testing", "nightly", "off"}));
 #endif
 
+    // the logs live in RAM and reach the stick only after a crash (docs/quiet-stick-plan.md); a tester keeps
+    // them all - from the next start, which is when the logs dir is chosen. The same switch as the
+    // System/Logs/keep marker, which this row makes and removes.
+    heading(_("Diagnostics"));
+    lines.emplace_back(CFG_KEEPLOGS, _("Keep logs on the stick:"), "keeplogs", true, vector<string>({"false", "true"}));
+
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
 }
 
@@ -250,6 +256,8 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
 // what a changed row makes the screen reload: the theme (everything), the language (the fonts may change
 // with it - Chinese), a font choice, the music; with the spinner over the panel while it happens
 void GuiOptions::reloadFor(int id, const string &nextValue) {
+    if (id == CFG_KEEPLOGS)
+        Env::setKeepLogsMarker(nextValue == "true"); // what the rc scripts look at, from the next boot
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || id == CFG_FONT;
     if (!theme && !fonts)

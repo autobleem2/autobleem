@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -52,6 +52,7 @@ Copy=Kopyala
 Core:=Çekirdek:
 Cores=Çekirdekler
 Cover Style:=Kapak Stili:
+Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
 Custom=Özel
 Custom Memory Cards=Özel Bellek Kartları
@@ -68,6 +69,7 @@ Delete card=Kartı sil
 Delete game=Oyunu sil
 Delete games, flush covers=Oyunları sil, kapakları temizle
 Delete the settings saved in the emulator and use AutoBleem's again?=Emülatörde kaydedilen ayarlar silinip yeniden AutoBleem ayarları kullanılsın mı?
+Diagnostics=Tanılama
 Disable=Devre dışı bırak
 Disabled=Devre dışı
 Display and input=Ekran ve giriş
@@ -105,6 +107,7 @@ File:=Dosya:
 Filter:=Filtre:
 Final score=Son skor
 Flush covers=Kapakları temizle
+Folder=Klasör
 Folder:=Klasör:
 Font:=Yazı tipi:
 Frameskip:=Kare Atlama:
@@ -136,6 +139,7 @@ INTERNAL=DAHILİ
 Internal=Dahili
 Internal Games=Dahili Oyunlar
 It could not be loaded=Yüklenemedi
+Keep logs on the stick:=Günlükleri USB bellekte tut:
 Kernel=Çekirdek
 Keyboard=Klavye
 Language:=Dil:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Yükleniyor ... Lütfen Bekleyin ...
 Loading...=Yükleniyor...
 Localization support=Yerelleştirme desteği
 Lock data:=Veriyi kilitle:
+Logs=Günlükler
 Look for new, changed or removed games=Yeni, değişen veya kaldırılan oyunları ara
 Memory=Bellek
 MEMORY CARD=HAFIZA KARTI
@@ -227,7 +232,9 @@ Run=Çalıştır
 Run an installed extension=Yüklü bir eklentiyi çalıştır
 Run using RetroArch=RetroArch ile Çalıştır
 Safely power off the console=Konsolu güvenle kapat
+Save logs=Günlükleri kaydet
 Saved in the emulator=Emülatörde kaydedildi
+Saved to=Kaydedildiği yer
 Scan complete:=Tarama tamamlandı:
 Scanline Level:=Tarama Satırı Seviyesi:
 Scanlines:=Scanning...

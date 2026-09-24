@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -52,6 +52,7 @@ Copy=Kopiér
 Core:=Core:
 Cores=Kerner
 Cover Style:=Cover-stil:
+Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
 Custom=Custom
 Custom Memory Cards=Custom Memory Cards
@@ -68,6 +69,7 @@ Delete card=Slet kort
 Delete game=Slet spil
 Delete games, flush covers=Slet spil, ryd covers
 Delete the settings saved in the emulator and use AutoBleem's again?=Slet indstillingerne gemt i emulatoren og brug AutoBleems igen?
+Diagnostics=Diagnostik
 Disable=Deaktiver
 Disabled=Deaktiveret
 Display and input=Skærm og input
@@ -105,6 +107,7 @@ File:=Fil:
 Filter:=Filter:
 Final score=Slutresultat
 Flush covers=Ryd covers
+Folder=Mappe
 Folder:=Mappe:
 Font:=Skrifttype:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interne spil
 It could not be loaded=Den kunne ikke indlæses
+Keep logs on the stick:=Behold logfiler på USB-nøglen:
 Kernel=Kerne
 Keyboard=Tastatur
 Language:=Sprog:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Indlæser ... Vent venligst ...
 Loading...=Indlæser...
 Localization support=Oversættelse
 Lock data:=Lås data:
+Logs=Logfiler
 Look for new, changed or removed games=Søg efter nye, ændrede eller fjernede spil
 Memory=Hukommelse
 MEMORY CARD=MEMORY CARD
@@ -227,7 +232,9 @@ Run=Kør
 Run an installed extension=Kør en installeret udvidelse
 Run using RetroArch=Kør med RetroArch
 Safely power off the console=Sluk konsollen sikkert
+Save logs=Gem logfiler
 Saved in the emulator=Gemt i emulatoren
+Saved to=Gemt i
 Scan complete:=Scanning fuldført:
 Scanline Level:=Scanline-niveau:
 Scanlines:=Scanlines:

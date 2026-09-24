@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -52,6 +52,7 @@ Copy=Kopiuj
 Core:=Rdzeń:
 Cores=Rdzenie
 Cover Style:=Styl Okładek:
+Crash logs:=Logi awarii:
 Create, rename or manage memory card sets=Twórz, zmieniaj nazwę lub zarządzaj zestawami kart pamięci
 Custom=Własna
 Custom Memory Cards=Współdzielone Karty Pamięci
@@ -68,6 +69,7 @@ Delete card=Usuń kartę
 Delete game=Usuń grę
 Delete games, flush covers=Usuwaj gry, czyść okładki
 Delete the settings saved in the emulator and use AutoBleem's again?=Usunąć ustawienia zapisane w emulatorze i znów używać ustawień AutoBleem?
+Diagnostics=Diagnostyka
 Disable=Wyłącz
 Disabled=Wyłączone
 Display and input=Ekran i sterowanie
@@ -105,6 +107,7 @@ File:=Plik:
 Filter:=Filtr:
 Final score=Wynik końcowy
 Flush covers=Wyczyść okładki
+Folder=Folder
 Folder:=Folder:
 Font:=Czcionka:
 Frameskip:=Pomiń klatki:
@@ -136,6 +139,7 @@ INTERNAL=WEWNĘTRZNA
 Internal=Wewnętrzna
 Internal Games=Wewnętrzne Gry
 It could not be loaded=Nie udało się go wczytać
+Keep logs on the stick:=Zachowuj logi na pendrivie:
 Kernel=Jądro
 Keyboard=Klawiatura
 Language:=Język:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Ładuję ... Proszę czekać ...
 Loading...=Wczytywanie...
 Localization support=Tłumaczenie
 Lock data:=Blokuj zmiany:
+Logs=Logi
 Look for new, changed or removed games=Wyszukaj nowe, zmienione lub usunięte gry
 Memory=Pamięć
 MEMORY CARD=KARTA PAMIĘCI
@@ -227,7 +232,9 @@ Run=Uruchom
 Run an installed extension=Uruchom zainstalowane rozszerzenie
 Run using RetroArch=Uruchom za pomocą RetroArch
 Safely power off the console=Bezpiecznie wyłącz konsolę
+Save logs=Zapisz logi
 Saved in the emulator=Zapisane w emulatorze
+Saved to=Zapisano w
 Scan complete:=Skanowanie zakończone:
 Scanline Level:=Intensywność linii:
 Scanlines:=Linie:

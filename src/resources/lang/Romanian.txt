@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -52,6 +52,7 @@ Copy=Copiaza
 Core:=Core:
 Cores=Nuclee
 Cover Style:=Stil pentru Cover:
+Crash logs:=Jurnale eroare:
 Create, rename or manage memory card sets=Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
 Custom=Personalizat
 Custom Memory Cards=Carduri de memorie Personalizate
@@ -68,6 +69,7 @@ Delete card=Sterge card
 Delete game=Șterge jocul
 Delete games, flush covers=Sterge jocuri, curata coperti
 Delete the settings saved in the emulator and use AutoBleem's again?=Ștergi setările salvate în emulator și folosești din nou setările AutoBleem?
+Diagnostics=Diagnosticare
 Disable=Dezactivează
 Disabled=Dezactivată
 Display and input=Afișaj și intrare
@@ -105,6 +107,7 @@ File:=Fișier:
 Filter:=Filtru:
 Final score=Scor final
 Flush covers=Sterge cover-urile
+Folder=Dosar
 Folder:=Dosar:
 Font:=Font:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERN
 Internal=Intern
 Internal Games=Jocuri Interne
 It could not be loaded=Nu a putut fi încărcată
+Keep logs on the stick:=Păstrează jurnalele pe stick:
 Kernel=Kernel
 Keyboard=Tastatură
 Language:=Limba:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Incarca...Te rog asteapta...
 Loading...=Se încarcă...
 Localization support=Suport localizare
 Lock data:=Restrictioneaza acessul la date:
+Logs=Jurnale
 Look for new, changed or removed games=Cauta jocuri noi, modificate sau eliminate
 Memory=Memorie
 MEMORY CARD=Card Memorie
@@ -227,7 +232,9 @@ Run=Pornește
 Run an installed extension=Pornește o extensie instalată
 Run using RetroArch=Rulează cu RetroArch
 Safely power off the console=Opreste consola in siguranta
+Save logs=Salvează jurnalele
 Saved in the emulator=Salvat în emulator
+Saved to=Salvate în
 Scan complete:=Scanare finalizata:
 Scanline Level:=Nivel ScanLine:
 Scanlines:=Scanlines:

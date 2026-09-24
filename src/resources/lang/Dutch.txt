@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -52,6 +52,7 @@ Copy=Kopiëren
 Core:=Core:
 Cores=Kernen
 Cover Style:=Cover stijl:
+Crash logs:=Crashlogs:
 Create, rename or manage memory card sets=Memory card-sets aanmaken, hernoemen of beheren
 Custom=Aangepast
 Custom Memory Cards=Custom Memory Kaart
@@ -68,6 +69,7 @@ Delete card=Verwijder kaart
 Delete game=Spel verwijderen
 Delete games, flush covers=Games verwijderen, covers wissen
 Delete the settings saved in the emulator and use AutoBleem's again?=De in de emulator opgeslagen instellingen verwijderen en weer die van AutoBleem gebruiken?
+Diagnostics=Diagnose
 Disable=Uitschakelen
 Disabled=Uitgeschakeld
 Display and input=Beeld en invoer
@@ -105,6 +107,7 @@ File:=Bestand:
 Filter:=Filter:
 Final score=Eindscore
 Flush covers=Covers wissen
+Folder=Map
 Folder:=Map:
 Font:=Lettertype:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interne games
 It could not be loaded=Kon niet worden geladen
+Keep logs on the stick:=Logbestanden op de stick bewaren:
 Kernel=Kernel
 Keyboard=Toetsenbord
 Language:=Taal:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Laden... Even geduld ...
 Loading...=Laden...
 Localization support=Vertaling
 Lock data:=Lock data:
+Logs=Logbestanden
 Look for new, changed or removed games=Zoek naar nieuwe, gewijzigde of verwijderde games
 Memory=Geheugen
 MEMORY CARD=MEMORY CARD
@@ -227,7 +232,9 @@ Run=Starten
 Run an installed extension=Een geïnstalleerde extensie starten
 Run using RetroArch=Uitvoeren met RetroArch
 Safely power off the console=Console veilig uitschakelen
+Save logs=Logbestanden opslaan
 Saved in the emulator=Opgeslagen in de emulator
+Saved to=Opgeslagen in
 Scan complete:=Scan voltooid:
 Scanline Level:=Scanline niveau:
 Scanlines:=Scanlines:

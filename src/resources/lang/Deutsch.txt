@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -52,6 +52,7 @@ Copy=Kopieren
 Core:=Core:
 Cores=Kerne
 Cover Style:=Cover-Stil:
+Crash logs:=Absturzprotokolle:
 Create, rename or manage memory card sets=Memory-Card-Sets erstellen, umbenennen oder verwalten
 Custom=Benutzer
 Custom Memory Cards=Benutzerdefinierte Memory Cards
@@ -68,6 +69,7 @@ Delete card=Karte löschen
 Delete game=Spiel löschen
 Delete games, flush covers=Spiele löschen, Cover leeren
 Delete the settings saved in the emulator and use AutoBleem's again?=Die im Emulator gespeicherten Einstellungen löschen und wieder die von AutoBleem verwenden?
+Diagnostics=Diagnose
 Disable=Deaktivieren
 Disabled=Deaktiviert
 Display and input=Anzeige und Eingabe
@@ -105,6 +107,7 @@ File:=Datei:
 Filter:=Filter:
 Final score=Endstand
 Flush covers=Cover leeren
+Folder=Ordner
 Folder:=Ordner:
 Font:=Schriftart:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERN
 Internal=Interne
 Internal Games=Interne Spiele
 It could not be loaded=Konnte nicht geladen werden
+Keep logs on the stick:=Protokolle auf dem Stick behalten:
 Kernel=Kernel
 Keyboard=Tastatur
 Language:=Sprache:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Laden ... Bitte warten ...
 Loading...=Wird geladen...
 Localization support=Lokalisierungsunterstützung
 Lock data:=Infos Sperren:
+Logs=Protokolle
 Look for new, changed or removed games=Nach neuen, geänderten oder entfernten Spielen suchen
 Memory=Speicher
 MEMORY CARD=MEMORY CARD
@@ -227,7 +232,9 @@ Run=Starten
 Run an installed extension=Eine installierte Erweiterung starten
 Run using RetroArch=Mit RetroArch ausführen
 Safely power off the console=Konsole sicher ausschalten
+Save logs=Protokolle speichern
 Saved in the emulator=Im Emulator gespeichert
+Saved to=Gespeichert in
 Scan complete:=Scan abgeschlossen:
 Scanline Level:=Scanline-Stufe:
 Scanlines:=Scanlines:

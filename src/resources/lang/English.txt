@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 307
+# Untranslated: 0 / Total: 314
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -52,6 +52,7 @@ Copy=Copy
 Core:=Core:
 Cores=Cores
 Cover Style:=Cover Style:
+Crash logs:=Crash logs:
 Create, rename or manage memory card sets=Create, rename or manage memory card sets
 Custom=Custom
 Custom Memory Cards=Custom Memory Cards
@@ -68,6 +69,7 @@ Delete card=Delete card
 Delete game=Delete game
 Delete games, flush covers=Delete games, flush covers
 Delete the settings saved in the emulator and use AutoBleem's again?=Delete the settings saved in the emulator and use AutoBleem's again?
+Diagnostics=Diagnostics
 Disable=Disable
 Disabled=Disabled
 Display and input=Display and input
@@ -105,6 +107,7 @@ File:=File:
 Filter:=Filter:
 Final score=Final score
 Flush covers=Flush covers
+Folder=Folder
 Folder:=Folder:
 Font:=Font:
 Frameskip:=Frameskip:
@@ -136,6 +139,7 @@ INTERNAL=INTERNAL
 Internal=Internal
 Internal Games=Internal Games
 It could not be loaded=It could not be loaded
+Keep logs on the stick:=Keep logs on the stick:
 Kernel=Kernel
 Keyboard=Keyboard
 Language:=Language:
@@ -155,6 +159,7 @@ Loading ... Please Wait ...=Loading ... Please Wait ...
 Loading...=Loading...
 Localization support=Localization support
 Lock data:=Lock data:
+Logs=Logs
 Look for new, changed or removed games=Look for new, changed or removed games
 Memory=Memory
 MEMORY CARD=MEMORY CARD
@@ -227,7 +232,9 @@ Run=Run
 Run an installed extension=Run an installed extension
 Run using RetroArch=Run using RetroArch
 Safely power off the console=Safely power off the console
+Save logs=Save logs
 Saved in the emulator=Saved in the emulator
+Saved to=Saved to
 Scan complete:=Scan complete:
 Scanline Level:=Scanline Level:
 Scanlines:=Scanlines:
