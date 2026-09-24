@@ -1334,7 +1334,7 @@ create_tree() {
     log "Creating the AutoBleem tree under $DATA_MOUNT"
     local d
     for d in Autobleem/bin/autobleem Autobleem/bin/db Autobleem/bin/emu Autobleem/bin/emunxt Autobleem/rc \
-             Games System/Bios System/Databases System/Logs System/Processors Themes Apps; do
+             Games System/Bios System/Databases System/Logs System/Processors Themes Apps Extensions; do
         run mkdir -p "$DATA_MOUNT/$d"
     done
     RA_ROOT="$DATA_MOUNT/RetroArch"
@@ -1378,6 +1378,10 @@ $STAGE_DIR/Autobleem/bin/autobleem
     # case-insensitive filesystem)
     if [ -f "$SCRIPT_DIR/system/processors-README.txt" ] && [ ! -f "$DATA_MOUNT/System/Processors/README.txt" ]; then
         run cp "$SCRIPT_DIR/system/processors-README.txt" "$DATA_MOUNT/System/Processors/README.txt"
+    fi
+    # the extensions' folder (docs/extensions-plan.md): installed by hand, so only its README, once
+    if [ -f "$SCRIPT_DIR/system/extensions-README.txt" ] && [ ! -f "$DATA_MOUNT/Extensions/README.txt" ]; then
+        run cp "$SCRIPT_DIR/system/extensions-README.txt" "$DATA_MOUNT/Extensions/README.txt"
     fi
 
     # exFAT has no permission bits of its own - the mount's umask=000 already makes everything 0777 - so a
