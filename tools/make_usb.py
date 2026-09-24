@@ -192,7 +192,7 @@ def make_cover_db(path):
 
 
 # the console tools under apps/ that are staged into usb/Apps/<tool>/ for a visual test on Windows
-TOOLS = ['pscbios', 'abflashkit']
+TOOLS = ['abflashkit'] # PSC-Bios is an extension since 2026-09-24: build_win/extensions/, staged below
 
 # the fake RetroArch: one core that "plays" three systems, and a couple of ROMs per system. The names are
 # real no-intro names so the thumbnail lookup has something to match once a thumbnail pack is dropped in.

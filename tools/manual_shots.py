@@ -60,7 +60,8 @@ LAUNCHER = [
 STORE_CATALOG = 'https://autobleem.retromenele.pl/store/rpi/catalog.json'
 
 PSCBIOS = [
-    ('pscbios-main', 'wait 600'),
+    # PSC-Bios is an extension (2026-09-24): the launcher's Hardware Information item opens it
+    ('pscbios-main', 'menu 4; wait_screen GuiPscBiosMain; wait 600'),
     ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
     ('pscbios-gamepads', 'press o; wait 400; press s; wait_screen GuiGamepadMenu; wait 400'),
     ('pscbios-wizard', 'press x; wait 1200'),
@@ -148,7 +149,7 @@ def main(argv):
         print('== %s' % name)
         set_language(name)
         shoot(None, pick(LAUNCHER), out_dir, show)
-        shoot('pscbios', pick(PSCBIOS), out_dir, show)
+        shoot(None, pick(PSCBIOS), out_dir, show)
         shoot('abflashkit', pick(ABFLASHKIT), out_dir, show)
     set_language('English')
     if only is not None:
