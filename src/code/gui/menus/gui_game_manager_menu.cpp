@@ -40,6 +40,35 @@ void GuiManager::init() {
         lines.emplace_back(gui->text().elide(font, psGame->title, xoffset_R - 20),
                            gui->text().elide(font, path, pathWidth));
     }
+    failed = app.library().usbGames().loadFailedGames();
+    for (const auto &folder : failed) {
+        lines.emplace_back(gui->text().elide(font, DirEntry::getFileNameFromPath(folder.path), xoffset_R - 20),
+                           _("Not added"));
+    }
+}
+
+//*******************************
+// GuiManager::translatedReason
+//*******************************
+std::string GuiManager::translatedReason(const std::string &reason) {
+    // the literals, so tools/lang_tools.py finds them
+    if (reason == "No discs")
+        return _("No discs");
+    if (reason == "No disc name")
+        return _("No disc name");
+    if (reason == "Cue file not found")
+        return _("Cue file not found");
+    if (reason == "Bin file failed to verify")
+        return _("Bin file failed to verify");
+    if (reason == "Game file not found")
+        return _("Game file not found");
+    if (reason == "Game.ini file not found")
+        return _("Game.ini file not found");
+    if (reason == "Game.ini file not valid")
+        return _("Game.ini file not valid");
+    if (reason == "pcsx.cfg file not found")
+        return _("pcsx.cfg file not found");
+    return reason;
 }
 
 //*******************************
@@ -65,6 +94,20 @@ void GuiManager::render() {
 // GuiManager::renderPreview
 //*******************************
 void GuiManager::renderPreview() {
+    if (selected >= 0 && onFailed() && selected - psGames.size() < failed.size()) {
+        // a folder the scan refused: no cover to show, only where it is and why
+        pane.cover = ableem::Texture();
+        pane.snap = ableem::Texture();
+        pane.facts.clear();
+        pane.facts.emplace_back(_("Folder:"), DirEntry::removeGamesPathFromFrontOfPath(selectedFailed().path));
+        bool first = true;
+        for (const string &reason : selectedFailed().reasons) {
+            pane.facts.emplace_back(first ? _("Not added because:") : "", translatedReason(reason));
+            first = false;
+        }
+        pane.render(*gui);
+        return;
+    }
     if (selected < 0 || selected >= static_cast<int>(psGames.size()))
         return;
     if (previewFor != selected) {
@@ -116,6 +159,9 @@ std::string GuiManager::getTitle() {
 // GuiManager::getStatusLine
 //*******************************
 string GuiManager::getStatusLine() {
+    if (onFailed())
+        return _("Not added") + " " + to_string(selected - psGames.size() + 1) + "/" + to_string(failed.size()) +
+               "    |@L2|/|@R2| " + _("Page") + "   |@S| " + _("Delete folder") + " |@O| " + _("Back") + " |";
     return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L2|/|@R2| " +
            _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete game") + "  |@T| " + _("Flush covers") +
            " |@O| " + _("Back") + " |";
@@ -137,6 +183,10 @@ void GuiManager::doCircle_Pressed() {
 //*******************************
 void GuiManager::doSquare_Pressed() {
     app.audio().cursor.play();
+    if (onFailed()) {
+        deleteFailedFolder();
+        return;
+    }
     auto game = psGames[selected];
     int gameId = game->gameId;
     string gameName = game->title;
@@ -169,13 +219,43 @@ void GuiManager::doSquare_Pressed() {
     }
     app.scans().requestScan(); // in order for the sub dir hierarchy to be fixed we have to do a rescan
     // menuVisible = false;
-    init();                                             // refresh games list and menu item count
-    if (selected >= static_cast<int>(psGames.size())) { // the last game went: the cursor cannot stay past the end
-        selected = psGames.empty() ? 0 : psGames.size() - 1;
+    init(); // refresh games list and menu item count
+    settleSelection();
+    render();
+}
+
+//*******************************
+// GuiManager::deleteFailedFolder / settleSelection
+//*******************************
+// a folder the scan could not add - nothing to edit, only to delete (Windows would show it too)
+void GuiManager::deleteFailedFolder() {
+    const string path = selectedFailed().path;
+    const string name = DirEntry::getFileNameFromPath(path);
+    GuiConfirm confirm(*gui);
+    confirm.label = _("Delete the folder") + " " + name + "?";
+    confirm.show();
+    if (confirm.result) {
+        PLOG_INFO << "Deleting the folder the scan refused: " << path;
+        gui->beginBusy(_("Please wait ... deleting") + " " + name, [this]() { render(); });
+        if (!DirEntry::removeDirAndContents(path))
+            gui->renderStatus(_("Failed to delete") + " " + name);
+        gui->endBusy();
+        failed.erase(failed.begin() + (selected - psGames.size()));
+        app.library().usbGames().replaceFailedGames(failed); // gone from the list at once, the scan agrees
+        app.scans().requestScan();
+    }
+    init();
+    settleSelection();
+    render();
+}
+
+void GuiManager::settleSelection() {
+    const int count = static_cast<int>(lines.size());
+    if (selected >= count) { // the last row went: the cursor cannot stay past the end
+        selected = count == 0 ? 0 : count - 1;
         firstVisibleIndex = std::max(0, selected - maxVisible + 1);
         lastVisibleIndex = firstVisibleIndex + maxVisible - 1;
     }
-    render();
 }
 
 //*******************************
@@ -205,6 +285,8 @@ void GuiManager::doTriangle_Pressed() {
 // GuiManager::doCross_Pressed
 //*******************************
 void GuiManager::doCross_Pressed() {
+    if (onFailed())
+        return; // a folder that is not a game has nothing to edit
     app.audio().cursor.play();
     if (!psGames.empty()) {
         string selectedGameFolder = psGames[selected]->folder;
