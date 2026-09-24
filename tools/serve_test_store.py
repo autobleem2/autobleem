@@ -7,7 +7,8 @@ Every folder under GAMES_DIR (not the ! ones) that holds disc images becomes one
 folder, its images (.chd/.pbp/.img, else the .cue files) in name order as discs 1, 2, ... (.bin/.sbi/.ecm ride
 along with no disc number). The
 TSV is served at http://<lan ip>:<port>/store.tsv - add that URL in the Store's Sources tab, or put it in
-System/Extensions/store/sources.txt on the client. The games are served read-only, with Range requests (the
+System/Extensions/store/sources.txt on the client. A folder's serial comes from its Game.ini (a folder AutoBleem
+has scanned has one): the Store finds the cover by it in its own covers databases. The games are served read-only, with Range requests (the
 Store resumes a stopped download); nothing is written to GAMES_DIR. The sha256 of each file is worked out
 once and kept in a cache file next to this machine's temp directory, keyed by path + size.
 
@@ -25,7 +26,6 @@ import urllib.parse
 
 IMAGES = ('.chd', '.pbp', '.img')
 COMPANIONS = ('.cue', '.bin', '.sbi', '.ecm')
-COVERS = ('.png', '.jpg')
 
 
 def lan_address(probe):
@@ -35,6 +35,18 @@ def lan_address(probe):
         return s.getsockname()[0]
     finally:
         s.close()
+
+
+def game_ini_serial(folder):
+    # the serial AutoBleem's scan wrote into the folder's Game.ini - what the Store finds the cover by
+    ini = os.path.join(folder, 'Game.ini')
+    if os.path.isfile(ini):
+        with open(ini, encoding='utf-8', errors='replace') as f:
+            for line in f:
+                key, _, value = line.partition('=')
+                if key.strip().lower() == 'serial':
+                    return value.strip()
+    return ''
 
 
 def sha256_of(path, cache):
@@ -55,7 +67,7 @@ def build_tsv(games_dir, base_url, name, with_sha):
         with open(cache_file, encoding='utf-8') as f:
             cache = json.load(f)
     lines = ['# autobleem-store 1', '# name: ' + name,
-             '\t'.join(['kind', 'title', 'url', 'size', 'sha256', 'disc', 'name', 'image'])]
+             '\t'.join(['kind', 'title', 'url', 'size', 'sha256', 'disc', 'name', 'serial'])]
     items = 0
     for folder in sorted(os.listdir(games_dir), key=str.lower):
         path = os.path.join(games_dir, folder)
@@ -70,8 +82,7 @@ def build_tsv(games_dir, base_url, name, with_sha):
             companions = [f for f in files if f.lower().endswith(('.bin', '.sbi', '.ecm'))]
         if not images:
             continue
-        covers = [f for f in files if f.lower().endswith(COVERS)]
-        image_url = base_url + urllib.parse.quote(folder + '/' + covers[0]) if covers else ''
+        serial = game_ini_serial(path)
         title = folder.replace('\t', ' ')
         entries = [(f, i + 1) for i, f in enumerate(images)] + [(f, 0) for f in companions]
         for file_name, disc in entries:
@@ -86,8 +97,8 @@ def build_tsv(games_dir, base_url, name, with_sha):
             print('  %s / %s' % (folder, file_name), file=sys.stderr)
             lines.append('\t'.join(['ps1', title, base_url + urllib.parse.quote(folder + '/' + file_name),
                                     str(os.path.getsize(full)), sha, str(disc) if disc else '', file_name,
-                                    image_url]))
-            image_url = ''
+                                    serial]))
+            serial = ''  # once per item is enough
         items += 1
     return '\n'.join(lines) + '\n', items
 
