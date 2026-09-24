@@ -19,7 +19,7 @@ pushed, **not merged**. CLAUDE.md's "The quiet stick" section describes the resu
 
 | Step | State |
 |---|---|
-| 0 guard tests, `tools/stick_writes.sh` | done; `test_quiet_stick` green. **Device numbers not taken yet** |
+| 0 guard tests, `tools/stick_writes.sh` | done; `test_quiet_stick` green; Pi 400: idle and a rescan measured (below) |
 | 1.1-1.6 logs in RAM, keep switch, crash capture, Save logs | done (launcher, core, both payload trees) |
 | 1.7 pcsx-abnxt line-buffered stdout | done (pcsx-abnxt) |
 | 1.8 Linux targets: RuntimeDirectory, journald volatile | done (autobleem-appliance) |
@@ -38,9 +38,18 @@ wrote `Game.ini` values the second one normalised (Favorite/Lightgun/Play_using_
 selection left over from a game hid a later crash from `selection.sh`; RetroArch changes the player made
 during a game were thrown away by the old `.bak` restore.
 
-Still to do: merging the five branches (launcher, core, pcsx-abnxt, pcsx-ab, appliance - the emulators'
-releases must carry abfeatures before the launcher can use it); `stick_writes.sh` on the console and a
-Pi, the numbers here; verify on RetroArch 1.22 that
+**Merged** into develop in all five repos on 2026-09-24, published as nightly v2.0.0-alpha2-117-g497b9bc.
+
+**Measured on the Pi 400** (that nightly, installed through the online update; before the restart that
+switches the session script over, so the old session still tee'd `AB_out.txt` to the data partition):
+| Scenario | Written to the data partition |
+|---|---|
+| 5 min idle at the carousel | **0 KiB, 0 files** |
+| a rescan with no game changed (set off by a text file dropped into `RetroArch/roms`) | 11 KiB: the test file, `roms.fingerprint` (a real change), `AB_out.txt` (the old session's tee), and two avoidable ones - `.online-probe` downloaded/renamed/deleted per scan cycle, and the covers dbs opened read-write - **both fixed** the same night (runtime dir, read-only). No `Game.ini`, regional.db, `.m3u`, playlist or dump |
+| first start of the new build | `config.ini` once (the two new keys), one `Game.ini` (a one-off update to that folder's file) |
+
+Still to do: `stick_writes.sh` for a boot, a PS1 game and a RetroArch game after the restart (someone at
+the pad), and on a console; verify on RetroArch 1.22 that
 `--appendconfig` + the restore behave as `configuration.c` says; verify the exit dir on a console with a
 real game (the Windows build of pcsx-abnxt compiles it, but could not be exercised without a BIOS).
 
