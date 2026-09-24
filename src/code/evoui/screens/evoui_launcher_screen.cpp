@@ -566,6 +566,13 @@ void GuiLauncher::loadAssets() {
         }
     }
 
+    // a crash's logs, which the rc scripts took from RAM to the stick (docs/quiet-stick-plan.md) - said once,
+    // the first time the launcher is shown after it; over the resume messages above, which it explains
+    const string crashLogs = Env::takeNewCrashLogs();
+    if (!crashLogs.empty()) {
+        notificationLines[1].setText(_("Crash logs:") + " System/Logs/" + crashLogs, 10 * TicksPerSecond);
+    }
+
     showOptions();
     showSetName();
     updateMeta();

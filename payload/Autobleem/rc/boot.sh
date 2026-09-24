@@ -7,6 +7,9 @@
 
 RC=/media/Autobleem/rc
 
+# where this run's logs go (RAM unless kept on the stick) - exported to everything below, the launcher too
+. $RC/ab_log.sh
+
 # USB gamepad fix - the rules file from tmpfs: it survives the standby (the stick is unmounted then) and
 # holds nothing on the stick
 cp -f $RC/20-joystick.rules /tmp/20-joystick.rules

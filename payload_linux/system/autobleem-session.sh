@@ -4,19 +4,31 @@
 #
 # AutoBleem::run()'s loop starts games and comes back in-process; the only thing that actually ends the
 # process is the L2+R2 system menu's "RetroArch / EmulationStation" item, which writes AB_SELECTION=4 into
-# rc/autobleem_cfg.sh (LaunchService::writeSelectionScript) on the way out. The console reboots at that point;
+# autobleem_cfg.sh in the runtime dir (LaunchService::writeSelectionScript) on the way out. The console reboots at that point;
 # a Pi has no reason to, so this loops instead: hand over to RetroArch, then come back to the launcher.
 set -uo pipefail
 
 DATA_MOUNT="${1:-/media/autobleem}"
 APP_DIR="$DATA_MOUNT/Autobleem/bin/autobleem"
 RC_DIR="$DATA_MOUNT/Autobleem/rc"
-LOG_DIR="$DATA_MOUNT/System/Logs"
 
 SEL_RETROARCH=4
 SEL_UPDATE=6      # the online update: the launcher downloaded it, autobleem-update applies it (install.sh --update)
 
-mkdir -p "$LOG_DIR"
+# Where this run's logs go (docs/quiet-stick-plan.md): RAM - systemd's /run/autobleem for this service
+# (RuntimeDirectory=autobleem), /tmp/autobleem when started some other way - unless the logs are kept on the
+# data partition (System/Logs/keep, the Options row). rc/ab_log.sh decides, the same file the console uses;
+# re-read on every pass, since the launcher may have changed its mind (it writes <runtime>/log_dir).
+export AB_ROOT="$DATA_MOUNT"
+export AB_RUNTIME_DIR="${RUNTIME_DIRECTORY:-/tmp/autobleem}"
+mkdir -p "$AB_RUNTIME_DIR" "$DATA_MOUNT/System/Logs"
+log_dir() {
+    unset AB_LOG_DIR
+    # shellcheck disable=SC1091
+    . "$RC_DIR/ab_log.sh"
+    LOG_DIR="$AB_LOG_DIR"
+}
+log_dir
 
 #*******************************
 # hdmi_audio
@@ -122,6 +134,7 @@ boot_splash_down
 while true; do
     cd "$APP_DIR" || exit 1
     hdmi_audio
+    log_dir
 
     # stdbuf keeps the tee'd copy as unbuffered as the app makes its own stdout, so a crash does not eat the
     # last lines - the same reason main.cpp sets ios::unitbuf
@@ -132,13 +145,20 @@ while true; do
     echo "autobleem-session: autobleem-gui exited with $status"
 
     selection=""
-    if [ -f "$RC_DIR/autobleem_cfg.sh" ]; then
-        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=...
+    if [ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ]; then
+        # the file is a tiny generated shell fragment: AB_SELECTION=n, AB_THEME=..., AB_PCSX=... - read once:
+        # a selection left over would hide the next crash
         # shellcheck disable=SC1091
-        . "$RC_DIR/autobleem_cfg.sh"
+        . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
         selection="${AB_SELECTION:-}"
+        rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
     fi
+    rm -f "$RC_DIR/autobleem_cfg.sh" # where a launcher before the quiet-stick plan wrote it
     echo "autobleem-session: selection=${selection:-none}"
+    # no selection and a failure status: a crash - the logs are in RAM, keep them on the data partition
+    if [ -z "$selection" ] && [ "$status" -ne 0 ]; then
+        ab_persist_logs "autobleem-gui exited with status $status and no selection (a crash?)"
+    fi
 
     if [ "$selection" = "$SEL_RETROARCH" ] && [ -x "$RC_DIR/retroarch.sh" ]; then
         "$RC_DIR/retroarch.sh"
@@ -148,8 +168,6 @@ while true; do
         else
             echo "autobleem-session: no autobleem-update on this system - re-run install.sh from a package once" >&2
         fi
-        # a stale selection must not run the update again on the next pass
-        rm -f "$RC_DIR/autobleem_cfg.sh"
     fi
 
     sync

@@ -54,7 +54,7 @@ private:
 App::App(std::unique_ptr<ProcessRunner> runner)
     : AppBase("AutoBleem"), runner_(std::move(runner)),
       extensionCatalog_(Env::getPathToExtensionsDir(), Env::getPathToExtensionsStateDir(), Env::appPlatformKeys(),
-                        AppManifest::pluginExtension()),
+                        AppManifest::pluginExtension(), Env::getPathToRuntimeDir()),
       extensions_(extensionCatalog_, pluginLoader_, [this](const ExtensionInfo &extension) {
           return unique_ptr<ExtensionHost>(new LauncherExtensionHost(*this, extension));
       }) {
