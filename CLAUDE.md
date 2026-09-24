@@ -1230,7 +1230,7 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
 
 **The data root is written only when the user's state changes** - a save, a card, a kept resume slot, a
 setting the player changed, a game added or removed. Everything else is in RAM or not written at all.
-Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt and autobleem-appliance (not merged yet; the
+Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt, pcsx-ab and autobleem-appliance (not merged yet; the
 work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a console or a Pi yet -
 `tools/stick_writes.sh start|stop` measures a scenario there.
 
@@ -1257,7 +1257,7 @@ work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a conso
   pass `--appendconfig`. RetroArch 1.22 saves appended values into `retroarch.cfg` when it saves, so
   `restoreAppended()` puts each of ours back afterwards; what the player changed stays.
 - **The emulator** says what it takes in an `abfeatures` file next to its binary (pcsx-abnxt: `exitdir`,
-  `memcarddir`, `loadstate`; the classic pcsx-ab has none yet): `AB_EXIT_DIR` (the resume point of the way
+  `memcarddir`, `loadstate`; the classic pcsx-ab the same, `frontend/ab_env.h`): `AB_EXIT_DIR` (the resume point of the way
   out in `<runtime>/exit`, `ResumePointService::setExitDir` reads it there and copies only a kept slot),
   `AB_MEMCARD_DIR` (the set played in place, `MemcardService::setDirForLaunch` - no swap),
   `AB_LOAD_STATE` (the kept slot read where it is). Without the file everything works as before.

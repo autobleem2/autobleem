@@ -14,7 +14,7 @@ pcsx-ab, pcsx-abnxt and RetroArch's shipped config (2026-09-24). File:line refer
 
 ## Status (2026-09-24)
 
-Branch `feature/quiet-stick` in autobleem (launcher), autobleem-core, pcsx-abnxt and autobleem-appliance,
+Branch `feature/quiet-stick` in autobleem (launcher), autobleem-core, pcsx-abnxt, pcsx-ab and autobleem-appliance,
 pushed, **not merged**. CLAUDE.md's "The quiet stick" section describes the result.
 
 | Step | State |
@@ -26,8 +26,8 @@ pushed, **not merged**. CLAUDE.md's "The quiet stick" section describes the resu
 | 2.1-2.8 write only what changed (ini, cfg, scan, db, history, rc) | done |
 | 2.9 refused games in the Game Manager | done |
 | 3.1 selection hand-over in RAM, written on leaving only | done |
-| 3.2 exit resume point in RAM (`AB_EXIT_DIR`) | done for pcsx-abnxt; **classic pcsx-ab: not yet** (no local build) |
-| 3.3 memory-card set in place (`AB_MEMCARD_DIR`), slot read in place (`AB_LOAD_STATE`) | done for pcsx-abnxt; classic: not yet |
+| 3.2 exit resume point in RAM (`AB_EXIT_DIR`) | done - pcsx-abnxt and the classic pcsx-ab (both `feature/quiet-stick`) |
+| 3.3 memory-card set in place (`AB_MEMCARD_DIR`), slot read in place (`AB_LOAD_STATE`) | done - both emulators |
 | 3.4-3.5 RetroArch via `--appendconfig`, Persist RetroArch config | done |
 | 3.6 extensions' crash guard in RAM | done |
 | 3.7 App cache in RAM | done (with 1.5) |
@@ -38,8 +38,9 @@ wrote `Game.ini` values the second one normalised (Favorite/Lightgun/Play_using_
 selection left over from a game hid a later crash from `selection.sh`; RetroArch changes the player made
 during a game were thrown away by the old `.bak` restore.
 
-Still to do: the classic pcsx-ab's share of 3.2/3.3 (ab_exit_dir etc. as in pcsx-abnxt, on the build
-server); `stick_writes.sh` on the console and a Pi, the numbers here; verify on RetroArch 1.22 that
+Still to do: merging the five branches (launcher, core, pcsx-abnxt, pcsx-ab, appliance - the emulators'
+releases must carry abfeatures before the launcher can use it); `stick_writes.sh` on the console and a
+Pi, the numbers here; verify on RetroArch 1.22 that
 `--appendconfig` + the restore behave as `configuration.c` says; verify the exit dir on a console with a
 real game (the Windows build of pcsx-abnxt compiles it, but could not be exercised without a BIOS).
 
