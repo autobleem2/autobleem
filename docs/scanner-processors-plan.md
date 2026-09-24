@@ -6,6 +6,8 @@ screen), and on Linux in the CI image. Step 9 (`tools/proc_check.py`) is done to
 or a Pi. `proc_unzip` is public (`autobleem2/proc_unzip`, CI on, the develop `nightly` release has every
 platform's binary). What changed on the
 way is marked **Built:** below.
+What comes after (the first release, `.7z`, the Store, launch-time processors, signatures) is
+`docs/scanner-processors-next-plan.md`.
 
 ## The decisions (the owner, 2026-09-24)
 
