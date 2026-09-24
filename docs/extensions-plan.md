@@ -20,12 +20,22 @@ This is our answer to what Project Eris calls "mods". Nothing of theirs is used 
 3. **Installed by hand**: the user unpacks an extension's package onto the stick (or the data partition,
    or the Windows data folder). Nothing installs or updates an extension for them, and that includes the
    Store. **Extensions are separate downloads**: none is bundled with a release package, the Store
-   included.
+   included - **except PSC-Bios** (decision 6, as changed).
 4. **Every target**: an extension folder is multi-platform, with one library per platform key
    (`docs/app-format-plan.md`).
 5. **The AutoBleem Store is the first extension.**
-6. **PSC-Bios and ABFlashKit stay Apps.** The console needs both (pads and WiFi, the kernel), so they ship
-   with the console package in `Apps/` as today. They are not extensions.
+6. **PSC-Bios is an extension, bundled with the console package; ABFlashKit stays an App** (changed by the
+   owner later on 2026-09-24; it read "both stay Apps").
+   - PSC-Bios is `Extensions/pscbios/` (a console-only plugin, `bin/psc/pscbios.so`), built in
+     autobleem-console-tools and shipped in its `console-tools-psc` tarball, which the appliance lays onto
+     the stick. The System menu's Hardware Information runs it in-process, and the built-in
+     `GuiHardwareInfo` shows wherever it cannot run.
+   - An update replaces it like the launcher's own folders (core's `InstallerJob`), and removes the old
+     `Apps/pscbios/`.
+   - Its `AB_SDK_ABI` must be the launcher's. The console tools' CI fails when their autobleem-core's
+     differs from the launcher's.
+   - ABFlashKit flashes the kernel and must work with the launcher out of the way, so it stays an App in
+     `Apps/abflashkit/`.
 7. **Translations**: an extension in the autobleem2 organisation follows the 16-language rule, with its own
    `lang/` files. Anyone else's falls back to English for whatever string it lacks.
 
