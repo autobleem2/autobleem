@@ -112,7 +112,10 @@ def start(usb, port, show, tool=None):
     else:
         exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
         app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
-        driven = os.path.join(app_dir, 'autobleem-gui-drive.exe')
+        # under its own name, in a folder of its own: an extension imports from "autobleem-gui.exe" by name
+        # (docs/extensions-plan.md), so a renamed copy could load none; the resources are the root's anyway
+        os.makedirs(os.path.join(app_dir, 'drive'), exist_ok=True)
+        driven = os.path.join(app_dir, 'drive', 'autobleem-gui.exe')
         first_screen = 'GuiLauncher'
         lang = os.path.join(REPO, 'src', 'resources', 'lang')
     # its own copy of the exe next to the resources: the owner's own instance may be running the other

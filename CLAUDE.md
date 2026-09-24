@@ -406,6 +406,38 @@ recipe is the clean route if they are ever to ship.
   three scripts identical in `payload/` and `payload_linux/`. **autobleem-appliance's `payload_linux/`
   carries the same three files**: change all three copies together.
 
+## Extensions (2026-09-24, `docs/extensions-plan.md`)
+
+**What an extension is.** A plugin, `Extensions/<name>/` with an `extension.ini`:
+- `Name`, `Description`, `Author`, `Version`, `Icon`;
+- `Plugin=bin/{key}/<name>`, resolved by `AppManifest`, with `.so`/`.dll` added;
+- `Background=true` to be polled every frame;
+- `Network=required|optional|none` - `required` is refused offline.
+
+It is installed by hand, run from the System menu's **Extensions** item (`GuiExtensions`), and never
+bundled with a release. Its source repository is named `ext_<name>`.
+
+**How it binds to the launcher.**
+- It links against the launcher's own copy of the SDK. `autobleem-gui` is built with `ENABLE_EXPORTS`
+  (`--export-all-symbols` on MinGW). On Windows a plugin imports from **`autobleem-gui.exe` by name**, so
+  never rename the executable; `tools/ab_drive.py` runs `drive/autobleem-gui.exe` for that reason.
+- A plugin never links the SDK's static libraries: `ab_add_extension()`
+  (`autobleem-core/cmake/ab_extension.cmake`) gives it the headers and, on Windows, the import library.
+- It logs through plog instance 1 (`PLOG_DEFAULT_INSTANCE_ID=1`), chained by `AB_EXTENSION` into the
+  launcher's log with an `[<name>]` tag. Chaining instance 0 recursed on Linux.
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` whenever the layout
+  of a class, or the signature of a function, an extension may use changes.
+
+**Where the code is.**
+- Core: `ExtensionCatalog` and `PluginLoader`.
+- ab_classic: `gui/extension.h`, `ExtensionRuntime` (the crash guard: `System/Extensions/.active`, and
+  `disabled.txt`) and `ExtensionHostBase`.
+- The launcher: `App` (its `LauncherExtensionHost`, `takeExtensionRequests()`),
+  `AutoBleem::run`/`runOutside` (start, crash guard, suspend/resume, shutdown) and `GuiLauncher`
+  (the poll and its `extensionBubble`).
+- `extensions/hello/` is the sample and smoke test, staged in `build_win/extensions/` and put on the dev
+  stick by `make_usb.py`.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

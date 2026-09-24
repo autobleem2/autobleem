@@ -23,6 +23,7 @@
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
+#include "evoui_extensions.h"
 #ifdef AB_ONLINE_UPDATE
 #include "evoui_update.h"
 #include <ctime>
@@ -518,6 +519,10 @@ void GuiLauncher::loop_openSystemMenu() {
 #endif
         break;
 
+    case SystemMenuAction::Extensions:
+        loop_openExtensions();
+        break;
+
     case SystemMenuAction::About: {
         GuiAbout aboutScreen(*gui);
         aboutScreen.show();
@@ -538,6 +543,72 @@ void GuiLauncher::loop_openSystemMenu() {
 }
 
 #ifdef AB_ONLINE_UPDATE
+//*******************************
+// GuiLauncher::loop_openExtensions
+//*******************************
+// the Extensions list (every folder in Extensions/, read again each time it opens), then the chosen one's
+// run(): its own screens on our Gui, back here when it is done. A refusal is shown on the row already; what
+// comes back from run() is reported on the notification line.
+void GuiLauncher::loop_openExtensions() {
+    app.extensionCatalog().scan();
+    const bool networkUp = System::hasDefaultRoute();
+    string chosen;
+    {
+        GuiExtensions list(*gui, app.extensionCatalog(), networkUp);
+        if (background != nullptr)
+            list.background = background->tex;
+        list.show();
+        chosen = list.chosen;
+    }
+    forgetHeldModifiers();
+    if (chosen.empty())
+        return;
+    const ExtensionInfo *info = app.extensionCatalog().find(chosen);
+    const string title = info != nullptr ? info->title : chosen;
+    ExtensionRuntime::Refusal why = app.extensions().run(chosen, System::hasDefaultRoute());
+    forgetHeldModifiers(); // its screens ran their own loops
+    gui->input().flushEvents();
+    if (why == ExtensionRuntime::Refusal::Failed || why == ExtensionRuntime::Refusal::LoadFailed ||
+        why == ExtensionRuntime::Refusal::WrongAbi) {
+        notificationLines[1].setText(title + " " + _("closed with an error"), 2 * DefaultShowingTimeout);
+    } else if (why == ExtensionRuntime::Refusal::Offline) {
+        notificationLines[1].setText(_("Needs a network connection"), DefaultShowingTimeout);
+    }
+    applyExtensionRequests();
+}
+
+//*******************************
+// GuiLauncher::applyExtensionRequests
+//*******************************
+// once a frame (and after an extension's run()): the bubble an extension fed, a message for the line, and
+// the reloads it asked for - done here, in the launcher's own frame, never from inside an extension's call
+void GuiLauncher::applyExtensionRequests() {
+    App::ExtensionRequests r = app.takeExtensionRequests();
+    if (r.bubbleChanged) {
+        if (r.bubbleVisible)
+            extensionBubble.show(r.bubbleTitle, r.bubbleDetail, r.bubbleDone, r.bubbleTotal, 0);
+        else
+            extensionBubble.hide();
+    }
+    if (!r.message.empty())
+        notificationLines[1].setText(r.message, 2 * DefaultShowingTimeout);
+    if (r.reloadConfig) {
+        // what closing Options does: config.ini read again, the theme and every cover reloaded
+        Config fresh;
+        app.config().inifile.values = fresh.inifile.values;
+        app.applyOnlineSetting();
+#ifdef AB_ONLINE_UPDATE
+        app.applyUpdateSetting();
+#endif
+        freeAssets();
+        loadAssets();
+        switchSet(selection.set, false);
+        showSetName();
+    } else if (r.reloadApps && selection.set == GameSet::Apps && !carousel.scrolling) {
+        reloadGames();
+    }
+}
+
 //*******************************
 // GuiLauncher::pollUpdates
 //*******************************

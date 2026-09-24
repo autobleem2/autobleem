@@ -89,6 +89,8 @@ bool AutoBleem::openLibrary() {
 // AutoBleem::runOutside
 //*******************************
 void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
+    // the extensions first: they may hold textures, and their threads should leave the machine to the game
+    extensions_.suspend();
     gui_->finish(); // fades the music out and closes the mixer
 
     gui_->input().flushPads();
@@ -155,6 +157,7 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
 
     gui_->display(true);
     session_.resumingGui = true; // the launcher fades back in over the game that just ended
+    extensions_.resume();
 
     // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
     // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
@@ -257,6 +260,17 @@ int AutoBleem::run() {
         scans().requestScan();
     }
 
+    // the extensions (docs/extensions-plan.md): what is in Extensions/, the crash guard's verdict on the last
+    // run - an extension that was running when the launcher died is disabled and the user told - and the
+    // background ones started
+    extensionCatalog_.scan();
+    const string crashed = extensionCatalog_.takeCrashed();
+    if (!crashed.empty()) {
+        const ExtensionInfo *info = extensionCatalog_.find(crashed);
+        extensionRequests_.message = (info ? info->title : crashed) + " " + _("stopped AutoBleem and was disabled");
+    }
+    extensions_.startBackground();
+
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
     // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the
     // emulator's memory yet, the launcher's first buffer uploads failed ("PVR: glBufferSubData: No memory
@@ -325,6 +339,8 @@ int AutoBleem::run() {
         }
     }
 
+    // the extensions go before the services they may reach
+    extensions_.shutdown();
     scans().stop();
 
     // close the databases before the gui goes away.
