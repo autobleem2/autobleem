@@ -160,6 +160,14 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
   - with only `size`, the size is checked;
   - with neither, the download is trusted as it came.
 - A malformed line is skipped and logged (the line number and why); the file still loads.
+- **The NoPayStation layout is read too** (the owner, 2026-09-24: it is well known). Its column names map
+  onto ours: `PKG direct link` is the url, `File Size` the size, `Title ID` the serial, and `Name` the title
+  (only in a header without a `title` column; in ours `name` is the file's name).
+  - Lines of the same title with different serials (one per regional release) are separate items, their
+    ids `<kind>/<title>/<serial>`.
+  - Their links are PSN packages (`.pkg`), which are not disc images. The Store lists such items as **Not
+    installable** and never queues or fetches them.
+  - Implemented from the layout's column names alone: no list of theirs was downloaded to build or test it.
 
 **Where sources come from:**
 - every `*.tsv` in `System/Store/sources/` (drop one on the stick);
