@@ -14,8 +14,8 @@ const int FooterHeight = PanelStyle::FooterHeight;
 // a row: the title over its description, smaller than a compact panel's usual (PanelStyle::RowHeight, 60), so
 // every item fits on the screen at once without scrolling (the owner, 2026-09-25)
 const int RowHeight = 46;
-const int TitleSize = 19;       // the theme's medium font
-const int DescriptionSize = 13; // its bold one
+const int TitleSize = 19;                  // the theme's medium font
+const int DescriptionSize = 13;            // its bold one
 const int RowInset = PanelStyle::RowInset; // the rows' text from the panel's edge
 } // namespace
 
