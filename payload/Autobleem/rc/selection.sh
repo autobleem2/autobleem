@@ -38,12 +38,23 @@ cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 # micro-USB (power) port - the AutoBleem kernel's OTG, a hub with the stick on it - refuses suspend-to-RAM
 # while it serves a device ("trying to suspend as a_host while active", usb1 error -16); shutdown only
 # runs the drivers' shutdown hooks, so nothing can refuse it. The POWER button is then a cold boot, not a
-# quick wake. The stick is still attached (no suspend happened): mounted again for the log, and systemd
-# unmounts it cleanly on the way down.
+# quick wake. The stick is still attached (no suspend happened): mounted again for the log, then unmounted
+# here and its flag cleared as standby() does - not left to systemd's unmount on the way down: a stick that
+# came out of that power off dirty was reported (2026-09-25, the stick on the rear port, Windows' "scan and
+# fix" after the red LED).
 poweroff_instead() {
     echo "$(date) no standby on this console - powering off instead" >> $SLOG
     if mount "$DEV" /media 2>> $SLOG; then
         { cat $SLOG; echo; } >> $FAILLOG
+        sync
+        n=0
+        until umount /media 2>/dev/null || [ $n -ge 5 ]; do
+            n=$((n + 1))
+            sleep 1
+        done
+        if [ -f /tmp/ab_stick_owned ] && [ -x /tmp/abfatflag ]; then
+            /tmp/abfatflag "$DEV" clean
+        fi
         sync
     fi
     echo 0 > /sys/class/leds/green/brightness
