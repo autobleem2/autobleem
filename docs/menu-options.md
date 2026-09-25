@@ -39,7 +39,26 @@ classic start screen of earlier versions is gone.
 ## System menu (L2 + R2)
 
 Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Memory Cards, Game Manager
-(refuses while a scan is running), Hardware Information, Options, About, Power Off (confirmed).
+(refuses while a scan is running), Hardware Information, Options, Extensions, Scanner processors (refuses
+while a scan is running), Software Update (where the platform has one), About, Power Off (confirmed).
+
+## Scanner processors
+
+The programs in `System/Processors/` that every scan runs before it reads the games
+(`docs/scanner-processors-plan.md`), in two sequences - one per tab:
+
+| Button | Does |
+|---|---|
+| L1 / R1 | the PlayStation tab / the ROMs tab |
+| Up / Down | the processor above / below; L2 / R2 a page |
+| Cross | switches the selected processor off or on (a switched-off one keeps its place, greyed) |
+| Square | picks the processor up; Up / Down then move it through the sequence; Square (or Cross) puts it down |
+| Triangle | Run again: forgets what it already did, so the next scan offers it every game again |
+| Circle | back - `sequence.ini` saved and a scan requested when anything changed |
+
+A processor with no program for this machine is listed greyed ("Not available for this system") and keeps
+its place, since the stick may go to another machine. A processor's progress shows in the scan's bubble at the
+top right; a warning or a failure on the notification line under it (the details are in `processors.log`).
 
 ## Options
 

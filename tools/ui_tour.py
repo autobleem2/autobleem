@@ -88,7 +88,7 @@ def main(argv):
         shot('hardware-info-page-2')
         run('press o; wait_screen GuiLauncher')
         # About and the surprise game
-        run('menu 7; wait_screen GuiAbout; wait 300')
+        run('menu 9; wait_screen GuiAbout; wait 300')  # 7 Scanner processors, 8 Software Update
         shot('about')
         run('press start; wait 1500')
         shot('surprise-game')

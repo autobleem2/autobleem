@@ -25,7 +25,9 @@
 // anything changed; changed() tells the caller to request a scan.
 class GuiProcessors : public GuiScreen {
 public:
-    using GuiScreen::GuiScreen;
+    // spelled out, not `using GuiScreen::GuiScreen;`: the console's gcc-6 cannot combine an inherited
+    // constructor with the members below that are initialised in place (CLAUDE.md, "CI")
+    explicit GuiProcessors(ableem::GuiBase &gui) : GuiScreen(gui) {}
 
     void init() override;
     void render() override;

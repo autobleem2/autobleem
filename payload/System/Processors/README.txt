@@ -19,5 +19,6 @@ Only the bin/ folders for your machines are needed. Unpack a processor here and 
 next scan runs it. The System menu (L2+R2) -> Scanner processors puts them in order
 and switches them on or off; sequence.ini in this folder is that order.
 
-The first one, and the example to copy when you write your own:
+Unzip comes with AutoBleem: it unpacks zipped PS1 games and ROMs. It is also the example
+to copy when you write your own:
     https://github.com/autobleem2/proc_unzip

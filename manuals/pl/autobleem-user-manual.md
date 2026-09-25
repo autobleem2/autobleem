@@ -211,6 +211,7 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 | Informacje o sprzęcie | Maszyna: system, CPU, dyski, sieć, ekran, pady. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6). |
 | Opcje | Ustawienia AutoBleem (punkt 3.5). |
 | Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
+| Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). |
 | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | O programie | Autorzy i licencja. |
 | Wyłącz | Po potwierdzeniu: na konsoli czuwanie AutoBleem - pendrive odłączony, dioda czerwona, Power przywraca launcher (punkt 2.1); na Pi lub PC maszyna się wyłącza. |
@@ -317,6 +318,7 @@ Games/
 ```
 
 - Formaty: `.cue` + `.bin` (albo `.img`), `.pbp`, `.chd` (także zstd), `.ecm` (dekodowany przez skan), `.iso`.
+  Działa też spakowana gra: procesor **Unzip** rozpakowuje ją przed skanowaniem (punkt 3.13).
 - Gra wielopłytowa to jeden folder ze wszystkimi płytami; foldery `Gra (Disc 1)`, `Gra (Disc 2)` ... skan
   scala w jeden folder `Gra`.
 - Gry wrzucone luzem prosto do `Games/` skan porządkuje do folderów.
@@ -394,6 +396,36 @@ udostępnia i jakie problemy znalazł, i dodaj `http://<ta maszyna>:8124/store.t
 programy dla Linuksa i Windows są na stronie Sklepu, w zakładce **LAN server**; instrukcja instalacji jako
 usługi to `INSTALL-linux.md` (`ext_store/server/` w źródłach). Gry i płyty z PC wgrywa na taki serwer
 **LAN Share** (rozdział 5.2).
+
+### 3.13 Procesory skanowania
+
+**Procesory skanowania** to małe programy, które każde skanowanie uruchamia, zanim przeczyta gry. Procesor
+może zamienić format, którego AutoBleem nie czyta, na taki, który czyta - na przykład spakowaną grę - albo
+zmienić dane gry, jak łatka z tłumaczeniem. Mieszkają w `System/Processors/<nazwa>/` na pendrivie (na
+Raspberry Pi na partycji danych, w Windows w folderze danych); żeby zainstalować procesor, rozpakuj tam jego
+folder. Następne skanowanie go uruchomi.
+
+- **Unzip jest dołączony do AutoBleem**: rozpakowuje spakowane gry PS1 w `Games/`, zanim skanowanie je
+  przeczyta, oraz spakowane ROM-y, każdy osobno (zestawy arcade zostają spakowane). Aktualizacja AutoBleem
+  aktualizuje też jego, a jeśli go wyłączyłeś, zostaje wyłączony.
+- Procesor, który już zajął się grą, nie jest uruchamiany na niej ponownie, dopóki gra się nie zmieni.
+- Gdy procesor pracuje, dymek w prawym górnym rogu pokazuje, co robi; ostrzeżenie albo błąd pojawia się w
+  linii pod nim. Szczegóły są w `processors.log` w folderze logów.
+- Uruchomienie gry albo RetroArch zatrzymuje procesor, który zmienia pliki; następne skanowanie kończy jego
+  pracę.
+
+**L2 + R2 → Procesory skanowania** pokazuje je w kolejności, w jakiej działają, na jednej karcie dla gier PS1,
+na drugiej dla ROM-ów (L1 / R1). **Kwadrat** podnosi procesor, a góra / dół go przesuwają - kolejność ma
+znaczenie: procesor, który rozpakowuje, musi być przed tym, który łata to, co rozpakowano. **Krzyżyk**
+wyłącza go albo włącza, **Trójkąt** każe mu przy następnym skanowaniu przejrzeć wszystkie gry od nowa,
+**Kółko** wraca i uruchamia skanowanie, jeśli coś zmieniłeś. Procesor zbudowany dla innego urządzenia zostaje
+na liście, wyszarzony.
+
+![Procesory skanowania](../images/pl/processors.jpg)
+
+Własny procesor: strona procesora Unzip, `https://github.com/autobleem2/proc_unzip`, opisuje wszystko, co
+procesor musi robić, a `tools/proc_check.py` w
+źródłach AutoBleem sprawdza go, zanim się nim podzielisz.
 
 <!-- pagebreak -->
 
