@@ -127,6 +127,8 @@ SECTIONS = [
      'linked by every program; shipped as shared libraries in the console package (Autobleem/lib/libs.tar.gz) '
      'and the Windows package', 'zlib',
      'Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>\n\n' + ZLIB_LICENCE),
+    ('SDL_GameControllerDB', 'src/resources/gamecontrollerdb.txt - the pad mappings every launcher build loads '
+     '(tools/update_gamecontrollerdb.py)', 'zlib', read('src/resources/gamecontrollerdb.LICENSE')),
     ('libogg, libvorbis, libvorbisfile', 'shipped in the console package (Autobleem/lib/libs.tar.gz) for SDL2_mixer',
      'BSD-3-Clause', BSD3_XIPH),
     ('GNU libiconv', 'shipped in the console package (Autobleem/lib/libs.tar.gz) as a shared library, unmodified',
