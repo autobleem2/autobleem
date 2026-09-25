@@ -152,7 +152,11 @@ standby() {
     sleep 3 # the USB bus re-enumerates after the resume
     i=0
     while [ $i -lt 30 ]; do
-        DEV="$(blkid | grep "^/dev/sd\(a\|b\)1:" | grep -E "LABEL=\"SONY.{0,4}\"" | awk -F: '{print $1}' | head -1)"
+        # any sd?1, not only sda1/sdb1 as usb_watch looks: a stick pulled during the standby and plugged back
+        # can come back under a new name while the kernel still holds the old one, and the wake then found
+        # nothing and rebooted (2026-09-25)
+        DEV="$(blkid | grep "^/dev/sd[a-z]1:" | grep -E "LABEL=\"SONY.{0,4}\"" | awk -F: '{print $1}' | head -1)"
+        [ $i = 0 ] && { echo "$(date) after the wake:"; blkid | grep '^/dev/sd' | sed 's/^/  /'; } >> $SLOG
         [ -n "$DEV" ] && mount "$DEV" /media && break
         DEV=""
         i=$((i + 1))
