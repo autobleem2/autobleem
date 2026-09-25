@@ -38,9 +38,11 @@ classic start screen of earlier versions is gone.
 
 ## System menu (L2 + R2)
 
-Re-Scan Games, RetroArch (or EmulationStation - exits the launcher into it), Memory Cards, Game Manager
-(refuses while a scan is running), Hardware Information, Options, Extensions, Scanner processors (refuses
-while a scan is running), Software Update (where the platform has one), About, Power Off (confirmed).
+Re-Scan Games, Extensions (second since 2026-09-25 - the Store is one), RetroArch (or EmulationStation -
+exits the launcher into it), Memory Cards, Game Manager (refuses while a scan is running), Hardware
+Information, Options, Scanner processors (refuses while a scan is running), Software Update (where the
+platform has one), About, Power Off (confirmed). The rows are 46 px (a 19 px title over a 13 px
+description), so all eleven fit on the screen without scrolling.
 
 ## Scanner processors
 

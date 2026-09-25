@@ -205,12 +205,12 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 | Pozycja | Co robi |
 |---|---|
 | Skanuj gry ponownie | Szuka teraz nowych, zmienionych lub usuniętych gier (skan sam też obserwuje folder). |
+| Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
 | RetroArch | Wychodzi z launchera do własnego menu RetroArch. Zamknięcie RetroArch wraca. |
 | Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
 | Menedżer gier | Gry PS1 jako lista z folderami: usuwanie gry, czyszczenie okładek. |
 | Informacje o sprzęcie | Maszyna: system, CPU, dyski, sieć, ekran, pady. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6). |
 | Opcje | Ustawienia AutoBleem (punkt 3.5). |
-| Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
 | Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). |
 | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | O programie | Autorzy i licencja. |

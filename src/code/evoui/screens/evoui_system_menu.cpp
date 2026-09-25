@@ -11,7 +11,11 @@ const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
 const int HeaderHeight = PanelStyle::HeaderHeight;
 const int FooterHeight = PanelStyle::FooterHeight;
-const int RowHeight = PanelStyle::RowHeight;
+// a row: the title over its description, smaller than a compact panel's usual (PanelStyle::RowHeight, 60), so
+// every item fits on the screen at once without scrolling (the owner, 2026-09-25)
+const int RowHeight = 46;
+const int TitleSize = 19;       // the theme's medium font
+const int DescriptionSize = 13; // its bold one
 const int RowInset = PanelStyle::RowInset; // the rows' text from the panel's edge
 } // namespace
 
@@ -23,13 +27,14 @@ void GuiSystemMenu::init() {
     items.push_back(
         {SystemMenuAction::RescanGames, _("Re-Scan Games"),
          scanInProgress ? _("A scan is already in progress") : _("Look for new, changed or removed games")});
+    // second, right after the rescan (the owner, 2026-09-25): the Store is an extension
+    items.push_back({SystemMenuAction::Extensions, _("Extensions"), _("Run an installed extension")});
     items.push_back({SystemMenuAction::RetroArch, retroArchLabel, _("Exit to") + " " + retroArchLabel});
     items.push_back({SystemMenuAction::MemoryCards, _("Memory Cards"), _("Create, rename or manage memory card sets")});
     items.push_back({SystemMenuAction::GameManager, _("Game Manager"), _("Delete games, flush covers")});
     items.push_back(
         {SystemMenuAction::HardwareInfo, _("Hardware Information"), _("Controller and system information")});
     items.push_back({SystemMenuAction::Options, _("Options"), _("Customize AutoBleem settings")});
-    items.push_back({SystemMenuAction::Extensions, _("Extensions"), _("Run an installed extension")});
     items.push_back({SystemMenuAction::Processors, _("Scanner processors"),
                      _("Put the scan's processors in order, switch them on or off")});
 #ifdef AB_ONLINE_UPDATE
@@ -80,10 +85,10 @@ void GuiSystemMenu::render() {
     for (int i = firstVisible; i < firstVisible + rows && i < static_cast<int>(items.size()); i++) {
         if (i == selected)
             style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts.atSize(FONT_MED, TitleSize), items[i].title, panel.x + RowInset + 8,
+                                         rowY + 4, i == selected ? style.text : style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts.atSize(FONT_BOLD, DescriptionSize), items[i].description,
+                                         panel.x + RowInset + 8, rowY + 27, style.secondary, XALIGN_LEFT);
         rowY += RowHeight;
     }
 

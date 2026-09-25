@@ -38,21 +38,21 @@ LAUNCHER = [
     ('set-picker-retroarch', 'press r1; wait 400'),
     ('set-picker-apps', 'press r1; wait 400'),
     ('system-menu', 'press o; wait 400; down l2; press r2; up l2; wait_screen GuiSystemMenu; wait 400'),
-    ('options', 'press o; wait 300; menu 5; wait_screen GuiOptions; wait 400'),
+    ('options', 'press o; wait 300; menu 6; wait_screen GuiOptions; wait 400'),
     ('game-editor', 'press o; wait 500; press down; wait 400; press right; wait 300; press x; wait_screen GuiEditor; wait 500'),
     ('memory-card-editor', 'press o; wait 400; press right; wait 300; press x; wait 1200'),
-    ('memory-cards', 'press o; wait 500; press o; wait 400; menu 2; wait 500'),
-    ('game-manager', 'press o; wait 400; menu 3; wait_screen GuiManager; wait 500'),
-    ('hardware-info', 'press o; wait 400; menu 4; wait 600'),
+    ('memory-cards', 'press o; wait 500; press o; wait 400; menu 3; wait 500'),
+    ('game-manager', 'press o; wait 400; menu 4; wait_screen GuiManager; wait 500'),
+    ('hardware-info', 'press o; wait 400; menu 5; wait 600'),
     # the system menu's items after Extensions: Scanner processors (7), Software Update (8), About (9)
     ('about', 'press o; wait 400; menu 9; wait_screen GuiAbout; wait 500'),
     ('button-guide', 'press o; wait 400; press t; wait 600'),
-    ('keyboard', 'press o; wait 400; menu 2; wait 400; press s; wait_screen GuiKeyboard; wait 400'),
+    ('keyboard', 'press o; wait 400; menu 3; wait 400; press s; wait_screen GuiKeyboard; wait 400'),
     ('app-start', 'press o; wait 300; press o; wait 300; press select; wait_screen GuiSetPicker; press r1; press r1; wait 300; press x; wait 900; press x; wait_screen GuiAppStart; wait 500'),
     ('launcher-apps', 'press o; wait 500'),
     ('rescan', 'menu 0; wait 700'),
     # the Extensions list and the AutoBleem Store
-    ('extensions', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu 6; wait_screen GuiExtensions; wait 400'),
+    ('extensions', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu 1; wait_screen GuiExtensions; wait 400'),
     # the scanner processors' sequences: copy proc_unzip's folder into usb/System/Processors/unzip first
     ('processors', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu 7; wait_screen GuiProcessors; wait 400'),
     ('store-apps', 'wait 500; press x; wait_screen GuiStore; wait 3000'),
@@ -64,7 +64,7 @@ STORE_CATALOG = 'https://autobleem.retromenele.pl/store/rpi/catalog.json'
 
 PSCBIOS = [
     # PSC-Bios is an extension (2026-09-24): the launcher's Hardware Information item opens it
-    ('pscbios-main', 'menu 4; wait_screen GuiPscBiosMain; wait 600'),
+    ('pscbios-main', 'menu 5; wait_screen GuiPscBiosMain; wait 600'),
     ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
     ('pscbios-gamepads', 'press o; wait 400; press s; wait_screen GuiGamepadMenu; wait 400'),
     ('pscbios-wizard', 'press x; wait 1200'),

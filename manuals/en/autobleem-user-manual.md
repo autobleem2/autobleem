@@ -204,12 +204,12 @@ with none opens on an empty shelf with the icon row showing Settings only.
 | Item | What it does |
 |---|---|
 | Re-Scan Games | Looks for new, changed or removed games now (the scan also watches the folder by itself). |
+| Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
 | RetroArch | Leaves the launcher for RetroArch's own menu. Closing RetroArch comes back. |
 | Memory Cards | Your memory card sets (section 3.7). |
 | Game Manager | The PS1 games as a list with their folders: delete a game, flush the covers. |
 | Hardware Information | The machine: system, CPU, storage, network, display, the pads. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6). |
 | Options | AutoBleem's settings (section 3.5). |
-| Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
 | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). |
 | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | About | Credits and licence. |
