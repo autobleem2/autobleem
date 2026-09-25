@@ -489,6 +489,14 @@ it is missing: core's `ProcessorCatalog::ensureFolder()` from `InstallerJob` (th
 `payload_linux/install.sh` (here and in autobleem-appliance's copy), `payload/System/Processors/README.txt`
 for the console package, and `tools/make_usb.py`. The launcher itself never needs it: no folder, no processors.
 
+**Unzip is bundled** (the owner, 2026-09-25: a processor ships with the packages, an extension does not):
+autobleem-appliance's `stage_processor` (`tools/release_assets.sh`) fetches `proc_unzip`'s package - its
+`nightly` for a development build, its latest `v*` release for a release (its nightly while it has none) - and
+keeps only the package's `bin/<key>/`: the console stick gets `System/Processors/unzip/` (laid over the stick),
+the Pi and PC-stick packages `processors/unzip/` (copied by `install.sh`), the Windows program folder
+`Processors/unzip/` (copied into the data tree by core's `WindowsInstallJob`). An update replaces its files and
+never touches `sequence.ini`. `proc_unzip` is part of the nightly's fingerprint.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

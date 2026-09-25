@@ -1379,6 +1379,13 @@ $STAGE_DIR/Autobleem/bin/autobleem
     if [ -f "$SCRIPT_DIR/system/processors-README.txt" ] && [ ! -f "$DATA_MOUNT/System/Processors/README.txt" ]; then
         run cp "$SCRIPT_DIR/system/processors-README.txt" "$DATA_MOUNT/System/Processors/README.txt"
     fi
+    # the bundled scanner processors (processors/<name>/ in the package - proc_unzip): their files replace the
+    # data partition's copies, so an update brings the new program; System/Processors/sequence.ini (the user's
+    # order, on/off) is never touched
+    if [ -d "$STAGE_DIR/processors" ]; then
+        run cp -r "$STAGE_DIR/processors/." "$DATA_MOUNT/System/Processors/"
+        run chmod +x "$DATA_MOUNT"/System/Processors/*/bin/*/* || true
+    fi
     # the extensions' folder (docs/extensions-plan.md): installed by hand, so only its README, once
     if [ -f "$SCRIPT_DIR/system/extensions-README.txt" ] && [ ! -f "$DATA_MOUNT/Extensions/README.txt" ]; then
         run cp "$SCRIPT_DIR/system/extensions-README.txt" "$DATA_MOUNT/Extensions/README.txt"

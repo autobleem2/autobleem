@@ -318,7 +318,7 @@ Games/
 ```
 
 - Formaty: `.cue` + `.bin` (albo `.img`), `.pbp`, `.chd` (także zstd), `.ecm` (dekodowany przez skan), `.iso`.
-  Z zainstalowanym procesorem **Unzip** działa też spakowana gra (punkt 3.13).
+  Działa też spakowana gra: procesor **Unzip** rozpakowuje ją przed skanowaniem (punkt 3.13).
 - Gra wielopłytowa to jeden folder ze wszystkimi płytami; foldery `Gra (Disc 1)`, `Gra (Disc 2)` ... skan
   scala w jeden folder `Gra`.
 - Gry wrzucone luzem prosto do `Games/` skan porządkuje do folderów.
@@ -405,9 +405,9 @@ zmienić dane gry, jak łatka z tłumaczeniem. Mieszkają w `System/Processors/<
 Raspberry Pi na partycji danych, w Windows w folderze danych); żeby zainstalować procesor, rozpakuj tam jego
 folder. Następne skanowanie go uruchomi.
 
-- **Unzip** jest pierwszym: rozpakowuje spakowane gry PS1 w `Games/`, zanim skanowanie je przeczyta, oraz
-  spakowane ROM-y, każdy osobno (zestawy arcade zostają spakowane). Jest pod adresem
-  `https://github.com/autobleem2/proc_unzip`.
+- **Unzip jest dołączony do AutoBleem**: rozpakowuje spakowane gry PS1 w `Games/`, zanim skanowanie je
+  przeczyta, oraz spakowane ROM-y, każdy osobno (zestawy arcade zostają spakowane). Aktualizacja AutoBleem
+  aktualizuje też jego, a jeśli go wyłączyłeś, zostaje wyłączony.
 - Procesor, który już zajął się grą, nie jest uruchamiany na niej ponownie, dopóki gra się nie zmieni.
 - Gdy procesor pracuje, dymek w prawym górnym rogu pokazuje, co robi; ostrzeżenie albo błąd pojawia się w
   linii pod nim. Szczegóły są w `processors.log` w folderze logów.
@@ -423,7 +423,8 @@ na liście, wyszarzony.
 
 ![Procesory skanowania](../images/pl/processors.jpg)
 
-Własny procesor: strona procesora unzip opisuje wszystko, co procesor musi robić, a `tools/proc_check.py` w
+Własny procesor: strona procesora Unzip, `https://github.com/autobleem2/proc_unzip`, opisuje wszystko, co
+procesor musi robić, a `tools/proc_check.py` w
 źródłach AutoBleem sprawdza go, zanim się nim podzielisz.
 
 <!-- pagebreak -->

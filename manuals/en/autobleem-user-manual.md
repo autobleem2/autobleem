@@ -316,7 +316,7 @@ Games/
 ```
 
 - Formats: `.cue` + `.bin` (or `.img`), `.pbp`, `.chd` (zstd too), `.ecm` (decoded by the scan), `.iso`.
-  With the **Unzip** processor installed, a zipped game works too (section 3.13).
+  A zipped game works too: the **Unzip** processor unpacks it before the scan (section 3.13).
 - A multi-disc game is one folder with every disc in it; folders named `Game (Disc 1)`, `Game (Disc 2)`
   ... are merged into one `Game` folder by the scan.
 - Games dropped straight into `Games/` (loose files) are sorted into folders by the scan.
@@ -401,8 +401,9 @@ format AutoBleem does not read into one it does - a zipped game, for example - o
 as a translation patch. They live in `System/Processors/<name>/` on the stick (on a Raspberry Pi its data
 partition, on Windows the data folder); to install one, unpack its folder there. The next scan runs it.
 
-- **Unzip** is the first one: it unpacks zipped PS1 games in `Games/` before the scan reads them, and zipped
-  ROMs one at a time (arcade sets stay zipped). It is at `https://github.com/autobleem2/proc_unzip`.
+- **Unzip comes with AutoBleem**: it unpacks zipped PS1 games in `Games/` before the scan reads them, and
+  zipped ROMs one at a time (arcade sets stay zipped). Updating AutoBleem updates it too, and leaves it
+  switched off if you switched it off.
 - A processor that has already dealt with a game is not run on it again until the game changes.
 - While a processor works, the bubble at the top right shows what it is doing; a warning or a failure appears
   on the line under it. `processors.log` in the logs folder has the details.
@@ -416,7 +417,8 @@ anything. A processor built for another machine stays on the list, greyed.
 
 ![Scanner processors](../images/en/processors.jpg)
 
-Writing your own: the unzip processor's page explains everything a processor has to do, and
+Writing your own: Unzip's page, `https://github.com/autobleem2/proc_unzip`, explains everything a processor
+has to do, and
 `tools/proc_check.py` in AutoBleem's source checks one before you share it.
 
 <!-- pagebreak -->
