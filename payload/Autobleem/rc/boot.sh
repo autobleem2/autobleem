@@ -18,9 +18,18 @@ udevadm control --reload-rules
 udevadm trigger
 
 # kernel modules the stick carries beyond the firmware's (xpad.ko for Xbox pads - the site's libs pack,
-# unpacked by the installer into Autobleem/lib/modules)
+# unpacked by the installer into Autobleem/lib/modules) - only for a kernel without its own: the AutoBleem
+# kernel from psc-kernel-payload 2026-09-25 on builds a newer xpad (and more) as modules, udev loads them,
+# and the stick's 2020 build would take the pad from it - built for another kernel, at best refused
+KMODDIR=/lib/modules/$(uname -r)
 for kmod in /media/Autobleem/lib/modules/*.ko; do
-    [ -f "$kmod" ] && insmod "$kmod"
+    [ -f "$kmod" ] || continue
+    name=$(basename "$kmod")
+    if grep -qs "/$name" "$KMODDIR/modules.dep" "$KMODDIR/modules.builtin"; then
+        echo "boot: $name - the kernel has its own"
+        continue
+    fi
+    insmod "$kmod"
 done
 
 $RC/killsony.sh
