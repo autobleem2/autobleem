@@ -56,6 +56,10 @@ export AB_APP_VIRTUAL_PAD
 # symlink), and made the library path. Was RetroBoot's init_libs.sh / RB_LIBRARY_PATH. Only the console has
 # that folder; a Pi or a PC has a real distribution underneath and needs none of it.
 #
+# A multi-platform App built for the console (AB_APP_KEY=psc) is built against the launcher's own SDL2 family
+# (autobleem-main docs/decisions.md, "Third-party App ports"), which is in /tmp/lib - unpacked at boot from
+# Autobleem/lib/libs.tar.gz - so that goes ahead of the pack. An App of the old kind keeps the path it had.
+#
 # Every target: the App's own libraries for this platform (Lib= in its ini, AB_APP_LIB) go first.
 # ---------------------------------------------------------------------------------------------
 APPLIB=/tmp/applib
@@ -76,6 +80,9 @@ if [ -d "$APPLIB_SRC" ]; then
         done
     fi
     LD_LIBRARY_PATH=$APPLIB
+fi
+if [ "$AB_APP_KEY" = psc ] && [ -d /tmp/lib ]; then
+    LD_LIBRARY_PATH="/tmp/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
 if [ -n "$AB_APP_LIB" ]; then
     LD_LIBRARY_PATH="$AB_APP_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"

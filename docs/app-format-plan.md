@@ -1,8 +1,11 @@
 # Multi-platform Apps and extensions (plan)
 
-**Status (2026-09-24):** steps 1-2 and the launch half of step 3 are done: the rule is in core, the
-launcher lists and starts Apps by it, and the three rc scripts carry it. What is left: the Windows
-product's `Apps/` folder, converting the eight console Apps, and building OpenTyrian for every target.
+**Status (2026-09-25):** steps 1-3 are done: the rule is in core, the launcher lists and starts Apps by it,
+the three rc scripts carry it, and the Windows product has its `Apps/` folder (the launcher and
+AutoBleemWinSetup make it). OpenTyrian is the first App built for every target (`autobleem2/app_opentyrian`,
+step 6 - built and run on the dev PC, the hardware pass to come). What is left: converting the eight console
+Apps (the third-party ports, one `app_<name>` repository each - autobleem-main `docs/decisions.md`) and the
+App authors' documentation.
 This file defines one folder format that carries a
 program for **every platform we build for, now and later**. The same folder holds several platforms'
 binaries side by side. Its ini says which binary is for which platform, and the launcher, `run.sh` and
@@ -160,8 +163,14 @@ key that matched, or why nothing matched.
     instead, with the same environment. It sources `app_env.sh` and ends in `exec "$AB_APP_EXEC" ...`.
   - Either way the script "knows" the binary from the ini, because the launcher resolved it from the ini.
 - **Windows:** no `sh`. The launcher starts `AB_APP_EXEC` directly (the Windows product's direct-launch
-  path, `Env::directLaunch()`) with the same environment and `AB_APP_LIB` prepended to `PATH`. A `run.sh`
-  is ignored there; an App that needs set-up on Windows puts a `run.cmd` in `Exec.win`.
+  path, `Env::directLaunch()`) with the same environment and a `PATH` of `AB_APP_LIB`, then the launcher's
+  own folder - so an App uses the launcher's `SDL2.dll`, as it uses the launcher's SDL2 on the console -
+  then the inherited one. A `run.sh` is ignored there; an App that needs set-up on Windows puts a `run.cmd`
+  in `Exec.win`. An App of the old kind (`Startup=` only) cannot run there: `AppManifest` refuses it, so the
+  Apps set does not list it and the Store does not install it (2026-09-25).
+- **SDL2** is never in an App's `lib/<key>/` (autobleem-main `docs/decisions.md`, "Third-party App ports"):
+  the launcher's own on the console (`app_env.sh` puts `/tmp/lib` ahead of the libs pack for an App with
+  `AB_APP_KEY=psc`) and on Windows (the `PATH` above), the system's on the Pis and the PC stick.
 - **Run by hand** (ssh, debugging) there is no launcher to resolve anything. `rc/app_env.sh` then resolves
   the ini itself, with the same rule written in `sh`, when `AB_APP_EXEC` is not already set:
   - the keys come from `$AB_PLATFORM_KEYS`, else from the file the launcher writes at start-up,
@@ -223,14 +232,15 @@ Each step is one commit (core first, then the submodule bump), with its tests.
    - Tests: `tests/rc/test_app_resolve.cpp` holds the shell copy to the C++ answers and the two payload
      copies identical; `test_launch`/`test_game_query` cover the new paths.
    - Existing Apps (`Startup=run.sh` only) are started exactly as before.
-3. **Half done.** The direct launch of the resolved program with `Args`, `PATH` and the environment is in
-   (`planApp`, tested). Still to do: an `Apps/` folder in the Windows product's data root, and a first
-   Windows App run on the product.
+3. **Done.** The direct launch of the resolved program with `Args`, `PATH` and the environment is in
+   (`planApp`, tested); the Windows product's data root has `Apps/` (`EnvironmentSetup::fromWindowsInstall`,
+   `WindowsInstallJob`); OpenTyrian's Windows build ran on the dev PC as the launcher starts it. The first
+   run on an installed Windows product is the tester checklist's.
 4. **Not done.** The eight console Apps converted (`tools/pack_psc_apps.py`): binaries to `bin/psc/`,
    `Exec=bin/{key}/<name>`, `run.sh` kept only where it does something. They repack per App for the Store.
 5. **Not done.** `ExtensionService` on `AppManifest` (with the extensions plan's step 1).
-6. **Not done.** OpenTyrian as the first real multi-platform App: `psc`, `rpi`, `rpi64`, `pcusb`, `win`
-   builds in one folder, run on each (the tester checklist).
+6. **Built.** OpenTyrian as the first real multi-platform App (`autobleem2/app_opentyrian`, 2026-09-25):
+   `psc`, `rpi`, `rpi64`, `pcusb`, `win` packages from its CI. Left: a run on each (the tester checklist).
 7. **Not done.** Documentation for App authors: the folder, the keys table, the ini, when to write a
    `run.sh`; the manuals' Apps section.
 
