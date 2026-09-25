@@ -104,6 +104,10 @@ private:
     // be worse than having no way out at all.
     unsigned hotkeyHeldCycles_ = 0;
     bool hotkeyQuitSent_ = false;
+    // the daemon's quit requests (the console's Reset button): a count, so the first snapshot sets the
+    // baseline and only a later, different count asks the app to quit
+    uint32_t quitRequestsSeen_ = 0;
+    bool quitBaselineTaken_ = false;
     std::deque<ShimEvent> events_;
     FILE *log_ = nullptr;
 };

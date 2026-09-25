@@ -295,6 +295,17 @@ TEST_CASE("the daemon's state reaches the shim through the shared block") {
         CHECK(readSnapshot(shared, other) == false);
     }
 
+    SUBCASE("a quit request (the console's Reset button) reaches the reader as a new count") {
+        uint32_t before = snapshot.quitRequests;
+        requestQuit(shared);
+        Snapshot asked;
+        REQUIRE(readSnapshot(shared, asked));
+        CHECK(asked.quitRequests == before + 1);
+        // and the pads are untouched by it
+        CHECK(asked.pads[0].button(Element::A));
+        CHECK(shared.sequence.load() % 2 == 0);
+    }
+
     SUBCASE("more pads than the block holds are cut off, not written past") {
         bool all[MaxPads] = {true, true, true, true};
         publishPads(shared, pads, all, 99);
@@ -308,6 +319,9 @@ TEST_CASE("the shared block is only useful if both sides agree on its shape") {
     // a change to either of these is a change to the protocol: bump SharedVersion with it
     CHECK(sizeof(SharedPad) == 120);
     CHECK(SharedVersion == 1);
+    // quitRequests took one of the two reserved words: the block keeps its size, so an older shim
+    // still reads a newer daemon's block (and ignores the count)
+    CHECK(sizeof(SharedState) == 8 * sizeof(uint32_t) + MaxPads * sizeof(SharedPad));
     CHECK(ButtonElementCount <= 32); // the buttons are a bitmask in one word
     CHECK(MaxPads >= 2);             // two players is the point
 }

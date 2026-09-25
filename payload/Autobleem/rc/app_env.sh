@@ -115,7 +115,11 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
 # libabpad.so, preloaded, shows the App a pad it understands whichever SDL API it reads. Neither is
 # required: an App whose folder has no pad.ini and a tree with no abpad installed simply run as they
 # always did, and an App whose app.ini says VirtualPad=false (it reads the pads its own way, or has no
-# use for one) is left alone entirely.
+# use for one) gets neither - on the console only the daemon's Reset watch (--exit-only).
+#
+# Either way out ends the App: holding Start+Select (the shim asks, the daemon terminates, then
+# kills), and on the console a press of Reset (the daemon asks through the shim, then terminates and
+# kills - see ResetWatch in abpadd.cpp).
 #
 # The daemon is given this shell's pid to watch, so it goes when the App goes - including when the
 # App is exec'd over this shell, which keeps the same pid, and including when the App crashes.
@@ -146,4 +150,8 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
     # overrides SDL's built-in table, and for a pad SDL already knows the built-in entry is the right
     # one while ours may be a stale line for another of that pad's modes.
     [ -f /tmp/abpad.state.mappings ] && export SDL_GAMECONTROLLERCONFIG_FILE=/tmp/abpad.state.mappings
+elif [ -d /usr/sony ] && [ -x "$AB_PAD_DIR/abpadd" ]; then
+    # The console's Reset button ends every App (the owner's rule, 2026-09-25): an App that reads the
+    # pads itself still gets the daemon, in the mode that only watches Reset (no SDL, no preload).
+    "$AB_PAD_DIR/abpadd" --exit-only --watch-pid $$ > "$AB_LOG_DIR/abpadd.log" 2>&1 &
 fi

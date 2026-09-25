@@ -30,6 +30,7 @@ void initSharedState(SharedState &state) {
     state.padCount = 0;
     state.daemonPid = 0;
     state.heartbeat = 0;
+    state.quitRequests = 0;
     memset(state.reserved, 0, sizeof(state.reserved));
     memset(state.pads, 0, sizeof(state.pads));
     state.magic = SharedMagic;
@@ -48,6 +49,16 @@ void publishPadIdentity(SharedState &state, int index, const char *name, const c
     state.sequence.store(sequence + 1, memory_order_release); // odd: a write is in progress
     copyName(state.pads[index].name, SharedNameSize, name);
     copyName(state.pads[index].guid, SharedGuidSize, guid);
+    state.sequence.store(sequence + 2, memory_order_release);
+}
+
+//*******************************
+// requestQuit
+//*******************************
+void requestQuit(SharedState &state) {
+    uint32_t sequence = state.sequence.load(memory_order_relaxed);
+    state.sequence.store(sequence + 1, memory_order_release);
+    ++state.quitRequests;
     state.sequence.store(sequence + 2, memory_order_release);
 }
 
@@ -108,6 +119,7 @@ bool readSnapshot(const SharedState &state, Snapshot &out) {
         uint32_t padCount = state.padCount;
         snapshot.padCount = static_cast<int>(padCount > MaxPads ? MaxPads : padCount);
         snapshot.heartbeat = state.heartbeat;
+        snapshot.quitRequests = state.quitRequests;
         for (int i = 0; i < snapshot.padCount; ++i) {
             const SharedPad &shared = state.pads[i];
             snapshot.connected[i] = shared.connected != 0;
