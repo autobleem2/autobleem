@@ -246,6 +246,13 @@ build_win() {
     file build_mingw_product/autobleem-gui.exe | grep -q 'PE32+ executable.*x86-64'
     # (not grep -q: it would quit at the match and objdump's SIGPIPE fails the pipeline under pipefail)
     objdump -p build_mingw_product/autobleem-gui.exe | grep 'Subsystem.*Windows GUI' >/dev/null
+    # an extension carries the GCC runtime inside, as the exe does: the product ships neither DLL
+    while IFS= read -r dll; do
+        if objdump -p "$dll" | grep -E 'DLL Name: (libstdc\+\+-6|libgcc_s_seh-1)\.dll' >/dev/null; then
+            echo "$dll needs the GCC runtime DLLs, which the product does not ship" >&2
+            exit 1
+        fi
+    done < <(find build_mingw_product -path '*/extensions/*' -name '*.dll')
     bash tools/make_win_package.sh --build-dir build_mingw --product build_mingw_product --out dist/win --version "$VERSION"
     if command -v makensis >/dev/null 2>&1; then
         banner "win: the installer"

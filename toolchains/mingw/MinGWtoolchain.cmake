@@ -33,6 +33,11 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # the GCC runtime inside the exe; winpthread stays a DLL (libstdc++'s thread support wants it shared) and
 # ships next to the exe with the SDL DLLs (tools/make_win_package.sh). UpdateRoms links -static on its own.
 set(CMAKE_EXE_LINKER_FLAGS_INIT "-static-libgcc -static-libstdc++")
+# and inside every extension (ab_add_extension builds a MODULE): the product ships no libstdc++-6.dll or
+# libgcc_s_seh-1.dll, so a plugin that wanted them was refused - error 126 on a clean install, 127 where an
+# older MSYS2-built install had left its own copies next to a newer winpthread (the Store, 2026-09-25)
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "-static-libgcc -static-libstdc++")
+set(CMAKE_MODULE_LINKER_FLAGS_INIT "-static-libgcc -static-libstdc++")
 
 # the host's pkg-config, reading only the SDL packages' .pc files (their prefix is rewritten at install)
 set(ENV{PKG_CONFIG_LIBDIR} "${AB_MINGW_SDL2}/lib/pkgconfig")
