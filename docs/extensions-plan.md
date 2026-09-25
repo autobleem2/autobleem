@@ -18,9 +18,10 @@ This is our answer to what Project Eris calls "mods". Nothing of theirs is used 
 2. **One central place to run them**: the System menu's **Extensions** item opens a list of what is
    installed, and Cross runs one.
 3. **Installed by hand**: the user unpacks an extension's package onto the stick (or the data partition,
-   or the Windows data folder). Nothing installs or updates an extension for them, and that includes the
-   Store. **Extensions are separate downloads**: none is bundled with a release package, the Store
-   included - **except PSC-Bios** (decision 6, as changed).
+   or the Windows data folder). Nothing installs or updates an extension for them. **Extensions are
+   separate downloads**: none is bundled with a release package - **except PSC-Bios** (decision 6, as
+   changed) **and the Store** (changed by the owner on 2026-09-25: every platform's installer ships it, and
+   an install or update puts in the version it brings - see `CLAUDE.md`, "Extensions").
 4. **Every target**: an extension folder is multi-platform, with one library per platform key
    (`docs/app-format-plan.md`).
 5. **The AutoBleem Store is the first extension.**
@@ -373,7 +374,8 @@ Each step is one commit (a core commit plus a submodule bump where core changes)
    - Still to do: the export list (a version script / `.def` file with the SDK surface only).
 5. **Not done.** CI: the ABI check (`abidiff` against the last release) and the SDK package per target.
 6. **Not done.** The first real extension, the **AutoBleem Store** (`docs/store-plan.md`), in its own
-   repository, `autobleem2/ext_store`, published as a separate download for every target.
+   repository, `autobleem2/ext_store`, published for every target - and, since 2026-09-25, shipped in
+   every platform's package (decision 3).
 7. **Not done.** Documentation for extension authors (the surface, the life of a plugin, the ABI rules,
    building in the image, the UI standard they draw by), and an "Extensions" section in the manuals.
 8. **Not done.** On hardware (the tester checklist): `hello` and the Store on the console, a Pi, the PC

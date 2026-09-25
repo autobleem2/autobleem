@@ -10,8 +10,8 @@
 
 The Store downloads and installs Apps and games without
 pulling the stick. It is the **first AutoBleem extension** (`docs/extensions-plan.md`): a program built on
-the AutoBleem SDK, loaded into the launcher as a plugin. It is a separate download, unpacked onto the
-stick by hand, and run from the System menu's Extensions list.
+the AutoBleem SDK, loaded into the launcher as a plugin. It ships with every platform's installer (since
+2026-09-25; it was a separate download, unpacked by hand) and runs from the System menu's Extensions list.
 
 It came out of a look at Project Eris' "PSC Store" (`github.com/hampter-mods/pscstore-release`,
 release-only, closed source). What we take from it is the idea, not the code: a controller-driven library
@@ -50,7 +50,8 @@ behind it:
    - it lives in `Extensions/store/` and is started from System menu -> Extensions;
    - it is a plugin with `Background=true`, so its downloads go on while the carousel is showing;
    - it is **a separate download**, never bundled with a release, and the user installs it by hand like
-     every extension;
+     every extension - **changed on 2026-09-25**: every platform's installer ships it, an install or update
+     puts in the version it brings;
    - it lives in its own repository (`autobleem2/ext_store` - an extension's repository is named `ext_<name>` - with autobleem-core as a
      submodule);
    - it never offers or installs extensions.

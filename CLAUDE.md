@@ -415,8 +415,13 @@ recipe is the clean route if they are ever to ship.
 - `Background=true` to be polled every frame;
 - `Network=required|optional|none` - `required` is refused offline.
 
-It is installed by hand, run from the System menu's **Extensions** item (`GuiExtensions`), and never
-bundled with a release. Its source repository is named `ext_<name>`.
+It is run from the System menu's **Extensions** item (`GuiExtensions`); its source repository is named
+`ext_<name>`. **The Store ships with every platform's installer** (the owner, 2026-09-25 - it used to be a
+separate download): the appliance's assemble scripts put `ext_store`'s package in (the stick's
+`Extensions/`, `extensions/` in a Linux package for `install.sh`, the Windows program folder's `Extensions/`
+for `WindowsInstallJob`), and every install and update replaces a shipped extension's folder whole
+(`InstallerJob` removes exactly the package's `Extensions/<name>/`), leaving an extension's state in
+`System/Extensions/` and any extension the user unpacked by hand alone. PSC-Bios ships with the console's.
 
 **How it binds to the launcher.**
 - It links against the launcher's own copy of the SDK. `autobleem-gui` is built with `ENABLE_EXPORTS`

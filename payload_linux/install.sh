@@ -1386,9 +1386,20 @@ $STAGE_DIR/Autobleem/bin/autobleem
         run cp -r "$STAGE_DIR/processors/." "$DATA_MOUNT/System/Processors/"
         run chmod +x "$DATA_MOUNT"/System/Processors/*/bin/*/* || true
     fi
-    # the extensions' folder (docs/extensions-plan.md): installed by hand, so only its README, once
+    # the extensions' folder (docs/extensions-plan.md): its README, once
     if [ -f "$SCRIPT_DIR/system/extensions-README.txt" ] && [ ! -f "$DATA_MOUNT/Extensions/README.txt" ]; then
         run cp "$SCRIPT_DIR/system/extensions-README.txt" "$DATA_MOUNT/Extensions/README.txt"
+    fi
+    # the bundled extensions (extensions/<name>/ in the package - the Store, the owner 2026-09-25): each folder
+    # replaced whole, so an update brings the new version and nothing of the old; the extension's own state
+    # (System/Extensions/<name>/, disabled.txt) and an extension the user unpacked themselves are never touched
+    if [ -d "$STAGE_DIR/extensions" ]; then
+        for ext in "$STAGE_DIR"/extensions/*/; do
+            [ -f "$ext/extension.ini" ] || continue
+            name="$(basename "$ext")"
+            run rm -rf "$DATA_MOUNT/Extensions/$name"
+            run cp -r "$ext" "$DATA_MOUNT/Extensions/$name"
+        done
     fi
 
     # exFAT has no permission bits of its own - the mount's umask=000 already makes everything 0777 - so a

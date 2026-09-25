@@ -158,6 +158,7 @@ Section "AutoBleem (required)" SecProgram
   RMDir /r "$INSTDIR\lang"
   RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\emu"
+  RMDir /r "$INSTDIR\Extensions" ; the shipped extensions (the Store): AutoBleemWinSetup copies them into the data folder
   ; the Linux makensis (the image) takes no backslash in a File spec, the Windows one no forward slash
 !ifdef NSIS_WIN32_MAKENSIS
   !searchreplace STAGE_WIN "${STAGE}" "/" "\"
