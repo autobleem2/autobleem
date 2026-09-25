@@ -46,7 +46,10 @@ struct SharedState {
     uint32_t padCount;
     uint32_t daemonPid;
     uint32_t heartbeat; // bumped every cycle, so a reader can tell a stopped daemon from a still one
-    uint32_t reserved[2];
+    // bumped each time the daemon wants the app gone (the console's Reset button): the shim sends the
+    // app a quit event when it sees a new count. Was reserved[0], so an older shim simply ignores it.
+    uint32_t quitRequests;
+    uint32_t reserved[1];
     SharedPad pads[MaxPads];
 };
 
@@ -60,6 +63,7 @@ struct Snapshot {
     bool connected[MaxPads] = {};
     ControllerState pads[MaxPads];
     uint32_t heartbeat = 0;
+    uint32_t quitRequests = 0;
 };
 
 // the daemon's side
@@ -67,6 +71,8 @@ void initSharedState(SharedState &state);
 void publishPads(SharedState &state, const ControllerState *pads, const bool *connected, int padCount);
 // the name and guid are written once when a pad arrives, not every cycle
 void publishPadIdentity(SharedState &state, int index, const char *name, const char *guid);
+// asks the app to quit - the shim turns a new quitRequests count into a quit event
+void requestQuit(SharedState &state);
 
 // the shim's side: false when the block is not ours, or never settled (the daemon died mid-write)
 bool readSnapshot(const SharedState &state, Snapshot &out);

@@ -8,10 +8,11 @@
 // It is a separate process because it has to be: an SDL 1.2 app cannot have a libSDL2 loaded beside
 // its own SDL, both exporting SDL_Init, SDL_PollEvent and SDL_NumJoysticks.
 //
-//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--probe] [--verbose]
+//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--probe] [--exit-only] [--verbose]
 //
 // --probe prints what SDL makes of every pad and exits, which is how to find out on a console whether
-// a pad is mapped at all and what the launcher would call it.
+// a pad is mapped at all and what the launcher would call it. --exit-only watches the console's Reset
+// button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
 
 #include "core/mapping.h"
 #include "core/profile.h"
@@ -36,6 +37,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #ifdef __linux__
+#include <fcntl.h>
+#include <linux/input.h>
+#include <sys/ioctl.h>
 #include <sys/prctl.h>
 #endif
 #endif
@@ -316,6 +320,138 @@ private:
 };
 
 //*******************************
+// ResetWatch - the console's Reset button ends the app
+//*******************************
+// The PlayStation Classic's Reset button is an input device's KEY_PLAYPAUSE - what SDL 2.0.14 calls
+// SDL_SCANCODE_AUDIOPLAY, which is how pcsx-ab and pcsx-abnxt see it and leave the game. A third-party
+// app sees it as a key it does not know, and ignores it; we have no window and so no key events, so we
+// read the devices that can send it ourselves (we run as root, for hidraw, which covers /dev/input too).
+// A press asks the app to quit through the shim (quitRequests), then ends it by its pid: SIGTERM after
+// a second and a half, SIGKILL after three. In --exit-only mode (an App with VirtualPad=false - no shim
+// to ask) the SIGTERM comes at once. Nothing on a Pi or a PC has the key, so there it watches nothing.
+class ResetWatch {
+public:
+    ResetWatch(long pid, SharedState *shared) : pid_(pid), shared_(shared) { open(); }
+    ~ResetWatch() {
+#ifdef __linux__
+        for (int fd : fds_) {
+            ::close(fd);
+        }
+#endif
+    }
+    ResetWatch(const ResetWatch &) = delete;
+    ResetWatch &operator=(const ResetWatch &) = delete;
+
+    bool enabled() const { return pid_ > 0 && !fds_.empty(); }
+
+    // called once per cycle
+    void check(int rate) {
+        if (!enabled()) {
+            return;
+        }
+        if (cycles_ < 0 && pressed()) {
+            say("abpadd: Reset was pressed - stopping the app (pid %ld)", pid_);
+            cycles_ = 0;
+            if (shared_ != nullptr) {
+                requestQuit(*shared_);
+            } else {
+                stop(false);
+            }
+        }
+        if (cycles_ < 0) {
+            return;
+        }
+        ++cycles_;
+        if (shared_ != nullptr && cycles_ == rate * 3 / 2) {
+            stop(false);
+        } else if (cycles_ == rate * 3) {
+            say("abpadd: it did not stop - killing it");
+            stop(true);
+        }
+    }
+
+private:
+    void open() {
+#ifdef __linux__
+        if (pid_ <= 0) {
+            return;
+        }
+        for (int i = 0; i < 32; ++i) {
+            string path = "/dev/input/event" + to_string(i);
+            int fd = ::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+            if (fd < 0) {
+                continue;
+            }
+            unsigned char keys[KEY_MAX / 8 + 1] = {};
+            if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keys)), keys) >= 0 &&
+                (keys[KEY_PLAYPAUSE / 8] & (1 << (KEY_PLAYPAUSE % 8))) != 0) {
+                char name[128] = {};
+                ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name);
+                say("abpadd: watching %s (%s) for Reset", path.c_str(), name);
+                fds_.push_back(fd);
+            } else {
+                ::close(fd);
+            }
+        }
+#endif
+    }
+
+    bool pressed() {
+        bool any = false;
+#ifdef __linux__
+        for (int fd : fds_) {
+            input_event events[16];
+            ssize_t bytes;
+            while ((bytes = read(fd, events, sizeof(events))) > 0) {
+                for (size_t i = 0; i < static_cast<size_t>(bytes) / sizeof(input_event); ++i) {
+                    any = any || (events[i].type == EV_KEY && events[i].code == KEY_PLAYPAUSE && events[i].value == 1);
+                }
+            }
+        }
+#endif
+        return any;
+    }
+
+    // SIGTERM, or SIGKILL when hard
+    void stop(bool hard) const {
+#ifndef _WIN32
+        kill(static_cast<pid_t>(pid_), hard ? SIGKILL : SIGTERM);
+#else
+        (void)hard;
+#endif
+    }
+
+    long pid_;
+    SharedState *shared_;
+    vector<int> fds_;
+    int cycles_ = -1; // -1: not pressed yet; then counting towards SIGTERM / SIGKILL
+};
+
+//*******************************
+// exitOnly - Reset and nothing else
+//*******************************
+// For an App that reads the pads itself (VirtualPad=false): no SDL, no shared memory, only the way out.
+int exitOnly(long watchPid) {
+    ResetWatch reset(watchPid, nullptr);
+    if (!reset.enabled()) {
+        chatter("abpadd: no Reset button to watch");
+        return 0;
+    }
+    constexpr int rate = 50;
+    while (!g_stop) {
+        reset.check(rate);
+#ifndef _WIN32
+        if (kill(static_cast<pid_t>(watchPid), 0) != 0) {
+            chatter("abpadd: the app (pid %ld) is gone", watchPid);
+            break;
+        }
+        usleep(1000000 / rate);
+#endif
+    }
+    return 0;
+}
+
+//*******************************
 // readPad
 //*******************************
 ControllerState readPad(SDL_GameController *controller) {
@@ -486,6 +622,7 @@ int main(int argc, char *argv[]) {
     long watchPid = 0;
     bool probeOnly = false;
     bool watchOnly = false;
+    bool exitOnlyMode = false;
 
     for (int i = 1; i < argc; ++i) {
         string argument = argv[i];
@@ -506,11 +643,13 @@ int main(int argc, char *argv[]) {
             probeOnly = true;
         } else if (argument == "--watch") {
             watchOnly = true;
+        } else if (argument == "--exit-only") {
+            exitOnlyMode = true;
         } else if (argument == "--verbose") {
             g_verbose = true;
         } else {
             say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
-            say("              [--quit-hotkey a+b] [--rate HZ] [--probe] [--watch] [--verbose]");
+            say("              [--quit-hotkey a+b] [--rate HZ] [--probe] [--watch] [--exit-only] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
     }
@@ -533,6 +672,18 @@ int main(int argc, char *argv[]) {
         signal(SIGTERM, onSignal);
 #endif
         return watch(shmPath);
+    }
+    if (exitOnlyMode) {
+        // an App that reads the pads itself: only the console's Reset button, no SDL, no shared memory
+#ifndef _WIN32
+        signal(SIGINT, onSignal);
+        signal(SIGTERM, onSignal);
+        signal(SIGHUP, onSignal);
+#ifdef __linux__
+        prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
+#endif
+        return exitOnly(watchPid);
     }
 
     SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
@@ -580,6 +731,7 @@ int main(int argc, char *argv[]) {
     if (quitWatch.enabled()) {
         say("abpadd: holding %s will stop the app (pid %ld)", quitHotkey.c_str(), watchPid);
     }
+    ResetWatch resetWatch(watchPid, shared);
 
     Slot slots[MaxPads];
     // whatever is already plugged in when we start, once it has stopped changing shape under us;
@@ -636,6 +788,7 @@ int main(int argc, char *argv[]) {
         }
         publishPads(*shared, pads, connected, highest);
         quitWatch.check(pads, connected, highest, rate);
+        resetWatch.check(rate);
 
 #ifndef _WIN32
         // the App we were started for has gone: nothing left to serve

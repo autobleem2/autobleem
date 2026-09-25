@@ -339,6 +339,18 @@ through one gesture, the shim asking the app to quit at ~1.5 s, the daemon (whic
 sending SIGTERM at 3 s and SIGKILL at 5 s. It must be *held*: Start and Select are live buttons in most
 games.
 
+**Every App can be left with the console's Reset button** (the owner's rule, 2026-09-25: every game
+needs a way out through Reset on the console and from the controller). The Reset button is an input
+device's `KEY_PLAYPAUSE` - what SDL 2.0.14 maps to `SDL_SCANCODE_AUDIOPLAY`, the key pcsx-ab
+(`plat_sdl.c`, `SACTION_RESET_EVENT`) and pcsx-abnxt (`plat_sdl2.c`, `SACTION_AB_RESET`) leave a game on;
+`KEY_PLAYCD`/`KEY_PLAY` map to nothing there. A third-party App ignores that key, so `abpadd`'s
+`ResetWatch` reads every `/dev/input/event*` that can send it: a press bumps `SharedState::quitRequests`
+(was `reserved[0]` - the block keeps its size and version, an older shim ignores it), the shim turns a
+new count into a quit event at once, and the daemon sends SIGTERM at 1.5 s and SIGKILL at 3 s. An App
+with `VirtualPad=false` (the terminal) gets `abpadd --exit-only` on the console (`[ -d /usr/sony ]` in
+`app_env.sh`): no SDL, no shim, SIGTERM on the press. **Windows** has no abpad: an App there is left
+through its own menu, which each port's readme names (the owner's choice).
+
 Layout: `apps/abpad/src/core/` is `abpad_core`, which links **nothing** - not even `ab_core` - because
 it ends up inside a shared object mapped into someone else's process; `src/daemon/` is `abpadd`;
 `src/shim/` is the preload (`sdl_abi.h` spells out both SDLs' event structures rather than including a
@@ -391,8 +403,16 @@ recipe is the clean route if they are ever to ship.
   - through `rc/app_run.sh`, or its own `Startup=` script, with `AB_APP_DIR/EXEC/ARGS/LIB/KEY`,
     `AB_PLATFORM(_KEYS)`, `AB_ROOT` and the ini's `Env` in the environment (`LaunchPlan::env`,
     `System::runAndWait`'s `env`);
-  - directly on Windows (the resolved exe, `Args` split, `Lib` on `PATH`).
-- An ini with only `Startup=` is an App of the old kind and is started exactly as before.
+  - directly on Windows (the resolved exe, `Args` split; `PATH` = `Lib`, then the launcher's own folder,
+    then the inherited one).
+- An ini with only `Startup=` is an App of the old kind and is started exactly as before - except on
+  Windows, which has no `sh`: `AppManifest` refuses it there, so it is neither listed nor run
+  (2026-09-25).
+- **SDL2 is shared, never bundled** (autobleem-main `docs/decisions.md`, "Third-party App ports"): an App
+  uses the launcher's SDL2 family - `/tmp/lib` on the console (`app_env.sh` puts it ahead of the libs
+  pack for an `AB_APP_KEY=psc` App), the launcher's folder on Windows (`SDL2.dll`, `SDL2_image/mixer/ttf`)
+  - or the system's on the Pis and the PC stick. Every other library an App needs is in its own
+  `lib/<key>/` (`Lib=lib/{key}`).
 - `VirtualPad=true|false` (absent = true) says whether the App runs with the virtual pad mapper.
   `AB_APP_VIRTUAL_PAD` carries it, and `app_env.sh` skips abpadd and the preload when it is off.
 - An App's source repository is named `app_<name>`, an extension's `ext_<name>` (the owner's rule).

@@ -294,6 +294,20 @@ void ShimState::update() {
         hotkeyQuitSent_ = true;
     }
 
+    // The console's Reset button, which abpadd reads (the app never sees it as anything it knows): the
+    // same request, at once - a single press is the way out, as it is in pcsx. abpadd ends the app
+    // itself if it does not go.
+    if (!quitBaselineTaken_) {
+        quitRequestsSeen_ = snapshot.quitRequests;
+        quitBaselineTaken_ = true;
+    } else if (snapshot.quitRequests != quitRequestsSeen_) {
+        quitRequestsSeen_ = snapshot.quitRequests;
+        log("abpad: Reset was pressed - asking the app to quit");
+        ShimEvent event;
+        event.kind = ShimEvent::Kind::Quit;
+        events_.push_back(event);
+    }
+
     // an app that never reads its events must not grow a queue for ever
     while (events_.size() > 256) {
         events_.pop_front();
