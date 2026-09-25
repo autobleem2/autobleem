@@ -284,6 +284,9 @@ target_link_libraries(autobleem-gui
 set_target_properties(autobleem-gui PROPERTIES ENABLE_EXPORTS ON)
 if (MINGW)
     target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
+    # but not the GCC runtime linked in statically (-static-libgcc -static-libstdc++): an extension carries
+    # its own copy (the toolchain file), and _Unwind_Resume from both was a duplicate definition
+    target_link_options(autobleem-gui PRIVATE -Wl,--exclude-libs=libgcc.a:libgcc_eh.a:libstdc++.a:libsupc++.a)
 endif()
 # ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
 # the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
