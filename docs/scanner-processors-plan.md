@@ -394,7 +394,9 @@ One commit each; core changes are an autobleem-core commit plus a submodule bump
    files next to the archive, the archive deleted only after the last rename. Built for every platform key
    with miniz. `--ismine` answers from the archive's listing (a `.zip` with a `.cue`/`.bin`/`.chd`/`.pbp`
    inside for PS1; any single ROM for the ROM kind). It proves the whole chain on the console. *Done* in
-   `github.com/autobleem2/proc_unzip` (`.zip` only): its CI builds psc, linux-armhf, linux-arm64, linux-i386 and
+   `github.com/autobleem2/proc_unzip` (`.zip` at first; `.7z` and `.rar` - RAR4, RAR5, volume sets - since
+   1.1.0, 2026-09-25, through a vendored, trimmed libarchive + liblzma): its CI builds psc, linux-armhf,
+   linux-arm64, linux-i386 and
    windows-x86_64 in the shared image, runs the self-test natively and on i386, and packs one
    `unzip-<version>.zip`.
 9. **`tools/proc_check.py`**: runs a processor against a scratch copy of a folder and validates its output
@@ -496,11 +498,11 @@ shows up on the console and nowhere else.
 ```ini
 [Processor]
 Name=Unzip
-Description=Unpacks zipped PS1 games and ROMs
-Version=1.0.0
+Description=Unpacks PS1 games and ROMs from .zip, .7z and .rar
+Version=1.1.0
 Exec=bin/{key}/unzip
 Kinds=games-folder,rom
-Match=*.zip
+Match=*.zip;*.7z;*.rar
 Systems=                     ; all - it answers "not mine" for arcade sets itself
 Order=10
 Timeout=120
@@ -509,7 +511,7 @@ Modifies=true
 
 ```
 $ unzip --version
-#Unzip V1.0.0 - Unpacks zipped PS1 games and ROMs
+#Unzip V1.1.0 - Unpacks PS1 games and ROMs from .zip, .7z and .rar
 ```
 
 As a preprocessor over `Games/`, the first thing a scan does (the environment is the launcher's):
@@ -519,7 +521,7 @@ AB_PROCESSOR_PROTOCOL=1  AB_ROOT=/media  AB_GAMES_DIR=/media/Games
 AB_TMP=/tmp/abproc/unzip  AB_LANGUAGE=English  AB_PLATFORM=psc
 
 $ unzip --start --games /media/Games
-#Starting - Unzip V1.0.0
+#Starting - Unzip V1.1.0
 #Looking for archives
 #Unpacking Crash Bandicoot (USA).zip
 1/2
@@ -546,14 +548,16 @@ Games/RPG/Spyro/Spyro the Dragon (Europe).zip -> Games/RPG/Spyro/Spyro the Drago
 ```
 
 A zip loose in `Games/` gets a folder named after it; a zip already in a game folder is unpacked where it
-is. While unpacking, the stick holds `Crash Bandicoot (USA).bin.part`; it is renamed when complete, and
+is. A `.7z` or a `.rar` is the same (since proc_unzip 1.1.0, 2026-09-25) - a RAR set of volumes
+(`Game.part1.rar`, ... or `Game.rar`, `Game.r00`, ...) is one archive, named by its first volume and deleted
+whole. While unpacking, the stick holds `Crash Bandicoot (USA).bin.part`; it is renamed when complete, and
 the `.zip` is deleted after the last rename.
 
 Nothing to do - the bubble never shows this run:
 
 ```
 $ unzip --start --games /media/Games
-#Starting - Unzip V1.0.0
+#Starting - Unzip V1.1.0
 #DONE
 ```
 
@@ -561,7 +565,7 @@ An error - the zip is kept, the `.part` files are removed:
 
 ```
 $ unzip --start --games /media/Games
-#Starting - Unzip V1.0.0
+#Starting - Unzip V1.1.0
 #Unpacking Final Fantasy VII (USA).zip
 1/1
 0
@@ -581,11 +585,11 @@ $ echo $?
 
 $ unzip --ismine --rom "/media/RetroArch/roms/MAME/pacman.zip" --system "MAME"
 $ echo $?
-1                                   # arcade sets stay zipped: not mine
+1                                   # arcade sets stay packed: not mine
 
 $ unzip --start --rom "/media/RetroArch/roms/Sega - Mega Drive - Genesis/Sonic (World).zip" \
                 --system "Sega - Mega Drive - Genesis"
-#Starting - Unzip V1.0.0
+#Starting - Unzip V1.1.0
 #Unpacking Sonic (World).zip
 0
 100

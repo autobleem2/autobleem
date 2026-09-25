@@ -9,20 +9,19 @@ section 11). Everything below waits for that, and for the owner's go.
 
 It has only the rolling `nightly` release. A `v1.0.0` tag runs its CI's `release` job (the package for every
 platform key, built in `autobleem-build:latest`). Before tagging: the hardware pass (console and Pi), and a
-look at whether the version on the tag and `package/processor.ini`'s `Version=` should move to 1.0.0 together
-(they are both 1.0.0 now). After it: the download site could list processors like the Store lists Apps -
+look at whether the tag and `package/processor.ini`'s `Version=` should move together (`Version=` is 1.1.0
+since 7z and RAR went in - the first tag could simply be `v1.1.0`). After it: the download site could list processors like the Store lists Apps -
 see 3.
 
-## 2. `.7z` in `proc_unzip`
+## 2. `.7z` in `proc_unzip` - done (2026-09-25)
 
-The first plan's step 8 said `.7z` too "if a small enough decoder can be vendored". core already has
-`SevenZipArchive` (`lib_ableem/engine/seven_zip_archive.h`, the Windows installer's), but proc_unzip links no
-AutoBleem code on purpose - it is the example of a processor with nothing but the standard library. Options:
-- vendor the LZMA SDK's 7z decoder (`7zDec.c`, `7zArcIn.c`, `LzmaDec.c`, ... - public domain, ~100 KB of
-  source) into `third_party/lzma/`, as core's libchdr deps already do;
-- a separate `proc_un7z`, so unzip stays the minimal example.
-Either way the same rules: `.part` then rename, a stopped run's finished files kept (size + CRC), the archive
-deleted after the last rename, the self-test and `proc_check.py` in CI. Match becomes `*.zip;*.7z`.
+proc_unzip 1.1.0 reads `.7z` and `.rar` (RAR 1.5-4.x and RAR5, volume sets `Game.partN.rar` or `Game.rar` +
+`.r00`...) as well as `.zip`, still with no AutoBleem code: libarchive 3.8.9 (the read core and the 7-Zip, RAR
+and RAR5 readers) over liblzma 5.8.4 (decoders only), vendored and trimmed, built with hand-written
+configuration. The LZMA SDK route was not taken: its 7z decoder unpacks a whole solid block into memory, which a
+solid 7z of a disc would not survive on the console, and it has no RAR; RARLAB's UnRAR is not GPL-compatible.
+`Match=*.zip;*.7z;*.rar`. A file a stopped run left is compared byte by byte as the archive unpacks (libarchive
+gives no CRC). Not read: a split 7z, anything with a password. proc_unzip's CLAUDE.md has the details.
 
 ## 3. Processors in the Store
 

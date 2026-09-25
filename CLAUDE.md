@@ -456,7 +456,7 @@ for `WindowsInstallJob`), and every install and update replaces a shipped extens
 binary per platform key in `bin/{key}/`, resolved by `AppManifest`), run by the scan over the games before it
 reads them: it can turn a format the launcher does not read into one it does, or change a game's data (a
 patch, a mod). The example and the first one is **`proc_unzip`** (its own repository, one C++ file over
-miniz). Its source repository is named `proc_<name>` (the owner's rule).
+miniz for `.zip` and a vendored libarchive + liblzma for `.7z` and `.rar` since 1.1.0). Its source repository is named `proc_<name>` (the owner's rule).
 
 **The protocol.**
 - `--version`, `--ismine --ps1 <folder>` / `--rom <file> --system <name>` (exit 0 = mine), and
