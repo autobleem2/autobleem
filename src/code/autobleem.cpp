@@ -313,7 +313,8 @@ int AutoBleem::run() {
         }
 
         // for the rc scripts, when the process is about to leave - never for a game, which comes back here:
-        // a selection left over from one would hide a later crash from them (docs/quiet-stick-plan.md)
+        // a selection left over from one would hide a later crash from them (autobleem-main's
+        // docs/archive/quiet-stick-plan.md)
         if (session_.menuOption != MENU_OPTION_START)
             launcher_.writeSelectionScript();
 

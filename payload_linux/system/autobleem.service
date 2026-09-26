@@ -13,7 +13,7 @@ Conflicts=getty@tty1.service plymouth-quit.service
 Type=simple
 ExecStart=/usr/local/bin/autobleem-session @DATA_MOUNT@
 # /run/autobleem (tmpfs) for this run's logs and hand-over files - the data partition is written only when
-# the user's state changes (docs/quiet-stick-plan.md); the session exports it as AB_RUNTIME_DIR
+# the user's state changes (autobleem-main's docs/archive/quiet-stick-plan.md); the session exports it as AB_RUNTIME_DIR
 RuntimeDirectory=autobleem
 WorkingDirectory=@DATA_MOUNT@/Autobleem/bin/autobleem
 

@@ -1372,7 +1372,7 @@ $STAGE_DIR/Autobleem/bin/autobleem
         [ -d "$STAGE_DIR/$d" ] || continue
         run cp -r "$STAGE_DIR/$d/." "$DATA_MOUNT/$d/"
     done
-    # the scanner processors' folder (the launcher's docs/scanner-processors-plan.md): its README once - the
+    # the scanner processors' folder (autobleem-main's docs/archive/scanner-processors-plan.md): its README once - the
     # user may have edited it, and the processors in there are theirs, never the package's
     # (kept under system/, the installer's own files: payload_linux cannot hold both System/ and system/ on a
     # case-insensitive filesystem)
