@@ -23,7 +23,7 @@ Reads what is there (CLAUDE.md, "The download repository", has the layout) and w
     win/cores/                         cores-win64-<date>.tar.gz (ci/build_cores.sh win64), the newest kept
     win/bios/                          biospack-win64.txt, the Windows list (tools/biospack.py --arch win64)
     rpi/cores/latest.json              the newest cores tarball per architecture (rpi/cores/<arch>/)
-    samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, tools/build_samples.py)
+    samples/latest.json                the newest sample-games pack (samples/samples-<date>.tar.gz, autobleem-samples' tools/build_samples.py)
     emu/pcsx-ab/latest.json            the newest build of each emulator, one package per platform (emu/<name>/<version>/,
     emu/pcsx-abnxt/latest.json         each repository's tools/make_packages.sh) - the classic pcsx-ab and the next one
     rpi-imager/os_list.json            the newest images' Imager metadata with real urls (from the
@@ -704,7 +704,7 @@ def index_pcsx(repo, base_url, name="pcsx-abnxt"):
 # sample games
 #*******************************
 def index_samples(repo, base_url):
-    """samples/samples-<date>.tar.gz (+ samples-<date>.json, what is inside - tools/build_samples.py) - the
+    """samples/samples-<date>.tar.gz (+ samples-<date>.json, what is inside - autobleem-samples' tools/build_samples.py) - the
     newest kept; latest.json is what payload_linux/install.sh reads (url, sha256, date, the games)."""
     root = os.path.join(repo, "samples")
     dated = {}
