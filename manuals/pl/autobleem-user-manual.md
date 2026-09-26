@@ -171,7 +171,7 @@ rogu pokazuje postęp, a nowe gry pojawiają się na półce w miarę znajdowani
 | Przycisk | Na półce |
 |---|---|
 | Lewo / Prawo | Poprzednia / następna gra. Przytrzymanie przewija dalej. |
-| L1 / R1 | Skok do poprzedniej / następnej pierwszej litery tytułów. |
+| L1 / R1 | Skok do poprzedniej / następnej pierwszej litery tytułów. Dźwięk przewijania przy głośności d-pada. |
 | Krzyżyk | Uruchom wybraną grę (grę PS1 w emulatorze PS1; grę RetroArch jej rdzeniem; aplikację po jej opisie). |
 | Kwadrat | Uruchom wybraną grę PS1 w RetroArch. |
 | Trójkąt | Przewodnik po przyciskach. |
@@ -180,8 +180,7 @@ rogu pokazuje postęp, a nowe gry pojawiają się na półce w miarę znajdowani
 | Dół | Otwiera rząd ikon pod grą (Ustawienia, Gra, Karta pamięci, Wznów). Góra go zamyka. |
 | L2 + R2 | Menu systemowe (punkt 3.4). |
 
-Na PC bez pada zastępuje go klawiatura: **X O S T** to Krzyżyk, Kółko, Kwadrat, Trójkąt; **I J K L**
-kierunki; **Spacja** Start, **B** Select; **Q E 1 2** to L1, R1, L2, R2; **Esc** kończy program.
+**Na PC bez pada** klawiatura zastępuje pad: **Strzałki** = d-pad, **Enter** = Krzyżyk, **Esc lub Backspace** = Kółko, **Tab** = Trójkąt, **Spacja** = Kwadrat, **F1 / F2** = Select / Start, **Page Up / Page Down** = L1 / R1, **Home / End** = L2 / R2, **F10** = menu systemowe. Na konsoli **Esc** mapuje się na Kółko (nie wyłącza programu). Na maszynie deweloperskiej Esc zamyka program, a Spacja to Start.
 
 Na każdej liście i w każdym menu: Góra / Dół przesuwają, **L2 / R2 zmieniają stronę**, L1 / R1 skaczą do
 pierwszego / ostatniego wiersza, **Krzyżyk wybiera, Kółko wraca**. Ekran z ustawieniami zapisuje je, gdy
@@ -202,8 +201,8 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 
 **Góra** w launcherze, lub **ikona koła zębatego** w rzędzie ikon (gdzie Ustawienia / Gra / Karta pamięci / Wznowienie):
 szybkie menu na dostęp do akcji, które robisz z półki. Krótka lista: *Skanuj gry ponownie* (skanowanie teraz),
-*Sklep* (Sklep AutoBleem na rozszerzenia), *Sieć i kontrolery* (na konsoli, Raspberry Pi i pendrivie PC: Wi-Fi, parowanie
-Bluetooth, kreator mapowania pada - patrz rozdział 6), i *Menu systemowe...* (pełne menu poniżej). Góra / Dół
+*Sklep* (Sklep AutoBleem na rozszerzenia), *Sieć i kontrolery* (na konsoli, Raspberry Pi i pendrivie PC, gdy PSC-Bios jest włączone: Wi-Fi, parowanie
+Bluetooth, kreator mapowania pada - patrz rozdział 6; wyszarzone z notatką "włącz w Rozszerzeniach", gdy PSC-Bios jest wyłączony - Krzyżyk otwiera Rozszerzenia), i *Menu systemowe...* (pełne menu poniżej). Góra / Dół
 przechodzą (z zawinięciem), Krzyżyk wybiera, Kółko wychodzi. Nic tu unikatowego - każda pozycja jest też w menu
 systemowym.
 
@@ -219,7 +218,7 @@ systemowym.
 | | Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
 | | Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). Wyłączone podczas skanowania. |
 | **System** | Opcje | Ustawienia AutoBleem (punkt 3.6). |
-| | Sieć i kontrolery | (Konsola, Raspberry Pi i pendrive PC) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrz rozdział 6. Jeśli PSC-Bios jest zainstalowany, ale wyłączony (w Rozszerzeniach), ta pozycja zostaje wyszarzona z notatką "włącz w Rozszerzeniach" - Krzyżyk otwiera Rozszerzenia, żeby go włączyć. |
+| | Sieć i kontrolery | (Konsola, Raspberry Pi i pendrive PC, gdy PSC-Bios jest włączone) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrz rozdział 6. Jeśli PSC-Bios jest zainstalowany, ale wyłączony (w Rozszerzeniach), ta pozycja zostaje wyszarzona z notatką "włącz w Rozszerzeniach" - Krzyżyk otwiera Rozszerzenia, żeby go włączyć. |
 | | Informacje o sprzęcie | Fakty maszyny: system, CPU, dyski, interfejsy sieciowe, strefa czasowa, ekran, pady i ich mapowania. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6); na pozostałych maszynach pokazuje tę stronę informacyjną. |
 | | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | | O programie | Autorzy i licencja. |
@@ -379,16 +378,15 @@ launcher, zostaje wyłączone - lista o tym mówi.
 systemie, na którym działa AutoBleem (PlayStation Classic potrzebuje WiFi z kernela AutoBleem). Ma cztery
 karty, L1 / R1 przełączają:
 
-- **Aplikacje** i **Gry**: to, co oferują źródła, każda pozycja z obrazkiem, wersją, rozmiarem i źródłem.
-  Krzyżyk instaluje (albo aktualizuje, albo próbuje ponownie), Trójkąt usuwa to, co zainstalował Sklep.
+- **Aplikacje** i **Gry**: to, co oferują źródła, każda pozycja z obrazkiem, wersją, rozmiarem i ikoną źródła. Zainstalowane pozycje są wyszarzone. Krzyżyk instaluje (albo aktualizuje, albo próbuje ponownie po niepowodzeniu), Trójkąt usuwa to, co zainstalował Sklep.
   L2 / R2 lub Lewo / Prawo zmieniają stronę, **Select** pokazuje jedno źródło naraz, **Start** szuka w
-  tytułach.
-- **Pobrania**: co się pobiera, czeka, nie udało się lub jest zainstalowane. Pobieranie trwa w tle, także
+  tytułach. Obrazki pozycji są buforowane i mogą być ponownie pobrane, jeśli ich wczytanie się nie powiedzie.
+- **Pobrania**: co się pobiera, czeka, nie udało się lub jest zainstalowane. Pasek postępu aktualizuje się płynnie. Pobieranie trwa w tle, także
   po wyjściu ze Sklepu; uruchomienie gry lub wyłączenie tylko je wstrzymuje, a przerwane pobieranie wznawia
   się od miejsca, w którym stanęło. Zainstalowana gra pojawia się na półce po najbliższym skanie, z
-  obrazkiem ze Sklepu jako okładką.
+  obrazkiem ze Sklepu jako okładką. Pobierania ponad 2 GB działają na wszystkich platformach, w tym na wydaniach 32-bitowych.
 - **Źródła**: skąd pochodzą listy - własny katalog AutoBleem, lista TSV wrzucona do
-  `System/Extensions/store/sources/` i adresy dodane przez **Dodaj adres źródła**. Krzyżyk na dodanym przez
+  `System/Extensions/store/sources/` i adresy dodane przez **Dodaj adres źródła**. Każde źródło pokazuje swoją ikonę na liście. Krzyżyk na dodanym przez
   ciebie źródle pozwala zmienić jego nazwę, zmienić adres, przełączyć między `http://` a `https://` albo je
   usunąć.
 
@@ -460,7 +458,7 @@ zamiast tego **PSC-Bios** (rozdział 6).
 
 ### 4.3 Przewodnik po przyciskach
 
-Trójkąt na półce: wszystkie przyciski każdego ekranu na jednej stronie.
+Trójkąt na półce: wszystkie przyciski każdego ekranu na jednej stronie. Gdy klawiatura USB jest podłączona lub była używana, kolumna Klawiatura pokazuje klawiszę obok przycisków pada.
 
 ![Przewodnik po przyciskach](../images/pl/button-guide.jpg)
 
@@ -545,19 +543,20 @@ pakietu konsoli: otwiera je *Informacje o sprzęcie* w menu systemowym i jest na
 ### 6.1 PSC-Bios
 
 Rozszerzenie dołączone do pakietu konsoli, dostępne też na Raspberry Pi i pendrivie PC. Jest otwierane z
-menu systemowego pozycji *Sieć i kontrolery* (albo z listy Rozszerzeń na wszystkich platformach). Pierwszy ekran
-pokazuje fakty maszyny: czas, strefę czasową, adaptery sieciowe WiFi/Ethernet/Bluetooth z adresami, oraz
+menu systemowego pozycji *Sieć i kontrolery* (albo z listy Rozszerzeń). Gdy PSC-Bios jest wyłączony w liście Rozszerzeń, pozycja *Sieć i kontrolery* w szybkim menu i menu systemowym jest wyszarzona z notatką "włącz w Rozszerzeniach" - Krzyżyk tam otwiera Rozszerzenia.
+
+Pierwszy ekran pokazuje fakty maszyny: czas, strefę czasową, adaptery sieciowe WiFi/Ethernet/Bluetooth z adresami, oraz
 każdy podłączony kontroler z informacją, czy ma mapowanie przycisków. Część sieciowa wymaga kernela
 AutoBleem na konsoli (punkt 6.2) lub narzędzi systemowych na Raspberry Pi / pendrivie PC; kreator
 mapowania pada działa wszędzie.
 
 ![PSC-Bios: centrum Sieć i kontrolery](../images/pl/pscbios-main.jpg)
 
-- **Select - Sieć WiFi** (tylko z kernelem lub NetworkManager): nazwa sieci (wpisana albo wybrana ze skanu),
+- **Select - Sieć WiFi** (tylko z kernelem lub NetworkManager na Pi/pendrivie PC): nazwa sieci (wpisana albo wybrana ze skanu),
   hasło, tryb sterownika, i *Zastosuj / Restartuj sieć*. Strefa czasowa ustawia się tutaj. Adres IP konsoli
   pokazuje się po połączeniu.
-- **Kwadrat - Pady Bluetooth**: skan padów Bluetooth (DualShock 4, itd.) do sparowania albo usunięcia.
-- **L1 - Parowanie DualShock 3**: połączenie tylko przez USB dla pierwszego DualShock 3, przez plugin sixaxis kernela.
+- **Kwadrat - Pady Bluetooth**: skan padów Bluetooth (DualShock 4, itd.) do sparowania albo usunięcia. Na Pi i pendrivie PC z narzędziami systemowymi (nmcli, bluetoothctl).
+- **L1 - Parowanie DualShock 3**: połączenie tylko przez USB dla pierwszego DualShock 3, przez plugin sixaxis kernela (tylko konsola).
 - **R1 - Mapowanie pada**: kreator mapowania (poniżej).
 - **Trójkąt - O programie**, **Kółko - powrót** do launchera.
 
@@ -565,7 +564,7 @@ mapowania pada działa wszędzie.
 rysunek DualShocka, który podświetla się przy naciskaniu. Ponieważ testowanemu padowi nie można ufać,
 kreator obsługują **przednie przyciski** konsoli: **RESET** przełącza na następny pad, **OPEN** zaczyna
 mapowanie (potem odpowiada na każde pytanie - naciśnij przycisk podświetlony na rysunku albo OPEN, gdy
-pad takiego nie ma), **POWER** anuluje lub wychodzi. Na koniec nowe mapowanie jest dodane do testu, a OPEN
+pad takiego nie ma), **POWER** wychodzi (krótkie naciśnięcie anuluje, przytrzymanie 2 sekundy otwiera pasek potwierdzenia i podpowiedź). Na koniec nowe mapowanie jest dodane do testu, a OPEN
 zapisuje je pod wybraną nazwą; od tej pory launcher je wczytuje.
 
 ![PSC-Bios: kreator mapowania pada](../images/pl/pscbios-wizard.jpg)
