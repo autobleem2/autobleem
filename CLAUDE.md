@@ -1019,13 +1019,23 @@ with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only
 **LAN testing** (2026-09-26): the driver can listen on a non-loopback address for a trusted LAN test rig. On the
 launcher, set `AB_DEBUG_BIND=<IPv4>` (default 127.0.0.1) and `AB_DEBUG_TOKEN=<token>` - the driver refuses to start
 without a token when the bind is not loopback, and the client must send `auth <token>` on its first line
-(compared in constant time, never logged). The script reaches it with `--host <addr>` (default 127.0.0.1) and
-`--token <t>` (or env `AB_DEBUG_TOKEN`). New command `grab`: replies `ok <n>` followed by exactly n bytes of PNG
-data - a test fetches screenshots over the socket without writing to the device. Example: start the launcher on
-the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then from a PC
-run `python tools/ab_drive.py run "..." --host <ip> --port <p> --token <t>`. **Security note:** the token
-travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is not a real
-credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface.
+(compared in constant time, never logged). **Prefer `AB_DEBUG_TOKEN` in the environment over `--token` on the
+command line** - a command-line argument sits in the process list (`ps`/Task Manager) for anything else on the
+same machine to read; the env var does not. A peer has `DebugDriver::AuthTimeoutMs` (5 s) to send that first
+line and it may not exceed `DebugDriver::MaxAuthLine` (4 KB) - past either, the connection is dropped as if it
+had closed, so one client that never authenticates cannot tie up the driver, which serves one connection at a
+time. Neither limit applies once `auth` succeeds: an authenticated session reads with no timeout, since real
+commands in a script can be minutes apart. The script reaches it with `--host <addr>` (default 127.0.0.1) and
+`--token <t>` (or env `AB_DEBUG_TOKEN`, preferred as above) - a refused `auth` is reported with the token
+redacted (`'auth ***': err auth`), never echoed. New command `grab`: replies `ok <n>` followed by exactly n bytes
+of PNG data - a test fetches screenshots over the socket without writing to the device. Example: start the
+launcher on the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then
+from a PC run `AB_DEBUG_TOKEN=<token> python tools/ab_drive.py run "..." --host <ip> --port <p>`. **Security
+note:** the token travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is
+not a real credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface. A peer that authenticates and then
+drops the connection mid-command (Ctrl-C, a WiFi drop) never crashes the driver: every socket send uses
+`MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send just closes that client and goes
+back to accepting the next one.
 
 **Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
 `X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
