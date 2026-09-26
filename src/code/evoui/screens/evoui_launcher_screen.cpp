@@ -550,13 +550,9 @@ void GuiLauncher::loadAssets() {
     arrow->originaly = arrow->y;
     arrow->visible = false;
 
-    xButton = addStaticElement(new PsObj("xbtn", theme.hints.cross));
-    xButton->visible = true;
-    oButton = addStaticElement(new PsObj("obtn", theme.hints.circle));
-    oButton->visible = true;
-    tButton = addStaticElement(new PsObj("tbtn", theme.hints.triangle));
-    tButton->visible = true;
-    layoutHints(); // positions the three, and the chips and labels next to them
+    // built lazily: render() calls updateHintsIfNeeded() every frame, which rebuilds only when the state,
+    // selection or language actually changed. Force that on the first frame of this fresh screen.
+    lastHintSignature.clear();
 
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
@@ -632,9 +628,6 @@ void GuiLauncher::freeAssets() {
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
-    xButton = nullptr;
-    oButton = nullptr;
-    tButton = nullptr;
     sselector = nullptr;
     menuHead = nullptr;
     menuText = nullptr;
@@ -665,59 +658,181 @@ GuiLauncher::~GuiLauncher() {
 }
 
 //*******************************
+// GuiLauncher::hintSignature
+//*******************************
+// everything buildHintLines() reads, as a short string - updateHintsIfNeeded() rebuilds and re-lays-out the
+// two hint lines only when this actually changes, so render() can call it every frame for free (the "cache
+// the layout" rule: the layout is redone on a state/selection/language change, not per frame).
+string GuiLauncher::hintSignature() const {
+    string sig = app.lang().currentLanguage();
+    sig += "|s" + to_string(static_cast<int>(state));
+    if (state == LauncherScreenState::Set) {
+        sig += "|o" + to_string(menu ? menu->selOption : -1);
+        sig += carousel.games.empty() ? "|empty" : "";
+    } else if (state == LauncherScreenState::Resume) {
+        if (sselector != nullptr) {
+            sig += "|op" + to_string(sselector->operation);
+            sig += "|sl" + to_string(sselector->selSlot);
+            sig += sselector->slotActive[sselector->selSlot] ? "|act" : "";
+        }
+    } else { // Games
+        if (carousel.games.empty()) {
+            sig += "|empty";
+        } else if (carousel.selectedIsValid()) {
+            const PsGame &g = *carousel.games[carousel.selected];
+            sig += g.foreign ? "|f1" : "|f0";
+            sig += g.app ? "|a1" : "|a0";
+        }
+        sig += Env::retroArchInstalled() ? "|ra" : "";
+    }
+    return sig;
+}
+
+//*******************************
+// GuiLauncher::buildHintLines
+//*******************************
+// line 1: what acts on the current selection right now. Line 2: what always works (Select/Start/Guide/
+// System). "Play" not "Enter" (an App: "Start"); Circle only appears where it does something; L2+R2 says
+// "System", never "Options" (see docs/theme-format.md's hintBar entry and PLANS-menu-hints-quickmenu.md,
+// section E). The icon-row and Resume lines only ever fill line 1 - Select/Start do nothing there, so line 2
+// stays just the Guide/System pair (Resume: System alone - Circle already means Back/Don't save there).
+void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const {
+    line1.clear();
+    line2.clear();
+    if (state == LauncherScreenState::Set) {
+        // the game menu's icon row. Up closes it back to the games - or, on an empty set, opens the Quick
+        // menu instead (settleEmptyRoster keeps this state open on an empty roster - there is no Games
+        // state to show, so this is the "empty set" row the design calls out on its own)
+        string openLabel = _("Open:");
+        if (menu != nullptr && menu->selOption >= 0 && static_cast<size_t>(menu->selOption) < headers.size())
+            openLabel += " " + headers[menu->selOption];
+        line1.push_back({"|@X|", openLabel});
+        if (carousel.games.empty()) {
+            line1.push_back({"|@Up|", _("Quick menu")});
+            line2.push_back({"|@Select|", _("Games shown")});
+        } else {
+            line1.push_back({"|@Left|/|@Right|", _("Choose")});
+            line1.push_back({"|@Up|", _("Back to games")});
+            line2.push_back({"|@T|", _("Guide")});
+        }
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    if (state == LauncherScreenState::Resume) {
+        if (sselector == nullptr)
+            return;
+        const string slotLabel = to_string(sselector->selSlot + 1);
+        if (sselector->operation == OP_LOAD) {
+            line1.push_back({"|@X|", _("Resume slot") + " " + slotLabel});
+            if (sselector->slotActive[sselector->selSlot])
+                line1.push_back({"|@T|", _("Delete slot")});
+            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@O|", _("Back")});
+        } else {
+            line1.push_back({"|@X|", _("Save to slot") + " " + slotLabel});
+            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@O|", _("Don't save")});
+        }
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    // Games
+    if (carousel.games.empty()) {
+        line1.push_back({"|@Up|", _("Quick menu")});
+        line2.push_back({"|@Select|", _("Games shown")});
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+    line1.push_back({"|@X|", game != nullptr && game->app ? _("Start") : _("Play")});
+    if (game != nullptr && !game->foreign && Env::retroArchInstalled())
+        line1.push_back({"|@S|", _("Play in RetroArch")});
+    line1.push_back({"|@Down|", _("Game menu")});
+    line1.push_back({"|@Up|", _("Quick menu")});
+    line2.push_back({"|@Select|", _("Games shown")});
+    line2.push_back({"|@Start|", _("Random")});
+    line2.push_back({"|@T|", _("Guide")});
+    line2.push_back({"|@L2+R2|", _("System")});
+}
+
+//*******************************
+// GuiLauncher::updateHintsIfNeeded
+//*******************************
+void GuiLauncher::updateHintsIfNeeded() {
+    string sig = hintSignature();
+    if (sig == lastHintSignature)
+        return;
+    lastHintSignature = sig;
+    layoutHints();
+}
+
+//*******************************
 // GuiLauncher::layoutHints
 //*******************************
-// The five hints - Enter, Cancel, Button Guide, L2+R2 Options, Start Random - centred in the theme's hintBar
-// (the pill most themes paint at the bottom right) at the largest font from 22 down to 14 at which the row
-// fits the frame in the current language; below that the gaps close up. The v1 theme pack's frames all
-// hold the row at 16 in English.
+// Lays the two hint lines buildHintLines() returns out in the theme's hintBar (the pill most themes paint at
+// the bottom right), each at the largest font from 22 down to 14 that fits its own half of the bar in the
+// current language; below that the gaps close up, and line 2 (never line 1, which is always short) drops
+// hints from the right if it is still too wide even at the smallest font and tightest gap. A hintBar under
+// 48 px tall (an old theme that never expected two lines) shows line 1 only, at the bar's full height.
 void GuiLauncher::layoutHints() {
     const LauncherTheme &theme = app.theme().launcher();
     ableem::Rect bar(560, 624, 680, 72);
     if (theme.hintBar.set)
         bar = ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
-    const int inset = 16;
-    const int iconGap = 6; // icon to its label
 
-    hints = {{xButton, "", _("Enter")},
-             {oButton, "", _("Cancel")},
-             {tButton, "", _("Button Guide")},
-             {nullptr, "|@L2+R2|", _("Options")},
-             {nullptr, "|@Start|", _("Random")}};
+    buildHintLines(hints, hints2);
+    hintsOneLineOnly = bar.h < 48;
+    if (hintsOneLineOnly)
+        hints2.clear();
+
     PanelStyle style = gui->panelStyle();
-    auto iconWidth = [&](const Hint &h) {
-        return h.icon != nullptr ? h.icon->w : style.buttonsWidth(*gui, h.markers) - 6; // buttons() adds a gap
+    const int inset = 16;
+    const int iconGap = 6; // icon(s) to the label
+    static const int sizes[] = {22, 20, 18, 16, 14};
+
+    // fits `items` into `rect`'s width by shrinking the font, then the gaps, then - only when allowDrop -
+    // dropping hints from the right; positions each one's chip and label inside `rect`
+    auto layoutLine = [&](std::vector<Hint> &items, const ableem::Rect &rect, bool allowDrop, ableem::Font &outFont,
+                          int &outLabelY, int &outChipY) {
+        auto iconWidth = [&](const Hint &h) { return style.buttonsWidth(*gui, h.markers) - 6; }; // buttons() adds a gap
+        int gap = 28;
+        int total = 0;
+        for (int size : sizes) {
+            outFont =
+                size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
+            total = items.empty() ? 0 : -gap;
+            for (const Hint &h : items)
+                total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
+            if (total <= rect.w - 2 * inset)
+                break;
+        }
+        while (total > rect.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
+            total -= static_cast<int>(items.size()) * 4;
+            gap -= 2;
+        }
+        while (allowDrop && total > rect.w - 2 * inset && items.size() > 1) {
+            const Hint dropped = items.back();
+            total -= iconWidth(dropped) + iconGap + gui->text().textWidth(outFont, dropped.label) + gap;
+            items.pop_back();
+        }
+        int x = rect.x + max(inset, (rect.w - total) / 2);
+        outLabelY = rect.y + (rect.h - outFont.lineHeight()) / 2;
+        outChipY = rect.y + (rect.h - 30) / 2;
+        for (Hint &h : items) {
+            const int iconW = iconWidth(h);
+            h.chipX = x;
+            h.labelX = x + iconW + iconGap;
+            x = h.labelX + gui->text().textWidth(outFont, h.label) + gap;
+        }
     };
 
-    static const int sizes[] = {22, 20, 18, 16, 14};
-    int gap = 28;
-    int total = 0;
-    for (int size : sizes) {
-        hintFont = size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
-        total = -gap;
-        for (const Hint &h : hints)
-            total += iconWidth(h) + iconGap + gui->text().textWidth(hintFont, h.label) + gap;
-        if (total <= bar.w - 2 * inset)
-            break;
-    }
-    while (total > bar.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
-        total -= 4 * 2;
-        gap -= 2;
-    }
-
-    int x = bar.x + max(inset, (bar.w - total) / 2);
-    hintLabelY = bar.y + (bar.h - hintFont.lineHeight()) / 2;
-    hintChipY = bar.y + (bar.h - 30) / 2;
-    for (Hint &h : hints) {
-        const int iconW = iconWidth(h);
-        if (h.icon != nullptr) {
-            h.icon->x = x;
-            h.icon->y = bar.y + (bar.h - h.icon->h) / 2;
-        } else {
-            h.chipX = x;
-        }
-        h.labelX = x + iconW + iconGap;
-        x = h.labelX + gui->text().textWidth(hintFont, h.label) + gap;
+    if (hintsOneLineOnly) {
+        layoutLine(hints, bar, false, hintFont, hintLabelY, hintChipY);
+    } else {
+        const ableem::Rect top(bar.x, bar.y, bar.w, bar.h / 2);
+        const ableem::Rect bottom(bar.x, bar.y + bar.h / 2, bar.w, bar.h - bar.h / 2);
+        layoutLine(hints, top, false, hintFont, hintLabelY, hintChipY);
+        layoutLine(hints2, bottom, true, hintFont2, hintLabelY2, hintChipY2);
     }
 }
 
@@ -751,13 +866,19 @@ void GuiLauncher::render() {
 
     menu->render();
 
-    // the hint row: the icons are static elements (drawn above), the chips and labels go here
+    // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
+    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed.
+    updateHintsIfNeeded();
     PanelStyle style = gui->panelStyle();
     for (const Hint &hint : hints) {
-        if (hint.icon == nullptr)
-            style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
+        style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
         gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
     }
+    if (!hintsOneLineOnly)
+        for (const Hint &hint : hints2) {
+            style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
+            gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+        }
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);

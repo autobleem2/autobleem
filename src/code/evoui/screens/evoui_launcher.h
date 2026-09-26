@@ -181,20 +181,31 @@ public:
 
     PsObj *background = nullptr;
     PsMoveBtn *arrow = nullptr;
-    PsObj *xButton = nullptr;
-    PsObj *oButton = nullptr;
-    PsObj *tButton = nullptr;
-    // the footer's hint row: an icon (a theme image for X/O/T, chips for the rest) and a label each, laid
-    // out by layoutHints() in the theme's hintBar at the largest font that fits the language
+    // the footer's two hint lines: line 1 is what acts on the current selection (built from `state` and the
+    // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
+    // ("|@X|", "|@L2+R2|", "|@Left|/|@Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
+    // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
+    // hintBar at the largest font that fits the language. updateHintsIfNeeded() rebuilds the two lines from
+    // a signature of what they depend on and calls layoutHints() only when that signature changes - the
+    // "cache the layout" rule - so render() can call it every frame for free.
     struct Hint {
-        PsObj *icon;         // the theme's hint image, positioned by layoutHints(); or
-        std::string markers; // the chips, "|@L2+R2|" - drawn by render()
+        std::string markers; // the chips, e.g. "|@L2+R2|" - drawn by render()
         std::string label;
         int labelX = 0, chipX = 0;
     };
-    std::vector<Hint> hints;
-    ableem::Font hintFont;
+    std::vector<Hint> hints;  // line 1
+    std::vector<Hint> hints2; // line 2
+    ableem::Font hintFont, hintFont2;
     int hintLabelY = 0, hintChipY = 0;
+    int hintLabelY2 = 0, hintChipY2 = 0;
+    bool hintsOneLineOnly = false; // the theme's hintBar is under 48 px tall: line 2 is not drawn at all
+    std::string lastHintSignature;
+    // the two hint lines for the current state/selection, in the language it was built in
+    void buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const;
+    // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
+    // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
+    std::string hintSignature() const;
+    void updateHintsIfNeeded();
     void layoutHints();
     std::unique_ptr<PsMenu> menu;
     PsStateSelector *sselector = nullptr;
