@@ -7,6 +7,9 @@ scaled down, the style of tools/make_theme_images.py:
   tab_playstation.png  64x64  a disc (the PlayStation tab of the set picker - no Sony mark)
   tab_retroarch.png    64x64  an arcade stick
   tab_apps.png         64x64  a grid of four tiles
+  dpad_up/down/left/right.png  28x28  a filled chevron, for the footer's d-pad hint chips (GuiLauncher's
+                                hint lines - "|@Up|", "|@Down|", "|@Left|", "|@Right|" - drawn through
+                                PanelStyle::faceIcon at their native size, same as the X/O/T hint images)
 """
 import os
 import sys
@@ -16,16 +19,17 @@ from PIL import Image, ImageDraw
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'src', 'resources', 'evoimg')
 SIZE = 64
 K = 4
+DPAD_SIZE = 28
 WHITE = (245, 245, 245, 255)
 CLEAR = (0, 0, 0, 0)
 
 
-def canvas():
-    return Image.new('RGBA', (SIZE * K, SIZE * K), CLEAR)
+def canvas(size=SIZE):
+    return Image.new('RGBA', (size * K, size * K), CLEAR)
 
 
-def down(im):
-    return im.resize((SIZE, SIZE), Image.LANCZOS)
+def down(im, size=SIZE):
+    return im.resize((size, size), Image.LANCZOS)
 
 
 def disc():
@@ -59,10 +63,28 @@ def app_grid():
     return down(im)
 
 
+def dpad_arrow(direction):
+    """A filled chevron pointing `direction` ('up', 'down', 'left' or 'right'), for a d-pad hint chip -
+    always drawn 'up' then rotated, so the four stay identical apart from orientation."""
+    im = canvas(DPAD_SIZE)
+    d = ImageDraw.Draw(im)
+    s = DPAD_SIZE * K
+    # a triangle over a short tail, like an arrow - centred, pointing up
+    d.polygon([(s * 0.5, s * 0.12), (s * 0.18, s * 0.52), (s * 0.36, s * 0.52), (s * 0.36, s * 0.88),
+               (s * 0.64, s * 0.88), (s * 0.64, s * 0.52), (s * 0.82, s * 0.52)], fill=WHITE)
+    im = down(im, DPAD_SIZE)
+    rotation = {'up': 0, 'right': -90, 'down': 180, 'left': 90}[direction]
+    return im.rotate(rotation, resample=Image.BICUBIC)
+
+
 def main():
     for name, make in (('tab_playstation.png', disc), ('tab_retroarch.png', arcade_stick), ('tab_apps.png', app_grid)):
         path = os.path.join(OUT, name)
         make().save(path, optimize=True)
+        print(path)
+    for direction in ('up', 'down', 'left', 'right'):
+        path = os.path.join(OUT, 'dpad_%s.png' % direction)
+        dpad_arrow(direction).save(path, optimize=True)
         print(path)
     return 0
 

@@ -23,6 +23,8 @@
 #include <memory>
 #include "gui/gui.h"
 
+enum class SystemMenuAction; // evoui_system_menu.h
+
 // which sub-screen of the launcher is showing
 enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
 
@@ -100,6 +102,22 @@ public:
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
+    // the Quick menu: Re-Scan, Store, Network & Controllers, System menu... - d-pad Up in the Games state (and
+    // on an empty set), and the gear icon of the game's icon row
+    void loop_openQuickMenu();
+    // what an item of either menu does
+    void runMenuAction(SystemMenuAction action);
+    // Options (the System menu's): the screen, then the theme, the sets and the covers reloaded
+    void loop_openOptions();
+    // an extension provides the "network" entry here: the Network & Controllers item shows
+    bool networkProvided();
+    // one does, but cannot run (switched off, another AutoBleem, not built for this system): why, as the
+    // greyed item's description ("PSC-Bios is switched off - enable it in Extensions"), and which one - the
+    // item then opens the Extensions list at it. "" when a provider can run, or none is installed
+    std::string networkUnavailable(std::string *extension = nullptr);
+    // an extension run from a menu: by name, or at `entry` by whichever provides it (name ""); the refusal
+    // reported on the notification line
+    void runExtensionEntry(const std::string &name, const std::string &entry);
 #ifdef AB_ONLINE_UPDATE
     // the online update: the check's result once a frame (it asks when one lands), the system menu's
     // "Software Update" item (a check now, then the same question), and the download that ends in
@@ -161,7 +179,8 @@ public:
     NotificationBubble extensionBubble;
     void applyExtensionRequests();
     // the system menu's Extensions item: the list, then the chosen one run
-    void loop_openExtensions();
+    // select: the extension the list opens at ("" = the first)
+    void loop_openExtensions(const std::string &select = "");
     // the system menu's Scanner processors item: the sequences sorted, a scan when anything changed
     void loop_openProcessors();
 
@@ -181,20 +200,31 @@ public:
 
     PsObj *background = nullptr;
     PsMoveBtn *arrow = nullptr;
-    PsObj *xButton = nullptr;
-    PsObj *oButton = nullptr;
-    PsObj *tButton = nullptr;
-    // the footer's hint row: an icon (a theme image for X/O/T, chips for the rest) and a label each, laid
-    // out by layoutHints() in the theme's hintBar at the largest font that fits the language
+    // the footer's two hint lines: line 1 is what acts on the current selection (built from `state` and the
+    // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
+    // ("|@X|", "|@L2+R2|", "|@Left|/|@Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
+    // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
+    // hintBar at the largest font that fits the language. updateHintsIfNeeded() rebuilds the two lines from
+    // a signature of what they depend on and calls layoutHints() only when that signature changes - the
+    // "cache the layout" rule - so render() can call it every frame for free.
     struct Hint {
-        PsObj *icon;         // the theme's hint image, positioned by layoutHints(); or
-        std::string markers; // the chips, "|@L2+R2|" - drawn by render()
+        std::string markers; // the chips, e.g. "|@L2+R2|" - drawn by render()
         std::string label;
         int labelX = 0, chipX = 0;
     };
-    std::vector<Hint> hints;
-    ableem::Font hintFont;
+    std::vector<Hint> hints;  // line 1
+    std::vector<Hint> hints2; // line 2
+    ableem::Font hintFont, hintFont2;
     int hintLabelY = 0, hintChipY = 0;
+    int hintLabelY2 = 0, hintChipY2 = 0;
+    bool hintsOneLineOnly = false; // the theme's hintBar is under 48 px tall: line 2 is not drawn at all
+    std::string lastHintSignature;
+    // the two hint lines for the current state/selection, in the language it was built in
+    void buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const;
+    // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
+    // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
+    std::string hintSignature() const;
+    void updateHintsIfNeeded();
     void layoutHints();
     std::unique_ptr<PsMenu> menu;
     PsStateSelector *sselector = nullptr;

@@ -10,6 +10,7 @@
 
 #include "gui/panel_style.h"
 
+#include <cstdint>
 #include <string>
 
 class Gui;
@@ -17,8 +18,9 @@ class Gui;
 class NotificationBubble {
 public:
     // shows (or updates) the bubble: `title` bold, `detail` under it, done/total as a bar when total > 0.
-    // holdMs: how long it stays after this call (0 = until hide() or the next show)
-    void show(const std::string &title, const std::string &detail, int done, int total, long holdMs);
+    // holdMs: how long it stays after this call (0 = until hide() or the next show). done/total are 64-bit:
+    // an extension reports bytes, and a download past 2 GB must not turn negative on the 32-bit console
+    void show(const std::string &title, const std::string &detail, int64_t done, int64_t total, long holdMs);
     // the fade-out starts now (a scan that finished, its summary shown for holdMs, then this)
     void hide();
     bool visible() const { return state_ != State::Hidden; }
@@ -42,6 +44,6 @@ private:
     long hideAt_ = 0;     // Shown: when to start fading (0 = never)
 
     std::string title_, detail_;
-    int done_ = 0, total_ = 0;
+    int64_t done_ = 0, total_ = 0;
     long now_ = 0;
 };

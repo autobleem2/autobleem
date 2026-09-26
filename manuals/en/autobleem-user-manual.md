@@ -194,30 +194,41 @@ In every list and menu: Up / Down move, **L2 / R2 turn pages**, L1 / R1 jump to 
 built-in twenty, on a PlayStation Classic), every folder you made under `Games/` (a game in a sub-folder
 belongs to that group), *Favorite Games*, *Game History* and, when any game is flagged as one, *Lightgun
 Games*. The RetroArch tab lists one group per system that has games, plus RetroArch's own Favorites and
-History. The Apps tab is the one group of applications. Each row shows how many games it holds; a group
+History. The Apps tab groups applications by type: *All apps*, then *Games*, *Emulators*, *Tools*, *Media*
+and *Other* (the category is set in each app's `app.ini` file). Each row shows how many items it holds; a group
 with none opens on an empty shelf with the icon row showing Settings only.
 
-### 3.4 The system menu
+### 3.4 The Quick menu
 
-**L2 + R2** (together, in either order) opens the system menu over the shelf:
+**Up** in the launcher, or the **gear icon** in the icon row (where Settings / Game / Memory Card / Resume are):
+the Quick menu for actions you reach for from the carousel. A short list: *Re-Scan Games* (starts a scan
+now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (on the console, the
+Raspberry Pi and the PC stick: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6), and *System menu...* 
+(the full menu below). Up / Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every
+item is also in the system menu.
 
-| Item | What it does |
-|---|---|
-| Re-Scan Games | Looks for new, changed or removed games now (the scan also watches the folder by itself). |
-| Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
-| RetroArch | Leaves the launcher for RetroArch's own menu. Closing RetroArch comes back. |
-| Memory Cards | Your memory card sets (section 3.7). |
-| Game Manager | The PS1 games as a list with their folders: delete a game, flush the covers. |
-| Hardware Information | The machine: system, CPU, storage, network, display, the pads. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6). |
-| Options | AutoBleem's settings (section 3.5). |
-| Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). |
-| Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
-| About | Credits and licence. |
-| Power Off | After a confirmation: on the console AutoBleem's standby - the stick disconnected, the light red, Power brings the launcher back (section 2.1); on a Pi or PC the machine shuts down. |
+### 3.5 The system menu
+
+**L2 + R2** (together, in either order) opens the system menu over the shelf. The menu is grouped into sections:
+
+| Section | Item | What it does |
+|---|---|---|
+| (top) | Re-Scan Games | Looks for new, changed or removed games now (the scan also watches the folder by itself). |
+| | Extensions | The extensions on the stick - the AutoBleem Store and others (section 3.12). |
+| **Library** | Game Manager | The PS1 games as a list with their folders: delete a game, flush the covers. Disabled while a scan is running. |
+| | Memory Cards | Your memory card sets (section 3.7). |
+| | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). Disabled while a scan is running. |
+| **System** | Options | AutoBleem's settings (section 3.6). |
+| | Network & Controllers | (Console, Raspberry Pi and PC stick) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. If PSC-Bios is installed but disabled (in Extensions), this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list to re-enable it. |
+| | Hardware Information | The machine's facts: system, CPU, storage, network interfaces, time zone, display, the pads and their mappings. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6); on other machines it shows this information page. |
+| | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
+| | About | Credits and licence. |
+| **Leave** | RetroArch | Leaves the launcher for RetroArch's own menu. Closing RetroArch comes back. |
+| | Power Off | After a confirmation: on the console AutoBleem's standby - the stick disconnected, the light red, Power brings the launcher back (section 2.1); on a Pi or PC the machine shuts down. |
 
 ![The system menu](../images/en/system-menu.jpg)
 
-### 3.5 Options
+### 3.6 Options
 
 The settings are in groups; Up / Down move between them, Left / Right change a value, Circle leaves and
 saves. Every change is applied at once.
@@ -240,7 +251,7 @@ saves. Every change is applied at once.
 
 ![The options, in groups](../images/en/options.jpg)
 
-### 3.6 A game's settings
+### 3.7 A game's settings
 
 With a game selected, **Down** opens its icon row: **Settings** (the options above), **Game** (the game's
 own settings), **Memory Card** (its memory card) and **Resume** (its save states). Cross opens the one under
@@ -530,17 +541,20 @@ is in the Extensions list. **ABFlashKit** is an App in the Apps set.
 
 ### 6.1 PSC-Bios
 
-The hardware page: the time and timezone, the WiFi, Ethernet and Bluetooth dongles with their addresses,
-and every connected controller with whether it has a button mapping. The network parts need the AutoBleem
-kernel (section 6.2); the controller parts work on a stock console too.
+An extension that comes with the console package, also available on a Raspberry Pi and the PC stick. It is
+opened from the System menu's *Network & Controllers* item (or from the Extensions list).
+The opening screen shows machine facts: time, timezone, WiFi/Ethernet/Bluetooth network adapters with their
+addresses, and every connected controller with whether it has a button mapping. The network and Bluetooth
+parts need the AutoBleem kernel on the console (section 6.2) or system tools on a Raspberry Pi / PC stick;
+the gamepad wizard works on any system.
 
-![PSC-Bios: the hardware page](../images/en/pscbios-main.jpg)
+![PSC-Bios: the Network & Controllers hub](../images/en/pscbios-main.jpg)
 
-- **Select - WiFi Settings** (kernel only): the network name (typed, or picked from a scan with Triangle),
-  the password, the driver mode, *Write Configuration/Restart Network* to apply, and the timezone. The
-  console's IP address is shown once it is connected.
-- **Square - Setup Gamepads**: the mapping wizard, and two pages on pairing a DualShock 3 or another
-  Bluetooth pad.
+- **Select - Wi-Fi Network** (kernel or NetworkManager only): the network name (typed, or picked from a
+  scan), password, driver mode, and *Apply / Restart Network*. The time zone is set here too. The console's IP address is shown once connected.
+- **Square - Bluetooth Controllers**: a scan for Bluetooth gamepads (DualShock 4, etc.), to pair or remove.
+- **L1 - DualShock 3 Pairing**: USB-only connection for the first DualShock 3, through the kernel's sixaxis plugin.
+- **R1 - Controller Mapping**: the mapping wizard (below).
 - **Triangle - About**, **Circle - back** to the launcher.
 
 **The gamepad wizard** shows the connected pad raw - every axis, button and hat as numbers, and a
@@ -550,7 +564,7 @@ is driven by the console's **front buttons**: **RESET** switches to the next pad
 button), **POWER** cancels or leaves. At the end the new mapping is added for a test and OPEN saves it under
 a name of your choice; the launcher loads it from then on.
 
-![The gamepad wizard](../images/en/pscbios-wizard.jpg)
+![PSC-Bios: the controller mapping wizard](../images/en/pscbios-wizard.jpg)
 
 ### 6.2 ABFlashKit - the AutoBleem kernel
 

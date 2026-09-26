@@ -422,6 +422,13 @@ recipe is the clean route if they are ever to ship.
 - `VirtualPad=true|false` (absent = true) says whether the App runs with the virtual pad mapper.
   `AB_APP_VIRTUAL_PAD` carries it, and `app_env.sh` skips abpadd and the preload when it is off.
 - An App's source repository is named `app_<name>`, an extension's `ext_<name>` (the owner's rule).
+- **`Category=`** (2026-09-26): `Games`/`Emulators`/`Tools`/`Media`, case-insensitive
+  (`core/model/game_set.h`'s `AppCategory`, parsed by `GameQueryService::apps()`/`appCategories()`);
+  missing or anything else is `Other`. The set picker's Apps tab (`evoui_set_picker.cpp`) lists "All apps"
+  first, then one row per category with at least one App present, each with its count;
+  `GuiLauncher::showSetName()` shows "Showing: Apps: Tools (3 apps)" for a category row - Apps are counted
+  as apps, never games. The app_* repos and the Store catalog will carry their own category later; this is
+  the app.ini side only.
 
 **The scripts.**
 - `rc/app_env.sh` is one file for every Linux target: the console's libs pack only where
@@ -438,6 +445,9 @@ recipe is the clean route if they are ever to ship.
 **What an extension is.** A plugin, `Extensions/<name>/` with an `extension.ini`:
 - `Name`, `Description`, `Author`, `Version`, `Icon`;
 - `Plugin=bin/{key}/<name>`, resolved by `AppManifest`, with `.so`/`.dll` added;
+- `Provides=` (2026-09-26) - a semicolon-separated list of entry points (e.g. `network`) the extension provides
+  for the launcher's system menu (Network & Controllers opens the first installed extension that provides
+  `network` at that entry through `Extension::runEntry(entry)`);
 - `Background=true` to be polled every frame;
 - `Network=required|optional|none` - `required` is refused offline.
 
@@ -462,8 +472,11 @@ for `WindowsInstallJob`), and every install and update replaces a shipped extens
   an inline or template function is a GNU "unique" symbol): the plugins shared one plog instance-1 logger,
   and every line was logged once per extension, under each one's tag. `nm -D --defined-only` on a plugin
   should list `ab_extension_abi`/`ab_extension_create` and no `u` symbols.
-- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` whenever the layout
-  of a class, or the signature of a function, an extension may use changes.
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 4, since 2026-09-26)
+  whenever the layout of a class, or the signature of a function, an extension may use changes. **AB_SDK_ABI 4**
+  (2026-09-26): `Extension::runEntry(entry)` - extensions can be opened at a named entry point, e.g. `"network"`
+  for the Network & Controllers hub; `extension.ini`'s `Provides=` lists them; `ExtensionCatalog::findProvider(entry)`
+  finds the first installed extension that provides it.
 
 **Where the code is.**
 - Core: `ExtensionCatalog` and `PluginLoader`.
@@ -759,8 +772,11 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `Button`/`Key` replace `SDL_BTN_*`/`SDLK_*`. `dpadUp()/Down()/Left()/Right()/Centered()` are the old
   `PadMapper::isUp()` etc (state, not just "this event's direction" - screens read them right after `poll()`
   returns a Dpad event, same priority order as before: up, down, right, left, center).
-  `setKeyboardAsPad(true)` (the default on a dev host) is what lets `tools/win_drive.ps1` drive the app -
-  X/O/S/T = cross/circle/square/triangle, I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2.
+  `setKeyboardAsPad(true)` (the default on **every** platform since 2026-09-26) turns keys into pad events:
+  the PC-style map (`ui/keyboard_map.h`, see "The keyboard" under Build) everywhere, and on a dev host also
+  the letter map `tools/win_drive.ps1` drives the app with - X/O/S/T = cross/circle/square/triangle,
+  I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2. `keyboardPresent()` says whether a
+  keyboard is connected (`engine/keyboard_presence.h`).
 - **`GuiBase`/`GuiScreen`** - `GuiBase` owns Platform+Renderer+Input+Audio in that order. The app's `Gui`
   (`gui/gui.h`) derives from it and adds theme/config/database/carousel state - lib_ableem has no idea what a
   theme or a database is. The app's own `gui/gui_screen.h` is now a thin shim: `class GuiScreen :
@@ -1015,10 +1031,35 @@ screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_d
 the client (`run "menu 6; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
 with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only smoke test.
 
-**Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
-`X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
-`Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
-to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
+**The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,
+on every platform - a PC stick, Windows, a Pi, a USB keyboard on the console. `ableem::Input` applies
+`lib_ableem/include/ableem/ui/keyboard_map.h` (header-only, tested in `test_keyboard`) to every key event:
+
+| Key | Pad | | Key | Pad |
+|---|---|---|---|---|
+| Arrows | d-pad | | F1 | Select |
+| Enter (and keypad Enter) | Cross | | F2 | Start |
+| Backspace, Esc | Circle | | Page Up / Page Down | L1 / R1 |
+| Tab | Triangle | | Home / End | L2 / R2 |
+| Space | Square | | F10 | L2+R2 (the launcher's System menu) |
+
+A held key's repeats are swallowed (the screens have their own hold logic). The power button
+(`SDL_SCANCODE_SLEEP`) and the console's Reset/Open keys are not in the map and behave as before. A screen
+that takes typed text turns the map off for its own duration (`GuiKeyboard`: `setKeyboardAsPad(false)` +
+`setRawKeyboard(true)`, restored on close) - there Enter, Esc, Backspace and the arrows are the text field's.
+**On a dev host** the old letter map stays alongside: `X O S T` = cross/circle/square/triangle, `I J K L` =
+d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2. It owns Space (Start, not Square), and `Esc`
+stays the power off (exits) - Backspace is Circle there; the two maps share no other key. The DebugDriver's
+`key` command goes through the map as a real key does (`key f10` opens the System menu), so a script can test
+it. `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts letter-map keys to its
+window, screenshots after each, and collects the logs.
+
+**Keyboard presence** (`Input::keyboardPresent()`, what the Button Guide shows the keyboard column by): a key
+seen this session, or `ableem::KeyboardPresence::detect()` (`engine/keyboard_presence.*`) - on Linux every
+`/sys/class/input/eventN/device/capabilities/key` bitmap with Enter and at least 20 letters (a pad's `BTN_*`,
+the console's power/reset buttons and a number pad are not keyboards; the word size, 32 or 64 bits, is told from
+the text, since a 32-bit userland on a 64-bit kernel cannot know the kernel's), on Windows
+`GetRawInputDeviceList`'s `RIM_TYPEKEYBOARD`. Asked afresh each time, so a keyboard plugged in later counts.
 
 ### Running on PC (debug)
 
@@ -1235,12 +1276,13 @@ defaults, which both the services and the screens need.
 | `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
 | `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's L2+R2 system menu or its sub-screens: About (`credits` settable by the caller, AutoBleem's by default - a tool shows its own), Confirm dialog, on-screen Keyboard (`GuiKeyboard`, rebuilt 2026-09-24 as ABI 3: pages of letters, symbols - `/ \ : ? & = % @ #` and the rest a URL, path or password needs - and two of accented letters, a function row with Shift/caps lock, the page key, Space, Backspace and Done; L1 Shift, R1 the next page, L2/R2 move the cursor; a USB keyboard types alongside the pad, Esc cancels, and while it shows a dev host's keyboard-as-pad is off; UTF-8 by whole characters; keys and field drawn as plain text, never parsed for `|@X|` markers), memcard select, `GuiTextPage` (a titled page of static `lines`, Circle back - a tool's instructions). `gui/starfx.*` is the star field the About screen draws. (`GuiScrollWin`/`GuiPadTest` were deleted on 2026-09-18 - nothing had shown them since the classic menu went.) |
 | `gui/screens/gui_facts_page.*`, `gui_action_menu.*` | `GuiFactsPage`, `GuiActionMenu` | Two reusable classic screens (2026-09-21, for the console tools): a facts page - sections with a heading band and label/value rows, scrolling, re-read every `refreshInterval`, a subclass gives `title()`/`collect()` and takes its own buttons through `onButton()`/`extraHints()` (Hardware Information and PSC-Bios's opening screen) - and an action menu in the system menu's look (rows of a name over a description, Cross picks into `result`, Circle leaves; ABFlashKit's screen). |
-| `gui/screens/gui_hardware_info.*` | `GuiHardwareInfo` | The Hardware Information screen (2026-09-18) for a machine without PSC-Bios, a `GuiFactsPage` of `SystemInfoService`'s sections plus a "Display and input" one only the running program can fill (render driver + MSAA, video driver, display mode, canvas/scale, audio driver, SDL version, the pads by name - `Platform::linkedVersion/videoDriverName/displayModeString`, `Renderer::driverName`, `Input::pads`). Classic layout, rows paged like Options, re-read every second, Up/Down a row, L1/R1/Left/Right a page, Circle back. `autobleem-gui <root> --sysinfo` prints the same sections (minus the display/input one) to stdout and exits - for bug reports and for checking the Linux branch over ssh; verified on the Pi 400 (64-bit kernel: no `model name` in cpuinfo, the core comes from `armCoreName()`'s part-id table). The system menu's item runs the PSC-Bios extension (`app.extensions().run("pscbios")`, `Extensions/pscbios/`, the console's only - 2026-09-24; it was `Apps/pscbios/run.sh` before) and shows this screen wherever that does not run: a Pi, a PC, a console without it, one of another `AB_SDK_ABI`, one the crash guard disabled; a PSC-Bios that failed mid-run is a notification line instead. |
+| `gui/screens/gui_hardware_info.*` | `GuiHardwareInfo` | The Hardware Information screen (2026-09-26): a `GuiFactsPage` built in on every platform with `SystemInfoService`'s sections - system (os, hostname, uptime, load), hardware (model, CPU cores, clock, thermal zone, RAM), storage (the data root and every block filesystem), network (IPv4 adapters, time zone from timedatectl), display (render driver + MSAA, video driver, display mode, canvas/scale, audio driver, SDL version), pads (by name with their mapping file in use - `Env::padMappingFiles()`'s first file found). Rows paged like Options, re-read every second. `autobleem-gui <root> --sysinfo` prints the sections to stdout and exits (minus display) - for bug reports and checking the Linux branch over ssh. The System menu's Hardware Information item (2026-09-26) opens this screen on every platform; the Network & Controllers item (when an installed extension provides the `network` entry - see below) opens that extension at its network entry through `Extension::runEntry("network")` (ABI 4), which on the console and a Pi/PC stick opens PSC-Bios's hub for Wi-Fi settings, Bluetooth pairing, DualShock 3 pairing and controller mapping. `GuiHardwareInfo` serves as fallback where Network & Controllers is not provided. |
 | `core/services/system_info.*` | `SystemInfoService` | What that screen shows, SDL-free: `collect()` = `system()` (os-release/uname, hostname, uptime, load; the registry on Windows), `hardware()` (device-tree model, cpuinfo, cpufreq, thermal_zone0, meminfo), `storage()` (the data root first, then every block filesystem in `/proc/mounts` - or the fixed/removable drives - with `statvfs`/`GetDiskFreeSpaceEx`), `network()` (IPv4 per interface, `getifaddrs`/`GetAdaptersAddresses` - ab_core links `iphlpapi ws2_32` on Windows), `software()` (version, build, platform, roots, RetroArch). The parsers and formatters are static and tested (`tests/core/test_system_info.cpp`). |
 | `gui/gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, L2+R2 among them), and the actions (what Cross does per state and menu icon, and L2+R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running; a highlighted game that vanished (folder pulled, or merged by the scan) falls back to the set's first game, closes a resume-slot picker that was showing its slots, and keeps the cover raised while the game menu is open (`Carousel::snapMainCover`). |
-| `evoui/screens/evoui_set_picker.*` | `GuiSetPicker` | What Select opens (2026-09-21; Select used to cycle the sets and L2+Select open a folder or playlist picker): a panel with three icon tabs - PlayStation, RetroArch, Apps - L1/R1 between them, and the groups of the tab as rows (all/internal/the folders/favorites/history/light-gun games; a playlist each; the one Apps group) with their game counts, Up/Down and L2/R2 a page, Cross picks. It fills a `GameSetSelection`; `GuiLauncher::loop_chooseSet()` applies it. **L2/R2 page on every list since the same day** (the menu base, the memcard picker, Hardware Information, the text page); L1/R1 go to the first/last row. |
-| `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The L2+R2 overlay (either order - `powerOffShift` + `r2Held`, 2026-09-18): Re-Scan Games, Extensions (second since 2026-09-25), RetroArch/EmulationStation, Memory Cards, Game Manager, Hardware Information (PSC-Bios on the console, `GuiHardwareInfo` elsewhere), Options, Scanner processors, Software Update, About, Power Off - `ab_drive.py`'s `menu <n>` counts from 0 in that order, and the rows are 46 px so all eleven fit - everything the classic main menu used to offer, Power Off included (no more direct L2+R2 shutdown). A dumb picker: a panel over the launcher's dimmed background (`background` texture handed in by the launcher), launcher fonts and theme colours, the panel as tall as its rows need and scrolling with edge markers when more than fit, the launcher's X/O hint icons in its footer; Up/Down + wrap, Cross/Circle - it returns a `SystemMenuAction` and `GuiLauncher::loop_openSystemMenu()` runs it. |
+| `evoui/screens/evoui_set_picker.*` | `GuiSetPicker` | What Select opens (2026-09-21; Select used to cycle the sets and L2+Select open a folder or playlist picker): a panel with three icon tabs - PlayStation, RetroArch, Apps - L1/R1 between them, and the groups of the tab as rows (all/internal/the folders/favorites/history/light-gun games; a playlist each; Apps grouped by Category= from `app.ini`). `app.gameQuery().appsGrouped()` returns a map sorted by category name (Games / Emulators / Tools / Media / Other - alphabetical within each). Each group row shows its game count (`"Tools (3 apps)"`). Up/Down and L2/R2 a page, Cross picks. It fills a `GameSetSelection`; `GuiLauncher::loop_chooseSet()` applies it. **L2/R2 page on every list since 2026-09-21** (the menu base, the memcard picker, Hardware Information, the text page); L1/R1 go to the first/last row. |
+| (Quick menu) | (launcher method `loop_openQuickMenu`) | The Quick menu (2026-09-26): d-pad Up in the Games state, or the gear icon in the game's icon row. A compact `GuiActionMenu` panel (44 px rows, drawn over the launcher's dimmed frame): Re-Scan Games, Store (the `store` extension; a notification when not installed), Network & Controllers (an installed extension providing `network` when runnable; greyed with a reason "PSC-Bios is switched off - enable it in Extensions"-style when installed but disabled/crashed/wrong ABI, with Cross opening the Extensions list at it; hidden when no extension provides it), System menu... (opens the L2+R2 menu). Up/Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every item is also in the System menu, and the Quick menu is a shortcut to frequent actions. The renderer's last capture (the launcher frame taken before opening any extension) is passed to `GuiActionMenu::background` so the menu sits over a dimmed background, like the System menu. |
+| `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The L2+R2 overlay (2026-09-26, grouped): heading rows (cursor skips them) separate Re-Scan Games / Extensions (top), Library (Game Manager, Memory Cards, Scanner processors), System (Options, Network & Controllers - an installed extension providing `network` when runnable; greyed "PSC-Bios is switched off - enable it in Extensions"-style with Cross opening Extensions list when installed but unavailable; hidden when nothing provides it, Hardware Information, Software Update, About), and Leave (RetroArch / EmulationStation, Power Off). Single-line 32 px rows, 24 px headings; the selected item's description in one strip above the footer, status notes right-aligned (a "Scan running" note on Re-Scan, "Update available" on Software Update). `tools/ab_drive.py`'s `menu "<title>"` picks an item by its English title; `quick "<title>"` is the same for the Quick menu (both keep `menu <n>` working by counting items only, not headings). A `GuiActionMenu` panel over the launcher's dimmed frame captured by `GuiLauncher::runExtensionEntry()` before opening any extension, launcher fonts and theme colours; Up/Down + wrap, Cross/Circle - it returns a `SystemMenuAction` and `GuiLauncher::loop_openSystemMenu()` runs it. `ExtensionCatalog::findUnavailableProvider(entry)` and `ExtensionInfo::problem()` describe why an extension cannot run (disabled, crash guard, ABI mismatch). |
 | `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | **Two kinds of box** (2026-09-18): a PS1 game is the art in the theme's jewel case (`cdJewel`, thin - `JewelCaseThickness` 8%); a RetroArch game or an App is a **big box** - the art at its own aspect (tall NES, wide SNES) with `evoimg/bigbox.png` laid over it as a 9-slice (`drawNineSlice`, 7 px border; `tools/make_bigbox_frame.py` draws the file, replace it with real artwork any time) and `BigBoxThickness` 22% deep. `PsCarouselGame::content` is where the box is in the 226x226 texture and `thickness` its depth; `renderTurnedCover` turns the box about *that* rect and puts the spine on its edge, so a tall box no longer has its spine floating in the transparent part of the texture. The row of covers: `games` (exactly the set's games, a bounded row - see "Conventions"), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. **Cover flow** since 2026-09-18: `PsScreenpoint::angle` (degrees about the vertical axis, negative = left of the middle, facing in) is interpolated like x/y/scale; `PsCarousel::createCoverPoint(distance, side)` lays out the `PsCarousel::SideCovers` (14 - enough that the outermost slot is off a 1280-wide screen, so a cover scrolls in from the edge rather than popping up) slots a side as a shelf receding from the middle: the nearest at half size 190 px out, each further one 3.5% smaller, 15 shades darker, a step (50 px, scaled with the cover) further out and turned more (40..72°) - the shrinking is what makes an inner cover drawn over an outer one read as being in front of it; `render()` draws far-to-near, the selected cover as a plain copy and every turned one via `renderTurnedCover()` - front face through `Renderer::copyTrapezoid`, plus a spine (`CoverThickness` = 8% of the width, textured with a strip from the cover's near edge, darker) and a Lambert-ish darkening with the turn. `ViewerDistance` (600 px) is the perspective strength. |
 | `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. `PsMeta` shows a RetroArch game the database knows as title / "publisher, year" / core / "n Players" (2026-09-19); one it does not know as title / core, as before. |
 | `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |

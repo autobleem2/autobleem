@@ -9,12 +9,12 @@ classic start screen of earlier versions is gone.
 |---|---|
 | Left / Right | Previous / next game. Holding scrolls faster after a moment. |
 | L1 / R1 | Jump to the previous / next first letter of the title. |
+| Up | The Quick menu (below). Also on an empty set. |
 | Down | Opens the options row for the selected game (see below). |
 | Cross | Starts the selected item. A PS1 game runs in pcsx-ab unless "Play using RA" (per game) or "Play all PSX games with RA" (Options) says RetroArch; a light-gun game always runs in RetroArch. A RetroArch entry starts RetroArch with its core. An App shows its readme first. |
 | Square | Starts the selected PS1 game in RetroArch (when RetroArch is installed). |
 | Triangle | Button guide. In resume-slot mode, deletes the selected resume point after a confirmation. |
-| Select | Next set: PS1 -> RetroArch -> Lightgun Games -> Apps. The Lightgun set is skipped while no game is flagged. |
-| L2 + Select | The PS1 set's sub-set (All Games, Internal Games, a game folder, Favorites, History) or the RetroArch playlist. |
+| Select | The set picker: the PlayStation, RetroArch and Apps tabs (L1 / R1) and the groups in each - All Games, Internal Games, a game folder, Favorites, History, Lightgun Games; a RetroArch playlist; the Apps. |
 | Start | A random game from the current list. |
 | L2 + R2 | The system menu (below). |
 
@@ -31,18 +31,59 @@ classic start screen of earlier versions is gone.
 
 | Option | Available for | What it does |
 |---|---|---|
-| Settings | everything | AutoBleem's Options. |
+| Quick menu (the gear) | everything | The Quick menu (below) - it opened Options until 2026-09-26; Options is in the System menu. |
 | Game | PS1 and RetroArch games | The game editor (below). |
 | Memory Card | PS1 games | The two-card memory card editor for the game. |
 | Resume | PS1 games with resume points | Pick a resume point to continue from. |
 
+## The keyboard
+
+Every screen driven by the pad works from a keyboard, on every platform (2026-09-26):
+
+| Key | Pad button |
+|---|---|
+| Arrow keys | d-pad |
+| Enter | Cross |
+| Esc or Backspace | Circle (on a development build Esc closes the program; Backspace is Circle there) |
+| Tab | Triangle |
+| Space | Square (on a development build Space is Start - its letter map owns it) |
+| F1 / F2 | Select / Start |
+| Page Up / Page Down | L1 / R1 |
+| Home / End | L2 / R2 |
+| F10 | L2 + R2 - the System menu |
+
+In a screen where text is typed (the on-screen keyboard) the keys type instead. The Button Guide (Triangle, or
+Tab) lists the keys beside the pad buttons when a keyboard is connected or has been typed on.
+
+## Quick menu (Up, or the gear icon)
+
+A short panel over the launcher, for what a player reaches for from the carousel (2026-09-26):
+
+| Item | What it does |
+|---|---|
+| Re-Scan Games | Starts a scan (a note says so when one is running already). |
+| Store | Runs the Store extension (`Extensions/store/`); a notification line when it is not installed. |
+| Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick): Wi-Fi, Bluetooth pairing, DualShock 3 pairing, the controller mapping wizard. |
+| System menu... | The System menu (below). |
+
+Up / Down move (wrapping), Cross picks, Circle goes back. Nothing is only here: every item is in the
+System menu too.
+
 ## System menu (L2 + R2)
 
-Re-Scan Games, Extensions (second since 2026-09-25 - the Store is one), RetroArch (or EmulationStation -
-exits the launcher into it), Memory Cards, Game Manager (refuses while a scan is running), Hardware
-Information, Options, Scanner processors (refuses while a scan is running), Software Update (where the
-platform has one), About, Power Off (confirmed). The rows are 46 px (a 19 px title over a 13 px
-description), so all eleven fit on the screen without scrolling.
+Grouped under headings the cursor skips (2026-09-26):
+
+| Group | Items |
+|---|---|
+| (top) | Re-Scan Games (a "Scan running" note while one runs), Extensions (the Store is one) |
+| Library | Game Manager (refuses while a scan is running), Memory Cards, Scanner processors (refuses while a scan is running) |
+| System | Options, Network & Controllers (only where provided - see the Quick menu), Hardware Information (the built-in facts page on every platform, Square saves the logs), Software Update (an "Update available" note when there is one), About |
+| Leave | RetroArch (or EmulationStation - exits the launcher into it), Power Off (confirmed) |
+
+The rows are one line (32 px, headings 24 px) and the selected item's description is in a strip above the
+footer, so the thirteen items and three headings fit on the screen without scrolling (a longer list would
+scroll, with markers). `tools/ab_drive.py`'s `menu "<title>"` / `quick "<title>"` pick an item by its
+English title in any language (`menu 3` still counts items, headings not included).
 
 ## Scanner processors
 

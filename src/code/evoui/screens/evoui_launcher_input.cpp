@@ -32,9 +32,9 @@ void GuiLauncher::loop() {
         // back into this loop, which is the one time they need translating again
         if (headersLanguage != app.lang().currentLanguage()) {
             headersLanguage = app.lang().currentLanguage();
-            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
-                     _("Resume game from saved state point")};
+            headers = {_("QUICK MENU"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+            texts = {_("Re-Scan, Store, Network and more"), _("Edit game parameters"),
+                     _("Edit Memory Card information"), _("Resume game from saved state point")};
         }
 
         time = gui->platform().ticks();
@@ -236,9 +236,18 @@ void GuiLauncher::loop_joyMoveUp() {
     if (carousel.scrolling) {
         return;
     }
-    if (state == LauncherScreenState::Set) {
+    if (state == LauncherScreenState::Games) {
+        // the Quick menu, above the games as the icon row is below them (the owner, 2026-09-26)
+        if (menu->animationStarted == 0) {
+            motionStart = 0;
+            loop_openQuickMenu();
+        }
+    } else if (state == LauncherScreenState::Set) {
         if (carousel.games.empty()) {
-            app.audio().cancel.play(); // nothing up there to go to (settleEmptyRoster)
+            // an empty set: no games to go up to (settleEmptyRoster), so the Quick menu - Re-Scan and the
+            // Store are what an empty set needs
+            if (menu->animationStarted == 0)
+                loop_openQuickMenu();
             return;
         }
         if (menu->animationStarted == 0) {
@@ -322,8 +331,8 @@ void GuiLauncher::loop_joyButton_Pressed() {
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
 void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, true is next
-    app.audio().cursor.play();
-
+    // one sound per press, played below where the jump is decided: a cursor.play() here as well put the
+    // same sound on two mixer channels at once, twice as loud as a d-pad step
     if (state == LauncherScreenState::Games) {
         if (carousel.games.empty()) {
             return;
