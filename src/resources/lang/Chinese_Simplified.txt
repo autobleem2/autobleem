@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=更新已下载 - 正在�
 Theme Default=主题默认
 Third-party extensions=第三方扩展
 This game is protected by its PSN licence and cannot be started=此游戏受 PSN 许可证保护，无法启动
+This version is brought to you by screemer and a friendly robot, Claude.=本版本由 screemer 和一位友好的机器人 Claude 为您带来。
 Title=标题
 Unknown Core (AutoDetect)=未知核心（自动检测）
 Unlock=解锁

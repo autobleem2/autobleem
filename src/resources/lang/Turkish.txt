@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=Güncelleme indirildi - y
 Theme Default=Tema Varsayılanı
 Third-party extensions=Üçüncü taraf uzantılar
 This game is protected by its PSN licence and cannot be started=Bu oyun PSN lisansıyla korunuyor ve başlatılamıyor
+This version is brought to you by screemer and a friendly robot, Claude.=Bu sürüm size screemer ve dost canlısı bir robot olan Claude tarafından sunuluyor.
 Title=Başlık
 Unknown Core (AutoDetect)=Bilinmeyen Çekirdek (Otomatik Algıla)
 Unlock=Kilidi aç

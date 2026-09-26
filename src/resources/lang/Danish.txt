@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=Opdateringen er hentet - 
 Theme Default=Temaets standard
 Third-party extensions=Tredjepartsudvidelser
 This game is protected by its PSN licence and cannot be started=Dette spil er beskyttet af sin PSN-licens og kan ikke startes
+This version is brought to you by screemer and a friendly robot, Claude.=Denne version er bragt til dig af screemer og en venlig robot, Claude.
 Title=Titel
 Unknown Core (AutoDetect)=Ukendt kerne (Autodetekt)
 Unlock=Lås op

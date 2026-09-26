@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=Das Update ist herunterge
 Theme Default=Theme-Standard
 Third-party extensions=Erweiterungen von Drittanbietern
 This game is protected by its PSN licence and cannot be started=Dieses Spiel ist durch seine PSN-Lizenz geschützt und kann nicht gestartet werden
+This version is brought to you by screemer and a friendly robot, Claude.=Diese Version wird dir von screemer und einem freundlichen Roboter, Claude, präsentiert.
 Title=Titel
 Unknown Core (AutoDetect)=Unbekannter Kern (AutoErkennung)
 Unlock=Entsperren

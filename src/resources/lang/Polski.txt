@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=Aktualizacja pobrana - ot
 Theme Default=Domyślna motywu
 Third-party extensions=Rozszerzenia innych firm
 This game is protected by its PSN licence and cannot be started=Ta gra jest chroniona licencją PSN i nie można jej uruchomić
+This version is brought to you by screemer and a friendly robot, Claude.=Tę wersję przygotowali dla Ciebie screemer i przyjazny robot, Claude.
 Title=Tytuł
 Unknown Core (AutoDetect)=Nieznany Rdzeń (AutoDetekcja)
 Unlock=Odblokuj

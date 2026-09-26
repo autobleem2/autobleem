@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=De update is gedownload -
 Theme Default=Standaard van thema
 Third-party extensions=Extensies van derden
 This game is protected by its PSN licence and cannot be started=Dit spel is beveiligd met zijn PSN-licentie en kan niet worden gestart
+This version is brought to you by screemer and a friendly robot, Claude.=Deze versie wordt je aangeboden door screemer en een vriendelijke robot, Claude.
 Title=Titel
 Unknown Core (AutoDetect)=Onbekende core (AutoDetectie)
 Unlock=Ontgrendelen

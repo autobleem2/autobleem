@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=Päivitys on ladattu - as
 Theme Default=Teeman oletus
 Third-party extensions=Kolmannen osapuolen laajennukset
 This game is protected by its PSN licence and cannot be started=Tämä peli on suojattu PSN-lisenssillään, eikä sitä voi käynnistää
+This version is brought to you by screemer and a friendly robot, Claude.=Tämän version tarjoavat sinulle screemer ja ystävällinen robotti Claude.
 Title=Nimi
 Unknown Core (AutoDetect)=Tuntematon ydin (Automaattisesti havaittu)
 Unlock=Avaa lukitus

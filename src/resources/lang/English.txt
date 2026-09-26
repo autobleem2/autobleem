@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 341
+# Untranslated: 0 / Total: 342
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -317,6 +317,7 @@ The update is downloaded - the installer is opening...=The update is downloaded 
 Theme Default=Theme Default
 Third-party extensions=Third-party extensions
 This game is protected by its PSN licence and cannot be started=This game is protected by its PSN licence and cannot be started
+This version is brought to you by screemer and a friendly robot, Claude.=This version is brought to you by screemer and a friendly robot, Claude.
 Title=Title
 Unknown Core (AutoDetect)=Unknown Core (AutoDetect)
 Unlock=Unlock
