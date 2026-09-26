@@ -20,14 +20,14 @@ const int Pad = 12;
 //*******************************
 // NotificationBubble::show
 //*******************************
-void NotificationBubble::show(const string &title, const string &detail, int done, int total, long holdMs) {
+void NotificationBubble::show(const string &title, const string &detail, int64_t done, int64_t total, long holdMs) {
     // the clock is the platform's: a show() before the first render() (the launcher's "Showing:" line is
     // set while its assets load) must not count its hold from 0
     now_ = Gui::getInstance()->platform().ticks();
     title_ = title;
     detail_ = detail;
-    done_ = done;
-    total_ = total;
+    done_ = max<int64_t>(0, done);
+    total_ = max<int64_t>(0, total);
     if (state_ == State::Hidden || state_ == State::FadingOut) {
         // a bubble on its way out comes back from where it is
         const long elapsed = state_ == State::FadingOut ? max(0L, SlideMs - (now_ - stateSince_)) : 0;
@@ -116,7 +116,9 @@ void NotificationBubble::render(Gui &gui, long now) {
         gui.renderer().setBlendMode(ableem::BlendMode::Blend);
         gui.renderer().setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
         gui.renderer().fillRect(track);
-        const int fill = static_cast<int>(static_cast<long>(textWidth) * min(done_, total_) / total_);
+        // in floating point: width x bytes overflows a 32-bit long (the console's) past ~5 MB
+        const int fill = static_cast<int>(static_cast<double>(textWidth) * static_cast<double>(min(done_, total_)) /
+                                          static_cast<double>(total_));
         gui.renderer().setDrawColor(style.text);
         gui.renderer().fillRect(ableem::Rect(track.x, track.y, fill, BarHeight));
     }

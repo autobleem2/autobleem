@@ -623,10 +623,17 @@ void GuiLauncher::loop_openExtensions() {
 void GuiLauncher::applyExtensionRequests() {
     App::ExtensionRequests r = app.takeExtensionRequests();
     if (r.bubbleChanged) {
-        if (r.bubbleVisible)
-            extensionBubble.show(r.bubbleTitle, r.bubbleDetail, r.bubbleDone, r.bubbleTotal, 0);
-        else
+        if (r.bubbleVisible) {
+            // the percentage next to the detail says what the bar shows - in 64 bits, as the extension
+            // reports its bytes (a Store download is past a 32-bit count's reach on the console)
+            string detail = r.bubbleDetail;
+            if (r.bubbleTotal > 0)
+                detail += "  " + to_string(min(r.bubbleDone, r.bubbleTotal) * 100 / r.bubbleTotal) + "%";
+            extensionBubble.show(r.bubbleTitle, detail, static_cast<int64_t>(r.bubbleDone),
+                                 static_cast<int64_t>(r.bubbleTotal), 0);
+        } else {
             extensionBubble.hide();
+        }
     }
     if (!r.message.empty())
         notificationLines[1].setText(r.message, 2 * DefaultShowingTimeout);
