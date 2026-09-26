@@ -467,10 +467,10 @@ I fatti della macchina - sistema, hardware, archiviazione con il suo spazio libe
 display e audio, i controller collegati - rileggi ogni secondo. Su una PlayStation Classic con il kernel AutoBleem
 questo elemento apre **PSC-Bios** invece (capitolo 6).
 
-I primi due controller sono mostrati come Player 1 e Player 2 – le porte che l'emulatore PS1 assegna loro.
+I primi due controller sono mostrati come Giocatore 1 e Giocatore 2 – le porte che l'emulatore PS1 assegna loro.
 Qualsiasi controller aggiuntivo è mostrato come non utilizzato dall'emulatore PS1. RetroArch assegna i controller
 secondo le proprie impostazioni e potrebbe ordinarli diversamente. Quando un controller è collegato o scollegato,
-il launcher mostra brevemente quale pad è Player 1 e Player 2.
+il launcher mostra brevemente quale pad è Giocatore 1 e Giocatore 2.
 
 ![Informazioni sull'hardware](../images/en/hardware-info.jpg)
 

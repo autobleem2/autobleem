@@ -460,10 +460,10 @@ köşede. Oyun Yöneticisi tarama çalışana kadar bekler.
 Makine gerçekleri - sistem, donanım, depolama boş alanla, ağ adresleri, ekran ve ses sürücüleri, bağlı
 kontrolcüler - her saniye yeniden okunan. AutoBleem kernel'i olan konsolda bu **PSC-Bios** açar (bölüm 6).
 
-İlk iki kontrolcü, Player 1 ve Player 2 olarak gösterilir – PS1 emülatörünün onlara atadığı portlar.
+İlk iki kontrolcü, Oyuncu 1 ve Oyuncu 2 olarak gösterilir – PS1 emülatörünün onlara atadığı portlar.
 Diğer tüm kontrolcüler PS1 emülatörü tarafından kullanılmayan olarak gösterilir. RetroArch, kendi
 ayarlarına göre kontrolcüleri atar ve onları farklı şekilde sıralayabilir. Bir kontrolcü bağlandığında
-veya bağlantısı kesildiğinde, başlatıcı hangi pad'in Player 1 ve Player 2 olduğunu kısaca gösterir.
+veya bağlantısı kesildiğinde, başlatıcı hangi pad'in Oyuncu 1 ve Oyuncu 2 olduğunu kısaca gösterir.
 
 ![Donanım Bilgisi](../images/en/hardware-info.jpg)
 

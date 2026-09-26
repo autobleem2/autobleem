@@ -476,10 +476,10 @@ Los hechos de la máquina - sistema, hardware, almacenamiento con su espacio lib
 controladores de pantalla y audio, los controles conectados - reléidos cada segundo. En una PlayStation Classic
 con el núcleo de AutoBleem este elemento abre **PSC-Bios** en su lugar (capítulo 6).
 
-Los dos primeros controles se muestran como Player 1 y Player 2 – los puertos que el emulador PS1 les asigna.
+Los dos primeros controles se muestran como Jugador 1 y Jugador 2 – los puertos que el emulador PS1 les asigna.
 Cualquier control adicional se muestra como no utilizado por el emulador PS1. RetroArch asigna controles según
 su propia configuración y puede ordenarlos de manera diferente. Cuando se conecta o desconecta un control, el
-lanzador muestra brevemente cuál es el pad Player 1 y Player 2.
+lanzador muestra brevemente cuál es el pad Jugador 1 y Jugador 2.
 
 ![Información de hardware](../images/en/hardware-info.jpg)
 
