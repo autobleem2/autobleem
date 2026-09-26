@@ -38,8 +38,9 @@ private:
         // the selection it stands for
         GameSet set = GameSet::PS1;
         Ps1SelectState ps1State = Ps1SelectState::AllGames;
-        int index = 0;    // the folder row or the playlist
-        std::string name; // the folder's or playlist's name
+        int index = 0;                              // the folder row or the playlist
+        std::string name;                           // the folder's or playlist's name
+        AppCategory appCategory = AppCategory::All; // the Apps tab's row
     };
     struct Tab {
         std::string title;

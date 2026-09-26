@@ -235,6 +235,41 @@ def make_fake_retroarch(usb):
                 z.writestr('%s.%s' % (game, ext), b'fake rom ' + game.encode('utf-8'))
 
 
+# fake Apps for the set picker's category rows (docs/app-format-plan.md's Category=): a couple of Games,
+# one Emulators, one Tools, one Media, and one with no Category at all (falls under "Other") - enough for
+# every row the Apps tab can show, plus "All apps". Real Apps (abflashkit, pscbios) never get a Category
+# here: the app_* repos and the Store catalog carry their own later, not this batch.
+FAKE_APPS = [
+    ('Retro Blaster', 'Games'),
+    ('Puzzle Quest', 'Games'),
+    ('SNES Companion', 'Emulators'),
+    ('Terminal', 'Tools'),
+    ('Movie Player', 'Media'),
+    ('Mystery Tool', None), # no Category= at all -> Other
+]
+
+
+def make_fake_apps(usb):
+    """usb/Apps/<name>/app.ini, one per FAKE_APPS entry, each with a stub bin/dev/<name> binary so it is
+    runnable on the Windows dev build too (Env::appPlatformKeys() tries "dev" first there)."""
+    for title, category in FAKE_APPS:
+        folder = os.path.join(usb, 'Apps', title.replace(' ', ''))
+        os.makedirs(os.path.join(folder, 'bin', 'dev'), exist_ok=True)
+        binary = os.path.join(folder, 'bin', 'dev', title.replace(' ', ''))
+        if not os.path.exists(binary):
+            with open(binary, 'w') as f:
+                f.write('#!/bin/sh\n# a stand-in: AppManifest only asks whether the file exists\n')
+        ini_path = os.path.join(folder, 'app.ini')
+        if os.path.exists(ini_path):
+            continue # keep what a previous run wrote, like the rest of make_usb.py's fixtures
+        with open(ini_path, 'w', encoding='utf-8') as f:
+            f.write('Title=%s\n' % title)
+            f.write('Author=AutoBleem\n')
+            f.write('Exec=bin/{key}/%s\n' % title.replace(' ', ''))
+            if category:
+                f.write('Category=%s\n' % category)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('usb', help='the USB root to create or refresh')
@@ -324,6 +359,7 @@ def main():
     make_fake_games(games, max(1, args.games))
     make_fake_memcards(games)
     make_fake_retroarch(usb)
+    make_fake_apps(usb)
 
     # UpdateRoms, the PC-side scanner, in the stick's root as a release lays it out (the DLLs come from
     # PATH here; tools/make_updateroms_bundle.sh gathers them for a real stick)

@@ -204,7 +204,12 @@ void GuiLauncher::showSetName() {
         string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
         notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
     } else if (selection.set == GameSet::Apps) {
-        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + numGames, timeout);
+        // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
+        string name = _("Showing: Apps");
+        if (selection.appCategory != AppCategory::All)
+            name += ": " + _(appCategoryName(selection.appCategory));
+        string numApps = " (" + to_string(carousel.games.size()) + " " + _("apps") + ")";
+        notificationLines[0].setText(name + numApps, timeout);
     }
 }
 
