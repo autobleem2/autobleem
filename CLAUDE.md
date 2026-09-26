@@ -1080,6 +1080,14 @@ each (`link.sh`/`overmount.sh`/`startsony.sh`) - is gone with it (2026-09-18, as
 runs `retroboot/bin/init.sh` at boot, and the `/tmp/.rbpatching` guards, `rb_patch_background.sh` and
 `rb_monitor.sh` are deleted - an RB_Patch dropped on the stick is not applied by AutoBleem any more.
 
+**`/tmp` is kept out of systemd's aging** (2026-09-26): the console boots with its clock at 2018-09-01, and on
+the AutoBleem kernel WiFi's timesyncd jumps it to today - after which `systemd-tmpfiles-clean.timer` (15 min
+after boot, then daily; `/usr/lib/tmpfiles.d/tmp.conf` ages `/tmp` at 10 days) deleted everything boot had put
+there as eight years old: `/tmp/lib`'s soname links (the Apps then loaded the firmware's SDL 2.0.4 from
+`/usr/lib`), the libs archive, the bind-mounted udev rules file. `boot.sh` writes `x /tmp/*` to
+`/run/tmpfiles.d/autobleem.conf` (tmpfs - nothing on the console's own storage), checked on its systemd 229;
+psc-kernel-payload `3f67f19`+ also ships a `tmp.conf` without an age. Anything of ours in `/tmp` relies on it.
+
 ### SDL2 on the console (2026-09-23)
 
 The launcher, absplash, the console tools, pcsx-ab and pcsx-abnxt all run on the SDL2 family in
