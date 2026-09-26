@@ -1160,6 +1160,17 @@ hooks, so nothing can refuse it. So: the write's result is checked, a refusal re
 runs `shutdown -h now` - POWER is then a cold boot, not a quick wake. Confirmed by the tester the same
 day, from the OTG hub and from a front port. **Never read `/sys/power/wakeup_count` in these scripts**: it
 blocks while a wakeup event is in progress, which hung a diagnostic build on the red LED.
+**The rear port after a wake** (2026-09-26, the owner's console on the pad-driver payload, WiFi and Bluetooth
+dongles on a powered hub at the rear): MediaTek's musb driver does not restart its OTG host session after a
+resume - the front bus came back in 2 s, the rear hub never did, so WiFi and Bluetooth were gone after every
+wake. `standby()` notes whether the rear bus (found by its controller, `musb-hdrc.0.auto`) had a device before
+the suspend; after the wake, if it is still missing 5 s in, it writes `idle` then `host` to
+`/sys/devices/platform/mt_usb/swmode` (the glue's `musb_id_pin_sw_work`: VBUS, session, PHY) and the hub
+re-enumerates within 2 s - before the stick's mount loop, so a stick on that hub comes back too. The stock
+kernel, an empty rear port or a device that came back: nothing, no wait. Unbinding/rebinding the driver is
+**not** a way: its probe cannot run twice (IRQ never freed, `probe ... failed with error -16`) and the port stays
+dead until a reboot. Also: this kernel does not add the time spent suspended to the wall clock (a standby is
+seconds in the logs), and after the wake the overlay's `rndis restart` restarts dropbear with a new host key.
 
 **The dirty flag** (`ableem::FatDirtyFlag`, `lib_ableem/engine/fat_dirty_flag.*`, tested; the CLI
 `abfatflag DEVICE [clean|dirty]` in `src/tools/`, shipped next to `absplash`): the boot sector byte at

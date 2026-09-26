@@ -115,6 +115,17 @@ standby() {
     sync
     # a refused suspend fails the write (EBUSY, a wakeup source held); a real one returns after the wake.
     # Refused: what held it goes to the log, and two more tries for a passing wakelock.
+    # whether anything is plugged in at the rear (micro-USB, OTG) port now: only the AutoBleem kernel runs it as a
+    # host, and a device there may not come back after the resume (see below)
+    # (the bus is found by its controller, musb-hdrc.0.auto - the front ports are musbfsh - not by its number)
+    REAR_HAD=0
+    REAR_DEV=""
+    for u in /sys/bus/usb/devices/usb*; do
+        case "$(readlink -f $u)" in
+        */musb-hdrc.0.auto/usb*) REAR_DEV=/sys/bus/usb/devices/${u##*/usb}-1 ;;
+        esac
+    done
+    [ -n "$REAR_DEV" ] && [ -e "$REAR_DEV" ] && REAR_HAD=1
     try=1
     until echo mem > /sys/power/state 2>> $SLOG; do
         echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
@@ -150,6 +161,28 @@ standby() {
     fi
 
     sleep 3 # the USB bus re-enumerates after the resume
+
+    # The rear (OTG) port on the AutoBleem kernel: MediaTek's musb driver does not restart its host session after
+    # a resume, so a hub or dongle there stays gone - WiFi and Bluetooth dead after every wake (2026-09-26: the
+    # front bus came back in 2 s, the rear hub never did). Its glue's own switch redoes the host bring-up
+    # (musb_id_pin_sw_work: VBUS, session, PHY) and the hub re-enumerates within 2 s; unbinding the driver instead
+    # leaves the port dead (its probe cannot run twice). Only when something was there before the standby and is
+    # still missing - the stock kernel, an empty rear port or a device that came back: nothing, no wait.
+    REAR_MODE=/sys/devices/platform/mt_usb/swmode
+    if [ "$REAR_HAD" = 1 ] && [ -w $REAR_MODE ]; then
+        j=0
+        while [ ! -e "$REAR_DEV" ] && [ $j -lt 2 ]; do
+            j=$((j + 1))
+            sleep 1
+        done
+        if [ ! -e "$REAR_DEV" ]; then
+            echo "$(date) rear USB: its device did not come back - restarting the port's host mode" >> $SLOG
+            echo idle > $REAR_MODE # the first time a no-op (the switch only tracks its own writes)
+            sleep 1
+            echo host > $REAR_MODE
+        fi
+    fi
+
     i=0
     while [ $i -lt 30 ]; do
         # any sd?1, not only sda1/sdb1 as usb_watch looks: a stick pulled during the standby and plugged back
