@@ -9,6 +9,27 @@
 
 using namespace std;
 
+//*******************************
+// appCategoryLabel
+//*******************************
+string appCategoryLabel(AppCategory category) {
+    switch (category) {
+    case AppCategory::All:
+        return _("All apps");
+    case AppCategory::Games:
+        return _("Games");
+    case AppCategory::Emulators:
+        return _("Emulators");
+    case AppCategory::Tools:
+        return _("Tools");
+    case AppCategory::Media:
+        return _("Media");
+    case AppCategory::Other:
+        return _("Other");
+    }
+    return _(appCategoryName(category));
+}
+
 namespace {
 const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
@@ -89,7 +110,7 @@ void GuiSetPicker::buildTabs() {
     apps.entries.push_back({_("All apps"), appsCount(query.apps().size()), 0, GameSet::Apps, Ps1SelectState::AllGames,
                             0, "", AppCategory::All});
     for (const auto &c : query.appCategories()) {
-        Entry entry{_(appCategoryName(c.category)),
+        Entry entry{appCategoryLabel(c.category),
                     appsCount(static_cast<size_t>(c.count)),
                     0,
                     GameSet::Apps,

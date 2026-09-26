@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include "evoui_mc_manager.h"
+#include "evoui_set_picker.h"
 #include <cassert>
 #include <memory>
 #include <ableem/engine/log.h>
@@ -207,7 +208,7 @@ void GuiLauncher::showSetName() {
         // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
         string name = _("Showing: Apps");
         if (selection.appCategory != AppCategory::All)
-            name += ": " + _(appCategoryName(selection.appCategory));
+            name += ": " + appCategoryLabel(selection.appCategory);
         string numApps = " (" + to_string(carousel.games.size()) + " " + _("apps") + ")";
         notificationLines[0].setText(name + numApps, timeout);
     }

@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 383
 
 A scan is already in progress=A scan is already in progress
 About=About

@@ -16,6 +16,10 @@
 #include <string>
 #include <vector>
 
+// an App category's name as the picker and the launcher's set line show it, translated (literal _() calls, so
+// tools/lang_tools.py extract finds every name)
+std::string appCategoryLabel(AppCategory category);
+
 class GuiSetPicker : public GuiScreen {
 public:
     App &app = App::get();
