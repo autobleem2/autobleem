@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -28,6 +28,7 @@ Back=Takaisin
 Back to games=Takaisin peleihin
 Background Music:=Taustamusiikki:
 Backspace=Askelpalautin
+battery low=akku vähissä
 Bin file failed to verify=BIN-tiedoston tarkistus epäonnistui
 Bluetooth=Bluetooth
 Boot logo:=Käynnistyslogo:
@@ -391,5 +392,6 @@ WAVE=AALTO
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-paritus ja ohjainmääritys
 Widescreen:=Laajakuva:
+Wireless pad=Langaton ohjain
 Year:=Vuosi:
 |@lang|=fi

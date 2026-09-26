@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -28,6 +28,7 @@ Back=Geri
 Back to games=Oyunlara dön
 Background Music:=Arkaplan Müziği:
 Backspace=Geri Sil
+battery low=pil zayıf
 Bin file failed to verify=BIN dosyası doğrulanamadı
 Bluetooth=Bluetooth
 Boot logo:=Açılış logosu:
@@ -391,5 +392,6 @@ WAVE=DALGA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth eşleştirme ve kontrolcü eşleme
 Widescreen:=Geniş Ekran:
+Wireless pad=Kablosuz kumanda
 Year:=Yıl:
 |@lang|=tr

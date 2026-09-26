@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -28,6 +28,7 @@ Back=Zurück
 Back to games=Zurück zu den Spielen
 Background Music:=Hintergrunds Musik:
 Backspace=Rücktaste
+battery low=Akku schwach
 Bin file failed to verify=BIN-Datei konnte nicht geprüft werden
 Bluetooth=Bluetooth
 Boot logo:=Boot-Logo:
@@ -391,5 +392,6 @@ WAVE=WELLE
 Wi-Fi=WLAN
 Wi-Fi, Bluetooth pairing and controller mapping=WLAN, Bluetooth-Kopplung und Controller-Zuordnung
 Widescreen:=Breitbild:
+Wireless pad=Kabelloser Controller
 Year:=Jahr:
 |@lang|=2

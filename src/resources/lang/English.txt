@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -28,6 +28,7 @@ Back=Back
 Back to games=Back to games
 Background Music:=Background Music:
 Backspace=Backspace
+battery low=battery low
 Bin file failed to verify=Bin file failed to verify
 Bluetooth=Bluetooth
 Boot logo:=Boot logo:
@@ -391,5 +392,6 @@ WAVE=WAVE
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth pairing and controller mapping
 Widescreen:=Widescreen:
+Wireless pad=Wireless pad
 Year:=Year:
 |@lang|=|@lang|

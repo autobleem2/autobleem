@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -28,6 +28,7 @@ Back=Wstecz
 Back to games=Powrót do gier
 Background Music:=Muzyka w tle:
 Backspace=Backspace
+battery low=bateria słaba
 Bin file failed to verify=Nie udało się zweryfikować pliku BIN
 Bluetooth=Bluetooth
 Boot logo:=Logo startowe:
@@ -391,5 +392,6 @@ WAVE=FALA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, parowanie Bluetooth i mapowanie kontrolerów
 Widescreen:=Pełny ekran:
+Wireless pad=Bezprzewodowy pad
 Year:=Rok:
 |@lang|=pl

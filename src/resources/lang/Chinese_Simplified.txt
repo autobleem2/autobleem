@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -28,6 +28,7 @@ Back=返回
 Back to games=返回游戏
 Background Music:=背景音乐：
 Backspace=退格
+battery low=电量低
 Bin file failed to verify=BIN文件校验失败
 Bluetooth=蓝牙
 Boot logo:=启动标志：
@@ -391,5 +392,6 @@ WAVE=波次
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi、蓝牙配对和控制器映射
 Widescreen:=宽屏：
+Wireless pad=无线手柄
 Year:=年份：
 |@lang|=zh_CN
