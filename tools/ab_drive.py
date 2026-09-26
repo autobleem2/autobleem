@@ -18,6 +18,13 @@ another machine - a Pi 400 or a PSC with AB_DEBUG_BIND set - and `--token <t>` (
 environment variable) when that driver was started with AB_DEBUG_TOKEN: sent as the connection's first
 `auth <token>` command, before anything else. `start` always launches on this PC (127.0.0.1 only, no
 token needed) - driving a device is `run`/single commands with `--host` against a copy already running there.
+`start` always talks to its own launch on 127.0.0.1 (never --host), so it drops AB_DEBUG_BIND from the
+launched process's environment even if it is set in yours (e.g. left over from driving a device in the same
+shell): a bind to one specific non-loopback address would leave nothing listening on 127.0.0.1 at all. A set
+AB_DEBUG_TOKEN, though, is left as inherited and honoured: "set = required" applies on loopback too, so
+`start` authenticates its own readiness commands (window hide, the wait for the first screen) with it, and
+a `stop`/`screen`/... run straight after in the same shell keeps working with no --token of its own, exactly
+as if AB_DEBUG_TOKEN were unset throughout.
 
 The script language is the driver's: press <btn> [ms], down/up <btn>, key <name>, text <utf8>, wait <ms>,
 shot <file>, grab <local file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start
@@ -215,6 +222,18 @@ def start(usb, port, show, tool=None):
     for name in os.listdir(lang):
         shutil.copy(os.path.join(lang, name), os.path.join(app_dir, 'lang', name))
     env = dict(os.environ)
+    # `start` always talks to its own launch on 127.0.0.1 (the readiness Driver(port) below, with no --host).
+    # AB_DEBUG_BIND left inherited would be able to make that address unreachable outright - a bind to one
+    # specific non-loopback address (not 0.0.0.0) means nothing is listening on 127.0.0.1 at all, and the
+    # readiness wait below would just time out with "the driver did not answer". Dropped unconditionally:
+    # never what a *local* launch wants, whatever a `run --host ...` against a device left set.
+    env.pop('AB_DEBUG_BIND', None)
+    # AB_DEBUG_TOKEN is left as inherited on purpose (unlike AB_DEBUG_BIND above): "set = required" applies
+    # on loopback too (see debug_driver.h), so if it is set this launch requires it as much as a remote one
+    # would - and leaving it set is what keeps a `stop`/`screen`/... run straight after, from the same shell,
+    # matching without a --token of its own (main() already reads AB_DEBUG_TOKEN for every command). What
+    # changes here is only that start()'s own readiness commands below now authenticate with it too.
+    token = env.get('AB_DEBUG_TOKEN')
     env['AB_DEBUG_PORT'] = str(port)
     env['AB_NO_SPLASH'] = '1'  # straight to the launcher (GuiSplash honours it on a dev host)
     env['PATH'] = r'C:\msys64\ucrt64\bin;' + env.get('PATH', '')
@@ -226,7 +245,7 @@ def start(usb, port, show, tool=None):
     for _ in range(300):
         time.sleep(0.1)
         try:
-            d = Driver(port)
+            d = Driver(port, token=token)
             break
         except OSError:
             if proc.poll() is not None:

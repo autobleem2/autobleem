@@ -1032,7 +1032,12 @@ of PNG data - a test fetches screenshots over the socket without writing to the 
 launcher on the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then
 from a PC run `AB_DEBUG_TOKEN=<token> python tools/ab_drive.py run "..." --host <ip> --port <p>`. **Security
 note:** the token travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is
-not a real credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface. A peer that authenticates and then
+not a real credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface. `start` (always local, no --host) is
+the one exception to all of the above: it drops an inherited AB_DEBUG_BIND from the launch it starts, since a
+non-loopback bind would leave nothing listening on the 127.0.0.1 it always talks to - but it honours an
+inherited AB_DEBUG_TOKEN, authenticating its own readiness commands with it, so a leftover AB_DEBUG_TOKEN from
+testing a device in the same shell does not break `start`, and a `stop`/`screen`/... run straight after keeps
+matching it with no --token of its own. A peer that authenticates and then
 drops the connection mid-command (Ctrl-C, a WiFi drop) never crashes the driver: every socket send uses
 `MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send just closes that client and goes
 back to accepting the next one.
