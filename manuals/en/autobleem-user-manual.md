@@ -202,8 +202,8 @@ with none opens on an empty shelf with the icon row showing Settings only.
 
 **Up** in the launcher, or the **gear icon** in the icon row (where Settings / Game / Memory Card / Resume are):
 the Quick menu for actions you reach for from the carousel. A short list: *Re-Scan Games* (starts a scan
-now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (only on the console
-and Raspberry Pi: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6), and *System menu...* 
+now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (on the console, the
+Raspberry Pi and the PC stick: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6), and *System menu...* 
 (the full menu below). Up / Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every
 item is also in the system menu.
 
@@ -219,7 +219,7 @@ item is also in the system menu.
 | | Memory Cards | Your memory card sets (section 3.7). |
 | | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). Disabled while a scan is running. |
 | **System** | Options | AutoBleem's settings (section 3.6). |
-| | Network & Controllers | (Console and Raspberry Pi only) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. |
+| | Network & Controllers | (Console, Raspberry Pi and PC stick) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. |
 | | Hardware Information | The machine's facts: system, CPU, storage, network interfaces, time zone, display, the pads and their mappings. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6); on other machines it shows this information page. |
 | | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | | About | Credits and licence. |
@@ -542,7 +542,7 @@ is in the Extensions list. **ABFlashKit** is an App in the Apps set.
 ### 6.1 PSC-Bios
 
 An extension that comes with the console package, also available on a Raspberry Pi and the PC stick. It is
-opened from the System menu's *Network & Controllers* item (or from the Extensions list on all platforms).
+opened from the System menu's *Network & Controllers* item (or from the Extensions list).
 The opening screen shows machine facts: time, timezone, WiFi/Ethernet/Bluetooth network adapters with their
 addresses, and every connected controller with whether it has a button mapping. The network and Bluetooth
 parts need the AutoBleem kernel on the console (section 6.2) or system tools on a Raspberry Pi / PC stick;

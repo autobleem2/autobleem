@@ -202,8 +202,8 @@ bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 
 **Góra** w launcherze, lub **ikona koła zębatego** w rzędzie ikon (gdzie Ustawienia / Gra / Karta pamięci / Wznowienie):
 szybkie menu na dostęp do akcji, które robisz z półki. Krótka lista: *Skanuj gry ponownie* (skanowanie teraz),
-*Sklep* (Sklep AutoBleem na rozszerzenia), *Sieć i pady* (tylko na konsoli i Raspberry Pi: Wi-Fi, parowanie
-Bluetooth, kreator mapowania pada - patrzrozzial 6), i *Menu systemowe...* (pełne menu poniżej). Góra / Dół
+*Sklep* (Sklep AutoBleem na rozszerzenia), *Sieć i kontrolery* (na konsoli, Raspberry Pi i pendrivie PC: Wi-Fi, parowanie
+Bluetooth, kreator mapowania pada - patrz rozdział 6), i *Menu systemowe...* (pełne menu poniżej). Góra / Dół
 przechodzą (z zawinięciem), Krzyżyk wybiera, Kółko wychodzi. Nic tu unikatowego - każda pozycja jest też w menu
 systemowym.
 
@@ -219,7 +219,7 @@ systemowym.
 | | Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
 | | Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). Wyłączone podczas skanowania. |
 | **System** | Opcje | Ustawienia AutoBleem (punkt 3.6). |
-| | Sieć i pady | (Konsola i Raspberry Pi tylko) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrzrozzial 6. |
+| | Sieć i kontrolery | (Konsola, Raspberry Pi i pendrive PC) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrz rozdział 6. |
 | | Informacje o sprzęcie | Fakty maszyny: system, CPU, dyski, interfejsy sieciowe, strefa czasowa, ekran, pady i ich mapowania. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6); na pozostałych maszynach pokazuje tę stronę informacyjną. |
 | | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | | O programie | Autorzy i licencja. |
@@ -545,13 +545,13 @@ pakietu konsoli: otwiera je *Informacje o sprzęcie* w menu systemowym i jest na
 ### 6.1 PSC-Bios
 
 Rozszerzenie dołączone do pakietu konsoli, dostępne też na Raspberry Pi i pendrivie PC. Jest otwierane z
-menu systemowego pozycji *Sieć i pady* (albo z listy Rozszerzeń na wszystkich platformach). Pierwszy ekran
+menu systemowego pozycji *Sieć i kontrolery* (albo z listy Rozszerzeń na wszystkich platformach). Pierwszy ekran
 pokazuje fakty maszyny: czas, strefę czasową, adaptery sieciowe WiFi/Ethernet/Bluetooth z adresami, oraz
 każdy podłączony kontroler z informacją, czy ma mapowanie przycisków. Część sieciowa wymaga kernela
 AutoBleem na konsoli (punkt 6.2) lub narzędzi systemowych na Raspberry Pi / pendrivie PC; kreator
 mapowania pada działa wszędzie.
 
-![PSC-Bios: centrum Sieć i pady](../images/pl/pscbios-main.jpg)
+![PSC-Bios: centrum Sieć i kontrolery](../images/pl/pscbios-main.jpg)
 
 - **Select - Sieć WiFi** (tylko z kernelem lub NetworkManager): nazwa sieci (wpisana albo wybrana ze skanu),
   hasło, tryb sterownika, i *Zastosuj / Restartuj sieć*. Strefa czasowa ustawia się tutaj. Adres IP konsoli
