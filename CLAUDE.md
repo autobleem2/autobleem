@@ -1136,13 +1136,25 @@ USB stick root = `/media` on the PSC:
 
 Boot chain: the exploit payload in `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` runs `Autobleem/start.sh` →
 `rc/boot.sh` (bind-mounts `rc/20-joystick.rules` over `/etc/udev/rules.d` and re-triggers udev, which is what
-lets two pads through one hub; `killsony.sh`; `backup.sh`) → `rc/autobleem.sh` → unpack `libs.tar.gz` (SDL2
+lets two pads through one hub; `killsony.sh`; `backup.sh`; `rc/ssh_keys.sh` - see below) → `rc/autobleem.sh` → unpack `libs.tar.gz` (SDL2
 2.0.14 + SDL2_image/mixer 2.6.3 + SDL2_ttf 2.20.2 from the image, SDL2 with the **Wayland** video and **ALSA**
 audio backends - the console has no X and no OSS; see "SDL2 on the console") → `bin/autobleem/run.sh` → `autobleem-gui /media`.
 `/autobleem` existing on the console marks the AutoBleem kernel installed (`Env::autobleemKernel`). The
 console has no battery clock (every boot is 2018-09-01), so last-played times are recorded only when the
 network has set it via WiFi's `70-autobleem-time` dhcpcd hook, which touches `/run/autobleem/clock-set`
 (`Env::clockIsSet()`, checked per-launch).
+
+**`rc/ssh_keys.sh`** (C10, 2026-09-26) is what gives the team SSH into the AutoBleem kernel without the
+owner hand-editing `boot.sh` on his stick, which the console's own online update overwrote once already
+(taking a hand-made block with it) - `System/ssh/authorized_keys` on the stick, if present, is copied into
+a tmpfs copy of dropbear's root home (`/home/root` on psc-kernel-payload's overlay - `.ssh` 700,
+`authorized_keys` 600, both root-owned, which is what dropbear insists on) and that copy is bind-mounted
+over `/home/root`. A bind mount is independent of `/media`, so it outlives the standby loop (the stick is
+unmounted then; `rc/selection.sh`'s `rndis restart` after a wake only makes dropbear a fresh host key, not
+a fresh home) and a stick rewritten from under it by a reinstall or an online update - nothing here is read
+from the stick again after boot. No-op on the stock kernel (`/etc/autobleem` absent - there is no dropbear
+to feed) and when the stick carries no key file; idempotent (safe if called again in the same boot).
+`payload/System/ssh/README.txt` is the folder's placeholder, in the style of `System/Processors/README.txt`.
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
 or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
 an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `<runtime>/autobleem_cfg.sh`
