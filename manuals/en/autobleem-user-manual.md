@@ -554,7 +554,7 @@ the gamepad wizard works on any system.
 DualShock picture that lights up as you press. Because the pad under test cannot be trusted, the wizard
 is driven by the console's **front buttons**: **RESET** switches to the next pad, **OPEN** starts the mapping
 (then answers each question - press the button lit on the picture, or OPEN when the pad has no such
-button), **POWER** cancels or leaves. **NEW**: while mapping a button, holding Circle on the pad for 2 seconds leaves the wizard (a bar fills and the footer hint says "Hold 2 s: Exit"). While the pad has no mapping yet, holding any button for 2 seconds does it ("Hold any button 2 s: Exit"). A short press is mapped as usual. On a keyboard, Esc / Space / Enter stand in for POWER / RESET / OPEN. At the end the new mapping is added for a test and OPEN saves it under a name of your choice; the launcher loads it from then on.
+button), **POWER** cancels or leaves. Holding Circle on the pad for 2 seconds leaves the wizard (a bar fills and the footer hint says "Hold 2 s: Exit"). While the pad has no mapping yet, holding any button for 2 seconds does it ("Hold any button 2 s: Exit"). A short press is mapped as usual. On a keyboard, Esc / Space / Enter stand in for POWER / RESET / OPEN. At the end the new mapping is added for a test and OPEN saves it under a name of your choice; the launcher loads it from then on.
 
 ![PSC-Bios: the controller mapping wizard](../images/en/pscbios-wizard.jpg)
 

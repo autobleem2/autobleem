@@ -564,7 +564,7 @@ mapowania pada działa wszędzie.
 rysunek DualShocka, który podświetla się przy naciskaniu. Ponieważ testowanemu padowi nie można ufać,
 kreator obsługują **przednie przyciski** konsoli: **RESET** przełącza na następny pad, **OPEN** zaczyna
 mapowanie (potem odpowiada na każde pytanie - naciśnij przycisk podświetlony na rysunku albo OPEN, gdy
-pad takiego nie ma), **POWER** anuluje lub wychodzi. **NOWOŚĆ**: podczas mapowania przycisku przytrzymanie Kółka na padzie przez 2 sekundy kończy kreator (pasek się wypełnia, a podpowiedź w stopce mówi "Hold 2 s: Exit"). Gdy pad nie ma jeszcze żadnego mapowania, przytrzymanie jakiegokolwiek przycisku przez 2 sekundy to robi ("Hold any button 2 s: Exit"). Krótkie naciśnięcie mapuje się normalnie. Na klawiaturze Esc / Spacja / Enter zastępują POWER / RESET / OPEN. Na koniec nowe mapowanie jest dodane do testu, a OPEN
+pad takiego nie ma), **POWER** anuluje lub wychodzi. Przytrzymanie Kółka na padzie przez 2 sekundy kończy kreator (pasek się wypełnia, a podpowiedź w stopce mówi "Hold 2 s: Exit"). Gdy pad nie ma jeszcze żadnego mapowania, przytrzymanie jakiegokolwiek przycisku przez 2 sekundy to robi ("Hold any button 2 s: Exit"). Krótkie naciśnięcie mapuje się normalnie. Na klawiaturze Esc / Spacja / Enter zastępują POWER / RESET / OPEN. Na koniec nowe mapowanie jest dodane do testu, a OPEN
 zapisuje je pod wybraną nazwą; od tej pory launcher je wczytuje.
 
 ![PSC-Bios: kreator mapowania pada](../images/pl/pscbios-wizard.jpg)
