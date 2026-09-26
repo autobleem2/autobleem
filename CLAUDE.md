@@ -1016,6 +1016,17 @@ screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_d
 the client (`run "menu 6; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
 with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only smoke test.
 
+**LAN testing** (2026-09-26): the driver can listen on a non-loopback address for a trusted LAN test rig. On the
+launcher, set `AB_DEBUG_BIND=<IPv4>` (default 127.0.0.1) and `AB_DEBUG_TOKEN=<token>` - the driver refuses to start
+without a token when the bind is not loopback, and the client must send `auth <token>` on its first line
+(compared in constant time, never logged). The script reaches it with `--host <addr>` (default 127.0.0.1) and
+`--token <t>` (or env `AB_DEBUG_TOKEN`). New command `grab`: replies `ok <n>` followed by exactly n bytes of PNG
+data - a test fetches screenshots over the socket without writing to the device. Example: start the launcher on
+the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then from a PC
+run `python tools/ab_drive.py run "..." --host <ip> --port <p> --token <t>`. **Security note:** the token
+travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is not a real
+credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface.
+
 **Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
 `X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
 `Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
