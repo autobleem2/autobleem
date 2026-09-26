@@ -580,7 +580,6 @@ void GuiLauncher::loop_openProcessors() {
         app.scans().requestScan();
 }
 
-#ifdef AB_ONLINE_UPDATE
 //*******************************
 // GuiLauncher::loop_openExtensions
 //*******************************
@@ -654,6 +653,7 @@ void GuiLauncher::applyExtensionRequests() {
     }
 }
 
+#ifdef AB_ONLINE_UPDATE
 //*******************************
 // GuiLauncher::pollUpdates
 //*******************************
