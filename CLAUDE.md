@@ -118,229 +118,27 @@ recursive`).
 Windows product. Their history in this tree is autobleem-main's `docs/history/console-tools-in-the-launcher.md`; their current docs are those repos'
 CLAUDE.md files.
 
-## lib_ableem
+## lib_ableem, ab_core and ab_classic: see `autobleem-core/CLAUDE.md`
 
-A portable library (`lib_ableem/`, namespace `ableem`) in two CMake targets, mirrored in `include/ableem/`
-and `lib_ableem/src/`:
-- **`ableem_engine`** (`include/ableem/engine/`, umbrella `<ableem/engine.h>`) - no SDL at all: filesystem,
-  strings, ini/cfg files, the SQLite game database, cover dbs, disc images, the scanner, RetroArch playlists.
-  Vendored code lives in `lib_ableem/third_party/` (sqlite, nlohmann json) and
-  `src/engine/unecm.c`, all private to the library - the app includes none of them.
-- **`ableem`** (`include/ableem/ui/`, links `ableem_engine`) - owns every SDL/SDL_image/SDL_mixer/SDL_ttf
-  call: Platform, Renderer, Texture, Font, Audio, Input, GuiBase, GuiScreen, types.h.
-- `include/ableem/ableem.h` - the umbrella over both.
+The portable `lib_ableem` library (`ableem_engine` + the `ableem` ui library), the launcher's SDL-free
+`ab_core` model+services layer and the game-agnostic `ab_classic` screens/controls all live in the
+`autobleem-core` submodule (`autobleem-core/`, `github.com/autobleem2/autobleem-core`) and are documented in
+its own `autobleem-core/CLAUDE.md`, loaded automatically when working under that directory. Moved there in
+task D19's second pass (2026-09-26), verbatim, because that code is not part of this repository:
 
-Never add a `#include <SDL2/...>` to anything under `src/code/`; if you need new SDL functionality, add it to
-the library. Same for sqlite/json: extend `GameDatabase`/`RetroArchPlaylist` instead.
+- The whole **lib_ableem** section (the `engine` and `ui` API notes: `Environment`, `DirEntry`, `IniFile`,
+  `GameDatabase`, `MetadataLookup`, `ThumbnailLookup`, `GameScanner`, `RetroArchPlaylist`, `CoreInfoTable`,
+  `RetroArchScanner`, `ThemeSpec`, `ZipArchive`/`ZipWriter`, `Md5`/`Crc32` on the engine side; `Platform`,
+  `Renderer`, `Texture`, `Font`, `Input`, `GuiBase`/`GuiScreen` and the CMake layout on the ui side).
+- The **source map rows for every core-owned file**: `core/...` services and models, `app_base.*`, and the
+  ab_classic `gui/...` files (`Gui`, `ThemeAssets`, `TextRenderer`, `Fonts`, `AppAudio`, the splash/confirm/
+  keyboard/about/hardware-info/facts-page/action-menu screens, the classic menu framework).
+- The whole **UI styling standards** section (`PanelStyle` and the rest of the `feature/ui-fixes` look) -
+  it is ab_classic code.
+- The core test harness's details (doctest/ctest, `env_fixture.h`, `temp_dir.h`, `ab_add_test`).
 
-### engine
-
-The app imports the engine names into its global namespace once, in `src/code/core/main.h` (explicit `using`
-declarations - not `using namespace ableem`, because the app's `GuiScreen` shares its name with
-`ableem::GuiScreen`), so app code writes `DirEntry::exists(...)`, `IniFile`, `GameDatabase` unqualified.
-
-- **`Environment`** (`engine/environment.h`) - every path the engine touches. The library has no
-  `AB_DEBUG_HOST`, `/media`, `/gaadata` or `/usr/sony` literals: `main.cpp`'s `setupEnvironment()` decides
-  the layout for the platform and calls the setters (`setUsbRoot/GamesDir/RegionalDbFile/InternalDbFile/
-  WorkingPath/SonyDataPath/ThemesDir/CoversDbDir/InternalGamesDir`) once; everything else is derived
-  (`getPathToMemCardsDir()` = games + `!MemCards`, `getPathToMemcardTemplateDir()` = working + `memcard`, ...).
-  The app's `Env` (`src/code/core/services/environment.h`) derives from it and only adds `autobleemKernel`/`hiddenMenuEnabled`.
-- **`DirEntry`/`sep`** (`engine/filesystem.h`) and the string helpers (`engine/strings.h`: in-place `trim/
-  lcase/...` free functions, copying `Strings::trim/replaceAll/toInt/...`) are the old `DirEntry.h`, `main.h`
-  and `Util` string parts, unchanged in API. The app reaches them as `Strings::`; the process helpers
-  (`runAndWait`, `execUnixCommand`, `powerOff`, ...) are `System` (`core/services/system.h`).
-- **`game_types.h`** - `ImageType`, `GAME_INI`/`EXT_*`, `SAVESTATES_DIR_NAME`/`MEMCARDS_DIR_NAME`.
-- **`Lang`** (`engine/lang.h`) - the translation table: `load(langDir, name)`, `translate`, `listLanguages`,
-  `dumpUntranslated`, and `setCurrent`/`ableem::translate()` for a global `_()`. Was the app's `Lang` singleton.
-- **`MemcardImage`** (`engine/memcard_image.h`) - a 128 KB .mcd (or DexDrive) image and its 15 slots: block
-  kinds and chains, product code / game id / Shift-JIS title per save, delete/undelete, export/import of a save
-  between cards, and each icon frame as 16x16 RGBA pixels. The app's `CardEdit` (`evoui/card_edit.*`) is the
-  texture wrapper over it.
-- **`IniFile`** (`load/reload/mergeFrom/save`), **`ConfigFileEditor`** (pcsx.cfg / RetroArch cfg line editing:
-  `getValue/replaceUsb/replaceInternal/replace/replaceInFile`), **`MemcardManager`** (`create/remove/rename/
-  list/swapIn/swapOut/backup/restore/restoreAll/storeToRepo` over `<games>/!MemCards`).
-- **`GameDatabase`** (`engine/game_database.h`) - the SQLite wrapper for regional.db, internal.db and the
-  covers dbs, file-local RAII `Stmt` class inside; add queries the same way. Rows come back as
-  `GameRecord`s (`engine/game_record.h`); the app's `PsGame : ableem::GameRecord` adds the launcher-only fields
-  and `PsGame::fromRecords()` wraps `loadUsbGames()`/`loadInternalGames()` results. `reloadUsbGame(*game)`
-  refreshes one. Schema notes in `lib_ableem/src/engine/database_tables.txt`.
-- **`MetadataLookup(coversDir, rdbFile)`** (`engine/metadata_lookup.h`, 2026-09-18) - where a game's title,
-  publisher, year and players come from: RetroArch's `Sony - PlayStation.rdb` (`Environment::
-  getPathToPlayStationRdbFile()`, `<retroarch>/database/rdb/` on both targets' standard tree) through
-  **`RdbReader`** (`engine/rdb_reader.h`: the whole `.rdb` in memory, rmsgpack, indexed by serial and name,
-  `findBySerial` also takes a suffixed serial like `SLUS-01251GH`; since 2026-09-19 also `crc`, `size`,
-  `rom_name` with `findByCrc`/`findByRomName` for the other systems' databases), else the three covers dbs through
-  **`CoverDatabase`** - and the covers db is still asked for its PNG when the rdb answered, so a stick with
-  no thumbnails keeps its art. `GameMetadata::recordName` is the rdb's name (`"Crash Bandicoot (USA)"`),
-  `title` has the trailing tags stripped, `lastRegion` ("U"/"P"/"J", what pcsx.cfg's region is set from)
-  comes from the rdb's region, PAL countries included. `GameLibrary::metadata()` owns the launcher's; the
-  scan worker has its own (sqlite handles are per thread). Ported from AutoBleem-NG.
-- **`ThumbnailLookup`** (`engine/thumbnail_lookup.h`, 2026-09-18) - where a cover/title screen/snap is in
-  `<retroarch>/thumbnails/<db name>/Named_Boxarts|Titles|Snaps/`, and the user's own screenshots and save-state
-  pictures: the rdb's record name first, then the title, each with trailing ` (...)` tags peeled one at a
-  time, then a fuzzy `"<bare name> ("` match scored by shared tags and region. Listings are cached per
-  instance (`DirEntry::listNames` - no stat per entry, Named_Boxarts is ~9000 files) - the scan makes its
-  own, `App::thumbnails()` is the launcher's, cleared when a game returns. `escapeName()` is the one file
-  name rule (`RetroArchService::escapeName` delegates). The scanner resolves every game's cover and snap
-  and caches them in Game.ini (`Thumbnail_record_name`, `Cached_cover_path`, `Cached_snap_path`, read back
-  onto `GameRecord::recordName/coverPath/snapPath`); the carousel's PS1 chain is the PNG next to the game
-  -> the cached path while its file exists -> a fresh lookup (internal games) -> `default.png` drawn at
-  draw time. **No `default.png` is copied next to a game any more** and a cover is not a verify()
-  requirement; a placeholder byte-identical to `default.png` is removed by the scan once a thumbnail
-  exists (`DirEntry::filesAreIdentical`). Titles of *unlocked* games lose their region tag on a rescan
-  with an rdb around (`"Persona (USA)"` -> `"Persona"`).
-- **`DiscSuffix::parse`** (`engine/disc_suffix.h`, 2026-09-18) - `"Game (Disc 2)"` / `"(Disk 2)"` / `"(CD 2)"` /
-  `"(CD2)"` / `"Game - Disc 2"` -> `{base, disc}`. **`GameScanner::mergeMultiDiscFolders(gamesDir)`** runs in
-  the scan worker before the tree is read: sibling folders whose names differ only by that marker become one
-  `<base>` folder - the lowest disc's folder is renamed, the other discs' images (chd/pbp/cue/bin/img) are moved
-  in, **their folders are deleted with their Game.ini/pcsx.cfg/save states** (the owner accepted the fork's
-  behaviour), disc 1's Game.ini keeps its settings but loses its `Discs=` key (the scan rebuilds it) and a
-  folder-derived `(Disc 1)` title. A group is skipped when `<base>` already exists as something else or a
-  file would be overwritten. `ScanStage::MergingDiscs` is the status line. pcsx-ab gets the first disc's
-  `.cue` as before (its frontend cannot open an `.m3u`; its disc picker lists the folder); RetroArch gets
-  the `.m3u`. Ported from AutoBleem-NG's `mergeMultiDiscGames`, moved ahead of the scan because our
-  `onGameVerified` events would otherwise have announced the per-disc folders first.
-- **`UsbGame`/`GamesHierarchy`/`GameScanner`** - the scan. `GameScanner::scanGamesDirectory(hierarchy,
-  metadata)` then `writeRegionalDatabase(hierarchy, db)`; progress is reported to a `ScanProgressListener`
-  (`ScanStage::Scanning/Game/DecompressingEcm/UpdatingDatabase/GameFailedVerify`). The app's listener is
-  `SplashScanProgress` (`gui/scan_progress.*`): `Gui::splash(_(...))` per stage, and the 3 s pause after a
-  failed verify. `AutoBleem::rescan` constructs the `GameScanner` with one.
-  `UsbGame::verify()` reasons are plain English: the scanner keeps them in `failedGames`, regional.db's
-  `FAILED_GAMES` holds them, and the Game Manager lists and translates them (`gamesThatFailedVerifyCheck.txt`
-  is gone - "The quiet stick").
-- **`SerialScanner`** (`readSerial/readSerialFromImage/readSerialByWorkaround/serialFromMd5/normalizeSerial/
-  serialToRegion`), **`IsoDirectoryReader::read`**, **`EcmDecoder::decode`** (+ `setProgressHandler`, which
-  is how unecm.c's percentage messages reach the splash). Private: `cd_image_reader.h` (`CdImageReader`,
-  `ChdImageReader` behind `ABLEEM_ENABLE_CHD`), `binary_reader.h`, `md5.*` (replaces `head|md5sum`).
-- **`RetroArchPlaylist`** - `.lpl` files: `load/loadJson/loadSixLine/save` over `RetroArchPlaylistEntry`,
-  plus the `RetroArchPlaylistHeader` (2026-09-18): every top-level field but `items`, as opaque JSON text
-  in file order, so a playlist RetroArch 1.22 wrote (version 1.5, `sort_mode`, `scan_content_dir`, ...)
-  survives a rewrite; `save()` puts `version` first. `GameLibrary::exportToRetroArchPlaylist`,
-  `RetroArchService` and the scanner are the callers.
-- **`CoreInfoTable`** (`engine/retroarch_cores.h`, 2026-09-18) - `<retroarch>/info/*.info` for the cores
-  whose `.so` is installed (`CoreInfo`: display name, extensions, databases, `block_extract`), each database
-  mapped to the first installed core listing it (most extensions first) unless the cores.cfg given to
-  `load()` overrides it. Was `RetroArchService::loadCores`; the service holds one, the scan worker builds
-  its own.
-- **`RetroArchScanner`** (`engine/retroarch_scanner.h`, 2026-09-18) - the ROM scan:
-  `scan(Options{romsDir, playlistsDir, targetRomsDir}, systemsFrom(cores))` walks each `roms/<system>/`
-  folder that has a core, one entry per game (a `.cue` hides its bins, an `.m3u` its discs, a `.ccd` its
-  image; a `.zip` for a core that does not read archives itself - `zip` among its extensions, or
-  `block_extract` - is opened: one ROM inside is `zip#rom` named after the zip with the ROM's CRC from the
-  central directory, several are one entry each, none is skipped; an arcade core gets the zip whole),
-  label = the file's stem, and merges into the existing playlist (`Options::folderAliases` sends a folder
-  named otherwise to its database's playlist): entries
-  outside the folder stay, an entry whose file is still there is kept exactly (RetroArch's own label/CRC),
-  the vanished go, the new join, sorted by label; `.tmp` + `DirEntry::replaceFile`, only when something
-  changed. `targetRomsDir` is what the playlists name (the console's `/media/RetroArch/roms` when a PC writes them -
-  the plan's step 5); `""` = `romsDir`. `AutoBleem`, `Applications` and `content_*` are never written.
-  With `Options::rdbDir` (2026-09-19) each folder's `ScannedRoms` go through `identify()` first: the
-  system's `.rdb` names a zip member by CRC, a loose file by `Crc32::ofFile` (up to `maxCrcBytes`), an
-  arcade set (`wholeArchive`) by `rom_name`; the label becomes the record's name and, in the merge, an
-  identified entry replaces an existing one for the same ROM whose label differs. **A rescan is cheap**
-  (2026-09-21): with `Options::stateFile` a digest per folder (file names + sizes, the playlist's size,
-  the rdb's size, target path, core - no mtimes) lets a folder nothing changed in be skipped outright
-  (`RetroArchScanResult::systemsSkipped`; its playlist is only read for the counts), and
-  `seedCrcsFromPlaylist` gives a loose ROM the CRC its existing playlist entry carries, so `identify()`
-  hashes only files new to the playlist. `UpdateRoms` passes no state file yet (the target's state dir
-  differs per platform); the digest is portable, so it could.
-- **`ThemeSpec`** (`engine/theme_spec.h`) - a theme as a typed struct (`music`, `classic`, `launcher`, `sounds`)
-  with `load/save` of theme.json (never throws), `mergeOver(base)` for a partial theme over the default, and
-  `resolveFiles()` (the theme's file if it exists, else the default's). `fileFields()` is the one list every
-  file loop uses. Scalars a theme may omit are `Opt<T>`; colours are `ThemeColor` (`#rrggbb`).
-  The app's `ThemeConverter` (`core/services/theme_converter.*`) is the only writer besides tests.
-- **`ZipArchive`** (`engine/zip_archive.h`) - `list/extract` of a .zip over vendored miniz (`third_party/miniz/`,
-  built with `MINIZ_NO_TIME`). Entry names are checked before anything is written: no
-  `..`, no absolute paths, no backslashes. Themes dropped as zips are its only caller. **`ZipWriter`**
-  (`engine/zip_writer.h`, 2026-09-18) is the write side: `open/addFile(path, name)/addBytes/close`, files
-  streamed through miniz's read callback with 64-bit offsets, so a partition image of any size goes in
-  without being read into memory - for abflashkit's `LBOOT.EPB`. The entry size is given up front on
-  purpose: it is what keeps the archive plain zip (no zip64), which is what the console's recovery reads.
-- **`Md5`** (`engine/md5.h`, public since 2026-09-18) - RFC 1321: `ofBytes/ofString/ofFile` (streamed) and
-  the incremental `update/hexDigest`. `SerialScanner::serialFromMd5` and abflashkit's kernel check use it.
-- **`Crc32`** (`engine/crc32.h`, 2026-09-19) - `ofFile(path, crc, maxBytes)` streamed over miniz's
-  `mz_crc32` (false, no read at all, over the cap), `ofBytes`, and `playlistText()` (`"%08X|crc"`). What
-  the ROM scanner identifies a loose file by.
-
-### ui
-
-- **`Platform`** - owns SDL_Init/window/TTF_Init/Mix_Init (created by `GuiBase`). `isDevHost()` replaces the
-  app's old per-call `AB_DEBUG_HOST` checks for cursor grab; `setPowerOffHandler()` is how the app supplies
-  what "power off" means (main.cpp wires it once to `gui->drawText(...); System::powerOff();`) - `Input::poll()`
-  calls it automatically on the console power button or Esc, so screens never check for that themselves.
-  `Platform::shutdownSDL()` must be registered with `atexit()` before the first `GuiBase`/`Gui` is constructed
-  (done once, in `main.cpp`) - it runs SDL_Quit() after everything else is destroyed.
-- **Output scale** (2026-09-18): the app draws on a logical 1280x720 canvas; the window may be bigger by
-  `Renderer::outputScale()` (`GuiBase(title, w, h, outputScale)`), and every `Renderer` call maps logical to
-  output pixels (`toOutput()`, edges rounded so neighbours tile; identity at 1). `Texture::createTarget`
-  allocates output pixels and carries `pixelScale()`, which `copy()` applies to a source rect, so a target is
-  addressed like the screen; `Font::load` loads the face `scale` times bigger, draws in output pixels and
-  measures in logical ones. Nothing in the app knows. `Gui::outputScale()` is the policy: a Pi on a >= 1080p
-  display gets 1.5 (`Platform::desktopDisplaySize()`), a dev host reads `AB_OUTPUT_SCALE`, the console is 1.
-  The Pi installer boots in 1920x1080 by default now (`--hdmi-mode`), the plymouth script scales the logo up.
-- **MSAA** (2026-09-18): `GuiBase(..., multisampleSamples)` asks for a multisampled GL context before the
-  window exists (`Platform::createWindow`: `SDL_GL_MULTISAMPLESAMPLES`, `SDL_WINDOW_OPENGL`, Windows also
-  forced onto the "opengl" driver - direct3d would ignore it; a driver that refuses gets a plain window
-  and `Platform::multisampleSamples()` says 0). SDL's GL renderer then rasterises every quad with it, the
-  carousel's cover strips included, which now sit at fractional positions (`SDL_RenderCopyF`, SDL >= 2.0.10;
-  the console's 2.0.4 headers keep the integer path). `Gui::multisampleSamples()`: 4 on a Pi and a dev host,
-  `AB_MSAA` overrides (0 off), the console 0. Was costly on the Pi at 1080p (idle CPU 17% -> 60%) when
-  a frame was ~3200 copies; the launcher performance work of 2026-09-18 (its plan, `docs/perf-plan.md`,
-  was removed once done - the git log has it and the numbers) took that to 85:
-  `AB_FRAME_STATS=1` logs frame times and copies every 5 s (`Renderer::present`) and slow
-  `Texture::loadFile`s; the launcher defers the snap/resume-picture loads to the frame the carousel
-  settles in and keeps `Carousel::Lookahead` covers past each end decoded; every animation is
-  `easeOutCubic` (`core/model/timing.h`), a held stick chains steps without a pause and a tap during a
-  scroll is queued; `TextRenderer` caches every run as a texture (`clearTextCache()` on font reload and
-  display release); `copyTrapezoid` is one `SDL_RenderGeometry` call on SDL >= 2.0.18 with the tint in
-  the vertex colours. Step 7 measured MSAA on the Pi 400 at 1080p: **even 2x drops to 30 fps for
-  stretches**, so a Pi runs with 0 (`Gui::multisampleSamples`; a dev host keeps 4) and the covers' edges
-  are smoothed by `CoverMargin` - each cover composed 2 px inset into a transparent-black texture, which the
-  linear filter blends the edge into. 60 fps solid there, ~25% of a core idle.
-- **`Renderer`** - the one SDL_Renderer, `clear/present/setDrawColor/fillRect/drawRect/drawLine/copy/setTarget`,
-  and `copyTrapezoid(tex, src, VerticalEdge left, VerticalEdge right)` (2026-09-18): pseudo-3D for the
-  carousel - a texture drawn into a trapezoid with vertical sides, one `SDL_RenderCopy` strip per screen
-  column, the columns spread perspective-correctly with each side's height as its depth. Nothing newer than
-  SDL 2.0.4 (`SDL_RenderGeometry` is 2.0.18, the console has 2.0.14).
-- **`Texture`** - shared handle (copy freely) with `loadFile/loadMemory/createTarget/createStreaming`, plus
-  `PixelLock` (RAII `lock()`) for per-pixel `get/set` - replaces the old manual `SDL_LockTexture` +
-  `SDL_AllocFormat`/`SDL_MapRGBA` dance (see `engine/cardedit.cpp`, the memory card icon renderer).
-- **`Font`** - shared handle over SDL_FontCache: `textSize/width/lineHeight/draw/drawAlign/drawColor`. The
-  app's own `Fonts`/`FontEnum` (`gui/gui_font.*`) is unchanged in spirit - it still maps FONT_15_BOLD etc to a
-  themed .ttf path, just building `ableem::Font`s now instead of `FC_Font_Shared`s.
-- **`Sound`/`Music`/`Audio`** - `Sound::play()` replaces `Mix_PlayChannel(-1, chunk, 0)`; `Audio::close()` is
-  the old "close until `Mix_QuerySpec` fails" loop, now one call (`gui->audio().close()`).
-- **`Joystick`** (`ui/joystick.h`, 2026-09-18) - one device by index opened *raw*, for a pad-mapping wizard:
-  `count/nameForIndex/guidForIndex/isGameControllerAtIndex`, `open(i)`, `update()` into `state()` (every
-  axis, button and hat as SDL's joystick API reports them, hats as `HatUp|...` masks) and `controllerState()`
-  (the 15 standard buttons and 6 axes through the mapping, when it has one). `Input::addMapping(line)`,
-  `mappingForDeviceIndex(i)` and `currentMappingPath()` are its companions; `Input::setPowerKeyAsKey(true)`
-  makes the power button/Esc arrive as `Key::Sleep` instead of calling the power-off handler (a wizard uses
-  it as "cancel"); `Key::Reset`/`Key::Open` are the console's other front buttons (AUDIOPLAY/EJECT scancodes).
-- **`Input`** - one `poll(Event&)` replaces `SDL_PollEvent` + `PadMapper` + `gui/abl.c`'s PSC event filter
-  (still there, moved to `lib_ableem/src/ui/psc_event_filter.c`, wired up by `Input`'s constructor). `Event::Type`
-  is `Quit/ButtonDown/ButtonUp/DpadDown/DpadUp/KeyDown/KeyUp/TextInput/PadAdded/PadRemoved/RenderReset`;
-  `Button`/`Key` replace `SDL_BTN_*`/`SDLK_*`. `dpadUp()/Down()/Left()/Right()/Centered()` are the old
-  `PadMapper::isUp()` etc (state, not just "this event's direction" - screens read them right after `poll()`
-  returns a Dpad event, same priority order as before: up, down, right, left, center).
-  `setKeyboardAsPad(true)` (the default on **every** platform since 2026-09-26) turns keys into pad events:
-  the PC-style map (`ui/keyboard_map.h`, see "The keyboard" under Build) everywhere, and on a dev host also
-  the letter map `tools/win_drive.ps1` drives the app with - X/O/S/T = cross/circle/square/triangle,
-  I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2. `keyboardPresent()` says whether a
-  keyboard is connected (`engine/keyboard_presence.h`).
-- **`GuiBase`/`GuiScreen`** - `GuiBase` owns Platform+Renderer+Input+Audio in that order. The app's `Gui`
-  (`gui/gui.h`) derives from it and adds theme/config/database/carousel state - lib_ableem has no idea what a
-  theme or a database is. The app's own `gui/gui_screen.h` is now a thin shim: `class GuiScreen :
-  public ableem::GuiScreen` that also carries `std::shared_ptr<Gui> gui` and `ableem::Renderer &renderer` as
-  members, so every existing screen file keeps writing `gui->cursor.play()` / `renderer.copy(...)` unchanged -
-  only the SDL-specific calls inside each screen needed converting, not every constructor caller. Screens are
-  constructed with a `GuiBase&`, in practice always `*gui` (e.g. `GuiConfirm confirm(*gui);`).
-- **CMake**: `add_subdirectory(lib_ableem)` from the root file; `ABLEEM_EMBEDDED_TARGET` is forced on for both
-  ARM builds (no cursor grab, keyboard-as-pad off); the non-MinGW branch does one `find_package(SDL2)` and links
-  the bare names `SDL2 SDL2_image SDL2_mixer SDL2_ttf`, which is why each cross toolchain ships its own
-  `cmake/FindSDL2.cmake` defining those four imported targets; `ABLEEM_ENABLE_CHD` follows the root `AB_ENABLE_CHD`
-  (libchdr is linked by `ableem_engine`); `lib_ableem/examples/demo.cpp` (`ableem_demo` target) is a
-  from-scratch smoke test of the ui library alone - texture + font + sound + input, no AutoBleem code involved.
+This repo's own `CLAUDE.md` (below) keeps only the source-map rows for `ab_ui`/`ab_evoui`/the executable/
+`apps/abpad/` - the code that actually lives here.
 
 ## Build
 
@@ -387,46 +185,30 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **sccache** (2026-09-20) sits in front of every compiler in the image: `ci/build.sh` (and pcsx-ab's)
   configure with `CMAKE_C/CXX_COMPILER_LAUNCHER=sccache`, `docker/run.sh` mounts the cache from the host
   (`~/.cache/autobleem-sccache`, `AB_SCCACHE_DIR`, 10 GB) so it outlives the container, the run ends with
-  the stats; `AB_NO_SCCACHE=1` opts out. The console target: 263 s cold, **42 s** with the cache warm
-  (95 % hits) - the remaining misses are what includes the generated `core/version.h`. The image's last
-  layer holds the binary (a musl release), so a version bump rebuilds nothing else.
-- **CI: one Docker image builds every target** (2026-09-19; autobleem-main's `docs/ci.md` is the operator's page,
-  autobleem-main's `docs/archive/ci-plan.md` the plan until the workflows have run). `docker/Dockerfile` -> `autobleem-build`
-  (Debian Bookworm, ~3.4 GB, built on the server with `docker/build-image.sh`): the native build with
-  clang-format/clang-tidy **22** (apt.llvm.org, the major MSYS2 has), Debian's `crossbuild-essential-armhf`
-  / `-arm64` with the multiarch `libsdl2*-dev` packages for the two Pis, `mingw-w64` (posix) with the
-  official SDL2 mingw devel packages at `/opt/mingw-sdl2` for Windows, the three cover databases at
-  `/opt/autobleem/db`, and **the console toolchain by AutoBleem-NG's recipe** under `/opt/psc`: a Debian
-  Stretch armhf sysroot (`mmdebstrap --variant=extract` from archive.debian.org - glibc 2.24 / libstdc++
-  6.0.22, the console's own), Stretch's **gcc-6** cross compiler (patchelf'ed RUNPATH to its own
-  isl/mpc/mpfr/gmp, its libc linker scripts rewritten to bare names - no host `/usr/arm-linux-gnueabihf`
-  hijack, that directory is the Pi cross libc's), and **SDL2 2.0.14 + image 2.6.3 + mixer 2.6.3 + ttf
-  2.20.2 built from source** with the console's backend set (Wayland + dummy, GLES via EGL, ALSA, udev, no
-  X11, no OSS - see "SDL2 on the console" below), wrapped as `armv8-sony-linux-gnueabihf-*` so `PSCtoolchainV8.cmake` works with
-  `-DAB_PSC_TOOLCHAIN=/opt/psc`. The 2019 Sony toolchain (`/opt/toolchain`, `autobleem/PSC-CrossCompile-
-  Toolchain`) is **no longer what releases are built with** (the owner's call: outdated). Each stage ends
-  with `docker/ab-validate.sh` linking a C++14 + SDL test program and checking the result (the console:
-  ARMv8, nothing above GLIBC_2.24 / GLIBCXX_3.4.22, no RPATH, a Wayland SDL2).
+  the stats; `AB_NO_SCCACHE=1` opts out. Timings from when it was added are in
+  autobleem-main `docs/history/launcher-build.md`.
+- **CI: one Docker image builds every target** (autobleem-main's `docs/ci.md` is the operator's page).
+  `docker/Dockerfile` -> `autobleem-build` is built and pushed by **`autobleem2/autobleem-build`**'s own
+  `image.yml` (that repo is the Dockerfile's one source; this tree's `docker/` is a stale copy). It carries
+  the console toolchain under `/opt/psc` (a Debian Stretch armhf sysroot, Stretch's **gcc-6** cross compiler,
+  and **SDL2 2.0.14 + image/mixer/ttf built from source** with the console's backend set - Wayland + ALSA,
+  no X11/OSS, see "SDL2 on the console" below) that `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`;
+  the build-recipe history and the image's verification story are at autobleem-main
+  `docs/history/launcher-build.md`.
   `ci/build.sh native|psc|rpi|rpi64|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into the
-  same `build_*/` dirs the `make_*.sh` scripts use, builds, validates and packages into `dist/<t>/`; for
-  `psc`/`rpi`/`rpi64` it **builds pcsx-ab first** from the sibling checkout (`AB_PCSX_DIR` /
-  `../pcsx-ab`; pcsx-ab has its own `ci/build.sh` and the same Debian-fallback toolchain files) and the
-  package ships that emulator. New scripts: `tools/make_psc_package.sh` (the console zip - the release
-  script `make_psc.sh` always assumed; it also **regenerates `libs.tar.gz`** from the image's SDL build,
-  keeping iconv/ogg/vorbis) and `tools/make_win_package.sh` (launcher zip with the four SDL DLLs +
-  `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows today** (2026-09-23, the compile-once
-  model - autobleem-main's `docs/ci-org-migration-plan.md`): the image is built and pushed by
-  **`autobleem2/autobleem-build`**'s own `image.yml`, from develop and master pushes (that repo is the
-  Dockerfile's one source; this tree's `docker/` is a stale copy without llvm-mingw); here, **`test.yml`**
-  is the test gate (`ci/build.sh native` on a hosted runner, every push and pull request) and
-  **`publish-launcher.yml`** builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop
-  pushes and `v*` tags, and keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance**
-  assembles the packages and images from it and the other components' releases, and publishes them.
-  The monolith's `ci.yml` (everything built here, the packages published from here) and `site-refresh.yml`
-  (the site's RetroArch and cores - autobleem-build's `retroarch.yml` does that now) were deleted on
-  2026-09-23. All gated by `AB_CI_ENABLED`. Verified 2026-09-19 on the server: all five targets green
-  A hardware-run debugging tale from that pass (the pcsx-ab Wayland segfault, the missing ALSA build, a
-  gcc-6 limitation and a `ctest -j` fixture race) is at autobleem-main `docs/history/launcher-console-runs.md`.
+  same `build_*/` dirs the `make_*.sh` scripts use, builds, validates (`docker/ab-validate.sh`) and packages
+  into `dist/<t>/`; for `psc`/`rpi`/`rpi64` it **builds pcsx-ab first** from the sibling checkout
+  (`AB_PCSX_DIR` / `../pcsx-ab`) and the package ships that emulator. `tools/make_psc_package.sh` makes the
+  console zip (also regenerating `libs.tar.gz` from the image's SDL build) and `tools/make_win_package.sh`
+  the launcher zip (the four SDL DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows**
+  (the compile-once model - autobleem-main's `docs/ci-org-migration-plan.md`): **`test.yml`** is the test
+  gate (`ci/build.sh native` on a hosted runner, every push and pull request) and **`publish-launcher.yml`**
+  builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop pushes and `v*` tags, and
+  keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance** assembles the packages and
+  images from it and the other components' releases, and publishes them. All gated by `AB_CI_ENABLED`.
+  A hardware-run debugging tale from the first green CI pass (the pcsx-ab Wayland segfault, the missing
+  ALSA build, a gcc-6 limitation and a `ctest -j` fixture race) is at autobleem-main
+  `docs/history/launcher-console-runs.md`.
 - **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` → `build_psc/dist/`
   (`autobleem-gui`), built **on the build server over ssh** - the same shape as pcsx-ab's
   `make_psc.sh`, so the two build side by side there. `ssh psc-build` (a `Host` entry in `~/.ssh/config`, in
@@ -440,17 +222,14 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   build dir is kept and rsync sends only what changed; `--clean` wipes it first (`-k` is the old spelling
   of the default). Invoke from the MSYS2 UCRT64 shell like `make_win.sh`.
   `toolchains/psc/cmake/FindSDL2.cmake` defines the four imported SDL2 targets over the sysroot's `.so`s
-  (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic** - the original toolchain file's
-  `--static` was always overwritten by the root CMakeLists' `^arm` branch (`-march=armv8-a+simd -Os -s`), and
-  `rc/autobleem.sh` unpacks `Autobleem/lib/libs.tar.gz` (SDL2, SDL2_mixer) to `/tmp/lib` at boot. First
-  built this way 2026-09-17: GCC 8 warning-free, `Tag_CPU_arch: v8`, NEON, hard-float, and the binary needs
-  at most `GLIBCXX_3.4.22` / `GLIBC_2.7`, which the console's stock libstdc++ 6.0.22 / glibc 2.24 provide
-  (the toolchain's own libstdc++ is 6.0.25 - anything newer than 3.4.22 would fail to load on the console).
-  **`make_psc.sh` checks that on the server before fetching the binary** (`tools/check_psc_binary.sh`:
-  highest `GLIBC_`/`GLIBCXX_` version needed, and no RPATH/RUNPATH - the toolchain file sets
-  `CMAKE_SKIP_RPATH`, since `FindSDL2.cmake` links the sysroot's `.so` files by absolute path), and passes
-  the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`. This
-  Sony-toolchain build has never run on a console; the image's gcc-6 build has (2026-09-19).
+  (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic** (`-march=armv8-a+simd -Os -s`, the
+  root CMakeLists' `^arm` branch); `rc/autobleem.sh` unpacks `Autobleem/lib/libs.tar.gz` (SDL2, SDL2_mixer)
+  to `/tmp/lib` at boot. The binary needs at most `GLIBCXX_3.4.22` / `GLIBC_2.7`, which the console's stock
+  libstdc++ 6.0.22 / glibc 2.24 provide - **`make_psc.sh` checks that on the server before fetching the
+  binary** (`tools/check_psc_binary.sh`: highest `GLIBC_`/`GLIBCXX_` version needed, and no RPATH/RUNPATH),
+  and passes the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`.
+  This Sony-toolchain build has never run on a console; the image's gcc-6 build has - see
+  autobleem-main `docs/history/launcher-build.md` for how that was established.
 - The Pi toolchain files (`toolchains/rpi/RPitoolchain.cmake`, `toolchains/rpi64/RPi64toolchain.cmake`, over
   the shared `toolchains/rpi/common.cmake`) take the SysGCC toolchain when its directory exists
   (`AB_RPI_TOOLCHAIN` / `AB_RPI64_TOOLCHAIN`, the Windows PC) and Debian's multiarch cross compiler
@@ -462,12 +241,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into `build_rpi_dbg/`. See the
   "Raspberry Pi port" section above. All three build scripts are incremental now; `make_win.sh`'s time is
   mostly `ctest`.
-- **Linux/macOS (native)**: `make_sys.sh` - a plain host build into `build_sys/`. (The root's 2019 leftovers
-  went on 2026-09-19: the armv7 `MacToolchain.cmake`/`PS1Ctoolchain.cmake`/`PSCtoolchainV7.cmake` and
-  `make_mac.sh`/`make_all.sh` - the console build is `make_psc.sh` with `toolchains/psc/` - and
-  `make_english.txt.sh` (`tools/lang_tools.py extract`), `.dep.inc`, a stray `coversP.db`, `default.lic`,
-  root copies of `default.png`/`pcsx.cfg` (the real ones are in `src/resources`), and `win_drive.ps1`'s
-  screenshots, now ignored as `/shot*.png`.)
+- **Linux/macOS (native)**: `make_sys.sh` - a plain host build into `build_sys/`.
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
@@ -481,21 +255,14 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. A dev build is
   `AB_TARGET=dev` -> `AB_DEBUG_HOST` (see "The platform model" below) - use that, never `__x86_64__` or
   `_WIN32`, to mean "a development machine".
-- **`libchdr`** (`#include <libchdr/chd.h>`, link `chdr`) is vendored under `lib_ableem/third_party/libchdr/` -
-  upstream libchdr at `8bba774` (2025-06-08), the snapshot AutoBleem-NG bundles, replacing the older libmamecd
-  fork on 2026-09-18 because chdman's default **zstd** codec was missing there (a fresh CHD would not open).
-  Used only by `lib_ableem/src/engine/cd_image_reader.h` (`ChdImageReader`), which now reads hunks with
-  `chd_read` and takes track 0's length from `CDROM_TRACK_METADATA(2)` - upstream has no `cdrom_*` layer.
-  Builds from source on every host (its own `CMakeLists.txt` there builds the libchdr sources - FLAC is the
-  header-only dr_flac - plus vendored LZMA SDK 24.05, zlib 1.3.1 and zstd 1.5.6 under `deps/`, each trimmed
-  to what its CMake build needs, all warnings-off like the other vendored code). `AB_ENABLE_CHD` defaults
-  ON; OFF (which sets `ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles `ChdImageReader` out (`.chd`
-  games then scan as "no serial"). `make_win.sh` passes `-DAB_ENABLE_CHD=ON` explicitly: a `build_win/`
-  configured before the library was vendored had OFF cached, and that silently outlived the default
-  becoming ON - `tests/core/test_cd_image.cpp` (over the zstd-compressed `tests/data/test.chd`, NG's
-  fixture) is what noticed. **pcsx-ab** (`E:\Programming\pcsx-rearmed-develop`) got the same refresh the
-  same day (its `8f26911`); the Pi payload binary was rebuilt from it then, the console one
-  (`payload/Autobleem/bin/emu/`, via its `make_psc.sh`) on 2026-09-18 too - both play zstd CHDs.
+- **`libchdr`** (`#include <libchdr/chd.h>`, link `chdr`) is vendored under `lib_ableem/third_party/libchdr/`
+  (used only by `lib_ableem/src/engine/cd_image_reader.h`'s `ChdImageReader`), built from source on every
+  host with vendored LZMA/zlib/zstd under `deps/` - the default codec is **zstd**, so a fresh CHD opens.
+  `AB_ENABLE_CHD` defaults ON; OFF (`ABLEEM_ENABLE_CHD=OFF` / `ABLEEM_NO_CHD`) compiles `ChdImageReader` out
+  (`.chd` games then scan as "no serial"). `make_win.sh` passes `-DAB_ENABLE_CHD=ON` explicitly - a stale
+  cached OFF from before the library was vendored silently outlived the default becoming ON, until
+  `tests/core/test_cd_image.cpp` noticed; see autobleem-main `docs/history/launcher-build.md` for the
+  libmamecd-to-libchdr refresh story and the matching pcsx-ab refresh.
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
   SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
@@ -515,18 +282,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   during a build. The tree is clean today; keep it so. Both tools come from MSYS2's
   `mingw-w64-ucrt-x86_64-clang-tools-extra` (clang 22); the scripts find them without PATH changes.
   A deliberately implicit conversion gets a `// NOLINT` with its reason (`ThemeSpec`'s `Opt<T>`).
-- **Tests**: `tests/` builds two doctest executables against `ab_core` and runs under `ctest`
-  (`ctest --test-dir build_win --output-on-failure`; `make_win.sh` does it for you). `AB_BUILD_TESTS=OFF`
-  skips them, and both cross toolchain files force that. Every service extracted from a screen from here on
-  ships with its tests in the same commit (the refactor plan's rule, kept after the plan itself was done).
-  - `tests/support/env_fixture.h` - **use it in any test that touches a path.** `ableem::Environment`'s
-    setters are static, so without it tests inherit each other's roots and pass or fail by run order.
-  - `tests/support/temp_dir.h` - a scratch tree that deletes itself; `makeSubDir`/`writeFile`/`readFile`. Named
-    with the pid and a counter, so suites run in parallel (`ctest -j`, the CI) cannot touch each other.
-  - Add a suite with `ab_add_test(<name> core/<file>.cpp)` in `tests/CMakeLists.txt`. Tests include app
-    headers from `src/code`, e.g. `#include "core/services/config.h"`.
-  - The test exes need `C:\msys64\ucrt64\bin` on PATH to run directly (ctest inherits it from the
-    MSYS2 login shell; running one from another shell exits 127 without it).
+- **Tests**: the core test harness (doctest/`ctest`, `env_fixture.h`/`temp_dir.h`, `ab_add_test`) is
+  documented in `autobleem-core/CLAUDE.md`; `make_win.sh` runs it for you (`AB_BUILD_TESTS=OFF` skips it,
+  and both cross toolchain files force that). Every service extracted from a screen ships with its tests
+  in the same commit.
 
 ### Smoke test layout (Windows)
 
@@ -623,11 +382,6 @@ drops the connection mid-command (Ctrl-C, a WiFi drop) never crashes the driver:
 `MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send just closes that client and goes
 back to accepting the next one.
 
-**Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
-`X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
-`Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
-to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
-
 ### Running on PC (debug)
 
 ```
@@ -690,20 +444,15 @@ our own HTTP/1.1 client over the vendored mbedTLS 3.6 in `third_party/mbedtls`, 
 it, certificate dates deliberately not checked - no battery clock), never with the kernel payload's curl) or `MENU_OPTION_POWEROFF` (see "The console's power off" below); starting a game and returning from one both loop back into the launcher
 in-process and never reach it. `boot.sh` loops `autobleem.sh` -> `selection.sh` since 2026-09-22, so both
 come back to the launcher without a reboot; `selection.sh` reboots for anything else (a crash, a missing
-`autobleem_cfg.sh` - the file is deleted once read), which brings AutoBleem back up. The stock
-SonyUI exit - `starter` mounted over `/usr/sony/bin/pcsx`, USB games linked into `/gaadata` with a `.lic`
-each (`link.sh`/`overmount.sh`/`startsony.sh`) - is gone with it (2026-09-18, as in AutoBleem-NG), and so is
-`.lic` handling in the scanner. RetroBoot's own update hook went the same day: `autobleem.sh` no longer
-runs `retroboot/bin/init.sh` at boot, and the `/tmp/.rbpatching` guards, `rb_patch_background.sh` and
-`rb_monitor.sh` are deleted - an RB_Patch dropped on the stick is not applied by AutoBleem any more.
+`autobleem_cfg.sh` - the file is deleted once read), which brings AutoBleem back up. There is no stock-SonyUI
+exit path and no RetroBoot update hook any more - the history of their removal is at autobleem-main
+`docs/history/launcher-console-runs.md`.
 
-**`/tmp` is kept out of systemd's aging** (2026-09-26): the console boots with its clock at 2018-09-01, and on
-the AutoBleem kernel WiFi's timesyncd jumps it to today - after which `systemd-tmpfiles-clean.timer` (15 min
-after boot, then daily; `/usr/lib/tmpfiles.d/tmp.conf` ages `/tmp` at 10 days) deleted everything boot had put
-there as eight years old: `/tmp/lib`'s soname links (the Apps then loaded the firmware's SDL 2.0.4 from
-`/usr/lib`), the libs archive, the bind-mounted udev rules file. `boot.sh` writes `x /tmp/*` to
+**`/tmp` is kept out of systemd's aging**: `boot.sh` writes `x /tmp/*` to
 `/run/tmpfiles.d/autobleem.conf` (tmpfs - nothing on the console's own storage), checked on its systemd 229;
 psc-kernel-payload `3f67f19`+ also ships a `tmp.conf` without an age. Anything of ours in `/tmp` relies on it.
+The discovery story (`systemd-tmpfiles-clean.timer` deleting `/tmp/lib`'s soname links, the libs archive and
+the bind-mounted udev rules file as "eight years old") is at autobleem-main `docs/history/launcher-console-runs.md`.
 
 ### SDL2 on the console (2026-09-23)
 
@@ -714,16 +463,10 @@ SDL2_mixer 2.6.3, SDL2_ttf 2.20.2, built by the `autobleem2/autobleem-build` ima
 no X and no OSS; `ab-validate psc` fails an image whose SDL2 has x11 or oss, lacks wayland or alsa, or is not
 2.0.12/2.0.14. `tools/make_psc_package.sh` and the `publish-launcher` workflow put the image's SDL2 family
 into the archive at package time (the checked-in `payload/Autobleem/lib/libs.tar.gz` is the same set, for
-builds without the image). **2.0.14 is the ceiling** (verified on a console the same day, and was 2.0.12 before):
-the console's compositor is Sony's Weston 1.11, which offers `wl_shell` and no xdg shell, and 2.0.14 is the
-last SDL with a `wl_shell` window - 2.0.16 removed it together with `zxdg_shell_v6`, and 2.0.20+ also need
-libwayland >= 1.18 (the console has 1.12; 2.0.22's configure refuses it). The Wayland protocol code is
-generated by a wayland-scanner 1.12 the image builds (a newer one emits `wl_proxy_marshal_flags()`, which
-1.12 lacks). What a newer SDL would take, for later: a patch bringing `wl_shell` back as a fallback (what
-retroarch-psc's `wl_shell_fallback.patch` did for RetroArch 1.22), with the 1.18/1.20 libwayland symbols made
-optional - the route to 2.0.22 or 2.30 and `SDL_RenderGeometry` (2.0.18), which the carousel's turned covers
-already use when the headers have it. SDL2's ABI is backward compatible, so a newer libSDL2 in the archive
-never needs a rebuild of the programs.
+builds without the image). **2.0.14 is the ceiling**: the last SDL with a `wl_shell` window, which is what
+Sony's Weston 1.11 compositor offers (no xdg shell) - the forensic detail (why 2.0.16+ and libwayland >= 1.18
+are refused) and the route a newer SDL would need are at autobleem-main `docs/history/launcher-build.md`.
+SDL2's ABI is backward compatible, so a newer libSDL2 in the archive never needs a rebuild of the programs.
 
 ### The console's power off (2026-09-22)
 
@@ -739,10 +482,10 @@ item and the power button - `AutoBleem`'s constructor re-wires `Platform::setPow
 Quit, so the stack of screens unwinds and `AutoBleem::run()` leaves cleanly (databases closed, the scan
 joined), "POWERING OFF... PLEASE WAIT" on the screen.
 
-day, from the OTG hub and from a front port. **Never read `/sys/power/wakeup_count` in these scripts**: it
+**Never read `/sys/power/wakeup_count` in these scripts**: it
 blocks while a wakeup event is in progress, which hung a diagnostic build on the red LED.
 
-kernel, an empty rear port or a device that came back: nothing, no wait. Unbinding/rebinding the driver is
+Unbinding/rebinding the driver is
 **not** a way: its probe cannot run twice (IRQ never freed, `probe ... failed with error -16`) and the port stays
 dead until a reboot.
 
@@ -757,52 +500,16 @@ defaults, which both the services and the screens need.
 
 | Area | Files | Notes |
 |---|---|---|
-| Version | `core/version.h` (generated) | `Version::VERSION` (the last git tag, else `AB_VERSION_FALLBACK` in CMakeLists - was `config.ini`'s `Version=` key, dropped on load now), `GIT_HASH`, `GIT_BRANCH`, `GIT_DIRTY`, `BUILD_TIMESTAMP`, `FULL_VERSION` (`v2.0.0-pre0 (master@a83777b*)`). Written by `cmake/generate_version.cmake` into `<build>/generated/core/` on every build (`ab_version` target; the header only changes when the facts do - `BUILD_TIMESTAMP` is kept from the existing header while tag, hash, branch and dirty flag are the same (2026-09-21), so it is when *this version* was first built, and a no-change ninja run is a no-op). The splash, About and the log's first line use it. Include as `"core/version.h"`. |
 | Entry | `main.cpp` | Strips `--sysinfo`, has `EnvironmentSetup::fromArguments()` configure `ableem::Environment`, registers `SDL_Quit`, then constructs the one `AutoBleem` and calls `run()`. |
-| `core/services/environment_setup.*` | `EnvironmentSetup` | The layouts a program can be started with (2026-09-18, was `main.cpp`'s `setupEnvironment()`): `fromRoot(root)` (everything under one root - the console's `/media`, the Pi's data partition, the 1-arg debug mode: `Games/`, `System/Databases/`, `Autobleem/bin/autobleem` as the resources dir, `Autobleem/bin/db`, `themes/`; the Sony data tree is the console's own or `<resources>/sony` under `AB_ROOT_RELATIVE_LAYOUT`), `fromDbAndGames()` (the 2-arg debug layout), `fromArguments()` (autobleem-gui's command line) and `forTool(argc, argv, name)` for a console tool in `Apps/<tool>` (optional root, `/media` by default on the console; pins `Env::getAppDir()` - the tool's own folder, `getPathToAppLangDir()` its `lang/` - before anything can chdir). Every one applies `PlatformConfig`. The only place besides `Env::platformName()` that spells `/media` or `/usr/sony`. Tested in `tests/core/test_environment_setup.cpp`. |
 | `autobleem.*` | `AutoBleem : App` | The program: `run()` opens the DBs, restores memcards, requests a scan up front when `games.fingerprint` doesn't match (or is missing, or there are loose game files, or `gamelist.xml` is gone), starts `scans()` and shows the splash, then loops `GuiLauncher` directly - `MENU_OPTION_START` → `launchGame()` (watching paused around it) → back to the launcher; `MENU_OPTION_RETRO` and `MENU_OPTION_POWEROFF` (the console's standby, `App::requestPowerOff()` - see "The console's power off") exit the loop. Chooses the `ProcessRunner` the launch service forks with (a splash on the dev host). In the executable, above both UI libraries. |
-| `app_base.*` | `AppBase` | The model of any program drawn with the classic UI: `Config`, `Lang`, `Theme`, `Clock`, the `Gui` singleton (whose window title it sets - `Gui::setWindowTitle` before the first `getInstance()`) and `AppAudio`. Top of `ab_classic`; every `GuiScreen`'s `app` member is one. `AppBase::get()` for the non-screens (Gui, Theme, AppAudio, Fonts). |
 | `app.*` | `App : AppBase` | AutoBleem's model on top of it: the `GameLibrary`, the `Session`, every service (including `ScanService`, `app.scans()`). Top of `ab_ui`. `App::get()` is a `static_cast` of `AppBase::get()`; a game-aware screen declares its own `App &app = App::get();` over `GuiScreen`'s `AppBase &app` (the seven that do: the two game editors, Game Manager, memory cards, playlists, select-memcard, `GuiLauncher`). |
-| `core/model/session.h` | `Session` | Where we are across one run: `menuOption` (`MENU_OPTION_IDLE`/`RETRO`/`START`/`UPDATE`/`POWEROFF` - the classic-UI values are gone), the game being started (`runningGame`, `EmuMode`, `resumePoint`), and `launcher`, the carousel's `GameSetSelection`. |
-| `core/services/online_assets.*` | `OnlineAssets` | The scan's online side (2026-09-19): `probe()` (one request per instance), `fetch(url, file)` through the platform's `download_command` (`%u`/`%o`, `std::system`, a `.part` renamed on success), `ensureDatabases(rdbDir)` (the 40 MB `database-rdb.zip` unpacked when there is no `.rdb`), `fetchBoxArt(thumbnailsDir, db, label)` -> Fetched / AlreadyThere / Missing (remembered in `Named_Boxarts/.autobleem-missing.txt` after a re-probe) / Failed (the network went). `boxArtUrl()`/`urlEncode()` spell the libretro-thumbnails URL. `CommandRunner` is the test seam. Made per scan cycle by `ScanService` from what `setOnline()` was given (`App::applyOnlineSetting()`: config.ini `online` + `Env::downloadCommand()`). |
-| `core/services/scan_service.*` | `ScanService` | The background scan: one worker thread (lowest OS priority - `System::lowerCurrentThreadPriority()`) does the filesystem work (`GamesFingerprint`, `GameScanner`, its own `CoverDatabase`, and - with RetroArch detected, `romScanEnabled()` - `ableem::RetroArchScanner` over the ROM folders with its own `CoreInfoTable`) and queues `WorkerEvent`s; `poll()`, called once a frame from `GuiLauncher::loop()`, applies every regional.db write on the main thread, has `RetroArchService` reload rewritten playlists, and returns a `ScanUpdate` (added/updated/removed games, `playlistsWritten`, progress, finished with the game and ROM counts). `requestScan()`/`scanning()`/`setWatching()`; `checkForChanges()` is the watcher's debounce over both `games.fingerprint` and `roms.fingerprint`, checked every `ScanWatchInterval` when nothing was requested directly; `fingerprintsMatchDisk()` is the startup check. **A moved game keeps its row** (2026-09-21): the rows whose folder is not where the database says are kept aside at `ScanStarted` (`VanishedGame`: id, folder name, disc names), a verified game at a new path with the same folder name and disc file names claims one (`claimMovedGame` -> `GameDatabase::updateGamePath`, reported in `updatedGames`, so id/history/last_played and the carousel's selection survive a drag into a sub-folder), and the unclaimed are deleted at `Finished`; a *renamed* folder is a new game. The ROM pass gets `<state>/roms.scanstate` (`romScanStateFilePath()`) as the scanner's per-folder state, so a rescan skips every ROM folder nothing changed in. Owned by `App` (`app.scans()`, constructed with `&retroArch_`). |
-| `core/main.h` | | The `using` declarations that bring the lib_ableem engine names (`DirEntry`, `sep`, `ImageType`, `GAME_INI`, `trim`/`lcase`, `IniFile`, `GameDatabase`, ...) into the app's global namespace. |
-| `core/services/environment.*` | `Env` | `struct Environment : ableem::Environment` + the two app flags, the `AB_DEBUG_HOST` macro, `platformName()` (`"psc"`/`"rpi"`/`"pc"` - the one place the build macros decide a path), `retroArchInstalled()`, `padMappingFiles()` (the `gamecontrollerdb.txt` list `Gui`'s constructor hands `Input::loadMappings()` - the kernel's `/etc/autobleem` one on the console, then the shipped one in the resources dir; **loaded since 2026-09-18** - until then nothing called `loadMappings` and the pscbios wizard's output was never read), and **`clockIsSet()`** (2026-09-26: on the console only, true if the network has set the clock - the marker file at `clockSetMarkerFile()` (`/run/autobleem/clock-set`), touched by the dhcpcd `70-autobleem-time` hook; off-console always true - `LaunchService::recordLastPlayed()` uses it to avoid overwriting valid times with 2018-09-01). The shipped `src/resources/gamecontrollerdb.txt` is the community SDL_GameControllerDB at a pinned commit, cleaned for the console's SDL 2.0.14, with our own `#Magnus RC`/`#AutoBleem` sections last (they win): refresh it with **`tools/update_gamecontrollerdb.py`** (2026-09-25, 755 Linux mappings - the 6.1 pad drivers' GUIDs included). All path getters live in the library (`getPathToKernelConfigDir()` is `""` off the console); extend `ableem::Environment` instead of adding new literal paths. |
-| `core/services/platform_config.*` | `PlatformConfig` | **What differs per target about where things are, as data**: `resources/platform/<platform>.ini` (`psc.ini`, `rpi.ini`, `pcusb.ini`, `pc.ini`; `win.ini` to come) - `retroarch_dir` (relative to the USB root), `retroarch_core` (the PS1 core the exported playlist names, relative to that dir), `retroarch_binary` (`;`-separated candidates; "RetroArch" in the system menu and Square on a game are offered when one exists), `retroarch_roms_dir` (the other systems' ROM folders the scan writes playlists for, relative to the USB root; 2026-09-18), `download_command` (how the platform fetches a URL to a file, `%u`/`%o`, with its own timeout; empty = never online - the console; 2026-09-19, `Env::downloadCommand()`). `main.cpp` loads and `apply()`s it after the roots are set; a missing file means the console's layout. `retroarch_catalog`, `launch_mode`, `core_extension`, `pcsx_dir` (2026-09-20, see "The platform model"). Add per-platform paths here, never as `#ifdef AB_PLATFORM_*` in the services. **`<platformName>.cores.cfg`** next to it (2026-09-18) is which core plays which RetroArch playlist on that platform (`<database name>=<part of a core display name>`, `#` comments), read by `RetroArchService` ahead of its `.info` mapping - was the one `coreOverride.cfg` for every platform; the Pi's prefers Genesis Plus GX (picodrive's Cyclone core segfaulted on the Pi 400), plain Snes9x and blueMSX. Tested in `tests/core/test_platform_config.cpp`. |
-| `core/services/system.*` | `System` | The process/console helpers: `execUnixCommand` (popen, returns "" on failure), **`runAndWait(exe, args)`** - the only fork/exec in the code base, `powerOff`, `getAvailableSpace`, `getRandom*`. The string helpers are `Strings::` (`ableem::Strings`, via `main.h`). |
-| `core/main.h` | `_()` | The app's `_("...")` is `ableem::translate()`, which goes through the `ableem::Lang` the `App` owns and registered (`app.lang()`); `resources/lang/<Language>.txt` is `English text=Translated text` lines under a `#` header (since 2026-09-18; the old pairs-of-lines layout is still read when the first line is not a comment). **`tools/lang_tools.py`** keeps them in step: `extract` (English.txt from every `_("...")`), `update [--remove-obsolete]`, `validate` (run by `make_win.sh`), `compare <Lang>`, `convert`, `merge <dir>`. A key cannot contain `=` - decorate at render time (`".-= " + _("Testing") + " =-."`). Emoji markers like `\|@X\|` in strings are replaced by button textures by `TextRenderer`. |
-| `core/services/clock.*` | `Clock` | The "last played" time as text: `displayTime(t)` in config.ini's `datetimeformat`, "" for a time the console could not have known (before 2020 - no battery clock). Owned by `App` (`app.clock()`). |
 | `evoui/card_edit.*` | `CardEdit` | A memory card as the manager shows it: `ableem::MemcardImage` plus its 45 icon frames as textures, kept in step after every edit, and the translated "Free"/"Link Block" titles. |
-| `core/services/config.*` | `Config` | `config.ini` on top of `ableem::IniFile`: app defaults (`language`, `aspect`, ...; keys are lower-cased on load, e.g. `values["theme"]`) and a few obsolete keys dropped on load, `ui` (the classic UI is gone) among them. Owned by `App`; read as `app.config().inifile.values["..."]`. |
-| `core/services/theme.*` | `Theme` | The current theme's `theme.json` merged over `themes/default/theme.json` (so every key has a value), every file resolved to the theme's own or the default's. `load()` converts an old-layout folder first (`ThemeConverter`). Owned by `App`; read as `app.theme().classic().menuPanel.x`, `app.theme().launcher().footer`, `app.theme().sounds().cursor`. No platform `#ifdef`s - the paths come from `Env`. |
-| `core/services/theme_installer.*` | `ThemeInstaller` | `<themes>/<name>.zip` -> `<themes>/<name>/` (root files or one folder inside; replaces an existing folder; a non-theme becomes `.zip.bad`). Run by `Theme::load()` and the Options theme list before they look at folders. |
-| `core/services/theme_converter.*` | `ThemeConverter` | `theme.ini` + the PSC data tree -> `theme.json` + role-named files, in place: json first, then the renames, then the deletes. `needsConversion(dir)` is also what makes an old folder count as a theme in the Options menu. `tools/theme_convert` wraps it. |
-| `gui/app_audio.*` | `AppAudio` | The background music track and the five UI sounds (`cursor`, `cancel`, `home_up`, `home_down`, `resume`), plus which track to play (theme's or the user's from `resources/music`) at which sample rate. Owned by `App`: `app.audio().cursor.play()`. Sits on `gui->audio()`, which is only lib_ableem's mixer device. |
-| `gui/gui.*` | `Gui` singleton | The screen only: SDL window/renderer (via `ableem::GuiBase`), `assets()`, `text()`, and the background/logo/status drawing that combines them. `display(resume)` (re)inits and shows the splash (`resume=false`, boot only) or sets `session().resumingGui` for the launcher to pick up (`resume=true`, after a game exits). |
-| `gui/screens/gui_splash.*` | `GuiSplash` | Fades in, holds at full brightness for `SplashHoldDuration` (2s), fades back out, then returns - `Gui::display(false)` is its only caller, once at boot. |
-| `gui/theme_assets.*` | `ThemeAssets` | The current theme's textures (background, logo, jewel case, the `|@X|` button markers) and fonts (`themeFont` at the theme's size, plus the `themeFonts`/`sonyFonts` sets). `load()` re-reads theme.json (`Theme::load()`) and reloads everything from the resolved paths. Screens use `gui->assets()`. |
-| `gui/text_renderer.*` | `TextRenderer` | The classic UI's text drawing: `|@X|` button markers laid out inline with text, `renderTextLine/ToColumns/Options`, selection and label boxes, the theme's menu-panel/status-bar rects, `toColor()`. Holds references to `Gui`'s theme font and button textures; screens use `gui->text()`. |
-| `gui/gui_screen.h` | `GuiScreen` | Base for every screen: `init/render/loop` + virtual `doCross_Pressed()`-style handlers; `show()` runs them. Set `menuVisible=false` to exit. Carries `gui`, `renderer` and `app` (an `AppBase &` - see `app_base.*`). |
-| `gui/menus/gui_*` | `GuiMenuBase`, `GuiOptionsMenuBase`, ... | Header-only templated list menus (string, two-column, playlist, game dir) and concrete Options / Memory Cards / Game Manager / Game Editor menus. |
-| `gui/screens/gui_*` | | The rest of the classic screens, shown from the launcher's L2+R2 system menu or its sub-screens: About (`credits` settable by the caller, AutoBleem's by default - a tool shows its own), Confirm dialog, on-screen Keyboard (`GuiKeyboard`, rebuilt 2026-09-24 as ABI 3: pages of letters, symbols - `/ \ : ? & = % @ #` and the rest a URL, path or password needs - and two of accented letters, a function row with Shift/caps lock, the page key, Space, Backspace and Done; L1 Shift, R1 the next page, L2/R2 move the cursor; a USB keyboard types alongside the pad, Esc cancels, and while it shows a dev host's keyboard-as-pad is off; UTF-8 by whole characters; keys and field drawn as plain text, never parsed for `|@X|` markers), memcard select, `GuiTextPage` (a titled page of static `lines`, Circle back - a tool's instructions). `gui/starfx.*` is the star field the About screen draws. (`GuiScrollWin`/`GuiPadTest` were deleted on 2026-09-18 - nothing had shown them since the classic menu went.) |
-| `gui/screens/gui_facts_page.*`, `gui_action_menu.*` | `GuiFactsPage`, `GuiActionMenu` | Two reusable classic screens (2026-09-21, for the console tools): a facts page - sections with a heading band and label/value rows, scrolling, re-read every `refreshInterval`, a subclass gives `title()`/`collect()` and takes its own buttons through `onButton()`/`extraHints()` (Hardware Information and PSC-Bios's opening screen) - and an action menu in the system menu's look (rows of a name over a description, Cross picks into `result`, Circle leaves; ABFlashKit's screen). |
-| `gui/screens/gui_hardware_info.*` | `GuiHardwareInfo` | The Hardware Information screen (2026-09-26): a `GuiFactsPage` built in on every platform with `SystemInfoService`'s sections - system (os, hostname, uptime, load), hardware (model, CPU cores, clock, thermal zone, RAM), storage (the data root and every block filesystem), network (IPv4 adapters, time zone from timedatectl), display (render driver + MSAA, video driver, display mode, canvas/scale, audio driver, SDL version), pads (by name with their mapping file in use - `Env::padMappingFiles()`'s first file found). Rows paged like Options, re-read every second. `autobleem-gui <root> --sysinfo` prints the sections to stdout and exits (minus display) - for bug reports and checking the Linux branch over ssh. The System menu's Hardware Information item (2026-09-26) opens this screen on every platform; the Network & Controllers item (when an installed extension provides the `network` entry - see below) opens that extension at its network entry through `Extension::runEntry("network")` (ABI 4), which on the console and a Pi/PC stick opens PSC-Bios's hub for Wi-Fi settings, Bluetooth pairing, DualShock 3 pairing and controller mapping. `GuiHardwareInfo` serves as fallback where Network & Controllers is not provided. |
-| `core/services/system_info.*` | `SystemInfoService` | What that screen shows, SDL-free: `collect()` = `system()` (os-release/uname, hostname, uptime, load; the registry on Windows), `hardware()` (device-tree model, cpuinfo, cpufreq, thermal_zone0, meminfo), `storage()` (the data root first, then every block filesystem in `/proc/mounts` - or the fixed/removable drives - with `statvfs`/`GetDiskFreeSpaceEx`), `network()` (IPv4 per interface, `getifaddrs`/`GetAdaptersAddresses` - ab_core links `iphlpapi ws2_32` on Windows), `software()` (version, build, platform, roots, RetroArch). The parsers and formatters are static and tested (`tests/core/test_system_info.cpp`). |
-| `gui/gui_font.*` | `Fonts`, `FontEnum` | Theme/Sony SST font loader built on `ableem::Font` (SDL_FontCache itself is now in lib_ableem). |
 | `evoui/screens/evoui_launcher.h`, `evoui_launcher_screen.cpp`, `evoui_launcher_input.cpp`, `evoui_launcher_actions.cpp` | `GuiLauncher` | EvolutionUI, the only screen `AutoBleem::run()` shows, in three files: the screen (assets, the sets - PS1 all/internal/favorites/history/sub-dir, RetroArch playlists, Apps - the metadata panel, state transitions, `render()`), the input (the event loop - polls `app.scans()` once a frame via `applyScanUpdate()`, before `render()` - and per-button handlers, L2+R2 among them), and the actions (what Cross does per state and menu icon, and L2+R2's system menu). Holds the `Carousel` as `carousel`. A black overlay fades out over `LauncherFadeInDuration` every time the screen is shown (`fadeAlpha`/`fadeStart`). `scanStatusLine` (bottom of the screen) shows the scan's progress or its "Scan complete" summary; `reloadGames()` re-runs the current set's query and re-selects the same game by id whenever the roster changed and no scroll animation is running; a highlighted game that vanished (folder pulled, or merged by the scan) falls back to the set's first game, closes a resume-slot picker that was showing its slots, and keeps the cover raised while the game menu is open (`Carousel::snapMainCover`). |
 | `evoui/screens/evoui_set_picker.*` | `GuiSetPicker` | What Select opens (2026-09-21; Select used to cycle the sets and L2+Select open a folder or playlist picker): a panel with three icon tabs - PlayStation, RetroArch, Apps - L1/R1 between them, and the groups of the tab as rows (all/internal/the folders/favorites/history/light-gun games; a playlist each; Apps grouped by Category= from `app.ini`). `app.gameQuery().appsGrouped()` returns a map sorted by category name (Games / Emulators / Tools / Media / Other - alphabetical within each). Each group row shows its game count (`"Tools (3 apps)"`). Up/Down and L2/R2 a page, Cross picks. It fills a `GameSetSelection`; `GuiLauncher::loop_chooseSet()` applies it. **L2/R2 page on every list since 2026-09-21** (the menu base, the memcard picker, Hardware Information, the text page); L1/R1 go to the first/last row. |
 | (Quick menu) | (launcher method `loop_openQuickMenu`) | The Quick menu (2026-09-26): d-pad Up in the Games state, or the gear icon in the game's icon row. A compact `GuiActionMenu` panel (44 px rows, drawn over the launcher's dimmed frame): Re-Scan Games, Store (the `store` extension; a notification when not installed), Network & Controllers (an installed extension providing `network` when runnable; greyed with a reason "PSC-Bios is switched off - enable it in Extensions"-style when installed but disabled/crashed/wrong ABI, with Cross opening the Extensions list at it; hidden when no extension provides it), System menu... (opens the L2+R2 menu). Up/Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every item is also in the System menu, and the Quick menu is a shortcut to frequent actions. The renderer's last capture (the launcher frame taken before opening any extension) is passed to `GuiActionMenu::background` so the menu sits over a dimmed background, like the System menu. |
 | `evoui/screens/evoui_system_menu.*` | `GuiSystemMenu` | The L2+R2 overlay (2026-09-26, grouped): heading rows (cursor skips them) separate Re-Scan Games / Extensions (top), Library (Game Manager, Memory Cards, Scanner processors), System (Options, Network & Controllers - an installed extension providing `network` when runnable; greyed "PSC-Bios is switched off - enable it in Extensions"-style with Cross opening Extensions list when installed but unavailable; hidden when nothing provides it, Hardware Information, Software Update, About), and Leave (RetroArch / EmulationStation, Power Off). Single-line 32 px rows, 24 px headings; the selected item's description in one strip above the footer, status notes right-aligned (a "Scan running" note on Re-Scan, "Update available" on Software Update). `tools/ab_drive.py`'s `menu "<title>"` picks an item by its English title; `quick "<title>"` is the same for the Quick menu (both keep `menu <n>` working by counting items only, not headings). A `GuiActionMenu` panel over the launcher's dimmed frame captured by `GuiLauncher::runExtensionEntry()` before opening any extension, launcher fonts and theme colours; Up/Down + wrap, Cross/Circle - it returns a `SystemMenuAction` and `GuiLauncher::loop_openSystemMenu()` runs it. `ExtensionCatalog::findUnavailableProvider(entry)` and `ExtensionInfo::problem()` describe why an extension cannot run (disabled, crash guard, ABI mismatch). |
 | `evoui/carousel.*`, `carousel_game.*` | `Carousel`, `PsCarouselGame` | **Two kinds of box** (2026-09-18): a PS1 game is the art in the theme's jewel case (`cdJewel`, thin - `JewelCaseThickness` 8%); a RetroArch game or an App is a **big box** - the art at its own aspect (tall NES, wide SNES) with `evoimg/bigbox.png` laid over it as a 9-slice (`drawNineSlice`, 7 px border; `tools/make_bigbox_frame.py` draws the file, replace it with real artwork any time) and `BigBoxThickness` 22% deep. `PsCarouselGame::content` is where the box is in the 226x226 texture and `thickness` its depth; `renderTurnedCover` turns the box about *that* rect and puts the spine on its edge, so a tall box no longer has its spine floating in the transparent part of the texture. The row of covers: `games` (exactly the set's games, a bounded row - see "Conventions"), `selected`, the 13 screen positions, the scroll/moveMainCover animations, texture load/free on visibility, `render()`. **Cover flow** since 2026-09-18: `PsScreenpoint::angle` (degrees about the vertical axis, negative = left of the middle, facing in) is interpolated like x/y/scale; `PsCarousel::createCoverPoint(distance, side)` lays out the `PsCarousel::SideCovers` (14 - enough that the outermost slot is off a 1280-wide screen, so a cover scrolls in from the edge rather than popping up) slots a side as a shelf receding from the middle: the nearest at half size 190 px out, each further one 3.5% smaller, 15 shades darker, a step (50 px, scaled with the cover) further out and turned more (40..72°) - the shrinking is what makes an inner cover drawn over an outer one read as being in front of it; `render()` draws far-to-near, the selected cover as a plain copy and every turned one via `renderTurnedCover()` - front face through `Renderer::copyTrapezoid`, plus a spine (`CoverThickness` = 8% of the width, textured with a strip from the cover's near edge, darker) and a Lambert-ish darkening with the turn. `ViewerDistance` (600 px) is the perspective strength. |
 | `evoui/controls/evoui_*.{h,cpp}` | `PsObj` and subclasses | The EvolutionUI controls: the animated elements the launcher is built from (`PsObj` base, meta panel, menu, buttons, labels, the state selector). Class names keep their `Ps` prefix. `PsMeta` shows a RetroArch game the database knows as title / "publisher, year" / core / "n Players" (2026-09-19); one it does not know as title / core, as before. |
-| `core/model/ps_game.*` | `PsGame : ableem::GameRecord` | Game as seen by the UI (from DB via `PsGame::fromRecords`, or playlist). `PsGamePtr = shared_ptr<PsGame>`. Adds the RetroArch/App fields. A plain data record - the resume points are `ResumePointService`'s, the memcard `MemcardService`'s. |
-| `core/services/game_catalog.*` | `GameCatalogService` | The writes: play history ranking, game delete, cover flush. Owned by `App` (`app.gameCatalog()`). |
-| `core/services/resume_point.*` | `ResumePointService` | The save-state slots in a game's `!SaveStates` folder, and the prepare/save around a PCSX launch. Owned by `App` (`app.resumePoints()`); non-screens reach it via `App::get()`. |
-| `core/services/memcard.*` | `MemcardService` | The `!MemCards` sets and a game's chosen card; the swap in/out around a launch. Owned by `App` (`app.memcards()`). |
-| `core/services/game_settings.*` | `GameSettingsService` | The game editor's model: a game's Game.ini flags and pcsx.cfg values, read with `open()` and written one setter per option. A game with its own config (`PcsxConfig`) is read-only until `unlock()`. Owned by `App` (`app.gameSettings()`). |
-| `core/services/game_query.*` | `GameQueryService` | Which games a set shows and in what order - `gamesFor(selection)` is the whole of the old `switchSet` query. Owned by `App` (`app.gameQuery()`); RetroArch arrives through the `RetroArchGames` interface. |
-| `core/services/retroarch.*` | `RetroArchService` | RetroArch's playlists as sets of foreign `PsGame`s: `.lpl` parsing (both formats via `ableem::RetroArchPlaylist`), the core for an entry from its `ableem::CoreInfoTable` (`info/*.info` + `platform/<platform>.cores.cfg`, `coresCfgPath()`), Favorites/History, `reloadPlaylists()` after the scan rewrote them, and `ensureMetadata()` - publisher/year/players from `<rdb dir>/<playlist>.rdb` by label, read once per playlist on first use and dropped again (Favorites/History copy from the source playlist). Implements `RetroArchGames`. Owned by `App` (`app.retroArch()`). |
-| `core/services/launch.*`, `process_runner.*` | `LaunchService`, `ProcessRunner` | A game launch start to finish: argv for `rc/launch.sh` (PCSX) / `rc/launch_rb.sh` (RetroArch) / an App's `startup`, the memcard and resume-point work around it, the RetroArch config transfer, `writeSelectionScript()`. `recordLastPlayed()` writes the last-played time only when `Env::clockIsSet()` (2026-09-26: the console has no battery clock). Runs through a `ProcessRunner`. Owned by `App` (`app.launcher()`). |
 | `evoui/screens/evoui_mc_manager.*`, `evoui_app_start.*`, `evoui_btn_guide.*` | | Launcher sub-screens. |
 | `evoui/controls/evoui_notification_line.*`, `evoui_notification_bubble.*` | `NotificationLines`, `NotificationBubble` | The launcher's notifications, all in one look (2026-09-21): `NotificationBubble` is a PanelStyle sheet at the right edge that slides in and fades out (the scan's progress with a bar, 440 wide); each `NotificationLine` (0: "Showing: ..." for the set, 1: messages and the jump letter) is one too, fitted to its text, and `GuiLauncher::render` stacks them under the scan's bubble at the top-right corner. `show()` takes the time from the platform, so a line set before the first frame keeps its hold. |
 
@@ -829,59 +536,6 @@ gamecontrollerdb line for the evdev GUID, or not closing the pad around a game a
 replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
 `(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
 package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
-
-## UI styling standards (2026-09-21, the `feature/ui-fixes` pass)
-
-Every screen but the launcher's own carousel frame draws in **one look**, and new screens must too:
-
-- **`PanelStyle`** (`gui/panel_style.*`) is the look: the screen behind dimmed (`dim`, black 110), a sheet
-  (black 200) with a 1 px edge in the launcher theme's *secondary* colour, a **header** (`header`: the title in
-  `FONT_28_BOLD` at `RowInset` (24) + 18 from the top, a rule 8 px above the header's 74 px end), rows,
-  and a **footer** band (`FooterHeight` 54). Colours come from `launcher.colors` (`text`, `secondary`,
-  `hint`) - never hard-coded. `Gui::panelStyle()` resolves it for the current theme.
-- **Two panel shapes.** A *full* panel (the classic screens: Options, the editors, Game Manager, Memory
-  Cards, Hardware Information, the keyboard, pages): `Gui::renderTextBar()` + `renderHeader(title)` +
-  rows + `renderStatus(hints)`; its rect is the theme's `classic.menuPanel` down to the status line
-  (`Gui::classicPanel()`), rows live in `classicContent()`, the footer in `classicFooter()`. A *compact*
-  panel centred on the screen (the system menu, the set picker, the update prompt, Confirm): 800 wide,
-  as tall as its rows, `PanelStyle::Margin` (40) from the edges, the launcher's captured frame under it
-  (`renderer.captureNextFrame(); render(); background = renderer.lastCapture()`). A dialog with one
-  question is compact, never full.
-- **Rows.** Text at `RowInset + 8` (32 px) from the panel's edge - the header's text x. The classic
-  screens' rows use the theme's classic font at its own line height, one under the other, **as many as
-  fit** (`Gui::classicRowsThatFit(font)`), scrolling a row at a time with **markers**
-  (`Gui::renderScrollMarkers` - triangles at the content's right edge). The selected row is
-  `renderSelectionBox`: a band in the text colour at alpha 38 with a 5 px bar at the panel's left edge
-  (`PanelStyle::selection`); a heading between rows is `renderLabelBox` (a faint band). A row that cannot be changed is drawn, then greyed over
-  with `renderDisabledBox` (`PanelStyle::disabled`, black at alpha 150) - still selectable, so the cursor
-  can pass it. Compact panels
-  use `PanelStyle::RowHeight` (60: `FONT_22_MED` title + `FONT_15_BOLD` description) or 44 for a
-  single-line row.
-- **Values right-aligned.** An option row is its label at the left and its value at the row's right
-  edge: a boolean's switch (`renderTextLineOptions`, the theme's on/off image with its transparent margin
-  measured so the art meets the edge) or text (`renderRowValue`). A screen with a pane on the right
-  passes the pane's `rowsRight` as the edge.
-- **The detail pane** (`gui/game_detail_pane.*`, 360 wide) is the right side of any screen about one
-  game: the cover on a plate, a screenshot when there is one, then facts as `FONT_15_BOLD` label over
-  `FONT_20_BOLD` value, a rule to its left.
-- **Footers are structured** and drawn by `PanelStyle::footer` from the `"|@X| Label  |@O| Label"`
-  protocol (`parseHints`): the hints **sorted** Cross, Circle, Triangle, Square, Start, Select, L1/R1,
-  L2/R2, keyboard keys; icons 30 px (the launcher's hint images for X/O/T, the theme's buttons for the
-  rest); labels in the largest launcher font that fits; a counter ("Game 3/21") at the right edge in the
-  secondary colour. **Labels**: Circle is "Back" wherever leaving loses nothing, "Cancel" only where
-  Cross commits; Cross names its action; sentence case ("Delete game"). **Paging is L2/R2 everywhere**,
-  L1/R1 go to the first/last row (or switch tabs where there are tabs).
-- **Fonts.** Titles/labels: the launcher pair (`themeFonts[FONT_28_BOLD/22_MED/20_BOLD/15_BOLD]`, Open
-  Sans); classic rows: the theme's classic font (`assets().themeFont`, Saira / Selawik); never a
-  hard-coded ttf path - the shipped ones are `Env::getPathToFontsDir()`'s.
-- **Waiting.** A long job on the main thread runs inside `Gui::beginBusy(message, redraw)` /
-  `endBusy()` with `Gui::tickBusy()` in its loops (the spinner over the dimmed screen); a blocking call
-  with no loop goes through `Gui::drawText(message)` (background, logo, spinner). Background work
-  reports in the launcher's `NotificationBubble` (top-right, slides in and out), never in a status line.
-- **Every string on screen is `_()`** and lands in all 16 language files in the same commit
-  (`tools/lang_tools.py extract`/`update`, then translate); no `=` in a key.
-- **Testing a screen** is `tools/ab_drive.py` (`start --show`, `run "menu 6; wait_screen GuiOptions; shot
-  a.png"`, `sheet`, `stop`); every screen's class name is what `wait_screen` takes.
 
 ## The quiet stick (2026-09-24, autobleem-main `docs/archive/quiet-stick-plan.md` and `docs/history/quiet-stick.md`)
 
