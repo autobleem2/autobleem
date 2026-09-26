@@ -171,7 +171,7 @@ shelf as they are found.
 | Button | On the shelf |
 |---|---|
 | Left / Right | Previous / next game. Holding scrolls on. |
-| L1 / R1 | Jump to the previous / next first letter of the titles. Scroll sound at d-pad volume. |
+| L1 / R1 | Jump to the previous / next first letter of the titles. |
 | Cross | Start the selected game (a PS1 game in the PS1 emulator; a RetroArch game in its core; an App after its read-me). |
 | Square | Start the selected PS1 game in RetroArch instead. |
 | Triangle | The button guide. |
@@ -180,7 +180,7 @@ shelf as they are found.
 | Down | Open the icon row under the game (Settings, Game, Memory Card, Resume). Up closes it. |
 | L2 + R2 | The system menu (section 3.4). |
 
-**On a PC without a pad** the keyboard stands in: **Arrow keys** = d-pad, **Enter** = Cross, **Esc or Backspace** = Circle, **Tab** = Triangle, **Space** = Square, **F1 / F2** = Select / Start, **Page Up / Page Down** = L1 / R1, **Home / End** = L2 / R2, **F10** = the system menu. On the console, **Esc** maps to Circle (not power off). On a development machine Esc closes the program and Space is Start.
+**With a keyboard** (a PC without a pad, or a USB keyboard on the console, a Pi or the PC stick) the keys stand in: **Arrow keys** = d-pad, **Enter** = Cross, **Esc or Backspace** = Circle, **Tab** = Triangle, **Space** = Square, **F1 / F2** = Select / Start, **Page Up / Page Down** = L1 / R1, **Home / End** = L2 / R2, **F10** = the system menu. On a development machine Esc closes the program and Space is Start.
 
 In every list and menu: Up / Down move, **L2 / R2 turn pages**, L1 / R1 jump to the first / last row,
 **Cross selects, Circle goes back**. A screen with settings saves them when you leave it with Circle.
@@ -201,8 +201,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 
 **Up** in the launcher, or the **gear icon** in the icon row (where Settings / Game / Memory Card / Resume are):
 the Quick menu for actions you reach for from the carousel. A short list: *Re-Scan Games* (starts a scan
-now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (on the console, the
-Raspberry Pi and the PC stick when PSC-Bios is enabled: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6; greyed out with "enable it in Extensions" if PSC-Bios is disabled - Cross opens the Extensions list), and *System menu...* 
+now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (only where an installed extension provides the `network` entry - PSC-Bios on the console, a Pi and the PC stick: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6; greyed out with "enable it in Extensions" when that extension is disabled - Cross opens the Extensions list), and *System menu...* 
 (the full menu below). Up / Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every
 item is also in the system menu.
 
@@ -218,7 +217,7 @@ item is also in the system menu.
 | | Memory Cards | Your memory card sets (section 3.7). |
 | | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). Disabled while a scan is running. |
 | **System** | Options | AutoBleem's settings (section 3.6). |
-| | Network & Controllers | (Console, Raspberry Pi and PC stick, when PSC-Bios is enabled) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. If PSC-Bios is installed but disabled (in Extensions), this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list to re-enable it. |
+| | Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick) - Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. When that extension is installed but disabled, this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list at it. |
 | | Hardware Information | The machine's facts: system, CPU, storage, network interfaces, time zone, display, the pads and their mappings. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6); on other machines it shows this information page. |
 | | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | | About | Credits and licence. |
@@ -535,7 +534,7 @@ is in the Extensions list. **ABFlashKit** is an App in the Apps set.
 ### 6.1 PSC-Bios
 
 An extension that comes with the console package, also available on a Raspberry Pi and the PC stick. It is
-opened from the System menu's *Network & Controllers* item (or from the Extensions list). When PSC-Bios is disabled in the Extensions list, the *Network & Controllers* item in the Quick menu and System menu is greyed out with a note "enable it in Extensions" - Cross there opens the Extensions list.
+opened from the System menu's *Network & Controllers* item (or from the Extensions list). When that extension is installed but disabled, the *Network & Controllers* item in the Quick menu and System menu is greyed out with a note "enable it in Extensions" - Cross there opens the Extensions list at it.
 
 The opening screen shows machine facts: time, timezone, WiFi/Ethernet/Bluetooth network adapters with their
 addresses, and every connected controller with whether it has a button mapping. The network and Bluetooth
@@ -544,10 +543,10 @@ the gamepad wizard works on any system.
 
 ![PSC-Bios: the Network & Controllers hub](../images/en/pscbios-main.jpg)
 
-- **Select - Wi-Fi Network** (kernel or NetworkManager on Pi/PC stick): the network name (typed, or picked from a
+- **Select - Wi-Fi Network** (kernel or NetworkManager): the network name (typed, or picked from a
   scan), password, driver mode, and *Apply / Restart Network*. The time zone is set here too. The console's IP address is shown once connected.
-- **Square - Bluetooth Controllers**: a scan for Bluetooth gamepads (DualShock 4, etc.), to pair or remove. On Pi and PC stick with system tools (nmcli, bluetoothctl).
-- **L1 - DualShock 3 Pairing**: USB-only connection for the first DualShock 3, through the kernel's sixaxis plugin (console only).
+- **Square - Bluetooth Controllers**: a scan for Bluetooth gamepads (DualShock 4, etc.), to pair or remove.
+- **L1 - DualShock 3 Pairing**: USB-only connection for the first DualShock 3, through the kernel's sixaxis plugin.
 - **R1 - Controller Mapping**: the mapping wizard (below).
 - **Triangle - About**, **Circle - back** to the launcher.
 
@@ -555,7 +554,7 @@ the gamepad wizard works on any system.
 DualShock picture that lights up as you press. Because the pad under test cannot be trusted, the wizard
 is driven by the console's **front buttons**: **RESET** switches to the next pad, **OPEN** starts the mapping
 (then answers each question - press the button lit on the picture, or OPEN when the pad has no such
-button), **POWER** exits (a short press cancels, holding for 2 seconds brings up a confirmation bar and hint). At the end the new mapping is added for a test and OPEN saves it under a name of your choice; the launcher loads it from then on.
+button), **POWER** cancels or leaves. **NEW**: while mapping a button, holding Circle on the pad for 2 seconds leaves the wizard (a bar fills and the footer hint says "Hold 2 s: Exit"). While the pad has no mapping yet, holding any button for 2 seconds does it ("Hold any button 2 s: Exit"). A short press is mapped as usual. On a keyboard, Esc / Space / Enter stand in for POWER / RESET / OPEN. At the end the new mapping is added for a test and OPEN saves it under a name of your choice; the launcher loads it from then on.
 
 ![PSC-Bios: the controller mapping wizard](../images/en/pscbios-wizard.jpg)
 

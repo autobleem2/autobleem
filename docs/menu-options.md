@@ -38,21 +38,22 @@ classic start screen of earlier versions is gone.
 
 ## The keyboard
 
-Every screen driven by the pad works from a keyboard, on every platform - a PC without a controller, the console with a USB keyboard, the Pi, the PC stick (2026-09-26):
+Every screen driven by the pad works from a keyboard on every platform (a PC without a pad, the console with a USB keyboard, the Pi, the PC stick) (2026-09-26):
 
-| Key | Pad button | Notes |
-|---|---|---|
-| Arrow keys | d-pad | |
-| Enter | Cross | |
-| Esc | Circle (on non-dev platforms); power off (on dev machines) | Backspace also maps to Circle |
-| Tab | Triangle | |
-| Space | Square (on non-dev platforms); Start (on dev machines) | On dev machines, the letter map owns Space |
-| F1 / F2 | Select / Start | |
-| Page Up / Page Down | L1 / R1 | Display scroll sound at d-pad volume |
-| Home / End | L2 / R2 | |
-| F10 | L2 + R2 - the System menu | |
+| Key | Pad button |
+|---|---|
+| Arrow keys | d-pad |
+| Enter | Cross |
+| Esc or Backspace | Circle (on a development build Esc closes the program; Backspace is Circle there) |
+| Tab | Triangle |
+| Space | Square (on a development build Space is Start - its letter map owns it) |
+| F1 / F2 | Select / Start |
+| Page Up / Page Down | L1 / R1 |
+| Home / End | L2 / R2 |
+| F10 | L2 + R2 - the System menu |
 
-In a screen where text is typed (the on-screen keyboard) the keys type instead. The Button Guide (Triangle, or Tab, or F1) lists the keys beside the pad buttons when a keyboard is connected or has been typed on.
+In a screen where text is typed (the on-screen keyboard) the keys type instead. The Button Guide (Triangle, or
+Tab) lists the keys beside the pad buttons when a keyboard is connected or has been typed on.
 
 ## Quick menu (Up, or the gear icon)
 
@@ -62,7 +63,7 @@ A short panel over the launcher, for what a player reaches for from the carousel
 |---|---|
 | Re-Scan Games | Starts a scan (a note says so when one is running already). |
 | Store | Runs the Store extension (`Extensions/store/`); a notification line when it is not installed. |
-| Network & Controllers | Only where PSC-Bios is enabled (console, Raspberry Pi, PC stick): Wi-Fi, Bluetooth pairing, DualShock 3 pairing (console only), the controller mapping wizard. Greyed out with "enable it in Extensions" if PSC-Bios is installed but disabled - Cross opens the Extensions list. |
+| Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick): Wi-Fi, Bluetooth pairing, DualShock 3 pairing, the controller mapping wizard. When that extension is installed but disabled, the item is greyed with "enable it in Extensions" - Cross opens the Extensions list at it. |
 | System menu... | The System menu (below). |
 
 Up / Down move (wrapping), Cross picks, Circle goes back. Nothing is only here: every item is in the
@@ -76,7 +77,7 @@ Grouped under headings the cursor skips (2026-09-26):
 |---|---|
 | (top) | Re-Scan Games (a "Scan running" note while one runs), Extensions (the Store is one) |
 | Library | Game Manager (refuses while a scan is running), Memory Cards, Scanner processors (refuses while a scan is running) |
-| System | Options, Network & Controllers (only where PSC-Bios is enabled - see the Quick menu), Hardware Information (the built-in facts page on every platform, Square saves the logs), Software Update (an "Update available" note when there is one), About |
+| System | Options, Network & Controllers (only where provided - see the Quick menu), Hardware Information (the built-in facts page on every platform, Square saves the logs), Software Update (an "Update available" note when there is one), About |
 | Leave | RetroArch (or EmulationStation - exits the launcher into it), Power Off (confirmed) |
 
 The rows are one line (32 px, headings 24 px) and the selected item's description is in a strip above the
