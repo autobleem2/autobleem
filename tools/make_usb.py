@@ -297,7 +297,8 @@ def main():
             shutil.copy2(os.path.join(args.build, helper), app)
 
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
-    replace_tree(os.path.join(REPO, 'payload', 'Themes'), os.path.join(usb, 'Themes'))
+    # the five themes: their own repository now (autobleem2/autobleem-themes), a submodule at autobleem-themes/
+    replace_tree(os.path.join(REPO, 'autobleem-themes', 'Themes'), os.path.join(usb, 'Themes'))
     # the scanner processors' folder and its README (once: the processors in it are the tester's)
     processors = os.path.join(usb, 'System', 'Processors')
     os.makedirs(processors, exist_ok=True)

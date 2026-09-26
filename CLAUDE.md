@@ -303,7 +303,7 @@ usb/Autobleem/bin/autobleem/   <- contents of build_win/ (exe + resources)
 usb/Autobleem/bin/db/          <- db/covers*.db
 usb/Autobleem/rc/              <- payload/Autobleem/rc/*
 usb/System/Databases/internal.db  <- src/resources/internal.db
-usb/System/Logs/               usb/Games/<game dirs>/   usb/Themes/ <- payload/Themes/*
+usb/System/Logs/               usb/Games/<game dirs>/   usb/Themes/ <- autobleem-themes/Themes/*
 ```
 Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr are the log. Expected noise on
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
@@ -528,10 +528,18 @@ defaults, which both the services and the screens need.
 | `apps/abpad/` | `abpad_core`, `abpadd`, `libabpad.so`, `padtest` | The virtual gamepad for third-party Apps - see its own section above and `docs/virtual-gamepad-plan.md`. Built for every target but `win`; the packages ship it as `Autobleem/bin/abpad/`. |
 | (autobleem-console-tools) | `PscBios`, `AbFlashKit` | The console tools live in their own repository since 2026-09-23: PSC-Bios an extension (`Extensions/pscbios/`), ABFlashKit an App. |
 
-Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
-`default`, `evolution`), `RetroArch/`'s skeleton, and `Docs/README.txt` (which points to the site's current user manual). `ab2`'s launcher menu icons (gear, gamepad, memory card,
+Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s skeleton, and
+`Docs/README.txt` (which points to the site's current user manual). **The five themes (`ab2`, `aergb`,
+`autobleem`, `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
+`github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
+to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and the packaging scripts
+(`tools/make_psc_package.sh`/`make_rpi_package.sh`/`make_win_package.sh`,
+`.github/workflows/publish-launcher.yml`) all take the themes from there now. `Theme::load()` still reads
+`<root>/Themes/default` at run time, so whatever assembles a real package (the appliance, going forward -
+see below) must always stage at least `default`. `ab2`'s launcher menu icons (gear, gamepad, memory card,
 the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
-and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
+and its blue `on.png`/`off.png` switch are drawn by `autobleem-themes/tools/make_ab2_icons.py` (2026-09-18,
+moved out of this repo with the rest of the theme-asset tools on D5); the tile sits high in
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
 the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
 its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-slot picker writes "Slot n" on its

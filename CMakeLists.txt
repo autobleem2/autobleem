@@ -175,7 +175,8 @@ if (AB_BUILD_TESTS)
     add_subdirectory(tests)
 
     # theme_convert <themesDir>: the ThemeInstaller over every zip and the ThemeConverter over every theme
-    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load
+    # folder, for converting the autobleem-themes submodule's Themes/ or a theme being worked on ahead of
+    # the app doing it on first load
     add_executable(theme_convert tools/theme_convert/main.cpp)
     target_link_libraries(theme_convert ab_core)
 endif()
