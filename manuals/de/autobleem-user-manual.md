@@ -607,9 +607,9 @@ Raspberry Pi / PC-Stick; der Gamepad-Wizard funktioniert auf jedem System.
 das aufleuchtet, wenn Sie drücken. Da der getestete Pad nicht vertraut werden kann, wird der Wizard von den
 **vorderen Tasten der Console** getrieben: **RESET** wechselt zum nächsten Pad, **OPEN** startet die Zuordnung
 (dann beantwortet jede Frage - drücken Sie den Button, der auf dem Bild leuchtet, oder OPEN, wenn das Pad diesen
-Button nicht hat), **POWER** bricht ab oder verläßt. Halten von Circle auf dem Pad für 2 Sekunden verlässt den Wizard
-(ein Balken füllt sich und der Footer-Hinweis sagt "2 Sekunden halten: Beenden"). Während der Pad keine Zuordnung
-hat, hält jeden Button 2 Sekunden ("Beliebigen Button 2 Sekunden halten: Beenden"). Ein kurzer Druck wird normal
+Button nicht hat), **POWER** bricht ab oder verlässt. Wer Circle auf dem Pad 2 Sekunden lang hält, verlässt den Wizard
+(ein Balken füllt sich und der Footer-Hinweis sagt "2 Sekunden halten: Beenden"). Solange das Pad noch keine Zuordnung
+hat, genügt es, einen beliebigen Button 2 Sekunden zu halten ("Beliebigen Button 2 Sekunden halten: Beenden"). Ein kurzer Druck wird normal
 zugeordnet. Auf einer Tastatur stehen Esc / Space / Enter für POWER / RESET / OPEN ein. Am Ende wird die neue
 Zuordnung zum Test hinzugefügt und OPEN speichert es unter einem Namen Ihrer Wahl; der Launcher lädt es von dann
 an.
