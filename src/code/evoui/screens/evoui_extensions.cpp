@@ -156,7 +156,18 @@ void GuiExtensions::render() {
         const int textX = panel.x + RowInset + 8 + IconSize + 16;
         const ableem::Texture &icon = icons[rows[i]];
         if (icon.valid()) {
-            ableem::Rect dst(panel.x + RowInset + 8, rowY + (RowHeight - IconSize) / 2, IconSize, IconSize);
+            const ableem::Size iconSize = icon.size();
+            int w = IconSize, h = IconSize;
+            if (iconSize.w > 0 && iconSize.h > 0) {
+                if (iconSize.w >= iconSize.h) {
+                    w = IconSize;
+                    h = max(1, IconSize * iconSize.h / iconSize.w);
+                } else {
+                    h = IconSize;
+                    w = max(1, IconSize * iconSize.w / iconSize.h);
+                }
+            }
+            ableem::Rect dst(panel.x + RowInset + 8 + (IconSize - w) / 2, rowY + (RowHeight - h) / 2, w, h);
             renderer.copy(icon, nullptr, &dst);
         }
         const string reason = reasonFor(e, networkUp);
