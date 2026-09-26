@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -59,6 +59,7 @@ Controllers=Kontrolery
 Copy=Kopiuj
 Core:=Rdzeń:
 Cores=Rdzenie
+could not be loaded - see Extensions=nie dało się załadować - zobacz Rozszerzenia
 Cover Style:=Styl Okładek:
 Crash logs:=Logi awarii:
 Create, rename or manage memory card sets=Twórz, zmieniaj nazwę lub zarządzaj zestawami kart pamięci
@@ -160,8 +161,11 @@ Interface=Interfejs
 INTERNAL=WEWNĘTRZNA
 Internal=Wewnętrzna
 Internal Games=Wewnętrzne Gry
+is built for a different AutoBleem - update it=jest zbudowane dla innego AutoBleem - zaktualizuj je
 is disabled - see Extensions=jest wyłączone - zobacz Rozszerzenia
 is not available on this system=nie jest dostępne w tym systemie
+is not built for this system=nie jest zbudowane dla tego systemu
+is switched off - enable it in Extensions=jest wyłączone - włącz je w Rozszerzeniach
 It could not be loaded=Nie udało się go wczytać
 Keep logs on the stick:=Zachowuj logi na pendrivie:
 Kernel=Jądro

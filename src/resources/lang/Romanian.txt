@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -59,6 +59,7 @@ Controllers=Controlere
 Copy=Copiaza
 Core:=Core:
 Cores=Nuclee
+could not be loaded - see Extensions=nu a putut fi încărcată - vezi Extensii
 Cover Style:=Stil pentru Cover:
 Crash logs:=Jurnale eroare:
 Create, rename or manage memory card sets=Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
@@ -160,8 +161,11 @@ Interface=Interfață
 INTERNAL=INTERN
 Internal=Intern
 Internal Games=Jocuri Interne
+is built for a different AutoBleem - update it=este construită pentru alt AutoBleem - actualizeaz-o
 is disabled - see Extensions=este dezactivată - vezi Extensii
 is not available on this system=nu este disponibilă pe acest sistem
+is not built for this system=nu este construită pentru acest sistem
+is switched off - enable it in Extensions=este oprită - pornește-o din Extensii
 It could not be loaded=Nu a putut fi încărcată
 Keep logs on the stick:=Păstrează jurnalele pe stick:
 Kernel=Kernel

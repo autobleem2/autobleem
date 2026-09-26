@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -59,6 +59,7 @@ Controllers=Manètas
 Copy=Copiar
 Core:=Core:
 Cores=Còrs
+could not be loaded - see Extensions=a pas pogut èsser cargada - vejatz Extensions
 Cover Style:=Estil cobèrtura :
 Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
@@ -160,8 +161,11 @@ Interface=Interfàcia
 INTERNAL=INTÈRNA
 Internal=Intèrna
 Internal Games=Jòcs intèrnes
+is built for a different AutoBleem - update it=es bastida per un autre AutoBleem - metètz-la a jorn
 is disabled - see Extensions=es desactivada - vejatz Extensions
 is not available on this system=es pas disponibla sus aqueste sistèma
+is not built for this system=es pas bastida per aqueste sistèma
+is switched off - enable it in Extensions=es desactivada - activatz-la dins Extensions
 It could not be loaded=Se podiá pas cargar
 Keep logs on the stick:=Gardar los jornals sus la clau :
 Kernel=Nucli

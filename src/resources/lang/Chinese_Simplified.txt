@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -59,6 +59,7 @@ Controllers=控制器
 Copy=复制
 Core:=核心：
 Cores=核心数
+could not be loaded - see Extensions=无法加载 - 请查看扩展
 Cover Style:=封面样式：
 Crash logs:=崩溃日志：
 Create, rename or manage memory card sets=创建、重命名或管理记忆卡组
@@ -160,8 +161,11 @@ Interface=界面
 INTERNAL=内置
 Internal=内置
 Internal Games=内置游戏
+is built for a different AutoBleem - update it=是为其他版本的 AutoBleem 构建的 - 请更新
 is disabled - see Extensions=已被禁用 - 请查看扩展
 is not available on this system=在此系统上不可用
+is not built for this system=不是为此系统构建的
+is switched off - enable it in Extensions=已关闭 - 请在扩展中启用
 It could not be loaded=无法加载
 Keep logs on the stick:=在U盘上保留日志：
 Kernel=内核

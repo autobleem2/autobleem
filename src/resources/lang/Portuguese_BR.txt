@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -59,6 +59,7 @@ Controllers=Controles
 Copy=Copiar
 Core:=Core:
 Cores=Núcleos
+could not be loaded - see Extensions=não pôde ser carregada - veja Extensões
 Cover Style:=Estilo da Capa:
 Crash logs:=Logs da falha:
 Create, rename or manage memory card sets=Crie, renomeie ou gerencie conjuntos de cartões de memória
@@ -160,8 +161,11 @@ Interface=Interface
 INTERNAL=INTERNO
 Internal=Interno
 Internal Games=Jogos Internos
+is built for a different AutoBleem - update it=foi feita para outro AutoBleem - atualize-a
 is disabled - see Extensions=está desativada - veja Extensões
 is not available on this system=não está disponível neste sistema
+is not built for this system=não foi feita para este sistema
+is switched off - enable it in Extensions=está desligada - ative-a em Extensões
 It could not be loaded=Não foi possível carregá-la
 Keep logs on the stick:=Manter os logs no pendrive:
 Kernel=Kernel

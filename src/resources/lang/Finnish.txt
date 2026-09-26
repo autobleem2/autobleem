@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -59,6 +59,7 @@ Controllers=Ohjaimet
 Copy=Kopioi
 Core:=Ydin:
 Cores=Ytimet
+could not be loaded - see Extensions=ei voitu ladata - katso Laajennukset
 Cover Style:=Kannen tyyli:
 Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
@@ -160,8 +161,11 @@ Interface=Käyttöliittymä
 INTERNAL=SISÄINEN
 Internal=Sisäinen
 Internal Games=Sisäiset Pelit
+is built for a different AutoBleem - update it=on tehty eri AutoBleemille - päivitä se
 is disabled - see Extensions=on poistettu käytöstä - katso Laajennukset
 is not available on this system=ei ole käytettävissä tässä järjestelmässä
+is not built for this system=ei ole tehty tälle järjestelmälle
+is switched off - enable it in Extensions=on pois päältä - ota se käyttöön Laajennuksissa
 It could not be loaded=Sitä ei voitu ladata
 Keep logs on the stick:=Säilytä lokit tikulla:
 Kernel=Ydin

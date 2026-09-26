@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -59,6 +59,7 @@ Controllers=Ovladače
 Copy=Kopírovat
 Core:=Jádro:
 Cores=Jádra
+could not be loaded - see Extensions=nelze načíst - viz Rozšíření
 Cover Style:=Styl obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvořit, přejmenovat nebo spravovat sady paměťových karet
@@ -160,8 +161,11 @@ Interface=Rozhraní
 INTERNAL=INTERNÍ
 Internal=Interní
 Internal Games=Interní hry
+is built for a different AutoBleem - update it=je sestaveno pro jiný AutoBleem - aktualizujte jej
 is disabled - see Extensions=je vypnuto - viz Rozšíření
 is not available on this system=není v tomto systému k dispozici
+is not built for this system=není sestaveno pro tento systém
+is switched off - enable it in Extensions=je vypnuto - zapněte jej v Rozšířeních
 It could not be loaded=Nelze načíst
 Keep logs on the stick:=Uchovávat logy na disku:
 Kernel=Jádro

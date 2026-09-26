@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -59,6 +59,7 @@ Controllers=Controllers
 Copy=Kopiëren
 Core:=Core:
 Cores=Kernen
+could not be loaded - see Extensions=kon niet worden geladen - zie Extensies
 Cover Style:=Cover stijl:
 Crash logs:=Crashlogs:
 Create, rename or manage memory card sets=Memory card-sets aanmaken, hernoemen of beheren
@@ -160,8 +161,11 @@ Interface=Interface
 INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interne games
+is built for a different AutoBleem - update it=is gebouwd voor een andere AutoBleem - werk hem bij
 is disabled - see Extensions=is uitgeschakeld - zie Extensies
 is not available on this system=is niet beschikbaar op dit systeem
+is not built for this system=is niet gebouwd voor dit systeem
+is switched off - enable it in Extensions=staat uit - zet hem aan bij Extensies
 It could not be loaded=Kon niet worden geladen
 Keep logs on the stick:=Logbestanden op de stick bewaren:
 Kernel=Kernel

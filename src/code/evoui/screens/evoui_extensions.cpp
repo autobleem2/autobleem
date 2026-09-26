@@ -83,6 +83,16 @@ void GuiExtensions::init() {
     selected = 0;
     firstVisible = 0;
     chosen.clear();
+    // opened at one (Network & Controllers greyed: the extension providing it): the cursor on its row,
+    // scrolled into view
+    for (int i = 0; i < count(); i++) {
+        if (rows[i] != HeadingRow && extensionAt(i).name == select) {
+            selected = i;
+            while (selected >= firstVisible + visibleRows())
+                firstVisible++;
+            break;
+        }
+    }
 }
 
 //*******************************

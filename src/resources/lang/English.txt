@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -59,6 +59,7 @@ Controllers=Controllers
 Copy=Copy
 Core:=Core:
 Cores=Cores
+could not be loaded - see Extensions=could not be loaded - see Extensions
 Cover Style:=Cover Style:
 Crash logs:=Crash logs:
 Create, rename or manage memory card sets=Create, rename or manage memory card sets
@@ -160,8 +161,11 @@ Interface=Interface
 INTERNAL=INTERNAL
 Internal=Internal
 Internal Games=Internal Games
+is built for a different AutoBleem - update it=is built for a different AutoBleem - update it
 is disabled - see Extensions=is disabled - see Extensions
 is not available on this system=is not available on this system
+is not built for this system=is not built for this system
+is switched off - enable it in Extensions=is switched off - enable it in Extensions
 It could not be loaded=It could not be loaded
 Keep logs on the stick:=Keep logs on the stick:
 Kernel=Kernel

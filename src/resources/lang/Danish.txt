@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -59,6 +59,7 @@ Controllers=Controllere
 Copy=Kopiér
 Core:=Core:
 Cores=Kerner
+could not be loaded - see Extensions=kunne ikke indlæses - se Udvidelser
 Cover Style:=Cover-stil:
 Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
@@ -160,8 +161,11 @@ Interface=Grænseflade
 INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interne spil
+is built for a different AutoBleem - update it=er bygget til en anden AutoBleem - opdater den
 is disabled - see Extensions=er slået fra - se Udvidelser
 is not available on this system=er ikke tilgængelig på dette system
+is not built for this system=er ikke bygget til dette system
+is switched off - enable it in Extensions=er slået fra - slå den til under Udvidelser
 It could not be loaded=Den kunne ikke indlæses
 Keep logs on the stick:=Behold logfiler på USB-nøglen:
 Kernel=Kerne

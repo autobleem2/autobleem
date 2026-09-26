@@ -30,6 +30,7 @@ public:
 
     ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
     std::string chosen;         // the extension to run; "" = none (Circle)
+    std::string select;         // the extension the cursor starts on; "" = the first row
 
     // why an extension cannot run now, as the row shows it; "" = it can
     static std::string reasonFor(const ExtensionInfo &extension, bool networkUp);

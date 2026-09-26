@@ -59,11 +59,19 @@ void GuiSystemMenu::init() {
     const string rescanWhat = _("Look for new, changed or removed games");
     const string networkWhat = _("Wi-Fi, Bluetooth pairing and controller mapping");
 
+    // greyed when the extension providing it is installed but cannot run: the description says why
+    auto addNetwork = [&]() {
+        if (!networkProvided)
+            return;
+        addItem(SystemMenuAction::Network, "Network & Controllers", _("Network & Controllers"),
+                networkUnavailable.empty() ? networkWhat : networkUnavailable);
+        rows.back().greyed = !networkUnavailable.empty();
+    };
+
     if (kind == Kind::Quick) {
         addItem(SystemMenuAction::RescanGames, "Re-Scan Games", _("Re-Scan Games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
-        if (networkProvided)
-            addItem(SystemMenuAction::Network, "Network & Controllers", _("Network & Controllers"), networkWhat);
+        addNetwork();
         addItem(SystemMenuAction::SystemMenu, "System menu...", _("System menu..."),
                 _("Everything else: Options, Game Manager, Power Off and more"));
     } else {
@@ -80,8 +88,7 @@ void GuiSystemMenu::init() {
 
         addHeading(_("System"));
         addItem(SystemMenuAction::Options, "Options", _("Options"), _("Customize AutoBleem settings"));
-        if (networkProvided)
-            addItem(SystemMenuAction::Network, "Network & Controllers", _("Network & Controllers"), networkWhat);
+        addNetwork();
         addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
                 _("Controller and system information"));
 #ifdef AB_ONLINE_UPDATE
@@ -207,6 +214,8 @@ void GuiSystemMenu::render() {
             if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
                 gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
                                                  rowY + (h - noteFont.lineHeight()) / 2, style.hint, XALIGN_RIGHT);
+            if (row.greyed)
+                style.disabled(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
         }
         rowY += h;
     }

@@ -59,7 +59,10 @@ public:
     bool updateAvailable = false;             // shown as a note on the Software Update row
     bool scanInProgress = false;              // shown as a note on the Re-Scan row, not a disabled state
     bool networkProvided = false;             // an extension provides "network": the Network & Controllers row
-    ableem::Texture background;               // the launcher's background, drawn dimmed under the panel
+    // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
+    // the row is greyed with this as its description, still selectable (the caller opens the Extensions list)
+    std::string networkUnavailable;
+    ableem::Texture background; // the launcher's background, drawn dimmed under the panel
 
     SystemMenuAction result = SystemMenuAction::None;
 
@@ -68,6 +71,7 @@ public:
 private:
     struct Row {
         bool heading = false;
+        bool greyed = false; // drawn over with the disabled-row style, still selectable
         SystemMenuAction action = SystemMenuAction::None;
         std::string key;   // the untranslated title: what tools/ab_drive.py's `menu "<title>"` matches
         std::string title; // translated

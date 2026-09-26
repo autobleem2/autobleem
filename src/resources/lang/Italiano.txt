@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -59,6 +59,7 @@ Controllers=Controller
 Copy=Copia
 Core:=Core:
 Cores=Core
+could not be loaded - see Extensions=non è stata caricata - vedi Estensioni
 Cover Style:=Stile delle Cover:
 Crash logs:=Log del crash:
 Create, rename or manage memory card sets=Crea, rinomina o gestisci i set di memory card
@@ -160,8 +161,11 @@ Interface=Interfaccia
 INTERNAL=INTERNO
 Internal=Interno
 Internal Games=Giochi Interni
+is built for a different AutoBleem - update it=è compilata per un altro AutoBleem - aggiornala
 is disabled - see Extensions=è disattivata - vedi Estensioni
 is not available on this system=non è disponibile su questo sistema
+is not built for this system=non è compilata per questo sistema
+is switched off - enable it in Extensions=è disattivata - attivala in Estensioni
 It could not be loaded=Impossibile caricarla
 Keep logs on the stick:=Conserva i log sulla chiavetta:
 Kernel=Kernel

@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -59,6 +59,7 @@ Controllers=Manettes
 Copy=Copier
 Core:=Core :
 Cores=Cœurs
+could not be loaded - see Extensions=n'a pas pu être chargée - voir Extensions
 Cover Style:=Style de jaquette :
 Crash logs:=Journaux du plantage :
 Create, rename or manage memory card sets=Créer, renommer ou gérer des jeux de cartes mémoire
@@ -160,8 +161,11 @@ Interface=Interface
 INTERNAL=INTERNE
 Internal=Interne
 Internal Games=Jeux internes
+is built for a different AutoBleem - update it=est conçue pour un autre AutoBleem - mettez-la à jour
 is disabled - see Extensions=est désactivée - voir Extensions
 is not available on this system=n'est pas disponible sur ce système
+is not built for this system=n'est pas conçue pour ce système
+is switched off - enable it in Extensions=est désactivée - activez-la dans Extensions
 It could not be loaded=Impossible de la charger
 Keep logs on the stick:=Garder les journaux sur la clé :
 Kernel=Noyau

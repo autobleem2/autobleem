@@ -111,6 +111,10 @@ public:
     void loop_openOptions();
     // an extension provides the "network" entry here: the Network & Controllers item shows
     bool networkProvided();
+    // one does, but cannot run (switched off, another AutoBleem, not built for this system): why, as the
+    // greyed item's description ("PSC-Bios is switched off - enable it in Extensions"), and which one - the
+    // item then opens the Extensions list at it. "" when a provider can run, or none is installed
+    std::string networkUnavailable(std::string *extension = nullptr);
     // an extension run from a menu: by name, or at `entry` by whichever provides it (name ""); the refusal
     // reported on the notification line
     void runExtensionEntry(const std::string &name, const std::string &entry);
@@ -175,7 +179,8 @@ public:
     NotificationBubble extensionBubble;
     void applyExtensionRequests();
     // the system menu's Extensions item: the list, then the chosen one run
-    void loop_openExtensions();
+    // select: the extension the list opens at ("" = the first)
+    void loop_openExtensions(const std::string &select = "");
     // the system menu's Scanner processors item: the sequences sorted, a scan when anything changed
     void loop_openProcessors();
 

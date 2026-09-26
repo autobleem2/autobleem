@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -59,6 +59,7 @@ Controllers=Kumandalar
 Copy=Kopyala
 Core:=Çekirdek:
 Cores=Çekirdekler
+could not be loaded - see Extensions=yüklenemedi - Eklentiler'e bakın
 Cover Style:=Kapak Stili:
 Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
@@ -160,8 +161,11 @@ Interface=Arayüz
 INTERNAL=DAHILİ
 Internal=Dahili
 Internal Games=Dahili Oyunlar
+is built for a different AutoBleem - update it=farklı bir AutoBleem için derlenmiş - güncelleyin
 is disabled - see Extensions=devre dışı - Eklentiler'e bakın
 is not available on this system=bu sistemde kullanılamıyor
+is not built for this system=bu sistem için derlenmemiş
+is switched off - enable it in Extensions=kapalı - Eklentiler'den açın
 It could not be loaded=Yüklenemedi
 Keep logs on the stick:=Günlükleri USB bellekte tut:
 Kernel=Çekirdek

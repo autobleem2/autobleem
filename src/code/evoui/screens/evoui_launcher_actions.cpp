@@ -448,7 +448,8 @@ void GuiLauncher::loop_openSystemMenu() {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
         systemMenu.scanInProgress = app.scans().scanning();
-        systemMenu.networkProvided = networkProvided();
+        systemMenu.networkUnavailable = networkUnavailable();
+        systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
         systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
@@ -476,7 +477,8 @@ void GuiLauncher::loop_openQuickMenu() {
         GuiSystemMenu quickMenu(*gui);
         quickMenu.kind = GuiSystemMenu::Kind::Quick;
         quickMenu.scanInProgress = app.scans().scanning();
-        quickMenu.networkProvided = networkProvided();
+        quickMenu.networkUnavailable = networkUnavailable();
+        quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
         if (background != nullptr)
             quickMenu.background = background->tex;
         quickMenu.show();
@@ -496,6 +498,30 @@ void GuiLauncher::loop_openQuickMenu() {
 bool GuiLauncher::networkProvided() {
     app.extensionCatalog().scan();
     return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
+}
+
+//*******************************
+// GuiLauncher::networkUnavailable
+//*******************************
+// the owner's rule (2026-09-26): an installed provider that cannot run keeps the item on the menu, greyed,
+// saying why - hidden only when nothing provides it at all
+string GuiLauncher::networkUnavailable(string *extension) {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info = app.extensionCatalog().findUnavailableProvider(NetworkEntry);
+    if (info == nullptr)
+        return "";
+    if (extension != nullptr)
+        *extension = info->name;
+    switch (info->problem()) {
+    case ExtensionProblem::Disabled:
+        return info->title + " " + _("is switched off - enable it in Extensions");
+    case ExtensionProblem::NotBuiltForThisSystem:
+        return info->title + " " + _("is not built for this system");
+    case ExtensionProblem::WrongAbi:
+        return info->title + " " + _("is built for a different AutoBleem - update it");
+    default:
+        return info->title + " " + _("could not be loaded - see Extensions");
+    }
 }
 
 //*******************************
@@ -556,9 +582,15 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         break;
     }
 
-    case SystemMenuAction::Network:
-        runExtensionEntry("", NetworkEntry);
+    case SystemMenuAction::Network: {
+        // greyed (installed, cannot run): the Extensions list at it, where it can be switched on
+        string unavailable;
+        if (!networkUnavailable(&unavailable).empty())
+            loop_openExtensions(unavailable);
+        else
+            runExtensionEntry("", NetworkEntry);
         break;
+    }
 
     case SystemMenuAction::Store:
         runExtensionEntry(StoreExtension, "");
@@ -634,12 +666,13 @@ void GuiLauncher::loop_openProcessors() {
 // the Extensions list (every folder in Extensions/, read again each time it opens), then the chosen one's
 // run(): its own screens on our Gui, back here when it is done. A refusal is shown on the row already; what
 // comes back from run() is reported on the notification line.
-void GuiLauncher::loop_openExtensions() {
+void GuiLauncher::loop_openExtensions(const string &select) {
     app.extensionCatalog().scan();
     const bool networkUp = System::hasDefaultRoute();
     string chosen;
     {
         GuiExtensions list(*gui, app.extensionCatalog(), networkUp);
+        list.select = select;
         if (background != nullptr)
             list.background = background->tex;
         list.show();
@@ -672,6 +705,10 @@ void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
     const string title = info->title;
     const string extension = info->name; // info is the catalog's: the run may scan it again
     const bool networkUp = System::hasDefaultRoute();
+    // the launcher's own frame, for an extension's screens to draw over (GuiActionMenu::background =
+    // renderer().lastCapture()) - the bare launcher, not the menu the run was picked from
+    renderer.captureNextFrame();
+    render();
     const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
                                                         : app.extensions().runEntry(extension, entry, networkUp);
     forgetHeldModifiers(); // its screens ran their own loops

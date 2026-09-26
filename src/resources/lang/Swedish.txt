@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -59,6 +59,7 @@ Controllers=Handkontroller
 Copy=Kopiera
 Core:=Core:
 Cores=Kärnor
+could not be loaded - see Extensions=kunde inte laddas - se Tillägg
 Cover Style:=Omslagsstil:
 Crash logs:=Kraschloggar:
 Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
@@ -160,8 +161,11 @@ Interface=Gränssnitt
 INTERNAL=INTERN
 Internal=Intern
 Internal Games=Interna spel
+is built for a different AutoBleem - update it=är byggt för en annan AutoBleem - uppdatera det
 is disabled - see Extensions=är avstängt - se Tillägg
 is not available on this system=är inte tillgängligt på det här systemet
+is not built for this system=är inte byggt för det här systemet
+is switched off - enable it in Extensions=är avstängt - slå på det under Tillägg
 It could not be loaded=Den kunde inte läsas in
 Keep logs on the stick:=Behåll loggar på minnet:
 Kernel=Kärna

@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 384
+# Untranslated: 0 / Total: 388
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -59,6 +59,7 @@ Controllers=Mandos
 Copy=Copiar
 Core:=Núcleo:
 Cores=Núcleos
+could not be loaded - see Extensions=no se pudo cargar - ver Extensiones
 Cover Style:=Estilo de Caratulas:
 Crash logs:=Registros del fallo:
 Create, rename or manage memory card sets=Crea, renombra o administra sets de memory cards
@@ -160,8 +161,11 @@ Interface=Interfaz
 INTERNAL=INTERNO
 Internal=Interno
 Internal Games=Juegos Internos
+is built for a different AutoBleem - update it=está hecha para otro AutoBleem - actualízala
 is disabled - see Extensions=está desactivada - ver Extensiones
 is not available on this system=no está disponible en este sistema
+is not built for this system=no está hecha para este sistema
+is switched off - enable it in Extensions=está desactivada - actívala en Extensiones
 It could not be loaded=No se pudo cargar
 Keep logs on the stick:=Conservar los registros en el USB:
 Kernel=Kernel
