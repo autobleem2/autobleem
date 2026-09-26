@@ -4,14 +4,11 @@ A game launcher and front-end for the **PlayStation Classic** (and the **Raspber
 
 ## Platforms
 
-- **PlayStation Classic** - the primary target
-- **Raspberry Pi** (32-bit and 64-bit) - as an appliance on the SD card
-- **PC / Linux** - development and testing builds
-- **Windows** - development build with MSYS2; a standalone Windows product is assembled by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance)
+**Products**: PlayStation Classic (`psc`), Raspberry Pi 32-bit and 64-bit (`rpi`, `rpi64` - appliances on the SD card), 32-bit Debian PC USB stick (`pcusb`), Windows (`win` - NSIS installer). Development builds on Linux/macOS (`make_sys.sh`) and Windows MSYS2 (`make_win.sh`). (CLAUDE.md "The platform model", line 1115-1130)
 
 ## Getting started
 
-Ready-to-use packages for every platform are assembled and released by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance). Extract a release package to your USB stick or SD card (FAT32 or exFAT), drop PS1 game folders into `Games/`, plug it in, and the launcher starts automatically.
+Ready-to-use packages for every platform are assembled and released by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance). Extract a release package to your USB stick (FAT32 on a stock PlayStation Classic; exFAT requires the AutoBleem kernel) or SD card on a Raspberry Pi, drop PS1 game folders into `Games/`, and plug it in. On the console, the exploit payload in the stick's `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` folder boots AutoBleem automatically. (CLAUDE.md line 1474, line 1065)
 
 ### Stick layout
 
@@ -22,13 +19,20 @@ Autobleem/bin/emu/         pcsx-ab (PS1 emulator)
 Autobleem/bin/emunxt/      pcsx-abnxt (PS1 emulator, next version)
 Autobleem/bin/db/          regional cover art databases
 Autobleem/rc/              boot and launch scripts
+Autobleem/lib/libs.tar.gz  shared SDL2 libraries (unpacked to /tmp/lib at boot)
 Games/                     your PS1 game folders (one folder per game)
-  Resident Evil.bin, .cue  (or .chd, .pbp)
-  Silent Hill (Disc 1)/    (merged into one game on first scan)
-RetroArch/                 RetroArch installation and ROMs for other systems
+  !SaveStates/             save-state slots per game
+  !MemCards/               shared memory cards
+Apps/                      third-party apps (ABFlashKit, etc.)
+Extensions/                launcher extensions (PSC-Bios, Store, etc.)
+RetroArch/bin/             RetroArch binary, cores, configuration
+RetroArch/bios/            BIOS files for cores
+RetroArch/roms/            other systems' games
 System/Databases/          game metadata (regional.db, internal.db)
+System/Logs/               launcher and system logs
 Themes/                    UI themes (folders or .zip)
 ```
+(CLAUDE.md "Runtime layout on the console", line 1060-1085)
 
 ## Building
 
@@ -43,14 +47,16 @@ See `CLAUDE.md` for detailed build information, platform-specific macros, and co
 
 ## Architecture
 
-The launcher is built from six linked libraries, each with no dependencies on the ones above it:
+The launcher is built from libraries that link only the one below them:
 
-- **`ableem_engine`** - SDL-free portable engine: filesystem, ini/cfg files, SQLite game database, metadata from RetroArch's `.rdb`, cover art from thumbnails, disc images (bin/cue, PBP, CHD via libchdr), game scanner, RetroArch playlists, themes as JSON, zip read/write
-- **`ableem`** - SDL2 UI layer: window, renderer with perspective cover-flow, textures, fonts, audio, input (pads, keyboard-as-pad)
-- **`ab_core`** - AutoBleem's model and services (no SDL): game library, queries, settings, memory cards, resume points, launching, the background scan
-- **`ab_classic`** - Theme-aware classic UI: launcher singleton, text rendering, theme assets, splash/confirm/keyboard screens
-- **`ab_ui`** - Game-aware classic screens: Options, game editors, Game Manager, memory cards
-- **`ab_evoui`** - EvolutionUI: the carousel and the launcher (the primary screen)
+- **`ableem_engine`** - SDL-free portable engine: filesystem, ini/cfg files, SQLite game database, metadata from RetroArch's `.rdb`, cover art from thumbnails, disc images (bin/cue, PBP, CHD via libchdr), game scanner, RetroArch playlists, themes as JSON, zip read/write (in `autobleem-core`)
+- **`ableem`** - SDL2 UI layer: window, renderer, textures, fonts, audio, input; links `ableem_engine` (in `autobleem-core`)
+- **`ab_core`** - AutoBleem's model and services (no SDL): game queries, settings, memory cards, launching; links `ableem_engine` (in `autobleem-core`)
+- **`ab_classic`** - Theme-aware classic UI: `Gui` singleton, text rendering, theme assets, splash/confirm/keyboard screens; links `ab_core` + `ableem` (in `autobleem-core`)
+- **`ab_ui`** - Game-aware classic screens (Options, editors, Game Manager); links `ab_classic` (in this repo)
+- **`ab_evoui`** - EvolutionUI: carousel and launcher; links `ab_ui` (in this repo)
+
+(CLAUDE.md "Where the code lives", line 926-949)
 
 ## Features
 
@@ -68,24 +74,24 @@ The launcher is built from six linked libraries, each with no dependencies on th
 
 ## Code structure
 
-```
-lib_ableem/             SDL-free engine + SDL UI library (vendored: sqlite, json, miniz, plog, libchdr)
-src/code/
-  core/                 model + services (ab_core library)
-  gui/                  classic UI (ab_classic + ab_ui libraries)
-  evoui/                launcher UI (ab_evoui library)
-  app.*                 app model + main entry point
-  autobleem.*           application class
-  main.cpp
-src/resources/          bundled themes, languages, fonts, platform configs
-apps/abpad/             virtual gamepad mapper for third-party Apps
-payload/                console USB tree: boot scripts, themes, rc glue
-payload_linux/          Raspberry Pi installer package
-```
+**In autobleem-core submodule**:
+- `lib_ableem/` - SDL-free engine + SDL UI library (vendored: sqlite, json, miniz, plog, libchdr)
+- `src/code/core/` - model + services (ab_core library)
+- `src/code/app_base.*` and `src/code/gui/` (partial) - classic UI framework (ab_classic library)
 
-**Shared code**: This repo uses [autobleem-core](https://github.com/autobleem2/autobleem-core) as a submodule (library headers, cmake files, core tests). Clone with `git clone --recurse-submodules`.
+**In this repository**:
+- `src/code/app.*` - app model and `main.cpp` entry point
+- `src/code/gui/` (game-aware screens) and `src/code/evoui/` - launcher UI (ab_ui and ab_evoui libraries)
+- `src/resources/` - themes, languages, fonts, platform configs
+- `apps/abpad/` - virtual gamepad mapper for third-party Apps
+- `payload/` and `payload_linux/` - console USB tree and Pi installer package
 
-**Console tools**: PSC-Bios (WiFi, timezone, gamepad wizard) and ABFlashKit (kernel flasher) are in [autobleem-console-tools](https://github.com/autobleem2/autobleem-console-tools). UpdateRoms and the installers are in [autobleem-pc-tools](https://github.com/autobleem2/autobleem-pc-tools).
+Clone with `git clone --recurse-submodules`. (CLAUDE.md "Where the code lives", line 926-949)
+
+**Separate repositories**:
+- [autobleem-console-tools](https://github.com/autobleem2/autobleem-console-tools): PSC-Bios, ABFlashKit
+- [autobleem-pc-tools](https://github.com/autobleem2/autobleem-pc-tools): UpdateRoms, installers
+- [autobleem-appliance](https://github.com/autobleem2/autobleem-appliance): assembles packages from all repos
 
 ## Runtime
 
