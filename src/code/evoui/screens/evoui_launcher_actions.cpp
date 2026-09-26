@@ -60,7 +60,7 @@ void GuiLauncher::loop_chooseSet() {
         return;
 
     selection = picker.selection;
-    switchSet(selection.set, true);
+    switchSet(selection.set, false); // the icon row follows the set: an empty one leaves settings alone
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();

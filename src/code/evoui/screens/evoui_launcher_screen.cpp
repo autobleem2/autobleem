@@ -36,6 +36,11 @@ void GuiLauncher::updateMeta(bool withSnap) {
         string last_played{""};
         meta->updateTexts(gameName, publisher, year, serial, region, players, internal, hd, locked, discs, favorite,
                           foreign, play_using_ra, app, last_played, fgColor);
+        // no game: the row keeps settings alone, and no screenshot of the last set's game stays up
+        if (menu != nullptr)
+            showOptions();
+        if (withSnap)
+            loadSnap();
         return;
     }
     if (carousel.selectedIsValid())
@@ -891,6 +896,8 @@ void GuiLauncher::showOptions() {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
         }
     }
+    if (!enabled[3])
+        menu->resume = ableem::Texture(); // no resume icon, no picture of another game's resume point
     bool same = true;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);
