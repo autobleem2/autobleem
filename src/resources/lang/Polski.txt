@@ -1,15 +1,17 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
 About AutoBleem=O programie AutoBleem
 Address=Adres
+All apps=Wszystkie Aplikacje
 All Games=Wszystkie Gry
 An update is available=Dostępna jest aktualizacja
 Applying settings...=Stosowanie ustawień...
 Apps=Aplikacje
+apps=aplikacje
 Architecture=Architektura
 Are you sure you want to delete=Czy na pewno chcesz usunąć
 Are you sure you want to flush all covers?=Czy na pewno chcesz wyczyścić wszystkie okładki?
@@ -90,6 +92,7 @@ Emulation=Emulacja
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=MENU kofiguracji emulatora
+Emulators=Emulatory
 Enable=Włącz
 Enter=Wejdź
 Enter new card name=Podaj nową nazwę karty
@@ -168,6 +171,7 @@ Localization support=Tłumaczenie
 Lock data:=Blokuj zmiany:
 Logs=Logi
 Look for new, changed or removed games=Wyszukaj nowe, zmienione lub usunięte gry
+Media=Multimedia
 Memory=Pamięć
 MEMORY CARD=KARTA PAMIĘCI
 Memory Card Manager=Menadżer Kart Pamięci
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=UUPS! Wysypało grę. Punkt wzno
 Open Retroarch Menu=Otwiera Menu Retroarch
 Operating system=System operacyjny
 Options=Opcje
+Other=Inne
 Page=Strona
 pcsx.cfg file not found=Nie znaleziono pliku pcsx.cfg
 Persist RetroArch config:=Zachowuj konfigurację RetroArch:
@@ -319,6 +324,7 @@ Third-party extensions=Rozszerzenia innych firm
 This game is protected by its PSN licence and cannot be started=Ta gra jest chroniona licencją PSN i nie można jej uruchomić
 This version is brought to you by screemer and a friendly robot, Claude.=Tę wersję przygotowali dla Ciebie screemer i przyjazny robot, Claude.
 Title=Tytuł
+Tools=Narzędzia
 Unknown Core (AutoDetect)=Nieznany Rdzeń (AutoDetekcja)
 Unlock=Odblokuj
 Unlock the settings=Odblokuj ustawienia

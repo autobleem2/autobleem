@@ -1,15 +1,17 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
 About AutoBleem=Sobre o AutoBleem
 Address=Endereço
+All apps=Todos os Apps
 All Games=Todos os Jogos
 An update is available=Há uma atualização disponível
 Applying settings...=Aplicando as configurações...
 Apps=Apps
+apps=apps
 Architecture=Arquitetura
 Are you sure you want to delete=Tem certeza que deseja excluir
 Are you sure you want to flush all covers?=Você tem certeza que deseja atualizar todas as capas?
@@ -90,6 +92,7 @@ Emulation=Emulação
 EmulationStation=EmulationStation
 Emulator=Emulador
 Emulator config MENU=MENU de Configurações do Emulador
+Emulators=Emuladores
 Enable=Ativar
 Enter=Confirmar
 Enter new card name=Inserir nome do novo cartão
@@ -168,6 +171,7 @@ Localization support=Suporte à localização
 Lock data:=Trancar dados:
 Logs=Logs
 Look for new, changed or removed games=Procura por jogos novos, alterados ou removidos
+Media=Mídia
 Memory=Memória
 MEMORY CARD=CARTÃO DE MEMÓRIA
 Memory Card Manager=Gerenciador de Cartões de Memória
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=OPA! O jogo travou. Não é poss
 Open Retroarch Menu=Abrir Menu do RetroArch
 Operating system=Sistema operacional
 Options=Opções
+Other=Outros
 Page=Página
 pcsx.cfg file not found=Arquivo pcsx.cfg não encontrado
 Persist RetroArch config:=Manter config. do RetroArch:
@@ -319,6 +324,7 @@ Third-party extensions=Extensões de terceiros
 This game is protected by its PSN licence and cannot be started=Este jogo é protegido pela licença PSN e não pode ser iniciado
 This version is brought to you by screemer and a friendly robot, Claude.=Esta versão é oferecida por screemer e um robô amigável, Claude.
 Title=Título
+Tools=Ferramentas
 Unknown Core (AutoDetect)=Núcleo Desconhecido (Autodetectar)
 Unlock=Desbloquear
 Unlock the settings=Desbloquear as configurações

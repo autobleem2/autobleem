@@ -1,15 +1,17 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
 About AutoBleem=O aplikácii AutoBleem
 Address=Adresa
+All apps=Všetky aplikácie
 All Games=Všetky hry
 An update is available=Je dostupná aktualizácia
 Applying settings...=Aplikujú sa nastavenia...
 Apps=Aplikácie
+apps=aplikácie
 Architecture=Architektúra
 Are you sure you want to delete=Ste si istý, že chcete zmazať
 Are you sure you want to flush all covers?=Naozaj chcete zmazať všetky obaly?
@@ -90,6 +92,7 @@ Emulation=Emulácia
 EmulationStation=EmulationStation
 Emulator=Emulátor
 Emulator config MENU=Menu Emulátora
+Emulators=Emulátory
 Enable=Zapnúť
 Enter=Spustiť
 Enter new card name=Zadajte nový názov karty
@@ -168,6 +171,7 @@ Localization support=Podpora lokalizácie
 Lock data:=Uzamknúť zmeny:
 Logs=Logy
 Look for new, changed or removed games=Vyhľadáť nové, zmenené alebo odstránené hry
+Media=Médiá
 Memory=Pamäť
 MEMORY CARD=PAMÄŤOVÁ KARTA
 Memory Card Manager=Správca pamäťových kariet
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=Och! Hra spadla. Bod obnovy nie 
 Open Retroarch Menu=Otvoriť ponuku Retroarch
 Operating system=Operačný systém
 Options=Nastavenia
+Other=Ostatné
 Page=Strana
 pcsx.cfg file not found=Súbor pcsx.cfg sa nenašiel
 Persist RetroArch config:=Uchovať nastavenia RetroArch:
@@ -319,6 +324,7 @@ Third-party extensions=Rozšírenia tretích strán
 This game is protected by its PSN licence and cannot be started=Táto hra je chránená licenciou PSN a nedá sa spustiť
 This version is brought to you by screemer and a friendly robot, Claude.=Túto verziu vám prinášajú screemer a priateľský robot Claude.
 Title=Názov
+Tools=Nástroje
 Unknown Core (AutoDetect)=Neznáme jadro (AutoDetect)
 Unlock=Odomknúť
 Unlock the settings=Odomknúť nastavenia

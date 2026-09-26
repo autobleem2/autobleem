@@ -1,15 +1,17 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=扫描已在进行中
 About=关于
 About AutoBleem=关于 AutoBleem
 Address=地址
+All apps=所有应用
 All Games=所有游戏
 An update is available=有可用更新
 Applying settings...=正在应用设置...
 Apps=应用
+apps=应用
 Architecture=架构
 Are you sure you want to delete=确定要删除吗
 Are you sure you want to flush all covers?=确定要清除所有封面吗？
@@ -90,6 +92,7 @@ Emulation=模拟
 EmulationStation=EmulationStation
 Emulator=模拟器
 Emulator config MENU=模拟器配置菜单
+Emulators=模拟器
 Enable=启用
 Enter=确定
 Enter new card name=输入新卡名称
@@ -168,6 +171,7 @@ Localization support=本地化支持
 Lock data:=锁定数据：
 Logs=日志
 Look for new, changed or removed games=查找新增、更改或移除的游戏
+Media=媒体
 Memory=内存
 MEMORY CARD=记忆卡
 Memory Card Manager=记忆卡管理器
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=糟糕！游戏崩溃了。存�
 Open Retroarch Menu=打开 RetroArch 菜单
 Operating system=操作系统
 Options=选项
+Other=其他
 Page=页
 pcsx.cfg file not found=找不到pcsx.cfg文件
 Persist RetroArch config:=保存RetroArch配置：
@@ -319,6 +324,7 @@ Third-party extensions=第三方扩展
 This game is protected by its PSN licence and cannot be started=此游戏受 PSN 许可证保护，无法启动
 This version is brought to you by screemer and a friendly robot, Claude.=本版本由 screemer 和一位友好的机器人 Claude 为您带来。
 Title=标题
+Tools=工具
 Unknown Core (AutoDetect)=未知核心（自动检测）
 Unlock=解锁
 Unlock the settings=解锁设置

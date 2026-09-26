@@ -1,15 +1,17 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
 About AutoBleem=A prepaus d'AutoBleem
 Address=Adreça
+All apps=Totas las aplicacions
 All Games=Totes los jòcs
 An update is available=Una mesa a jorn es disponibla
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions
+apps=aplicacions
 Architecture=Arquitectura
 Are you sure you want to delete=Sètz segur que volètz suprimir
 Are you sure you want to flush all covers?=Volètz vertadièrament suprimir totas las cobèrturas ?
@@ -90,6 +92,7 @@ Emulation=Emulacion
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Menú config de l'emulator
+Emulators=Emuladors
 Enable=Activar
 Enter=Dintrar
 Enter new card name=Picatz un nòu nom per la carta
@@ -168,6 +171,7 @@ Localization support=Assisténcia localizacion
 Lock data:=Verrolhar las donadas :
 Logs=Jornals
 Look for new, changed or removed games=Cercar de jòcs novèls, modificats o suprimits
+Media=Mèdia
 Memory=Memòria
 MEMORY CARD=CARTA MEMÒRIA
 Memory Card Manager=Gestionari de carta memòria
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=Ops ! Lo jòc a agut un problèm
 Open Retroarch Menu=Dobrir lo menú RetroArch
 Operating system=Sistèma operatiu
 Options=Opcions
+Other=Autre
 Page=Pagina
 pcsx.cfg file not found=Fichièr pcsx.cfg introbable
 Persist RetroArch config:=Gardar la config RetroArch :
@@ -319,6 +324,7 @@ Third-party extensions=Extensions tèrças
 This game is protected by its PSN licence and cannot be started=Aqueste jòc es protegit per sa licéncia PSN e se pòt pas aviar
 This version is brought to you by screemer and a friendly robot, Claude.=Aquesta version vos es porgida per screemer e un robòt amistós, Claude.
 Title=Títol
+Tools=Espleches
 Unknown Core (AutoDetect)=Còr desconegut (AutoDetect)
 Unlock=Desblocar
 Unlock the settings=Desblocar los paramètres

@@ -1,15 +1,17 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
 About AutoBleem=Despre AutoBleem
 Address=Adresă
+All apps=Toate aplicațiile
 All Games=Toate jocurile
 An update is available=Este disponibilă o actualizare
 Applying settings...=Se aplică setările...
 Apps=Aplicații
+apps=aplicații
 Architecture=Arhitectură
 Are you sure you want to delete=Esti sigur ca vrei sa stergi
 Are you sure you want to flush all covers?=Esti sigur ca vrei sa stergi toate cover-urile?
@@ -90,6 +92,7 @@ Emulation=Emulare
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Meniu de configurare al emulatorului
+Emulators=Emulatoare
 Enable=Activează
 Enter=Aplica
 Enter new card name=Adauga un nume de card nou
@@ -168,6 +171,7 @@ Localization support=Suport localizare
 Lock data:=Restrictioneaza acessul la date:
 Logs=Jurnale
 Look for new, changed or removed games=Cauta jocuri noi, modificate sau eliminate
+Media=Media
 Memory=Memorie
 MEMORY CARD=Card Memorie
 Memory Card Manager=Manager Carduri Memorie
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point
 Open Retroarch Menu=Deschide Meniul RetroArch
 Operating system=Sistem de operare
 Options=Optiuni
+Other=Altele
 Page=Pagina
 pcsx.cfg file not found=Fișierul pcsx.cfg nu a fost găsit
 Persist RetroArch config:=Păstrează config. RetroArch:
@@ -319,6 +324,7 @@ Third-party extensions=Extensii terțe
 This game is protected by its PSN licence and cannot be started=Acest joc este protejat de licenta PSN si nu poate fi pornit
 This version is brought to you by screemer and a friendly robot, Claude.=Această versiune îți este oferită de screemer și de un robot prietenos, Claude.
 Title=Titlu
+Tools=Instrumente
 Unknown Core (AutoDetect)=Nucleu Necunoscut (Autodetectare)
 Unlock=Deblochează
 Unlock the settings=Deblochează setările

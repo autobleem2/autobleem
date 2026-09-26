@@ -1,15 +1,17 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
 About AutoBleem=Om AutoBleem
 Address=Adresse
+All apps=Alle apps
 All Games=Alle spil
 An update is available=En opdatering er tilgængelig
 Applying settings...=Anvender indstillinger...
 Apps=Apps
+apps=apps
 Architecture=Arkitektur
 Are you sure you want to delete=Er du sikker på, du vil slette
 Are you sure you want to flush all covers?=Er du sikker på, at du vil rydde alle covers?
@@ -90,6 +92,7 @@ Emulation=Emulering
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Emulator-konfigurationsmenu
+Emulators=Emulatorer
 Enable=Aktiver
 Enter=Enter
 Enter new card name=Indtast nyt kort navn
@@ -168,6 +171,7 @@ Localization support=Oversættelse
 Lock data:=Lås data:
 Logs=Logfiler
 Look for new, changed or removed games=Søg efter nye, ændrede eller fjernede spil
+Media=Medier
 Memory=Hukommelse
 MEMORY CARD=MEMORY CARD
 Memory Card Manager=Memory Card-manager
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagel
 Open Retroarch Menu=Åbn RetroArch-menu
 Operating system=Styresystem
 Options=Indstillinger
+Other=Andet
 Page=Side
 pcsx.cfg file not found=pcsx.cfg blev ikke fundet
 Persist RetroArch config:=Gem RetroArch-konfiguration:
@@ -319,6 +324,7 @@ Third-party extensions=Tredjepartsudvidelser
 This game is protected by its PSN licence and cannot be started=Dette spil er beskyttet af sin PSN-licens og kan ikke startes
 This version is brought to you by screemer and a friendly robot, Claude.=Denne version er bragt til dig af screemer og en venlig robot, Claude.
 Title=Titel
+Tools=Værktøjer
 Unknown Core (AutoDetect)=Ukendt kerne (Autodetekt)
 Unlock=Lås op
 Unlock the settings=Lås indstillingerne op

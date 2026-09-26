@@ -1,15 +1,17 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
 About AutoBleem=Over AutoBleem
 Address=Adres
+All apps=Alle apps
 All Games=Alle games
 An update is available=Er is een update beschikbaar
 Applying settings...=Instellingen toepassen...
 Apps=Apps
+apps=apps
 Architecture=Architectuur
 Are you sure you want to delete=Weet je zeker dat je wilt verwijderen
 Are you sure you want to flush all covers?=Weet je zeker dat je alle covers wilt wissen?
@@ -90,6 +92,7 @@ Emulation=Emulatie
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Emulator configuratiemenu
+Emulators=Emulators
 Enable=Inschakelen
 Enter=Enter
 Enter new card name=Nieuwe kaart naam
@@ -168,6 +171,7 @@ Localization support=Vertaling
 Lock data:=Lock data:
 Logs=Logbestanden
 Look for new, changed or removed games=Zoek naar nieuwe, gewijzigde of verwijderde games
+Media=Media
 Memory=Geheugen
 MEMORY CARD=MEMORY CARD
 Memory Card Manager=Memory Card beheer
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=OEPS! Game is gecrasht. Hervatti
 Open Retroarch Menu=Open RetroArch menu
 Operating system=Besturingssysteem
 Options=Options
+Other=Overig
 Page=Pagina
 pcsx.cfg file not found=pcsx.cfg niet gevonden
 Persist RetroArch config:=RetroArch-configuratie bewaren:
@@ -319,6 +324,7 @@ Third-party extensions=Extensies van derden
 This game is protected by its PSN licence and cannot be started=Dit spel is beveiligd met zijn PSN-licentie en kan niet worden gestart
 This version is brought to you by screemer and a friendly robot, Claude.=Deze versie wordt je aangeboden door screemer en een vriendelijke robot, Claude.
 Title=Titel
+Tools=Hulpmiddelen
 Unknown Core (AutoDetect)=Onbekende core (AutoDetectie)
 Unlock=Ontgrendelen
 Unlock the settings=Instellingen ontgrendelen

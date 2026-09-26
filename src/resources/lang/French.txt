@@ -1,15 +1,17 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 6 / Total: 348
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
 About AutoBleem=À propos d'AutoBleem
 Address=Adresse
+All apps=Toutes les applications
 All Games=Tous les jeux
 An update is available=Une mise à jour est disponible
 Applying settings...=Application des réglages...
 Apps=Applications
+apps=applications
 Architecture=Architecture
 Are you sure you want to delete=Êtes-vous sûr de vouloir supprimer
 Are you sure you want to flush all covers?=Êtes-vous sûr de vouloir vider toutes les jaquettes ?
@@ -90,6 +92,7 @@ Emulation=Émulation
 EmulationStation=EmulationStation
 Emulator=Émulateur
 Emulator config MENU=Menu de configuration de l'émulateur
+Emulators=Émulateurs
 Enable=Activer
 Enter=Entrée
 Enter new card name=Nouveau nom de la carte
@@ -168,6 +171,7 @@ Localization support=Support de localisation
 Lock data:=Verrouiller les données:
 Logs=Journaux
 Look for new, changed or removed games=Rechercher les jeux nouveaux, modifiés ou supprimés
+Media=Média
 Memory=Mémoire
 MEMORY CARD=Carte mémoire
 Memory Card Manager=Gestionnaire de cartes mémoire
@@ -200,6 +204,7 @@ OOPS! Game crashed. Resume point not available.=OOPS ! Le jeu a planté. Point 
 Open Retroarch Menu=Ouvrir le menu RetroArch
 Operating system=Système d'exploitation
 Options=Options
+Other=Autre
 Page=Page
 pcsx.cfg file not found=Fichier pcsx.cfg introuvable
 Persist RetroArch config:=Conserver la config RetroArch :
@@ -319,6 +324,7 @@ Third-party extensions=Extensions tierces
 This game is protected by its PSN licence and cannot be started=Ce jeu est protégé par sa licence PSN et ne peut pas être lancé
 This version is brought to you by screemer and a friendly robot, Claude.=Cette version vous est offerte par screemer et un sympathique robot, Claude.
 Title=Titre
+Tools=Outils
 Unknown Core (AutoDetect)=Noyau inconnu (Détection auto)
 Unlock=Déverrouiller
 Unlock the settings=Déverrouiller les réglages

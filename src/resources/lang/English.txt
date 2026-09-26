@@ -1,15 +1,17 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 342
+# Untranslated: 0 / Total: 344
 
 A scan is already in progress=A scan is already in progress
 About=About
 About AutoBleem=About AutoBleem
 Address=Address
+All apps=All apps
 All Games=All Games
 An update is available=An update is available
 Applying settings...=Applying settings...
 Apps=Apps
+apps=apps
 Architecture=Architecture
 Are you sure you want to delete=Are you sure you want to delete
 Are you sure you want to flush all covers?=Are you sure you want to flush all covers?
@@ -133,6 +135,10 @@ Game.ini file not found=Game.ini file not found
 Game.ini file not valid=Game.ini file not valid
 Games=Games
 games=games
+Emulators=Emulators
+Media=Media
+Other=Other
+Tools=Tools
 Graphics=Graphics
 Hardware=Hardware
 Hardware Information=Hardware Information
