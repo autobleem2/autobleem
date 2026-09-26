@@ -316,6 +316,11 @@ def main(argv):
         show = '--show' in args
         if '--usb' in args:
             usb = args[args.index('--usb') + 1]
+        # made absolute now, relative to the caller's cwd: start() launches the exe with cwd inside the usb
+        # tree itself (app_dir, several levels down), so a relative --usb (or a relative DEFAULT_USB, were
+        # the caller's cwd not REPO) would be resolved against the wrong directory once passed to Popen and
+        # made the launcher's own argv[1] - the process then can't find its own USB root and exits at once.
+        usb = os.path.abspath(usb)
         tool = args[args.index('--tool') + 1] if '--tool' in args else None
         start(usb, port, show, tool)
         return 0
