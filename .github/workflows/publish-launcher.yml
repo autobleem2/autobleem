@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.t.outputs.json }}
+      full: ${{ steps.t.outputs.full }}
       version: ${{ steps.v.outputs.version }}
     steps:
       - uses: actions/checkout@v7
@@ -47,6 +48,10 @@ jobs:
         run: |
           t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+          # every target built: what may replace the rolling nightly (a partial run would leave some out)
+          full=true
+          for x in rpi rpi64 pcusb psc win; do case " $(echo $t) " in *" $x "*) ;; *) full=false ;; esac; done
+          echo "full=$full" >> "$GITHUB_OUTPUT"
       - id: v
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
@@ -241,11 +246,14 @@ jobs:
 
   # the rolling development build: every successful build of develop replaces the assets of the `nightly`
   # pre-release (autobleem-build's nightly-release action), which autobleem-appliance's nightly assembly
-  # fetches the way it fetches a v* release. A partial manual run (fewer targets) would leave the others out,
-  # so only a push publishes it.
+  # fetches the way it fetches a v* release, and then starts that assembly (dispatch-token). A push publishes
+  # it, and so does a manual run with every target - autobleem-main's release.py nightly refreshes a stale
+  # launcher by dispatch, and until 2026-09-26 that run rebuilt it and then skipped this job, so the nightly
+  # was assembled from the old launcher. A partial manual run (fewer targets) would leave the others out.
   nightly:
     if: >-
-      !cancelled() && github.ref == 'refs/heads/develop' && github.event_name == 'push' &&
+      !cancelled() && github.ref == 'refs/heads/develop' &&
+      (github.event_name == 'push' || needs.plan.outputs.full == 'true') &&
       needs.build.result == 'success' && (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
     needs: [plan, build, sign-win]
     runs-on: ubuntu-24.04
@@ -253,7 +261,18 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with: { pattern: launcher-*, path: out, merge-multiple: true }
+      # the admin App's token, so the new nightly starts autobleem-appliance's assembly at once (a repository
+      # without AB_ADMIN_APP_ID skips this, and the appliance's schedule assembles it instead)
+      - id: app
+        if: vars.AB_ADMIN_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AB_ADMIN_APP_ID }}
+          private-key: ${{ secrets.AB_ADMIN_APP_KEY }}
+          owner: autobleem2
+          repositories: autobleem-appliance
       - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
         with:
           files: out/*.tar.gz
           version: ${{ needs.plan.outputs.version }}
+          dispatch-token: ${{ steps.app.outputs.token }}
