@@ -494,6 +494,11 @@ Faptele mașinii - sistem, hardware, stocare cu spațiul liber, adrese de rețea
 audio, gamepad-urile conectate - re-cite o dată la fiecare secundă. Pe PlayStation Classic cu kernel
 AutoBleem aceasta deschide **PSC-Bios** în loc (capitolul 6).
 
+Primele două controllere sunt afișate ca Player 1 și Player 2 – porturile pe care emilatorul PS1 le atribuie.
+Orice controller suplimentar este afișat ca neutilizat de emilatorul PS1. RetroArch atribuie controllere
+conform setărilor proprii și le poate ordona diferit. Când un controller este conectat sau deconectat,
+launcher-ul arată pe scurt care pad este Player 1 și Player 2.
+
 ![Informatii Hardware](../images/en/hardware-info.jpg)
 
 ### 4.3 Ghidul butoanelor
