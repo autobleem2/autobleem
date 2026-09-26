@@ -322,8 +322,8 @@ void GuiLauncher::loop_joyButton_Pressed() {
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
 void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, true is next
-    app.audio().cursor.play();
-
+    // one sound per press, played below where the jump is decided: a cursor.play() here as well put the
+    // same sound on two mixer channels at once, twice as loud as a d-pad step
     if (state == LauncherScreenState::Games) {
         if (carousel.games.empty()) {
             return;
