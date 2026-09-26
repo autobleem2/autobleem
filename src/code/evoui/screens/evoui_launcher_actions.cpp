@@ -193,7 +193,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
             menu->setResumePic("");
         }
 
-        state = LauncherScreenState::Games;
+        // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
     } else {
         render();

@@ -465,6 +465,11 @@ void GuiLauncher::loadAssets() {
             10 * TicksPerSecond);
     }
 
+    // every element below is built at rest in the Games layout (the menu row closed, the play button shown,
+    // the main cover in the row) - so the state is Games too, whatever it was when this was called (Options
+    // or an editor closing from the open menu used to leave the state Set, or a row rebuilt open, over a
+    // screen laid out closed). An empty set then opens the row (settleEmptyRoster), a resume the picker.
+    state = LauncherScreenState::Games;
     staticElements.clear();
     frontElemets.clear();
     carousel.games.clear();
