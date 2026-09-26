@@ -13,18 +13,26 @@ keyboard and a screenshot over a socket, for automated looks at the UI without t
   python tools/ab_drive.py <command> ...                           one command, e.g. `shot a.png`, `press x`
   python tools/ab_drive.py sheet OUT.png IN1.png IN2.png ...       a contact sheet of shots (Pillow)
 
+Every command but `start`/`stop`/`sheet` takes `--host <address>` (default 127.0.0.1) to reach a driver on
+another machine - a Pi 400 or a PSC with AB_DEBUG_BIND set - and `--token <t>` (or the AB_DEBUG_TOKEN
+environment variable) when that driver was started with AB_DEBUG_TOKEN: sent as the connection's first
+`auth <token>` command, before anything else. `start` always launches on this PC (127.0.0.1 only, no
+token needed) - driving a device is `run`/single commands with `--host` against a copy already running there.
+
 The script language is the driver's: press <btn> [ms], down/up <btn>, key <name>, text <utf8>, wait <ms>,
-shot <file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start select l1 r1 l2 r2
-up down left right. A `shot` waits for a frame drawn after the last input, so "press x; shot a.png" shows
-the result of the press. Shots land where the path says (relative to this process's cwd, made absolute).
-Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen` until that screen shows (a
-GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) - `start` waits for
-GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System menu and picks
-an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item> is the item's
-English title, in any language the launcher shows (`menu "Hardware Information"`, `menu options`; case does
-not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based index counting items
-only (headings are not counted). The names come from the driver's `items` reply, which lists what the menu
-shows on this machine (Network & Controllers only where an extension provides it).
+shot <file>, grab <local file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start
+select l1 r1 l2 r2 up down left right. A `shot`/`grab` waits for a frame drawn after the last input, so
+"press x; grab a.png" shows the result of the press. `shot` writes the frame on the machine running the
+launcher (its path, relative to that process's cwd); `grab` instead reads the frame back over the socket
+and saves it at the local path given here (made absolute) - the way to get a screenshot off a device
+without writing to its own storage. Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen`
+until that screen shows (a GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) -
+`start` waits for GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System
+menu and picks an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item>
+is the item's English title, in any language the launcher shows (`menu "Hardware Information"`, `menu
+options`; case does not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based
+index counting items only (headings are not counted). The names come from the driver's `items` reply, which
+lists what the menu shows on this machine (Network & Controllers only where an extension provides it).
 
 The launcher is started from a copy of build_win/'s exe (autobleem-gui-drive.exe, next to the resources
 tools/make_usb.py staged), so the owner's own instance of autobleem-gui.exe can keep running.
@@ -39,6 +47,7 @@ import time
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
+DEFAULT_HOST = '127.0.0.1'
 
 
 def pid_file(port):
@@ -46,22 +55,51 @@ def pid_file(port):
 
 
 class Driver:
-    def __init__(self, port=DEFAULT_PORT):
-        self.sock = socket.create_connection(('127.0.0.1', port), timeout=10)
+    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None):
+        self.sock = socket.create_connection((host, port), timeout=10)
         self.buf = b''
+        if token:
+            self.cmd('auth ' + token)
 
-    def cmd(self, line):
-        self.sock.sendall((line + '\n').encode('utf-8'))
+    def _line(self):
+        # the next '\n'-terminated line, buffering whatever came with it (a `grab` reply's bytes included)
         while b'\n' not in self.buf:
             chunk = self.sock.recv(4096)
             if not chunk:
                 raise RuntimeError('driver closed the connection')
             self.buf += chunk
-        reply, self.buf = self.buf.split(b'\n', 1)
-        reply = reply.decode('utf-8', 'replace')
+        line, self.buf = self.buf.split(b'\n', 1)
+        return line
+
+    def _exact(self, n):
+        while len(self.buf) < n:
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise RuntimeError('driver closed the connection')
+            self.buf += chunk
+        data, self.buf = self.buf[:n], self.buf[n:]
+        return data
+
+    def cmd(self, line):
+        self.sock.sendall((line + '\n').encode('utf-8'))
+        reply = self._line().decode('utf-8', 'replace')
         if reply.startswith('err'):
             raise RuntimeError(f'{line!r}: {reply}')
         return reply
+
+    def grab(self, local_path):
+        # "ok <n>" then exactly n raw PNG bytes - no file written on whatever machine the driver runs on
+        self.sock.sendall(b'grab\n')
+        header = self._line().decode('utf-8', 'replace')
+        if header.startswith('err'):
+            raise RuntimeError(f'grab: {header}')
+        n = int(header.split(' ', 1)[1])
+        data = self._exact(n)
+        local_path = os.path.abspath(local_path)
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        with open(local_path, 'wb') as f:
+            f.write(data)
+        return 'ok ' + local_path
 
     def wait_screen(self, name, timeout=15.0):
         end = time.time() + timeout
@@ -126,6 +164,9 @@ class Driver:
             if words[0] == 'shot':
                 path = os.path.abspath(part.split(None, 1)[1].strip())
                 part = 'shot ' + path
+            elif words[0] == 'grab':
+                out.append(self.grab(part.split(None, 1)[1].strip()))
+                continue
             elif words[0] == 'wait_screen':
                 out.append(self.wait_screen(words[1], float(words[2]) if len(words) > 2 else 15.0))
                 continue
@@ -188,9 +229,9 @@ def start(usb, port, show, tool=None):
     print(f'started pid {proc.pid} on port {port}' + ('' if show else ', hidden'))
 
 
-def stop(port):
+def stop(port, host=DEFAULT_HOST, token=None):
     try:
-        d = Driver(port)
+        d = Driver(port, host, token)
         d.cmd('quit')
         d.close()
         time.sleep(0.5)
@@ -224,12 +265,23 @@ def main(argv):
         return 2
     cmd = argv[1]
     port = DEFAULT_PORT
+    host = DEFAULT_HOST
+    token = os.environ.get('AB_DEBUG_TOKEN')
     args = argv[2:]
     if '--port' in args:
         i = args.index('--port')
         port = int(args[i + 1])
         del args[i:i + 2]
+    if '--host' in args:
+        i = args.index('--host')
+        host = args[i + 1]
+        del args[i:i + 2]
+    if '--token' in args:
+        i = args.index('--token')
+        token = args[i + 1]
+        del args[i:i + 2]
     if cmd == 'start':
+        # always this PC: what starts the exe here, never a remote driver - --host/--token do not apply
         usb = DEFAULT_USB
         show = '--show' in args
         if '--usb' in args:
@@ -238,12 +290,12 @@ def main(argv):
         start(usb, port, show, tool)
         return 0
     if cmd == 'stop':
-        stop(port)
+        stop(port, host, token)
         return 0
     if cmd == 'sheet':
         sheet(args[0], args[1:])
         return 0
-    d = Driver(port)
+    d = Driver(port, host, token)
     try:
         if cmd == 'run':
             for reply in d.run(' '.join(args)):
