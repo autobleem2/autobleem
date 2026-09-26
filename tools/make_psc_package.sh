@@ -15,7 +15,6 @@
 #                                      checked-in archive with the SDL2 family replaced by the libraries the
 #                                      binary was just built against (AB_PSC_TOOLCHAIN/sdl2/lib - the Docker
 #                                      image's build; kept as is when there is no such directory)
-#   Apps/pscbios/, Apps/abflashkit/    the console tools built alongside, over their resources
 #   VERSION                            what this package is (the tag, plus hash and -dirty unless clean at it),
 #                                      read from the build's generated version.h as the Pi package does
 #
@@ -92,15 +91,8 @@ fi
 
 # the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
 # launcher took core as a submodule (2026-09-23): autobleem-appliance's assemble-psc.sh puts them on the
-# stick; this zip carries them only when a build tree still has them
+# stick, not this script - apps/pscbios and apps/abflashkit are gone from this tree
 PACK=("$APP/autobleem-gui" "$APP/absplash" "$APP/abupdate" "$APP/abfetch") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
-for tool in pscbios abflashkit; do
-    [ -f "$BUILD_DIR/apps/$tool/$tool" ] && [ -d "$REPO/apps/$tool/resources" ] || continue
-    mkdir -p "$STAGE/Apps/$tool"
-    cp -a "$REPO/apps/$tool/resources/." "$STAGE/Apps/$tool/"
-    cp -a "$BUILD_DIR/apps/$tool/$tool" "$STAGE/Apps/$tool/$tool"
-    PACK+=("$STAGE/Apps/$tool/$tool") # a fresh build; payload/Apps' own copies come packed already
-done
 
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
@@ -150,7 +142,7 @@ fi
 # git's directory keepers have no business on a stick; the executable bit does not survive a zip made on
 # Windows, which is why rc/autobleem.sh chmods what it runs, but from here it can be right
 find "$STAGE" -type f -name placeholder -delete
-chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$APP/abfetch" "$STAGE/Apps/pscbios/pscbios" "$STAGE/Apps/abflashkit/abflashkit" \
+chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$APP/abfetch" \
          "$STAGE"/Autobleem/*.sh "$STAGE"/Autobleem/rc/*.sh "$STAGE"/Apps/*/*.sh 2>/dev/null || true
 
 echo "==> $ZIP"
