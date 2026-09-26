@@ -556,7 +556,7 @@ for entry in data["os_list"]:
         entry["extract_sha256"] = os.environ["EXTRACT_SHA256"]
         entry["image_download_size"] = int(os.environ["DOWNLOAD_SIZE"])
         entry["image_download_sha256"] = os.environ["DOWNLOAD_SHA256"]
-        # where tools/repo_publish.sh image will put it (repo_index.py fills these in again from what it
+        # where autobleem-repo's tools/repo_publish.sh image will put it (its repo_index.py fills these in again from what it
         # finds, so a different --repo at publish time still ends up right)
         entry["url"] = os.environ["IMAGE_URL"]
         entry["icon"] = os.environ["ICON_URL"]
