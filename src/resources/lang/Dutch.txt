@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-koppeling en co
 Widescreen:=Widescreen:
 Year:=Jaar:
 |@lang|=nl
+
+Player 1=Speler 1
+Player 2=Speler 2
+not used by the PS1 emulator=wordt niet gebruikt door de PS1-emulator

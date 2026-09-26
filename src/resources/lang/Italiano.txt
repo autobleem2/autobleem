@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, abbinamento Bluetooth e m
 Widescreen:=Widescreen:
 Year:=Anno:
 |@lang|=it
+
+Player 1=Giocatore 1
+Player 2=Giocatore 2
+not used by the PS1 emulator=non utilizzato dall'emulatore PS1

@@ -81,6 +81,10 @@ public:
     void loop_joyMoveUp();
     void loop_joyMoveDown();
 
+    // a pad connected or disconnected: what PS1 port each one now lands on (C9), a NotificationLine -
+    // quiet, only on the change, not shown at startup/loadAssets
+    void showPadAssignment();
+
     // a button is pressed
     void loop_joyButton_Pressed();
     void loop_chooseSet(); // Select: the set picker (tabs PlayStation / RetroArch / Apps, the groups inside)

@@ -7,6 +7,7 @@
 #include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
 #include "core/model/timing.h"
+#include "core/model/pad_assignment.h"
 
 #include <algorithm>
 #include <iostream>
@@ -123,6 +124,10 @@ void GuiLauncher::loop() {
                 break;
             case Event::Type::ButtonUp:
                 loop_joyButtonReleased(); // button released
+                break;
+            case Event::Type::PadAdded:
+            case Event::Type::PadRemoved:
+                showPadAssignment();
                 break;
             default:
                 break;
@@ -272,6 +277,27 @@ void GuiLauncher::loop_joyMoveDown() {
             motionStart = 0;
         }
     }
+}
+
+//*******************************
+// GuiLauncher::showPadAssignment
+//*******************************
+// pcsx-ab/pcsx-abnxt assign PS1 port 1/2 by ascending SDL device-index at (re)probe time -
+// ableem::Input::pads() already enumerates in that same order, so this is what a game started right
+// now would use. Fires only on PadAdded/PadRemoved (not at loadAssets/startup) - quiet, once per change.
+void GuiLauncher::showPadAssignment() {
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    if (pads.empty()) {
+        notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
+        return;
+    }
+    string text;
+    for (size_t i = 0; i < pads.size() && i < 2; i++) {
+        if (!text.empty())
+            text += ", ";
+        text += _(psPlayerLabel(static_cast<int>(i), static_cast<int>(pads.size()))) + ": " + pads[i].name;
+    }
+    notificationLines[1].setText(text, DefaultShowingTimeout);
 }
 
 //*******************************

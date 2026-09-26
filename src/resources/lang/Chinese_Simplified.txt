@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi、蓝牙配对和控制器
 Widescreen:=宽屏：
 Year:=年份：
 |@lang|=zh_CN
+
+Player 1=玩家 1
+Player 2=玩家 2
+not used by the PS1 emulator=PS1 模拟器未使用

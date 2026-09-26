@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-paritus ja ohja
 Widescreen:=Laajakuva:
 Year:=Vuosi:
 |@lang|=fi
+
+Player 1=Pelaaja 1
+Player 2=Pelaaja 2
+not used by the PS1 emulator=ei käytössä PS1-emulaattorissa

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-parring og cont
 Widescreen:=Widescreen:
 Year:=År:
 |@lang|=da
+
+Player 1=Spiller 1
+Player 2=Spiller 2
+not used by the PS1 emulator=bruges ikke af PS1-emulatoren

@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth eşleştirme ve
 Widescreen:=Geniş Ekran:
 Year:=Yıl:
 |@lang|=tr
+
+Player 1=Oyuncu 1
+Player 2=Oyuncu 2
+not used by the PS1 emulator=PS1 emülatörü tarafından kullanılmıyor

@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, párovanie Bluetooth a ma
 Widescreen:=Širokouhlý obraz:
 Year:=Rok:
 |@lang|=sk
+
+Player 1=Hráč 1
+Player 2=Hráč 2
+not used by the PS1 emulator=nepoužíva ho PS1 emulátor

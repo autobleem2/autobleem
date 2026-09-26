@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, párování Bluetooth a m
 Widescreen:=Širokoúhlý obraz:
 Year:=Rok:
 |@lang|=cs
+
+Player 1=Hráč 1
+Player 2=Hráč 2
+not used by the PS1 emulator=nepoužívá jej PS1 emulátor

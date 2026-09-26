@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-parkoppling och
 Widescreen:=Widescreen:
 Year:=År:
 |@lang|=sv
+
+Player 1=Spelare 1
+Player 2=Spelare 2
+not used by the PS1 emulator=används inte av PS1-emulatorn

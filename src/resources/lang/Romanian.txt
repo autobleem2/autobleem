@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -390,3 +390,7 @@ Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, asociere Bluetooth și ma
 Widescreen:=WideScreen:
 Year:=An:
 |@lang|=ro
+
+Player 1=Jucător 1
+Player 2=Jucător 2
+not used by the PS1 emulator=nefolosit de emulatorul PS1
