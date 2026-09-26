@@ -1061,6 +1061,37 @@ the console's power/reset buttons and a number pad are not keyboards; the word s
 the text, since a 32-bit userland on a 64-bit kernel cannot know the kernel's), on Windows
 `GetRawInputDeviceList`'s `RIM_TYPEKEYBOARD`. Asked afresh each time, so a keyboard plugged in later counts.
 
+**LAN testing** (2026-09-26): the driver can listen on a non-loopback address for a trusted LAN test rig. On the
+launcher, set `AB_DEBUG_BIND=<IPv4>` (default 127.0.0.1) and `AB_DEBUG_TOKEN=<token>` - the driver refuses to start
+without a token when the bind is not loopback, and the client must send `auth <token>` on its first line
+(compared in constant time, never logged). **Prefer `AB_DEBUG_TOKEN` in the environment over `--token` on the
+command line** - a command-line argument sits in the process list (`ps`/Task Manager) for anything else on the
+same machine to read; the env var does not. A peer has `DebugDriver::AuthTimeoutMs` (5 s) to send that first
+line and it may not exceed `DebugDriver::MaxAuthLine` (4 KB) - past either, the connection is dropped as if it
+had closed, so one client that never authenticates cannot tie up the driver, which serves one connection at a
+time. Neither limit applies once `auth` succeeds: an authenticated session reads with no timeout, since real
+commands in a script can be minutes apart. The script reaches it with `--host <addr>` (default 127.0.0.1) and
+`--token <t>` (or env `AB_DEBUG_TOKEN`, preferred as above) - a refused `auth` is reported with the token
+redacted (`'auth ***': err auth`), never echoed. New command `grab`: replies `ok <n>` followed by exactly n bytes
+of PNG data - a test fetches screenshots over the socket without writing to the device. Example: start the
+launcher on the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then
+from a PC run `AB_DEBUG_TOKEN=<token> python tools/ab_drive.py run "..." --host <ip> --port <p>`. **Security
+note:** the token travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is
+not a real credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface. `start` (always local, no --host) is
+the one exception to all of the above: it drops an inherited AB_DEBUG_BIND from the launch it starts, since a
+non-loopback bind would leave nothing listening on the 127.0.0.1 it always talks to - but it honours an
+inherited AB_DEBUG_TOKEN, authenticating its own readiness commands with it, so a leftover AB_DEBUG_TOKEN from
+testing a device in the same shell does not break `start`, and a `stop`/`screen`/... run straight after keeps
+matching it with no --token of its own. A peer that authenticates and then
+drops the connection mid-command (Ctrl-C, a WiFi drop) never crashes the driver: every socket send uses
+`MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send just closes that client and goes
+back to accepting the next one.
+
+**Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
+`X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
+`Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
+to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
+
 ### Running on PC (debug)
 
 ```

@@ -13,18 +13,33 @@ keyboard and a screenshot over a socket, for automated looks at the UI without t
   python tools/ab_drive.py <command> ...                           one command, e.g. `shot a.png`, `press x`
   python tools/ab_drive.py sheet OUT.png IN1.png IN2.png ...       a contact sheet of shots (Pillow)
 
+Every command but `start`/`stop`/`sheet` takes `--host <address>` (default 127.0.0.1) to reach a driver on
+another machine - a Pi 400 or a PSC with AB_DEBUG_BIND set - and `--token <t>` (or the AB_DEBUG_TOKEN
+environment variable) when that driver was started with AB_DEBUG_TOKEN: sent as the connection's first
+`auth <token>` command, before anything else. `start` always launches on this PC (127.0.0.1 only, no
+token needed) - driving a device is `run`/single commands with `--host` against a copy already running there.
+`start` always talks to its own launch on 127.0.0.1 (never --host), so it drops AB_DEBUG_BIND from the
+launched process's environment even if it is set in yours (e.g. left over from driving a device in the same
+shell): a bind to one specific non-loopback address would leave nothing listening on 127.0.0.1 at all. A set
+AB_DEBUG_TOKEN, though, is left as inherited and honoured: "set = required" applies on loopback too, so
+`start` authenticates its own readiness commands (window hide, the wait for the first screen) with it, and
+a `stop`/`screen`/... run straight after in the same shell keeps working with no --token of its own, exactly
+as if AB_DEBUG_TOKEN were unset throughout.
+
 The script language is the driver's: press <btn> [ms], down/up <btn>, key <name>, text <utf8>, wait <ms>,
-shot <file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start select l1 r1 l2 r2
-up down left right. A `shot` waits for a frame drawn after the last input, so "press x; shot a.png" shows
-the result of the press. Shots land where the path says (relative to this process's cwd, made absolute).
-Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen` until that screen shows (a
-GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) - `start` waits for
-GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System menu and picks
-an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item> is the item's
-English title, in any language the launcher shows (`menu "Hardware Information"`, `menu options`; case does
-not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based index counting items
-only (headings are not counted). The names come from the driver's `items` reply, which lists what the menu
-shows on this machine (Network & Controllers only where an extension provides it).
+shot <file>, grab <local file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start
+select l1 r1 l2 r2 up down left right. A `shot`/`grab` waits for a frame drawn after the last input, so
+"press x; grab a.png" shows the result of the press. `shot` writes the frame on the machine running the
+launcher (its path, relative to that process's cwd); `grab` instead reads the frame back over the socket
+and saves it at the local path given here (made absolute) - the way to get a screenshot off a device
+without writing to its own storage. Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen`
+until that screen shows (a GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) -
+`start` waits for GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System
+menu and picks an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item>
+is the item's English title, in any language the launcher shows (`menu "Hardware Information"`, `menu
+options`; case does not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based
+index counting items only (headings are not counted). The names come from the driver's `items` reply, which
+lists what the menu shows on this machine (Network & Controllers only where an extension provides it).
 
 The launcher is started from a copy of build_win/'s exe (autobleem-gui-drive.exe, next to the resources
 tools/make_usb.py staged), so the owner's own instance of autobleem-gui.exe can keep running.
@@ -39,29 +54,70 @@ import time
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
+DEFAULT_HOST = '127.0.0.1'
 
 
 def pid_file(port):
     return os.path.join(REPO, 'build_win', f'ab_drive-{port}.pid')
 
 
-class Driver:
-    def __init__(self, port=DEFAULT_PORT):
-        self.sock = socket.create_connection(('127.0.0.1', port), timeout=10)
-        self.buf = b''
+def _redact(line):
+    """'auth s3cr3t' -> 'auth ***' - what a raised RuntimeError shows instead of the real token, so a refusal
+    printed to a terminal or logged by a CI step never leaks it. Anything that is not an `auth ...` line is
+    returned unchanged."""
+    if line.startswith('auth '):
+        return 'auth ***'
+    return line
 
-    def cmd(self, line):
-        self.sock.sendall((line + '\n').encode('utf-8'))
+
+class Driver:
+    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None):
+        self.sock = socket.create_connection((host, port), timeout=10)
+        self.buf = b''
+        if token:
+            self.cmd('auth ' + token)
+
+    def _line(self):
+        # the next '\n'-terminated line, buffering whatever came with it (a `grab` reply's bytes included)
         while b'\n' not in self.buf:
             chunk = self.sock.recv(4096)
             if not chunk:
                 raise RuntimeError('driver closed the connection')
             self.buf += chunk
-        reply, self.buf = self.buf.split(b'\n', 1)
-        reply = reply.decode('utf-8', 'replace')
+        line, self.buf = self.buf.split(b'\n', 1)
+        return line
+
+    def _exact(self, n):
+        while len(self.buf) < n:
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise RuntimeError('driver closed the connection')
+            self.buf += chunk
+        data, self.buf = self.buf[:n], self.buf[n:]
+        return data
+
+    def cmd(self, line):
+        self.sock.sendall((line + '\n').encode('utf-8'))
+        reply = self._line().decode('utf-8', 'replace')
         if reply.startswith('err'):
-            raise RuntimeError(f'{line!r}: {reply}')
+            # never echo a real token back - even on a refusal, which is the one reply guaranteed to happen
+            # right after `auth <token>` on a wrong guess
+            raise RuntimeError(f'{_redact(line)!r}: {reply}')
         return reply
+
+    def grab(self, local_path):
+        # "ok <n>" then exactly n raw PNG bytes - no file written on whatever machine the driver runs on
+        self.sock.sendall(b'grab\n')
+        header = self._line().decode('utf-8', 'replace')
+        if header.startswith('err'):
+            raise RuntimeError(f'grab: {header}')
+        n = int(header.split(' ', 1)[1])
+        data = self._exact(n)
+        local_path = os.path.abspath(local_path)
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        with open(local_path, 'wb') as f:
+            f.write(data)
+        return 'ok ' + local_path
 
     def wait_screen(self, name, timeout=15.0):
         end = time.time() + timeout
@@ -126,6 +182,9 @@ class Driver:
             if words[0] == 'shot':
                 path = os.path.abspath(part.split(None, 1)[1].strip())
                 part = 'shot ' + path
+            elif words[0] == 'grab':
+                out.append(self.grab(part.split(None, 1)[1].strip()))
+                continue
             elif words[0] == 'wait_screen':
                 out.append(self.wait_screen(words[1], float(words[2]) if len(words) > 2 else 15.0))
                 continue
@@ -163,6 +222,18 @@ def start(usb, port, show, tool=None):
     for name in os.listdir(lang):
         shutil.copy(os.path.join(lang, name), os.path.join(app_dir, 'lang', name))
     env = dict(os.environ)
+    # `start` always talks to its own launch on 127.0.0.1 (the readiness Driver(port) below, with no --host).
+    # AB_DEBUG_BIND left inherited would be able to make that address unreachable outright - a bind to one
+    # specific non-loopback address (not 0.0.0.0) means nothing is listening on 127.0.0.1 at all, and the
+    # readiness wait below would just time out with "the driver did not answer". Dropped unconditionally:
+    # never what a *local* launch wants, whatever a `run --host ...` against a device left set.
+    env.pop('AB_DEBUG_BIND', None)
+    # AB_DEBUG_TOKEN is left as inherited on purpose (unlike AB_DEBUG_BIND above): "set = required" applies
+    # on loopback too (see debug_driver.h), so if it is set this launch requires it as much as a remote one
+    # would - and leaving it set is what keeps a `stop`/`screen`/... run straight after, from the same shell,
+    # matching without a --token of its own (main() already reads AB_DEBUG_TOKEN for every command). What
+    # changes here is only that start()'s own readiness commands below now authenticate with it too.
+    token = env.get('AB_DEBUG_TOKEN')
     env['AB_DEBUG_PORT'] = str(port)
     env['AB_NO_SPLASH'] = '1'  # straight to the launcher (GuiSplash honours it on a dev host)
     env['PATH'] = r'C:\msys64\ucrt64\bin;' + env.get('PATH', '')
@@ -174,7 +245,7 @@ def start(usb, port, show, tool=None):
     for _ in range(300):
         time.sleep(0.1)
         try:
-            d = Driver(port)
+            d = Driver(port, token=token)
             break
         except OSError:
             if proc.poll() is not None:
@@ -188,9 +259,9 @@ def start(usb, port, show, tool=None):
     print(f'started pid {proc.pid} on port {port}' + ('' if show else ', hidden'))
 
 
-def stop(port):
+def stop(port, host=DEFAULT_HOST, token=None):
     try:
-        d = Driver(port)
+        d = Driver(port, host, token)
         d.cmd('quit')
         d.close()
         time.sleep(0.5)
@@ -224,26 +295,42 @@ def main(argv):
         return 2
     cmd = argv[1]
     port = DEFAULT_PORT
+    host = DEFAULT_HOST
+    token = os.environ.get('AB_DEBUG_TOKEN')
     args = argv[2:]
     if '--port' in args:
         i = args.index('--port')
         port = int(args[i + 1])
         del args[i:i + 2]
+    if '--host' in args:
+        i = args.index('--host')
+        host = args[i + 1]
+        del args[i:i + 2]
+    if '--token' in args:
+        i = args.index('--token')
+        token = args[i + 1]
+        del args[i:i + 2]
     if cmd == 'start':
+        # always this PC: what starts the exe here, never a remote driver - --host/--token do not apply
         usb = DEFAULT_USB
         show = '--show' in args
         if '--usb' in args:
             usb = args[args.index('--usb') + 1]
+        # made absolute now, relative to the caller's cwd: start() launches the exe with cwd inside the usb
+        # tree itself (app_dir, several levels down), so a relative --usb (or a relative DEFAULT_USB, were
+        # the caller's cwd not REPO) would be resolved against the wrong directory once passed to Popen and
+        # made the launcher's own argv[1] - the process then can't find its own USB root and exits at once.
+        usb = os.path.abspath(usb)
         tool = args[args.index('--tool') + 1] if '--tool' in args else None
         start(usb, port, show, tool)
         return 0
     if cmd == 'stop':
-        stop(port)
+        stop(port, host, token)
         return 0
     if cmd == 'sheet':
         sheet(args[0], args[1:])
         return 0
-    d = Driver(port)
+    d = Driver(port, host, token)
     try:
         if cmd == 'run':
             for reply in d.run(' '.join(args)):
