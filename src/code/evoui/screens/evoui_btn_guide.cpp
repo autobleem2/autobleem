@@ -52,6 +52,7 @@ void GuiBtnGuide::render() {
     row("|@Start|", _("Random Game"));
     row("|@Select|", _("Choose the games shown: PlayStation, RetroArch or Apps and the group"));
     row("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"));
+    row("|@Up|", _("Quick menu (Re-Scan, Store, Network & Controllers, System menu)"));
     section(_("In Game"));
     row("|@Select| + |@Start|", _("Emulator config MENU"));
     row(_("RESET"), _("Quit emulation - back to AutoBleem"));

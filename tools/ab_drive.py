@@ -19,8 +19,12 @@ up down left right. A `shot` waits for a frame drawn after the last input, so "p
 the result of the press. Shots land where the path says (relative to this process's cwd, made absolute).
 Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen` until that screen shows (a
 GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) - `start` waits for
-GuiLauncher itself, so a script may press at once - and `menu <item>` opens the L2+R2 system menu and
-picks an item by its 0-based index.
+GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System menu and picks
+an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item> is the item's
+English title, in any language the launcher shows (`menu "Hardware Information"`, `menu options`; case does
+not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based index counting items
+only (headings are not counted). The names come from the driver's `items` reply, which lists what the menu
+shows on this machine (Network & Controllers only where an extension provides it).
 
 The launcher is started from a copy of build_win/'s exe (autobleem-gui-drive.exe, next to the resources
 tools/make_usb.py staged), so the owner's own instance of autobleem-gui.exe can keep running.
@@ -69,15 +73,48 @@ class Driver:
             time.sleep(0.05)
         raise RuntimeError(f'screen {name} did not show (now: {current})')
 
-    def menu(self, index):
+    def items(self, timeout=5.0):
+        # the showing picker's items (DebugDriver `items`); published in its init(), so polled a moment
+        end = time.time() + timeout
+        while True:
+            reply = self.cmd('items')
+            names = [n for n in reply[3:].split('|') if n]
+            if names or time.time() > end:
+                return names
+            time.sleep(0.05)
+
+    def pick(self, item):
+        # the item by its English title (case-insensitive, a unique prefix will do) or its index
+        item = item.strip().strip('"\'')
+        names = self.items()
+        if item.isdigit():
+            index = int(item)
+            if index >= len(names):
+                raise RuntimeError(f'no item {index}: {names}')
+        else:
+            wanted = item.lower()
+            exact = [i for i, n in enumerate(names) if n.lower() == wanted]
+            prefix = [i for i, n in enumerate(names) if n.lower().startswith(wanted)]
+            found = exact or prefix
+            if len(found) != 1:
+                raise RuntimeError(f'item {item!r} ' + ('is ambiguous' if found else 'not found') + f': {names}')
+            index = found[0]
+        for _ in range(index):
+            self.cmd('press down 40')
+        self.cmd('press x')
+        return 'ok ' + names[index]
+
+    def menu(self, item):
         self.cmd('down l2')
         self.cmd('press r2')
         self.cmd('up l2')
         self.wait_screen('GuiSystemMenu')
-        for _ in range(int(index)):
-            self.cmd('press down 40')
-        self.cmd('press x')
-        return 'ok'
+        return self.pick(item)
+
+    def quick(self, item):
+        self.cmd('press up')
+        self.wait_screen('GuiSystemMenu')
+        return self.pick(item)
 
     def run(self, script):
         out = []
@@ -92,8 +129,9 @@ class Driver:
             elif words[0] == 'wait_screen':
                 out.append(self.wait_screen(words[1], float(words[2]) if len(words) > 2 else 15.0))
                 continue
-            elif words[0] == 'menu':
-                out.append(self.menu(words[1]))
+            elif words[0] in ('menu', 'quick'):
+                what = part.split(None, 1)[1]
+                out.append(self.menu(what) if words[0] == 'menu' else self.quick(what))
                 continue
             out.append(self.cmd(part))
         return out

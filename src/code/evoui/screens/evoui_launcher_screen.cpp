@@ -423,8 +423,8 @@ void GuiLauncher::loadAssets() {
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
     // - every return from a RetroArch launch - crashed on headers[0])
-    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+    headers = {_("QUICK MENU"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+    texts = {_("Re-Scan, Store, Network and more"), _("Edit game parameters"), _("Edit Memory Card information"),
              _("Resume game from saved state point")};
 
     selection = app.session().launcher;
@@ -464,9 +464,12 @@ void GuiLauncher::loadAssets() {
     fadeStart = gui->platform().ticks();
 
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
+    // - pointing at Network & Controllers (its controller mapping wizard) where an extension provides it
     if (gui->input().joystickCount() > gui->input().activePadCount()) {
         notificationLines[1].setText(
-            _("NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup."),
+            networkProvided()
+                ? _("NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.")
+                : _("NOTICE: At least one connected gamepad is not recognized."),
             10 * TicksPerSecond);
     }
 
