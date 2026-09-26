@@ -4,11 +4,11 @@ A game launcher and front-end for the **PlayStation Classic** (and the **Raspber
 
 ## Platforms
 
-**Products**: PlayStation Classic (`psc`), Raspberry Pi 32-bit and 64-bit (`rpi`, `rpi64` - appliances on the SD card), 32-bit Debian PC USB stick (`pcusb`), Windows (`win` - NSIS installer). Development builds on Linux/macOS (`make_sys.sh`) and Windows MSYS2 (`make_win.sh`). (CLAUDE.md "The platform model", line 1115-1130)
+**Products**: PlayStation Classic (`psc`), Raspberry Pi 32-bit and 64-bit (`rpi`, `rpi64` - appliances on the SD card), 32-bit Debian PC USB stick (`pcusb`), Windows (`win` - NSIS installer). Development builds on Linux/macOS (`make_sys.sh`) and Windows MSYS2 (`make_win.sh`).
 
 ## Getting started
 
-Ready-to-use packages for every platform are assembled and released by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance). Extract a release package to your USB stick (FAT32 on a stock PlayStation Classic; exFAT requires the AutoBleem kernel) or SD card on a Raspberry Pi, drop PS1 game folders into `Games/`, and plug it in. On the console, the exploit payload in the stick's `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` folder boots AutoBleem automatically. (CLAUDE.md line 1474, line 1065)
+Ready-to-use packages for every platform are assembled and released by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance). Extract a release package to your USB stick (FAT32 on a stock PlayStation Classic; exFAT requires the AutoBleem kernel) or SD card on a Raspberry Pi, drop PS1 game folders into `Games/`, and plug it in. On the console, the exploit payload in the stick's `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` folder boots AutoBleem automatically.
 
 ### Stick layout
 
@@ -32,7 +32,7 @@ System/Databases/          game metadata (regional.db, internal.db)
 System/Logs/               launcher and system logs
 Themes/                    UI themes (folders or .zip)
 ```
-(CLAUDE.md "Runtime layout on the console", line 1060-1085)
+
 
 ## Building
 
@@ -56,7 +56,7 @@ The launcher is built from libraries that link only the one below them:
 - **`ab_ui`** - Game-aware classic screens (Options, editors, Game Manager); links `ab_classic` (in this repo)
 - **`ab_evoui`** - EvolutionUI: carousel and launcher; links `ab_ui` (in this repo)
 
-(CLAUDE.md "Where the code lives", line 926-949)
+
 
 ## Features
 
@@ -80,13 +80,13 @@ The launcher is built from libraries that link only the one below them:
 - `src/code/app_base.*` and `src/code/gui/` (partial) - classic UI framework (ab_classic library)
 
 **In this repository**:
-- `src/code/app.*` - app model and `main.cpp` entry point
+- `src/code/main.cpp`, `autobleem.*` - the executable; `src/code/app.*` - the app model (ab_ui)
 - `src/code/gui/` (game-aware screens) and `src/code/evoui/` - launcher UI (ab_ui and ab_evoui libraries)
 - `src/resources/` - themes, languages, fonts, platform configs
 - `apps/abpad/` - virtual gamepad mapper for third-party Apps
 - `payload/` and `payload_linux/` - console USB tree and Pi installer package
 
-Clone with `git clone --recurse-submodules`. (CLAUDE.md "Where the code lives", line 926-949)
+Clone with `git clone --recurse-submodules`.
 
 **Separate repositories**:
 - [autobleem-console-tools](https://github.com/autobleem2/autobleem-console-tools): PSC-Bios, ABFlashKit
@@ -96,14 +96,14 @@ Clone with `git clone --recurse-submodules`. (CLAUDE.md "Where the code lives", 
 ## Runtime
 
 - **PlayStation Classic**: The launcher runs at 720p on the console's HDMI output. Boot chain is the exploit payload → AutoBleem's `rc/boot.sh` → launcher.
-- **Raspberry Pi**: Runs as a systemd service on a 32-bit or 64-bit Pi OS install. Games are on an exFAT partition of the same SD card.
+- **Raspberry Pi**: Runs as a systemd service on a 32-bit or 64-bit Pi OS install. Games are on a data partition of the same SD card.
 - **Development (Windows)**: The launcher reads from a fake USB root in one-arg mode (`autobleem-gui <root>`) or two-arg debug mode (`autobleem-gui <regional.db> <Games dir>`).
 
 ## Licence
 
 **GNU General Public License, version 3 or later** - see `LICENSE` and `TRADEMARKS.md`.
 
-- Source code and binaries: GPL-3.0-or-later, copyright 2018-2026 screemer and the AutoBleem contributors
+- Source code and binaries: GPL-3.0-or-later (`LICENSE`)
 - Third-party components: see `THIRD_PARTY_NOTICES.md` (SQLite, nlohmann json, miniz, plog, libchdr with lzma/zlib/zstd, SDL2 family, fonts under SIL OFL, etc.)
 - Name, logo, and theme artwork are excluded from the licence grant - see `TRADEMARKS.md`
 
@@ -117,6 +117,6 @@ Clone with `git clone --recurse-submodules`. (CLAUDE.md "Where the code lives", 
 
 ## Credits
 
-AutoBleem 2 is by screemer. AutoBleem-NG (Axanar, cornelk, and contributors) for the features ported back. PCSX-ReARMed (notaz) and RetroArch communities for the emulators.
+AutoBleem 2 is by screemer. The AutoBleem-NG contributors, whose fork's features were ported back. PCSX-ReARMed (notaz) and RetroArch communities for the emulators.
 
 **This tool is made to be used with legally owned games only. It does not alter any file on the console's internal storage.**
