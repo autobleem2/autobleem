@@ -476,7 +476,7 @@ for `WindowsInstallJob`), and every install and update replaces a shipped extens
   stick by `make_usb.py`. It is built on a dev host only (`AB_BUILD_SAMPLE_EXTENSION`, off for every device
   target): it never goes into a package or onto a device (the owner's call, 2026-09-24).
 
-## Scanner processors (2026-09-24, `docs/scanner-processors-plan.md`)
+## Scanner processors (2026-09-24, autobleem-main `docs/archive/scanner-processors-plan.md` and `docs/history/scanner-processors.md`)
 
 **What a processor is.** A community console program in `System/Processors/<name>/` (`processor.ini`, a
 binary per platform key in `bin/{key}/`, resolved by `AppManifest`), run by the scan over the games before it
@@ -1331,7 +1331,7 @@ Every screen but the launcher's own carousel frame draws in **one look**, and ne
 - **Testing a screen** is `tools/ab_drive.py` (`start --show`, `run "menu 6; wait_screen GuiOptions; shot
   a.png"`, `sheet`, `stop`); every screen's class name is what `wait_screen` takes.
 
-## The quiet stick (2026-09-24, `docs/quiet-stick-plan.md`)
+## The quiet stick (2026-09-24, autobleem-main `docs/archive/quiet-stick-plan.md` and `docs/history/quiet-stick.md`)
 
 **The data root is written only when the user's state changes** - a save, a card, a kept resume slot, a
 setting the player changed, a game added or removed. Everything else is in RAM or not written at all.
