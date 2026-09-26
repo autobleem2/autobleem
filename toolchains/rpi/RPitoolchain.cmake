@@ -16,5 +16,6 @@ ab_rpi_toolchain(arm-linux-gnueabihf "${AB_RPI_TOOLCHAIN}" "${CMAKE_CURRENT_LIST
 
 # Raspberry Pi 2/3/4 running the 32-bit OS - a reasonable generic target for a first port attempt.
 # (Pi Zero/1 are armv6 and would need a different -march; not a goal yet.)
-set(CMAKE_C_FLAGS   "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a ${_ab_rpi_opt}")
-set(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a ${_ab_rpi_opt}")
+# _FILE_OFFSET_BITS=64: a 32-bit off_t makes stat() fail on a file over 2 GB (a Store download, a disc image)
+set(CMAKE_C_FLAGS   "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a -D_FILE_OFFSET_BITS=64 ${_ab_rpi_opt}")
+set(CMAKE_CXX_FLAGS "-mfloat-abi=hard -mfpu=neon-vfpv4 -march=armv7-a -D_FILE_OFFSET_BITS=64 ${_ab_rpi_opt}")
