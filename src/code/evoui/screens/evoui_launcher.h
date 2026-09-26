@@ -23,6 +23,8 @@
 #include <memory>
 #include "gui/gui.h"
 
+enum class SystemMenuAction; // evoui_system_menu.h
+
 // which sub-screen of the launcher is showing
 enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
 
@@ -100,6 +102,18 @@ public:
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
+    // the Quick menu: Re-Scan, Store, Network & Controllers, System menu... - d-pad Up in the Games state (and
+    // on an empty set), and the gear icon of the game's icon row
+    void loop_openQuickMenu();
+    // what an item of either menu does
+    void runMenuAction(SystemMenuAction action);
+    // Options (the System menu's): the screen, then the theme, the sets and the covers reloaded
+    void loop_openOptions();
+    // an extension provides the "network" entry here: the Network & Controllers item shows
+    bool networkProvided();
+    // an extension run from a menu: by name, or at `entry` by whichever provides it (name ""); the refusal
+    // reported on the notification line
+    void runExtensionEntry(const std::string &name, const std::string &entry);
 #ifdef AB_ONLINE_UPDATE
     // the online update: the check's result once a frame (it asks when one lands), the system menu's
     // "Software Update" item (a check now, then the same question), and the download that ends in
