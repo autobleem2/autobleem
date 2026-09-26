@@ -20,8 +20,10 @@
 #include "core/main.h"
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
+#include "core/services/pad_battery.h"
 #include <vector>
 #include <memory>
+#include <set>
 #include "gui/gui.h"
 
 enum class SystemMenuAction; // evoui_system_menu.h
@@ -93,6 +95,19 @@ public:
     PadAssignment currentPadAssignment() const;
     PadAssignment lastShownPadAssignment;
     bool padAssignmentSuppressedEmpty = false;
+
+    // C8: a small battery indicator per wireless pad, top-left corner - PadBatteryService (ab_core) reads
+    // the kernel's power_supply sysfs tree, same as PSC-Bios's pairing screen. Polled at most every
+    // PadBatteryPollInterval (core/model/timing.h), never every frame - a handful of sysfs reads is cheap,
+    // but there is no reason to do it 60 times a second. lowBatteryNotified is which pads (by address)
+    // already got the one-time "battery low" NotificationLine since they last climbed back over
+    // PadBatteryLowResetPercent (or vanished) - so a reading sitting at 12% for ten minutes says it once.
+    PadBatteryService padBatteryService;
+    std::vector<PadBatteryInfo> padBatteries;
+    long lastPadBatteryPoll = 0;
+    std::set<std::string> lowBatteryNotified;
+    void pollPadBattery();
+    void renderPadBatteries();
 
     // a button is pressed
     void loop_joyButton_Pressed();

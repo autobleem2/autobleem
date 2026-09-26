@@ -318,6 +318,80 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
 }
 
 //*******************************
+// GuiLauncher::pollPadBattery
+//*******************************
+// called once a frame (loop(), like applyScanUpdate) but only acts every PadBatteryPollInterval: a handful
+// of sysfs reads is cheap, but nothing here changes fast enough to need it every frame. Labels a pad
+// generically ("Wireless pad", "Wireless pad 2", ...) by its position in the list - PadBatteryService knows
+// only the sysfs address, not which SDL pad it is (matching the two is follow-up work, C8's plan flagged
+// it), so two pads read in a stable (sorted) order is the best a label can do today.
+void GuiLauncher::pollPadBattery() {
+    if (time - lastPadBatteryPoll < PadBatteryPollInterval && lastPadBatteryPoll != 0)
+        return;
+    lastPadBatteryPoll = time;
+
+    padBatteries = padBatteryService.list();
+
+    set<string> stillLow;
+    for (size_t i = 0; i < padBatteries.size(); ++i) {
+        const PadBatteryInfo &pad = padBatteries[i];
+        if (!pad.known())
+            continue;
+        string label = padBatteries.size() > 1 ? _("Wireless pad") + " " + to_string(i + 1) : _("Wireless pad");
+        if (pad.percent <= PadBatteryLowPercent) {
+            stillLow.insert(pad.address);
+            if (lowBatteryNotified.find(pad.address) == lowBatteryNotified.end()) {
+                lowBatteryNotified.insert(pad.address);
+                notificationLines[1].setText(label + ": " + _("battery low") + " (" + to_string(pad.percent) + "%)", 0);
+            }
+        } else if (pad.percent >= PadBatteryLowResetPercent) {
+            lowBatteryNotified.erase(pad.address);
+        }
+    }
+    // a pad that vanished (unplugged, or its battery node went away) gets to be renotified if it comes back
+    // low - erase everything list() no longer reports rather than letting the set grow forever
+    for (auto it = lowBatteryNotified.begin(); it != lowBatteryNotified.end();) {
+        bool present = false;
+        for (const PadBatteryInfo &pad : padBatteries)
+            if (pad.address == *it) {
+                present = true;
+                break;
+            }
+        if (!present)
+            it = lowBatteryNotified.erase(it);
+        else
+            ++it;
+    }
+}
+
+//*******************************
+// GuiLauncher::renderPadBatteries
+//*******************************
+// a small icon (outline + a fill proportional to the charge, plus a nub) and the percent, one per known
+// pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
+// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning),
+// the percent in hintFont (already loaded for the footer, so this costs nothing extra to show).
+void GuiLauncher::renderPadBatteries() {
+    if (padBatteries.empty())
+        return;
+    const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
+    int x = 16, y = 16;
+    for (const PadBatteryInfo &pad : padBatteries) {
+        if (!pad.known())
+            continue;
+        renderer.setDrawColor(secColor);
+        renderer.drawRect(ableem::Rect(x, y, iconW, iconH));
+        renderer.fillRect(ableem::Rect(x + iconW, y + (iconH - nubH) / 2, nubW, nubH));
+        int fillW = std::max(1, (iconW - 4) * std::min(100, std::max(0, pad.percent)) / 100);
+        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
+        renderer.setDrawColor(fillColor);
+        renderer.fillRect(ableem::Rect(x + 2, y + 2, fillW, iconH - 4));
+        gui->text().renderText_WithColor(hintFont, to_string(pad.percent) + "%", x + iconW + nubW + 6, y - 2, fgColor);
+        y += iconH + 10;
+    }
+}
+
+//*******************************
 // GuiLauncher::applyScanUpdate
 //*******************************
 // called once a frame (loop(), before render()) with whatever app.scans().poll() drained since the last
@@ -894,6 +968,8 @@ void GuiLauncher::render() {
             style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
             gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
         }
+
+    renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);

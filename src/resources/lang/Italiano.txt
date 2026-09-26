@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -28,6 +28,7 @@ Back=Indietro
 Back to games=Torna ai giochi
 Background Music:=Musica di Sottofondo:
 Backspace=Backspace
+battery low=batteria scarica
 Bin file failed to verify=Verifica del file BIN non riuscita
 Bluetooth=Bluetooth
 Boot logo:=Logo di avvio:
@@ -391,5 +392,6 @@ WAVE=ONDATA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, abbinamento Bluetooth e mappatura dei controller
 Widescreen:=Widescreen:
+Wireless pad=Controller wireless
 Year:=Anno:
 |@lang|=it

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -28,6 +28,7 @@ Back=Terug
 Back to games=Terug naar games
 Background Music:=Achtergrond Muziek
 Backspace=Backspace
+battery low=batterij bijna leeg
 Bin file failed to verify=BIN-bestand kon niet worden gecontroleerd
 Bluetooth=Bluetooth
 Boot logo:=Opstartlogo:
@@ -391,5 +392,6 @@ WAVE=GOLF
 Wi-Fi=Wifi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-koppeling en controllertoewijzing
 Widescreen:=Widescreen:
+Wireless pad=Draadloze controller
 Year:=Jaar:
 |@lang|=nl

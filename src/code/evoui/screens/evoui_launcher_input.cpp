@@ -56,6 +56,7 @@ void GuiLauncher::loop() {
         applyScanUpdate(app.scans().poll());
         app.extensions().poll();
         applyExtensionRequests();
+        pollPadBattery();
 #ifdef AB_ONLINE_UPDATE
         pollUpdates();
 #endif

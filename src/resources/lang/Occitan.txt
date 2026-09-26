@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 391
+# Untranslated: 0 / Total: 393
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -28,6 +28,7 @@ Back=Tornar
 Back to games=Tornar als jòcs
 Background Music:=Musica de fons :
 Backspace=Retorn arrièr
+battery low=batariá febla
 Bin file failed to verify=Lo fichièr BIN a pas pogut èsser verificat
 Bluetooth=Bluetooth
 Boot logo:=Lògo d'aviada:
@@ -391,5 +392,6 @@ WAVE=ONDADA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, apariatge Bluetooth e configuracion de las manetas
 Widescreen:=Grand ecran :
+Wireless pad=Manèta sens fial
 Year:=Annada :
 |@lang|=oc
