@@ -123,10 +123,42 @@ mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"
 #
 # The daemon is given this shell's pid to watch, so it goes when the App goes - including when the
 # App is exec'd over this shell, which keeps the same pid, and including when the App crashes.
+#
+# The daemon's own library path and gamecontrollerdb.txt are the launcher's, never the App's: an App
+# built for the console links the launcher's SDL2 too (see "The libraries" above), but an App with a
+# library path of its own - a RetroBoot port, one of the old kind - would otherwise hand abpadd a
+# different SDL2 off $LD_LIBRARY_PATH/$AB_APP_LIB, which does not know our pad database and resolves a
+# pad differently from the launcher, the one thing this daemon exists not to do. So abpadd is started
+# with its own environment: /tmp/lib (the launcher's SDL2) on the console, nothing extra elsewhere -
+# the App's LD_LIBRARY_PATH/AB_APP_LIB above is left untouched for the App itself - and AB_PAD_DB
+# points at the same gamecontrollerdb.txt file(s) the launcher loads (Env::padMappingFiles(): the
+# kernel's first when there is one, then the shipped one in the resources dir).
 # ---------------------------------------------------------------------------------------------
 AB_PAD_DIR="$AB_ROOT/Autobleem/bin/abpad"
+AB_PAD_RUNTIME_DIR=${AB_RUNTIME_DIR:-/tmp/autobleem}
+AB_PAD_LD_LIBRARY_PATH=
+[ -d /tmp/lib ] && AB_PAD_LD_LIBRARY_PATH=/tmp/lib
+AB_PAD_DB=
+[ -f /etc/autobleem/gamecontrollerdb.txt ] && AB_PAD_DB=/etc/autobleem/gamecontrollerdb.txt
+if [ -f "$AB_ROOT/Autobleem/bin/autobleem/gamecontrollerdb.txt" ]; then
+    AB_PAD_DB="${AB_PAD_DB:+$AB_PAD_DB:}$AB_ROOT/Autobleem/bin/autobleem/gamecontrollerdb.txt"
+fi
+
+# abpadd's own log: the stick may be read-only (or "Keep logs on the stick" points AB_LOG_DIR there
+# with no write access) - a redirection to a directory that cannot be written stops the shell from
+# starting the command at all, which used to leave every App without a pad. Fall back to the runtime
+# dir (RAM, always writable) rather than let that failure silently drop the daemon.
+AB_ABPAD_LOG_DIR=$AB_LOG_DIR
+if ! mkdir -p "$AB_ABPAD_LOG_DIR" 2>/dev/null || ! : > "$AB_ABPAD_LOG_DIR/.wtest" 2>/dev/null; then
+    AB_ABPAD_LOG_DIR="$AB_PAD_RUNTIME_DIR/logs"
+    mkdir -p "$AB_ABPAD_LOG_DIR" 2>/dev/null
+else
+    rm -f "$AB_ABPAD_LOG_DIR/.wtest"
+fi
+
 if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
-    "$AB_PAD_DIR/abpadd" --watch-pid $$ > "$AB_LOG_DIR/abpadd.log" 2>&1 &
+    env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" AB_PAD_DB="$AB_PAD_DB" \
+        "$AB_PAD_DIR/abpadd" --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 
     # the daemon lets a pad settle before publishing (a multi-mode pad is taken over by hidapi a
     # second or two after it is first opened), so wait for it rather than have the App ask too early
@@ -136,7 +168,7 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
         sleep 0.1
     done
 
-    AB_PAD_LOG="$AB_LOG_DIR/abpad.log"
+    AB_PAD_LOG="$AB_ABPAD_LOG_DIR/abpad.log"
     export AB_PAD_LOG
     export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
 
@@ -152,6 +184,8 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
     [ -f /tmp/abpad.state.mappings ] && export SDL_GAMECONTROLLERCONFIG_FILE=/tmp/abpad.state.mappings
 elif [ -d /usr/sony ] && [ -x "$AB_PAD_DIR/abpadd" ]; then
     # The console's Reset button ends every App (the owner's rule, 2026-09-25): an App that reads the
-    # pads itself still gets the daemon, in the mode that only watches Reset (no SDL, no preload).
-    "$AB_PAD_DIR/abpadd" --exit-only --watch-pid $$ > "$AB_LOG_DIR/abpadd.log" 2>&1 &
+    # pads itself still gets the daemon, in the mode that only watches Reset (no SDL, no preload) -
+    # still needs the launcher's own library path to find libSDL2 at all.
+    env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" \
+        "$AB_PAD_DIR/abpadd" --exit-only --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 fi

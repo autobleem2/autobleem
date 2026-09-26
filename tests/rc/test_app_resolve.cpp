@@ -167,3 +167,76 @@ TEST_CASE("rc/app_resolve.sh gives the launcher's answer for every kind of app.i
     app(tmp, "Old", "Title=Old\nStartup=run.sh\n", {"run.sh"});
     CHECK_FALSE(runScript(tmp, dir("Old"), {"psc"}, {}).resolved);
 }
+
+// C1 (autobleem-main docs/todo.md): a read-only stick used to leave every App without a pad -
+// abpadd's own stdout/stderr redirection into an unwritable log dir stopped the shell from starting
+// it at all - and an App with its own LD_LIBRARY_PATH handed abpadd a foreign SDL2 that does not know
+// our gamecontrollerdb.txt. Both are exercised against a fake abpadd that records what it actually got.
+TEST_CASE("rc/app_env.sh starts abpadd through an unwritable log dir, with the launcher's own "
+          "library path and gamecontrollerdb regardless of the App's own") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - app_env.sh is not exercised");
+        return;
+    }
+    TempDir tmp("app_env_abpad");
+    const string root = slashes(tmp.path());
+    const string appDir = root + "/Apps/Foreign";
+    const string resourcesDb = root + "/Autobleem/bin/autobleem/gamecontrollerdb.txt";
+    const string abpadDir = root + "/Autobleem/bin/abpad";
+    const string resultFile = root + "/result.txt";
+    const string blockedLogDir = root + "/BlockedLogDir"; // a plain file where a dir is expected
+    const string foreignLib = root + "/ForeignLib";        // what abpadd must NOT run with
+
+    tmp.makeSubDir("Apps/Foreign");
+    tmp.makeSubDir("Autobleem/bin/autobleem");
+    tmp.makeSubDir("Autobleem/bin/abpad");
+    tmp.makeSubDir("ForeignLib");
+    tmp.writeFile("Autobleem/bin/autobleem/gamecontrollerdb.txt", "fake db\n");
+    tmp.writeFile("BlockedLogDir", "x"); // mkdir -p on this path must fail
+    // a fake abpadd - a shell script standing in for the real binary - that just records the
+    // environment it was actually started with, instead of touching any real pad
+    tmp.writeFile("Autobleem/bin/abpad/abpadd", "#!/bin/sh\n"
+                                                 "touch /tmp/abpad.state\n"
+                                                 "{\n"
+                                                 "  echo \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH\"\n"
+                                                 "  echo \"AB_PAD_DB=$AB_PAD_DB\"\n"
+                                                 "} > \"$AB_TEST_RESULT\"\n");
+    tmp.writeFile("Autobleem/bin/abpad/libabpad.so", "x");
+    System::execUnixCommand("chmod +x '" + slashes(abpadDir) + "/abpadd'");
+    System::execUnixCommand("rm -f /tmp/abpad.state");
+
+    string script = "AB_APP_DIR='" + appDir + "'\n"
+                     "AB_ROOT='" + root + "'\n"
+                     "AB_LOG_DIR='" + blockedLogDir + "'\n"
+                     "AB_APP_LIB='" + foreignLib + "'\n"
+                     "AB_TEST_RESULT='" + resultFile + "'\n"
+                     "export AB_APP_DIR AB_ROOT AB_LOG_DIR AB_APP_LIB AB_TEST_RESULT\n"
+                     ". '" + string(AB_RC_DIR) + "/app_env.sh'\n"
+                     "ab_waited=0\n"
+                     "while [ ! -f \"$AB_TEST_RESULT\" ] && [ $ab_waited -lt 50 ]; do\n"
+                     "  ab_waited=$((ab_waited + 1))\n"
+                     "  sleep 0.1\n"
+                     "done\n"
+                     "cat \"$AB_TEST_RESULT\" 2>/dev/null\n"
+                     "rm -f /tmp/abpad.state\n";
+    ofstream(tmp.at("driver.sh"), ios::binary) << script;
+
+    string ldLibraryPath, padDb;
+    bool gotResult = false;
+    for (string line : System::execUnixCommandLines("sh \"" + slashes(tmp.at("driver.sh")) + "\"")) {
+        line = Strings::trim(line);
+        if (line.compare(0, 16, "LD_LIBRARY_PATH=") == 0) {
+            ldLibraryPath = line.substr(16);
+            gotResult = true;
+        } else if (line.compare(0, 10, "AB_PAD_DB=") == 0) {
+            padDb = line.substr(10);
+        }
+    }
+
+    // it started at all - despite AB_LOG_DIR being unwritable
+    REQUIRE(gotResult);
+    // never the App's own library path
+    CHECK(ldLibraryPath.find(foreignLib) == string::npos);
+    // the resources dir's gamecontrollerdb.txt is there, whatever the App's own env carried
+    CHECK(padDb.find(resourcesDb) != string::npos);
+}
