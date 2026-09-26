@@ -416,6 +416,13 @@ recipe is the clean route if they are ever to ship.
 - `VirtualPad=true|false` (absent = true) says whether the App runs with the virtual pad mapper.
   `AB_APP_VIRTUAL_PAD` carries it, and `app_env.sh` skips abpadd and the preload when it is off.
 - An App's source repository is named `app_<name>`, an extension's `ext_<name>` (the owner's rule).
+- **`Category=`** (2026-09-26): `Games`/`Emulators`/`Tools`/`Media`, case-insensitive
+  (`core/model/game_set.h`'s `AppCategory`, parsed by `GameQueryService::apps()`/`appCategories()`);
+  missing or anything else is `Other`. The set picker's Apps tab (`evoui_set_picker.cpp`) lists "All apps"
+  first, then one row per category with at least one App present, each with its count;
+  `GuiLauncher::showSetName()` shows "Showing: Apps: Tools (3 apps)" for a category row - Apps are counted
+  as apps, never games. The app_* repos and the Store catalog will carry their own category later; this is
+  the app.ini side only.
 
 **The scripts.**
 - `rc/app_env.sh` is one file for every Linux target: the console's libs pack only where
