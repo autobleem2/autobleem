@@ -443,6 +443,11 @@ The machine's facts - system, hardware, storage with its free space, network add
 audio drivers, the connected pads - re-read every second. On a PlayStation Classic with the AutoBleem
 kernel this item opens **PSC-Bios** instead (chapter 6).
 
+The first two controllers are shown as Player 1 and Player 2 - the ports the PS1 emulator gives them.
+Any further controller is shown as not used by the PS1 emulator. RetroArch assigns controllers by its own
+settings and may order them differently. When a controller is plugged in or pulled out, the launcher
+briefly shows which pad is Player 1 and Player 2.
+
 ![Hardware Information](../images/en/hardware-info.jpg)
 
 ### 4.3 The button guide

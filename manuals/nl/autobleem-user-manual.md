@@ -296,6 +296,11 @@ De PS1-spellen als lijst met hun mappen en de cover en details van degene die is
 
 De machinefeiten - systeem, hardware, opslag met vrije ruimte, netwerkadres, de beeldscherm- en audiostuurprogramma's, de aangesloten controllers - opnieuw gelezen elke seconde. Op een PlayStation Classic met de AutoBleem-kernel opent dit item **PSC-Bios** (hoofdstuk 6).
 
+De eerste twee controllers worden weergegeven als Player 1 en Player 2 – de poorten die de PS1-emulator aan hen toekent.
+Elke verdere controller wordt weergegeven als niet gebruikt door de PS1-emulator. RetroArch wijst controllers toe
+volgens zijn eigen instellingen en kan ze anders ordenen. Wanneer een controller wordt ingesteld of verwijderd, toont
+de launcher kort welke pad Player 1 en Player 2 is.
+
 ![Hardwaregegevens](../images/en/hardware-info.jpg)
 
 ### 4.3 De buttonhulpgids

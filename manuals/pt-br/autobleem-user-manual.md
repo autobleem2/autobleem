@@ -455,6 +455,11 @@ Os fatos da máquina - sistema, hardware, armazenamento com seu espaço livre, e
 áudio, os controles conectados - relido a cada segundo. Em um PlayStation Classic com o kernel AutoBleem este item abre
 **PSC-Bios** em vez disso (capítulo 6).
 
+Os dois primeiros controles são mostrados como Player 1 e Player 2 – as portas que o emulador PS1 lhes atribui. Qualquer
+controle adicional é mostrado como não utilizado pelo emulador PS1. RetroArch atribui controles de acordo com suas próprias
+configurações e pode ordená-los de forma diferente. Quando um controle é conectado ou desconectado, o launcher mostra brevemente
+qual alavanca é Player 1 e Player 2.
+
 ![Informações de Hardware](../images/en/hardware-info.jpg)
 
 ### 4.3 O Guia de Botões

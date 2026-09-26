@@ -477,6 +477,11 @@ Maskinens fakta - system, hårdvara, lagring med fritt utrymme, nätverksadresse
 ljudstyrprogrammen, anslutna styrenheter - omläst varje sekund. På en PlayStation Classic med
 AutoBleem-kerneln öppnas **PSC-Bios** istället (kapitel 6).
 
+De två första enheterna visas som Player 1 och Player 2 – de portar som PS1-emulatorn tilldelar dem.
+Alla ytterligare enheter visas som oanvända av PS1-emulatorn. RetroArch tilldelar enheter enligt egna
+inställningar och kan ordna dem annorlunda. När en enhet ansluts eller kopplas från visar startaren kort
+vilken pad som är Player 1 och Player 2.
+
 ![Hårdvaruinformation](../images/en/hardware-info.jpg)
 
 ### 4.3 Knappguiden

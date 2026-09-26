@@ -487,6 +487,11 @@ Die Fakten der Maschine - System, Hardware, Speicher mit seinem freien Platz, Ne
 und Audio-Treiber, die verbundenen Pads - neu gelesen jede Sekunde. Auf einer PlayStation Classic mit dem
 AutoBleem-Kernel öffnet dieses Element stattdessen **PSC-Bios** (Kapitel 6).
 
+Die erste und zweite Steuerung werden als Player 1 und Player 2 angezeigt – die Anschlüsse, die der PS1-Emulator ihnen gibt.
+Jede weitere Steuerung wird als nicht von dem PS1-Emulator verwendet angezeigt. RetroArch weist Steuerungen nach seinen eigenen
+Einstellungen zu und kann sie anders anordnen. Wenn eine Steuerung angeschlossen oder abgezogen wird, zeigt der Launcher kurz,
+welcher Pad Player 1 und Player 2 ist.
+
 ![Hardware-Informationen](../images/en/hardware-info.jpg)
 
 ### 4.3 Der Button-Leitfaden

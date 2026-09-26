@@ -451,6 +451,11 @@ Maskinens fakta - system, hardware, lagerplads med dens frie plads netværk-adre
 tilsluttede pads - genleser hvert sekund. På PlayStation Classic med AutoBleem-kernelen åbner dette element
 **PSC-Bios** i stedet (kapitel 6).
 
+De to første controllers vises som Player 1 og Player 2 – portene som PS1-emulatoren giver dem. Enhver
+yderligere controller vises som ikke brugt af PS1-emulatoren. RetroArch tildeler controllers efter egne
+indstillinger og kan ordne dem anderledes. Når en controller tilsluttes eller fjernes, viser launcher'en
+kort, hvilken pad der er Player 1 og Player 2.
+
 ![Hardware Information](../images/da/hardware-info.jpg)
 
 ### 4.3 Knap-vejledningen
