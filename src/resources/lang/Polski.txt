@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -338,7 +338,6 @@ Unlock=Odblokuj
 Unlock the settings=Odblokuj ustawienia
 Unpack a processor into System/Processors=Rozpakuj procesor do System/Processors
 Unpack an extension into the Extensions folder=Rozpakuj rozszerzenie do folderu Extensions
-UP=GÓRA
 Update available=Dostępna aktualizacja
 Update failed=Aktualizacja nie powiodła się
 Update now=Aktualizuj teraz

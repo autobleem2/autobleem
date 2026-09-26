@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -338,7 +338,6 @@ Unlock=Desblocar
 Unlock the settings=Desblocar los paramètres
 Unpack a processor into System/Processors=Descompressatz un processor dins System/Processors
 Unpack an extension into the Extensions folder=Descompressatz una extension dins lo dorsièr Extensions
-UP=AMONT
 Update available=Mesa a jorn disponibla
 Update failed=Fracàs de la mesa a jorn
 Update now=Metre a jorn ara

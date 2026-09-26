@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -338,7 +338,6 @@ Unlock=Odemknout
 Unlock the settings=Odemknout nastavení
 Unpack a processor into System/Processors=Rozbalte procesor do System/Processors
 Unpack an extension into the Extensions folder=Rozbalte rozšíření do složky Extensions
-UP=NAHORU
 Update available=Aktualizace k dispozici
 Update failed=Aktualizace selhala
 Update now=Aktualizovat nyní

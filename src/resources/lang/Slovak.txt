@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -338,7 +338,6 @@ Unlock=Odomknúť
 Unlock the settings=Odomknúť nastavenia
 Unpack a processor into System/Processors=Rozbaľte procesor do System/Processors
 Unpack an extension into the Extensions folder=Rozbaľte rozšírenie do priečinka Extensions
-UP=HORE
 Update available=Dostupná aktualizácia
 Update failed=Aktualizácia zlyhala
 Update now=Aktualizovať teraz

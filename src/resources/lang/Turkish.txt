@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -338,7 +338,6 @@ Unlock=Kilidi aç
 Unlock the settings=Ayarların kilidini aç
 Unpack a processor into System/Processors=Bir işlemciyi System/Processors içine açın
 Unpack an extension into the Extensions folder=Bir eklentiyi Extensions klasörüne açın
-UP=YUKARI
 Update available=Güncelleme mevcut
 Update failed=Güncelleme başarısız
 Update now=Şimdi güncelle

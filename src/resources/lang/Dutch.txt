@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -338,7 +338,6 @@ Unlock=Ontgrendelen
 Unlock the settings=Instellingen ontgrendelen
 Unpack a processor into System/Processors=Pak een processor uit in System/Processors
 Unpack an extension into the Extensions folder=Pak een extensie uit in de map Extensions
-UP=OMHOOG
 Update available=Update beschikbaar
 Update failed=Update mislukt
 Update now=Nu bijwerken

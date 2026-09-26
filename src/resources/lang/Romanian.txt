@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -338,7 +338,6 @@ Unlock=Deblochează
 Unlock the settings=Deblochează setările
 Unpack a processor into System/Processors=Dezarhivează un procesor în System/Processors
 Unpack an extension into the Extensions folder=Dezarhivează o extensie în folderul Extensions
-UP=SUS
 Update available=Actualizare disponibilă
 Update failed=Actualizarea a eșuat
 Update now=Actualizează acum

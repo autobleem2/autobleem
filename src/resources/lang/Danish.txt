@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -338,7 +338,6 @@ Unlock=Lås op
 Unlock the settings=Lås indstillingerne op
 Unpack a processor into System/Processors=Pak en processor ud i System/Processors
 Unpack an extension into the Extensions folder=Pak en udvidelse ud i mappen Extensions
-UP=OP
 Update available=Opdatering tilgængelig
 Update failed=Opdatering mislykkedes
 Update now=Opdater nu

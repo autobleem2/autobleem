@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -338,7 +338,6 @@ Unlock=Avaa lukitus
 Unlock the settings=Avaa asetusten lukitus
 Unpack a processor into System/Processors=Pura prosessori kansioon System/Processors
 Unpack an extension into the Extensions folder=Pura laajennus Extensions-kansioon
-UP=YLÖS
 Update available=Päivitys saatavilla
 Update failed=Päivitys epäonnistui
 Update now=Päivitä nyt

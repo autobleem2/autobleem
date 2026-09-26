@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -338,7 +338,6 @@ Unlock=Unlock
 Unlock the settings=Unlock the settings
 Unpack a processor into System/Processors=Unpack a processor into System/Processors
 Unpack an extension into the Extensions folder=Unpack an extension into the Extensions folder
-UP=UP
 Update available=Update available
 Update failed=Update failed
 Update now=Update now

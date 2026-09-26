@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -338,7 +338,6 @@ Unlock=Desbloquear
 Unlock the settings=Desbloquear as configurações
 Unpack a processor into System/Processors=Descompacte um processador em System/Processors
 Unpack an extension into the Extensions folder=Descompacte uma extensão na pasta Extensions
-UP=CIMA
 Update available=Atualização disponível
 Update failed=A atualização falhou
 Update now=Atualizar agora

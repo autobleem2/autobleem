@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 358
+# Untranslated: 0 / Total: 357
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -338,7 +338,6 @@ Unlock=Lås upp
 Unlock the settings=Lås upp inställningarna
 Unpack a processor into System/Processors=Packa upp en processor i System/Processors
 Unpack an extension into the Extensions folder=Packa upp ett tillägg i mappen Extensions
-UP=UPP
 Update available=Uppdatering tillgänglig
 Update failed=Uppdateringen misslyckades
 Update now=Uppdatera nu
