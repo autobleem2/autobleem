@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -218,6 +218,7 @@ Not available for this system=Nie je k dispozícii pre tento systém
 Not available on this system=V tomto systéme nie je k dispozícii
 Not connected=Nepripojené
 Not installed=Nenainštalované
+not used by the PS1 emulator=nepoužíva ho PS1 emulátor
 NOTICE: At least one connected gamepad is not recognized.=UPOZORNENIE: Aspoň jeden pripojený ovládač nebol rozpoznaný.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=UPOZORNENIE: Aspoň jeden pripojený ovládač nebol rozpoznaný. Nastavte ho v ponuke Sieť a ovládače.
 Off=Vypnutý
@@ -237,6 +238,8 @@ Play all PSX games with RA:=Hrať všetky PSX hry cez RA:
 Play in RetroArch=Hrať v RetroArch
 Play using RA:=Hrať cez RA:
 Player=Hráč
+Player 1=Hráč 1
+Player 2=Hráč 2
 Players=Hráči
 PlayStation=PlayStation
 Please confirm=Potvrďte prosím

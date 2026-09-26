@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -218,6 +218,7 @@ Not available for this system=Niet beschikbaar voor dit systeem
 Not available on this system=Niet beschikbaar op dit systeem
 Not connected=Niet verbonden
 Not installed=Niet geïnstalleerd
+not used by the PS1 emulator=wordt niet gebruikt door de PS1-emulator
 NOTICE: At least one connected gamepad is not recognized.=LET OP: Ten minste één aangesloten controller wordt niet herkend.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=LET OP: Ten minste één aangesloten controller wordt niet herkend. Stel hem in via Netwerk & controllers.
 Off=Uit
@@ -237,6 +238,8 @@ Play all PSX games with RA:=Speel alle PSX games met RA:
 Play in RetroArch=Spelen in RetroArch
 Play using RA:=Speel met RA:
 Player=Speler
+Player 1=Speler 1
+Player 2=Speler 2
 Players=Spelers
 PlayStation=PlayStation
 Please confirm=Bevestig

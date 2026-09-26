@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -218,6 +218,7 @@ Not available for this system=Indisponibilă pentru acest sistem
 Not available on this system=Nu este disponibil pe acest sistem
 Not connected=Neconectat
 Not installed=Neinstalat
+not used by the PS1 emulator=nefolosit de emulatorul PS1
 NOTICE: At least one connected gamepad is not recognized.=NOTĂ: Cel puțin un controler conectat nu este recunoscut.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=NOTĂ: Cel puțin un controler conectat nu este recunoscut. Configurează-l în Rețea și controlere.
 Off=Oprit
@@ -237,6 +238,8 @@ Play all PSX games with RA:=Joaca toate jocurile PSX cu RA:
 Play in RetroArch=Joacă în RetroArch
 Play using RA:=Joaca folosind RA:
 Player=Jucator
+Player 1=Jucător 1
+Player 2=Jucător 2
 Players=Jucatori
 PlayStation=PlayStation
 Please confirm=Te rog confirma

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -218,6 +218,7 @@ Not available for this system=Pas disponibla per aqueste sistèma
 Not available on this system=Pas disponible sus aqueste sistèma
 Not connected=Pas connectat
 Not installed=Pas installat
+not used by the PS1 emulator=pas utilizat per l'emulator PS1
 NOTICE: At least one connected gamepad is not recognized.=AVÍS : Almens una maneta connectada es pas reconeguda.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=AVÍS : Almens una maneta connectada es pas reconeguda. Configuratz-la dins Ret e manetas.
 Off=Desactivat
@@ -237,6 +238,8 @@ Play all PSX games with RA:=Jogar a totes los jòcs PSX amb RA :
 Play in RetroArch=Jogar dins RetroArch
 Play using RA:=Jogar amb RA :
 Player=Jogaire
+Player 1=Jogaire 1
+Player 2=Jogaire 2
 Players=Jogaires
 PlayStation=PlayStation
 Please confirm=Volgatz confirmar

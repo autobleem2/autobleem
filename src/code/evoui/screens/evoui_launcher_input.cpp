@@ -7,6 +7,7 @@
 #include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
 #include "core/model/timing.h"
+#include "core/model/pad_assignment.h"
 
 #include <algorithm>
 #include <iostream>
@@ -123,6 +124,10 @@ void GuiLauncher::loop() {
                 break;
             case Event::Type::ButtonUp:
                 loop_joyButtonReleased(); // button released
+                break;
+            case Event::Type::PadAdded:
+            case Event::Type::PadRemoved:
+                showPadAssignment();
                 break;
             default:
                 break;
@@ -272,6 +277,82 @@ void GuiLauncher::loop_joyMoveDown() {
             motionStart = 0;
         }
     }
+}
+
+//*******************************
+// psPlayerSlotLabel (local)
+//*******************************
+// the enum's UI text, literal _() calls at each branch so tools/lang_tools.py's extract (which only
+// recognises a literal string inside _(...), not a runtime value) picks up the three keys.
+static string psPlayerSlotLabel(PsPlayerSlot slot) {
+    switch (slot) {
+    case PsPlayerSlot::Player1:
+        return _("Player 1");
+    case PsPlayerSlot::Player2:
+        return _("Player 2");
+    case PsPlayerSlot::Unused:
+    default:
+        return _("not used by the PS1 emulator");
+    }
+}
+
+//*******************************
+// GuiLauncher::currentPadAssignment
+//*******************************
+// ableem::Input::pads() in its own (ascending SDL device-index) order, as the id pair
+// decidePadAssignmentChange() compares - each pad's guid+name, so a like-named pad on a different port
+// still counts as a change, and a replugged identical pad on the same port does not.
+PadAssignment GuiLauncher::currentPadAssignment() const {
+    PadAssignment result;
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    for (size_t i = 0; i < pads.size() && i < 2; i++)
+        result.ids.push_back(pads[i].guid + "|" + pads[i].name);
+    return result;
+}
+
+//*******************************
+// GuiLauncher::seedPadAssignment
+//*******************************
+// records the current assignment as already "shown", with no NotificationLine - called from
+// loadAssets() (startup, and every time the display is reacquired after a game), so SDL's start-up
+// PadAdded burst and the pad flush/reopen around a launch never pop the notice by themselves; only an
+// assignment that differs from this seed (a live PadAdded/PadRemoved after that) will.
+void GuiLauncher::seedPadAssignment() {
+    lastShownPadAssignment = currentPadAssignment();
+    padAssignmentSuppressedEmpty = false;
+}
+
+//*******************************
+// GuiLauncher::showPadAssignment
+//*******************************
+// pcsx-ab/pcsx-abnxt assign PS1 port 1/2 by ascending SDL device-index at (re)probe time -
+// ableem::Input::pads() already enumerates in that same order, so this is what a game started right
+// now would use. Only pops the NotificationLine when decidePadAssignmentChange() says the P1/P2
+// assignment actually changed from what was last shown - not on every PadAdded/PadRemoved, which SDL
+// also fires at start-up (seedPadAssignment() covers that) and during a re-enumeration's momentary
+// empty reading (decidePadAssignmentChange()'s own suppressed-empty rule covers that).
+void GuiLauncher::showPadAssignment() {
+    PadAssignment current = currentPadAssignment();
+    PadAssignmentDecision decision =
+        decidePadAssignmentChange(current, lastShownPadAssignment, padAssignmentSuppressedEmpty);
+    padAssignmentSuppressedEmpty = decision.suppressedEmpty;
+    if (!decision.show)
+        return;
+    lastShownPadAssignment = current;
+
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    if (pads.empty()) {
+        notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
+        return;
+    }
+    string text;
+    for (size_t i = 0; i < pads.size() && i < 2; i++) {
+        if (!text.empty())
+            text += ", ";
+        PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()));
+        text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
+    }
+    notificationLines[1].setText(text, DefaultShowingTimeout);
 }
 
 //*******************************

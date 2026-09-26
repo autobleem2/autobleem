@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 388
+# Untranslated: 0 / Total: 391
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -218,6 +218,7 @@ Not available for this system=No disponible para este sistema
 Not available on this system=No disponible en este sistema
 Not connected=No conectado
 Not installed=No instalado
+not used by the PS1 emulator=no utilizado por el emulador de PS1
 NOTICE: At least one connected gamepad is not recognized.=AVISO: Al menos un mando conectado no se reconoce.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=AVISO: Al menos un mando conectado no se reconoce. Configúralo en Red y mandos.
 Off=Desactivado
@@ -237,6 +238,8 @@ Play all PSX games with RA:=Jugar todos los juegos PSX con RA:
 Play in RetroArch=Jugar en RetroArch
 Play using RA:=Jugar usando RA:
 Player=Jugador
+Player 1=Jugador 1
+Player 2=Jugador 2
 Players=Jugadores
 PlayStation=PlayStation
 Please confirm=Por favor confirma
