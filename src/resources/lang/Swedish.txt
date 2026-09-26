@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -16,6 +16,7 @@ Are you sure you want to delete=Är du säker på att du vill radera
 Are you sure you want to flush all covers?=Är du säker på att du vill nollställa alla omslag?
 Are you sure you want to power off?=Är du säker på att du vill stänga av?
 Are you sure?=Är du säker?
+Arrow up=Pil upp
 Ask again in a day=Fråga igen om en dag
 Audio driver=Ljuddrivrutin
 AutoBleem=AutoBleem

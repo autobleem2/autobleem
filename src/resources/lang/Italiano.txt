@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -16,6 +16,7 @@ Are you sure you want to delete=Sei sicuro di voler cancellare
 Are you sure you want to flush all covers?=Sei sicuro di voler cancellare tutte le cover?
 Are you sure you want to power off?=Sei sicuro di voler spegnere la console?
 Are you sure?=Sei sicuro?
+Arrow up=Freccia su
 Ask again in a day=Chiedi di nuovo tra un giorno
 Audio driver=Driver audio
 AutoBleem=AutoBleem

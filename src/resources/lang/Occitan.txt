@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -16,6 +16,7 @@ Are you sure you want to delete=Sètz segur que volètz suprimir
 Are you sure you want to flush all covers?=Volètz vertadièrament suprimir totas las cobèrturas ?
 Are you sure you want to power off?=Sètz segur que volètz atudar la consòla?
 Are you sure?=O volètz vertadièrament ?
+Arrow up=Sageta amont
 Ask again in a day=Tornar demandar dins un jorn
 Audio driver=Pilòt àudio
 AutoBleem=AutoBleem

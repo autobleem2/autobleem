@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -16,6 +16,7 @@ Are you sure you want to delete=Esti sigur ca vrei sa stergi
 Are you sure you want to flush all covers?=Esti sigur ca vrei sa stergi toate cover-urile?
 Are you sure you want to power off?=Esti sigur ca vrei sa opresti consola?
 Are you sure?=Esti sigur?
+Arrow up=Săgeată sus
 Ask again in a day=Întreabă din nou peste o zi
 Audio driver=Driver audio
 AutoBleem=AutoBleem

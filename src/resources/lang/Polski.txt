@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -16,6 +16,7 @@ Are you sure you want to delete=Czy na pewno chcesz usunąć
 Are you sure you want to flush all covers?=Czy na pewno chcesz wyczyścić wszystkie okładki?
 Are you sure you want to power off?=Czy na pewno chcesz wyłączyć konsolę?
 Are you sure?=Czy jesteś pewien?
+Arrow up=Strzałka w górę
 Ask again in a day=Zapytaj ponownie za dzień
 Audio driver=Sterownik dźwięku
 AutoBleem=AutoBleem

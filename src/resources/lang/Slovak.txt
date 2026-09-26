@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -16,6 +16,7 @@ Are you sure you want to delete=Ste si istý, že chcete zmazať
 Are you sure you want to flush all covers?=Naozaj chcete zmazať všetky obaly?
 Are you sure you want to power off?=Naozaj chcete vypnúť konzolu?
 Are you sure?=Ste si tým istý?
+Arrow up=Šípka hore
 Ask again in a day=Opýtať sa znova o deň
 Audio driver=Ovládač zvuku
 AutoBleem=AutoBleem

@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -16,6 +16,7 @@ Are you sure you want to delete=Estas seguro que quieres borrar
 Are you sure you want to flush all covers?=¿Estas seguro que quieres eliminar todas las caratulas?
 Are you sure you want to power off?=¿Seguro que quieres apagar la consola?
 Are you sure?=¿Estas seguro?
+Arrow up=Flecha arriba
 Ask again in a day=Preguntar de nuevo en un día
 Audio driver=Controlador de audio
 AutoBleem=AutoBleem

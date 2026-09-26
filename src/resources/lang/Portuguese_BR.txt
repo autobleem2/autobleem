@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -16,6 +16,7 @@ Are you sure you want to delete=Tem certeza que deseja excluir
 Are you sure you want to flush all covers?=Você tem certeza que deseja atualizar todas as capas?
 Are you sure you want to power off?=Tem certeza que deseja desligar?
 Are you sure?=Você tem certeza?
+Arrow up=Seta para cima
 Ask again in a day=Perguntar de novo em um dia
 Audio driver=Driver de áudio
 AutoBleem=AutoBleem

@@ -766,8 +766,11 @@ declarations - not `using namespace ableem`, because the app's `GuiScreen` share
   `Button`/`Key` replace `SDL_BTN_*`/`SDLK_*`. `dpadUp()/Down()/Left()/Right()/Centered()` are the old
   `PadMapper::isUp()` etc (state, not just "this event's direction" - screens read them right after `poll()`
   returns a Dpad event, same priority order as before: up, down, right, left, center).
-  `setKeyboardAsPad(true)` (the default on a dev host) is what lets `tools/win_drive.ps1` drive the app -
-  X/O/S/T = cross/circle/square/triangle, I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2.
+  `setKeyboardAsPad(true)` (the default on **every** platform since 2026-09-26) turns keys into pad events:
+  the PC-style map (`ui/keyboard_map.h`, see "The keyboard" under Build) everywhere, and on a dev host also
+  the letter map `tools/win_drive.ps1` drives the app with - X/O/S/T = cross/circle/square/triangle,
+  I/J/K/L = d-pad, Space/B = Start/Select, Q/E/1/2 = L1/R1/L2/R2. `keyboardPresent()` says whether a
+  keyboard is connected (`engine/keyboard_presence.h`).
 - **`GuiBase`/`GuiScreen`** - `GuiBase` owns Platform+Renderer+Input+Audio in that order. The app's `Gui`
   (`gui/gui.h`) derives from it and adds theme/config/database/carousel state - lib_ableem has no idea what a
   theme or a database is. The app's own `gui/gui_screen.h` is now a thin shim: `class GuiScreen :
@@ -1022,10 +1025,35 @@ screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_d
 the client (`run "menu 6; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
 with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only smoke test.
 
-**Keyboard = gamepad on debug hosts** (`ableem::Input::setKeyboardAsPad`, on by default off the console):
-`X O S T` = cross/circle/square/triangle, `I J K L` = d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2,
-`Esc` = power off (exits). `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts those keys
-to its window, screenshots after each, and collects the logs — use it to smoke test without a controller.
+**The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,
+on every platform - a PC stick, Windows, a Pi, a USB keyboard on the console. `ableem::Input` applies
+`lib_ableem/include/ableem/ui/keyboard_map.h` (header-only, tested in `test_keyboard`) to every key event:
+
+| Key | Pad | | Key | Pad |
+|---|---|---|---|---|
+| Arrows | d-pad | | F1 | Select |
+| Enter (and keypad Enter) | Cross | | F2 | Start |
+| Backspace, Esc | Circle | | Page Up / Page Down | L1 / R1 |
+| Tab | Triangle | | Home / End | L2 / R2 |
+| Space | Square | | F10 | L2+R2 (the launcher's System menu) |
+
+A held key's repeats are swallowed (the screens have their own hold logic). The power button
+(`SDL_SCANCODE_SLEEP`) and the console's Reset/Open keys are not in the map and behave as before. A screen
+that takes typed text turns the map off for its own duration (`GuiKeyboard`: `setKeyboardAsPad(false)` +
+`setRawKeyboard(true)`, restored on close) - there Enter, Esc, Backspace and the arrows are the text field's.
+**On a dev host** the old letter map stays alongside: `X O S T` = cross/circle/square/triangle, `I J K L` =
+d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2. It owns Space (Start, not Square), and `Esc`
+stays the power off (exits) - Backspace is Circle there; the two maps share no other key. The DebugDriver's
+`key` command goes through the map as a real key does (`key f10` opens the System menu), so a script can test
+it. `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts letter-map keys to its
+window, screenshots after each, and collects the logs.
+
+**Keyboard presence** (`Input::keyboardPresent()`, what the Button Guide shows the keyboard column by): a key
+seen this session, or `ableem::KeyboardPresence::detect()` (`engine/keyboard_presence.*`) - on Linux every
+`/sys/class/input/eventN/device/capabilities/key` bitmap with Enter and at least 20 letters (a pad's `BTN_*`,
+the console's power/reset buttons and a number pad are not keyboards; the word size, 32 or 64 bits, is told from
+the text, since a 32-bit userland on a 64-bit kernel cannot know the kernel's), on Windows
+`GetRawInputDeviceList`'s `RIM_TYPEKEYBOARD`. Asked afresh each time, so a keyboard plugged in later counts.
 
 ### Running on PC (debug)
 

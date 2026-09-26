@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -16,6 +16,7 @@ Are you sure you want to delete=Möchten Sie wirklich löschen
 Are you sure you want to flush all covers?=Möchten Sie wirklich alle Cover leeren?
 Are you sure you want to power off?=Möchten Sie das Gerät wirklich ausschalten?
 Are you sure?=Sind Sie sicher?
+Arrow up=Pfeil hoch
 Ask again in a day=In einem Tag erneut fragen
 Audio driver=Audiotreiber
 AutoBleem=AutoBleem
