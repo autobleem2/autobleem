@@ -219,7 +219,7 @@ systemowym.
 | | Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
 | | Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). Wyłączone podczas skanowania. |
 | **System** | Opcje | Ustawienia AutoBleem (punkt 3.6). |
-| | Sieć i kontrolery | (Konsola, Raspberry Pi i pendrive PC) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrz rozdział 6. |
+| | Sieć i kontrolery | (Konsola, Raspberry Pi i pendrive PC) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrz rozdział 6. Jeśli PSC-Bios jest zainstalowany, ale wyłączony (w Rozszerzeniach), ta pozycja zostaje wyszarzona z notatką "włącz w Rozszerzeniach" - Krzyżyk otwiera Rozszerzenia, żeby go włączyć. |
 | | Informacje o sprzęcie | Fakty maszyny: system, CPU, dyski, interfejsy sieciowe, strefa czasowa, ekran, pady i ich mapowania. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6); na pozostałych maszynach pokazuje tę stronę informacyjną. |
 | | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
 | | O programie | Autorzy i licencja. |

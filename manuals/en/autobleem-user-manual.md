@@ -219,7 +219,7 @@ item is also in the system menu.
 | | Memory Cards | Your memory card sets (section 3.7). |
 | | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). Disabled while a scan is running. |
 | **System** | Options | AutoBleem's settings (section 3.6). |
-| | Network & Controllers | (Console, Raspberry Pi and PC stick) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. |
+| | Network & Controllers | (Console, Raspberry Pi and PC stick) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. If PSC-Bios is installed but disabled (in Extensions), this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list to re-enable it. |
 | | Hardware Information | The machine's facts: system, CPU, storage, network interfaces, time zone, display, the pads and their mappings. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6); on other machines it shows this information page. |
 | | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | | About | Credits and licence. |
