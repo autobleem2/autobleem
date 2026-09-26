@@ -481,6 +481,11 @@ Les faits de la machine - système, matériel, stockage avec son espace libre, a
 d'affichage et audio, les manettes connectées - relus chaque seconde. Sur une PlayStation Classic avec le noyau
 AutoBleem cet élément ouvre **PSC-Bios** à la place (chapitre 6).
 
+Les deux premiers contrôleurs sont affichés comme Player 1 et Player 2 – les ports que l'émulateur PS1 leur attribue.
+Tout contrôleur supplémentaire est affiché comme non utilisé par l'émulateur PS1. RetroArch attribue les contrôleurs
+selon ses propres paramètres et peut les ordonner différemment. Quand un contrôleur est branché ou débranché, le lanceur
+affiche brièvement quel pad est Player 1 et Player 2.
+
 ![Informations matérielles](../images/en/hardware-info.jpg)
 
 ### 4.3 Le guide des touches

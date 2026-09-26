@@ -454,6 +454,11 @@ Fakty o maszynie - system, sprzęt, dyski z wolnym miejscem, adresy sieciowe, st
 podłączone pady - odczytywane co sekundę. Na PlayStation Classic z kernelem AutoBleem ta pozycja otwiera
 zamiast tego **PSC-Bios** (rozdział 6).
 
+Pierwsze dwie kontrolery są wyświetlane jako Player 1 i Player 2 – porty, które emulator PS1 im przydziela.
+Każdy dodatkowy kontroler jest wyświetlany jako nieużywany przez emulator PS1. RetroArch przydziela kontrolery
+według własnych ustawień i może je uporządkować inaczej. Gdy kontroler jest podłączony lub odłączony, launcher
+krótko pokazuje, który pad to Player 1 i Player 2.
+
 ![Informacje o sprzęcie](../images/pl/hardware-info.jpg)
 
 ### 4.3 Przewodnik po przyciskach

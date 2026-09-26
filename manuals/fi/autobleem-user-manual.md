@@ -463,6 +463,11 @@ Koneen faktat - järjestelmä laitteisto tallennustila vapaa tila verkkoosoittee
 liitetyt ohjaimet - uudelleen luettu jokainen sekunti. PlayStation Classicsissa AutoBleem-kernelin kanssa
 tämä avaa **PSC-Bios**:in sijaan (luku 6).
 
+Kaksi ensimmäistä ohjaiminta näytetään nimellä Player 1 ja Player 2 – portit, jotka PS1-emulaattori antaa heille.
+Mikä tahansa lisäohjain näytetään PS1-emulaattorin käyttämättömänä. RetroArch määrittää ohjaimet omien
+asetustensa mukaan ja voi järjestää ne eri tavalla. Kun ohjain kytketään tai kytketään irti, käynnistin näyttää
+lyhyesti, mikä pad on Player 1 ja Player 2.
+
 ![Laitteiston tieto](../images/fi/hardware-info.jpg)
 
 ### 4.3 Painikeo opas

@@ -493,6 +493,11 @@ Los faches de la maquina - sistèma, material, emmagazinatge amb son espaci liur
 d'afichatge e àudio, las manetas connectadas - ra-legits cada segonda. Sus una PlayStation Classic amb lo
 nucli AutoBleem aqueste element dobrís **PSC-Bios** en plaça (capítol 6).
 
+Los dos primièrs controllers se presentan coma Player 1 e Player 2 – los pòrts que l'emulatòr PS1 lor assigna.
+Tota maneta suplimentària se presenta coma non utilizat per l'emulatòr PS1. RetroArch assigna los controllers
+segont sas paramètres e pòt los ordenar diferentes. Quand un controller se branca o se debranca, lo llançador
+mostra breu quau pad es Player 1 e Player 2.
+
 ![Entresenhas de material](../images/en/hardware-info.jpg)
 
 ### 4.3 La guida de los botons

@@ -504,6 +504,11 @@ Fakta o počítači - systém, hardware, úložiště s jeho volným místem, s�
 a zvuková ovladače, připojené gamepady - znovu čten každou sekundu. Na PlayStation Classic
 s jádrem AutoBleem se tato položka otevře **PSC-Bios** místo toho (kapitola 6).
 
+První dva řadiče jsou zobrazeny jako Player 1 a Player 2 – porty, které jim přiděluje emulátor PS1.
+Jakýkoli další řadič je zobrazen jako nepoužitý emulátorem PS1. RetroArch přiřazuje řadiče podle
+vlastního nastavení a může je objednat jinak. Když je řadič připojen nebo odpojen, spouštěč krátce
+zobrazuje, který pad je Player 1 a Player 2.
+
 ![Informace o hardwaru](../images/en/hardware-info.jpg)
 
 ### 4.3 Průvodce tlačítky
