@@ -19,6 +19,7 @@
 #include "../controls/evoui_stateselector.h"
 #include "core/main.h"
 #include "core/model/timing.h"
+#include "core/model/pad_assignment.h"
 #include <vector>
 #include <memory>
 #include "gui/gui.h"
@@ -82,8 +83,16 @@ public:
     void loop_joyMoveDown();
 
     // a pad connected or disconnected: what PS1 port each one now lands on (C9), a NotificationLine -
-    // quiet, only on the change, not shown at startup/loadAssets
+    // quiet, only on the change, not shown at startup/loadAssets. seedPadAssignment() (loadAssets(), and
+    // every time a game returns the display) records the current assignment as already "shown" without
+    // popping the notice, so SDL's start-up PadAdded burst and the flush/reopen around a launch stay quiet;
+    // showPadAssignment() (a live PadAdded/PadRemoved) only pops it when ableem::PadAssignment actually
+    // differs from lastShownPadAssignment (decidePadAssignmentChange(), core/model/pad_assignment.h).
+    void seedPadAssignment();
     void showPadAssignment();
+    PadAssignment currentPadAssignment() const;
+    PadAssignment lastShownPadAssignment;
+    bool padAssignmentSuppressedEmpty = false;
 
     // a button is pressed
     void loop_joyButton_Pressed();

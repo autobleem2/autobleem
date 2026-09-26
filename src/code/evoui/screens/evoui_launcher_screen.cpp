@@ -464,6 +464,11 @@ void GuiLauncher::loadAssets() {
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.create(2);
 
+    // silently record who's Player 1/2 right now (C9): loadAssets() runs at startup and every time the
+    // display comes back after a game, both of which fire a burst of PadAdded/PadRemoved that must not
+    // itself pop the notice - only a *later* live change should (see showPadAssignment()).
+    seedPadAssignment();
+
     scanRosterChangedSinceReload = false;
 
     fadeAlpha = 255;
