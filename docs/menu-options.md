@@ -36,6 +36,25 @@ classic start screen of earlier versions is gone.
 | Memory Card | PS1 games | The two-card memory card editor for the game. |
 | Resume | PS1 games with resume points | Pick a resume point to continue from. |
 
+## The keyboard
+
+Every screen driven by the pad works from a keyboard, on every platform (2026-09-26):
+
+| Key | Pad button |
+|---|---|
+| Arrow keys | d-pad |
+| Enter | Cross |
+| Esc or Backspace | Circle (on a development build Esc closes the program; Backspace is Circle there) |
+| Tab | Triangle |
+| Space | Square (on a development build Space is Start - its letter map owns it) |
+| F1 / F2 | Select / Start |
+| Page Up / Page Down | L1 / R1 |
+| Home / End | L2 / R2 |
+| F10 | L2 + R2 - the System menu |
+
+In a screen where text is typed (the on-screen keyboard) the keys type instead. The Button Guide (Triangle, or
+Tab) lists the keys beside the pad buttons when a keyboard is connected or has been typed on.
+
 ## Quick menu (Up, or the gear icon)
 
 A short panel over the launcher, for what a player reaches for from the carousel (2026-09-26):
