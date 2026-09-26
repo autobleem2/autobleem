@@ -494,12 +494,8 @@ void GuiLauncher::loop_openQuickMenu() {
 //*******************************
 // an installed extension that can run here offers the "network" entry: the Network & Controllers item shows
 bool GuiLauncher::networkProvided() {
-#if AB_SDK_ABI >= 4
     app.extensionCatalog().scan();
     return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
-#else
-    return false; // the SDK before entry points (ABI 4): nothing can provide one
-#endif
 }
 
 //*******************************
@@ -663,13 +659,8 @@ void GuiLauncher::loop_openExtensions() {
 // line, and what it asked the launcher for is done afterwards.
 void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
     app.extensionCatalog().scan();
-    const ExtensionInfo *info = nullptr;
-#if AB_SDK_ABI >= 4
-    if (name.empty())
-        info = app.extensionCatalog().findProvider(entry);
-    else
-#endif
-        info = app.extensionCatalog().find(name);
+    const ExtensionInfo *info =
+        name.empty() ? app.extensionCatalog().findProvider(entry) : app.extensionCatalog().find(name);
     if (info == nullptr) {
         // the Store ships with every package, so this is a stick someone tidied; a provider went missing
         // between the menu and here
@@ -681,13 +672,8 @@ void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
     const string title = info->title;
     const string extension = info->name; // info is the catalog's: the run may scan it again
     const bool networkUp = System::hasDefaultRoute();
-    ExtensionRuntime::Refusal why;
-#if AB_SDK_ABI >= 4
-    if (!entry.empty())
-        why = app.extensions().runEntry(extension, entry, networkUp);
-    else
-#endif
-        why = app.extensions().run(extension, networkUp);
+    const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
+                                                        : app.extensions().runEntry(extension, entry, networkUp);
     forgetHeldModifiers(); // its screens ran their own loops
     gui->input().flushEvents();
     switch (why) {
