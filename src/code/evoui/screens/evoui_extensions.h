@@ -33,6 +33,8 @@ public:
 
     // why an extension cannot run now, as the row shows it; "" = it can
     static std::string reasonFor(const ExtensionInfo &extension, bool networkUp);
+    // an extension the user may not switch off here (PSC-Bios on the console): greyed, no Triangle
+    static bool lockedOn(const ExtensionInfo &extension);
 
 private:
     ExtensionCatalog &catalog;
