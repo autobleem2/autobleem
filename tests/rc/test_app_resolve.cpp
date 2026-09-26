@@ -186,7 +186,7 @@ TEST_CASE("rc/app_env.sh starts abpadd through an unwritable log dir, with the l
     const string abpadDir = root + "/Autobleem/bin/abpad";
     const string resultFile = root + "/result.txt";
     const string blockedLogDir = root + "/BlockedLogDir"; // a plain file where a dir is expected
-    const string foreignLib = root + "/ForeignLib";        // what abpadd must NOT run with
+    const string foreignLib = root + "/ForeignLib";       // what abpadd must NOT run with
 
     tmp.makeSubDir("Apps/Foreign");
     tmp.makeSubDir("Autobleem/bin/autobleem");
@@ -197,27 +197,38 @@ TEST_CASE("rc/app_env.sh starts abpadd through an unwritable log dir, with the l
     // a fake abpadd - a shell script standing in for the real binary - that just records the
     // environment it was actually started with, instead of touching any real pad
     tmp.writeFile("Autobleem/bin/abpad/abpadd", "#!/bin/sh\n"
-                                                 "touch /tmp/abpad.state\n"
-                                                 "{\n"
-                                                 "  echo \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH\"\n"
-                                                 "  echo \"AB_PAD_DB=$AB_PAD_DB\"\n"
-                                                 "} > \"$AB_TEST_RESULT\"\n");
+                                                "touch /tmp/abpad.state\n"
+                                                "{\n"
+                                                "  echo \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH\"\n"
+                                                "  echo \"AB_PAD_DB=$AB_PAD_DB\"\n"
+                                                "} > \"$AB_TEST_RESULT\"\n");
     tmp.writeFile("Autobleem/bin/abpad/libabpad.so", "x");
     System::execUnixCommand(("chmod +x '" + slashes(abpadDir) + "/abpadd'").c_str());
     System::execUnixCommand("rm -f /tmp/abpad.state");
 
-    string script = "AB_APP_DIR='" + appDir + "'\n"
-                     "AB_ROOT='" + root + "'\n"
-                     "AB_LOG_DIR='" + blockedLogDir + "'\n"
-                     "AB_APP_LIB='" + foreignLib + "'\n"
-                     "AB_TEST_RESULT='" + resultFile + "'\n"
-                     "export AB_APP_DIR AB_ROOT AB_LOG_DIR AB_APP_LIB AB_TEST_RESULT\n"
-                     ". '" + string(AB_RC_DIR) + "/app_env.sh'\n"
-                     "ab_waited=0\n"
-                     "while [ ! -f \"$AB_TEST_RESULT\" ] && [ $ab_waited -lt 50 ]; do\n"
-                     "  ab_waited=$((ab_waited + 1))\n"
-                     "  sleep 0.1\n"
-                     "done\n";
+    string script = "AB_APP_DIR='" + appDir +
+                    "'\n"
+                    "AB_ROOT='" +
+                    root +
+                    "'\n"
+                    "AB_LOG_DIR='" +
+                    blockedLogDir +
+                    "'\n"
+                    "AB_APP_LIB='" +
+                    foreignLib +
+                    "'\n"
+                    "AB_TEST_RESULT='" +
+                    resultFile +
+                    "'\n"
+                    "export AB_APP_DIR AB_ROOT AB_LOG_DIR AB_APP_LIB AB_TEST_RESULT\n"
+                    ". '" +
+                    string(AB_RC_DIR) +
+                    "/app_env.sh'\n"
+                    "ab_waited=0\n"
+                    "while [ ! -f \"$AB_TEST_RESULT\" ] && [ $ab_waited -lt 50 ]; do\n"
+                    "  ab_waited=$((ab_waited + 1))\n"
+                    "  sleep 0.1\n"
+                    "done\n";
     // app_env.sh exports LD_PRELOAD once abpadd is up, which is exactly what abpadd's own preload is
     // for - but it means nothing else must run in this same shell afterwards: our fake libabpad.so is
     // not a real shared object, and a shell that honours LD_PRELOAD (as MSYS2's does) fails every
