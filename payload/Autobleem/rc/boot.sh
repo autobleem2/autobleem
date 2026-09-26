@@ -10,6 +10,15 @@ RC=/media/Autobleem/rc
 # where this run's logs go (RAM unless kept on the stick) - exported to everything below, the launcher too
 . $RC/ab_log.sh
 
+# Nothing of ours in /tmp is aged out. The console boots with its clock at 2018-09-01; on a network (the
+# AutoBleem kernel's WiFi) timesyncd jumps it to today, and systemd-tmpfiles-clean.timer (15 min after boot,
+# then daily) then finds everything made at boot eight years old - /usr/lib/tmpfiles.d/tmp.conf ages /tmp
+# at 10 days - and deletes it: /tmp/lib's soname links went (the Apps fell back to the firmware's SDL 2.0.4),
+# the libs archive, the udev rules file. /tmp is RAM, emptied by every reboot anyway. /run/tmpfiles.d is
+# tmpfs too - nothing on the console's own storage is written; an x line keeps a path and all under it.
+mkdir -p /run/tmpfiles.d
+echo 'x /tmp/*' > /run/tmpfiles.d/autobleem.conf
+
 # USB gamepad fix - the rules file from tmpfs: it survives the standby (the stick is unmounted then) and
 # holds nothing on the stick
 cp -f $RC/20-joystick.rules /tmp/20-joystick.rules
