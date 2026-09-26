@@ -64,7 +64,7 @@ STORE_CATALOG = 'https://autobleem.retromenele.pl/store/rpi/catalog.json'
 
 PSCBIOS = [
     # PSC-Bios is an extension (2026-09-24): the launcher's Hardware Information item opens it
-    ('pscbios-main', 'menu network; wait_screen GuiPscBiosMain; wait 600'),
+    ('pscbios-main', 'menu network; wait_screen GuiActionMenu; wait 600'),
     ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
     ('pscbios-gamepads', 'press o; wait 400; press s; wait_screen GuiGamepadMenu; wait 400'),
     ('pscbios-wizard', 'press x; wait 1200'),
