@@ -15,7 +15,7 @@ RC_DIR="$DATA_MOUNT/Autobleem/rc"
 SEL_RETROARCH=4
 SEL_UPDATE=6      # the online update: the launcher downloaded it, autobleem-update applies it (install.sh --update)
 
-# Where this run's logs go (docs/quiet-stick-plan.md): RAM - systemd's /run/autobleem for this service
+# Where this run's logs go (autobleem-main's docs/archive/quiet-stick-plan.md): RAM - systemd's /run/autobleem for this service
 # (RuntimeDirectory=autobleem), /tmp/autobleem when started some other way - unless the logs are kept on the
 # data partition (System/Logs/keep, the Options row). rc/ab_log.sh decides, the same file the console uses;
 # re-read on every pass, since the launcher may have changed its mind (it writes <runtime>/log_dir).

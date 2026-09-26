@@ -47,7 +47,7 @@ description), so all eleven fit on the screen without scrolling.
 ## Scanner processors
 
 The programs in `System/Processors/` that every scan runs before it reads the games
-(`docs/scanner-processors-plan.md`), in two sequences - one per tab:
+(autobleem-main's `docs/archive/scanner-processors-plan.md`), in two sequences - one per tab:
 
 | Button | Does |
 |---|---|

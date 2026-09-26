@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks an AutoBleem scanner processor before it is published (docs/scanner-processors-plan.md).
+"""Checks an AutoBleem scanner processor before it is published (autobleem-main's docs/archive/scanner-processors-plan.md).
 
     python tools/proc_check.py <processor folder> --games <sample Games tree>
     python tools/proc_check.py <processor folder> --roms <sample roms tree>
