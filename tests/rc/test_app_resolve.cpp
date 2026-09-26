@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -202,7 +203,7 @@ TEST_CASE("rc/app_env.sh starts abpadd through an unwritable log dir, with the l
                                                  "  echo \"AB_PAD_DB=$AB_PAD_DB\"\n"
                                                  "} > \"$AB_TEST_RESULT\"\n");
     tmp.writeFile("Autobleem/bin/abpad/libabpad.so", "x");
-    System::execUnixCommand("chmod +x '" + slashes(abpadDir) + "/abpadd'");
+    System::execUnixCommand(("chmod +x '" + slashes(abpadDir) + "/abpadd'").c_str());
     System::execUnixCommand("rm -f /tmp/abpad.state");
 
     string script = "AB_APP_DIR='" + appDir + "'\n"
@@ -216,20 +217,27 @@ TEST_CASE("rc/app_env.sh starts abpadd through an unwritable log dir, with the l
                      "while [ ! -f \"$AB_TEST_RESULT\" ] && [ $ab_waited -lt 50 ]; do\n"
                      "  ab_waited=$((ab_waited + 1))\n"
                      "  sleep 0.1\n"
-                     "done\n"
-                     "cat \"$AB_TEST_RESULT\" 2>/dev/null\n"
-                     "rm -f /tmp/abpad.state\n";
+                     "done\n";
+    // app_env.sh exports LD_PRELOAD once abpadd is up, which is exactly what abpadd's own preload is
+    // for - but it means nothing else must run in this same shell afterwards: our fake libabpad.so is
+    // not a real shared object, and a shell that honours LD_PRELOAD (as MSYS2's does) fails every
+    // process it forks from here on. So the driver does nothing but source app_env.sh and wait; the
+    // result is read back from the file directly, not from this script's own stdout.
     ofstream(tmp.at("driver.sh"), ios::binary) << script;
+    System::execUnixCommandLines("sh \"" + slashes(tmp.at("driver.sh")) + "\"");
+    System::execUnixCommand("rm -f /tmp/abpad.state"); // a fresh process - not the driver's, LD_PRELOAD and all
 
+    bool gotResult = DirEntry::exists(resultFile);
     string ldLibraryPath, padDb;
-    bool gotResult = false;
-    for (string line : System::execUnixCommandLines("sh \"" + slashes(tmp.at("driver.sh")) + "\"")) {
-        line = Strings::trim(line);
-        if (line.compare(0, 16, "LD_LIBRARY_PATH=") == 0) {
-            ldLibraryPath = line.substr(16);
-            gotResult = true;
-        } else if (line.compare(0, 10, "AB_PAD_DB=") == 0) {
-            padDb = line.substr(10);
+    if (gotResult) {
+        istringstream in(tmp.readFile("result.txt"));
+        string line;
+        while (getline(in, line)) {
+            line = Strings::trim(line);
+            if (line.compare(0, 16, "LD_LIBRARY_PATH=") == 0)
+                ldLibraryPath = line.substr(16);
+            else if (line.compare(0, 10, "AB_PAD_DB=") == 0)
+                padDb = line.substr(10);
         }
     }
 
