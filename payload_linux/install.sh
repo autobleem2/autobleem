@@ -1475,8 +1475,8 @@ install_cover_databases() {
 # install_sample_games
 #*******************************
 # So the shelf is not empty on the first start: the sample pack from the download repository (samples/,
-# built by tools/build_samples.py from tools/samples/samples.json - homebrew whose licence allows
-# redistribution) laid out as it is on the data partition: Games/<game>/ with a locked Game.ini and a
+# built by autobleem-samples' tools/build_samples.py - homebrew whose licence allows redistribution) laid
+# out as it is on the data partition: Games/<game>/ with a locked Game.ini and a
 # cover for the PS1 game, RetroArch/roms/<system>/ + thumbnails for the others (those only when RetroArch
 # is installed - nothing plays them otherwise). Once: System/samples.txt remembers the pack installed, so a
 # re-run does not put back a sample the user deleted. Not behind --no-downloads (that is RetroArch's
