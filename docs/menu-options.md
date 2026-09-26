@@ -38,7 +38,7 @@ classic start screen of earlier versions is gone.
 
 ## The keyboard
 
-Every screen driven by the pad works from a keyboard, on every platform (2026-09-26):
+Every screen driven by the pad works from a keyboard on every platform (a PC without a pad, the console with a USB keyboard, the Pi, the PC stick) (2026-09-26):
 
 | Key | Pad button |
 |---|---|
@@ -63,7 +63,7 @@ A short panel over the launcher, for what a player reaches for from the carousel
 |---|---|
 | Re-Scan Games | Starts a scan (a note says so when one is running already). |
 | Store | Runs the Store extension (`Extensions/store/`); a notification line when it is not installed. |
-| Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick): Wi-Fi, Bluetooth pairing, DualShock 3 pairing, the controller mapping wizard. |
+| Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick): Wi-Fi, Bluetooth pairing, DualShock 3 pairing, the controller mapping wizard. When that extension is installed but disabled, the item is greyed with "enable it in Extensions" - Cross opens the Extensions list at it. |
 | System menu... | The System menu (below). |
 
 Up / Down move (wrapping), Cross picks, Circle goes back. Nothing is only here: every item is in the

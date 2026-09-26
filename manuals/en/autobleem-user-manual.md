@@ -180,8 +180,7 @@ shelf as they are found.
 | Down | Open the icon row under the game (Settings, Game, Memory Card, Resume). Up closes it. |
 | L2 + R2 | The system menu (section 3.4). |
 
-On a PC without a pad the keyboard stands in: **X O S T** are Cross, Circle, Square, Triangle; **I J K L**
-the directions; **Space** Start, **B** Select; **Q E 1 2** are L1, R1, L2, R2; **Esc** leaves the program.
+**With a keyboard** (a PC without a pad, or a USB keyboard on the console, a Pi or the PC stick) the keys stand in: **Arrow keys** = d-pad, **Enter** = Cross, **Esc or Backspace** = Circle, **Tab** = Triangle, **Space** = Square, **F1 / F2** = Select / Start, **Page Up / Page Down** = L1 / R1, **Home / End** = L2 / R2, **F10** = the system menu. On a development machine Esc closes the program and Space is Start.
 
 In every list and menu: Up / Down move, **L2 / R2 turn pages**, L1 / R1 jump to the first / last row,
 **Cross selects, Circle goes back**. A screen with settings saves them when you leave it with Circle.
@@ -202,8 +201,7 @@ with none opens on an empty shelf with the icon row showing Settings only.
 
 **Up** in the launcher, or the **gear icon** in the icon row (where Settings / Game / Memory Card / Resume are):
 the Quick menu for actions you reach for from the carousel. A short list: *Re-Scan Games* (starts a scan
-now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (on the console, the
-Raspberry Pi and the PC stick: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6), and *System menu...* 
+now), *Store* (the AutoBleem Store to download extensions), *Network & Controllers* (only where an installed extension provides the `network` entry - PSC-Bios on the console, a Pi and the PC stick: Wi-Fi, Bluetooth pairing, the gamepad mapping wizard - see section 6; greyed out with "enable it in Extensions" when that extension is disabled - Cross opens the Extensions list), and *System menu...* 
 (the full menu below). Up / Down move (wrapping), Cross picks, Circle back. Nothing is unique here - every
 item is also in the system menu.
 
@@ -219,7 +217,7 @@ item is also in the system menu.
 | | Memory Cards | Your memory card sets (section 3.7). |
 | | Scanner processors | The programs every scan runs first - their order, on or off (section 3.13). Disabled while a scan is running. |
 | **System** | Options | AutoBleem's settings (section 3.6). |
-| | Network & Controllers | (Console, Raspberry Pi and PC stick) Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. If PSC-Bios is installed but disabled (in Extensions), this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list to re-enable it. |
+| | Network & Controllers | Only where an installed extension provides the `network` entry (`Provides=network` in its `extension.ini` - PSC-Bios on the console, a Pi and the PC stick) - Wi-Fi, Bluetooth controller pairing, DualShock 3 setup, and the gamepad mapping wizard - see chapter 6. When that extension is installed but disabled, this item stays greyed with a note "enable it in Extensions" - Cross opens the Extensions list at it. |
 | | Hardware Information | The machine's facts: system, CPU, storage, network interfaces, time zone, display, the pads and their mappings. On a console with the AutoBleem kernel this opens PSC-Bios (chapter 6); on other machines it shows this information page. |
 | | Software Update | (Raspberry Pi and PC) Check the site for a newer AutoBleem or RetroArch now. |
 | | About | Credits and licence. |
@@ -379,16 +377,10 @@ says so.
 AutoBleem runs on (a PlayStation Classic needs the AutoBleem kernel's WiFi). Its four tabs, L1 / R1 between
 them:
 
-- **Apps** and **Games**: what the sources offer, each with its picture, version, size and source. Cross
-  installs (or updates, or tries again), Triangle removes what the Store installed. L2 / R2 or Left / Right
-  turn pages, **Select** shows one source at a time, **Start** searches the titles.
-- **Downloads**: what is downloading, waiting, failed or installed. Downloads go on in the background, also
-  after you leave the Store; starting a game or powering off only pauses them, and a stopped download
-  resumes where it stopped. An installed game appears on the shelf after the next scan, with the Store's
-  picture as its cover.
+- **Apps** and **Games**: what the sources offer, each with its picture, version, size and source favicon. Installed items are greyed out. Cross installs (or updates, or tries again after a failure), Triangle removes what the Store installed. L2 / R2 or Left / Right turn pages, **Select** shows one source at a time, **Start** searches the titles. Item pictures are cached and can be retried if they fail to load.
+- **Downloads**: what is downloading, waiting, failed or installed. The progress bar updates steadily. Downloads go on in the background, also after you leave the Store; starting a game or powering off only pauses them, and a stopped download resumes where it stopped. An installed game appears on the shelf after the next scan, with the Store's picture as its cover. Downloads over 2 GB work on all platforms, including 32-bit builds.
 - **Sources**: where the lists come from - AutoBleem's own catalog, a TSV list dropped into
-  `System/Extensions/store/sources/`, and the addresses you add with **Add a source URL**. Cross on one you
-  added renames it, changes its address, switches it between `http://` and `https://`, or removes it.
+  `System/Extensions/store/sources/`, and the addresses you add with **Add a source URL**. Each source shows its favicon in the list. Cross on one you added renames it, changes its address, switches it between `http://` and `https://`, or removes it.
 
 ![The Store's Apps tab](../images/en/store-apps.jpg)
 
@@ -455,7 +447,7 @@ kernel this item opens **PSC-Bios** instead (chapter 6).
 
 ### 4.3 The button guide
 
-Triangle on the shelf: every button of every screen on one page.
+Triangle on the shelf: every button of every screen on one page. When a USB keyboard is connected or has been used, a Keyboard column shows the keys alongside the pad buttons.
 
 ![The button guide](../images/en/button-guide.jpg)
 
@@ -542,7 +534,8 @@ is in the Extensions list. **ABFlashKit** is an App in the Apps set.
 ### 6.1 PSC-Bios
 
 An extension that comes with the console package, also available on a Raspberry Pi and the PC stick. It is
-opened from the System menu's *Network & Controllers* item (or from the Extensions list).
+opened from the System menu's *Network & Controllers* item (or from the Extensions list). When that extension is installed but disabled, the *Network & Controllers* item in the Quick menu and System menu is greyed out with a note "enable it in Extensions" - Cross there opens the Extensions list at it.
+
 The opening screen shows machine facts: time, timezone, WiFi/Ethernet/Bluetooth network adapters with their
 addresses, and every connected controller with whether it has a button mapping. The network and Bluetooth
 parts need the AutoBleem kernel on the console (section 6.2) or system tools on a Raspberry Pi / PC stick;
@@ -550,7 +543,7 @@ the gamepad wizard works on any system.
 
 ![PSC-Bios: the Network & Controllers hub](../images/en/pscbios-main.jpg)
 
-- **Select - Wi-Fi Network** (kernel or NetworkManager only): the network name (typed, or picked from a
+- **Select - Wi-Fi Network** (kernel or NetworkManager): the network name (typed, or picked from a
   scan), password, driver mode, and *Apply / Restart Network*. The time zone is set here too. The console's IP address is shown once connected.
 - **Square - Bluetooth Controllers**: a scan for Bluetooth gamepads (DualShock 4, etc.), to pair or remove.
 - **L1 - DualShock 3 Pairing**: USB-only connection for the first DualShock 3, through the kernel's sixaxis plugin.
@@ -561,8 +554,7 @@ the gamepad wizard works on any system.
 DualShock picture that lights up as you press. Because the pad under test cannot be trusted, the wizard
 is driven by the console's **front buttons**: **RESET** switches to the next pad, **OPEN** starts the mapping
 (then answers each question - press the button lit on the picture, or OPEN when the pad has no such
-button), **POWER** cancels or leaves. At the end the new mapping is added for a test and OPEN saves it under
-a name of your choice; the launcher loads it from then on.
+button), **POWER** cancels or leaves. **NEW**: while mapping a button, holding Circle on the pad for 2 seconds leaves the wizard (a bar fills and the footer hint says "Hold 2 s: Exit"). While the pad has no mapping yet, holding any button for 2 seconds does it ("Hold any button 2 s: Exit"). A short press is mapped as usual. On a keyboard, Esc / Space / Enter stand in for POWER / RESET / OPEN. At the end the new mapping is added for a test and OPEN saves it under a name of your choice; the launcher loads it from then on.
 
 ![PSC-Bios: the controller mapping wizard](../images/en/pscbios-wizard.jpg)
 
