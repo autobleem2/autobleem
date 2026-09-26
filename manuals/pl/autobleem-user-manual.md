@@ -195,30 +195,40 @@ wychodzisz Kółkiem.
 wbudowanych gier konsoli, na PlayStation Classic), każdy folder, który założysz w `Games/` (gra w
 podfolderze należy do tej grupy), *Ulubione*, *Historię* oraz - gdy jakaś gra jest tak oznaczona - *Gry na
 pistolet świetlny*. Zakładka RetroArch ma po jednej grupie na system z grami, a także własne Ulubione i
-Historię RetroArch. Zakładka Aplikacje to jedna grupa aplikacji. Każdy wiersz pokazuje liczbę gier; grupa
+Historię RetroArch. Zakładka Aplikacje grupuje programy: *Wszystkie aplikacje*, a potem *Gry*, *Emulatory*, *Narzędzia*, *Multimedia* i *Inne* (kategorię ustawia plik `app.ini` każdej aplikacji). Każdy wiersz pokazuje liczbę elementów; grupa
 bez gier otwiera pustą półkę z rzędem ikon pokazującym same Ustawienia.
 
-### 3.4 Menu systemowe
+### 3.4 Szybkie menu
 
-**L2 + R2** (razem, w dowolnej kolejności) otwiera menu systemowe nad półką:
+**Góra** w launcherze, lub **ikona koła zębatego** w rzędzie ikon (gdzie Ustawienia / Gra / Karta pamięci / Wznowienie):
+szybkie menu na dostęp do akcji, które robisz z półki. Krótka lista: *Skanuj gry ponownie* (skanowanie teraz),
+*Sklep* (Sklep AutoBleem na rozszerzenia), *Sieć i pady* (tylko na konsoli i Raspberry Pi: Wi-Fi, parowanie
+Bluetooth, kreator mapowania pada - patrzrozzial 6), i *Menu systemowe...* (pełne menu poniżej). Góra / Dół
+przechodzą (z zawinięciem), Krzyżyk wybiera, Kółko wychodzi. Nic tu unikatowego - każda pozycja jest też w menu
+systemowym.
 
-| Pozycja | Co robi |
-|---|---|
-| Skanuj gry ponownie | Szuka teraz nowych, zmienionych lub usuniętych gier (skan sam też obserwuje folder). |
-| Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
-| RetroArch | Wychodzi z launchera do własnego menu RetroArch. Zamknięcie RetroArch wraca. |
-| Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
-| Menedżer gier | Gry PS1 jako lista z folderami: usuwanie gry, czyszczenie okładek. |
-| Informacje o sprzęcie | Maszyna: system, CPU, dyski, sieć, ekran, pady. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6). |
-| Opcje | Ustawienia AutoBleem (punkt 3.5). |
-| Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). |
-| Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
-| O programie | Autorzy i licencja. |
-| Wyłącz | Po potwierdzeniu: na konsoli czuwanie AutoBleem - pendrive odłączony, dioda czerwona, Power przywraca launcher (punkt 2.1); na Pi lub PC maszyna się wyłącza. |
+### 3.5 Menu systemowe
+
+**L2 + R2** (razem, w dowolnej kolejności) otwiera menu systemowe nad półką. Menu jest podzielone na sekcje:
+
+| Sekcja | Pozycja | Co robi |
+|---|---|---|
+| (góra) | Skanuj gry ponownie | Szuka teraz nowych, zmienionych lub usuniętych gier (skan sam też obserwuje folder). |
+| | Rozszerzenia | Rozszerzenia na pendrivie - Sklep AutoBleem i inne (punkt 3.12). |
+| **Biblioteka** | Menedżer gier | Gry PS1 jako lista z folderami: usuwanie gry, czyszczenie okładek. Wyłączone podczas skanowania. |
+| | Karty pamięci | Twoje zestawy kart pamięci (punkt 3.7). |
+| | Procesory skanowania | Programy, które każde skanowanie uruchamia najpierw - ich kolejność, włączenie (punkt 3.13). Wyłączone podczas skanowania. |
+| **System** | Opcje | Ustawienia AutoBleem (punkt 3.6). |
+| | Sieć i pady | (Konsola i Raspberry Pi tylko) Wi-Fi, parowanie padów Bluetooth, konfiguracja DualShock 3 i kreator mapowania - patrzrozzial 6. |
+| | Informacje o sprzęcie | Fakty maszyny: system, CPU, dyski, interfejsy sieciowe, strefa czasowa, ekran, pady i ich mapowania. Na konsoli z kernelem AutoBleem otwiera PSC-Bios (rozdział 6); na pozostałych maszynach pokazuje tę stronę informacyjną. |
+| | Aktualizacja | (Raspberry Pi i PC) Sprawdź teraz, czy na stronie jest nowszy AutoBleem lub RetroArch. |
+| | O programie | Autorzy i licencja. |
+| **Wyjście** | RetroArch | Wychodzi z launchera do własnego menu RetroArch. Zamknięcie RetroArch wraca. |
+| | Wyłącz | Po potwierdzeniu: na konsoli czuwanie AutoBleem - pendrive odłączony, dioda czerwona, Power przywraca launcher (punkt 2.1); na Pi lub PC maszyna się wyłącza. |
 
 ![Menu systemowe](../images/pl/system-menu.jpg)
 
-### 3.5 Opcje
+### 3.6 Opcje
 
 Ustawienia są w grupach; Góra / Dół przechodzą między nimi, Lewo / Prawo zmieniają wartość, Kółko wychodzi
 i zapisuje. Każda zmiana działa od razu.
@@ -241,7 +251,7 @@ i zapisuje. Każda zmiana działa od razu.
 
 ![Opcje, w grupach](../images/pl/options.jpg)
 
-### 3.6 Ustawienia gry
+### 3.7 Ustawienia gry
 
 Przy wybranej grze **Dół** otwiera jej rząd ikon: **Ustawienia** (opcje powyżej), **Gra** (ustawienia samej
 gry), **Karta pamięci** (jej karta) i **Wznów** (jej stany gry). Krzyżyk otwiera tę pod kursorem.
@@ -270,7 +280,7 @@ same ustawienia.
 
 ![Edytor gry](../images/pl/game-editor.jpg)
 
-### 3.7 Karty pamięci i stany gry
+### 3.8 Karty pamięci i stany gry
 
 Każda gra PS1 ma domyślnie własną kartę pamięci (trzymaną razem z jej stanami w `Games/!SaveStates/<folder
 gry>/`). **Karty pamięci** w menu systemowym zarządzają **zestawami wspólnymi** - kartą używaną przez kilka
@@ -289,7 +299,7 @@ PC), AutoBleem zachowuje stan gry z tego miejsca i proponuje go pod ikoną **Wzn
 obrazkiem chwili. Krzyżyk kontynuuje ze slotu, Trójkąt go usuwa. Gra z punktem wznowienia pokazuje mały
 obrazek na ikonie Wznów.
 
-### 3.8 Uruchamianie gier, RetroArch i aplikacje
+### 3.9 Uruchamianie gier, RetroArch i aplikacje
 
 **Krzyżyk** uruchamia wybraną grę. Gra PS1 chodzi w wybranym emulatorze PS1 (punkt 3.5), na pełnym
 ekranie, aż z niej wyjdziesz - na konsoli przednim przyciskiem **Reset** (powrót do launchera z punktem
@@ -305,7 +315,7 @@ Doom, Quake, Amiga, ...) pokazuje najpierw swój opis; Krzyżyk ją uruchamia, K
 
 ![Opis aplikacji przed jej uruchomieniem](../images/pl/app-start.jpg)
 
-### 3.9 Dodawanie gier
+### 3.10 Dodawanie gier
 
 **Gry PS1** trafiają do folderu `Games`, **po jednym folderze na grę**, nazwanym jak gra:
 
@@ -339,14 +349,14 @@ zapisuje listy RetroArch; na pendrivie konsoli uruchom **UpdateRoms** na PC (roz
 
 **Motywy** trafiają do `Themes/<nazwa>/` (`theme.json` i obrazy) - albo wrzuć zip motywu do `Themes/`.
 
-### 3.10 BIOS PS1
+### 3.11 BIOS PS1
 
 Na **PlayStation Classic** emulator używa BIOS-u konsoli. Na **Raspberry Pi, PC i Windows** wgraj własny
 BIOS PS1 do `System/Bios/`: `romw.bin` (amerykański/europejski SCPH-5501/5502) i `romJP.bin` (japoński
 SCPH-5500). Instalatory wypełniają je z paczek BIOS RetroArch, chyba że twoje pliki już tam są. Bez nich
 emulator działa na wbudowanym BIOS-ie HLE, który wiele gier toleruje, a niektóre nie.
 
-### 3.11 Aktualizacje
+### 3.12 Aktualizacje
 
 - **Raspberry Pi, pendrive PC, Windows**: launcher sprawdza stronę przy starcie i raz dziennie (Opcje →
   *Aktualizacje* to kanał; *Aktualizacja* w menu systemowym sprawdza od razu). Gdy jest nowszy AutoBleem
@@ -355,7 +365,7 @@ emulator działa na wbudowanym BIOS-ie HLE, który wiele gier toleruje, a niekt�
   ustawienia zostają; po aktualizacji launcher raz skanuje ponownie.
 - **PlayStation Classic**: uruchom nowszy `AutoBleemInstaller.exe` na pendrivie (punkt 2.1).
 
-### 3.12 Rozszerzenia i Sklep AutoBleem
+### 3.13 Rozszerzenia i Sklep AutoBleem
 
 **Rozszerzenia** dodają do launchera własne ekrany. Mieszkają w `Extensions/<nazwa>/` na pendrivie (na
 Raspberry Pi na partycji danych, w Windows w folderze danych); żeby zainstalować rozszerzenie, rozpakuj tam
@@ -397,7 +407,7 @@ programy dla Linuksa i Windows są na stronie Sklepu, w zakładce **LAN server**
 usługi to `INSTALL-linux.md` (`ext_store/server/` w źródłach). Gry i płyty z PC wgrywa na taki serwer
 **LAN Share** (rozdział 5.2).
 
-### 3.13 Procesory skanowania
+### 3.14 Procesory skanowania
 
 **Procesory skanowania** to małe programy, które każde skanowanie uruchamia, zanim przeczyta gry. Procesor
 może zamienić format, którego AutoBleem nie czyta, na taki, który czyta - na przykład spakowaną grę - albo
@@ -534,17 +544,21 @@ pakietu konsoli: otwiera je *Informacje o sprzęcie* w menu systemowym i jest na
 
 ### 6.1 PSC-Bios
 
-Strona sprzętu: czas i strefa czasowa, adaptery WiFi, Ethernet i Bluetooth z adresami oraz każdy podłączony
-kontroler z informacją, czy ma mapowanie przycisków. Część sieciowa wymaga kernela AutoBleem (punkt 6.2);
-część o kontrolerach działa też na fabrycznej konsoli.
+Rozszerzenie dołączone do pakietu konsoli, dostępne też na Raspberry Pi i pendrivie PC. Jest otwierane z
+menu systemowego pozycji *Sieć i pady* (albo z listy Rozszerzeń na wszystkich platformach). Pierwszy ekran
+pokazuje fakty maszyny: czas, strefę czasową, adaptery sieciowe WiFi/Ethernet/Bluetooth z adresami, oraz
+każdy podłączony kontroler z informacją, czy ma mapowanie przycisków. Część sieciowa wymaga kernela
+AutoBleem na konsoli (punkt 6.2) lub narzędzi systemowych na Raspberry Pi / pendrivie PC; kreator
+mapowania pada działa wszędzie.
 
-![PSC-Bios: strona sprzętu](../images/pl/pscbios-main.jpg)
+![PSC-Bios: centrum Sieć i pady](../images/pl/pscbios-main.jpg)
 
-- **Select - Ustawienia WiFi** (tylko z kernelem): nazwa sieci (wpisana albo wybrana ze skanu Trójkątem),
-  hasło, tryb sterownika, *Zapisz konfigurację/Restartuj sieć*, żeby zastosować, oraz strefa czasowa. Adres
-  IP konsoli pokazuje się po połączeniu.
-- **Kwadrat - Konfiguruj gamepady**: kreator mapowania oraz dwie strony o parowaniu DualShock 3 albo
-  innego pada Bluetooth.
+- **Select - Sieć WiFi** (tylko z kernelem lub NetworkManager): nazwa sieci (wpisana albo wybrana ze skanu),
+  hasło, tryb sterownika, i *Zastosuj / Restartuj sieć*. Strefa czasowa ustawia się tutaj. Adres IP konsoli
+  pokazuje się po połączeniu.
+- **Kwadrat - Pady Bluetooth**: skan padów Bluetooth (DualShock 4, itd.) do sparowania albo usunięcia.
+- **L1 - Parowanie DualShock 3**: połączenie tylko przez USB dla pierwszego DualShock 3, przez plugin sixaxis kernela.
+- **R1 - Mapowanie pada**: kreator mapowania (poniżej).
 - **Trójkąt - O programie**, **Kółko - powrót** do launchera.
 
 **Kreator mapowania** pokazuje podłączony pad "na surowo" - każdą oś, przycisk i krzyżak jako liczby - oraz
@@ -554,7 +568,7 @@ mapowanie (potem odpowiada na każde pytanie - naciśnij przycisk podświetlony 
 pad takiego nie ma), **POWER** anuluje lub wychodzi. Na koniec nowe mapowanie jest dodane do testu, a OPEN
 zapisuje je pod wybraną nazwą; od tej pory launcher je wczytuje.
 
-![Kreator mapowania pada](../images/pl/pscbios-wizard.jpg)
+![PSC-Bios: kreator mapowania pada](../images/pl/pscbios-wizard.jpg)
 
 ### 6.2 ABFlashKit - kernel AutoBleem
 
