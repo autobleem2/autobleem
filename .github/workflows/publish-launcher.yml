@@ -3,8 +3,9 @@
 # This does NOT build the old monolithic package; it builds only the launcher tree (AB_NO_PCSX=1 uses the
 # checked-in emulators, so no emulator repos are needed) and ships launcher-<platform>.tar.gz laid out as
 # the payload the launcher repo contributes: Autobleem/bin/autobleem (autobleem-gui + resources),
-# Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) and Themes/ (the five themes ship with the
-# launcher - they stay in payload/Themes in the repo, no theme pack). Assembly extracts it over the payload.
+# Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) and Themes/ (the five themes, from the
+# autobleem-themes submodule - D5, 2026-09-26; was payload/Themes in this repo). Assembly extracts it over
+# the payload.
 # The psc target's artifact also carries the psc skeleton (payload/'s exploit dir, Autobleem/rc,
 # Autobleem/start.sh, Autobleem/lib/libs.tar.gz, Docs/, Games/) - autobleem-appliance's assemble-psc.sh has
 # nowhere else to get it from, since payload/ lives only in this repo. Deliberately NOT included: RetroArch/
@@ -115,7 +116,7 @@ jobs:
           # extracts it straight over the staged payload:
           #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag/abupdate/abfetch on psc)
           #   Autobleem/bin/abpad      the virtual-gamepad daemon + preload shim
-          #   Themes                   the five themes (owner's rule: themes stay in the repo, no theme pack)
+          #   Themes                   the five themes, from the autobleem-themes submodule (D5)
           # The emulators, the payload skeleton (payload_linux/ or payload/), the console tools
           # (pscbios/abflashkit), and the install-time downloads (cover DBs, samples, RetroArch-psc) are
           # other components' artifacts / site fetches, not this one.
@@ -148,7 +149,7 @@ jobs:
           else
             echo "::warning::no abpad built in $D/apps/abpad - Apps would run without the virtual gamepad"
           fi
-          cp -a payload/Themes/. stage/Themes/
+          cp -a autobleem-themes/Themes/. stage/Themes/
           if [ "${{ matrix.target }}" = psc ]; then
             # the psc skeleton this repo owns and nothing else has: the exploit dir, Autobleem/{rc,start.sh},
             # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - see

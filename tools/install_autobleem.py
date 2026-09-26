@@ -66,7 +66,8 @@ INSTALL NOTES - copies onto the (already cleaned, or already-fresh) drive:
   payload/Apps/<name>/          -> Apps/<name>/                (each app folder replaced whole - the two
                                                                  console tools; the third-party apps are
                                                                  the download repository's psc/apps pack)
-  payload/Themes/<name>/        -> Themes/<name>/              (each theme folder replaced whole)
+  autobleem-themes/Themes/<name>/ -> Themes/<name>/            (each theme folder replaced whole; the
+                                                                 autobleem-themes submodule, since D5)
   payload/RetroArch/            -> RetroArch/                  (the README files and bios/biospack.txt,
                                                                  merged over what is there)
   payload/Docs/                 -> Docs/                       (the manuals and release notes)
@@ -867,7 +868,7 @@ def stage_install(root: Path, opts, dry_run: bool):
     dist_helpers = [REPO_ROOT / 'build_psc' / 'dist' / n for n in ('absplash', 'abfatflag')]  # src/tools/
     db_dir = REPO_ROOT / 'db'
     payload_apps = REPO_ROOT / 'payload' / 'Apps'
-    payload_themes = REPO_ROOT / 'payload' / 'Themes'
+    payload_themes = REPO_ROOT / 'autobleem-themes' / 'Themes'  # the themes' own repo, submodule at autobleem-themes/
     payload_retroarch = REPO_ROOT / 'payload' / 'RetroArch'
 
     usb_autobleem = find_ci(root, 'Autobleem') or (root / 'Autobleem')

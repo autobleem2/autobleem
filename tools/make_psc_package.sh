@@ -8,7 +8,8 @@
 # on the build server did the same by hand):
 #
 #   <zip root>/                        payload/ as checked in: the exploit folder, Autobleem/{rc,lib,start.sh},
-#                                      Apps/, Games/, Themes/, RetroArch/{bin,bios,roms}, Docs/ (the manuals)
+#                                      Apps/, Games/, RetroArch/{bin,bios,roms}, Docs/ (the manuals), plus
+#                                      Themes/ from the autobleem-themes submodule (D5, 2026-09-26)
 #   Autobleem/bin/autobleem/           the launcher + src/resources (config.ini, internal.db, lang/, ...)
 #   Autobleem/bin/db/                  coversJ/P/U.db
 #   Autobleem/lib/libs.tar.gz          the shared libraries rc/autobleem.sh unpacks to /tmp/lib at boot: the
@@ -58,6 +59,10 @@ mkdir -p "$STAGE" "$OUT"
 
 # the checked-in USB tree
 cp -a "$REPO/payload/." "$STAGE/"
+# the five themes: their own repository now (autobleem2/autobleem-themes), a submodule at autobleem-themes/
+# - payload/ no longer carries a Themes/ folder, so it is copied in separately here
+mkdir -p "$STAGE/Themes"
+cp -a "$REPO/autobleem-themes/Themes/." "$STAGE/Themes/"
 
 # the launcher and its resources
 APP="$STAGE/Autobleem/bin/autobleem"

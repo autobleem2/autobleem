@@ -23,7 +23,8 @@
 # data-partition tree: Autobleem/ - with pcsx-ab and its plugins already in bin/emu (armhf), bin/emu-arm64
 # (arm64) or bin/emu-i386 (the PC stick), put there by pcsx-rearmed-develop's builds - Games/, Apps/) with
 # the built parts filled in: the binary and its resources in Autobleem/bin/autobleem, the cover databases in
-# Autobleem/bin/db, and payload/Themes as Themes/. install.sh then copies Autobleem/ Themes/ Games/ Apps/
+# Autobleem/bin/db, and the autobleem-themes submodule's Themes/ as Themes/. install.sh then copies
+# Autobleem/ Themes/ Games/ Apps/
 # onto the exFAT partition as they are - the same install.sh serves every architecture, detecting which at
 # runtime (dpkg --print-architecture), and the platform (a Pi or a PC) with it.
 #
@@ -144,8 +145,9 @@ else
     echo "    (no $VERSION_H - the package carries no VERSION file; make_rpi_image.sh will name the image without one)"
 fi
 
-# themes: the converted theme.json layout, the same ones the console's payload ships
-cp -a "$REPO/payload/Themes/." "$STAGE/Themes/"
+# themes: the converted theme.json layout, from the autobleem-themes submodule (D5, 2026-09-26 - the
+# same five themes that used to live at payload/Themes)
+cp -a "$REPO/autobleem-themes/Themes/." "$STAGE/Themes/"
 
 # cover art databases: not in the package by default since 2026-09-19 - they are 290 MB of the 306, and
 # install.sh downloads them from the download repository (CLAUDE.md, "The download repository"; a Pi needs

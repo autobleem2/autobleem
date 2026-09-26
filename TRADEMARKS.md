@@ -6,10 +6,11 @@ authors and are **not** licensed for reuse:
 
 - the name **AutoBleem** and the names **AutoBleem 2**, **EvolutionUI** and the theme names shipped here;
 - the AutoBleem logo (`ab.png`, `abback2.jpg`, `AB-EvoBack.jpg`, the splash and boot pictures, the icon);
-- the artwork of the shipped themes (`payload/Themes/*`): the backgrounds, the painted images and the
-  music tracks (`ab2/ab.ogg` is screemer's own composition, `aergb/mel.ogg` and `evolution/Absolute
-  Terror.ogg` their authors'). The images `tools/make_theme_images.py`, `make_theme_sounds.py` and
-  `make_theme_music.py` generate are part of the program and under the GPL like the tools themselves; the
+- the artwork of the shipped themes (the `autobleem-themes` submodule's `Themes/*`, since 2026-09-26 -
+  D5): the backgrounds, the painted images and the music tracks (`ab2/ab.ogg` is screemer's own
+  composition, `aergb/mel.ogg` and `evolution/Absolute Terror.ogg` their authors'). The images `tools/
+  make_theme_images.py`, `make_theme_sounds.py` and `make_theme_music.py` (now that submodule's own
+  `tools/`) generate are part of the program and under the GPL like the tools themselves; the
   fonts are under the SIL Open Font License (see the `OFL.txt` next to each).
 
 Section 7(e) of the GPLv3 allows a licensor to decline to grant rights under trademark law, and we do.

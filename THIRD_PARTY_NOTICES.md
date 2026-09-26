@@ -941,18 +941,18 @@ Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Sour
 
 ## Saira
 
-*payload/Themes/default/saira-semicondensed-medium.ttf - the classic screens' font* - **SIL Open Font License 1.1**
+*autobleem-themes submodule, Themes/default/saira-semicondensed-medium.ttf - the classic screens' font* - **SIL Open Font License 1.1**
 
 ```
-Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved Font Name "Saira". The licence text is in payload/Themes/default/OFL.txt.
+Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved Font Name "Saira". The licence text is in the submodule's Themes/default/OFL.txt.
 ```
 
 ## Selawik
 
-*payload/Themes/ab2/selawik-light.ttf - the ab2 theme's font* - **SIL Open Font License 1.1**
+*autobleem-themes submodule, Themes/ab2/selawik-light.ttf - the ab2 theme's font* - **SIL Open Font License 1.1**
 
 ```
-Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See payload/Themes/ab2/OFL.txt.
+Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See the submodule's Themes/ab2/OFL.txt.
 ```
 
 ## Space Shooter Redux (Kenney) and "Venus" (SketchyLogic)
