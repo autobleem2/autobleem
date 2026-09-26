@@ -17,8 +17,8 @@
 //******************
 // A compact panel over the launcher's dimmed background, like the System menu, one row per extension.
 // A row that cannot run (not built for this system, a different AutoBleem, disabled, offline for one that
-// needs the network) is greyed but stays selectable, so its reason can be read. Ours (Author=AutoBleem team
-// - the Store, PSC-Bios, the SDK's sample) come first, the third-party ones after a heading.
+// needs the network) is greyed but stays selectable, so its reason can be read. Ours (a fixed list - the
+// Store, PSC-Bios, the SDK's sample) come first, the third-party ones after a heading.
 class GuiExtensions : public GuiScreen {
 public:
     GuiExtensions(ableem::GuiBase &gui, ExtensionCatalog &catalog, bool networkUp)
@@ -33,8 +33,10 @@ public:
 
     // why an extension cannot run now, as the row shows it; "" = it can
     static std::string reasonFor(const ExtensionInfo &extension, bool networkUp);
-    // an extension the user may not switch off here (PSC-Bios on the console): greyed, no Triangle
+    // an extension the user may not switch off here (PSC-Bios on the console): no Triangle
     static bool lockedOn(const ExtensionInfo &extension);
+    // one the AutoBleem team ships, listed before the third-party ones
+    static bool isOurs(const ExtensionInfo &extension);
 
 private:
     ExtensionCatalog &catalog;

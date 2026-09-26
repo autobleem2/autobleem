@@ -16,8 +16,9 @@ const int RowInset = PanelStyle::RowInset;
 const int IconSize = 56;
 const int EmptyHeight = 110;  // the panel's body when nothing is installed
 const int HeadingHeight = 44; // the heading between ours and the third-party ones
-// ours: what the AutoBleem team ships (the Store, PSC-Bios, the SDK's sample) - listed first
-const char *const OurAuthor = "AutoBleem team";
+// ours: what the AutoBleem team ships (the Store, PSC-Bios, the SDK's sample), by folder name - listed
+// first. A fixed list, not the Author line, which any extension could claim.
+const char *const OurExtensions[] = {"store", "pscbios", "hello"};
 // the console's hardware tool (WiFi, time zone, pads): on the console it cannot be switched off here
 const char *const PscBiosExtension = "pscbios";
 } // namespace
@@ -28,10 +29,20 @@ const int GuiExtensions::HeadingRow; // odr-used by push_back (C++14)
 // GuiExtensions::lockedOn
 //*******************************
 // PSC-Bios on the console is where the WiFi, the pads and the time are set up - disabling it would leave
-// no way back to them, so its row is greyed and Triangle refused. One the crash guard disabled can still
-// be switched back on.
+// no way back to them, so Triangle is refused (and its hint not shown). One the crash guard disabled can
+// still be switched back on.
 bool GuiExtensions::lockedOn(const ExtensionInfo &extension) {
     return extension.name == PscBiosExtension && string(Env::platformName()) == "psc" && !extension.disabled;
+}
+
+//*******************************
+// GuiExtensions::isOurs
+//*******************************
+bool GuiExtensions::isOurs(const ExtensionInfo &extension) {
+    for (const char *name : OurExtensions)
+        if (extension.name == name)
+            return true;
+    return false;
 }
 
 //*******************************
@@ -65,7 +76,7 @@ void GuiExtensions::init() {
     vector<int> theirs;
     const auto &list = catalog.extensions();
     for (int i = 0; i < static_cast<int>(list.size()); i++)
-        (list[i].author == OurAuthor ? rows : theirs).push_back(i);
+        (isOurs(list[i]) ? rows : theirs).push_back(i);
     if (!rows.empty() && !theirs.empty())
         rows.push_back(HeadingRow);
     rows.insert(rows.end(), theirs.begin(), theirs.end());
@@ -154,7 +165,7 @@ void GuiExtensions::render() {
                                          i == selected ? style.text : style.secondary, XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? e.description : reason, textX, rowY + 41,
                                          style.secondary, XALIGN_LEFT);
-        if (!reason.empty() || lockedOn(e))
+        if (!reason.empty())
             style.disabled(renderer, row);
         rowY += RowHeight;
     }
