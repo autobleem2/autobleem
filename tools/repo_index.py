@@ -742,8 +742,14 @@ def index_db(repo, base_url):
     return [file_entry(repo, base_url, p) for p in data_files(os.path.join(repo, "db"))]
 
 
-MANUAL_LANGUAGES = {"en": "English", "pl": "Polski"}
-MANUAL_RE = re.compile(r"^(?P<stem>.+)-(?P<lang>[a-z]{2})\.pdf$")
+MANUAL_LANGUAGES = {
+    "en": "English", "pl": "Polski", "de": "Deutsch", "fr": "Français", "es": "Español", "it": "Italiano",
+    "pt-br": "Português (Brasil)", "zh-cn": "简体中文", "nl": "Nederlands", "sv": "Svenska", "da": "Dansk",
+    "fi": "Suomi", "cs": "Čeština", "sk": "Slovenčina", "ro": "Română", "tr": "Türkçe", "oc": "Occitan",
+}
+# the folder code is one or two hyphen-joined parts (pt-br, zh-cn); a lazy stem so "pt-br"/"zh-cn" are not
+# split at their own hyphen (a greedy stem would back off to the shortest suffix, "br"/"cn" alone - wrong)
+MANUAL_RE = re.compile(r"^(?P<stem>.+?)-(?P<lang>[a-z]{2}(?:-[a-z]{2})?)\.pdf$")
 
 
 def index_manuals(repo, base_url):

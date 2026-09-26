@@ -27,7 +27,12 @@ OUT = os.path.join(REPO, 'manuals', 'images')
 DRIVE = [sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py')]
 PORT = '7795'
 
-LANGS = {'en': 'English', 'pl': 'Polski'}
+# site code -> the launcher's language file name (src/resources/lang/<Name>.txt, config.ini's `language`)
+LANGS = {
+    'en': 'English', 'pl': 'Polski', 'de': 'Deutsch', 'fr': 'French', 'es': 'Spanish', 'it': 'Italiano',
+    'pt-br': 'Portuguese_BR', 'zh-cn': 'Chinese_Simplified', 'nl': 'Dutch', 'sv': 'Swedish', 'da': 'Danish',
+    'fi': 'Finnish', 'cs': 'Czech', 'sk': 'Slovak', 'ro': 'Romanian', 'tr': 'Turkish', 'oc': 'Occitan',
+}
 
 # the launcher's screens: name -> the driver script that reaches it (the shot is taken by the caller)
 LAUNCHER = [
