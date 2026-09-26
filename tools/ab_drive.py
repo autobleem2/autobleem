@@ -54,6 +54,15 @@ def pid_file(port):
     return os.path.join(REPO, 'build_win', f'ab_drive-{port}.pid')
 
 
+def _redact(line):
+    """'auth s3cr3t' -> 'auth ***' - what a raised RuntimeError shows instead of the real token, so a refusal
+    printed to a terminal or logged by a CI step never leaks it. Anything that is not an `auth ...` line is
+    returned unchanged."""
+    if line.startswith('auth '):
+        return 'auth ***'
+    return line
+
+
 class Driver:
     def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None):
         self.sock = socket.create_connection((host, port), timeout=10)
@@ -84,7 +93,9 @@ class Driver:
         self.sock.sendall((line + '\n').encode('utf-8'))
         reply = self._line().decode('utf-8', 'replace')
         if reply.startswith('err'):
-            raise RuntimeError(f'{line!r}: {reply}')
+            # never echo a real token back - even on a refusal, which is the one reply guaranteed to happen
+            # right after `auth <token>` on a wrong guess
+            raise RuntimeError(f'{_redact(line)!r}: {reply}')
         return reply
 
     def grab(self, local_path):
