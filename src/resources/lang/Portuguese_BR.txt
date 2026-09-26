@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 13 / Total: 340
+# Untranslated: 0 / Total: 341
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -315,6 +315,7 @@ Testing=Testes
 The installer could not be started - it is in System/Updates=Não foi possível iniciar o instalador - ele está em System/Updates
 The update is downloaded - the installer is opening...=A atualização foi baixada - abrindo o instalador...
 Theme Default=Padrão do tema
+Third-party extensions=Extensões de terceiros
 This game is protected by its PSN licence and cannot be started=Este jogo é protegido pela licença PSN e não pode ser iniciado
 Title=Título
 Unknown Core (AutoDetect)=Núcleo Desconhecido (Autodetectar)

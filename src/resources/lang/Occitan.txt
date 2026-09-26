@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 13 / Total: 340
+# Untranslated: 0 / Total: 341
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -315,6 +315,7 @@ Testing=Ensag
 The installer could not be started - it is in System/Updates=L'installador a pas pogut èsser aviat - es dins System/Updates
 The update is downloaded - the installer is opening...=La mesa a jorn es telecargada - l'installador se dobrís...
 Theme Default=Defaut del tèma
+Third-party extensions=Extensions tèrças
 This game is protected by its PSN licence and cannot be started=Aqueste jòc es protegit per sa licéncia PSN e se pòt pas aviar
 Title=Títol
 Unknown Core (AutoDetect)=Còr desconegut (AutoDetect)

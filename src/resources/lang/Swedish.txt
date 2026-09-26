@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 13 / Total: 340
+# Untranslated: 0 / Total: 341
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -315,6 +315,7 @@ Testing=Testning
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunde inte startas - det ligger i System/Updates
 The update is downloaded - the installer is opening...=Uppdateringen är nedladdad - installationsprogrammet öppnas...
 Theme Default=Temats standard
+Third-party extensions=Tillägg från tredje part
 This game is protected by its PSN licence and cannot be started=Det här spelet skyddas av sin PSN-licens och kan inte startas
 Title=Titel
 Unknown Core (AutoDetect)=Okänd kärna (AutoDetect)

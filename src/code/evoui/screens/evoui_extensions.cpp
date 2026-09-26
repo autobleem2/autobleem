@@ -13,8 +13,13 @@ const int FooterHeight = PanelStyle::FooterHeight;
 const int RowHeight = 72; // a 56 px icon with room around it
 const int RowInset = PanelStyle::RowInset;
 const int IconSize = 56;
-const int EmptyHeight = 110; // the panel's body when nothing is installed
+const int EmptyHeight = 110;  // the panel's body when nothing is installed
+const int HeadingHeight = 44; // the heading between ours and the third-party ones
+// ours: what the AutoBleem team ships (the Store, PSC-Bios, the SDK's sample) - listed first
+const char *const OurAuthor = "AutoBleem team";
 } // namespace
+
+const int GuiExtensions::HeadingRow; // odr-used by push_back (C++14)
 
 //*******************************
 // GuiExtensions::reasonFor
@@ -41,17 +46,43 @@ void GuiExtensions::init() {
     icons.clear();
     for (const ExtensionInfo &e : catalog.extensions())
         icons.push_back(e.icon.empty() ? ableem::Texture() : ableem::Texture::loadFile(renderer, e.icon));
+    // ours first, then the third-party ones under a heading (only when there are both), each in the
+    // catalog's order (by title)
+    rows.clear();
+    vector<int> theirs;
+    const auto &list = catalog.extensions();
+    for (int i = 0; i < static_cast<int>(list.size()); i++)
+        (list[i].author == OurAuthor ? rows : theirs).push_back(i);
+    if (!rows.empty() && !theirs.empty())
+        rows.push_back(HeadingRow);
+    rows.insert(rows.end(), theirs.begin(), theirs.end());
     selected = 0;
     firstVisible = 0;
     chosen.clear();
 }
 
 //*******************************
-// GuiExtensions::visibleRows
+// GuiExtensions::rowHeight / visibleRows / bodyHeight
 //*******************************
+int GuiExtensions::rowHeight(int row) const {
+    return rows[row] == HeadingRow ? HeadingHeight : RowHeight;
+}
+
 int GuiExtensions::visibleRows() const {
-    int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
-    return max(1, min(count(), roomForRows / RowHeight));
+    const int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
+    int used = 0, shown = 0;
+    for (int i = firstVisible; i < count() && used + rowHeight(i) <= roomForRows; i++, shown++)
+        used += rowHeight(i);
+    return max(1, shown);
+}
+
+// the whole list when it fits, else as much room as there is - the panel keeps its height while it scrolls
+int GuiExtensions::bodyHeight() const {
+    const int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
+    int all = 0;
+    for (int i = 0; i < count(); i++)
+        all += rowHeight(i);
+    return min(all, roomForRows);
 }
 
 //*******************************
@@ -65,8 +96,8 @@ void GuiExtensions::render() {
     style.dim(renderer);
 
     const bool empty = count() == 0;
-    const int rows = empty ? 0 : visibleRows();
-    const int body = empty ? EmptyHeight : rows * RowHeight;
+    const int shown = empty ? 0 : visibleRows();
+    const int body = empty ? EmptyHeight : bodyHeight();
     const int panelHeight = HeaderHeight + body + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
     style.sheet(renderer, panel);
@@ -84,16 +115,25 @@ void GuiExtensions::render() {
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], _("Unpack an extension into the Extensions folder"),
                                          panel.x + RowInset + 8, rowY + 56, style.secondary, XALIGN_LEFT);
     }
-    const auto &list = catalog.extensions();
-    for (int i = firstVisible; i < firstVisible + rows && i < count(); i++) {
-        const ExtensionInfo &e = list[i];
+    for (int i = firstVisible; i < firstVisible + shown && i < count(); i++) {
+        if (rows[i] == HeadingRow) {
+            const ableem::Rect band(panel.x + 1, rowY, panel.w - 2, HeadingHeight);
+            style.label(renderer, band);
+            gui->text().renderText_WithColor(fonts[FONT_15_BOLD], _("Third-party extensions"), panel.x + RowInset + 8,
+                                             rowY + (HeadingHeight - fonts[FONT_15_BOLD].lineHeight()) / 2,
+                                             style.secondary, XALIGN_LEFT);
+            rowY += HeadingHeight;
+            continue;
+        }
+        const ExtensionInfo &e = extensionAt(i);
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
             style.selection(renderer, row);
         const int textX = panel.x + RowInset + 8 + IconSize + 16;
-        if (icons[i].valid()) {
+        const ableem::Texture &icon = icons[rows[i]];
+        if (icon.valid()) {
             ableem::Rect dst(panel.x + RowInset + 8, rowY + (RowHeight - IconSize) / 2, IconSize, IconSize);
-            renderer.copy(icons[i], nullptr, &dst);
+            renderer.copy(icon, nullptr, &dst);
         }
         const string reason = reasonFor(e, networkUp);
         const string title = e.version.empty() ? e.title : e.title + "  " + e.version;
@@ -109,14 +149,14 @@ void GuiExtensions::render() {
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
         style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
-    if (!empty && firstVisible + rows < count())
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
+    if (!empty && firstVisible + shown < count())
+        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + body + 2, 1);
 
     vector<PanelStyle::HintItem> hints;
     if (!empty) {
         hints.push_back({{"X"}, _("Run")});
         hints.push_back({{"O"}, _("Back")});
-        hints.push_back({{"T"}, list[selected].disabled ? _("Enable") : _("Disable")});
+        hints.push_back({{"T"}, extensionAt(selected).disabled ? _("Enable") : _("Disable")});
     } else {
         hints.push_back({{"O"}, _("Back")});
     }
@@ -137,11 +177,14 @@ void GuiExtensions::moveSelection(int step) {
         selected = (selected + step + count()) % count(); // a row at a time wraps
     else
         selected = max(0, min(count() - 1, selected + step)); // a page stops at the ends
-    const int rows = visibleRows();
+    if (rows[selected] == HeadingRow) // never on the heading: on past it (it is never first or last)
+        selected += step > 0 ? 1 : -1;
     if (selected < firstVisible)
         firstVisible = selected;
-    else if (selected >= firstVisible + rows)
-        firstVisible = selected - rows + 1;
+    while (selected >= firstVisible + visibleRows())
+        firstVisible++;
+    if (firstVisible == selected && selected > 0 && rows[selected - 1] == HeadingRow)
+        firstVisible--; // the first third-party row shows its heading above it
 }
 
 //*******************************
@@ -170,7 +213,7 @@ void GuiExtensions::loop() {
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross && count() > 0) {
-                    const ExtensionInfo &picked = catalog.extensions()[selected];
+                    const ExtensionInfo &picked = extensionAt(selected);
                     if (reasonFor(picked, networkUp).empty()) {
                         app.audio().cursor.play();
                         chosen = picked.name;
@@ -179,7 +222,7 @@ void GuiExtensions::loop() {
                         app.audio().cancel.play(); // greyed: its reason is on the row
                     }
                 } else if (e.button == Button::Triangle && count() > 0) {
-                    const ExtensionInfo &picked = catalog.extensions()[selected];
+                    const ExtensionInfo &picked = extensionAt(selected);
                     app.audio().cursor.play();
                     catalog.setDisabled(picked.name, !picked.disabled);
                 } else if (e.button == Button::L1) {
