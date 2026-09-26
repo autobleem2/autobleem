@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -16,6 +16,7 @@ Are you sure you want to delete=Opravdu chcete smazat
 Are you sure you want to flush all covers?=Opravdu chcete smazat všechny obaly?
 Are you sure you want to power off?=Opravdu chcete vypnout?
 Are you sure?=Jste si jistí?
+Arrow up=Šipka nahoru
 Ask again in a day=Zeptat se znovu za den
 Audio driver=Ovladač zvuku
 AutoBleem=AutoBleem

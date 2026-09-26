@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -16,6 +16,7 @@ Are you sure you want to delete=Haluatko varmasti poistaa
 Are you sure you want to flush all covers?=Haluatko varmasti tyhjentää kaikki kannet?
 Are you sure you want to power off?=Haluatko varmasti sammuttaa laitteen?
 Are you sure?=Oletko varma?
+Arrow up=Nuoli ylös
 Ask again in a day=Kysy uudelleen päivän päästä
 Audio driver=Ääniajuri
 AutoBleem=AutoBleem

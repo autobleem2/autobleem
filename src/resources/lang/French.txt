@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -16,6 +16,7 @@ Are you sure you want to delete=Êtes-vous sûr de vouloir supprimer
 Are you sure you want to flush all covers?=Êtes-vous sûr de vouloir vider toutes les jaquettes ?
 Are you sure you want to power off?=Voulez-vous vraiment éteindre la console ?
 Are you sure?=Êtes-vous sûr ?
+Arrow up=Flèche haut
 Ask again in a day=Redemander dans un jour
 Audio driver=Pilote audio
 AutoBleem=AutoBleem

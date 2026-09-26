@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -16,6 +16,7 @@ Are you sure you want to delete=Silmek istediğine emin misin
 Are you sure you want to flush all covers?=Tüm kapakları temizlemek istediğinizden emin misiniz?
 Are you sure you want to power off?=Kapatmak istediğinizden emin misiniz?
 Are you sure?=Emin misiniz?
+Arrow up=Yukarı ok
 Ask again in a day=Bir gün sonra tekrar sor
 Audio driver=Ses sürücüsü
 AutoBleem=AutoBleem

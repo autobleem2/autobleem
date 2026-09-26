@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -16,6 +16,7 @@ Are you sure you want to delete=Er du sikker på, du vil slette
 Are you sure you want to flush all covers?=Er du sikker på, at du vil rydde alle covers?
 Are you sure you want to power off?=Er du sikker på, at du vil slukke?
 Are you sure?=Er du sikker?
+Arrow up=Pil op
 Ask again in a day=Spørg igen om en dag
 Audio driver=Lyddriver
 AutoBleem=AutoBleem

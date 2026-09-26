@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -16,6 +16,7 @@ Are you sure you want to delete=Weet je zeker dat je wilt verwijderen
 Are you sure you want to flush all covers?=Weet je zeker dat je alle covers wilt wissen?
 Are you sure you want to power off?=Weet je zeker dat je wilt uitschakelen?
 Are you sure?=Weet je het zeker?
+Arrow up=Pijl omhoog
 Ask again in a day=Over een dag opnieuw vragen
 Audio driver=Audiostuurprogramma
 AutoBleem=AutoBleem

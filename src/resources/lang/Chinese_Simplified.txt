@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 350
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -16,6 +16,7 @@ Are you sure you want to delete=确定要删除吗
 Are you sure you want to flush all covers?=确定要清除所有封面吗？
 Are you sure you want to power off?=确定要关机吗？
 Are you sure?=确定吗？
+Arrow up=上箭头
 Ask again in a day=一天后再询问
 Audio driver=音频驱动
 AutoBleem=AutoBleem

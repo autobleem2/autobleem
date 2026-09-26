@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 383
+# Untranslated: 0 / Total: 384
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -16,6 +16,7 @@ Are you sure you want to delete=Are you sure you want to delete
 Are you sure you want to flush all covers?=Are you sure you want to flush all covers?
 Are you sure you want to power off?=Are you sure you want to power off?
 Are you sure?=Are you sure?
+Arrow up=Arrow up
 Ask again in a day=Ask again in a day
 Audio driver=Audio driver
 AutoBleem=AutoBleem
