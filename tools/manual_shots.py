@@ -63,11 +63,15 @@ LAUNCHER = [
 STORE_CATALOG = 'https://autobleem.retromenele.pl/store/rpi/catalog.json'
 
 PSCBIOS = [
-    # PSC-Bios is an extension (2026-09-24): the launcher's Hardware Information item opens it
+    # PSC-Bios is an extension (2026-09-24); the launcher's Network & Controllers item opens its hub
+    # (2026-09-26), whose rows are, in order: Wi-Fi network, Bluetooth controllers, DualShock 3 pairing,
+    # Controller mapping. Each shot starts where the one before left off.
     ('pscbios-main', 'menu network; wait_screen GuiActionMenu; wait 600'),
-    ('pscbios-network', 'press select; wait_screen GuiNetworkMenu; wait 400'),
-    ('pscbios-gamepads', 'press o; wait 400; press s; wait_screen GuiGamepadMenu; wait 400'),
-    ('pscbios-wizard', 'press x; wait 1200'),
+    # GuiNetworkMenu, or a GuiTextPage on a machine without abnet/nmcli - so a plain wait
+    ('pscbios-network', 'press x; wait 800'),
+    ('pscbios-bluetooth', 'press o; wait_screen GuiActionMenu; press down; press x; wait_screen GuiBtPairing; wait 400'),
+    ('pscbios-ds3', 'press o; wait_screen GuiActionMenu; press down; press x; wait_screen GuiTextPage; wait 400'),
+    ('pscbios-wizard', 'press o; wait_screen GuiActionMenu; press down; press x; wait_screen GuiPadConfig; wait 1200'),
 ]
 ABFLASHKIT = [
     ('abflashkit-warning', 'wait 500'),
