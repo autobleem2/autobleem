@@ -361,11 +361,17 @@ API, and **`--map`**, which asks for one control at a time and writes the gameco
 `tests/apps/test_abpad_core.cpp`.
 
 **`rc/app_env.sh` on both platforms** now starts the daemon (`--watch-pid`, so it goes when the App
-goes), preloads the shim, and points an App at `rc/pad.default.ini` plus its own `Apps/<name>/pad.ini`.
-It also gives the App **a home on the stick**: `$HOME` is `<root>/Home` with the XDG variables under
-it, because an App left alone writes to `/root/.local/share/...` - the machine's own storage, which is
-not ours to write to and does not travel with the stick. Note that exFAT and FAT cannot hold a symlink,
-so a program wanting one under `$HOME` (PulseAudio tries) logs a warning; harmless so far.
+goes), preloaded with its own environment: `LD_LIBRARY_PATH` = `/tmp/lib` on the console, and
+`AB_PAD_DB` = the launcher's gamecontrollerdb (`/etc/autobleem/...` first, then
+`<root>/Autobleem/bin/autobleem/gamecontrollerdb.txt`, as `Env::padMappingFiles()`), independent of
+the App's own `LD_LIBRARY_PATH`/`AB_APP_LIB`. Abpadd's output falls back to
+`${AB_RUNTIME_DIR:-/tmp/autobleem}/logs` when `AB_LOG_DIR` cannot be written, so a read-only stick does
+not prevent the daemon from starting. `app_env.sh` also preloads the shim, points an App at
+`rc/pad.default.ini` plus its own `Apps/<name>/pad.ini`, and gives the App **a home on the stick**:
+`$HOME` is `<root>/Home` with the XDG variables under it, because an App left alone writes to
+`/root/.local/share/...` - the machine's own storage, which is not ours to write to and does not travel
+with the stick. Note that exFAT and FAT cannot hold a symlink, so a program wanting one under `$HOME`
+(PulseAudio tries) logs a warning; harmless so far.
 
 **Proven on a Pi 400** with five Apps built for it (not in this repository - see below): SDLPoP
 (GameController API), OpenTyrian and OpenJazz (raw joystick), OpenJazz again built with `LEGACY_SDL=ON`
@@ -1046,7 +1052,8 @@ USB stick root = `/media` on the PSC:
                                   ra-core-options.cfg, exit/ (the emulator's resume point), extensions.active
 /media/System/lightguns.txt       RetroArch games flagged as light-gun games, one image path per line
 /media/System/Bios|Preferences|Region|UI/   rc/backup.sh's copies of the console's own files, made at boot
-/media/Themes/<name>/theme.json   UI themes (docs/theme-format.md); /media/Apps/<name>/ launchable apps (app.ini + run.sh)
+/media/Themes/<name>/theme.json   UI themes (docs/theme-format.md)
+/media/Apps/<name>/               launchable apps (app.ini + run.sh) - the system menu's Apps item or Square on a game
 /media/RetroArch/bin/             RetroArch's own tree (since 2026-09-20; was /media/retroarch): the binary, cores/, info/,
                                   database/rdb/Sony - PlayStation.rdb (game metadata), thumbnails/Sony - PlayStation/
                                   Named_*/ (covers), screenshots/, states/, playlists/, retroarch.cfg
@@ -1251,7 +1258,7 @@ defaults, which both the services and the screens need.
 | (autobleem-console-tools) | `PscBios`, `AbFlashKit` | The console tools live in their own repository since 2026-09-23: PSC-Bios an extension (`Extensions/pscbios/`), ABFlashKit an App. |
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, themes (`ab2`, `aergb`, `autobleem`,
-`default`, `evolution`), the two console tools under `Apps/`, `RetroArch/`'s skeleton, `Docs/` (the 0.9.0 manuals and release notes - at the root until 2026-09-20). `ab2`'s launcher menu icons (gear, gamepad, memory card,
+`default`, `evolution`), `RetroArch/`'s skeleton, and `Docs/README.txt` (which points to the site's current user manual). `ab2`'s launcher menu icons (gear, gamepad, memory card,
 the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
 and its blue `on.png`/`off.png` switch are drawn by `tools/make_ab2_icons.py` (2026-09-18); the tile sits high in
 the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
@@ -1462,7 +1469,8 @@ subset (headings, lists, tables, `![caption](path)` figures, `> ` notes, `<!-- p
 **`tools/build_manuals.py`** into `build_manuals/<lang>/*-<lang>.html` and `*.pdf` (headless Chrome/Edge prints the
 PDF; `--html` skips it; `manuals/style.css` is the look, the site's palette). **`tools/repo_publish.sh manuals
 build_manuals/*/*.pdf`** puts the PDFs on the site (`manuals/`, a "User manual" panel under "Every platform" -
-`index_manuals`, `MANUAL_LANGUAGES`); rebuild and republish after any manual change. Facts to keep right: a stock
+`index_manuals`, `MANUAL_LANGUAGES`); rebuild and republish after any manual change. The stick's `Docs/README.txt`
+points at the site's current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right: a stock
 console reads **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not mentioned. The screenshots are
 `manuals/images/<lang>/*.jpg`, taken by **`tools/manual_shots.py`** through the DebugDriver on the Windows
 dev build (`--lang Polski --show`; needs `make_win.sh` and `tools/make_usb.py usb`): it walks the launcher,
