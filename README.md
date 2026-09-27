@@ -113,7 +113,7 @@ Clone with `git clone --recurse-submodules`.
 - **`tools/format.sh`** - auto-format sources with clang-format
 - **`tools/lint.sh`** - check with clang-tidy
 - **Tests** - `tests/` with doctest; every extracted service ships with tests in the same commit
-- **Manual** - `manuals/` - user manual in Markdown, built to HTML and PDF
+- **Manual** - [autobleem2/autobleem-manuals](https://github.com/autobleem2/autobleem-manuals) - the user manual (17 languages), built to HTML and PDF by that repository's CI
 
 ## Credits
 

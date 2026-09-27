@@ -98,7 +98,7 @@ def main():
     ap.add_argument("--per-app", action="store_true",
                     help="one zip per App for the AutoBleem Store instead of the one pack: <out>/<name>-<platform>-"
                          "<version>.zip laid out as Apps/<name>/..., with <name>.item.json and its picture - what "
-                         "what autobleem-repo's `repo_publish.sh store <platform>` takes (docs/store-plan.md)")
+                         "autobleem-repo's `repo_publish.sh store <platform>` takes (docs/store-plan.md)")
     ap.add_argument("--platform", default="psc", help="the platform key the per-app packages are for")
     args = ap.parse_args()
 
