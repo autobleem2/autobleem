@@ -44,6 +44,26 @@ string(TOUPPER "${AB_TARGET}" _ab_target_upper)
 message(STATUS "Building for target ${AB_TARGET} (AB_PLATFORM_${_ab_target_upper})")
 add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 
+# MSYS2 UCRT64 packaging regression (seen from mingw-w64-ucrt-x86_64-gcc 16.2.0-3, 2026-09): the gcc driver's
+# own specs only add -D_UCRT when -mcrtdll=ucrt is passed explicitly (`gcc -dumpspecs`'s `*cpp:` rule) - there
+# is no `self_spec` defaulting that in for the ucrt64 environment any more, so mingw-w64's <cstdlib> (which
+# gates at_quick_exit/quick_exit on _UCRT) fails to declare them on a from-scratch build: "'at_quick_exit' has
+# not been declared in '::'". An already-configured build dir keeps its object files and never retriggers
+# this, which is why it looked intermittent. Scoped to exactly that toolchain - MinGW GNU gcc whose binary
+# resolves under a ucrt64 tree - so llvm-mingw (Clang, no ucrt64 path) and the Debian mingw-w64 gcc-posix
+# cross compiler (toolchains/mingw/, no ucrt64 path either) are untouched; harmless again once MSYS2 fixes
+# the packaging, since the compiler would then define it on its own. add_compile_definitions() (not
+# CMAKE_CXX_FLAGS) because the Debug branch below overwrites CMAKE_CXX_FLAGS wholesale. Repeated here (not
+# just in autobleem-core's own CMakeLists) because this file's own targets (ab_ui, ab_evoui, autobleem-gui)
+# are a sibling directory scope of that submodule, not a child of it.
+if (MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    get_filename_component(_ab_cxx_compiler_real "${CMAKE_CXX_COMPILER}" REALPATH)
+    if (_ab_cxx_compiler_real MATCHES "/ucrt64/" OR "$ENV{MSYSTEM}" STREQUAL "UCRT64")
+        message(STATUS "Building: MSYS2 UCRT64 gcc without a default -D_UCRT detected - defining it (see CMakeLists.txt comment)")
+        add_compile_definitions(_UCRT)
+    endif()
+endif()
+
 # The launcher's online update (core/services/update_service.*, the update dialogs): every target checks the
 # download repository for a newer AutoBleem (and RetroArch, on the appliances) and fetches it. The console
 # too since 2026-09-23 - only when it has a network (the AutoBleem kernel's WiFi; a stock console never has
