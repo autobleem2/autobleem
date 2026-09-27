@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 0 / Total: 402
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -353,6 +353,7 @@ Storage=Úložisko
 Store=Store
 Support via Discord:=Podpora na Discorde:
 Surprise=Prekvapenie
+Swap Player 1 / Player 2 (PS1 emulators):=Vymeniť hráča 1 / hráča 2 (emulátory PS1):
 Switch off=Vypnúť
 Switch on=Zapnúť
 Switched off=Vypnuté
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=Aktualizácia je stiahnut
 Theme Default=Predvolené motívu
 Third-party extensions=Rozšírenia tretích strán
 This game is protected by its PSN licence and cannot be started=Táto hra je chránená licenciou PSN a nedá sa spustiť
+This PS1 emulator does not support swapping pads yet=Tento PS1 emulátor zatiaľ nepodporuje výmenu ovládačov
 This version is brought to you by screemer and a friendly robot, Claude.=Túto verziu vám prinášajú screemer a priateľský robot Claude.
 Time zone=Časové pásmo
 Title=Názov

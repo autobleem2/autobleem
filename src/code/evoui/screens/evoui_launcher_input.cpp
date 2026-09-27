@@ -346,11 +346,14 @@ void GuiLauncher::showPadAssignment() {
         notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
         return;
     }
+    // Options -> "Swap Player 1 / Player 2" (C11): this notice must say the same thing LaunchService's
+    // AB_PAD_ORDER is about to tell the emulator, or a swapped user sees their own pad mislabelled here.
+    bool padSwap = app.config().inifile.values["padswap"] == "true";
     string text;
     for (size_t i = 0; i < pads.size() && i < 2; i++) {
         if (!text.empty())
             text += ", ";
-        PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()));
+        PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()), padSwap);
         text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
     }
     notificationLines[1].setText(text, DefaultShowingTimeout);

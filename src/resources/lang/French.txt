@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 0 / Total: 402
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -353,6 +353,7 @@ Storage=Stockage
 Store=Store
 Support via Discord:=Support via Discord:
 Surprise=Surprise
+Swap Player 1 / Player 2 (PS1 emulators):=Échanger Joueur 1 / Joueur 2 (émulateurs PS1) :
 Switch off=Désactiver
 Switch on=Activer
 Switched off=Désactivé
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=La mise à jour est tél�
 Theme Default=Défaut du thème
 Third-party extensions=Extensions tierces
 This game is protected by its PSN licence and cannot be started=Ce jeu est protégé par sa licence PSN et ne peut pas être lancé
+This PS1 emulator does not support swapping pads yet=Cet émulateur PS1 ne prend pas encore en charge l'échange des manettes
 This version is brought to you by screemer and a friendly robot, Claude.=Cette version vous est offerte par screemer et un sympathique robot, Claude.
 Time zone=Fuseau horaire
 Title=Titre

@@ -377,13 +377,16 @@ vector<string> GuiLauncher::padBatteryLabelsFor(const vector<PadBatteryInfo> &ba
         sources.push_back({static_cast<int>(i), pads[i].serial});
     vector<MatchedPadBattery> matches = matchPadBatteries(batteries, sources);
 
+    // Options -> "Swap Player 1 / Player 2" (C11): the battery row's P1/P2 label has to follow the same
+    // swap the carousel/notice show and LaunchService's AB_PAD_ORDER hands the emulator.
+    bool padSwap = app.config().inifile.values["padswap"] == "true";
     vector<string> labels(batteries.size());
     iconTagsOut.assign(batteries.size(), "");
     vector<int> unmatchedPosition(batteries.size(), -1);
     int unmatchedSeen = 0;
     for (size_t i = 0; i < matches.size(); i++) {
         if (matches[i].padIndex >= 0) {
-            PsPlayerSlot slot = psPlayerSlot(matches[i].padIndex, static_cast<int>(pads.size()));
+            PsPlayerSlot slot = psPlayerSlot(matches[i].padIndex, static_cast<int>(pads.size()), padSwap);
             string label = padBatteryPlayerLabel(slot);
             if (!label.empty()) {
                 labels[i] = label;
@@ -658,6 +661,14 @@ void GuiLauncher::loadAssets() {
     // display comes back after a game, both of which fire a burst of PadAdded/PadRemoved that must not
     // itself pop the notice - only a *later* live change should (see showPadAssignment()).
     seedPadAssignment();
+
+    // C11: the swap was on but the emulator that just ran did not understand AB_PAD_ORDER
+    // (LaunchService::launch() set this instead of silently doing nothing) - say so once, here, since the
+    // screen that started the game is long gone by the time it returns.
+    if (app.session().padOrderUnsupportedNotice) {
+        app.session().padOrderUnsupportedNotice = false;
+        notificationLines[1].setText(_("This PS1 emulator does not support swapping pads yet"), DefaultShowingTimeout);
+    }
 
     scanRosterChangedSinceReload = false;
 
