@@ -12,7 +12,10 @@ has scanned has one): the Store finds the cover by it in its own covers database
 Store resumes a stopped download); nothing is written to GAMES_DIR. The sha256 of each file is worked out
 once and kept in a cache file next to this machine's temp directory, keyed by path + size.
 
-For testing on a LAN only: the server answers anyone who can reach the port. Stop it with Ctrl+C.
+R29 (2026-09-27): binds 127.0.0.1 by default - the store.tsv URL still names the LAN address (a real
+device fetches it from there), but nothing outside this machine can reach the server itself, so it never
+raises a firewall prompt. --lan restores the old 0.0.0.0 bind, for the actual Pi Store test rig only -
+never on the owner's PC. Stop it with Ctrl+C.
 """
 import argparse
 import hashlib
@@ -184,12 +187,16 @@ def main():
     parser.add_argument('--address', help="the address clients use (default: this machine's LAN address)")
     parser.add_argument('--probe', default='192.168.1.1', help='an address on the LAN, to find the interface')
     parser.add_argument('--no-sha', action='store_true', help='leave sha256 out (no hashing at start)')
+    parser.add_argument('--lan', action='store_true',
+                        help='bind 0.0.0.0 (every interface) instead of the default 127.0.0.1 - only for the '
+                             'Pi Store test rig; never on the owner\'s PC (a LAN bind is a firewall prompt)')
     args = parser.parse_args()
     address = args.address or lan_address(args.probe)
     base_url = 'http://%s:%d/' % (address, args.port)
     tsv, items = build_tsv(args.games_dir, base_url, args.name, not args.no_sha)
     print('%d games; the source is %sstore.tsv' % (items, base_url), file=sys.stderr)
-    server = http.server.ThreadingHTTPServer(('0.0.0.0', args.port), handler_for(args.games_dir, tsv))
+    bind = '0.0.0.0' if args.lan else '127.0.0.1'
+    server = http.server.ThreadingHTTPServer((bind, args.port), handler_for(args.games_dir, tsv))
     try:
         server.serve_forever()
     except KeyboardInterrupt:
