@@ -7,8 +7,8 @@ RetroArch on this PC). Run with:
     python tools/test_ra_drive.py
     python -m unittest tools.test_ra_drive          (from the repo root)
 
-Everything that needs a live RetroArch on the Debian machine (Xvfb, `start`, real screenshots, real log
-lines) is out of scope here - see E:\\Programming\\_team\\r-items\\R22-TEST.md for the on-laptop steps.
+Everything that needs a live RetroArch on the Debian test machine (Xvfb, `start`, real screenshots, real
+log lines) is out of scope here - it is exercised on that machine directly, not by this offline suite.
 """
 import inspect
 import os

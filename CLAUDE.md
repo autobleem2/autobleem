@@ -340,21 +340,32 @@ it against a reference PNG - the practical "wait for this menu" substitute), `wa
 `log_to_file`+`log_dir`+`log_to_file_timestamp=false` for a predictable log path, `screenshot_directory`)
 and launches RetroArch under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1` - **Linux only**: run it on the Debian test
 machine over ssh (there is no Windows RetroArch in this project, and none is fetched to a dev PC to run
-this). **`video_driver` stays `gl` (never `sdl2`)**: the official 1.22.2 AppImage segfaults 100% of the time
-under Xvfb with `video_driver=sdl2` - `XScreenSaverQueryExtension()` in its bundled `libXss.so.1`/
-`libXext.so.6` crashes inside the host's `libX11.so.6` (an Xlib extension-registration ABI mismatch, upstream
-RetroArch AppImage packaging, not ours to fix), independent of the core or the Xvfb screen size; `gl`/`glcore`
-never crash - see `E:\Programming\_team\r-items\R22-phase1-root-cause.md` for the gdb backtrace and driver
-matrix. **Three more RetroArch-1.22.2-specific findings from R22 phase 2 (2026-09-27), all worked around in
-`ra_drive.py` itself**: `cmd_start`'s own readiness poll uses `VERSION`, never `GET_STATUS` - this build
-segfaults the instant `GET_STATUS` is answered while any core is actively running (PLAYING), gdb-confirmed
-as the same crash address inside RetroArch's own binary with three unrelated cores, so a script must never
-send `GET_STATUS`/`wait_status` against a PLAYING instance either; `--verbose` is passed on the RetroArch
-command line because without it the log file is opened but nothing is ever written into it past the startup
-banner, no matter how long the instance runs; `stop` sends `QUIT` (which this build does not reliably honour
-on its own) and falls back to `os.killpg()` on the process group `cmd_start` created with
-`start_new_session=True` - a bare PID kill only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/
-`retroarch` children it spawns. See `E:\Programming\_team\r-items\R22-phase2-report.md`.
+this; see "Where this runs" in the tool's own docstring). **Four confirmed upstream RetroArch 1.22.2 issues,
+all found by R22 and all worked around in `ra_drive.py` itself, never in this project's own code**:
+1. `video_driver=sdl2` segfaults the official AppImage 100% of the time under Xvfb -
+   `XScreenSaverQueryExtension()` in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
+   `libX11.so.6` (an Xlib extension-registration ABI mismatch), independent of the core or the Xvfb screen
+   size. `gl`/`glcore` never crash - `CFG_TEMPLATE` stays on `gl`.
+2. `GET_STATUS` segfaults the instant it is answered while any core is actively running - gdb-confirmed as
+   the same crash address inside RetroArch's own binary with three unrelated cores, independent of pause
+   state. `cmd_start`'s own readiness poll uses `VERSION` instead, and a script must never send
+   `GET_STATUS`/`wait_status` against a running instance either.
+3. Without `--verbose` on the command line, `retroarch.log` is opened but nothing is ever written into it
+   past the startup banner, no matter how long the instance runs - `cmd_start` always passes it.
+4. `QUIT` does not reliably exit the process under Xvfb (confirmed: a fresh instance sent bare `QUIT` was
+   still running 5+ seconds later) - `stop` sends it anyway (in case a future build honours it) but relies on
+   `os.killpg()` on the process group `cmd_start` creates with `start_new_session=True` - a bare PID kill
+   only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/`retroarch` children it spawns.
+
+**Menu state is read from screenshots, not logs**: RetroArch 1.22.2 logs nothing for a menu toggle/
+transition (`MENU_TOGGLE` and menu navigation produce zero new `retroarch.log` lines, confirmed against a
+live instance), so `wait_log` cannot substitute for RetroArch's missing "which menu is showing" query - only
+`shot`/`wait_shot` can. Even there, `SCREENSHOT` was found not to capture the RGUI/ozone menu overlay itself
+on this build (only the content's own rendered frame - confirmed with `menu_driver=rgui` and `ozone`, and
+with `video_gpu_screenshot` both `true` and `false`, none of which made the overlay appear; `false` also
+introduced torn/incomplete frames, so `true`, the default, is still the right setting) - two shots taken
+around a `press toggle` differ only when something else changes the frame (e.g. the "Screenshot saved" HUD
+toast from the previous `shot` itself), never from the menu opening.
 `tools/test_ra_drive.py` covers the protocol, the log-tail parser and the script parser offline
 against a fake UDP server standing in for RetroArch - no RetroArch binary needed to run those.
 

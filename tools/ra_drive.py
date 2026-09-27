@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Drives a RetroArch 1.22.2 instance over its network command interface (command.c/command.h, UDP,
 default port 55355) - the RetroArch-side counterpart to ab_drive.py's DebugDriver client, for automated
-looks at RetroArch's own menu without touching a screen. Built for R22 (see
-E:\\Programming\\_team\\r-items\\R22-research.md and R22-report.md); every command name and reply shape
+looks at RetroArch's own menu without touching a screen. Built for R22; every command name and reply shape
 below was checked against RetroArch's own source at tag v1.22.2 (command.h's `map`/`action_map` arrays,
 command.c's command_get_status/command_version/... and verbosity.c's log file naming) - not just the
 docs.libretro.com prose the research pass had to rely on.
@@ -56,25 +55,38 @@ research pass (network_remote_*, port 55400+, needs a second RetroArch instance 
 
 Which menu is showing: RetroArch's GET_STATUS only ever says PAUSED/PLAYING/CONTENTLESS (content.c's
 command_get_status - not which menu tab or row is open); there is no equivalent of the launcher's
-GuiScreen-per-class `screen` reply. Two substitutes: `wait_log <pattern>` greps retroarch.log for a line -
-exact when the right pattern is known, but *which* lines name a menu transition was not captured against a
-running instance this session (verbosity.c confirms the log format itself: plain `[INFO] `/`[WARN]
-`/`[ERROR] `/`[DEBUG] ` tags, no timestamp by default - see LogTail below - but not the menu driver's own
-message text); and `wait_shot` (screenshot + average-hash distance against a reference image), which needs
-no log-text guess and is what this session verified end to end (offline, against synthetic PNGs - see
-tools/test_ra_drive.py). Capture real reference shots and, if useful, real log lines once RetroArch is
-running on the Debian machine (R22-TEST.md has the follow-up steps for Nina).
+GuiScreen-per-class `screen` reply, and (R22 phase 2, confirmed against a running instance) no substitute in
+the log either: `MENU_TOGGLE` and menu navigation (`MENU_UP`/`MENU_DOWN`/...) write **zero** new lines to
+retroarch.log, at any verbosity - `wait_log` cannot stand in for a menu-transition query. **Menu state is
+read from screenshots instead** - `wait_shot` (screenshot + average-hash distance against a reference
+image) - but even that has a caveat: `SCREENSHOT` was found (R22 phase 2) not to capture the RGUI/ozone menu
+overlay itself on this build, only the content's own rendered frame - tried with `menu_driver` both `rgui`
+and `ozone`, and `video_gpu_screenshot` both `true` (the default - clean, consistent frames) and `false`
+(introduces torn/incomplete frames instead of showing the menu, so stay on `true`). Two shots taken around a
+`press toggle` will only differ when something else changes the frame - e.g. the "Screenshot saved" HUD
+toast left over from the previous `shot` itself - never from the menu actually opening. Use `wait_shot`
+for "did the frame change at all", not for "is the menu open".
 
-Why `video_driver=gl`, never `sdl2`: `start`'s cfg template used to leave this an open choice, but
-`video_driver=sdl2` segfaults RetroArch 1.22.2's official AppImage 100% of the time under Xvfb - an
-`XScreenSaverQueryExtension()` call in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
-`libX11.so.6` (an Xlib extension-registration ABI mismatch between the AppImage's bundled X11 client libs
-and the host's `libX11`), independent of the core loaded or the Xvfb screen size. `gl`/`glcore` never crash.
-This is an upstream RetroArch AppImage packaging issue, not anything `ra_drive.py` or this project can fix -
-see `E:\\Programming\\_team\\r-items\\R22-phase1-root-cause.md` for the gdb backtrace and driver matrix.
+Known upstream RetroArch 1.22.2 issues (all found by R22, all worked around here, none of them a bug in
+this project's own code):
+1. `video_driver=sdl2` segfaults the official AppImage 100% of the time under Xvfb - an
+   `XScreenSaverQueryExtension()` call in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
+   `libX11.so.6` (an Xlib extension-registration ABI mismatch between the AppImage's bundled X11 client libs
+   and the host's `libX11`), independent of the core loaded or the Xvfb screen size. `gl`/`glcore` never
+   crash - `CFG_TEMPLATE` stays on `gl`.
+2. `GET_STATUS` segfaults the instant it is answered while any core is actively running - gdb-confirmed as
+   the same crash address inside RetroArch's own binary with three unrelated cores. `cmd_start`'s own
+   readiness poll uses `VERSION` instead; a script must never send `GET_STATUS`/`wait_status` against a
+   running instance either.
+3. Without `--verbose`, the log file is opened but nothing is ever written into it past the startup banner,
+   no matter how long the instance runs - `cmd_start` always passes it.
+4. `QUIT` does not reliably exit the process under Xvfb - `stop` sends it anyway (in case a future build
+   honours it) but relies on `os.killpg()` on the process group `cmd_start` creates with
+   `start_new_session=True` for the actual exit.
 
-Where this runs: `start` needs Xvfb, so it must run **on the Debian machine** (192.168.68.148) - there is
-no Windows RetroArch in this project and this tool never launches one, per the owner's rule (no RetroArch
+Where this runs: `start` needs Xvfb, so it must run **on the Debian test machine** (bleemmachine - its
+address is in autobleem-main's infrastructure.local.md) - there is no Windows RetroArch in this project and
+this tool never launches one, per the owner's rule (no RetroArch
 download to this PC, no window opened here). The simplest split, matching R22's plan: ssh onto that machine
 and run this script there for everything - `start`, then `run "..."` in the same or another ssh session -
 since screenshot_directory and retroarch.log are both local files on whichever machine RetroArch runs on,
@@ -452,7 +464,8 @@ menu_driver = "rgui"
 def cmd_start(args):
     if sys.platform not in ('linux', 'linux2'):
         print('ra_drive.py start needs Xvfb (Linux only) - run this on the Debian test machine '
-              '(192.168.68.148), not here. See the module docstring, "Where this runs".')
+              '(bleemmachine - its address is in autobleem-main\'s infrastructure.local.md), not here. '
+              'See the module docstring, "Where this runs".')
         return 1
 
     def opt(name, default):
