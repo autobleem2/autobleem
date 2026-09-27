@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -28,6 +28,7 @@ Back=Tornar
 Back to games=Tornar als jòcs
 Background Music:=Musica de fons :
 Backspace=Retorn arrièr
+Battery=Batariá
 battery low=batariá febla
 Bin file failed to verify=Lo fichièr BIN a pas pogut èsser verificat
 Bluetooth=Bluetooth
@@ -42,6 +43,7 @@ Cancel=Anullar
 Canvas=Canabàs
 Card=Carta
 Change memory card=Cambiar la carta memòria
+Charging=En carga
 Check the download site for a newer version=Verificatz lo site de telecargament per una version mai recenta
 Checking for updates...=Recèrca de mesas a jorn...
 Choose=Causir
@@ -86,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Suprimir lo
 Diagnostics=Diagnostic
 Disable=Desactivar
 Disabled=Desactivada
+Discharging=En descarga
 Display and input=Afichatge e entradas
 Display mode=Mòde d'afichatge
 Do not ask about this one again=Demandar pas mai per aquesta version
@@ -133,6 +136,7 @@ Free=Liure
 free of=liures sus
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Logicial liure jos GNU GPL v3 o ulteriora - sens garantida. Fonts e licéncia:
 Free space=Espaci liure
+Full=Plena
 GAME=JÒC
 Game=Jòc
 Game data=Donadas dels jòcs
@@ -217,6 +221,7 @@ Not added=Pas apondut
 Not added because:=Pas apondut, perque :
 Not available for this system=Pas disponibla per aqueste sistèma
 Not available on this system=Pas disponible sus aqueste sistèma
+Not charging=Càrga pas
 Not connected=Pas connectat
 Not installed=Pas installat
 not used by the PS1 emulator=pas utilizat per l'emulator PS1
@@ -230,6 +235,8 @@ Open:=Dobrir :
 Operating system=Sistèma operatiu
 Options=Opcions
 Other=Autre
+P1=P1
+P2=P2
 Page=Pagina
 pcsx.cfg file not found=Fichièr pcsx.cfg introbable
 Persist RetroArch config:=Gardar la config RetroArch :

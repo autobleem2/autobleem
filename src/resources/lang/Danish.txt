@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -28,6 +28,7 @@ Back=Tilbage
 Back to games=Tilbage til spil
 Background Music:=Baggrundsmusik:
 Backspace=Backspace
+Battery=Batteri
 battery low=lavt batteri
 Bin file failed to verify=BIN-filen kunne ikke verificeres
 Bluetooth=Bluetooth
@@ -42,6 +43,7 @@ Cancel=Annuller
 Canvas=Lærred
 Card=Kort
 Change memory card=Skift hukommelseskort
+Charging=Oplader
 Check the download site for a newer version=Se efter en nyere version på downloadsiden
 Checking for updates...=Søger efter opdateringer...
 Choose=Vælg
@@ -86,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Slet indsti
 Diagnostics=Diagnostik
 Disable=Deaktiver
 Disabled=Deaktiveret
+Discharging=Aflader
 Display and input=Skærm og input
 Display mode=Skærmtilstand
 Do not ask about this one again=Spørg ikke igen om denne version
@@ -133,6 +136,7 @@ Free=Fri
 free of=ledige af
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Fri software under GNU GPL v3 eller nyere - ingen garanti. Kildekode og licens:
 Free space=Ledig plads
+Full=Fuld
 GAME=SPIL
 Game=Spil
 Game data=Spildata
@@ -217,6 +221,7 @@ Not added=Ikke tilføjet
 Not added because:=Ikke tilføjet, fordi:
 Not available for this system=Ikke tilgængelig til dette system
 Not available on this system=Ikke tilgængelig på dette system
+Not charging=Oplader ikke
 Not connected=Ikke forbundet
 Not installed=Ikke installeret
 not used by the PS1 emulator=bruges ikke af PS1-emulatoren
@@ -230,6 +235,8 @@ Open:=Åbn:
 Operating system=Styresystem
 Options=Indstillinger
 Other=Andet
+P1=P1
+P2=P2
 Page=Side
 pcsx.cfg file not found=pcsx.cfg blev ikke fundet
 Persist RetroArch config:=Gem RetroArch-konfiguration:

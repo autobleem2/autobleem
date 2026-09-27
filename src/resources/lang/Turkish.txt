@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -28,6 +28,7 @@ Back=Geri
 Back to games=Oyunlara dön
 Background Music:=Arkaplan Müziği:
 Backspace=Geri Sil
+Battery=Pil
 battery low=pil zayıf
 Bin file failed to verify=BIN dosyası doğrulanamadı
 Bluetooth=Bluetooth
@@ -42,6 +43,7 @@ Cancel=İptal et
 Canvas=Tuval
 Card=Kart
 Change memory card=Hafıza kartını değiştir
+Charging=Şarj oluyor
 Check the download site for a newer version=Daha yeni bir sürüm için indirme sitesine bakın
 Checking for updates...=Güncellemeler denetleniyor...
 Choose=Seç
@@ -86,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Emülatörd
 Diagnostics=Tanılama
 Disable=Devre dışı bırak
 Disabled=Devre dışı
+Discharging=Boşalıyor
 Display and input=Ekran ve giriş
 Display mode=Ekran modu
 Do not ask about this one again=Bu sürüm için bir daha sorma
@@ -133,6 +136,7 @@ Free=Boş
 free of=boş, toplam
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=GNU GPL v3 veya sonrası altında özgür yazılım - garanti yok. Kaynak kodu ve lisans:
 Free space=Boş alan
+Full=Dolu
 GAME=OYUN
 Game=Oyun
 Game data=Oyun verileri
@@ -217,6 +221,7 @@ Not added=Eklenmedi
 Not added because:=Eklenmeme nedeni:
 Not available for this system=Bu sistem için kullanılamaz
 Not available on this system=Bu sistemde kullanılamıyor
+Not charging=Şarj olmuyor
 Not connected=Bağlı değil
 Not installed=Yüklü değil
 not used by the PS1 emulator=PS1 emülatörü tarafından kullanılmıyor
@@ -230,6 +235,8 @@ Open:=Aç:
 Operating system=İşletim sistemi
 Options=Seçenekler
 Other=Diğer
+P1=P1
+P2=P2
 Page=Sayfa
 pcsx.cfg file not found=pcsx.cfg dosyası bulunamadı
 Persist RetroArch config:=RetroArch ayarlarını koru:

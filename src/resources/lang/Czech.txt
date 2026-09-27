@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -28,6 +28,7 @@ Back=Zpět
 Back to games=Zpět ke hrám
 Background Music:=Hudba na pozadí:
 Backspace=Backspace
+Battery=Baterie
 battery low=baterie vybitá
 Bin file failed to verify=Soubor BIN neprošel kontrolou
 Bluetooth=Bluetooth
@@ -42,6 +43,7 @@ Cancel=Zrušit
 Canvas=Plátno
 Card=Karta
 Change memory card=Změnit paměťovou kartu
+Charging=Nabíjení
 Check the download site for a newer version=Novější verzi hledejte na stránce ke stažení
 Checking for updates...=Kontrola aktualizací...
 Choose=Vybrat
@@ -86,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Smazat nast
 Diagnostics=Diagnostika
 Disable=Vypnout
 Disabled=Vypnuto
+Discharging=Vybíjení
 Display and input=Obraz a vstup
 Display mode=Režim obrazu
 Do not ask about this one again=Na tuto verzi se už neptat
@@ -133,6 +136,7 @@ Free=Volné
 free of=volných z
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Svobodný software pod GNU GPL v3 nebo novější - bez záruky. Zdrojový kód a licence:
 Free space=Volné místo
+Full=Plná
 GAME=HRA
 Game=Hra
 Game data=Data her
@@ -217,6 +221,7 @@ Not added=Nepřidáno
 Not added because:=Nepřidáno, protože:
 Not available for this system=Není k dispozici pro tento systém
 Not available on this system=V tomto systému není k dispozici
+Not charging=Nenabíjí se
 Not connected=Nepřipojeno
 Not installed=Nenainstalováno
 not used by the PS1 emulator=nepoužívá jej PS1 emulátor
@@ -230,6 +235,8 @@ Open:=Otevřít:
 Operating system=Operační systém
 Options=Nastavení
 Other=Ostatní
+P1=P1
+P2=P2
 Page=Strana
 pcsx.cfg file not found=Soubor pcsx.cfg nenalezen
 Persist RetroArch config:=Uchovat nastavení RetroArch:

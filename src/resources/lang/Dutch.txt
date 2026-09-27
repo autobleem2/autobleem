@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -28,6 +28,7 @@ Back=Terug
 Back to games=Terug naar games
 Background Music:=Achtergrond Muziek
 Backspace=Backspace
+Battery=Batterij
 battery low=batterij bijna leeg
 Bin file failed to verify=BIN-bestand kon niet worden gecontroleerd
 Bluetooth=Bluetooth
@@ -42,6 +43,7 @@ Cancel=Annuleer
 Canvas=Canvas
 Card=Kaart
 Change memory card=Geheugenkaart wisselen
+Charging=Opladen
 Check the download site for a newer version=Kijk op de downloadsite voor een nieuwere versie
 Checking for updates...=Controleren op updates...
 Choose=Kiezen
@@ -86,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=De in de em
 Diagnostics=Diagnose
 Disable=Uitschakelen
 Disabled=Uitgeschakeld
+Discharging=Ontladen
 Display and input=Beeld en invoer
 Display mode=Beeldmodus
 Do not ask about this one again=Niet meer vragen voor deze versie
@@ -133,6 +136,7 @@ Free=Vrij
 free of=vrij van
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Vrije software onder de GNU GPL v3 of nieuwer - geen garantie. Broncode en licentie:
 Free space=Vrije ruimte
+Full=Vol
 GAME=GAME
 Game=Game
 Game data=Spelgegevens
@@ -217,6 +221,7 @@ Not added=Niet toegevoegd
 Not added because:=Niet toegevoegd, omdat:
 Not available for this system=Niet beschikbaar voor dit systeem
 Not available on this system=Niet beschikbaar op dit systeem
+Not charging=Laadt niet
 Not connected=Niet verbonden
 Not installed=Niet geïnstalleerd
 not used by the PS1 emulator=wordt niet gebruikt door de PS1-emulator
@@ -230,6 +235,8 @@ Open:=Openen:
 Operating system=Besturingssysteem
 Options=Options
 Other=Overig
+P1=P1
+P2=P2
 Page=Pagina
 pcsx.cfg file not found=pcsx.cfg niet gevonden
 Persist RetroArch config:=RetroArch-configuratie bewaren:

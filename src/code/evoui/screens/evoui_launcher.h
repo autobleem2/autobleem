@@ -21,6 +21,7 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 #include "core/services/pad_battery.h"
+#include "core/model/pad_battery_match.h"
 #include <vector>
 #include <memory>
 #include <set>
@@ -102,12 +103,26 @@ public:
     // but there is no reason to do it 60 times a second. lowBatteryNotified is which pads (by address)
     // already got the one-time "battery low" NotificationLine since they last climbed back over
     // PadBatteryLowResetPercent (or vanished) - so a reading sitting at 12% for ten minutes says it once.
+    // C12: each reading is also matched to the SDL pad it belongs to (matchPadBatteries(),
+    // core/model/pad_battery_match.h - by the pad's own serial against the sysfs address), so the label is
+    // "Player 1"/"Player 2" when that match succeeds; padBatteryLabelsFor() falls back to the old generic
+    // "Wireless pad N" when it does not (an address with no matching pad still gets a stable number,
+    // counted among the unmatched entries only). padBatteryIconTags is the short form of the same match
+    // ("P1"/"P2", "" when unmatched) the icon row draws next to a matched pad's icon.
     PadBatteryService padBatteryService;
     std::vector<PadBatteryInfo> padBatteries;
+    std::vector<std::string> padBatteryLabels;   // padBatteryLabels[i] is padBatteries[i]'s label (for the
+                                                 // low-battery notice), recomputed with it each poll
+    std::vector<std::string> padBatteryIconTags; // padBatteryIconTags[i] is padBatteries[i]'s short icon
+                                                 // tag ("P1"/"P2"/""), recomputed together with the above
     long lastPadBatteryPoll = 0;
     std::set<std::string> lowBatteryNotified;
     void pollPadBattery();
     void renderPadBatteries();
+    // fills both padBatteryLabels and padBatteryIconTags from one pass of matchPadBatteries() - out params
+    // rather than a struct-of-two-vectors to keep the call site in pollPadBattery() simple
+    std::vector<std::string> padBatteryLabelsFor(const std::vector<PadBatteryInfo> &batteries,
+                                                 std::vector<std::string> &iconTagsOut) const;
 
     // a button is pressed
     void loop_joyButton_Pressed();
