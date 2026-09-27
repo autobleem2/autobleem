@@ -320,9 +320,11 @@ def stop(port, host=DEFAULT_HOST, token=None):
         # force-killed it (TOOLS-8). DebugDriver's `quit` now calls Input::requestQuit() instead - the same
         # persistent condition the real Power button sets, which every nested screen's own poll() sees in
         # turn - and a clean exit from GuiPadConfig now measures ~1.5s, repeatably, over three runs. The
-        # budget here is a generous 5s of actual sleep (not counting each tasklist spawn's own overhead),
-        # more than 3x that; only what is still alive after that gets force-killed.
-        for _ in range(5):
+        # loop below returns as soon as the pid is gone, so that clean exit still comes back in ~1.5s; the
+        # budget stays a generous 30s (not counting each tasklist spawn's own overhead) as a safety margin
+        # for a loaded machine, where a premature force-kill is the failure this comment describes, not a
+        # tight guess against the common case.
+        for _ in range(30):
             if not _pid_alive(pid):
                 break
             time.sleep(1.0)
