@@ -1,12 +1,13 @@
 # The AutoBleem Store (plan)
 
-**Status (2026-09-24):**
-- **Working on the Windows dev build**, from the launcher's Extensions list, against a local test site: the
-  sources are read, an App and a game are installed, and the launcher rescans.
-- **In its repository**, `autobleem2/ext_store` (2026-09-24), built with the launcher through
-  `AB_EXTENSION_DIRS` until the SDK package exists.
-- **Still open**: the site's catalog and per-App packages (step 6), Apps for the other targets (step 7),
-  hardware (step 8) and the manuals (step 9).
+**Status as of 2026-09-27** (see "Steps" below for each step's own detail - this header only summarises it):
+- **Shipped**: steps 1-6, in `autobleem2/ext_store`, bundled with every platform's installer since
+  2026-09-25 (it was a separate download, unpacked by hand, before that) and driven from the launcher's
+  Extensions list; the site's catalog and per-App packages (step 6) are live.
+- **Still open**: Apps for the other targets - `rpi`/`rpi64`/`pcusb`/`win` beyond the console (step 7,
+  autobleem-main's `todo.md` "Testers" section); hardware testing - the console on WiFi, a Pi 400, the PC
+  stick, Windows (step 8, `todo.md` HWTEST-2); and, from step 9, the TSV format write-up for source owners
+  (the manuals' own Store section is otherwise done).
 
 The Store downloads and installs Apps and games without
 pulling the stick. It is the **first AutoBleem extension** (`docs/extensions-plan.md`): a program built on
