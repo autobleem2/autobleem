@@ -27,6 +27,10 @@ on:
         description: launcher targets (space separated; rpi rpi64 pcusb psc win)
         type: string
         default: 'rpi rpi64 pcusb psc win'
+      force_fallback:
+        description: force the runner router's hosted fallback (test-only)
+        type: boolean
+        default: false
 
 concurrency:
   group: publish-launcher-${{ github.ref }}
@@ -61,13 +65,36 @@ jobs:
           # the commits past it and the commit - v2.0.0-alpha2-5-gabc1234 - so the file says what it is
           else echo "version=$(git describe --tags --match 'v*' 2>/dev/null || echo "$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)")" >> "$GITHUB_OUTPUT"; fi
 
+  # Routes build's runner: the laptop (ab-main) when it's online, else a GitHub-hosted
+  # ubuntu-24.04. See autobleem-build's route.yml for the decision order; route_runner
+  # re-exports its output through a plain job, which is the only way a downstream job's
+  # runs-on: can read it (a job with its own uses: can't be read directly by runs-on:,
+  # a GitHub limitation - see ROUTE-report.md). plan/sign-win/release/nightly don't
+  # compile and stay on ubuntu-24.04 untouched.
+  route:
+    if: vars.AB_CI_ENABLED == 'true'
+    uses: autobleem2/autobleem-build/.github/workflows/route.yml@develop
+    with:
+      force_fallback: ${{ inputs.force_fallback == true }}
+    secrets: inherit
+
+  route_runner:
+    needs: route
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      runs_on: ${{ needs.route.outputs.runs_on }}
+    steps:
+      - run: echo "runner - ${{ needs.route.outputs.runner }}"
+
   build:
-    needs: plan
+    needs: [plan, route_runner]
     strategy:
       fail-fast: false
       matrix:
         target: ${{ fromJSON(needs.plan.outputs.targets) }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(needs.route_runner.outputs.runs_on) }}
+    timeout-minutes: 60
     container:
       image: ghcr.io/autobleem2/autobleem-build:${{ startsWith(github.ref, 'refs/tags/v') && 'latest' || 'develop' }}
       credentials:

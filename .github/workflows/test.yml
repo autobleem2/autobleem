@@ -11,16 +11,45 @@ on:
   pull_request:
     branches: [develop, master]
   workflow_dispatch:
+    inputs:
+      force_fallback:
+        description: force the runner router's hosted fallback (test-only)
+        type: boolean
+        default: false
 
 concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Routes native's runner: the laptop (ab-main) when it's online, else a GitHub-hosted
+  # ubuntu-24.04 - never for a pull_request, which route.yml sends to hosted on its own
+  # before it even looks at a runner. See autobleem-build's route.yml for the decision
+  # order; route_runner re-exports its output through a plain job, which is the only
+  # way a downstream job's runs-on: can read it (a job with its own uses: can't be read
+  # directly by runs-on:, a GitHub limitation - see ROUTE-report.md).
+  route:
+    if: vars.AB_CI_ENABLED == 'true'
+    uses: autobleem2/autobleem-build/.github/workflows/route.yml@develop
+    with:
+      force_fallback: ${{ inputs.force_fallback == true }}
+    secrets: inherit
+
+  route_runner:
+    needs: route
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      runs_on: ${{ needs.route.outputs.runs_on }}
+    steps:
+      - run: echo "runner - ${{ needs.route.outputs.runner }}"
+
   native:
     name: native (tests, format, lint)
     if: vars.AB_CI_ENABLED == 'true'
-    runs-on: ubuntu-24.04
+    needs: route_runner
+    runs-on: ${{ fromJSON(needs.route_runner.outputs.runs_on) }}
+    timeout-minutes: 30
     container:
       image: ghcr.io/autobleem2/autobleem-build:${{ startsWith(github.ref, 'refs/tags/v') && 'latest' || 'develop' }}
       credentials:
