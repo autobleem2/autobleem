@@ -137,7 +137,7 @@ else
     echo "==> libs.tar.gz kept as checked in (no $SDL_LIB)"
 fi
 
-# VERSION, from the build's own version.h (see tools/make_rpi_package.sh for the rule)
+# VERSION, from the build's own version.h (see autobleem-appliance's tools/make_rpi_package.sh for the rule)
 VERSION_H="$BUILD_DIR/generated/core/version.h"
 if [ -f "$VERSION_H" ]; then
     ab_version="$(sed -n 's/^constexpr const char \*VERSION = "\([^"]*\)".*/\1/p' "$VERSION_H")"

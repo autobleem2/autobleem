@@ -342,14 +342,14 @@ RUN ab-validate psc
 
 # ---------------------------------------------------------------------------------------------------------
 # retroarch: what ci/build_retroarch.sh cross-builds RetroArch for the two Pi architectures with - the
-# runtime libraries payload_linux/install.sh's source build needs, as foreign-architecture dev packages (no
+# runtime libraries autobleem-appliance's payload_linux/install.sh's source build needs, as foreign-architecture dev packages (no
 # FLAC: its soname differs between Bookworm and Trixie, see the script). Placed after psc on purpose: a
 # change here rebuilds no toolchain, only this layer.
 FROM psc AS retroarch
 RUN apt-get update && apt-get install -y --no-install-recommends         libasound2-dev:armhf libudev-dev:armhf libusb-1.0-0-dev:armhf libgbm-dev:armhf libdrm-dev:armhf         libegl-dev:armhf libgles-dev:armhf libfreetype-dev:armhf libxml2-dev:armhf         libasound2-dev:arm64 libudev-dev:arm64 libusb-1.0-0-dev:arm64 libgbm-dev:arm64 libdrm-dev:arm64         libegl-dev:arm64 libgles-dev:arm64 libfreetype-dev:arm64 libxml2-dev:arm64         file     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------------------------------------
-# pcusb: the 32-bit PC stick (payload_linux/, Debian 12 Bookworm i386 - the last Debian with an i386 kernel).
+# pcusb: the 32-bit PC stick (autobleem-appliance's payload_linux/, Debian 12 Bookworm i386 - the last Debian with an i386 kernel).
 # The same multiarch route as the Pis: crossbuild-essential-i386 is i686-linux-gnu-gcc, the :i386 dev
 # packages give real headers and .so links under /usr/lib/i386-linux-gnu, and the jackd2 pin (see pi) holds.
 # The RetroArch dev packages are for ci/build_retroarch.sh i386.

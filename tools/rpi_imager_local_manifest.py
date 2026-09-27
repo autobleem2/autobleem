@@ -8,9 +8,15 @@ with file:// URLs. That is what this writes, the way Imager's own doc/local_json
 for the official images (a *.rpi-imager-manifest file; double-click it, or App Options -> Content
 Repository -> Use custom file, or `rpi-imager --repo <file>`).
 
-The size/hash fields come from the rpi_imager_repo.json that tools/make_rpi_image.sh wrote next to the
-image (--repo). Without it, or for an architecture it has no real values for, they are computed here from
-the image file itself - the extract_* pair needs the whole .xz decompressed once, about a minute.
+The size/hash fields come from the rpi_imager_repo.json that autobleem-appliance's tools/make_rpi_image.sh
+wrote next to the image (--repo). Without it, or for an architecture it has no real values for, they are
+computed here from the image file itself - the extract_* pair needs the whole .xz decompressed once, about
+a minute.
+
+DOCS-5 (2026-09-27): the image build itself (make_rpi_image.sh) moved to autobleem-appliance, which owns
+payload_linux/ now; this script and its rpi_imager_repo.json template stay here since they are a local dev
+convenience for inspecting an image with Raspberry Pi Imager, not part of the packaging pipeline the
+appliance's own tools/merge_rpi_imager_json.py drives for a real publish.
 
     python tools/rpi_imager_local_manifest.py --repo build_rpi_image/rpi_imager_repo.json \\
         --arm64 build_rpi_image/autobleem-rpi-image-arm64.img.xz \\

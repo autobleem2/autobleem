@@ -8,8 +8,8 @@
 #   docker/run.sh                         an interactive shell in the image
 #   AB_BUILD_IMAGE=ghcr.io/autobleem/autobleem-build:latest docker/run.sh ...
 #
-# Two modes for the image builders (tools/make_pc_image.sh builds a Debian root from packages, which wants
-# either user namespaces or real root), both off by default - a build needs neither:
+# Two modes for the image builders (autobleem-appliance's tools/make_pc_image.sh builds a Debian root from
+# packages, which wants either user namespaces or real root), both off by default - a build needs neither:
 #   docker/run.sh --userns CMD...        still the calling user, but seccomp and AppArmor unconfined so
 #                                        mmdebstrap --mode=unshare can make its user namespace and mount
 #                                        inside it (the rootless route; needs the kernel to allow
