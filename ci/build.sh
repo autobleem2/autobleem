@@ -6,23 +6,25 @@
 #
 #   native   build_sys/     Debug + -Wall -Wextra, ctest, the language files, clang-format --check, clang-tidy
 #   psc      build_psc/     the PlayStation Classic (toolchains/psc, AB_PSC_TOOLCHAIN) -> autobleem-psc-<v>.zip
-#   rpi      build_rpi/     Raspberry Pi 32-bit (toolchains/rpi) -> autobleem-rpi.tar.gz
-#   rpi64    build_rpi64/   Raspberry Pi 64-bit (toolchains/rpi64) -> autobleem-rpi-arm64.tar.gz
-#   pcusb    build_pcusb/   the 32-bit PC USB stick (toolchains/pcusb, i386 Debian) -> autobleem-pcusb-i386.tar.gz;
+#   rpi      build_rpi/     Raspberry Pi 32-bit (toolchains/rpi) -> dist/rpi/ (binary + abpad + resources, staged
+#                           the way .github/workflows/publish-launcher.yml does; no install.sh, no package - see below)
+#   rpi64    build_rpi64/   Raspberry Pi 64-bit (toolchains/rpi64) -> dist/rpi64/, same shape as rpi
+#   pcusb    build_pcusb/   the 32-bit PC USB stick (toolchains/pcusb, i386 Debian) -> dist/pcusb/, same shape;
 #                           its unit tests run too (i386 runs on the host)
 #   win      build_mingw/   Windows (toolchains/mingw) -> autobleem-win-<v>.zip + UpdateRoms-<v>.zip, and the
 #            product (build_mingw_product/, AB_TARGET=win) -> autobleem-win-product-<v>.zip + AutoBleemSetup-<v>.exe
 #   all      every one of the above, in that order
 #
-# pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64/pcusb from its own
-# checkout (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with
-# its ci/build.sh, and the stripped result is staged into build_<target>/emu-stage/ - never the tracked
-# payload/Autobleem/bin/emu/ (console) or payload_linux/Autobleem/bin/emu{,-arm64,-i386}/ (the appliances)
-# trees, so a build never leaves the checkout dirty (D21). The packaging scripts (make_psc_package.sh,
-# make_rpi_package.sh) copy the staged emulator into the package in place of the checked-in one when it is
-# there. AB_NO_PCSX=1 skips the fresh build - the checked-in payload*/ binaries ship, for a developer
-# without that checkout; the CI always builds it. A pcsx-ab checkout without the target (pcusb, until it
-# has one) is reported and the package ships the checked-in binaries.
+# pcsx-ab, the PS1 emulator the console package ships, is built ahead of psc only, from its own checkout
+# (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with its own
+# ci/build.sh, and the stripped result is staged into build_psc/emu-stage/ - never the tracked
+# payload/Autobleem/bin/emu/ tree, so a build never leaves the checkout dirty (D21). make_psc_package.sh
+# copies the staged emulator into the package in place of the checked-in one when it is there. AB_NO_PCSX=1
+# skips the fresh build - the checked-in payload/ binaries ship, for a developer without that checkout; the
+# CI always builds it. DOCS-5 (2026-09-27): rpi/rpi64/pcusb no longer build or stage an emulator, or run a
+# packaging script, at all - autobleem2/autobleem-appliance owns payload_linux/ (its install.sh, its own
+# make_rpi_package.sh/make_pc_image.sh/make_rpi_image.sh/biospack.py) and does that assembly from a
+# launcher release plus its own pcsx-ab build. This gate builds, checks and stages the launcher binary only.
 #
 #   AB_JOBS=N       parallel jobs (default: nproc)
 #   AB_PCSX_DIR=D   the pcsx-ab checkout;  AB_NO_PCSX=1  use the checked-in emulator binaries
@@ -176,17 +178,33 @@ build_psc() {
 }
 
 # --- rpi / rpi64: the Pi -------------------------------------------------------------------------------------
+# DOCS-5 (2026-09-27): this used to package a full installable tarball too (tools/make_rpi_package.sh,
+# staging pcsx-ab/pcsx-abnxt in ahead of it via build_pcsx). Both the packaging script and the payload_linux/
+# tree it staged now live solely in autobleem2/autobleem-appliance (its own duplicate had drifted from this
+# one - DOCS-6 folded the drift back into it before this repo's copies were removed). So this gate now
+# stops exactly where .github/workflows/publish-launcher.yml's own staging does: the binary, abpad and
+# src/resources/ into dist/<target>/, no install skeleton, no tarball, no emulator bundled - the appliance
+# assembles the actual package from a launcher release plus its own build.
+stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{autobleem,abpad}, no package
+    local dir="$1" target="$2" bin="dist/$target/Autobleem/bin"
+    dist_reset "$target"
+    mkdir -p "$bin/autobleem" "$bin/abpad"
+    cp "$dir/autobleem-gui" "$bin/autobleem/"
+    cp -a src/resources/. "$bin/autobleem/"
+    rm -f "$bin/autobleem/internal.db"   # an appliance has no built-in games (AB_HAS_INTERNAL_GAMES is psc/dev only)
+    if [ -f "$dir/apps/abpad/abpadd" ] && [ -f "$dir/apps/abpad/libabpad.so" ]; then
+        cp "$dir/apps/abpad/abpadd" "$dir/apps/abpad/libabpad.so" "$bin/abpad/"
+    else
+        echo "    (no abpad in $dir/apps/abpad - Apps would run without the virtual gamepad)"
+    fi
+    dist_note "$target"
+}
+
 build_rpi() { # build_rpi armhf|arm64
     local arch="$1" dir toolchain proc
     case "$arch" in
         armhf) dir=build_rpi;   toolchain=toolchains/rpi/RPitoolchain.cmake;     proc=arm ;;
         arm64) dir=build_rpi64; toolchain=toolchains/rpi64/RPi64toolchain.cmake; proc=aarch64 ;;
-    esac
-    case "$arch" in
-        armhf) build_pcsx rpi   build_rpi/emu-stage/emu
-               build_pcsx rpi   build_rpi/emu-stage/emunxt nxt ;;
-        arm64) build_pcsx rpi64 build_rpi64/emu-stage/emu-arm64
-               build_pcsx rpi64 build_rpi64/emu-stage/emunxt-arm64 nxt ;;
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \
@@ -198,17 +216,12 @@ build_rpi() { # build_rpi armhf|arm64
         armhf) file "$dir/autobleem-gui" | grep -q 'ELF 32-bit LSB.*ARM, EABI5' ;;
         arm64) file "$dir/autobleem-gui" | grep -q 'ELF 64-bit LSB.*ARM aarch64' ;;
     esac
-    banner "rpi $arch: package"
-    bash tools/make_rpi_package.sh --arch "$arch"
     local target=rpi; [ "$arch" = arm64 ] && target=rpi64
-    dist_reset "$target"
-    cp "$dir"/autobleem-rpi*.tar.gz "dist/$target/"
-    dist_note "$target"
+    banner "rpi $arch: stage"
+    stage_launcher "$dir" "$target"
 }
 
 build_pcusb() {
-    build_pcsx pcusb build_pcusb/emu-stage/emu-i386
-    build_pcsx pcusb build_pcusb/emu-stage/emunxt-i386 nxt
     banner "pcusb: configure + build (build_pcusb)"
     configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
     ninja -C build_pcusb -j "$JOBS"
@@ -218,11 +231,8 @@ build_pcusb() {
     # i386 runs on this host: the suites are a gate here too (their scratch dirs carry the pid, -j is safe)
     banner "pcusb: tests"
     ctest --test-dir build_pcusb --output-on-failure -j "$JOBS"
-    banner "pcusb: package"
-    bash tools/make_rpi_package.sh --arch i386
-    dist_reset pcusb
-    cp build_pcusb/autobleem-pcusb-i386.tar.gz dist/pcusb/
-    dist_note pcusb
+    banner "pcusb: stage"
+    stage_launcher build_pcusb pcusb
 }
 
 # --- win: Windows --------------------------------------------------------------------------------------------

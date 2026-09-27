@@ -39,7 +39,7 @@ Themes/                    UI themes (folders or .zip)
 | Target | Command |
 |--------|---------|
 | **Windows (dev)** | `make_win.sh` - builds, runs tests, validates translations. Requires MSYS2 UCRT64 with SDL2 packages. |
-| **Raspberry Pi (32-bit)** | `make_rpi.sh` then `tools/make_rpi_package.sh` for the installer. |
+| **Raspberry Pi (32-bit)** | `make_rpi.sh` then autobleem-appliance's `tools/make_rpi_package.sh` for the installer. |
 | **Linux / macOS** | `make_sys.sh` for a native build. |
 | **PlayStation Classic** | `make_psc.sh` to cross-compile on a build server, or `docker/run.sh ci/build.sh psc` in the Docker image for all targets. |
 
@@ -84,7 +84,9 @@ The launcher is built from libraries that link only the one below them:
 - `src/code/gui/` (game-aware screens) and `src/code/evoui/` - launcher UI (ab_ui and ab_evoui libraries)
 - `src/resources/` - themes, languages, fonts, platform configs
 - `apps/abpad/` - virtual gamepad mapper for third-party Apps
-- `payload/` and `payload_linux/` - console USB tree and Pi installer package
+- `payload/` - console USB tree; `payload_linux/` keeps only `Autobleem/rc/`, the App scripts shared
+  with the console (DOCS-5, 2026-09-27) - the Pi/PC-stick installer package itself is
+  autobleem2/autobleem-appliance's own `payload_linux/`
 
 Clone with `git clone --recurse-submodules`.
 

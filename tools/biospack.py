@@ -22,6 +22,12 @@ carries (psc/cores/latest.json -> its cores-psc-<date>.json; KMFD's km_<core>_xt
 onto the plain core names RetroBIOS uses), plus the systems only the console's cores cover (Saturn,
 Dreamcast, DS, PC-FX, Atari ST, ...). Its manifest is payload/RetroArch/bios/biospack.txt.
 
+DOCS-5 (2026-09-27): payload_linux/ (armhf/arm64/i386's destination) is autobleem2/autobleem-appliance's
+own tree now - this script stays here too, identical to that repo's copy, because --arch psc and --arch
+win64 write into payload/ and src/win/, which are this repo's own. Regenerate an armhf/arm64/i386 manifest
+from the appliance's copy of this script instead; running one from here would write into this repo's
+now near-empty payload_linux/system/, which nothing packages any more.
+
     python tools/biospack.py                 # rewrite payload_linux/system/biospack.txt (armhf) from the pinned commit
     python tools/biospack.py --arch arm64    # rewrite payload_linux/system/biospack-arm64.txt
     python tools/biospack.py --ref main      # try RetroBIOS's current main (then update RETROBIOS_REF)

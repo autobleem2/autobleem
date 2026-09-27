@@ -183,14 +183,16 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   no X11/OSS, see "SDL2 on the console" below) that `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`;
   the build-recipe history and the image's verification story are at autobleem-main
   `docs/history/launcher-build.md`.
-  `ci/build.sh native|psc|rpi|rpi64|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into the
-  same `build_*/` dirs the `make_*.sh` scripts use, builds, validates (`docker/ab-validate.sh`) and packages
-  into `dist/<t>/`; for `psc`/`rpi`/`rpi64`/`pcusb` it **builds pcsx-ab first** from the sibling checkout
-  (`AB_PCSX_DIR` / `../pcsx-ab`), stages the stripped result into `build_<t>/emu-stage/` (never over the
-  tracked `payload*/Autobleem/bin/emu*`, which a build must never leave dirty) and the packaging scripts copy
-  it from there into the package. `tools/make_psc_package.sh` makes the console zip (also regenerating
-  `libs.tar.gz` from the image's SDL build) and `tools/make_win_package.sh` the launcher zip (the four SDL
-  DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows** (the compile-once model):
+  `ci/build.sh native|psc|rpi|rpi64|pcusb|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into
+  the same `build_*/` dirs the `make_*.sh` scripts use, builds and validates (`docker/ab-validate.sh`), and
+  leaves `dist/<t>/`; for `psc` only it **builds pcsx-ab first** from the sibling checkout (`AB_PCSX_DIR` /
+  `../pcsx-ab`), stages the stripped result into `build_psc/emu-stage/` (never over the tracked
+  `payload/Autobleem/bin/emu*`, which a build must never leave dirty) and `tools/make_psc_package.sh` copies
+  it from there into the console zip (also regenerating `libs.tar.gz` from the image's SDL build).
+  `rpi`/`rpi64`/`pcusb` build, check and stage the launcher binary + abpad + resources into `dist/<t>/` only
+  (DOCS-5, 2026-09-27 - no emulator, no install skeleton, no package: autobleem-appliance assembles those
+  from a launcher release plus its own pcsx-ab build). `tools/make_win_package.sh` makes the launcher zip
+  (the four SDL DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows** (the compile-once model):
   **`test.yml`** is the test gate (`ci/build.sh native` on a hosted runner, every push and pull request) and
   **`publish-launcher.yml`** builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop
   pushes and `v*` tags, and keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance**
@@ -221,11 +223,14 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   otherwise (the image) - same thing in pcsx-ab. `toolchains/mingw/MinGWtoolchain.cmake` is the Windows
   cross build from Linux (`-static-libgcc -static-libstdc++`; the tests are built and run only under
   wine, which the image does not have - the native target runs the suites).
-- **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/`, then
-  `tools/make_rpi_package.sh` for the installable tarball. Incremental since 2026-09-19 (it used to
-  `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into `build_rpi_dbg/`. See the
-  "Raspberry Pi port" section above. All three build scripts are incremental now; `make_win.sh`'s time is
-  mostly `ctest`.
+- **Raspberry Pi (32-bit Pi OS)**: `make_rpi.sh` → `toolchains/rpi/RPitoolchain.cmake` → `build_rpi/` - the
+  compile only; turning that into the installable tarball is autobleem-appliance's own
+  `tools/make_rpi_package.sh` now (DOCS-5, 2026-09-27 - its duplicate here, and the payload_linux/ tree it
+  staged, were removed as drifted copies; `ci/build.sh rpi`/`rpi64`/`pcusb` build, check and stage the
+  launcher binary only, the same as `publish-launcher.yml`, and stop there). Incremental since 2026-09-19
+  (it used to `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into
+  `build_rpi_dbg/`. See the "Raspberry Pi port" section above. All three build scripts are incremental now;
+  `make_win.sh`'s time is mostly `ctest`.
 - **Linux/macOS (native)**: `make_sys.sh` - a plain host build into `build_sys/`.
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
@@ -449,8 +454,10 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s
 `Docs/README.txt` (which points to the site's current user manual). **The five themes (`ab2`, `aergb`,
 `autobleem`, `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
 `github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
-to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and the packaging scripts
-(`tools/make_psc_package.sh`/`make_rpi_package.sh`/`make_win_package.sh`) all take the themes from there.
+to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and this repo's own packaging scripts
+(`tools/make_psc_package.sh`/`make_win_package.sh`) all take the themes from there; autobleem-appliance's own
+`tools/make_rpi_package.sh` (DOCS-5, 2026-09-27 - it no longer lives here) takes them from its own copy of
+the submodule the same way.
 **`.github/workflows/publish-launcher.yml` no longer stages `Themes/` into its per-platform artifact**
 (D5 step 3, 2026-09-27): a release package gets its themes only through autobleem-appliance's own
 `stage_themes` (a real release of `autobleem2/autobleem-themes`, fetched straight there), never through the
@@ -473,9 +480,11 @@ after every game (and at boot) on the Pi 400** - a multi-mode pad re-enumerates 
 opens it, which is SDL's hidapi driver probing its HID reports; `SDL_HINT_JOYSTICK_HIDAPI=0` (evdev instead)
 stopped it but swapped Triangle/Square on the same pad's new GUID, so it was reverted - a fix has to keep
 hidapi's mapping (a gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all).
-`payload_linux/` next to it is the
-Raspberry Pi installer package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored
-(cover DBs live there).
+`payload_linux/` next to it keeps only `Autobleem/rc/` (DOCS-5, 2026-09-27) - the App scripts shared with the
+console's `payload/`, kept identical there and checked by `test_app_resolve` (see the quiet-stick section
+below). The Raspberry Pi/PC-stick installer package itself - `install.sh`, `README.md`, `system/`, the
+data-partition tree - is autobleem2/autobleem-appliance's own `payload_linux/` now; this repo's duplicate had
+drifted and was removed rather than kept in sync by hand. `db/` is git-ignored (cover DBs live there).
 
 ## The quiet stick (2026-09-24, autobleem-main `docs/archive/quiet-stick-plan.md` and `docs/history/quiet-stick.md`)
 

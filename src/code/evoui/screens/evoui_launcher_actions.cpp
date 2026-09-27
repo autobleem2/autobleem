@@ -865,7 +865,7 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     if (outcome.phase != UpdateService::Phase::Downloaded)
         return;
 #if defined(AB_APPLIANCE) || defined(AB_PLATFORM_PSC)
-    // the session loop takes it from here (payload_linux/system/autobleem-session.sh; the console's
+    // the session loop takes it from here (autobleem-appliance's payload_linux/system/autobleem-session.sh; the console's
     // rc/boot.sh -> selection.sh -> abupdate)
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
