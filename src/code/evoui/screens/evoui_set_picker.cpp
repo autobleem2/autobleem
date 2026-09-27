@@ -103,7 +103,8 @@ void GuiSetPicker::buildTabs() {
                               Ps1SelectState::AllGames, static_cast<int>(i), raPlaylists[i]});
     }
 
-    // Apps: "All apps" first, then one row per category present (docs/app-format-plan.md's Category=)
+    // Apps: "All apps" first, then one row per category present (autobleem-main
+    // docs/archive/app-format-plan.md's Category=)
     Tab &apps = tabs[2];
     apps.entries.clear();
     auto appsCount = [](size_t n) { return to_string(n) + " " + _("apps"); };

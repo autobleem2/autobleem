@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# The generic start of a multi-platform App (docs/app-format-plan.md): what the launcher runs for an App whose
+# The generic start of a multi-platform App (autobleem-main docs/archive/app-format-plan.md): what the launcher runs for an App whose
 # app.ini names its binaries (Exec=bin/{key}/...) and has no run.sh of its own. The launcher has resolved the
 # ini already and passes the answer in the environment (AB_APP_DIR, AB_APP_EXEC, AB_APP_ARGS, ...); by hand,
 # give the App's folder:
