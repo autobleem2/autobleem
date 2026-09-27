@@ -58,6 +58,7 @@ build_rpi_dbg/
 build_rpi64/
 build_rpi64_dbg/
 build_rpi_image/
+build_pcusb/
 build_sys/
 build_win/
 build_updateroms/

@@ -83,6 +83,16 @@ cp -a "$PAYLOAD/." "$STAGE/"
 # built for it - leaves no emu/ at all: install.sh's RetroArch core fallback plays PS1 then).
 EMU_ARCH_SUFFIX="${EMU_SRC_SUBDIR#emu}"   # "" for armhf, "-arm64", "-i386"
 for emu in emu emunxt; do
+    # pcsx-ab / pcsx-abnxt: ci/build.sh stages a freshly built emulator into $BUILD_DIR/emu-stage/ rather
+    # than the tracked payload_linux/Autobleem/bin/emu* tree (D21 - a build must never leave the checkout
+    # dirty). Use it when it is there, overwriting the checked-in copy the cp -a above just staged; the
+    # rename below then treats it exactly as it would the checked-in one.
+    staged="$BUILD_DIR/emu-stage/$emu$EMU_ARCH_SUFFIX"
+    if [ -d "$staged" ]; then
+        rm -rf "$STAGE/Autobleem/bin/$emu$EMU_ARCH_SUFFIX"
+        mkdir -p "$STAGE/Autobleem/bin"
+        cp -a "$staged" "$STAGE/Autobleem/bin/$emu$EMU_ARCH_SUFFIX"
+    fi
     if [ -n "$EMU_ARCH_SUFFIX" ]; then
         rm -rf "$STAGE/Autobleem/bin/$emu"
         if [ -d "$STAGE/Autobleem/bin/$emu$EMU_ARCH_SUFFIX" ]; then

@@ -16,10 +16,13 @@
 #
 # pcsx-ab, the PS1 emulator every package ships, is built first for psc/rpi/rpi64/pcusb from its own
 # checkout (AB_PCSX_DIR, default ../pcsx-ab or ../pcsx-rearmed-develop; github.com/autobleem/pcsx-ab2) with
-# its ci/build.sh, and the stripped result replaces the checked-in payload/Autobleem/bin/emu/ (console) or
-# payload_linux/Autobleem/bin/emu{,-arm64,-i386}/ (the appliances) before the package is made. AB_NO_PCSX=1
-# keeps the checked-in binaries - for a developer without that checkout; the CI always builds it. A pcsx-ab
-# checkout without the target (pcusb, until it has one) is reported and the package ships without it.
+# its ci/build.sh, and the stripped result is staged into build_<target>/emu-stage/ - never the tracked
+# payload/Autobleem/bin/emu/ (console) or payload_linux/Autobleem/bin/emu{,-arm64,-i386}/ (the appliances)
+# trees, so a build never leaves the checkout dirty (D21). The packaging scripts (make_psc_package.sh,
+# make_rpi_package.sh) copy the staged emulator into the package in place of the checked-in one when it is
+# there. AB_NO_PCSX=1 skips the fresh build - the checked-in payload*/ binaries ship, for a developer
+# without that checkout; the CI always builds it. A pcsx-ab checkout without the target (pcusb, until it
+# has one) is reported and the package ships the checked-in binaries.
 #
 #   AB_JOBS=N       parallel jobs (default: nproc)
 #   AB_PCSX_DIR=D   the pcsx-ab checkout;  AB_NO_PCSX=1  use the checked-in emulator binaries
@@ -103,11 +106,12 @@ pcsxnxt_dir() {
     if [ -n "${AB_PCSXNXT_DIR:-}" ]; then echo "$AB_PCSXNXT_DIR"; return; fi
     if [ -f ../pcsx-abnxt/ci/build.sh ]; then (cd ../pcsx-abnxt && pwd); fi
 }
-build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-abnxt) for the target into the payload folder DEST
+build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-abnxt) for the target into the
+               # staging folder DEST (build_<target>/emu-stage/<name> - never a tracked payload*/ path, D21)
     local target="$1" dest="$2" which="${3:-ab}" dir name=pcsx-ab
     [ "$which" = nxt ] && name=pcsx-abnxt
     if [ -n "${AB_NO_PCSX:-}" ]; then
-        echo "    AB_NO_PCSX: the checked-in emulator in $dest ships"
+        echo "    AB_NO_PCSX: the checked-in emulator ships (no fresh $name staged)"
         return
     fi
     if [ "$which" = nxt ]; then dir="$(pcsxnxt_dir)"; else dir="$(pcsx_dir)"; fi
@@ -116,7 +120,7 @@ build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-ab
         exit 1
     fi
     if ! grep -q "$target)" "$dir/ci/build.sh"; then
-        echo "    $name at $dir has no $target target yet - the package ships whatever $dest holds"
+        echo "    $name at $dir has no $target target yet - the checked-in binaries ship"
         return
     fi
     banner "$name $target: $dir"
@@ -152,8 +156,8 @@ build_native() {
 # --- psc: the console ----------------------------------------------------------------------------------------
 build_psc() {
     local toolchain="${AB_PSC_TOOLCHAIN:-/opt/psc}"
-    build_pcsx psc payload/Autobleem/bin/emu
-    build_pcsx psc payload/Autobleem/bin/emunxt nxt
+    build_pcsx psc build_psc/emu-stage/emu
+    build_pcsx psc build_psc/emu-stage/emunxt nxt
     banner "psc: configure + build (build_psc, toolchain $toolchain)"
     configure build_psc -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE=toolchains/psc/PSCtoolchainV8.cmake -DAB_PSC_TOOLCHAIN="$toolchain"
@@ -177,10 +181,10 @@ build_rpi() { # build_rpi armhf|arm64
         arm64) dir=build_rpi64; toolchain=toolchains/rpi64/RPi64toolchain.cmake; proc=aarch64 ;;
     esac
     case "$arch" in
-        armhf) build_pcsx rpi   payload_linux/Autobleem/bin/emu
-               build_pcsx rpi   payload_linux/Autobleem/bin/emunxt nxt ;;
-        arm64) build_pcsx rpi64 payload_linux/Autobleem/bin/emu-arm64
-               build_pcsx rpi64 payload_linux/Autobleem/bin/emunxt-arm64 nxt ;;
+        armhf) build_pcsx rpi   build_rpi/emu-stage/emu
+               build_pcsx rpi   build_rpi/emu-stage/emunxt nxt ;;
+        arm64) build_pcsx rpi64 build_rpi64/emu-stage/emu-arm64
+               build_pcsx rpi64 build_rpi64/emu-stage/emunxt-arm64 nxt ;;
     esac
     banner "rpi $arch: configure + build ($dir)"
     configure "$dir" -DCMAKE_SYSTEM_PROCESSOR="$proc" -DCMAKE_BUILD_TYPE=Release -DAB_RPI_DEBUG=OFF \
@@ -201,8 +205,8 @@ build_rpi() { # build_rpi armhf|arm64
 }
 
 build_pcusb() {
-    build_pcsx pcusb payload_linux/Autobleem/bin/emu-i386
-    build_pcsx pcusb payload_linux/Autobleem/bin/emunxt-i386 nxt
+    build_pcsx pcusb build_pcusb/emu-stage/emu-i386
+    build_pcsx pcusb build_pcusb/emu-stage/emunxt-i386 nxt
     banner "pcusb: configure + build (build_pcusb)"
     configure build_pcusb -DCMAKE_BUILD_TYPE=Release -DAB_PCUSB_DEBUG=OFF -DAB_ENABLE_CHD=ON         -DCMAKE_TOOLCHAIN_FILE=toolchains/pcusb/PcUsbToolchain.cmake
     ninja -C build_pcusb -j "$JOBS"

@@ -59,6 +59,17 @@ mkdir -p "$STAGE" "$OUT"
 
 # the checked-in USB tree
 cp -a "$REPO/payload/." "$STAGE/"
+
+# pcsx-ab / pcsx-abnxt: ci/build.sh stages a freshly built emulator into $BUILD_DIR/emu-stage/ rather than
+# the tracked payload/Autobleem/bin/emu{,nxt} (D21 - a build must never leave the checkout dirty). Use it
+# when it is there; otherwise the checked-in copy the cp -a above just staged ships, as before.
+for name in emu emunxt; do
+    if [ -d "$BUILD_DIR/emu-stage/$name" ]; then
+        rm -rf "$STAGE/Autobleem/bin/$name"
+        cp -a "$BUILD_DIR/emu-stage/$name" "$STAGE/Autobleem/bin/$name"
+    fi
+done
+
 # the five themes: their own repository now (autobleem2/autobleem-themes), a submodule at autobleem-themes/
 # - payload/ no longer carries a Themes/ folder, so it is copied in separately here
 mkdir -p "$STAGE/Themes"

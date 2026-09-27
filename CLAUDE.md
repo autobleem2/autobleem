@@ -197,8 +197,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `docs/history/launcher-build.md`.
   `ci/build.sh native|psc|rpi|rpi64|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into the
   same `build_*/` dirs the `make_*.sh` scripts use, builds, validates (`docker/ab-validate.sh`) and packages
-  into `dist/<t>/`; for `psc`/`rpi`/`rpi64` it **builds pcsx-ab first** from the sibling checkout
-  (`AB_PCSX_DIR` / `../pcsx-ab`) and the package ships that emulator. `tools/make_psc_package.sh` makes the
+  into `dist/<t>/`; for `psc`/`rpi`/`rpi64`/`pcusb` it **builds pcsx-ab first** from the sibling checkout
+  (`AB_PCSX_DIR` / `../pcsx-ab`), stages the stripped result into `build_<t>/emu-stage/` (never over the
+  tracked `payload*/Autobleem/bin/emu*` - D21, 2026-09-27: that used to dirty a fresh clone's tree and stamp
+  the version `-dirty`) and the packaging scripts copy it from there into the package. `tools/make_psc_package.sh` makes the
   console zip (also regenerating `libs.tar.gz` from the image's SDL build) and `tools/make_win_package.sh`
   the launcher zip (the four SDL DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows**
   (the compile-once model - autobleem-main's `docs/ci-org-migration-plan.md`): **`test.yml`** is the test
