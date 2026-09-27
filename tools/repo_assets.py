@@ -3,7 +3,7 @@
 
     repo_assets.py <outdir>
 
-Writes into <outdir> (what tools/repo_publish.sh assets uploads to <repo>/assets/):
+Writes into <outdir> (what autobleem-repo's tools/repo_publish.sh assets uploads to <repo>/assets/):
 
     hero.jpg            the theme's background - the AutoBleem 2 logo is painted into it
     icon.png            the emblem cut out of it, 128x128 - the page's favicon and Raspberry Pi Imager's icon

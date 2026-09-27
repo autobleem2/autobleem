@@ -272,7 +272,7 @@ rebuilt on it.
 
 - **The Store itself** is published like the launcher's components: `ext_store-<platform>-<v>.zip`,
   laid out as `Extensions/store/...`, from its repository's CI.
-- **The catalog**: `repo_publish.sh store <platform> <zip|png|json>...` puts files under
+- **The catalog**: `autobleem-repo's repo_publish.sh store <platform> <zip|png|json>...` puts files under
   `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
   author, licence, description, requires). The page does not have to show the store; if it does, it fits
   into the approved look.
@@ -332,12 +332,12 @@ exists.
    - Walked through with `tools/ab_drive.py` against a local site (`AB_STORE_CATALOG`,
      `python -m http.server`): an App installed from the catalog, a game from a TSV source, the rescan
      after it.
-6. **Done** (2026-09-24/25): `store` in `repo_publish.sh`/`repo_index.py` and the Store page
+6. **Done** (2026-09-24/25): `store` in autobleem-repo's `repo_publish.sh`/`repo_index.py` and the Store page
    (`store/index.html`); the Store's own packages there, per system, from its CI (`extensions/store/`), with
    abstored and LAN Share in a LAN server tab (the LAN server work: autobleem-pc-tools
    `docs/lan-share-plan.md`); `pack_psc_apps.py --per-app` (autobleem-appliance) and the first items - the
    eight console Apps of apps-psc-20260920 in `store/psc/`, next to Terminal. The step as first written:
-   The site: the Store's packages, `store` in `repo_publish.sh`/`repo_index.py`,
+   The site: the Store's packages, `store` in autobleem-repo's `repo_publish.sh`/`repo_index.py`,
    `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
