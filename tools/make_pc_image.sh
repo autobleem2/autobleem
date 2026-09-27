@@ -550,7 +550,7 @@ summary() {
       xzcat $(basename "$OUT_IMG") | sudo dd of=/dev/sdX bs=4M status=progress
   Boot the PC from the stick (BIOS or UEFI, Secure Boot off). The first boot sets AutoBleem up on the
   screen; autobleem.txt on the stick's first partition holds its options.
-  Publish: tools/repo_publish.sh pc-image $VERSION $OUT_IMG
+  Publish: autobleem-repo's tools/repo_publish.sh pc-image $VERSION $OUT_IMG
 
 EOF
 }

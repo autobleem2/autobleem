@@ -693,19 +693,23 @@ theme authors' own work.
 Repo was `git init`ed on 2026-09-15 from the final source snapshot (no upstream history here; the public
 history is at github.com/screemerpl/cbleemsync). Commit per logical refactor step. `.gitattributes` forces LF.
 
-## User manuals (`manuals/`, 2026-09-21)
+## User manuals (2026-09-27: moved to autobleem-manuals, D4)
 
-`manuals/<lang>/autobleem-user-manual.md` (English and Polish for now) is the user manual in a small Markdown
-subset (headings, lists, tables, `![caption](path)` figures, `> ` notes, `<!-- pagebreak -->`), built by
-**`tools/build_manuals.py`** into `build_manuals/<lang>/*-<lang>.html` and `*.pdf` (headless Chrome/Edge prints the
-PDF; `--html` skips it; `manuals/style.css` is the look, the site's palette). **`tools/repo_publish.sh manuals
-build_manuals/*/*.pdf`** puts the PDFs on the site (`manuals/`, a "User manual" panel under "Every platform" -
-`index_manuals`, `MANUAL_LANGUAGES`); rebuild and republish after any manual change. The stick's `Docs/README.txt`
-points at the site's current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right: a stock
-console reads **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not mentioned. The screenshots are
-`manuals/images/<lang>/*.jpg`, taken by **`tools/manual_shots.py`** through the DebugDriver on the Windows
-dev build (`--lang Polski --show`; needs `make_win.sh` and `tools/make_usb.py usb`): it walks the launcher,
-PSC-Bios and ABFlashKit through their screens with the stick's `config.ini` switched to each language, and
-captures the UpdateRoms/installer windows by title when they are open. A changed screen means rerunning the
-shots for every language; a new language is a folder under `manuals/` plus its `LANGS` entry. `build_manuals/`
-is git-ignored; the PDFs are not checked in.
+The user manuals - `manuals/<lang>/autobleem-user-manual.md`, `manuals/style.css` and
+`tools/build_manuals.py` - live in **`autobleem2/autobleem-manuals`** now, the one source for every
+language (17, was English and Polish only here). A merge to its `develop` branch builds and publishes the
+PDFs to the site (`.github/workflows/build.yml`, gated by that repo's own `AB_CI_ENABLED`) - there is no
+`tools/repo_publish.sh manuals` step to run by hand any more. The stick's `Docs/README.txt` points at the
+site's current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right there: a stock
+console reads **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not
+mentioned.
+
+**`tools/manual_shots.py` stays in this repo** - it is the one piece of the user manuals that has to run
+against a built launcher. It takes the screenshots (`--lang Polski --show`; needs `make_win.sh` and
+`tools/make_usb.py usb`) through the DebugDriver on the Windows dev build: it walks the launcher, PSC-Bios
+and ABFlashKit through their screens with the stick's `config.ini` switched to each language, and captures
+the UpdateRoms/installer windows by title when they are open. It writes into a **sibling
+`autobleem-manuals` checkout**'s `manuals/images/<lang>/*.jpg` by default (`../autobleem-manuals/manuals/
+images`, next to this one) - pass `--out-dir` for a checkout that lives somewhere else. A changed screen
+means rerunning the shots for every language there, then committing and merging autobleem-manuals'
+`develop`; a new language is a folder under that repo's `manuals/` plus this script's `LANGS` entry.
