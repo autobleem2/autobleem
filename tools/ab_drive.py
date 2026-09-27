@@ -313,10 +313,17 @@ def stop(port, host=DEFAULT_HOST, token=None):
         # marker in place - the next `start` read it back as "was running when AutoBleem stopped last
         # time" and auto-disabled the extension (System/Extensions/disabled.txt), breaking every capture
         # that opens PSC-Bios (pscbios-main and everything after it in the same run) until it was
-        # re-enabled by hand. Measured from GuiPadConfig (the deepest PSC-Bios screen the manual shots
-        # reach) the unwind alone took ~13s on this machine - so the budget here is a generous 30s of
-        # actual sleep (not counting each tasklist spawn's own overhead) rather than a tight guess; only
-        # what is still alive after that gets force-killed.
+        # re-enabled by hand. The old ~13s figure recorded here was this tool's own bug, not the app's:
+        # `quit` injected a single one-shot Quit event, which only the innermost screen's poll() loop ever
+        # consumed - a nested screen (GuiPadConfig under the System Menu's Network hub) left everything
+        # above it with no reason to unwind, so the process sat there until this loop's budget ran out and
+        # force-killed it (TOOLS-8). DebugDriver's `quit` now calls Input::requestQuit() instead - the same
+        # persistent condition the real Power button sets, which every nested screen's own poll() sees in
+        # turn - and a clean exit from GuiPadConfig now measures ~1.5s, repeatably, over three runs. The
+        # loop below returns as soon as the pid is gone, so that clean exit still comes back in ~1.5s; the
+        # budget stays a generous 30s (not counting each tasklist spawn's own overhead) as a safety margin
+        # for a loaded machine, where a premature force-kill is the failure this comment describes, not a
+        # tight guess against the common case.
         for _ in range(30):
             if not _pid_alive(pid):
                 break
