@@ -20,7 +20,7 @@ on:
     tags: ['v*']
     # develop too, for the rolling `nightly` pre-release the appliance's development build is assembled from
     branches: [develop]
-    paths-ignore: ['docs/**', '**.md', 'manuals/**']
+    paths-ignore: ['docs/**', '**.md']
   workflow_dispatch:
     inputs:
       targets:

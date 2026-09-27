@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 """The user manual's screenshots, taken through the DebugDriver (tools/ab_drive.py) on the Windows dev build:
 the launcher and the two console tools walked through their screens, one JPEG per screen per language into
-manuals/images/<lang>/. Run after `make_win.sh` and `python tools/make_usb.py usb --games 50`:
+a sibling autobleem-manuals checkout's manuals/images/<lang>/ (the manuals themselves moved there in D4 -
+this script is the launcher's only remaining piece of the user manuals). Run after `make_win.sh` and
+`python tools/make_usb.py usb --games 50`:
 
     python tools/manual_shots.py                # English and Polish
     python tools/manual_shots.py --lang English --show
     python tools/manual_shots.py --only keyboard,store-apps   # just these screens
+    python tools/manual_shots.py --out-dir E:/Programming/autobleem-manuals/manuals/images
 
-The Store's screens need the Store built (-DAB_EXTENSION_DIRS=<ext_store>) and staged by make_usb.py; they show
-the published rpi catalog (AB_STORE_CATALOG, overridable) and the stick's own sources
-(usb/System/Extensions/store/sources.txt) as they are.
+The default output directory is `../autobleem-manuals/manuals/images` next to this checkout; `--out-dir`
+overrides it for a checkout that lives somewhere else. The Store's screens need the Store built
+(-DAB_EXTENSION_DIRS=<ext_store>) and staged by make_usb.py; they show the published rpi catalog
+(AB_STORE_CATALOG, overridable) and the stick's own sources (usb/System/Extensions/store/sources.txt) as
+they are.
 
 The stick's config.ini (usb/Autobleem/bin/autobleem/config.ini) is switched to each language for its run and
 put back to English. The UpdateRoms and installer windows are plain Win32 programs without the driver: those
@@ -23,7 +28,7 @@ import time
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 USB = os.path.join(REPO, 'usb')
-OUT = os.path.join(REPO, 'manuals', 'images')
+DEFAULT_OUT = os.path.join(REPO, '..', 'autobleem-manuals', 'manuals', 'images')
 DRIVE = [sys.executable, os.path.join(REPO, 'tools', 'ab_drive.py')]
 PORT = '7795'
 
@@ -145,9 +150,14 @@ $bmp.Save("%s", [System.Drawing.Imaging.ImageFormat]::Png)
 
 
 def main(argv):
+    if '--help' in argv or '-h' in argv:
+        print(__doc__)
+        return 0
     langs = dict(LANGS)
     show = '--show' in argv
     only = set(argv[argv.index('--only') + 1].split(',')) if '--only' in argv else None
+    out = argv[argv.index('--out-dir') + 1] if '--out-dir' in argv else DEFAULT_OUT
+    out = os.path.abspath(out)
 
     def pick(screens):
         return [sc for sc in screens if only is None or sc[0] in only]
@@ -156,7 +166,7 @@ def main(argv):
         name = argv[argv.index('--lang') + 1]
         langs = {k: v for k, v in LANGS.items() if v == name}
     for code, name in langs.items():
-        out_dir = os.path.join(OUT, code)
+        out_dir = os.path.join(out, code)
         os.makedirs(out_dir, exist_ok=True)
         print('== %s' % name)
         set_language(name)
@@ -167,7 +177,7 @@ def main(argv):
     if only is not None:
         return 0
     # the two Win32 programs, when the owner has them open
-    shared = os.path.join(OUT, 'shared')
+    shared = os.path.join(out, 'shared')
     os.makedirs(shared, exist_ok=True)
     for title, name in (('UpdateRoms', 'updateroms'), ('AutoBleem Installer', 'installer')):
         png = os.path.join(shared, name + '.png')

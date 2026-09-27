@@ -11,7 +11,7 @@ wolf4sdl), made self-contained by tools/install_autobleem.py's layout stage - th
 retroarch/apps/<name> moved in, the scripts pointed at /media/Apps/<name>, /media/System/Logs and
 Autobleem/rc/app_env.sh (the libraries from the site's libs pack, on the path). The pack is
 apps-psc-<date>.tar.gz, laid out as Apps/<name>/..., plus apps-psc-<date>.json listing every app with its
-app.ini fields, file count, size and the sha256 of every file; tools/repo_publish.sh psc-apps puts both
+app.ini fields, file count, size and the sha256 of every file; autobleem-repo's tools/repo_publish.sh psc-apps puts both
 on the download repository (psc/apps/, the newest date kept). pscbios and abflashkit are skipped - they
 ship with every release.
 
@@ -98,7 +98,7 @@ def main():
     ap.add_argument("--per-app", action="store_true",
                     help="one zip per App for the AutoBleem Store instead of the one pack: <out>/<name>-<platform>-"
                          "<version>.zip laid out as Apps/<name>/..., with <name>.item.json and its picture - what "
-                         "`repo_publish.sh store <platform>` takes (the launcher's docs/store-plan.md)")
+                         "autobleem-repo's `repo_publish.sh store <platform>` takes (docs/store-plan.md)")
     ap.add_argument("--platform", default="psc", help="the platform key the per-app packages are for")
     args = ap.parse_args()
 
