@@ -90,12 +90,17 @@ public:
     // every time a game returns the display) records the current assignment as already "shown" without
     // popping the notice, so SDL's start-up PadAdded burst and the flush/reopen around a launch stay quiet;
     // showPadAssignment() (a live PadAdded/PadRemoved) only pops it when ableem::PadAssignment actually
-    // differs from lastShownPadAssignment (decidePadAssignmentChange(), core/model/pad_assignment.h).
+    // differs from padAssignmentState.lastShown (decidePadAssignmentChange(), core/model/pad_assignment.h).
+    // C16: unplugging the *only* connected pad leaves an empty assignment that decidePadAssignmentChange()
+    // never shows directly any more (a lone pad's unplug is one PadRemoved event, never a second one to
+    // confirm the pads are really gone rather than mid re-enumeration) - pollPadAssignmentEmptyNotice(),
+    // called every frame like pollPadBattery(), shows "Controllers: None" once PadEmptyNoticeDelay has
+    // passed with nothing reconnecting (checkPadAssignmentEmptyNotice(), core/model/pad_assignment.h).
     void seedPadAssignment();
     void showPadAssignment();
+    void pollPadAssignmentEmptyNotice();
     PadAssignment currentPadAssignment() const;
-    PadAssignment lastShownPadAssignment;
-    bool padAssignmentSuppressedEmpty = false;
+    PadAssignmentState padAssignmentState;
 
     // C8: a small battery indicator per wireless pad, top-left corner - PadBatteryService (ab_core) reads
     // the kernel's power_supply sysfs tree, same as PSC-Bios's pairing screen. Polled at most every

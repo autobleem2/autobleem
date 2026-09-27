@@ -57,6 +57,7 @@ void GuiLauncher::loop() {
         app.extensions().poll();
         applyExtensionRequests();
         pollPadBattery();
+        pollPadAssignmentEmptyNotice();
 #ifdef AB_ONLINE_UPDATE
         pollUpdates();
 #endif
@@ -319,8 +320,8 @@ PadAssignment GuiLauncher::currentPadAssignment() const {
 // PadAdded burst and the pad flush/reopen around a launch never pop the notice by themselves; only an
 // assignment that differs from this seed (a live PadAdded/PadRemoved after that) will.
 void GuiLauncher::seedPadAssignment() {
-    lastShownPadAssignment = currentPadAssignment();
-    padAssignmentSuppressedEmpty = false;
+    padAssignmentState = PadAssignmentState();
+    padAssignmentState.lastShown = currentPadAssignment();
 }
 
 //*******************************
@@ -331,21 +332,17 @@ void GuiLauncher::seedPadAssignment() {
 // now would use. Only pops the NotificationLine when decidePadAssignmentChange() says the P1/P2
 // assignment actually changed from what was last shown - not on every PadAdded/PadRemoved, which SDL
 // also fires at start-up (seedPadAssignment() covers that) and during a re-enumeration's momentary
-// empty reading (decidePadAssignmentChange()'s own suppressed-empty rule covers that).
+// empty reading (decidePadAssignmentChange() never shows an empty reading directly any more - C16 - it
+// only starts pollPadAssignmentEmptyNotice()'s delay, which is what actually shows "Controllers: None").
 void GuiLauncher::showPadAssignment() {
     PadAssignment current = currentPadAssignment();
-    PadAssignmentDecision decision =
-        decidePadAssignmentChange(current, lastShownPadAssignment, padAssignmentSuppressedEmpty);
-    padAssignmentSuppressedEmpty = decision.suppressedEmpty;
+    PadAssignmentDecision decision = decidePadAssignmentChange(current, padAssignmentState, time);
     if (!decision.show)
         return;
-    lastShownPadAssignment = current;
 
+    // decision.show is only ever true here for a non-empty `current` - an empty reading never shows
+    // directly (see above), so this is always the "who plays as P1/P2 now" text, never "None".
     vector<ableem::PadInfo> pads = gui->input().pads();
-    if (pads.empty()) {
-        notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
-        return;
-    }
     // Options -> "Swap Player 1 / Player 2" (C11): this notice must say the same thing LaunchService's
     // AB_PAD_ORDER is about to tell the emulator, or a swapped user sees their own pad mislabelled here.
     bool padSwap = app.config().inifile.values["padswap"] == "true";
@@ -357,6 +354,23 @@ void GuiLauncher::showPadAssignment() {
         text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
     }
     notificationLines[1].setText(text, DefaultShowingTimeout);
+}
+
+//*******************************
+// GuiLauncher::pollPadAssignmentEmptyNotice
+//*******************************
+// C16: called every frame (loop(), alongside pollPadBattery()) - the counterpart to showPadAssignment()'s
+// live-event check, for the one case an event alone can never resolve: unplugging the *only* connected
+// pad. SDL fires one PadRemoved for that, never a second "still gone" event to tell a real unplug apart
+// from a re-enumeration blip, so showPadAssignment() only starts a pending timer for it
+// (decidePadAssignmentChange()) rather than showing anything. This is what shows "Controllers: None" once
+// that timer has run for PadEmptyNoticeDelay with nothing reconnecting; a pad that comes back first is
+// caught by showPadAssignment()'s own live PadAdded, which clears the pending timer before it ever fires.
+void GuiLauncher::pollPadAssignmentEmptyNotice() {
+    PadAssignmentDecision decision = checkPadAssignmentEmptyNotice(padAssignmentState, time, PadEmptyNoticeDelay);
+    if (!decision.show)
+        return;
+    notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
 }
 
 //*******************************
