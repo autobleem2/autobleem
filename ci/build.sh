@@ -112,6 +112,7 @@ build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-ab
     [ "$which" = nxt ] && name=pcsx-abnxt
     if [ -n "${AB_NO_PCSX:-}" ]; then
         echo "    AB_NO_PCSX: the checked-in emulator ships (no fresh $name staged)"
+        rm -rf "$dest"   # a stale stage from an earlier run in a reused build dir must not ship instead
         return
     fi
     if [ "$which" = nxt ]; then dir="$(pcsxnxt_dir)"; else dir="$(pcsx_dir)"; fi
@@ -121,13 +122,14 @@ build_pcsx() { # build_pcsx psc|rpi|rpi64|pcusb DEST [nxt] - pcsx-ab (or pcsx-ab
     fi
     if ! grep -q "$target)" "$dir/ci/build.sh"; then
         echo "    $name at $dir has no $target target yet - the checked-in binaries ship"
+        rm -rf "$dest"   # ditto - a stale stage from an earlier run must not ship instead
         return
     fi
     banner "$name $target: $dir"
     (cd "$dir" && AB_JOBS="$JOBS" bash ci/build.sh "$target")
     local built="$dir/build_$target/dist"
     [ -f "$built/pcsx-ab" ] || { echo "no $built/pcsx-ab after the build" >&2; exit 1; }
-    rm -rf "$dest/plugins"
+    rm -rf "$dest"
     mkdir -p "$dest"
     cp -a "$built/." "$dest/"
     echo "    -> $dest: $(cd "$dest" && echo pcsx-ab plugins/*.so)"
