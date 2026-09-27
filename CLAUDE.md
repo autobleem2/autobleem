@@ -123,22 +123,11 @@ CLAUDE.md files.
 The portable `lib_ableem` library (`ableem_engine` + the `ableem` ui library), the launcher's SDL-free
 `ab_core` model+services layer and the game-agnostic `ab_classic` screens/controls all live in the
 `autobleem-core` submodule (`autobleem-core/`, `github.com/autobleem2/autobleem-core`) and are documented in
-its own `autobleem-core/CLAUDE.md`, loaded automatically when working under that directory. Moved there in
-task D19's second pass (2026-09-26), verbatim, because that code is not part of this repository:
-
-- The whole **lib_ableem** section (the `engine` and `ui` API notes: `Environment`, `DirEntry`, `IniFile`,
-  `GameDatabase`, `MetadataLookup`, `ThumbnailLookup`, `GameScanner`, `RetroArchPlaylist`, `CoreInfoTable`,
-  `RetroArchScanner`, `ThemeSpec`, `ZipArchive`/`ZipWriter`, `Md5`/`Crc32` on the engine side; `Platform`,
-  `Renderer`, `Texture`, `Font`, `Input`, `GuiBase`/`GuiScreen` and the CMake layout on the ui side).
-- The **source map rows for every core-owned file**: `core/...` services and models, `app_base.*`, and the
-  ab_classic `gui/...` files (`Gui`, `ThemeAssets`, `TextRenderer`, `Fonts`, `AppAudio`, the splash/confirm/
-  keyboard/about/hardware-info/facts-page/action-menu screens, the classic menu framework).
-- The whole **UI styling standards** section (`PanelStyle` and the rest of the `feature/ui-fixes` look) -
-  it is ab_classic code.
-- The core test harness's details (doctest/ctest, `env_fixture.h`, `temp_dir.h`, `ab_add_test`).
-
-This repo's own `CLAUDE.md` (below) keeps only the source-map rows for `ab_ui`/`ab_evoui`/the executable/
-`apps/abpad/` - the code that actually lives here.
+its own `autobleem-core/CLAUDE.md`, loaded automatically when working under that directory - including the
+lib_ableem `engine`/`ui` API notes, the source-map rows for every core-owned file, the UI styling standards
+(`PanelStyle`), and the core test harness's details (doctest/ctest, `env_fixture.h`, `temp_dir.h`,
+`ab_add_test`). This repo's own `CLAUDE.md` (below) keeps only the source-map rows for `ab_ui`/`ab_evoui`/
+the executable/`apps/abpad/` - the code that actually lives here.
 
 ## Build
 
@@ -164,14 +153,13 @@ RetroArch listing for the update check - `rpi/retroarch/latest.json`, `pc/retroa
 PC stick, empty on Windows; `launch_mode=script|direct` and `pcsx_dir` for the Windows product's direct
 launches; `core_extension` - `.dll` on Windows, what `CoreInfoTable` and the default PS1 core file use).
 `ABLEEM_EMBEDDED_TARGET` is on for psc/rpi/pcusb. `win` is the Windows product (the NSIS installer, a real
-target; `make_win.sh --product`), `pcusb` the 32-bit Debian PC stick - both done (autobleem-main's `docs/pc-targets-plan.md`,
-the sections above).
+target; `make_win.sh --product`), `pcusb` the 32-bit Debian PC stick.
 The other per-target switches: the console tools and the PC programs are built in their own repositories
-now (autobleem-console-tools, autobleem-pc-tools); `AB_ONLINE_UPDATE` is on for every target since
-2026-09-23 - the console checks only with a network (autobleem-main's `docs/history/online-update.md`).
+now (autobleem-console-tools, autobleem-pc-tools); `AB_ONLINE_UPDATE` is on for every target - the console
+checks only with a network (autobleem-main's `docs/history/online-update.md`).
 
 Six targets in `CMakeLists.txt`, each linking only the one below it: `ab_core` (`src/code/core/`, the
-app's SDL-free model+services layer, links `ableem_engine`), **`ab_classic`** (2026-09-18: `app_base.*` and
+app's SDL-free model+services layer, links `ableem_engine`), **`ab_classic`** (`app_base.*` and
 the game-agnostic part of `gui/` - Gui, ThemeAssets, TextRenderer, Fonts, AppAudio, the splash/confirm/
 keyboard/about/hardware-info screens and the list-menu framework; links `ab_core` + `ableem`; what the
 console tools under `apps/` draw with), `ab_ui` (`app.*` and the game-aware classic screens in `gui/`:
@@ -199,39 +187,34 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   same `build_*/` dirs the `make_*.sh` scripts use, builds, validates (`docker/ab-validate.sh`) and packages
   into `dist/<t>/`; for `psc`/`rpi`/`rpi64`/`pcusb` it **builds pcsx-ab first** from the sibling checkout
   (`AB_PCSX_DIR` / `../pcsx-ab`), stages the stripped result into `build_<t>/emu-stage/` (never over the
-  tracked `payload*/Autobleem/bin/emu*` - D21, 2026-09-27: that used to dirty a fresh clone's tree and stamp
-  the version `-dirty`) and the packaging scripts copy it from there into the package. `tools/make_psc_package.sh` makes the
-  console zip (also regenerating `libs.tar.gz` from the image's SDL build) and `tools/make_win_package.sh`
-  the launcher zip (the four SDL DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows**
-  (the compile-once model - autobleem-main's `docs/ci-org-migration-plan.md`): **`test.yml`** is the test
-  gate (`ci/build.sh native` on a hosted runner, every push and pull request) and **`publish-launcher.yml`**
-  builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop pushes and `v*` tags, and
-  keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance** assembles the packages and
-  images from it and the other components' releases, and publishes them. All gated by `AB_CI_ENABLED`.
-  A hardware-run debugging tale from the first green CI pass (the pcsx-ab Wayland segfault, the missing
-  ALSA build, a gcc-6 limitation and a `ctest -j` fixture race) is at autobleem-main
+  tracked `payload*/Autobleem/bin/emu*`, which a build must never leave dirty) and the packaging scripts copy
+  it from there into the package. `tools/make_psc_package.sh` makes the console zip (also regenerating
+  `libs.tar.gz` from the image's SDL build) and `tools/make_win_package.sh` the launcher zip (the four SDL
+  DLLs + `libwinpthread-1.dll`, and `UpdateRoms-<v>.zip`). **The workflows** (the compile-once model):
+  **`test.yml`** is the test gate (`ci/build.sh native` on a hosted runner, every push and pull request) and
+  **`publish-launcher.yml`** builds `launcher-<platform>-<v>.tar.gz` for psc/rpi/rpi64/pcusb/win on develop
+  pushes and `v*` tags, and keeps the rolling `nightly` release current; **autobleem2/autobleem-appliance**
+  assembles the packages and images from it and the other components' releases, and publishes them. All gated
+  by `AB_CI_ENABLED`. A hardware-run debugging tale from the first green CI pass is at autobleem-main
   `docs/history/launcher-console-runs.md`.
-- **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` → `build_psc/dist/`
-  (`autobleem-gui`), built **on the build server over ssh** - the same shape as pcsx-ab's
+- **PlayStation Classic (real target)**: `make_psc.sh` → `toolchains/psc/PSCtoolchainV8.cmake` →
+  `build_psc/dist/` (`autobleem-gui`), built **on the build server over ssh** - the same shape as pcsx-ab's
   `make_psc.sh`, so the two build side by side there. `ssh psc-build` (a `Host` entry in `~/.ssh/config`, in
   both the Windows profile and `C:\msys64\home\<you>` - MSYS2's ssh and Git for Windows' ssh have different
   homes; key `~/.ssh/id_ed25519`). Ubuntu x86_64, 2 cores, Sony's crosstool-NG toolchain at `/opt/toolchain`
-  (GCC 8.2.0, sysroot `/opt/toolchain/armv8-sony-linux-gnueabihf/sysroot` with SDL2 2.0.4 + image/mixer/ttf
-  `.so`s). The distro CMake is 3.10; `~/opt/cmake` (3.31) is what the script uses. The tree is rsynced to
-  `~/autobleem` (minus `usb/`, `db/`, `payload*/`, `!refactor/`, the Pi devkit), built in `~/autobleem/build_psc`
-  with Unix Makefiles `-j2`, and the two binaries come back by tar (rsync refuses NTFS modes). **Incremental
-  by default** (2026-09-19, the owner's request - every build used to start from nothing): the remote
-  build dir is kept and rsync sends only what changed; `--clean` wipes it first (`-k` is the old spelling
-  of the default). Invoke from the MSYS2 UCRT64 shell like `make_win.sh`.
-  `toolchains/psc/cmake/FindSDL2.cmake` defines the four imported SDL2 targets over the sysroot's `.so`s
-  (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic** (`-march=armv8-a+simd -Os -s`, the
-  root CMakeLists' `^arm` branch); `rc/autobleem.sh` unpacks `Autobleem/lib/libs.tar.gz` (SDL2, SDL2_mixer)
-  to `/tmp/lib` at boot. The binary needs at most `GLIBCXX_3.4.22` / `GLIBC_2.7`, which the console's stock
+  (GCC 8.2.0, sysroot with SDL2 2.0.4 + image/mixer/ttf `.so`s); the distro CMake is 3.10, `~/opt/cmake`
+  (3.31) is what the script uses. The tree is rsynced to `~/autobleem` (minus `usb/`, `db/`, `payload*/`,
+  `!refactor/`, the Pi devkit), built in `~/autobleem/build_psc` with Unix Makefiles `-j2`, and the two
+  binaries come back by tar (rsync refuses NTFS modes). **Incremental by default**: the remote build dir is
+  kept and rsync sends only what changed; `--clean` wipes it first. Invoke from the MSYS2 UCRT64 shell like
+  `make_win.sh`. `toolchains/psc/cmake/FindSDL2.cmake` defines the four imported SDL2 targets over the
+  sysroot's `.so`s (2.0.4 predates `sdl2-config.cmake`). The console build is **dynamic**
+  (`-march=armv8-a+simd -Os -s`); `rc/autobleem.sh` unpacks `Autobleem/lib/libs.tar.gz` (SDL2, SDL2_mixer) to
+  `/tmp/lib` at boot. The binary needs at most `GLIBCXX_3.4.22` / `GLIBC_2.7`, which the console's stock
   libstdc++ 6.0.22 / glibc 2.24 provide - **`make_psc.sh` checks that on the server before fetching the
-  binary** (`tools/check_psc_binary.sh`: highest `GLIBC_`/`GLIBCXX_` version needed, and no RPATH/RUNPATH),
-  and passes the git facts up as `AB_GIT_*` environment variables because the tree goes up without `.git`.
-  This Sony-toolchain build has never run on a console; the image's gcc-6 build has - see
-  autobleem-main `docs/history/launcher-build.md` for how that was established.
+  binary** (`tools/check_psc_binary.sh`), and passes the git facts up as `AB_GIT_*` environment variables
+  because the tree goes up without `.git`. This Sony-toolchain build has never run on a console; the image's
+  gcc-6 build has - see autobleem-main `docs/history/launcher-build.md`.
 - The Pi toolchain files (`toolchains/rpi/RPitoolchain.cmake`, `toolchains/rpi64/RPi64toolchain.cmake`, over
   the shared `toolchains/rpi/common.cmake`) take the SysGCC toolchain when its directory exists
   (`AB_RPI_TOOLCHAIN` / `AB_RPI64_TOOLCHAIN`, the Windows PC) and Debian's multiarch cross compiler
@@ -247,13 +230,11 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
 - **Windows/MinGW (dev + smoke test)**: `make_win.sh` → `build_win/autobleem-gui.exe`. Uses MSYS2 UCRT64
   (`C:\msys64`, installed 2026-09-15) with `mingw-w64-ucrt-x86_64-{gcc,cmake,ninja,SDL2,SDL2_image,SDL2_mixer,SDL2_ttf,pkgconf}`.
   Invoke from PowerShell as `$env:MSYSTEM='UCRT64'; C:\msys64\usr\bin\bash.exe -lc "cd /e/Programming/autobleem-develop && ./make_win.sh"`.
-  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs). **`--no-tests`** skips ctest (37 s of every build; the
-  language and format checks stay). **sccache** (`mingw-w64-ucrt-x86_64-sccache`, installed 2026-09-21) is put in
-  front of gcc when present (`AB_NO_SCCACHE=1` opts out; not in `compile_commands.json`, so clang-tidy is
-  unaffected): a clean rebuild is 38 s instead of 3 min - it does nothing for a sequential edit, that is
-  ninja's job. What *did* cost 25 s on every no-change build was `version.h`'s `BUILD_TIMESTAMP` changing
-  every run (14 objects + 5 links); it is now kept while tag/hash/branch/dirty are unchanged (see the
-  Version row of the source map).
+  Run needs `C:\msys64\ucrt64\bin` on PATH (SDL DLLs). **`--no-tests`** skips ctest (the language and format
+  checks stay). **sccache** (`mingw-w64-ucrt-x86_64-sccache`) is put in front of gcc when present
+  (`AB_NO_SCCACHE=1` opts out; not in `compile_commands.json`, so clang-tidy is unaffected). `version.h`'s
+  `BUILD_TIMESTAMP` is kept unchanged while tag/hash/branch/dirty are unchanged, so a no-change build does not
+  relink everything for a timestamp alone (see the Version row of the source map).
   Windows-only shims: `mkdir` one-arg, `sys/wait.h` guarded, `System::runAndWait` stubbed. A dev build is
   `AB_TARGET=dev` -> `AB_DEBUG_HOST` (see "The platform model" below) - use that, never `__x86_64__` or
   `_WIN32`, to mean "a development machine".
@@ -269,7 +250,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
-- **Code style** (2026-09-18, from AutoBleem-NG): `.clang-format` at the root (LLVM, 4-space indent, 120
+- **Code style** (from AutoBleem-NG): `.clang-format` at the root (LLVM, 4-space indent, 120
   columns, includes left alone; two choices of our own - `AccessModifierOffset: -4` so `public:` sits at the
   class's column, and `AllowShortFunctionsOnASingleLine: Inline` so a banner-commented function keeps its
   body on its own lines). **`tools/format.sh`** formats every source we own (`--check` is what `make_win.sh`
@@ -311,133 +292,18 @@ Run `autobleem-gui.exe <usb>` from `usb/Autobleem/bin/autobleem`; stdout/stderr 
 Windows: `ALTER TABLE ... duplicate column` (the add-column-if-missing idiom) and a failed `popen` of
 `backup_internal.sh`.
 
-**`AB_SHOT=<file%d.bmp>`** (2026-09-20) has the launcher save the frame it presents every 3 s - the way to look
-at a Pi's screen over ssh (a systemd drop-in `Environment=AB_SHOT=/tmp/ab%%d.bmp` on `autobleem.service`,
-removed afterwards: 8 MB a frame into tmpfs) or at a PC whose screen is in use; pcsx-abnxt has the same as
-`PLAT_SDL2_SHOT`. `win_drive.ps1` had posted its keys to the process's *console* window all along (the
-`GetWindowText`/`GetClassName` imports were not `CharSet.Unicode`, so every name came back one letter long
-and the `SDL_app` window was never matched) - fixed the same day; the resume-slot picker on the PC needs a
-clean return from a game (`filename.txt` in the game's `!SaveStates`), which the splash runner simulates when
-the file is there.
+**`AB_SHOT=<file%d.bmp>`** has the launcher save the frame it presents every 3 s - the way to look at a Pi's
+screen over ssh, or at a PC whose screen is in use; pcsx-abnxt has the same as `PLAT_SDL2_SHOT`. The
+resume-slot picker on the PC needs a clean return from a game (`filename.txt` in the game's `!SaveStates`),
+which the splash runner simulates when the file is there.
 
-**The DebugDriver** (2026-09-21, `lib_ableem/include/ableem/ui/debug_driver.h`) is how the UI is tested: a dev
-build started with `AB_DEBUG_PORT=<port>` (and `AB_NO_SPLASH=1`) - `AppBase` starts it, so the console tools
-take it too (`ab_drive.py start --tool abflashkit`; PSC-Bios is an extension, reached through the launcher) - takes pad/keyboard input and hands frames back
-over a socket - `press x`, `down l2`, `key escape`, `text abc`, `shot a.png`, `screen` (the class name of the
-screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_drive.py start|run|sheet|stop` is
-the client (`run "menu 6; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
-with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only smoke test.
-
-**`tools/ra_drive.py`** (R22, 2026-09-27) is the DebugDriver's counterpart for **RetroArch itself** - not the
-launcher's own screens, which the DebugDriver already covers, but the RetroArch UI a game's Square/RetroArch
-option or the system menu's "RetroArch" item hands off to. It drives RetroArch 1.22.2's own network command
-interface (`command.h`/`command.c`, UDP, `network_cmd_port` - 55355 by default) rather than a socket of ours:
-`press up|down|left|right|a|b|toggle` (`MENU_*`), `wait_status PAUSED|PLAYING|CONTENTLESS` (`GET_STATUS` -
-RetroArch has no per-menu `screen` reply, only playing/paused/no-content), `shot`/`wait_shot <ref.png>`
-(`SCREENSHOT` has no reply either, so this polls `screenshot_directory` for a new file, then average-hashes
-it against a reference PNG - the practical "wait for this menu" substitute), `wait_log <pattern>` (greps
-`retroarch.log`, `log_to_file`), `menu <n>`, and any exact command name bare (`QUIT`, `RESET`,
-`LOAD_STATE_SLOT 2`, ...), checked against the confirmed `map[]`/`action_map[]` tables before it is sent.
-`start` writes a throwaway `retroarch.cfg` (`network_cmd_enable`, `video_driver=gl`, `audio_driver=null`,
-`log_to_file`+`log_dir`+`log_to_file_timestamp=false` for a predictable log path, `screenshot_directory`)
-and launches RetroArch under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1` - **Linux only**: run it on the Debian test
-machine over ssh (there is no Windows RetroArch in this project, and none is fetched to a dev PC to run
-this; see "Where this runs" in the tool's own docstring). **Four confirmed upstream RetroArch 1.22.2 issues,
-all found by R22 and all worked around in `ra_drive.py` itself, never in this project's own code**:
-1. `video_driver=sdl2` segfaults the official AppImage 100% of the time under Xvfb -
-   `XScreenSaverQueryExtension()` in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
-   `libX11.so.6` (an Xlib extension-registration ABI mismatch), independent of the core or the Xvfb screen
-   size. `gl`/`glcore` never crash - `CFG_TEMPLATE` stays on `gl`.
-2. `GET_STATUS` segfaults the instant it is answered while any core is actively running - gdb-confirmed as
-   the same crash address inside RetroArch's own binary with three unrelated cores, independent of pause
-   state. `cmd_start`'s own readiness poll uses `VERSION` instead, and a script must never send
-   `GET_STATUS`/`wait_status` against a running instance either.
-3. Without `--verbose` on the command line, `retroarch.log` is opened but nothing is ever written into it
-   past the startup banner, no matter how long the instance runs - `cmd_start` always passes it.
-4. `QUIT` does not reliably exit the process under Xvfb (confirmed: a fresh instance sent bare `QUIT` was
-   still running 5+ seconds later) - `stop` sends it anyway (in case a future build honours it) but relies on
-   `os.killpg()` on the process group `cmd_start` creates with `start_new_session=True` - a bare PID kill
-   only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/`retroarch` children it spawns.
-
-**Menu state is a capture of the Xvfb display, not a RetroArch screenshot**: RetroArch 1.22.2 logs nothing
-for a menu toggle/transition (`MENU_TOGGLE` and menu navigation produce zero new `retroarch.log` lines,
-confirmed against a live instance), so `wait_log` cannot substitute for RetroArch's missing "which menu is
-showing" query, and its own `SCREENSHOT` command was found not to capture the RGUI/ozone menu overlay
-itself on this build either (only the content's own rendered frame - confirmed with `menu_driver=rgui` and
-`ozone`, and with `video_gpu_screenshot` both `true` and `false`, none of which made the overlay appear;
-`false` also introduced torn/incomplete frames, so `true`, the default, is still the right setting): two
-`shot`s taken around a `press toggle` differ only when something else changes the frame (e.g. the
-"Screenshot saved" HUD toast from the previous `shot` itself), never from the menu opening. The fix (R22,
-2026-09-27): `shot_display <file>` (`--cfg DIR` required, local only) captures the Xvfb display `start` is
-running on directly with `xwd -root` - the whole framebuffer as the X server drew it, menu included,
-independent of RetroArch entirely - proven against a live instance (a shot before opening the menu, one
-with the RGUI Quick Menu open, one after: the menu shot's hash differs, before/after match exactly).
-`start` now records the display number (parsed from `xvfb-run`'s own `-e` diagnostic output - its
-`-displayfd` needs fd 1, not a custom fd number; `xvfb-run`'s own script hardcodes fd 3 for its own use and
-closes it before the wrapped command runs) and a pinned `Xauthority` path next to the pidfile; a small
-pure-Python XWD decoder (`xwd_to_rgb_rows`, file_version 7 ZPixmap, 24/32bpp - checked pixel-by-pixel
-against a real capture) converts to PNG via the same Pillow `wait_shot` already needs, no netpbm/ImageMagick
-dependency in the shipped tool. Needs `xwd` (Debian's `x11-apps`) on PATH - same no-root
-`apt-get download`+`dpkg-deb -x` recipe as Pillow/gdb/7zip elsewhere on that machine.
-`tools/test_ra_drive.py` covers the protocol, the log-tail parser, the script parser and the XWD decoder
-offline against a fake UDP server / synthetic files standing in for RetroArch and `xwd` - no RetroArch
-binary or `xwd` needed to run those (61/61, both the PC and the Debian laptop).
-
-**The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,
-on every platform - a PC stick, Windows, a Pi, a USB keyboard on the console. `ableem::Input` applies
-`lib_ableem/include/ableem/ui/keyboard_map.h` (header-only, tested in `test_keyboard`) to every key event:
-
-| Key | Pad | | Key | Pad |
-|---|---|---|---|---|
-| Arrows | d-pad | | F1 | Select |
-| Enter (and keypad Enter) | Cross | | F2 | Start |
-| Backspace, Esc | Circle | | Page Up / Page Down | L1 / R1 |
-| Tab | Triangle | | Home / End | L2 / R2 |
-| Space | Square | | F10 | L2+R2 (the launcher's System menu) |
-
-A held key's repeats are swallowed (the screens have their own hold logic). The power button
-(`SDL_SCANCODE_SLEEP`) and the console's Reset/Open keys are not in the map and behave as before. A screen
-that takes typed text turns the map off for its own duration (`GuiKeyboard`: `setKeyboardAsPad(false)` +
-`setRawKeyboard(true)`, restored on close) - there Enter, Esc, Backspace and the arrows are the text field's.
-**On a dev host** the old letter map stays alongside: `X O S T` = cross/circle/square/triangle, `I J K L` =
-d-pad, `Space` = Start, `B` = Select, `Q E 1 2` = L1 R1 L2 R2. It owns Space (Start, not Square), and `Esc`
-stays the power off (exits) - Backspace is Circle there; the two maps share no other key. The DebugDriver's
-`key` command goes through the map as a real key does (`key f10` opens the System menu), so a script can test
-it. `tools/win_drive.ps1 -Usb <usb> -Sequence "x;5;space;8"` starts the exe, posts letter-map keys to its
-window, screenshots after each, and collects the logs.
-
-**Keyboard presence** (`Input::keyboardPresent()`, what the Button Guide shows the keyboard column by): a key
-seen this session, or `ableem::KeyboardPresence::detect()` (`engine/keyboard_presence.*`) - on Linux every
-`/sys/class/input/eventN/device/capabilities/key` bitmap with Enter and at least 20 letters (a pad's `BTN_*`,
-the console's power/reset buttons and a number pad are not keyboards; the word size, 32 or 64 bits, is told from
-the text, since a 32-bit userland on a 64-bit kernel cannot know the kernel's), on Windows
-`GetRawInputDeviceList`'s `RIM_TYPEKEYBOARD`. Asked afresh each time, so a keyboard plugged in later counts.
-
-**LAN testing** (2026-09-26): the driver can listen on a non-loopback address for a trusted LAN test rig. On the
-launcher, set `AB_DEBUG_BIND=<IPv4>` (default 127.0.0.1) and `AB_DEBUG_TOKEN=<token>` - the driver refuses to start
-without a token when the bind is not loopback, and the client must send `auth <token>` on its first line
-(compared in constant time, never logged). **Prefer `AB_DEBUG_TOKEN` in the environment over `--token` on the
-command line** - a command-line argument sits in the process list (`ps`/Task Manager) for anything else on the
-same machine to read; the env var does not. A peer has `DebugDriver::AuthTimeoutMs` (5 s) to send that first
-line and it may not exceed `DebugDriver::MaxAuthLine` (4 KB) - past either, the connection is dropped as if it
-had closed, so one client that never authenticates cannot tie up the driver, which serves one connection at a
-time. Neither limit applies once `auth` succeeds: an authenticated session reads with no timeout, since real
-commands in a script can be minutes apart. The script reaches it with `--host <addr>` (default 127.0.0.1) and
-`--token <t>` (or env `AB_DEBUG_TOKEN`, preferred as above) - a refused `auth` is reported with the token
-redacted (`'auth ***': err auth`), never echoed. New command `grab`: replies `ok <n>` followed by exactly n bytes
-of PNG data - a test fetches screenshots over the socket without writing to the device. Example: start the
-launcher on the device with `AB_DEBUG_PORT=<port>`, `AB_DEBUG_BIND=<its LAN IP>`, `AB_DEBUG_TOKEN=<token>`; then
-from a PC run `AB_DEBUG_TOKEN=<token> python tools/ab_drive.py run "..." --host <ip> --port <p>`. **Security
-note:** the token travels in plain text over TCP - use this only on a trusted LAN test rig with a token that is
-not a real credential; `AB_DEBUG_BIND=0.0.0.0` listens on every interface. `start` (always local, no --host) is
-the one exception to all of the above: it drops an inherited AB_DEBUG_BIND from the launch it starts, since a
-non-loopback bind would leave nothing listening on the 127.0.0.1 it always talks to - but it honours an
-inherited AB_DEBUG_TOKEN, authenticating its own readiness commands with it, so a leftover AB_DEBUG_TOKEN from
-testing a device in the same shell does not break `start`, and a `stop`/`screen`/... run straight after keeps
-matching it with no --token of its own. A peer that authenticates and then
-drops the connection mid-command (Ctrl-C, a WiFi drop) never crashes the driver: every socket send uses
-`MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send just closes that client and goes
-back to accepting the next one.
+**The DebugDriver** (`lib_ableem/include/ableem/ui/debug_driver.h`) is how the UI is tested: a dev build
+started with `AB_DEBUG_PORT=<port>` (and `AB_NO_SPLASH=1`) takes pad/keyboard input and hands frames back over
+a socket; `tools/ab_drive.py start|run|sheet|stop` is the client, and `tools/ra_drive.py` is its counterpart
+for driving RetroArch's own screens over its network command interface. The keyboard mapping (pad from a real
+keyboard, plus the dev-host letter map), keyboard-presence detection, and LAN testing (`AB_DEBUG_BIND`/
+`AB_DEBUG_TOKEN`, the `grab` command) are all in **`docs/testing.md`** - read it before writing or changing a
+UI test script. `win_drive.ps1` is the old keyboard-only way, kept for a smoke test.
 
 ### Running on PC (debug)
 
@@ -491,17 +357,11 @@ console has no battery clock (every boot is 2018-09-01), so last-played times ar
 network has set it via WiFi's `70-autobleem-time` dhcpcd hook, which touches `/run/autobleem/clock-set`
 (`Env::clockIsSet()`, checked per-launch).
 
-**`rc/ssh_keys.sh`** (C10, 2026-09-26) is what gives the team SSH into the AutoBleem kernel without the
-owner hand-editing `boot.sh` on his stick, which the console's own online update overwrote once already
-(taking a hand-made block with it) - `System/ssh/authorized_keys` on the stick, if present, is copied into
-a tmpfs copy of dropbear's root home (`/home/root` on psc-kernel-payload's overlay - `.ssh` 700,
-`authorized_keys` 600, both root-owned, which is what dropbear insists on) and that copy is bind-mounted
-over `/home/root`. A bind mount is independent of `/media`, so it outlives the standby loop (the stick is
-unmounted then; `rc/selection.sh`'s `rndis restart` after a wake only makes dropbear a fresh host key, not
-a fresh home) and a stick rewritten from under it by a reinstall or an online update - nothing here is read
-from the stick again after boot. No-op on the stock kernel (`/etc/autobleem` absent - there is no dropbear
-to feed) and when the stick carries no key file; idempotent (safe if called again in the same boot).
-`payload/System/ssh/README.txt` is the folder's placeholder, in the style of `System/Processors/README.txt`.
+**`rc/ssh_keys.sh`** gives SSH into the AutoBleem kernel: `System/ssh/authorized_keys` on the stick, if
+present, is bind-mounted over dropbear's root home at boot, independent of `/media` so it outlives the
+standby loop and a stick rewrite; no-op on the stock kernel or without a key file, idempotent
+(`payload/System/ssh/README.txt` is the folder's placeholder) -> autobleem-main
+`docs/history/launcher-ssh-keys.md`.
 Game launch: `rc/launch.sh` (PCSX, args: ssFolder, cdfile, lang, region, gameFolder, resume, aspect, filter, pad)
 or `rc/launch_rb.sh` (RetroArch: file, core - our own script since 2026-09-20, see "RetroArch for the console";
 an App's `run.sh` sources `rc/app_env.sh`). `LaunchService::writeSelectionScript()` writes `<runtime>/autobleem_cfg.sh`
@@ -598,34 +458,30 @@ launcher's artifact - `make_{psc,rpi,win}_package.sh`, `ci/build.sh` and `test.y
 from the submodule because they are dev/test paths that nothing downstream ever ships (no appliance
 assemble step consumes them). `Theme::load()` still reads `<root>/Themes/default` at run time, so whatever
 assembles a real package (the appliance, going forward - see below) must always stage at least `default`.
-`ab2`'s launcher menu icons (gear, gamepad, memory card,
-the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
-and its blue `on.png`/`off.png` switch are drawn by `autobleem-themes/tools/make_ab2_icons.py` (2026-09-18,
-moved out of this repo with the rest of the theme-asset tools on D5); the tile sits high in
-the 118 slot so it clears the footer bar in the launcher's Games state. Where the resume icon takes the picture is
-the theme's `launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); ab2 centres it on
-its tile, and `resumeSlotLabel` (`ThemePoint`, 2026-09-20) is where the resume-slot picker writes "Slot n" on its
-2.7x copy of the icon - unset = the original spot, so older themes are untouched. `launcher.colors.selection`
-(2026-09-21) is the picker's colour for the selected slot: a halo in it around the tile (the tile's own alpha, drawn
-larger twice with additive blending, so it follows any tile's shape) and the other tiles dimmed; unset = the original
-red tint of the selected tile, which only ever showed on a white tile (ab2's cyan tile made it invisible). **Open: the
-pad is dead for 1-3 s after every game (and at boot) on the Pi 400** - its multi-mode "PS4/PC/PS3/Android" pad
-re-enumerates right after the launcher opens it (the log: disconnect, back as an "Xbox 360" pad a second later, back
-as itself three seconds after that), which is SDL's hidapi driver probing the pad's HID reports.
-`SDL_HINT_JOYSTICK_HIDAPI=0` (evdev instead) stopped the re-enumeration but the same pad then came up with another
-GUID and a mapping with Triangle/Square swapped - reverted the same day; a fix has to keep hidapi's mapping (a
-gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all). ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
-replacement for Segoe UI) since 2026-09-18 - `sul.ttf` was Segoe UI Light itself, not redistributable and with its
-`(` `)` cut out; the console's SST fonts and Typodermic's Zrnic in the other themes are as they always were. `payload_linux/` next to it is the Raspberry Pi installer
-package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored (cover DBs live there).
+`ab2`'s launcher menu icons (gear, gamepad, memory card, the save-state frame - which must keep its 68x52
+window at (25, 33), where `PsMenu::render` pastes the picture) and its blue `on.png`/`off.png` switch are
+drawn by `autobleem-themes/tools/make_ab2_icons.py`; the tile sits high in the 118 slot so it clears the
+footer bar in the launcher's Games state. Where the resume icon takes the picture is the theme's
+`launcher.menuIcons.resumePicture` (`ThemeRect`, unset = the original (25, 33) 68x52); `resumeSlotLabel`
+(`ThemePoint`) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon - unset = the
+original spot, so older themes are untouched. `launcher.colors.selection` is the picker's colour for the
+selected slot: a halo in it around the tile and the other tiles dimmed; unset = the original red tint.
+ab2's classic font is **Selawik Light** (`selawik-light.ttf`, OFL, Microsoft's open metric-compatible
+replacement for Segoe UI, since the original Segoe UI Light file was not redistributable); the console's SST
+fonts and Typodermic's Zrnic in the other themes are as they always were. **Open: the pad is dead for 1-3 s
+after every game (and at boot) on the Pi 400** - a multi-mode pad re-enumerates right after the launcher
+opens it, which is SDL's hidapi driver probing its HID reports; `SDL_HINT_JOYSTICK_HIDAPI=0` (evdev instead)
+stopped it but swapped Triangle/Square on the same pad's new GUID, so it was reverted - a fix has to keep
+hidapi's mapping (a gamecontrollerdb line for the evdev GUID, or not closing the pad around a game at all).
+`payload_linux/` next to it is the
+Raspberry Pi installer package, not part of the USB tree (see "Raspberry Pi port"). `db/` is git-ignored
+(cover DBs live there).
 
 ## The quiet stick (2026-09-24, autobleem-main `docs/archive/quiet-stick-plan.md` and `docs/history/quiet-stick.md`)
 
 **The data root is written only when the user's state changes** - a save, a card, a kept resume slot, a
 setting the player changed, a game added or removed. Everything else is in RAM or not written at all.
-Branch `feature/quiet-stick` in this repo, core, pcsx-abnxt, pcsx-ab and autobleem-appliance (merged into develop 2026-09-24; the
-work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a console or a Pi yet -
-`tools/stick_writes.sh start|stop` measures a scenario there.
+Nothing of it has run on a console or a Pi yet - `tools/stick_writes.sh start|stop` measures a scenario there.
 
 - **Write only what changed.** `DirEntry::writeFileIfChanged(path, contents)` (compare, then `.tmp` +
   replace) is under `IniFile::save`, `ConfigFileEditor` (`replaceProperties`: one write per batch, an empty
@@ -686,18 +542,17 @@ work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a conso
 - Bool-ish config values are the strings `"true"`/`"false"`; ints are parsed with `atoi`.
 - Menu/emulator/state selections are plain `int`s with `#define`s (`EMU_PCSX`, `SET_PS1`, `STATE_GAMES`) —
   easy to mix up; converting to `enum class` is on the plan.
-- The carousel is a bounded row (2026-09-18): exactly the games given, nothing before the first or after the
-  last, a scroll past either end refused (`Carousel::canSelectNext/Previous`, checked by the launcher's
-  `next/prevCarouselGame`, which also stop a held stick there). It used to repeat a short list to fill the
-  13 slots and wrap around, which showed the same few games over and over. The slots past the ends are
-  not bare, though: **empty boxes** (`PsCarouselGame::emptyBox()`, `Carousel::leftFill/rightFill`) stand
-  in them and scroll with the games - an empty jewel case or an empty big box (`BoxKind`, from the first
+- The carousel is a bounded row: exactly the games given, nothing before the first or after the last, a
+  scroll past either end refused (`Carousel::canSelectNext/Previous`, checked by the launcher's
+  `next/prevCarouselGame`, which also stop a held stick there). The slots past the ends are not bare, though:
+  **empty boxes** (`PsCarouselGame::emptyBox()`, `Carousel::leftFill/rightFill`) stand in them and scroll
+  with the games - an empty jewel case or an empty big box (`BoxKind`, from the first
   game in the row, or the set for an empty row: `setGames(games, kind)`), one shared texture per row
   (`loadPlaceholderTex`: the case/frame over a dark translucent inside), drawn at 55% shade and alpha 150
   (`PlaceholderShade/Alpha` in `carousel.cpp`). An empty set is a shelf of empty boxes.
 - SDL lifecycle: `TTF_Init`/`Mix_Init` once in `GuiBase`, `SDL_Quit` registered with `atexit` in `main` so it
   runs after the `Gui` singleton is destroyed. Audio is fully closed (`Mix_CloseAudio` loop) before forking PCSX.
-- Logging (2026-09-18): `PLOG_INFO/WARNING/ERROR/DEBUG` (plog, vendored header-only under
+- Logging: `PLOG_INFO/WARNING/ERROR/DEBUG` (plog, vendored header-only under
   `lib_ableem/third_party/plog`, behind `<ableem/engine/log.h>`). `main()` calls
   `ableem::Log::initConsoleOnly()` first thing - a `PLOG_*` before any init is silently dropped, which is
   how a bad command line's USAGE line used to vanish - and `Log::addFile()` once the logs directory is
@@ -712,9 +567,8 @@ work happened in `E:\Programming\_work-quiet`). Nothing of it has run on a conso
 - Files are read/written by bare `ifstream`/`ofstream`; use `ios::binary` for anything that is not text
   (PNG blobs, .mcd cards, PBP headers) or the Windows build corrupts it. **Never `readsome()`** to read a
   file: it returns only what is already buffered, and libc++ (llvm-mingw, what the Windows programs are
-  built with) never reports anything on a fresh stream - `DirEntry::copy` wrote every file empty and called
-  it a success until 2026-09-23 (a 0-byte `UpdateRoms.exe` on every stick the installer touched); GCC builds
-  never showed it. `read()` + `gcount()`, as `DirEntry::copy` does now.
+  built with) never reports anything on a fresh stream, so a `readsome()`-based copy silently writes empty
+  files there (GCC builds never showed it). Use `read()` + `gcount()`, as `DirEntry::copy` does.
 - **Every version a user sees is the package's** (`Env::productVersion()` - `$AB_VERSION`, else a `VERSION`
   file at the data root / next to the program / a folder up, else `Version::DESCRIBE`); never show
   `Version::VERSION` or `FULL_VERSION` on screen. The launcher exports `AB_VERSION` for what it starts.
@@ -755,23 +609,17 @@ theme authors' own work.
 Repo was `git init`ed on 2026-09-15 from the final source snapshot (no upstream history here; the public
 history is at github.com/screemerpl/cbleemsync). Commit per logical refactor step. `.gitattributes` forces LF.
 
-## User manuals (2026-09-27: moved to autobleem-manuals, D4)
+## User manuals
 
-The user manuals - `manuals/<lang>/autobleem-user-manual.md`, `manuals/style.css` and
-`tools/build_manuals.py` - live in **`autobleem2/autobleem-manuals`** now, the one source for every
-language (17, was English and Polish only here). A merge to its `develop` branch builds and publishes the
-PDFs to the site (`.github/workflows/build.yml`, gated by that repo's own `AB_CI_ENABLED`) - there is no
-`tools/repo_publish.sh manuals` step to run by hand any more. The stick's `Docs/README.txt` points at the
-site's current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right there: a stock
-console reads **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not
-mentioned.
+The user manuals (17 languages) live in **`autobleem2/autobleem-manuals`**, the one source; a merge to its
+`develop` builds and publishes the PDFs to the site. The stick's `Docs/README.txt` points at the site's
+current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right there: a stock console reads
+**FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not mentioned.
 
-**`tools/manual_shots.py` stays in this repo** - it is the one piece of the user manuals that has to run
-against a built launcher. It takes the screenshots (`--lang Polski --show`; needs `make_win.sh` and
-`tools/make_usb.py usb`) through the DebugDriver on the Windows dev build: it walks the launcher, PSC-Bios
-and ABFlashKit through their screens with the stick's `config.ini` switched to each language, and captures
-the UpdateRoms/installer windows by title when they are open. It writes into a **sibling
-`autobleem-manuals` checkout**'s `manuals/images/<lang>/*.jpg` by default (`../autobleem-manuals/manuals/
-images`, next to this one) - pass `--out-dir` for a checkout that lives somewhere else. A changed screen
-means rerunning the shots for every language there, then committing and merging autobleem-manuals'
-`develop`; a new language is a folder under that repo's `manuals/` plus this script's `LANGS` entry.
+**`tools/manual_shots.py` stays in this repo** - the one piece of the user manuals that has to run against a
+built launcher: through the DebugDriver on the Windows dev build (`--lang Polski --show`; needs `make_win.sh`
+and `tools/make_usb.py usb`) it walks the launcher, PSC-Bios and ABFlashKit through their screens with the
+stick's `config.ini` switched to each language, and captures the UpdateRoms/installer windows by title. It
+writes into a **sibling `autobleem-manuals` checkout**'s `manuals/images/<lang>/*.jpg` by default (pass
+`--out-dir` otherwise); a new language is a folder under that repo's `manuals/` plus this script's `LANGS`
+entry.
