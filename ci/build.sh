@@ -198,7 +198,8 @@ build_psc() {
 # src/resources/ into dist/<target>/, no install skeleton, no tarball, no emulator bundled - the appliance
 # assembles the actual package from a launcher release plus its own build.
 stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{autobleem,abpad}, no package
-    local dir="$1" target="$2" bin="dist/$target/Autobleem/bin"
+    local dir="$1" target="$2"
+    local bin="dist/$target/Autobleem/bin"   # its own line: local expands every word before it assigns any
     dist_reset "$target"
     mkdir -p "$bin/autobleem" "$bin/abpad"
     cp "$dir/autobleem-gui" "$bin/autobleem/"
