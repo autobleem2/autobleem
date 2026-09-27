@@ -1,7 +1,7 @@
 # Scanner processors - what comes next (plan)
 
 **Status (2026-09-25):** a list for later, nothing started. The facility itself is done and in `develop`
-(`docs/scanner-processors-plan.md`, steps 1-9); `proc_unzip` is public with its CI; the installers make
+(autobleem-main's `docs/archive/scanner-processors-plan.md`, steps 1-9); `proc_unzip` is public with its CI; the installers make
 `System/Processors`. The owner will test on hardware later (autobleem-main's `docs/tester-checklist.md`,
 section 11). Everything below waits for that, and for the owner's go.
 

@@ -67,6 +67,9 @@ if (AB_TARGET STREQUAL "psc")
 		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
 		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
 	endif()
+	# 64-bit file offsets on the 32-bit console: without them stat() fails (EOVERFLOW) on a file over 2 GB,
+	# so a big Store download or disc image reads as size 0. The PC stick's toolchain does the same.
+	add_definitions(-D_FILE_OFFSET_BITS=64)
 
 	# the Sony sysroot is wherever toolchains/psc/PSCtoolchainV8.cmake found the toolchain (AB_PSC_TOOLCHAIN);
 	# the old hard-coded /opt/toolchain/... is only the fallback for a toolchain that is merely on PATH
@@ -172,7 +175,8 @@ if (AB_BUILD_TESTS)
     add_subdirectory(tests)
 
     # theme_convert <themesDir>: the ThemeInstaller over every zip and the ThemeConverter over every theme
-    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load
+    # folder, for converting the autobleem-themes submodule's Themes/ or a theme being worked on ahead of
+    # the app doing it on first load
     add_executable(theme_convert tools/theme_convert/main.cpp)
     target_link_libraries(theme_convert ab_core)
 endif()

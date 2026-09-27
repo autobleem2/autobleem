@@ -37,8 +37,11 @@
 using namespace std;
 
 namespace {
-// the console's hardware tool, an extension shipped with the console package: Extensions/pscbios/
-const char *const PscBiosExtension = "pscbios";
+// the Quick menu's Store item: the extension shipped with every package (Extensions/store/)
+const char *const StoreExtension = "store";
+// the entry an extension names in Provides= to offer Wi-Fi, Bluetooth pairing and controller mapping - PSC-Bios
+// on the console, a Pi and the PC stick: the "Network & Controllers" item
+const char *const NetworkEntry = "network";
 } // namespace
 
 //*******************************
@@ -60,7 +63,7 @@ void GuiLauncher::loop_chooseSet() {
         return;
 
     selection = picker.selection;
-    switchSet(selection.set, true);
+    switchSet(selection.set, false); // the icon row follows the set: an empty one leaves settings alone
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
@@ -131,7 +134,17 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 //*******************************
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
+// the gear icon of the game's icon row: the Quick menu (it opened Options until 2026-09-26 - Options is the
+// System menu's alone now; the icon row is about the selected game, Options is global)
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
+    loop_openQuickMenu();
+}
+
+//*******************************
+// GuiLauncher::loop_openOptions
+//*******************************
+// the System menu's Options: the screen, then everything it may have changed reloaded
+void GuiLauncher::loop_openOptions() {
     app.audio().cursor.play();
     GameSet lastSet = selection.set;
     Ps1SelectState lastPS1_SelectState = selection.ps1SelectState;
@@ -193,7 +206,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
             menu->setResumePic("");
         }
 
-        state = LauncherScreenState::Games;
+        // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
     } else {
         render();
@@ -435,6 +448,8 @@ void GuiLauncher::loop_openSystemMenu() {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
         systemMenu.scanInProgress = app.scans().scanning();
+        systemMenu.networkUnavailable = networkUnavailable();
+        systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
         systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
@@ -447,7 +462,74 @@ void GuiLauncher::loop_openSystemMenu() {
     // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
     // as if L2 were down until it was pressed and released again
     forgetHeldModifiers();
+    runMenuAction(action);
+}
 
+//*******************************
+// GuiLauncher::loop_openQuickMenu
+//*******************************
+// the Quick menu (d-pad Up in the Games state, Up on an empty set, the gear icon of the game's icon row): the
+// few things a player reaches for from the carousel, and the System menu last (the owner, 2026-09-26)
+void GuiLauncher::loop_openQuickMenu() {
+    app.audio().cursor.play();
+    SystemMenuAction action;
+    {
+        GuiSystemMenu quickMenu(*gui);
+        quickMenu.kind = GuiSystemMenu::Kind::Quick;
+        quickMenu.scanInProgress = app.scans().scanning();
+        quickMenu.networkUnavailable = networkUnavailable();
+        quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
+        if (background != nullptr)
+            quickMenu.background = background->tex;
+        quickMenu.show();
+        action = quickMenu.result;
+    }
+    forgetHeldModifiers();
+    if (action == SystemMenuAction::SystemMenu)
+        loop_openSystemMenu();
+    else
+        runMenuAction(action);
+}
+
+//*******************************
+// GuiLauncher::networkProvided
+//*******************************
+// an installed extension that can run here offers the "network" entry: the Network & Controllers item shows
+bool GuiLauncher::networkProvided() {
+    app.extensionCatalog().scan();
+    return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
+}
+
+//*******************************
+// GuiLauncher::networkUnavailable
+//*******************************
+// the owner's rule (2026-09-26): an installed provider that cannot run keeps the item on the menu, greyed,
+// saying why - hidden only when nothing provides it at all
+string GuiLauncher::networkUnavailable(string *extension) {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info = app.extensionCatalog().findUnavailableProvider(NetworkEntry);
+    if (info == nullptr)
+        return "";
+    if (extension != nullptr)
+        *extension = info->name;
+    switch (info->problem()) {
+    case ExtensionProblem::Disabled:
+        return info->title + " " + _("is switched off - enable it in Extensions");
+    case ExtensionProblem::NotBuiltForThisSystem:
+        return info->title + " " + _("is not built for this system");
+    case ExtensionProblem::WrongAbi:
+        return info->title + " " + _("is built for a different AutoBleem - update it");
+    default:
+        return info->title + " " + _("could not be loaded - see Extensions");
+    }
+}
+
+//*******************************
+// GuiLauncher::runMenuAction
+//*******************************
+// what an item of the System or the Quick menu does - GuiSystemMenu only picks; every action below is what
+// ClassicMenuScreen used to do for the same item
+void GuiLauncher::runMenuAction(SystemMenuAction action) {
     switch (action) {
     case SystemMenuAction::None:
         break;
@@ -493,35 +575,33 @@ void GuiLauncher::loop_openSystemMenu() {
     }
 
     case SystemMenuAction::HardwareInfo: {
-        // the console's PSC-Bios - the facts, and the WiFi, the time zone and the pads set up - an extension
-        // shipped with the console package (Extensions/pscbios/, 2026-09-24; it was an App before). Wherever it
-        // cannot run - a Pi or a PC (it is built for the console only), a console without it, one built for
-        // another AutoBleem or disabled after a crash - the built-in screen, rather than nothing
-        ExtensionRuntime::Refusal why = ExtensionRuntime::Refusal::NotFound;
-#ifdef AB_ONLINE_UPDATE
-        app.extensionCatalog().scan();
-        if (app.extensionCatalog().find(PscBiosExtension) != nullptr) {
-            why = app.extensions().run(PscBiosExtension, System::hasDefaultRoute());
-            forgetHeldModifiers(); // its screens ran their own loops
-            gui->input().flushEvents();
-            applyExtensionRequests();
-            if (why != ExtensionRuntime::Refusal::None) {
-                PLOG_WARNING << "PSC-Bios did not run (" << static_cast<int>(why) << ")";
-            }
-        }
-#endif
-        if (why == ExtensionRuntime::Refusal::Failed) {
-            notificationLines[1].setText("PSC-Bios " + _("closed with an error"), 2 * DefaultShowingTimeout);
-        } else if (why != ExtensionRuntime::Refusal::None) {
-            GuiHardwareInfo infoScreen(*gui);
-            infoScreen.show();
-        }
+        // the built-in facts page on every platform (the owner, 2026-09-26): PSC-Bios's setup screens are
+        // Network & Controllers now, and its facts page is this one's
+        GuiHardwareInfo infoScreen(*gui);
+        infoScreen.show();
         break;
     }
 
+    case SystemMenuAction::Network: {
+        // greyed (installed, cannot run): the Extensions list at it, where it can be switched on
+        string unavailable;
+        if (!networkUnavailable(&unavailable).empty())
+            loop_openExtensions(unavailable);
+        else
+            runExtensionEntry("", NetworkEntry);
+        break;
+    }
+
+    case SystemMenuAction::Store:
+        runExtensionEntry(StoreExtension, "");
+        break;
+
+    case SystemMenuAction::SystemMenu:
+        loop_openSystemMenu();
+        break;
+
     case SystemMenuAction::Options:
-        // same screen, same reload, as the settings icon in the Set overlay
-        loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
+        loop_openOptions();
         break;
 
     case SystemMenuAction::SoftwareUpdate:
@@ -580,19 +660,19 @@ void GuiLauncher::loop_openProcessors() {
         app.scans().requestScan();
 }
 
-#ifdef AB_ONLINE_UPDATE
 //*******************************
 // GuiLauncher::loop_openExtensions
 //*******************************
 // the Extensions list (every folder in Extensions/, read again each time it opens), then the chosen one's
 // run(): its own screens on our Gui, back here when it is done. A refusal is shown on the row already; what
 // comes back from run() is reported on the notification line.
-void GuiLauncher::loop_openExtensions() {
+void GuiLauncher::loop_openExtensions(const string &select) {
     app.extensionCatalog().scan();
     const bool networkUp = System::hasDefaultRoute();
     string chosen;
     {
         GuiExtensions list(*gui, app.extensionCatalog(), networkUp);
+        list.select = select;
         if (background != nullptr)
             list.background = background->tex;
         list.show();
@@ -601,16 +681,55 @@ void GuiLauncher::loop_openExtensions() {
     forgetHeldModifiers();
     if (chosen.empty())
         return;
-    const ExtensionInfo *info = app.extensionCatalog().find(chosen);
-    const string title = info != nullptr ? info->title : chosen;
-    ExtensionRuntime::Refusal why = app.extensions().run(chosen, System::hasDefaultRoute());
+    runExtensionEntry(chosen, "");
+}
+
+//*******************************
+// GuiLauncher::runExtensionEntry
+//*******************************
+// one extension run from a menu item: by name (entry ""), or at an entry - by the one providing it when name
+// is "" (Network & Controllers). Its screens run on our Gui; what comes back is reported on the notification
+// line, and what it asked the launcher for is done afterwards.
+void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info =
+        name.empty() ? app.extensionCatalog().findProvider(entry) : app.extensionCatalog().find(name);
+    if (info == nullptr) {
+        // the Store ships with every package, so this is a stick someone tidied; a provider went missing
+        // between the menu and here
+        notificationLines[1].setText(name == StoreExtension ? _("The Store is not installed")
+                                                            : _("Not available on this system"),
+                                     DefaultShowingTimeout);
+        return;
+    }
+    const string title = info->title;
+    const string extension = info->name; // info is the catalog's: the run may scan it again
+    const bool networkUp = System::hasDefaultRoute();
+    // the launcher's own frame, for an extension's screens to draw over (GuiActionMenu::background =
+    // renderer().lastCapture()) - the bare launcher, not the menu the run was picked from
+    renderer.captureNextFrame();
+    render();
+    const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
+                                                        : app.extensions().runEntry(extension, entry, networkUp);
     forgetHeldModifiers(); // its screens ran their own loops
     gui->input().flushEvents();
-    if (why == ExtensionRuntime::Refusal::Failed || why == ExtensionRuntime::Refusal::LoadFailed ||
-        why == ExtensionRuntime::Refusal::WrongAbi) {
+    switch (why) {
+    case ExtensionRuntime::Refusal::None:
+        break;
+    case ExtensionRuntime::Refusal::Failed:
+    case ExtensionRuntime::Refusal::LoadFailed:
+    case ExtensionRuntime::Refusal::WrongAbi:
         notificationLines[1].setText(title + " " + _("closed with an error"), 2 * DefaultShowingTimeout);
-    } else if (why == ExtensionRuntime::Refusal::Offline) {
+        break;
+    case ExtensionRuntime::Refusal::Offline:
         notificationLines[1].setText(_("Needs a network connection"), DefaultShowingTimeout);
+        break;
+    case ExtensionRuntime::Refusal::Disabled:
+        notificationLines[1].setText(title + " " + _("is disabled - see Extensions"), DefaultShowingTimeout);
+        break;
+    default: // not found, not built for this machine, an entry it does not handle
+        notificationLines[1].setText(title + " " + _("is not available on this system"), DefaultShowingTimeout);
+        break;
     }
     applyExtensionRequests();
 }
@@ -623,10 +742,17 @@ void GuiLauncher::loop_openExtensions() {
 void GuiLauncher::applyExtensionRequests() {
     App::ExtensionRequests r = app.takeExtensionRequests();
     if (r.bubbleChanged) {
-        if (r.bubbleVisible)
-            extensionBubble.show(r.bubbleTitle, r.bubbleDetail, r.bubbleDone, r.bubbleTotal, 0);
-        else
+        if (r.bubbleVisible) {
+            // the percentage next to the detail says what the bar shows - in 64 bits, as the extension
+            // reports its bytes (a Store download is past a 32-bit count's reach on the console)
+            string detail = r.bubbleDetail;
+            if (r.bubbleTotal > 0)
+                detail += "  " + to_string(min(r.bubbleDone, r.bubbleTotal) * 100 / r.bubbleTotal) + "%";
+            extensionBubble.show(r.bubbleTitle, detail, static_cast<int64_t>(r.bubbleDone),
+                                 static_cast<int64_t>(r.bubbleTotal), 0);
+        } else {
             extensionBubble.hide();
+        }
     }
     if (!r.message.empty())
         notificationLines[1].setText(r.message, 2 * DefaultShowingTimeout);
@@ -647,6 +773,7 @@ void GuiLauncher::applyExtensionRequests() {
     }
 }
 
+#ifdef AB_ONLINE_UPDATE
 //*******************************
 // GuiLauncher::pollUpdates
 //*******************************

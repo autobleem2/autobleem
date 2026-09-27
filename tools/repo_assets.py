@@ -10,8 +10,9 @@ Writes into <outdir> (what tools/repo_publish.sh assets uploads to <repo>/assets
                         (copied to <repo>/rpi-imager/icon.png by the publish script)
     selawik-light.ttf   the theme's font (SIL OFL) and its OFL.txt
 
-Nothing is duplicated in git: the sources stay in payload/Themes/ab2. icon.png is cut out with Pillow, or
-copied from tools/repo_icon.png (the same cut, checked in for a python without Pillow - MSYS2's).
+Nothing is duplicated in git: the sources stay in the autobleem-themes submodule's Themes/ab2. icon.png is
+cut out with Pillow, or copied from tools/repo_icon.png (the same cut, checked in for a python without
+Pillow - MSYS2's).
 """
 
 import os
@@ -19,7 +20,7 @@ import shutil
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-THEME = os.path.join(REPO, "payload", "Themes", "ab2")
+THEME = os.path.join(REPO, "autobleem-themes", "Themes", "ab2")
 # where the emblem sits in abback2.jpg (1280x720): the "A" with the pad, above the wordmark
 EMBLEM_BOX = (430, 90, 850, 440)
 

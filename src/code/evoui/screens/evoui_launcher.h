@@ -19,9 +19,15 @@
 #include "../controls/evoui_stateselector.h"
 #include "core/main.h"
 #include "core/model/timing.h"
+#include "core/model/pad_assignment.h"
+#include "core/services/pad_battery.h"
+#include "core/model/pad_battery_match.h"
 #include <vector>
 #include <memory>
+#include <set>
 #include "gui/gui.h"
+
+enum class SystemMenuAction; // evoui_system_menu.h
 
 // which sub-screen of the launcher is showing
 enum class LauncherScreenState : int { Games = 0, Set, Resume, Info };
@@ -79,6 +85,45 @@ public:
     void loop_joyMoveUp();
     void loop_joyMoveDown();
 
+    // a pad connected or disconnected: what PS1 port each one now lands on (C9), a NotificationLine -
+    // quiet, only on the change, not shown at startup/loadAssets. seedPadAssignment() (loadAssets(), and
+    // every time a game returns the display) records the current assignment as already "shown" without
+    // popping the notice, so SDL's start-up PadAdded burst and the flush/reopen around a launch stay quiet;
+    // showPadAssignment() (a live PadAdded/PadRemoved) only pops it when ableem::PadAssignment actually
+    // differs from lastShownPadAssignment (decidePadAssignmentChange(), core/model/pad_assignment.h).
+    void seedPadAssignment();
+    void showPadAssignment();
+    PadAssignment currentPadAssignment() const;
+    PadAssignment lastShownPadAssignment;
+    bool padAssignmentSuppressedEmpty = false;
+
+    // C8: a small battery indicator per wireless pad, top-left corner - PadBatteryService (ab_core) reads
+    // the kernel's power_supply sysfs tree, same as PSC-Bios's pairing screen. Polled at most every
+    // PadBatteryPollInterval (core/model/timing.h), never every frame - a handful of sysfs reads is cheap,
+    // but there is no reason to do it 60 times a second. lowBatteryNotified is which pads (by address)
+    // already got the one-time "battery low" NotificationLine since they last climbed back over
+    // PadBatteryLowResetPercent (or vanished) - so a reading sitting at 12% for ten minutes says it once.
+    // C12: each reading is also matched to the SDL pad it belongs to (matchPadBatteries(),
+    // core/model/pad_battery_match.h - by the pad's own serial against the sysfs address), so the label is
+    // "Player 1"/"Player 2" when that match succeeds; padBatteryLabelsFor() falls back to the old generic
+    // "Wireless pad N" when it does not (an address with no matching pad still gets a stable number,
+    // counted among the unmatched entries only). padBatteryIconTags is the short form of the same match
+    // ("P1"/"P2", "" when unmatched) the icon row draws next to a matched pad's icon.
+    PadBatteryService padBatteryService;
+    std::vector<PadBatteryInfo> padBatteries;
+    std::vector<std::string> padBatteryLabels;   // padBatteryLabels[i] is padBatteries[i]'s label (for the
+                                                 // low-battery notice), recomputed with it each poll
+    std::vector<std::string> padBatteryIconTags; // padBatteryIconTags[i] is padBatteries[i]'s short icon
+                                                 // tag ("P1"/"P2"/""), recomputed together with the above
+    long lastPadBatteryPoll = 0;
+    std::set<std::string> lowBatteryNotified;
+    void pollPadBattery();
+    void renderPadBatteries();
+    // fills both padBatteryLabels and padBatteryIconTags from one pass of matchPadBatteries() - out params
+    // rather than a struct-of-two-vectors to keep the call site in pollPadBattery() simple
+    std::vector<std::string> padBatteryLabelsFor(const std::vector<PadBatteryInfo> &batteries,
+                                                 std::vector<std::string> &iconTagsOut) const;
+
     // a button is pressed
     void loop_joyButton_Pressed();
     void loop_chooseSet(); // Select: the set picker (tabs PlayStation / RetroArch / Apps, the groups inside)
@@ -100,6 +145,22 @@ public:
     // the system menu: Re-Scan, RetroArch, Memory Cards, Game Manager, Options, About, Power Off, ... -
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
+    // the Quick menu: Re-Scan, Store, Network & Controllers, System menu... - d-pad Up in the Games state (and
+    // on an empty set), and the gear icon of the game's icon row
+    void loop_openQuickMenu();
+    // what an item of either menu does
+    void runMenuAction(SystemMenuAction action);
+    // Options (the System menu's): the screen, then the theme, the sets and the covers reloaded
+    void loop_openOptions();
+    // an extension provides the "network" entry here: the Network & Controllers item shows
+    bool networkProvided();
+    // one does, but cannot run (switched off, another AutoBleem, not built for this system): why, as the
+    // greyed item's description ("PSC-Bios is switched off - enable it in Extensions"), and which one - the
+    // item then opens the Extensions list at it. "" when a provider can run, or none is installed
+    std::string networkUnavailable(std::string *extension = nullptr);
+    // an extension run from a menu: by name, or at `entry` by whichever provides it (name ""); the refusal
+    // reported on the notification line
+    void runExtensionEntry(const std::string &name, const std::string &entry);
 #ifdef AB_ONLINE_UPDATE
     // the online update: the check's result once a frame (it asks when one lands), the system menu's
     // "Software Update" item (a check now, then the same question), and the download that ends in
@@ -161,7 +222,8 @@ public:
     NotificationBubble extensionBubble;
     void applyExtensionRequests();
     // the system menu's Extensions item: the list, then the chosen one run
-    void loop_openExtensions();
+    // select: the extension the list opens at ("" = the first)
+    void loop_openExtensions(const std::string &select = "");
     // the system menu's Scanner processors item: the sequences sorted, a scan when anything changed
     void loop_openProcessors();
 
@@ -181,20 +243,31 @@ public:
 
     PsObj *background = nullptr;
     PsMoveBtn *arrow = nullptr;
-    PsObj *xButton = nullptr;
-    PsObj *oButton = nullptr;
-    PsObj *tButton = nullptr;
-    // the footer's hint row: an icon (a theme image for X/O/T, chips for the rest) and a label each, laid
-    // out by layoutHints() in the theme's hintBar at the largest font that fits the language
+    // the footer's two hint lines: line 1 is what acts on the current selection (built from `state` and the
+    // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
+    // ("|@X|", "|@L2+R2|", "|@Left|/|@Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
+    // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
+    // hintBar at the largest font that fits the language. updateHintsIfNeeded() rebuilds the two lines from
+    // a signature of what they depend on and calls layoutHints() only when that signature changes - the
+    // "cache the layout" rule - so render() can call it every frame for free.
     struct Hint {
-        PsObj *icon;         // the theme's hint image, positioned by layoutHints(); or
-        std::string markers; // the chips, "|@L2+R2|" - drawn by render()
+        std::string markers; // the chips, e.g. "|@L2+R2|" - drawn by render()
         std::string label;
         int labelX = 0, chipX = 0;
     };
-    std::vector<Hint> hints;
-    ableem::Font hintFont;
+    std::vector<Hint> hints;  // line 1
+    std::vector<Hint> hints2; // line 2
+    ableem::Font hintFont, hintFont2;
     int hintLabelY = 0, hintChipY = 0;
+    int hintLabelY2 = 0, hintChipY2 = 0;
+    bool hintsOneLineOnly = false; // the theme's hintBar is under 48 px tall: line 2 is not drawn at all
+    std::string lastHintSignature;
+    // the two hint lines for the current state/selection, in the language it was built in
+    void buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const;
+    // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
+    // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
+    std::string hintSignature() const;
+    void updateHintsIfNeeded();
     void layoutHints();
     std::unique_ptr<PsMenu> menu;
     PsStateSelector *sselector = nullptr;

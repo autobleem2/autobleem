@@ -104,6 +104,8 @@ Env=SDL_AUDIODRIVER=alsa;TYRIAN_DATA=data
 VirtualPad=true
 # unchanged: needs the AutoBleem kernel
 Kernel=false
+# optional (2026-09-26): which group the set picker's Apps tab lists it under
+Category=Games
 ```
 
 **`VirtualPad=`** (decided 2026-09-24) is the App's own statement about the pad mapper:
@@ -114,6 +116,13 @@ Kernel=false
 
 The launcher passes it as `AB_APP_VIRTUAL_PAD=1|0` (`AppManifest::usesVirtualPad()`); a `run.sh` started
 by hand reads it from the ini the same way.
+
+**`Category=`** (decided 2026-09-26) is which group the set picker's Apps tab lists an App under - `Games`,
+`Emulators`, `Tools` or `Media`, case-insensitive (`GameQueryService`'s `parseAppCategory`); missing or
+anything else is `Other`. The tab always starts with "All apps", then one row per category that has at
+least one App present (`GameQueryService::appCategories()`); a stick with every App in one category shows
+just that one row alongside "All apps". The app_* repos and the Store catalog will carry their own category
+later - not part of this change.
 
 **Repositories** (decided 2026-09-24): an App's source repository is named **`app_<name>`**
 (`app_opentyrian`), an extension's **`ext_<name>`** (`ext_store`). The folder it installs to keeps the bare

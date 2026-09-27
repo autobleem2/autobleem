@@ -104,8 +104,8 @@ static int runAutobleem(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
     // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well. In RAM
-    // (<runtime>/logs, a quarter of the size) unless "Keep logs on the stick" is on - docs/quiet-stick-plan.md;
-    // a crash takes them to System/Logs (rc/ab_log.sh's ab_persist_logs)
+    // (<runtime>/logs, a quarter of the size) unless "Keep logs on the stick" is on - autobleem-main's
+    // docs/archive/quiet-stick-plan.md; a crash takes them to System/Logs (rc/ab_log.sh's ab_persist_logs)
     Env::setKeepLogs(Env::keepLogsRequested());
     Env::exportLogDirs();
     if (Env::keepLogs())

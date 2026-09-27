@@ -1,7 +1,7 @@
 //
 // GuiProcessors: the System menu's Scanner processors - the two sequences (PS1, ROMs) the scan runs the
 // processors in System/Processors/ in, for the user to sort and switch on and off
-// (docs/scanner-processors-plan.md, "Sequences").
+// (autobleem-main's docs/archive/scanner-processors-plan.md, "Sequences").
 //
 #pragma once
 

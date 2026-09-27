@@ -12,8 +12,9 @@
 #
 #   autobleem-win-product-<v>.zip   AutoBleem/: autobleem-gui.exe (GUI subsystem, full screen, the data tree
 #                            found by itself - see EnvironmentSetup::fromWindowsInstall) + resources + DLLs,
-#                            AutoBleemWinSetup.exe, Themes/ (payload/Themes, copied into the data tree on the
-#                            first start), the two PS1 emulators as emu/ (pcsx-ab) and emunxt/ (pcsx-abnxt) -
+#                            AutoBleemWinSetup.exe, Themes/ (the autobleem-themes submodule's Themes/,
+#                            copied into the data tree on the first start), the two PS1 emulators as emu/
+#                            (pcsx-ab) and emunxt/ (pcsx-abnxt) -
 #                            Options -> "PS1 Emulator" picks, as on the console and the Pi - from a local
 #                            build (AB_PCSX_WIN_DIST / AB_PCSXNXT_WIN_DIST: a folder with pcsx-ab.exe and its
 #                            DLLs) or else the site's win64 package (emu/pcsx-ab, emu/pcsx-abnxt latest.json;
@@ -165,7 +166,7 @@ if [ -n "$PRODUCT_DIR" ]; then
         echo "    (no apps/installer/AutoBleemWinSetup.exe in $PRODUCT_DIR - the package has no setup helper)"
     fi
     mkdir -p "$APP/Themes"
-    cp -a "$REPO/payload/Themes/." "$APP/Themes/"
+    cp -a "$REPO/autobleem-themes/Themes/." "$APP/Themes/"
     # the two PS1 emulators: a local Windows build, else the site's package of each
     emulator "pcsx-ab" "emu" "${AB_PCSX_WIN_DIST:-}"
     emulator "pcsx-abnxt" "emunxt" "${AB_PCSXNXT_WIN_DIST:-}"

@@ -1,159 +1,122 @@
 # AutoBleem 2
 
-AutoBleem is a game launcher for the **PlayStation Classic**: it replaces the stock SonyUI, scans a USB stick
-for PS1 games, keeps their metadata and cover art, and starts them in the bundled `pcsx-ab` (or its successor,
-`pcsx-abnxt`) or in RetroArch. Version 2 is a rebuilt AutoBleem - the same product, the same USB layout and the same
-themes, on a codebase that was taken apart and put back together during 2026 - and it now also runs as an
-appliance on a **Raspberry Pi**.
+A game launcher and front-end for the **PlayStation Classic** (and the **Raspberry Pi**). AutoBleem replaces the stock SonyUI, scans a USB stick or SD card for PS1 games, keeps their metadata and cover art in SQLite, and launches games in `pcsx-ab`, `pcsx-abnxt` (the next emulator), or RetroArch.
 
-This repository continues [screemerpl/cbleemsync](https://github.com/screemerpl/cbleemsync) (AutoBleem 0.x
-to 0.9.1) and folds in everything the community fork
-[AutoBleem-NG/autobleem](https://github.com/AutoBleem-NG/autobleem) added after the original went quiet.
-The repository is private while the console build is being brought up; the history starts at the 0.9.1
-source snapshot (`a033670`).
+## Platforms
 
-> **Status (September 2026):** the Windows development build and the Raspberry Pi build run - the Pi 400
-> test box boots into the launcher, scans, and plays PS1 games in pcsx-ab and other systems in RetroArch.
-> The PlayStation Classic binaries build and pass the link gates but **have not yet been run on a console**.
+**Products**: PlayStation Classic (`psc`), Raspberry Pi 32-bit and 64-bit (`rpi`, `rpi64` - appliances on the SD card), 32-bit Debian PC USB stick (`pcusb`), Windows (`win` - NSIS installer). Development builds on Linux/macOS (`make_sys.sh`) and Windows MSYS2 (`make_win.sh`).
 
-## What changed since 0.9.1
+## Getting started
 
-### The code
+Ready-to-use packages for every platform are assembled and released by [autobleem2/autobleem-appliance](https://github.com/autobleem2/autobleem-appliance). Extract a release package to your USB stick (FAT32 on a stock PlayStation Classic; exFAT requires the AutoBleem kernel) or SD card on a Raspberry Pi, drop PS1 game folders into `Games/`, and plug it in. On the console, the exploit payload in the stick's `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` folder boots AutoBleem automatically.
 
-The 2019-2021 GUI was one process-wide `Gui` object with SDL calls, SQLite, the scanner and the screens all
-reaching into each other. It is now six libraries, each linking only the one below it:
+### Stick layout
 
-| Target | What it is |
-|---|---|
-| `lib_ableem/` `ableem_engine` | Portable, SDL-free engine: filesystem, ini/cfg files, the SQLite game database, cover dbs, disc images (bin/cue, PBP, CHD via libchdr, ECM), the scanner, RetroArch playlists, `.rdb` metadata, thumbnails, memory-card images, themes as `theme.json`, zip read/write, MD5, logging. |
-| `lib_ableem/` `ableem` | Every SDL2 call: window, renderer (with perspective "cover flow" and output scaling), textures, fonts, audio, input (pads, keyboard-as-pad, raw joysticks for the mapping wizard). |
-| `src/code/core/` `ab_core` | AutoBleem's model and services, no SDL: game queries, catalog, settings, memory cards, resume points, launching, RetroArch integration, the background scan, system info, platform layout. Unit tested. |
-| `src/code/gui/` `ab_classic` | The theme-aware classic UI shared with the console tools: `AppBase`, `Gui`, text rendering, theme assets, splash/confirm/keyboard/about/hardware-info screens, the list-menu framework. |
-| `src/code/gui/` `ab_ui` | The game-aware classic screens: Options, game editors, Game Manager, memory cards, playlists. |
-| `src/code/evoui/` `ab_evoui` | EvolutionUI: the carousel and the launcher. |
+```
+/media (console) or data partition (Pi):
+Autobleem/bin/autobleem/   launcher binary, libraries, resources
+Autobleem/bin/emu/         pcsx-ab (PS1 emulator)
+Autobleem/bin/emunxt/      pcsx-abnxt (PS1 emulator, next version)
+Autobleem/bin/db/          regional cover art databases
+Autobleem/rc/              boot and launch scripts
+Autobleem/lib/libs.tar.gz  shared SDL2 libraries (unpacked to /tmp/lib at boot)
+Games/                     your PS1 game folders (one folder per game)
+  !SaveStates/             save-state slots per game
+  !MemCards/               shared memory cards
+Apps/                      third-party apps (ABFlashKit, etc.)
+Extensions/                launcher extensions (PSC-Bios, Store, etc.)
+RetroArch/bin/             RetroArch binary, cores, configuration
+RetroArch/bios/            BIOS files for cores
+RetroArch/roms/            other systems' games
+System/Databases/          game metadata (regional.db, internal.db)
+System/Logs/               launcher and system logs
+Themes/                    UI themes (folders or .zip)
+```
 
-Every SDL/SQLite/JSON/miniz/libchdr dependency lives inside `lib_ableem/`; the application includes no SDL
-header. There are no raw owning pointers, no uncaught exceptions, one `fork/exec` helper, RAII around every
-SQLite statement, and a doctest suite (34 suites, run by every Windows build) for the engine and the core
-services. `CLAUDE.md` is the developer documentation - the source map, the conventions and the history of
-every step, kept current with the code.
-
-### Ported back from AutoBleem-NG
-
-The fork's 122 commits past our snapshot were reviewed and their functionality re-implemented on the new
-structure (each with tests), so AutoBleem 2 has everything the maintained public line has:
-
-- **Metadata from RetroArch's `Sony - PlayStation.rdb`** (title, publisher, year, players, region) with the
-  covers databases kept as the fallback, and **covers from the libretro thumbnail sets**
-  (`retroarch/thumbnails/`) - no `default.png` copies next to games any more.
-- **Multi-disc folders merged** (`Game (Disc 1)`/`(Disc 2)` -> one game) and `.m3u` generation for RetroArch.
-- **Light-gun games** as a set of their own, flagged per game.
-- **CHD with zstd** (upstream libchdr, vendored) in the launcher and in pcsx-ab.
-- Fitted, wrapped and elided text everywhere; Options paging and user font selection; the Game Manager's
-  preview pane.
-- **Chinese (Simplified)** with a bundled CJK font, on top of the 16 languages the launcher already had;
-  translations as `Key=Value` files kept in step by `tools/lang_tools.py`.
-- Logging through plog (`System/Logs/autobleem.log`), a compile-time version from git, link gates that
-  check the console binary's GLIBC/GLIBCXX ceiling, UPX-packed binaries, clang-format/clang-tidy.
-- The Phase-0 bug fixes: `play_us_ra`, locked games keeping their serial, CHD exported as `.chd.cue`, the
-  year on the meta panel, music not restarting on theme browse, the Favorites fallback, rc script guards.
-
-Left out on purpose: the fork's Docker/CI pipeline, gtest (doctest does the job) and the RetroBoot 1.2.1
-Apps payload.
-
-### New in AutoBleem 2
-
-- **Straight into EvolutionUI.** The classic boot menu is gone; the splash goes directly to the carousel
-  and the **scan runs in the background** on a lowest-priority thread while you browse - a game folder
-  dropped on the stick appears without a reboot, a pulled one disappears. The old menu's items (Re-Scan,
-  RetroArch, Memory Cards, Game Manager, Hardware Information, Options, About, Power Off) live in the
-  **L2+R2 system menu**.
-- **Cover flow**: a perspective shelf of covers receding into the distance, PS1 games in jewel cases,
-  RetroArch games and Apps in big boxes at the art's own aspect. The row is bounded (no wrap-around), with
-  translucent empty boxes past the ends. 60 fps on a Pi at 1080p with 1.5x output scaling.
-- **`theme.json`** themes: a typed theme format (`docs/theme-format.md`) with partial-over-default merging;
-  old `theme.ini` folders are converted in place, a theme can be dropped in as a `.zip`. The stock SonyUI is
-  no longer re-skinned. The shipped **`ab2`** theme has redrawn launcher icons and Selawik Light.
-- **Hardware Information** screen (`autobleem-gui <root> --sysinfo` prints the same on the command line).
-- **Console tools in the tree**: **PSC-Bios** (WiFi, timezone, the gamepad mapping wizard) and
-  **ABFlashKit** (kernel flasher) - the 2020 forks under `apps/`, rebuilt on the same libraries, drawn with
-  the launcher's theme, translated into all 17 languages, with fakes so they run on a PC for visual testing.
-  The launcher loads the wizard's `gamecontrollerdb.txt`.
-- **Raspberry Pi port** (`payload_linux/`): 32-bit Raspberry Pi OS on a Pi 2/3/4/400/Zero 2 W, games on an
-  exFAT partition of the SD card, RetroArch built from source with every libretro core, the BIOS pack
-  fetched from RetroBIOS, a plymouth boot splash, pcsx-ab for PS1. See `payload_linux/README.md`.
-- The `Cfg=` absolute path in `config.ini` is gone; every path derives from the USB root.
-
-### The next emulator: pcsx-abnxt
-
-`pcsx-ab`, the emulator AutoBleem has always shipped, is PCSX-ReARMed as the console's firmware took it in
-2017 plus Sony's and AutoBleem's additions ([autobleem/pcsx-ab2](https://github.com/autobleem/pcsx-ab2)).
-**pcsx-abnxt** ([autobleem/pcsx-abnxt](https://github.com/autobleem/pcsx-abnxt)) is its successor: a
-public fork of [notaz/pcsx_rearmed](https://github.com/notaz/pcsx_rearmed) at its current release (r26),
-with everything AutoBleem needs re-implemented on top - the console's front buttons (open, reset, power),
-the resume points and save-state pictures (in pcsx-ab's layout, so either emulator continues the other's),
-disc changes, the in-game menu, the
-filters, two pads, `SET_BY_PCSX` BIOS selection - so it brings what upstream gained in nine years: an
-aarch64 dynarec, lightrec on x86, the C-SIMD `gpu_neon`, lid emulation, CHD, a per-serial game database.
-Sony's per-title hacks are not ported wholesale; games are tested and a hack is ported when a regression
-shows.
-
-**Both ship, and you choose.** Every package carries both emulators (`Autobleem/bin/emu/` and
-`Autobleem/bin/emunxt/`, the same layout and binary name) and Options -> **"PS1 Emulator"** picks which one
-plays PS1 games, on the console, a Pi and the PC alike; `pcsx-ab` is the default until pcsx-abnxt has been
-through its compatibility pass. Settings, memory cards and resume points are shared: both write pcsx-ab's
-save-state layout, so a game left in one continues in the other - unless it ran on the HLE BIOS (no BIOS
-file), where it starts from the beginning instead. Standalone packages of each are on
-the download repository under `emu/`.
 
 ## Building
 
-| Target | How |
-|---|---|
-| PlayStation Classic | `./make_psc.sh` - cross-compiles on a build server with Sony's GCC 8.2 toolchain, gates the binaries (GLIBC/GLIBCXX ceiling, no RPATH), packs them and drops them into `payload/`. Releases come from the Docker image (`https://github.com/autobleem2/autobleem-main/blob/develop/docs/ci.md`: `docker/run.sh ci/build.sh psc`), which also builds both emulators from their checkouts next to this tree. |
-| Raspberry Pi (32-bit) | `./make_rpi.sh` with the SysGCC toolchain, then `tools/make_rpi_package.sh` for the installable tarball. |
-| Windows (development) | `./make_win.sh` from an MSYS2 UCRT64 shell: builds, runs the tests, validates the language files, checks formatting. `python tools/make_usb.py usb` stages a fake USB root; `tools/win_drive.ps1` drives the exe from the keyboard for smoke tests. |
-| Linux / macOS (native) | `make_sys.sh`. |
+| Target | Command |
+|--------|---------|
+| **Windows (dev)** | `make_win.sh` - builds, runs tests, validates translations. Requires MSYS2 UCRT64 with SDL2 packages. |
+| **Raspberry Pi (32-bit)** | `make_rpi.sh` then `tools/make_rpi_package.sh` for the installer. |
+| **Linux / macOS** | `make_sys.sh` for a native build. |
+| **PlayStation Classic** | `make_psc.sh` to cross-compile on a build server, or `docker/run.sh ci/build.sh psc` in the Docker image for all targets. |
 
-C++14, CMake >= 3.12, SDL2 + SDL2_image + SDL2_mixer + SDL2_ttf. Everything else is vendored.
-`CLAUDE.md` has the details for each target and the coding conventions (`tools/format.sh`, `tools/lint.sh`).
+See `CLAUDE.md` for detailed build information, platform-specific macros, and coding conventions.
 
-## Using it on a PlayStation Classic
+## Architecture
 
-The USB layout is unchanged from 0.9: extract a release to the root of a FAT32 (or ext4) stick named
-`SONY`, drop game folders into `Games/`, plug it in. One folder per game with the image inside:
+The launcher is built from libraries that link only the one below them:
 
-```
-Games/
-     Resident Evil 2 Leon/
-           Resident Evil.bin, .cue
-     Silent Hill (Disc 1)/         <- merged with (Disc 2) into "Silent Hill" on the first scan
-     Tomb Raider II/
-           Tomb Raider II.chd
-     Revolt/
-             Revolt.PBP
-```
+- **`ableem_engine`** - SDL-free portable engine: filesystem, ini/cfg files, SQLite game database, metadata from RetroArch's `.rdb`, cover art from thumbnails, disc images (bin/cue, PBP, CHD via libchdr), game scanner, RetroArch playlists, themes as JSON, zip read/write (in `autobleem-core`)
+- **`ableem`** - SDL2 UI layer: window, renderer, textures, fonts, audio, input; links `ableem_engine` (in `autobleem-core`)
+- **`ab_core`** - AutoBleem's model and services (no SDL): game queries, settings, memory cards, launching; links `ableem_engine` (in `autobleem-core`)
+- **`ab_classic`** - Theme-aware classic UI: `Gui` singleton, text rendering, theme assets, splash/confirm/keyboard screens; links `ab_core` + `ableem` (in `autobleem-core`)
+- **`ab_ui`** - Game-aware classic screens (Options, editors, Game Manager); links `ab_classic` (in this repo)
+- **`ab_evoui`** - EvolutionUI: carousel and launcher; links `ab_ui` (in this repo)
 
-Cover databases go in `Autobleem/bin/db/` as before; a `retroarch/` tree (RetroBoot) with its
-`database/rdb` and `thumbnails` gives better metadata and art. Save states and memory cards are kept next
-to each game (`!SaveStates`, `!MemCards`). Themes go in `themes/`, as folders or `.zip`s.
+
+
+## Features
+
+- **EvolutionUI** with background scanning - games appear on the stick without rebooting
+- **Cover flow** - a perspective shelf of PS1 games in jewel cases, other systems in big boxes
+- **Multiple PS1 emulators** - choose between `pcsx-ab` and `pcsx-abnxt` in Options
+- **theme.json themes** - typed theme format with partial-over-default merging; old `theme.ini` folders are converted in place; themes can be dropped as `.zip` files
+- **Metadata and cover art** from RetroArch's database and thumbnail sets
+- **Multi-disc game folders** merged automatically
+- **RetroArch integration** - play other systems (Mega Drive, SNES, NES, etc.)
+- **Light-gun games** as a separate set
+- **Memory card management** - create, rename, and switch between cards per game
+- **Hardware Information** screen (CPU, RAM, storage, network)
+- **17 languages** with Key=Value translation files
+
+## Code structure
+
+**In autobleem-core submodule**:
+- `lib_ableem/` - SDL-free engine + SDL UI library (vendored: sqlite, json, miniz, plog, libchdr)
+- `src/code/core/` - model + services (ab_core library)
+- `src/code/app_base.*` and `src/code/gui/` (partial) - classic UI framework (ab_classic library)
+
+**In this repository**:
+- `src/code/main.cpp`, `autobleem.*` - the executable; `src/code/app.*` - the app model (ab_ui)
+- `src/code/gui/` (game-aware screens) and `src/code/evoui/` - launcher UI (ab_ui and ab_evoui libraries)
+- `src/resources/` - themes, languages, fonts, platform configs
+- `apps/abpad/` - virtual gamepad mapper for third-party Apps
+- `payload/` and `payload_linux/` - console USB tree and Pi installer package
+
+Clone with `git clone --recurse-submodules`.
+
+**Separate repositories**:
+- [autobleem-console-tools](https://github.com/autobleem2/autobleem-console-tools): PSC-Bios, ABFlashKit
+- [autobleem-pc-tools](https://github.com/autobleem2/autobleem-pc-tools): UpdateRoms, installers
+- [autobleem-appliance](https://github.com/autobleem2/autobleem-appliance): assembles packages from all repos
+
+## Runtime
+
+- **PlayStation Classic**: The launcher runs at 720p on the console's HDMI output. Boot chain is the exploit payload → AutoBleem's `rc/boot.sh` → launcher.
+- **Raspberry Pi**: Runs as a systemd service on a 32-bit or 64-bit Pi OS install. Games are on a data partition of the same SD card.
+- **Development (Windows)**: The launcher reads from a fake USB root in one-arg mode (`autobleem-gui <root>`) or two-arg debug mode (`autobleem-gui <regional.db> <Games dir>`).
+
+## Licence
+
+**GNU General Public License, version 3 or later** - see `LICENSE` and `TRADEMARKS.md`.
+
+- Source code and binaries: GPL-3.0-or-later (`LICENSE`)
+- Third-party components: see `THIRD_PARTY_NOTICES.md` (SQLite, nlohmann json, miniz, plog, libchdr with lzma/zlib/zstd, SDL2 family, fonts under SIL OFL, etc.)
+- Name, logo, and theme artwork are excluded from the licence grant - see `TRADEMARKS.md`
+
+## Development
+
+- **CLAUDE.md** - the canonical source of developer knowledge: architecture, conventions, build details, runtime layout, history
+- **`tools/format.sh`** - auto-format sources with clang-format
+- **`tools/lint.sh`** - check with clang-tidy
+- **Tests** - `tests/` with doctest; every extracted service ships with tests in the same commit
+- **Manual** - `manuals/` - user manual in Markdown, built to HTML and PDF
 
 ## Credits
 
-AutoBleem is by screemer, with the AutoBleem team and the community on Discord. AutoBleem-NG (Axanar,
-cornelk and contributors) for the features ported back. RetroBoot by genderbent, cores by KMDFManic.
-BleemSync (ModMyClassic) for parts of the early boot scripts.
+AutoBleem 2 is by screemer. The AutoBleem-NG contributors, whose fork's features were ported back. PCSX-ReARMed (notaz) and RetroArch communities for the emulators.
 
-This tool is made to be used with legally owned games only. It does not alter any file on the console's
-internal storage.
-
-## License
-
-AutoBleem is free software under the **GNU General Public License, version 3 or later** - see `LICENSE`.
-Copyright (C) 2018-2026 screemer and the AutoBleem contributors. Every program in the packages (the
-launcher, the console tools, UpdateRoms, the installers) is built from this tree under that licence; the
-emulators and RetroArch are separate GPL programs from their own repositories, linked from
-`THIRD_PARTY_NOTICES.md`, which lists every third-party component shipped or linked and its licence
-(SQLite, nlohmann json, miniz, plog, libchdr with lzma/zlib/zstd, SDL_FontCache, unecm, the SDL2 libraries,
-the fonts under the SIL OFL, ...). The name, the logo and the theme artwork are not part of the licence
-grant - `TRADEMARKS.md` says what a fork may and may not keep.
+**This tool is made to be used with legally owned games only. It does not alter any file on the console's internal storage.**

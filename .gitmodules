@@ -1,3 +1,7 @@
 [submodule "autobleem-core"]
 	path = autobleem-core
 	url = https://github.com/autobleem2/autobleem-core.git
+[submodule "autobleem-themes"]
+	path = autobleem-themes
+	url = https://github.com/autobleem2/autobleem-themes
+	branch = develop

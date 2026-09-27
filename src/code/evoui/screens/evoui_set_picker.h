@@ -16,6 +16,10 @@
 #include <string>
 #include <vector>
 
+// an App category's name as the picker and the launcher's set line show it, translated (literal _() calls, so
+// tools/lang_tools.py extract finds every name)
+std::string appCategoryLabel(AppCategory category);
+
 class GuiSetPicker : public GuiScreen {
 public:
     App &app = App::get();
@@ -38,8 +42,9 @@ private:
         // the selection it stands for
         GameSet set = GameSet::PS1;
         Ps1SelectState ps1State = Ps1SelectState::AllGames;
-        int index = 0;    // the folder row or the playlist
-        std::string name; // the folder's or playlist's name
+        int index = 0;                              // the folder row or the playlist
+        std::string name;                           // the folder's or playlist's name
+        AppCategory appCategory = AppCategory::All; // the Apps tab's row
     };
     struct Tab {
         std::string title;

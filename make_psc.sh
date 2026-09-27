@@ -85,8 +85,8 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
-# the launcher, its four helpers (absplash, abfatflag, abupdate, abfetch - src/tools/) and the console tools under apps/, each
-# where its build leaves it
+# the launcher and its four helpers (absplash, abfatflag, abupdate, abfetch - src/tools/), each where its
+# build leaves it
 BINARIES="autobleem-gui absplash abfatflag abupdate abfetch"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
@@ -109,12 +109,7 @@ if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
         upx -q --best --lzma build_psc/dist/$bin
     done
 fi
-# the tools go straight into the payload's Apps folders (with their resources), the launcher stays in
-# dist/ for the release script to pick up
-echo "==> payload/Apps: pscbios, abflashkit"
-for tool in pscbios abflashkit; do
-    cp build_psc/dist/apps/$tool/$tool payload/Apps/$tool/$tool
-    cp -r apps/$tool/resources/. payload/Apps/$tool/
-done
+# the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
+# launcher took core as a submodule (2026-09-23); this script no longer builds or stages them
 echo "==> build_psc/dist:"
 find build_psc/dist -type f | xargs ls -l

@@ -52,7 +52,7 @@ try:
 except ImportError:
     fcntl = None
 
-# the ab2 theme's palette (tools/repo_index.py's page uses the same)
+# the ab2 theme's palette (the download site's repo_index.py page uses the same - autobleem2/autobleem-repo)
 NAVY = (6, 26, 58)
 PANEL = (4, 22, 56)
 LINE = (60, 140, 190)

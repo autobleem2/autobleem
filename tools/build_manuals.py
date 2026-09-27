@@ -29,7 +29,12 @@ BROWSERS = [
     '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge',
 ]
 
-TOC_TITLE = {'en': 'Contents', 'pl': 'Spis treści'}
+TOC_TITLE = {
+    'en': 'Contents', 'pl': 'Spis treści', 'de': 'Inhaltsverzeichnis', 'fr': 'Table des matières',
+    'es': 'Índice', 'it': 'Indice', 'pt-br': 'Sumário', 'zh-cn': '目录', 'nl': 'Inhoudsopgave',
+    'sv': 'Innehållsförteckning', 'da': 'Indholdsfortegnelse', 'fi': 'Sisällysluettelo', 'cs': 'Obsah',
+    'sk': 'Obsah', 'ro': 'Cuprins', 'tr': 'İçindekiler', 'oc': 'Ensenhador',
+}
 
 
 def inline(text):

@@ -64,11 +64,11 @@ def main(argv):
         shot('system-menu')
         run('press o; wait_screen GuiLauncher')
         # Options
-        run('menu 5; wait_screen GuiOptions; wait 200')
+        run('menu options; wait_screen GuiOptions; wait 200')
         shot('options')
         run('press o; wait_screen GuiLauncher')
         # the Game Manager and its confirms
-        run('menu 3; wait_screen GuiManager; wait 300')
+        run('menu game; wait_screen GuiManager; wait 300')
         shot('game-manager')
         run('press s; wait_screen GuiConfirm; wait 200')
         shot('confirm-delete-game')
@@ -76,19 +76,19 @@ def main(argv):
         shot('confirm-flush-covers')
         run('press o; wait 200; press o; wait_screen GuiLauncher')
         # Memory Cards, the New Card keyboard
-        run('menu 2; wait_screen GuiMemcards; wait 200')
+        run('menu memory; wait_screen GuiMemcards; wait 200')
         shot('memory-cards')
         run('press s; wait_screen GuiKeyboard; wait 200')
         shot('keyboard-new-card')
         run('press o; wait 200; press o; wait_screen GuiLauncher')
         # Hardware Information
-        run('menu 4; wait_screen GuiHardwareInfo; wait 300')
+        run('menu hardware; wait_screen GuiHardwareInfo; wait 300')
         shot('hardware-info')
         run('press r2; wait 300')
         shot('hardware-info-page-2')
         run('press o; wait_screen GuiLauncher')
         # About and the surprise game
-        run('menu 9; wait_screen GuiAbout; wait 300')  # 7 Scanner processors, 8 Software Update
+        run('menu about; wait_screen GuiAbout; wait 300')
         shot('about')
         run('press start; wait 1500')
         shot('surprise-game')

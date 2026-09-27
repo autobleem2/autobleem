@@ -1,5 +1,5 @@
 #!/bin/sh
-# What a scenario writes to the stick / data partition - the measuring tape of docs/quiet-stick-plan.md.
+# What a scenario writes to the stick / data partition - the measuring tape of autobleem-main's docs/archive/quiet-stick-plan.md.
 # Runs on the target (the console over its RNDIS/ssh, a Pi or the PC stick over ssh), busybox sh is enough.
 #
 #   stick_writes.sh start [MOUNT]   remember the partition's written-sectors counter, and watch the files

@@ -9,6 +9,27 @@
 
 using namespace std;
 
+//*******************************
+// appCategoryLabel
+//*******************************
+string appCategoryLabel(AppCategory category) {
+    switch (category) {
+    case AppCategory::All:
+        return _("All apps");
+    case AppCategory::Games:
+        return _("Games");
+    case AppCategory::Emulators:
+        return _("Emulators");
+    case AppCategory::Tools:
+        return _("Tools");
+    case AppCategory::Media:
+        return _("Media");
+    case AppCategory::Other:
+        return _("Other");
+    }
+    return _(appCategoryName(category));
+}
+
 namespace {
 const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
@@ -82,10 +103,23 @@ void GuiSetPicker::buildTabs() {
                               Ps1SelectState::AllGames, static_cast<int>(i), raPlaylists[i]});
     }
 
-    // Apps: the one group
+    // Apps: "All apps" first, then one row per category present (docs/app-format-plan.md's Category=)
     Tab &apps = tabs[2];
     apps.entries.clear();
-    apps.entries.push_back({_("Apps"), games(query.apps().size()), 0, GameSet::Apps, Ps1SelectState::AllGames, 0, ""});
+    auto appsCount = [](size_t n) { return to_string(n) + " " + _("apps"); };
+    apps.entries.push_back({_("All apps"), appsCount(query.apps().size()), 0, GameSet::Apps, Ps1SelectState::AllGames,
+                            0, "", AppCategory::All});
+    for (const auto &c : query.appCategories()) {
+        Entry entry{appCategoryLabel(c.category),
+                    appsCount(static_cast<size_t>(c.count)),
+                    0,
+                    GameSet::Apps,
+                    Ps1SelectState::AllGames,
+                    0,
+                    "",
+                    c.category};
+        apps.entries.push_back(entry);
+    }
 
     // the tab and row of what shows now
     tab = selection.set == GameSet::RetroArch ? 1 : selection.set == GameSet::Apps ? 2 : 0;
@@ -101,6 +135,8 @@ void GuiSetPicker::buildTabs() {
         else if (selection.set == GameSet::PS1)
             match = e.set == GameSet::PS1 && e.ps1State == selection.ps1SelectState &&
                     (e.ps1State != Ps1SelectState::GamesSubdir || e.index == selection.usbGameDirIndex);
+        else if (selection.set == GameSet::Apps)
+            match = e.set == GameSet::Apps && e.appCategory == selection.appCategory;
         else
             match = true;
         if (match) {
@@ -156,6 +192,8 @@ void GuiSetPicker::pick() {
     } else if (e.set == GameSet::RetroArch) {
         selection.raPlaylistIndex = e.index;
         selection.raPlaylistName = e.name;
+    } else if (e.set == GameSet::Apps) {
+        selection.appCategory = e.appCategory;
     }
     cancelled = false;
 }

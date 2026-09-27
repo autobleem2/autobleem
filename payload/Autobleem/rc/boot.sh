@@ -45,6 +45,8 @@ $RC/killsony.sh
 $RC/backup.sh
 # the stick's dirty flag, before anything of ours writes to it
 $RC/checkstick.sh
+# the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
+$RC/ssh_keys.sh
 
 # The launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
 # RetroArch session and the launcher is started over; a reboot never returns. It runs from a copy on

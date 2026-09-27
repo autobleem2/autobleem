@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # the launcher's stdout/stderr go where this run's logs go - RAM (/tmp/autobleem/logs) unless the logs are
-# kept on the stick (rc/ab_log.sh, docs/quiet-stick-plan.md)
+# kept on the stick (rc/ab_log.sh, autobleem-main's docs/archive/quiet-stick-plan.md)
 . /media/Autobleem/rc/ab_log.sh
 # A kernel with the backported pad drivers as modules (psc-kernel-payload 2026-09-25 on: hid-sony,
 # hid-playstation, hid-nintendo, xpad) drives the pads itself - SDL's own HIDAPI drivers then only get in the

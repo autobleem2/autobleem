@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <iostream>
 #include "evoui_mc_manager.h"
+#include "evoui_set_picker.h"
+#include "gui/panel_style.h"
 #include <cassert>
 #include <memory>
 #include <ableem/engine/log.h>
@@ -36,6 +38,11 @@ void GuiLauncher::updateMeta(bool withSnap) {
         string last_played{""};
         meta->updateTexts(gameName, publisher, year, serial, region, players, internal, hd, locked, discs, favorite,
                           foreign, play_using_ra, app, last_played, fgColor);
+        // no game: the row keeps settings alone, and no screenshot of the last set's game stays up
+        if (menu != nullptr)
+            showOptions();
+        if (withSnap)
+            loadSnap();
         return;
     }
     if (carousel.selectedIsValid())
@@ -199,7 +206,12 @@ void GuiLauncher::showSetName() {
         string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
         notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
     } else if (selection.set == GameSet::Apps) {
-        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + numGames, timeout);
+        // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
+        string name = _("Showing: Apps");
+        if (selection.appCategory != AppCategory::All)
+            name += ": " + appCategoryLabel(selection.appCategory);
+        string numApps = " (" + to_string(carousel.games.size()) + " " + _("apps") + ")";
+        notificationLines[0].setText(name + numApps, timeout);
     }
 }
 
@@ -303,6 +315,195 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
     case ScanStage::FetchingBoxArt:
         title = _("Fetching box art") + count;
         break;
+    }
+}
+
+//*******************************
+// padBatteryPlayerLabel (local)
+//*******************************
+// literal _() calls at each branch, like psPlayerSlotLabel's other copies (evoui_launcher_input.cpp,
+// gui_hardware_info.cpp) - tools/lang_tools.py's extract only recognises a literal inside _(...), not a
+// runtime value, so every copy needs its own. "" for Unused: a battery matched to a third+ pad (past the
+// PS1 port count) falls back to the generic label in padBatteryLabelsFor() below, same as no match at all.
+static string padBatteryPlayerLabel(PsPlayerSlot slot) {
+    switch (slot) {
+    case PsPlayerSlot::Player1:
+        return _("Player 1");
+    case PsPlayerSlot::Player2:
+        return _("Player 2");
+    case PsPlayerSlot::Unused:
+    default:
+        return "";
+    }
+}
+
+//*******************************
+// padBatteryIconTag (local)
+//*******************************
+// the short form of the same label, for the icon row (evoui_launcher.h's padBatteryIconTags): "P1"/"P2",
+// kept to two characters everywhere on purpose - the icon row has no room for a full word, and a plain
+// number-with-letter reads as a player number in every one of the 17 languages we ship without needing a
+// per-language abbreviation (a Polish "G1"/"G2" for "gracz" was considered and dropped: "P1"/"P2" already
+// reads correctly to a Polish player from a PS1/PS2 pad-select screen, and one shared abbreviation is one
+// less thing to keep in sync across every language file). "" for Unused, same as padBatteryPlayerLabel.
+static string padBatteryIconTag(PsPlayerSlot slot) {
+    switch (slot) {
+    case PsPlayerSlot::Player1:
+        return _("P1");
+    case PsPlayerSlot::Player2:
+        return _("P2");
+    case PsPlayerSlot::Unused:
+    default:
+        return "";
+    }
+}
+
+//*******************************
+// GuiLauncher::padBatteryLabelsFor
+//*******************************
+// C12: matches each sysfs battery reading to the SDL pad it belongs to (matchPadBatteries(), by the pad's
+// own serial against the sysfs address - core/model/pad_battery_match.h) and labels it "Player 1" /
+// "Player 2" when that pad is one of the two the PS1 emulators actually use - the same label
+// showPadAssignment()/GuiHardwareInfo already show for it - with "P1"/"P2" for the icon row in
+// `iconTagsOut`. A reading with no match (no SDL pad reported that address as its serial - unplugged
+// since, no serial at all on this SDL/pad combination - or it landed on a third+ pad) falls back to the
+// old generic "Wireless pad N" (icon tag ""), numbered only among the *unmatched* entries so one matched
+// and one unmatched pad does not jump straight to "Wireless pad 2".
+vector<string> GuiLauncher::padBatteryLabelsFor(const vector<PadBatteryInfo> &batteries,
+                                                vector<string> &iconTagsOut) const {
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    vector<PadBatterySource> sources;
+    for (size_t i = 0; i < pads.size(); i++)
+        sources.push_back({static_cast<int>(i), pads[i].serial});
+    vector<MatchedPadBattery> matches = matchPadBatteries(batteries, sources);
+
+    vector<string> labels(batteries.size());
+    iconTagsOut.assign(batteries.size(), "");
+    vector<int> unmatchedPosition(batteries.size(), -1);
+    int unmatchedSeen = 0;
+    for (size_t i = 0; i < matches.size(); i++) {
+        if (matches[i].padIndex >= 0) {
+            PsPlayerSlot slot = psPlayerSlot(matches[i].padIndex, static_cast<int>(pads.size()));
+            string label = padBatteryPlayerLabel(slot);
+            if (!label.empty()) {
+                labels[i] = label;
+                iconTagsOut[i] = padBatteryIconTag(slot);
+                continue;
+            }
+        }
+        unmatchedPosition[i] = unmatchedSeen++;
+    }
+    for (size_t i = 0; i < labels.size(); i++) {
+        if (labels[i].empty())
+            labels[i] =
+                unmatchedSeen > 1 ? _("Wireless pad") + " " + to_string(unmatchedPosition[i] + 1) : _("Wireless pad");
+    }
+    return labels;
+}
+
+//*******************************
+// GuiLauncher::pollPadBattery
+//*******************************
+// called once a frame (loop(), like applyScanUpdate) but only acts every PadBatteryPollInterval: a handful
+// of sysfs reads is cheap, but nothing here changes fast enough to need it every frame.
+void GuiLauncher::pollPadBattery() {
+    if (time - lastPadBatteryPoll < PadBatteryPollInterval && lastPadBatteryPoll != 0)
+        return;
+    lastPadBatteryPoll = time;
+
+    padBatteries = padBatteryService.list();
+    padBatteryLabels = padBatteryLabelsFor(padBatteries, padBatteryIconTags);
+
+    set<string> stillLow;
+    for (size_t i = 0; i < padBatteries.size(); ++i) {
+        const PadBatteryInfo &pad = padBatteries[i];
+        if (!pad.known())
+            continue;
+        const string &label = padBatteryLabels[i];
+        if (pad.percent <= PadBatteryLowPercent) {
+            stillLow.insert(pad.address);
+            if (lowBatteryNotified.find(pad.address) == lowBatteryNotified.end()) {
+                lowBatteryNotified.insert(pad.address);
+                notificationLines[1].setText(label + ": " + _("battery low") + " (" + to_string(pad.percent) + "%)", 0);
+            }
+        } else if (pad.percent >= PadBatteryLowResetPercent) {
+            lowBatteryNotified.erase(pad.address);
+        }
+    }
+    // a pad that vanished (unplugged, or its battery node went away) gets to be renotified if it comes back
+    // low - erase everything list() no longer reports rather than letting the set grow forever
+    for (auto it = lowBatteryNotified.begin(); it != lowBatteryNotified.end();) {
+        bool present = false;
+        for (const PadBatteryInfo &pad : padBatteries)
+            if (pad.address == *it) {
+                present = true;
+                break;
+            }
+        if (!present)
+            it = lowBatteryNotified.erase(it);
+        else
+            ++it;
+    }
+}
+
+//*******************************
+// GuiLauncher::renderPadBatteries
+//*******************************
+// a small icon (outline + a fill proportional to the charge, plus a nub) and the percent, one per known
+// pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
+// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning),
+// the percent in hintFont (already loaded for the footer, so this costs nothing extra to show).
+// C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
+// launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
+// against any theme's background image instead of floating over whatever happens to be behind them there.
+// A matched pad's icon also gets its short "P1"/"P2" tag (padBatteryIconTags, from padBatteryLabelsFor())
+// drawn to its left - an unmatched one gets no tag, same spot left blank, as before C12.
+void GuiLauncher::renderPadBatteries() {
+    if (padBatteries.empty())
+        return;
+    const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
+    const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
+    int x = 16, y = 16;
+
+    int knownCount = 0;
+    int tagW = 0; // the widest icon tag actually shown right now, so unmatched pads cost no extra width
+    for (size_t i = 0; i < padBatteries.size(); i++) {
+        if (!padBatteries[i].known())
+            continue;
+        knownCount++;
+        const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
+        if (!tag.empty())
+            tagW = std::max(tagW, hintFont.width(tag) + 6); // the tag plus a small gap before the icon
+    }
+    if (knownCount == 0)
+        return;
+
+    int rowWidth = tagW + iconW + nubW + 6 + 44; // [tag] + icon + nub + gap + room for "100%"
+    int rowHeight = iconH + 10;
+    ableem::Rect plate(x - plateMargin, y - plateMargin, rowWidth + 2 * plateMargin,
+                       knownCount * rowHeight - 10 + 2 * plateMargin);
+    PanelStyle plateStyle;
+    plateStyle.secondary = secColor;
+    plateStyle.sheet(renderer, plate);
+
+    int iconX = x + tagW;
+    for (size_t i = 0; i < padBatteries.size(); i++) {
+        const PadBatteryInfo &pad = padBatteries[i];
+        if (!pad.known())
+            continue;
+        const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
+        if (!tag.empty())
+            gui->text().renderText_WithColor(hintFont, tag, x, y - 2, fgColor);
+        renderer.setDrawColor(secColor);
+        renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
+        renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
+        int fillW = std::max(1, (iconW - 4) * std::min(100, std::max(0, pad.percent)) / 100);
+        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
+        renderer.setDrawColor(fillColor);
+        renderer.fillRect(ableem::Rect(iconX + 2, y + 2, fillW, iconH - 4));
+        gui->text().renderText_WithColor(hintFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y - 2,
+                                         fgColor);
+        y += rowHeight;
     }
 }
 
@@ -418,8 +619,8 @@ void GuiLauncher::loadAssets() {
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
     // - every return from a RetroArch launch - crashed on headers[0])
-    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+    headers = {_("QUICK MENU"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+    texts = {_("Re-Scan, Store, Network and more"), _("Edit game parameters"), _("Edit Memory Card information"),
              _("Resume game from saved state point")};
 
     selection = app.session().launcher;
@@ -453,18 +654,31 @@ void GuiLauncher::loadAssets() {
     // count, x_start, y_start, fontEnum, fontHeight, separationBetweenLines
     notificationLines.create(2);
 
+    // silently record who's Player 1/2 right now (C9): loadAssets() runs at startup and every time the
+    // display comes back after a game, both of which fire a burst of PadAdded/PadRemoved that must not
+    // itself pop the notice - only a *later* live change should (see showPadAssignment()).
+    seedPadAssignment();
+
     scanRosterChangedSinceReload = false;
 
     fadeAlpha = 255;
     fadeStart = gui->platform().ticks();
 
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
+    // - pointing at Network & Controllers (its controller mapping wizard) where an extension provides it
     if (gui->input().joystickCount() > gui->input().activePadCount()) {
         notificationLines[1].setText(
-            _("NOTICE: At least one connected gamepad is not recognized. Use Hardware Information page to setup."),
+            networkProvided()
+                ? _("NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.")
+                : _("NOTICE: At least one connected gamepad is not recognized."),
             10 * TicksPerSecond);
     }
 
+    // every element below is built at rest in the Games layout (the menu row closed, the play button shown,
+    // the main cover in the row) - so the state is Games too, whatever it was when this was called (Options
+    // or an editor closing from the open menu used to leave the state Set, or a row rebuilt open, over a
+    // screen laid out closed). An empty set then opens the row (settleEmptyRoster), a resume the picker.
+    state = LauncherScreenState::Games;
     staticElements.clear();
     frontElemets.clear();
     carousel.games.clear();
@@ -540,13 +754,9 @@ void GuiLauncher::loadAssets() {
     arrow->originaly = arrow->y;
     arrow->visible = false;
 
-    xButton = addStaticElement(new PsObj("xbtn", theme.hints.cross));
-    xButton->visible = true;
-    oButton = addStaticElement(new PsObj("obtn", theme.hints.circle));
-    oButton->visible = true;
-    tButton = addStaticElement(new PsObj("tbtn", theme.hints.triangle));
-    tButton->visible = true;
-    layoutHints(); // positions the three, and the chips and labels next to them
+    // built lazily: render() calls updateHintsIfNeeded() every frame, which rebuilds only when the state,
+    // selection or language actually changed. Force that on the first frame of this fresh screen.
+    lastHintSignature.clear();
 
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
@@ -586,8 +796,9 @@ void GuiLauncher::loadAssets() {
         }
     }
 
-    // a crash's logs, which the rc scripts took from RAM to the stick (docs/quiet-stick-plan.md) - said once,
-    // the first time the launcher is shown after it; over the resume messages above, which it explains
+    // a crash's logs, which the rc scripts took from RAM to the stick (autobleem-main's
+    // docs/archive/quiet-stick-plan.md) - said once, the first time the launcher is shown after it; over the resume
+    // messages above, which it explains
     const string crashLogs = Env::takeNewCrashLogs();
     if (!crashLogs.empty()) {
         notificationLines[1].setText(_("Crash logs:") + " System/Logs/" + crashLogs, 10 * TicksPerSecond);
@@ -622,9 +833,6 @@ void GuiLauncher::freeAssets() {
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
-    xButton = nullptr;
-    oButton = nullptr;
-    tButton = nullptr;
     sselector = nullptr;
     menuHead = nullptr;
     menuText = nullptr;
@@ -655,59 +863,181 @@ GuiLauncher::~GuiLauncher() {
 }
 
 //*******************************
+// GuiLauncher::hintSignature
+//*******************************
+// everything buildHintLines() reads, as a short string - updateHintsIfNeeded() rebuilds and re-lays-out the
+// two hint lines only when this actually changes, so render() can call it every frame for free (the "cache
+// the layout" rule: the layout is redone on a state/selection/language change, not per frame).
+string GuiLauncher::hintSignature() const {
+    string sig = app.lang().currentLanguage();
+    sig += "|s" + to_string(static_cast<int>(state));
+    if (state == LauncherScreenState::Set) {
+        sig += "|o" + to_string(menu ? menu->selOption : -1);
+        sig += carousel.games.empty() ? "|empty" : "";
+    } else if (state == LauncherScreenState::Resume) {
+        if (sselector != nullptr) {
+            sig += "|op" + to_string(sselector->operation);
+            sig += "|sl" + to_string(sselector->selSlot);
+            sig += sselector->slotActive[sselector->selSlot] ? "|act" : "";
+        }
+    } else { // Games
+        if (carousel.games.empty()) {
+            sig += "|empty";
+        } else if (carousel.selectedIsValid()) {
+            const PsGame &g = *carousel.games[carousel.selected];
+            sig += g.foreign ? "|f1" : "|f0";
+            sig += g.app ? "|a1" : "|a0";
+        }
+        sig += Env::retroArchInstalled() ? "|ra" : "";
+    }
+    return sig;
+}
+
+//*******************************
+// GuiLauncher::buildHintLines
+//*******************************
+// line 1: what acts on the current selection right now. Line 2: what always works (Select/Start/Guide/
+// System). "Play" not "Enter" (an App: "Start"); Circle only appears where it does something; L2+R2 says
+// "System", never "Options" (see docs/theme-format.md's hintBar entry and PLANS-menu-hints-quickmenu.md,
+// section E). The icon-row and Resume lines only ever fill line 1 - Select/Start do nothing there, so line 2
+// stays just the Guide/System pair (Resume: System alone - Circle already means Back/Don't save there).
+void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const {
+    line1.clear();
+    line2.clear();
+    if (state == LauncherScreenState::Set) {
+        // the game menu's icon row. Up closes it back to the games - or, on an empty set, opens the Quick
+        // menu instead (settleEmptyRoster keeps this state open on an empty roster - there is no Games
+        // state to show, so this is the "empty set" row the design calls out on its own)
+        string openLabel = _("Open:");
+        if (menu != nullptr && menu->selOption >= 0 && static_cast<size_t>(menu->selOption) < headers.size())
+            openLabel += " " + headers[menu->selOption];
+        line1.push_back({"|@X|", openLabel});
+        if (carousel.games.empty()) {
+            line1.push_back({"|@Up|", _("Quick menu")});
+            line2.push_back({"|@Select|", _("Games shown")});
+        } else {
+            line1.push_back({"|@Left|/|@Right|", _("Choose")});
+            line1.push_back({"|@Up|", _("Back to games")});
+            line2.push_back({"|@T|", _("Guide")});
+        }
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    if (state == LauncherScreenState::Resume) {
+        if (sselector == nullptr)
+            return;
+        const string slotLabel = to_string(sselector->selSlot + 1);
+        if (sselector->operation == OP_LOAD) {
+            line1.push_back({"|@X|", _("Resume slot") + " " + slotLabel});
+            if (sselector->slotActive[sselector->selSlot])
+                line1.push_back({"|@T|", _("Delete slot")});
+            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@O|", _("Back")});
+        } else {
+            line1.push_back({"|@X|", _("Save to slot") + " " + slotLabel});
+            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@O|", _("Don't save")});
+        }
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    // Games
+    if (carousel.games.empty()) {
+        line1.push_back({"|@Up|", _("Quick menu")});
+        line2.push_back({"|@Select|", _("Games shown")});
+        line2.push_back({"|@L2+R2|", _("System")});
+        return;
+    }
+    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+    line1.push_back({"|@X|", game != nullptr && game->app ? _("Start") : _("Play")});
+    if (game != nullptr && !game->foreign && Env::retroArchInstalled())
+        line1.push_back({"|@S|", _("Play in RetroArch")});
+    line1.push_back({"|@Down|", _("Game menu")});
+    line1.push_back({"|@Up|", _("Quick menu")});
+    line2.push_back({"|@Select|", _("Games shown")});
+    line2.push_back({"|@Start|", _("Random")});
+    line2.push_back({"|@T|", _("Guide")});
+    line2.push_back({"|@L2+R2|", _("System")});
+}
+
+//*******************************
+// GuiLauncher::updateHintsIfNeeded
+//*******************************
+void GuiLauncher::updateHintsIfNeeded() {
+    string sig = hintSignature();
+    if (sig == lastHintSignature)
+        return;
+    lastHintSignature = sig;
+    layoutHints();
+}
+
+//*******************************
 // GuiLauncher::layoutHints
 //*******************************
-// The five hints - Enter, Cancel, Button Guide, L2+R2 Options, Start Random - centred in the theme's hintBar
-// (the pill most themes paint at the bottom right) at the largest font from 22 down to 14 at which the row
-// fits the frame in the current language; below that the gaps close up. The v1 theme pack's frames all
-// hold the row at 16 in English.
+// Lays the two hint lines buildHintLines() returns out in the theme's hintBar (the pill most themes paint at
+// the bottom right), each at the largest font from 22 down to 14 that fits its own half of the bar in the
+// current language; below that the gaps close up, and line 2 (never line 1, which is always short) drops
+// hints from the right if it is still too wide even at the smallest font and tightest gap. A hintBar under
+// 48 px tall (an old theme that never expected two lines) shows line 1 only, at the bar's full height.
 void GuiLauncher::layoutHints() {
     const LauncherTheme &theme = app.theme().launcher();
     ableem::Rect bar(560, 624, 680, 72);
     if (theme.hintBar.set)
         bar = ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
-    const int inset = 16;
-    const int iconGap = 6; // icon to its label
 
-    hints = {{xButton, "", _("Enter")},
-             {oButton, "", _("Cancel")},
-             {tButton, "", _("Button Guide")},
-             {nullptr, "|@L2+R2|", _("Options")},
-             {nullptr, "|@Start|", _("Random")}};
+    buildHintLines(hints, hints2);
+    hintsOneLineOnly = bar.h < 48;
+    if (hintsOneLineOnly)
+        hints2.clear();
+
     PanelStyle style = gui->panelStyle();
-    auto iconWidth = [&](const Hint &h) {
-        return h.icon != nullptr ? h.icon->w : style.buttonsWidth(*gui, h.markers) - 6; // buttons() adds a gap
+    const int inset = 16;
+    const int iconGap = 6; // icon(s) to the label
+    static const int sizes[] = {22, 20, 18, 16, 14};
+
+    // fits `items` into `rect`'s width by shrinking the font, then the gaps, then - only when allowDrop -
+    // dropping hints from the right; positions each one's chip and label inside `rect`
+    auto layoutLine = [&](std::vector<Hint> &items, const ableem::Rect &rect, bool allowDrop, ableem::Font &outFont,
+                          int &outLabelY, int &outChipY) {
+        auto iconWidth = [&](const Hint &h) { return style.buttonsWidth(*gui, h.markers) - 6; }; // buttons() adds a gap
+        int gap = 28;
+        int total = 0;
+        for (int size : sizes) {
+            outFont =
+                size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
+            total = items.empty() ? 0 : -gap;
+            for (const Hint &h : items)
+                total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
+            if (total <= rect.w - 2 * inset)
+                break;
+        }
+        while (total > rect.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
+            total -= static_cast<int>(items.size()) * 4;
+            gap -= 2;
+        }
+        while (allowDrop && total > rect.w - 2 * inset && items.size() > 1) {
+            const Hint dropped = items.back();
+            total -= iconWidth(dropped) + iconGap + gui->text().textWidth(outFont, dropped.label) + gap;
+            items.pop_back();
+        }
+        int x = rect.x + max(inset, (rect.w - total) / 2);
+        outLabelY = rect.y + (rect.h - outFont.lineHeight()) / 2;
+        outChipY = rect.y + (rect.h - 30) / 2;
+        for (Hint &h : items) {
+            const int iconW = iconWidth(h);
+            h.chipX = x;
+            h.labelX = x + iconW + iconGap;
+            x = h.labelX + gui->text().textWidth(outFont, h.label) + gap;
+        }
     };
 
-    static const int sizes[] = {22, 20, 18, 16, 14};
-    int gap = 28;
-    int total = 0;
-    for (int size : sizes) {
-        hintFont = size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
-        total = -gap;
-        for (const Hint &h : hints)
-            total += iconWidth(h) + iconGap + gui->text().textWidth(hintFont, h.label) + gap;
-        if (total <= bar.w - 2 * inset)
-            break;
-    }
-    while (total > bar.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
-        total -= 4 * 2;
-        gap -= 2;
-    }
-
-    int x = bar.x + max(inset, (bar.w - total) / 2);
-    hintLabelY = bar.y + (bar.h - hintFont.lineHeight()) / 2;
-    hintChipY = bar.y + (bar.h - 30) / 2;
-    for (Hint &h : hints) {
-        const int iconW = iconWidth(h);
-        if (h.icon != nullptr) {
-            h.icon->x = x;
-            h.icon->y = bar.y + (bar.h - h.icon->h) / 2;
-        } else {
-            h.chipX = x;
-        }
-        h.labelX = x + iconW + iconGap;
-        x = h.labelX + gui->text().textWidth(hintFont, h.label) + gap;
+    if (hintsOneLineOnly) {
+        layoutLine(hints, bar, false, hintFont, hintLabelY, hintChipY);
+    } else {
+        const ableem::Rect top(bar.x, bar.y, bar.w, bar.h / 2);
+        const ableem::Rect bottom(bar.x, bar.y + bar.h / 2, bar.w, bar.h - bar.h / 2);
+        layoutLine(hints, top, false, hintFont, hintLabelY, hintChipY);
+        layoutLine(hints2, bottom, true, hintFont2, hintLabelY2, hintChipY2);
     }
 }
 
@@ -741,13 +1071,21 @@ void GuiLauncher::render() {
 
     menu->render();
 
-    // the hint row: the icons are static elements (drawn above), the chips and labels go here
+    // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
+    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed.
+    updateHintsIfNeeded();
     PanelStyle style = gui->panelStyle();
     for (const Hint &hint : hints) {
-        if (hint.icon == nullptr)
-            style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
+        style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
         gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
     }
+    if (!hintsOneLineOnly)
+        for (const Hint &hint : hints2) {
+            style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
+            gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+        }
+
+    renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
     scanBubble.render(*gui, time);
@@ -886,6 +1224,8 @@ void GuiLauncher::showOptions() {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
         }
     }
+    if (!enabled[3])
+        menu->resume = ableem::Texture(); // no resume icon, no picture of another game's resume point
     bool same = true;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);
