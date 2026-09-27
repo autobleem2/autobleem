@@ -103,7 +103,7 @@ __pycache__/
 # the self-hosted runner's token (docker/runner/compose.yml)
 /docker/runner/.env
 /build_samples/
-# the packs tools/pack_psc_apps.py and friends write
+# the packs make_psc_package.sh/make_win_package.sh and friends write (pack_psc_apps.py moved to autobleem-appliance)
 /dist/
 /build_win_product/
 /build_manuals/

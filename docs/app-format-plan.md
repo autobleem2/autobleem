@@ -245,7 +245,7 @@ Each step is one commit (core first, then the submodule bump), with its tests.
    (`planApp`, tested); the Windows product's data root has `Apps/` (`EnvironmentSetup::fromWindowsInstall`,
    `WindowsInstallJob`); OpenTyrian's Windows build ran on the dev PC as the launcher starts it. The first
    run on an installed Windows product is the tester checklist's.
-4. **Not done.** The eight console Apps converted (`tools/pack_psc_apps.py`): binaries to `bin/psc/`,
+4. **Not done.** The eight console Apps converted (autobleem-appliance's `tools/pack_psc_apps.py`): binaries to `bin/psc/`,
    `Exec=bin/{key}/<name>`, `run.sh` kept only where it does something. They repack per App for the Store.
 5. **Not done.** `ExtensionService` on `AppManifest` (with the extensions plan's step 1).
 6. **Built.** OpenTyrian as the first real multi-platform App (`autobleem2/app_opentyrian`, 2026-09-25):
