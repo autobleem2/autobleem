@@ -227,7 +227,10 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   compile only; turning that into the installable tarball is autobleem-appliance's own
   `tools/make_rpi_package.sh` now (DOCS-5, 2026-09-27 - its duplicate here, and the payload_linux/ tree it
   staged, were removed as drifted copies; `ci/build.sh rpi`/`rpi64`/`pcusb` build, check and stage the
-  launcher binary only, the same as `publish-launcher.yml`, and stop there). Incremental since 2026-09-19
+  launcher binary only, the same as `publish-launcher.yml`, and stop there). The local route, from inside
+  this checkout: `AB_LAUNCHER_DIR="$PWD" ../autobleem-appliance/tools/make_rpi_package.sh` (or an absolute
+  path to that checkout) - it reads `build_rpi/` and `src/resources/` from here, `payload_linux/` from
+  there. Incremental since 2026-09-19
   (it used to `rm -rf` the build dir on every run); `--clean` wipes it, `--debug` builds into
   `build_rpi_dbg/`. See the "Raspberry Pi port" section above. All three build scripts are incremental now;
   `make_win.sh`'s time is mostly `ctest`.
@@ -456,8 +459,10 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s
 `github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
 to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and this repo's own packaging scripts
 (`tools/make_psc_package.sh`/`make_win_package.sh`) all take the themes from there; autobleem-appliance's own
-`tools/make_rpi_package.sh` (DOCS-5, 2026-09-27 - it no longer lives here) takes them from its own copy of
-the submodule the same way.
+`tools/make_rpi_package.sh` (DOCS-5, 2026-09-27 - it no longer lives here) takes them a different way -
+it has no submodule of its own, so it fetches `autobleem-themes`' own GitHub release
+(`tools/release_assets.sh`'s `stage_themes()`, the same call `assemble.sh` makes), or copies from a local
+checkout given as `AB_THEMES_DIR` when there's no `gh`.
 **`.github/workflows/publish-launcher.yml` no longer stages `Themes/` into its per-platform artifact**
 (D5 step 3, 2026-09-27): a release package gets its themes only through autobleem-appliance's own
 `stage_themes` (a real release of `autobleem2/autobleem-themes`, fetched straight there), never through the
