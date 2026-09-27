@@ -330,7 +330,7 @@ pkg_first_available() {
         # a package apt can install - "apt-cache show" alone is not the test: it succeeds, silently, for a
         # name that only exists as something another package Provides (libasound2 on Trixie, libasound2t64's
         # virtual name), which apt-get then refuses to install
-        if apt-cache policy "$name" 2>/dev/null | grep -q '^  Candidate: [^(]'; then
+        if apt-cache policy "$name" 2>/dev/null | grep '^  Candidate: [^(]' >/dev/null; then
             echo "$name"
             return 0
         fi
