@@ -454,19 +454,27 @@ void GuiLauncher::pollPadBattery() {
 //*******************************
 // a small icon (outline + a fill proportional to the charge, plus a nub) and the percent, one per known
 // pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
-// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning),
-// the percent in hintFont (already loaded for the footer, so this costs nothing extra to show).
+// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning).
 // C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
 // launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
 // against any theme's background image instead of floating over whatever happens to be behind them there.
 // A matched pad's icon also gets its short "P1"/"P2" tag (padBatteryIconTags, from padBatteryLabelsFor())
 // drawn to its left - an unmatched one gets no tag, same spot left blank, as before C12.
+// C15: the tag and the percent are drawn in FONT_15_BOLD (a fixed, always-loaded font), not `hintFont` -
+// `hintFont` is sized dynamically between 14 and 22 by layoutHints() for whatever the footer's hint bar
+// needs this frame (a footer-only concern, unrelated to this 13px icon), so reusing it here made the text's
+// size - and with it its vertical offset from the fixed "y - 2" this function used - drift with the footer's
+// current language/state, which is what threw the tag and the percent off the icon's centre. Both text
+// draws now compute their y from the fixed font's own line height so their visual centre lands on the
+// icon's, whatever that height turns out to be.
 void GuiLauncher::renderPadBatteries() {
     if (padBatteries.empty())
         return;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
     int x = 16, y = 16;
+    const ableem::Font &battFont = gui->assets().themeFonts[FONT_15_BOLD];
+    const int textY = (iconH - battFont.lineHeight()) / 2; // added to y: centres the text on the icon
 
     int knownCount = 0;
     int tagW = 0; // the widest icon tag actually shown right now, so unmatched pads cost no extra width
@@ -476,7 +484,7 @@ void GuiLauncher::renderPadBatteries() {
         knownCount++;
         const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
         if (!tag.empty())
-            tagW = std::max(tagW, hintFont.width(tag) + 6); // the tag plus a small gap before the icon
+            tagW = std::max(tagW, battFont.width(tag) + 6); // the tag plus a small gap before the icon
     }
     if (knownCount == 0)
         return;
@@ -496,7 +504,7 @@ void GuiLauncher::renderPadBatteries() {
             continue;
         const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
         if (!tag.empty())
-            gui->text().renderText_WithColor(hintFont, tag, x, y - 2, fgColor);
+            gui->text().renderText_WithColor(battFont, tag, x, y + textY, fgColor);
         renderer.setDrawColor(secColor);
         renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
         renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
@@ -504,7 +512,7 @@ void GuiLauncher::renderPadBatteries() {
         ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
         renderer.setDrawColor(fillColor);
         renderer.fillRect(ableem::Rect(iconX + 2, y + 2, fillW, iconH - 4));
-        gui->text().renderText_WithColor(hintFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y - 2,
+        gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
                                          fgColor);
         y += rowHeight;
     }
