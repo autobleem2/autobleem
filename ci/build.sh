@@ -160,16 +160,28 @@ build_native() {
 # --- psc: the console ----------------------------------------------------------------------------------------
 build_psc() {
     local toolchain="${AB_PSC_TOOLCHAIN:-/opt/psc}"
+    # DOCS-4 (2026-09-27): the autobleem-build image stages one canonical copy of these at /opt/ab (APPS-6) -
+    # use it when it is there (every run inside the image, so every CI run and every `docker/run.sh` dev
+    # build). The vendored toolchains/psc/PSCtoolchainV8.cmake and tools/check_psc_binary.sh stay only as the
+    # fallback make_psc.sh needs: it builds on the bare Sony-toolchain server over ssh, no image there.
+    local ab_toolchain_cmake=toolchains/psc/PSCtoolchainV8.cmake
+    local ab_check_psc_binary=tools/check_psc_binary.sh
+    if [ -f /opt/ab/toolchains/psc/PSCtoolchainV8.cmake ]; then
+        ab_toolchain_cmake=/opt/ab/toolchains/psc/PSCtoolchainV8.cmake
+    fi
+    if [ -f /opt/ab/tools/check_psc_binary.sh ]; then
+        ab_check_psc_binary=/opt/ab/tools/check_psc_binary.sh
+    fi
     build_pcsx psc build_psc/emu-stage/emu
     build_pcsx psc build_psc/emu-stage/emunxt nxt
-    banner "psc: configure + build (build_psc, toolchain $toolchain)"
+    banner "psc: configure + build (build_psc, toolchain $toolchain, $ab_toolchain_cmake)"
     configure build_psc -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_TOOLCHAIN_FILE=toolchains/psc/PSCtoolchainV8.cmake -DAB_PSC_TOOLCHAIN="$toolchain"
+        -DCMAKE_TOOLCHAIN_FILE="$ab_toolchain_cmake" -DAB_PSC_TOOLCHAIN="$toolchain"
     ninja -C build_psc -j "$JOBS"
-    banner "psc: the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
+    banner "psc: the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH ($ab_check_psc_binary)"
     local bin
     for bin in autobleem-gui absplash abfatflag abupdate abfetch apps/abpad/abpadd apps/abpad/libabpad.so; do
-        bash tools/check_psc_binary.sh "build_psc/$bin" "$toolchain"
+        bash "$ab_check_psc_binary" "build_psc/$bin" "$toolchain"
     done
     banner "psc: package"
     dist_reset psc

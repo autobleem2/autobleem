@@ -4,7 +4,7 @@
 # Two kinds of host build for a Pi:
 #   - the Windows PC, with a "SysGCC for Raspberry Pi" toolchain (a sysroot rsynced from a real Pi, no SDL
 #     headers - the toolchain dir's cmake/FindSDL2.cmake borrows them from toolchains/rpi/sdl2-devkit)
-#   - a Debian host (the Docker image, docker/Dockerfile's pi stage) with Debian's own crossbuild-essential-*
+#   - a Debian host (autobleem-build's Docker image, its docker/Dockerfile's pi stage) with Debian's own crossbuild-essential-*
 #     and the multiarch libsdl2*-dev:<arch> packages: real headers, .so links and sdl2-config.cmake under
 #     /usr/lib/<triplet>, nothing borrowed. Raspberry Pi OS is Debian, so this is the closer sysroot.
 # ab_rpi_toolchain() picks the first when its directory exists, the second otherwise.

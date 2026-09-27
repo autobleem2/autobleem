@@ -13,7 +13,7 @@ readelf="$(ls "$toolchain"/bin/*-readelf "$toolchain"/bin/*-readelf.exe 2>/dev/n
 [ -n "$readelf" ] || readelf=readelf
 
 # the highest version of a symbol family the binary needs, e.g. GLIBC_2.7 / GLIBCXX_3.4.22
-highest() { "$readelf" -V "$bin" | grep -o "$1_[0-9][0-9.]*" | sort -t. -k1,1 -k2,2n -k3,3n -u | tail -1; }
+highest() { "$readelf" -V "$bin" | { grep -o "$1_[0-9][0-9.]*" || true; } | sort -t. -k1,1 -k2,2n -k3,3n -u | tail -1; }
 # "2.24" >= "2.7"? - numeric, component by component
 newer_than() {   # newer_than A B: true when version A is newer than B
     local a="$1" b="$2" i x y
