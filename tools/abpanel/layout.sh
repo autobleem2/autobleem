@@ -7,6 +7,7 @@
 # shell's workspace 1 gets the focus back.
 set -u
 abpanel=~/.local/bin/abpanel
+panel_font=monospace:size=12   # the quadrants' font (the shell's is foot.ini's)
 
 wait_for() { # app_id
     for _ in $(seq 100); do
@@ -18,14 +19,14 @@ wait_for() { # app_id
 
 wait_for work
 swaymsg -q 'workspace 2; layout splith'
-swaymsg -q "exec foot --app-id abpanel-overview $abpanel overview"
+swaymsg -q "exec foot -o font=$panel_font --app-id abpanel-overview $abpanel overview"
 wait_for abpanel-overview
 swaymsg -q "exec virt-viewer -c qemu:///system --attach --reconnect --wait pcusb-test"
 wait_for virt-viewer
 swaymsg -q '[app_id="abpanel-overview"] focus; splitv'
-swaymsg -q "exec foot --app-id abpanel-teams $abpanel teams"
+swaymsg -q "exec foot -o font=$panel_font --app-id abpanel-teams $abpanel teams"
 wait_for abpanel-teams
 swaymsg -q '[app_id="virt-viewer"] focus; splitv'
-swaymsg -q "exec foot --app-id abpanel-empty $abpanel empty"
+swaymsg -q "exec foot -o font=$panel_font --app-id abpanel-empty $abpanel empty"
 wait_for abpanel-empty
 swaymsg -q 'workspace 1'

@@ -360,7 +360,7 @@ def human(n):
 def load_lines(procs, width, rows):
     L = []
     cores = procs.core_percent()
-    per_row = 2 if width >= 60 else 1
+    per_row = 4 if width >= 90 else (2 if width >= 60 else 1)
     col = (width - 2) // per_row
     for i in range(0, len(cores), per_row):
         L.append("  ".join(bar(f"{j:>2}", cores[j], col - 1) for j in range(i, min(i + per_row, len(cores)))))
@@ -383,14 +383,13 @@ def load_lines(procs, width, rows):
              f"   {'%.0f°C' % t if t is not None else ''}   {BOLD}Disk{RESET} {gib(du.free)} free of {gib(du.total)}")
     ps = procs.sample()
     side = width >= 120  # the two lists side by side on a wide pane
-    n = max(rows - len(L) - 3 if side else (rows - len(L) - 6) // 2, 2)
+    n = max(rows - len(L) - 2 if side else (rows - len(L) - 5) // 2, 2)
     head = f"{BOLD}{'PID':>7} {'USER':<10} {'CPU%':>5} {'RES':>6}  COMMAND{RESET}"
     lists = []
     for title, key in (("Top by CPU", lambda p: p[2]), ("Top by memory", lambda p: p[3])):
         lists.append([f"{BOLD}{CYAN}{title}{RESET}", head] +
                      [f"{pid:>7} {user[:10]:<10} {cpu:5.1f} {human(rss):>6}  {cmd}"
                       for pid, user, cpu, rss, cmd in sorted(ps, key=key, reverse=True)[:n]])
-    L.append("")
     if side:
         half = (width - 2) // 2
         L += [pad(a, half) + "  " + b for a, b in zip(*lists)]
