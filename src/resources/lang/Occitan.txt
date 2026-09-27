@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 402
+# Untranslated: 0 / Total: 402
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus

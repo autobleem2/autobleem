@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 402
+# Untranslated: 0 / Total: 402
 
 A scan is already in progress=扫描已在进行中
 About=关于

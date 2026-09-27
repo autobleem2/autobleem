@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 402
+# Untranslated: 0 / Total: 402
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
