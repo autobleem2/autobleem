@@ -176,16 +176,23 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   the stats; `AB_NO_SCCACHE=1` opts out. Timings from when it was added are in
   autobleem-main `docs/history/launcher-build.md`.
 - **CI: one Docker image builds every target** (autobleem-main's `docs/ci.md` is the operator's page).
-  `docker/Dockerfile` -> `autobleem-build` is built and pushed by **`autobleem2/autobleem-build`**'s own
-  `image.yml` (that repo is the Dockerfile's one source; this tree's `docker/` is a stale copy). It carries
-  the console toolchain under `/opt/psc` (a Debian Stretch armhf sysroot, Stretch's **gcc-6** cross compiler,
-  and **SDL2 2.0.14 + image/mixer/ttf built from source** with the console's backend set - Wayland + ALSA,
-  no X11/OSS, see "SDL2 on the console" below) that `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`;
-  the build-recipe history and the image's verification story are at autobleem-main
-  `docs/history/launcher-build.md`.
+  The image (`autobleem-build`) is built and pushed by **`autobleem2/autobleem-build`**'s own `image.yml`
+  from that repo's own `docker/Dockerfile` - DOCS-4 (2026-09-27) removed this tree's stale copy of it and of
+  the rest of the image-build tooling (`docker/ab-validate.sh`, `docker/build-image.sh`, `docker/README.md`,
+  `docker/runner/`): none of it built or validated anything here, only `autobleem2/autobleem-build`'s own
+  workflow does. This tree keeps only `docker/run.sh`, the local wrapper a dev (or `ci/build.sh` itself, in
+  its own comments) actually runs against the published image. The image carries the console toolchain
+  under `/opt/psc` (a Debian Stretch armhf sysroot, Stretch's **gcc-6** cross compiler, and **SDL2 2.0.14 +
+  image/mixer/ttf built from source** with the console's backend set - Wayland + ALSA, no X11/OSS, see "SDL2
+  on the console" below) that `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`, and the shared
+  build helpers at `/opt/ab` (APPS-6): `ci/build.sh psc` reads `/opt/ab/toolchains/psc/PSCtoolchainV8.cmake`
+  and `/opt/ab/tools/check_psc_binary.sh` when they are there, falling back to this tree's own vendored
+  `toolchains/psc/` and `tools/check_psc_binary.sh` otherwise - the fallback is what `make_psc.sh` runs on,
+  building on the bare Sony-toolchain server, no image there. The build-recipe history and the image's
+  verification story are at autobleem-main `docs/history/launcher-build.md`.
   `ci/build.sh native|psc|rpi|rpi64|pcusb|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into
-  the same `build_*/` dirs the `make_*.sh` scripts use, builds and validates (`docker/ab-validate.sh`), and
-  leaves `dist/<t>/`; for `psc` only it **builds pcsx-ab first** from the sibling checkout (`AB_PCSX_DIR` /
+  the same `build_*/` dirs the `make_*.sh` scripts use, builds, checks and leaves `dist/<t>/`; for `psc` only
+  it **builds pcsx-ab first** from the sibling checkout (`AB_PCSX_DIR` /
   `../pcsx-ab`), stages the stripped result into `build_psc/emu-stage/` (never over the tracked
   `payload/Autobleem/bin/emu*`, which a build must never leave dirty) and `tools/make_psc_package.sh` copies
   it from there into the console zip (also regenerating `libs.tar.gz` from the image's SDL build).
@@ -396,7 +403,7 @@ the bind-mounted udev rules file as "eight years old") is at autobleem-main `doc
 The launcher, absplash, the console tools, pcsx-ab and pcsx-abnxt all run on the SDL2 family in
 `Autobleem/lib/libs.tar.gz` (`/tmp/lib`, inherited through `LD_LIBRARY_PATH`): **SDL2 2.0.14**, SDL2_image and
 SDL2_mixer 2.6.3, SDL2_ttf 2.20.2, built by the `autobleem2/autobleem-build` image (`/opt/psc/sdl2`, its
-`docker/Dockerfile`'s psc stage) with the **Wayland** video and **ALSA** audio backends only - the console has
+autobleem-build's `docker/Dockerfile`'s psc stage) with the **Wayland** video and **ALSA** audio backends only - the console has
 no X and no OSS; `ab-validate psc` fails an image whose SDL2 has x11 or oss, lacks wayland or alsa, or is not
 2.0.12/2.0.14. `tools/make_psc_package.sh` and the `publish-launcher` workflow put the image's SDL2 family
 into the archive at package time (the checked-in `payload/Autobleem/lib/libs.tar.gz` is the same set, for

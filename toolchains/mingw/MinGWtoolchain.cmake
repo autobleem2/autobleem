@@ -1,4 +1,4 @@
-# Cross-compile AutoBleem for Windows from a Linux host with mingw-w64 - the Docker image (docker/Dockerfile's
+# Cross-compile AutoBleem for Windows from a Linux host with mingw-w64 - autobleem-build's Docker image (its docker/Dockerfile's
 # mingw stage) and the CI. The native Windows build on the PC is make_win.sh in MSYS2 and needs no toolchain
 # file; this one exists so the same tree builds the same exe on a Linux CI runner.
 #
