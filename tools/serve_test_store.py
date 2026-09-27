@@ -16,6 +16,18 @@ R29 (2026-09-27): binds 127.0.0.1 by default, and the store.tsv URL now follows 
 127.0.0.1 too (--address overrides that), so the default mode is actually reachable at the URL it prints.
 --lan restores the old 0.0.0.0 bind and advertises this machine's LAN address, as before - for the actual
 Pi Store test rig only, never on the owner's PC (a LAN bind is a firewall prompt). Stop it with Ctrl+C.
+
+H13 (2026-09-27): the root ("/" and "/index.html") now answers with a small HTML page instead of 404, so the
+Store's source-icon fetch (ext_store's StorePictures::fetchSiteIcon/iconUrlFromHtml: it takes the source URL's
+origin, fetches "/", and looks in <head> for a <link rel="...icon..." href=...> resolved against the page,
+falling back to /favicon.ico) has something to find on this test server. The page's <head> carries
+<link rel="icon" type="image/png" href="icon.png"> - a RELATIVE href on purpose, to exercise the resolver -
+and "/icon.png" answers with a small generated PNG (a two-colour test shape, drawn with only zlib/struct - no
+Pillow, nothing checked in); --icon FILE serves a given PNG instead. --icon-fail N makes the first N requests
+for /icon.png answer 503 (later ones succeed), for testing the Store's retry-after-a-failed-fetch (Refresh)
+path. These routes are matched before store.tsv or the games directory, so nothing changes for existing
+clients, and a games-dir folder happening to be named "icon.png" or a loose "index.html" file there cannot
+shadow them - the root routes always win.
 """
 import argparse
 import hashlib
@@ -23,9 +35,12 @@ import http.server
 import json
 import os
 import socket
+import struct
 import sys
 import tempfile
+import threading
 import urllib.parse
+import zlib
 
 IMAGES = ('.chd', '.pbp', '.img')
 COMPANIONS = ('.cue', '.bin', '.sbi', '.ecm')
@@ -106,9 +121,46 @@ def build_tsv(games_dir, base_url, name, with_sha):
     return '\n'.join(lines) + '\n', items
 
 
-def handler_for(games_dir, tsv):
+def png_chunk(kind, data):
+    body = kind + data
+    return struct.pack('>I', len(data)) + body + struct.pack('>I', zlib.crc32(body) & 0xffffffff)
+
+
+def make_test_icon_png(size=32):
+    """A small PNG (RGB, 8-bit), built with only zlib + struct: a simple two-colour cross on a plain
+    background - recognisable at a glance, and enough to prove the fetched bytes really are a decodable
+    picture (the reference reader, StorePictures::validPng, walks every chunk and checks its CRC)."""
+    bg = (32, 96, 200)      # blue
+    fg = (255, 200, 0)      # amber
+    band = max(1, size // 4)
+    mid_lo, mid_hi = size // 2 - band // 2, size // 2 + band // 2
+    rows = bytearray()
+    for y in range(size):
+        rows.append(0)  # filter type 0 (none) for every scanline
+        for x in range(size):
+            colour = fg if (mid_lo <= x < mid_hi or mid_lo <= y < mid_hi) else bg
+            rows.extend(colour)
+    ihdr = struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0)  # 8-bit depth, colour type 2 = truecolour
+    idat = zlib.compress(bytes(rows), 9)
+    return (b'\x89PNG\r\n\x1a\n' + png_chunk(b'IHDR', ihdr) + png_chunk(b'IDAT', idat) +
+            png_chunk(b'IEND', b''))
+
+
+def root_html(name):
+    import html
+    title = html.escape(name)
+    return ('<!DOCTYPE html>\n<html><head><meta charset="utf-8"><title>%s</title>\n'
+            '<link rel="icon" type="image/png" href="icon.png"></head>\n'
+            '<body><h1>%s</h1><p><a href="store.tsv">store.tsv</a></p></body></html>\n'
+            % (title, title)).encode('utf-8')
+
+
+def handler_for(games_dir, tsv, name, icon_bytes, icon_fail):
     tsv_bytes = tsv.encode('utf-8')
+    html_bytes = root_html(name)
     root = os.path.realpath(games_dir)
+    fail_left = [icon_fail]
+    fail_lock = threading.Lock()
 
     class Handler(http.server.BaseHTTPRequestHandler):
         protocol_version = 'HTTP/1.1'
@@ -121,6 +173,21 @@ def handler_for(games_dir, tsv):
 
         def answer(self, body):
             path = urllib.parse.unquote(urllib.parse.urlsplit(self.path).path)
+            # the root routes are matched first and always win - a games-dir folder named "icon.png" or a
+            # loose "index.html" file there is never reachable through these three paths.
+            if path in ('/', '/index.html'):
+                self.send(200, 'text/html; charset=utf-8', len(html_bytes), body and html_bytes)
+                return
+            if path == '/icon.png':
+                with fail_lock:
+                    fail_now = fail_left[0] > 0
+                    if fail_now:
+                        fail_left[0] -= 1
+                if fail_now:
+                    self.send(503, 'text/plain', 14, body and b'icon not ready')
+                    return
+                self.send(200, 'image/png', len(icon_bytes), body and icon_bytes)
+                return
             if path == '/store.tsv':
                 self.send(200, 'text/tab-separated-values; charset=utf-8', len(tsv_bytes), body and tsv_bytes)
                 return
@@ -192,6 +259,10 @@ def main():
     parser.add_argument('--lan', action='store_true',
                         help='bind 0.0.0.0 (every interface) instead of the default 127.0.0.1 - only for the '
                              'Pi Store test rig; never on the owner\'s PC (a LAN bind is a firewall prompt)')
+    parser.add_argument('--icon', help='a PNG file to serve at /icon.png instead of the generated test icon')
+    parser.add_argument('--icon-fail', type=int, default=0,
+                        help='answer the first N requests for /icon.png with 503, then succeed - for testing '
+                             'the Store\'s retry-after-a-failed-fetch (Refresh) path (default: 0)')
     args = parser.parse_args()
     if args.address:
         address = args.address
@@ -202,8 +273,14 @@ def main():
     base_url = 'http://%s:%d/' % (address, args.port)
     tsv, items = build_tsv(args.games_dir, base_url, args.name, not args.no_sha)
     print('%d games; the source is %sstore.tsv' % (items, base_url), file=sys.stderr)
+    if args.icon:
+        with open(args.icon, 'rb') as f:
+            icon_bytes = f.read()
+    else:
+        icon_bytes = make_test_icon_png()
     bind = '0.0.0.0' if args.lan else '127.0.0.1'
-    server = http.server.ThreadingHTTPServer((bind, args.port), handler_for(args.games_dir, tsv))
+    server = http.server.ThreadingHTTPServer(
+        (bind, args.port), handler_for(args.games_dir, tsv, args.name, icon_bytes, args.icon_fail))
     try:
         server.serve_forever()
     except KeyboardInterrupt:
