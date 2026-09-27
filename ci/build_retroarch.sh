@@ -138,8 +138,11 @@ build_one() {
     # (dpkg knows a library by the path its package shipped - /lib/... for glibc and liblzma on a merged-usr
     # system, /usr/lib/... for the rest - so both are asked; libc6/libgcc/libstdc++ are always there)
     "$triplet-objdump" -p "$stage/usr/local/bin/retroarch" | awk '/NEEDED/ {print $2}' | while read -r so; do
+        # sed, not `head -1 | sed`: sed reads all of dpkg -S's output before exiting, so a package that
+        # owns more than one matching path never gives dpkg a SIGPIPE under `set -o pipefail` (BUG-18 - the
+        # same race as the image build's version-print, autobleem-build dbb1378).
         { dpkg -S "/usr/lib/$multiarch/$so" 2>/dev/null || dpkg -S "/lib/$multiarch/$so" 2>/dev/null || true; } \
-            | head -1 | sed 's/:.*//'
+            | sed -n '1{s/:.*//;p}'
     done | grep -vE '^(libc6|libgcc-s1|libstdc\+\+6|)$' | sort -u > "$meta/retroarch.depends"
     [ -s "$meta/retroarch.depends" ] || { echo "no dependencies found for $arch - something is off" >&2; exit 1; }
     cat "$meta/retroarch.depends"
