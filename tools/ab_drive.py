@@ -58,6 +58,10 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
 DEFAULT_HOST = '127.0.0.1'
+# ABFlashKit (and PSC-Bios) moved to their own repository on 2026-09-23 (CLAUDE.md, "Where the code lives")
+# and are no longer built here. Same convention as AB_PCSX_DIR / ../pcsx-ab (make_psc.sh): a sibling checkout,
+# overridable for one that lives somewhere else.
+CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
 
 
 def pid_file(port):
@@ -204,11 +208,18 @@ class Driver:
 
 def start(usb, port, show, tool=None):
     if tool:
-        exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
+        # abflashkit used to build in this tree's own build_win/apps/; since the D5 split (2026-09-23) it
+        # builds in autobleem-console-tools' own build_win instead - try the sibling checkout first (see
+        # CONSOLE_TOOLS_DIR above) and fall back to the old in-tree path for a checkout that still has one.
+        exe = os.path.join(CONSOLE_TOOLS_DIR, 'build_win', 'apps', tool, tool + '.exe')
+        if not os.path.exists(exe):
+            exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
         app_dir = os.path.join(usb, 'Apps', tool)
         driven = os.path.join(app_dir, tool + '-drive.exe')
         first_screen = {'abflashkit': 'GuiConfirm'}[tool]
-        lang = os.path.join(REPO, 'apps', tool, 'resources', 'lang')
+        # this repo's own apps/<tool>/ went with the D5 split too - the resources are the sibling
+        # checkout's, next to its exe.
+        lang = os.path.join(CONSOLE_TOOLS_DIR, 'apps', tool, 'resources', 'lang')
     else:
         exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
         app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
