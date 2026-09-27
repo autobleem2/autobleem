@@ -112,6 +112,10 @@ void GuiOptions::fill() {
     // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
     lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
                        vector<string>({"false", "true"}));
+    // C11: a positional swap of the first two SDL pads' PS1 ports (core/model/pad_assignment.h,
+    // LaunchService's AB_PAD_ORDER) - PS1 only, RetroArch is unaffected, hence the row saying so
+    lines.emplace_back(CFG_PAD_SWAP, _("Swap Player 1 / Player 2 (PS1 emulators):"), "padswap", true,
+                       vector<string>({"false", "true"}));
 
     heading(_("Library"));
 #ifdef AB_HAS_INTERNAL_GAMES

@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 2 / Total: 402
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -353,6 +353,7 @@ Storage=Pamięć masowa
 Store=Store
 Support via Discord:=Wsparcie na Discord:
 Surprise=Niespodzianka
+Swap Player 1 / Player 2 (PS1 emulators):=Zamień Gracza 1 / Gracza 2 (emulatory PS1):
 Switch off=Wyłącz
 Switch on=Włącz
 Switched off=Wyłączony
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=Aktualizacja pobrana - ot
 Theme Default=Domyślna motywu
 Third-party extensions=Rozszerzenia innych firm
 This game is protected by its PSN licence and cannot be started=Ta gra jest chroniona licencją PSN i nie można jej uruchomić
+This PS1 emulator does not support swapping pads yet=Ten emulator PS1 nie obsługuje jeszcze zamiany padów
 This version is brought to you by screemer and a friendly robot, Claude.=Tę wersję przygotowali dla Ciebie screemer i przyjazny robot, Claude.
 Time zone=Strefa czasowa
 Title=Tytuł

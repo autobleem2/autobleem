@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 2 / Total: 402
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -353,6 +353,7 @@ Storage=Stocare
 Store=Store
 Support via Discord:=Support via Discord:
 Surprise=Surpriza
+Swap Player 1 / Player 2 (PS1 emulators):=Schimbă Jucătorul 1 / Jucătorul 2 (emulatoare PS1):
 Switch off=Oprește
 Switch on=Pornește
 Switched off=Oprit
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=Actualizarea a fost desc�
 Theme Default=Implicit al temei
 Third-party extensions=Extensii terțe
 This game is protected by its PSN licence and cannot be started=Acest joc este protejat de licenta PSN si nu poate fi pornit
+This PS1 emulator does not support swapping pads yet=Acest emulator PS1 nu acceptă încă schimbarea controlerelor
 This version is brought to you by screemer and a friendly robot, Claude.=Această versiune îți este oferită de screemer și de un robot prietenos, Claude.
 Time zone=Fus orar
 Title=Titlu

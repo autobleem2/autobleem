@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 2 / Total: 402
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -353,6 +353,7 @@ Storage=Tallennustila
 Store=Store
 Support via Discord:=Tuki Discordin kautta:
 Surprise=Yllätys
+Swap Player 1 / Player 2 (PS1 emulators):=Vaihda pelaaja 1 / pelaaja 2 (PS1-emulaattorit):
 Switch off=Kytke pois
 Switch on=Kytke päälle
 Switched off=Pois päältä
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=Päivitys on ladattu - as
 Theme Default=Teeman oletus
 Third-party extensions=Kolmannen osapuolen laajennukset
 This game is protected by its PSN licence and cannot be started=Tämä peli on suojattu PSN-lisenssillään, eikä sitä voi käynnistää
+This PS1 emulator does not support swapping pads yet=Tämä PS1-emulaattori ei vielä tue ohjainten vaihtoa
 This version is brought to you by screemer and a friendly robot, Claude.=Tämän version tarjoavat sinulle screemer ja ystävällinen robotti Claude.
 Time zone=Aikavyöhyke
 Title=Nimi

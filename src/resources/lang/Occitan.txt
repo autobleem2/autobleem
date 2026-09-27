@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 400
+# Untranslated: 2 / Total: 402
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -353,6 +353,7 @@ Storage=Emmagazinatge
 Store=Store
 Support via Discord:=Sosten via Discord :
 Surprise=Susprisa
+Swap Player 1 / Player 2 (PS1 emulators):=Escambiar Jogaire 1 / Jogaire 2 (emuladors PS1):
 Switch off=Desactivar
 Switch on=Activar
 Switched off=Desactivat
@@ -369,6 +370,7 @@ The update is downloaded - the installer is opening...=La mesa a jorn es telecar
 Theme Default=Defaut del tèma
 Third-party extensions=Extensions tèrças
 This game is protected by its PSN licence and cannot be started=Aqueste jòc es protegit per sa licéncia PSN e se pòt pas aviar
+This PS1 emulator does not support swapping pads yet=Aqueste emulador PS1 pren pas encara en carga l'escambi dels manetas
 This version is brought to you by screemer and a friendly robot, Claude.=Aquesta version vos es porgida per screemer e un robòt amistós, Claude.
 Time zone=Fus orari
 Title=Títol
