@@ -277,7 +277,7 @@ rebuilt on it.
   `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
   author, licence, description, requires). The page does not have to show the store; if it does, it fits
   into the approved look.
-- **Apps**: `tools/pack_psc_apps.py` gets a `--per-app` mode that writes one zip per App instead of the
+- **Apps**: autobleem-appliance's `tools/pack_psc_apps.py` gets a `--per-app` mode that writes one zip per App instead of the
   one dated pack. The pack stays for the PC installer.
 - **Games on our catalog** are homebrew or freeware whose licence allows hosting, each with its licence in
   the item. Anything else reaches a user through a TSV source.
@@ -339,7 +339,7 @@ exists.
    `docs/lan-share-plan.md`); `pack_psc_apps.py --per-app` (autobleem-appliance) and the first items - the
    eight console Apps of apps-psc-20260920 in `store/psc/`, next to Terminal. The step as first written:
    The site: the Store's packages, `store` in autobleem-repo's `repo_publish.sh`/`repo_index.py`,
-   `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
+   autobleem-appliance's `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
    (the App sources are the tier-2 `screemerpl` repositories, see autobleem-main's `todo.md`). Each is
