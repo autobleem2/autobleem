@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -28,7 +28,7 @@ Back=Takaisin
 Back to games=Takaisin peleihin
 Background Music:=Taustamusiikki:
 Backspace=Askelpalautin
-battery=akku
+Battery=Akku
 battery low=akku vähissä
 Bin file failed to verify=BIN-tiedoston tarkistus epäonnistui
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Peruuta
 Canvas=Piirtoalue
 Card=Kortti
 Change memory card=Vaihda muistikortti
+Charging=Latautuu
 Check the download site for a newer version=Etsi uudempaa versiota lataussivulta
 Checking for updates...=Tarkistetaan päivityksiä...
 Choose=Valitse
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Poistetaank
 Diagnostics=Vianmääritys
 Disable=Poista käytöstä
 Disabled=Poistettu käytöstä
+Discharging=Purkautuu
 Display and input=Näyttö ja syöte
 Display mode=Näyttötila
 Do not ask about this one again=Älä kysy tästä versiosta uudelleen
@@ -134,6 +136,7 @@ Free=Vapaa
 free of=vapaana, yhteensä
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Vapaa ohjelmisto GNU GPL v3 -lisenssillä tai uudemmalla - ei takuuta. Lähdekoodi ja lisenssi:
 Free space=Vapaa tila
+Full=Täynnä
 GAME=PELI
 Game=Peli
 Game data=Pelien tiedot
@@ -218,6 +221,7 @@ Not added=Ei lisätty
 Not added because:=Ei lisätty, koska:
 Not available for this system=Ei saatavilla tälle järjestelmälle
 Not available on this system=Ei käytettävissä tässä järjestelmässä
+Not charging=Ei lataudu
 Not connected=Ei yhteyttä
 Not installed=Ei asennettu
 not used by the PS1 emulator=ei käytössä PS1-emulaattorissa
@@ -231,6 +235,8 @@ Open:=Avaa:
 Operating system=Käyttöjärjestelmä
 Options=Vaihtoehdot
 Other=Muut
+P1=P1
+P2=P2
 Page=Sivu
 pcsx.cfg file not found=pcsx.cfg-tiedostoa ei löytynyt
 Persist RetroArch config:=Säilytä RetroArchin asetukset:

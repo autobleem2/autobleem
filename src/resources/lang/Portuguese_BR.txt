@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -28,7 +28,7 @@ Back=Voltar
 Back to games=Voltar aos jogos
 Background Music:=Música de Fundo:
 Backspace=Backspace
-battery=bateria
+Battery=Bateria
 battery low=bateria fraca
 Bin file failed to verify=Falha ao verificar o arquivo BIN
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Cancelar
 Canvas=Tela
 Card=Cartão
 Change memory card=Trocar memory card
+Charging=Carregando
 Check the download site for a newer version=Verifique o site de download por uma versão mais nova
 Checking for updates...=Verificando atualizações...
 Choose=Escolher
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Apagar as c
 Diagnostics=Diagnóstico
 Disable=Desativar
 Disabled=Desativada
+Discharging=Descarregando
 Display and input=Vídeo e entrada
 Display mode=Modo de vídeo
 Do not ask about this one again=Não perguntar mais sobre esta versão
@@ -134,6 +136,7 @@ Free=Livre
 free of=livres de
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Software livre sob a GNU GPL v3 ou posterior - sem garantia. Código-fonte e licença:
 Free space=Espaço livre
+Full=Cheia
 GAME=JOGO
 Game=Jogo
 Game data=Dados dos jogos
@@ -218,6 +221,7 @@ Not added=Não adicionado
 Not added because:=Não adicionado porque:
 Not available for this system=Não disponível para este sistema
 Not available on this system=Não disponível neste sistema
+Not charging=Não carregando
 Not connected=Não conectado
 Not installed=Não instalado
 not used by the PS1 emulator=não utilizado pelo emulador de PS1
@@ -231,6 +235,8 @@ Open:=Abrir:
 Operating system=Sistema operacional
 Options=Opções
 Other=Outros
+P1=P1
+P2=P2
 Page=Página
 pcsx.cfg file not found=Arquivo pcsx.cfg não encontrado
 Persist RetroArch config:=Manter config. do RetroArch:

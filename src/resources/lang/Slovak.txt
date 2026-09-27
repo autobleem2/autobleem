@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -28,7 +28,7 @@ Back=Späť
 Back to games=Späť na hry
 Background Music:=Hudba na pozadí:
 Backspace=Vrátiť
-battery=batéria
+Battery=Batéria
 battery low=batéria slabá
 Bin file failed to verify=Súbor BIN neprešiel kontrolou
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Zrušiť
 Canvas=Plátno
 Card=Karta
 Change memory card=Zmeniť pamäťovú kartu
+Charging=Nabíja sa
 Check the download site for a newer version=Novšiu verziu hľadajte na stránke na stiahnutie
 Checking for updates...=Kontrola aktualizácií...
 Choose=Vybrať
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Vymazať na
 Diagnostics=Diagnostika
 Disable=Vypnúť
 Disabled=Vypnuté
+Discharging=Vybíja sa
 Display and input=Obraz a vstup
 Display mode=Režim obrazu
 Do not ask about this one again=Na túto verziu sa už nepýtať
@@ -134,6 +136,7 @@ Free=Voľné
 free of=voľných z
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Slobodný softvér pod GNU GPL v3 alebo novšou - bez záruky. Zdrojový kód a licencia:
 Free space=Voľné miesto
+Full=Plná
 GAME=HRA
 Game=Hra
 Game data=Dáta hier
@@ -218,6 +221,7 @@ Not added=Nepridané
 Not added because:=Nepridané, pretože:
 Not available for this system=Nie je k dispozícii pre tento systém
 Not available on this system=V tomto systéme nie je k dispozícii
+Not charging=Nenabíja sa
 Not connected=Nepripojené
 Not installed=Nenainštalované
 not used by the PS1 emulator=nepoužíva ho PS1 emulátor
@@ -231,6 +235,8 @@ Open:=Otvoriť:
 Operating system=Operačný systém
 Options=Nastavenia
 Other=Ostatné
+P1=P1
+P2=P2
 Page=Strana
 pcsx.cfg file not found=Súbor pcsx.cfg sa nenašiel
 Persist RetroArch config:=Uchovať nastavenia RetroArch:

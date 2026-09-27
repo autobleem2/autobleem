@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -28,7 +28,7 @@ Back=Tillbaka
 Back to games=Tillbaka till spel
 Background Music:=Bakgrundsmusik:
 Backspace=Backsteg
-battery=batteri
+Battery=Batteri
 battery low=batteri lågt
 Bin file failed to verify=BIN-filen kunde inte verifieras
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Avbryt
 Canvas=Rityta
 Card=CONFIGURED
 Change memory card=Byt minneskort
+Charging=Laddar
 Check the download site for a newer version=Leta efter en nyare version på nedladdningssidan
 Checking for updates...=Söker efter uppdateringar...
 Choose=Välj
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Radera inst
 Diagnostics=Diagnostik
 Disable=Inaktivera
 Disabled=Inaktiverad
+Discharging=Laddar ur
 Display and input=Skärm och inmatning
 Display mode=Skärmläge
 Do not ask about this one again=Fråga inte igen om den här versionen
@@ -134,6 +136,7 @@ Free=Ledigt
 free of=ledigt av
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Fri programvara under GNU GPL v3 eller senare - ingen garanti. Källkod och licens:
 Free space=Ledigt utrymme
+Full=Fulladdat
 GAME=SPEL
 Game=Spel
 Game data=Speldata
@@ -218,6 +221,7 @@ Not added=Inte tillagt
 Not added because:=Inte tillagt eftersom:
 Not available for this system=Inte tillgänglig för det här systemet
 Not available on this system=Inte tillgängligt på det här systemet
+Not charging=Laddar inte
 Not connected=Inte ansluten
 Not installed=Inte installerad
 not used by the PS1 emulator=används inte av PS1-emulatorn
@@ -231,6 +235,8 @@ Open:=Öppna:
 Operating system=Operativsystem
 Options=Alternativ
 Other=Övrigt
+P1=P1
+P2=P2
 Page=Sida
 pcsx.cfg file not found=pcsx.cfg hittades inte
 Persist RetroArch config:=Behåll RetroArch-inställningar:

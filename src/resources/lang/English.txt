@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -28,7 +28,7 @@ Back=Back
 Back to games=Back to games
 Background Music:=Background Music:
 Backspace=Backspace
-battery=battery
+Battery=Battery
 battery low=battery low
 Bin file failed to verify=Bin file failed to verify
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Cancel
 Canvas=Canvas
 Card=Card
 Change memory card=Change memory card
+Charging=Charging
 Check the download site for a newer version=Check the download site for a newer version
 Checking for updates...=Checking for updates...
 Choose=Choose
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Delete the 
 Diagnostics=Diagnostics
 Disable=Disable
 Disabled=Disabled
+Discharging=Discharging
 Display and input=Display and input
 Display mode=Display mode
 Do not ask about this one again=Do not ask about this one again
@@ -134,6 +136,7 @@ Free=Free
 free of=free of
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Free software under the GNU GPL v3 or later - no warranty. Source and licence:
 Free space=Free space
+Full=Full
 GAME=GAME
 Game=Game
 Game data=Game data
@@ -218,6 +221,7 @@ Not added=Not added
 Not added because:=Not added because:
 Not available for this system=Not available for this system
 Not available on this system=Not available on this system
+Not charging=Not charging
 Not connected=Not connected
 Not installed=Not installed
 not used by the PS1 emulator=not used by the PS1 emulator
@@ -231,6 +235,8 @@ Open:=Open:
 Operating system=Operating system
 Options=Options
 Other=Other
+P1=P1
+P2=P2
 Page=Page
 pcsx.cfg file not found=pcsx.cfg file not found
 Persist RetroArch config:=Persist RetroArch config:

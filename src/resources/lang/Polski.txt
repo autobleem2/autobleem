@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -28,7 +28,7 @@ Back=Wstecz
 Back to games=Powrót do gier
 Background Music:=Muzyka w tle:
 Backspace=Backspace
-battery=bateria
+Battery=Bateria
 battery low=bateria słaba
 Bin file failed to verify=Nie udało się zweryfikować pliku BIN
 Bluetooth=Bluetooth
@@ -43,6 +43,7 @@ Cancel=Anuluj
 Canvas=Płótno
 Card=Karta
 Change memory card=Zmień kartę pamięci
+Charging=Ładowanie
 Check the download site for a newer version=Sprawdź nowszą wersję na stronie pobierania
 Checking for updates...=Sprawdzanie aktualizacji...
 Choose=Wybierz
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=Usunąć us
 Diagnostics=Diagnostyka
 Disable=Wyłącz
 Disabled=Wyłączone
+Discharging=Rozładowywanie
 Display and input=Ekran i sterowanie
 Display mode=Tryb wyświetlania
 Do not ask about this one again=Nie pytaj więcej o tę wersję
@@ -134,6 +136,7 @@ Free=Wolne
 free of=wolne z
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Wolne oprogramowanie na licencji GNU GPL v3 lub nowszej - bez gwarancji. Źródła i licencja:
 Free space=Wolne miejsce
+Full=Naładowana
 GAME=GRA
 Game=Gra
 Game data=Dane gier
@@ -218,6 +221,7 @@ Not added=Nie dodano
 Not added because:=Nie dodano, ponieważ:
 Not available for this system=Niedostępne dla tego systemu
 Not available on this system=Niedostępne w tym systemie
+Not charging=Nie ładuje się
 Not connected=Nie połączono
 Not installed=Nie zainstalowano
 not used by the PS1 emulator=nieużywany przez emulator PS1
@@ -231,6 +235,8 @@ Open:=Otwórz:
 Operating system=System operacyjny
 Options=Opcje
 Other=Inne
+P1=P1
+P2=P2
 Page=Strona
 pcsx.cfg file not found=Nie znaleziono pliku pcsx.cfg
 Persist RetroArch config:=Zachowuj konfigurację RetroArch:

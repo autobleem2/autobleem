@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 394
+# Untranslated: 0 / Total: 400
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -28,7 +28,7 @@ Back=返回
 Back to games=返回游戏
 Background Music:=背景音乐：
 Backspace=退格
-battery=电池
+Battery=电池
 battery low=电量低
 Bin file failed to verify=BIN文件校验失败
 Bluetooth=蓝牙
@@ -43,6 +43,7 @@ Cancel=取消
 Canvas=画布
 Card=卡
 Change memory card=更换记忆卡
+Charging=充电中
 Check the download site for a newer version=请到下载站点查看更新版本
 Checking for updates...=正在检查更新...
 Choose=选择
@@ -87,6 +88,7 @@ Delete the settings saved in the emulator and use AutoBleem's again?=删除在�
 Diagnostics=诊断
 Disable=禁用
 Disabled=已禁用
+Discharging=放电中
 Display and input=显示与输入
 Display mode=显示模式
 Do not ask about this one again=不再询问此版本
@@ -134,6 +136,7 @@ Free=可用
 free of=可用，共
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=自由软件，遵循 GNU GPL v3 或更高版本 - 不提供任何担保。源代码与许可证：
 Free space=可用空间
+Full=已充满
 GAME=游戏
 Game=游戏
 Game data=游戏数据
@@ -218,6 +221,7 @@ Not added=未添加
 Not added because:=未添加原因：
 Not available for this system=不适用于此系统
 Not available on this system=在此系统上不可用
+Not charging=未充电
 Not connected=未连接
 Not installed=未安装
 not used by the PS1 emulator=PS1 模拟器未使用
@@ -231,6 +235,8 @@ Open:=打开：
 Operating system=操作系统
 Options=选项
 Other=其他
+P1=P1
+P2=P2
 Page=页
 pcsx.cfg file not found=找不到pcsx.cfg文件
 Persist RetroArch config:=保存RetroArch配置：
