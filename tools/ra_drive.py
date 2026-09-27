@@ -15,9 +15,12 @@ docs.libretro.com prose the research pass had to rely on.
                                                                    Xvfb with LIBGL_ALWAYS_SOFTWARE=1 -
                                                                    Linux only, run this ON the Debian test
                                                                    machine (see "Where this runs" below)
-  python tools/ra_drive.py stop [--host H] [--port N]             sends QUIT; if a --cfg pidfile exists
-                                                                   for that port, also waits for the exit
-                                                                   and falls back to SIGTERM
+  python tools/ra_drive.py stop [--host H] [--port N] [--cfg DIR] sends QUIT, then (for a local instance)
+                                                                   reads DIR's pidfile (must be the same
+                                                                   --cfg a matching `start` used) and
+                                                                   os.killpg()s the whole process group -
+                                                                   SIGTERM first, SIGKILL if still alive
+                                                                   after ~5s
   python tools/ra_drive.py run "<script>" [--host H] [--port N] [--shots DIR] [--log FILE]
                                                                    commands separated by ';', e.g.
                                                                    "press toggle; wait 300; press down;
@@ -62,6 +65,14 @@ no log-text guess and is what this session verified end to end (offline, against
 tools/test_ra_drive.py). Capture real reference shots and, if useful, real log lines once RetroArch is
 running on the Debian machine (R22-TEST.md has the follow-up steps for Nina).
 
+Why `video_driver=gl`, never `sdl2`: `start`'s cfg template used to leave this an open choice, but
+`video_driver=sdl2` segfaults RetroArch 1.22.2's official AppImage 100% of the time under Xvfb - an
+`XScreenSaverQueryExtension()` call in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
+`libX11.so.6` (an Xlib extension-registration ABI mismatch between the AppImage's bundled X11 client libs
+and the host's `libX11`), independent of the core loaded or the Xvfb screen size. `gl`/`glcore` never crash.
+This is an upstream RetroArch AppImage packaging issue, not anything `ra_drive.py` or this project can fix -
+see `E:\\Programming\\_team\\r-items\\R22-phase1-root-cause.md` for the gdb backtrace and driver matrix.
+
 Where this runs: `start` needs Xvfb, so it must run **on the Debian machine** (192.168.68.148) - there is
 no Windows RetroArch in this project and this tool never launches one, per the owner's rule (no RetroArch
 download to this PC, no window opened here). The simplest split, matching R22's plan: ssh onto that machine
@@ -74,6 +85,7 @@ a RetroArch on the LAN from another machine, with no shot/log-dependent commands
 import os
 import re
 import shutil
+import signal
 import socket
 import subprocess
 import sys
@@ -416,6 +428,11 @@ CFG_TEMPLATE = """network_cmd_enable = "true"
 network_cmd_port = "{port}"
 video_driver = "gl"
 video_fullscreen = "false"
+# video_driver stays "gl" (never "sdl2"): RetroArch 1.22.2's AppImage, driven by ra_drive.py under Xvfb,
+# segfaults 100% of the time with video_driver=sdl2 - an XScreenSaverQueryExtension() call in its bundled
+# libXss.so.1/libXext.so.6 crashes inside the host's libX11.so.6 (Xlib extension-registration ABI mismatch),
+# core- and screen-size-independent. gl/glcore never crash. See R22-phase1-root-cause.md for the gdb
+# backtrace and the driver matrix.
 video_windowed_fullscreen = "false"
 audio_driver = "null"
 log_to_file = "true"
@@ -459,11 +476,22 @@ def cmd_start(args):
 
     env = dict(os.environ)
     env['LIBGL_ALWAYS_SOFTWARE'] = '1'
+    # --verbose is required, not optional: R22 phase 2 (2026-09-27) found that without it, RetroArch 1.22.2
+    # opens log_dir's retroarch.log but never writes anything past its startup banner into it, no matter how
+    # long the instance runs - wait_log (and any script reading --log) would poll an effectively-empty file
+    # forever. Confirmed live: a --verbose instance's log grows with real INFO/WARN lines from the first
+    # second; without it, the file exists but stays static.
     cmd = ['xvfb-run', '-a', '--server-args=-screen 0 1280x720x24 -displayfd 1',
-           retroarch_bin, '-c', cfg_path]
+           retroarch_bin, '-c', cfg_path, '--verbose']
     if core:
         cmd += ['-L', core]
-    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # start_new_session=True (POSIX setsid()): R22 phase 2 (2026-09-27) found that stop's SIGTERM to
+    # proc.pid never reached the actual retroarch process - proc.pid is xvfb-run's own wrapper shell,
+    # and killing just that PID leaves Xvfb and retroarch (both separate PIDs the wrapper spawned)
+    # running. Starting a new session makes proc.pid the process GROUP id too, so cmd_stop can
+    # os.killpg() the whole tree (wrapper + Xvfb + retroarch) in one signal.
+    proc = subprocess.Popen(cmd, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
 
     with open(os.path.join(work_dir, 'ra_drive.pid'), 'w', encoding='utf-8', newline='\n') as f:
         f.write(str(proc.pid))
@@ -475,7 +503,13 @@ def cmd_start(args):
             raise RaError('retroarch exited with {} before answering - check {}'.format(
                 proc.returncode, log_path))
         try:
-            client.get_status()
+            # VERSION, never GET_STATUS: R22 phase 2 (2026-09-27) found GET_STATUS reliably segfaults this
+            # RetroArch 1.22.2 build the instant it is answered while a core is actively running (PLAYING) -
+            # reproduced with three unrelated cores (2048, mrboom, a from-scratch NES ROM under fceumm), gdb-
+            # confirmed as the same crash address inside RetroArch's own binary each time (not a core bug),
+            # independent of contentless vs real ROM content. See R22-phase2-report.md. VERSION answers just
+            # as well for "is the command port up yet" and never touches that code path.
+            client.command('VERSION')
             break
         except RaError:
             # request() already turns a timeout/refused-connection into RaError; keep polling until the
@@ -489,23 +523,58 @@ def cmd_start(args):
     return 0
 
 
-def cmd_stop(host, port):
+def cmd_stop(host, port, work_dir=None):
+    # R22 phase 2 (2026-09-27) found two bugs here, both fixed below: (1) QUIT alone does not terminate
+    # this RetroArch 1.22.2 build under Xvfb (confirmed: a fresh instance sent bare QUIT was still running
+    # 5+ seconds later) - it's sent anyway, on the chance a future build honours it, but it is never relied
+    # on by itself; (2) the pidfile path was hardcoded to build_ra_drive, so it never matched a --cfg DIR
+    # session - work_dir (== start's own --cfg) is now required to find the right one. proc.pid recorded by
+    # cmd_start is a process GROUP id (start_new_session=True) - os.killpg() reaches the whole
+    # xvfb-run/Xvfb/retroarch tree, where os.kill() on that one pid alone only ever reached xvfb-run's own
+    # wrapper shell and left Xvfb/retroarch running.
     try:
         client = RaClient(host, port)
         client.command('QUIT')
         client.close()
     except OSError:
         pass
-    pid_path = os.path.join(REPO, 'build_ra_drive', 'ra_drive.pid')
-    if host in ('127.0.0.1', 'localhost') and os.path.exists(pid_path):
-        pid = int(open(pid_path, encoding='utf-8').read().strip())
-        time.sleep(0.5)
+
+    if host not in ('127.0.0.1', 'localhost'):
+        print('stopped')
+        return
+
+    pid_path = os.path.join(work_dir or os.path.join(REPO, 'build_ra_drive'), 'ra_drive.pid')
+    if not os.path.exists(pid_path):
+        print('stopped (no pidfile at {} - nothing else to do)'.format(pid_path))
+        return
+
+    pgid = int(open(pid_path, encoding='utf-8').read().strip())
+
+    def group_alive():
         try:
-            os.kill(pid, 15)  # SIGTERM - QUIT above should already have done it cleanly
+            os.killpg(pgid, 0)  # signal 0: no-op, just checks the group still exists
+            return True
+        except OSError:
+            return False
+
+    time.sleep(0.5)  # give QUIT above a moment, in case some future build does honour it
+    for _ in range(10):  # up to ~5s for a clean SIGTERM exit
+        if not group_alive():
+            break
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except OSError:
+            break
+        time.sleep(0.5)
+    if group_alive():
+        try:
+            os.killpg(pgid, signal.SIGKILL)
         except OSError:
             pass
-        os.remove(pid_path)
-    print('stopped')
+        time.sleep(0.5)
+    os.remove(pid_path)
+    print('stopped ({})'.format('group still reported alive after SIGKILL - check ps' if group_alive()
+                                 else 'group exited'))
 
 
 def sheet(out, paths, columns=2, width=640):
@@ -533,6 +602,10 @@ def main(argv):
     port = DEFAULT_PORT
     shots = None
     logpath = None
+    # --cfg is peeked (not stripped from args): cmd_start does its own --cfg parsing straight out of args,
+    # so it must stay in the list for that path. 'stop' has no other use for args, so cmd_stop is handed
+    # the value directly instead.
+    cfg_dir = os.path.abspath(args[args.index('--cfg') + 1]) if '--cfg' in args else None
     if '--host' in args:
         i = args.index('--host')
         host = args[i + 1]
@@ -554,7 +627,7 @@ def main(argv):
         if cmd == 'start':
             return cmd_start(args)
         if cmd == 'stop':
-            cmd_stop(host, port)
+            cmd_stop(host, port, cfg_dir)
             return 0
         if cmd == 'sheet':
             sheet(args[0], args[1:])

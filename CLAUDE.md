@@ -340,7 +340,22 @@ it against a reference PNG - the practical "wait for this menu" substitute), `wa
 `log_to_file`+`log_dir`+`log_to_file_timestamp=false` for a predictable log path, `screenshot_directory`)
 and launches RetroArch under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1` - **Linux only**: run it on the Debian test
 machine over ssh (there is no Windows RetroArch in this project, and none is fetched to a dev PC to run
-this). `tools/test_ra_drive.py` covers the protocol, the log-tail parser and the script parser offline
+this). **`video_driver` stays `gl` (never `sdl2`)**: the official 1.22.2 AppImage segfaults 100% of the time
+under Xvfb with `video_driver=sdl2` - `XScreenSaverQueryExtension()` in its bundled `libXss.so.1`/
+`libXext.so.6` crashes inside the host's `libX11.so.6` (an Xlib extension-registration ABI mismatch, upstream
+RetroArch AppImage packaging, not ours to fix), independent of the core or the Xvfb screen size; `gl`/`glcore`
+never crash - see `E:\Programming\_team\r-items\R22-phase1-root-cause.md` for the gdb backtrace and driver
+matrix. **Three more RetroArch-1.22.2-specific findings from R22 phase 2 (2026-09-27), all worked around in
+`ra_drive.py` itself**: `cmd_start`'s own readiness poll uses `VERSION`, never `GET_STATUS` - this build
+segfaults the instant `GET_STATUS` is answered while any core is actively running (PLAYING), gdb-confirmed
+as the same crash address inside RetroArch's own binary with three unrelated cores, so a script must never
+send `GET_STATUS`/`wait_status` against a PLAYING instance either; `--verbose` is passed on the RetroArch
+command line because without it the log file is opened but nothing is ever written into it past the startup
+banner, no matter how long the instance runs; `stop` sends `QUIT` (which this build does not reliably honour
+on its own) and falls back to `os.killpg()` on the process group `cmd_start` created with
+`start_new_session=True` - a bare PID kill only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/
+`retroarch` children it spawns. See `E:\Programming\_team\r-items\R22-phase2-report.md`.
+`tools/test_ra_drive.py` covers the protocol, the log-tail parser and the script parser offline
 against a fake UDP server standing in for RetroArch - no RetroArch binary needed to run those.
 
 **The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,

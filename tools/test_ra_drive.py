@@ -10,6 +10,7 @@ RetroArch on this PC). Run with:
 Everything that needs a live RetroArch on the Debian machine (Xvfb, `start`, real screenshots, real log
 lines) is out of scope here - see E:\\Programming\\_team\\r-items\\R22-TEST.md for the on-laptop steps.
 """
+import inspect
 import os
 import shutil
 import socket
@@ -497,6 +498,21 @@ class CfgTemplateTests(unittest.TestCase):
                     'audio_driver = "null"', 'log_to_file', 'log_to_file_timestamp = "false"',
                     'log_dir = "/tmp/work"', 'screenshot_directory = "/tmp/work/screenshots"'):
             self.assertIn(key, text)
+
+
+class CmdStartReadinessPollTests(unittest.TestCase):
+    """No RetroArch process involved (cmd_start needs Xvfb, not run offline) - a source-level regression
+    guard for the R22 phase 2 finding: cmd_start's own readiness poll must never call GET_STATUS. RetroArch
+    1.22.2's official Linux x86_64 build reproducibly segfaults the instant GET_STATUS is answered while any
+    core is actively running (PLAYING) - gdb-confirmed with three unrelated cores (2048, mrboom, a from-
+    scratch NES ROM under fceumm), same crash address inside RetroArch's own binary every time, independent
+    of contentless vs real ROM content. See R22-phase2-report.md. VERSION is what cmd_start must poll with
+    instead - it answers just as well for "is the command port up yet" and never touches that code path."""
+
+    def test_readiness_poll_uses_version_not_get_status(self):
+        source = inspect.getsource(rd.cmd_start)
+        self.assertIn("command('VERSION')", source)
+        self.assertNotIn('get_status()', source)
 
 
 if __name__ == '__main__':
