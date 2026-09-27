@@ -326,6 +326,61 @@ screen showing, from `GuiScreen::show`'s stack), `window hide|show`. `tools/ab_d
 the client (`run "menu 6; wait_screen GuiOptions; shot a.png"`); a whole walk through the screens takes seconds,
 with the window hidden. `win_drive.ps1` is the old way, kept for a keyboard-only smoke test.
 
+**`tools/ra_drive.py`** (R22, 2026-09-27) is the DebugDriver's counterpart for **RetroArch itself** - not the
+launcher's own screens, which the DebugDriver already covers, but the RetroArch UI a game's Square/RetroArch
+option or the system menu's "RetroArch" item hands off to. It drives RetroArch 1.22.2's own network command
+interface (`command.h`/`command.c`, UDP, `network_cmd_port` - 55355 by default) rather than a socket of ours:
+`press up|down|left|right|a|b|toggle` (`MENU_*`), `wait_status PAUSED|PLAYING|CONTENTLESS` (`GET_STATUS` -
+RetroArch has no per-menu `screen` reply, only playing/paused/no-content), `shot`/`wait_shot <ref.png>`
+(`SCREENSHOT` has no reply either, so this polls `screenshot_directory` for a new file, then average-hashes
+it against a reference PNG - the practical "wait for this menu" substitute), `wait_log <pattern>` (greps
+`retroarch.log`, `log_to_file`), `menu <n>`, and any exact command name bare (`QUIT`, `RESET`,
+`LOAD_STATE_SLOT 2`, ...), checked against the confirmed `map[]`/`action_map[]` tables before it is sent.
+`start` writes a throwaway `retroarch.cfg` (`network_cmd_enable`, `video_driver=gl`, `audio_driver=null`,
+`log_to_file`+`log_dir`+`log_to_file_timestamp=false` for a predictable log path, `screenshot_directory`)
+and launches RetroArch under Xvfb with `LIBGL_ALWAYS_SOFTWARE=1` - **Linux only**: run it on the Debian test
+machine over ssh (there is no Windows RetroArch in this project, and none is fetched to a dev PC to run
+this; see "Where this runs" in the tool's own docstring). **Four confirmed upstream RetroArch 1.22.2 issues,
+all found by R22 and all worked around in `ra_drive.py` itself, never in this project's own code**:
+1. `video_driver=sdl2` segfaults the official AppImage 100% of the time under Xvfb -
+   `XScreenSaverQueryExtension()` in its bundled `libXss.so.1`/`libXext.so.6` crashes inside the host's
+   `libX11.so.6` (an Xlib extension-registration ABI mismatch), independent of the core or the Xvfb screen
+   size. `gl`/`glcore` never crash - `CFG_TEMPLATE` stays on `gl`.
+2. `GET_STATUS` segfaults the instant it is answered while any core is actively running - gdb-confirmed as
+   the same crash address inside RetroArch's own binary with three unrelated cores, independent of pause
+   state. `cmd_start`'s own readiness poll uses `VERSION` instead, and a script must never send
+   `GET_STATUS`/`wait_status` against a running instance either.
+3. Without `--verbose` on the command line, `retroarch.log` is opened but nothing is ever written into it
+   past the startup banner, no matter how long the instance runs - `cmd_start` always passes it.
+4. `QUIT` does not reliably exit the process under Xvfb (confirmed: a fresh instance sent bare `QUIT` was
+   still running 5+ seconds later) - `stop` sends it anyway (in case a future build honours it) but relies on
+   `os.killpg()` on the process group `cmd_start` creates with `start_new_session=True` - a bare PID kill
+   only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/`retroarch` children it spawns.
+
+**Menu state is a capture of the Xvfb display, not a RetroArch screenshot**: RetroArch 1.22.2 logs nothing
+for a menu toggle/transition (`MENU_TOGGLE` and menu navigation produce zero new `retroarch.log` lines,
+confirmed against a live instance), so `wait_log` cannot substitute for RetroArch's missing "which menu is
+showing" query, and its own `SCREENSHOT` command was found not to capture the RGUI/ozone menu overlay
+itself on this build either (only the content's own rendered frame - confirmed with `menu_driver=rgui` and
+`ozone`, and with `video_gpu_screenshot` both `true` and `false`, none of which made the overlay appear;
+`false` also introduced torn/incomplete frames, so `true`, the default, is still the right setting): two
+`shot`s taken around a `press toggle` differ only when something else changes the frame (e.g. the
+"Screenshot saved" HUD toast from the previous `shot` itself), never from the menu opening. The fix (R22,
+2026-09-27): `shot_display <file>` (`--cfg DIR` required, local only) captures the Xvfb display `start` is
+running on directly with `xwd -root` - the whole framebuffer as the X server drew it, menu included,
+independent of RetroArch entirely - proven against a live instance (a shot before opening the menu, one
+with the RGUI Quick Menu open, one after: the menu shot's hash differs, before/after match exactly).
+`start` now records the display number (parsed from `xvfb-run`'s own `-e` diagnostic output - its
+`-displayfd` needs fd 1, not a custom fd number; `xvfb-run`'s own script hardcodes fd 3 for its own use and
+closes it before the wrapped command runs) and a pinned `Xauthority` path next to the pidfile; a small
+pure-Python XWD decoder (`xwd_to_rgb_rows`, file_version 7 ZPixmap, 24/32bpp - checked pixel-by-pixel
+against a real capture) converts to PNG via the same Pillow `wait_shot` already needs, no netpbm/ImageMagick
+dependency in the shipped tool. Needs `xwd` (Debian's `x11-apps`) on PATH - same no-root
+`apt-get download`+`dpkg-deb -x` recipe as Pillow/gdb/7zip elsewhere on that machine.
+`tools/test_ra_drive.py` covers the protocol, the log-tail parser, the script parser and the XWD decoder
+offline against a fake UDP server / synthetic files standing in for RetroArch and `xwd` - no RetroArch
+binary or `xwd` needed to run those (61/61, both the PC and the Debian laptop).
+
 **The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,
 on every platform - a PC stick, Windows, a Pi, a USB keyboard on the console. `ableem::Input` applies
 `lib_ableem/include/ableem/ui/keyboard_map.h` (header-only, tested in `test_keyboard`) to every key event:
