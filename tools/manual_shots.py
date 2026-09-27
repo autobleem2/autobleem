@@ -17,8 +17,10 @@ overrides it for a checkout that lives somewhere else. The Store's screens need 
 they are.
 
 The stick's config.ini (usb/Autobleem/bin/autobleem/config.ini) is switched to each language for its run and
-put back to English. The UpdateRoms and installer windows are plain Win32 programs without the driver: those
-two are captured by window title (PowerShell, PrintWindow) when they are running, else skipped.
+put back to English. UpdateRoms, the installer and LAN Share are plain Win32 programs without the driver:
+those three are captured by window title (PowerShell, PrintWindow) when they are running, else skipped - this
+script never launches them itself (D24: LAN Share was never automated further than this; open it by hand
+before a run to capture it, the way UpdateRoms/the installer already worked).
 """
 import os
 import re
@@ -187,7 +189,8 @@ def main(argv):
     # the two Win32 programs, when the owner has them open
     shared = os.path.join(out, 'shared')
     os.makedirs(shared, exist_ok=True)
-    for title, name in (('UpdateRoms', 'updateroms'), ('AutoBleem Installer', 'installer')):
+    for title, name in (('UpdateRoms', 'updateroms'), ('AutoBleem Installer', 'installer'),
+                        ('AutoBleem LAN Share', 'lanshare')):
         png = os.path.join(shared, name + '.png')
         if capture_window(title, png):
             to_jpeg(png, os.path.join(shared, name + '.jpg'))

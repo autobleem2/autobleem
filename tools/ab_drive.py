@@ -58,6 +58,10 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
 DEFAULT_HOST = '127.0.0.1'
+# ABFlashKit (and PSC-Bios) moved to their own repository on 2026-09-23 (CLAUDE.md, "Where the code lives")
+# and are no longer built here. Same convention as AB_PCSX_DIR / ../pcsx-ab (make_psc.sh): a sibling checkout,
+# overridable for one that lives somewhere else.
+CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
 
 
 def pid_file(port):
@@ -204,11 +208,18 @@ class Driver:
 
 def start(usb, port, show, tool=None):
     if tool:
-        exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
+        # abflashkit used to build in this tree's own build_win/apps/; since the D5 split (2026-09-23) it
+        # builds in autobleem-console-tools' own build_win instead - try the sibling checkout first (see
+        # CONSOLE_TOOLS_DIR above) and fall back to the old in-tree path for a checkout that still has one.
+        exe = os.path.join(CONSOLE_TOOLS_DIR, 'build_win', 'apps', tool, tool + '.exe')
+        if not os.path.exists(exe):
+            exe = os.path.join(REPO, 'build_win', 'apps', tool, tool + '.exe')
         app_dir = os.path.join(usb, 'Apps', tool)
         driven = os.path.join(app_dir, tool + '-drive.exe')
         first_screen = {'abflashkit': 'GuiConfirm'}[tool]
-        lang = os.path.join(REPO, 'apps', tool, 'resources', 'lang')
+        # this repo's own apps/<tool>/ went with the D5 split too - the resources are the sibling
+        # checkout's, next to its exe.
+        lang = os.path.join(CONSOLE_TOOLS_DIR, 'apps', tool, 'resources', 'lang')
     else:
         exe = os.path.join(REPO, 'build_win', 'autobleem-gui.exe')
         app_dir = os.path.join(usb, 'Autobleem', 'bin', 'autobleem')
@@ -279,17 +290,48 @@ def start(usb, port, show, tool=None):
     print(f'started pid {proc.pid} on port {port}' + ('' if show else ', headless'))
 
 
+def _pid_alive(pid):
+    # tasklist's own filter, not a plain grep of the full listing - a fast, single-process check
+    r = subprocess.run(['tasklist', '/FI', 'PID eq %d' % pid], capture_output=True, text=True)
+    return str(pid) in r.stdout
+
+
 def stop(port, host=DEFAULT_HOST, token=None):
     try:
         d = Driver(port, host, token)
         d.cmd('quit')
         d.close()
-        time.sleep(0.5)
     except OSError:
         pass
     if os.path.exists(pid_file(port)):
         pid = int(open(pid_file(port)).read().strip())
-        subprocess.call(['taskkill', '/PID', str(pid), '/F'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # D24: give the process real time to unwind on its own before force-killing it - a clean Quit
+        # closes every screen on the stack, including a running extension's (PSC-Bios's Network hub among
+        # them), and only THAT unwind clears its crash-guard marker (ExtensionCatalog::clearActive(),
+        # <runtime>/extensions.active). A flat 0.5s wait then an unconditional `taskkill /F` (the previous
+        # behaviour here) routinely won the race against that unwind on this machine, which left the
+        # marker in place - the next `start` read it back as "was running when AutoBleem stopped last
+        # time" and auto-disabled the extension (System/Extensions/disabled.txt), breaking every capture
+        # that opens PSC-Bios (pscbios-main and everything after it in the same run) until it was
+        # re-enabled by hand. Measured from GuiPadConfig (the deepest PSC-Bios screen the manual shots
+        # reach) the unwind alone took ~13s on this machine - so the budget here is a generous 30s of
+        # actual sleep (not counting each tasklist spawn's own overhead) rather than a tight guess; only
+        # what is still alive after that gets force-killed.
+        for _ in range(30):
+            if not _pid_alive(pid):
+                break
+            time.sleep(1.0)
+        else:
+            subprocess.call(['taskkill', '/PID', str(pid), '/F'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # this force-kill is the test driver's own doing, not a real crash - the marker it left behind
+            # (ExtensionCatalog::markActive(), never reached clearActive() because the process didn't get
+            # to unwind) would otherwise make the NEXT `start` read it as "was running when AutoBleem
+            # stopped last time" and auto-disable that extension (System/Extensions/disabled.txt) for
+            # every run after this one. `stop` always targets DEFAULT_USB here (see main(), same as a
+            # plain `start` with no --usb) - a remote device's own marker is its own business.
+            marker = os.path.join(DEFAULT_USB, 'System', 'Runtime', 'extensions.active')
+            if os.path.exists(marker):
+                os.remove(marker)
         os.remove(pid_file(port))
     print('stopped')
 

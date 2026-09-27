@@ -23,6 +23,10 @@ import sys
 import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# ABFlashKit and PSC-Bios moved to their own repository on 2026-09-23 (CLAUDE.md, "Where the code lives") and
+# build there now, not here - same sibling-checkout convention as ab_drive.py's CONSOLE_TOOLS_DIR / make_psc.sh's
+# AB_PCSX_DIR.
+CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
 
 
 def copy_tree(src, dst):
@@ -313,26 +317,36 @@ def main():
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
 
     # the console tools built from apps/: each one's resources plus its Windows exe over the payload's copy,
-    # so that usb/Apps/<tool>/<tool>.exe <usb root> is the visual test of it
+    # so that usb/Apps/<tool>/<tool>.exe <usb root> is the visual test of it. Since the D5 split (2026-09-23)
+    # they build in autobleem-console-tools' own tree, not this one - try the sibling checkout's build dir
+    # first (CONSOLE_TOOLS_DIR above), then this repo's own (a checkout that still has one).
     for tool in TOOLS:
-        src = os.path.join(REPO, 'apps', tool, 'resources')
+        src = os.path.join(CONSOLE_TOOLS_DIR, 'apps', tool, 'resources')
+        tool_build = CONSOLE_TOOLS_DIR
+        if not os.path.isdir(src):
+            src = os.path.join(REPO, 'apps', tool, 'resources')
+            tool_build = REPO
         if not os.path.isdir(src):
             continue
         dst = os.path.join(usb, 'Apps', tool)
         copy_tree(src, dst)
-        tool_exe = os.path.join(args.build, 'apps', tool, tool + '.exe')
+        tool_exe = os.path.join(tool_build, 'build_win', 'apps', tool, tool + '.exe')
+        if not os.path.exists(tool_exe):
+            tool_exe = os.path.join(args.build, 'apps', tool, tool + '.exe')
         if os.path.exists(tool_exe):
             shutil.copy2(tool_exe, dst)
         else:
             print('note: no', tool_exe, '- build first for the', tool, 'visual test')
 
-    # the extensions the build staged (<build>/extensions/<name>/ - the hello sample): the Extensions list's test
-    staged = os.path.join(args.build, 'extensions')
-    if os.path.isdir(staged):
-        for name in sorted(os.listdir(staged)):
-            # an extension has its extension.ini; store-server (abstored, a program of its own) is not one
-            if os.path.isfile(os.path.join(staged, name, 'extension.ini')):
-                replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
+    # the extensions the build staged (<build>/extensions/<name>/ - the hello sample): the Extensions list's
+    # test. PSC-Bios is built in the console-tools sibling checkout now (CONSOLE_TOOLS_DIR above) - its
+    # build_win/extensions/ is checked too, alongside this repo's own build dir.
+    for staged in (os.path.join(CONSOLE_TOOLS_DIR, 'build_win', 'extensions'), os.path.join(args.build, 'extensions')):
+        if os.path.isdir(staged):
+            for name in sorted(os.listdir(staged)):
+                # an extension has its extension.ini; store-server (abstored, a program of its own) is not one
+                if os.path.isfile(os.path.join(staged, name, 'extension.ini')):
+                    replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
 
     db_dir = os.path.join(usb, 'Autobleem', 'bin', 'db')
     os.makedirs(db_dir, exist_ok=True)
