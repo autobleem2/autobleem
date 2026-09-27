@@ -394,6 +394,43 @@ TEST_CASE("fetch --continue: a download that stops keeps what arrived, and the n
     CHECK(tmp.readFile("game.part") == "first partand more..");
 }
 
+TEST_CASE("fetch --continue: a resumed download re-requests the original URL, not the expired signed one") {
+    // GitHub's signed redirect URLs expire (about an hour); the Store always passes the catalog's original
+    // URL on every attempt, never the Location it last followed, so a resume after the signed URL expired
+    // still works: the original URL is asked again and redirects to a fresh one.
+    TempDir tmp("abfetch");
+    Options options;
+    string error;
+    {
+        LoopbackServer server(Replies{{"HTTP/1.1 302 Found\r\nLocation: /signed/1\r\nContent-Length: 0\r\n\r\n"},
+                                      {"HTTP/1.1 200 OK\r\nContent-Length: 20\r\n\r\nfirst part"}});
+        options = optionsFor(server.url("/release/game.bin"), tmp.at("game.part"));
+        options.resume = true;
+        CHECK(fetch(options, error) == Incomplete);
+        auto requests = server.requests();
+        REQUIRE(requests.size() == 2);
+        CHECK(requests[0].find("GET /release/game.bin HTTP/1.1") == 0);
+        CHECK(requests[1].find("GET /signed/1 HTTP/1.1") == 0);
+    }
+    CHECK(tmp.readFile("game.part") == "first part"); // kept: --continue picks it up from here
+
+    // /signed/1 has since expired (would answer 403 if asked again); the original URL now redirects
+    // somewhere else
+    {
+        LoopbackServer server(Replies{
+            {"HTTP/1.1 302 Found\r\nLocation: /signed/2\r\nContent-Length: 0\r\n\r\n"},
+            {"HTTP/1.1 206 Partial Content\r\nContent-Range: bytes 10-19/20\r\nContent-Length: 10\r\n\r\nand more.."}});
+        options.url = server.url("/release/game.bin"); // the ORIGINAL URL again, never /signed/1
+        CHECK(fetch(options, error) == Ok);
+        auto requests = server.requests();
+        REQUIRE(requests.size() == 2);
+        CHECK(requests[0].find("GET /release/game.bin HTTP/1.1") == 0);
+        CHECK(requests[1].find("GET /signed/2 HTTP/1.1") == 0);
+        CHECK(requests[1].find("\r\nRange: bytes=10-\r\n") != string::npos);
+    }
+    CHECK(tmp.readFile("game.part") == "first partand more..");
+}
+
 TEST_CASE("fetch: a stall gives up after the stall timeout") {
     TempDir tmp("abfetch");
     LoopbackServer server(Replies{{"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nabc", 3000, "defghij"}});
