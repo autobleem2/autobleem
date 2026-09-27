@@ -113,6 +113,7 @@ top right; a warning or a failure on the notification line under it (the details
 | Music / Background Music | Which track plays, and whether one plays at all. Stepping through themes no longer restarts the track. |
 | Widescreen | The PS1 emulator's aspect ratio for every game. (The picture filter is per game since 2026-09-24 - the game editor's Filter row.) |
 | PS1 Emulator | Which emulator plays PS1 games: `pcsx-ab`, the one AutoBleem has always shipped, or `pcsx-abnxt`, the next one (current upstream PCSX-ReARMed with AutoBleem's additions). Both use the same settings, memory cards and resume points (pcsx-ab's save-state layout, which pcsx-abnxt writes and reads too since 2026-09-24): a game left in one continues in the other. A resume point saved on the HLE BIOS (no BIOS file) is the exception - the other emulator starts the game from its beginning. |
+| Swap Player 1 / Player 2 (PS1 emulators) | Swaps the first two SDL pads' PS1 ports (`padswap` in config.ini). PS1 only - RetroArch is unaffected. |
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
 | Fetch box art online | Whether the scan fetches missing covers (and RetroArch's databases, when there are none) from libretro's servers. Only on a platform that can (a Pi, a PC); one probe per scan decides whether there is a network, and a cover the server does not have is not asked for again. |
