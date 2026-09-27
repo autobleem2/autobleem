@@ -28,7 +28,7 @@ CI across the repositories, the owner's standing rules - lives in **`autobleem2/
 - RetroArch for the console (`github.com/autobleem/retroarch-psc`, 2026-09-19/20) -> `docs/history/retroarch-for-the-console.md`
 - Console tools (`apps/`, 2026-09-18) - and one PC tool - moved out on 2026-09-23 (see above) -> `docs/history/console-tools-in-the-launcher.md`
 - The virtual gamepad for Apps, `apps/abpad/` (2026-09-22) -> `docs/history/launcher-virtual-gamepad.md`
-- Multi-platform Apps, `docs/app-format-plan.md` (2026-09-24) -> `docs/history/launcher-multiplatform-apps.md`
+- Multi-platform Apps (2026-09-24, the plan is autobleem-main `docs/archive/app-format-plan.md`) -> `docs/history/launcher-multiplatform-apps.md`
 - Extensions, `docs/extensions-plan.md` (2026-09-24) -> `docs/history/launcher-extensions.md`
 - Scanner processors, the launcher's own protocol notes (2026-09-24) -> `docs/history/launcher-scanner-processors.md`
 - The 2026-09-19 CI image console hardware-run debugging tale -> `docs/history/launcher-console-runs.md`
