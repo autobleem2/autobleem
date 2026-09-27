@@ -533,10 +533,15 @@ Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s
 `autobleem`, `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
 `github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
 to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and the packaging scripts
-(`tools/make_psc_package.sh`/`make_rpi_package.sh`/`make_win_package.sh`,
-`.github/workflows/publish-launcher.yml`) all take the themes from there now. `Theme::load()` still reads
-`<root>/Themes/default` at run time, so whatever assembles a real package (the appliance, going forward -
-see below) must always stage at least `default`. `ab2`'s launcher menu icons (gear, gamepad, memory card,
+(`tools/make_psc_package.sh`/`make_rpi_package.sh`/`make_win_package.sh`) all take the themes from there.
+**`.github/workflows/publish-launcher.yml` no longer stages `Themes/` into its per-platform artifact**
+(D5 step 3, 2026-09-27): a release package gets its themes only through autobleem-appliance's own
+`stage_themes` (a real release of `autobleem2/autobleem-themes`, fetched straight there), never through the
+launcher's artifact - `make_{psc,rpi,win}_package.sh`, `ci/build.sh` and `test.yml` still stage `Themes/`
+from the submodule because they are dev/test paths that nothing downstream ever ships (no appliance
+assemble step consumes them). `Theme::load()` still reads `<root>/Themes/default` at run time, so whatever
+assembles a real package (the appliance, going forward - see below) must always stage at least `default`.
+`ab2`'s launcher menu icons (gear, gamepad, memory card,
 the save-state frame - which must keep its 68x52 window at (25, 33), where `PsMenu::render` pastes the picture)
 and its blue `on.png`/`off.png` switch are drawn by `autobleem-themes/tools/make_ab2_icons.py` (2026-09-18,
 moved out of this repo with the rest of the theme-asset tools on D5); the tile sits high in
