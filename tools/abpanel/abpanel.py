@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """abpanel (R24) - the PC test machine's status panel, drawn in a terminal on its standby monitor.
 
-The standby monitor is four quadrants (tools/abpanel/layout.sh): `abpanel status` top-left, the VM's live view
-(virt-viewer) top-right, `abpanel teams` bottom-left, `abpanel load` bottom-right, each in its own foot.
-Everything is read locally except the Teams block, which is autobleem-main's public status.json on develop
-(no token). Standard library only.
+The standby monitor is four quadrants (tools/abpanel/layout.sh): `abpanel overview` top-left, the VM's live
+view (virt-viewer) top-right, `abpanel teams` bottom-left, and bottom-right `abpanel empty` - reserved, blank
+until its use is decided - each in its own foot. Everything is read locally except the Teams block, which is
+autobleem-main's public status.json on develop (no token). Standard library only.
 
-  abpanel [status|teams|load|all]          redraws every 2 s, Ctrl-C to quit (all = status + teams)
-  abpanel [mode] --once                    one frame to stdout, no logo, no screen control (a check over ssh)
+  abpanel [overview|status|teams|load|empty|all]   redraws every 2 s, Ctrl-C to quit (all = status + teams)
+  abpanel [mode] --once                            one frame to stdout, no logo, no screen control (over ssh)
 
-status: the logo, the host (IP, time in Irish local time), a load line, the three runners (idle/busy and the
-        job's repository), the VM (state, the stick's VERSION, launcher, padsim, the DebugDriver forward);
-teams:  status.json schema 1 (docs/admin-roadmap-plan.md in autobleem-main) - usage, the teams, Needs the owner;
-load:   htop-like - a bar per core, memory and swap bars, load average, the top processes by CPU and by memory.
+overview: status (compact) and load together - what the panel's top-left quadrant shows;
+status:   the logo, the host (IP, time in Irish local time), a load line, the three runners (idle/busy and the
+          job's repository), the VM (state, the stick's VERSION, launcher, padsim, the DebugDriver forward);
+teams:    status.json schema 1 (docs/admin-roadmap-plan.md in autobleem-main) - usage, teams, Needs the owner;
+load:     htop-like - a bar per core, memory and swap bars, load average, disk, the top processes by CPU and by
+          memory (side by side on a wide pane);
+empty:    a blank pane that holds a quadrant's place.
 """
 import json
 import os
@@ -212,22 +215,27 @@ def colour(state):
     return STATE_COLOUR.get(state, RED) + state + RESET
 
 
-def status_lines(cpu, vm, width):
+def status_lines(cpu, vm, width, compact=False):
+    """compact: the runners on one line and no load line - the htop-like view under it has the load."""
     L = []
     now = datetime.now(TZ)
     L.append(f"{BOLD}bleemmachine{RESET}  {host_ip()}   {now:%a %d %b  %H:%M:%S} {now.tzname()}")
-    L.append("")
-    used, total = memory()
-    t = temperature()
-    du = shutil.disk_usage("/")
-    load = read("/proc/loadavg").split()[:3]
-    L.append(f"{BOLD}Load{RESET}    CPU {cpu.percent():3.0f}%   load {' '.join(load)}   RAM {used:.1f}/{total:.1f}G"
-             f"   {'%.0f°C' % t if t is not None else ''}   disk {gib(du.free)} free of {gib(du.total)}")
-    L.append("")
-    L.append(f"{BOLD}Runners{RESET}")
-    for name, state, repo in runners():
-        L.append(f"  {name:<16}{colour(state):<20}{repo}")
-    L.append("")
+    if compact:
+        L.append(f"{BOLD}Runners{RESET} " + "   ".join(
+            f"{name} {colour(state)}{' (' + repo + ')' if repo else ''}" for name, state, repo in runners()))
+    else:
+        L.append("")
+        used, total = memory()
+        t = temperature()
+        du = shutil.disk_usage("/")
+        load = read("/proc/loadavg").split()[:3]
+        L.append(f"{BOLD}Load{RESET}    CPU {cpu.percent():3.0f}%   load {' '.join(load)}   RAM {used:.1f}/{total:.1f}G"
+                 f"   {'%.0f°C' % t if t is not None else ''}   disk {gib(du.free)} free of {gib(du.total)}")
+        L.append("")
+        L.append(f"{BOLD}Runners{RESET}")
+        for name, state, repo in runners():
+            L.append(f"  {name:<16}{colour(state):<20}{repo}")
+        L.append("")
     v = vm.value or {}
     state = v.get("state", "...")
     L.append(f"{BOLD}VM{RESET}      {VM}  {(GREEN if state == 'running' else RED) + state + RESET}")
@@ -369,19 +377,32 @@ def load_lines(procs, width, rows):
     la = read("/proc/loadavg").split()
     up = float(read("/proc/uptime").split()[0] or 0)
     t = temperature()
+    du = shutil.disk_usage("/")
     L.append(f"{BOLD}Load average{RESET} {' '.join(la[:3])}   {BOLD}Tasks{RESET} {la[3] if len(la) > 3 else '?'}"
              f"   {BOLD}Up{RESET} {int(up // 86400)}d {int(up % 86400 // 3600)}h {int(up % 3600 // 60)}m"
-             f"   {'%.0f°C' % t if t is not None else ''}")
+             f"   {'%.0f°C' % t if t is not None else ''}   {BOLD}Disk{RESET} {gib(du.free)} free of {gib(du.total)}")
     ps = procs.sample()
-    n = max((rows - len(L) - 5) // 2, 2)
+    side = width >= 120  # the two lists side by side on a wide pane
+    n = max(rows - len(L) - 3 if side else (rows - len(L) - 6) // 2, 2)
     head = f"{BOLD}{'PID':>7} {'USER':<10} {'CPU%':>5} {'RES':>6}  COMMAND{RESET}"
+    lists = []
     for title, key in (("Top by CPU", lambda p: p[2]), ("Top by memory", lambda p: p[3])):
-        L.append("")
-        L.append(f"{BOLD}{CYAN}{title}{RESET}")
-        L.append(head)
-        for pid, user, cpu, rss, cmd in sorted(ps, key=key, reverse=True)[:n]:
-            L.append(f"{pid:>7} {user[:10]:<10} {cpu:5.1f} {human(rss):>6}  {cmd}")
+        lists.append([f"{BOLD}{CYAN}{title}{RESET}", head] +
+                     [f"{pid:>7} {user[:10]:<10} {cpu:5.1f} {human(rss):>6}  {cmd}"
+                      for pid, user, cpu, rss, cmd in sorted(ps, key=key, reverse=True)[:n]])
+    L.append("")
+    if side:
+        half = (width - 2) // 2
+        L += [pad(a, half) + "  " + b for a, b in zip(*lists)]
+    else:
+        L += lists[0] + [""] + lists[1]
     return [fit(x, width) for x in L]
+
+
+def pad(line, width):
+    """fit() and then spaces up to `width` visible columns - for side-by-side columns."""
+    line = fit(line, width)
+    return line + " " * (width - len(re.sub(r"\x1b\[[0-9;]*m", "", line)))
 
 
 def fit(line, width):
@@ -402,16 +423,15 @@ def fit(line, width):
     return "".join(out) + RESET
 
 
-def logo(cols):
+def logo(cols, rows=7):
     """The logo as sixel (foot draws it), rendered once by chafa; empty if chafa or the file is missing."""
     if not shutil.which("chafa") or not os.path.exists(LOGO):
         return "", 0
-    rows = 7
     out = run(["chafa", "-f", "sixels", "--size", f"{min(cols, 40)}x{rows}", LOGO], timeout=10)
     return out, rows if out else 0
 
 
-MODES = ("status", "teams", "load", "all")
+MODES = ("overview", "status", "teams", "load", "empty", "all")
 
 
 def main():
@@ -420,13 +440,23 @@ def main():
     mode = args[0] if args else "all"
     if mode not in MODES:
         sys.exit(f"usage: abpanel [{'|'.join(MODES)}] [--once]")
+    if mode == "empty":  # a reserved quadrant: a blank pane, nothing drawn
+        sys.stdout.write("\x1b[?25l\x1b[2J")
+        sys.stdout.flush()
+        if not once:
+            signal.pause()
+        return
     cpu, vm, teams = Cpu(), Slow(VM_EVERY, vm_status), Slow(TEAMS_EVERY, teams_status)
-    procs = Procs() if mode == "load" else None
-    slows = [s for s, used in ((vm, mode in ("status", "all")), (teams, mode in ("teams", "all"))) if used]
+    procs = Procs() if mode in ("load", "overview") else None
+    slows = [s for s, used in ((vm, mode in ("overview", "status", "all")), (teams, mode in ("teams", "all")))
+             if used]
 
     def frame(width, rows):
         if mode == "load":
             return load_lines(procs, width, rows)
+        if mode == "overview":
+            out = status_lines(cpu, vm, width, compact=True) + [""]
+            return out + load_lines(procs, width, rows - len(out))
         out = status_lines(cpu, vm, width) if mode != "teams" else []
         if mode == "all":
             out.append("")
@@ -452,7 +482,8 @@ def main():
             cols, rows = shutil.get_terminal_size()
             if redraw[0]:
                 redraw[0] = False
-                img, h = logo(cols) if mode in ("status", "all") else ("", 0)
+                img, h = {"overview": lambda: logo(cols, 4), "status": lambda: logo(cols),
+                          "all": lambda: logo(cols)}.get(mode, lambda: ("", 0))()
                 sys.stdout.write("\x1b[2J\x1b[H" + img)
                 top = h + 2 if h else 1
             lines = frame(cols, rows - top + 1)[: max(rows - top, 1)]
