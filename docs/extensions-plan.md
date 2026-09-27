@@ -23,7 +23,7 @@ This is our answer to what Project Eris calls "mods". Nothing of theirs is used 
    changed) **and the Store** (changed by the owner on 2026-09-25: every platform's installer ships it, and
    an install or update puts in the version it brings - see `CLAUDE.md`, "Extensions").
 4. **Every target**: an extension folder is multi-platform, with one library per platform key
-   (`docs/app-format-plan.md`).
+   (autobleem-main `docs/archive/app-format-plan.md`).
 5. **The AutoBleem Store is the first extension.**
 6. **PSC-Bios is an extension, bundled with the console package; ABFlashKit stays an App** (changed by the
    owner later on 2026-09-24; it read "both stay Apps").
@@ -238,7 +238,7 @@ scan and the Apps set without the SDK knowing what a launcher is.
 
 `Extensions/<name>/`, next to `Apps/` and `Themes/` at the data root (`Env::getPathToExtensionsDir()`,
 set by `EnvironmentSetup` like the others). The layout is the multi-platform format
-(`docs/app-format-plan.md`):
+(autobleem-main `docs/archive/app-format-plan.md`):
 
 ```
 Extensions/store/

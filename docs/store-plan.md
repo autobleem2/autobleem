@@ -64,7 +64,7 @@ behind it:
      the update. The Store's `extension.ini` says `Network=required`, so **the launcher refuses to open it
      offline**: its row in the Extensions list is greyed with "Needs a network connection" (the extensions
      plan). On a console that means a stock kernel, or the AutoBleem kernel with its WiFi down.
-3. **Our Apps format is a store item.** The App folder is multi-platform (`docs/app-format-plan.md`):
+3. **Our Apps format is a store item.** The App folder is multi-platform (autobleem-main `docs/archive/app-format-plan.md`):
    one `Apps/<name>/` holds every platform's binary in `bin/<key>/`, and `app.ini` says which is which.
    The Store downloads the one-platform package for this machine (`opentyrian-psc-<version>.zip`) and
    *merges* it into the folder, never deleting another platform's binaries. Updates and removal are the
@@ -284,7 +284,7 @@ rebuilt on it.
 
 ## Steps
 
-The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the extension mechanism
+The multi-platform folder format (autobleem-main `docs/archive/app-format-plan.md`, steps 1-2) and the extension mechanism
 (`docs/extensions-plan.md`, steps 1-4) come first. Each step here is one commit
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
@@ -354,7 +354,7 @@ exists.
 
 ## Open questions
 
-- **Apps beyond the console** depend on `docs/app-format-plan.md` (the multi-platform folder, the
+- **Apps beyond the console** depend on autobleem-main `docs/archive/app-format-plan.md` (the multi-platform folder, the
   Windows direct launch). Until it and step 7 are done, a target's catalog may simply have no Apps, and the
   tab says so.
 None left: the notice, the name and dead-link checking were decided on 2026-09-24 (decisions 1 and 4).

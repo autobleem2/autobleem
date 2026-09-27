@@ -57,7 +57,7 @@ with `VirtualPad=false` (the terminal) gets `abpadd --exit-only` on the console 
 `app_env.sh`): no SDL, no shim, SIGTERM on the press. **Windows** has no abpad: an App there is left
 through its own menu, which each port's readme names (the owner's choice).
 
-## Multi-platform Apps (2026-09-24, `docs/app-format-plan.md`)
+## Multi-platform Apps (2026-09-24, autobleem-main `docs/archive/app-format-plan.md` and `docs/history/launcher-multiplatform-apps.md`)
 
 One `Apps/<name>/` folder, a binary per platform key in `bin/<key>/`, resolved by `AppManifest`
 (`core/services/app_manifest.*`) through `Env::appPlatformKeys()`. Full format, `app.ini` fields,

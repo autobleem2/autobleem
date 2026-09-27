@@ -1,7 +1,8 @@
 //
 // rc/app_resolve.sh against AppManifest: the shell copy of the multi-platform App rule (what a run.sh started
-// by hand goes by) must give the launcher's answers (docs/app-format-plan.md). Runs the script with the
-// machine's sh; without one (a Windows shell with no MSYS2 on PATH) the comparison is skipped, not failed.
+// by hand goes by) must give the launcher's answers (autobleem-main docs/archive/app-format-plan.md). Runs
+// the script with the machine's sh; without one (a Windows shell with no MSYS2 on PATH) the comparison is
+// skipped, not failed.
 //
 #include "doctest/doctest.h"
 
