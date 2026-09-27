@@ -18,6 +18,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ra_drive as rd  # noqa: E402
@@ -141,6 +142,110 @@ class ProtocolTests(unittest.TestCase):
     def test_wait_status_times_out(self):
         with self.assertRaises(rd.RaError):
             self.client.wait_status('PLAYING', timeout=0.3, poll=0.05)
+
+
+class NoResponseTests(unittest.TestCase):
+    """R22-RESULT.md step 3b (Nina): with nothing listening, request() used to leak a raw
+    ConnectionResetError/OSError traceback instead of raising RaError. Two real shapes, both covered
+    without relying on a specific OS's ICMP/RST behaviour (which the closed-port test can't pin down
+    portably), plus a deterministic mock of each exact exception RetroArch's absence can produce."""
+
+    def test_silent_server_times_out_with_a_clear_ra_error(self):
+        # a bound-but-never-answering "server": nothing ever calls sendto back, so recvfrom just times out
+        # - the common shape when RetroArch simply is not running (or a firewall silently drops it).
+        silent = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        silent.bind(('127.0.0.1', 0))
+        port = silent.getsockname()[1]
+        client = rd.RaClient('127.0.0.1', port, timeout=0.3)
+        try:
+            with self.assertRaises(rd.RaError) as ctx:
+                client.request('VERSION')
+            message = str(ctx.exception)
+            self.assertIn('no response from 127.0.0.1:{}'.format(port), message)
+            self.assertIn('0.3', message)
+            self.assertIn('RetroArch running', message)
+        finally:
+            client.close()
+            silent.close()
+
+    def test_closed_port_raises_a_clear_ra_error_not_a_traceback(self):
+        # nothing listening at all. Real OS behaviour here varies (a plain timeout, or an OS-level
+        # connection-refused error surfacing on the *next* socket call - Windows: WSAECONNRESET via
+        # ConnectionResetError, Linux: typically ECONNREFUSED via ConnectionRefusedError) - this only
+        # checks that whichever shape this machine produces, it comes out as one clear RaError, never a
+        # raw socket traceback. The exact wording of each shape is pinned down deterministically below.
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        probe.bind(('127.0.0.1', 0))
+        port = probe.getsockname()[1]
+        probe.close()  # freed again - nothing is listening on it now
+        client = rd.RaClient('127.0.0.1', port, timeout=0.5)
+        try:
+            with self.assertRaises(rd.RaError) as ctx:
+                client.request('VERSION')
+            message = str(ctx.exception)
+            self.assertIn('127.0.0.1:{}'.format(port), message)
+            self.assertIn('RetroArch running', message)
+        finally:
+            client.close()
+
+    def _client_with_fake_socket(self, recv_exception):
+        # socket.socket's methods are C-level slots (read-only on the real object - mock.patch.object on
+        # them raises AttributeError), so the deterministic tests swap in a plain MagicMock standing in for
+        # self.sock instead of patching the real socket's attributes.
+        client = rd.RaClient('127.0.0.1', 12345, timeout=1.0)
+        client.sock.close()  # the real socket RaClient's constructor opened - no longer needed
+        client.sock = mock.MagicMock()
+        client.sock.recvfrom.side_effect = recv_exception
+        return client
+
+    def test_connection_reset_is_mapped_to_refused(self):
+        # deterministic: what Windows reports for a UDP send to a closed port (WSAECONNRESET on the recv).
+        client = self._client_with_fake_socket(ConnectionResetError('WSAECONNRESET'))
+        try:
+            with self.assertRaises(rd.RaError) as ctx:
+                client.request('VERSION')
+            message = str(ctx.exception)
+            self.assertIn('127.0.0.1:12345 refused', message)
+            self.assertIn('RetroArch running', message)
+        finally:
+            client.close()
+
+    def test_connection_refused_is_mapped_to_refused(self):
+        # deterministic: the usual Linux shape (ECONNREFUSED).
+        client = self._client_with_fake_socket(ConnectionRefusedError('ECONNREFUSED'))
+        try:
+            with self.assertRaises(rd.RaError) as ctx:
+                client.request('VERSION')
+            message = str(ctx.exception)
+            self.assertIn('127.0.0.1:12345 refused', message)
+        finally:
+            client.close()
+
+    def test_wait_status_survives_a_single_failed_poll(self):
+        # get_status() now raises RaError (not socket.timeout/OSError) on a no-response poll; wait_status
+        # must still treat one failed attempt as "not yet", not let it end the whole wait early.
+        server = FakeRetroArch()
+        client = rd.RaClient('127.0.0.1', server.port, timeout=0.2)
+        try:
+            def flip():
+                time.sleep(0.15)
+                server.status_state = 'PLAYING'
+            threading.Thread(target=flip, daemon=True).start()
+            status = client.wait_status('PLAYING', timeout=2.0, poll=0.05)
+            self.assertEqual(status['state'], 'PLAYING')
+        finally:
+            client.close()
+            server.stop()
+
+    def test_main_reports_no_response_and_exits_1(self):
+        silent = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        silent.bind(('127.0.0.1', 0))
+        port = silent.getsockname()[1]
+        try:
+            rc = rd.main(['ra_drive.py', 'VERSION', '--host', '127.0.0.1', '--port', str(port)])
+            self.assertEqual(rc, 1)
+        finally:
+            silent.close()
 
 
 class CommandTableTests(unittest.TestCase):

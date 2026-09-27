@@ -163,10 +163,26 @@ class RaClient:
 
     def request(self, line, timeout=None):
         """Send a command known to reply and return its decoded text with any trailing newline stripped -
-        command.c is not consistent about appending one (VERSION does, LOAD_STATE_SLOT does not)."""
-        self.sock.settimeout(timeout if timeout is not None else self.timeout)
-        self.sock.sendto(line.encode('utf-8'), (self.host, self.port))
-        data, _ = self.sock.recvfrom(4096)
+        command.c is not consistent about appending one (VERSION does, LOAD_STATE_SLOT does not).
+
+        Nothing listening on (host, port) shows up two different ways, and neither is RaError's usual
+        shape unless caught here: a plain timeout (nothing ever answers - the common case when RetroArch
+        just is not running, or a firewall drops the packet) and, on some platforms/routes, an ICMP port-
+        unreachable turning into a connection-refused error on the *next* socket call - Windows surfaces a
+        UDP send to a closed port as WSAECONNRESET on the following recv (ConnectionResetError), Linux
+        typically as ECONNREFUSED (ConnectionRefusedError) on the recv or occasionally the sendto itself.
+        Both are OSError subclasses; left uncaught they would raise as a raw socket traceback with no hint
+        of what to check, instead of the same clear RaError every other bad-input case here raises."""
+        effective_timeout = timeout if timeout is not None else self.timeout
+        self.sock.settimeout(effective_timeout)
+        try:
+            self.sock.sendto(line.encode('utf-8'), (self.host, self.port))
+            data, _ = self.sock.recvfrom(4096)
+        except socket.timeout:
+            raise RaError('no response from {}:{} (timeout {}s) - is RetroArch running?'.format(
+                self.host, self.port, effective_timeout))
+        except OSError as e:
+            raise RaError('{}:{} refused ({}) - is RetroArch running?'.format(self.host, self.port, e))
         return data.decode('utf-8', 'replace').rstrip('\n')
 
     def command(self, name, arg=None):
@@ -211,7 +227,10 @@ class RaClient:
         while time.time() < end:
             try:
                 last = self.get_status()
-            except (socket.timeout, OSError):
+            except RaError:
+                # request() below already turned a timeout/refused-connection into RaError; a single failed
+                # poll (RetroArch briefly not answering, e.g. still starting up) should not end the wait -
+                # only running out of `timeout` here should.
                 last = None
             if last and last['state'] == want:
                 return last
@@ -458,7 +477,9 @@ def cmd_start(args):
         try:
             client.get_status()
             break
-        except (socket.timeout, OSError):
+        except RaError:
+            # request() already turns a timeout/refused-connection into RaError; keep polling until the
+            # process either answers or exits (checked above) or the retry budget below runs out.
             continue
     else:
         raise RaError('the command port never answered (cfg {}, log {})'.format(cfg_path, log_path))
@@ -529,24 +550,30 @@ def main(argv):
         logpath = args[i + 1]
         del args[i:i + 2]
 
-    if cmd == 'start':
-        return cmd_start(args)
-    if cmd == 'stop':
-        cmd_stop(host, port)
-        return 0
-    if cmd == 'sheet':
-        sheet(args[0], args[1:])
-        return 0
-
-    client = RaClient(host, port)
-    log = LogTail(logpath) if logpath else None
     try:
-        script = ' '.join(args) if cmd == 'run' else (cmd + (' ' + ' '.join(args) if args else ''))
-        for line in run_script(client, script, shots, log):
-            print(line)
-    finally:
-        client.close()
-    return 0
+        if cmd == 'start':
+            return cmd_start(args)
+        if cmd == 'stop':
+            cmd_stop(host, port)
+            return 0
+        if cmd == 'sheet':
+            sheet(args[0], args[1:])
+            return 0
+
+        client = RaClient(host, port)
+        log = LogTail(logpath) if logpath else None
+        try:
+            script = ' '.join(args) if cmd == 'run' else (cmd + (' ' + ' '.join(args) if args else ''))
+            for line in run_script(client, script, shots, log):
+                print(line)
+        finally:
+            client.close()
+        return 0
+    except RaError as e:
+        # every "nothing answered"/"bad input" case (see request()'s docstring) lands here as one clear
+        # line on stderr and exit code 1 - never a raw socket traceback.
+        print('error: {}'.format(e), file=sys.stderr)
+        return 1
 
 
 if __name__ == '__main__':
