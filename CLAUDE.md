@@ -357,17 +357,29 @@ all found by R22 and all worked around in `ra_drive.py` itself, never in this pr
    `os.killpg()` on the process group `cmd_start` creates with `start_new_session=True` - a bare PID kill
    only reaches `xvfb-run`'s own wrapper shell, never the `Xvfb`/`retroarch` children it spawns.
 
-**Menu state is read from screenshots, not logs**: RetroArch 1.22.2 logs nothing for a menu toggle/
-transition (`MENU_TOGGLE` and menu navigation produce zero new `retroarch.log` lines, confirmed against a
-live instance), so `wait_log` cannot substitute for RetroArch's missing "which menu is showing" query - only
-`shot`/`wait_shot` can. Even there, `SCREENSHOT` was found not to capture the RGUI/ozone menu overlay itself
-on this build (only the content's own rendered frame - confirmed with `menu_driver=rgui` and `ozone`, and
-with `video_gpu_screenshot` both `true` and `false`, none of which made the overlay appear; `false` also
-introduced torn/incomplete frames, so `true`, the default, is still the right setting) - two shots taken
-around a `press toggle` differ only when something else changes the frame (e.g. the "Screenshot saved" HUD
-toast from the previous `shot` itself), never from the menu opening.
-`tools/test_ra_drive.py` covers the protocol, the log-tail parser and the script parser offline
-against a fake UDP server standing in for RetroArch - no RetroArch binary needed to run those.
+**Menu state is a capture of the Xvfb display, not a RetroArch screenshot**: RetroArch 1.22.2 logs nothing
+for a menu toggle/transition (`MENU_TOGGLE` and menu navigation produce zero new `retroarch.log` lines,
+confirmed against a live instance), so `wait_log` cannot substitute for RetroArch's missing "which menu is
+showing" query, and its own `SCREENSHOT` command was found not to capture the RGUI/ozone menu overlay
+itself on this build either (only the content's own rendered frame - confirmed with `menu_driver=rgui` and
+`ozone`, and with `video_gpu_screenshot` both `true` and `false`, none of which made the overlay appear;
+`false` also introduced torn/incomplete frames, so `true`, the default, is still the right setting): two
+`shot`s taken around a `press toggle` differ only when something else changes the frame (e.g. the
+"Screenshot saved" HUD toast from the previous `shot` itself), never from the menu opening. The fix (R22,
+2026-09-27): `shot_display <file>` (`--cfg DIR` required, local only) captures the Xvfb display `start` is
+running on directly with `xwd -root` - the whole framebuffer as the X server drew it, menu included,
+independent of RetroArch entirely - proven against a live instance (a shot before opening the menu, one
+with the RGUI Quick Menu open, one after: the menu shot's hash differs, before/after match exactly).
+`start` now records the display number (parsed from `xvfb-run`'s own `-e` diagnostic output - its
+`-displayfd` needs fd 1, not a custom fd number; `xvfb-run`'s own script hardcodes fd 3 for its own use and
+closes it before the wrapped command runs) and a pinned `Xauthority` path next to the pidfile; a small
+pure-Python XWD decoder (`xwd_to_rgb_rows`, file_version 7 ZPixmap, 24/32bpp - checked pixel-by-pixel
+against a real capture) converts to PNG via the same Pillow `wait_shot` already needs, no netpbm/ImageMagick
+dependency in the shipped tool. Needs `xwd` (Debian's `x11-apps`) on PATH - same no-root
+`apt-get download`+`dpkg-deb -x` recipe as Pillow/gdb/7zip elsewhere on that machine.
+`tools/test_ra_drive.py` covers the protocol, the log-tail parser, the script parser and the XWD decoder
+offline against a fake UDP server / synthetic files standing in for RetroArch and `xwd` - no RetroArch
+binary or `xwd` needed to run those (61/61, both the PC and the Debian laptop).
 
 **The keyboard** (2026-09-26, the owner's PC-style layout): every screen driven by the pad works from a keyboard,
 on every platform - a PC stick, Windows, a Pi, a USB keyboard on the console. `ableem::Input` applies
