@@ -3,8 +3,11 @@
 keyboard and a screenshot over a socket, for automated looks at the UI without touching the user's screen.
 
   python tools/ab_drive.py start [--usb DIR] [--port N] [--show]   start the dev build on the usb tree with
-                                                                   AB_DEBUG_PORT and no splash; hidden
-                                                                   (--show: visible)
+                                                                   AB_DEBUG_PORT and no splash; AB_HEADLESS=1
+                                                                   by default (SDL_WINDOW_HIDDEN from the
+                                                                   first frame, dummy audio, no focus taken)
+                                                                   - --show is the only way to get a visible
+                                                                   window
                                  [--tool abflashkit]                ...a console tool instead (from
                                                                    usb/Apps/<tool>, staged by make_usb.py)
   python tools/ab_drive.py stop                                    a Quit event, then the process is killed
@@ -246,6 +249,15 @@ def start(usb, port, show, tool=None):
     token = env.get('AB_DEBUG_TOKEN')
     env['AB_DEBUG_PORT'] = str(port)
     env['AB_NO_SPLASH'] = '1'  # straight to the launcher (GuiSplash honours it on a dev host)
+    # R29: headless by default - the window is created with SDL_WINDOW_HIDDEN from its very first frame
+    # (never flashes visible, never takes focus) and audio goes to SDL's dummy driver, so a tester's run
+    # never shows a window or a firewall prompt on the owner's PC. --show is the only way to get a visible
+    # window (drop AB_HEADLESS entirely rather than set it to "0" - Platform::headlessRequested() only
+    # treats exactly "1" as headless, but an unset variable is the least surprising "off").
+    if show:
+        env.pop('AB_HEADLESS', None)
+    else:
+        env['AB_HEADLESS'] = '1'
     env['PATH'] = r'C:\msys64\ucrt64\bin;' + env.get('PATH', '')
     proc = subprocess.Popen([driven, usb], cwd=app_dir, env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -262,11 +274,9 @@ def start(usb, port, show, tool=None):
                 raise RuntimeError(f'the launcher exited with {proc.returncode}')
     else:
         raise RuntimeError('the driver did not answer')
-    if not show:
-        d.cmd('window hide')
     d.wait_screen(first_screen, 60)
     d.close()
-    print(f'started pid {proc.pid} on port {port}' + ('' if show else ', hidden'))
+    print(f'started pid {proc.pid} on port {port}' + ('' if show else ', headless'))
 
 
 def stop(port, host=DEFAULT_HOST, token=None):
