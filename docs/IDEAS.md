@@ -13,9 +13,9 @@ target, or a build pipeline change).
 
 ## Prebuilt Raspberry Pi image for Raspberry Pi Imager
 
-**Status:** done (2026-09-19). `tools/make_rpi_image.sh` builds both architectures on the Pi 400;
-`tools/rpi_imager_local_manifest.py` makes the local Imager manifest that enables Imager's customisation
-screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
+**Status:** done (2026-09-19). autobleem-appliance's `tools/make_rpi_image.sh` builds both architectures on
+the Pi 400; its `tools/rpi_imager_local_manifest.py` (DOCS-5/6 moved both there, alongside payload_linux/)
+makes the local Imager manifest that enables Imager's customisation screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
 ask for WiFi when there is none, bounded root growth - CLAUDE.md's "Flashable image for Raspberry Pi Imager"
 has the story); the second (arm64, Imager presets via the manifest) ran end to end into the launcher. The
 `v2.0.0-pre0-933bd2f` armhf + arm64 images are built and checked. **Not yet verified:** the interactive WiFi
