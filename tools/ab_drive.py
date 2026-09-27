@@ -216,7 +216,17 @@ def start(usb, port, show, tool=None):
         first_screen = 'GuiLauncher'
         lang = os.path.join(REPO, 'src', 'resources', 'lang')
     # its own copy of the exe next to the resources: the owner's own instance may be running the other
-    shutil.copy(exe, driven)
+    # - a moment after the previous run's `stop`, Windows can still hold the file open while that process
+    # finishes exiting (SQLite/theme teardown), so a PermissionError here is retried briefly instead of
+    # failing the whole capture
+    for attempt in range(20):
+        try:
+            shutil.copy(exe, driven)
+            break
+        except PermissionError:
+            if attempt == 19:
+                raise
+            time.sleep(0.25)
     # the language files change with the strings; the rest of the resources are make_usb.py's
     os.makedirs(os.path.join(app_dir, 'lang'), exist_ok=True)
     for name in os.listdir(lang):
