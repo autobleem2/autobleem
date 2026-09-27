@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -28,6 +28,7 @@ Back=Geri
 Back to games=Oyunlara dön
 Background Music:=Arkaplan Müziği:
 Backspace=Geri Sil
+battery=pil
 battery low=pil zayıf
 Bin file failed to verify=BIN dosyası doğrulanamadı
 Bluetooth=Bluetooth

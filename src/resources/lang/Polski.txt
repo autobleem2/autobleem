@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -28,6 +28,7 @@ Back=Wstecz
 Back to games=Powrót do gier
 Background Music:=Muzyka w tle:
 Backspace=Backspace
+battery=bateria
 battery low=bateria słaba
 Bin file failed to verify=Nie udało się zweryfikować pliku BIN
 Bluetooth=Bluetooth

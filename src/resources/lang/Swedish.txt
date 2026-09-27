@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -28,6 +28,7 @@ Back=Tillbaka
 Back to games=Tillbaka till spel
 Background Music:=Bakgrundsmusik:
 Backspace=Backsteg
+battery=batteri
 battery low=batteri lågt
 Bin file failed to verify=BIN-filen kunde inte verifieras
 Bluetooth=Bluetooth

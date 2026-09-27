@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -28,6 +28,7 @@ Back=Tilbage
 Back to games=Tilbage til spil
 Background Music:=Baggrundsmusik:
 Backspace=Backspace
+battery=batteri
 battery low=lavt batteri
 Bin file failed to verify=BIN-filen kunne ikke verificeres
 Bluetooth=Bluetooth

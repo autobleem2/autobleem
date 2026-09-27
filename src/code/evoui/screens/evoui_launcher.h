@@ -21,6 +21,7 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 #include "core/services/pad_battery.h"
+#include "core/model/pad_battery_match.h"
 #include <vector>
 #include <memory>
 #include <set>
@@ -102,12 +103,20 @@ public:
     // but there is no reason to do it 60 times a second. lowBatteryNotified is which pads (by address)
     // already got the one-time "battery low" NotificationLine since they last climbed back over
     // PadBatteryLowResetPercent (or vanished) - so a reading sitting at 12% for ten minutes says it once.
+    // C12: each reading is also matched to the SDL pad it belongs to (matchPadBatteries(),
+    // core/model/pad_battery_match.h - by the pad's own serial against the sysfs address), so the label is
+    // "Player 1"/"Player 2" when that match succeeds; padBatteryLabel() is the fallback for when it does
+    // not (an address with no matching pad still gets a stable "Wireless pad N", numbered among the
+    // unmatched entries only).
     PadBatteryService padBatteryService;
     std::vector<PadBatteryInfo> padBatteries;
+    std::vector<std::string> padBatteryLabels; // padBatteryLabels[i] is padBatteries[i]'s label, recomputed
+                                               // together with it each poll (see padBatteryLabelsFor())
     long lastPadBatteryPoll = 0;
     std::set<std::string> lowBatteryNotified;
     void pollPadBattery();
     void renderPadBatteries();
+    std::vector<std::string> padBatteryLabelsFor(const std::vector<PadBatteryInfo> &batteries) const;
 
     // a button is pressed
     void loop_joyButton_Pressed();

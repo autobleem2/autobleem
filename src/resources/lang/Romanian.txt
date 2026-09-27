@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -28,6 +28,7 @@ Back=Înapoi
 Back to games=Înapoi la jocuri
 Background Music:=Muzica de fundal:
 Backspace=Backspace
+battery=baterie
 battery low=baterie descărcată
 Bin file failed to verify=Fișierul BIN nu a putut fi verificat
 Bluetooth=Bluetooth

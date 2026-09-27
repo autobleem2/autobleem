@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -28,6 +28,7 @@ Back=Voltar
 Back to games=Voltar aos jogos
 Background Music:=Música de Fundo:
 Backspace=Backspace
+battery=bateria
 battery low=bateria fraca
 Bin file failed to verify=Falha ao verificar o arquivo BIN
 Bluetooth=Bluetooth

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -28,6 +28,7 @@ Back=Takaisin
 Back to games=Takaisin peleihin
 Background Music:=Taustamusiikki:
 Backspace=Askelpalautin
+battery=akku
 battery low=akku vähissä
 Bin file failed to verify=BIN-tiedoston tarkistus epäonnistui
 Bluetooth=Bluetooth

@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -28,6 +28,7 @@ Back=Späť
 Back to games=Späť na hry
 Background Music:=Hudba na pozadí:
 Backspace=Vrátiť
+battery=batéria
 battery low=batéria slabá
 Bin file failed to verify=Súbor BIN neprešiel kontrolou
 Bluetooth=Bluetooth

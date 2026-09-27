@@ -11,6 +11,7 @@
 #include <iostream>
 #include "evoui_mc_manager.h"
 #include "evoui_set_picker.h"
+#include "gui/panel_style.h"
 #include <cassert>
 #include <memory>
 #include <ableem/engine/log.h>
@@ -318,26 +319,81 @@ void GuiLauncher::scanStatusText(const ScanUpdate &update, string &title, string
 }
 
 //*******************************
+// padBatteryPlayerLabel (local)
+//*******************************
+// literal _() calls at each branch, like psPlayerSlotLabel's other copies (evoui_launcher_input.cpp,
+// gui_hardware_info.cpp) - tools/lang_tools.py's extract only recognises a literal inside _(...), not a
+// runtime value, so every copy needs its own. "" for Unused: a battery matched to a third+ pad (past the
+// PS1 port count) falls back to the generic label in padBatteryLabelsFor() below, same as no match at all.
+static string padBatteryPlayerLabel(PsPlayerSlot slot) {
+    switch (slot) {
+    case PsPlayerSlot::Player1:
+        return _("Player 1");
+    case PsPlayerSlot::Player2:
+        return _("Player 2");
+    case PsPlayerSlot::Unused:
+    default:
+        return "";
+    }
+}
+
+//*******************************
+// GuiLauncher::padBatteryLabelsFor
+//*******************************
+// C12: matches each sysfs battery reading to the SDL pad it belongs to (matchPadBatteries(), by the pad's
+// own serial against the sysfs address - core/model/pad_battery_match.h) and labels it "Player 1" /
+// "Player 2" when that pad is one of the two the PS1 emulators actually use - the same label
+// showPadAssignment()/GuiHardwareInfo already show for it. A reading with no match (no SDL pad reported
+// that address as its serial - unplugged since, no serial at all on this SDL/pad combination - or it
+// landed on a third+ pad) falls back to the old generic "Wireless pad N", numbered only among the
+// *unmatched* entries so one matched and one unmatched pad does not jump straight to "Wireless pad 2".
+vector<string> GuiLauncher::padBatteryLabelsFor(const vector<PadBatteryInfo> &batteries) const {
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    vector<PadBatterySource> sources;
+    for (size_t i = 0; i < pads.size(); i++)
+        sources.push_back({static_cast<int>(i), pads[i].serial});
+    vector<MatchedPadBattery> matches = matchPadBatteries(batteries, sources);
+
+    vector<string> labels(batteries.size());
+    vector<int> unmatchedPosition(batteries.size(), -1);
+    int unmatchedSeen = 0;
+    for (size_t i = 0; i < matches.size(); i++) {
+        if (matches[i].padIndex >= 0) {
+            string label = padBatteryPlayerLabel(psPlayerSlot(matches[i].padIndex, static_cast<int>(pads.size())));
+            if (!label.empty()) {
+                labels[i] = label;
+                continue;
+            }
+        }
+        unmatchedPosition[i] = unmatchedSeen++;
+    }
+    for (size_t i = 0; i < labels.size(); i++) {
+        if (labels[i].empty())
+            labels[i] =
+                unmatchedSeen > 1 ? _("Wireless pad") + " " + to_string(unmatchedPosition[i] + 1) : _("Wireless pad");
+    }
+    return labels;
+}
+
+//*******************************
 // GuiLauncher::pollPadBattery
 //*******************************
 // called once a frame (loop(), like applyScanUpdate) but only acts every PadBatteryPollInterval: a handful
-// of sysfs reads is cheap, but nothing here changes fast enough to need it every frame. Labels a pad
-// generically ("Wireless pad", "Wireless pad 2", ...) by its position in the list - PadBatteryService knows
-// only the sysfs address, not which SDL pad it is (matching the two is follow-up work, C8's plan flagged
-// it), so two pads read in a stable (sorted) order is the best a label can do today.
+// of sysfs reads is cheap, but nothing here changes fast enough to need it every frame.
 void GuiLauncher::pollPadBattery() {
     if (time - lastPadBatteryPoll < PadBatteryPollInterval && lastPadBatteryPoll != 0)
         return;
     lastPadBatteryPoll = time;
 
     padBatteries = padBatteryService.list();
+    padBatteryLabels = padBatteryLabelsFor(padBatteries);
 
     set<string> stillLow;
     for (size_t i = 0; i < padBatteries.size(); ++i) {
         const PadBatteryInfo &pad = padBatteries[i];
         if (!pad.known())
             continue;
-        string label = padBatteries.size() > 1 ? _("Wireless pad") + " " + to_string(i + 1) : _("Wireless pad");
+        const string &label = padBatteryLabels[i];
         if (pad.percent <= PadBatteryLowPercent) {
             stillLow.insert(pad.address);
             if (lowBatteryNotified.find(pad.address) == lowBatteryNotified.end()) {
@@ -371,11 +427,31 @@ void GuiLauncher::pollPadBattery() {
 // pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
 // is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning),
 // the percent in hintFont (already loaded for the footer, so this costs nothing extra to show).
+// C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
+// launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
+// against any theme's background image instead of floating over whatever happens to be behind them there.
 void GuiLauncher::renderPadBatteries() {
     if (padBatteries.empty())
         return;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
+    const int plateMargin = 8;
     int x = 16, y = 16;
+
+    int knownCount = 0;
+    for (const PadBatteryInfo &pad : padBatteries)
+        if (pad.known())
+            knownCount++;
+    if (knownCount == 0)
+        return;
+
+    int rowWidth = iconW + nubW + 6 + 44; // icon + nub + gap + room for "100%"
+    int rowHeight = iconH + 10;
+    ableem::Rect plate(x - plateMargin, y - plateMargin, rowWidth + 2 * plateMargin,
+                       knownCount * rowHeight - 10 + 2 * plateMargin);
+    PanelStyle plateStyle;
+    plateStyle.secondary = secColor;
+    plateStyle.sheet(renderer, plate);
+
     for (const PadBatteryInfo &pad : padBatteries) {
         if (!pad.known())
             continue;
@@ -387,7 +463,7 @@ void GuiLauncher::renderPadBatteries() {
         renderer.setDrawColor(fillColor);
         renderer.fillRect(ableem::Rect(x + 2, y + 2, fillW, iconH - 4));
         gui->text().renderText_WithColor(hintFont, to_string(pad.percent) + "%", x + iconW + nubW + 6, y - 2, fgColor);
-        y += iconH + 10;
+        y += rowHeight;
     }
 }
 

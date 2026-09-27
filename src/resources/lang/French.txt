@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 393
+# Untranslated: 0 / Total: 394
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -28,6 +28,7 @@ Back=Retour
 Back to games=Retour aux jeux
 Background Music:=Musique de fond:
 Backspace=Retour arrière
+battery=batterie
 battery low=batterie faible
 Bin file failed to verify=Le fichier BIN n'a pas pu être vérifié
 Bluetooth=Bluetooth
