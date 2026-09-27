@@ -6,14 +6,18 @@ below was checked against RetroArch's own source at tag v1.22.2 (command.h's `ma
 command.c's command_get_status/command_version/... and verbosity.c's log file naming) - not just the
 docs.libretro.com prose the research pass had to rely on.
 
-  python tools/ra_drive.py start [--cfg DIR] [--retroarch PATH] [--core PATH] [--port N] [--display :99]
+  python tools/ra_drive.py start [--cfg DIR] [--retroarch PATH] [--core PATH] [--port N]
                                                                    write a test retroarch.cfg into DIR
                                                                    (network_cmd_enable/port, video gl,
                                                                    audio null, log_to_file, screenshot_
                                                                    directory) and launch RetroArch under
                                                                    Xvfb with LIBGL_ALWAYS_SOFTWARE=1 -
                                                                    Linux only, run this ON the Debian test
-                                                                   machine (see "Where this runs" below)
+                                                                   machine (see "Where this runs" below).
+                                                                   Also records the Xvfb display it picked
+                                                                   (DIR/ra_drive.display) and its auth file
+                                                                   (DIR/ra_drive.Xauthority), for
+                                                                   `shot_display` below.
   python tools/ra_drive.py stop [--host H] [--port N] [--cfg DIR] sends QUIT, then (for a local instance)
                                                                    reads DIR's pidfile (must be the same
                                                                    --cfg a matching `start` used) and
@@ -33,7 +37,7 @@ Every command but `start`/`sheet` takes `--host <address>` (default 127.0.0.1) a
 55355, RetroArch's own default network_cmd_port) to reach an instance on another machine - UDP has no
 "connect" step, `--host`/`--port` is just where each packet is addressed. `--shots DIR` is
 screenshot_directory (needed by `shot`/`wait_shot`), `--log FILE` is the retroarch.log path (needed by
-`wait_log`).
+`wait_log`), `--cfg DIR` (same as `start`'s) is needed by `shot_display`.
 
 The script language: `press <btn>` (up/down/left/right/a/b/toggle - the menu-navigation subset of
 command.h's map[], see "Buttons" below), `wait <ms>`, `wait_status <PAUSED|PLAYING|CONTENTLESS> [timeout s]`
@@ -41,12 +45,17 @@ command.h's map[], see "Buttons" below), `wait <ms>`, `wait_status <PAUSED|PLAYI
 RetroArch has no "which menu is showing" query the way the launcher's DebugDriver has `screen`; see "Which
 menu is showing" below), `shot <file>` (SCREENSHOT, then waits for a new file in --shots DIR and copies it
 to <file> - RetroArch's own screenshot has no reply, unlike ab_drive.py's `shot`, so this is a directory
-poll, not a socket wait), `wait_shot <ref.png> [timeout s] [threshold]` (screenshot-hashes against a
-reference PNG - the practical "wait for this menu" substitute), `menu <n>` (MENU_TOGGLE, MENU_DOWN * n,
-MENU_A - a 0-based row index, there is no item-name query on this side), and any exact command.h name bare
-or after `cmd` (`QUIT`, `RESET`, `PAUSE_TOGGLE`, `GET_STATUS`, `LOAD_STATE_SLOT 2`, ...) - checked against
-the confirmed map/action_map tables before it is sent, so a typo is caught locally instead of vanishing into
-RetroArch's own [NetCMD] warning log.
+poll, not a socket wait; R22 phase 2 found this never includes the RGUI/ozone menu overlay - see
+`shot_display` and "Which menu is showing" below), `shot_display <file>` (R22, this session: `xwd -root`s
+the Xvfb display `start` (with the same --cfg) is running on and converts it to a PNG - the whole
+framebuffer as the X server drew it, menu included, independent of RetroArch's own SCREENSHOT; local only,
+needs `--cfg DIR` and `xwd` on PATH - see "Which menu is showing" below), `wait_shot <ref.png> [timeout s]
+[threshold]` (screenshot-hashes against a reference PNG - the practical "wait for this menu" substitute,
+against either kind of shot), `menu <n>` (MENU_TOGGLE, MENU_DOWN * n, MENU_A - a 0-based row index, there is
+no item-name query on this side), and any exact command.h name bare or after `cmd` (`QUIT`, `RESET`,
+`PAUSE_TOGGLE`, `GET_STATUS`, `LOAD_STATE_SLOT 2`, ...) - checked against the confirmed map/action_map
+tables before it is sent, so a typo is caught locally instead of vanishing into RetroArch's own [NetCMD]
+warning log.
 
 Buttons (press <btn>): up down left right a b toggle - MENU_UP/DOWN/LEFT/RIGHT/A/B/TOGGLE. This is
 menu-navigation only: the command port has no raw in-game RetroPad button commands (A/B/X/Y/L/R for
@@ -57,15 +66,19 @@ Which menu is showing: RetroArch's GET_STATUS only ever says PAUSED/PLAYING/CONT
 command_get_status - not which menu tab or row is open); there is no equivalent of the launcher's
 GuiScreen-per-class `screen` reply, and (R22 phase 2, confirmed against a running instance) no substitute in
 the log either: `MENU_TOGGLE` and menu navigation (`MENU_UP`/`MENU_DOWN`/...) write **zero** new lines to
-retroarch.log, at any verbosity - `wait_log` cannot stand in for a menu-transition query. **Menu state is
-read from screenshots instead** - `wait_shot` (screenshot + average-hash distance against a reference
-image) - but even that has a caveat: `SCREENSHOT` was found (R22 phase 2) not to capture the RGUI/ozone menu
-overlay itself on this build, only the content's own rendered frame - tried with `menu_driver` both `rgui`
-and `ozone`, and `video_gpu_screenshot` both `true` (the default - clean, consistent frames) and `false`
-(introduces torn/incomplete frames instead of showing the menu, so stay on `true`). Two shots taken around a
-`press toggle` will only differ when something else changes the frame - e.g. the "Screenshot saved" HUD
-toast left over from the previous `shot` itself - never from the menu actually opening. Use `wait_shot`
-for "did the frame change at all", not for "is the menu open".
+retroarch.log, at any verbosity - `wait_log` cannot stand in for a menu-transition query. **Menu state is a
+capture of the Xvfb display, not a RetroArch screenshot**: `SCREENSHOT` (R22 phase 2) never includes the
+RGUI/ozone menu overlay on this build, only the content's own rendered frame - tried with `menu_driver` both
+`rgui` and `ozone`, and `video_gpu_screenshot` both `true` (the default - clean, consistent frames) and
+`false` (introduces torn/incomplete frames instead of showing the menu, so stay on `true`); two `shot`s taken
+around a `press toggle` only differ when something else changes the frame (e.g. the "Screenshot saved" HUD
+toast left over from the previous `shot` itself), never from the menu actually opening. `shot_display` (R22,
+this session) is the fix: it reads the whole Xvfb framebuffer directly with `xwd -root`, the way a human
+looking at the screen would, bypassing RetroArch's own (menu-blind) SCREENSHOT command entirely - proven
+against a live instance with `press toggle`: a shot before, one with the RGUI Quick Menu open, one after all
+differ/match exactly as expected (before == after, both != the menu shot) - see R22-phase2-report.md section
+11 and the `R22-disp-A/B/C.png` files it points at. Use `wait_shot` against either kind of shot for "did the
+frame/display change at all"; `shot_display` is what actually shows the menu.
 
 Known upstream RetroArch 1.22.2 issues (all found by R22, all worked around here, none of them a bug in
 this project's own code):
@@ -93,12 +106,16 @@ since screenshot_directory and retroarch.log are both local files on whichever m
 driving it from elsewhere over `--host` would still need a second hop (sftp/scp) just to read those two
 paths back. `--host`/`--port` remain for the rare case of sending a bare command (`press`, `QUIT`, ...) at
 a RetroArch on the LAN from another machine, with no shot/log-dependent commands in the script.
+`shot_display` additionally needs `xwd` (Debian's `x11-apps` package) on PATH - not preinstalled on the test
+machine any more than Pillow was; `apt-get download x11-apps` + `dpkg-deb -x` into a local root, no sudo,
+the same recipe already used there for Pillow/gdb/7zip (see CLAUDE.md, "ra_drive.py").
 """
 import os
 import re
 import shutil
 import signal
 import socket
+import struct
 import subprocess
 import sys
 import time
@@ -328,6 +345,128 @@ def hash_distance(h1, h2):
     return bin(int(h1, 16) ^ int(h2, 16)).count('1')
 
 
+# ---------------------------------------------------------------------------------------------------------
+# Xvfb display capture (`shot_display`) - see the module docstring's "Which menu is showing". `capture_
+# display` shells out to `xwd -root` (the only way to read a live X framebuffer without a full X client
+# library) and hands the raw .xwd bytes to `xwd_to_rgb_rows`, a small pure-Python decoder kept separate so
+# it can be unit-tested offline against a synthetic file with no `xwd` binary or live X server involved -
+# see test_ra_drive.py's XwdParsingTests. This is deliberately not a general XWD reader: it covers exactly
+# what Xvfb + xwd produce (file_version 7, ZPixmap, 24 or 32 bits/pixel, direct RGB via the header's own
+# red/green/blue masks) and raises RaError, not a guess, for anything else. The byte layout below (LSBFirst
+# word per pixel, R/G/B pulled out by each mask's own bit position) was checked pixel-by-pixel against a
+# real capture and a known-good reference image, several coordinates, both a near-white background and
+# pure black - see R22-phase2-report.md section 11.
+
+_XWD_HEADER_FIELDS = (
+    'header_size', 'file_version', 'pixmap_format', 'pixmap_depth', 'pixmap_width', 'pixmap_height',
+    'xoffset', 'byte_order', 'bitmap_unit', 'bitmap_bit_order', 'bitmap_pad', 'bits_per_pixel',
+    'bytes_per_line', 'visual_class', 'red_mask', 'green_mask', 'blue_mask', 'bits_per_rgb',
+    'colormap_entries', 'ncolors', 'window_width', 'window_height', 'window_x', 'window_y',
+    'window_bdrwidth',
+)
+_XWD_ZPIXMAP = 2
+
+
+def _mask_shift(mask):
+    """The bit position of a mask's lowest set bit, e.g. 0xFF0000 -> 16 (0 for an all-zero mask)."""
+    if mask == 0:
+        return 0
+    shift = 0
+    while not (mask >> shift) & 1:
+        shift += 1
+    return shift
+
+
+def xwd_to_rgb_rows(data):
+    """Parses raw XWD file bytes (X11/XWDFile.h's format, version 7 - what `xwd` writes) into
+    (width, height, rows), rows being `height` lists of `width` (r, g, b) tuples, top row first. See the
+    section banner above for what this does and does not support."""
+    if len(data) < 100:
+        raise RaError('not an XWD file (only {} bytes, need at least a 100-byte header)'.format(len(data)))
+    header = dict(zip(_XWD_HEADER_FIELDS, struct.unpack('>25I', data[:100])))
+    if header['file_version'] != 7:
+        raise RaError('unsupported XWD file_version {} (expected 7)'.format(header['file_version']))
+    if header['pixmap_format'] != _XWD_ZPIXMAP:
+        raise RaError('unsupported XWD pixmap_format {} (expected {}, ZPixmap)'.format(
+            header['pixmap_format'], _XWD_ZPIXMAP))
+    bpp = header['bits_per_pixel']
+    if bpp not in (24, 32):
+        raise RaError('unsupported XWD bits_per_pixel {} (expected 24 or 32)'.format(bpp))
+    if header['byte_order'] not in (0, 1):
+        raise RaError('unsupported XWD byte_order {} (expected 0 LSBFirst or 1 MSBFirst)'.format(
+            header['byte_order']))
+    little = header['byte_order'] == 0
+    bytes_per_pixel = bpp // 8
+    width, height, stride = header['pixmap_width'], header['pixmap_height'], header['bytes_per_line']
+    r_shift = _mask_shift(header['red_mask'])
+    g_shift = _mask_shift(header['green_mask'])
+    b_shift = _mask_shift(header['blue_mask'])
+    # header_size already covers the fixed 100-byte header plus the variable-length, null-terminated
+    # window name that follows it (nothing here needs the name itself); the colormap table (ncolors *
+    # 12-byte XWDColor entries) comes right after that, then the pixel data.
+    data_off = header['header_size'] + header['ncolors'] * 12
+    needed = data_off + height * stride
+    if len(data) < needed:
+        raise RaError('truncated XWD file: need {} bytes, have {}'.format(needed, len(data)))
+
+    rows = []
+    for y in range(height):
+        row_off = data_off + y * stride
+        row = []
+        for x in range(width):
+            off = row_off + x * bytes_per_pixel
+            word = int.from_bytes(data[off:off + bytes_per_pixel], 'little' if little else 'big')
+            row.append(((word >> r_shift) & 0xFF, (word >> g_shift) & 0xFF, (word >> b_shift) & 0xFF))
+        rows.append(row)
+    return width, height, rows
+
+
+def capture_display(work_dir, out_path):
+    """Captures the whole Xvfb display a matching `start --cfg work_dir` is running on, as `out_path`
+    (PNG) - not RetroArch's own SCREENSHOT, which (R22 phase 2) never includes the RGUI/ozone menu overlay,
+    only the content's own rendered frame. `xwd -root` reads the framebuffer the way a human looking at the
+    screen would, independent of RetroArch. Needs `xwd` on PATH and Pillow (already required for
+    wait_shot's hashing) - see the module docstring's "Where this runs"."""
+    display_file = os.path.join(work_dir, 'ra_drive.display')
+    xauth_file = os.path.join(work_dir, 'ra_drive.Xauthority')
+    try:
+        with open(display_file, 'r', encoding='utf-8') as f:
+            display_num = f.read().strip()
+    except OSError:
+        raise RaError('{} not found - was `start` run with this --cfg, and did it finish (a display '
+                       'number is written once Xvfb reports it)?'.format(display_file))
+    if not display_num:
+        raise RaError('{} is empty - Xvfb has not reported a display number yet'.format(display_file))
+
+    env = dict(os.environ)
+    env['XAUTHORITY'] = xauth_file
+    xwd_path = out_path + '.xwd.tmp'
+    try:
+        result = subprocess.run(['xwd', '-root', '-display', ':' + display_num, '-out', xwd_path],
+                                 env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except FileNotFoundError:
+        raise RaError('xwd not found on PATH - see the module docstring, "Where this runs", for the '
+                       'apt-get-download recipe (x11-apps, no root needed)')
+    if result.returncode != 0:
+        raise RaError('xwd failed (exit {}): {}'.format(
+            result.returncode, result.stderr.decode('utf-8', 'replace').strip()))
+
+    try:
+        with open(xwd_path, 'rb') as f:
+            width, height, rows = xwd_to_rgb_rows(f.read())
+        from PIL import Image
+        img = Image.new('RGB', (width, height))
+        img.putdata([px for row in rows for px in row])
+        out_dir = os.path.dirname(os.path.abspath(out_path))
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+        img.save(out_path)
+    finally:
+        if os.path.exists(xwd_path):
+            os.remove(xwd_path)
+    return out_path
+
+
 class LogTail:
     """Tails a retroarch.log written with log_to_file=true (see the module docstring's "Which menu is
     showing" paragraph). verbosity.c's RARCH_LOG_V (the non-Qt/WinRT/Apple branch, i.e. a plain Linux
@@ -368,9 +507,10 @@ class LogTail:
 _NUMBER_RE = re.compile(r'^\d+(\.\d+)?$')
 
 
-def run_script(client, script, shots=None, log=None):
+def run_script(client, script, shots=None, log=None, work_dir=None):
     """Runs a ';'-separated script against `client`, returning one reply string per command - the same
-    shape as ab_drive.py's Driver.run(). See the module docstring for the command list."""
+    shape as ab_drive.py's Driver.run(). See the module docstring for the command list. `work_dir` is the
+    --cfg directory `shot_display` reads (ra_drive.display/ra_drive.Xauthority, written by `start`)."""
     out = []
     for part in script.split(';'):
         part = part.strip()
@@ -394,6 +534,12 @@ def run_script(client, script, shots=None, log=None):
             src = client.screenshot(shots)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
             shutil.copy(src, dest)
+            out.append('ok ' + dest)
+        elif head == 'shot_display':
+            if work_dir is None:
+                raise RaError('shot_display needs --cfg DIR (the same one `start` used)')
+            dest = os.path.abspath(part.split(None, 1)[1].strip())
+            capture_display(work_dir, dest)
             out.append('ok ' + dest)
         elif head == 'wait_shot':
             if shots is None:
@@ -460,6 +606,26 @@ menu_driver = "rgui"
 # configuration.c's parse_config() - "is not an existing directory, ignoring...") - start() below creates
 # both directories before writing the cfg.
 
+_DIGITS_ONLY_RE = re.compile(r'^\d+$')
+
+
+def _parse_xvfb_diag_display(diag_path):
+    """The Xvfb display number `xvfb-run -e diag_path --server-args='... -displayfd 1'` reported, or None
+    if it hasn't (yet, or ever) - see cmd_start's comment on why -e/fd 1 is what actually carries it. The
+    file also picks up Xvfb's own startup noise (e.g. llvmpipe/libEGL "failed to open /dev/dri/cardN"
+    warnings) mixed in around it - confirmed live, the number was not always the first line - so this takes
+    the last line that is only digits, not just the first line of the file."""
+    try:
+        with open(diag_path, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return None
+    for line in reversed(lines):
+        line = line.strip()
+        if _DIGITS_ONLY_RE.match(line):
+            return line
+    return None
+
 
 def cmd_start(args):
     if sys.platform not in ('linux', 'linux2'):
@@ -475,7 +641,6 @@ def cmd_start(args):
     work_dir = os.path.abspath(opt('--cfg', os.path.join(REPO, 'build_ra_drive')))
     retroarch_bin = opt('--retroarch', 'retroarch')
     core = opt('--core', None)
-    display = opt('--display', ':99')
 
     screenshots_dir = os.path.join(work_dir, 'screenshots')
     os.makedirs(screenshots_dir, exist_ok=True)
@@ -494,7 +659,31 @@ def cmd_start(args):
     # long the instance runs - wait_log (and any script reading --log) would poll an effectively-empty file
     # forever. Confirmed live: a --verbose instance's log grows with real INFO/WARN lines from the first
     # second; without it, the file exists but stays static.
-    cmd = ['xvfb-run', '-a', '--server-args=-screen 0 1280x720x24 -displayfd 1',
+    #
+    # display/auth handling (R22, this session, for `shot_display`): `-a` (auto-pick a free display number)
+    # stays - it is what lets more than one ra_drive.py instance share this machine without clashing on a
+    # fixed number - but the number it picks has to be recovered so `shot_display` can `xwd -root -display
+    # :N` the right one later. xvfb-run's own source (/usr/bin/xvfb-run, a shell script) rules out the
+    # obvious approach: it hardcodes fd 3 for ITS OWN diagnostics (`exec 3>>"$ERRORFILE"`, default
+    # /dev/null) and explicitly closes it (`3>&-`) before exec'ing the wrapped command - `-displayfd 3`
+    # would need a fd xvfb-run does not hand through. `-displayfd 1` (Xvfb's own stdout) is what actually
+    # works, because xvfb-run starts Xvfb with `>&3 2>&3` - i.e. Xvfb's fd 1/2 already point at fd 3, so
+    # `--error-file`/`-e FILE` (not Popen's stdout, which stays DEVNULL as before - that is xvfb-run's own
+    # fd 1, never Xvfb's) is what actually captures the -displayfd write. Confirmed live: the file also
+    # picks up unrelated Xvfb-startup noise (llvmpipe/libEGL "failed to open /dev/dri/card0" warnings), and
+    # the display number is not reliably the first line - `_parse_xvfb_diag_display` below takes the last
+    # line that is only digits, which is what the number always was in every capture taken this session.
+    # `-f` pins the auth file to a known path instead of xvfb-run's own random
+    # `/tmp/xvfb-run.XXXXXX/Xauthority`, so `shot_display` (a later, separate process) can find it from
+    # --cfg alone.
+    xauth_path = os.path.join(work_dir, 'ra_drive.Xauthority')
+    diag_path = os.path.join(work_dir, 'ra_drive.xvfb-diag')
+    display_path = os.path.join(work_dir, 'ra_drive.display')
+    for stale in (xauth_path, diag_path, display_path):
+        if os.path.exists(stale):
+            os.remove(stale)
+    cmd = ['xvfb-run', '-a', '-f', xauth_path, '-e', diag_path,
+           '--server-args=-screen 0 1280x720x24 -displayfd 1',
            retroarch_bin, '-c', cfg_path, '--verbose']
     if core:
         cmd += ['-L', core]
@@ -531,8 +720,24 @@ def cmd_start(args):
     else:
         raise RaError('the command port never answered (cfg {}, log {})'.format(cfg_path, log_path))
     client.close()
-    print('started pid {} on port {}, cfg {}, log {}, screenshots {}'.format(
-        proc.pid, port, cfg_path, log_path, screenshots_dir))
+
+    # By the time VERSION answers, Xvfb has been up for a while (RetroArch itself needed to connect to it
+    # first) - the number should already be in diag_path, but poll briefly rather than assume, since it is
+    # a separate write racing nothing in particular against VERSION's own readiness.
+    display_num = None
+    for _ in range(25):
+        display_num = _parse_xvfb_diag_display(diag_path)
+        if display_num:
+            break
+        time.sleep(0.2)
+    if not display_num:
+        raise RaError('retroarch answered but no display number ever appeared in {} - shot_display will '
+                       'not work for this instance'.format(diag_path))
+    with open(display_path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(display_num)
+
+    print('started pid {} on port {}, display :{}, cfg {}, log {}, screenshots {}'.format(
+        proc.pid, port, display_num, cfg_path, log_path, screenshots_dir))
     return 0
 
 
@@ -615,10 +820,17 @@ def main(argv):
     port = DEFAULT_PORT
     shots = None
     logpath = None
-    # --cfg is peeked (not stripped from args): cmd_start does its own --cfg parsing straight out of args,
-    # so it must stay in the list for that path. 'stop' has no other use for args, so cmd_stop is handed
-    # the value directly instead.
+    # --cfg is peeked, then stripped from args UNLESS cmd == 'start': cmd_start does its own --cfg parsing
+    # straight out of args, so it must stay in the list for that path. Every other command gets cfg_dir
+    # handed to it directly instead (cmd_stop's own parameter; run_script's work_dir, for `shot_display` -
+    # R22, this session) - left in args there, it would leak into the joined script text for `run`/a bare
+    # command (`' '.join(args)`), corrupting whichever command happened to read the rest of the line as its
+    # own argument (shot_display's destination path, first found this way: `--cfg DIR` ends up appended to
+    # the filename xwd is asked to write).
     cfg_dir = os.path.abspath(args[args.index('--cfg') + 1]) if '--cfg' in args else None
+    if cmd != 'start' and '--cfg' in args:
+        i = args.index('--cfg')
+        del args[i:i + 2]
     if '--host' in args:
         i = args.index('--host')
         host = args[i + 1]
@@ -650,7 +862,7 @@ def main(argv):
         log = LogTail(logpath) if logpath else None
         try:
             script = ' '.join(args) if cmd == 'run' else (cmd + (' ' + ' '.join(args) if args else ''))
-            for line in run_script(client, script, shots, log):
+            for line in run_script(client, script, shots, log, cfg_dir):
                 print(line)
         finally:
             client.close()
