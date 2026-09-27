@@ -65,7 +65,10 @@ LAUNCHER = [
     ('extensions', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu extensions; wait_screen GuiExtensions; wait 400'),
     # the scanner processors' sequences: copy proc_unzip's folder into usb/System/Processors/unzip first
     ('processors', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu scanner; wait_screen GuiProcessors; wait 400'),
-    ('store-apps', 'wait 500; press x; wait_screen GuiStore; wait 3000'),
+    # self-contained (not just "continues from extensions"): 'processors' runs between this and 'extensions'
+    # above and leaves the launcher on GuiProcessors, not the Extensions list Store expects to open from
+    ('store-apps', 'press o; wait 300; press o; wait 300; press o; wait 1500; menu extensions; '
+                    'wait_screen GuiExtensions; wait 400; press x; wait_screen GuiStore; wait 3000'),
     ('store-sources', 'press l1; wait 1500'),
     ('store-source-menu', 'press up; press up; press x; wait_screen GuiActionMenu; wait 400'),
 ]
@@ -112,7 +115,12 @@ def shoot(tool, screens, out_dir, show):
         return
     start = DRIVE + ['start', '--port', PORT] + (['--show'] if show else []) + (['--tool', tool] if tool else [])
     os.environ.setdefault('AB_STORE_CATALOG', STORE_CATALOG)
-    run(start)
+    r = run(start, check=False)
+    if r.returncode != 0:
+        # a tool not built for this checkout (e.g. a console-tools binary not staged here) skips its shots
+        # instead of aborting the whole run - so the languages after this one are still captured
+        print('  !! could not start%s: %s' % (' ' + tool if tool else '', (r.stdout + r.stderr).strip().splitlines()[-1:]))
+        return
     try:
         for name, script in screens:
             png = os.path.join(out_dir, name + '.png')
