@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """abpanel (R24) - the PC test machine's status panel, drawn in a terminal on its standby monitor.
 
-Runs as `foot --app-id abpanel abpanel` from the sway config next to it (tools/abpanel/sway.config); the VM's
-live view (virt-viewer) sits beside it on the same monitor. Everything is read locally except the Teams block,
-which is autobleem-main's public status.json on develop (no token). Standard library only.
+The standby monitor is four quadrants (tools/abpanel/layout.sh): `abpanel status` top-left, the VM's live view
+(virt-viewer) top-right, `abpanel teams` bottom-left, `abpanel load` bottom-right, each in its own foot.
+Everything is read locally except the Teams block, which is autobleem-main's public status.json on develop
+(no token). Standard library only.
 
-  abpanel               the panel (redraws every 2 s, Ctrl-C to quit)
-  abpanel --once        one frame to stdout, no logo, no screen control (a check over ssh)
+  abpanel [status|teams|load|all]          redraws every 2 s, Ctrl-C to quit (all = status + teams)
+  abpanel [mode] --once                    one frame to stdout, no logo, no screen control (a check over ssh)
 
-Blocks: the logo, the host (IP, time in Irish local time), load (CPU, load average, RAM, temperature, disk),
-the three runners (idle/busy and the job's repository), the VM (state, the stick's VERSION, launcher, padsim,
-the DebugDriver forward), and the teams (status.json schema 1, docs/admin-roadmap-plan.md in autobleem-main).
+status: the logo, the host (IP, time in Irish local time), a load line, the three runners (idle/busy and the
+        job's repository), the VM (state, the stick's VERSION, launcher, padsim, the DebugDriver forward);
+teams:  status.json schema 1 (docs/admin-roadmap-plan.md in autobleem-main) - usage, the teams, Needs the owner;
+load:   htop-like - a bar per core, memory and swap bars, load average, the top processes by CPU and by memory.
 """
 import json
 import os
@@ -210,7 +212,7 @@ def colour(state):
     return STATE_COLOUR.get(state, RED) + state + RESET
 
 
-def frame(cpu, vm, teams, width):
+def status_lines(cpu, vm, width):
     L = []
     now = datetime.now(TZ)
     L.append(f"{BOLD}bleemmachine{RESET}  {host_ip()}   {now:%a %d %b  %H:%M:%S} {now.tzname()}")
@@ -235,7 +237,11 @@ def frame(cpu, vm, teams, width):
                  f" (forward {v.get('forward', '?')})")
     elif v:
         L.append(f"  {RED}{v.get('error', '')}{RESET}  forward {v.get('forward', '?')}")
-    L.append("")
+    return [fit(x, width) for x in L]
+
+
+def teams_lines(teams, width):
+    L = []
     s = teams.value
     if not isinstance(s, dict) or s.get("schema") != 1:
         err = s.get("error") if isinstance(s, dict) else None
@@ -261,6 +267,120 @@ def frame(cpu, vm, teams, width):
             L.append(f"{BOLD}{YELLOW}Needs the owner{RESET}")
             for n in needs:
                 L.append(f"  {n.get('id', '')}  [{n.get('kind', '')}]  {n.get('what', '')}")
+    return [fit(x, width) for x in L]
+
+
+# ---------------------------------------------------------------- the htop-like load view
+
+class Procs:
+    """Per-core CPU and per-process CPU/memory from /proc, as deltas between two frames."""
+
+    def __init__(self):
+        self.hz = os.sysconf("SC_CLK_TCK")
+        self.page = os.sysconf("SC_PAGE_SIZE")
+        self.cores, self.ticks, self.at = self.core_sample(), {}, time.time()
+        self.users = {}
+        self.sample()
+
+    @staticmethod
+    def core_sample():
+        out = []
+        for line in read("/proc/stat").splitlines():
+            if re.match(r"cpu\d+ ", line):
+                f = [int(x) for x in line.split()[1:]]
+                out.append((sum(f), f[3] + f[4]))
+        return out
+
+    def core_percent(self):
+        now = self.core_sample()
+        pct = [0.0 if t1 - t0 <= 0 else 100.0 * ((t1 - t0) - (i1 - i0)) / (t1 - t0)
+               for (t0, i0), (t1, i1) in zip(self.cores, now)]
+        self.cores = now
+        return pct
+
+    def user(self, uid):
+        if uid not in self.users:
+            try:
+                import pwd
+                self.users[uid] = pwd.getpwuid(uid).pw_name
+            except (ImportError, KeyError):
+                self.users[uid] = str(uid)
+        return self.users[uid]
+
+    def sample(self):
+        """[(pid, user, cpu%, rss bytes, command)] - cpu% of one core, as htop shows it."""
+        now, ticks, rows = time.time(), {}, []
+        dt = max(now - self.at, 0.001)
+        for pid in filter(str.isdigit, os.listdir("/proc")):
+            try:
+                stat = read(f"/proc/{pid}/stat")
+                rest = stat[stat.rindex(")") + 2:].split()
+                t = int(rest[11]) + int(rest[12])
+                rss = int(read(f"/proc/{pid}/statm").split()[1]) * self.page
+                uid = os.stat(f"/proc/{pid}").st_uid
+                with open(f"/proc/{pid}/cmdline", "rb") as f:
+                    cmd = f.read().replace(b"\0", b" ").decode(errors="replace").strip()
+            except (OSError, ValueError, IndexError):
+                continue
+            if not cmd:
+                cmd = "[" + stat[stat.index("(") + 1:stat.rindex(")")] + "]"
+            ticks[pid] = t
+            cpu = 100.0 * (t - self.ticks.get(pid, t)) / (self.hz * dt)
+            rows.append((int(pid), self.user(uid), cpu, rss, cmd))
+        self.ticks, self.at = ticks, now
+        return rows
+
+
+def bar(label, pct, width, text=None):
+    inner = max(width - len(label) - 2, 4)
+    text = text if text is not None else f"{pct:.0f}%"
+    fill = int(round(inner * min(max(pct, 0), 100) / 100))
+    body = ("|" * fill).ljust(inner)
+    body = body[: inner - len(text)] + text
+    c = GREEN if pct < 60 else (YELLOW if pct < 85 else RED)
+    return f"{BOLD}{label}{RESET}[{c}{body[:fill]}{RESET}{body[fill:]}]"
+
+
+def human(n):
+    for unit in ("B", "K", "M", "G"):
+        if n < 1024 or unit == "G":
+            return f"{n:.0f}{unit}" if unit in ("B", "K") else f"{n:.1f}{unit}"
+        n /= 1024
+    return "?"
+
+
+def load_lines(procs, width, rows):
+    L = []
+    cores = procs.core_percent()
+    per_row = 2 if width >= 60 else 1
+    col = (width - 2) // per_row
+    for i in range(0, len(cores), per_row):
+        L.append("  ".join(bar(f"{j:>2}", cores[j], col - 1) for j in range(i, min(i + per_row, len(cores)))))
+    m = {}
+    for line in read("/proc/meminfo").splitlines():
+        k, _, v = line.partition(":")
+        m[k] = int(v.split()[0]) * 1024 if v.split() else 0
+    used = m.get("MemTotal", 0) - m.get("MemAvailable", 0)
+    swap = m.get("SwapTotal", 0) - m.get("SwapFree", 0)
+    L.append(bar("Mem", 100 * used / max(m.get("MemTotal", 1), 1), width - 1,
+                 f"{human(used)}/{human(m.get('MemTotal', 0))}"))
+    L.append(bar("Swp", 100 * swap / max(m.get("SwapTotal", 1), 1), width - 1,
+                 f"{human(swap)}/{human(m.get('SwapTotal', 0))}"))
+    la = read("/proc/loadavg").split()
+    up = float(read("/proc/uptime").split()[0] or 0)
+    t = temperature()
+    L.append(f"{BOLD}Load average{RESET} {' '.join(la[:3])}   {BOLD}Tasks{RESET} {la[3] if len(la) > 3 else '?'}"
+             f"   {BOLD}Up{RESET} {int(up // 86400)}d {int(up % 86400 // 3600)}h {int(up % 3600 // 60)}m"
+             f"   {'%.0f°C' % t if t is not None else ''}")
+    ps = procs.sample()
+    n = max((rows - len(L) - 5) // 2, 2)
+    head = f"{BOLD}{'PID':>7} {'USER':<10} {'CPU%':>5} {'RES':>6}  COMMAND{RESET}"
+    for title, key in (("Top by CPU", lambda p: p[2]), ("Top by memory", lambda p: p[3])):
+        L.append("")
+        L.append(f"{BOLD}{CYAN}{title}{RESET}")
+        L.append(head)
+        for pid, user, cpu, rss, cmd in sorted(ps, key=key, reverse=True)[:n]:
+            L.append(f"{pid:>7} {user[:10]:<10} {cpu:5.1f} {human(rss):>6}  {cmd}")
     return [fit(x, width) for x in L]
 
 
@@ -291,20 +411,38 @@ def logo(cols):
     return out, rows if out else 0
 
 
+MODES = ("status", "teams", "load", "all")
+
+
 def main():
     once = "--once" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--once"]
+    mode = args[0] if args else "all"
+    if mode not in MODES:
+        sys.exit(f"usage: abpanel [{'|'.join(MODES)}] [--once]")
     cpu, vm, teams = Cpu(), Slow(VM_EVERY, vm_status), Slow(TEAMS_EVERY, teams_status)
+    procs = Procs() if mode == "load" else None
+    slows = [s for s, used in ((vm, mode in ("status", "all")), (teams, mode in ("teams", "all"))) if used]
+
+    def frame(width, rows):
+        if mode == "load":
+            return load_lines(procs, width, rows)
+        out = status_lines(cpu, vm, width) if mode != "teams" else []
+        if mode == "all":
+            out.append("")
+        return out + (teams_lines(teams, width) if mode != "status" else [])
+
     if once:
-        for slow in (vm, teams):
+        for slow in slows:
             try:
                 slow.value = slow.fn()
             except Exception as e:  # the same as Slow.run
                 slow.value = {"error": str(e)}
-        time.sleep(0.5)
-        print("\n".join(frame(cpu, vm, teams, 200)))
+        time.sleep(1)
+        print("\n".join(frame(160, 60)))
         return
-    vm.start()
-    teams.start()
+    for slow in slows:
+        slow.start()
     redraw = [True]
     signal.signal(signal.SIGWINCH, lambda *_: redraw.__setitem__(0, True))
     sys.stdout.write("\x1b[?25l")  # no cursor
@@ -314,10 +452,10 @@ def main():
             cols, rows = shutil.get_terminal_size()
             if redraw[0]:
                 redraw[0] = False
-                img, h = logo(cols)
+                img, h = logo(cols) if mode in ("status", "all") else ("", 0)
                 sys.stdout.write("\x1b[2J\x1b[H" + img)
-                top = h + 2
-            lines = frame(cpu, vm, teams, cols)[: max(rows - top, 1)]
+                top = h + 2 if h else 1
+            lines = frame(cols, rows - top + 1)[: max(rows - top, 1)]
             sys.stdout.write(f"\x1b[{top};1H" + "".join(x + "\x1b[K\n" for x in lines) + "\x1b[J")
             sys.stdout.flush()
             time.sleep(TICK)

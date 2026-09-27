@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installs the PC test machine's two-monitor setup (R24) for the current user - no root:
-#   ~/.local/share/abpanel/  abpanel.py + the logo, ~/.local/bin/abpanel -> it
+#   ~/.local/share/abpanel/  abpanel.py, layout.sh (the four quadrants), the logo; ~/.local/bin/abpanel -> it
 #   ~/.config/sway/config    tools/abpanel/sway.config (an existing one is kept as config.before-abpanel)
 #   ~/.profile               sway on tty1 only, between the abpanel markers
 # The packages (sway foot virt-viewer grim chafa) and tty1's autologin are the owner's sudo steps
@@ -30,6 +30,7 @@ fi
 
 mkdir -p "$share" ~/.local/bin ~/.config/sway
 install -m 755 "$here/abpanel.py" "$share/abpanel.py"
+install -m 755 "$here/layout.sh" "$share/layout.sh"
 install -m 644 "$here/../../src/resources/ablogo.png" "$share/ablogo.png"
 ln -sf "$share/abpanel.py" ~/.local/bin/abpanel
 if [ -f ~/.config/sway/config ] && ! cmp -s ~/.config/sway/config "$here/sway.config" &&
