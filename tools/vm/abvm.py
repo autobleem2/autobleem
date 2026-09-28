@@ -5,11 +5,16 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
   python tools/vm/abvm.py status                         the VM, the guest, the launcher, padsim, the DebugDriver
   python tools/vm/abvm.py setup                          copy this tool to the test machine (needed once, and after
                                                          every change to it: `run` and `pad` execute there)
-  python tools/vm/abvm.py install FILE [GUEST_PATH]      put a file in the guest; the original is kept once as
-                                                         <path>.abvm-orig. GUEST_PATH: an absolute path, or
-                                                         `launcher` (next to the running autobleem-gui) or
-                                                         `ext:<name>` (<root>/Extensions/<name>/bin/<key>/)
-  python tools/vm/abvm.py restore                        every file `install` replaced back as it was
+  python tools/vm/abvm.py install SRC [GUEST_PATH]       put a file or a directory in the guest; the original is kept
+                                                         once as <path>.abvm-orig. SRC: a local path, or
+                                                         host:<path> for one on the test machine (a build's
+                                                         dist/ there). GUEST_PATH: an absolute path, `launcher`
+                                                         (next to the running autobleem-gui; a directory: over the
+                                                         launcher's own - the launcher is restarted), `launcher-dir`,
+                                                         or `ext:<name>` (<root>/Extensions/<name>/bin/<key>/)
+  python tools/vm/abvm.py restore                        every file and directory `install` replaced back as it was
+  python tools/vm/abvm.py clip SECONDS OUT.mp4           the VM's screen as a video (ffmpeg on the test machine);
+                                                         in `run`: clip start <name.mp4>; ...steps...; clip stop
   python tools/vm/abvm.py restart                        restart the launcher, wait until its DebugDriver answers
   python tools/vm/abvm.py shot OUT.png                   the VM's whole screen (the emulator and Apps included)
   python tools/vm/abvm.py pad "<script>"                 the virtual pad: press a; wait 300; dpad down; ...
@@ -147,7 +152,9 @@ def launcher_exe():
     return out[0]
 
 
-def resolve_target(name, target):
+def resolve_target(name, target, is_dir=False):
+    if target == 'launcher-dir' or (is_dir and target in (None, 'launcher')):
+        return os.path.dirname(launcher_exe())
     if target is None or target == 'launcher':
         return os.path.join(os.path.dirname(launcher_exe()), name).replace('\\', '/')
     if target.startswith('ext:'):
@@ -162,28 +169,72 @@ def resolve_target(name, target):
     return target
 
 
-def install(path, target):
-    dest = resolve_target(os.path.basename(path), target)
-    stage = f'/tmp/abvm-{uuid.uuid4().hex[:8]}'
-    to_guest(path, stage)
+def source_to_guest(src, guest_path):
+    """a local file, or `host:<path>` - one already on the test machine (a build's output there), sent straight on"""
+    if src.startswith('host:'):
+        host_run(f'scp -q -i {KEY} -o BatchMode=yes {shlex.quote(src[5:])} {guest_address()}:{shlex.quote(guest_path)}')
+    else:
+        to_guest(src, guest_path)
+
+
+def install(src, target):
+    on_host = src.startswith('host:')
+    path = src[5:] if on_host else src
+    if on_host:
+        is_dir = host_run(f'test -d {shlex.quote(path)} && echo d || echo f').strip() == 'd'
+    else:
+        is_dir = os.path.isdir(path)
+    name = os.path.basename(path.rstrip('/\\'))
+    dest = resolve_target(name, target, is_dir)
     q = shlex.quote(dest)
-    # the original once (a second install keeps the first original), the list of what was replaced on the root
-    # filesystem, the new file moved into place so a running program never sees half a file
-    guest_run(f'sudo sh -c "set -e; if [ -e {q} ] && [ ! -e {q}.abvm-orig ]; then cp -p {q} {q}.abvm-orig; '
-              f'mkdir -p /var/lib/abvm; echo {q} >> /var/lib/abvm/installed; fi; '
-              f'cp {stage} {q}.abvm-new; chmod --reference={q}.abvm-orig {q}.abvm-new 2>/dev/null || chmod 755 {q}.abvm-new; '
-              f'mv -f {q}.abvm-new {q}; rm -f {stage}; sync"')
-    print(f'installed {dest}')
+    # the original once (a second install keeps the first original), and the list of what was replaced on the
+    # root filesystem, which `restore` reads
+    keep = (f'if [ -e {q} ] && [ ! -e {q}.abvm-orig ]; then cp -a {q} {q}.abvm-orig; '
+            f'mkdir -p /var/lib/abvm; echo {q} >> /var/lib/abvm/installed; fi')
+    stage = f'/tmp/abvm-{uuid.uuid4().hex[:8]}'
+    if not is_dir:
+        source_to_guest(src, stage)
+        # moved into place, so a running program never sees half a file
+        guest_run(f'sudo sh -c "set -e; {keep}; cp {stage} {q}.abvm-new; '
+                  f'chmod --reference={q}.abvm-orig {q}.abvm-new 2>/dev/null || chmod 755 {q}.abvm-new; '
+                  f'mv -f {q}.abvm-new {q}; rm -f {stage}; sync"')
+        print(f'installed {dest}')
+        return
+    # a directory: packed where it is, unpacked in the guest and copied over the target's contents, with the
+    # launcher stopped meanwhile (a launcher tree is the usual one; the data partition is exFAT, which has no
+    # owners - hence --no-same-owner and a plain cp)
+    archive = stage + '.tgz'
+    if on_host:
+        host_run(f'tar czf {archive} -C {shlex.quote(os.path.dirname(path.rstrip("/")))} {shlex.quote(name)}')
+        source_to_guest('host:' + archive, archive)
+        host_run(f'rm -f {archive}', check=False)
+    else:
+        import tarfile
+        local = os.path.join(tempfile.mkdtemp(prefix='abvm-'), name + '.tgz')
+        with tarfile.open(local, 'w:gz') as tar:
+            tar.add(path, arcname=name)
+        to_guest(local, archive)
+        shutil.rmtree(os.path.dirname(local), ignore_errors=True)
+    guest_run(f'sudo sh -c "set -e; systemctl stop autobleem.service; {keep}; mkdir -p {stage} {q}; '
+              f'tar xzf {archive} --no-same-owner -C {stage}; cp -r {stage}/{shlex.quote(name)}/. {q}/; '
+              f'rm -rf {stage} {archive}; sync; systemctl start autobleem.service"')
+    print(f'installed {dest}/ (the launcher restarted)')
 
 
 def restore():
     out = guest_run('cat /var/lib/abvm/installed 2>/dev/null', check=False).split()
+    if out:
+        guest_run('sudo systemctl stop autobleem.service')
     for path in dict.fromkeys(out):
         q = shlex.quote(path)
-        guest_run(f'sudo sh -c "if [ -e {q}.abvm-orig ]; then mv -f {q}.abvm-orig {q}; fi"')
+        # a directory goes back whole (what the install added to it goes with the new copy)
+        guest_run(f'sudo sh -c "if [ -d {q}.abvm-orig ]; then rm -rf {q}; mv {q}.abvm-orig {q}; '
+                  f'elif [ -e {q}.abvm-orig ]; then mv -f {q}.abvm-orig {q}; fi"')
         print(f'restored {path}')
     guest_run('sudo rm -f /var/lib/abvm/installed; sync')
-    if not out:
+    if out:
+        guest_run('sudo systemctl start autobleem.service')
+    else:
         print('nothing to restore')
 
 
@@ -234,6 +285,141 @@ def save_png(src, out):
     os.remove(src)
 
 
+# ------------------------------------------------------------------ clips (on the test machine)
+
+class VncClip:
+    """The VM's screen as an MP4: a minimal VNC client (RFB 3.8, no password - QEMU's display listens on the test
+    machine's loopback only) keeps the frame current from the changed rectangles, and a second thread hands it to
+    ffmpeg at a steady rate - frames repeated while nothing changes, so the clip plays in real time. A screenshot
+    through virsh takes ~600 ms (QEMU encodes a PNG); this keeps up with the UI."""
+
+    def __init__(self, out, fps=25):
+        import threading
+        self.out, self.fps = out, fps
+        self.threading = threading
+        if not shutil.which('ffmpeg'):
+            raise Fail('ffmpeg is not installed on the test machine (sudo apt-get install -y ffmpeg)')
+        port = re.search(r':(\d+)', host_run(f'{VIRSH} domdisplay {shlex.quote(DOMAIN)}'))
+        self.sock = socket.create_connection(('127.0.0.1', 5900 + int(port.group(1)) if port else 5900), timeout=10)
+        self.handshake()
+        self.lock = threading.Lock()
+        self.stop_flag = False
+        self.error = None
+        self.ffmpeg = subprocess.Popen(
+            ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'bgr0', '-s', f'{self.w}x{self.h}',
+             '-r', str(fps), '-i', '-', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p',
+             '-movflags', '+faststart', out], stdin=subprocess.PIPE)
+        self.reader = threading.Thread(target=self.read_loop, daemon=True)
+        self.writer = threading.Thread(target=self.write_loop, daemon=True)
+        self.reader.start()
+        self.writer.start()
+
+    def exact(self, n):
+        data = bytearray()
+        while len(data) < n:
+            chunk = self.sock.recv(min(n - len(data), 1 << 20))
+            if not chunk:
+                raise Fail('the VNC server closed the connection')
+            data += chunk
+        return bytes(data)
+
+    def handshake(self):
+        import struct
+        self.struct = struct
+        self.exact(12)
+        self.sock.sendall(b'RFB 003.008\n')
+        types = self.exact(self.exact(1)[0])
+        if 1 not in types:
+            raise Fail(f'the VNC server wants a password (security types {list(types)})')
+        self.sock.sendall(b'\x01')
+        if struct.unpack('>I', self.exact(4))[0] != 0:
+            raise Fail('the VNC server refused the connection')
+        self.sock.sendall(b'\x01')  # shared: virt-viewer on the panel stays connected
+        self.w, self.h = struct.unpack('>HH', self.exact(4))
+        self.exact(16)
+        self.exact(struct.unpack('>I', self.exact(4))[0])
+        # 32 bits, true colour, little endian B G R X - ffmpeg's bgr0
+        self.sock.sendall(struct.pack('>BxxxBBBBHHHBBBxxx', 0, 32, 24, 0, 1, 255, 255, 255, 16, 8, 0))
+        self.sock.sendall(struct.pack('>BxHi', 2, 1, 0))  # raw only
+        self.fb = bytearray(self.w * self.h * 4)
+
+    def request(self, incremental):
+        self.sock.sendall(self.struct.pack('>BBHHHH', 3, incremental, 0, 0, self.w, self.h))
+
+    def read_loop(self):
+        st = self.struct
+        try:
+            self.sock.settimeout(None)
+            self.request(0)
+            while not self.stop_flag:
+                kind = self.exact(1)[0]
+                if kind == 0:
+                    rects = st.unpack('>xH', self.exact(3))[0]
+                    for _ in range(rects):
+                        x, y, w, h, enc = st.unpack('>HHHHi', self.exact(12))
+                        if enc != 0:
+                            raise Fail(f'unexpected VNC encoding {enc}')
+                        data = self.exact(w * h * 4)
+                        with self.lock:
+                            for row in range(h):
+                                if y + row >= self.h:
+                                    break
+                                cols = max(0, min(w, self.w - x))
+                                start = ((y + row) * self.w + x) * 4
+                                self.fb[start:start + cols * 4] = data[row * w * 4:row * w * 4 + cols * 4]
+                    self.request(1)
+                elif kind == 2:
+                    pass  # bell
+                elif kind == 3:
+                    self.exact(st.unpack('>xxxI', self.exact(7))[0])
+                else:
+                    raise Fail(f'unexpected VNC message {kind}')
+        except Exception as e:  # noqa: BLE001 - reported by stop()
+            if not self.stop_flag:
+                self.error = e
+
+    def write_loop(self):
+        start = time.time()
+        written = 0
+        while not self.stop_flag:
+            due = int((time.time() - start) * self.fps) + 1
+            while written < due:
+                with self.lock:
+                    frame = bytes(self.fb)
+                self.ffmpeg.stdin.write(frame)
+                written += 1
+            time.sleep(max(0.0, start + written / self.fps - time.time()))
+        self.frames = written
+
+    def stop(self):
+        self.stop_flag = True
+        self.writer.join()
+        try:
+            self.sock.close()
+        except OSError:
+            pass
+        self.ffmpeg.stdin.close()
+        self.ffmpeg.wait()
+        if self.error:
+            raise Fail(f'clip: {self.error}')
+        return self.frames
+
+
+def clip(seconds, out):
+    if not LOCAL:
+        stage = f'/tmp/abvm-clip-{uuid.uuid4().hex[:8]}.mp4'
+        try:
+            print(remote_tool(['clip', str(seconds), stage]), end='')
+            from_host(stage, out)
+        finally:
+            host_run(f'rm -f {stage}', check=False)
+        print(f'ok {os.path.abspath(out)}')
+        return
+    recorder = VncClip(out)
+    time.sleep(float(seconds))
+    print(f'clip {os.path.basename(out)}: {recorder.stop()} frames')
+
+
 # ------------------------------------------------------------------ the pad (on the test machine)
 
 class Padsim:
@@ -271,11 +457,20 @@ def steps(script):
 def run_local(script, out_dir):
     """on the test machine: every step at its own time; shots through virsh into out_dir"""
     pad = None
+    recorder = None
     try:
         for step in steps(script):
             words = step.split()
             if words[0] == 'wait':
                 time.sleep(int(words[1]) / 1000)
+            elif words[0] == 'clip':
+                # clip start <name.mp4> ... clip stop: the screen recorded while the steps between run
+                if words[1] == 'start':
+                    os.makedirs(out_dir, exist_ok=True)
+                    recorder = VncClip(os.path.join(out_dir, os.path.basename(words[2])))
+                elif recorder:
+                    print(f'clip {os.path.basename(recorder.out)}: {recorder.stop()} frames')
+                    recorder = None
             elif words[0] == 'shot':
                 os.makedirs(out_dir, exist_ok=True)
                 name = os.path.basename(step.split(None, 1)[1].strip())
@@ -300,6 +495,8 @@ def run_local(script, out_dir):
             else:
                 raise Fail(f'unknown step {step!r}')
     finally:
+        if recorder:
+            print(f'clip {os.path.basename(recorder.out)}: {recorder.stop()} frames')
         if pad:
             pad.close()
 
@@ -315,12 +512,15 @@ def run(script, out_dir):
     stage = f'/tmp/abvm-run-{uuid.uuid4().hex[:8]}'
     try:
         print(remote_tool(['run', script, '--out', stage]), end='')
-        if 'shot ' in script:
+        if 'shot ' in script or 'clip start' in script:
             os.makedirs(out_dir, exist_ok=True)
             tmp = tempfile.mkdtemp(prefix='abvm-')
             from_host(stage + '/.', tmp, recursive=True)
             for name in os.listdir(tmp):
-                save_png(os.path.join(tmp, name), os.path.join(out_dir, name))
+                if name.endswith('.mp4'):
+                    shutil.move(os.path.join(tmp, name), os.path.join(out_dir, name))
+                else:
+                    save_png(os.path.join(tmp, name), os.path.join(out_dir, name))
             shutil.rmtree(tmp, ignore_errors=True)
     finally:
         host_run(f'rm -rf {stage}', check=False)
@@ -428,6 +628,8 @@ def main(argv):
             restart()
         elif cmd == 'shot':
             shot(args[0])
+        elif cmd == 'clip':
+            clip(args[0], args[1])
         elif cmd == 'pad':
             run(' '.join(args), out_dir)
         elif cmd == 'run':
