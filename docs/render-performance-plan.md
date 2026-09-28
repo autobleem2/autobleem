@@ -203,6 +203,20 @@ Why 2.0.14 is the ceiling, and what each blocker takes:
      App, both emulators (owner session, fps before/after), standby and power off, the Reset button.
   5. Then the launcher and console tools built against the new headers, and 2.0.14 kept as the fallback for a
      release or two.
+- **Recon done (2026-09-28, the owner's PSC, read-only; kernel 4.4.22, nightly 393)**:
+  - Weston **1.11.0** (2016-05-31), libwayland-client **1.12** (`libwayland-client.so.0.3.0`: has
+    `wl_proxy_get_version`, no `wl_proxy_marshal_flags`/tags).
+  - **The GL stack is Mesa's**, with the PowerVR driver underneath: `libEGL.so.1` is Mesa's (Mesa symbols,
+    `EGL_MESA_configless_context`) and needs only the ordinary `libwayland-client.so.0`, `libwayland-server.so.0`,
+    `libgbm.so.1`, `libdrm.so.2`; the GPU part is `libGLESv2_PVR_MESA.so` + `libpvr_dri_support.so` (+ `libsrv_um`,
+    `libusc`, `libglslcompiler`). `libwayland-egl.so.1` is the generic 3.8 KB one. So a newer
+    `libwayland-client` in `/tmp/lib` is used by Mesa's EGL through the stable libwayland ABI - route (a) looks
+    safe; still proven on the console before anything ships.
+  - xkbcommon **0.5.0** (symbol version `V_0.5.0`) - what SDL 2.30 needs at minimum; its newer calls must be the
+    optional ones (checked in the build).
+  - ALSA `libasound.so.2` present (as today).
+  - A side finding: Mesa's `libgbm`/`libdrm` and the PVR DRI driver are there, so SDL's KMSDRM backend could in
+    principle drive the display without Weston - not pursued (Weston owns the display; see below).
 - **Not a route**: replacing Sony's Weston with our own newer compositor, or SDL's KMSDRM backend without
   Weston - the GPU's blob (DDK 1.9, tied to kernel 4.4) comes with its EGL/Wayland integration for that Weston;
   swapping the compositor risks the whole display stack.
