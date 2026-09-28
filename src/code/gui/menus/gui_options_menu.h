@@ -28,9 +28,10 @@ enum {
     CFG_PERFOVERLAY,
     CFG_RA_PERSIST,
     CFG_PAD_SWAP,
-    CFG_DISPLAY
+    CFG_DISPLAY,
+    CFG_COVER_SHINE
 };
-#define CFG_LAST CFG_DISPLAY
+#define CFG_LAST CFG_COVER_SHINE
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 

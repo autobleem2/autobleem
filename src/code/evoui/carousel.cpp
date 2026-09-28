@@ -3,6 +3,7 @@
 //
 #include "carousel.h"
 #include "gui/gui.h"
+#include "app_base.h"
 #include "core/model/timing.h"
 
 #include <algorithm>
@@ -14,6 +15,13 @@
 #include <ableem/engine/log.h>
 
 using namespace std;
+
+namespace {
+// the selected cover's shine (Carousel::drawShine): its crossing, and the pause after the row comes to rest
+// before it starts
+const long ShineMs = 600;
+const long ShineDelayMs = 120;
+} // namespace
 
 //*******************************
 // Carousel::setGames
@@ -43,6 +51,8 @@ void Carousel::freeTextures() {
     layerValid_ = false; // a texture made later may get a freed one's address: never trust the signature then
     forEachItem([](PsCarouselGame &item) { item.freeTex(); });
     placeholderTex_ = ableem::Texture();
+    glowTex_ = ableem::Texture();
+    shineTex_ = ableem::Texture();
     targetPool_.clear();
     loader_.clear();
 }
@@ -383,6 +393,8 @@ void Carousel::moveMainCover(bool toGamesRow) {
 bool Carousel::animating() const {
     if (scrolling)
         return true;
+    if (shineAt_ != 0 && gui_.platform().ticks() < shineAt_ + ShineMs)
+        return true;
     for (const auto &game : games)
         if (game.visible && game.animationStart != 0)
             return true;
@@ -498,6 +510,52 @@ void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, c
     renderer.copyTrapezoid(tex, &content, project(-half, 0), project(half, 0),
                            ableem::Color(faceShade, faceShade, faceShade, alpha));
 }
+
+// the box mirrored in a glossy floor under it: its bottom slice, upside down, from each edge's own foot
+// down, fading out - the side covers' reflection half their height, the selected cover's a short one
+// (it would run into Play). A turned box reflects its face and spine as the box itself shows them.
+void renderReflection(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point) {
+    const ableem::Texture &tex = game.coverPng;
+    const ableem::Rect &content = game.content;
+    const float nearness = std::min(1.0f, std::max(0.0f, (point.scale - 0.5f) / 0.5f));
+    const float depth = 0.5f - 0.2f * nearness; // of the box's height
+    const unsigned char startAlpha = 135;
+    const ableem::Rect slice(content.x, content.y + static_cast<int>(content.h * (1.0f - depth)), content.w,
+                             static_cast<int>(content.h * depth));
+    auto mirrored = [&](const ableem::VerticalEdge &e) {
+        const float height = e.bottom - e.top;
+        return ableem::VerticalEdge(e.x, e.bottom, e.bottom + height * depth);
+    };
+    auto draw = [&](const ableem::Rect &src, const ableem::VerticalEdge &a, const ableem::VerticalEdge &b, int shade) {
+        const auto s = static_cast<unsigned char>(std::min(255, std::max(0, shade)));
+        renderer.copyTrapezoidFaded(tex, &src, mirrored(a), mirrored(b), ableem::Color(s, s, s, startAlpha),
+                                    ableem::Color(s, s, s, 0), true);
+    };
+
+    const float width = content.w * point.scale, height = content.h * point.scale;
+    const float cx = point.x + (content.x + content.w / 2.0f) * point.scale;
+    const float cy = point.y + (content.y + content.h / 2.0f) * point.scale;
+    if (std::fabs(point.angle) < 0.5f) {
+        draw(slice, ableem::VerticalEdge(cx - width / 2, cy - height / 2, cy + height / 2),
+             ableem::VerticalEdge(cx + width / 2, cy - height / 2, cy + height / 2), point.shade);
+        return;
+    }
+    const float radians = point.angle * Pi / 180.0f;
+    const float c = std::cos(radians), s = std::sin(radians);
+    auto project = [&](float x, float z) {
+        float worldX = x * c - z * s;
+        float worldZ = x * s + z * c;
+        float k = ViewerDistance / (ViewerDistance + worldZ);
+        return ableem::VerticalEdge(cx + worldX * k, cy - height / 2 * k, cy + height / 2 * k);
+    };
+    const float half = width / 2;
+    const float boxDepth = width * game.thickness;
+    const bool nearEdgeIsLeft = point.angle > 0;
+    const ableem::Rect spineSlice(nearEdgeIsLeft ? content.x + 3 : content.x + content.w - 5, slice.y, 2, slice.h);
+    draw(spineSlice, project(nearEdgeIsLeft ? -half : half, 0), project(nearEdgeIsLeft ? -half : half, boxDepth),
+         static_cast<int>(point.shade * 0.45f));
+    draw(slice, project(-half, 0), project(half, 0), static_cast<int>(point.shade * (0.55f + 0.45f * std::fabs(c))));
+}
 } // namespace
 
 void Carousel::render() {
@@ -519,12 +577,18 @@ void Carousel::render() {
         return distanceFromMiddle(a) > distanceFromMiddle(b);
     });
 
-    static const bool layersOn = [] {
+    const long now = gui_.platform().ticks();
+    drawGlow(now);
+
+    // a render target is not multisampled: with MSAA on, the row is drawn to the screen every frame, so the
+    // covers keep their smooth edges at rest too (a few dozen geometry calls - the layer's saving is small then)
+    static const bool layersOn = [this] {
         const char *v = getenv("AB_LAYERS");
-        return !(v && strcmp(v, "0") == 0);
+        return !(v && strcmp(v, "0") == 0) && gui_.platform().multisampleSamples() == 0;
     }();
     if (!layersOn) {
         drawCovers(visible);
+        drawShine(now);
         return;
     }
 
@@ -554,6 +618,7 @@ void Carousel::render() {
         lastSignature_ = signature;
         if (!still) {
             drawCovers(visible); // moving: straight to the screen, at the full rate
+            drawShine(now);
             return;
         }
         if (!layer_.valid()) {
@@ -573,6 +638,127 @@ void Carousel::render() {
         layerValid_ = true;
     }
     renderer.copy(layer_);
+    drawShine(now);
+}
+
+//*******************************
+// Carousel::drawGlow / drawShine
+//*******************************
+namespace {
+// the selected cover's centre and size on screen, and how much it is "the selected one" - 1 in the middle
+// slot, 0 once it is half-way to the next (so the light hands over as the row scrolls)
+struct Spot {
+    float cx = 0, cy = 0, size = 0, strength = 0;
+};
+Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
+    Spot spot;
+    const PsScreenpoint &p = game.actual;
+    const ableem::Rect &content = game.content;
+    spot.size = content.w * p.scale;
+    spot.cx = p.x + (content.x + content.w / 2.0f) * p.scale;
+    spot.cy = p.y + (content.y + content.h / 2.0f) * p.scale;
+    const float off = std::min(1.0f, std::fabs(spot.cx - screenMiddle) / 150.0f);
+    const float big = std::min(1.0f, std::max(0.0f, (p.scale - 0.5f) / 0.5f));
+    spot.strength = (1.0f - off) * big;
+    return spot;
+}
+} // namespace
+
+void Carousel::drawGlow(long now) {
+    if (!selectedIsValid() || !games[selected].visible || !games[selected].coverPng.valid())
+        return;
+    ableem::Renderer &renderer = gui_.renderer();
+    const Spot spot = spotOf(games[selected], renderer.width() / 2.0f);
+    if (spot.strength < 0.02f)
+        return;
+    if (!glowTex_.valid()) {
+        // a soft square of light, brightest in the middle: nested rects, each adding a little, in a target
+        // (so premultiplied), drawn scaled - the linear filter rounds the steps off
+        const int size = 128, rings = 32;
+        glowTex_ = ableem::Texture::createTarget(renderer, size, size);
+        glowTex_.setBlendMode(ableem::BlendMode::Premultiplied);
+        const ableem::Color keep = renderer.drawColor();
+        renderer.pushTarget(&glowTex_);
+        renderer.setBlendMode(ableem::BlendMode::None);
+        renderer.setDrawColor(ableem::Color(0, 0, 0, 0));
+        renderer.fillRect();
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(ableem::Color(255, 255, 255, 22));
+        for (int i = 0; i < rings; i++) {
+            const int inset = i * (size / 2) / rings;
+            const ableem::Rect r(inset, inset, size - 2 * inset, size - 2 * inset);
+            renderer.fillRects(&r, 1);
+        }
+        renderer.popTarget();
+        renderer.setDrawColor(keep);
+    }
+    const ableem::ThemeColor &selection = AppBase::get().theme().launcher().colors.selection;
+    const ableem::Color light =
+        selection.set ? ableem::Color(selection.r, selection.g, selection.b) : ableem::Color(255, 255, 255);
+    // breathing, 0.8..1 every 5.6 s
+    const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
+    const float k = spot.strength * pulse;
+    // premultiplied: the colour and the alpha both scale, or the light would not fade with them
+    glowTex_.setColorMod(ableem::Color(static_cast<unsigned char>(light.r * k), static_cast<unsigned char>(light.g * k),
+                                       static_cast<unsigned char>(light.b * k)));
+    glowTex_.setAlphaMod(static_cast<unsigned char>(255 * k));
+    const float margin = 54.0f * spot.size / 222.0f;
+    const float side = spot.size + 2 * margin;
+    renderer.copy(glowTex_, nullptr, ableem::FRect(spot.cx - side / 2, spot.cy - side / 2, side, side));
+}
+
+void Carousel::drawShine(long now) {
+    if (!selectedIsValid())
+        return;
+    const PsCarouselGame &game = games[selected];
+    const bool resting = !scrolling && game.animationStart == 0;
+    if (!resting) {
+        shineFor_ = -1; // the row moved: the next rest shines again
+        shineAt_ = 0;
+        return;
+    }
+    if (shineFor_ != selected) {
+        shineFor_ = selected;
+        const bool wanted = AppBase::get().config().inifile.values["covershine"] != "false";
+        shineAt_ = wanted ? now + ShineDelayMs : 0;
+    }
+    if (shineAt_ == 0 || now < shineAt_ || now >= shineAt_ + ShineMs || !game.coverPng.valid() ||
+        std::fabs(game.actual.angle) >= 0.5f)
+        return;
+    ableem::Renderer &renderer = gui_.renderer();
+    if (!shineTex_.valid()) {
+        // a band of light across, clear at both sides: each column its own alpha, added onto the cover
+        const int width = 64;
+        shineTex_ = ableem::Texture::createTarget(renderer, width, 4);
+        shineTex_.setBlendMode(ableem::BlendMode::Add);
+        const ableem::Color keep = renderer.drawColor();
+        renderer.pushTarget(&shineTex_);
+        renderer.setBlendMode(ableem::BlendMode::None);
+        for (int x = 0; x < width; x++) {
+            const float t = std::sin(Pi * (x + 0.5f) / width);
+            renderer.setDrawColor(ableem::Color(255, 255, 255, static_cast<unsigned char>(110 * t * t)));
+            const ableem::Rect column(x, 0, 1, 4);
+            renderer.fillRects(&column, 1);
+        }
+        renderer.popTarget();
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(keep);
+    }
+    // the band runs from just off the cover's left edge to just off its right, clipped to the cover
+    const Spot spot = spotOf(game, renderer.width() / 2.0f);
+    const float t = static_cast<float>(now - shineAt_) / ShineMs;
+    const float eased = t * t * (3.0f - 2.0f * t);
+    const float left = spot.cx - spot.size / 2, right = spot.cx + spot.size / 2;
+    const float band = spot.size * 0.35f;
+    const float from = left - band + (right - left + band) * eased;
+    const float x0 = std::max(left, from), x1 = std::min(right, from + band);
+    if (x1 <= x0)
+        return;
+    const int texW = 64;
+    const int u0 = static_cast<int>((x0 - from) / band * texW),
+              u1 = static_cast<int>(std::ceil((x1 - from) / band * texW));
+    const ableem::Rect src(u0, 0, std::max(1, std::min(texW, u1) - u0), 4);
+    renderer.copy(shineTex_, &src, ableem::FRect(x0, spot.cy - spot.size / 2, x1 - x0, spot.size));
 }
 
 //*******************************
@@ -580,6 +766,10 @@ void Carousel::render() {
 //*******************************
 void Carousel::drawCovers(const vector<const PsCarouselGame *> &visible) {
     ableem::Renderer &renderer = gui_.renderer();
+    for (const PsCarouselGame *game : visible) {
+        if (!game->placeholder && game->coverPng.valid())
+            renderReflection(renderer, *game, game->actual);
+    }
     PsCarouselGame standIn = PsCarouselGame::emptyBox();
     for (const PsCarouselGame *game : visible) {
         if (!game->coverPng.valid()) { // its cover has not arrived yet: an empty box where it will be

@@ -65,6 +65,7 @@ Core:=Core:
 Cores=Cores
 could not be loaded - see Extensions=could not be loaded - see Extensions
 Cover Style:=Cover Style:
+Cover shine:=Cover shine:
 Crash logs:=Crash logs:
 Create, rename or manage memory card sets=Create, rename or manage memory card sets
 Cue file not found=Cue file not found

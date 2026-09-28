@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Kernen
 could not be loaded - see Extensions=kon niet worden geladen - zie Extensies
 Cover Style:=Cover stijl:
+Cover shine:=Glans op de hoes:
 Crash logs:=Crashlogs:
 Create, rename or manage memory card sets=Memory card-sets aanmaken, hernoemen of beheren
 Cue file not found=CUE-bestand niet gevonden

@@ -64,6 +64,7 @@ Core:=Núcleo:
 Cores=Núcleos
 could not be loaded - see Extensions=no se pudo cargar - ver Extensiones
 Cover Style:=Estilo de Caratulas:
+Cover shine:=Destello de la carátula:
 Crash logs:=Registros del fallo:
 Create, rename or manage memory card sets=Crea, renombra o administra sets de memory cards
 Cue file not found=No se encontró el archivo CUE

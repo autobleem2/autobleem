@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Còrs
 could not be loaded - see Extensions=a pas pogut èsser cargada - vejatz Extensions
 Cover Style:=Estil cobèrtura :
+Cover shine:=Lusor de la jaqueta :
 Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
 Cue file not found=Fichièr CUE introbable

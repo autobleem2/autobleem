@@ -152,10 +152,24 @@ void PsCarouselGame::compose(ableem::Renderer &renderer, const Texture &artTex, 
     const Rect artRect(0, 0, s.w, s.h);
     const Rect fullRect(0, 0, 226, 226);
     if (!bigBox) {
-        Rect outputRect = gui->assets().cdJewel.valid() ? Rect(23, 5, 199, 217) : fullRect;
+        // the jewel case's window is (25,7)-(222,219) in every frame evoimg ships (198x213); the art fills it
+        // a pixel under the frame all round, at its own proportions - the part that does not fit is cut from
+        // both sides evenly, never stretched (the square art used to be pulled 9% taller, 2 px off to the left)
+        Rect outputRect = gui->assets().cdJewel.valid() ? Rect(24, 6, 200, 215) : fullRect;
+        Rect source = artRect;
+        if (s.w > 0 && s.h > 0) {
+            const float want = static_cast<float>(outputRect.w) / outputRect.h;
+            if (static_cast<float>(s.w) / s.h > want) {
+                source.w = static_cast<int>(s.h * want + 0.5f);
+                source.x = (s.w - source.w) / 2;
+            } else {
+                source.h = static_cast<int>(s.w / want + 0.5f);
+                source.y = (s.h - source.h) / 2;
+            }
+        }
         Rect inset = insetIntoCover(outputRect);
         renderer.setBlendMode(BlendMode::Add);
-        renderer.copy(artTex, &artRect, &inset);
+        renderer.copy(artTex, &source, &inset);
         renderer.setBlendMode(BlendMode::Blend);
         if (gui->assets().cdJewel.valid()) {
             Rect box = insetIntoCover(fullRect);
@@ -208,7 +222,7 @@ void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind
     Rect fullRect(0, 0, 226, 226);
     const Color glass(12, 12, 16, 150);
     if (kind == BoxKind::JewelCase) {
-        Rect inside = insetIntoCover(gui->assets().cdJewel.valid() ? Rect(23, 5, 199, 217) : fullRect);
+        Rect inside = insetIntoCover(gui->assets().cdJewel.valid() ? Rect(24, 6, 200, 215) : fullRect);
         renderer.setDrawColor(glass);
         renderer.fillRect(inside);
         Rect box = insetIntoCover(fullRect);

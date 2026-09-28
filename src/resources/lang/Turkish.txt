@@ -64,6 +64,7 @@ Core:=Çekirdek:
 Cores=Çekirdekler
 could not be loaded - see Extensions=yüklenemedi - Eklentiler'e bakın
 Cover Style:=Kapak Stili:
+Cover shine:=Kapak parıltısı:
 Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
 Cue file not found=CUE dosyası bulunamadı

@@ -64,6 +64,7 @@ Core:=Core :
 Cores=Cœurs
 could not be loaded - see Extensions=n'a pas pu être chargée - voir Extensions
 Cover Style:=Style de jaquette :
+Cover shine:=Reflet de la jaquette :
 Crash logs:=Journaux du plantage :
 Create, rename or manage memory card sets=Créer, renommer ou gérer des jeux de cartes mémoire
 Cue file not found=Fichier CUE introuvable

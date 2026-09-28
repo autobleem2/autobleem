@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Core
 could not be loaded - see Extensions=non è stata caricata - vedi Estensioni
 Cover Style:=Stile delle Cover:
+Cover shine:=Riflesso della copertina:
 Crash logs:=Log del crash:
 Create, rename or manage memory card sets=Crea, rinomina o gestisci i set di memory card
 Cue file not found=File CUE non trovato

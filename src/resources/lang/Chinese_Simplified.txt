@@ -64,6 +64,7 @@ Core:=核心：
 Cores=核心数
 could not be loaded - see Extensions=无法加载 - 请查看扩展
 Cover Style:=封面样式：
+Cover shine:=封面闪光：
 Crash logs:=崩溃日志：
 Create, rename or manage memory card sets=创建、重命名或管理记忆卡组
 Cue file not found=找不到CUE文件

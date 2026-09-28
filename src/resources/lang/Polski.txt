@@ -64,6 +64,7 @@ Core:=Rdzeń:
 Cores=Rdzenie
 could not be loaded - see Extensions=nie dało się załadować - zobacz Rozszerzenia
 Cover Style:=Styl Okładek:
+Cover shine:=Błysk okładki:
 Crash logs:=Logi awarii:
 Create, rename or manage memory card sets=Twórz, zmieniaj nazwę lub zarządzaj zestawami kart pamięci
 Cue file not found=Nie znaleziono pliku CUE

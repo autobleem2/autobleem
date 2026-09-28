@@ -122,6 +122,8 @@ void GuiOptions::fill() {
     heading(_("Interface"));
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
+    // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
+    lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
     lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());

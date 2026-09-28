@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Kerner
 could not be loaded - see Extensions=kunne ikke indlæses - se Udvidelser
 Cover Style:=Cover-stil:
+Cover shine:=Glimt på coveret:
 Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
 Cue file not found=CUE-filen blev ikke fundet

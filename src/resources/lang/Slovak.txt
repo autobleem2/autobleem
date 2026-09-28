@@ -64,6 +64,7 @@ Core:=Jadro:
 Cores=Jadrá
 could not be loaded - see Extensions=sa nedalo načítať - pozri Rozšírenia
 Cover Style:=Štýl obalu:
+Cover shine:=Záblesk obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 Cue file not found=Súbor CUE sa nenašiel

@@ -64,6 +64,7 @@ Core:=Ydin:
 Cores=Ytimet
 could not be loaded - see Extensions=ei voitu ladata - katso Laajennukset
 Cover Style:=Kannen tyyli:
+Cover shine:=Kannen välähdys:
 Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 Cue file not found=CUE-tiedostoa ei löytynyt

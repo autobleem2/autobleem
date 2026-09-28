@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Nuclee
 could not be loaded - see Extensions=nu a putut fi încărcată - vezi Extensii
 Cover Style:=Stil pentru Cover:
+Cover shine:=Strălucirea copertei:
 Crash logs:=Jurnale eroare:
 Create, rename or manage memory card sets=Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
 Cue file not found=Fișierul CUE nu a fost găsit

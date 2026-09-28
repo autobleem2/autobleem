@@ -76,7 +76,8 @@ public:
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
     void moveMainCover(bool toGamesRow);
-    // a scroll or a cover's own move (the main cover raised or lowered) is in progress
+    // a scroll or a cover's own move (the main cover raised or lowered) is in progress, or the shine crossing
+    // the selected cover
     bool animating() const;
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
@@ -134,4 +135,13 @@ private:
     ableem::Texture layer_;
     std::vector<std::uintptr_t> layerSignature_, lastSignature_;
     bool layerValid_ = false;
+
+    // the selected cover's light: a soft glow behind it in the theme's selection colour, breathing slowly,
+    // and - when it comes to rest - a shine that crosses its front once (Options "Cover shine", config.ini
+    // covershine). Both are drawn outside the layer, the glow under it, the shine over it.
+    void drawGlow(long now);
+    void drawShine(long now);
+    ableem::Texture glowTex_, shineTex_;
+    int shineFor_ = -1; // the game the shine last crossed (-1: none since the row moved)
+    long shineAt_ = 0;  // when it starts crossing
 };
