@@ -238,8 +238,10 @@ void GuiExtensions::moveSelection(int step) {
 //*******************************
 void GuiExtensions::loop() {
     menuVisible = true;
+    gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
-        render();
+        if (gui->input().frameDue())
+            render();
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {

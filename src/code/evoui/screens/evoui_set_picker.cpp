@@ -283,6 +283,7 @@ void GuiSetPicker::render() {
 //*******************************
 void GuiSetPicker::loop() {
     menuVisible = true;
+    gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
         Event e;
         while (gui->input().poll(e)) {
@@ -339,6 +340,7 @@ void GuiSetPicker::loop() {
                 menuVisible = false;
             }
         }
-        render();
+        if (gui->input().frameDue())
+            render();
     }
 }
