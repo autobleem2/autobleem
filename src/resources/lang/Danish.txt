@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -404,3 +404,10 @@ Widescreen:=Widescreen:
 Wireless pad=Trådløs controller
 Year:=År:
 |@lang|=da
+Auto=Auto
+Display=Skærm
+Display:=Skærm:
+Go back=Gå tilbage
+Going back to the previous mode in=Tilbage til den forrige tilstand om
+Keep=Behold
+Keep this display mode?=Behold denne skærmtilstand?

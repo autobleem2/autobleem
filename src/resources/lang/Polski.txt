@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -404,3 +404,10 @@ Widescreen:=Pełny ekran:
 Wireless pad=Bezprzewodowy pad
 Year:=Rok:
 |@lang|=pl
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Wróć
+Going back to the previous mode in=Powrót do poprzedniego trybu za
+Keep=Zostaw
+Keep this display mode?=Zostawić ten tryb obrazu?

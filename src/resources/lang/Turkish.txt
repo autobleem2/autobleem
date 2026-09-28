@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -404,3 +404,10 @@ Widescreen:=Geniş Ekran:
 Wireless pad=Kablosuz kumanda
 Year:=Yıl:
 |@lang|=tr
+Auto=Otomatik
+Display=Ekran
+Display:=Ekran:
+Go back=Geri dön
+Going back to the previous mode in=Önceki moda dönülüyor:
+Keep=Koru
+Keep this display mode?=Bu ekran modu korunsun mu?

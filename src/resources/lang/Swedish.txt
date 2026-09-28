@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -404,3 +404,10 @@ Widescreen:=Widescreen:
 Wireless pad=Trådlös handkontroll
 Year:=År:
 |@lang|=sv
+Auto=Auto
+Display=Bild
+Display:=Bild:
+Go back=Gå tillbaka
+Going back to the previous mode in=Tillbaka till föregående läge om
+Keep=Behåll
+Keep this display mode?=Behålla det här bildläget?

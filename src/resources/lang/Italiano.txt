@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=È già in corso una scansione
 About=Informazioni su
@@ -404,3 +404,10 @@ Widescreen:=Widescreen:
 Wireless pad=Controller wireless
 Year:=Anno:
 |@lang|=it
+Auto=Auto
+Display=Schermo
+Display:=Schermo:
+Go back=Torna indietro
+Going back to the previous mode in=Ritorno alla modalità precedente tra
+Keep=Mantieni
+Keep this display mode?=Mantenere questa modalità video?

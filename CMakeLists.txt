@@ -209,6 +209,8 @@ add_library(ab_ui STATIC
         src/code/app.h
         src/code/gui/screens/gui_select_memcard.cpp
         src/code/gui/screens/gui_select_memcard.h
+        src/code/gui/screens/gui_keep_display.cpp
+        src/code/gui/screens/gui_keep_display.h
         src/code/gui/menus/gui_game_dir_menu.h
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h

@@ -20,6 +20,7 @@
 #include "core/services/environment.h"
 #include "core/services/system.h"
 #include "core/services/launch.h"
+#include "core/services/output_mode.h"
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
@@ -208,6 +209,16 @@ void GuiLauncher::loop_openOptions() {
 
         // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
+
+        // Options -> Display changed: the launcher closes so AutoBleem::run() can try the mode (on the console
+        // through rc/boot.sh, a launcher restart) - and comes back on the same game
+        if (!option.newOutputMode.empty()) {
+            app.config().inifile.values[OutputMode::ConfigKey] = option.previousOutputMode();
+            rememberSelection();
+            app.session().pendingOutputMode = option.newOutputMode;
+            app.session().menuOption = MENU_OPTION_DISPLAY;
+            menuVisible = false;
+        }
     } else {
         render();
     }

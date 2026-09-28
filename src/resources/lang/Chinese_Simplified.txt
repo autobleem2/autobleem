@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -404,3 +404,10 @@ Widescreen:=宽屏：
 Wireless pad=无线手柄
 Year:=年份：
 |@lang|=zh_CN
+Auto=自动
+Display=显示
+Display:=显示：
+Go back=返回
+Going back to the previous mode in=恢复到之前的模式倒计时
+Keep=保留
+Keep this display mode?=保留此显示模式？

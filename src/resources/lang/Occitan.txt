@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -404,3 +404,10 @@ Widescreen:=Grand ecran :
 Wireless pad=Manèta sens fial
 Year:=Annada :
 |@lang|=oc
+Auto=Auto
+Display=Afichatge
+Display:=Afichatge :
+Go back=Tornar
+Going back to the previous mode in=Retorn al mòde precedent dins
+Keep=Gardar
+Keep this display mode?=Gardar aqueste mòde d'afichatge ?

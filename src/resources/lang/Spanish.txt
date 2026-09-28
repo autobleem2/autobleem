@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -404,3 +404,10 @@ Widescreen:=Widescreen:
 Wireless pad=Mando inalámbrico
 Year:=Año:
 |@lang|=6
+Auto=Auto
+Display=Pantalla
+Display:=Pantalla:
+Go back=Volver
+Going back to the previous mode in=Vuelta al modo anterior en
+Keep=Mantener
+Keep this display mode?=¿Mantener este modo de pantalla?

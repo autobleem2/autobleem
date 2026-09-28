@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -404,3 +404,10 @@ Widescreen:=WideScreen:
 Wireless pad=Controller wireless
 Year:=An:
 |@lang|=ro
+Auto=Auto
+Display=Afișaj
+Display:=Afișaj:
+Go back=Înapoi
+Going back to the previous mode in=Revenire la modul anterior în
+Keep=Păstrează
+Keep this display mode?=Păstrați acest mod de afișare?

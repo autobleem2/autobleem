@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -404,3 +404,10 @@ Widescreen:=Plein écran:
 Wireless pad=Manette sans fil
 Year:=Année:
 |@lang|=fr
+Auto=Auto
+Display=Affichage
+Display:=Affichage :
+Go back=Revenir
+Going back to the previous mode in=Retour au mode précédent dans
+Keep=Garder
+Keep this display mode?=Garder ce mode d'affichage ?

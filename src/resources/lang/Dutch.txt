@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -404,3 +404,10 @@ Widescreen:=Widescreen:
 Wireless pad=Draadloze controller
 Year:=Jaar:
 |@lang|=nl
+Auto=Auto
+Display=Beeld
+Display:=Beeld:
+Go back=Terug
+Going back to the previous mode in=Terug naar de vorige modus over
+Keep=Behouden
+Keep this display mode?=Deze beeldmodus behouden?

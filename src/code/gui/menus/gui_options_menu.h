@@ -26,9 +26,10 @@ enum {
     CFG_FONT,
     CFG_KEEPLOGS,
     CFG_RA_PERSIST,
-    CFG_PAD_SWAP
+    CFG_PAD_SWAP,
+    CFG_DISPLAY
 };
-#define CFG_LAST CFG_PAD_SWAP
+#define CFG_LAST CFG_DISPLAY
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 
@@ -49,6 +50,9 @@ public:
 
 private:
     void settleOnOption(int direction);
+    std::string outputModeOnEntry; // the Display row's value when the screen opened
+    std::string autoLabel;         // "Auto (1080p)", made by getOutputModes()
+    bool stepsOnePerPress();       // Left/Right without the held-button repeat on this row
 
 public:
     std::vector<std::string> getThemes();
@@ -56,6 +60,7 @@ public:
     std::vector<std::string> getJewels();
     std::vector<std::string> getMusic();
     std::vector<std::string> getTimeoutValues();
+    std::vector<std::string> getOutputModes(); // OutputMode tokens: the console 720/1080, elsewhere auto + EDID
 
     void fill();
 
@@ -72,6 +77,11 @@ public:
     std::string doOptionIndex(unsigned int index) override;
 
     int exitCode = 0;
+    // Options -> Display changed: the OutputMode token to try (config.ini keeps the old one until the new
+    // one is confirmed - GuiKeepDisplay); "" when the row was not changed
+    std::string newOutputMode;
+    // the value config.ini keeps until the new one is confirmed (the launcher puts it back in memory)
+    const std::string &previousOutputMode() const { return outputModeOnEntry; }
 
     void doCircle_Pressed() override;
     void doCross_Pressed() override;

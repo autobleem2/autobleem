@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -404,3 +404,10 @@ Widescreen:=Širokouhlý obraz:
 Wireless pad=Bezdrôtový ovládač
 Year:=Rok:
 |@lang|=sk
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Späť
+Going back to the previous mode in=Návrat k predchádzajúcemu režimu o
+Keep=Ponechať
+Keep this display mode?=Ponechať tento režim obrazu?

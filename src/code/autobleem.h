@@ -4,6 +4,7 @@
 #pragma once
 
 #include "app.h"
+#include "core/services/output_mode.h"
 #include <functional>
 
 //******************
@@ -30,4 +31,9 @@ private:
     void runOutside(bool retroArch, const std::function<void()> &body);
     void launchGame();       // the MENU_OPTION_START handling
     void runRetroArchMenu(); // MENU_OPTION_RETRO in direct mode: RetroArch's own menu, then back
+    // Options -> Display (OutputMode, MENU_OPTION_DISPLAY) - see autobleem.cpp
+    void takeEmulatorOutputMode();
+    void switchOutputMode(const OutputMode &mode);
+    void tryOutputMode(const std::string &token);
+    bool confirmPendingOutputMode();
 };

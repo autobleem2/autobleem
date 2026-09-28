@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -404,3 +404,10 @@ Widescreen:=Širokoúhlý obraz:
 Wireless pad=Bezdrátový ovladač
 Year:=Rok:
 |@lang|=cs
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Zpět
+Going back to the previous mode in=Návrat k předchozímu režimu za
+Keep=Ponechat
+Keep this display mode?=Ponechat tento režim obrazu?

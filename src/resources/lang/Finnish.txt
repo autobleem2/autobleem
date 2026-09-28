@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 409
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -404,3 +404,10 @@ Widescreen:=Laajakuva:
 Wireless pad=Langaton ohjain
 Year:=Vuosi:
 |@lang|=fi
+Auto=Auto
+Display=Näyttö
+Display:=Näyttö:
+Go back=Palaa
+Going back to the previous mode in=Paluu edelliseen tilaan
+Keep=Pidä
+Keep this display mode?=Pidetäänkö tämä näyttötila?
