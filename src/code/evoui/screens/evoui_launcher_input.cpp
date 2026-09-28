@@ -93,6 +93,9 @@ void GuiLauncher::loop() {
             }
         }
 
+        // an animation a button starts begins now, not when this pass began: frameDue() may have waited up to
+        // an ambient frame for the input, and a start from before that would open the animation part way in
+        time = gui->platform().ticks();
         while (gui->input().poll(e)) {
             // this is for pc Only - the window's own close button. Closing this screen alone is not enough:
             // AutoBleem::run() would just show a fresh GuiLauncher again (session().menuOption is nothing

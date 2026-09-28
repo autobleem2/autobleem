@@ -179,12 +179,27 @@ bool Carousel::loadOneMissingTexture() {
 }
 
 //*******************************
+// Carousel::stepStart
+//*******************************
+// when a scroll step begins: now - or, for a held stick's step that follows the last one (not eased, and
+// that one ended no more than a step ago), exactly where the last one ended, so the row keeps its speed
+// instead of losing the part of a frame between the end of a step and the start of the next
+long Carousel::stepStart(int speed, bool eased) {
+    const long now = gui_.platform().ticks();
+    long start = now;
+    if (!eased && chainEnd != 0 && now >= chainEnd && now - chainEnd < speed)
+        start = chainEnd;
+    chainEnd = eased ? 0 : start + speed;
+    return start;
+}
+
+//*******************************
 // Carousel::scrollLeft
 //*******************************
 // start scroll animation to next game
 void Carousel::scrollLeft(int speed, bool eased) {
     scrolling = true;
-    long time = gui_.platform().ticks();
+    long time = stepStart(speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -211,7 +226,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
 // start scroll animation to previous game
 void Carousel::scrollRight(int speed, bool eased) {
     scrolling = true;
-    long time = gui_.platform().ticks();
+    long time = stepStart(speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;

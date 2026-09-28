@@ -54,6 +54,8 @@ public:
     bool canSelectPrevious() const { return selectedIsValid() && selected > 0; }
 
     bool scrolling = false; // an animation is in progress; input that would start another waits
+    long chainEnd = 0;      // when the last held-stick step ends: the next one starts there (stepStart)
+    long stepStart(int speed, bool eased);
     PsCarousel positions;
 
     // places the covers around `selectedIndex` with no animation, loading and freeing textures to match:
