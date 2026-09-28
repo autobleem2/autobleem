@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=O scanare este deja in curs
 About=Despre
@@ -325,6 +325,7 @@ Share memory card=Partajează cardul de memorie
 Sharp=Clar
 Shift=Shift
 Show Internal Games:=Arata Jocurile Interne:
+Show performance:=Afișează performanța:
 Showing Timeout (0 for no timeout):=Showing Timeout (0 no timeout):
 Showing: All Games=Se arata: Toate Jocurile
 Showing: Apps=Se arata: Aplicatii

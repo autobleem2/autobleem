@@ -84,20 +84,23 @@ struct profile {
     const struct button *buttons;                          /* in the kernel driver's code order, {0} ended */
     int triggerButtons;                                    /* the driver also reports L2/R2 as buttons */
     int hasBattery;
-    int smallSticks;                                       /* sticks 0..255 (centre 128), not -32768..32767 */
+    int smallSticks; /* sticks 0..255 (centre 128), not -32768..32767 */
 };
 
 /* xpad */
 static const struct button x360Buttons[] = {
-    {"a", BTN_A},        {"b", BTN_B},        {"x", BTN_X},           {"y", BTN_Y},
-    {"l1", BTN_TL},      {"r1", BTN_TR},      {"select", BTN_SELECT}, {"start", BTN_START},
-    {"guide", BTN_MODE}, {"l3", BTN_THUMBL},  {"r3", BTN_THUMBR},     {0, 0},
+    {"a", BTN_A},        {"b", BTN_B},       {"x", BTN_X},           {"y", BTN_Y},
+    {"l1", BTN_TL},      {"r1", BTN_TR},     {"select", BTN_SELECT}, {"start", BTN_START},
+    {"guide", BTN_MODE}, {"l3", BTN_THUMBL}, {"r3", BTN_THUMBR},     {0, 0},
 };
 /* hid-playstation / hid-sony's DualShock 4: Cross South, Circle East, Triangle North, Square West */
 static const struct button ds4Buttons[] = {
-    {"a", BTN_SOUTH},       {"b", BTN_EAST},      {"y", BTN_NORTH},    {"x", BTN_WEST},
-    {"l1", BTN_TL},         {"r1", BTN_TR},       {"l2", BTN_TL2},     {"r2", BTN_TR2},
-    {"select", BTN_SELECT}, {"start", BTN_START}, {"guide", BTN_MODE}, {"l3", BTN_THUMBL},
+    {"a", BTN_SOUTH},       {"b", BTN_EAST},
+    {"y", BTN_NORTH},       {"x", BTN_WEST},
+    {"l1", BTN_TL},         {"r1", BTN_TR},
+    {"l2", BTN_TL2},        {"r2", BTN_TR2},
+    {"select", BTN_SELECT}, {"start", BTN_START},
+    {"guide", BTN_MODE},    {"l3", BTN_THUMBL},
     {"r3", BTN_THUMBR},     {0, 0},
 };
 
@@ -110,47 +113,110 @@ static const struct profile profiles[] = {
 
 /* the USB keyboard: key names as a tester types them, in no particular order */
 static const struct button keys[] = {
-    {"a", KEY_A},           {"b", KEY_B},         {"c", KEY_C},           {"d", KEY_D},
-    {"e", KEY_E},           {"f", KEY_F},         {"g", KEY_G},           {"h", KEY_H},
-    {"i", KEY_I},           {"j", KEY_J},         {"k", KEY_K},           {"l", KEY_L},
-    {"m", KEY_M},           {"n", KEY_N},         {"o", KEY_O},           {"p", KEY_P},
-    {"q", KEY_Q},           {"r", KEY_R},         {"s", KEY_S},           {"t", KEY_T},
-    {"u", KEY_U},           {"v", KEY_V},         {"w", KEY_W},           {"x", KEY_X},
-    {"y", KEY_Y},           {"z", KEY_Z},         {"1", KEY_1},           {"2", KEY_2},
-    {"3", KEY_3},           {"4", KEY_4},         {"5", KEY_5},           {"6", KEY_6},
-    {"7", KEY_7},           {"8", KEY_8},         {"9", KEY_9},           {"0", KEY_0},
-    {"enter", KEY_ENTER},   {"esc", KEY_ESC},     {"backspace", KEY_BACKSPACE}, {"tab", KEY_TAB},
-    {"space", KEY_SPACE},   {"minus", KEY_MINUS}, {"equal", KEY_EQUAL},   {"leftbrace", KEY_LEFTBRACE},
-    {"rightbrace", KEY_RIGHTBRACE}, {"backslash", KEY_BACKSLASH}, {"semicolon", KEY_SEMICOLON},
-    {"apostrophe", KEY_APOSTROPHE}, {"grave", KEY_GRAVE}, {"comma", KEY_COMMA}, {"dot", KEY_DOT},
-    {"slash", KEY_SLASH},   {"capslock", KEY_CAPSLOCK},
-    {"f1", KEY_F1},         {"f2", KEY_F2},       {"f3", KEY_F3},         {"f4", KEY_F4},
-    {"f5", KEY_F5},         {"f6", KEY_F6},       {"f7", KEY_F7},         {"f8", KEY_F8},
-    {"f9", KEY_F9},         {"f10", KEY_F10},     {"f11", KEY_F11},       {"f12", KEY_F12},
-    {"up", KEY_UP},         {"down", KEY_DOWN},   {"left", KEY_LEFT},     {"right", KEY_RIGHT},
-    {"home", KEY_HOME},     {"end", KEY_END},     {"pageup", KEY_PAGEUP}, {"pagedown", KEY_PAGEDOWN},
-    {"insert", KEY_INSERT}, {"delete", KEY_DELETE}, {"shift", KEY_LEFTSHIFT}, {"rshift", KEY_RIGHTSHIFT},
-    {"ctrl", KEY_LEFTCTRL}, {"rctrl", KEY_RIGHTCTRL}, {"alt", KEY_LEFTALT}, {"altgr", KEY_RIGHTALT},
-    {"meta", KEY_LEFTMETA}, {"menu", KEY_COMPOSE}, {"printscreen", KEY_SYSRQ}, {"pause", KEY_PAUSE},
+    {"a", KEY_A},
+    {"b", KEY_B},
+    {"c", KEY_C},
+    {"d", KEY_D},
+    {"e", KEY_E},
+    {"f", KEY_F},
+    {"g", KEY_G},
+    {"h", KEY_H},
+    {"i", KEY_I},
+    {"j", KEY_J},
+    {"k", KEY_K},
+    {"l", KEY_L},
+    {"m", KEY_M},
+    {"n", KEY_N},
+    {"o", KEY_O},
+    {"p", KEY_P},
+    {"q", KEY_Q},
+    {"r", KEY_R},
+    {"s", KEY_S},
+    {"t", KEY_T},
+    {"u", KEY_U},
+    {"v", KEY_V},
+    {"w", KEY_W},
+    {"x", KEY_X},
+    {"y", KEY_Y},
+    {"z", KEY_Z},
+    {"1", KEY_1},
+    {"2", KEY_2},
+    {"3", KEY_3},
+    {"4", KEY_4},
+    {"5", KEY_5},
+    {"6", KEY_6},
+    {"7", KEY_7},
+    {"8", KEY_8},
+    {"9", KEY_9},
+    {"0", KEY_0},
+    {"enter", KEY_ENTER},
+    {"esc", KEY_ESC},
+    {"backspace", KEY_BACKSPACE},
+    {"tab", KEY_TAB},
+    {"space", KEY_SPACE},
+    {"minus", KEY_MINUS},
+    {"equal", KEY_EQUAL},
+    {"leftbrace", KEY_LEFTBRACE},
+    {"rightbrace", KEY_RIGHTBRACE},
+    {"backslash", KEY_BACKSLASH},
+    {"semicolon", KEY_SEMICOLON},
+    {"apostrophe", KEY_APOSTROPHE},
+    {"grave", KEY_GRAVE},
+    {"comma", KEY_COMMA},
+    {"dot", KEY_DOT},
+    {"slash", KEY_SLASH},
+    {"capslock", KEY_CAPSLOCK},
+    {"f1", KEY_F1},
+    {"f2", KEY_F2},
+    {"f3", KEY_F3},
+    {"f4", KEY_F4},
+    {"f5", KEY_F5},
+    {"f6", KEY_F6},
+    {"f7", KEY_F7},
+    {"f8", KEY_F8},
+    {"f9", KEY_F9},
+    {"f10", KEY_F10},
+    {"f11", KEY_F11},
+    {"f12", KEY_F12},
+    {"up", KEY_UP},
+    {"down", KEY_DOWN},
+    {"left", KEY_LEFT},
+    {"right", KEY_RIGHT},
+    {"home", KEY_HOME},
+    {"end", KEY_END},
+    {"pageup", KEY_PAGEUP},
+    {"pagedown", KEY_PAGEDOWN},
+    {"insert", KEY_INSERT},
+    {"delete", KEY_DELETE},
+    {"shift", KEY_LEFTSHIFT},
+    {"rshift", KEY_RIGHTSHIFT},
+    {"ctrl", KEY_LEFTCTRL},
+    {"rctrl", KEY_RIGHTCTRL},
+    {"alt", KEY_LEFTALT},
+    {"altgr", KEY_RIGHTALT},
+    {"meta", KEY_LEFTMETA},
+    {"menu", KEY_COMPOSE},
+    {"printscreen", KEY_SYSRQ},
+    {"pause", KEY_PAUSE},
     {0, 0},
 };
 
 /* `kbd type`: a character as the key a US layout types it with, shifted or not */
 static const char unshifted[] = "`1234567890-=[]\\;',./";
 static const char shifted[] = "~!@#$%^&*()_+{}|:\"<>?";
-static const int punctuation[] = {KEY_GRAVE, KEY_1,     KEY_2,         KEY_3,          KEY_4,         KEY_5,
-                                  KEY_6,     KEY_7,     KEY_8,         KEY_9,          KEY_0,         KEY_MINUS,
-                                  KEY_EQUAL, KEY_LEFTBRACE, KEY_RIGHTBRACE, KEY_BACKSLASH, KEY_SEMICOLON,
-                                  KEY_APOSTROPHE, KEY_COMMA, KEY_DOT, KEY_SLASH};
+static const int punctuation[] = {
+    KEY_GRAVE,      KEY_1,         KEY_2,         KEY_3,          KEY_4,     KEY_5,     KEY_6,
+    KEY_7,          KEY_8,         KEY_9,         KEY_0,          KEY_MINUS, KEY_EQUAL, KEY_LEFTBRACE,
+    KEY_RIGHTBRACE, KEY_BACKSLASH, KEY_SEMICOLON, KEY_APOSTROPHE, KEY_COMMA, KEY_DOT,   KEY_SLASH};
 
 static int kbdfd = -1;
 
 struct pad {
     const struct profile *profile;
     int bluetooth;
-    int fd;          /* the uinput device, -1: unplugged */
-    int level;       /* battery percent, -1: no battery node */
-    int cable;       /* a charging cable in */
+    int fd;    /* the uinput device, -1: unplugged */
+    int level; /* battery percent, -1: no battery node */
+    int cable; /* a charging cable in */
 };
 
 static struct pad pads[PADS];
@@ -168,7 +234,9 @@ static void emit(struct pad *p, int type, int code, int value) {
         perror("padsim: write(uinput)");
 }
 
-static void syn(struct pad *p) { emit(p, EV_SYN, SYN_REPORT, 0); }
+static void syn(struct pad *p) {
+    emit(p, EV_SYN, SYN_REPORT, 0);
+}
 
 static int buttonCode(struct pad *p, const char *name) {
     for (const struct button *b = p->profile->buttons; b->name; b++)
@@ -189,7 +257,9 @@ static void setupAxis(int fd, int code, int min, int max, int fuzz, int flat) {
     ioctl(fd, UI_ABS_SETUP, &abs);
 }
 
-static void mac(int index, char *out, size_t size) { snprintf(out, size, "aa:bb:cc:00:ab:%02x", index + 1); }
+static void mac(int index, char *out, size_t size) {
+    snprintf(out, size, "aa:bb:cc:00:ab:%02x", index + 1);
+}
 
 static int plugPad(struct pad *p) {
     if (p->fd >= 0)
@@ -300,7 +370,9 @@ static int setButton(struct pad *p, const char *name, int down) {
     return 0;
 }
 
-static int clampInt(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
+static int clampInt(int v, int lo, int hi) {
+    return v < lo ? lo : v > hi ? hi : v;
+}
 
 static int writeFile(const char *dir, const char *name, const char *text) {
     char path[160];

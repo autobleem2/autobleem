@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -325,6 +325,7 @@ Share memory card=Sdílet paměťovou kartu
 Sharp=Ostrý
 Shift=Shift
 Show Internal Games:=Zobrazit interní hry:
+Show performance:=Zobrazit výkon:
 Showing Timeout (0 for no timeout):=Časový limit zobrazení (0 bez limitu):
 Showing: All Games=Zobrazeno: Všechny hry
 Showing: Apps=Zobrazeno: Aplikace

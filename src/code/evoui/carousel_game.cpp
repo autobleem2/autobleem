@@ -66,7 +66,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             Texture renderSurface = Texture::createTarget(renderer, 226, 226);
             Rect fullRect;
 
-            renderer.setTarget(&renderSurface);
+            renderer.pushTarget(&renderSurface);
             renderer.setBlendMode(BlendMode::None);
             renderSurface.setBlendMode(BlendMode::None);
             renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
@@ -78,7 +78,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             // RetroArch's thumbnails tree (while that file is still there), else a look in the tree now -
             // an internal game, or a game scanned before the tree existed
             string imagePath = (*this)->folder + sep + (*this)->base + ".png";
-            renderer.setTarget(nullptr);
+            renderer.popTarget();
             if (!DirEntry::exists(imagePath)) {
                 imagePath = (*this)->coverPath;
                 if (imagePath.empty() || !DirEntry::exists(imagePath)) {
@@ -104,7 +104,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             }
 
             if (coverPng.valid()) {
-                renderer.setTarget(&renderSurface);
+                renderer.pushTarget(&renderSurface);
                 fullRect.x = 0;
                 fullRect.y = 0;
                 fullRect.h = 226, fullRect.w = 226;
@@ -143,8 +143,8 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 content = insetIntoCover(fullRect);
                 thickness = JewelCaseThickness;
                 coverPng = renderSurface;
+                renderer.popTarget();
             }
-            renderer.setTarget(nullptr);
             renderer.setBlendMode(BlendMode::Blend);
         }
     } else {
@@ -152,7 +152,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             Texture renderSurface = Texture::createTarget(renderer, 226, 226);
             Rect fullRect;
 
-            renderer.setTarget(&renderSurface);
+            renderer.pushTarget(&renderSurface);
             renderer.setBlendMode(BlendMode::None);
             renderSurface.setBlendMode(BlendMode::None);
             renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
@@ -160,7 +160,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             renderSurface.setBlendMode(BlendMode::Blend);
             renderer.setBlendMode(BlendMode::Blend);
 
-            renderer.setTarget(nullptr);
+            renderer.popTarget();
             string imagePath;
             if (!(*this)->app) {
                 // Named_Boxarts, Titles, Snaps - png or jpg, tags stripped, fuzzy on the region
@@ -184,7 +184,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
                 }
             }
 
-            renderer.setTarget(&renderSurface);
+            renderer.pushTarget(&renderSurface);
             fullRect.x = 0;
             fullRect.y = 0;
             fullRect.h = 226, fullRect.w = 226;
@@ -219,7 +219,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
             fullRect.h = 226, fullRect.w = 226;
             coverPng = renderSurface;
 
-            renderer.setTarget(nullptr);
+            renderer.popTarget();
             renderer.setBlendMode(BlendMode::Blend);
         }
     }
@@ -235,7 +235,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
 void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind) {
     shared_ptr<Gui> gui(Gui::getInstance());
     Texture renderSurface = Texture::createTarget(renderer, 226, 226);
-    renderer.setTarget(&renderSurface);
+    renderer.pushTarget(&renderSurface);
     renderer.setBlendMode(BlendMode::None);
     renderSurface.setBlendMode(BlendMode::None);
     renderer.setDrawColor(Color(0, 0, 0, 0));
@@ -264,7 +264,7 @@ void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind
         thickness = BigBoxThickness;
     }
     coverPng = renderSurface;
-    renderer.setTarget(nullptr);
+    renderer.popTarget();
     renderer.setBlendMode(BlendMode::Blend);
 }
 

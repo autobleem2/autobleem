@@ -179,6 +179,8 @@ void GuiOptions::fill() {
     // System/Logs/keep marker, which this row makes and removes.
     heading(_("Diagnostics"));
     lines.emplace_back(CFG_KEEPLOGS, _("Keep logs on the stick:"), "keeplogs", true, vector<string>({"false", "true"}));
+    // the renderer's overlay: frame rate, CPU load, threads, memory in the bottom-left corner
+    lines.emplace_back(CFG_PERFOVERLAY, _("Show performance:"), "perfoverlay", true, vector<string>({"false", "true"}));
 
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
 }
@@ -314,6 +316,8 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
 void GuiOptions::reloadFor(int id, const string &nextValue) {
     if (id == CFG_KEEPLOGS)
         Env::setKeepLogsMarker(nextValue == "true"); // what the rc scripts look at, from the next boot
+    if (id == CFG_PERFOVERLAY)
+        renderer.setPerfOverlay(nextValue == "true"); // at once, from the next frame
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || id == CFG_FONT;
     if (!theme && !fonts)

@@ -30,6 +30,7 @@
 #   AB_PCSX_DIR=D   the pcsx-ab checkout;  AB_NO_PCSX=1  use the checked-in emulator binaries
 #   AB_NO_SCCACHE=1 no compiler cache (sccache is put in front of every compiler when the image has it)
 #   AB_NO_LINT=1    skip clang-tidy in the native target (it is the slow part)
+#   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
 #   AB_NO_UPX=1     leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
 set -euo pipefail
@@ -57,6 +58,10 @@ version() {
 VERSION="$(version)"
 
 banner() { echo; echo "==> $*"; }
+run_ctest() { # ctest ARGS... - unless AB_NO_TESTS
+    if [ -n "${AB_NO_TESTS:-}" ]; then echo "    AB_NO_TESTS: the suites are skipped"; return 0; fi
+    ctest "$@"
+}
 configure() { # configure BUILD_DIR ARGS...
     local dir="$1"; shift
     [ -n "${AB_CLEAN:-}" ] && rm -rf "$dir"
@@ -71,7 +76,9 @@ configure() { # configure BUILD_DIR ARGS...
             rm -rf "$dir"
         fi
     fi
-    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "$@"
+    local tests=()
+    [ -n "${AB_NO_TESTS:-}" ] && tests=(-DAB_BUILD_TESTS=OFF)
+    cmake -S . -B "$dir" -G Ninja "${LAUNCHER[@]}" "${tests[@]}" "$@"
 }
 # sccache in front of every compiler when it is there (the image has it; docker/run.sh mounts the cache
 # from the host) - one launcher for the native, Pi, MinGW and console compilers, each keyed by its own
@@ -143,7 +150,7 @@ build_native() {
     configure build_sys -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DAB_ENABLE_CHD=ON
     ninja -C build_sys -j "$JOBS"
     banner "native: tests"
-    ctest --test-dir build_sys --output-on-failure -j "$JOBS"
+    run_ctest --test-dir build_sys --output-on-failure -j "$JOBS"
     banner "native: language files"
     python3 tools/lang_tools.py validate
     banner "native: clang-format"
@@ -243,7 +250,7 @@ build_pcusb() {
     file build_pcusb/autobleem-gui | grep -q 'ELF 32-bit LSB.*Intel 80386'
     # i386 runs on this host: the suites are a gate here too (their scratch dirs carry the pid, -j is safe)
     banner "pcusb: tests"
-    ctest --test-dir build_pcusb --output-on-failure -j "$JOBS"
+    run_ctest --test-dir build_pcusb --output-on-failure -j "$JOBS"
     banner "pcusb: stage"
     stage_launcher build_pcusb pcusb
 }
@@ -257,7 +264,7 @@ build_win() {
     file build_mingw/autobleem-gui.exe | grep -q 'PE32+ executable.*x86-64'
     if command -v wine64 >/dev/null 2>&1 || command -v wine >/dev/null 2>&1; then
         banner "win: tests under wine"
-        ctest --test-dir build_mingw --output-on-failure -j "$JOBS"
+        run_ctest --test-dir build_mingw --output-on-failure -j "$JOBS"
     else
         echo "    (no wine: the test executables are built, not run - the native target runs the suites)"
     fi

@@ -882,6 +882,18 @@ GuiLauncher::~GuiLauncher() {
 }
 
 //*******************************
+// GuiLauncher::retroArchInstalledCached
+//*******************************
+bool GuiLauncher::retroArchInstalledCached() const {
+    const unsigned int now = gui->platform().ticks();
+    if (raCheckedAt_ == 0 || now - raCheckedAt_ >= 2000) {
+        raInstalled_ = Env::retroArchInstalled();
+        raCheckedAt_ = now == 0 ? 1 : now;
+    }
+    return raInstalled_;
+}
+
+//*******************************
 // GuiLauncher::hintSignature
 //*******************************
 // everything buildHintLines() reads, as a short string - updateHintsIfNeeded() rebuilds and re-lays-out the
@@ -907,7 +919,7 @@ string GuiLauncher::hintSignature() const {
             sig += g.foreign ? "|f1" : "|f0";
             sig += g.app ? "|a1" : "|a0";
         }
-        sig += Env::retroArchInstalled() ? "|ra" : "";
+        sig += retroArchInstalledCached() ? "|ra" : "";
     }
     return sig;
 }
@@ -969,7 +981,7 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
     }
     const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
     line1.push_back({"|@X|", game != nullptr && game->app ? _("Start") : _("Play")});
-    if (game != nullptr && !game->foreign && Env::retroArchInstalled())
+    if (game != nullptr && !game->foreign && retroArchInstalledCached())
         line1.push_back({"|@S|", _("Play in RetroArch")});
     line1.push_back({"|@Down|", _("Game menu")});
     line1.push_back({"|@Up|", _("Quick menu")});

@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
@@ -325,6 +325,7 @@ Share memory card=Compartilhar memory card
 Sharp=Nítido
 Shift=Shift
 Show Internal Games:=Mostrar Jogos Internos:
+Show performance:=Mostrar desempenho:
 Showing Timeout (0 for no timeout):=Tempo Visível Limite para Status (0 for tempo indefinido):
 Showing: All Games=Mostrando: Todos os Jogos
 Showing: Apps=Mostrando: Aplicativos

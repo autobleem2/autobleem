@@ -28,6 +28,7 @@ void GuiKeepDisplay::loop() {
     int shown = Seconds;
     result = false;
     menuVisible = true;
+    gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // a 1 s countdown: 4 Hz is plenty
     while (menuVisible) {
         const int left = Seconds - static_cast<int>((gui->platform().ticks() - start) / 1000);
         if (left <= 0) {
@@ -38,7 +39,8 @@ void GuiKeepDisplay::loop() {
             shown = left;
             updateLabel(left);
         }
-        render();
+        if (gui->input().frameDue())
+            render();
 
         Event e;
         while (gui->input().poll(e)) {

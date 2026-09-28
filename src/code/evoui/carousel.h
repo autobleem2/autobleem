@@ -9,6 +9,7 @@
 
 #include <ableem/ableem.h>
 
+#include <cstdint>
 #include <vector>
 
 //******************
@@ -72,6 +73,8 @@ public:
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
     void moveMainCover(bool toGamesRow);
+    // a scroll or a cover's own move (the main cover raised or lowered) is in progress
+    bool animating() const;
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
     void snapMainCover(bool toGamesRow);
@@ -87,6 +90,9 @@ private:
     PsCarouselGame *itemAt(int index);
     // the composed empty box, shared by every placeholder; made on first use
     void loadPlaceholderTexture();
+    // the covers are composed in render targets: when the renderer lost them (Renderer::targetsLost), the
+    // shown and wanted ones are composed again before the next frame
+    void reloadLostTextures();
     // every item: the games, then the empty boxes
     template <class F> void forEachItem(F f) {
         for (auto &game : games)
@@ -101,4 +107,14 @@ private:
     ableem::Texture placeholderTex_; // the empty box of `boxKind`, invalid until a placeholder is shown
     ableem::Rect placeholderContent_;
     float placeholderThickness_ = 0.08f;
+    unsigned long texturesDrawnAt_ = 0; // Renderer::targetsLost() the covers were composed at
+
+    // the layer: a row at rest is drawn once into layer_ and shown with one copy a frame after that, instead of
+    // a copy per cover strip (over a thousand on the console). What was drawn is told by its signature - every
+    // shown cover's texture, place, turn and shade; a moving row is drawn straight to the screen, and baked
+    // again the first frame it stands still. AB_LAYERS=0 turns it off.
+    void drawCovers(const std::vector<const PsCarouselGame *> &visible);
+    ableem::Texture layer_;
+    std::vector<std::uintptr_t> layerSignature_, lastSignature_;
+    bool layerValid_ = false;
 };
