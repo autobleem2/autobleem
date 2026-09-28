@@ -261,7 +261,7 @@ class Padsim:
 
 
 PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping', 'profile', 'plug', 'unplug',
-             'battery'}
+             'battery', 'cable'}
 
 
 def steps(script):
