@@ -63,6 +63,13 @@ void GuiLauncher::loop() {
 #endif
         render();
 
+        // CONSOLE-13: a held direction's release can be read by a screen opened over this one (Options, and
+        // the busy job that ends it) and never reach this loop; Input's own d-pad state is the truth - it is
+        // reset when a busy job ends - so a hold nothing holds any more stops here, instead of the carousel
+        // running on by itself
+        if (motionStart != 0 && !gui->input().dpadLeft() && !gui->input().dpadRight())
+            motionStart = 0;
+
         if (!carousel.scrolling && state == LauncherScreenState::Games) {
             if (queuedScroll != 0) {
                 // the tap that came in during the last scroll
