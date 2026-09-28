@@ -1252,11 +1252,14 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
     if (state == LauncherScreenState::Games) {
         app.audio().home_up.play();
         settingsBack->animEndTime = time + 100;
+        settingsBack->animStarted = time;
+        settingsBack->prevLen = settingsBack->h;
         settingsBack->nextLen = 100;
         playButton->visible = true;
         playText->visible = true;
         if (!staticMeta) {
             meta->animEndTime = time + 200;
+            meta->animStarted = time;
             meta->nextPos = 285;
             meta->prevPos = meta->y;
         }
@@ -1274,11 +1277,14 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
     } else {
         app.audio().home_down.play();
         settingsBack->animEndTime = time + 100;
+        settingsBack->animStarted = time;
+        settingsBack->prevLen = settingsBack->h;
         settingsBack->nextLen = 280;
         playButton->visible = false;
         playText->visible = false;
         if (!staticMeta) {
             meta->animEndTime = time + 200;
+            meta->animStarted = time;
             meta->nextPos = 215;
             meta->prevPos = meta->y;
         }
