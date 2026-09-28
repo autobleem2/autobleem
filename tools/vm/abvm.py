@@ -351,6 +351,7 @@ class VncClip:
         try:
             self.sock.settimeout(None)
             self.request(0)
+            last_full = time.time()
             while not self.stop_flag:
                 kind = self.exact(1)[0]
                 if kind == 0:
@@ -367,7 +368,13 @@ class VncClip:
                                 cols = max(0, min(w, self.w - x))
                                 start = ((y + row) * self.w + x) * 4
                                 self.fb[start:start + cols * 4] = data[row * w * 4:row * w * 4 + cols * 4]
-                    self.request(1)
+                    # QEMU's incremental updates can miss a change (a closed overlay stayed on screen in the
+                    # first clip), so ask for the whole screen again a few times a second
+                    now = time.time()
+                    full = now - last_full >= 0.25
+                    if full:
+                        last_full = now
+                    self.request(0 if full else 1)
                 elif kind == 2:
                     pass  # bell
                 elif kind == 3:
