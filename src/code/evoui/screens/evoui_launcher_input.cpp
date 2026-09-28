@@ -10,7 +10,9 @@
 #include "core/model/pad_assignment.h"
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <sstream>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -49,7 +51,7 @@ void GuiLauncher::loop() {
         // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
         // are asked for, and shown when decoded
         carousel.pumpCovers();
-        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0)
+        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0 && !benchScrolling())
             finishSettleLoads();
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
@@ -86,6 +88,15 @@ void GuiLauncher::loop() {
                 // the stick is held: the next step starts the moment the last one ends, at one speed, so
                 // the row runs instead of stopping between games
                 if (motionDir == 0)
+                    nextCarouselGame(CarouselHeldScrollDuration, false);
+                else
+                    prevCarouselGame(CarouselHeldScrollDuration, false);
+            } else if (benchScrolling() && !carousel.games.empty()) {
+                if (benchDir == 0 && !carousel.canSelectNext())
+                    benchDir = 1;
+                else if (benchDir == 1 && !carousel.canSelectPrevious())
+                    benchDir = 0;
+                if (benchDir == 0)
                     nextCarouselGame(CarouselHeldScrollDuration, false);
                 else
                     prevCarouselGame(CarouselHeldScrollDuration, false);
@@ -170,6 +181,33 @@ void GuiLauncher::loop() {
     } // while (menuVisible)
 
     freeAssets();
+}
+
+//*******************************
+// GuiLauncher::benchScrolling / benchSkips
+//*******************************
+bool GuiLauncher::benchScrolling() {
+    static const bool on = [] {
+        const char *v = getenv("AB_BENCH_SCROLL");
+        return v && *v && strcmp(v, "0") != 0;
+    }();
+    return on;
+}
+
+bool GuiLauncher::benchSkips(const string &part) {
+    static const vector<string> parts = [] {
+        vector<string> list;
+        const char *v = getenv("AB_SKIP");
+        if (v && *v) {
+            stringstream ss(v);
+            string item;
+            while (getline(ss, item, ','))
+                list.push_back(item);
+            PLOG_INFO << "AB_SKIP: " << v;
+        }
+        return list;
+    }();
+    return !parts.empty() && find(parts.begin(), parts.end(), part) != parts.end();
 }
 
 //*******************************

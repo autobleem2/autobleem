@@ -1158,19 +1158,21 @@ void GuiLauncher::render() {
     gui->text().setShadow(shadow);
 
     for (auto &obj : staticElements) {
-
-        obj->render();
+        if (!benchSkips(obj->name))
+            obj->render();
     }
-    carousel.render();
+    if (!benchSkips("carousel"))
+        carousel.render();
     renderSnap();
 
-    menu->render();
+    if (!benchSkips("menu"))
+        menu->render();
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
     // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed.
     updateHintsIfNeeded();
     PanelStyle style = gui->panelStyle();
-    for (const Hint &hint : hints) {
+    for (const Hint &hint : benchSkips("hints") ? vector<Hint>() : hints) {
         style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
         gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
     }
@@ -1183,7 +1185,8 @@ void GuiLauncher::render() {
     renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
 
     // the top-right corner: the scan's bubble, the notification lines stacked under it
-    scanBubble.render(*gui, time);
+    if (!benchSkips("bubbles"))
+        scanBubble.render(*gui, time);
     int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
     extensionBubble.top = belowScan;
     extensionBubble.render(*gui, time);
@@ -1191,7 +1194,8 @@ void GuiLauncher::render() {
         *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
 
     for (auto &obj : frontElemets)
-        obj->render();
+        if (!benchSkips("front"))
+            obj->render();
 
     gui->text().setShadow(classicShadow);
 

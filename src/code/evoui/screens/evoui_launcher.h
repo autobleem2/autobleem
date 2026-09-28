@@ -197,6 +197,12 @@ public:
     bool settleLoadsPending = false;
     // an animation is running or input is held: the loop draws every frame, else at the ambient rate
     bool somethingMoves() const;
+    // measuring on a device (not for users): AB_BENCH_SCROLL=1 runs the row back and forth by itself as a held
+    // stick would, AB_SKIP=part,part leaves parts of the frame undrawn (a static element's name, carousel,
+    // menu, hints, bubbles, front) - the frame statistics then say what each part costs
+    static bool benchScrolling();
+    static bool benchSkips(const std::string &part);
+    int benchDir = 0;
     void finishSettleLoads();
     void loadAssets();
     void freeAssets();
