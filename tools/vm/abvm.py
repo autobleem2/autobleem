@@ -842,7 +842,8 @@ def sb_forward(port):
                        stdin=subprocess.DEVNULL, capture_output=True, text=True)
     if r.returncode != 0:
         raise Fail(f'the forward to port {port}: {r.stderr.strip()}')
-    out = subprocess.run(['pgrep', '-n', '-f', f'-L {port}:127.0.0.1:{port} '], capture_output=True, text=True)
+    # no leading '-' in the pattern: pgrep would take it for an option
+    out = subprocess.run(['pgrep', '-n', '-f', f'[-]L {port}:127.0.0.1:{port} '], capture_output=True, text=True)
     return int(out.stdout.split()[0]) if out.stdout.strip() else 0
 
 
@@ -872,11 +873,27 @@ def sb_start(name, build=None):
         raise Busy(f'busy: no free sandbox slot ({SB_SLOTS}; running: {", ".join(running)}) - '
                    'do something else and try again later')
     used = {sb_state(n).get('port') for n in running}
-    port = next(p for p in SB_PORTS if p not in used)
+
+    def free_here(p):
+        s = socket.socket()
+        try:
+            s.bind(('127.0.0.1', p))
+            return True
+        except OSError:
+            return False
+        finally:
+            s.close()
+
+    port = next((p for p in SB_PORTS if p not in used and free_here(p)), None)
+    if port is None:
+        raise Busy(f'busy: no free sandbox port in {SB_PORTS.start}-{SB_PORTS.stop - 1} on this machine')
     g = f'{SB_GUEST}/{name}'
     rt = f'/run/abvm-sb/{name}'
     env = (f'AB_ROOT={g} AB_RUNTIME_DIR={rt} AB_LOG_DIR={g}/System/Logs AB_DEBUG_PORT={port} AB_NO_SPLASH=1 '
            'AB_HEADLESS=1 AB_INPUT_ISOLATED=1 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy')
+    extra = os.environ.get('ABVM_SANDBOX_ENV', '')  # more for the launcher, e.g. AB_FRAME_STATS=1
+    if extra:
+        env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
     t0 = time.time()
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; sudo mkdir -p {rt}; sudo chown $(id -u):$(id -g) {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
@@ -888,7 +905,12 @@ def sb_start(name, build=None):
         raise Fail(f'sandbox {name} did not open its driver port in 10 s - see {sb_host(name)}/System/Logs/'
                    'abvm-out.txt')
     st = {'pid': pid, 'port': port, 'since': time.time()}
-    st['forward'] = sb_forward(port)
+    sb_save_state(name, st)  # saved before the forward, so a failure below never leaves an orphan behind
+    try:
+        st['forward'] = sb_forward(port)
+    except Fail:
+        sb_stop(name, use_driver=False)  # the port on this side is someone else's - never talk to it
+        raise
     sb_save_state(name, st)
     print(f'sandbox {name} runs on port {port} (ready in {time.time() - t0:.1f} s)')
 
@@ -917,13 +939,14 @@ def sb_drive(name, script, out_dir):
     print(f'grabs {run_dir}')
 
 
-def sb_stop(name):
+def sb_stop(name, use_driver=True):
     st = sb_state(name)
     if st.get('pid') and sb_guest_pid_alive(name, st['pid']):
         try:
-            d = sb_driver(name)
-            d.cmd('quit')  # the clean way: the screens unwind, the databases close
-            d.close()
+            if use_driver and st.get('forward'):
+                d = sb_driver(name)
+                d.cmd('quit')  # the clean way: the screens unwind, the databases close
+                d.close()
         except (OSError, Fail):
             pass
         for _ in range(50):
