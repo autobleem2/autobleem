@@ -30,6 +30,7 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
     PLOG_DEBUG << "Setting initial positions";
     selected = games.empty() ? -1 : 0;
     setInitialPositions(selected);
+    texturesDrawnAt_ = gui_.renderer().targetsLost(); // composed just now
 }
 
 //*******************************
@@ -60,6 +61,31 @@ void Carousel::loadPlaceholderTexture() {
     placeholderTex_ = box.coverPng;
     placeholderContent_ = box.content;
     placeholderThickness_ = box.thickness;
+}
+
+//*******************************
+// Carousel::reloadLostTextures
+//*******************************
+void Carousel::reloadLostTextures() {
+    const unsigned long lost = gui_.renderer().targetsLost();
+    if (lost == texturesDrawnAt_)
+        return;
+    texturesDrawnAt_ = lost;
+    freeTextures();
+    bool placeholderShown = false;
+    forEachItem([&](PsCarouselGame &item) {
+        if (item.placeholder)
+            placeholderShown = placeholderShown || item.visible;
+        else if (item.visible || item.wanted)
+            item.loadTex(gui_.renderer());
+    });
+    if (placeholderShown) {
+        loadPlaceholderTexture();
+        forEachItem([&](PsCarouselGame &item) {
+            if (item.placeholder)
+                item.coverPng = placeholderTex_;
+        });
+    }
 }
 
 //*******************************
@@ -336,6 +362,7 @@ void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, c
 
 void Carousel::render() {
     ableem::Renderer &renderer = gui_.renderer();
+    reloadLostTextures();
     const float screenMiddle = renderer.width() / 2.0f;
 
     // far to near, so that a cover nearer the middle is drawn over the one behind it

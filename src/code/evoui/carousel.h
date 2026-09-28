@@ -87,6 +87,9 @@ private:
     PsCarouselGame *itemAt(int index);
     // the composed empty box, shared by every placeholder; made on first use
     void loadPlaceholderTexture();
+    // the covers are composed in render targets: when the renderer lost them (Renderer::targetsLost), the
+    // shown and wanted ones are composed again before the next frame
+    void reloadLostTextures();
     // every item: the games, then the empty boxes
     template <class F> void forEachItem(F f) {
         for (auto &game : games)
@@ -101,4 +104,5 @@ private:
     ableem::Texture placeholderTex_; // the empty box of `boxKind`, invalid until a placeholder is shown
     ableem::Rect placeholderContent_;
     float placeholderThickness_ = 0.08f;
+    unsigned long texturesDrawnAt_ = 0; // Renderer::targetsLost() the covers were composed at
 };
