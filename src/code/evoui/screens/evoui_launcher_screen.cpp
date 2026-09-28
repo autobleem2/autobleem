@@ -55,18 +55,64 @@ void GuiLauncher::updateMeta(bool withSnap) {
 //*******************************
 // GuiLauncher::finishSettleLoads
 //*******************************
+// the carousel has come to rest: the selected game's snap and resume picture are asked of the background
+// loader, and pollSettleLoads() shows them when they are decoded - no PNG decode on this thread
 void GuiLauncher::finishSettleLoads() {
     settleLoadsPending = false;
-    loadSnap();
-    if (carousel.selectedIsValid())
-        menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
+    pendingSnapPath.clear();
+    pendingResumePath.clear();
+    vector<string> paths;
+
+    const ableem::ThemeRect &panel = app.theme().launcher().snapPanel;
+    if (!panel.set || !carousel.selectedIsValid()) {
+        snapTex = ableem::Texture();
+        snapForGameId = -1;
+    } else {
+        const PsGame &game = *carousel.games[carousel.selected];
+        if (!(snapForGameId == game.gameId && snapForInternal == game.internal && snapTex.valid())) {
+            snapForGameId = game.gameId;
+            snapForInternal = game.internal;
+            pendingSnapPath = snapPathFor(game);
+            if (pendingSnapPath.empty())
+                snapTex = ableem::Texture();
+            else
+                paths.push_back(pendingSnapPath);
+        }
+    }
+
+    if (carousel.selectedIsValid()) {
+        pendingResumePath = app.resumePoints().lastPicture(*carousel.games[carousel.selected]);
+        if (pendingResumePath.empty())
+            menu->setResumeTex(ableem::Texture());
+        else if (pendingResumePath != pendingSnapPath)
+            paths.push_back(pendingResumePath);
+    }
+    extrasLoader.want(paths);
+}
+
+//*******************************
+// GuiLauncher::pollSettleLoads
+//*******************************
+void GuiLauncher::pollSettleLoads() {
+    ableem::Image image;
+    if (!pendingSnapPath.empty() && extrasLoader.take(pendingSnapPath, image)) {
+        snapTex = ableem::Texture::fromImage(renderer, image);
+        if (pendingResumePath == pendingSnapPath) {
+            menu->setResumeTex(snapTex);
+            pendingResumePath.clear();
+        }
+        pendingSnapPath.clear();
+    }
+    if (!pendingResumePath.empty() && extrasLoader.take(pendingResumePath, image)) {
+        menu->setResumeTex(ableem::Texture::fromImage(renderer, image));
+        pendingResumePath.clear();
+    }
 }
 
 //*******************************
 // GuiLauncher::loadSnap
 //*******************************
-// the selected game's screenshot: the path the scan cached while its file exists, else a look in the
-// thumbnails tree (a RetroArch game, an internal game). Only when the theme draws it.
+// the selected game's screenshot, now. Only when the theme draws it.
 void GuiLauncher::loadSnap() {
     const ableem::ThemeRect &panel = app.theme().launcher().snapPanel;
     if (!panel.set || !carousel.selectedIsValid()) {
@@ -79,10 +125,18 @@ void GuiLauncher::loadSnap() {
         return;
     snapForGameId = game.gameId;
     snapForInternal = game.internal;
-    snapTex = ableem::Texture();
-    if (game.app)
-        return;
+    pendingSnapPath.clear(); // this one wins over a snap still being decoded
+    snapTex = ableem::Texture::loadFile(renderer, snapPathFor(game));
+}
 
+//*******************************
+// GuiLauncher::snapPathFor
+//*******************************
+// the path the scan cached while its file exists, else a look in the thumbnails tree (a RetroArch game, an
+// internal game); an App has none
+string GuiLauncher::snapPathFor(const PsGame &game) {
+    if (game.app)
+        return "";
     string path = game.snapPath;
     if (path.empty() || !DirEntry::exists(path)) {
         if (game.foreign)
@@ -91,8 +145,7 @@ void GuiLauncher::loadSnap() {
             path = app.thumbnails().findSnap(ableem::ThumbnailLookup::PlayStationDbName, game.title,
                                              game.folder + sep + game.base, game.recordName);
     }
-    if (!path.empty())
-        snapTex = ableem::Texture::loadFile(renderer, path);
+    return path;
 }
 
 //*******************************

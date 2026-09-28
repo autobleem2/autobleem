@@ -338,7 +338,15 @@ public:
     // the selected game's screenshot in the theme's launcher.snapPanel, when the theme has one
     void loadSnap();
     void renderSnap();
+    // where the selected game's screenshot is (empty: none)
+    std::string snapPathFor(const PsGame &game);
     ableem::Texture snapTex;
     int snapForGameId = -1;
     bool snapForInternal = false;
+
+    // the snap and the resume picture finishSettleLoads() asked for, decoded in the background and put on
+    // the GPU by pollSettleLoads() when they are ready - the picture shown until then is the last one
+    CoverLoader extrasLoader;
+    std::string pendingSnapPath, pendingResumePath;
+    void pollSettleLoads();
 };

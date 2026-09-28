@@ -45,11 +45,13 @@ void GuiLauncher::loop() {
 
         menu->update(time);
         carousel.updatePositions();
-        // the covers decoded in the background go onto the GPU, a frame at a time; the frame the carousel rests
-        // in does the other loads a scroll put off
+        // the covers decoded in the background go onto the GPU, a frame at a time; once the row really rests
+        // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
+        // are asked for, and shown when decoded
         carousel.pumpCovers();
-        if (!carousel.scrolling && settleLoadsPending)
+        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0)
             finishSettleLoads();
+        pollSettleLoads();
         applyScanUpdate(app.scans().poll());
         app.extensions().poll();
         applyExtensionRequests();

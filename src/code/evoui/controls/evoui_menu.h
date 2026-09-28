@@ -60,6 +60,8 @@ public:
     void render() override;
 
     void setResumePic(std::string picturePath);
+    // the same picture decoded elsewhere (the launcher's background loader)
+    void setResumeTex(const ableem::Texture &picture) { resume = picture; }
 
     int transition = 0;
 
