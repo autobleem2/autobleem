@@ -43,6 +43,8 @@ void Carousel::freeTextures() {
     layerValid_ = false; // a texture made later may get a freed one's address: never trust the signature then
     forEachItem([](PsCarouselGame &item) { item.freeTex(); });
     placeholderTex_ = ableem::Texture();
+    targetPool_.clear();
+    loader_.clear();
 }
 
 //*******************************
@@ -111,8 +113,9 @@ void Carousel::selectPrevious() {
 // initialize a table with positions for covers: the selected game in the middle slot, its neighbours
 // in the slots either side, and an empty box in every slot the row has no game for (an empty row is
 // placed around index 0, which is then its first empty box)
-void Carousel::setInitialPositions(int selectedIndex) {
+void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
     layerValid_ = false; // textures are loaded and freed here
+    placement_++;
     forEachItem([](PsCarouselGame &item) {
         item.visible = false;
         item.wanted = false;
@@ -128,7 +131,7 @@ void Carousel::setInitialPositions(int selectedIndex) {
         item->screenPointIndex = slot;
     }
 
-    // the lookahead: the games just past the two ends of the row keep their textures ready
+    // the lookahead: the games just past the two ends of the row are decoded ahead
     for (int i = 1; i <= Lookahead; i++) {
         PsCarouselGame *before = itemAt(middle - PsCarousel::MiddleSlot - i);
         PsCarouselGame *after = itemAt(middle + PsCarousel::MiddleSlot + i);
@@ -138,20 +141,35 @@ void Carousel::setInitialPositions(int selectedIndex) {
             after->wanted = true;
     }
 
+    ableem::Renderer &renderer = gui_.renderer();
     bool placeholderShown = false;
     forEachItem([&](PsCarouselGame &item) {
         item.actual = item.current;
         item.destination = item.current;
         if (item.placeholder) {
             placeholderShown = placeholderShown || item.visible;
-        } else if (item.visible) {
-            item.wanted = true;
-            item.loadTex(gui_.renderer()); // a no-op for a texture already there
-            Gui::tickBusy();
-        } else if (!item.wanted) {
-            item.freeTex();
+            return;
+        }
+        if (!item.visible && !item.wanted)
+            return; // kept or evicted below
+        item.wanted = true;
+        item.lastWanted = placement_;
+        if (item.visible && !item.coverPng.valid()) {
+            if (waitForCovers && !item.artFailed) {
+                ableem::Image image;
+                if (loader_.take(item.artPath(), image))
+                    item.loadFromImage(renderer, image, spareTarget());
+                else
+                    item.loadTex(renderer, spareTarget());
+                item.artFailed = !item.coverPng.valid();
+                Gui::tickBusy();
+            }
+            // a cover still missing is shown as an empty box until it arrives
+            placeholderShown = placeholderShown || !item.coverPng.valid();
         }
     });
+    evictCovers();
+    requestMissingCovers(middle);
     if (placeholderShown) {
         loadPlaceholderTexture();
         forEachItem([&](PsCarouselGame &item) {
@@ -165,17 +183,109 @@ void Carousel::setInitialPositions(int selectedIndex) {
 }
 
 //*******************************
-// Carousel::loadOneMissingTexture
+// Carousel::coverCacheLimit / evictCovers / spareTarget
 //*******************************
-bool Carousel::loadOneMissingTexture() {
+int Carousel::coverCacheLimit() {
+    static const int limit = [] {
+        const char *v = getenv("AB_COVER_CACHE");
+        const int n = v && *v ? atoi(v) : 0;
+        return n > 0 ? n : 80;
+    }();
+    return limit;
+}
+
+void Carousel::evictCovers() {
+    vector<PsCarouselGame *> spare; // held but neither shown nor wanted
+    int held = 0;
     for (auto &game : games) {
-        if (game.wanted && !game.coverPng.valid()) {
-            layerValid_ = false;
-            game.loadTex(gui_.renderer());
-            return true;
+        if (!game.coverPng.valid())
+            continue;
+        held++;
+        if (!game.visible && !game.wanted)
+            spare.push_back(&game);
+    }
+    if (held <= coverCacheLimit())
+        return;
+    sort(spare.begin(), spare.end(),
+         [](const PsCarouselGame *a, const PsCarouselGame *b) { return a->lastWanted < b->lastWanted; });
+    for (PsCarouselGame *game : spare) {
+        if (held <= coverCacheLimit())
+            break;
+        if (targetPool_.size() < 8)
+            targetPool_.push_back(game->coverPng); // composed into again by the next cover
+        game->freeTex();
+        held--;
+    }
+}
+
+ableem::Texture Carousel::spareTarget() {
+    if (targetPool_.empty())
+        return ableem::Texture();
+    ableem::Texture target = targetPool_.back();
+    targetPool_.pop_back();
+    return target;
+}
+
+//*******************************
+// Carousel::requestMissingCovers
+//*******************************
+void Carousel::requestMissingCovers(int middle) {
+    vector<string> paths;
+    const int count = static_cast<int>(games.size());
+    for (int d = 0; d <= PsCarousel::MiddleSlot + Lookahead; d++) {
+        for (int side : {1, -1}) {
+            if (d == 0 && side < 0)
+                continue;
+            const int i = middle + side * d;
+            if (i < 0 || i >= count)
+                continue;
+            PsCarouselGame &game = games[i];
+            if (game.coverPng.valid() || game.artFailed || !(game.visible || game.wanted))
+                continue;
+            const string &path = game.artPath();
+            if (!path.empty())
+                paths.push_back(path);
         }
     }
-    return false;
+    loader_.want(paths);
+}
+
+//*******************************
+// Carousel::pumpCovers
+//*******************************
+bool Carousel::pumpCovers() {
+    if (games.empty())
+        return false;
+    int budget = scrolling ? 1 : 2;
+    bool did = false;
+    const int count = static_cast<int>(games.size());
+    const int middle = selectedIsValid() ? selected : 0;
+    for (int d = 0; d <= PsCarousel::MiddleSlot + Lookahead && budget > 0; d++) {
+        for (int side : {1, -1}) {
+            if ((d == 0 && side < 0) || budget == 0)
+                continue;
+            const int i = middle + side * d;
+            if (i < 0 || i >= count)
+                continue;
+            PsCarouselGame &game = games[i];
+            if (game.coverPng.valid() || game.artFailed || !(game.visible || game.wanted))
+                continue;
+            const string &path = game.artPath();
+            if (path.empty()) { // a dev host's internal game: its picture comes from the metadata
+                game.loadTex(gui_.renderer(), spareTarget());
+            } else {
+                ableem::Image image;
+                if (!loader_.take(path, image))
+                    continue;
+                game.loadFromImage(gui_.renderer(), image, spareTarget());
+            }
+            game.artFailed = !game.coverPng.valid();
+            layerValid_ = false;
+            did = true;
+            budget--;
+        }
+    }
+    return did;
 }
 
 //*******************************
@@ -302,7 +412,7 @@ void Carousel::updateVisibility() {
     });
 
     if (allAnimationFinished && scrolling) {
-        setInitialPositions(selected);
+        setInitialPositions(selected, false); // the end of a scroll step: the new covers come in the background
         scrolling = false;
     }
 }
@@ -398,7 +508,8 @@ void Carousel::render() {
     // far to near, so that a cover nearer the middle is drawn over the one behind it
     vector<const PsCarouselGame *> visible;
     forEachItem([&](const PsCarouselGame &game) {
-        if (game.visible && game.coverPng.valid())
+        // a game whose cover is still on its way stands as an empty box (drawCovers)
+        if (game.visible && (game.coverPng.valid() || (!game.placeholder && placeholderTex_.valid())))
             visible.push_back(&game);
     });
     auto distanceFromMiddle = [&](const PsCarouselGame *game) {
@@ -469,7 +580,15 @@ void Carousel::render() {
 //*******************************
 void Carousel::drawCovers(const vector<const PsCarouselGame *> &visible) {
     ableem::Renderer &renderer = gui_.renderer();
+    PsCarouselGame standIn = PsCarouselGame::emptyBox();
     for (const PsCarouselGame *game : visible) {
+        if (!game->coverPng.valid()) { // its cover has not arrived yet: an empty box where it will be
+            standIn.actual = game->actual;
+            standIn.coverPng = placeholderTex_;
+            standIn.content = placeholderContent_;
+            standIn.thickness = placeholderThickness_;
+            game = &standIn;
+        }
         ableem::Texture currentGameTex = game->coverPng;
         PsScreenpoint point = game->actual;
         // an empty box: darker and see-through, so it reads as the shelf and not as a game
