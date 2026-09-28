@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -325,6 +325,7 @@ Share memory card=Partager la carte mémoire
 Sharp=Net
 Shift=Maj
 Show Internal Games:=Afficher les jeux internes :
+Show performance:=Afficher les performances :
 Showing Timeout (0 for no timeout):=Délai d'affichage (0 aucun délai) :
 Showing: All Games=Affichage : Tous les jeux
 Showing: Apps=Affichage : Applications

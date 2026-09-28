@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=扫描已在进行中
 About=关于
@@ -325,6 +325,7 @@ Share memory card=共享记忆卡
 Sharp=锐利
 Shift=上档
 Show Internal Games:=显示内置游戏：
+Show performance:=显示性能：
 Showing Timeout (0 for no timeout):=提示显示时长（0 为不消失）：
 Showing: All Games=显示：全部游戏
 Showing: Apps=显示：应用

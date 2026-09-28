@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -325,6 +325,7 @@ Share memory card=Del hukommelseskort
 Sharp=Skarp
 Shift=Skift
 Show Internal Games:=Vis interne spil:
+Show performance:=Vis ydeevne:
 Showing Timeout (0 for no timeout):=Vis timeout (0 ingen timeout):
 Showing: All Games=Viser: Alle spil
 Showing: Apps=Viser: Apps

@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -325,6 +325,7 @@ Share memory card=Udostępnij kartę pamięci
 Sharp=Ostry
 Shift=Shift
 Show Internal Games:=Pokazuj Wewnętrzne Gry:
+Show performance:=Pokazuj wydajność:
 Showing Timeout (0 for no timeout):=Czas Wyświetlania (0 ciągle)
 Showing: All Games=Wyświetla: Wszystkie Gry
 Showing: Apps=Wyświetla: Aplikacje

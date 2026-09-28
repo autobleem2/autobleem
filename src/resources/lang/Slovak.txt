@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -325,6 +325,7 @@ Share memory card=Zdieľať pamäťovú kartu
 Sharp=Ostrý
 Shift=Shift
 Show Internal Games:=Zobraziť originálne hry:
+Show performance:=Zobraziť výkon:
 Showing Timeout (0 for no timeout):=Zobrazenie časového limitu (0 bez limitu):
 Showing: All Games=Zobrazujem: Všetky hry
 Showing: Apps=Zobrazujem: Aplikácie

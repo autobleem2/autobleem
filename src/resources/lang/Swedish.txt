@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -325,6 +325,7 @@ Share memory card=Dela minneskort
 Sharp=Skarp
 Shift=Skift
 Show Internal Games:=Visa interna spel:
+Show performance:=Visa prestanda:
 Showing Timeout (0 for no timeout):=Visningstimeout (0 ingen timeout):
 Showing: All Games=Visar: Alla spel
 Showing: Apps=Visar: Appar

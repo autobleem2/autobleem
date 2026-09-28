@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -325,6 +325,7 @@ Share memory card=Partejar la carta memòria
 Sharp=Net
 Shift=Maj
 Show Internal Games:=Afichar los jòcs intèrnes :
+Show performance:=Afichar las performàncias :
 Showing Timeout (0 for no timeout):=Afichatge Timeout (0 cap de timeout) :
 Showing: All Games=Afichatge : Totes los jòcs
 Showing: Apps=Afichatge : Aplicacions

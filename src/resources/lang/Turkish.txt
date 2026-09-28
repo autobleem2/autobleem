@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -325,6 +325,7 @@ Share memory card=Hafıza kartını paylaş
 Sharp=Keskin
 Shift=Shift
 Show Internal Games:=Dahili Oyunları Göster:
+Show performance:=Performansı göster:
 Showing Timeout (0 for no timeout):=Gösterim Zaman Aşımı (0 zaman aşımı yok):
 Showing: All Games=Gösteriliyor: Tüm Oyunlar
 Showing: Apps=Gösteriliyor: Uygulamalar

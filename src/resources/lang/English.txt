@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=A scan is already in progress
 About=About
@@ -332,6 +332,7 @@ Share memory card=Share memory card
 Sharp=Sharp
 Shift=Shift
 Show Internal Games:=Show Internal Games:
+Show performance:=Show performance:
 Showing Timeout (0 for no timeout):=Showing Timeout (0 for no timeout):
 Showing: All Games=Showing: All Games
 Showing: Apps=Showing: Apps

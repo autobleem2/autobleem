@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Er is al een scan bezig
 About=Over
@@ -325,6 +325,7 @@ Share memory card=Geheugenkaart delen
 Sharp=Scherp
 Shift=Shift
 Show Internal Games:=Toon interne games:
+Show performance:=Prestaties tonen:
 Showing Timeout (0 for no timeout):=Toon timeout (0 geen timeout):
 Showing: All Games=Toont: Alle games
 Showing: Apps=Toont: Apps

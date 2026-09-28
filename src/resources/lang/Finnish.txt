@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 409
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -325,6 +325,7 @@ Share memory card=Jaa muistikortti
 Sharp=Terävä
 Shift=Vaihto
 Show Internal Games:=Näytä Sisäiset Pelit:
+Show performance:=Näytä suorituskyky:
 Showing Timeout (0 for no timeout):=Näytetään: aikakatkaisu (0 ei aikakatkaisua)
 Showing: All Games=Näytetään: Kaikki Pelit
 Showing: Apps=Näytetään: Sovellukset
