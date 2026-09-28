@@ -22,7 +22,8 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
 [usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4, generic one SDL has no mapping
-for), unplug, plug; battery <0..100> [charging|discharging|full] | battery off. Buttons: a b x y l1 r1 l2 r2
+for), unplug, plug, battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
+2 (no @ = pad 1; pads 2-4 start unplugged). Buttons: a b x y l1 r1 l2 r2
 select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
 `wait <ms>`, and in `run` also `shot <name.png>`. tools/vm/padsim.c's opening comment has the details.
 
@@ -283,13 +284,19 @@ def run_local(script, out_dir):
                                stdout=subprocess.DEVNULL)
                 os.replace(path + '.part', path)
                 print(f'shot {name}')
-            elif words[0] in PAD_WORDS or words[0] == 'tap':
+            elif re.fullmatch(r'@[1-4]', words[0]) or words[0] in PAD_WORDS or words[0] == 'tap':
+                # "@2 press a": the pad's number stays in front of whatever the step becomes
+                target = words.pop(0) + ' ' if words[0].startswith('@') else ''
+                if not words or not (words[0] in PAD_WORDS or words[0] == 'tap'):
+                    raise Fail(f'unknown step {step!r}')
                 if pad is None:
                     pad = Padsim()
                     pad.cmd('ping')
                 if words[0] == 'tap':
                     step = f'hold {words[1]} {words[2] if len(words) > 2 else 120}'
-                print(pad.cmd(step))
+                else:
+                    step = ' '.join(words)
+                print(pad.cmd(target + step))
             else:
                 raise Fail(f'unknown step {step!r}')
     finally:
