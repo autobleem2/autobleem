@@ -20,9 +20,11 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
   python tools/vm/abvm.py guest "<command>"              a shell command in the guest (it is a sandbox)
 
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
-stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset. Buttons: a b x y l1 r1 l2 r2
-select start guide l3 r3 - the Xbox layout (a = Cross, b = Circle, x = Square, y = Triangle). `wait <ms>`, and in
-`run` also `shot <name.png>`.
+stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
+[usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4, generic one SDL has no mapping
+for), unplug, plug; battery <0..100> [charging|discharging|full] | battery off. Buttons: a b x y l1 r1 l2 r2
+select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
+`wait <ms>`, and in `run` also `shot <name.png>`. tools/vm/padsim.c's opening comment has the details.
 
 Where things are comes from the environment, never from this file (no addresses in the repository):
   ABVM_HOST      the test machine's ssh name (default: bleemmachine - a Host entry in ~/.ssh/config)
@@ -257,7 +259,8 @@ class Padsim:
         self.sock.close()
 
 
-PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping'}
+PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping', 'profile', 'plug', 'unplug',
+             'battery'}
 
 
 def steps(script):
@@ -373,15 +376,22 @@ def setup():
     print(f'copied to {HOST}:{REMOTE_TOOL}')
 
 
+BATTERY_DROPIN = '/etc/systemd/system/autobleem.service.d/padsim-battery.conf'
+
+
 def padsim_install():
     src = os.path.join(HERE, 'padsim.c')
     to_guest(src, '/tmp/padsim.c')
+    # the launcher reads pad batteries from padsim's fake power_supply tree instead of /sys (the VM has no real
+    # wireless pad) - a drop-in on the guest's root filesystem, like the DebugDriver's
     guest_run('set -e; gcc -O2 -Wall -o /tmp/padsim /tmp/padsim.c; '
               'sudo install -m 755 /tmp/padsim /usr/local/bin/padsim; '
               'sudo install -D -m 644 /tmp/padsim.c /usr/local/src/padsim/padsim.c; '
-              'sudo systemctl restart padsim.service; rm -f /tmp/padsim /tmp/padsim.c; sleep 1; '
-              'systemctl is-active padsim.service')
-    print('padsim built and restarted')
+              f'printf "[Service]\\nEnvironment=AB_PAD_BATTERY_DIR=/run/padsim/power_supply\\n" > /tmp/pb.conf; '
+              f'sudo install -D -m 644 /tmp/pb.conf {BATTERY_DROPIN}; rm -f /tmp/pb.conf; '
+              'sudo systemctl daemon-reload; sudo systemctl restart padsim.service; '
+              'rm -f /tmp/padsim /tmp/padsim.c; sleep 1; systemctl is-active padsim.service')
+    print('padsim built and restarted; the launcher reads its battery after `abvm.py restart`')
 
 
 def main(argv):
