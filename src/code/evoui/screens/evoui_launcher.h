@@ -272,6 +272,10 @@ public:
     // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
     // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
     std::string hintSignature() const;
+    // Env::retroArchInstalled() for the per-frame footer: re-checked every 2 s, not a stat per binary a frame
+    bool retroArchInstalledCached() const;
+    mutable bool raInstalled_ = false;
+    mutable unsigned int raCheckedAt_ = 0;
     void updateHintsIfNeeded();
     void layoutHints();
     std::unique_ptr<PsMenu> menu;
