@@ -223,7 +223,7 @@ def save_png(src, out):
     with open(src, 'rb') as f:
         head = f.read(8)
     if head.startswith(b'\x89PNG'):
-        os.replace(src, out)
+        shutil.move(src, out)  # the temp dir may be on another drive than `out`
         return
     try:
         from PIL import Image
