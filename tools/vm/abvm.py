@@ -2,7 +2,10 @@
 """abvm - a test VM on the test machine, driven from a dev PC: put a build in, restart it, press its pad, take its
 screen. For the loop "code -> build -> install in the VM -> try it -> fix" without the owner's devices.
 
-  python tools/vm/abvm.py status                         the VM, the guest, the launcher, padsim, the DebugDriver
+  python tools/vm/abvm.py status                         the VM, who has it, the guest, the launcher, padsim, the driver
+  python tools/vm/abvm.py lock take <task> [minutes]     the VM is shared: take it before anything that changes it
+                                                         (default 30 min; taking it again renews it)
+  python tools/vm/abvm.py lock status | release          who has it and until when / give it back
   python tools/vm/abvm.py setup                          copy this tool to the test machine (needed once, and after
                                                          every change to it: `run` and `pad` execute there)
   python tools/vm/abvm.py install SRC [GUEST_PATH]       put a file or a directory in the guest; the original is kept
@@ -30,7 +33,17 @@ stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; 
 for), unplug, plug, battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
 2 (no @ = pad 1; pads 2-4 start unplugged). Buttons: a b x y l1 r1 l2 r2
 select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
-`wait <ms>`, and in `run` also `shot <name.png>`. tools/vm/padsim.c's opening comment has the details.
+`wait <ms>`, and in `run` also `shot <name.png>`. A USB keyboard: kbd plug|unplug, kbd press|release <key>,
+kbd tap <key> [ms], kbd combo <key>+<key>... (ctrl+alt+delete), kbd type <text> (keys: a-z 0-9 enter esc space
+tab backspace up down left right f1-f12 home end pageup pagedown insert delete shift ctrl alt meta, ...).
+tools/vm/padsim.c's opening comment has the details.
+
+The lease: one tester on the VM at a time. Every command that changes the VM or its screen (install, restore,
+restart, clip, pad, run, drive, padsim-install, guest) needs ABVM_WHO=<name> (or --who <name>) and that name's
+lease (`lock take`); a lease held by someone else is exit 3 and "busy: <who> (<task>) ... n min left" - do
+something else and come back. Every command of the holder keeps the lease at least 10 minutes ahead; a lease
+nobody renews runs out by itself. status and shot need none. The lease lives on the test machine
+(~/.local/state/abvm/lock.json, under flock).
 
 Where things are comes from the environment, never from this file (no addresses in the repository):
   ABVM_HOST      the test machine's ssh name (default: bleemmachine - a Host entry in ~/.ssh/config)
@@ -39,6 +52,7 @@ Where things are comes from the environment, never from this file (no addresses 
   ABVM_KEY       the guest's ssh key on the test machine (default: ~/.ssh/<domain>-vm_ed25519)
   ABVM_PADSIM    the padsim channel's socket on the test machine (default: /tmp/<domain>-padsim.sock)
   ABVM_DRIVER    the guest's DebugDriver port (default: 6900); ABVM_LOCAL_PORT the local end (default: 16900)
+  ABVM_WHO       who is testing - the lease's holder
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
@@ -454,7 +468,7 @@ class Padsim:
 
 
 PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping', 'profile', 'plug', 'unplug',
-             'battery', 'cable'}
+             'battery', 'cable', 'kbd'}
 
 
 def steps(script):
@@ -509,7 +523,102 @@ def run_local(script, out_dir):
 
 
 def remote_tool(args):
-    return host_run(f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in args))
+    who = ['--who', WHO] if WHO else []
+    return host_run(f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + args))
+
+
+# ------------------------------------------------------------------ the lease: one tester on the VM at a time
+
+LOCK_FILE = '~/.local/state/abvm/lock.json'
+LOCK_MINUTES = 30      # a lease's default length
+LOCK_KEEPALIVE = 10    # every command of the holder keeps the lease at least this many minutes ahead
+# what changes the VM or its screen; status, shot and lock itself never need the lease
+NEEDS_LEASE = {'install', 'restore', 'restart', 'clip', 'pad', 'run', 'drive', 'padsim-install', 'guest'}
+WHO = os.environ.get('ABVM_WHO', '')
+
+
+class Busy(Fail):
+    pass
+
+
+def lease_describe(lease, now):
+    left = int((lease['until'] - now + 59) // 60)
+    since = time.strftime('%H:%M', time.localtime(lease['since']))
+    return f"{lease['who']} ({lease['task']}) since {since}, {left} min left"
+
+
+def lease_op(op, who='', task='', minutes=LOCK_MINUTES):
+    """on the test machine: take / check / release / show the lease, under flock so two callers never race"""
+    import fcntl
+    import json
+    path = os.path.expanduser(LOCK_FILE)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + '.flock', 'w') as guard:
+        fcntl.flock(guard, fcntl.LOCK_EX)
+        now = time.time()
+        try:
+            with open(path) as f:
+                lease = json.load(f)
+            if lease['until'] <= now:
+                lease = None  # expired: a holder that died frees the VM by itself
+        except (OSError, ValueError, KeyError):
+            lease = None
+
+        def save(value):
+            with open(path + '.tmp', 'w') as f:
+                json.dump(value, f)
+            os.replace(path + '.tmp', path)
+
+        if op == 'show':
+            return f'held by {lease_describe(lease, now)}' if lease else 'free'
+        if not who:
+            raise Fail('who is testing? set ABVM_WHO=<name> (or --who <name>) - the VM is shared')
+        if lease and lease['who'] != who:
+            raise Busy(f'busy: {lease_describe(lease, now)} - do something else and try again later')
+        if op == 'take':
+            if not task:
+                raise Fail('lock take <task> [minutes]: say what the VM is for')
+            since = lease['since'] if lease else now
+            save({'who': who, 'task': task, 'since': since, 'until': now + minutes * 60})
+            return f"taken by {who} ({task}) for {minutes} min"
+        if op == 'check':
+            if not lease:
+                raise Fail(f'take the VM first: abvm.py lock take <task> [minutes] (ABVM_WHO={who})')
+            lease['until'] = max(lease['until'], now + LOCK_KEEPALIVE * 60)
+            save(lease)
+            return 'ok'
+        if op == 'release':
+            if lease:
+                os.remove(path)
+                return f'released by {who}'
+            return 'free'
+        raise Fail(f'lock: unknown {op!r}')
+
+
+def lease(op, *args):
+    if LOCAL:
+        return lease_op(op, WHO, *args)
+    try:
+        return remote_tool(['lock', op] + [str(a) for a in args]).strip()
+    except Fail as e:
+        # the test machine's own message, without the ssh command around it
+        msg = str(e).rsplit('abvm: ', 1)[-1]
+        raise (Busy if msg.startswith('busy:') else Fail)(msg) from None
+
+
+def lock_command(args):
+    op = args[0] if args else 'status'
+    if op in ('status', 'show'):
+        print(lease('show'))
+    elif op == 'take':
+        if len(args) < 2:
+            raise Fail('lock take <task> [minutes]')
+        minutes = int(args[2]) if len(args) > 2 else LOCK_MINUTES
+        print(lease_op('take', WHO, args[1], minutes) if LOCAL else lease('take', args[1], minutes))
+    elif op in ('release', 'check'):
+        print(lease(op))
+    else:
+        raise Fail('lock status | take <task> [minutes] | release')
 
 
 def run(script, out_dir):
@@ -572,6 +681,7 @@ def drive(script):
 def status():
     state = host_run(f'{VIRSH} domstate {shlex.quote(DOMAIN)}', check=False).strip() or 'unknown'
     print(f'vm        {DOMAIN}: {state}')
+    print(f'lease     {lease("show")}')
     if state != 'running':
         return 1
     print(f'guest     {guest_address()}')
@@ -609,10 +719,14 @@ def padsim_install():
 
 
 def main(argv):
-    global LOCAL
+    global LOCAL, WHO
     if '--local' in argv:
         LOCAL = True
         argv = [a for a in argv if a != '--local']
+    if '--who' in argv:
+        i = argv.index('--who')
+        WHO = argv[i + 1]
+        del argv[i:i + 2]
     out_dir = '.'
     if '--out' in argv:
         i = argv.index('--out')
@@ -623,8 +737,12 @@ def main(argv):
         return 2
     cmd, args = argv[0], argv[1:]
     try:
+        if cmd in NEEDS_LEASE:
+            lease('check')
         if cmd == 'status':
             return status()
+        elif cmd == 'lock':
+            lock_command(args)
         elif cmd == 'setup':
             setup()
         elif cmd == 'install':
@@ -650,6 +768,9 @@ def main(argv):
         else:
             print(__doc__)
             return 2
+    except Busy as e:
+        print(f'abvm: {e}', file=sys.stderr)
+        return 3
     except (Fail, subprocess.CalledProcessError) as e:
         print(f'abvm: {e}', file=sys.stderr)
         return 1

@@ -31,7 +31,8 @@
  * the launcher cannot tie a battery to a player: it shows as a pad of its own.
  *
  * Protocol, one command per line, one reply per line ("ok ..." or "err <msg>"):
- *   ping                              ok padsim 4 - then per pad: <n>:<profile>/<usb|bt>/<plugged|unplugged>
+ *   ping                              ok padsim 5 - then per pad: <n>:<profile>/<usb|bt>/<plugged|unplugged>, and
+ *                                     kbd:<plugged|unplugged>
  *   press <btn> | release <btn>       a b x y l1 r1 l2 r2 select start guide l3 r3 (l2/r2 also move the trigger axis)
  *   hold <btn> <ms>                   pressed, then released after ms
  *   stick <left|right> <x> <y>        -32768..32767 each
@@ -39,7 +40,18 @@
  *   dpad <up|down|left|right|center>  also up-left, up-right, down-left, down-right
  *   reset                             everything released and centred
  *   profile <x360|ds4|generic> [usb|bt] | plug | unplug | battery <0..100>|off | cable in|out
- * Every pad is reset whenever the host side goes away, so a client that dies mid-press leaves nothing held.
+ *
+ * A USB keyboard ("AutoBleem Test Keyboard", 1209:ab02, starts unplugged; the kernel repeats a held key):
+ *   kbd plug | kbd unplug
+ *   kbd press <key> | kbd release <key> | kbd tap <key> [ms]   (60 ms by default)
+ *   kbd combo <key>+<key>...          pressed left to right, released right to left (ctrl+alt+delete)
+ *   kbd type <text>                   the rest of the line, as a US layout types it (capitals and symbols shifted)
+ *   kbd reset                         every key released
+ * Keys: a-z 0-9 enter esc backspace tab space minus equal leftbrace rightbrace backslash semicolon apostrophe
+ * grave comma dot slash capslock f1-f12 up down left right home end pageup pagedown insert delete shift rshift
+ * ctrl rctrl alt altgr meta menu printscreen pause.
+ * Every pad and the keyboard are reset whenever the host side goes away, so a client that dies mid-press leaves
+ * nothing held.
  *
  * Build in the guest: gcc -O2 -Wall -o padsim padsim.c   (tools/vm/abvm.py padsim-install does it)
  */
@@ -95,6 +107,43 @@ static const struct profile profiles[] = {
     /* ids no pad has: SDL has no mapping for it */
     {"generic", "AutoBleem Test Pad", 0x1209, 0xab01, 0x0100, 0x0100, ds4Buttons, 1, 1, 1},
 };
+
+/* the USB keyboard: key names as a tester types them, in no particular order */
+static const struct button keys[] = {
+    {"a", KEY_A},           {"b", KEY_B},         {"c", KEY_C},           {"d", KEY_D},
+    {"e", KEY_E},           {"f", KEY_F},         {"g", KEY_G},           {"h", KEY_H},
+    {"i", KEY_I},           {"j", KEY_J},         {"k", KEY_K},           {"l", KEY_L},
+    {"m", KEY_M},           {"n", KEY_N},         {"o", KEY_O},           {"p", KEY_P},
+    {"q", KEY_Q},           {"r", KEY_R},         {"s", KEY_S},           {"t", KEY_T},
+    {"u", KEY_U},           {"v", KEY_V},         {"w", KEY_W},           {"x", KEY_X},
+    {"y", KEY_Y},           {"z", KEY_Z},         {"1", KEY_1},           {"2", KEY_2},
+    {"3", KEY_3},           {"4", KEY_4},         {"5", KEY_5},           {"6", KEY_6},
+    {"7", KEY_7},           {"8", KEY_8},         {"9", KEY_9},           {"0", KEY_0},
+    {"enter", KEY_ENTER},   {"esc", KEY_ESC},     {"backspace", KEY_BACKSPACE}, {"tab", KEY_TAB},
+    {"space", KEY_SPACE},   {"minus", KEY_MINUS}, {"equal", KEY_EQUAL},   {"leftbrace", KEY_LEFTBRACE},
+    {"rightbrace", KEY_RIGHTBRACE}, {"backslash", KEY_BACKSLASH}, {"semicolon", KEY_SEMICOLON},
+    {"apostrophe", KEY_APOSTROPHE}, {"grave", KEY_GRAVE}, {"comma", KEY_COMMA}, {"dot", KEY_DOT},
+    {"slash", KEY_SLASH},   {"capslock", KEY_CAPSLOCK},
+    {"f1", KEY_F1},         {"f2", KEY_F2},       {"f3", KEY_F3},         {"f4", KEY_F4},
+    {"f5", KEY_F5},         {"f6", KEY_F6},       {"f7", KEY_F7},         {"f8", KEY_F8},
+    {"f9", KEY_F9},         {"f10", KEY_F10},     {"f11", KEY_F11},       {"f12", KEY_F12},
+    {"up", KEY_UP},         {"down", KEY_DOWN},   {"left", KEY_LEFT},     {"right", KEY_RIGHT},
+    {"home", KEY_HOME},     {"end", KEY_END},     {"pageup", KEY_PAGEUP}, {"pagedown", KEY_PAGEDOWN},
+    {"insert", KEY_INSERT}, {"delete", KEY_DELETE}, {"shift", KEY_LEFTSHIFT}, {"rshift", KEY_RIGHTSHIFT},
+    {"ctrl", KEY_LEFTCTRL}, {"rctrl", KEY_RIGHTCTRL}, {"alt", KEY_LEFTALT}, {"altgr", KEY_RIGHTALT},
+    {"meta", KEY_LEFTMETA}, {"menu", KEY_COMPOSE}, {"printscreen", KEY_SYSRQ}, {"pause", KEY_PAUSE},
+    {0, 0},
+};
+
+/* `kbd type`: a character as the key a US layout types it with, shifted or not */
+static const char unshifted[] = "`1234567890-=[]\\;',./";
+static const char shifted[] = "~!@#$%^&*()_+{}|:\"<>?";
+static const int punctuation[] = {KEY_GRAVE, KEY_1,     KEY_2,         KEY_3,          KEY_4,         KEY_5,
+                                  KEY_6,     KEY_7,     KEY_8,         KEY_9,          KEY_0,         KEY_MINUS,
+                                  KEY_EQUAL, KEY_LEFTBRACE, KEY_RIGHTBRACE, KEY_BACKSLASH, KEY_SEMICOLON,
+                                  KEY_APOSTROPHE, KEY_COMMA, KEY_DOT, KEY_SLASH};
+
+static int kbdfd = -1;
 
 struct pad {
     const struct profile *profile;
@@ -293,14 +342,189 @@ static int syncBattery(struct pad *p) {
 
 static void ping(void) {
     char msg[256];
-    int n = snprintf(msg, sizeof(msg), "ok padsim 4");
+    int n = snprintf(msg, sizeof(msg), "ok padsim 5");
     for (int i = 0; i < PADS; i++)
         n += snprintf(msg + n, sizeof(msg) - n, " %d:%s/%s/%s", i + 1, pads[i].profile->name,
                       pads[i].bluetooth ? "bt" : "usb", pads[i].fd >= 0 ? "plugged" : "unplugged");
+    snprintf(msg + n, sizeof(msg) - n, " kbd:%s", kbdfd >= 0 ? "plugged" : "unplugged");
     reply(msg);
 }
 
+/* ------------------------------------------------------------------ the USB keyboard */
+
+static void msleep(int ms) {
+    struct timespec ts = {ms / 1000, (long)(ms % 1000) * 1000000L};
+    nanosleep(&ts, NULL);
+}
+
+static void kemit(int code, int down) {
+    if (kbdfd < 0)
+        return;
+    struct input_event ev[2];
+    memset(ev, 0, sizeof(ev));
+    ev[0].type = EV_KEY;
+    ev[0].code = code;
+    ev[0].value = down;
+    ev[1].type = EV_SYN;
+    ev[1].code = SYN_REPORT;
+    if (write(kbdfd, ev, sizeof(ev)) != (ssize_t)sizeof(ev))
+        perror("padsim: write(uinput keyboard)");
+}
+
+static int keyCode(const char *name) {
+    for (const struct button *k = keys; k->name; k++)
+        if (!strcmp(name, k->name))
+            return k->code;
+    return -1;
+}
+
+static int plugKbd(void) {
+    if (kbdfd >= 0)
+        return 0;
+    int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+    if (fd < 0) {
+        perror("padsim: open(/dev/uinput)");
+        return -1;
+    }
+    ioctl(fd, UI_SET_EVBIT, EV_KEY);
+    ioctl(fd, UI_SET_EVBIT, EV_REP); /* the kernel repeats a held key, as it does for a real keyboard */
+    for (const struct button *k = keys; k->name; k++)
+        ioctl(fd, UI_SET_KEYBIT, k->code);
+    struct uinput_setup setup;
+    memset(&setup, 0, sizeof(setup));
+    setup.id.bustype = BUS_USB;
+    setup.id.vendor = 0x1209; /* ids no keyboard has */
+    setup.id.product = 0xab02;
+    setup.id.version = 0x0110;
+    snprintf(setup.name, sizeof(setup.name), "AutoBleem Test Keyboard");
+    ioctl(fd, UI_SET_PHYS, "padsim/kbd");
+    ioctl(fd, UI_DEV_SETUP, &setup);
+    if (ioctl(fd, UI_DEV_CREATE) < 0) {
+        perror("padsim: UI_DEV_CREATE (keyboard)");
+        close(fd);
+        return -1;
+    }
+    kbdfd = fd;
+    return 0;
+}
+
+static void unplugKbd(void) {
+    if (kbdfd < 0)
+        return;
+    ioctl(kbdfd, UI_DEV_DESTROY);
+    close(kbdfd);
+    kbdfd = -1;
+}
+
+static void resetKbd(void) {
+    for (const struct button *k = keys; k->name; k++)
+        kemit(k->code, 0);
+}
+
+static void typeText(const char *text) {
+    for (const char *c = text; *c; c++) {
+        int code = -1, shift = 0;
+        char lower[2] = {(char)(*c >= 'A' && *c <= 'Z' ? *c - 'A' + 'a' : *c), 0};
+        if (*c == ' ') {
+            code = KEY_SPACE;
+        } else if ((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || (*c >= '0' && *c <= '9')) {
+            code = keyCode(lower);
+            shift = *c >= 'A' && *c <= 'Z';
+        } else if (strchr(unshifted, *c)) {
+            code = punctuation[strchr(unshifted, *c) - unshifted];
+        } else if (strchr(shifted, *c)) {
+            code = punctuation[strchr(shifted, *c) - shifted];
+            shift = 1;
+        }
+        if (code < 0)
+            continue; /* no key types it on a US layout */
+        if (shift)
+            kemit(KEY_LEFTSHIFT, 1);
+        kemit(code, 1);
+        msleep(20);
+        kemit(code, 0);
+        if (shift)
+            kemit(KEY_LEFTSHIFT, 0);
+        msleep(20);
+    }
+}
+
+/* "kbd <command>": the keyboard's own commands */
+static void handleKbd(char *line) {
+    char cmd[16] = {0}, a1[64] = {0}, a2[16] = {0};
+    int n = sscanf(line, "%15s %63s %15s", cmd, a1, a2);
+    if (n >= 1 && !strcmp(cmd, "plug")) {
+        reply(plugKbd() == 0 ? "ok" : "err cannot create the keyboard");
+        return;
+    }
+    if (n >= 1 && !strcmp(cmd, "unplug")) {
+        unplugKbd();
+        reply("ok");
+        return;
+    }
+    if (kbdfd < 0) {
+        reply("err the keyboard is unplugged (kbd plug)");
+        return;
+    }
+    if (n >= 1 && !strcmp(cmd, "type")) {
+        char *text = strstr(line, "type");
+        text += 4;
+        if (*text == ' ')
+            text++;
+        typeText(text);
+        reply("ok");
+    } else if (n >= 1 && !strcmp(cmd, "reset")) {
+        resetKbd();
+        reply("ok");
+    } else if ((!strcmp(cmd, "press") || !strcmp(cmd, "release")) && n >= 2) {
+        int code = keyCode(a1);
+        if (code < 0) {
+            reply("err unknown key");
+            return;
+        }
+        kemit(code, cmd[0] == 'p');
+        reply("ok");
+    } else if (!strcmp(cmd, "tap") && n >= 2) {
+        int code = keyCode(a1);
+        if (code < 0) {
+            reply("err unknown key");
+            return;
+        }
+        kemit(code, 1);
+        msleep(n >= 3 ? clampInt(atoi(a2), 0, 60000) : 60);
+        kemit(code, 0);
+        reply("ok");
+    } else if (!strcmp(cmd, "combo") && n >= 2) {
+        /* ctrl+alt+delete: pressed left to right, released right to left */
+        int codes[8], count = 0;
+        for (char *part = strtok(a1, "+"); part && count < 8; part = strtok(NULL, "+")) {
+            codes[count] = keyCode(part);
+            if (codes[count] < 0) {
+                reply("err unknown key");
+                return;
+            }
+            count++;
+        }
+        for (int i = 0; i < count; i++) {
+            kemit(codes[i], 1);
+            msleep(20);
+        }
+        msleep(60);
+        for (int i = count - 1; i >= 0; i--) {
+            kemit(codes[i], 0);
+            msleep(20);
+        }
+        reply("ok");
+    } else {
+        reply("err kbd plug|unplug|press|release <key>|tap <key> [ms]|combo <k>+<k>|type <text>|reset");
+    }
+}
+
 static void handleLine(char *line) {
+    if (!strncmp(line, "kbd ", 4)) {
+        handleKbd(line + 4);
+        return;
+    }
     struct pad *p = &pads[0];
     if (line[0] == '@') {
         int n = atoi(line + 1);
@@ -439,6 +663,7 @@ static void handleLine(char *line) {
 static void resetAll(void) {
     for (int i = 0; i < PADS; i++)
         resetPad(&pads[i]);
+    resetKbd();
 }
 
 int main(int argc, char **argv) {
@@ -516,5 +741,6 @@ int main(int argc, char **argv) {
     }
     for (int i = 0; i < PADS; i++)
         unplugPad(&pads[i]);
+    unplugKbd();
     return 0;
 }
