@@ -61,6 +61,33 @@ so it never ends up in a cached layer. The option's label and description in all
 **A2.** With the overlay and `AB_FRAME_STATS`: the baseline on the VM (the launcher's Games and Set states,
 Options, Game Manager, the Quick menu, the Button Guide, a confirm) and the RSS question from the spike.
 
+**Done (2026-09-28, feature/perf-overlay).** A1 as above, with two additions: "work" (the time from the end of
+one present to the start of the next - what the program itself spends on a frame) and the copies per frame.
+The CPU load is a share of the whole machine (all cores). The baseline, the launcher's Games state at rest:
+
+| | PSC (opengles2, SDL 2.0.14) | Pi 400 | VM (opengl, Mesa software, SDL 2.26) |
+|---|---|---|---|
+| FPS | **56** (misses vsync) | 60 | 40 |
+| frame (avg / max) | 18.0 / 19.5 ms | - | 25.3 / 27.5 ms |
+| work (avg / max) | 1.7 / 1.9 ms | - | 0.3 / 0.4 ms |
+| copies per frame | **1253** | - | 74 |
+| CPU process / system | 27% / 29% of 4 cores | ~30% of one core (top) | 50% / 100% of 2 cores |
+| memory, temperature | 32 MB, 63 C | - | 110 MB |
+
+What it says:
+- **The PSC's frame is the driver, not our code**: 1.7 ms of work, 18 ms per frame. The 1253 copies are
+  `copyTrapezoid`'s one copy per output column (no `SDL_RenderGeometry` in 2.0.14; the VM's SDL has it - 74);
+  the PowerVR driver takes ~16 ms over them, so the launcher misses 60 and holds a core. C (the carousel as a
+  cached layer: one copy at rest) is the biggest win there, F2 (the trapezoid in GLES, or a newer SDL) the
+  one for a moving carousel; B alone lowers the CPU but not the console's smoothness.
+- **The VM's frame is the present and the DebugDriver's readback** (0.3 ms of work, 25 ms per frame, in
+  Mesa's software GL) - B5 (readback on demand) first there.
+- **The RSS question**: 102-110 MB over a run with the driver; the spike's 1.2 GB did not come back.
+- Found on the way (for D): a sandbox's `shot` asks the launcher to write a path of the test machine, which
+  the guest cannot - it answers "err no frame" (`grab` works); and right after a start, `wait_screen
+  GuiLauncher` answered ok while the frame cache still held a black startup frame, which two grabs 30 s
+  apart both returned - a stale frame cache while nothing presented.
+
 ## B - Core: pacing, waiting, safety (lib_ableem + core's classic screens)
 
 **B1. A frame cap in `Renderer::present()`**: when present() came back sooner than the frame budget (vsync did
