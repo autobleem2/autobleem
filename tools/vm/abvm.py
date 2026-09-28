@@ -35,11 +35,16 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
   python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
                                                          Apps; no games, empty databases
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
-  python tools/vm/abvm.py sandbox start <name> [--build <dir>]   made from the template when new; --build lays a
-                                                         build's dist/<target> (on the test machine, e.g.
-                                                         ~/src/autobleem/dist/pcusb) over it; started headless
-  python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (press x; wait 500;
-                                                         screen; grab a.png; ...); grabs come back to DIR
+  python tools/vm/abvm.py sandbox new <name> [--build <dir>]     made from the template (not started)
+  python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--size WxH]   made from the template when new;
+                                                         --build lays a build's dist/<target> (on the test machine,
+                                                         e.g. ~/src/autobleem/dist/pcusb) over it; started headless
+                                                         in a WxH window (1280x720; ABVM_SANDBOX_SIZE), ready when
+                                                         its launcher screen shows
+  python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
+                                                         300; shot a.png; clip start b.mp4; ...; clip stop); shots,
+                                                         grabs and clips (MP4, ffmpeg on the test machine) come back
+                                                         to DIR - they are written into <sandbox>/.abvm/out/<run>/
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
@@ -52,7 +57,10 @@ stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; 
 for), unplug, plug, battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
 2 (no @ = pad 1; pads 2-4 start unplugged). Buttons: a b x y l1 r1 l2 r2
 select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
-`wait <ms>`, and in `run` also `shot <name.png>`. A USB keyboard: kbd plug|unplug, kbd press|release <key>,
+`wait <ms>`, and in `run` also `shot <name.png>` (the VM's whole screen) and the launcher's own DebugDriver words
+(screen, wait_screen, wait_idle, key, text, grab, menu, quick, items, frames, window, down, up), sent to the stick's
+launcher - so a script written with `@1` before each pad step runs the same in `run` and in `sandbox drive`, where
+the sandbox launcher's DebugDriver plays padsim's pads itself (tools/ab_drive.py). A USB keyboard: kbd plug|unplug, kbd press|release <key>,
 kbd tap <key> [ms], kbd combo <key>+<key>... (ctrl+alt+delete), kbd type <text> (keys: a-z 0-9 enter esc space
 tab backspace up down left right f1-f12 home end pageup pagedown insert delete shift ctrl alt meta, ...).
 tools/vm/padsim.c's opening comment has the details.
@@ -178,9 +186,10 @@ def to_guest(local_path, guest_path):
 # ------------------------------------------------------------------ the launcher in the guest
 
 def launcher_exe():
-    """the running autobleem-gui's path in the guest"""
+    """the running autobleem-gui's path in the guest - the stick's, never a sandbox's"""
     # the launcher runs as another user: its /proc/<pid>/exe is root's to read
     out = guest_run('for p in $(pidof autobleem-gui); do sudo readlink /proc/$p/exe; done', check=False).split()
+    out = [p for p in out if not p.startswith(SB_GUEST + '/')]
     if not out:
         raise Fail('the launcher is not running in the guest')
     return out[0]
@@ -489,6 +498,10 @@ class Padsim:
 
 PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping', 'profile', 'plug', 'unplug',
              'battery', 'cable', 'kbd'}
+# the launcher's own DebugDriver words (tools/ab_drive.py): in `run` they go to the stick's launcher through the
+# test machine's forward, so one script works here and in a sandbox (`sandbox drive`)
+DRIVER_WORDS = {'screen', 'wait_screen', 'wait_idle', 'key', 'text', 'grab', 'menu', 'quick', 'items', 'frames',
+                'window', 'down', 'up'}
 
 
 def steps(script):
@@ -499,10 +512,19 @@ def run_local(script, out_dir):
     """on the test machine: every step at its own time; shots through virsh into out_dir"""
     pad = None
     recorder = None
+    driver = None
     try:
         for step in steps(script):
             words = step.split()
-            if words[0] == 'wait':
+            if words[0] in DRIVER_WORDS:
+                if driver is None:
+                    driver = import_ab_drive().Driver(DRIVER_PORT)
+                if words[0] == 'grab':
+                    os.makedirs(out_dir, exist_ok=True)
+                    step = 'grab ' + os.path.join(out_dir, os.path.basename(words[1]))
+                for reply in driver.run(step):
+                    print(reply)
+            elif words[0] == 'wait':
                 time.sleep(int(words[1]) / 1000)
             elif words[0] == 'clip':
                 # clip start <name.mp4> ... clip stop: the screen recorded while the steps between run
@@ -540,6 +562,8 @@ def run_local(script, out_dir):
             print(f'clip {os.path.basename(recorder.out)}: {recorder.stop()} frames')
         if pad:
             pad.close()
+        if driver:
+            driver.close()
 
 
 def remote_tool(args):
@@ -662,7 +686,7 @@ def run(script, out_dir):
     stage = f'/tmp/abvm-run-{uuid.uuid4().hex[:8]}'
     try:
         print(remote_tool(['run', script, '--out', stage]), end='')
-        if 'shot ' in script or 'clip start' in script:
+        if re.search(r'\b(shot|grab)\s|clip start', script):
             os.makedirs(out_dir, exist_ok=True)
             tmp = tempfile.mkdtemp(prefix='abvm-')
             from_host(stage + '/.', tmp, recursive=True)
@@ -793,7 +817,8 @@ def sb_setup():
     os.makedirs(sb_host('_shared'), exist_ok=True)
     guest_run(f'set -e; printf "{unit}" > /tmp/{MOUNT_UNIT}; sudo install -m 644 /tmp/{MOUNT_UNIT} '
               f'/etc/systemd/system/{MOUNT_UNIT}; rm /tmp/{MOUNT_UNIT}; sudo systemctl daemon-reload; '
-              f'mountpoint -q {SB_GUEST} || sudo systemctl enable --now {MOUNT_UNIT}; mountpoint {SB_GUEST}')
+              f'sudo systemctl enable {MOUNT_UNIT}; mountpoint -q {SB_GUEST} || sudo systemctl start {MOUNT_UNIT}; '
+              f'systemctl is-enabled {MOUNT_UNIT}; mountpoint {SB_GUEST}')
     # the cover DBs: 280 MB, the same for every sandbox - one copy, linked from each
     guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
     print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
@@ -860,7 +885,8 @@ def sb_stop_forward(st):
         os.kill(int(pid), 15)
 
 
-def sb_start(name, build=None):
+def sb_start(name, build=None, size=None):
+    size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
     if not os.path.isdir(sb_host(name)):
         sb_new(name, build)
     elif build:
@@ -889,13 +915,19 @@ def sb_start(name, build=None):
         raise Busy(f'busy: no free sandbox port in {SB_PORTS.start}-{SB_PORTS.stop - 1} on this machine')
     g = f'{SB_GUEST}/{name}'
     rt = f'/run/abvm-sb/{name}'
+    if not re.fullmatch(r'\d{2,5}x\d{2,5}', size or ''):
+        raise Fail(f'--size {size!r}: <width>x<height>, e.g. 1280x720')
+    # shots and clips land in the sandbox's own .abvm/out (the test machine's folder), its pads' batteries in
+    # .abvm/power_supply; the window is `size` (the offscreen driver's own is 1024x768)
     env = (f'AB_ROOT={g} AB_RUNTIME_DIR={rt} AB_LOG_DIR={g}/System/Logs AB_DEBUG_PORT={port} AB_NO_SPLASH=1 '
-           'AB_HEADLESS=1 AB_INPUT_ISOLATED=1 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy')
+           f'AB_HEADLESS=1 AB_INPUT_ISOLATED=1 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy '
+           f'AB_WINDOW_SIZE={size} AB_DEBUG_OUT={g}/.abvm/out AB_PAD_BATTERY_DIR={g}/.abvm/power_supply AB_MAX_FPS=30')
     extra = os.environ.get('ABVM_SANDBOX_ENV', '')  # more for the launcher, e.g. AB_FRAME_STATS=1
     if extra:
         env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
     t0 = time.time()
     out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; sudo mkdir -p {rt}; sudo chown $(id -u):$(id -g) {rt}; '
+                    f'mkdir -p {g}/.abvm/out {g}/.abvm/power_supply; chmod a+rwx {g}/.abvm/out {g}/.abvm/power_supply; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
                     f'echo pid $!; for i in $(seq 100); do ss -ltn | grep -q "127.0.0.1:{port} " && '
@@ -912,31 +944,53 @@ def sb_start(name, build=None):
         sb_stop(name, use_driver=False)  # the port on this side is someone else's - never talk to it
         raise
     sb_save_state(name, st)
-    print(f'sandbox {name} runs on port {port} (ready in {time.time() - t0:.1f} s)')
+    # ready = the launcher's screen shows, so the first script's first shot is of it
+    try:
+        d = import_ab_drive().Driver(port)
+        try:
+            d.wait_screen('GuiLauncher', 60)
+        finally:
+            d.close()
+    except (OSError, RuntimeError) as e:
+        raise Fail(f'sandbox {name} runs, but its launcher screen did not show: {e} - see '
+                   f'{sb_host(name)}/System/Logs/abvm-out.txt')
+    print(f'sandbox {name} runs on port {port}, {size} (ready in {time.time() - t0:.1f} s)')
 
 
-def sb_driver(name):
+def sb_driver(name, **kwargs):
     st = sb_running(name)
     if not st:
         raise Fail(f'sandbox {name} is not running: abvm.py sandbox start {name}')
     ab_drive = import_ab_drive()
-    return ab_drive.Driver(st['port'])
+    return ab_drive.Driver(st['port'], **kwargs)
 
 
 def sb_drive(name, script, out_dir):
-    """on the test machine: the script through the sandbox's driver; grabs land in <sandbox>/.abvm/grabs/<run>/"""
-    d = sb_driver(name)
-    run_dir = os.path.join(sb_host(name), '.abvm', 'grabs', uuid.uuid4().hex[:8])
+    """on the test machine: the script through the sandbox's driver. Its shots, clips and grabs land in the
+    sandbox's own <sandbox>/.abvm/out/<run>/ - the launcher writes shots and clip frames there itself (its
+    AB_DEBUG_OUT, this machine's folder through the share), grabs come over the socket; a clip becomes an MP4"""
+    run = uuid.uuid4().hex[:8]
+    run_dir = os.path.join(sb_host(name), '.abvm', 'out', run)
     os.makedirs(run_dir, exist_ok=True)
+    guest_root = f'{SB_GUEST}/{name}/'
+
+    def to_host(path):  # the guest's name for a sandbox file -> this machine's
+        return os.path.join(sb_host(name), path[len(guest_root):]) if path.startswith(guest_root) else None
+
+    d = sb_driver(name, out_prefix=run + '/', path_map=to_host)
     cwd = os.getcwd()
     os.chdir(run_dir)
     try:
         for reply in d.run(script):
-            print(reply)
+            # the guest's paths as this machine names them
+            print(re.sub(re.escape(guest_root) + r'\S*', lambda m: to_host(m.group(0)) or m.group(0), reply))
+    except RuntimeError as e:
+        raise Fail(str(e))
     finally:
         os.chdir(cwd)
         d.close()
-    print(f'grabs {run_dir}')
+    sb_open_modes(run_dir)
+    print(f'out {run_dir}')
 
 
 def sb_stop(name, use_driver=True):
@@ -949,14 +1003,19 @@ def sb_stop(name, use_driver=True):
                 d.close()
         except (OSError, Fail):
             pass
-        for _ in range(50):
-            if not sb_guest_pid_alive(name, st['pid']):
-                break
-            time.sleep(0.1)
-        else:
-            if sb_guest_pid_alive(name, st['pid']):
+        def gone(seconds):
+            for _ in range(int(seconds * 10)):
+                if not sb_guest_pid_alive(name, st['pid']):
+                    return True
+                time.sleep(0.1)
+            return False
+
+        if not gone(5):
+            # SIGTERM is a clean quit too (the screens unwind); a kill only when even that does not end it
+            guest_run(f'kill -TERM {int(st["pid"])}', check=False)
+            if not gone(5):
                 guest_run(f'kill -KILL {int(st["pid"])}', check=False)
-                print(f'sandbox {name}: did not quit in 5 s - killed')
+                print(f'sandbox {name}: did not quit in 10 s - killed')
     sb_stop_forward(st)
     if st:
         sb_save_state(name, {})
@@ -1030,10 +1089,11 @@ def sandbox_command(args, out_dir):
         build = None
         if '--build' in args:
             build = args[args.index('--build') + 1]
+        size = args[args.index('--size') + 1] if '--size' in args else None
         if sub == 'new':
             sb_new(name, build)
         elif sub == 'start':
-            sb_start(name, build)
+            sb_start(name, build, size)
         elif sub == 'drive':
             sb_drive(name, ' '.join(args[2:]), out_dir)
         elif sub == 'stop':
@@ -1057,8 +1117,8 @@ def sb_drive_remote(name, script, out_dir):
     """from a PC: the script runs on the test machine (its timing is not stretched by ssh), the grabs come back"""
     out = remote_tool(['sandbox', 'drive', name, script])
     print(out, end='')
-    m = re.search(r'^grabs (\S+)$', out, re.M)
-    if m and re.search(r'\bgrab\b', script):
+    m = re.search(r'^out (\S+)$', out, re.M)
+    if m and re.search(r'\b(grab|shot)\s|clip start', script):
         os.makedirs(out_dir, exist_ok=True)
         tmp = tempfile.mkdtemp(prefix='abvm-')
         from_host(m.group(1) + '/.', tmp, recursive=True)
