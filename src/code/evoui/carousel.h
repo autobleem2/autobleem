@@ -9,6 +9,7 @@
 
 #include <ableem/ableem.h>
 
+#include <cstdint>
 #include <vector>
 
 //******************
@@ -105,4 +106,13 @@ private:
     ableem::Rect placeholderContent_;
     float placeholderThickness_ = 0.08f;
     unsigned long texturesDrawnAt_ = 0; // Renderer::targetsLost() the covers were composed at
+
+    // the layer: a row at rest is drawn once into layer_ and shown with one copy a frame after that, instead of
+    // a copy per cover strip (over a thousand on the console). What was drawn is told by its signature - every
+    // shown cover's texture, place, turn and shade; a moving row is drawn straight to the screen, and baked
+    // again the first frame it stands still. AB_LAYERS=0 turns it off.
+    void drawCovers(const std::vector<const PsCarouselGame *> &visible);
+    ableem::Texture layer_;
+    std::vector<std::uintptr_t> layerSignature_, lastSignature_;
+    bool layerValid_ = false;
 };

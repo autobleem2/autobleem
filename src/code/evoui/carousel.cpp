@@ -7,6 +7,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <ableem/engine/log.h>
 
@@ -37,6 +40,7 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
 // Carousel::freeTextures
 //*******************************
 void Carousel::freeTextures() {
+    layerValid_ = false; // a texture made later may get a freed one's address: never trust the signature then
     forEachItem([](PsCarouselGame &item) { item.freeTex(); });
     placeholderTex_ = ableem::Texture();
 }
@@ -108,6 +112,7 @@ void Carousel::selectPrevious() {
 // in the slots either side, and an empty box in every slot the row has no game for (an empty row is
 // placed around index 0, which is then its first empty box)
 void Carousel::setInitialPositions(int selectedIndex) {
+    layerValid_ = false; // textures are loaded and freed here
     forEachItem([](PsCarouselGame &item) {
         item.visible = false;
         item.wanted = false;
@@ -165,6 +170,7 @@ void Carousel::setInitialPositions(int selectedIndex) {
 bool Carousel::loadOneMissingTexture() {
     for (auto &game : games) {
         if (game.wanted && !game.coverPng.valid()) {
+            layerValid_ = false;
             game.loadTex(gui_.renderer());
             return true;
         }
@@ -378,6 +384,67 @@ void Carousel::render() {
         return distanceFromMiddle(a) > distanceFromMiddle(b);
     });
 
+    static const bool layersOn = [] {
+        const char *v = getenv("AB_LAYERS");
+        return !(v && strcmp(v, "0") == 0);
+    }();
+    if (!layersOn) {
+        drawCovers(visible);
+        return;
+    }
+
+    // what this frame would draw
+    vector<uintptr_t> signature;
+    signature.reserve(visible.size() * 7 + 1);
+    signature.push_back(renderer.targetsLost());
+    auto bits = [](float f) {
+        uint32_t u;
+        memcpy(&u, &f, sizeof(u));
+        return static_cast<uintptr_t>(u);
+    };
+    for (const PsCarouselGame *game : visible) {
+        const PsScreenpoint &p = game->actual;
+        signature.push_back(reinterpret_cast<uintptr_t>(game->coverPng.native()));
+        signature.push_back(game->placeholder ? 1 : 0);
+        signature.push_back(static_cast<uintptr_t>(p.x));
+        signature.push_back(static_cast<uintptr_t>(p.y));
+        signature.push_back(bits(p.scale));
+        signature.push_back(bits(p.angle));
+        signature.push_back(static_cast<uintptr_t>(p.shade));
+    }
+
+    if (!(layerValid_ && signature == layerSignature_)) {
+        layerValid_ = false;
+        const bool still = signature == lastSignature_; // the same as the frame before: the row stands
+        lastSignature_ = signature;
+        if (!still) {
+            drawCovers(visible); // moving: straight to the screen, at the full rate
+            return;
+        }
+        if (!layer_.valid()) {
+            layer_ = ableem::Texture::createTarget(renderer, renderer.width(), renderer.height());
+            layer_.setBlendMode(ableem::BlendMode::Premultiplied);
+        }
+        const ableem::Color keep = renderer.drawColor();
+        renderer.pushTarget(&layer_);
+        renderer.setBlendMode(ableem::BlendMode::None);
+        renderer.setDrawColor(ableem::Color(0, 0, 0, 0));
+        renderer.fillRect();
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        drawCovers(visible);
+        renderer.popTarget();
+        renderer.setDrawColor(keep);
+        layerSignature_ = signature;
+        layerValid_ = true;
+    }
+    renderer.copy(layer_);
+}
+
+//*******************************
+// Carousel::drawCovers
+//*******************************
+void Carousel::drawCovers(const vector<const PsCarouselGame *> &visible) {
+    ableem::Renderer &renderer = gui_.renderer();
     for (const PsCarouselGame *game : visible) {
         ableem::Texture currentGameTex = game->coverPng;
         PsScreenpoint point = game->actual;
