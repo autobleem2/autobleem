@@ -569,8 +569,13 @@ def run_local(script, out_dir):
 def remote_tool(args):
     who = ['--who', WHO] if WHO else []
     key = ['--lease-key', LEASE_KEY] if LEASE_KEY != 'vm' else []
+    # the sandbox settings given here count there too
+    env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
+           if k in os.environ]
+    prefix = ('env ' + ' '.join(shlex.quote(e) for e in env) + ' ') if env else ''
     try:
-        return host_run(f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + key + args))
+        return host_run(prefix + f'python3 {REMOTE_TOOL} --local ' +
+                        ' '.join(shlex.quote(a) for a in who + key + args))
     except Fail as e:
         # the test machine's own message, without the ssh command around it; a busy one stays exit 3 here too
         msg = str(e).rsplit('abvm: ', 1)[-1]
@@ -894,6 +899,7 @@ def sb_start(name, build=None, size=None):
     if sb_running(name):
         print(f'sandbox {name} already runs on port {sb_state(name)["port"]}')
         return
+    sb_stop_forward(sb_state(name))  # a launcher that ended without `sandbox stop` (a crash, a SIGTERM) left it
     running = [n for n in sb_names() if n != name and sb_running(n)]
     if len(running) >= SB_SLOTS:
         raise Busy(f'busy: no free sandbox slot ({SB_SLOTS}; running: {", ".join(running)}) - '
@@ -914,7 +920,7 @@ def sb_start(name, build=None, size=None):
     if port is None:
         raise Busy(f'busy: no free sandbox port in {SB_PORTS.start}-{SB_PORTS.stop - 1} on this machine')
     g = f'{SB_GUEST}/{name}'
-    rt = f'/run/abvm-sb/{name}'
+    rt = f'/tmp/abvm-sb/{name}'  # the guest's own, no sudo needed
     if not re.fullmatch(r'\d{2,5}x\d{2,5}', size or ''):
         raise Fail(f'--size {size!r}: <width>x<height>, e.g. 1280x720')
     # shots and clips land in the sandbox's own .abvm/out (the test machine's folder), its pads' batteries in
@@ -926,8 +932,11 @@ def sb_start(name, build=None, size=None):
     if extra:
         env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
     t0 = time.time()
-    out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; sudo mkdir -p {rt}; sudo chown $(id -u):$(id -g) {rt}; '
-                    f'mkdir -p {g}/.abvm/out {g}/.abvm/power_supply; chmod a+rwx {g}/.abvm/out {g}/.abvm/power_supply; '
+    # made here, open to the guest (a folder the guest makes through the share is QEMU's, and closed to this user)
+    for sub in ('out', 'power_supply'):
+        os.makedirs(os.path.join(sb_host(name), '.abvm', sub), exist_ok=True)
+    sb_open_modes(os.path.join(sb_host(name), '.abvm'))
+    out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
                     f'cd {g}/Autobleem/bin/autobleem; umask 000; '
                     f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
                     f'echo pid $!; for i in $(seq 100); do ss -ltn | grep -q "127.0.0.1:{port} " && '
