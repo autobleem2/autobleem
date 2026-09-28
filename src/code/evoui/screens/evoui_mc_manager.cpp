@@ -363,13 +363,9 @@ void GuiMcManager::loop() {
                 break;
             }
         }
-        counter++;
-        if (counter > 5) {
-            animFrame++;
-            if (animFrame > 2)
-                animFrame = 0;
-            counter = 0;
-        }
+        // the save icons' three frames, 100 ms each - on the clock, not counted in passes, so the frame cap
+        // (or a faster display) does not change their speed (was: every 6th pass at 60 fps)
+        animFrame = static_cast<int>((gui->platform().ticks() / 100) % 3);
         render();
     }
 }
