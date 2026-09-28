@@ -187,6 +187,11 @@ the 16:9 canvas letterboxed); SIGTERM ends the launcher cleanly.
 
 ## F - The console: a newer SDL, and GLES only where needed (the owner, 2026-09-28)
 
+**The owner's decision (2026-09-28, after A2):** our own patched SDL, in its own repository
+`autobleem2/autobleem_sdl` - the newest SDL2 we can make work, with the wl_shell window put back, and **no
+Wayland libraries of our own** (it runs on the console's libwayland-client 1.12 - route (a) below). It will
+also serve the Store's App ports later.
+
 The console is where the carousel costs most: its SDL is **2.0.14** (the ceiling today - autobleem-main
 `docs/history/launcher-build.md`, "the wl_shell ceiling"), which has no `SDL_RenderGeometry` (2.0.18), so
 `copyTrapezoid` takes its fallback of **one copy per output column** (`renderer.cpp:525-557`) - every turned
