@@ -349,4 +349,6 @@ public:
     CoverLoader extrasLoader;
     std::string pendingSnapPath, pendingResumePath;
     void pollSettleLoads();
+    // the snap and the resume picture belong to the game the row rests on: gone while it moves
+    void hideSettlePictures();
 };

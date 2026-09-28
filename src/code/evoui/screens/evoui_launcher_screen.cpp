@@ -110,6 +110,17 @@ void GuiLauncher::pollSettleLoads() {
 }
 
 //*******************************
+// GuiLauncher::hideSettlePictures
+//*******************************
+void GuiLauncher::hideSettlePictures() {
+    menu->setResumeTex(ableem::Texture());
+    snapTex = ableem::Texture();
+    snapForGameId = -1;
+    pendingSnapPath.clear();
+    pendingResumePath.clear();
+}
+
+//*******************************
 // GuiLauncher::loadSnap
 //*******************************
 // the selected game's screenshot, now. Only when the theme draws it.
@@ -1209,6 +1220,7 @@ void GuiLauncher::nextCarouselGame(int speed, bool eased) {
     carousel.scrollLeft(speed, eased);
     carousel.selectNext();
     updateMeta(false);
+    hideSettlePictures();
     settleLoadsPending = true;
 }
 
@@ -1225,6 +1237,7 @@ void GuiLauncher::prevCarouselGame(int speed, bool eased) {
     carousel.scrollRight(speed, eased);
     carousel.selectPrevious();
     updateMeta(false);
+    hideSettlePictures();
     settleLoadsPending = true;
 }
 
