@@ -86,6 +86,16 @@ A peer that authenticates and then drops the connection mid-command (Ctrl-C, a W
 driver: every socket send uses `MSG_NOSIGNAL` on POSIX (Windows has no `SIGPIPE` to raise) and a failed send
 just closes that client and goes back to accepting the next one.
 
+## `tools/vm/` - a test VM with virtual pads and a keyboard
+
+`tools/vm/abvm.py` drives the PC-USB test VM from a dev PC: installs a build into it (and restores the
+original), restarts the launcher, sends pad and keyboard steps, takes whole-screen shots and MP4 clips, and
+runs `ab_drive.py` scripts through a tunnel. The VM is shared: take its lease first (`ABVM_WHO=<name>`,
+`abvm.py lock take <task>`); a busy VM is exit code 3. `tools/vm/padsim.c` is the guest's side - up to four
+virtual pads (x360, DualShock 4 over USB or Bluetooth, an unmapped one) with hot-plug, battery and charging,
+and a USB keyboard - for everything that reads a real input device (PSC-Bios's wizard, the emulators, the
+Apps). Their docstrings are the reference; autobleem-main's `docs/pc-test-machine.md` describes the machine.
+
 ## `tools/ra_drive.py` - driving RetroArch itself
 
 `tools/ra_drive.py` is the DebugDriver's counterpart for **RetroArch itself** - not the launcher's own
