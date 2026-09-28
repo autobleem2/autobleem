@@ -96,6 +96,12 @@ virtual pads (x360, DualShock 4 over USB or Bluetooth, an unmapped one) with hot
 and a USB keyboard - for everything that reads a real input device (PSC-Bios's wizard, the emulators, the
 Apps). Their docstrings are the reference; autobleem-main's `docs/pc-test-machine.md` describes the machine.
 
+**Sandboxes** (`abvm.py sandbox ...`): while someone holds the VM for a hardware test, the application can still be
+tested - extra launchers run headless in the same VM, each with its whole root in a folder on the test machine's
+disk (never the stick), their own DebugDriver port and their own lease. `sandbox start <name> --build
+~/src/autobleem/dist/pcusb` lays a fresh pcusb build over the template, `sandbox drive <name> "<ab_drive script>"
+--out DIR` drives it and brings the grabs back, `sandbox reset` starts it afresh in under a second.
+
 ## `tools/ra_drive.py` - driving RetroArch itself
 
 `tools/ra_drive.py` is the DebugDriver's counterpart for **RetroArch itself** - not the launcher's own
