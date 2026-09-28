@@ -51,7 +51,8 @@ void GuiLauncher::loop() {
         // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
         // are asked for, and shown when decoded
         carousel.pumpCovers();
-        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0 && !benchScrolling())
+        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0 &&
+            benchMode() != BenchHold)
             finishSettleLoads();
         pollSettleLoads();
         applyScanUpdate(app.scans().poll());
@@ -91,7 +92,7 @@ void GuiLauncher::loop() {
                     nextCarouselGame(CarouselHeldScrollDuration, false);
                 else
                     prevCarouselGame(CarouselHeldScrollDuration, false);
-            } else if (benchScrolling() && !carousel.games.empty()) {
+            } else if (benchMode() == BenchHold && !carousel.games.empty()) {
                 if (benchDir == 0 && !carousel.canSelectNext())
                     benchDir = 1;
                 else if (benchDir == 1 && !carousel.canSelectPrevious())
@@ -106,6 +107,7 @@ void GuiLauncher::loop() {
         // an animation a button starts begins now, not when this pass began: frameDue() may have waited up to
         // an ambient frame for the input, and a start from before that would open the animation part way in
         time = gui->platform().ticks();
+        benchStep();
         while (gui->input().poll(e)) {
             // this is for pc Only - the window's own close button. Closing this screen alone is not enough:
             // AutoBleem::run() would just show a fresh GuiLauncher again (session().menuOption is nothing
@@ -184,14 +186,47 @@ void GuiLauncher::loop() {
 }
 
 //*******************************
-// GuiLauncher::benchScrolling / benchSkips
+// GuiLauncher::benchMode / benchSkips
 //*******************************
-bool GuiLauncher::benchScrolling() {
-    static const bool on = [] {
+int GuiLauncher::benchMode() {
+    static const int mode = [] {
         const char *v = getenv("AB_BENCH_SCROLL");
-        return v && *v && strcmp(v, "0") != 0;
+        if (!v || !*v || strcmp(v, "0") == 0)
+            return static_cast<int>(BenchOff);
+        if (strcmp(v, "tap") == 0)
+            return static_cast<int>(BenchTap);
+        if (strcmp(v, "menu") == 0)
+            return static_cast<int>(BenchMenu);
+        return static_cast<int>(BenchHold);
     }();
-    return on;
+    return mode;
+}
+
+//*******************************
+// GuiLauncher::benchStep
+//*******************************
+// the measuring mode's taps and menu toggles (the held stick runs in the loop's own chaining)
+void GuiLauncher::benchStep() {
+    const int mode = benchMode();
+    if (mode != BenchTap && mode != BenchMenu)
+        return;
+    const long now = gui->platform().ticks();
+    if (now - benchLast < (mode == BenchTap ? 350 : 700) || carousel.scrolling || carousel.games.empty())
+        return;
+    benchLast = now;
+    if (mode == BenchTap) {
+        if (benchDir == 0 && !carousel.canSelectNext())
+            benchDir = 1;
+        else if (benchDir == 1 && !carousel.canSelectPrevious())
+            benchDir = 0;
+        if (benchDir == 0)
+            nextCarouselGame(CarouselScrollDuration);
+        else
+            prevCarouselGame(CarouselScrollDuration);
+    } else if (menu->animationStarted == 0) {
+        switchState(state == LauncherScreenState::Games ? LauncherScreenState::Set : LauncherScreenState::Games,
+                    static_cast<int>(now));
+    }
 }
 
 bool GuiLauncher::benchSkips(const string &part) {
