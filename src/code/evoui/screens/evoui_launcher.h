@@ -195,6 +195,8 @@ public:
     // the loads a scroll defers to the frame the carousel comes to rest in: the snap and the resume
     // picture, both PNG decodes off the SD card that used to cost the scroll its first frame
     bool settleLoadsPending = false;
+    // an animation is running or input is held: the loop draws every frame, else at the ambient rate
+    bool somethingMoves() const;
     void finishSettleLoads();
     void loadAssets();
     void freeAssets();

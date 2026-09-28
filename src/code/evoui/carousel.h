@@ -73,6 +73,8 @@ public:
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
     void moveMainCover(bool toGamesRow);
+    // a scroll or a cover's own move (the main cover raised or lowered) is in progress
+    bool animating() const;
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
     void snapMainCover(bool toGamesRow);

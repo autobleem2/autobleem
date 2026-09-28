@@ -255,6 +255,15 @@ void Carousel::moveMainCover(bool toGamesRow) {
     games[selected].eased = true;
 }
 
+bool Carousel::animating() const {
+    if (scrolling)
+        return true;
+    for (const auto &game : games)
+        if (game.visible && game.animationStart != 0)
+            return true;
+    return false;
+}
+
 void Carousel::snapMainCover(bool toGamesRow) {
     if (!selectedIsValid())
         return;

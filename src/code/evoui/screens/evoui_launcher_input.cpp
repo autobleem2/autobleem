@@ -61,7 +61,12 @@ void GuiLauncher::loop() {
 #ifdef AB_ONLINE_UPDATE
         pollUpdates();
 #endif
-        render();
+        // the frame rate: every frame while something moves; at rest only the play button's pulse and the
+        // arrow go on, which the ambient rate (30 fps) draws as well - at the same speed, they run on time
+        gui->input().setFrameNeed(somethingMoves() ? ableem::Input::FrameNeed::Active
+                                                   : ableem::Input::FrameNeed::Ambient);
+        if (gui->input().frameDue())
+            render();
 
         // CONSOLE-13: a held direction's release can be read by a screen opened over this one (Options, and
         // the busy job that ends it) and never reach this loop; Input's own d-pad state is the truth - it is
@@ -163,6 +168,17 @@ void GuiLauncher::loop() {
     } // while (menuVisible)
 
     freeAssets();
+}
+
+//*******************************
+// GuiLauncher::somethingMoves
+//*******************************
+bool GuiLauncher::somethingMoves() const {
+    return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
+           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
+           (menu && menu->animationStarted != 0) || (meta && meta->animEndTime != 0) ||
+           (settingsBack && settingsBack->animEndTime != 0) || notificationLines.animating() ||
+           scanBubble.animating() || extensionBubble.animating();
 }
 
 //*******************************

@@ -24,6 +24,7 @@ struct NotificationLine {
     void setText(const std::string &text, long timeLimit);
     void render(Gui &gui, long now, int top);
     bool visible() const { return bubble.visible(); }
+    bool animating() const { return bubble.animating(); }
     int height() const { return bubble.height(); }
 };
 
@@ -37,4 +38,10 @@ struct NotificationLines {
     void create(int count);
     // draws the visible lines one under the other from `top`, 8 px apart; returns the y below the last
     int render(Gui &gui, long now, int top);
+    bool animating() const {
+        for (const NotificationLine &line : lines)
+            if (line.animating())
+                return true;
+        return false;
+    }
 };
