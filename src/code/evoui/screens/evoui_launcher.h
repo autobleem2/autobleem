@@ -256,10 +256,13 @@ public:
     PsSettingsBack *settingsBack = nullptr;
     PsObj *playButton = nullptr;
     PsZoomBtn *playText = nullptr;
-    // Play's halo: a soft shadow under it and a faint rim around it, made once per theme (makePlayHalo)
-    ableem::Texture playHalo;
-    ableem::Rect playHaloRect;
-    void makePlayHalo(const LauncherTheme &theme);
+    // Play's outline: the launcher text's dark halo around its images, made once per theme (makePlayOutline) -
+    // one for the button, one for the text that pulses with it (drawn at the text's zoom each frame)
+    ableem::Texture playOutline;
+    ableem::Rect playOutlineRect;
+    ableem::Texture playTextOutline;
+    int playTextOutlineW = 0, playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
+    void makePlayOutline(const LauncherTheme &theme);
     PsMeta *meta = nullptr;
 
     PsObj *background = nullptr;
