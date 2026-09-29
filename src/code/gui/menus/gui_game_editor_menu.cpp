@@ -133,8 +133,8 @@ void GuiEditor::buildRows() {
     // those rows are greyed with it selected.
     heading(_("Display"));
     // the built-in NEON GPU's 2x (no line in Gpu3 = the built-in one)
-    const bool neon =
-        GameSettingsService::neonGpuFor(platform) && (pcsx.gpu.empty() || pcsx.gpu == GameSettingsService::BuiltinGpu);
+    const bool neon = GameSettingsService::neonGpuFor(platform, nxt) &&
+                      (pcsx.gpu.empty() || pcsx.gpu == GameSettingsService::BuiltinGpu);
     if (neon) {
         valueRow(_("Resolution:"), pcsx.highres != 0 ? "2x" : "1x", OPT_HIGHRES);
         // only with 2x, as the emulator's menu has it
