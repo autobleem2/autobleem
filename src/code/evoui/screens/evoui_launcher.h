@@ -221,6 +221,16 @@ public:
     // or none) - what a scan finishing, or the Game Manager/Options changing the roster, needs: the list
     // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.
     void reloadGames();
+    // which game is highlighted, in a form that survives the list being queried again: a library game by id,
+    // a playlist game by its image path (its id is only its position) - and finding it in the new list
+    struct GameKey {
+        int gameId = -1;
+        bool internal = false;
+        bool foreign = false;
+        std::string imagePath;
+    };
+    GameKey selectedGameKey() const;
+    int findGame(const GameKey &key) const; // its index in carousel.games, -1 when it is gone
 
     NotificationLines notificationLines; // the messages, bubbles under the scan's at the top-right
 

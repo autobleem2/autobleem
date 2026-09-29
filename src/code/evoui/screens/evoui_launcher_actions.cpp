@@ -151,7 +151,7 @@ void GuiLauncher::loop_openOptions() {
     Ps1SelectState lastPS1_SelectState = selection.ps1SelectState;
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
-    int lastGame = carousel.selected;
+    const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
     GuiOptions option(*gui);
     option.show();
     bool exitCode = option.exitCode;
@@ -171,10 +171,13 @@ void GuiLauncher::loop_openOptions() {
             selection.ps1SelectState = lastPS1_SelectState;
         selection.usbGameDirIndex = lastUSBGameDirIndex;
         selection.raPlaylistIndex = lastRAPlaylistIndex;
-        carousel.selected = lastGame;
         bool resetCarouselPosition = false;
 
         switchSet(selection.set, false);
+        // back on the game the row was on (Options may have re-sorted it); gone -> the first game, as setGames left it
+        const int found = findGame(lastGame);
+        if (found != -1)
+            carousel.selected = found;
         showSetName();
 
         if (resetCarouselPosition) {

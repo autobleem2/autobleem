@@ -282,41 +282,51 @@ void GuiLauncher::showSetName() {
 }
 
 //*******************************
+// GuiLauncher::selectedGameKey / findGame
+//*******************************
+// a library game is the same game by id; a playlist game's id is only its position in the playlist, which a
+// rewrite may have moved - its image path is what names it
+GuiLauncher::GameKey GuiLauncher::selectedGameKey() const {
+    GameKey key;
+    if (carousel.selectedIsValid()) {
+        const PsGame &current = *carousel.games[carousel.selected];
+        key.gameId = current.gameId;
+        key.internal = current.internal;
+        key.foreign = current.foreign;
+        key.imagePath = current.image_path;
+    }
+    return key;
+}
+
+int GuiLauncher::findGame(const GameKey &key) const {
+    if (key.gameId == -1)
+        return -1;
+    for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
+        const PsGame &game = *carousel.games[i];
+        bool same = key.foreign ? (game.foreign && game.image_path == key.imagePath)
+                                : (!game.foreign && game.gameId == key.gameId && game.internal == key.internal);
+        if (same)
+            return i;
+    }
+    return -1;
+}
+
+//*******************************
 // GuiLauncher::reloadGames
 //*******************************
 // re-runs the current set's query and re-selects the highlighted game by id. When that game is gone (its
 // folder removed while the scanner watched, or merged into another) the first game of the set - or none -
 // is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
-    // a library game is the same game by id; a playlist game's id is only its position in the playlist,
-    // which a rewrite may have moved - its image path is what names it
-    int keepGameId = -1;
-    bool keepInternal = false;
-    bool keepForeign = false;
-    string keepImagePath;
-    if (carousel.selectedIsValid()) {
-        const PsGame &current = *carousel.games[carousel.selected];
-        keepGameId = current.gameId;
-        keepInternal = current.internal;
-        keepForeign = current.foreign;
-        keepImagePath = current.image_path;
-    }
+    forgetSetCounts(); // the roster changed: the picker counts again
+    const GameKey keep = selectedGameKey();
 
     switchSet(selection.set, false);
 
-    bool kept = false;
-    if (keepGameId != -1) {
-        for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
-            const PsGame &game = *carousel.games[i];
-            bool same = keepForeign ? (game.foreign && game.image_path == keepImagePath)
-                                    : (!game.foreign && game.gameId == keepGameId && game.internal == keepInternal);
-            if (same) {
-                carousel.selected = i;
-                kept = true;
-                break;
-            }
-        }
-    }
+    const int found = findGame(keep);
+    const bool kept = found != -1;
+    if (kept)
+        carousel.selected = found;
     if (carousel.selectedIsValid()) {
         carousel.setInitialPositions(carousel.selected);
     }
