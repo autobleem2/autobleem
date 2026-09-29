@@ -1258,8 +1258,9 @@ void GuiLauncher::render() {
     if (playTextOutline.valid() && playText != nullptr && playText->visible && !benchSkips("playOutline")) {
         const ableem::FRect r = playText->drawRect();
         const float zoom = playText->ow > 0 ? r.w / static_cast<float>(playText->ow) : 1.0f;
-        renderer.copy(playTextOutline, nullptr,
-                      ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
+        renderer.copy(
+            playTextOutline, nullptr,
+            ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
     }
     for (auto &obj : staticElements) {
         if (!behindRow(obj.get()) && !benchSkips(obj->name))

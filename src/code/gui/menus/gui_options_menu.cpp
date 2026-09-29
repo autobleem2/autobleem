@@ -348,8 +348,8 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
         return;
     if (pendingReload && pendingReloadId != id)
         flushPendingReload(); // another row's change still waiting: load it first
-    if (valueHold.held()) { // Left/Right still down: the row only shows the values; the last one loads once the
-                            // row has rested after the release (holdTick)
+    if (valueHold.held()) {   // Left/Right still down: the row only shows the values; the last one loads once the
+                              // row has rested after the release (holdTick)
         pendingReload = true;
         pendingReloadAt = 0;
         pendingReloadId = id;

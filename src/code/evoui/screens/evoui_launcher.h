@@ -279,7 +279,8 @@ public:
     ableem::Texture playOutline;
     ableem::Rect playOutlineRect;
     ableem::Texture playTextOutline;
-    int playTextOutlineW = 0, playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
+    int playTextOutlineW = 0,
+        playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
     void makePlayOutline(const LauncherTheme &theme);
     PsMeta *meta = nullptr;
 
