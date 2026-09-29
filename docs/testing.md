@@ -1,7 +1,7 @@
 # Testing the launcher's UI
 
-Full detail for what CLAUDE.md's "Smoke test layout" section only points to: the DebugDriver, `ra_drive.py`
-(RetroArch's own network command interface), and LAN testing. Moved here from CLAUDE.md (DOCS-1, ~2026-09-27)
+Full detail for what docs/developer-guide.md's "Smoke test layout" section only points to: the DebugDriver, `ra_drive.py`
+(RetroArch's own network command interface), and LAN testing. Moved here from the old CLAUDE.md (DOCS-1, ~2026-09-27)
 to keep the developer-facing file terse; nothing here changed behaviour.
 
 ## The DebugDriver

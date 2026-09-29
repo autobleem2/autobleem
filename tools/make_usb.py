@@ -3,7 +3,7 @@
 
     python tools/make_usb.py <usbRoot> [--fresh] [--build <buildDir>]
 
-The layout is CLAUDE.md's "Smoke test layout": the payload's rc scripts and themes, src/resources next to the
+The layout is docs/developer-guide.md's "Smoke test layout": the payload's rc scripts and themes, src/resources next to the
 binary, the cover DBs, a copy of internal.db, and one fake PS1 game (a generated bin/cue whose ISO holds a
 SLUS_012.34 file, so the scanner finds a serial). A fake RetroArch install too - a stub binary (what makes
 the app treat RetroArch as present), one fake core with an .info naming three systems, and a few tiny zipped
@@ -23,7 +23,7 @@ import sys
 import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# ABFlashKit and PSC-Bios moved to their own repository on 2026-09-23 (CLAUDE.md, "Where the code lives") and
+# ABFlashKit and PSC-Bios moved to their own repository on 2026-09-23 (docs/developer-guide.md, "Where the code lives") and
 # build there now, not here - same sibling-checkout convention as ab_drive.py's CONSOLE_TOOLS_DIR / make_psc.sh's
 # AB_PCSX_DIR.
 CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))

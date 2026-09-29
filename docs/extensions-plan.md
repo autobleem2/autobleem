@@ -21,7 +21,7 @@ This is our answer to what Project Eris calls "mods". Nothing of theirs is used 
    or the Windows data folder). Nothing installs or updates an extension for them. **Extensions are
    separate downloads**: none is bundled with a release package - **except PSC-Bios** (decision 6, as
    changed) **and the Store** (changed by the owner on 2026-09-25: every platform's installer ships it, and
-   an install or update puts in the version it brings - see `CLAUDE.md`, "Extensions").
+   an install or update puts in the version it brings - see `docs/developer-guide.md`, "Extensions").
 4. **Every target**: an extension folder is multi-platform, with one library per platform key
    (autobleem-main `docs/archive/app-format-plan.md`).
 5. **The AutoBleem Store is the first extension.**
