@@ -58,7 +58,7 @@ private:
     bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn
     // a held Left/Right (see doJoyRight): the step at the press, repeats from render(), the reload a row needs
     // put off to the release
-    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::Timing{400, 120, 1500, 60}; }
+    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::rows(); }
     HoldRepeat valueHold;
     bool holdTicking = false;
     bool pendingReload = false;

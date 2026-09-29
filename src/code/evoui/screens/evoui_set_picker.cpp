@@ -298,6 +298,10 @@ void GuiSetPicker::loop() {
     menuVisible = true;
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -318,6 +322,7 @@ void GuiSetPicker::loop() {
                     app.audio().cursor.play();
                     tab = (tab + static_cast<int>(tabs.size()) - 1) % static_cast<int>(tabs.size());
                 }
+                hold.track(gui->input(), gui->platform().ticks());
             } else if (e.type == Event::Type::ButtonDown) {
                 switch (e.button) {
                 case Button::R1:
