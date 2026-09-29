@@ -86,16 +86,17 @@ void PsStateSelector::render() {
                                   icons.resumePicture.h);
         }
 
-        gui->text().renderText_WithColor(font30, text, 0, 110, brightWhite, XALIGN_CENTER); // translated above
+        // the theme's own text colour (white where the theme says nothing), the same one the launcher's other
+        // labels resolve to - not a hardcoded white, which ignored a theme that set its own (UIREV-14/R3)
+        const ThemeColor &textColorSpec = App::get().theme().launcher().colors.text;
+        const ableem::Color textColor =
+            textColorSpec.set ? TextRenderer::toColor(textColorSpec, 255) : ableem::Color(255, 255, 255, 255);
 
-        if (operation == OP_LOAD) {
-            gui->text().renderText(
-                font24, "|@T| " + _("Delete") + "     |@X| " + _("Select") + "     |@O| " + _("Cancel") + "|", 0, 150,
-                XALIGN_CENTER);
-        } else {
-            gui->text().renderText(font24, "|@X| " + _("Select") + "     |@O| " + _("Cancel") + "|", 0, 150,
-                                   XALIGN_CENTER);
-        }
+        gui->text().renderText_WithColor(font30, text, 0, 110, textColor, XALIGN_CENTER); // translated above
+
+        // R1 (UIREV-14): no hint line of its own any more - GuiLauncher::buildHintLines() already shows the
+        // Resume state's hints (Resume/Save/Delete slot, Slot, Back/Don't save) in the launcher's own footer,
+        // which was drawn under this panel at the same time, so the two duplicated each other.
 
         // the selected slot: with the theme's selection colour, the other tiles go dim and the selected
         // one keeps its colours behind a halo in that colour - the tile's own shape, a little larger,
@@ -153,7 +154,7 @@ void PsStateSelector::render() {
                 label = ableem::Rect(icons.resumeSlotLabel.x, icons.resumeSlotLabel.y, 0, 0);
             gui->text().renderText_WithColor(font24, _("Slot") + " " + to_string(i + 1),
                                              output.x + static_cast<int>(label.x * scale + 0.5f),
-                                             y + static_cast<int>(label.y * scale + 0.5f), brightWhite);
+                                             y + static_cast<int>(label.y * scale + 0.5f), textColor);
         }
     }
 }
