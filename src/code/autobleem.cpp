@@ -388,7 +388,9 @@ int AutoBleem::run() {
             break;
         }
         if (quitRequested) {
-            if (gui_->platform().isDevHost() || ++displayLost > 3) {
+            // Input's quit request (SIGTERM/SIGINT, the DebugDriver's `quit`) is a leave, never a lost
+            // display, and no selection is written for it (rc/selection.sh finds none: a stop, not a choice)
+            if (gui_->platform().isDevHost() || gui_->input().quitRequested() || ++displayLost > 3) {
                 break; // the window's own close button - see GuiLauncher::loop()'s comment - or hopeless
             }
             PLOG_WARNING << "The display went away (attempt " << displayLost << " of 3) - rebuilding it";

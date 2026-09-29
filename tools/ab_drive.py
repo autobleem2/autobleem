@@ -29,13 +29,20 @@ AB_DEBUG_TOKEN, though, is left as inherited and honoured: "set = required" appl
 a `stop`/`screen`/... run straight after in the same shell keeps working with no --token of its own, exactly
 as if AB_DEBUG_TOKEN were unset throughout.
 
-The script language is the driver's: press <btn> [ms], down/up <btn>, key <name>, text <utf8>, wait <ms>,
-shot <file>, grab <local file>, frames, screen, window hide|show|min|restore, quit. Buttons: x o s t start
+The script language is the driver's (debug_driver.h has the full list; docs/testing.md explains it), and
+tools/vm/abvm.py's `run` and `sandbox drive` take the same: press <btn> [ms], down/up <btn>, key <name>,
+text <utf8>, wait <ms>, shot <file>, grab <local file>, clip start <name> / clip stop, frames, screen,
+wait_idle <ms> [s], window hide|show|min|restore, quit; padsim's pad words for the driver's virtual pads
+(`@1 profile ds4 bt`, `@1 tap a`, `@2 stick left 0 -32768`, `@1 dpad down`, `@1 battery 20`, `@1 cable in`, ...
+- always with the @n in a script meant for both: a bare `press x` is the driver's logical Cross) and its
+keyboard words (`kbd tap enter`, `kbd combo ctrl+c`, `kbd type abc`). Buttons of `press`: x o s t start
 select l1 r1 l2 r2 up down left right. A `shot`/`grab` waits for a frame drawn after the last input, so
 "press x; grab a.png" shows the result of the press. `shot` writes the frame on the machine running the
-launcher (its path, relative to that process's cwd); `grab` instead reads the frame back over the socket
-and saves it at the local path given here (made absolute) - the way to get a screenshot off a device
-without writing to its own storage. Two of the client's own: `wait_screen <Name> [timeout s]` polls `screen`
+launcher (its path, relative to that process's cwd - or its AB_DEBUG_OUT); `grab` instead reads the frame back
+over the socket and saves it at the local path given here (made absolute) - the way to get a screenshot off a
+device without writing to its own storage. `clip start a.mp4 ... clip stop` records the frames the launcher
+presents and, with ffmpeg on PATH, makes a.mp4 of them. Two of the client's own: `wait_screen <Name>
+[timeout s]` polls `screen`
 until that screen shows (a GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) -
 `start` waits for GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System
 menu and picks an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item>
@@ -77,10 +84,32 @@ def _redact(line):
     return line
 
 
+def clip_to_mp4(frames_dir, out=None):
+    """a clip's folder (the driver's `clip stop`: PNG frames + clip.ffconcat) -> an MP4 at 25 fps, with ffmpeg;
+    the frames are removed once the MP4 is there. None when ffmpeg is not installed (the frames stay)."""
+    if not shutil.which('ffmpeg'):
+        return None
+    out = out or frames_dir.rstrip('/\\') + '.mp4'
+    subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i',
+                    os.path.join(frames_dir, 'clip.ffconcat'), '-vf',
+                    'fps=25,scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p', '-c:v', 'libx264', '-preset',
+                    'veryfast', '-crf', '26', '-movflags', '+faststart', out], check=True, stdin=subprocess.DEVNULL)
+    shutil.rmtree(frames_dir, ignore_errors=True)
+    return out
+
+
 class Driver:
-    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None):
+    def __init__(self, port=DEFAULT_PORT, host=DEFAULT_HOST, token=None, out_prefix=None, path_map=None):
+        """out_prefix: the driver writes `shot`/`clip` somewhere this machine cannot name (a sandbox in the test VM,
+        its AB_DEBUG_OUT): a shot's or clip's name is sent as out_prefix + its file name, relative, instead of made
+        absolute here. path_map: turns a path the driver replies with into this machine's name for it (None when
+        it has none), so a clip's frames can be made into an MP4 here."""
         self.sock = socket.create_connection((host, port), timeout=10)
+        self.sock.settimeout(180)  # a reply can take a while: hold 60000, wait_idle, a clip's last frames
         self.buf = b''
+        self.out_prefix = out_prefix
+        self.path_map = path_map or (lambda p: p if out_prefix is None else None)
+        self.clip_out = None  # where the running clip's MP4 goes
         if token:
             self.cmd('auth ' + token)
 
@@ -187,8 +216,24 @@ class Driver:
                 continue
             words = part.split()
             if words[0] == 'shot':
-                path = os.path.abspath(part.split(None, 1)[1].strip())
+                path = part.split(None, 1)[1].strip()
+                if self.out_prefix is None:
+                    path = os.path.abspath(path)
+                else:
+                    path = self.out_prefix + os.path.basename(path)
                 part = 'shot ' + path
+            elif words[0] == 'clip' and len(words) > 2 and words[1] == 'start':
+                name = part.split(None, 2)[2].strip()
+                stem = name[:-4] if name.endswith('.mp4') else name
+                if self.out_prefix is None:
+                    stem = os.path.abspath(stem)
+                else:
+                    stem = self.out_prefix + os.path.basename(stem)
+                part = 'clip start ' + stem
+                self.clip_out = os.path.basename(stem) + '.mp4'
+            elif words[0] == 'clip' and len(words) > 1 and words[1] == 'stop':
+                out.append(self.clip_stop())
+                continue
             elif words[0] == 'grab':
                 out.append(self.grab(part.split(None, 1)[1].strip()))
                 continue
@@ -201,6 +246,19 @@ class Driver:
                 continue
             out.append(self.cmd(part))
         return out
+
+    def clip_stop(self):
+        # "ok <folder> <n> frames <s> s": the folder made into an MP4 next to it, where this machine can see it
+        reply = self.cmd('clip stop')
+        words = reply.split()
+        local = self.path_map(words[1]) if len(words) > 1 else None
+        if local and os.path.isdir(local):
+            mp4 = clip_to_mp4(local, os.path.join(os.path.dirname(local.rstrip('/\\')), self.clip_out or
+                                                   os.path.basename(local.rstrip('/\\')) + '.mp4'))
+            if mp4:
+                reply += ' -> ' + mp4
+        self.clip_out = None
+        return reply
 
     def close(self):
         self.sock.close()

@@ -27,13 +27,40 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
   python tools/vm/abvm.py padsim-install                 build tools/vm/padsim.c in the guest and restart it
   python tools/vm/abvm.py guest "<command>"              a shell command in the guest (it is a sandbox)
 
+Sandboxes - headless launchers in the same VM, next to the stick's own, for testing the application while someone
+else holds the VM; each one's whole root is a folder on the test machine (~/abvm/sandboxes/<name>, the VM's 9p share
+at /mnt/abvm), never the stick. They need their own lease, not the VM's:
+  python tools/vm/abvm.py sandbox setup                  once per VM (the VM's lease): the guest mounts the share at
+                                                         boot, the cover DBs shared read-only (_shared/db)
+  python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
+                                                         Apps; no games, empty databases
+  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
+  python tools/vm/abvm.py sandbox new <name> [--build <dir>]     made from the template (not started)
+  python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--size WxH]   made from the template when new;
+                                                         --build lays a build's dist/<target> (on the test machine,
+                                                         e.g. ~/src/autobleem/dist/pcusb) over it; started headless
+                                                         in a WxH window (1280x720; ABVM_SANDBOX_SIZE), ready when
+                                                         its launcher screen shows
+  python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
+                                                         300; shot a.png; clip start b.mp4; ...; clip stop); shots,
+                                                         grabs and clips (MP4, ffmpeg on the test machine) come back
+                                                         to DIR - they are written into <sandbox>/.abvm/out/<run>/
+  python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
+  python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
+                                                         afresh from the template / delete it
+  python tools/vm/abvm.py sandbox list                   every sandbox, running or not, and its lease
+At most ABVM_SANDBOX_SLOTS (default 1) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
+
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
 [usb|bt] (the pad replugged as that pad - ds4 over bt is a Bluetooth DualShock 4, generic one SDL has no mapping
 for), unplug, plug, battery <0..100> | battery off, cable in|out. Up to four pads: `@2 profile ds4 bt` sends to pad
 2 (no @ = pad 1; pads 2-4 start unplugged). Buttons: a b x y l1 r1 l2 r2
 select start guide l3 r3 - the Xbox names on every profile (a = Cross, b = Circle, x = Square, y = Triangle).
-`wait <ms>`, and in `run` also `shot <name.png>`. A USB keyboard: kbd plug|unplug, kbd press|release <key>,
+`wait <ms>`, and in `run` also `shot <name.png>` (the VM's whole screen) and the launcher's own DebugDriver words
+(screen, wait_screen, wait_idle, key, text, grab, menu, quick, items, frames, window, down, up), sent to the stick's
+launcher - so a script written with `@1` before each pad step runs the same in `run` and in `sandbox drive`, where
+the sandbox launcher's DebugDriver plays padsim's pads itself (tools/ab_drive.py). A USB keyboard: kbd plug|unplug, kbd press|release <key>,
 kbd tap <key> [ms], kbd combo <key>+<key>... (ctrl+alt+delete), kbd type <text> (keys: a-z 0-9 enter esc space
 tab backspace up down left right f1-f12 home end pageup pagedown insert delete shift ctrl alt meta, ...).
 tools/vm/padsim.c's opening comment has the details.
@@ -95,7 +122,8 @@ def host_run(command, check=True):
         args = ['bash', '-c', command]
     else:
         args = ['ssh', '-o', 'BatchMode=yes', HOST, command]
-    r = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    r = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True, text=True, encoding='utf-8',
+                       errors='replace')
     if check and r.returncode != 0:
         raise Fail(f'{command!r} on the test machine: exit {r.returncode}: {r.stderr.strip()}')
     return r.stdout
@@ -158,9 +186,10 @@ def to_guest(local_path, guest_path):
 # ------------------------------------------------------------------ the launcher in the guest
 
 def launcher_exe():
-    """the running autobleem-gui's path in the guest"""
+    """the running autobleem-gui's path in the guest - the stick's, never a sandbox's"""
     # the launcher runs as another user: its /proc/<pid>/exe is root's to read
     out = guest_run('for p in $(pidof autobleem-gui); do sudo readlink /proc/$p/exe; done', check=False).split()
+    out = [p for p in out if not p.startswith(SB_GUEST + '/')]
     if not out:
         raise Fail('the launcher is not running in the guest')
     return out[0]
@@ -469,6 +498,10 @@ class Padsim:
 
 PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'ping', 'profile', 'plug', 'unplug',
              'battery', 'cable', 'kbd'}
+# the launcher's own DebugDriver words (tools/ab_drive.py): in `run` they go to the stick's launcher through the
+# test machine's forward, so one script works here and in a sandbox (`sandbox drive`)
+DRIVER_WORDS = {'screen', 'wait_screen', 'wait_idle', 'key', 'text', 'grab', 'menu', 'quick', 'items', 'frames',
+                'window', 'down', 'up'}
 
 
 def steps(script):
@@ -479,10 +512,19 @@ def run_local(script, out_dir):
     """on the test machine: every step at its own time; shots through virsh into out_dir"""
     pad = None
     recorder = None
+    driver = None
     try:
         for step in steps(script):
             words = step.split()
-            if words[0] == 'wait':
+            if words[0] in DRIVER_WORDS:
+                if driver is None:
+                    driver = import_ab_drive().Driver(DRIVER_PORT)
+                if words[0] == 'grab':
+                    os.makedirs(out_dir, exist_ok=True)
+                    step = 'grab ' + os.path.join(out_dir, os.path.basename(words[1]))
+                for reply in driver.run(step):
+                    print(reply)
+            elif words[0] == 'wait':
                 time.sleep(int(words[1]) / 1000)
             elif words[0] == 'clip':
                 # clip start <name.mp4> ... clip stop: the screen recorded while the steps between run
@@ -520,16 +562,40 @@ def run_local(script, out_dir):
             print(f'clip {os.path.basename(recorder.out)}: {recorder.stop()} frames')
         if pad:
             pad.close()
+        if driver:
+            driver.close()
 
 
 def remote_tool(args):
     who = ['--who', WHO] if WHO else []
-    return host_run(f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + args))
+    key = ['--lease-key', LEASE_KEY] if LEASE_KEY != 'vm' else []
+    # the sandbox settings given here count there too
+    env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
+           if k in os.environ]
+    prefix = ('env ' + ' '.join(shlex.quote(e) for e in env) + ' ') if env else ''
+    try:
+        return host_run(prefix + f'python3 {REMOTE_TOOL} --local ' +
+                        ' '.join(shlex.quote(a) for a in who + key + args))
+    except Fail as e:
+        # the test machine's own message, without the ssh command around it; a busy one stays exit 3 here too
+        msg = str(e).rsplit('abvm: ', 1)[-1]
+        raise (Busy if msg.startswith('busy:') else Fail)(msg) from None
 
 
 # ------------------------------------------------------------------ the lease: one tester on the VM at a time
 
 LOCK_FILE = '~/.local/state/abvm/lock.json'
+LEASE_KEY = 'vm'       # 'vm' - the VM itself; 'sb-<name>' - one sandbox (see "sandboxes" below)
+
+
+def lock_path():
+    if LEASE_KEY == 'vm':
+        return os.path.expanduser(LOCK_FILE)
+    return os.path.expanduser(f'~/.local/state/abvm/lock-{LEASE_KEY}.json')
+
+
+def lease_subject():
+    return 'the VM' if LEASE_KEY == 'vm' else f'sandbox {LEASE_KEY[3:]}'
 LOCK_MINUTES = 30      # a lease's default length
 LOCK_KEEPALIVE = 10    # every command of the holder keeps the lease at least this many minutes ahead
 # what changes the VM or its screen; status, shot and lock itself never need the lease
@@ -551,7 +617,7 @@ def lease_op(op, who='', task='', minutes=LOCK_MINUTES):
     """on the test machine: take / check / release / show the lease, under flock so two callers never race"""
     import fcntl
     import json
-    path = os.path.expanduser(LOCK_FILE)
+    path = lock_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path + '.flock', 'w') as guard:
         fcntl.flock(guard, fcntl.LOCK_EX)
@@ -574,16 +640,18 @@ def lease_op(op, who='', task='', minutes=LOCK_MINUTES):
         if not who:
             raise Fail('who is testing? set ABVM_WHO=<name> (or --who <name>) - the VM is shared')
         if lease and lease['who'] != who:
-            raise Busy(f'busy: {lease_describe(lease, now)} - do something else and try again later')
+            raise Busy(f'busy: {lease_subject()} - {lease_describe(lease, now)} - do something else and try again '
+                       'later')
         if op == 'take':
             if not task:
-                raise Fail('lock take <task> [minutes]: say what the VM is for')
+                raise Fail(f'take <task> [minutes]: say what {lease_subject()} is for')
             since = lease['since'] if lease else now
             save({'who': who, 'task': task, 'since': since, 'until': now + minutes * 60})
             return f"taken by {who} ({task}) for {minutes} min"
         if op == 'check':
             if not lease:
-                raise Fail(f'take the VM first: abvm.py lock take <task> [minutes] (ABVM_WHO={who})')
+                how = 'lock take' if LEASE_KEY == 'vm' else f'sandbox take {LEASE_KEY[3:]}'
+                raise Fail(f'take {lease_subject()} first: abvm.py {how} <task> [minutes] (ABVM_WHO={who})')
             lease['until'] = max(lease['until'], now + LOCK_KEEPALIVE * 60)
             save(lease)
             return 'ok'
@@ -598,12 +666,7 @@ def lease_op(op, who='', task='', minutes=LOCK_MINUTES):
 def lease(op, *args):
     if LOCAL:
         return lease_op(op, WHO, *args)
-    try:
-        return remote_tool(['lock', op] + [str(a) for a in args]).strip()
-    except Fail as e:
-        # the test machine's own message, without the ssh command around it
-        msg = str(e).rsplit('abvm: ', 1)[-1]
-        raise (Busy if msg.startswith('busy:') else Fail)(msg) from None
+    return remote_tool(['lock', op] + [str(a) for a in args]).strip()
 
 
 def lock_command(args):
@@ -628,7 +691,7 @@ def run(script, out_dir):
     stage = f'/tmp/abvm-run-{uuid.uuid4().hex[:8]}'
     try:
         print(remote_tool(['run', script, '--out', stage]), end='')
-        if 'shot ' in script or 'clip start' in script:
+        if re.search(r'\b(shot|grab)\s|clip start', script):
             os.makedirs(out_dir, exist_ok=True)
             tmp = tempfile.mkdtemp(prefix='abvm-')
             from_host(stage + '/.', tmp, recursive=True)
@@ -644,9 +707,15 @@ def run(script, out_dir):
 
 # ------------------------------------------------------------------ the DebugDriver through a tunnel
 
-def drive(script):
-    sys.path.insert(0, os.path.join(HERE, '..'))
+def import_ab_drive():
+    # the repository's tools/ab_drive.py, or the copy `setup` puts next to this tool on the test machine
+    sys.path[:0] = [HERE, os.path.join(HERE, '..')]
     import ab_drive
+    return ab_drive
+
+
+def drive(script):
+    ab_drive = import_ab_drive()
     # the guest's driver listens on its own loopback; the test machine's permanent user service
     # (<domain>-debugdriver) forwards its 127.0.0.1:<port> there - on the test machine that is used as it is,
     # from a PC one more forward to it (nothing listens on the LAN)
@@ -676,6 +745,398 @@ def drive(script):
             tunnel.terminate()
 
 
+# ------------------------------------------------------------------ sandboxes: headless launchers, roots on the host
+#
+# A sandbox is a launcher started headless inside the VM, next to the stick's own, with its whole root in a folder on
+# the test machine's disk (<SB_HOST>/<name>, the VM's 9p share mounted at <SB_GUEST>) - never the stick. Its own
+# runtime dir, DebugDriver port and lease; the VM's lease is not needed. Everything below runs on the test machine.
+
+SB_HOST = os.environ.get('ABVM_SANDBOXES', '~/abvm/sandboxes')
+SB_GUEST = os.environ.get('ABVM_SANDBOX_MOUNT', '/mnt/abvm')
+SB_SHARE = 'abvm-sandboxes'   # the <filesystem> target in the VM's domain XML
+SB_PORTS = range(6910, 6920)
+SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '1'))  # headless launchers running at once (the VM's CPUs)
+STICK = '/media/autobleem'
+MOUNT_UNIT = 'mnt-abvm.mount'
+
+
+def sb_host(name=''):
+    return os.path.join(os.path.expanduser(SB_HOST), name) if name else os.path.expanduser(SB_HOST)
+
+
+def sb_name(name):
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,30}', name or ''):
+        raise Fail(f'a sandbox name is lowercase letters, digits and dashes: {name!r}')
+    return name
+
+
+def sb_state(name):
+    import json
+    try:
+        with open(os.path.join(sb_host(name), '.abvm', 'state.json')) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def sb_save_state(name, state):
+    import json
+    d = os.path.join(sb_host(name), '.abvm')
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, 'state.json'), 'w') as f:
+        json.dump(state, f)
+
+
+def sb_names():
+    root = sb_host()
+    if not os.path.isdir(root):
+        return []
+    return sorted(n for n in os.listdir(root) if not n.startswith(('_', '.')) and os.path.isdir(os.path.join(root, n)))
+
+
+def sb_guest_pid_alive(name, pid):
+    """the pid is still the launcher of this sandbox (never trust a bare pid - it may be reused)"""
+    if not pid:
+        return False
+    out = guest_run(f'cat /proc/{int(pid)}/cmdline 2>/dev/null | tr "\\0" " "', check=False)
+    return f'{SB_GUEST}/{name}' in out and 'autobleem-gui' in out
+
+
+def sb_running(name):
+    st = sb_state(name)
+    return st if st.get('pid') and sb_guest_pid_alive(name, st['pid']) else None
+
+
+def sb_open_modes(path):
+    """the guest checks permissions itself against the host's owner, so a sandbox tree is open to everyone - it is a
+    disposable test tree on a test machine; the ACLs give this user and QEMU the rest"""
+    subprocess.run(['chmod', '-R', 'a+rwX', path], check=False)
+
+
+def sb_setup():
+    """once per VM (the VM's lease): the guest mounts the share at boot; the covers shared read-only"""
+    unit = (f'[Unit]\\nDescription=abvm sandboxes (a 9p share from the test machine)\\n'
+            f'[Mount]\\nWhat={SB_SHARE}\\nWhere={SB_GUEST}\\nType=9p\\n'
+            f'Options=trans=virtio,version=9p2000.L,msize=262144,access=any,cache=none\\n'
+            f'[Install]\\nWantedBy=multi-user.target\\n')
+    os.makedirs(sb_host('_shared'), exist_ok=True)
+    guest_run(f'set -e; printf "{unit}" > /tmp/{MOUNT_UNIT}; sudo install -m 644 /tmp/{MOUNT_UNIT} '
+              f'/etc/systemd/system/{MOUNT_UNIT}; rm /tmp/{MOUNT_UNIT}; sudo systemctl daemon-reload; '
+              f'sudo systemctl enable {MOUNT_UNIT}; mountpoint -q {SB_GUEST} || sudo systemctl start {MOUNT_UNIT}; '
+              f'systemctl is-enabled {MOUNT_UNIT}; mountpoint {SB_GUEST}')
+    # the cover DBs: 280 MB, the same for every sandbox - one copy, linked from each
+    guest_run(f'set -e; [ -d {SB_GUEST}/_shared/db ] || sudo cp -r {STICK}/Autobleem/bin/db {SB_GUEST}/_shared/db')
+    print(f'sandboxes: {SB_GUEST} in the guest = {sb_host()} here; covers in _shared/db')
+
+
+def sb_template():
+    """_template: what every new sandbox starts from - the stick's launcher, themes, extensions and Apps, no games,
+    empty databases; the covers linked from _shared"""
+    t = f'{SB_GUEST}/_template'
+    guest_run(f'set -e; mountpoint -q {SB_GUEST} || {{ echo "{SB_GUEST} is not mounted: abvm.py sandbox setup" >&2; '
+              f'exit 1; }}; sudo rm -rf {t}.new; sudo mkdir -p {t}.new/Autobleem/bin {t}.new/System/Databases '
+              f'{t}.new/System/Logs {t}.new/Games; '
+              f'sudo cp -r {STICK}/Autobleem/bin/autobleem {STICK}/Autobleem/bin/abpad {t}.new/Autobleem/bin/; '
+              f'sudo cp -r {STICK}/Autobleem/rc {t}.new/Autobleem/; '
+              f'sudo cp -r {STICK}/Themes {STICK}/Extensions {STICK}/Apps {t}.new/; sudo cp {STICK}/VERSION {t}.new/; '
+              f'sudo ln -s ../../../_shared/db {t}.new/Autobleem/bin/db; sudo rm -rf {t}; sudo mv {t}.new {t}')
+    sb_open_modes(sb_host('_template'))
+    print(f'template made from the stick ({STICK})')
+
+
+def sb_copy_build(name, build):
+    """a build's dist/<target> (its Autobleem/ tree) laid over the sandbox - the build under test, used where it lies"""
+    src = os.path.expanduser(build[5:] if build.startswith('host:') else build)
+    if not os.path.isdir(os.path.join(src, 'Autobleem')):
+        raise Fail(f'{src} has no Autobleem/ - give a build\'s dist/<target> directory (on the test machine)')
+    subprocess.run(['cp', '-r', os.path.join(src, 'Autobleem'), sb_host(name)], check=True)
+    sb_open_modes(os.path.join(sb_host(name), 'Autobleem'))
+
+
+def sb_new(name, build=None):
+    if os.path.exists(sb_host(name)):
+        raise Fail(f'sandbox {name} exists - `sandbox reset {name}` starts it afresh')
+    if not os.path.isdir(sb_host('_template')):
+        raise Fail('no template yet: abvm.py sandbox template')
+    subprocess.run(['cp', '-r', sb_host('_template'), sb_host(name)], check=True)
+    sb_open_modes(sb_host(name))
+    if build:
+        sb_copy_build(name, build)
+    print(f'sandbox {name} made' + (f' with {build}' if build else ''))
+
+
+def sb_forward(port):
+    """the test machine's 127.0.0.1:<port> -> the guest's own loopback (the driver never listens on a network)"""
+    r = subprocess.run(['ssh', '-f', '-N', '-o', 'ExitOnForwardFailure=yes', '-o', 'BatchMode=yes', '-i',
+                        os.path.expanduser(KEY), '-L', f'{port}:127.0.0.1:{port}', guest_address()],
+                       stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail(f'the forward to port {port}: {r.stderr.strip()}')
+    # no leading '-' in the pattern: pgrep would take it for an option
+    out = subprocess.run(['pgrep', '-n', '-f', f'[-]L {port}:127.0.0.1:{port} '], capture_output=True, text=True)
+    return int(out.stdout.split()[0]) if out.stdout.strip() else 0
+
+
+def sb_stop_forward(st):
+    pid = st.get('forward')
+    if not pid:
+        return
+    try:
+        with open(f'/proc/{int(pid)}/cmdline') as f:
+            args = f.read()
+    except OSError:
+        return
+    if f'{st.get("port")}:127.0.0.1:{st.get("port")}' in args:  # still our ssh, not a reused pid
+        os.kill(int(pid), 15)
+
+
+def sb_start(name, build=None, size=None):
+    size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
+    if not os.path.isdir(sb_host(name)):
+        sb_new(name, build)
+    elif build:
+        sb_copy_build(name, build)
+    if sb_running(name):
+        print(f'sandbox {name} already runs on port {sb_state(name)["port"]}')
+        return
+    sb_stop_forward(sb_state(name))  # a launcher that ended without `sandbox stop` (a crash, a SIGTERM) left it
+    running = [n for n in sb_names() if n != name and sb_running(n)]
+    if len(running) >= SB_SLOTS:
+        raise Busy(f'busy: no free sandbox slot ({SB_SLOTS}; running: {", ".join(running)}) - '
+                   'do something else and try again later')
+    used = {sb_state(n).get('port') for n in running}
+
+    def free_here(p):
+        s = socket.socket()
+        try:
+            s.bind(('127.0.0.1', p))
+            return True
+        except OSError:
+            return False
+        finally:
+            s.close()
+
+    port = next((p for p in SB_PORTS if p not in used and free_here(p)), None)
+    if port is None:
+        raise Busy(f'busy: no free sandbox port in {SB_PORTS.start}-{SB_PORTS.stop - 1} on this machine')
+    g = f'{SB_GUEST}/{name}'
+    rt = f'/tmp/abvm-sb/{name}'  # the guest's own, no sudo needed
+    if not re.fullmatch(r'\d{2,5}x\d{2,5}', size or ''):
+        raise Fail(f'--size {size!r}: <width>x<height>, e.g. 1280x720')
+    # shots and clips land in the sandbox's own .abvm/out (the test machine's folder), its pads' batteries in
+    # .abvm/power_supply; the window is `size` (the offscreen driver's own is 1024x768)
+    env = (f'AB_ROOT={g} AB_RUNTIME_DIR={rt} AB_LOG_DIR={g}/System/Logs AB_DEBUG_PORT={port} AB_NO_SPLASH=1 '
+           f'AB_HEADLESS=1 AB_INPUT_ISOLATED=1 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy '
+           f'AB_WINDOW_SIZE={size} AB_DEBUG_OUT={g}/.abvm/out AB_PAD_BATTERY_DIR={g}/.abvm/power_supply AB_MAX_FPS=30')
+    extra = os.environ.get('ABVM_SANDBOX_ENV', '')  # more for the launcher, e.g. AB_FRAME_STATS=1
+    if extra:
+        env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
+    t0 = time.time()
+    # made here, open to the guest (a folder the guest makes through the share is QEMU's, and closed to this user)
+    for sub in ('out', 'power_supply'):
+        os.makedirs(os.path.join(sb_host(name), '.abvm', sub), exist_ok=True)
+    sb_open_modes(os.path.join(sb_host(name), '.abvm'))
+    out = guest_run(f'set -e; mountpoint -q {SB_GUEST}; mkdir -p {rt}; '
+                    f'cd {g}/Autobleem/bin/autobleem; umask 000; '
+                    f'{env} setsid nohup ./autobleem-gui {g} > {g}/System/Logs/abvm-out.txt 2>&1 < /dev/null & '
+                    f'echo pid $!; for i in $(seq 100); do ss -ltn | grep -q "127.0.0.1:{port} " && '
+                    f'{{ echo ready; break; }}; sleep 0.1; done')
+    pid = int(re.search(r'pid (\d+)', out).group(1))
+    if 'ready' not in out:
+        raise Fail(f'sandbox {name} did not open its driver port in 10 s - see {sb_host(name)}/System/Logs/'
+                   'abvm-out.txt')
+    st = {'pid': pid, 'port': port, 'since': time.time()}
+    sb_save_state(name, st)  # saved before the forward, so a failure below never leaves an orphan behind
+    try:
+        st['forward'] = sb_forward(port)
+    except Fail:
+        sb_stop(name, use_driver=False)  # the port on this side is someone else's - never talk to it
+        raise
+    sb_save_state(name, st)
+    # ready = the launcher's screen shows, so the first script's first shot is of it
+    try:
+        d = import_ab_drive().Driver(port)
+        try:
+            d.wait_screen('GuiLauncher', 60)
+        finally:
+            d.close()
+    except (OSError, RuntimeError) as e:
+        raise Fail(f'sandbox {name} runs, but its launcher screen did not show: {e} - see '
+                   f'{sb_host(name)}/System/Logs/abvm-out.txt')
+    print(f'sandbox {name} runs on port {port}, {size} (ready in {time.time() - t0:.1f} s)')
+
+
+def sb_driver(name, **kwargs):
+    st = sb_running(name)
+    if not st:
+        raise Fail(f'sandbox {name} is not running: abvm.py sandbox start {name}')
+    ab_drive = import_ab_drive()
+    return ab_drive.Driver(st['port'], **kwargs)
+
+
+def sb_drive(name, script, out_dir):
+    """on the test machine: the script through the sandbox's driver. Its shots, clips and grabs land in the
+    sandbox's own <sandbox>/.abvm/out/<run>/ - the launcher writes shots and clip frames there itself (its
+    AB_DEBUG_OUT, this machine's folder through the share), grabs come over the socket; a clip becomes an MP4"""
+    run = uuid.uuid4().hex[:8]
+    run_dir = os.path.join(sb_host(name), '.abvm', 'out', run)
+    os.makedirs(run_dir, exist_ok=True)
+    guest_root = f'{SB_GUEST}/{name}/'
+
+    def to_host(path):  # the guest's name for a sandbox file -> this machine's
+        return os.path.join(sb_host(name), path[len(guest_root):]) if path.startswith(guest_root) else None
+
+    d = sb_driver(name, out_prefix=run + '/', path_map=to_host)
+    cwd = os.getcwd()
+    os.chdir(run_dir)
+    try:
+        for reply in d.run(script):
+            # the guest's paths as this machine names them
+            print(re.sub(re.escape(guest_root) + r'\S*', lambda m: to_host(m.group(0)) or m.group(0), reply))
+    except RuntimeError as e:
+        raise Fail(str(e))
+    finally:
+        os.chdir(cwd)
+        d.close()
+    sb_open_modes(run_dir)
+    print(f'out {run_dir}')
+
+
+def sb_stop(name, use_driver=True):
+    st = sb_state(name)
+    if st.get('pid') and sb_guest_pid_alive(name, st['pid']):
+        try:
+            if use_driver and st.get('forward'):
+                d = sb_driver(name)
+                d.cmd('quit')  # the clean way: the screens unwind, the databases close
+                d.close()
+        except (OSError, Fail):
+            pass
+        def gone(seconds):
+            for _ in range(int(seconds * 10)):
+                if not sb_guest_pid_alive(name, st['pid']):
+                    return True
+                time.sleep(0.1)
+            return False
+
+        if not gone(5):
+            # SIGTERM is a clean quit too (the screens unwind); a kill only when even that does not end it
+            guest_run(f'kill -TERM {int(st["pid"])}', check=False)
+            if not gone(5):
+                guest_run(f'kill -KILL {int(st["pid"])}', check=False)
+                print(f'sandbox {name}: did not quit in 10 s - killed')
+    sb_stop_forward(st)
+    if st:
+        sb_save_state(name, {})
+    print(f'sandbox {name} stopped')
+
+
+def sb_remove(name):
+    root = sb_host(name)
+    r = subprocess.run(['rm', '-rf', root], capture_output=True, text=True)
+    if os.path.exists(root):
+        # a file the guest made without write access for us - the guest's root can remove it
+        guest_run(f'sudo rm -rf {SB_GUEST}/{name}', check=False)
+    if os.path.exists(root):
+        raise Fail(f'cannot remove {root}: {r.stderr.strip()}')
+
+
+def sb_list():
+    names = sb_names()
+    if not names:
+        print('no sandboxes')
+    global LEASE_KEY
+    for n in names:
+        st = sb_running(n)
+        LEASE_KEY = f'sb-{n}'
+        holder = lease_op('show')
+        print(f'{n:16} {"running on " + str(st["port"]) if st else "stopped":18} lease: {holder}')
+    LEASE_KEY = 'vm'
+
+
+def sandbox_command(args, out_dir):
+    global LEASE_KEY
+    sub = args[0] if args else 'list'
+    name = sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template') else ''
+    if not LOCAL:
+        if sub == 'drive':
+            sb_drive_remote(name, ' '.join(args[2:]), out_dir)
+        else:
+            print(remote_tool(['sandbox'] + args), end='')
+        return
+    if sub == 'list':
+        sb_list()
+    elif sub == 'setup':
+        lease_op('check', WHO)  # changes the VM's own root filesystem
+        sb_setup()
+    elif sub == 'template':
+        LEASE_KEY = 'sb-_template'
+        lease_op('take', WHO, 'the template', 10)
+        try:
+            sb_template()
+        finally:
+            lease_op('release', WHO)
+    elif sub in ('take', 'release'):
+        if not name:
+            raise Fail(f'sandbox {sub} <name>' + (' <task> [minutes]' if sub == 'take' else ''))
+        LEASE_KEY = f'sb-{name}'
+        if sub == 'take':
+            minutes = int(args[3]) if len(args) > 3 else LOCK_MINUTES
+            print(lease_op('take', WHO, args[2] if len(args) > 2 else '', minutes))
+        else:
+            print(lease_op('release', WHO))
+    elif sub == 'logs':
+        path = os.path.join(sb_host(name), 'System', 'Logs', 'abvm-out.txt')
+        n = int(args[2]) if len(args) > 2 else 40
+        with open(path, errors='replace') as f:
+            print(''.join(f.readlines()[-n:]), end='')
+    elif sub in ('new', 'start', 'drive', 'stop', 'reset', 'rm'):
+        if not name:
+            raise Fail(f'sandbox {sub} <name>')
+        LEASE_KEY = f'sb-{name}'
+        lease_op('check', WHO)
+        build = None
+        if '--build' in args:
+            build = args[args.index('--build') + 1]
+        size = args[args.index('--size') + 1] if '--size' in args else None
+        if sub == 'new':
+            sb_new(name, build)
+        elif sub == 'start':
+            sb_start(name, build, size)
+        elif sub == 'drive':
+            sb_drive(name, ' '.join(args[2:]), out_dir)
+        elif sub == 'stop':
+            sb_stop(name)
+        elif sub == 'reset':
+            sb_stop(name)
+            sb_remove(name)
+            sb_new(name, build)
+        elif sub == 'rm':
+            sb_stop(name)
+            sb_remove(name)
+            lease_op('release', WHO)
+            print(f'sandbox {name} removed')
+    else:
+        raise Fail('sandbox list | setup | template | take <name> <task> [min] | release <name> | '
+                   'new|start <name> [--build <dist dir>] | drive <name> "<script>" | logs <name> [n] | '
+                   'stop|reset|rm <name>')
+
+
+def sb_drive_remote(name, script, out_dir):
+    """from a PC: the script runs on the test machine (its timing is not stretched by ssh), the grabs come back"""
+    out = remote_tool(['sandbox', 'drive', name, script])
+    print(out, end='')
+    m = re.search(r'^out (\S+)$', out, re.M)
+    if m and re.search(r'\b(grab|shot)\s|clip start', script):
+        os.makedirs(out_dir, exist_ok=True)
+        tmp = tempfile.mkdtemp(prefix='abvm-')
+        from_host(m.group(1) + '/.', tmp, recursive=True)
+        for f in os.listdir(tmp):
+            shutil.move(os.path.join(tmp, f), os.path.join(out_dir, f))
+        shutil.rmtree(tmp, ignore_errors=True)
+        host_run(f'rm -rf {shlex.quote(m.group(1))}', check=False)
+
+
 # ------------------------------------------------------------------ status, setup, padsim
 
 def status():
@@ -697,7 +1158,9 @@ def status():
 def setup():
     host_run('mkdir -p ~/.local/share/abvm')
     to_host(os.path.abspath(__file__), REMOTE_TOOL)
-    print(f'copied to {HOST}:{REMOTE_TOOL}')
+    # the DebugDriver's client, for `sandbox drive` there
+    to_host(os.path.join(HERE, '..', 'ab_drive.py'), os.path.dirname(REMOTE_TOOL) + '/ab_drive.py')
+    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py)')
 
 
 BATTERY_DROPIN = '/etc/systemd/system/autobleem.service.d/padsim-battery.conf'
@@ -719,13 +1182,17 @@ def padsim_install():
 
 
 def main(argv):
-    global LOCAL, WHO
+    global LOCAL, WHO, LEASE_KEY
     if '--local' in argv:
         LOCAL = True
         argv = [a for a in argv if a != '--local']
     if '--who' in argv:
         i = argv.index('--who')
         WHO = argv[i + 1]
+        del argv[i:i + 2]
+    if '--lease-key' in argv:
+        i = argv.index('--lease-key')
+        LEASE_KEY = argv[i + 1]
         del argv[i:i + 2]
     out_dir = '.'
     if '--out' in argv:
@@ -743,6 +1210,8 @@ def main(argv):
             return status()
         elif cmd == 'lock':
             lock_command(args)
+        elif cmd == 'sandbox':
+            sandbox_command(args, out_dir)
         elif cmd == 'setup':
             setup()
         elif cmd == 'install':

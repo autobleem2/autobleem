@@ -15,6 +15,76 @@ hide|show`. `tools/ab_drive.py start|run|sheet|stop` is the client (`run "menu 6
 a.png"`); a whole walk through the screens takes seconds, with the window hidden. `win_drive.ps1` is the old
 way, kept for a keyboard-only smoke test.
 
+### Shots, clips and waiting
+
+- **`shot <file>`** always shows a frame drawn after the command and after the last input - never an older one.
+  The driver waits up to 5 s for it and answers `err no frame` if none came (a screen that has hung). A relative
+  path goes under `AB_DEBUG_OUT` when that is set (a sandbox sets it to its own folder), otherwise under the
+  program's working directory. The reply names the full path. `grab` is the same frame, sent back over the
+  socket.
+- **`clip start <name>` ... `clip stop`** records what the launcher shows, 25 samples a second, into the folder
+  `<name>` (a `.mp4` on the name is dropped; the folder goes where a shot would). A sample is written as the next
+  PNG only when the picture changed, and `clip stop` writes `clip.ffconcat`, which gives every frame its time.
+  `ab_drive.py` then makes `<name>.mp4` with ffmpeg (if ffmpeg is on the PATH) and removes the frames:
+  `ab_drive.py run "clip start menu.mp4; menu options; wait_idle 500; clip stop"`. By hand:
+  `ffmpeg -f concat -safe 0 -i <name>/clip.ffconcat -vf fps=25,format=yuv420p <name>.mp4`. A clip ends by itself
+  after 10 minutes, or when the connection that started it closes.
+- **Frames are read back only when asked.** Reading a frame back from the GPU costs a few milliseconds (much more
+  in the VM's software renderer), so the renderer copies a frame only while a shot, a grab, a clip or a wait needs
+  one. An idle launcher with the driver on costs nothing extra.
+- **`wait_screen <Name> [seconds]`** waits until that screen shows (15 s by default). **`wait_idle <ms>
+  [seconds]`** waits until the picture has rested for that long: either the screen reports that only its looping
+  decorations move (the play button, the arrow - the frame pacer's "ambient" state), or two frames that far apart
+  are the same. Use these instead of `wait <ms>`: a script is then as fast as the machine and does not break on a
+  slow one.
+- **`quit`** makes the program leave the way a power off does: every screen closes, the databases close, the
+  process ends. So does **SIGTERM** (and SIGINT) since 2026-09-28 - `kill <pid>` or `systemctl stop` is a clean
+  stop now, on every target. Before, SDL turned the signal into a window-close event, which the launcher (off a
+  dev machine) took for a lost display: it rebuilt the display and carried on, so it had to be killed. Leaving
+  this way writes no selection file, so on the console `rc/selection.sh` treats it as a stop, not a choice. The
+  console's power button works as before.
+
+### Virtual pads (padsim's words)
+
+The driver can make up to four pads inside the program, with the same commands as the test VM's padsim
+(`tools/vm/padsim.c`), so one script tests the pad logic in a sandbox and in the VM. It needs SDL 2.24 or newer
+(the PC stick, a dev machine; not the console, whose SDL is older - there the commands answer `err`).
+
+| Command | What it does |
+|---|---|
+| `@2 profile ds4 bt` | pad 2 becomes a Bluetooth DualShock 4 (plugged in again as that pad). Profiles: `x360` (wired), `ds4` (`usb` or `bt`), `generic` (a pad SDL has no mapping for - what starts a mapping wizard) |
+| `@2 plug`, `@2 unplug` | the cable in or out (a Bluetooth pad: switched on or off) |
+| `@1 press a`, `@1 release a` | a button down or up. Xbox names on every profile: `a b x y` are Cross, Circle, Square, Triangle on a DualShock; also `l1 r1 l2 r2 select start guide l3 r3` |
+| `@1 tap a [ms]`, `@1 hold a <ms>` | down, then up after 120 ms (or ms) |
+| `@1 stick left <x> <y>` | a stick, -32768..32767 each |
+| `@1 trigger r2 <0..255>` | a trigger |
+| `@1 dpad down`, `@1 dpad up-left`, `@1 dpad center` | the d-pad |
+| `@1 reset` | everything released and centred |
+| `@1 battery 20`, `@1 battery off` | the pad's battery level (not on an x360, which is wired) |
+| `@1 cable in`, `@1 cable out` | a charging cable: "Charging", "Full" at 100, or back on the battery |
+
+`@n` picks the pad (1-4); without it the command goes to pad 1. Pad 1 is plugged in as an x360 by its first
+command; pads 2-4 wait for `plug` or `profile`. **Always write the `@n` in a script meant for both the sandbox and
+the VM**: `press x` without it is the driver's older logical press (a Cross, down and up), not padsim's.
+
+The pads have the real pads' vendor and product ids and names. One difference from padsim: SDL marks a pad made
+inside the program as "virtual" in its GUID, so SDL's database line for the real pad does not apply - the x360 and
+the DualShock get SDL's own standard mapping instead (the same buttons), and the generic pad gets none, like an
+unknown pad. A battery is a folder like the Sony driver's (`ps-controller-battery-aa:bb:cc:00:ab:0<n>` with
+`capacity`, `status`, `type`, `scope`) under `AB_PAD_BATTERY_DIR`, where the launcher reads pad batteries from;
+without that variable `battery` answers `err`.
+
+The keyboard: `key`/`text` as before, plus padsim's words - `kbd tap enter`, `kbd press shift`, `kbd combo
+ctrl+alt+delete` (the modifiers held with the last key), `kbd type Hello` (as typed text).
+
+**`AB_INPUT_ISOLATED=1`** makes the program ignore the machine's own input devices: no keyboard, mouse or text
+events, no real pad opened or listed (the raw joystick API too), and the keyboard counts as present only once the
+driver typed something. Only the driver drives it. A sandbox sets it, so padsim's pads - the VM's hardware test -
+never reach a sandbox.
+
+`AB_WINDOW_SIZE=1280x720` makes the window that size and never full screen. SDL's `offscreen` driver (a headless
+sandbox) otherwise reports a 1024x768 desktop, and the launcher drew 1024x576 with black bars.
+
 `AB_SHOT=<file%d.bmp>` has the launcher save the frame it presents every 3 s - the way to look at a Pi's
 screen over ssh (a systemd drop-in `Environment=AB_SHOT=/tmp/ab%%d.bmp` on `autobleem.service`, removed
 afterwards: 8 MB a frame into tmpfs) or at a PC whose screen is in use; pcsx-abnxt has the same as
@@ -95,6 +165,31 @@ runs `ab_drive.py` scripts through a tunnel. The VM is shared: take its lease fi
 virtual pads (x360, DualShock 4 over USB or Bluetooth, an unmapped one) with hot-plug, battery and charging,
 and a USB keyboard - for everything that reads a real input device (PSC-Bios's wizard, the emulators, the
 Apps). Their docstrings are the reference; autobleem-main's `docs/pc-test-machine.md` describes the machine.
+
+**Sandboxes** (`abvm.py sandbox ...`): while someone holds the VM for a hardware test, the application can still be
+tested - extra launchers run headless in the same VM, each with its whole root in a folder on the test machine's
+disk (never the stick), their own DebugDriver port and their own lease. `sandbox start <name> --build
+~/src/autobleem/dist/pcusb` lays a fresh pcusb build over the template, `sandbox drive <name> "<ab_drive script>"
+--out DIR` drives it and brings the shots, grabs and clips back, `sandbox reset` starts it afresh in under a
+second.
+
+A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
+(1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30`, and its outputs in its own folder:
+`AB_DEBUG_OUT=<sandbox>/.abvm/out` and `AB_PAD_BATTERY_DIR=<sandbox>/.abvm/power_supply`. Since the sandbox's root
+is a folder on the test machine, the launcher writes a `shot` or a clip's frames straight onto the test machine's
+disk; `sandbox drive` gives each run its own `.abvm/out/<run>/`, turns clips into MP4 there with ffmpeg and copies
+the folder to `--out`. `start` returns once the launcher screen shows, so the first shot of a script is of it.
+`stop` sends the driver's `quit`, then SIGTERM, and kills only if neither worked.
+
+The script language is the same in `run` (the VM) and `sandbox drive`: padsim's pad words (with `@n`), `wait`,
+`shot`, `clip start`/`clip stop`, and the driver's own words (`wait_screen`, `wait_idle`, `screen`, `key`, `text`,
+`grab`, `menu`, `quick`, ...). In `run`, pad words go to padsim, the driver's words to the stick's launcher, and
+`shot`/`clip` record the VM's whole screen; in a sandbox the sandbox launcher's driver does all of it. Example,
+the same in both:
+
+```
+python tools/vm/abvm.py sandbox drive sb1 "@1 profile ds4; @1 tap a; wait_screen GuiLauncher; @1 dpad right; @1 dpad center; wait_idle 300; shot next.png" --out out
+```
 
 ## `tools/ra_drive.py` - driving RetroArch itself
 
