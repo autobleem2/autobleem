@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -138,6 +138,7 @@ Fetching box art=Se preiau coperțile
 File:=Fișier:
 Filter:=Filtru:
 Final score=Scor final
+First/last=
 Flush covers=Sterge cover-urile
 Folder=Dosar
 Folder:=Dosar:

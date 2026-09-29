@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (inteira)
 4:3 (integer)=4:3 (inteira)
@@ -138,6 +138,7 @@ Fetching box art=Buscando capas
 File:=Arquivo:
 Filter:=Filtro:
 Final score=Pontuação final
+First/last=
 Flush covers=Atualizar capas
 Folder=Pasta
 Folder:=Pasta:

@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -138,6 +138,7 @@ Fetching box art=Kapak resimleri alınıyor
 File:=Dosya:
 Filter:=Filtre:
 Final score=Son skor
+First/last=
 Flush covers=Kapakları temizle
 Folder=Klasör
 Folder:=Klasör:

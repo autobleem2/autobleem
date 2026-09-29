@@ -203,6 +203,8 @@ void GuiExtensions::render() {
         hints.push_back({{"O"}, _("Back")});
         if (!lockedOn(extensionAt(selected)))
             hints.push_back({{"T"}, extensionAt(selected).disabled ? _("Enable") : _("Disable")});
+        hints.push_back({{"L1", "R1"}, _("First/last")});
+        hints.push_back({{"L2", "R2"}, _("Page")});
     } else {
         hints.push_back({{"O"}, _("Back")});
     }

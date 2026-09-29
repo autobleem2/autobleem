@@ -161,10 +161,11 @@ std::string GuiManager::getTitle() {
 string GuiManager::getStatusLine() {
     if (onFailed())
         return _("Not added") + " " + to_string(selected - psGames.size() + 1) + "/" + to_string(failed.size()) +
-               "    |@L2|/|@R2| " + _("Page") + "   |@S| " + _("Delete folder") + " |@O| " + _("Back") + " |";
-    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L2|/|@R2| " +
-           _("Page") + "   |@X| " + _("Select") + "  |@S| " + _("Delete game") + "  |@T| " + _("Flush covers") +
-           " |@O| " + _("Back") + " |";
+               "    |@L1|/|@R1| " + _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@S| " +
+               _("Delete folder") + " |@O| " + _("Back") + " |";
+    return _("Game") + " " + to_string(selected + 1) + "/" + to_string(psGames.size()) + "    |@L1|/|@R1| " +
+           _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@X| " + _("Select") + "  |@S| " +
+           _("Delete game") + "  |@T| " + _("Flush covers") + " |@O| " + _("Back") + " |";
 }
 
 //*******************************

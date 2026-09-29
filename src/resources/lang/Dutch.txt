@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -138,6 +138,7 @@ Fetching box art=Hoesjes ophalen
 File:=Bestand:
 Filter:=Filter:
 Final score=Eindscore
+First/last=
 Flush covers=Covers wissen
 Folder=Map
 Folder:=Map:

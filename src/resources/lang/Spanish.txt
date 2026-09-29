@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -138,6 +138,7 @@ Fetching box art=Obteniendo carátulas
 File:=Archivo:
 Filter:=Filtro:
 Final score=Puntuación final
+First/last=
 Flush covers=Eliminar caratulas
 Folder=Carpeta
 Folder:=Carpeta:

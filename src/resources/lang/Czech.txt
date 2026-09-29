@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -138,6 +138,7 @@ Fetching box art=Stahování obalů
 File:=Soubor:
 Filter:=Filtr:
 Final score=Konečné skóre
+First/last=
 Flush covers=Smazat obaly
 Folder=Složka
 Folder:=Složka:

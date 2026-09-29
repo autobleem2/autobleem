@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -138,6 +138,7 @@ Fetching box art=Hämtar omslag
 File:=Fil:
 Filter:=Filter:
 Final score=Slutresultat
+First/last=
 Flush covers=Nollställ omslag
 Folder=Mapp
 Folder:=Mapp:

@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (intera)
 4:3 (integer)=4:3 (intera)
@@ -138,6 +138,7 @@ Fetching box art=Download delle copertine
 File:=File:
 Filter:=Filtro:
 Final score=Punteggio finale
+First/last=
 Flush covers=Svuota le cover
 Folder=Cartella
 Folder:=Cartella:

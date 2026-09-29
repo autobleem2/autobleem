@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -138,6 +138,7 @@ Fetching box art=Sťahovanie obalov
 File:=Súbor:
 Filter:=Filter:
 Final score=Konečné skóre
+First/last=
 Flush covers=Zmazané obaly
 Folder=Priečinok
 Folder:=Priečinok:

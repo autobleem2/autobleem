@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 0 / Total: 426
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -138,6 +138,7 @@ Fetching box art=Fetching box art
 File:=File:
 Filter:=Filter:
 Final score=Final score
+First/last=First/last
 Flush covers=Flush covers
 Folder=Folder
 Folder:=Folder:

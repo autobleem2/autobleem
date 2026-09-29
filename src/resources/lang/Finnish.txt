@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -138,6 +138,7 @@ Fetching box art=Haetaan kansikuvia
 File:=Tiedosto:
 Filter:=Suodatin:
 Final score=Lopullinen pisteet
+First/last=
 Flush covers=Tyhjennä kannet
 Folder=Kansio
 Folder:=Kansio:

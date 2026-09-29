@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (ganzzahlig)
 4:3 (integer)=4:3 (ganzzahlig)
@@ -138,6 +138,7 @@ Fetching box art=Cover werden geladen
 File:=Datei:
 Filter:=Filter:
 Final score=Endstand
+First/last=
 Flush covers=Cover leeren
 Folder=Ordner
 Folder:=Ordner:

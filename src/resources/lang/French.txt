@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (entier)
 4:3 (integer)=4:3 (entier)
@@ -138,6 +138,7 @@ Fetching box art=Récupération des jaquettes
 File:=Fichier :
 Filter:=Filtre :
 Final score=Score final
+First/last=
 Flush covers=Vider les jaquettes
 Folder=Dossier
 Folder:=Dossier:

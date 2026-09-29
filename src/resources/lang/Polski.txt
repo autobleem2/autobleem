@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -138,6 +138,7 @@ Fetching box art=Pobieranie okładek
 File:=Plik:
 Filter:=Filtr:
 Final score=Wynik końcowy
+First/last=
 Flush covers=Wyczyść okładki
 Folder=Folder
 Folder:=Folder:

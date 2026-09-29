@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 1 / Total: 426
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -138,6 +138,7 @@ Fetching box art=Recuperacion de las cobertas
 File:=Fichièr:
 Filter:=Filtre :
 Final score=Marca finala
+First/last=
 Flush covers=Suprimir las cobèrturas
 Folder=Dorsièr
 Folder:=Dorsièr :
