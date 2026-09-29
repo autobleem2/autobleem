@@ -56,8 +56,12 @@ using std::vector;
 
 // same approximation as test_panel_style_footer.cpp (~0.6 px per point, Open Sans Bold/Medium's rough
 // average advance) - not real glyph metrics, just enough to reason about the formulas' arithmetic
-int charWidth(int fontPx) { return (fontPx * 3 + 2) / 5; }
-int textWidth(int fontPx, const string &s) { return static_cast<int>(s.size()) * charWidth(fontPx); }
+int charWidth(int fontPx) {
+    return (fontPx * 3 + 2) / 5;
+}
+int textWidth(int fontPx, const string &s) {
+    return static_cast<int>(s.size()) * charWidth(fontPx);
+}
 
 const int Font15 = 15, Font22 = 22;
 const int PanelWidth = 800; // evoui_set_picker.cpp's own constant
@@ -67,7 +71,9 @@ const int PanelWidth = 800; // evoui_set_picker.cpp's own constant
 //*******************************
 
 // mirrors the fixed code: RowInset (24) + 8 from the panel's edge, plus indent
-int rowTitleX(int panelX, int indent) { return panelX + 24 + 8 + indent * 24; }
+int rowTitleX(int panelX, int indent) {
+    return panelX + 24 + 8 + indent * 24;
+}
 // mirrors the fixed code: where the right-aligned count starts
 int rowDetailX(int panelX, int panelW, const string &detail) {
     return panelX + panelW - 24 - textWidth(Font15, detail);
