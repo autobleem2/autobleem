@@ -204,13 +204,12 @@ void GuiSystemMenu::render() {
         if (row.heading) {
             style.label(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(headingFont, row.title, panel.x + TextX,
-                                             rowY + (h - headingFont.lineHeight()) / 2, style.secondary, XALIGN_LEFT);
+                                             rowY + (h - headingFont.lineHeight()) / 2, style.text, XALIGN_LEFT);
         } else {
             if (i == selected)
                 style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(titleFont, row.title, panel.x + TextX,
-                                             rowY + (h - titleFont.lineHeight()) / 2,
-                                             i == selected ? style.text : style.secondary, XALIGN_LEFT);
+                                             rowY + (h - titleFont.lineHeight()) / 2, style.text, XALIGN_LEFT);
             if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
                 gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
                                                  rowY + (h - noteFont.lineHeight()) / 2, style.hint, XALIGN_RIGHT);
