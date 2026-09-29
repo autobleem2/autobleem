@@ -707,6 +707,18 @@ def run(script, out_dir):
 
 # ------------------------------------------------------------------ the DebugDriver through a tunnel
 
+def _script_from_args(parts):
+    """the literal script if given as words, or --file SCRIPT.txt's contents (one command per line,
+    '#'-comments and blank lines dropped, joined with ';' the same as ab_drive.py's own --file)"""
+    if '--file' in parts:
+        i = parts.index('--file')
+        path = parts[i + 1]
+        with open(path, encoding='utf-8') as f:
+            lines = [ln.strip() for ln in f]
+        return ';'.join(ln for ln in lines if ln and not ln.startswith('#'))
+    return ' '.join(parts)
+
+
 def import_ab_drive():
     # the repository's tools/ab_drive.py, or the copy `setup` puts next to this tool on the test machine
     sys.path[:0] = [HERE, os.path.join(HERE, '..')]
@@ -1060,7 +1072,7 @@ def sandbox_command(args, out_dir):
     name = sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template') else ''
     if not LOCAL:
         if sub == 'drive':
-            sb_drive_remote(name, ' '.join(args[2:]), out_dir)
+            sb_drive_remote(name, _script_from_args(args[2:]), out_dir)
         else:
             print(remote_tool(['sandbox'] + args), end='')
         return
@@ -1104,7 +1116,7 @@ def sandbox_command(args, out_dir):
         elif sub == 'start':
             sb_start(name, build, size)
         elif sub == 'drive':
-            sb_drive(name, ' '.join(args[2:]), out_dir)
+            sb_drive(name, _script_from_args(args[2:]), out_dir)
         elif sub == 'stop':
             sb_stop(name)
         elif sub == 'reset':
@@ -1225,11 +1237,11 @@ def main(argv):
         elif cmd == 'clip':
             clip(args[0], args[1])
         elif cmd == 'pad':
-            run(' '.join(args), out_dir)
+            run(_script_from_args(args), out_dir)
         elif cmd == 'run':
-            run(' '.join(args), out_dir)
+            run(_script_from_args(args), out_dir)
         elif cmd == 'drive':
-            drive(' '.join(args))
+            drive(_script_from_args(args))
         elif cmd == 'padsim-install':
             padsim_install()
         elif cmd == 'guest':
