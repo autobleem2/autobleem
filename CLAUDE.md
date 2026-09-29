@@ -557,6 +557,18 @@ Nothing of it has run on a console or a Pi yet - `tools/stick_writes.sh start|st
   object that outlives a launch** other than `ThemeAssets` - SDL frees them with the renderer and the handle
   would free them again. Screens are stack objects that die before the launch, which is what makes this
   safe.
+- **Input across a busy job (the busy rule, CONSOLE-13; autobleem-main `docs/decisions.md`, 2026-09-27).**
+  While a spinner shows (`Gui::beginBusy`...`endBusy`) every pad and key input is ignored, and when the job
+  ends the input starts clean: nothing held, no hold-repeat carried over. Core does it once, in `Input`
+  (`Gui::endBusy()` -> `Input::flushInputEvents()`, and `poll()`): a press made during the job is dropped;
+  every press a screen was handed and not yet the release of is released at the job's end (an Up event,
+  handed out first; the d-pad state centred; `padEventPending()` true), whether or not the player let go;
+  and a release, key repeat or its text for a press no screen was handed never reaches one. So a screen
+  (or an extension) never re-implements it - it ends its hold on the release event, on `padEventPending()`
+  (the list menus' `fastForwardUntilAnotherEvent`), or on the live d-pad state read once a frame (`HoldRepeat`
+  + `holdTick`, Options and the game editor). A hold that can outlive a screen opened over it must use the
+  live state (that screen may read its release - the carousel's `motionStart` check, e57dfa4); never act on
+  an Up event as if it were a press. Details: autobleem-core's CLAUDE.md ("Input across a busy job").
 - The one remaining singleton is `Gui` (`static shared_ptr<Gui> getInstance()`).
   `Gui::db` / `Gui::internalDB` / `Gui::coverdb` are non-owning pointers; the objects are `unique_ptr`s in
   `runAutobleem()` (main.cpp). `GuiLauncher`'s named `PsObj*` members are non-owning shortcuts into
