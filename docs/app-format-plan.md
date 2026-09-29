@@ -39,7 +39,7 @@ derived from the build's target (`AB_TARGET`) and its compiled architecture. The
 
 | target | keys, in order | why the generic key (or not) |
 |---|---|---|
-| `psc` | `psc` | no generic key: the console has glibc 2.24, its own SDL 2.0.14 on Wayland and no X, so a generic armhf Linux binary would not load |
+| `psc` | `psc` | no generic key: the console has glibc 2.24, its own SDL2 (`autobleem_sdl` 2.0.18) on Wayland and no X, so a generic armhf Linux binary would not load |
 | `rpi` (32-bit) | `rpi`, `linux-armhf` | any armhf Linux build against Bookworm's libraries runs |
 | `rpi64` | `rpi64`, `linux-arm64` | |
 | `pcusb` | `pcusb`, `linux-i386` | |

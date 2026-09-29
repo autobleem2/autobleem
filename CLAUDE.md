@@ -179,8 +179,9 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `docker/Dockerfile` -> `autobleem-build` is built and pushed by **`autobleem2/autobleem-build`**'s own
   `image.yml` (that repo is the Dockerfile's one source; this tree's `docker/` is a stale copy). It carries
   the console toolchain under `/opt/psc` (a Debian Stretch armhf sysroot, Stretch's **gcc-6** cross compiler,
-  and **SDL2 2.0.14 + image/mixer/ttf built from source** with the console's backend set - Wayland + ALSA,
-  no X11/OSS, see "SDL2 on the console" below) that `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`;
+  and **our own `autobleem_sdl` 2.0.18 (was upstream SDL2 2.0.14) + image/mixer/ttf built from source** with the
+  console's backend set - Wayland + ALSA, no X11/OSS, see "SDL2 on the console" below) that
+  `PSCtoolchainV8.cmake` uses via `-DAB_PSC_TOOLCHAIN=/opt/psc`;
   the build-recipe history and the image's verification story are at autobleem-main
   `docs/history/launcher-build.md`.
   `ci/build.sh native|psc|rpi|rpi64|pcusb|win|all` (run as `docker/run.sh ci/build.sh <t>`) configures into
@@ -357,8 +358,8 @@ USB stick root = `/media` on the PSC:
 
 Boot chain: the exploit payload in `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` runs `Autobleem/start.sh` →
 `rc/boot.sh` (bind-mounts `rc/20-joystick.rules` over `/etc/udev/rules.d` and re-triggers udev, which is what
-lets two pads through one hub; `killsony.sh`; `backup.sh`; `rc/ssh_keys.sh` - see below) → `rc/autobleem.sh` → unpack `libs.tar.gz` (SDL2
-2.0.14 + SDL2_image/mixer 2.6.3 + SDL2_ttf 2.20.2 from the image, SDL2 with the **Wayland** video and **ALSA**
+lets two pads through one hub; `killsony.sh`; `backup.sh`; `rc/ssh_keys.sh` - see below) → `rc/autobleem.sh` → unpack `libs.tar.gz` (our own
+`autobleem_sdl` 2.0.18 + SDL2_image/mixer 2.6.3 + SDL2_ttf 2.20.2 from the image, SDL2 with the **Wayland** video and **ALSA**
 audio backends - the console has no X and no OSS; see "SDL2 on the console") → `bin/autobleem/run.sh` → `autobleem-gui /media`.
 `/autobleem` existing on the console marks the AutoBleem kernel installed (`Env::autobleemKernel`). The
 console has no battery clock (every boot is 2018-09-01), so last-played times are recorded only when the
@@ -391,19 +392,24 @@ psc-kernel-payload `3f67f19`+ also ships a `tmp.conf` without an age. Anything o
 The discovery story (`systemd-tmpfiles-clean.timer` deleting `/tmp/lib`'s soname links, the libs archive and
 the bind-mounted udev rules file as "eight years old") is at autobleem-main `docs/history/launcher-console-runs.md`.
 
-### SDL2 on the console (2026-09-23)
+### SDL2 on the console (2026-09-23; superseded 2026-09-29)
 
 The launcher, absplash, the console tools, pcsx-ab and pcsx-abnxt all run on the SDL2 family in
-`Autobleem/lib/libs.tar.gz` (`/tmp/lib`, inherited through `LD_LIBRARY_PATH`): **SDL2 2.0.14**, SDL2_image and
+`Autobleem/lib/libs.tar.gz` (`/tmp/lib`, inherited through `LD_LIBRARY_PATH`): our own **`autobleem_sdl` 2.0.18**
+(`github.com/autobleem2/autobleem_sdl` - no longer plain upstream SDL, since 2026-09-29), SDL2_image and
 SDL2_mixer 2.6.3, SDL2_ttf 2.20.2, built by the `autobleem2/autobleem-build` image (`/opt/psc/sdl2`, its
-`docker/Dockerfile`'s psc stage) with the **Wayland** video and **ALSA** audio backends only - the console has
-no X and no OSS; `ab-validate psc` fails an image whose SDL2 has x11 or oss, lacks wayland or alsa, or is not
-2.0.12/2.0.14. `tools/make_psc_package.sh` and the `publish-launcher` workflow put the image's SDL2 family
-into the archive at package time (the checked-in `payload/Autobleem/lib/libs.tar.gz` is the same set, for
-builds without the image). **2.0.14 is the ceiling**: the last SDL with a `wl_shell` window, which is what
-Sony's Weston 1.11 compositor offers (no xdg shell) - the forensic detail (why 2.0.16+ and libwayland >= 1.18
-are refused) and the route a newer SDL would need are at autobleem-main `docs/history/launcher-build.md`.
-SDL2's ABI is backward compatible, so a newer libSDL2 in the archive never needs a rebuild of the programs.
+`docker/Dockerfile`'s psc stage, from `AUTOBLEEM_SDL_REF`) with the **Wayland** video and **ALSA** audio backends
+only - the console has no X and no OSS; `ab-validate psc` fails an image whose SDL2 has x11 or oss, lacks
+wayland or alsa, is not built from `autobleem_sdl`, or has no `wl_shell` in it. `tools/make_psc_package.sh` and
+the `publish-launcher` workflow put the image's SDL2 family into the archive at package time (the checked-in
+`payload/Autobleem/lib/libs.tar.gz` is the same set, for builds without the image). **2.0.18 is the new
+ceiling** (was 2.0.14): the last SDL that builds and runs against the console's libwayland 1.12 with a
+`wl_shell` window restored (Sony's Weston 1.11 compositor offers no xdg shell; patch 0001 in `autobleem_sdl`
+brings `wl_shell` back, which upstream dropped in 2.0.16) - the forensic detail (why 2.0.20+ and libwayland
+>= 1.18 are refused) is at autobleem-main `docs/history/launcher-build.md` and `docs/decisions.md`, and the
+build/patches at `autobleem_sdl`'s own README. Declared stable: stay on it until a wall needs another
+backport. SDL2's ABI is backward compatible, so a newer libSDL2 in the archive never needs a rebuild of the
+programs.
 
 ### The console's power off (2026-09-22)
 
