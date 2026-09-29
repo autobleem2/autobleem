@@ -193,6 +193,30 @@ void GuiEditor::moveSelection(int step) {
     }
 }
 
+// the option row at `index` (a heading is no place for the cursor): the next one in `dir`'s direction, else
+// the nearest the other way
+void GuiEditor::selectNear(int index, int dir) {
+    const int size = static_cast<int>(rows.size());
+    index = max(0, min(index, size - 1));
+    for (int j = index; j >= 0 && j < size; j += dir) {
+        if (rows[j].opt >= 0) {
+            selOption = rows[j].opt;
+            return;
+        }
+    }
+    for (int j = index; j >= 0 && j < size; j -= dir) {
+        if (rows[j].opt >= 0) {
+            selOption = rows[j].opt;
+            return;
+        }
+    }
+}
+
+void GuiEditor::pageSelection(int dir) {
+    const int fit = gui->classicRowsThatFit(gui->assets().themeFont);
+    selectNear(selectedRow() + dir * fit, dir);
+}
+
 //*******************************
 // GuiEditor::unlockSettings
 //*******************************
@@ -398,7 +422,8 @@ void GuiEditor::render() {
     }
     gui->renderScrollMarkers(firstVisible > 0, firstVisible + fit < total);
 
-    string guiMenu = selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
+    string guiMenu = "|@L1|/|@R1| " + _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   ";
+    guiMenu += selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
     if (!internal) {
         guiMenu += "  |@S| " + _("Change memory card") + " ";
         if (gameIni.values["memcard"] == "SONY") {
@@ -444,6 +469,17 @@ void GuiEditor::loop() {
                 break;
 
             case Event::Type::ButtonDown:
+                // L1/R1 the first and last row, L2/R2 a page (the cursor only ever rests on an option row)
+                if (e.button == Button::L1 || e.button == Button::R1 || e.button == Button::L2 ||
+                    e.button == Button::R2) {
+                    app.audio().cursor.play();
+                    const bool down = e.button == Button::R1 || e.button == Button::R2;
+                    if (e.button == Button::L1 || e.button == Button::R1)
+                        selectNear(down ? static_cast<int>(rows.size()) - 1 : 0, down ? -1 : 1);
+                    else
+                        pageSelection(down ? 1 : -1);
+                    break;
+                }
                 if (!internal) {
                     if (gameIni.values["memcard"] == "SONY") {
                         if (e.button == Button::Start) {

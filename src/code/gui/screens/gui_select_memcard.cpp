@@ -2,6 +2,7 @@
 // Created by screemer on 2019-01-25.
 //
 
+#include <algorithm>
 #include "gui_select_memcard.h"
 
 #include <string>
@@ -87,8 +88,9 @@ void GuiSelectMemcard::render() {
     }
     gui->renderScrollMarkers(firstVisible > 0, lastVisible < static_cast<int>(cards.size()));
 
-    gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L2|/|@R2| " +
-                      _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");
+    gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1|/|@R1| " +
+                      _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@X| " + _("Select") + "  |@O| " +
+                      _("Cancel") + "|");
     renderer.present();
     if (compact)
         gui->clearCompactPanel();
@@ -158,6 +160,14 @@ void GuiSelectMemcard::loop() {
                         selected = 0;
                     }
                     firstVisible = selected;
+                    lastVisible = firstVisible + maxVisible;
+                    render();
+                };
+
+                if ((e.button == Button::L1 || e.button == Button::R1) && !cards.empty()) {
+                    app.audio().home_down.play(); // the first and the last card
+                    selected = e.button == Button::L1 ? 0 : static_cast<int>(cards.size()) - 1;
+                    firstVisible = std::max(0, std::min(selected, static_cast<int>(cards.size()) - maxVisible));
                     lastVisible = firstVisible + maxVisible;
                     render();
                 };
