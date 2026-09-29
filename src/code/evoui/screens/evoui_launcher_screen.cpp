@@ -13,7 +13,6 @@
 #include "evoui_set_picker.h"
 #include "gui/panel_style.h"
 #include <cassert>
-#include <cmath>
 #include <memory>
 #include <vector>
 #include <ableem/engine/log.h>
@@ -700,50 +699,14 @@ void GuiLauncher::refreshPlaylistNames() {
 }
 
 //*******************************
-// playOutlineOf
-//*******************************
-// one image's dark outline (TextRenderer's Shadow): its shape drawn in black at alpha 150 at each of the eight
-// 1 px offsets and once 2 px down-right, composited as the text's halo is. The texture is the image plus 2 px on
-// each side and 1 more down-right; the image sits at (2, 2) in it.
-static ableem::Texture playOutlineOf(ableem::Renderer &renderer, const ableem::Image &img) {
-    if (!img.valid())
-        return ableem::Texture();
-    const ableem::Size s = img.size();
-    const int w = s.w + 5, h = s.h + 5;
-    std::vector<float> shape(static_cast<size_t>(w * h), 0.0f);
-    for (int y = 0; y < s.h; y++)
-        for (int x = 0; x < s.w; x++)
-            shape[static_cast<size_t>((y + 2) * w + x + 2)] = img.pixel(x, y).a / 255.0f;
-
-    static const int offsets[9][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
-    const float passAlpha = 150.0f / 255.0f;
-    ableem::Texture tex = ableem::Texture::createStreaming(renderer, w, h);
-    if (!tex.valid())
-        return tex;
-    tex.setBlendMode(ableem::BlendMode::Blend);
-    {
-        ableem::PixelLock px = tex.lock();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++) {
-                float clear = 1.0f;
-                for (const auto &o : offsets) {
-                    const int sx = x - o[0], sy = y - o[1];
-                    if (sx >= 0 && sy >= 0 && sx < w && sy < h)
-                        clear *= 1.0f - passAlpha * shape[static_cast<size_t>(sy * w + sx)];
-                }
-                px.set(x, y, ableem::Color(0, 0, 0, static_cast<unsigned char>(std::lround((1.0f - clear) * 255))));
-            }
-    }
-    return tex;
-}
-
-//*******************************
 // GuiLauncher::makePlayOutline
 //*******************************
 // what keeps Play readable over the covers' reflections: the dark outline the launcher's text has around Play's
 // two images, following their transparency, the images drawn over it. Made once per theme on the CPU - one
 // texture for the button, one for the text, which the frame draws at the text's pulse so the outline zooms with
-// it. (A soft shadow and a coloured rim came first - a dead end, the owner, 2026-09-29.)
+// it. (A soft shadow and a coloured rim came first - a dead end, the owner, 2026-09-29.) The outline itself is
+// PanelStyle::outlineOf (moved to autobleem-core, UIREV-2/UIREV-27) - the same halo the d-pad hint arrows and
+// the meta icons now draw behind themselves, so there is one copy of this logic in the whole codebase.
 void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
     playOutline = ableem::Texture();
     playTextOutline = ableem::Texture();
@@ -751,10 +714,10 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
         return; // the theme said no to the text's halo (launcher.textShadow false) - Play's outline goes with it
     const ableem::Image button = ableem::Image::loadFile(theme.playButton);
     const ableem::Image text = ableem::Image::loadFile(theme.playText);
-    playOutline = playOutlineOf(renderer, button);
+    playOutline = PanelStyle::outlineOf(renderer, button);
     if (playOutline.valid())
         playOutlineRect = ableem::Rect(playButton->x - 2, playButton->y - 2, button.size().w + 5, button.size().h + 5);
-    playTextOutline = playOutlineOf(renderer, text);
+    playTextOutline = PanelStyle::outlineOf(renderer, text);
     if (playTextOutline.valid()) {
         playTextOutlineW = text.size().w + 5;
         playTextOutlineH = text.size().h + 5;

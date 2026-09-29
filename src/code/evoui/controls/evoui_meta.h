@@ -37,6 +37,20 @@ public:
     ableem::Texture lightgunTex;  // one player
     ableem::Texture lightgun2Tex; // two or more
 
+    // each icon's dark halo (UIREV-27, PanelStyle::outlineOf - the same one Play and the d-pad hint arrows
+    // use), so the icons read on a light theme's background too
+    ableem::Texture internalOnOutline;
+    ableem::Texture internalOffOutline;
+    ableem::Texture hdOnOutline;
+    ableem::Texture hdOffOutline;
+    ableem::Texture lockOnOutline;
+    ableem::Texture lockOffOutline;
+    ableem::Texture cdOutline;
+    ableem::Texture favoriteOutline;
+    ableem::Texture raOutline;
+    ableem::Texture lightgunOutline;
+    ableem::Texture lightgun2Outline;
+
     int nextPos = 0;
     int prevPos = 0;
     long animEndTime = 0;
