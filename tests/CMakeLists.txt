@@ -5,6 +5,11 @@ include(${CMAKE_SOURCE_DIR}/autobleem-core/tests/harness.cmake)
 # abpad, the virtual gamepad for Apps (apps/abpad)
 ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
 
+# GuiSetPicker's row/panel layout formulas (evoui_set_picker.cpp) - UIREV-4, report.md P1/P2. A local model,
+# the same way autobleem-core's test_menu_base_navigation.cpp/test_panel_style_footer.cpp are: the screen
+# itself needs a live Gui/ThemeAssets to render, which no test host here builds.
+ab_add_test(test_set_picker_layout screens/test_set_picker_layout.cpp)
+
 # rc/app_resolve.sh, the shell copy of AppManifest's rule, held to the same answers
 ab_add_test(test_app_resolve rc/test_app_resolve.cpp)
 target_compile_definitions(test_app_resolve PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc"

@@ -212,8 +212,14 @@ void GuiSetPicker::render() {
 
     const int rows = visibleRows();
     const Tab &t = tabs[tab];
+    // the panel's height (so its position, since it is centred) is sized from the tab with the most rows,
+    // never the current tab alone - switching to a shorter tab (or an empty one) used to shrink the panel
+    // and re-centre it, jumping the tab strip (report.md P2)
+    int maxShown = 1;
+    for (const Tab &tb : tabs)
+        maxShown = max(maxShown, min(rows, static_cast<int>(tb.entries.size())));
     const int shown = max(1, min(rows, static_cast<int>(t.entries.size())));
-    const int panelHeight = TabsHeight + shown * RowHeight + FooterHeight;
+    const int panelHeight = TabsHeight + maxShown * RowHeight + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
     style.sheet(renderer, panel);
 
@@ -255,11 +261,15 @@ void GuiSetPicker::render() {
         if (i == t.selected)
             style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         const int x = panel.x + RowInset + 8 + e.indent * 24;
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], e.title, x, rowY + 8,
-                                         i == t.selected ? style.text : style.secondary, XALIGN_LEFT);
+        // the count is drawn to the right edge first, so the title has its real available width to elide
+        // into - a long title (e.g. a RetroArch playlist name) used to run under it (report.md P1)
         const int w = gui->text().textWidth(fonts[FONT_15_BOLD], e.detail);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, panel.x + panel.w - RowInset - w, rowY + 14,
-                                         style.secondary, XALIGN_LEFT);
+        const int detailX = panel.x + panel.w - RowInset - w;
+        const string title = gui->text().elide(fonts[FONT_22_MED], e.title, detailX - x - 20);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, x, rowY + 8,
+                                         i == t.selected ? style.text : style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, detailX, rowY + 14, style.secondary,
+                                         XALIGN_LEFT);
         rowY += RowHeight;
     }
     if (t.entries.empty())
