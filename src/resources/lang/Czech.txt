@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -11,6 +11,7 @@ Address=Adresa
 All apps=Všechny aplikace
 All games=Všechny hry
 Always=Vždy
+app=aplikace
 Applying settings...=Použití nastavení...
 Apps=Aplikace
 apps=aplikace
@@ -152,6 +153,7 @@ Free space=Volné místo
 Full=Plná
 Full screen=Celá obrazovka
 Game=Hra
+game=hry
 Game data=Data her
 Game failed to verify:=Ověření hry selhalo:
 Game file not found=Soubor hry nenalezen
@@ -249,7 +251,7 @@ Off=Vypnuto
 OK=OK
 ON=ZAP
 On=Zapnuto
-OOPS! Game crashed. Resume point not available.=Oh! Hra spadla. Bod obnovy není k dispozícii.
+Oops! Game crashed. Resume point not available.=Oh! Hra spadla. Bod obnovy není k dispozícii.
 Open RetroArch menu=Otevřít nabídku RetroArch
 Open:=Otevřít:
 Operating system=Operační systém
@@ -269,6 +271,7 @@ Player=Hráč
 Player 1=Hráč 1
 Player 2=Hráč 2
 Players=Hráči
+Players:=Hráči:
 PlayStation=PlayStation
 Please confirm=Potvrďte prosím
 Please wait ... deleting=Prosím čekejte ... mazání
@@ -373,7 +376,7 @@ SPREAD SHOT=ROZPTÝLENÁ PALBA
 Spu interpolation:=Interpolace zvuku:
 Start=Start
 Starting the installer...=Spouštění instalátoru...
-Startup=Spouštěcí skript
+Startup:=Spouštěcí skript
 stopped AutoBleem and was disabled=zastavilo AutoBleem a bylo vypnuto
 Storage=Úložiště
 Store=Store

@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -11,6 +11,7 @@ Address=Osoite
 All apps=Kaikki sovellukset
 All games=Kaikki pelit
 Always=Aina
+app=sovellukset
 Applying settings...=Otetaan asetukset käyttöön...
 Apps=Sovellukset
 apps=sovellukset
@@ -152,6 +153,7 @@ Free space=Vapaa tila
 Full=Täynnä
 Full screen=Koko näyttö
 Game=Peli
+game=pelit
 Game data=Pelien tiedot
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game file not found=Pelitiedostoa ei löytynyt
@@ -249,7 +251,7 @@ Off=Pois
 OK=OK
 ON=PÄÄLLÄ
 On=Päällä
-OOPS! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
+Oops! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
 Open RetroArch menu=Avaa RetroArch valikko
 Open:=Avaa:
 Operating system=Käyttöjärjestelmä
@@ -269,6 +271,7 @@ Player=Pelaaja
 Player 1=Pelaaja 1
 Player 2=Pelaaja 2
 Players=Pelaajat
+Players:=Pelaajat:
 PlayStation=PlayStation
 Please confirm=Ole hyvä ja vahvista
 Please wait ... deleting=Odota hetki ... poistetaan
@@ -373,7 +376,7 @@ SPREAD SHOT=HAJALAUKAUS
 Spu interpolation:=SPU-interpolointi:
 Start=Käynnistä
 Starting the installer...=Käynnistetään asennusohjelmaa...
-Startup=Käynnistys
+Startup:=Käynnistys
 stopped AutoBleem and was disabled=pysäytti AutoBleemin ja poistettiin käytöstä
 Storage=Tallennustila
 Store=Store

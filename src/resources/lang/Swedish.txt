@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -11,6 +11,7 @@ Address=Adress
 All apps=Alla appar
 All games=Alla spel
 Always=Alltid
+app=appar
 Applying settings...=Tillämpar inställningar...
 Apps=Appar
 apps=appar
@@ -152,6 +153,7 @@ Free space=Ledigt utrymme
 Full=Fulladdat
 Full screen=Helskärm
 Game=Spel
+game=spel
 Game data=Speldata
 Game failed to verify:=Spelverifiering misslyckades:
 Game file not found=Spelfilen hittades inte
@@ -249,7 +251,7 @@ Off=Av
 OK=OK
 ON=PÅ
 On=På
-OOPS! Game crashed. Resume point not available.=Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
+Oops! Game crashed. Resume point not available.=Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
 Open RetroArch menu=Öppna RetroArch-meny
 Open:=Öppna:
 Operating system=Operativsystem
@@ -269,6 +271,7 @@ Player=Spelare
 Player 1=Spelare 1
 Player 2=Spelare 2
 Players=Spelare
+Players:=Spelare:
 PlayStation=PlayStation
 Please confirm=Vänligen bekräfta
 Please wait ... deleting=Vänligen vänta ... raderar
@@ -373,7 +376,7 @@ SPREAD SHOT=SPRIDNINGSSKOTT
 Spu interpolation:=SPU-Interpolation:
 Start=Starta
 Starting the installer...=Startar installationsprogrammet...
-Startup=Start
+Startup:=Start
 stopped AutoBleem and was disabled=stoppade AutoBleem och inaktiverades
 Storage=Lagring
 Store=Store

@@ -2,6 +2,7 @@
 // GuiSetPicker: the launcher's "which games" screen. See the header.
 //
 #include "evoui_set_picker.h"
+#include "../evoui_plural.h"
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
@@ -70,7 +71,7 @@ void GuiSetPicker::init() {
 // GuiSetPicker::buildTabs
 //*******************************
 void GuiSetPicker::buildTabs() {
-    auto games = [](size_t n) { return to_string(n) + " " + _("games"); };
+    auto games = [](size_t n) { return pluralGames(n); };
     const GameQueryService::SetCounts &c = *counts;
 
     // PlayStation: all / internal / the folders / favorites / history / light-gun games
@@ -108,7 +109,7 @@ void GuiSetPicker::buildTabs() {
     // docs/archive/app-format-plan.md's Category=)
     Tab &apps = tabs[2];
     apps.entries.clear();
-    auto appsCount = [](size_t n) { return to_string(n) + " " + _("apps"); };
+    auto appsCount = [](size_t n) { return pluralApps(n); };
     apps.entries.push_back(
         {_("All apps"), appsCount(c.apps), 0, GameSet::Apps, Ps1SelectState::AllGames, 0, "", AppCategory::All});
     for (const auto &cat : c.appCategories) {

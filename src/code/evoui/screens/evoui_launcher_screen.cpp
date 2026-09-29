@@ -4,6 +4,7 @@
 //
 
 #include "evoui_launcher.h"
+#include "../evoui_plural.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
 #include "gui/screens/gui_confirm.h"
@@ -257,7 +258,7 @@ void GuiLauncher::showSetName() {
     assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
     assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
-    string numGames = " (" + to_string(carousel.games.size()) + " " + _("games") + ")";
+    string numGames = " (" + pluralGames(carousel.games.size()) + ")";
 
     long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
     if (timeout <= 0)
@@ -265,19 +266,24 @@ void GuiLauncher::showSetName() {
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
+        // every entry above carries its own trailing space (needed when a directory name follows); drop
+        // it here so it doesn't double up with numGames' own leading space (was "All Games  (21 games)")
+        if (!name.empty() && name.back() == ' ')
+            name.pop_back();
         if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
-            name += selection.usbGameDirName;
+            name += " " + selection.usbGameDirName;
         }
         notificationLines[0].setText(name + numGames, timeout);
     } else if (selection.set == GameSet::RetroArch) {
         string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
-        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
+        // numGames already starts with a space - no extra " " here (was a double space before the count)
+        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + numGames, timeout);
     } else if (selection.set == GameSet::Apps) {
         // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
         string name = _("Showing: Apps");
         if (selection.appCategory != AppCategory::All)
             name += ": " + appCategoryLabel(selection.appCategory);
-        string numApps = " (" + to_string(carousel.games.size()) + " " + _("apps") + ")";
+        string numApps = " (" + pluralApps(carousel.games.size()) + ")";
         notificationLines[0].setText(name + numApps, timeout);
     }
 }
@@ -634,7 +640,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
-        string text = to_string(update.finishedGameCount) + " " + _("games");
+        string text = pluralGames(static_cast<size_t>(update.finishedGameCount));
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
         if (update.finishedRomCount > 0)
@@ -915,7 +921,7 @@ void GuiLauncher::loadAssets() {
                 sselector->visible = true;
                 state = LauncherScreenState::Resume;
             } else {
-                notificationLines[1].setText(_("OOPS! Game crashed. Resume point not available."),
+                notificationLines[1].setText(_("Oops! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
             }
         } else {

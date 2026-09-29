@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -11,6 +11,7 @@ Address=Adreça
 All apps=Totas las aplicacions
 All games=Totes los jòcs
 Always=Totjorn
+app=aplicacions
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions
 apps=aplicacions
@@ -152,6 +153,7 @@ Free space=Espaci liure
 Full=Plena
 Full screen=Ecran complet
 Game=Jòc
+game=jòcs
 Game data=Donadas dels jòcs
 Game failed to verify:=Verificacion del jòc fracassada :
 Game file not found=Fichièr del jòc introbable
@@ -249,7 +251,7 @@ Off=Desactivat
 OK=OK
 ON=ACTIVAT
 On=Activat
-OOPS! Game crashed. Resume point not available.=Ops ! Lo jòc a agut un problèma. Lo punt de represa es pas disponible.
+Oops! Game crashed. Resume point not available.=Ops ! Lo jòc a agut un problèma. Lo punt de represa es pas disponible.
 Open RetroArch menu=Dobrir lo menú RetroArch
 Open:=Dobrir :
 Operating system=Sistèma operatiu
@@ -269,6 +271,7 @@ Player=Jogaire
 Player 1=Jogaire 1
 Player 2=Jogaire 2
 Players=Jogaires
+Players:=Jogaires:
 PlayStation=PlayStation
 Please confirm=Volgatz confirmar
 Please wait ... deleting=Esperatz ... supression en cors
@@ -373,7 +376,7 @@ SPREAD SHOT=TIR ESPARPALHAT
 Spu interpolation:=Interpolacion Spu :
 Start=Aviar
 Starting the installer...=Aviada de l'installador...
-Startup=Aviada
+Startup:=Aviada
 stopped AutoBleem and was disabled=a arrestat AutoBleem e es estada desactivada
 Storage=Emmagazinatge
 Store=Store

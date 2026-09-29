@@ -38,11 +38,13 @@ void GuiAppStart::init() {
     pane.facts.clear();
     if (!game->publisher.empty())
         pane.facts.emplace_back(_("Published by:"), game->publisher);
+    // "." (getFileNameFromPath left with nothing to split off) means the folder isn't really set - same
+    // as the empty case just above, skip the row instead of showing a meaningless value
     const string folder = DirEntry::getFileNameFromPath(DirEntry::removeSeparatorFromEndOfPath(game->folder));
-    if (!folder.empty())
+    if (!folder.empty() && folder != ".")
         pane.facts.emplace_back(_("Folder:"), folder);
     if (!game->startup.empty())
-        pane.facts.emplace_back(_("Startup"), DirEntry::getFileNameFromPath(game->startup));
+        pane.facts.emplace_back(_("Startup:"), DirEntry::getFileNameFromPath(game->startup));
 }
 
 //*******************************

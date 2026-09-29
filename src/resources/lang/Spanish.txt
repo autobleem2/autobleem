@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -11,6 +11,7 @@ Address=Dirección
 All apps=Todas las Aplicaciones
 All games=Todos los Juegos
 Always=Siempre
+app=aplicaciones
 Applying settings...=Aplicando los ajustes...
 Apps=Aplicaciones
 apps=aplicaciones
@@ -152,6 +153,7 @@ Free space=Espacio libre
 Full=Llena
 Full screen=Pantalla completa
 Game=Juego
+game=juegos
 Game data=Datos de juegos
 Game failed to verify:=El juego no se pudo verificar:
 Game file not found=No se encontró el archivo del juego
@@ -249,7 +251,7 @@ Off=Desactivado
 OK=Aceptar
 ON=ACTIVADO
 On=Activado
-OOPS! Game crashed. Resume point not available.=OOPS! Juego dañado. Punto de resumen no disponible.
+Oops! Game crashed. Resume point not available.=OOPS! Juego dañado. Punto de resumen no disponible.
 Open RetroArch menu=Abre Menu de Retoarch
 Open:=Abrir:
 Operating system=Sistema operativo
@@ -269,6 +271,7 @@ Player=Jugador
 Player 1=Jugador 1
 Player 2=Jugador 2
 Players=Jugadores
+Players:=Jugadores:
 PlayStation=PlayStation
 Please confirm=Por favor confirma
 Please wait ... deleting=Por favor espera ... borrando
@@ -373,7 +376,7 @@ SPREAD SHOT=DISPARO MULTIPLE
 Spu interpolation:=Spu Interpolation:
 Start=Iniciar
 Starting the installer...=Iniciando el instalador...
-Startup=Inicio
+Startup:=Inicio
 stopped AutoBleem and was disabled=detuvo AutoBleem y se desactivó
 Storage=Almacenamiento
 Store=Store

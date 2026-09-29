@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -11,6 +11,7 @@ Address=Address
 All apps=All apps
 All games=All games
 Always=Always
+app=app
 Applying settings...=Applying settings...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Free space=Free space
 Full=Full
 Full screen=Full screen
 Game=Game
+game=game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game file not found=Game file not found
@@ -249,7 +251,7 @@ Off=Off
 OK=OK
 ON=ON
 On=On
-OOPS! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
+Oops! Game crashed. Resume point not available.=Oops! Game crashed. Resume point not available.
 Open RetroArch menu=Open RetroArch menu
 Open:=Open:
 Operating system=Operating system
@@ -269,6 +271,7 @@ Player=Player
 Player 1=Player 1
 Player 2=Player 2
 Players=Players
+Players:=Players:
 PlayStation=PlayStation
 Please confirm=Please confirm
 Please wait ... deleting=Please wait ... deleting
@@ -373,7 +376,7 @@ SPREAD SHOT=SPREAD SHOT
 Spu interpolation:=Spu interpolation:
 Start=Start
 Starting the installer...=Starting the installer...
-Startup=Startup
+Startup:=Startup:
 stopped AutoBleem and was disabled=stopped AutoBleem and was disabled
 Storage=Storage
 Store=Store

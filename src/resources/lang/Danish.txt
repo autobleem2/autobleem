@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -11,6 +11,7 @@ Address=Adresse
 All apps=Alle apps
 All games=Alle spil
 Always=Altid
+app=apps
 Applying settings...=Anvender indstillinger...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Free space=Ledig plads
 Full=Fuld
 Full screen=Fuld skærm
 Game=Spil
+game=spil
 Game data=Spildata
 Game failed to verify:=Spilverificering mislykkedes:
 Game file not found=Spilfilen blev ikke fundet
@@ -249,7 +251,7 @@ Off=Fra
 OK=OK
 ON=TIL
 On=Til
-OOPS! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
+Oops! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
 Open RetroArch menu=Åbn RetroArch-menu
 Open:=Åbn:
 Operating system=Styresystem
@@ -269,6 +271,7 @@ Player=Spiller
 Player 1=Spiller 1
 Player 2=Spiller 2
 Players=Spillere
+Players:=Spillere:
 PlayStation=PlayStation
 Please confirm=Bekræft venligst
 Please wait ... deleting=Vent venligst ... sletter
@@ -373,7 +376,7 @@ SPREAD SHOT=SPREDNINGSSKUD
 Spu interpolation:=SPU-interpolation:
 Start=Start
 Starting the installer...=Starter installationsprogrammet...
-Startup=Start
+Startup:=Start
 stopped AutoBleem and was disabled=stoppede AutoBleem og blev deaktiveret
 Storage=Lager
 Store=Store

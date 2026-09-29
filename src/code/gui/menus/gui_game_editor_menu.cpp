@@ -339,8 +339,13 @@ void GuiEditor::render() {
     pane.cover = cover;
     pane.facts.clear();
     pane.facts.emplace_back(_("Published by:"), gameIni.values["publisher"]);
-    pane.facts.emplace_back(_("Year:"), gameIni.values["year"]);
-    pane.facts.emplace_back(_("Players"), gameIni.values["players"]);
+    // year 0 and a players count of 0 both mean "unknown" here, not a real value - skip the row rather
+    // than show a fact that reads as broken; pane.render draws whatever facts are in the vector, so
+    // leaving one out closes the gap by itself
+    if (!gameIni.values["year"].empty() && gameIni.values["year"] != "0")
+        pane.facts.emplace_back(_("Year:"), gameIni.values["year"]);
+    if (!gameIni.values["players"].empty() && gameIni.values["players"] != "0")
+        pane.facts.emplace_back(_("Players:"), gameIni.values["players"]);
     pane.facts.emplace_back(_("Folder:"), internal ? gameData->folder : gameIni.entry);
     pane.facts.emplace_back(_("Memory Card:"), gameIni.values["memcard"] == "SONY"
                                                    ? string(_("Internal"))

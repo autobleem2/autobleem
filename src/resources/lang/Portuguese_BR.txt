@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 425
+# Untranslated: 1 / Total: 428
 
 2x (integer)=2x (inteira)
 4:3 (integer)=4:3 (inteira)
@@ -11,6 +11,7 @@ Address=Endereço
 All apps=Todos os Apps
 All games=Todos os Jogos
 Always=Sempre
+app=apps
 Applying settings...=Aplicando as configurações...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Free space=Espaço livre
 Full=Cheia
 Full screen=Tela cheia
 Game=Jogo
+game=jogos
 Game data=Dados dos jogos
 Game failed to verify:=Falha ao verificar o jogo:
 Game file not found=Arquivo do jogo não encontrado
@@ -249,7 +251,7 @@ Off=Desligado
 OK=OK
 ON=LIGADO
 On=Ligado
-OOPS! Game crashed. Resume point not available.=OPA! O jogo travou. Não é possível retomar.
+Oops! Game crashed. Resume point not available.=OPA! O jogo travou. Não é possível retomar.
 Open RetroArch menu=Abrir Menu do RetroArch
 Open:=Abrir:
 Operating system=Sistema operacional
@@ -269,6 +271,7 @@ Player=Jogador
 Player 1=Jogador 1
 Player 2=Jogador 2
 Players=Jogadores
+Players:=Jogadores:
 PlayStation=PlayStation
 Please confirm=Favor Confirmar
 Please wait ... deleting=Aguarde ... excluindo
@@ -373,7 +376,7 @@ SPREAD SHOT=TIRO EM LEQUE
 Spu interpolation:=Interpolação Spu:
 Start=Iniciar
 Starting the installer...=Iniciando o instalador...
-Startup=Inicialização
+Startup:=Inicialização
 stopped AutoBleem and was disabled=parou o AutoBleem e foi desativada
 Storage=Armazenamento
 Store=Store
