@@ -1157,12 +1157,20 @@ void GuiLauncher::render() {
     shadow.enabled = textShadow;
     gui->text().setShadow(shadow);
 
+    // the background (and the footer, which the row never reaches) behind the row, and everything else -
+    // Play, the game's details, the menu's band - in front of it: the covers' reflections and the selected
+    // cover's glow reach below the row, under Play and beside the details, and must not be drawn over them
+    auto behindRow = [](const PsObj *obj) { return obj->name == "background" || obj->name == "footer"; };
     for (auto &obj : staticElements) {
-        if (!benchSkips(obj->name))
+        if (behindRow(obj.get()) && !benchSkips(obj->name))
             obj->render();
     }
     if (!benchSkips("carousel"))
         carousel.render();
+    for (auto &obj : staticElements) {
+        if (!behindRow(obj.get()) && !benchSkips(obj->name))
+            obj->render();
+    }
     renderSnap();
 
     if (!benchSkips("menu"))

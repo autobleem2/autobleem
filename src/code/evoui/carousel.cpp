@@ -683,7 +683,7 @@ void Carousel::drawGlow(long now) {
         renderer.setDrawColor(ableem::Color(0, 0, 0, 0));
         renderer.fillRect();
         renderer.setBlendMode(ableem::BlendMode::Blend);
-        renderer.setDrawColor(ableem::Color(255, 255, 255, 22));
+        renderer.setDrawColor(ableem::Color(255, 255, 255, 12));
         for (int i = 0; i < rings; i++) {
             const int inset = i * (size / 2) / rings;
             const ableem::Rect r(inset, inset, size - 2 * inset, size - 2 * inset);
@@ -697,12 +697,12 @@ void Carousel::drawGlow(long now) {
         selection.set ? ableem::Color(selection.r, selection.g, selection.b) : ableem::Color(255, 255, 255);
     // breathing, 0.8..1 every 5.6 s
     const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
-    const float k = spot.strength * pulse;
+    const float k = 0.55f * spot.strength * pulse; // a hint of light, not a lamp (the owner's look check)
     // premultiplied: the colour and the alpha both scale, or the light would not fade with them
     glowTex_.setColorMod(ableem::Color(static_cast<unsigned char>(light.r * k), static_cast<unsigned char>(light.g * k),
                                        static_cast<unsigned char>(light.b * k)));
     glowTex_.setAlphaMod(static_cast<unsigned char>(255 * k));
-    const float margin = 54.0f * spot.size / 222.0f;
+    const float margin = 44.0f * spot.size / 222.0f;
     const float side = spot.size + 2 * margin;
     renderer.copy(glowTex_, nullptr, ableem::FRect(spot.cx - side / 2, spot.cy - side / 2, side, side));
 }
