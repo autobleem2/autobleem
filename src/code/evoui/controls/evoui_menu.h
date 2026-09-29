@@ -47,6 +47,9 @@ public:
     // which of the four icons are shown, left to right - always a prefix: settings alone for an App,
     // settings + game editor for a RetroArch game, all four for a PS1 game (GuiLauncher::showOptions)
     bool enabled[4] = {true, true, true, true};
+    // the Resume icon (index 3) is still selectable with no resume points, just greyed - so the cursor can
+    // pass it and Cross can tell the player why nothing happens (GuiLauncher::showOptions)
+    bool resumeAvailable = true;
     int lastEnabled() const {
         int last = 0;
         for (int i = 0; i < 4; i++)

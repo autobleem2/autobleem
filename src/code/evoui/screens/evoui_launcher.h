@@ -366,6 +366,9 @@ public:
     // the options row for the selected game: every icon for a PS1 game, settings + game editor for a
     // RetroArch game, settings alone for an App or an empty carousel (was forceSettingsOnly/showAllOptions)
     void showOptions();
+    // any of the game's resume slots active (UIREV-13: greys the Resume icon and refuses opening the
+    // picker when this is false)
+    bool gameHasResumePoints(const PsGamePtr &game) const;
     // the selected game as the emulator sees it: a PS1 game, even from the Lightgun set
     bool selectedIsPs1() const;
     // the selected game is a PSN PS1 Classic still under its licence's DRM (the scan found it): it is not

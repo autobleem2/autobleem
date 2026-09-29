@@ -924,10 +924,11 @@ void GuiLauncher::loadAssets() {
                 notificationLines[1].setText(_("Oops! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
             }
-        } else {
+        } else if (app.session().emuMode == EmuMode::RetroArch) {
             notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
                                          DefaultShowingTimeout);
         }
+        // EmuMode::Launcher (an App): returning to the launcher isn't a "resume points" situation - nothing to say
     }
 
     // a crash's logs, which the rc scripts took from RAM to the stick (autobleem-main's
@@ -1391,6 +1392,19 @@ void GuiLauncher::settleEmptyRoster() {
 }
 
 //*******************************
+// GuiLauncher::gameHasResumePoints
+//*******************************
+bool GuiLauncher::gameHasResumePoints(const PsGamePtr &game) const {
+    if (game == nullptr || game->foreign)
+        return false;
+    for (int slot = 0; slot < ResumePointService::SlotCount; slot++) {
+        if (app.resumePoints().slotIsActive(*game, slot))
+            return true;
+    }
+    return false;
+}
+
+//*******************************
 // GuiLauncher::showOptions
 //*******************************
 void GuiLauncher::showOptions() {
@@ -1403,8 +1417,12 @@ void GuiLauncher::showOptions() {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
         }
     }
-    if (!enabled[3])
+    if (!enabled[3]) {
         menu->resume = ableem::Texture(); // no resume icon, no picture of another game's resume point
+        menu->resumeAvailable = true;
+    } else {
+        menu->resumeAvailable = gameHasResumePoints(carousel.games[carousel.selected]);
+    }
     bool same = true;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);

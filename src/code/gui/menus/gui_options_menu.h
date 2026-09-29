@@ -84,7 +84,7 @@ public:
 
     void fill();
 
-    std::string getTitle() override { return _("Configuration"); }
+    std::string getTitle() override { return _("Options"); }
     std::string getStatusLine() override;
 
     std::string valueText(const OptionsInfo &info, const std::string &value) override;

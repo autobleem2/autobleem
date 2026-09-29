@@ -10,10 +10,10 @@ using namespace std;
 
 string GuiOptions::getStatusLine() {
     auto id = lines[selected].id;
+    string hints = "|@L1|/|@R1| " + _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@O| " + _("Back");
     if (id == CFG_THEME || id == CFG_MUSIC)
-        return "|@O| " + _("Back") + "  " + "|@Start|   " + _("Random") + "|";
-    else
-        return "|@O| " + _("Back") + "|";
+        hints += "  |@Start| " + _("Random");
+    return hints + "|";
 }
 
 //*******************************
