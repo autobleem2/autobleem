@@ -52,12 +52,25 @@ const char *const NetworkEntry = "network";
 // groups in each (was Select cycling the sets and L2+Select opening a folder or playlist picker)
 void GuiLauncher::loop_chooseSet() {
     powerOffShift = false;
+    const long started = gui->platform().ticks();
+    const bool counted = !setCountsValid;
+    if (counted) {
+        setCounts = app.gameQuery().setCounts(raPlaylists);
+        setCountsValid = true;
+    }
+    const long countsDone = gui->platform().ticks();
+    if (setPickerIcons.empty())
+        setPickerIcons = GuiSetPicker::loadIcons(renderer);
     GuiSetPicker picker(*gui);
     picker.selection = selection;
     picker.raPlaylists = raPlaylists;
+    picker.counts = &setCounts;
+    picker.icons = setPickerIcons;
     renderer.captureNextFrame();
     render();
     picker.background = renderer.lastCapture();
+    PLOG_INFO << "Set picker: counts " << (counted ? to_string(countsDone - started) + " ms" : string("kept"))
+              << ", ready " << gui->platform().ticks() - started << " ms";
     picker.show();
     forgetHeldModifiers(); // reached with L2 held, maybe; its release went to the picker
     if (picker.cancelled)
@@ -92,8 +105,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     rememberSelection();
     menuVisible = false;
 
-    if (selectedIsPs1())
+    if (selectedIsPs1()) {
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
+        forgetSetCounts(); // Game History changed
+    }
 
     app.session().emuMode = EmuMode::Pcsx;
 
@@ -135,10 +150,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 //*******************************
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
-// the gear icon of the game's icon row: the Quick menu (it opened Options until 2026-09-26 - Options is the
-// System menu's alone now; the icon row is about the selected game, Options is global)
+// the gear icon of the game's icon row: Options, as it always was (the Quick menu had it from 2026-09-26 until
+// the owner took it back, 2026-09-29 - the Quick menu is d-pad Up's alone)
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
-    loop_openQuickMenu();
+    loop_openOptions();
 }
 
 //*******************************
@@ -151,7 +166,7 @@ void GuiLauncher::loop_openOptions() {
     Ps1SelectState lastPS1_SelectState = selection.ps1SelectState;
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
-    int lastGame = carousel.selected;
+    const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
     GuiOptions option(*gui);
     option.show();
     bool exitCode = option.exitCode;
@@ -171,10 +186,13 @@ void GuiLauncher::loop_openOptions() {
             selection.ps1SelectState = lastPS1_SelectState;
         selection.usbGameDirIndex = lastUSBGameDirIndex;
         selection.raPlaylistIndex = lastRAPlaylistIndex;
-        carousel.selected = lastGame;
         bool resetCarouselPosition = false;
 
         switchSet(selection.set, false);
+        // back on the game the row was on (Options may have re-sorted it); gone -> the first game, as setGames left it
+        const int found = findGame(lastGame);
+        if (found != -1)
+            carousel.selected = found;
         showSetName();
 
         if (resetCarouselPosition) {
@@ -227,6 +245,7 @@ void GuiLauncher::loop_openOptions() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
+    forgetSetCounts(); // favourite, light gun, title may change
     if (carousel.games.empty()) {
         return;
     }
@@ -417,7 +436,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
             app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
-            arrow->visible = true;
+            arrow->visible = sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
             app.audio().resume.play();
             notificationLines[1].setText(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                                          DefaultShowingTimeout);
@@ -478,7 +497,7 @@ void GuiLauncher::loop_openSystemMenu() {
 //*******************************
 // GuiLauncher::loop_openQuickMenu
 //*******************************
-// the Quick menu (d-pad Up in the Games state, Up on an empty set, the gear icon of the game's icon row): the
+// the Quick menu (d-pad Up in the Games state, Up on an empty set; the gear icon is Options): the
 // few things a player reaches for from the carousel, and the System menu last (the owner, 2026-09-26)
 void GuiLauncher::loop_openQuickMenu() {
     app.audio().cursor.play();
@@ -540,6 +559,7 @@ string GuiLauncher::networkUnavailable(string *extension) {
 // what an item of the System or the Quick menu does - GuiSystemMenu only picks; every action below is what
 // ClassicMenuScreen used to do for the same item
 void GuiLauncher::runMenuAction(SystemMenuAction action) {
+    forgetSetCounts(); // Game Manager, the Store, an extension may change what there is
     switch (action) {
     case SystemMenuAction::None:
         break;

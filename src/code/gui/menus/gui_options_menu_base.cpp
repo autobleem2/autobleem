@@ -210,39 +210,37 @@ int GuiOptionsMenuBase::computeAmountTomoveBy(unsigned int totalSize) {
 //*******************************
 // void GuiOptionsMenuBase::doL1_Pressed()
 //*******************************
+// a jump of several values, one a press - no repeat on a held button: every jump on a row that reloads (the
+// theme, a font) is a load, and the repeat loop kept jumping while one ran
 void GuiOptionsMenuBase::doL1_Pressed() {
-    do {
-        int size = getChoicesSize();
-        if (size > 0) {
-            auto &info = lines[selected];
-            string value = app.config().inifile.values[info.iniKey];
-            int index = getCurrentOptionIndex(info, value) - computeAmountTomoveBy(size);
-            if (index < 0)
-                doFirstOption();
-            else
-                doOptionIndex(index);
-        }
-        render();
-    } while (fastForwardUntilAnotherEvent());
+    int size = getChoicesSize();
+    if (size > 0) {
+        auto &info = lines[selected];
+        string value = app.config().inifile.values[info.iniKey];
+        int index = getCurrentOptionIndex(info, value) - computeAmountTomoveBy(size);
+        if (index < 0)
+            doFirstOption();
+        else
+            doOptionIndex(index);
+    }
+    render();
 }
 
 //*******************************
 // void GuiOptionsMenuBase::doR1_Pressed()
 //*******************************
 void GuiOptionsMenuBase::doR1_Pressed() {
-    do {
-        int size = getChoicesSize();
-        if (size > 0) {
-            auto &info = lines[selected];
-            string value = app.config().inifile.values[info.iniKey];
-            int index = getCurrentOptionIndex(info, value) + computeAmountTomoveBy(size);
-            if (index >= size)
-                doLastOption();
-            else
-                doOptionIndex(index);
-        }
-        render();
-    } while (fastForwardUntilAnotherEvent());
+    int size = getChoicesSize();
+    if (size > 0) {
+        auto &info = lines[selected];
+        string value = app.config().inifile.values[info.iniKey];
+        int index = getCurrentOptionIndex(info, value) + computeAmountTomoveBy(size);
+        if (index >= size)
+            doLastOption();
+        else
+            doOptionIndex(index);
+    }
+    render();
 }
 
 //*******************************

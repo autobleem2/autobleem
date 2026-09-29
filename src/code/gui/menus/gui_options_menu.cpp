@@ -119,20 +119,26 @@ void GuiOptions::fill() {
 
     // the rows in groups, each under a heading row (CFG_HEADING - drawn as a band, skipped by the cursor)
     auto heading = [&](const string &name) { lines.emplace_back(CFG_HEADING, name); };
+    // the display mode first, then the look, then the set splash; the fonts under a heading of their own
+    // (the owner's order, 2026-09-29)
     heading(_("Interface"));
+    // the display mode (OutputMode) - the launcher's and the PS1 emulator's; only where the launcher is full
+    // screen (a dev host's window has no mode to change)
+    if (Gui::fullscreen())
+        lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
     lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
-    lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
+    // how long the "Showing: <set>" splash stays after a set change: 0 = not shown at all (valueText: Skip)
+    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Splash timeout:"), "showingtimeout", false, getTimeoutValues());
+
+    heading(_("Fonts"));
+    // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its
+    // name when a theme's own classic font stopped being read (2026-09-29)
+    lines.emplace_back(CFG_THEME_FONT, _("Use Default Font:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
-    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
-                       getTimeoutValues());
-    // the display mode (OutputMode) - the launcher's and the PS1 emulator's; only where the launcher is full
-    // screen (a dev host's window has no mode to change)
-    if (Gui::fullscreen())
-        lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
 
     heading(_("Sound"));
     lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
@@ -191,11 +197,13 @@ void GuiOptions::fill() {
 // GuiOptions::getFonts
 //*******************************
 vector<string> GuiOptions::getFonts() {
-    vector<string> list{"--"};
-    for (const string &dir : Fonts::userFontDirs(app.theme().path())) {
+    vector<string> list;
+    for (const string &dir : Fonts::userFontDirs()) {
         for (const DirEntry &entry : DirEntry::diru_FilesOnly(dir)) {
             string ext = ableem::toLowerCopy(DirEntry::getFileExtension(entry.name));
-            if ((ext == "ttf" || ext == "otf") && find(list.begin(), list.end(), entry.name) == list.end())
+            // an empty file is no font (one in retroarch/fonts crashed the screen that tried to draw with it)
+            if ((ext == "ttf" || ext == "otf") && DirEntry::fileSize(dir + sep + entry.name) > 0 &&
+                find(list.begin(), list.end(), entry.name) == list.end())
                 list.push_back(entry.name);
         }
     }
@@ -206,6 +214,7 @@ vector<string> GuiOptions::getFonts() {
 // GuiOptions::render
 //*******************************
 void GuiOptions::render() {
+    holdTick();
     renderer.clear();
     gui->renderBackground();
     gui->renderTextBar();
@@ -285,8 +294,8 @@ void GuiOptions::doKeyUp() {
 // GuiOptions::valueText
 //*******************************
 std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
-    if (info.id == CFG_FONT && (value.empty() || value == "--"))
-        return _("Theme Default");
+    if (info.id == CFG_SHOWINGTIMEOUT)
+        return Strings::toInt(value, 0) <= 0 ? _("Skip") : value + "s";
     if (info.id == CFG_DISPLAY) {
         const OutputMode mode = OutputMode::parse(value);
         if (!mode.isAuto())
@@ -321,9 +330,15 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
     if (id == CFG_PERFOVERLAY)
         renderer.setPerfOverlay(nextValue == "true"); // at once, from the next frame
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
-    const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || id == CFG_FONT;
+    const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || (id == CFG_FONT && userFontInUse());
     if (!theme && !fonts)
         return;
+    if (valueHold.held()) { // Left/Right still down: the row only shows the values, the release loads the last
+        pendingReload = true;
+        pendingReloadId = id;
+        pendingReloadValue = nextValue;
+        return;
+    }
     gui->beginBusy(_("Loading..."), [this]() { render(); });
     if (id == CFG_LANG)
         app.lang().load(Env::getPathToLangDir(), nextValue);
@@ -399,46 +414,71 @@ void GuiOptions::doCross_Pressed() {}
 //*******************************
 // GuiOptions::doJoyRight
 //*******************************
+// Left/Right on a row, the same on every row: one step at the press; held past valueHoldTiming()'s delay it goes
+// on, faster the longer it is held - a frame at a time from render() (holdTick), so the screen keeps drawing. A row
+// that reloads (the theme, the music, the language, a font) only shows the values while held; the one it
+// stops on is loaded once, at the release (a tap loads at its release too). The repeat used to be a loop
+// (fastForwardUntilAnotherEvent) with no delay before the first repeat - a slow tap took two steps - and such
+// rows could not repeat at all: a load per step, and a release lost during one kept it stepping
 void GuiOptions::doJoyRight() {
-    if (stepsOnePerPress()) {
-        doKeyRight();
-        render();
-        return;
-    }
-    do {
-        doKeyRight();
-        render();
-    } while (fastForwardUntilAnotherEvent());
-}
-
-//*******************************
-// GuiOptions::stepsOnePerPress
-//*******************************
-// A row whose every step reloads (the theme, the music, the language, a font) or is tried on the screen (the
-// display mode) moves one value a press, never on a held button: the repeat loop runs until the next pad
-// event, and a release lost during a reload kept it stepping through every value - and on the Pi 400 left
-// the launcher spinning with nothing on the screen
-bool GuiOptions::stepsOnePerPress() {
-    if (selected < 0 || selected >= static_cast<int>(lines.size()))
-        return false;
-    const int id = lines[selected].id;
-    return id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC || id == CFG_LANG ||
-           id == CFG_THEME_FONT || id == CFG_FONT || id == CFG_DISPLAY;
+    startHold(1);
 }
 
 //*******************************
 // GuiOptions::doJoyLeft
 //*******************************
 void GuiOptions::doJoyLeft() {
-    if (stepsOnePerPress()) {
-        doKeyLeft();
-        render();
+    startHold(-1);
+}
+
+//*******************************
+// GuiOptions::startHold / holdTick / doJoyCenter / endHold
+//*******************************
+void GuiOptions::startHold(int step) {
+    if (valueHold.held() && valueHold.step() == step)
+        return; // the same direction still down (another direction's event came and went)
+    endHold();
+    valueHold.press(step, gui->platform().ticks(), valueHoldTiming());
+    step > 0 ? doKeyRight() : doKeyLeft();
+    render();
+}
+
+void GuiOptions::holdTick() {
+    if (!valueHold.held() || holdTicking)
+        return;
+    ableem::Input &input = gui->input();
+    const bool stillDown = valueHold.step() > 0 ? input.dpadRight() : input.dpadLeft();
+    if (!stillDown || input.dpadUp() || input.dpadDown()) {
+        endHold(); // the release (or a move to another row) came while something else ran
         return;
     }
-    do {
-        doKeyLeft();
-        render();
-    } while (fastForwardUntilAnotherEvent());
+    holdTicking = true;
+    for (int steps = valueHold.due(gui->platform().ticks()); steps != 0; steps -= valueHold.step())
+        valueHold.step() > 0 ? doKeyRight() : doKeyLeft();
+    holdTicking = false;
+}
+
+void GuiOptions::doJoyCenter() {
+    endHold();
+}
+
+void GuiOptions::endHold() {
+    if (!valueHold.held())
+        return;
+    valueHold.release();
+    if (pendingReload) {
+        pendingReload = false;
+        reloadFor(pendingReloadId, pendingReloadValue);
+    }
+}
+
+//*******************************
+// GuiOptions::userFontInUse
+//*******************************
+// the Font row only matters with "Use Default Font" off: with it on, a change there is kept in config.ini for
+// later and nothing is reloaded
+bool GuiOptions::userFontInUse() {
+    return app.config().inifile.values["themefont"] != "true";
 }
 
 //*******************************

@@ -22,6 +22,7 @@
 #include "core/model/pad_assignment.h"
 #include "core/services/pad_battery.h"
 #include "core/model/pad_battery_match.h"
+#include "core/services/game_query.h"
 #include <vector>
 #include <memory>
 #include <set>
@@ -151,7 +152,7 @@ public:
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
     // the Quick menu: Re-Scan, Store, Network & Controllers, System menu... - d-pad Up in the Games state (and
-    // on an empty set), and the gear icon of the game's icon row
+    // on an empty set); the gear icon of the game's icon row is Options
     void loop_openQuickMenu();
     // what an item of either menu does
     void runMenuAction(SystemMenuAction action);
@@ -221,6 +222,23 @@ public:
     // or none) - what a scan finishing, or the Game Manager/Options changing the roster, needs: the list
     // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.
     void reloadGames();
+    // which game is highlighted, in a form that survives the list being queried again: a library game by id,
+    // a playlist game by its image path (its id is only its position) - and finding it in the new list
+    struct GameKey {
+        int gameId = -1;
+        bool internal = false;
+        bool foreign = false;
+        std::string imagePath;
+    };
+    GameKey selectedGameKey() const;
+    // the set picker's (Select) row counts and tab icons, kept between openings so Select opens at once;
+    // forgetSetCounts() whenever the library may have changed - a scan, an edit, a game played, a menu
+    // action (Game Manager, the Store, an extension), the screen reloaded
+    GameQueryService::SetCounts setCounts;
+    bool setCountsValid = false; // C++14 on the console: no std::optional
+    std::vector<ableem::Texture> setPickerIcons;
+    void forgetSetCounts() { setCountsValid = false; }
+    int findGame(const GameKey &key) const; // its index in carousel.games, -1 when it is gone
 
     NotificationLines notificationLines; // the messages, bubbles under the scan's at the top-right
 
@@ -256,10 +274,13 @@ public:
     PsSettingsBack *settingsBack = nullptr;
     PsObj *playButton = nullptr;
     PsZoomBtn *playText = nullptr;
-    // Play's halo: a soft shadow under it and a faint rim around it, made once per theme (makePlayHalo)
-    ableem::Texture playHalo;
-    ableem::Rect playHaloRect;
-    void makePlayHalo(const LauncherTheme &theme);
+    // Play's outline: the launcher text's dark halo around its images, made once per theme (makePlayOutline) -
+    // one for the button, one for the text that pulses with it (drawn at the text's zoom each frame)
+    ableem::Texture playOutline;
+    ableem::Rect playOutlineRect;
+    ableem::Texture playTextOutline;
+    int playTextOutlineW = 0, playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
+    void makePlayOutline(const LauncherTheme &theme);
     PsMeta *meta = nullptr;
 
     PsObj *background = nullptr;

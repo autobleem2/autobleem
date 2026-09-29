@@ -1,8 +1,8 @@
 //
 // GuiSystemMenu: the L2+R2 overlay - everything the old classic main menu offered (Re/Scan, RetroArch,
 // Memory Cards, Game Manager, Hardware Information, Options, About, Power Off), reached from the launcher
-// now that it is the only screen - and the Quick menu (d-pad Up in the Games state, or the gear icon of the
-// game's icon row): the few things a player reaches for from the carousel, the System menu last.
+// now that it is the only screen - and the Quick menu (d-pad Up in the Games state; the gear icon of the
+// game's icon row is Options): the few things a player reaches for from the carousel, the System menu last.
 //
 #pragma once
 

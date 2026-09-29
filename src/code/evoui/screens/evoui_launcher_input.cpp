@@ -35,8 +35,8 @@ void GuiLauncher::loop() {
         // back into this loop, which is the one time they need translating again
         if (headersLanguage != app.lang().currentLanguage()) {
             headersLanguage = app.lang().currentLanguage();
-            headers = {_("QUICK MENU"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Re-Scan, Store, Network and more"), _("Edit game parameters"),
+            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
                      _("Edit Memory Card information"), _("Resume game from saved state point")};
         }
 
@@ -670,7 +670,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;
-        arrow->visible = true;
+        arrow->visible = sselector->operation == OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
         sselector->cleanSaveStateImages();
         if (carousel.selectedIsValid())
             menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
@@ -741,6 +741,7 @@ void GuiLauncher::loop_squareButton_Pressed() {
             if (carousel.selectedIsValid()) {
                 app.session().runningGame = carousel.games[carousel.selected];
                 app.gameCatalog().recordGamePlayed(app.session().runningGame);
+                forgetSetCounts(); // Game History changed
             }
             app.session().resumePoint = -1;
             rememberSelection();

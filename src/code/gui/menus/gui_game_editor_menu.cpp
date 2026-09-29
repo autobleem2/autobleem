@@ -332,36 +332,17 @@ void GuiEditor::loop() {
             switch (e.type) {
             case Event::Type::DpadDown: /* Handle Joystick Motion */
             case Event::Type::DpadUp:
-
-                if (gui->input().dpadDown()) {
-                    do {
-                        app.audio().cursor.play();
-                        moveSelection(1);
-                        render();
-                    } while (fastForwardUntilAnotherEvent(120));
-                }
-                if (gui->input().dpadUp()) {
-                    do {
-                        app.audio().cursor.play();
-                        moveSelection(-1);
-                        render();
-                    } while (fastForwardUntilAnotherEvent(120));
-                }
-
-                if (gui->input().dpadRight()) {
-                    do {
-                        app.audio().cursor.play();
-                        processOptionChange(true);
-                        render();
-                    } while (fastForwardUntilAnotherEvent(80));
-                }
-                if (gui->input().dpadLeft()) {
-                    do {
-                        app.audio().cursor.play();
-                        processOptionChange(false);
-                        render();
-                    } while (fastForwardUntilAnotherEvent(80));
-                }
+                // one step at the press, repeats while held (holdTick, once a pass) - see startHold
+                if (gui->input().dpadDown())
+                    startHold(false, 1);
+                else if (gui->input().dpadUp())
+                    startHold(false, -1);
+                else if (gui->input().dpadRight())
+                    startHold(true, 1);
+                else if (gui->input().dpadLeft())
+                    startHold(true, -1);
+                else
+                    hold.release();
                 break;
 
             case Event::Type::ButtonDown:
@@ -449,6 +430,44 @@ void GuiEditor::loop() {
                 break;
             }
         }
+        holdTick();
         render();
     }
+}
+
+//*******************************
+// GuiEditor::startHold / holdTick / holdStep
+//*******************************
+// Up/Down move the cursor, Left/Right change the value: one step at the press, and held past the delay they
+// go on, faster the longer they are held (HoldRepeat), a pass of the loop at a time. The repeat used to be a
+// loop with no delay before the first repeat (80 ms on a value) - a tap only a little slow took two steps
+void GuiEditor::startHold(bool value, int step) {
+    if (hold.held() && holdOnValue == value && hold.step() == step)
+        return; // the same direction still down
+    holdOnValue = value;
+    hold.press(step, gui->platform().ticks(),
+               value ? HoldRepeat::Timing{400, 120, 1500, 60} : HoldRepeat::rows());
+    holdStep(step);
+}
+
+void GuiEditor::holdTick() {
+    if (!hold.held())
+        return;
+    ableem::Input &input = gui->input();
+    const bool stillDown = holdOnValue ? (hold.step() > 0 ? input.dpadRight() : input.dpadLeft())
+                                       : (hold.step() > 0 ? input.dpadDown() : input.dpadUp());
+    if (!stillDown) {
+        hold.release();
+        return;
+    }
+    for (int steps = hold.due(gui->platform().ticks()); steps != 0; steps -= hold.step())
+        holdStep(hold.step());
+}
+
+void GuiEditor::holdStep(int step) {
+    app.audio().cursor.play();
+    if (holdOnValue)
+        processOptionChange(step > 0);
+    else
+        moveSelection(step);
 }

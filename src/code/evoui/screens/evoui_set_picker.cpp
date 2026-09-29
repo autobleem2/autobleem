@@ -42,15 +42,26 @@ const int IconSize = 56; // the tab icons (evoimg/tab_*.png, tools/make_evoimg_i
 } // namespace
 
 //*******************************
+// GuiSetPicker::loadIcons
+//*******************************
+vector<ableem::Texture> GuiSetPicker::loadIcons(ableem::Renderer &renderer) {
+    const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
+    return {ableem::Texture::loadFile(renderer, img + "tab_playstation.png"),
+            ableem::Texture::loadFile(renderer, img + "tab_retroarch.png"),
+            ableem::Texture::loadFile(renderer, img + "tab_apps.png")};
+}
+
+//*******************************
 // GuiSetPicker::init
 //*******************************
 void GuiSetPicker::init() {
     style = gui->panelStyle();
-    const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
+    if (icons.size() != 3)
+        icons = loadIcons(renderer);
     tabs.clear();
-    tabs.push_back({_("PlayStation"), ableem::Texture::loadFile(renderer, img + "tab_playstation.png"), {}, 0, 0});
-    tabs.push_back({_("RetroArch"), ableem::Texture::loadFile(renderer, img + "tab_retroarch.png"), {}, 0, 0});
-    tabs.push_back({_("Apps"), ableem::Texture::loadFile(renderer, img + "tab_apps.png"), {}, 0, 0});
+    tabs.push_back({_("PlayStation"), icons[0], {}, 0, 0});
+    tabs.push_back({_("RetroArch"), icons[1], {}, 0, 0});
+    tabs.push_back({_("Apps"), icons[2], {}, 0, 0});
     buildTabs();
     cancelled = true;
 }
@@ -60,47 +71,38 @@ void GuiSetPicker::init() {
 //*******************************
 void GuiSetPicker::buildTabs() {
     auto games = [](size_t n) { return to_string(n) + " " + _("games"); };
-    GameQueryService &query = app.gameQuery();
+    const GameQueryService::SetCounts &c = *counts;
 
     // PlayStation: all / internal / the folders / favorites / history / light-gun games
     Tab &ps = tabs[0];
     ps.entries.clear();
-    SubDirRowInfos rows;
-    app.library().usbGames().loadSubDirRows(&rows);
-    const bool internal = query.showInternalGames();
-    if (internal) {
-        const size_t usb = query.ps1GamesInSubDirRow(0).size();
-        const size_t all = usb + query.internalGames().size();
-        ps.entries.push_back({_("All Games"), games(all), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
+    if (app.gameQuery().showInternalGames()) {
         ps.entries.push_back(
-            {_("Internal Games"), games(all - usb), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
+            {_("All Games"), games(c.usb + c.internal), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
+        ps.entries.push_back(
+            {_("Internal Games"), games(c.internal), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
     }
     bool top = true;
-    for (const SubDirRowInfo &row : rows) {
+    for (const SubDirRowInfo &row : c.rows) {
         const string title = top ? _("USB Games") : row.rowName;
         ps.entries.push_back({title, games(static_cast<size_t>(row.numGames)), top ? 0 : row.indentLevel, GameSet::PS1,
                               Ps1SelectState::GamesSubdir, row.subDirRowIndex, row.rowName});
         top = false;
     }
     ps.entries.push_back(
-        {_("Favorite Games"), games(query.favorites().size()), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
-    ps.entries.push_back(
-        {_("Game History"), games(query.history().size()), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
-    const size_t lightgun = query.lightgunGames().size();
-    if (lightgun > 0)
+        {_("Favorite Games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
+    ps.entries.push_back({_("Game History"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
+    if (c.lightgun > 0)
         ps.entries.push_back(
-            {_("Lightgun Games"), games(lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
+            {_("Lightgun Games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
 
     // RetroArch: a playlist each
     Tab &ra = tabs[1];
     ra.entries.clear();
     for (size_t i = 0; i < raPlaylists.size(); i++) {
-        GameSetSelection sel;
-        sel.set = GameSet::RetroArch;
-        sel.raPlaylistIndex = static_cast<int>(i);
-        sel.raPlaylistName = raPlaylists[i];
-        ra.entries.push_back({raPlaylists[i], games(query.gamesFor(sel).size()), 0, GameSet::RetroArch,
-                              Ps1SelectState::AllGames, static_cast<int>(i), raPlaylists[i]});
+        const size_t n = i < c.playlists.size() ? static_cast<size_t>(c.playlists[i]) : 0;
+        ra.entries.push_back({raPlaylists[i], games(n), 0, GameSet::RetroArch, Ps1SelectState::AllGames,
+                              static_cast<int>(i), raPlaylists[i]});
     }
 
     // Apps: "All apps" first, then one row per category present (autobleem-main
@@ -108,17 +110,17 @@ void GuiSetPicker::buildTabs() {
     Tab &apps = tabs[2];
     apps.entries.clear();
     auto appsCount = [](size_t n) { return to_string(n) + " " + _("apps"); };
-    apps.entries.push_back({_("All apps"), appsCount(query.apps().size()), 0, GameSet::Apps, Ps1SelectState::AllGames,
-                            0, "", AppCategory::All});
-    for (const auto &c : query.appCategories()) {
-        Entry entry{appCategoryLabel(c.category),
-                    appsCount(static_cast<size_t>(c.count)),
+    apps.entries.push_back(
+        {_("All apps"), appsCount(c.apps), 0, GameSet::Apps, Ps1SelectState::AllGames, 0, "", AppCategory::All});
+    for (const auto &cat : c.appCategories) {
+        Entry entry{appCategoryLabel(cat.category),
+                    appsCount(static_cast<size_t>(cat.count)),
                     0,
                     GameSet::Apps,
                     Ps1SelectState::AllGames,
                     0,
                     "",
-                    c.category};
+                    cat.category};
         apps.entries.push_back(entry);
     }
 

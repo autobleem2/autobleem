@@ -261,6 +261,8 @@ void GuiLauncher::showSetName() {
     string numGames = " (" + to_string(carousel.games.size()) + " " + _("games") + ")";
 
     long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
+    if (timeout <= 0)
+        return; // Options' "Splash timeout: Skip" (0 kept it up for good until 2026-09-29)
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
@@ -282,41 +284,51 @@ void GuiLauncher::showSetName() {
 }
 
 //*******************************
+// GuiLauncher::selectedGameKey / findGame
+//*******************************
+// a library game is the same game by id; a playlist game's id is only its position in the playlist, which a
+// rewrite may have moved - its image path is what names it
+GuiLauncher::GameKey GuiLauncher::selectedGameKey() const {
+    GameKey key;
+    if (carousel.selectedIsValid()) {
+        const PsGame &current = *carousel.games[carousel.selected];
+        key.gameId = current.gameId;
+        key.internal = current.internal;
+        key.foreign = current.foreign;
+        key.imagePath = current.image_path;
+    }
+    return key;
+}
+
+int GuiLauncher::findGame(const GameKey &key) const {
+    if (key.gameId == -1)
+        return -1;
+    for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
+        const PsGame &game = *carousel.games[i];
+        bool same = key.foreign ? (game.foreign && game.image_path == key.imagePath)
+                                : (!game.foreign && game.gameId == key.gameId && game.internal == key.internal);
+        if (same)
+            return i;
+    }
+    return -1;
+}
+
+//*******************************
 // GuiLauncher::reloadGames
 //*******************************
 // re-runs the current set's query and re-selects the highlighted game by id. When that game is gone (its
 // folder removed while the scanner watched, or merged into another) the first game of the set - or none -
 // is highlighted instead, and a resume-point picker that was showing its slots is closed.
 void GuiLauncher::reloadGames() {
-    // a library game is the same game by id; a playlist game's id is only its position in the playlist,
-    // which a rewrite may have moved - its image path is what names it
-    int keepGameId = -1;
-    bool keepInternal = false;
-    bool keepForeign = false;
-    string keepImagePath;
-    if (carousel.selectedIsValid()) {
-        const PsGame &current = *carousel.games[carousel.selected];
-        keepGameId = current.gameId;
-        keepInternal = current.internal;
-        keepForeign = current.foreign;
-        keepImagePath = current.image_path;
-    }
+    forgetSetCounts(); // the roster changed: the picker counts again
+    const GameKey keep = selectedGameKey();
 
     switchSet(selection.set, false);
 
-    bool kept = false;
-    if (keepGameId != -1) {
-        for (int i = 0; i < static_cast<int>(carousel.games.size()); i++) {
-            const PsGame &game = *carousel.games[i];
-            bool same = keepForeign ? (game.foreign && game.image_path == keepImagePath)
-                                    : (!game.foreign && game.gameId == keepGameId && game.internal == keepInternal);
-            if (same) {
-                carousel.selected = i;
-                kept = true;
-                break;
-            }
-        }
-    }
+    const int found = findGame(keep);
+    const bool kept = found != -1;
+    if (kept)
+        carousel.selected = found;
     if (carousel.selectedIsValid()) {
         carousel.setInitialPositions(carousel.selected);
     }
@@ -539,7 +551,7 @@ void GuiLauncher::renderPadBatteries() {
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
     int x = 16, y = 16;
-    const ableem::Font &battFont = gui->assets().themeFonts[FONT_15_BOLD];
+    const ableem::Font &battFont = ThemeAssets::fixedFonts()[FONT_15_BOLD];
     const int textY = (iconH - battFont.lineHeight()) / 2; // added to y: centres the text on the icon
 
     int knownCount = 0;
@@ -651,6 +663,10 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 
     // a games-directory scan affects the PS1 set, a ROM pass the RetroArch one; leave the rest alone, and
     // never interrupt a scroll animation - reloadGames() repositions the carousel outright.
+    // the picker's counts are about every set, not just the one on screen
+    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty())
+        forgetSetCounts();
+
     bool setAffected = selection.set == GameSet::PS1 || selection.set == GameSet::RetroArch;
     if (scanRosterChangedSinceReload && setAffected && !carousel.scrolling) {
         reloadGames();
@@ -684,120 +700,65 @@ void GuiLauncher::refreshPlaylistNames() {
 }
 
 //*******************************
-// GuiLauncher::makePlayHalo
+// playOutlineOf
 //*******************************
-// what keeps Play readable over the covers' reflections: a soft dark shadow under it and a faint rim in the
-// theme's selection colour (white without one) around its shape - both images' own outline, so every theme's
-// Play gets its own. Made once per theme on the CPU into one texture; a frame only copies it. The shadow is
-// lighter where the theme's background is light under Play (measured in its image): a dark smudge on a light
-// theme reads as dirt, not depth.
-void GuiLauncher::makePlayHalo(const LauncherTheme &theme) {
-    playHalo = ableem::Texture();
+// one image's dark outline (TextRenderer's Shadow): its shape drawn in black at alpha 150 at each of the eight
+// 1 px offsets and once 2 px down-right, composited as the text's halo is. The texture is the image plus 2 px on
+// each side and 1 more down-right; the image sits at (2, 2) in it.
+static ableem::Texture playOutlineOf(ableem::Renderer &renderer, const ableem::Image &img) {
+    if (!img.valid())
+        return ableem::Texture();
+    const ableem::Size s = img.size();
+    const int w = s.w + 5, h = s.h + 5;
+    std::vector<float> shape(static_cast<size_t>(w * h), 0.0f);
+    for (int y = 0; y < s.h; y++)
+        for (int x = 0; x < s.w; x++)
+            shape[static_cast<size_t>((y + 2) * w + x + 2)] = img.pixel(x, y).a / 255.0f;
+
+    static const int offsets[9][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
+    const float passAlpha = 150.0f / 255.0f;
+    ableem::Texture tex = ableem::Texture::createStreaming(renderer, w, h);
+    if (!tex.valid())
+        return tex;
+    tex.setBlendMode(ableem::BlendMode::Blend);
+    {
+        ableem::PixelLock px = tex.lock();
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++) {
+                float clear = 1.0f;
+                for (const auto &o : offsets) {
+                    const int sx = x - o[0], sy = y - o[1];
+                    if (sx >= 0 && sy >= 0 && sx < w && sy < h)
+                        clear *= 1.0f - passAlpha * shape[static_cast<size_t>(sy * w + sx)];
+                }
+                px.set(x, y, ableem::Color(0, 0, 0, static_cast<unsigned char>(std::lround((1.0f - clear) * 255))));
+            }
+    }
+    return tex;
+}
+
+//*******************************
+// GuiLauncher::makePlayOutline
+//*******************************
+// what keeps Play readable over the covers' reflections: the dark outline the launcher's text has around Play's
+// two images, following their transparency, the images drawn over it. Made once per theme on the CPU - one
+// texture for the button, one for the text, which the frame draws at the text's pulse so the outline zooms with
+// it. (A soft shadow and a coloured rim came first - a dead end, the owner, 2026-09-29.)
+void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
+    playOutline = ableem::Texture();
+    playTextOutline = ableem::Texture();
+    if (!textShadow)
+        return; // the theme said no to the text's halo (launcher.textShadow false) - Play's outline goes with it
     const ableem::Image button = ableem::Image::loadFile(theme.playButton);
     const ableem::Image text = ableem::Image::loadFile(theme.playText);
-    if (!button.valid() && !text.valid())
-        return;
-    const ableem::Size bs = button.size(), ts = text.size();
-    const int bx = playButton->x, by = playButton->y, tx = playText->x, ty = playText->y;
-
-    // the shape's bounds on the screen (alpha > 40 in either image)
-    int x0 = SCREEN_WIDTH, y0 = SCREEN_HEIGHT, x1 = -1, y1 = -1;
-    auto bound = [&](const ableem::Image &img, ableem::Size s, int ox, int oy) {
-        for (int y = 0; y < s.h; y++)
-            for (int x = 0; x < s.w; x++)
-                if (img.pixel(x, y).a > 40) {
-                    x0 = std::min(x0, ox + x), x1 = std::max(x1, ox + x);
-                    y0 = std::min(y0, oy + y), y1 = std::max(y1, oy + y);
-                }
-    };
-    bound(button, bs, bx, by);
-    bound(text, ts, tx, ty);
-    if (x1 < 0)
-        return;
-    const float cx = (x0 + x1) / 2.0f, cy = (y0 + y1) / 2.0f;
-    const float rx = (x1 - x0) / 2.0f + 45, ry = (y1 - y0) / 2.0f + 12;
-    const float reach = 1.3f; // the shadow fades out at 1.25 of the ellipse
-    const int left = static_cast<int>(cx - rx * reach), top = static_cast<int>(cy - ry * reach);
-    const int w = static_cast<int>(2 * rx * reach) + 1, h = static_cast<int>(2 * ry * reach) + 1;
-
-    // the rim: the shape, blurred (two box passes each way, radius 4)
-    std::vector<float> rim(static_cast<size_t>(w * h), 0.0f);
-    auto stamp = [&](const ableem::Image &img, ableem::Size s, int ox, int oy) {
-        for (int y = 0; y < s.h; y++)
-            for (int x = 0; x < s.w; x++) {
-                const int px = ox + x - left, py = oy + y - top;
-                if (px >= 0 && py >= 0 && px < w && py < h && img.pixel(x, y).a > 40)
-                    rim[static_cast<size_t>(py * w + px)] = 1.0f;
-            }
-    };
-    stamp(button, bs, bx, by);
-    stamp(text, ts, tx, ty);
-    std::vector<float> tmp(rim.size());
-    const int r = 4;
-    auto boxPass = [&](bool horizontal) {
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++) {
-                float sum = 0;
-                for (int k = -r; k <= r; k++) {
-                    const int sx = horizontal ? x + k : x, sy = horizontal ? y : y + k;
-                    if (sx >= 0 && sy >= 0 && sx < w && sy < h)
-                        sum += rim[static_cast<size_t>(sy * w + sx)];
-                }
-                tmp[static_cast<size_t>(y * w + x)] = sum / static_cast<float>(2 * r + 1);
-            }
-        rim.swap(tmp);
-    };
-    boxPass(true), boxPass(false), boxPass(true), boxPass(false);
-
-    // the background's brightness under the shadow, 0..1
-    float shadowAlpha = 170;
-    const ableem::Image bg = ableem::Image::loadFile(theme.background);
-    if (bg.valid()) {
-        const ableem::Size gs = bg.size();
-        double sum = 0;
-        int n = 0;
-        for (int y = 0; y < h; y += 4)
-            for (int x = 0; x < w; x += 4) {
-                const ableem::Color c = bg.pixel((left + x) * gs.w / SCREEN_WIDTH, (top + y) * gs.h / SCREEN_HEIGHT);
-                sum += (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255.0;
-                n++;
-            }
-        const float light = n ? static_cast<float>(sum / n) : 0.0f;
-        const float k = std::min(1.0f, std::max(0.0f, (light - 0.35f) / 0.4f));
-        shadowAlpha = 170 - k * 110; // 170 over a dark background, 60 over a light one
+    playOutline = playOutlineOf(renderer, button);
+    if (playOutline.valid())
+        playOutlineRect = ableem::Rect(playButton->x - 2, playButton->y - 2, button.size().w + 5, button.size().h + 5);
+    playTextOutline = playOutlineOf(renderer, text);
+    if (playTextOutline.valid()) {
+        playTextOutlineW = text.size().w + 5;
+        playTextOutlineH = text.size().h + 5;
     }
-
-    const ableem::ThemeColor &sel = theme.colors.selection;
-    const float rr = sel.set ? sel.r : 255, rg = sel.set ? sel.g : 255, rb = sel.set ? sel.b : 255;
-    const float sr = 0, sg = 10, sb = 25; // the shadow: a blue-black, not grey
-    playHalo = ableem::Texture::createStreaming(renderer, w, h);
-    if (!playHalo.valid())
-        return;
-    playHalo.setBlendMode(ableem::BlendMode::Blend);
-    {
-        ableem::PixelLock px = playHalo.lock();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++) {
-                const float dx = (left + x - cx) / rx, dy = (top + y - cy) / ry;
-                const float d = std::sqrt(dx * dx + dy * dy);
-                float t = std::min(1.0f, std::max(0.0f, (1.25f - d) / 0.5f));
-                t = t * t * (3 - 2 * t);
-                const float a0 = shadowAlpha / 255.0f * t;
-                const float a1 = 120.0f / 255.0f * rim[static_cast<size_t>(y * w + x)];
-                const float a = a1 + a0 * (1 - a1); // the rim over the shadow
-                if (a <= 0.0f) {
-                    px.set(x, y, ableem::Color(0, 0, 0, 0));
-                    continue;
-                }
-                auto mix = [&](float rimC, float shC) {
-                    return static_cast<unsigned char>(std::lround((rimC * a1 + shC * a0 * (1 - a1)) / a));
-                };
-                px.set(x, y,
-                       ableem::Color(mix(rr, sr), mix(rg, sg), mix(rb, sb),
-                                     static_cast<unsigned char>(std::lround(a * 255))));
-            }
-    }
-    playHaloRect = ableem::Rect(left, top, w, h);
 }
 
 //*******************************
@@ -805,6 +766,7 @@ void GuiLauncher::makePlayHalo(const LauncherTheme &theme) {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
     if (DirEntry::exists(Env::getPathToRetroarchDir())) {
@@ -813,8 +775,8 @@ void GuiLauncher::loadAssets() {
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
     // - every return from a RetroArch launch - crashed on headers[0])
-    headers = {_("QUICK MENU"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    texts = {_("Re-Scan, Store, Network and more"), _("Edit game parameters"), _("Edit Memory Card information"),
+    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
              _("Resume game from saved state point")};
 
     selection = app.session().launcher;
@@ -924,14 +886,14 @@ void GuiLauncher::loadAssets() {
     playText->ox = playText->x;
     playText->oy = playText->y;
     playText->lastTime = time;
-    makePlayHalo(theme);
+    makePlayOutline(theme);
 
     settingsBack = addStaticElement(new PsSettingsBack("playButton", theme.settingsPanel));
     settingsBack->setCurLen(100);
     settingsBack->visible = true;
 
     meta = addStaticElement(new PsMeta("meta", theme.metaPanel));
-    meta->fonts = gui->assets().themeFonts;
+    meta->fonts = ThemeAssets::fixedFonts();
     meta->x = 785;
     meta->y = 285;
     meta->visible = true;
@@ -964,20 +926,20 @@ void GuiLauncher::loadAssets() {
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
     menuHead = addStaticElement(new PsCenterLabel("header"));
-    menuHead->font = gui->assets().themeFonts[FONT_28_BOLD];
+    menuHead->font = ThemeAssets::fixedFonts()[FONT_28_BOLD];
     menuHead->visible = false;
     menuHead->y = 545;
     menuText = addStaticElement(new PsCenterLabel("menuText"));
     menuText->visible = false;
-    menuText->font = gui->assets().themeFonts[FONT_22_MED];
+    menuText->font = ThemeAssets::fixedFonts()[FONT_22_MED];
     menuText->y = 585;
 
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 
     sselector = addFrontElement(new PsStateSelector("selector"));
-    sselector->font30 = gui->assets().themeFonts[FONT_28_BOLD];
-    sselector->font24 = gui->assets().themeFonts[FONT_22_MED];
+    sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
+    sselector->font24 = ThemeAssets::fixedFonts()[FONT_22_MED];
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -1022,6 +984,7 @@ void GuiLauncher::loadAssets() {
 //*******************************
 // memory cleanup for assets disposal
 void GuiLauncher::freeAssets() {
+    setPickerIcons.clear();
     for (auto &obj : staticElements) {
         obj->destroy();
     }
@@ -1033,7 +996,8 @@ void GuiLauncher::freeAssets() {
     settingsBack = nullptr;
     playButton = nullptr;
     playText = nullptr;
-    playHalo = ableem::Texture();
+    playOutline = ableem::Texture();
+    playTextOutline = ableem::Texture();
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
@@ -1220,7 +1184,7 @@ void GuiLauncher::layoutHints() {
         int total = 0;
         for (int size : sizes) {
             outFont =
-                size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
+                size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
             total = items.empty() ? 0 : -gap;
             for (const Hint &h : items)
                 total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
@@ -1288,8 +1252,15 @@ void GuiLauncher::render() {
     }
     if (!benchSkips("carousel"))
         carousel.render();
-    if (playHalo.valid() && playButton != nullptr && playButton->visible && !benchSkips("playHalo"))
-        renderer.copy(playHalo, nullptr, &playHaloRect);
+    if (playOutline.valid() && playButton != nullptr && playButton->visible && !benchSkips("playOutline"))
+        renderer.copy(playOutline, nullptr, &playOutlineRect);
+    // the text's outline at the text's pulse: the text is drawn 2 px into its outline, both grown by the same zoom
+    if (playTextOutline.valid() && playText != nullptr && playText->visible && !benchSkips("playOutline")) {
+        const ableem::FRect r = playText->drawRect();
+        const float zoom = playText->ow > 0 ? r.w / static_cast<float>(playText->ow) : 1.0f;
+        renderer.copy(playTextOutline, nullptr,
+                      ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
+    }
     for (auto &obj : staticElements) {
         if (!behindRow(obj.get()) && !benchSkips(obj->name))
             obj->render();

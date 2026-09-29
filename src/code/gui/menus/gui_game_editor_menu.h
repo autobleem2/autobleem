@@ -5,6 +5,7 @@
 
 #include "gui/gui_screen.h"
 #include "../game_detail_pane.h"
+#include "gui/hold_repeat.h"
 
 #include <string>
 #include <vector>
@@ -55,6 +56,12 @@ public:
     void buildRows();
     void moveSelection(int step); // to the next/previous option row
     int selectedRow() const;      // the index in `rows` of selOption
+    // a held d-pad: Up/Down (the cursor) or Left/Right (the value, holdOnValue) - see startHold
+    HoldRepeat hold;
+    bool holdOnValue = false;
+    void startHold(bool value, int step);
+    void holdTick();
+    void holdStep(int step);
 
     using GuiScreen::GuiScreen;
     ableem::Texture cover;

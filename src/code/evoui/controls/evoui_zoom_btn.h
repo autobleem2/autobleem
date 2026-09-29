@@ -21,4 +21,12 @@ class PsZoomBtn : public PsObj {
     void render() override;
 
     using PsObj::PsObj;
+
+  public:
+    // where the pulse draws it this frame (its own place and size until the first update) - Play's outline follows it
+    ableem::FRect drawRect() const {
+        if (drawW <= 0.0f)
+            return ableem::FRect(static_cast<float>(ox), static_cast<float>(oy), static_cast<float>(ow), static_cast<float>(oh));
+        return ableem::FRect(drawX, drawY, drawW, drawH);
+    }
 };

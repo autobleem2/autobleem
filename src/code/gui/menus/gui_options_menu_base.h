@@ -29,7 +29,7 @@ public:
 
     virtual std::string getBooleanSymbolText(const OptionsInfo &info, const std::string &value);
     virtual std::string getLineText(const OptionsInfo &info);
-    // the value as the row shows it (a screen maps a stored value to a label - "--" to "Theme Default")
+    // the value as the row shows it (a screen maps a stored value to a label - "0" to "Skip")
     virtual std::string valueText(const OptionsInfo &info, const std::string &value);
 
     // a row at y: the label left, the value (a check switch or text) at the right edge
