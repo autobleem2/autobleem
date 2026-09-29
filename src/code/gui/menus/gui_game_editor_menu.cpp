@@ -154,7 +154,9 @@ void GuiEditor::buildRows() {
     heading(_("Rendering"));
     if (!internal)
         valueRow(_("Plugin:"), pcsx.gpu, OPT_PLUGIN);
-    valueRow(_("Frameskip:"), to_string(pcsx.frameskip), OPT_FRAMESKIP);
+    // the emulators' own setting and names (men_frameskip): Auto, Off, then how many frames are skipped
+    const string frameskipNames[GameSettingsService::FrameskipCount] = {_("Auto"), _("Off"), "1", "2", "3"};
+    valueRow(_("Frameskip:"), frameskipNames[pcsx.frameskip], OPT_FRAMESKIP);
 
     heading(_("Emulator"));
     boolRow(_("SpeedHack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);

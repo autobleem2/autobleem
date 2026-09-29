@@ -156,7 +156,7 @@ folder's, and the copy in `!SaveStates`); the per-platform lists are `GameSettin
 | Scanline brightness | 0-100, `scanline_level` (hex in the file): how much of the picture shows through the lines. RetroArch: the overlay's opacity. Greyed with a CRT filter. |
 | **Rendering** | |
 | Plugin | `Gpu3`: the built-in GPU or `gpu_peops.so` (USB games only). |
-| Frameskip | `frameskip3`, 0-3. |
+| Frameskip | `frameskip3`, the emulators' own setting and names: Auto (0 - what the shipped pcsx.cfg gives every game), Off (1, no line), 1 / 2 / 3 frames skipped (2-4). RetroArch gets `pcsx_rearmed_frameskip_type` auto / disabled / fixed_interval with `pcsx_rearmed_frameskip_interval`. |
 | **Emulator** | |
 | SpeedHack, Clock, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |
 | Sony hacks | pcsx-abnxt only: Sony's per-title overrides (`sonyhacks`). |
