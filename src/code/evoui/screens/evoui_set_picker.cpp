@@ -208,7 +208,8 @@ void GuiSetPicker::pick() {
 // GuiSetPicker::render
 //*******************************
 void GuiSetPicker::render() {
-    if (menuVisible) { // the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed
+    // the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed
+    if (menuVisible && ableem::DebugDriver::active()) {
         vector<string> names;
         for (const Entry &e : tabs[tab].entries)
             names.push_back(e.title);

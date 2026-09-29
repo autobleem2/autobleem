@@ -64,7 +64,8 @@ int GuiProcessors::visibleRows() const {
 // GuiProcessors::render
 //*******************************
 void GuiProcessors::render() {
-    if (menuVisible) { // the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled
+    // the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled
+    if (menuVisible && ableem::DebugDriver::active()) {
         vector<string> names;
         for (const auto &e : sequences.entries(sequence)) {
             const ProcessorInfo *p = info(e.name);

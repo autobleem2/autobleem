@@ -126,7 +126,8 @@ int GuiExtensions::bodyHeight() const {
 // GuiExtensions::render
 //*******************************
 void GuiExtensions::render() {
-    if (menuVisible) { // the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'
+    // the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'
+    if (menuVisible && ableem::DebugDriver::active()) {
         vector<string> names;
         for (int i = 0; i < count(); i++)
             names.push_back(rows[i] == HeadingRow ? "#" + _("Third-party extensions") : extensionAt(i).title);

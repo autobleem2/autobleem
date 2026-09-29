@@ -101,7 +101,7 @@ bool GuiEditor::nxtEmulator() const {
 // the DebugDriver's `items` and `selected`: the rows as drawn, a heading band with a leading '#' (translated
 // labels), the cursor's row index among them
 void GuiEditor::publishToDriver(int selectedIndex) const {
-    if (!menuVisible)
+    if (!menuVisible || !ableem::DebugDriver::active())
         return;
     vector<string> names;
     for (const Row &row : rows)
