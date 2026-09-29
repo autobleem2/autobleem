@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -11,6 +11,7 @@ Address=Adresa
 All apps=Všetky aplikácie
 All Games=Všetky hry
 Always=Vždy
+app=aplikácie
 Applying settings...=Aplikujú sa nastavenia...
 Apps=Aplikácie
 apps=aplikácie
@@ -152,6 +153,7 @@ Full=Plná
 Full screen=Celá obrazovka
 GAME=HRA
 Game=Hra
+game=hry
 Game data=Dáta hier
 Game failed to verify:=Nepodarilo sa overiť hru:
 Game file not found=Súbor hry sa nenašiel

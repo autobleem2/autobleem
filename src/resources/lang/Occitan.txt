@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -11,6 +11,7 @@ Address=Adreça
 All apps=Totas las aplicacions
 All Games=Totes los jòcs
 Always=Totjorn
+app=aplicacions
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions
 apps=aplicacions
@@ -152,6 +153,7 @@ Full=Plena
 Full screen=Ecran complet
 GAME=JÒC
 Game=Jòc
+game=jòcs
 Game data=Donadas dels jòcs
 Game failed to verify:=Verificacion del jòc fracassada :
 Game file not found=Fichièr del jòc introbable

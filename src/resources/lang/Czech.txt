@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -11,6 +11,7 @@ Address=Adresa
 All apps=Všechny aplikace
 All Games=Všechny hry
 Always=Vždy
+app=aplikace
 Applying settings...=Použití nastavení...
 Apps=Aplikace
 apps=aplikace
@@ -152,6 +153,7 @@ Full=Plná
 Full screen=Celá obrazovka
 GAME=HRA
 Game=Hra
+game=hry
 Game data=Data her
 Game failed to verify:=Ověření hry selhalo:
 Game file not found=Soubor hry nenalezen

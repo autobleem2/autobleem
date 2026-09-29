@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -11,6 +11,7 @@ Address=Adres
 All apps=Alle apps
 All Games=Alle games
 Always=Altijd
+app=apps
 Applying settings...=Instellingen toepassen...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Full=Vol
 Full screen=Volledig scherm
 GAME=GAME
 Game=Game
+game=games
 Game data=Spelgegevens
 Game failed to verify:=Game verificatie mislukt:
 Game file not found=Spelbestand niet gevonden

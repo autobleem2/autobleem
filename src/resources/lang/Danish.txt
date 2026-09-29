@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -11,6 +11,7 @@ Address=Adresse
 All apps=Alle apps
 All Games=Alle spil
 Always=Altid
+app=apps
 Applying settings...=Anvender indstillinger...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Full=Fuld
 Full screen=Fuld skærm
 GAME=SPIL
 Game=Spil
+game=spil
 Game data=Spildata
 Game failed to verify:=Spilverificering mislykkedes:
 Game file not found=Spilfilen blev ikke fundet

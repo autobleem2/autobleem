@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 0 / Total: 427
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -11,6 +11,7 @@ Address=Address
 All apps=All apps
 All Games=All Games
 Always=Always
+app=app
 Applying settings...=Applying settings...
 Apps=Apps
 apps=apps
@@ -152,6 +153,7 @@ Full=Full
 Full screen=Full screen
 GAME=GAME
 Game=Game
+game=game
 Game data=Game data
 Game failed to verify:=Game failed to verify:
 Game file not found=Game file not found

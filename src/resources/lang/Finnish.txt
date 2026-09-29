@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -11,6 +11,7 @@ Address=Osoite
 All apps=Kaikki sovellukset
 All Games=Kaikki pelit
 Always=Aina
+app=sovellukset
 Applying settings...=Otetaan asetukset käyttöön...
 Apps=Sovellukset
 apps=sovellukset
@@ -152,6 +153,7 @@ Full=Täynnä
 Full screen=Koko näyttö
 GAME=PELI
 Game=Peli
+game=pelit
 Game data=Pelien tiedot
 Game failed to verify:=Pelin varmistus epäonnistui:
 Game file not found=Pelitiedostoa ei löytynyt

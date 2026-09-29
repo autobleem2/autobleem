@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -11,6 +11,7 @@ Address=Adress
 All apps=Alla appar
 All Games=Alla spel
 Always=Alltid
+app=appar
 Applying settings...=Tillämpar inställningar...
 Apps=Appar
 apps=appar
@@ -152,6 +153,7 @@ Full=Fulladdat
 Full screen=Helskärm
 GAME=SPEL
 Game=Spel
+game=spel
 Game data=Speldata
 Game failed to verify:=Spelverifiering misslyckades:
 Game file not found=Spelfilen hittades inte

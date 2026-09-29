@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -11,6 +11,7 @@ Address=Adres
 All apps=Wszystkie Aplikacje
 All Games=Wszystkie Gry
 Always=Zawsze
+app=aplikacje
 Applying settings...=Stosowanie ustawień...
 Apps=Aplikacje
 apps=aplikacje
@@ -152,6 +153,7 @@ Full=Naładowana
 Full screen=Pełny ekran
 GAME=GRA
 Game=Gra
+game=gry
 Game data=Dane gier
 Game failed to verify:=Nie udało się zweryfikować Gry:
 Game file not found=Nie znaleziono pliku gry

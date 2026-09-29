@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 425
+# Untranslated: 2 / Total: 427
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -11,6 +11,7 @@ Address=Adres
 All apps=Tüm Uygulamalar
 All Games=Tüm Oyunlar
 Always=Her zaman
+app=uygulama
 Applying settings...=Ayarlar uygulanıyor...
 Apps=Uygulamalar
 apps=uygulama
@@ -152,6 +153,7 @@ Full=Dolu
 Full screen=Tam ekran
 GAME=OYUN
 Game=Oyun
+game=oyun
 Game data=Oyun verileri
 Game failed to verify:=Oyun doğrulanamadı:
 Game file not found=Oyun dosyası bulunamadı
