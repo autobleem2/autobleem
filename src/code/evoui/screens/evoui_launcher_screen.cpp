@@ -661,6 +661,10 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 
     // a games-directory scan affects the PS1 set, a ROM pass the RetroArch one; leave the rest alone, and
     // never interrupt a scroll animation - reloadGames() repositions the carousel outright.
+    // the picker's counts are about every set, not just the one on screen
+    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty())
+        forgetSetCounts();
+
     bool setAffected = selection.set == GameSet::PS1 || selection.set == GameSet::RetroArch;
     if (scanRosterChangedSinceReload && setAffected && !carousel.scrolling) {
         reloadGames();
@@ -760,6 +764,7 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
 //*******************************
 // load all assets needed by the screengame i
 void GuiLauncher::loadAssets() {
+    forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
     if (DirEntry::exists(Env::getPathToRetroarchDir())) {
@@ -977,6 +982,7 @@ void GuiLauncher::loadAssets() {
 //*******************************
 // memory cleanup for assets disposal
 void GuiLauncher::freeAssets() {
+    setPickerIcons.clear();
     for (auto &obj : staticElements) {
         obj->destroy();
     }

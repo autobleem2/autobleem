@@ -741,6 +741,7 @@ void GuiLauncher::loop_squareButton_Pressed() {
             if (carousel.selectedIsValid()) {
                 app.session().runningGame = carousel.games[carousel.selected];
                 app.gameCatalog().recordGamePlayed(app.session().runningGame);
+                forgetSetCounts(); // Game History changed
             }
             app.session().resumePoint = -1;
             rememberSelection();

@@ -10,6 +10,7 @@
 
 #include "../../app.h"
 #include "core/model/game_set.h"
+#include "core/services/game_query.h"
 #include "gui/gui_screen.h"
 #include "gui/panel_style.h"
 
@@ -29,6 +30,12 @@ public:
 
     GameSetSelection selection; // in: what shows now; out: what was picked
     std::vector<std::string> raPlaylists;
+    // the numbers on the rows, worked out by the launcher and kept until the library changes
+    // (GuiLauncher::setCounts) - required
+    const GameQueryService::SetCounts *counts = nullptr;
+    // the three tab icons, loaded once by the launcher; empty = the picker loads them itself
+    std::vector<ableem::Texture> icons;
+    static std::vector<ableem::Texture> loadIcons(ableem::Renderer &renderer); // evoimg/tab_*.png, in tab order
     ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
     bool cancelled = true;
 

@@ -52,12 +52,25 @@ const char *const NetworkEntry = "network";
 // groups in each (was Select cycling the sets and L2+Select opening a folder or playlist picker)
 void GuiLauncher::loop_chooseSet() {
     powerOffShift = false;
+    const long started = gui->platform().ticks();
+    const bool counted = !setCountsValid;
+    if (counted) {
+        setCounts = app.gameQuery().setCounts(raPlaylists);
+        setCountsValid = true;
+    }
+    const long countsDone = gui->platform().ticks();
+    if (setPickerIcons.empty())
+        setPickerIcons = GuiSetPicker::loadIcons(renderer);
     GuiSetPicker picker(*gui);
     picker.selection = selection;
     picker.raPlaylists = raPlaylists;
+    picker.counts = &setCounts;
+    picker.icons = setPickerIcons;
     renderer.captureNextFrame();
     render();
     picker.background = renderer.lastCapture();
+    PLOG_INFO << "Set picker: counts " << (counted ? to_string(countsDone - started) + " ms" : string("kept"))
+              << ", ready " << gui->platform().ticks() - started << " ms";
     picker.show();
     forgetHeldModifiers(); // reached with L2 held, maybe; its release went to the picker
     if (picker.cancelled)
@@ -92,8 +105,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     rememberSelection();
     menuVisible = false;
 
-    if (selectedIsPs1())
+    if (selectedIsPs1()) {
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
+        forgetSetCounts(); // Game History changed
+    }
 
     app.session().emuMode = EmuMode::Pcsx;
 
@@ -230,6 +245,7 @@ void GuiLauncher::loop_openOptions() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
+    forgetSetCounts(); // favourite, light gun, title may change
     if (carousel.games.empty()) {
         return;
     }
@@ -543,6 +559,7 @@ string GuiLauncher::networkUnavailable(string *extension) {
 // what an item of the System or the Quick menu does - GuiSystemMenu only picks; every action below is what
 // ClassicMenuScreen used to do for the same item
 void GuiLauncher::runMenuAction(SystemMenuAction action) {
+    forgetSetCounts(); // Game Manager, the Store, an extension may change what there is
     switch (action) {
     case SystemMenuAction::None:
         break;
