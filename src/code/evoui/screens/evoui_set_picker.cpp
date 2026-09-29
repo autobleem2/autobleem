@@ -78,22 +78,22 @@ void GuiSetPicker::buildTabs() {
     ps.entries.clear();
     if (app.gameQuery().showInternalGames()) {
         ps.entries.push_back(
-            {_("All Games"), games(c.usb + c.internal), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
+            {_("All games"), games(c.usb + c.internal), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
         ps.entries.push_back(
-            {_("Internal Games"), games(c.internal), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
+            {_("Internal games"), games(c.internal), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
     }
     bool top = true;
     for (const SubDirRowInfo &row : c.rows) {
-        const string title = top ? _("USB Games") : row.rowName;
+        const string title = top ? _("USB games") : row.rowName;
         ps.entries.push_back({title, games(static_cast<size_t>(row.numGames)), top ? 0 : row.indentLevel, GameSet::PS1,
                               Ps1SelectState::GamesSubdir, row.subDirRowIndex, row.rowName});
         top = false;
     }
-    ps.entries.push_back({_("Favorite Games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
-    ps.entries.push_back({_("Game History"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
+    ps.entries.push_back({_("Favorite games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
+    ps.entries.push_back({_("Game history"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
     if (c.lightgun > 0)
         ps.entries.push_back(
-            {_("Lightgun Games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
+            {_("Lightgun games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
 
     // RetroArch: a playlist each
     Tab &ra = tabs[1];

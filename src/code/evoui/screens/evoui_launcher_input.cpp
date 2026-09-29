@@ -35,8 +35,8 @@ void GuiLauncher::loop() {
         // back into this loop, which is the one time they need translating again
         if (headersLanguage != app.lang().currentLanguage()) {
             headersLanguage = app.lang().currentLanguage();
-            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+            headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
+            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
                      _("Resume game from saved state point")};
         }
 

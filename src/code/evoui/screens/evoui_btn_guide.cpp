@@ -19,7 +19,7 @@ void GuiBtnGuide::render() {
     gui->renderBackground();
 
     gui->renderTextBar();
-    gui->renderHeader(_("Button Guide"));
+    gui->renderHeader(_("Button guide"));
 
     // three sections as heading bands; each row the buttons in a column at the left and what they do,
     // wrapped to the panel, beside it - a long translation takes two lines instead of running off. With a
@@ -64,17 +64,17 @@ void GuiBtnGuide::render() {
     row("|@S|", _("Run using RetroArch"), key(keyFor(Button::Square, devHost)));
     row("|@R1| / |@L1|", _("Quick scroll to next letter"),
         key(keyFor(Button::R1, devHost)) + " / " + key(keyFor(Button::L1, devHost)));
-    row("|@Start|", _("Random Game"), key(keyFor(Button::Start, devHost)));
+    row("|@Start|", _("Random game"), key(keyFor(Button::Start, devHost)));
     row("|@Select|", _("Choose the games shown: PlayStation, RetroArch or Apps and the group"),
         key(keyFor(Button::Select, devHost)));
-    row("|@L2| + |@R2|", _("System Menu (Re-Scan, RetroArch, Memory Cards, Power Off, ...)"),
+    row("|@L2| + |@R2|", _("System menu (Re-scan, RetroArch, Memory Cards, Power off, ...)"),
         key(ableem::KeyboardMap::systemMenuKey()));
-    row("|@Up|", _("Quick menu (Re-Scan, Store, Network & Controllers, System menu)"), key(_("Arrow up")));
-    section(_("In Game"));
-    row("|@Select| + |@Start|", _("Emulator config MENU"));
+    row("|@Up|", _("Quick menu (Re-scan, Store, Network & Controllers, System menu)"), key(_("Arrow up")));
+    section(_("In game"));
+    row("|@Select| + |@Start|", _("Emulator config menu"));
     row(_("RESET"), _("Quit emulation - back to AutoBleem"));
-    section(_("In Retroarch Game"));
-    row("|@Select| + |@Start|", _("Open Retroarch Menu"));
+    section(_("In RetroArch game"));
+    row("|@Select| + |@Start|", _("Open RetroArch menu"));
     row(_("POWER"), _("Exit to EvoUI"));
 
     gui->renderStatus("|@O| " + _("Back") + "|");

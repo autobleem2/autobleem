@@ -7,7 +7,7 @@
 //*******************************
 struct OptionsInfo {
     int id;                             // ex: CFG_THEME
-    std::string descriptionToTranslate; // ex: _("AutoBleem Theme:")
+    std::string descriptionToTranslate; // ex: _("AutoBleem theme:")
     std::string iniKey;                 // ex: "theme"
     bool keyIsBoolean;                  // if it's false/true we substitute the switch icons
     std::vector<std::string> choices;

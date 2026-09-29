@@ -45,7 +45,7 @@ void GuiEditorRA::render() {
     gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
     gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
     gui->text().renderTextLineOptions(
-        _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
+        _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);
 
     gui->renderStatus("|@O| " + _("Back") + "|");

@@ -112,7 +112,7 @@ void GuiEditor::buildRows() {
 
     heading(_("Game"));
     boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE);
-    boolRow(_("Lightgun Game:"), gameData->lightgun, OPT_LIGHTGUN);
+    boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN);
     boolRow(_("Play using RA:"),
             (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
                                                        : gameIni.values["play_using_ra"] == "true",
@@ -159,9 +159,9 @@ void GuiEditor::buildRows() {
     valueRow(_("Frameskip:"), frameskipNames[pcsx.frameskip], OPT_FRAMESKIP);
 
     heading(_("Emulator"));
-    boolRow(_("SpeedHack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
+    boolRow(_("Speedhack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
     valueRow(_("Clock:"), to_string(pcsx.clock), OPT_CLOCK_PSX);
-    valueRow(_("Spu Interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
+    valueRow(_("Spu interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
     boolRow(_("Boot logo:"), pcsx.bootLogo != 0, OPT_BOOTLOGO);
     if (nxt) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
         boolRow(_("Sony hacks:"), pcsx.sonyHacks, OPT_SONYHACKS);

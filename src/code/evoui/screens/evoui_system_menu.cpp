@@ -69,14 +69,14 @@ void GuiSystemMenu::init() {
     };
 
     if (kind == Kind::Quick) {
-        addItem(SystemMenuAction::RescanGames, "Re-Scan Games", _("Re-Scan Games"), rescanWhat, scanNote);
+        addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
         addNetwork();
         addItem(SystemMenuAction::SystemMenu, "System menu...", _("System menu..."),
-                _("Everything else: Options, Game Manager, Power Off and more"));
+                _("Everything else: Options, Game Manager, Power off and more"));
     } else {
         // the two used most, on top with no heading (the owner, 2026-09-25/26): the Store is an extension
-        addItem(SystemMenuAction::RescanGames, "Re-Scan Games", _("Re-Scan Games"), rescanWhat, scanNote);
+        addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Extensions, "Extensions", _("Extensions"), _("Run an installed extension"));
 
         addHeading(_("Library"));
@@ -99,7 +99,7 @@ void GuiSystemMenu::init() {
 
         addHeading(_("Leave"));
         addItem(SystemMenuAction::RetroArch, "RetroArch", retroArchLabel, _("Exit to") + " " + retroArchLabel);
-        addItem(SystemMenuAction::PowerOff, "Power Off", _("Power Off"), _("Safely power off the console"));
+        addItem(SystemMenuAction::PowerOff, "Power off", _("Power off"), _("Safely power off the console"));
     }
 
     selected = 0;

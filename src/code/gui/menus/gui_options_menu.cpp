@@ -131,8 +131,8 @@ void GuiOptions::fill() {
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
     lines.emplace_back(CFG_SCALER, _("Emulator screen scaling:"), "scaler", false,
                        vector<string>({"1x1", "2x", "4:3", "4:3i", "full"}));
-    lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
-    lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
+    lines.emplace_back(CFG_THEME, _("AutoBleem theme:"), "theme", false, getThemes());
+    lines.emplace_back(CFG_JEWEL, _("Cover style:"), "jewel", false, getJewels());
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
     lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
@@ -142,17 +142,17 @@ void GuiOptions::fill() {
     heading(_("Fonts"));
     // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its
     // name when a theme's own classic font stopped being read (2026-09-29)
-    lines.emplace_back(CFG_THEME_FONT, _("Use Default Font:"), "themefont", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_THEME_FONT, _("Use default font:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
 
     heading(_("Sound"));
     lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
-    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background Music:"), "nomusic", true,
+    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background music:"), "nomusic", true,
                        vector<string>({"true", "false"}));
 
     heading(_("Emulation"));
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
-    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
+    lines.emplace_back(CFG_EMULATOR, _("PS1 emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
     // C11: a positional swap of the first two SDL pads' PS1 ports (core/model/pad_assignment.h,
     // LaunchService's AB_PAD_ORDER) - PS1 only, RetroArch is unaffected, hence the row saying so; next to the
     // PS1 emulator it applies to
@@ -160,7 +160,7 @@ void GuiOptions::fill() {
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_RACONFIG, _("Update RA config:"), "raconfig", true, vector<string>({"false", "true"}));
     // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
     lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
                        vector<string>({"false", "true"}));
@@ -169,7 +169,7 @@ void GuiOptions::fill() {
 #ifdef AB_HAS_INTERNAL_GAMES
     // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
     // false there)
-    lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true,
+    lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show internal games:"), "origames", true,
                        vector<string>({"false", "true"}));
 #endif
     // only where the platform can fetch at all (download_command in its ini) - the console cannot

@@ -69,10 +69,10 @@ void PsStateSelector::render() {
         output.w = w;
         output.h = h;
 
-        string text = _("SELECT RESUME SLOT TO LOAD");
+        string text = _("Select resume slot to load");
 
         if (operation == OP_SAVE) {
-            text = _("SELECT SLOT TO SAVE STATE");
+            text = _("Select slot to save state");
         }
 
         shared_ptr<Gui> gui(Gui::getInstance());

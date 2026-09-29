@@ -249,11 +249,11 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet i
 //*******************************
 void GuiLauncher::showSetName() {
     vector<string> setNames = {"Showing: PS1 games", // this is a dummy entry. setPS1SubStateNames is used.
-                               _("Showing: Retroarch") + " ", _("Showing: Lightgun Games") + " ",
+                               _("Showing: RetroArch") + " ", _("Showing: Lightgun games") + " ",
                                _("Showing: Apps") + " "};
-    vector<string> setPS1SubStateNames = {_("Showing: All Games") + " ", _("Showing: Internal Games") + " ",
-                                          _("Showing: Favorite Games") + " ", _("Showing: Game History") + " ",
-                                          _("Showing: USB Games Directory:") + " "};
+    vector<string> setPS1SubStateNames = {_("Showing: All games") + " ", _("Showing: Internal games") + " ",
+                                          _("Showing: Favorite games") + " ", _("Showing: Game history") + " ",
+                                          _("Showing: USB games directory:") + " "};
     assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
     assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
@@ -738,8 +738,8 @@ void GuiLauncher::loadAssets() {
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
     // - every return from a RetroArch launch - crashed on headers[0])
-    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+    headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
              _("Resume game from saved state point")};
 
     selection = app.session().launcher;
