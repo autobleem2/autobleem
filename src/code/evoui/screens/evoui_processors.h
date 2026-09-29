@@ -9,6 +9,7 @@
 #include "core/services/processor_sequences.h"
 #include "core/services/processor_state.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <set>
@@ -48,6 +49,7 @@ private:
     bool moving = false;         // Square picked the selected row up
     std::set<std::string> rerun; // Triangle: forgotten, runs on everything again
     int selected = 0;
+    DpadHold hold; // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0;
 
     const ProcessorInfo *info(const std::string &name) const;

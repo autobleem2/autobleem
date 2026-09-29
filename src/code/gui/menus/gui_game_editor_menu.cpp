@@ -543,7 +543,7 @@ void GuiEditor::startHold(bool value, int step) {
     if (hold.held() && holdOnValue == value && hold.step() == step)
         return; // the same direction still down
     holdOnValue = value;
-    hold.press(step, gui->platform().ticks(), value ? HoldRepeat::Timing{400, 120, 1500, 60} : HoldRepeat::rows());
+    hold.press(step, gui->platform().ticks());
     holdStep(step);
 }
 

@@ -270,6 +270,10 @@ void GuiSystemMenu::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -286,6 +290,7 @@ void GuiSystemMenu::loop() {
                     app.audio().cursor.play();
                     moveSelection(1);
                 }
+                hold.track(gui->input(), gui->platform().ticks());
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross) {

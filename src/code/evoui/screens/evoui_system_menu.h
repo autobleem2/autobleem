@@ -7,6 +7,7 @@
 #pragma once
 
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -80,6 +81,7 @@ private:
     };
     std::vector<Row> rows;
     int selected = 0;     // a row index, never a heading's
+    DpadHold hold;        // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0; // the first row on screen, when there are more than fit
 
     // key and title are the same words, untranslated and translated: the literal _("...") at every call is

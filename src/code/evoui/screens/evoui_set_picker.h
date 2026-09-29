@@ -12,6 +12,7 @@
 #include "core/model/game_set.h"
 #include "core/services/game_query.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -67,6 +68,7 @@ private:
     void buildTabs();
     int visibleRows() const;
     void moveSelection(int step);
+    DpadHold hold; // Up/Down held: the rows go on at the shared HoldRepeat pace
     void keepSelectedVisible();
     void pick();
 };

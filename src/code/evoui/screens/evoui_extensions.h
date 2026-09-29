@@ -7,6 +7,7 @@
 
 #include "core/services/extension_catalog.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -46,6 +47,7 @@ private:
     std::vector<int> rows;              // the list as shown: catalog indices, HeadingRow for the heading
     static const int HeadingRow = -1;
     int selected = 0; // an index into rows, never the heading
+    DpadHold hold;    // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0;
     int rowHeight(int row) const;
     int visibleRows() const; // how many rows from firstVisible fit
