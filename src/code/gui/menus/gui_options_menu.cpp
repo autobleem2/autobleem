@@ -345,12 +345,26 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || (id == CFG_FONT && userFontInUse());
     if (!theme && !fonts)
         return;
-    if (valueHold.held()) { // Left/Right still down: the row only shows the values, the release loads the last
+    if (pendingReload && pendingReloadId != id)
+        flushPendingReload(); // another row's change still waiting: load it first
+    if (valueHold.held()) { // Left/Right still down: the row only shows the values; the last one loads once the
+                            // row has rested after the release (holdTick)
         pendingReload = true;
+        pendingReloadAt = 0;
         pendingReloadId = id;
         pendingReloadValue = nextValue;
         return;
     }
+    pendingReload = false; // this row's own waiting value is superseded (Start's random pick)
+    pendingReloadAt = 0;
+    loadFor(id, nextValue);
+}
+
+//*******************************
+// GuiOptions::loadFor
+//*******************************
+void GuiOptions::loadFor(int id, const string &nextValue) {
+    const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     gui->beginBusy(_("Loading..."), [this]() { render(); });
     if (id == CFG_LANG)
         app.lang().load(Env::getPathToLangDir(), nextValue);
@@ -400,6 +414,8 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 // "back without saving" here any more (it used to be Cross = save, Circle = discard)
 void GuiOptions::doCircle_Pressed() {
     app.audio().cancel.play();
+    endHold();
+    flushPendingReload(); // a change still waiting to load is loaded before leaving
     // a new display mode is only tried here (the launcher leaves for it) and kept once confirmed
     // config.ini is written with the old one; in memory the row keeps showing the new one while the settings
     // reload under it (it blinked back to the old value) - the launcher puts the old one back afterwards
@@ -429,7 +445,8 @@ void GuiOptions::doCross_Pressed() {}
 // Left/Right on a row, the same on every row: one step at the press; held past valueHoldTiming()'s delay it goes
 // on, faster the longer it is held - a frame at a time from render() (holdTick), so the screen keeps drawing. A row
 // that reloads (the theme, the music, the language, a font) only shows the values while held; the one it
-// stops on is loaded once, at the release (a tap loads at its release too). The repeat used to be a loop
+// stops on is loaded once, reloadSettleTime() after the release - quick taps in a row count as one change,
+// and so does a tap after a hold. The repeat used to be a loop
 // (fastForwardUntilAnotherEvent) with no delay before the first repeat - a slow tap took two steps - and such
 // rows could not repeat at all: a load per step, and a release lost during one kept it stepping
 void GuiOptions::doJoyRight() {
@@ -456,7 +473,14 @@ void GuiOptions::startHold(int step) {
 }
 
 void GuiOptions::holdTick() {
-    if (!valueHold.held() || holdTicking)
+    if (!valueHold.held()) {
+        // a reload waits for the row to rest; a new press before it is due puts it off again (reloadFor)
+        if (pendingReload && pendingReloadAt != 0 &&
+            static_cast<int32_t>(gui->platform().ticks() - pendingReloadAt) >= 0)
+            flushPendingReload();
+        return;
+    }
+    if (holdTicking)
         return;
     ableem::Input &input = gui->input();
     const bool stillDown = valueHold.step() > 0 ? input.dpadRight() : input.dpadLeft();
@@ -478,10 +502,16 @@ void GuiOptions::endHold() {
     if (!valueHold.held())
         return;
     valueHold.release();
-    if (pendingReload) {
-        pendingReload = false;
-        reloadFor(pendingReloadId, pendingReloadValue);
-    }
+    if (pendingReload)
+        pendingReloadAt = gui->platform().ticks() + reloadSettleTime(); // loaded by holdTick once due
+}
+
+void GuiOptions::flushPendingReload() {
+    if (!pendingReload)
+        return;
+    pendingReload = false;
+    pendingReloadAt = 0;
+    loadFor(pendingReloadId, pendingReloadValue);
 }
 
 //*******************************

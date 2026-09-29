@@ -126,7 +126,8 @@ Emulation, Library, Updates, Diagnostics. An on/off row shows its value as text 
 The rows spread over the panel; more than fit at the font's size page (Up/Down move through them).
 Left/Right change a value one step a press; held, the value scrolls on, faster the longer it is held. A row
 that reloads (Theme, Music, Language, the fonts) shows the values while held and loads the one it stops on
-at the release. L1/R1 jump several values, one jump a press. The PS1 game editor's rows (Up/Down and
+a moment (0.45 s) after the release - quick presses in a row load only the last value; leaving with Circle
+loads a change still waiting. L1/R1 jump several values, one jump a press. The PS1 game editor's rows (Up/Down and
 Left/Right) step and scroll the same way.
 Cross saves and leaves, Circle leaves without saving, Start picks a random theme, music track or font.
 

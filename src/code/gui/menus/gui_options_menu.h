@@ -64,9 +64,15 @@ private:
     bool pendingReload = false;
     int pendingReloadId = 0;
     std::string pendingReloadValue;
+    // after the release the reload waits this long for another press on the row, so quick taps in a row load
+    // only the value they stop on
+    static uint32_t reloadSettleTime() { return 450; }
+    uint32_t pendingReloadAt = 0; // 0 while a hold is on (or nothing waits)
     void startHold(int step);
     void holdTick();
     void endHold();
+    void flushPendingReload();
+    void loadFor(int id, const std::string &nextValue); // the load itself, under the spinner
 
 public:
     std::vector<std::string> getThemes();
