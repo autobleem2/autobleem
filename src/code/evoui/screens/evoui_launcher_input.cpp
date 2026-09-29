@@ -670,7 +670,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;
-        arrow->visible = true;
+        arrow->visible = sselector->operation == OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
         sselector->cleanSaveStateImages();
         if (carousel.selectedIsValid())
             menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));

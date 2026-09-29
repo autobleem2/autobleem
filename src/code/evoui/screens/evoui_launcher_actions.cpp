@@ -417,7 +417,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
             app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
-            arrow->visible = true;
+            arrow->visible = sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
             app.audio().resume.play();
             notificationLines[1].setText(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
                                          DefaultShowingTimeout);
