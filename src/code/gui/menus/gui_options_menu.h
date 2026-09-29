@@ -5,6 +5,7 @@
 
 #include "gui_options_menu_base.h"
 #include "gui/gui.h"
+#include "gui/hold_repeat.h"
 #include <string>
 #include <vector>
 
@@ -54,8 +55,18 @@ private:
     void settleOnOption(int direction);
     std::string outputModeOnEntry; // the Display row's value when the screen opened
     std::string autoLabel;         // "Auto (1080p)", made by getOutputModes()
-    bool stepsOnePerPress();       // Left/Right without the held-button repeat on this row
     bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn
+    // a held Left/Right (see doJoyRight): the step at the press, repeats from render(), the reload a row needs
+    // put off to the release
+    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::Timing{400, 120, 1500, 60}; }
+    HoldRepeat valueHold;
+    bool holdTicking = false;
+    bool pendingReload = false;
+    int pendingReloadId = 0;
+    std::string pendingReloadValue;
+    void startHold(int step);
+    void holdTick();
+    void endHold();
 
 public:
     std::vector<std::string> getThemes();
@@ -89,8 +100,9 @@ public:
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
 
-    void doJoyRight() override; // move option to the right, may fast forwward
-    void doJoyLeft() override;  // move option to the left, may fast forwward
+    void doJoyRight() override; // the value to the right; held, it goes on
+    void doJoyLeft() override;  // the value to the left; held, it goes on
+    void doJoyCenter() override; // the release: a put-off reload happens now
 
     void doKeyRight() override; // move option to the right
     void doKeyLeft() override;  // move option to the left
