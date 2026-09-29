@@ -332,7 +332,13 @@ void GuiEditor::render() {
 
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameIni.values["title"],
+    // a game with no title in its metadata (an empty Game.ini "title=", or - internal games - an unrecognised
+    // one) falls back to the folder name rather than showing a blank header (UIREV-18)
+    string title = gameIni.values["title"];
+    if (title.empty())
+        title = internal ? DirEntry::getFileNameFromPath(DirEntry::removeSeparatorFromEndOfPath(gameData->folder))
+                         : gameIni.entry;
+    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], title,
                                                       gui->classicPanel().w - 2 * PanelStyle::RowInset));
 
     // the pane on the right: the cover and the game's facts
