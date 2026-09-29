@@ -4,6 +4,7 @@
 #include <ableem/ui/debug_driver.h>
 
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -113,11 +114,17 @@ void GuiSystemMenu::init() {
 // GuiSystemMenu::publishItems
 //*******************************
 void GuiSystemMenu::publishItems() const {
+    // the keys of the items only (no headings), and the cursor's place among them
     vector<string> keys;
-    for (const Row &row : rows)
-        if (!row.heading)
-            keys.push_back(row.key);
-    ableem::DebugDriver::setItems(keys);
+    int cursor = -1;
+    for (int i = 0; i < static_cast<int>(rows.size()); i++) {
+        if (rows[i].heading)
+            continue;
+        if (i == selected)
+            cursor = static_cast<int>(keys.size());
+        keys.push_back(rows[i].key);
+    }
+    ableem::DebugDriver::publish(typeid(*this).name(), keys, cursor);
 }
 
 //*******************************
@@ -171,6 +178,7 @@ void GuiSystemMenu::keepSelectedVisible() {
 // GuiSystemMenu::render
 //*******************************
 void GuiSystemMenu::render() {
+    publishItems(); // the cursor moved (or the rows changed): the driver's `selected`
     // the launcher's own background, dimmed, so the menu reads as an overlay on the screen it came from
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);

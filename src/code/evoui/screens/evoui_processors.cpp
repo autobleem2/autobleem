@@ -3,7 +3,10 @@
 #include "core/services/scan_service.h"
 #include "gui/gui.h"
 
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -61,6 +64,14 @@ int GuiProcessors::visibleRows() const {
 // GuiProcessors::render
 //*******************************
 void GuiProcessors::render() {
+    if (menuVisible) { // the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled
+        vector<string> names;
+        for (const auto &e : sequences.entries(sequence)) {
+            const ProcessorInfo *p = info(e.name);
+            names.push_back(p ? p->title : e.name);
+        }
+        ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+    }
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else

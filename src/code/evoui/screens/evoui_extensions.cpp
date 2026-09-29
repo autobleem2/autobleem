@@ -2,7 +2,10 @@
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -123,6 +126,12 @@ int GuiExtensions::bodyHeight() const {
 // GuiExtensions::render
 //*******************************
 void GuiExtensions::render() {
+    if (menuVisible) { // the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'
+        vector<string> names;
+        for (int i = 0; i < count(); i++)
+            names.push_back(rows[i] == HeadingRow ? "#" + _("Third-party extensions") : extensionAt(i).title);
+        ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+    }
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else

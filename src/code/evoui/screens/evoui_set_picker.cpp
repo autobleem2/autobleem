@@ -6,7 +6,10 @@
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -205,6 +208,12 @@ void GuiSetPicker::pick() {
 // GuiSetPicker::render
 //*******************************
 void GuiSetPicker::render() {
+    if (menuVisible) { // the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed
+        vector<string> names;
+        for (const Entry &e : tabs[tab].entries)
+            names.push_back(e.title);
+        ableem::DebugDriver::publish(typeid(*this).name(), names, tabs[tab].entries.empty() ? -1 : tabs[tab].selected);
+    }
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else

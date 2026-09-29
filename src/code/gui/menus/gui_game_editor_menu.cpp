@@ -10,6 +10,10 @@
 #include "core/main.h"
 #include "core/services/environment.h"
 
+#include <ableem/ui/debug_driver.h>
+
+#include <typeinfo>
+
 using namespace std;
 
 #define OPT_FIRST 0
@@ -89,6 +93,20 @@ bool GuiEditor::nxtEmulator() const {
     auto &values = app.config().inifile.values;
     auto it = values.find("emulator");
     return it != values.end() && it->second == "pcsx-abnxt";
+}
+
+//*******************************
+// GuiEditor::publishToDriver
+//*******************************
+// the DebugDriver's `items` and `selected`: the rows as drawn, a heading band with a leading '#' (translated
+// labels), the cursor's row index among them
+void GuiEditor::publishToDriver(int selectedIndex) const {
+    if (!menuVisible)
+        return;
+    vector<string> names;
+    for (const Row &row : rows)
+        names.push_back((row.kind == Row::Kind::Heading ? "#" : "") + row.label);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, selectedIndex);
 }
 
 //*******************************
@@ -391,6 +409,7 @@ void GuiEditor::render() {
     const int fit = gui->classicRowsThatFit(font);
     const int total = static_cast<int>(rows.size());
     const int sel = selectedRow();
+    publishToDriver(sel);
     if (sel >= 0) {
         if (sel < firstVisible)
             firstVisible = sel;

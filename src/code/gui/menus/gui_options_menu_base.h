@@ -19,6 +19,9 @@ struct OptionsInfo {
           choices(_choices) {}
 };
 
+// the row's name for the DebugDriver: the label as displayed (translated), without the value
+std::string driverRowName(const OptionsInfo &info);
+
 //*******************************
 // class GuiOptionsMenuBase
 //*******************************

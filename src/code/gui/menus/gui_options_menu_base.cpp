@@ -10,6 +10,13 @@ void GuiOptionsMenuBase::init() {
 }
 
 //*******************************
+// driverRowName(OptionsInfo)
+//*******************************
+std::string driverRowName(const OptionsInfo &info) {
+    return app.lang().translate(info.descriptionToTranslate);
+}
+
+//*******************************
 // void GuiOptionsMenuBase::getBooleanSymbolText
 //*******************************
 std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo &info, const std::string &value) {

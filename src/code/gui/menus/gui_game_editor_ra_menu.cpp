@@ -6,6 +6,10 @@
 #include "../../app.h"
 #include "core/services/environment.h"
 
+#include <ableem/ui/debug_driver.h>
+
+#include <typeinfo>
+
 using namespace std;
 
 #define OPT_LIGHTGUN 1
@@ -39,6 +43,8 @@ void GuiEditorRA::render() {
     if (gameData->year > 0)
         pane.facts.emplace_back(_("Year:"), to_string(gameData->year));
     pane.render(*gui);
+    if (menuVisible) // the DebugDriver's rows: the heading band and the one option, the cursor on it
+        ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game"), _("Lightgun game:")}, 1);
 
     const int right = GameDetailPane::rowsRight(*gui);
     gui->text().renderLabelBox(0, yoffset, right);

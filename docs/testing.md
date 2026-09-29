@@ -37,6 +37,21 @@ way, kept for a keyboard-only smoke test.
   decorations move (the play button, the arrow - the frame pacer's "ambient" state), or two frames that far apart
   are the same. Use these instead of `wait <ms>`: a script is then as fast as the machine and does not break on a
   slow one.
+- **`busy`** answers `ok 1` while a busy spinner shows (`Gui::beginBusy` - "Applying settings..." right after
+  Options closes, deleting a game, ...), else `ok 0`. **`wait_ready [seconds]`** waits until it is `0` AND the
+  picture has rested ~300 ms (`wait_idle`'s test), 10 s by default; on a timeout it answers `err not ready after
+  <s> s (screen <Name>, busy 0|1)`. While the spinner shows every press is dropped (and flushed at its end), yet
+  `screen` already says `GuiLauncher` - so after anything that closes Options, `wait_ready` before the next press.
+  `screen`'s reply is unchanged.
+- **`items`** lists the rows the showing screen published, `|`-separated; **`selected`** answers where the cursor
+  is: `ok <index>|<name>` (0-based into `items`; `ok -1|` when the screen published none; the name is empty
+  past the end). Published by: the System/Quick menu (English keys, no headings), the classic lists - Options,
+  Game Manager, the game editors, Memory Cards, the USB/RetroArch pickers (the row text as displayed, so
+  **translated**; a heading row is included with a leading `#`, e.g. `#Display`, so an index matches what is
+  drawn, and the cursor never rests on one) - and the launcher's set picker (the tab showing), Extensions and Scanner
+  processors (titles as displayed). A screen's rows are its own: a dialog over a list has none until it
+  publishes, and the list's come back when the dialog closes. Hardware Information has no cursor and publishes
+  nothing.
 - **`quit`** makes the program leave the way a power off does: every screen closes, the databases close, the
   process ends. So does **SIGTERM** (and SIGINT) since 2026-09-28 - `kill <pid>` or `systemctl stop` is a clean
   stop now, on every target. Before, SDL turned the signal into a window-close event, which the launcher (off a

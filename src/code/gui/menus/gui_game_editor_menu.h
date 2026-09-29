@@ -57,6 +57,7 @@ public:
         bool locked = false;
     };
     std::vector<Row> rows;
+    void publishToDriver(int selectedIndex) const; // rows + cursor for the DebugDriver (render())
     int firstVisible = 0;
     void buildRows();
     void moveSelection(int step);        // to the next/previous option row
