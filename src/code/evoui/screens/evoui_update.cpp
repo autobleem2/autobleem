@@ -176,7 +176,6 @@ void GuiUpdateProgress::init() {
 // GuiUpdateProgress::render
 //*******************************
 void GuiUpdateProgress::render() {
-    const int panelHeight = 190;
     Fonts &fonts = gui->assets().themeFonts;
     string title, detail;
     double fraction = -1; // < 0: no bar
@@ -206,6 +205,11 @@ void GuiUpdateProgress::render() {
         title = "";
         break;
     }
+    const bool over =
+        status.phase != UpdateService::Phase::Checking && status.phase != UpdateService::Phase::Downloading;
+    // sized to its content: the title's band with its rule, the detail line and the bar, the footer's band
+    const int bodyHeight = 20 + (detail.empty() ? 0 : LineHeight) + (fraction >= 0 ? 34 : 0) + 12;
+    const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
     ableem::Rect panel =
         drawPanel(renderer, *gui, background, style,
                   panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
@@ -215,19 +219,28 @@ void GuiUpdateProgress::render() {
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + RowInset, panel.y + 24, style.text,
+    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + TextInset, panel.y + 18, style.text,
                                      XALIGN_LEFT);
-    if (!detail.empty())
+    style.rule(renderer, panel, panel.y + PanelStyle::HeaderHeight - 8);
+    int y = panel.y + PanelStyle::HeaderHeight + 20;
+    if (!detail.empty()) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                         gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * RowInset),
-                                         panel.x + RowInset, panel.y + 74, style.secondary, XALIGN_LEFT);
+                                         gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * TextInset),
+                                         panel.x + TextInset, y, style.secondary, XALIGN_LEFT);
+        y += LineHeight;
+    }
     if (fraction >= 0) {
-        ableem::Rect bar(panel.x + RowInset, panel.y + 124, panel.w - 2 * RowInset, 22);
+        ableem::Rect bar(panel.x + TextInset, y + 4, panel.w - 2 * TextInset, 22);
         renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
         renderer.drawRect(bar);
         renderer.setDrawColor(style.text);
         renderer.fillRect(ableem::Rect(bar.x + 2, bar.y + 2, static_cast<int>((bar.w - 4) * fraction), bar.h - 4));
     }
+
+    // an outcome can be dismissed (any button); a running job cannot
+    style.footer(*gui,
+                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+                 over ? vector<PanelStyle::HintItem>{{{"X"}, _("OK")}} : vector<PanelStyle::HintItem>{}, "", true);
 
     gui->text().setShadow(classicShadow);
     renderer.present();
