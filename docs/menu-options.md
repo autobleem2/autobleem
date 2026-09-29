@@ -133,14 +133,36 @@ Cross saves and leaves, Circle leaves without saving, Start picks a random theme
 
 ## PS1 game editor
 
+Four headings: **Game**, **Display**, **Rendering**, **Emulator**. Display is pcsx-abnxt's in-game menu's
+Picture section - its rows, names and values - except its Scaling and Display (output mode) rows, which are
+global Options (Emulator screen scaling, Display mode). Every value below is the game's pcsx.cfg (the game
+folder's, and the copy in `!SaveStates`); the per-platform lists are `GameSettingsService::filtersFor` /
+`smoothingsFor` / `neonGpuFor`.
+
 | Row | What it does |
 |---|---|
+| **Game** | |
 | Favorite | In or out of the Favorite Games set. |
 | Lightgun Game | The game is a light-gun game: it joins the Lightgun set and always runs in RetroArch (its pcsx_rearmed core has the guncon); switching it on switches Play using RA on, and keeps it on. |
 | Play using RA | This PS1 game runs in RetroArch. |
 | Lock data | The scanner leaves this game's Game.ini alone (its title, serial, region and disc list stay as you set them). |
-| Filter | How the picture is scaled to the screen: Off (plain pixels), Linear (smoothed) or Sharp (crisp pixels without shimmer). The game's pcsx.cfg `plat_target.hwfilter` (0/1/2) - the key pcsx-abnxt saves from its own menu - passed as `-filter`; the classic pcsx-ab has no Sharp and plays it as Off, and RetroArch's `video_smooth` is on for Linear only. |
-| High res, SpeedHack, Scanlines, Scanline Level, Clock, Frameskip, Plugin, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |
+| **Display** | |
+| Resolution | 1x / 2x: the built-in NEON GPU draws 3D at double resolution (`gpu_neon.enhancement_enable`, also Game.ini `Highres`). Only on the console and the Pis, and only while the Plugin is the built-in GPU. RetroArch: `pcsx_rearmed_neon_enhancement_enable`. |
+| Remove seams | On/off, `gpu_neon.enhancement_no_seams` (no line = on): no 1-pixel gaps between the parts of a picture at 2x. Shown with Resolution, greyed at 1x as in the emulator's menu. |
+| Dithering | Off / On / Always, pcsx-abnxt's `dithering2` (0 none, 1 where the game asks - no line, the default - 2 on everything). RetroArch: `pcsx_rearmed_dithering`, enabled for On and Always. |
+| Smoothing | `soft_filter`: None / Scale2x / Eagle2x on the console; None / Scale2x / Eagle2x / HQ2x / HQ3x on the Pis, the PC stick, Windows and a dev host. Greyed with a CRT filter on the console (the emulator turns it off there). |
+| Filter | How the picture is scaled to the screen, `plat_target.hwfilter` (no line = Nearest): Nearest, Linear, Sharp, Sharp (simple), Quilez, CRT (fast), CRT-Pi - pcsx-abnxt's list, the same on every platform today. Passed as `-filter`; the classic pcsx-ab knows nearest and bilinear only (Linear is bilinear, the rest nearest), and RetroArch's `video_smooth` is on for Linear only. |
+| Scanlines | Off / 1 / 2 / 3, `scanlines` (how thick the dark lines are; an older 1 is the thinnest). The classic pcsx-ab has them on or off. RetroArch: its scanline overlay for anything but Off. Greyed with a CRT filter, which draws its own. |
+| Scanline brightness | 0-100, `scanline_level` (hex in the file): how much of the picture shows through the lines. RetroArch: the overlay's opacity. Greyed with a CRT filter. |
+| **Rendering** | |
+| Plugin | `Gpu3`: the built-in GPU or `gpu_peops.so` (USB games only). |
+| Frameskip | `frameskip3`, 0-3. |
+| **Emulator** | |
+| SpeedHack, Clock, Spu Interpolation, Boot logo | The game's pcsx.cfg. Boot logo off (`SlowBoot = 0`) skips the BIOS shell - for a homebrew disc whose custom logo breaks the boot; RetroArch's `pcsx_rearmed_show_bios_bootlogo` follows it. |
+| Sony hacks | pcsx-abnxt only: Sony's per-title overrides (`sonyhacks`). |
+
+With the classic pcsx-ab selected (Options -> PS1 Emulator) the rows it does not read - Remove seams,
+Dithering, Smoothing - are shown greyed, and can be selected but not changed.
 
 Triangle renames the game, Square changes its memory card, Start shares a new card, Circle leaves.
 
@@ -151,7 +173,7 @@ its `!SaveStates` folder. Both pcsx-ab and pcsx-abnxt load pcsx.cfg and then the
 they only ever save to the custom file.
 
 While the custom file exists, the editor adds a *Saved in the emulator* heading and an **Unlock the
-settings** row, and shows the Video and Emulator rows greyed out with the values the emulator will use.
+settings** row, and shows the Display, Rendering and Emulator rows greyed out with the values the emulator will use.
 Those rows can be selected but not changed. Cross on Unlock asks for confirmation, then deletes the custom
 file (`GameSettingsService::unlock` / `PcsxConfig::unlock`), and the rows are pcsx.cfg's again.
 
