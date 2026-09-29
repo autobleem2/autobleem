@@ -25,9 +25,10 @@ public:
     // where `resume` is pasted on the resume icon, in the icon's pixels (theme launcher.menuIcons.resumePicture)
     ableem::Rect resumePicture{25, 33, 68, 52};
 
-    int x = 0, y = 0, oy = 0, ox = 0;
-    int xoff[4] = {0, 0, 0, 0};
-    int yoff[4] = {0, 0, 0, 0};
+    // fractional pixels: the zoomed icon stays centred and the row slides without 1-pixel steps
+    float x = 0, y = 0, oy = 0, ox = 0;
+    float xoff[4] = {0, 0, 0, 0};
+    float yoff[4] = {0, 0, 0, 0};
 
     float optionscales[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -55,11 +56,16 @@ public:
     }
     int direction = 0;
 
+    // the offset that keeps an icon drawn at `scale` centred on its unzoomed place
+    static float zoomOffset(float scale) { return -(118.0f * scale - 118.0f) / 2.0f; }
+
     void freeAssets();
     void update(long time) override;
     void render() override;
 
     void setResumePic(std::string picturePath);
+    // the same picture decoded elsewhere (the launcher's background loader)
+    void setResumeTex(const ableem::Texture &picture) { resume = picture; }
 
     int transition = 0;
 

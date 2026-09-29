@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Ein Scan läuft bereits
 About=Über
@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Kerne
 could not be loaded - see Extensions=konnte nicht geladen werden - siehe Erweiterungen
 Cover Style:=Cover-Stil:
+Cover shine:=Cover-Glanz:
 Crash logs:=Absturzprotokolle:
 Create, rename or manage memory card sets=Memory-Card-Sets erstellen, umbenennen oder verwalten
 Cue file not found=CUE-Datei nicht gefunden
@@ -325,6 +326,7 @@ Share memory card=Memory Card teilen
 Sharp=Scharf
 Shift=Umschalt
 Show Internal Games:=Interne Spiele anzeigen:
+Show performance:=Leistung anzeigen:
 Showing Timeout (0 for no timeout):=Anzeige-Timeout (0 kein Timeout):
 Showing: All Games=Zeige: Alle Spiele
 Showing: Apps=Zeige: Apps
@@ -404,3 +406,10 @@ Widescreen:=Breitbild:
 Wireless pad=Kabelloser Controller
 Year:=Jahr:
 |@lang|=2
+Auto=Auto
+Display=Anzeige
+Display:=Anzeige:
+Go back=Zurück
+Going back to the previous mode in=Zurück zum vorigen Modus in
+Keep=Behalten
+Keep this display mode?=Diesen Anzeigemodus behalten?

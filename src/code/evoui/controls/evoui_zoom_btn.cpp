@@ -3,37 +3,31 @@
 //
 
 #include "evoui_zoom_btn.h"
+#include "core/model/timing.h"
 
 //*******************************
 // PsZoomBtn::update
 //*******************************
+// the size is a function of the time since the pulse began, not a sum of per-frame steps: a late frame
+// lands where it should, and nothing drifts
 void PsZoomBtn::update(long time) {
-    long timeSinceLastFrame = time - lastTime;
-
-    if (up) {
-        zoom += (zoomStep * timeSinceLastFrame);
-        w = ow * zoom;
-        h = oh * zoom;
-    } else {
-        zoom -= (zoomStep * timeSinceLastFrame);
-        w = ow * zoom;
-        h = oh * zoom;
-    }
-
-    if (zoom >= maxZoom) {
-        up = false;
-        zoom = maxZoom;
-    }
-    if (zoom <= 1.0f) {
-        up = true;
-        zoom = 1.0f;
-    }
-
-    int sizeChangeX = w - ow;
-    int sizeChangeY = h - oh;
-
-    x = ox - (sizeChangeX / 2);
-    y = oy - (sizeChangeY / 2);
-
+    if (started == 0)
+        started = time;
+    const float zoom = 1.0f + (maxZoom - 1.0f) * pulseWave(time - started, period);
+    drawW = ow * zoom;
+    drawH = oh * zoom;
+    drawX = ox - (drawW - ow) / 2.0f;
+    drawY = oy - (drawH - oh) / 2.0f;
     lastTime = time;
+}
+
+//*******************************
+// PsZoomBtn::render
+//*******************************
+void PsZoomBtn::render() {
+    if (!visible)
+        return;
+    if (drawW <= 0.0f) // not updated yet
+        update(lastTime);
+    renderer.copy(tex, nullptr, ableem::FRect(drawX, drawY, drawW, drawH));
 }

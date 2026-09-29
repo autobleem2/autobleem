@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=En skanning pågår redan
 About=Om
@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Kärnor
 could not be loaded - see Extensions=kunde inte laddas - se Tillägg
 Cover Style:=Omslagsstil:
+Cover shine:=Glans på omslaget:
 Crash logs:=Kraschloggar:
 Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
 Cue file not found=CUE-filen hittades inte
@@ -325,6 +326,7 @@ Share memory card=Dela minneskort
 Sharp=Skarp
 Shift=Skift
 Show Internal Games:=Visa interna spel:
+Show performance:=Visa prestanda:
 Showing Timeout (0 for no timeout):=Visningstimeout (0 ingen timeout):
 Showing: All Games=Visar: Alla spel
 Showing: Apps=Visar: Appar
@@ -404,3 +406,10 @@ Widescreen:=Widescreen:
 Wireless pad=Trådlös handkontroll
 Year:=År:
 |@lang|=sv
+Auto=Auto
+Display=Bild
+Display:=Bild:
+Go back=Gå tillbaka
+Going back to the previous mode in=Tillbaka till föregående läge om
+Keep=Behåll
+Keep this display mode?=Behålla det här bildläget?

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=En scanning er allerede i gang
 About=Om
@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Kerner
 could not be loaded - see Extensions=kunne ikke indlæses - se Udvidelser
 Cover Style:=Cover-stil:
+Cover shine:=Glimt på coveret:
 Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
 Cue file not found=CUE-filen blev ikke fundet
@@ -325,6 +326,7 @@ Share memory card=Del hukommelseskort
 Sharp=Skarp
 Shift=Skift
 Show Internal Games:=Vis interne spil:
+Show performance:=Vis ydeevne:
 Showing Timeout (0 for no timeout):=Vis timeout (0 ingen timeout):
 Showing: All Games=Viser: Alle spil
 Showing: Apps=Viser: Apps
@@ -404,3 +406,10 @@ Widescreen:=Widescreen:
 Wireless pad=Trådløs controller
 Year:=År:
 |@lang|=da
+Auto=Auto
+Display=Skærm
+Display:=Skærm:
+Go back=Gå tilbage
+Going back to the previous mode in=Tilbage til den forrige tilstand om
+Keep=Behold
+Keep this display mode?=Behold denne skærmtilstand?

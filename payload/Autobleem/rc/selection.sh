@@ -8,6 +8,8 @@
 #   6  install the update the launcher downloaded into System/Updates (a console with a network - the
 #      AutoBleem kernel's WiFi): abupdate lays it over the stick, then the new launcher starts
 #   7  power off: the standby below, then the launcher again when the power button wakes the console
+#   8  a new display mode (Options -> Display): straight back to boot.sh, which restarts Weston in it and
+#      starts the launcher again - no reboot
 # After a crash, or a first boot where it never ran, the file is not there - then there is no selection
 # and the reboot is what happens. The file is removed once read, so a crash after a standby is not
 # taken for another power off.
@@ -15,6 +17,7 @@
 SEL_RETROARCH=4
 SEL_UPDATE=6
 SEL_POWEROFF=7
+SEL_DISPLAY=8
 
 RC=/media/Autobleem/rc
 . $RC/ab_log.sh
@@ -233,6 +236,9 @@ update() {
 }
 
 case "$AB_SELECTION" in
+"$SEL_DISPLAY")
+    exit 0
+    ;;
 "$SEL_RETROARCH")
     $RC/retroarch.sh
     exit 0

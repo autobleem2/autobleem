@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Ya hay un escaneo en curso
 About=Sobre
@@ -64,6 +64,7 @@ Core:=Núcleo:
 Cores=Núcleos
 could not be loaded - see Extensions=no se pudo cargar - ver Extensiones
 Cover Style:=Estilo de Caratulas:
+Cover shine:=Destello de la carátula:
 Crash logs:=Registros del fallo:
 Create, rename or manage memory card sets=Crea, renombra o administra sets de memory cards
 Cue file not found=No se encontró el archivo CUE
@@ -325,6 +326,7 @@ Share memory card=Compartir memory card
 Sharp=Nítido
 Shift=Mayús
 Show Internal Games:=Mostrar Juegos Internos:
+Show performance:=Mostrar rendimiento:
 Showing Timeout (0 for no timeout):=Tiempo de Muestra (0 sin tiempo):
 Showing: All Games=Mostrando: Todos los Juegos
 Showing: Apps=Mostrando: Apps
@@ -404,3 +406,10 @@ Widescreen:=Widescreen:
 Wireless pad=Mando inalámbrico
 Year:=Año:
 |@lang|=6
+Auto=Auto
+Display=Pantalla
+Display:=Pantalla:
+Go back=Volver
+Going back to the previous mode in=Vuelta al modo anterior en
+Keep=Mantener
+Keep this display mode?=¿Mantener este modo de pantalla?

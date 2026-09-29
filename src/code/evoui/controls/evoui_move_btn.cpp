@@ -3,32 +3,27 @@
 //
 
 #include "evoui_move_btn.h"
+#include "core/model/timing.h"
 
 //*******************************
 // PsMoveBtn::update
 //*******************************
 void PsMoveBtn::update(long time) {
-    int duration = 500;
-
-    float progress = time - animationStarted;
-
-    progress = progress / (duration * 1.0f);
-    if (progress > 1)
-        progress = 1;
-    if (progress < 0)
-        progress = 0;
-
-    if (!up) {
-        y = originaly + maxMove * progress;
-
-    } else {
-        y = (originaly + maxMove) - maxMove * progress;
-    }
-
-    if (progress >= 1.0f) {
-        up = !up;
+    if (animationStarted == 0)
         animationStarted = time;
-    }
-
+    drawY = originaly + maxMove * pulseWave(time - animationStarted, period);
+    y = originaly; // where the arrow stands; the bob is drawY
     lastTime = time;
+}
+
+//*******************************
+// PsMoveBtn::render
+//*******************************
+void PsMoveBtn::render() {
+    if (!visible)
+        return;
+    if (drawY == 0.0f) // not updated yet
+        drawY = static_cast<float>(originaly);
+    renderer.copy(tex, nullptr,
+                  ableem::FRect(static_cast<float>(x), drawY, static_cast<float>(w), static_cast<float>(h)));
 }

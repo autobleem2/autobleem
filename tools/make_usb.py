@@ -239,7 +239,7 @@ def make_fake_retroarch(usb):
                 z.writestr('%s.%s' % (game, ext), b'fake rom ' + game.encode('utf-8'))
 
 
-# fake Apps for the set picker's category rows (docs/app-format-plan.md's Category=): a couple of Games,
+# fake Apps for the set picker's category rows (autobleem-main docs/archive/app-format-plan.md's Category=): a couple of Games,
 # one Emulators, one Tools, one Media, and one with no Category at all (falls under "Other") - enough for
 # every row the Apps tab can show, plus "All apps". Real Apps (abflashkit, pscbios) never get a Category
 # here: the app_* repos and the Store catalog carry their own later, not this batch.

@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
@@ -64,6 +64,7 @@ Core:=Jadro:
 Cores=Jadrá
 could not be loaded - see Extensions=sa nedalo načítať - pozri Rozšírenia
 Cover Style:=Štýl obalu:
+Cover shine:=Záblesk obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 Cue file not found=Súbor CUE sa nenašiel
@@ -325,6 +326,7 @@ Share memory card=Zdieľať pamäťovú kartu
 Sharp=Ostrý
 Shift=Shift
 Show Internal Games:=Zobraziť originálne hry:
+Show performance:=Zobraziť výkon:
 Showing Timeout (0 for no timeout):=Zobrazenie časového limitu (0 bez limitu):
 Showing: All Games=Zobrazujem: Všetky hry
 Showing: Apps=Zobrazujem: Aplikácie
@@ -404,3 +406,10 @@ Widescreen:=Širokouhlý obraz:
 Wireless pad=Bezdrôtový ovládač
 Year:=Rok:
 |@lang|=sk
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Späť
+Going back to the previous mode in=Návrat k predchádzajúcemu režimu o
+Keep=Ponechať
+Keep this display mode?=Ponechať tento režim obrazu?

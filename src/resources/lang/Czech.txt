@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Prohledávání již probíhá
 About=O programu
@@ -64,6 +64,7 @@ Core:=Jádro:
 Cores=Jádra
 could not be loaded - see Extensions=nelze načíst - viz Rozšíření
 Cover Style:=Styl obalu:
+Cover shine:=Záblesk obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvořit, přejmenovat nebo spravovat sady paměťových karet
 Cue file not found=Soubor CUE nenalezen
@@ -325,6 +326,7 @@ Share memory card=Sdílet paměťovou kartu
 Sharp=Ostrý
 Shift=Shift
 Show Internal Games:=Zobrazit interní hry:
+Show performance:=Zobrazit výkon:
 Showing Timeout (0 for no timeout):=Časový limit zobrazení (0 bez limitu):
 Showing: All Games=Zobrazeno: Všechny hry
 Showing: Apps=Zobrazeno: Aplikace
@@ -404,3 +406,10 @@ Widescreen:=Širokoúhlý obraz:
 Wireless pad=Bezdrátový ovladač
 Year:=Rok:
 |@lang|=cs
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Zpět
+Going back to the previous mode in=Návrat k předchozímu režimu za
+Keep=Ponechat
+Keep this display mode?=Ponechat tento režim obrazu?

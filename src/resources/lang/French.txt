@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Une analyse est déjà en cours
 About=À propos
@@ -64,6 +64,7 @@ Core:=Core :
 Cores=Cœurs
 could not be loaded - see Extensions=n'a pas pu être chargée - voir Extensions
 Cover Style:=Style de jaquette :
+Cover shine:=Reflet de la jaquette :
 Crash logs:=Journaux du plantage :
 Create, rename or manage memory card sets=Créer, renommer ou gérer des jeux de cartes mémoire
 Cue file not found=Fichier CUE introuvable
@@ -325,6 +326,7 @@ Share memory card=Partager la carte mémoire
 Sharp=Net
 Shift=Maj
 Show Internal Games:=Afficher les jeux internes :
+Show performance:=Afficher les performances :
 Showing Timeout (0 for no timeout):=Délai d'affichage (0 aucun délai) :
 Showing: All Games=Affichage : Tous les jeux
 Showing: Apps=Affichage : Applications
@@ -404,3 +406,10 @@ Widescreen:=Plein écran:
 Wireless pad=Manette sans fil
 Year:=Année:
 |@lang|=fr
+Auto=Auto
+Display=Affichage
+Display:=Affichage :
+Go back=Revenir
+Going back to the previous mode in=Retour au mode précédent dans
+Keep=Garder
+Keep this display mode?=Garder ce mode d'affichage ?

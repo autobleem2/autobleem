@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
@@ -64,6 +64,7 @@ Core:=Ydin:
 Cores=Ytimet
 could not be loaded - see Extensions=ei voitu ladata - katso Laajennukset
 Cover Style:=Kannen tyyli:
+Cover shine:=Kannen välähdys:
 Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 Cue file not found=CUE-tiedostoa ei löytynyt
@@ -325,6 +326,7 @@ Share memory card=Jaa muistikortti
 Sharp=Terävä
 Shift=Vaihto
 Show Internal Games:=Näytä Sisäiset Pelit:
+Show performance:=Näytä suorituskyky:
 Showing Timeout (0 for no timeout):=Näytetään: aikakatkaisu (0 ei aikakatkaisua)
 Showing: All Games=Näytetään: Kaikki Pelit
 Showing: Apps=Näytetään: Sovellukset
@@ -404,3 +406,10 @@ Widescreen:=Laajakuva:
 Wireless pad=Langaton ohjain
 Year:=Vuosi:
 |@lang|=fi
+Auto=Auto
+Display=Näyttö
+Display:=Näyttö:
+Go back=Palaa
+Going back to the previous mode in=Paluu edelliseen tilaan
+Keep=Pidä
+Keep this display mode?=Pidetäänkö tämä näyttötila?

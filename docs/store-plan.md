@@ -64,7 +64,7 @@ behind it:
      the update. The Store's `extension.ini` says `Network=required`, so **the launcher refuses to open it
      offline**: its row in the Extensions list is greyed with "Needs a network connection" (the extensions
      plan). On a console that means a stock kernel, or the AutoBleem kernel with its WiFi down.
-3. **Our Apps format is a store item.** The App folder is multi-platform (`docs/app-format-plan.md`):
+3. **Our Apps format is a store item.** The App folder is multi-platform (autobleem-main `docs/archive/app-format-plan.md`):
    one `Apps/<name>/` holds every platform's binary in `bin/<key>/`, and `app.ini` says which is which.
    The Store downloads the one-platform package for this machine (`opentyrian-psc-<version>.zip`) and
    *merges* it into the folder, never deleting another platform's binaries. Updates and removal are the
@@ -277,14 +277,14 @@ rebuilt on it.
   `store/<platform>/`. `repo_index.py` builds `catalog.json` from them plus a per-item `<id>.json` (title,
   author, licence, description, requires). The page does not have to show the store; if it does, it fits
   into the approved look.
-- **Apps**: `tools/pack_psc_apps.py` gets a `--per-app` mode that writes one zip per App instead of the
+- **Apps**: autobleem-appliance's `tools/pack_psc_apps.py` gets a `--per-app` mode that writes one zip per App instead of the
   one dated pack. The pack stays for the PC installer.
 - **Games on our catalog** are homebrew or freeware whose licence allows hosting, each with its licence in
   the item. Anything else reaches a user through a TSV source.
 
 ## Steps
 
-The multi-platform folder format (`docs/app-format-plan.md`, steps 1-2) and the extension mechanism
+The multi-platform folder format (autobleem-main `docs/archive/app-format-plan.md`, steps 1-2) and the extension mechanism
 (`docs/extensions-plan.md`, steps 1-4) come first. Each step here is one commit
 (or a core commit plus a submodule bump) with its tests. Steps 1-4 are testable on a PC before any screen
 exists.
@@ -339,7 +339,7 @@ exists.
    `docs/lan-share-plan.md`); `pack_psc_apps.py --per-app` (autobleem-appliance) and the first items - the
    eight console Apps of apps-psc-20260920 in `store/psc/`, next to Terminal. The step as first written:
    The site: the Store's packages, `store` in autobleem-repo's `repo_publish.sh`/`repo_index.py`,
-   `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
+   autobleem-appliance's `pack_psc_apps.py --per-app`, and the first items: OpenTyrian and the other seven console Apps for
    `psc`.
 7. **Not done.** Apps for the other targets: OpenTyrian built for `rpi`, `rpi64`, `pcusb` and `win`
    (the App sources are the tier-2 `screemerpl` repositories, see autobleem-main's `todo.md`). Each is
@@ -354,7 +354,7 @@ exists.
 
 ## Open questions
 
-- **Apps beyond the console** depend on `docs/app-format-plan.md` (the multi-platform folder, the
+- **Apps beyond the console** depend on autobleem-main `docs/archive/app-format-plan.md` (the multi-platform folder, the
   Windows direct launch). Until it and step 7 are done, a target's catalog may simply have no Apps, and the
   tab says so.
 None left: the notice, the name and dead-link checking were decided on 2026-09-24 (decisions 1 and 4).

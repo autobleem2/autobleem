@@ -195,6 +195,18 @@ public:
     // the loads a scroll defers to the frame the carousel comes to rest in: the snap and the resume
     // picture, both PNG decodes off the SD card that used to cost the scroll its first frame
     bool settleLoadsPending = false;
+    // an animation is running or input is held: the loop draws every frame, else at the ambient rate
+    bool somethingMoves() const;
+    // measuring on a device (not for users): AB_BENCH_SCROLL=1 runs the row back and forth by itself as a held
+    // stick would, =tap by single taps (350 ms apart), =menu opens and closes the game menu (700 ms apart);
+    // AB_SKIP=part,part leaves parts of the frame undrawn (a static element's name, carousel, menu, hints,
+    // bubbles, front) - the frame statistics then say what each part costs
+    enum BenchMode { BenchOff, BenchHold, BenchTap, BenchMenu };
+    static int benchMode();
+    static bool benchSkips(const std::string &part);
+    void benchStep();
+    int benchDir = 0;
+    long benchLast = 0;
     void finishSettleLoads();
     void loadAssets();
     void freeAssets();
@@ -244,6 +256,10 @@ public:
     PsSettingsBack *settingsBack = nullptr;
     PsObj *playButton = nullptr;
     PsZoomBtn *playText = nullptr;
+    // Play's halo: a soft shadow under it and a faint rim around it, made once per theme (makePlayHalo)
+    ableem::Texture playHalo;
+    ableem::Rect playHaloRect;
+    void makePlayHalo(const LauncherTheme &theme);
     PsMeta *meta = nullptr;
 
     PsObj *background = nullptr;
@@ -272,6 +288,10 @@ public:
     // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
     // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
     std::string hintSignature() const;
+    // Env::retroArchInstalled() for the per-frame footer: re-checked every 2 s, not a stat per binary a frame
+    bool retroArchInstalledCached() const;
+    mutable bool raInstalled_ = false;
+    mutable unsigned int raCheckedAt_ = 0;
     void updateHintsIfNeeded();
     void layoutHints();
     std::unique_ptr<PsMenu> menu;
@@ -332,7 +352,17 @@ public:
     // the selected game's screenshot in the theme's launcher.snapPanel, when the theme has one
     void loadSnap();
     void renderSnap();
+    // where the selected game's screenshot is (empty: none)
+    std::string snapPathFor(const PsGame &game);
     ableem::Texture snapTex;
     int snapForGameId = -1;
     bool snapForInternal = false;
+
+    // the snap and the resume picture finishSettleLoads() asked for, decoded in the background and put on
+    // the GPU by pollSettleLoads() when they are ready - the picture shown until then is the last one
+    CoverLoader extrasLoader;
+    std::string pendingSnapPath, pendingResumePath;
+    void pollSettleLoads();
+    // the snap and the resume picture belong to the game the row rests on: gone while it moves
+    void hideSettlePictures();
 };

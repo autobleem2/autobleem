@@ -5,10 +5,12 @@
 #pragma once
 
 #include "carousel_game.h"
+#include "cover_loader.h"
 #include "core/model/ps_game.h"
 
 #include <ableem/ableem.h>
 
+#include <cstdint>
 #include <vector>
 
 //******************
@@ -16,8 +18,8 @@
 //******************
 // Was a third of GuiLauncher. PsCarousel::Slots screen positions (SideCovers a side and the selected one in the
 // middle at full size), one game per position; scrolling moves every visible cover one position along and
-// drops the one that falls off the end. Covers are textures loaded when a game becomes visible and freed
-// when it stops being, to keep the number held at once (each 226x226 RGBA) to what the console can spare.
+// drops the one that falls off the end. Covers are textures decoded in the background (CoverLoader) as a game
+// comes near the screen, and kept after it leaves up to a limit (coverCacheLimit) the console can spare.
 //
 // The row is bounded: it holds exactly the games given, the first game has nothing to its left and the
 // last nothing to its right, and a scroll past either end is refused (canSelectNext()/canSelectPrevious()).
@@ -53,25 +55,30 @@ public:
     bool canSelectPrevious() const { return selectedIsValid() && selected > 0; }
 
     bool scrolling = false; // an animation is in progress; input that would start another waits
+    long chainEnd = 0;      // when the last held-stick step ends: the next one starts there (stepStart)
+    long stepStart(int speed, bool eased);
     PsCarousel positions;
 
-    // places the covers around `selectedIndex` with no animation, loading and freeing textures to match:
-    // every visible cover is loaded before this returns; the Lookahead games beyond each end of the row
-    // keep theirs and get them from loadOneMissingTexture() when the screen has a frame to spare
-    void setInitialPositions(int selectedIndex);
-    // how many games beyond each end of the row keep a texture ready for the scroll that brings them in.
-    // A cover is a PNG decode of 10-40 ms on a Pi, and doing it on the frame the scroll ended was a hitch
-    // at the end of every scroll.
-    static const int Lookahead = 2;
-    // decodes one wanted-but-missing cover (the nearest first); true if it did. For the launcher's idle
-    // frames: one a frame, so the covers just past the ends are ready before the next scroll.
-    bool loadOneMissingTexture();
+    // places the covers around `selectedIndex` with no animation. With waitForCovers every shown cover is
+    // loaded before this returns (a new set, a return from a game); without it (the end of a scroll step)
+    // nothing is loaded here - the missing covers are asked of the CoverLoader and arrive through
+    // pumpCovers(), an empty box standing in for one until then. Covers no longer shown are kept, up to
+    // coverCacheLimit(), the longest unused let go first.
+    void setInitialPositions(int selectedIndex, bool waitForCovers = true);
+    // how many games beyond each end of the row are decoded ahead for the scroll that brings them in
+    static const int Lookahead = 6;
+    // puts the covers the CoverLoader has finished on the GPU, the nearest first - one a frame while the
+    // row moves, two at rest; true if it did any. Once a frame from the launcher's loop.
+    bool pumpCovers();
     // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
     // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next
     void scrollLeft(int speed, bool eased = true);
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
     void moveMainCover(bool toGamesRow);
+    // a scroll or a cover's own move (the main cover raised or lowered) is in progress, or the shine crossing
+    // the selected cover
+    bool animating() const;
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
     void snapMainCover(bool toGamesRow);
@@ -87,6 +94,9 @@ private:
     PsCarouselGame *itemAt(int index);
     // the composed empty box, shared by every placeholder; made on first use
     void loadPlaceholderTexture();
+    // the covers are composed in render targets: when the renderer lost them (Renderer::targetsLost), the
+    // shown and wanted ones are composed again before the next frame
+    void reloadLostTextures();
     // every item: the games, then the empty boxes
     template <class F> void forEachItem(F f) {
         for (auto &game : games)
@@ -97,8 +107,41 @@ private:
             f(box);
     }
 
+    // the covers kept at most (AB_COVER_CACHE overrides): the shown and the lookahead ones always, the
+    // rest up to this many - each a 226x226 RGBA target, 0.2 MB. Sony's own carousel loaded every cover at
+    // once, which on a big library ran the console out of video memory.
+    static int coverCacheLimit();
+    void evictCovers();
+    // asks the CoverLoader for the shown and wanted covers still missing, nearest to `middle` first
+    void requestMissingCovers(int middle);
+    // a 226x226 target an evicted cover left, to compose the next one into (creating one is slow on the
+    // console's GPU); an invalid Texture when there is none
+    ableem::Texture spareTarget();
+
     ableem::GuiBase &gui_;
+    CoverLoader loader_;
+    std::vector<ableem::Texture> targetPool_;
+    unsigned long placement_ = 0;    // counts setInitialPositions: PsCarouselGame::lastWanted's clock
     ableem::Texture placeholderTex_; // the empty box of `boxKind`, invalid until a placeholder is shown
     ableem::Rect placeholderContent_;
     float placeholderThickness_ = 0.08f;
+    unsigned long texturesDrawnAt_ = 0; // Renderer::targetsLost() the covers were composed at
+
+    // the layer: a row at rest is drawn once into layer_ and shown with one copy a frame after that, instead of
+    // a copy per cover strip (over a thousand on the console). What was drawn is told by its signature - every
+    // shown cover's texture, place, turn and shade; a moving row is drawn straight to the screen, and baked
+    // again the first frame it stands still. AB_LAYERS=0 turns it off.
+    void drawCovers(const std::vector<const PsCarouselGame *> &visible);
+    ableem::Texture layer_;
+    std::vector<std::uintptr_t> layerSignature_, lastSignature_;
+    bool layerValid_ = false;
+
+    // the selected cover's light: a soft glow behind it in the theme's selection colour, breathing slowly,
+    // and - when it comes to rest - a shine that crosses its front once (Options "Cover shine", config.ini
+    // covershine). Both are drawn outside the layer, the glow under it, the shine over it.
+    void drawGlow(long now);
+    void drawShine(long now);
+    ableem::Texture glowTex_, shineTex_;
+    int shineFor_ = -1; // the game the shine last crossed (-1: none since the row moved)
+    long shineAt_ = 0;  // when it starts crossing
 };

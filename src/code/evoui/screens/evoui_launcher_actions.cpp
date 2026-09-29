@@ -20,6 +20,7 @@
 #include "core/services/environment.h"
 #include "core/services/system.h"
 #include "core/services/launch.h"
+#include "core/services/output_mode.h"
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
@@ -194,20 +195,29 @@ void GuiLauncher::loop_openOptions() {
             }
         }
 
+        // the covers and the empty boxes both recomposed over the reloaded assets: Cover Style may have
+        // changed the jewel case, and an empty box kept from before would stay in the old one
+        gui->loadAssets();
+        carousel.freeTextures();
         if (!carousel.games.empty()) {
-            gui->loadAssets();
-            for (auto &game : carousel.games) {
-                game.freeTex();
-            }
             carousel.setInitialPositions(carousel.selected);
         } else {
-            gui->loadAssets();
             meta->gameName = "";
             menu->setResumePic("");
         }
 
         // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
+
+        // Options -> Display changed: the launcher closes so AutoBleem::run() can try the mode (on the console
+        // through rc/boot.sh, a launcher restart) - and comes back on the same game
+        if (!option.newOutputMode.empty()) {
+            app.config().inifile.values[OutputMode::ConfigKey] = option.previousOutputMode();
+            rememberSelection();
+            app.session().pendingOutputMode = option.newOutputMode;
+            app.session().menuOption = MENU_OPTION_DISPLAY;
+            menuVisible = false;
+        }
     } else {
         render();
     }

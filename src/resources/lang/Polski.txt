@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Skanowanie jest już w toku
 About=O programie
@@ -64,6 +64,7 @@ Core:=Rdzeń:
 Cores=Rdzenie
 could not be loaded - see Extensions=nie dało się załadować - zobacz Rozszerzenia
 Cover Style:=Styl Okładek:
+Cover shine:=Błysk okładki:
 Crash logs:=Logi awarii:
 Create, rename or manage memory card sets=Twórz, zmieniaj nazwę lub zarządzaj zestawami kart pamięci
 Cue file not found=Nie znaleziono pliku CUE
@@ -325,6 +326,7 @@ Share memory card=Udostępnij kartę pamięci
 Sharp=Ostry
 Shift=Shift
 Show Internal Games:=Pokazuj Wewnętrzne Gry:
+Show performance:=Pokazuj wydajność:
 Showing Timeout (0 for no timeout):=Czas Wyświetlania (0 ciągle)
 Showing: All Games=Wyświetla: Wszystkie Gry
 Showing: Apps=Wyświetla: Aplikacje
@@ -404,3 +406,10 @@ Widescreen:=Pełny ekran:
 Wireless pad=Bezprzewodowy pad
 Year:=Rok:
 |@lang|=pl
+Auto=Auto
+Display=Obraz
+Display:=Obraz:
+Go back=Wróć
+Going back to the previous mode in=Powrót do poprzedniego trybu za
+Keep=Zostaw
+Keep this display mode?=Zostawić ten tryb obrazu?

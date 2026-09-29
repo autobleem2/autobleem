@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
@@ -64,6 +64,7 @@ Core:=Çekirdek:
 Cores=Çekirdekler
 could not be loaded - see Extensions=yüklenemedi - Eklentiler'e bakın
 Cover Style:=Kapak Stili:
+Cover shine:=Kapak parıltısı:
 Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
 Cue file not found=CUE dosyası bulunamadı
@@ -325,6 +326,7 @@ Share memory card=Hafıza kartını paylaş
 Sharp=Keskin
 Shift=Shift
 Show Internal Games:=Dahili Oyunları Göster:
+Show performance:=Performansı göster:
 Showing Timeout (0 for no timeout):=Gösterim Zaman Aşımı (0 zaman aşımı yok):
 Showing: All Games=Gösteriliyor: Tüm Oyunlar
 Showing: Apps=Gösteriliyor: Uygulamalar
@@ -404,3 +406,10 @@ Widescreen:=Geniş Ekran:
 Wireless pad=Kablosuz kumanda
 Year:=Yıl:
 |@lang|=tr
+Auto=Otomatik
+Display=Ekran
+Display:=Ekran:
+Go back=Geri dön
+Going back to the previous mode in=Önceki moda dönülüyor:
+Keep=Koru
+Keep this display mode?=Bu ekran modu korunsun mu?

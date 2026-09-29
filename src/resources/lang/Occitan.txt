@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 402
+# Untranslated: 0 / Total: 410
 
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
@@ -64,6 +64,7 @@ Core:=Core:
 Cores=Còrs
 could not be loaded - see Extensions=a pas pogut èsser cargada - vejatz Extensions
 Cover Style:=Estil cobèrtura :
+Cover shine:=Lusor de la jaqueta :
 Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
 Cue file not found=Fichièr CUE introbable
@@ -325,6 +326,7 @@ Share memory card=Partejar la carta memòria
 Sharp=Net
 Shift=Maj
 Show Internal Games:=Afichar los jòcs intèrnes :
+Show performance:=Afichar las performàncias :
 Showing Timeout (0 for no timeout):=Afichatge Timeout (0 cap de timeout) :
 Showing: All Games=Afichatge : Totes los jòcs
 Showing: Apps=Afichatge : Aplicacions
@@ -404,3 +406,10 @@ Widescreen:=Grand ecran :
 Wireless pad=Manèta sens fial
 Year:=Annada :
 |@lang|=oc
+Auto=Auto
+Display=Afichatge
+Display:=Afichatge :
+Go back=Tornar
+Going back to the previous mode in=Retorn al mòde precedent dins
+Keep=Gardar
+Keep this display mode?=Gardar aqueste mòde d'afichatge ?

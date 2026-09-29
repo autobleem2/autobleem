@@ -48,6 +48,39 @@ $RC/checkstick.sh
 # the AutoBleem kernel's SSH key from the stick, if any (C10) - a no-op on the stock kernel
 $RC/ssh_keys.sh
 
+# Options -> Display: Weston's output mode, 720p (the firmware's) or 1080p. The console's HDMI driver reads no
+# EDID, so a client cannot switch modes: Weston is restarted with a CEA 1080p60 modeline from a RAM copy of its
+# ini, bind-mounted over it - nothing on the console's own storage is written, and a reboot is the firmware's
+# 720p again. Run before every start of the launcher (the boot, after a standby, after the launcher left for a
+# new mode - AB_SELECTION 8), and only when the wanted mode differs from the running one (~3 s of black). The
+# wanted mode: the launcher's pending one (outputmode.pending in the runtime dir - being tried, the launcher asks
+# to keep it), else config.ini's outputmode; anything but 1080 is 720. The copy is rewritten in place (cat >),
+# never replaced: the bind mount holds its inode.
+WESTON_INI=/etc/xdg/weston/weston.ini
+apply_output_mode() {
+    want=$(cat "$AB_RUNTIME_DIR/outputmode.pending" 2>/dev/null | tr -d '\r' | head -1)
+    [ -n "$want" ] || want=$(sed -n 's/^outputmode=//p' /media/System/config.ini 2>/dev/null | tr -d '\r' | tail -1)
+    [ "$want" = 1080 ] || want=720
+    have=$(cat /tmp/weston.mode 2>/dev/null)
+    [ -n "$have" ] || have=720
+    [ "$want" = "$have" ] && return
+    if ! grep -qs " $WESTON_INI " /proc/mounts; then
+        cp -f $WESTON_INI /tmp/weston.orig.ini
+        cp -f /tmp/weston.orig.ini /tmp/weston.ini
+        mount -o bind /tmp/weston.ini $WESTON_INI
+    fi
+    if [ "$want" = 1080 ]; then
+        sed 's/^mode=1280x720$/mode=148.50 1920 2008 2052 2200 1080 1084 1089 1125 +hsync +vsync/' \
+            /tmp/weston.orig.ini > /tmp/weston.ini
+    else
+        cat /tmp/weston.orig.ini > /tmp/weston.ini
+    fi
+    echo "$(date) boot: Weston restarted in ${want}p (was ${have}p)" >> "$AB_LOG_DIR/display.log"
+    systemctl restart weston
+    sleep 3
+    echo "$want" > /tmp/weston.mode
+}
+
 # The launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
 # RetroArch session and the launcher is started over; a reboot never returns. It runs from a copy on
 # tmpfs with the cwd there, so nothing of ours is on the stick while it unmounts it - the copy is taken
@@ -56,6 +89,7 @@ $RC/ssh_keys.sh
 # stick not being mounted at the wake.
 while true; do
     cd $RC
+    apply_output_mode
     ./autobleem.sh
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash

@@ -2,7 +2,7 @@
 #
 # Sourced before an App's program starts - by rc/app_run.sh (a multi-platform App without a run.sh of its
 # own) or by the App's own run.sh - on every Linux target: the console, the Pis, the PC stick. One file for
-# all of them (docs/app-format-plan.md); what differs is found, not configured. An App's run.sh does:
+# all of them (autobleem-main docs/archive/app-format-plan.md); what differs is found, not configured. An App's run.sh does:
 #
 #     #!/bin/sh
 #     . "$(dirname "$0")/../../Autobleem/rc/app_env.sh"

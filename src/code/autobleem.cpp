@@ -6,6 +6,7 @@
 #include "core/services/system.h"
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
+#include "gui/screens/gui_keep_display.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -127,6 +128,7 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     }
 
     body();
+    takeEmulatorOutputMode();
 
     if (runner_->keepsLauncherWindow()) {
         gui_->showSplashPicture("autobleem.jpg");
@@ -162,6 +164,89 @@ void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
     // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
     // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
     unlink("/tmp/.abload");
+}
+
+//*******************************
+// AutoBleem::takeEmulatorOutputMode
+//*******************************
+// The display mode the player picked in the emulator's own menu (<runtime>/outputmode, OutputMode) becomes the
+// launcher's: config.ini, and the window made after the game. Not on the console, where the mode is Weston's -
+// the emulator there cannot change it.
+void AutoBleem::takeEmulatorOutputMode() {
+    string token;
+    if (!OutputMode::readToken(OutputMode::emulatorFile(), token))
+        return;
+    DirEntry::removeFile(OutputMode::emulatorFile());
+#ifndef AB_PLATFORM_PSC
+    const OutputMode mode = OutputMode::parse(token);
+    string &value = cfg_.inifile.values[OutputMode::ConfigKey];
+    if (mode.token() == OutputMode::parse(value).token())
+        return;
+    PLOG_INFO << "The emulator switched the display to " << mode.token() << " - the launcher follows";
+    value = mode.token();
+    cfg_.save();
+    ableem::Platform::setOutputMode(mode.w, mode.h);
+#endif
+}
+
+//*******************************
+// AutoBleem::switchOutputMode / tryOutputMode / confirmPendingOutputMode
+//*******************************
+// Options -> Display off the console: the window made again in the new mode, in-process - everything that
+// holds a texture let go first, as for a game (runOutside)
+void AutoBleem::switchOutputMode(const OutputMode &mode) {
+    extensions_.suspend();
+    gui_->finish();
+    gui_->releaseDisplay();
+#ifdef AB_APPLIANCE
+    System::blankConsole();
+#endif
+    ableem::Platform::setOutputMode(mode.w, mode.h);
+    gui_->input().flushEvents();
+    gui_->display(true);
+    gui_->endBusy();
+    extensions_.resume();
+}
+
+// the new mode on the screen, and kept only with a Cross within GuiKeepDisplay::Seconds - else the old one back
+void AutoBleem::tryOutputMode(const string &token) {
+    string &value = cfg_.inifile.values[OutputMode::ConfigKey];
+    const OutputMode was = OutputMode::parse(value);
+    const OutputMode want = OutputMode::parse(token);
+    PLOG_INFO << "Trying display mode " << want.token() << " (was " << was.token() << ")";
+    switchOutputMode(want);
+    GuiKeepDisplay keep(*gui_);
+    keep.modeLabel = want.isAuto() ? _("Auto") : want.label();
+    keep.show();
+    if (keep.result) {
+        value = want.token();
+        cfg_.save();
+        PLOG_INFO << "Display mode " << want.token() << " kept";
+    } else {
+        PLOG_INFO << "Display mode " << want.token() << " not confirmed - back to " << was.token();
+        switchOutputMode(was);
+    }
+}
+
+// The console, right after the start: rc/boot.sh started Weston in the pending mode Options asked for (the
+// launcher left for it). Kept with a Cross - config.ini takes it; not kept, the launcher leaves again (false)
+// and boot.sh goes back to config.ini's mode. No pending file: nothing to ask.
+bool AutoBleem::confirmPendingOutputMode() {
+    string token;
+    if (!OutputMode::readToken(OutputMode::pendingFile(), token))
+        return true;
+    DirEntry::removeFile(OutputMode::pendingFile()); // asked once: a crash from here comes back in the old mode
+    GuiKeepDisplay keep(*gui_);
+    keep.modeLabel = OutputMode::parse(token).label();
+    keep.show();
+    if (!keep.result) {
+        PLOG_INFO << "Display mode " << token << " not confirmed - leaving for the previous one";
+        return false;
+    }
+    cfg_.inifile.values[OutputMode::ConfigKey] = OutputMode::parse(token).token();
+    cfg_.save();
+    PLOG_INFO << "Display mode " << token << " kept";
+    return true;
 }
 
 //*******************************
@@ -227,6 +312,15 @@ int AutoBleem::run() {
     gui_->display(false);
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
 
+    // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
+    // launcher leaves again at once for the old one. Elsewhere the mode is tried in-process, nothing is pending.
+#ifdef AB_PLATFORM_PSC
+    const bool leaveForDisplay = !confirmPendingOutputMode();
+#else
+    DirEntry::removeFile(OutputMode::pendingFile());
+    const bool leaveForDisplay = false;
+#endif
+
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
         // every game would otherwise scan in with no title/cover. RetroArch's "Sony - PlayStation.rdb"
@@ -278,7 +372,11 @@ int AutoBleem::run() {
     // the Quit that followed took the whole program out through selection.sh's reboot. So the display is
     // rebuilt a few times, a second apart, before that is accepted.
     int displayLost = 0;
-    while (true) {
+    if (leaveForDisplay) {
+        session_.menuOption = MENU_OPTION_DISPLAY;
+        launcher_.writeSelectionScript();
+    }
+    while (!leaveForDisplay) {
         bool quitRequested = false;
         {
             GuiLauncher launcherScreen(*gui_);
@@ -290,7 +388,9 @@ int AutoBleem::run() {
             break;
         }
         if (quitRequested) {
-            if (gui_->platform().isDevHost() || ++displayLost > 3) {
+            // Input's quit request (SIGTERM/SIGINT, the DebugDriver's `quit`) is a leave, never a lost
+            // display, and no selection is written for it (rc/selection.sh finds none: a stop, not a choice)
+            if (gui_->platform().isDevHost() || gui_->input().quitRequested() || ++displayLost > 3) {
                 break; // the window's own close button - see GuiLauncher::loop()'s comment - or hopeless
             }
             PLOG_WARNING << "The display went away (attempt " << displayLost << " of 3) - rebuilding it";
@@ -310,6 +410,23 @@ int AutoBleem::run() {
         // menu screen's job, and went missing with it - nothing launched anywhere until this line
         if (session_.startingGame && session_.runningGame) {
             session_.menuOption = MENU_OPTION_START;
+        }
+
+        // Options -> Display changed: the console leaves for rc/boot.sh to restart Weston in the new mode (the
+        // pending file says which) and start the launcher again; elsewhere the window is remade here
+        if (session_.menuOption == MENU_OPTION_DISPLAY) {
+#ifdef AB_PLATFORM_PSC
+            DirEntry::createDirs(Env::getPathToRuntimeDir());
+            DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            launcher_.writeSelectionScript();
+            break;
+#else
+            tryOutputMode(session_.pendingOutputMode);
+            session_.pendingOutputMode.clear();
+            session_.menuOption = MENU_OPTION_IDLE;
+            session_.resumingGui = true; // the launcher comes back on the same game
+            continue;
+#endif
         }
 
         // for the rc scripts, when the process is about to leave - never for a game, which comes back here:

@@ -4,6 +4,7 @@
 #include "core/services/environment.h"
 #include "core/services/theme_converter.h"
 #include "core/services/theme_installer.h"
+#include "core/services/output_mode.h"
 
 using namespace std;
 
@@ -77,6 +78,36 @@ vector<string> GuiOptions::getTimeoutValues() {
 }
 
 //*******************************
+// GuiOptions::getOutputModes
+//*******************************
+// The console: 720p or 1080p - Weston's mode, set by rc/boot.sh (its HDMI driver reads no EDID, so there is
+// nothing to list). Elsewhere: the display's own mode (auto) and every mode its EDID lists at 50 Hz or more.
+vector<string> GuiOptions::getOutputModes() {
+#ifdef AB_PLATFORM_PSC
+    vector<string> list{"720", "1080"};
+#else
+    vector<string> list{"auto"};
+    for (const ableem::DisplayMode &m : ableem::Platform::displayModes()) {
+        OutputMode mode;
+        mode.w = m.w;
+        mode.h = m.h;
+        list.push_back(mode.token());
+    }
+#endif
+    // "Auto (1080p)": the display's own mode, asked once here - never per drawn frame
+    const ableem::Size desktop = ableem::Platform::desktopDisplaySize();
+    OutputMode own;
+    own.w = desktop.w;
+    own.h = desktop.h;
+    autoLabel = own.isAuto() ? _("Auto") : _("Auto") + " (" + own.label() + ")";
+    // a mode chosen on another display stays listed, so the row does not jump away from it by itself
+    const string current = OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]).token();
+    if (find(list.begin(), list.end(), current) == list.end())
+        list.push_back(current);
+    return list;
+}
+
+//*******************************
 // GuiOptions::fill
 //*******************************
 void GuiOptions::fill() {
@@ -91,11 +122,17 @@ void GuiOptions::fill() {
     heading(_("Interface"));
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
+    // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
+    lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
     lines.emplace_back(CFG_THEME_FONT, _("Use Font from Theme:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
     lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Showing Timeout (0 for no timeout):"), "showingtimeout", false,
                        getTimeoutValues());
+    // the display mode (OutputMode) - the launcher's and the PS1 emulator's; only where the launcher is full
+    // screen (a dev host's window has no mode to change)
+    if (Gui::fullscreen())
+        lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
 
     heading(_("Sound"));
     lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
@@ -144,6 +181,8 @@ void GuiOptions::fill() {
     // System/Logs/keep marker, which this row makes and removes.
     heading(_("Diagnostics"));
     lines.emplace_back(CFG_KEEPLOGS, _("Keep logs on the stick:"), "keeplogs", true, vector<string>({"false", "true"}));
+    // the renderer's overlay: frame rate, CPU load, threads, memory in the bottom-left corner
+    lines.emplace_back(CFG_PERFOVERLAY, _("Show performance:"), "perfoverlay", true, vector<string>({"false", "true"}));
 
     app.lang().load(Env::getPathToLangDir(), saveCurrentLang);
 }
@@ -208,6 +247,14 @@ void GuiOptions::init() {
     GuiOptionsMenuBase::init(); // call the base class init()
     lines.clear();
     fill();
+    string &mode = app.config().inifile.values[OutputMode::ConfigKey];
+    mode = OutputMode::parse(mode).token(); // "1920x1080" is "1080", as the row lists it
+#ifdef AB_PLATFORM_PSC
+    if (mode != "1080")
+        mode = "720"; // what rc/boot.sh runs Weston in for anything but 1080
+#endif
+    outputModeOnEntry = mode;
+    newOutputMode.clear();
     selected = 0;
     settleOnOption(1);
 }
@@ -240,6 +287,12 @@ void GuiOptions::doKeyUp() {
 std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
     if (info.id == CFG_FONT && (value.empty() || value == "--"))
         return _("Theme Default");
+    if (info.id == CFG_DISPLAY) {
+        const OutputMode mode = OutputMode::parse(value);
+        if (!mode.isAuto())
+            return mode.label();
+        return autoLabel;
+    }
     return value;
 }
 
@@ -265,6 +318,8 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
 void GuiOptions::reloadFor(int id, const string &nextValue) {
     if (id == CFG_KEEPLOGS)
         Env::setKeepLogsMarker(nextValue == "true"); // what the rc scripts look at, from the next boot
+    if (id == CFG_PERFOVERLAY)
+        renderer.setPerfOverlay(nextValue == "true"); // at once, from the next frame
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || id == CFG_FONT;
     if (!theme && !fonts)
@@ -318,7 +373,18 @@ string GuiOptions::doOptionIndex(unsigned int index) {
 // "back without saving" here any more (it used to be Cross = save, Circle = discard)
 void GuiOptions::doCircle_Pressed() {
     app.audio().cancel.play();
-    app.config().save();
+    // a new display mode is only tried here (the launcher leaves for it) and kept once confirmed
+    // config.ini is written with the old one; in memory the row keeps showing the new one while the settings
+    // reload under it (it blinked back to the old value) - the launcher puts the old one back afterwards
+    string &mode = app.config().inifile.values[OutputMode::ConfigKey];
+    if (mode != outputModeOnEntry) {
+        newOutputMode = mode;
+        mode = outputModeOnEntry;
+        app.config().save();
+        mode = newOutputMode;
+    } else {
+        app.config().save();
+    }
     menuVisible = false;
     exitCode = 0;
 }
@@ -334,6 +400,11 @@ void GuiOptions::doCross_Pressed() {}
 // GuiOptions::doJoyRight
 //*******************************
 void GuiOptions::doJoyRight() {
+    if (stepsOnePerPress()) {
+        doKeyRight();
+        render();
+        return;
+    }
     do {
         doKeyRight();
         render();
@@ -341,9 +412,29 @@ void GuiOptions::doJoyRight() {
 }
 
 //*******************************
+// GuiOptions::stepsOnePerPress
+//*******************************
+// A row whose every step reloads (the theme, the music, the language, a font) or is tried on the screen (the
+// display mode) moves one value a press, never on a held button: the repeat loop runs until the next pad
+// event, and a release lost during a reload kept it stepping through every value - and on the Pi 400 left
+// the launcher spinning with nothing on the screen
+bool GuiOptions::stepsOnePerPress() {
+    if (selected < 0 || selected >= static_cast<int>(lines.size()))
+        return false;
+    const int id = lines[selected].id;
+    return id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC || id == CFG_LANG ||
+           id == CFG_THEME_FONT || id == CFG_FONT || id == CFG_DISPLAY;
+}
+
+//*******************************
 // GuiOptions::doJoyLeft
 //*******************************
 void GuiOptions::doJoyLeft() {
+    if (stepsOnePerPress()) {
+        doKeyLeft();
+        render();
+        return;
+    }
     do {
         doKeyLeft();
         render();

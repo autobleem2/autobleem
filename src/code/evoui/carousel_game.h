@@ -64,11 +64,28 @@ struct PsCarouselGame : public PsGamePtr {
     ableem::Rect content = ableem::Rect(0, 0, 226, 226);
     float thickness = 0.08f;
 
-    void loadTex(ableem::Renderer &renderer);
+    // the last time (Carousel's own count of placements) the cover was shown or wanted: the carousel keeps
+    // covers no longer shown up to a limit, and lets the longest unused go first
+    unsigned long lastWanted = 0;
+    bool artFailed = false; // its image could not be read: not asked for again
+
+    // the image file the cover is made from (see the .cpp), worked out on first use
+    const std::string &artPath();
+    // the cover, now: the file decoded and composed on this thread (a no-op when it is there already).
+    // `target` is a 226x226 render target to compose into (one the carousel reuses), or none to make one
+    void loadTex(ableem::Renderer &renderer, ableem::Texture target = ableem::Texture());
+    // the same from an image a CoverLoader decoded - only the upload and the compose left
+    void loadFromImage(ableem::Renderer &renderer, const ableem::Image &image,
+                       ableem::Texture target = ableem::Texture());
     // composes the empty box a placeholder shows: the jewel case or the big-box frame over a dark,
     // translucent inside, into coverPng/content/thickness like loadTex does for a game
     void loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind);
     void freeTex();
+
+private:
+    void compose(ableem::Renderer &renderer, const ableem::Texture &artTex, ableem::Texture target);
+    std::string art;
+    bool artResolved = false;
 };
 
 //******************

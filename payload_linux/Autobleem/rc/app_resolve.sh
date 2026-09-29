@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Sourced by app_env.sh: which of a multi-platform App's binaries this machine runs, read from its app.ini -
-# the shell copy of the launcher's AppManifest rule (docs/app-format-plan.md), for a run.sh started by hand.
+# the shell copy of the launcher's AppManifest rule (autobleem-main docs/archive/app-format-plan.md), for a run.sh started by hand.
 # The launcher itself resolves the ini and exports the answer (AB_APP_EXEC, AB_APP_ARGS, AB_APP_LIB,
 # AB_APP_KEY), so none of this runs under it. tests/rc/test_app_resolve.cpp holds the two to the same answers.
 #

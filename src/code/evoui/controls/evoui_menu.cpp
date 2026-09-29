@@ -46,9 +46,8 @@ void PsMenu::settle(bool open, int restY) {
     }
     if (open) {
         optionscales[selOption] = maxZoom;
-        const int grown = static_cast<int>(118 * maxZoom) - 118;
-        xoff[selOption] = -(grown / 2);
-        yoff[selOption] = -(grown / 2);
+        xoff[selOption] = zoomOffset(maxZoom);
+        yoff[selOption] = zoomOffset(maxZoom);
     }
 }
 
@@ -71,20 +70,14 @@ void PsMenu::update(long time) {
             if (active) {
 
                 optionscales[selOption] = 1 + progress * (maxZoom - 1);
-                int neww = 118 * optionscales[selOption];
-                int newh = 118 * optionscales[selOption];
-
-                xoff[selOption] = -((neww - 118) / 2);
-                yoff[selOption] = -((newh - 118) / 2);
+                xoff[selOption] = zoomOffset(optionscales[selOption]);
+                yoff[selOption] = zoomOffset(optionscales[selOption]);
 
             } else {
 
                 optionscales[selOption] = 1 + (1 - progress) * (maxZoom - 1);
-                int neww = 118 * optionscales[selOption];
-                int newh = 118 * optionscales[selOption];
-
-                xoff[selOption] = -((neww - 118) / 2);
-                yoff[selOption] = -((newh - 118) / 2);
+                xoff[selOption] = zoomOffset(optionscales[selOption]);
+                yoff[selOption] = zoomOffset(optionscales[selOption]);
             }
 
             if (progress == 1) {
@@ -93,20 +86,14 @@ void PsMenu::update(long time) {
                 if (active) {
 
                     optionscales[selOption] = 1 + (maxZoom - 1);
-                    int neww = 118 * optionscales[selOption];
-                    int newh = 118 * optionscales[selOption];
-
-                    xoff[selOption] = -((neww - 118) / 2);
-                    yoff[selOption] = -((newh - 118) / 2);
+                    xoff[selOption] = zoomOffset(optionscales[selOption]);
+                    yoff[selOption] = zoomOffset(optionscales[selOption]);
 
                 } else {
 
                     optionscales[selOption] = 1;
-                    int neww = 118 * optionscales[selOption];
-                    int newh = 118 * optionscales[selOption];
-
-                    xoff[selOption] = -((neww - 118) / 2);
-                    yoff[selOption] = -((newh - 118) / 2);
+                    xoff[selOption] = zoomOffset(optionscales[selOption]);
+                    yoff[selOption] = zoomOffset(optionscales[selOption]);
                 }
             }
         } else {
@@ -123,11 +110,8 @@ void PsMenu::update(long time) {
                 x = ox + progress * ICON_GAP;
 
                 optionscales[selOption] = 1 + (1 - progress) * (maxZoom - 1);
-                int neww = 118 * optionscales[selOption];
-                int newh = 118 * optionscales[selOption];
-
-                xoff[selOption] = -((neww - 118) / 2);
-                yoff[selOption] = -((newh - 118) / 2);
+                xoff[selOption] = zoomOffset(optionscales[selOption]);
+                yoff[selOption] = zoomOffset(optionscales[selOption]);
 
                 if (progress >= 1.0f) {
                     optionscales[selOption] = 1.0;
@@ -136,11 +120,8 @@ void PsMenu::update(long time) {
 
                     selOption--;
                     optionscales[selOption] = maxZoom;
-                    int neww = 118 * optionscales[selOption];
-                    int newh = 118 * optionscales[selOption];
-
-                    xoff[selOption] = -((neww - 118) / 2);
-                    yoff[selOption] = -((newh - 118) / 2);
+                    xoff[selOption] = zoomOffset(optionscales[selOption]);
+                    yoff[selOption] = zoomOffset(optionscales[selOption]);
 
                     x = ox + ICON_GAP;
                     animationStarted = 0;
@@ -158,11 +139,8 @@ void PsMenu::update(long time) {
                 x = ox - progress * ICON_GAP;
 
                 optionscales[selOption] = 1 + progress * (maxZoom - 1);
-                int neww = 118 * optionscales[selOption];
-                int newh = 118 * optionscales[selOption];
-
-                xoff[selOption] = -((neww - 118) / 2);
-                yoff[selOption] = -((newh - 118) / 2);
+                xoff[selOption] = zoomOffset(optionscales[selOption]);
+                yoff[selOption] = zoomOffset(optionscales[selOption]);
 
                 if (progress >= 1.0f) {
                     optionscales[selOption] = 1.0;
@@ -170,11 +148,8 @@ void PsMenu::update(long time) {
                     yoff[selOption] = 0;
                     selOption++;
                     optionscales[selOption] = maxZoom;
-                    int neww = 118 * optionscales[selOption];
-                    int newh = 118 * optionscales[selOption];
-
-                    xoff[selOption] = -((neww - 118) / 2);
-                    yoff[selOption] = -((newh - 118) / 2);
+                    xoff[selOption] = zoomOffset(optionscales[selOption]);
+                    yoff[selOption] = zoomOffset(optionscales[selOption]);
                     x = ox - ICON_GAP;
                     animationStarted = 0;
                     ox = x;
@@ -188,66 +163,24 @@ void PsMenu::update(long time) {
 // PsMenu::render
 //*******************************
 void PsMenu::render() {
-    int w = 118 * optionscales[0];
-    int h = 118 * optionscales[0];
-    ableem::Rect input, output;
-    input.x = 0, input.y = 0;
-    input.h = 118, input.w = 118;
-    output.x = x + xoff[0];
-    output.y = y + yoff[0];
-    output.w = w;
-    output.h = h;
+    static const float slots[4] = {0, ICON_GAP, ICON_GAP * 2, ICON_GAP * 3};
+    const ableem::Texture *icons[4] = {&settings, &guide, &memcard, &savestate};
+    const ableem::Rect input(0, 0, 118, 118);
+    for (int i = 0; i < 4; i++) {
+        if (i > 0 && !enabled[i])
+            continue;
+        const float left = x + slots[i] + xoff[i];
+        const float top = y + yoff[i];
+        const float size = 118 * optionscales[i];
+        renderer.copy(*icons[i], &input, ableem::FRect(left, top, size, size));
 
-    renderer.copy(settings, &input, &output);
-
-    if (enabled[1]) {
-        w = 118 * optionscales[1];
-        h = 118 * optionscales[1];
-
-        input.x = 0, input.y = 0;
-        input.h = 118, input.w = 118;
-        output.x = x + 130 + xoff[1];
-        output.y = y + yoff[1];
-        output.w = w;
-        output.h = h;
-
-        renderer.copy(guide, &input, &output);
-    }
-
-    if (enabled[2]) {
-        w = 118 * optionscales[2];
-        h = 118 * optionscales[2];
-        input.x = 0, input.y = 0;
-        input.h = 118, input.w = 118;
-        output.x = x + 260 + xoff[2];
-        output.y = y + yoff[2];
-        output.w = w;
-        output.h = h;
-
-        renderer.copy(memcard, &input, &output);
-    }
-
-    if (enabled[3]) {
-        w = 118 * optionscales[3];
-        h = 118 * optionscales[3];
-        input.x = 0, input.y = 0;
-        input.h = 118, input.w = 118;
-        output.x = x + 130 * 3 + xoff[3];
-        output.y = y + yoff[3];
-        output.w = w;
-        output.h = h;
-
-        renderer.copy(savestate, &input, &output);
-
-        if (resume.valid()) {
-            ableem::Size s = resume.size();
-            input.h = s.h;
-            input.w = s.w;
-            output.x = x + 130 * 3 + resumePicture.x * optionscales[3] + xoff[3];
-            output.y = y + yoff[3] + resumePicture.y * optionscales[3];
-            output.w = resumePicture.w * optionscales[3];
-            output.h = resumePicture.h * optionscales[3];
-            renderer.copy(resume, &input, &output);
+        if (i == 3 && resume.valid()) {
+            const ableem::Size s = resume.size();
+            const ableem::Rect whole(0, 0, s.w, s.h);
+            renderer.copy(resume, &whole,
+                          ableem::FRect(left + resumePicture.x * optionscales[3],
+                                        top + resumePicture.y * optionscales[3], resumePicture.w * optionscales[3],
+                                        resumePicture.h * optionscales[3]));
         }
     }
 }

@@ -24,6 +24,8 @@ public:
     // the fade-out starts now (a scan that finished, its summary shown for holdMs, then this)
     void hide();
     bool visible() const { return state_ != State::Hidden; }
+    // sliding in or fading out: the screen draws every frame meanwhile (a shown bubble is still)
+    bool animating() const { return state_ == State::SlidingIn || state_ == State::FadingOut; }
 
     // once a frame, over the launcher's other elements
     void render(Gui &gui, long now);
