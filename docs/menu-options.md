@@ -117,10 +117,12 @@ top right; a warning or a failure on the notification line under it (the details
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
 | Fetch box art online | Whether the scan fetches missing covers (and RetroArch's databases, when there are none) from libretro's servers. Only on a platform that can (a Pi, a PC); one probe per scan decides whether there is a network, and a cover the server does not have is not asked for again. |
-| Showing Timeout | How long the notification lines stay (seconds; 0 = for ever). |
+| Splash timeout | How long the "Showing: <set>" splash stays after a set change: Skip (not shown), 1s ... 20s (`showingtimeout`; 0 kept it up for ever until 2026-09-29). |
 | Language | Applied at once. |
-| Use Font from Theme / Font | Off, and the classic screens (this menu, the editors, the Game Manager) draw in the font chosen on the next row instead of the theme's: any `.ttf`/`.otf` in `retroarch/fonts`, `resources/fonts` or the theme's own folder. The launcher's fonts are the theme's regardless. Applied at once. |
+| Use Default Font / Font (under Fonts) | On: every screen draws in Open Sans, the launcher's own font, on every theme (a theme's `classic.font` is not read since 2026-09-29). Off: in the font chosen on the next row - any non-empty `.ttf`/`.otf` in `retroarch/fonts` or `resources/fonts` - the classic screens, the menus, the panels' titles and footers, the extensions (PSC-Bios, the Store) and the tools alike. A few parts keep their fixed look whatever this says (`ThemeAssets::fixedFonts()`): About and its hidden game, and the launcher's game details, game menu (its title, description and the resume-slot picker), hints and pad batteries. With the row on, changing the Font row only stores the choice. A font file that cannot be opened falls back to the default. `themefont`/`font` in config.ini. Applied at once. |
 
+The rows are grouped: Interface (Display first, then Theme, Cover Style, Cover shine, Language, Splash timeout), Fonts, Sound,
+Emulation, Library, Updates, Diagnostics. An on/off row shows its value as text (ON/OFF, translated) like any other row.
 The rows spread over the panel; more than fit at the font's size page (Up/Down move through them).
 Cross saves and leaves, Circle leaves without saving, Start picks a random theme, music track or font.
 

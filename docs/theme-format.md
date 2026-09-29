@@ -93,7 +93,7 @@ Themes/<name>/
 | `music` | The background track. `loop` false plays it once. `"music": null` is a theme with no music at all - it also silences a track the user picked in Options. |
 | `classic.background` | The classic UI's full-screen background (menus, splash, dialogs). |
 | `classic.logo` | The logo file and the rect it is drawn in. Dialogs draw it at a third of the size at the menu panel's origin. |
-| `classic.font` | The classic UI's ttf and point size. Also sizes the list menus' rows. |
+| `classic.font` | **Not read since 2026-09-29.** The classic screens draw in Open Sans Medium at 20 (the launcher's own, `resources/fonts`) on every theme, or the user's font from Options -> Fonts. Still parsed and converted, so an old theme loads unchanged. |
 | `classic.menuLines` | Visible rows in a list menu. |
 | `classic.menuPanel` | The translucent panel behind a menu: rect, fill colour, alpha. |
 | `classic.statusBar` | The status line at the bottom: its bar (rect, colour, alpha) and `textY`, where the text is drawn. Every shipped theme keeps the bar off screen (`y: -670`), so only the text shows. |

@@ -55,10 +55,11 @@ private:
     std::string outputModeOnEntry; // the Display row's value when the screen opened
     std::string autoLabel;         // "Auto (1080p)", made by getOutputModes()
     bool stepsOnePerPress();       // Left/Right without the held-button repeat on this row
+    bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn
 
 public:
     std::vector<std::string> getThemes();
-    std::vector<std::string> getFonts(); // "--" (the theme's) and every .ttf/.otf in Fonts::userFontDirs
+    std::vector<std::string> getFonts(); // every .ttf/.otf in Fonts::userFontDirs
     std::vector<std::string> getJewels();
     std::vector<std::string> getMusic();
     std::vector<std::string> getTimeoutValues();

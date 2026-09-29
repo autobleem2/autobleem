@@ -261,6 +261,8 @@ void GuiLauncher::showSetName() {
     string numGames = " (" + to_string(carousel.games.size()) + " " + _("games") + ")";
 
     long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
+    if (timeout <= 0)
+        return; // Options' "Splash timeout: Skip" (0 kept it up for good until 2026-09-29)
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
@@ -549,7 +551,7 @@ void GuiLauncher::renderPadBatteries() {
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
     int x = 16, y = 16;
-    const ableem::Font &battFont = gui->assets().themeFonts[FONT_15_BOLD];
+    const ableem::Font &battFont = ThemeAssets::fixedFonts()[FONT_15_BOLD];
     const int textY = (iconH - battFont.lineHeight()) / 2; // added to y: centres the text on the icon
 
     int knownCount = 0;
@@ -891,7 +893,7 @@ void GuiLauncher::loadAssets() {
     settingsBack->visible = true;
 
     meta = addStaticElement(new PsMeta("meta", theme.metaPanel));
-    meta->fonts = gui->assets().themeFonts;
+    meta->fonts = ThemeAssets::fixedFonts();
     meta->x = 785;
     meta->y = 285;
     meta->visible = true;
@@ -924,20 +926,20 @@ void GuiLauncher::loadAssets() {
     menu = std::make_unique<PsMenu>("menu", theme.menuIcons);
 
     menuHead = addStaticElement(new PsCenterLabel("header"));
-    menuHead->font = gui->assets().themeFonts[FONT_28_BOLD];
+    menuHead->font = ThemeAssets::fixedFonts()[FONT_28_BOLD];
     menuHead->visible = false;
     menuHead->y = 545;
     menuText = addStaticElement(new PsCenterLabel("menuText"));
     menuText->visible = false;
-    menuText->font = gui->assets().themeFonts[FONT_22_MED];
+    menuText->font = ThemeAssets::fixedFonts()[FONT_22_MED];
     menuText->y = 585;
 
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
 
     sselector = addFrontElement(new PsStateSelector("selector"));
-    sselector->font30 = gui->assets().themeFonts[FONT_28_BOLD];
-    sselector->font24 = gui->assets().themeFonts[FONT_22_MED];
+    sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
+    sselector->font24 = ThemeAssets::fixedFonts()[FONT_22_MED];
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -1182,7 +1184,7 @@ void GuiLauncher::layoutHints() {
         int total = 0;
         for (int size : sizes) {
             outFont =
-                size == 22 ? gui->assets().themeFonts[FONT_22_MED] : gui->assets().themeFonts.atSize(FONT_MED, size);
+                size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
             total = items.empty() ? 0 : -gap;
             for (const Hint &h : items)
                 total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
