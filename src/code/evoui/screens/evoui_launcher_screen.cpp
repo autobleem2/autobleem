@@ -13,7 +13,9 @@
 #include "evoui_set_picker.h"
 #include "gui/panel_style.h"
 #include <cassert>
+#include <cmath>
 #include <memory>
+#include <vector>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -682,6 +684,123 @@ void GuiLauncher::refreshPlaylistNames() {
 }
 
 //*******************************
+// GuiLauncher::makePlayHalo
+//*******************************
+// what keeps Play readable over the covers' reflections: a soft dark shadow under it and a faint rim in the
+// theme's selection colour (white without one) around its shape - both images' own outline, so every theme's
+// Play gets its own. Made once per theme on the CPU into one texture; a frame only copies it. The shadow is
+// lighter where the theme's background is light under Play (measured in its image): a dark smudge on a light
+// theme reads as dirt, not depth.
+void GuiLauncher::makePlayHalo(const LauncherTheme &theme) {
+    playHalo = ableem::Texture();
+    const ableem::Image button = ableem::Image::loadFile(theme.playButton);
+    const ableem::Image text = ableem::Image::loadFile(theme.playText);
+    if (!button.valid() && !text.valid())
+        return;
+    const ableem::Size bs = button.size(), ts = text.size();
+    const int bx = playButton->x, by = playButton->y, tx = playText->x, ty = playText->y;
+
+    // the shape's bounds on the screen (alpha > 40 in either image)
+    int x0 = SCREEN_WIDTH, y0 = SCREEN_HEIGHT, x1 = -1, y1 = -1;
+    auto bound = [&](const ableem::Image &img, ableem::Size s, int ox, int oy) {
+        for (int y = 0; y < s.h; y++)
+            for (int x = 0; x < s.w; x++)
+                if (img.pixel(x, y).a > 40) {
+                    x0 = std::min(x0, ox + x), x1 = std::max(x1, ox + x);
+                    y0 = std::min(y0, oy + y), y1 = std::max(y1, oy + y);
+                }
+    };
+    bound(button, bs, bx, by);
+    bound(text, ts, tx, ty);
+    if (x1 < 0)
+        return;
+    const float cx = (x0 + x1) / 2.0f, cy = (y0 + y1) / 2.0f;
+    const float rx = (x1 - x0) / 2.0f + 45, ry = (y1 - y0) / 2.0f + 12;
+    const float reach = 1.3f; // the shadow fades out at 1.25 of the ellipse
+    const int left = static_cast<int>(cx - rx * reach), top = static_cast<int>(cy - ry * reach);
+    const int w = static_cast<int>(2 * rx * reach) + 1, h = static_cast<int>(2 * ry * reach) + 1;
+
+    // the rim: the shape, blurred (two box passes each way, radius 4)
+    std::vector<float> rim(static_cast<size_t>(w * h), 0.0f);
+    auto stamp = [&](const ableem::Image &img, ableem::Size s, int ox, int oy) {
+        for (int y = 0; y < s.h; y++)
+            for (int x = 0; x < s.w; x++) {
+                const int px = ox + x - left, py = oy + y - top;
+                if (px >= 0 && py >= 0 && px < w && py < h && img.pixel(x, y).a > 40)
+                    rim[static_cast<size_t>(py * w + px)] = 1.0f;
+            }
+    };
+    stamp(button, bs, bx, by);
+    stamp(text, ts, tx, ty);
+    std::vector<float> tmp(rim.size());
+    const int r = 4;
+    auto boxPass = [&](bool horizontal) {
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++) {
+                float sum = 0;
+                for (int k = -r; k <= r; k++) {
+                    const int sx = horizontal ? x + k : x, sy = horizontal ? y : y + k;
+                    if (sx >= 0 && sy >= 0 && sx < w && sy < h)
+                        sum += rim[static_cast<size_t>(sy * w + sx)];
+                }
+                tmp[static_cast<size_t>(y * w + x)] = sum / static_cast<float>(2 * r + 1);
+            }
+        rim.swap(tmp);
+    };
+    boxPass(true), boxPass(false), boxPass(true), boxPass(false);
+
+    // the background's brightness under the shadow, 0..1
+    float shadowAlpha = 170;
+    const ableem::Image bg = ableem::Image::loadFile(theme.background);
+    if (bg.valid()) {
+        const ableem::Size gs = bg.size();
+        double sum = 0;
+        int n = 0;
+        for (int y = 0; y < h; y += 4)
+            for (int x = 0; x < w; x += 4) {
+                const ableem::Color c = bg.pixel((left + x) * gs.w / SCREEN_WIDTH, (top + y) * gs.h / SCREEN_HEIGHT);
+                sum += (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255.0;
+                n++;
+            }
+        const float light = n ? static_cast<float>(sum / n) : 0.0f;
+        const float k = std::min(1.0f, std::max(0.0f, (light - 0.35f) / 0.4f));
+        shadowAlpha = 170 - k * 110; // 170 over a dark background, 60 over a light one
+    }
+
+    const ableem::ThemeColor &sel = theme.colors.selection;
+    const float rr = sel.set ? sel.r : 255, rg = sel.set ? sel.g : 255, rb = sel.set ? sel.b : 255;
+    const float sr = 0, sg = 10, sb = 25; // the shadow: a blue-black, not grey
+    playHalo = ableem::Texture::createStreaming(renderer, w, h);
+    if (!playHalo.valid())
+        return;
+    playHalo.setBlendMode(ableem::BlendMode::Blend);
+    {
+        ableem::PixelLock px = playHalo.lock();
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++) {
+                const float dx = (left + x - cx) / rx, dy = (top + y - cy) / ry;
+                const float d = std::sqrt(dx * dx + dy * dy);
+                float t = std::min(1.0f, std::max(0.0f, (1.25f - d) / 0.5f));
+                t = t * t * (3 - 2 * t);
+                const float a0 = shadowAlpha / 255.0f * t;
+                const float a1 = 120.0f / 255.0f * rim[static_cast<size_t>(y * w + x)];
+                const float a = a1 + a0 * (1 - a1); // the rim over the shadow
+                if (a <= 0.0f) {
+                    px.set(x, y, ableem::Color(0, 0, 0, 0));
+                    continue;
+                }
+                auto mix = [&](float rimC, float shC) {
+                    return static_cast<unsigned char>(std::lround((rimC * a1 + shC * a0 * (1 - a1)) / a));
+                };
+                px.set(x, y,
+                       ableem::Color(mix(rr, sr), mix(rg, sg), mix(rb, sb),
+                                     static_cast<unsigned char>(std::lround(a * 255))));
+            }
+    }
+    playHaloRect = ableem::Rect(left, top, w, h);
+}
+
+//*******************************
 // GuiLauncher::loadAssets
 //*******************************
 // load all assets needed by the screengame i
@@ -805,6 +924,7 @@ void GuiLauncher::loadAssets() {
     playText->ox = playText->x;
     playText->oy = playText->y;
     playText->lastTime = time;
+    makePlayHalo(theme);
 
     settingsBack = addStaticElement(new PsSettingsBack("playButton", theme.settingsPanel));
     settingsBack->setCurLen(100);
@@ -913,6 +1033,7 @@ void GuiLauncher::freeAssets() {
     settingsBack = nullptr;
     playButton = nullptr;
     playText = nullptr;
+    playHalo = ableem::Texture();
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
@@ -1167,6 +1288,8 @@ void GuiLauncher::render() {
     }
     if (!benchSkips("carousel"))
         carousel.render();
+    if (playHalo.valid() && playButton != nullptr && playButton->visible && !benchSkips("playHalo"))
+        renderer.copy(playHalo, nullptr, &playHaloRect);
     for (auto &obj : staticElements) {
         if (!behindRow(obj.get()) && !benchSkips(obj->name))
             obj->render();

@@ -256,6 +256,10 @@ public:
     PsSettingsBack *settingsBack = nullptr;
     PsObj *playButton = nullptr;
     PsZoomBtn *playText = nullptr;
+    // Play's halo: a soft shadow under it and a faint rim around it, made once per theme (makePlayHalo)
+    ableem::Texture playHalo;
+    ableem::Rect playHaloRect;
+    void makePlayHalo(const LauncherTheme &theme);
     PsMeta *meta = nullptr;
 
     PsObj *background = nullptr;
