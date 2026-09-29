@@ -658,6 +658,7 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
     case SystemMenuAction::PowerOff: {
         GuiConfirm confirm(*gui);
         confirm.label = _("Are you sure you want to power off?");
+        confirm.confirmLabel = _("Power off");
         confirm.show();
         if (confirm.result) {
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));

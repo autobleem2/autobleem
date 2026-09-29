@@ -84,7 +84,9 @@ void GuiMemcards::doTriangle_Pressed() {
     app.audio().cursor.play();
     if (getVerticalSize() != 0) {
         GuiConfirm guiConfirm(*gui);
-        guiConfirm.label = _("Delete card") + " '" + lines[selected] + "' ?";
+        guiConfirm.label = _("Delete card '%s'?");
+        Strings::replaceAll(guiConfirm.label, "%s", lines[selected]);
+        guiConfirm.confirmLabel = _("Delete card");
         guiConfirm.show();
         bool result = guiConfirm.result;
 

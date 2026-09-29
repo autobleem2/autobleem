@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 431
+# Untranslated: 0 / Total: 432
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -17,7 +17,7 @@ Applying settings...=Applying settings...
 Apps=Apps
 apps=apps
 Architecture=Architecture
-Are you sure you want to delete=Are you sure you want to delete
+Are you sure you want to delete %s?=Are you sure you want to delete %s?
 Are you sure you want to flush all covers?=Are you sure you want to flush all covers?
 Are you sure you want to power off?=Are you sure you want to power off?
 Are you sure?=Are you sure?
@@ -86,13 +86,14 @@ days=days
 Decompressing ecm:=Decompressing ecm:
 Defragment card=Defragment card
 Delete=Delete
-Delete !SaveState folder for game=Delete !SaveState folder for game
 Delete card=Delete card
+Delete card '%s'?=Delete card '%s'?
 Delete folder=Delete folder
 Delete game=Delete game
 Delete games, flush covers=Delete games, flush covers
 Delete slot=Delete slot
-Delete the folder=Delete the folder
+Delete the !SaveState folder of %s?=Delete the !SaveState folder of %s?
+Delete the folder %s?=Delete the folder %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Delete the settings saved in the emulator and use AutoBleem's again?
 Diagnostics=Diagnostics
 Disable=Disable

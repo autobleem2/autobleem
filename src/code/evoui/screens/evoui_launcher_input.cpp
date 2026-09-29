@@ -704,6 +704,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 
                     GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
+                    confirm.confirmLabel = _("Delete slot");
                     confirm.show();
 
                     if (confirm.result) {

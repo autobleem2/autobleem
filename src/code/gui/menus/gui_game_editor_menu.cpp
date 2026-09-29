@@ -200,6 +200,7 @@ void GuiEditor::unlockSettings() {
     shared_ptr<Gui> gui(Gui::getInstance());
     GuiConfirm confirm(*gui);
     confirm.label = _("Delete the settings saved in the emulator and use AutoBleem's again?");
+    confirm.confirmLabel = _("Delete");
     confirm.show();
     if (!confirm.result)
         return;
