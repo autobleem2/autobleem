@@ -235,6 +235,7 @@ No disc name=No disc name
 No discs=No discs
 No extensions installed=No extensions installed
 No processors for these games=No processors for these games
+No resume points=No resume points
 None=None
 Not added=Not added
 Not added because:=Not added because:

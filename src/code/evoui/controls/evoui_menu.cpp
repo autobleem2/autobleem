@@ -166,6 +166,10 @@ void PsMenu::render() {
     static const float slots[4] = {0, ICON_GAP, ICON_GAP * 2, ICON_GAP * 3};
     const ableem::Texture *icons[4] = {&settings, &guide, &memcard, &savestate};
     const ableem::Rect input(0, 0, 118, 118);
+    // the Resume icon greyed when the selected game has no resume points - still drawn, still selectable
+    const unsigned char resumeAlpha = resumeAvailable ? 255 : 120;
+    savestate.setAlphaMod(resumeAlpha);
+    resume.setAlphaMod(resumeAlpha);
     for (int i = 0; i < 4; i++) {
         if (i > 0 && !enabled[i])
             continue;

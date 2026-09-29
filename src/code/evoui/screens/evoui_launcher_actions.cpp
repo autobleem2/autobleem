@@ -387,23 +387,18 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     if (carousel.games.empty()) {
         return;
     }
-    bool resumeAvailable = false;
-    for (int i = 0; i < 4; i++) {
-        if (carousel.selectedIsValid() && app.resumePoints().slotIsActive(*carousel.games[carousel.selected], i)) {
-            resumeAvailable = true;
-        }
-    }
+    const bool resumeAvailable = carousel.selectedIsValid() && gameHasResumePoints(carousel.games[carousel.selected]);
 
     if (resumeAvailable) {
         app.audio().cursor.play();
         sselector->visible = true;
-        if (carousel.selectedIsValid())
-            sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
+        sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
         state = LauncherScreenState::Resume;
         sselector->selSlot = 0;
         sselector->operation = OP_LOAD;
     } else {
         app.audio().cancel.play();
+        notificationLines[1].setText(_("No resume points"), DefaultShowingTimeout);
     }
 }
 
