@@ -176,16 +176,19 @@ void PsMeta::render() {
             gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x,
                                    y + yOffset);
 
-            yOffset += 21;
-            // last played line
+            // last played line - skipped entirely (no row reserved) when there is no value to show, the
+            // same way the coreName line above skips its yOffset when there is no core name
 #ifdef AB_PLATFORM_PSC
             // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
-            if (Env::autobleemKernel)
-                gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+            bool canShowLastPlayed = Env::autobleemKernel;
 #else
             // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
-            gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+            bool canShowLastPlayed = true;
 #endif
+            if (canShowLastPlayed && !last_played.empty()) {
+                yOffset += 21;
+                gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+            }
         }
 
         yOffset += 22;

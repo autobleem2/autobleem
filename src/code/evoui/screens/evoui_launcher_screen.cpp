@@ -266,13 +266,18 @@ void GuiLauncher::showSetName() {
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
+        // every entry above carries its own trailing space (needed when a directory name follows); drop
+        // it here so it doesn't double up with numGames' own leading space (was "All Games  (21 games)")
+        if (!name.empty() && name.back() == ' ')
+            name.pop_back();
         if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
-            name += selection.usbGameDirName;
+            name += " " + selection.usbGameDirName;
         }
         notificationLines[0].setText(name + numGames, timeout);
     } else if (selection.set == GameSet::RetroArch) {
         string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
-        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
+        // numGames already starts with a space - no extra " " here (was a double space before the count)
+        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + numGames, timeout);
     } else if (selection.set == GameSet::Apps) {
         // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
         string name = _("Showing: Apps");
@@ -916,7 +921,7 @@ void GuiLauncher::loadAssets() {
                 sselector->visible = true;
                 state = LauncherScreenState::Resume;
             } else {
-                notificationLines[1].setText(_("OOPS! Game crashed. Resume point not available."),
+                notificationLines[1].setText(_("Oops! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
             }
         } else {

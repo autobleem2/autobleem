@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -251,7 +251,7 @@ Off=Pois
 OK=OK
 ON=PÄÄLLÄ
 On=Päällä
-OOPS! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
+Oops! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
 Open Retroarch Menu=Avaa RetroArch valikko
 Open:=Avaa:
 Operating system=Käyttöjärjestelmä
@@ -271,6 +271,7 @@ Player=Pelaaja
 Player 1=Pelaaja 1
 Player 2=Pelaaja 2
 Players=Pelaajat
+Players:=Pelaajat:
 PlayStation=PlayStation
 Please confirm=Ole hyvä ja vahvista
 Please wait ... deleting=Odota hetki ... poistetaan
@@ -375,7 +376,7 @@ SPREAD SHOT=HAJALAUKAUS
 Spu Interpolation:=SPU-interpolointi:
 Start=Käynnistä
 Starting the installer...=Käynnistetään asennusohjelmaa...
-Startup=Käynnistys
+Startup:=Käynnistys
 stopped AutoBleem and was disabled=pysäytti AutoBleemin ja poistettiin käytöstä
 Storage=Tallennustila
 Store=Store

@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -251,7 +251,7 @@ Off=Fra
 OK=OK
 ON=TIL
 On=Til
-OOPS! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
+Oops! Game crashed. Resume point not available.=OPS! Spillet gik ned. Genoptagelsespunkt ikke tilgængeligt.
 Open Retroarch Menu=Åbn RetroArch-menu
 Open:=Åbn:
 Operating system=Styresystem
@@ -271,6 +271,7 @@ Player=Spiller
 Player 1=Spiller 1
 Player 2=Spiller 2
 Players=Spillere
+Players:=Spillere:
 PlayStation=PlayStation
 Please confirm=Bekræft venligst
 Please wait ... deleting=Vent venligst ... sletter
@@ -375,7 +376,7 @@ SPREAD SHOT=SPREDNINGSSKUD
 Spu Interpolation:=SPU-interpolation:
 Start=Start
 Starting the installer...=Starter installationsprogrammet...
-Startup=Start
+Startup:=Start
 stopped AutoBleem and was disabled=stoppede AutoBleem og blev deaktiveret
 Storage=Lager
 Store=Store

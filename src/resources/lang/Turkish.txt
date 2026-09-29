@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -251,7 +251,7 @@ Off=Kapalı
 OK=Tamam
 ON=AÇIK
 On=Açık
-OOPS! Game crashed. Resume point not available.=HATA! Oyun çöktü. Devam noktası mevcut değil.
+Oops! Game crashed. Resume point not available.=HATA! Oyun çöktü. Devam noktası mevcut değil.
 Open Retroarch Menu=RetroArch Menüsünü Aç
 Open:=Aç:
 Operating system=İşletim sistemi
@@ -271,6 +271,7 @@ Player=Oyuncu
 Player 1=Oyuncu 1
 Player 2=Oyuncu 2
 Players=Oyuncular
+Players:=Oyuncular:
 PlayStation=PlayStation
 Please confirm=Lütfen onaylayın
 Please wait ... deleting=Lütfen bekleyin ... siliniyor
@@ -375,7 +376,7 @@ SPREAD SHOT=YAYILI ATEŞ
 Spu Interpolation:=SPU İnterpolasyonu:
 Start=Başlat
 Starting the installer...=Yükleyici başlatılıyor...
-Startup=Başlatma
+Startup:=Başlatma
 stopped AutoBleem and was disabled=AutoBleem'i durdurdu ve devre dışı bırakıldı
 Storage=Depolama
 Store=Store

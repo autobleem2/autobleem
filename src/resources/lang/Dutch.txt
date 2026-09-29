@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -251,7 +251,7 @@ Off=Uit
 OK=OK
 ON=AAN
 On=Aan
-OOPS! Game crashed. Resume point not available.=OEPS! Game is gecrasht. Hervattingspunt niet beschikbaar.
+Oops! Game crashed. Resume point not available.=OEPS! Game is gecrasht. Hervattingspunt niet beschikbaar.
 Open Retroarch Menu=Open RetroArch menu
 Open:=Openen:
 Operating system=Besturingssysteem
@@ -271,6 +271,7 @@ Player=Speler
 Player 1=Speler 1
 Player 2=Speler 2
 Players=Spelers
+Players:=Spelers:
 PlayStation=PlayStation
 Please confirm=Bevestig
 Please wait ... deleting=Even geduld ... verwijderen
@@ -375,7 +376,7 @@ SPREAD SHOT=SPREISCHOT
 Spu Interpolation:=SPU interpolatie:
 Start=Starten
 Starting the installer...=Installatieprogramma starten...
-Startup=Start
+Startup:=Start
 stopped AutoBleem and was disabled=heeft AutoBleem gestopt en is uitgeschakeld
 Storage=Opslag
 Store=Store

@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -251,7 +251,7 @@ Off=Oprit
 OK=OK
 ON=PORNIT
 On=Pornit
-OOPS! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
+Oops! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
 Open Retroarch Menu=Deschide Meniul RetroArch
 Open:=Deschide:
 Operating system=Sistem de operare
@@ -271,6 +271,7 @@ Player=Jucator
 Player 1=Jucător 1
 Player 2=Jucător 2
 Players=Jucatori
+Players:=Jucatori:
 PlayStation=PlayStation
 Please confirm=Te rog confirma
 Please wait ... deleting=Asteapta ... se sterge
@@ -375,7 +376,7 @@ SPREAD SHOT=FOC IMPRASTIAT
 Spu Interpolation:=Spu Interpolation:
 Start=Start
 Starting the installer...=Se pornește programul de instalare...
-Startup=Pornire
+Startup:=Pornire
 stopped AutoBleem and was disabled=a oprit AutoBleem și a fost dezactivată
 Storage=Stocare
 Store=Store

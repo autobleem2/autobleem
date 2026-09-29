@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 427
+# Untranslated: 0 / Total: 428
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -251,7 +251,7 @@ Off=Desactivado
 OK=Aceptar
 ON=ACTIVADO
 On=Activado
-OOPS! Game crashed. Resume point not available.=OOPS! Juego dañado. Punto de resumen no disponible.
+Oops! Game crashed. Resume point not available.=OOPS! Juego dañado. Punto de resumen no disponible.
 Open Retroarch Menu=Abre Menu de Retoarch
 Open:=Abrir:
 Operating system=Sistema operativo
@@ -271,6 +271,7 @@ Player=Jugador
 Player 1=Jugador 1
 Player 2=Jugador 2
 Players=Jugadores
+Players:=Jugadores:
 PlayStation=PlayStation
 Please confirm=Por favor confirma
 Please wait ... deleting=Por favor espera ... borrando
@@ -375,7 +376,7 @@ SPREAD SHOT=DISPARO MULTIPLE
 Spu Interpolation:=Spu Interpolation:
 Start=Iniciar
 Starting the installer...=Iniciando el instalador...
-Startup=Inicio
+Startup:=Inicio
 stopped AutoBleem and was disabled=detuvo AutoBleem y se desactivó
 Storage=Almacenamiento
 Store=Store
