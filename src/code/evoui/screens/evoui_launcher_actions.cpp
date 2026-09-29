@@ -195,14 +195,13 @@ void GuiLauncher::loop_openOptions() {
             }
         }
 
+        // the covers and the empty boxes both recomposed over the reloaded assets: Cover Style may have
+        // changed the jewel case, and an empty box kept from before would stay in the old one
+        gui->loadAssets();
+        carousel.freeTextures();
         if (!carousel.games.empty()) {
-            gui->loadAssets();
-            for (auto &game : carousel.games) {
-                game.freeTex();
-            }
             carousel.setInitialPositions(carousel.selected);
         } else {
-            gui->loadAssets();
             meta->gameName = "";
             menu->setResumePic("");
         }
