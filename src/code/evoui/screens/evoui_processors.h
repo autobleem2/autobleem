@@ -26,7 +26,7 @@
 class GuiProcessors : public GuiScreen {
 public:
     // spelled out, not `using GuiScreen::GuiScreen;`: the console's gcc-6 cannot combine an inherited
-    // constructor with the members below that are initialised in place (CLAUDE.md, "CI")
+    // constructor with the members below that are initialised in place (docs/developer-guide.md, "CI")
     explicit GuiProcessors(ableem::GuiBase &gui) : GuiScreen(gui) {}
 
     void init() override;

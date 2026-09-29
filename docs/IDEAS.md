@@ -3,7 +3,7 @@
 A running list of things that might be worth doing, before they're worth planning. Each entry is a quick
 "is this possible, and how big is it" writeup - not an implementation plan. When an idea is picked up for
 real, it gets its own plan (and, once done, this entry is removed or marked done - see "Finished plans
-leave docs/" in CLAUDE.md's spirit, though a *researched-but-not-started* idea can just stay here).
+leave docs/" in docs/developer-guide.md's spirit, though a *researched-but-not-started* idea can just stay here).
 
 Rough complexity scale used below: **S** (a sitting, one file or a script), **M** (a few files, one
 subsystem, a day or two), **L** (touches several subsystems / new infrastructure), **XL** (a new toolchain,
@@ -16,7 +16,7 @@ target, or a build pipeline change).
 **Status:** done (2026-09-19). autobleem-appliance's `tools/make_rpi_image.sh` builds both architectures on
 the Pi 400; its `tools/rpi_imager_local_manifest.py` (DOCS-5/6 moved both there, alongside payload_linux/)
 makes the local Imager manifest that enables Imager's customisation screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
-ask for WiFi when there is none, bounded root growth - CLAUDE.md's "Flashable image for Raspberry Pi Imager"
+ask for WiFi when there is none, bounded root growth - docs/developer-guide.md's "Flashable image for Raspberry Pi Imager"
 has the story); the second (arm64, Imager presets via the manifest) ran end to end into the launcher. The
 `v2.0.0-pre0-933bd2f` armhf + arm64 images are built and checked. **Not yet verified:** the interactive WiFi
 prompt on a flash without presets, and any armhf image boot. Everything below is the pre-implementation
@@ -219,7 +219,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   commits, 25 files changed**. Two groups:
   - **Build-system files** (`Dockerfile`, `Makefile.psc`, `config.mak.psc`, `.dockerignore`) - their own
     Docker/GCC9 cross toolchain, not reusable as-is (we build on the Sony crosstool-NG toolchain via
-    `make_psc.sh` on the remote build server - see CLAUDE.md's Build section). Skip these outright.
+    `make_psc.sh` on the remote build server - see docs/developer-guide.md's Build section). Skip these outright.
   - **Source changes**, worth assessing one at a time rather than as a block:
     - **`frontend/psc_m3u.c`/`.h`** (new, ~165 lines total) - minimal in-frontend `.m3u` playlist parsing
       that drives an eject->next-disc swap for **separate per-disc image files** (`.cue`/`.bin`/`.chd`). This
@@ -260,7 +260,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   than merging them mechanically - there's no shared history for `git cherry-pick`/`git merge` to work with.
 - **Open questions before building:** whether m3u playlists are something AutoBleem's own scanner should
   start generating for multi-disc USB games once pcsx-ab can read them (today `GameScanner::mergeMultiDiscFolders`
-  hands pcsx-ab only the first disc's `.cue` and generates the `.m3u` for RetroArch only - see CLAUDE.md's
+  hands pcsx-ab only the first disc's `.cue` and generates the `.m3u` for RetroArch only - see docs/developer-guide.md's
   "DiscSuffix" note); what exactly `psc_launcher.c`'s two bug-fix commits do, unread so far.
 
 ---
@@ -327,7 +327,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   GLES2/3 context instead) is actually available on the PSC's GPU, since a fixed-function GLES1 pipeline
   can't run a fragment shader at all; performance headroom on both the PSC's embedded GPU and a Pi at
   1080p/60 for a full-screen shader pass every frame, on top of what the carousel/launcher already costs
-  (see `docs/IDEAS.md`'s sibling entries and CLAUDE.md's carousel-perf notes for how tight that budget
+  (see `docs/IDEAS.md`'s sibling entries and docs/developer-guide.md's carousel-perf notes for how tight that budget
   already is on a Pi).
 
 ---

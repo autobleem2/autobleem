@@ -3,7 +3,7 @@
 #
 #   autobleem-win-<v>.zip    AutoBleem/bin/autobleem/: autobleem-gui.exe + src/resources + the SDL2 DLLs and
 #                            libwinpthread-1.dll - the launcher for a PC, run as
-#                            "autobleem-gui.exe <usb root>" (see CLAUDE.md, "Running on PC")
+#                            "autobleem-gui.exe <usb root>" (see docs/developer-guide.md, "Running on PC")
 #   UpdateRoms-<v>.zip       UpdateRoms/: UpdateRoms.exe (static, stripped) + README.txt - the folder for
 #                            a stick's root (tools/make_updateroms_bundle.sh makes the same from MSYS2)
 #

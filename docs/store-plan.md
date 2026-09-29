@@ -245,7 +245,7 @@ is a rename. Nothing half-written ever appears under `Games/`, where the scan's 
 
 ### The screen (`GuiStore`, in the extension)
 
-It is a *full* panel by the UI standard (the launcher's `CLAUDE.md`, "UI styling standards"), drawn with
+It is a *full* panel by the UI standard (the launcher's `docs/developer-guide.md`, "UI styling standards"), drawn with
 the SDK's components in the user's theme. The detail pane on the right shows the cover (the item's
 `image`, fetched into `System/Store/cache/`, or a local thumbnail by title), then source, version, size,
 author, licence and status. The launcher's `GameDetailPane` is in `ab_ui`, outside the SDK, so a generic

@@ -43,7 +43,7 @@ Themes/                    UI themes (folders or .zip)
 | **Linux / macOS** | `make_sys.sh` for a native build. |
 | **PlayStation Classic** | `make_psc.sh` to cross-compile on a build server, or `docker/run.sh ci/build.sh psc` in the Docker image for all targets. |
 
-See `CLAUDE.md` for detailed build information, platform-specific macros, and coding conventions.
+See `CLAUDE.md` (the short map) and `docs/developer-guide.md` for detailed build information, platform-specific macros, and coding conventions.
 
 ## Architecture
 
@@ -111,7 +111,7 @@ Clone with `git clone --recurse-submodules`.
 
 ## Development
 
-- **CLAUDE.md** - the canonical source of developer knowledge: architecture, conventions, build details, runtime layout, history
+- **CLAUDE.md** (short map) and **docs/developer-guide.md** (the full reference) - the canonical source of developer knowledge: architecture, conventions, build details, runtime layout, history
 - **`tools/format.sh`** - auto-format sources with clang-format
 - **`tools/lint.sh`** - check with clang-tidy
 - **Tests** - `tests/` with doctest; every extracted service ships with tests in the same commit

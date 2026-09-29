@@ -108,7 +108,7 @@ paths back. `--host`/`--port` remain for the rare case of sending a bare command
 a RetroArch on the LAN from another machine, with no shot/log-dependent commands in the script.
 `shot_display` additionally needs `xwd` (Debian's `x11-apps` package) on PATH - not preinstalled on the test
 machine any more than Pillow was; `apt-get download x11-apps` + `dpkg-deb -x` into a local root, no sudo,
-the same recipe already used there for Pillow/gdb/7zip (see CLAUDE.md, "ra_drive.py").
+the same recipe already used there for Pillow/gdb/7zip (see docs/developer-guide.md, "ra_drive.py").
 """
 import os
 import re

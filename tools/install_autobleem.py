@@ -62,7 +62,7 @@ INSTALL NOTES - copies onto the (already cleaned, or already-fresh) drive:
   build_psc/dist/autobleem-gui  -> Autobleem/bin/autobleem/autobleem-gui   (run ./make_psc.sh first)
   src/resources/                -> Autobleem/bin/autobleem/
   payload/Autobleem/{rc,start.sh,lib,bin/emu}  -> Autobleem/...
-  db/covers*.db                 -> Autobleem/bin/db/           (optional - see README/CLAUDE.md)
+  db/covers*.db                 -> Autobleem/bin/db/           (optional - see README/docs/developer-guide.md)
   payload/Apps/<name>/          -> Apps/<name>/                (each app folder replaced whole - the two
                                                                  console tools; the third-party apps are
                                                                  the download repository's psc/apps pack)

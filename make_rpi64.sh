@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cross-compile for a 64-bit Raspberry Pi OS Lite (Trixie) userland, using the Windows-hosted "SysGCC for
 # Raspberry Pi (64-bit)" toolchain at C:\sysGCC\raspberry64 (not the 32-bit toolchain - see make_rpi.sh for
-# that, and CLAUDE.md's "Raspberry Pi port" section for both). The result goes into build_rpi64/;
+# that, and docs/developer-guide.md's "Raspberry Pi port" section for both). The result goes into build_rpi64/;
 # autobleem-appliance's tools/make_rpi_package.sh --arch arm64 turns it into the installable tarball (DOCS-5,
 # 2026-09-27 - packaging moved there with payload_linux/; see that repo's payload_linux/README.md).
 #

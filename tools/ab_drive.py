@@ -65,7 +65,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 DEFAULT_USB = os.path.join(REPO, 'usb')
 DEFAULT_PORT = 7788
 DEFAULT_HOST = '127.0.0.1'
-# ABFlashKit (and PSC-Bios) moved to their own repository on 2026-09-23 (CLAUDE.md, "Where the code lives")
+# ABFlashKit (and PSC-Bios) moved to their own repository on 2026-09-23 (docs/developer-guide.md, "Where the code lives")
 # and are no longer built here. Same convention as AB_PCSX_DIR / ../pcsx-ab (make_psc.sh): a sibling checkout,
 # overridable for one that lives somewhere else.
 CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
