@@ -17,7 +17,7 @@ using namespace std;
 #define OPT_LIGHTGUN 1
 #define OPT_PLAY_USING_RA 2
 #define OPT_LOCK 3
-#define OPT_HIGHRES 4
+#define OPT_HIGHRES 4 // Resolution: the built-in NEON GPU only
 #define OPT_SPEEDHACK 5
 #define OPT_SCANLINES 6
 #define OPT_SCANLINELV 7
@@ -26,10 +26,61 @@ using namespace std;
 #define OPT_PLUGIN 10
 #define OPT_INTERPOLATION 11
 #define OPT_BOOTLOGO 12
-#define OPT_SMOOTHING 13 // pcsx-abnxt only
+#define OPT_SMOOTHING 13
 #define OPT_SONYHACKS 14 // pcsx-abnxt only
 #define OPT_FILTER 15
-#define OPT_UNLOCK 16 // only while the game has its own config
+#define OPT_UNLOCK 16  // only while the game has its own config
+#define OPT_NOSEAMS 17 // Remove seams: with Resolution
+#define OPT_DITHERING 18
+
+namespace {
+
+// pcsx-abnxt's names for its values (ab_menu.c, ab_shaders.c), through the language files; a literal each,
+// so tools/lang_tools.py finds them
+string filterName(int filter) {
+    switch (filter) {
+    case 0:
+        return _("Nearest");
+    case 1:
+        return _("Linear");
+    case 2:
+        return _("Sharp");
+    case 3:
+        return _("Sharp (simple)");
+    case 4:
+        return _("Quilez");
+    case 5:
+        return _("CRT (fast)");
+    case 6:
+        return _("CRT-Pi");
+    default:
+        return to_string(filter);
+    }
+}
+
+string ditheringName(int mode) {
+    switch (mode) {
+    case 0:
+        return _("Off");
+    case 2:
+        return _("Always");
+    default:
+        return _("On");
+    }
+}
+
+string smoothingName(int mode) {
+    if (mode <= 0 || mode >= GameSettingsService::SmoothingCount)
+        return _("None");
+    return GameSettingsService::SmoothingNames[mode]; // the scalers' own names
+}
+
+// pcsx-abnxt's CRT filters draw their own scanlines (ab_filter_is_crt)
+bool crtFilter(int filter) {
+    return filter == 5 || filter == 6;
+}
+
+} // namespace
 
 //*******************************
 // GuiEditor::nxtEmulator
@@ -47,13 +98,16 @@ void GuiEditor::buildRows() {
     const bool internal = settings.internal;
     IniFile &gameIni = settings.ini;
     const PcsxSettings &pcsx = settings.pcsx;
+    const string platform = Env::platformName();
+    const bool nxt = nxtEmulator();
     rows.clear();
     auto heading = [&](const string &label) { rows.push_back({Row::Kind::Heading, label, "", false, -1}); };
-    auto boolRow = [&](const string &label, bool on, int opt) {
-        rows.push_back({Row::Kind::Bool, label, "", on, opt});
+    // `greyed`: shown, not changeable (the emulator does not read it, or another setting rules it out)
+    auto boolRow = [&](const string &label, bool on, int opt, bool greyed = false) {
+        rows.push_back({Row::Kind::Bool, label, "", on, opt, greyed});
     };
-    auto valueRow = [&](const string &label, const string &value, int opt) {
-        rows.push_back({Row::Kind::Value, label, value, false, opt});
+    auto valueRow = [&](const string &label, const string &value, int opt, bool greyed = false) {
+        rows.push_back({Row::Kind::Value, label, value, false, opt, greyed});
     };
 
     heading(_("Game"));
@@ -73,31 +127,48 @@ void GuiEditor::buildRows() {
         valueRow(_("Unlock the settings"), "", OPT_UNLOCK);
     }
 
-    heading(_("Video"));
-    boolRow(_("High res:"), pcsx.highres == 1, OPT_HIGHRES);
-    boolRow(_("Scanlines:"), pcsx.scanlines == 1, OPT_SCANLINES);
-    valueRow(_("Scanline Level:"), to_string(pcsx.scanlineLevel), OPT_SCANLINELV);
-    valueRow(_("Frameskip:"), to_string(pcsx.frameskip), OPT_FRAMESKIP);
+    // pcsx-abnxt's in-game menu's Picture rows, in its order, with its values for this platform; its Scaling
+    // and Display (the output mode) are global Options. The classic pcsx-ab reads no dithering2 and no
+    // enhancement_no_seams, and its soft_filter is upstream's of 2017 (no HQ2x/HQ3x, NEON builds only):
+    // those rows are greyed with it selected.
+    heading(_("Display"));
+    // the built-in NEON GPU's 2x (no line in Gpu3 = the built-in one)
+    const bool neon = GameSettingsService::neonGpuFor(platform, nxt) &&
+                      (pcsx.gpu.empty() || pcsx.gpu == GameSettingsService::BuiltinGpu);
+    if (neon) {
+        valueRow(_("Resolution:"), pcsx.highres != 0 ? "2x" : "1x", OPT_HIGHRES);
+        // only with 2x, as the emulator's menu has it
+        boolRow(_("Remove seams:"), pcsx.noSeams != 0, OPT_NOSEAMS, !nxt || pcsx.highres == 0);
+    }
+    valueRow(_("Dithering:"), ditheringName(pcsx.dither), OPT_DITHERING, !nxt);
+    // a CRT filter draws its own scanlines, and on the console it rules out the smoothing too
+    const bool crt = nxt && crtFilter(pcsx.filter);
+    valueRow(_("Smoothing:"), smoothingName(pcsx.smoothing), OPT_SMOOTHING, !nxt || (crt && platform == "psc"));
+    // the classic pcsx-ab and RetroArch have nearest and bilinear only: every filter but Linear is nearest
+    // there (LaunchService)
+    valueRow(_("Filter:"), filterName(pcsx.filter), OPT_FILTER);
+    valueRow(_("Scanlines:"), pcsx.scanlines == 0 ? _("Off") : to_string(pcsx.scanlines), OPT_SCANLINES, crt);
+    valueRow(_("Scanline brightness:"), to_string(pcsx.scanlineLevel), OPT_SCANLINELV, crt);
+
+    // what does not fit the emulator's Picture section
+    heading(_("Rendering"));
     if (!internal)
         valueRow(_("Plugin:"), pcsx.gpu, OPT_PLUGIN);
-    // how the picture is scaled to the screen: pcsx-abnxt has all three, the classic pcsx-ab and RetroArch
-    // play Sharp as Off (LaunchService)
-    const string filterNames[] = {_("Off"), _("Linear"), _("Sharp")};
-    valueRow(_("Filter:"), filterNames[pcsx.filter], OPT_FILTER);
-    if (nxtEmulator()) // pcsx-abnxt's software scaler (its menu's "Smoothing"); the classic pcsx-ab ignores the key
-        valueRow(_("Smoothing:"), GameSettingsService::SmoothingNames[pcsx.smoothing], OPT_SMOOTHING);
+    // the emulators' own setting and names (men_frameskip): Auto, Off, then how many frames are skipped
+    const string frameskipNames[GameSettingsService::FrameskipCount] = {_("Auto"), _("Off"), "1", "2", "3"};
+    valueRow(_("Frameskip:"), frameskipNames[pcsx.frameskip], OPT_FRAMESKIP);
 
     heading(_("Emulator"));
     boolRow(_("SpeedHack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
     valueRow(_("Clock:"), to_string(pcsx.clock), OPT_CLOCK_PSX);
     valueRow(_("Spu Interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
     boolRow(_("Boot logo:"), pcsx.bootLogo != 0, OPT_BOOTLOGO);
-    if (nxtEmulator()) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
+    if (nxt) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
         boolRow(_("Sony hacks:"), pcsx.sonyHacks, OPT_SONYHACKS);
 
     if (settings.custom) {
         for (size_t i = firstPcsxRow; i < rows.size(); i++)
-            rows[i].locked = rows[i].opt >= 0;
+            rows[i].locked = rows[i].locked || rows[i].opt >= 0;
     }
 }
 
@@ -133,7 +204,11 @@ void GuiEditor::unlockSettings() {
     if (!confirm.result)
         return;
     app.gameSettings().unlock(settings);
-    selOption = OPT_HIGHRES; // the unlock row is gone; the cursor lands on the first of the rows it freed
+    // the unlock row is gone; the cursor lands on the first of the rows it freed, the one after Lock data
+    // (Resolution is not on every platform)
+    buildRows();
+    selOption = OPT_LOCK;
+    moveSelection(1);
 }
 
 //*******************************
@@ -143,10 +218,11 @@ void GuiEditor::unlockSettings() {
 void GuiEditor::processOptionChange(bool direction) {
     GameSettingsService &svc = app.gameSettings();
     const PcsxSettings &pcsx = settings.pcsx;
+    const string platform = Env::platformName();
     int step = direction ? 1 : -1;
     int sel = selectedRow();
     if (sel >= 0 && rows[sel].locked)
-        return; // the game's own config speaks for it (the service would do nothing either)
+        return; // the game's own config speaks for it, or the row is greyed (buildRows)
 
     switch (selOption) {
     case OPT_FAVORITE:
@@ -167,16 +243,24 @@ void GuiEditor::processOptionChange(bool direction) {
         svc.setLocked(settings, direction);
         break;
 
-    case OPT_HIGHRES:
+    case OPT_HIGHRES: // 1x / 2x
         svc.setHighres(settings, direction);
+        break;
+
+    case OPT_NOSEAMS:
+        svc.setNoSeams(settings, direction);
+        break;
+
+    case OPT_DITHERING: // Off / On / Always
+        svc.setDithering(settings, pcsx.dither + step);
         break;
 
     case OPT_SPEEDHACK:
         svc.setSpeedhack(settings, direction);
         break;
 
-    case OPT_SCANLINES:
-        svc.setScanlines(settings, direction);
+    case OPT_SCANLINES: // Off / 1 / 2 / 3
+        svc.setScanlines(settings, pcsx.scanlines + step);
         break;
 
     case OPT_SCANLINELV:
@@ -203,16 +287,18 @@ void GuiEditor::processOptionChange(bool direction) {
         svc.setBootLogo(settings, direction);
         break;
 
-    case OPT_SMOOTHING:
-        svc.setSmoothing(settings, pcsx.smoothing + step);
+    case OPT_SMOOTHING: // this platform's scalers
+        svc.setSmoothing(
+            settings, GameSettingsService::stepIn(GameSettingsService::smoothingsFor(platform), pcsx.smoothing, step));
         break;
 
     case OPT_SONYHACKS:
         svc.setSonyHacks(settings, direction);
         break;
 
-    case OPT_FILTER:
-        svc.setFilter(settings, pcsx.filter + step);
+    case OPT_FILTER: // this platform's filters
+        svc.setFilter(settings,
+                      GameSettingsService::stepIn(GameSettingsService::filtersFor(platform), pcsx.filter, step));
         break;
     }
 }
@@ -445,8 +531,7 @@ void GuiEditor::startHold(bool value, int step) {
     if (hold.held() && holdOnValue == value && hold.step() == step)
         return; // the same direction still down
     holdOnValue = value;
-    hold.press(step, gui->platform().ticks(),
-               value ? HoldRepeat::Timing{400, 120, 1500, 60} : HoldRepeat::rows());
+    hold.press(step, gui->platform().ticks(), value ? HoldRepeat::Timing{400, 120, 1500, 60} : HoldRepeat::rows());
     holdStep(step);
 }
 

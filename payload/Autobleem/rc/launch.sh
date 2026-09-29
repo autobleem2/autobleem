@@ -34,8 +34,9 @@ if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
   EMU_DIR=/media/Autobleem/bin/emu
 fi
 echo "emulator: $EMU_DIR"
-# $8 is the game's filter as pcsx-abnxt numbers it (0 Off, 1 Linear, 2 Sharp) and nxt gets it as is; the
-# classic pcsx-ab counts the other way round (0 bilinear, 1 nearest) and has no Sharp, so Sharp is Off
+# $8 is the game's filter as pcsx-abnxt numbers it (0 Nearest, 1 Linear, 2 Sharp .. 6 CRT-Pi) and nxt gets it as
+# is; the classic pcsx-ab counts the other way round (0 bilinear, 1 nearest) and has nothing else: all but
+# Linear are nearest there
 FILTER="${8:-0}"
 if [ "$EMU_DIR" != /media/Autobleem/bin/emunxt ]; then
   if [ "$FILTER" = "1" ]; then FILTER=0; else FILTER=1; fi
