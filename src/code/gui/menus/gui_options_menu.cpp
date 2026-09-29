@@ -153,15 +153,16 @@ void GuiOptions::fill() {
     heading(_("Emulation"));
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
     lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
+    // C11: a positional swap of the first two SDL pads' PS1 ports (core/model/pad_assignment.h,
+    // LaunchService's AB_PAD_ORDER) - PS1 only, RetroArch is unaffected, hence the row saying so; next to the
+    // PS1 emulator it applies to
+    lines.emplace_back(CFG_PAD_SWAP, _("Swap Player 1 / Player 2 (PS1 emulators):"), "padswap", true,
+                       vector<string>({"false", "true"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
     // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
     lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
-                       vector<string>({"false", "true"}));
-    // C11: a positional swap of the first two SDL pads' PS1 ports (core/model/pad_assignment.h,
-    // LaunchService's AB_PAD_ORDER) - PS1 only, RetroArch is unaffected, hence the row saying so
-    lines.emplace_back(CFG_PAD_SWAP, _("Swap Player 1 / Player 2 (PS1 emulators):"), "padswap", true,
                        vector<string>({"false", "true"}));
 
     heading(_("Library"));
