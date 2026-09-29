@@ -13,7 +13,7 @@ void GuiOptionsMenuBase::init() {
 // driverRowName(OptionsInfo)
 //*******************************
 std::string driverRowName(const OptionsInfo &info) {
-    return app.lang().translate(info.descriptionToTranslate);
+    return _(info.descriptionToTranslate);
 }
 
 //*******************************
