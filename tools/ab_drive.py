@@ -13,6 +13,9 @@ keyboard and a screenshot over a socket, for automated looks at the UI without t
   python tools/ab_drive.py stop                                    a Quit event, then the process is killed
   python tools/ab_drive.py run "<script>"                          commands separated by ';', e.g.
                                    "down l2; press r2; up l2; wait 300; shot menu.png; press o"
+  python tools/ab_drive.py run --file SCRIPT.txt                   the same, one command per line instead -
+                                   easier to author/read for a long walk; '#'-comments and blank lines
+                                   dropped, lines joined with ';' the same as an inline script
   python tools/ab_drive.py <command> ...                           one command, e.g. `shot a.png`, `press x`
   python tools/ab_drive.py sheet OUT.png IN1.png IN2.png ...       a contact sheet of shots (Pillow)
 
@@ -437,6 +440,11 @@ def main(argv):
         i = args.index('--token')
         token = args[i + 1]
         del args[i:i + 2]
+    script_file = None
+    if '--file' in args:
+        i = args.index('--file')
+        script_file = args[i + 1]
+        del args[i:i + 2]
     if cmd == 'start':
         # always this PC: what starts the exe here, never a remote driver - --host/--token do not apply
         usb = DEFAULT_USB
@@ -460,7 +468,15 @@ def main(argv):
     d = Driver(port, host, token)
     try:
         if cmd == 'run':
-            for reply in d.run(' '.join(args)):
+            if script_file:
+                # one command per line, '#'-comments and blank lines dropped, so a long script reads like a
+                # checklist instead of one ';'-joined shell string every quoting layer gets to mangle
+                with open(script_file, encoding='utf-8') as f:
+                    lines = [ln.strip() for ln in f]
+                script = ';'.join(ln for ln in lines if ln and not ln.startswith('#'))
+            else:
+                script = ' '.join(args)
+            for reply in d.run(script):
                 print(reply)
         else:
             print(d.run(cmd + ' ' + ' '.join(args))[0])
