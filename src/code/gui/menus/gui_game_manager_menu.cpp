@@ -9,6 +9,7 @@
 #include "gui_game_editor_menu.h"
 #include "gui/screens/gui_confirm.h"
 #include "../../app.h"
+#include "core/model/timing.h"
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -156,9 +157,24 @@ std::string GuiManager::getTitle() {
 }
 
 //*******************************
+// GuiManager::showError
+//*******************************
+// a delete failure, held long enough to actually be seen (DefaultShowingTimeout) instead of drawn once and
+// overwritten by the rescan/init() that follows it
+void GuiManager::showError(const string &message) {
+    errorMessage = message;
+    errorMessageUntil = gui->platform().ticks() + DefaultShowingTimeout;
+}
+
+//*******************************
 // GuiManager::getStatusLine
 //*******************************
 string GuiManager::getStatusLine() {
+    if (!errorMessage.empty()) {
+        if (gui->platform().ticks() < errorMessageUntil)
+            return errorMessage;
+        errorMessage.clear();
+    }
     if (onFailed())
         return _("Not added") + " " + to_string(selected - psGames.size() + 1) + "/" + to_string(failed.size()) +
                "    |@L1|/|@R1| " + _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@S| " + _("Delete folder") +
@@ -212,11 +228,11 @@ void GuiManager::doSquare_Pressed() {
                     app.gameCatalog().removeSaveStateFolder(result.saveStateFolder);
             }
         } else {
-            gui->renderStatus(_("Failed to delete") + " " + gameName);
+            showError(_("Failed to delete") + " " + gameName);
         }
     } else {
         PLOG_ERROR << "Failed to delete " << gameName;
-        gui->renderStatus(_("Failed to delete") + " " + gameName);
+        showError(_("Failed to delete") + " " + gameName);
     }
     app.scans().requestScan(); // in order for the sub dir hierarchy to be fixed we have to do a rescan
     // menuVisible = false;
@@ -239,7 +255,7 @@ void GuiManager::deleteFailedFolder() {
         PLOG_INFO << "Deleting the folder the scan refused: " << path;
         gui->beginBusy(_("Please wait ... deleting") + " " + name, [this]() { render(); });
         if (!DirEntry::removeDirAndContents(path))
-            gui->renderStatus(_("Failed to delete") + " " + name);
+            showError(_("Failed to delete") + " " + name);
         gui->endBusy();
         failed.erase(failed.begin() + (selected - psGames.size()));
         app.library().usbGames().replaceFailedGames(failed); // gone from the list at once, the scan agrees
