@@ -1,7 +1,9 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (entièr)
+4:3 (integer)=4:3 (entièr)
 A scan is already in progress=Un escandalhatge es ja en cors
 About=A prepaus
 About AutoBleem=A prepaus d'AutoBleem
@@ -109,6 +111,7 @@ Emulation=Emulacion
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Menú config de l'emulator
+Emulator screen scaling:=Escalatge de l'ecran de l'emulador :
 Emulators=Emuladors
 Enable=Activar
 Enter new card name=Picatz un nòu nom per la carta
@@ -142,6 +145,7 @@ free of=liures sus
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Logicial liure jos GNU GPL v3 o ulteriora - sens garantida. Fonts e licéncia:
 Free space=Espaci liure
 Full=Plena
+Full screen=Ecran complet
 GAME=JÒC
 Game=Jòc
 Game data=Donadas dels jòcs
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=ATENCION : CAP DE COBÈRTURA PAS T
 WAVE=ONDADA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, apariatge Bluetooth e configuracion de las manetas
-Widescreen:=Grand ecran :
 Wireless pad=Manèta sens fial
 Year:=Annada :
 |@lang|=oc

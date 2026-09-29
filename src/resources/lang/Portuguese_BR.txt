@@ -1,7 +1,9 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (inteira)
+4:3 (integer)=4:3 (inteira)
 A scan is already in progress=Uma varredura já está em andamento
 About=Sobre o AutoBleem
 About AutoBleem=Sobre o AutoBleem
@@ -109,6 +111,7 @@ Emulation=Emulação
 EmulationStation=EmulationStation
 Emulator=Emulador
 Emulator config MENU=MENU de Configurações do Emulador
+Emulator screen scaling:=Escala da tela do emulador:
 Emulators=Emuladores
 Enable=Ativar
 Enter new card name=Inserir nome do novo cartão
@@ -142,6 +145,7 @@ free of=livres de
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Software livre sob a GNU GPL v3 ou posterior - sem garantia. Código-fonte e licença:
 Free space=Espaço livre
 Full=Cheia
+Full screen=Tela cheia
 GAME=JOGO
 Game=Jogo
 Game data=Dados dos jogos
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=AVISO: DB DE CAPAS NÃO ENCONTRADA
 WAVE=ONDA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, pareamento Bluetooth e mapeamento de controles
-Widescreen:=Tela Larga:
 Wireless pad=Controle sem fio
 Year:=Ano:
 |@lang|=pt_BR

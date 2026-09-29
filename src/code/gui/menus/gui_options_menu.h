@@ -15,7 +15,7 @@ enum {
     CFG_JEWEL,
     CFG_MUSIC,
     CFG_ENABLE_BACKGROUND_MUSIC,
-    CFG_WIDESCREEN,
+    CFG_SCALER, // "Emulator screen scaling" (was the Widescreen switch, config.ini aspect)
     CFG_EMULATOR,
     CFG_RACONFIG,
     CFG_PLAY_ALL_PSX_WITH_RA,

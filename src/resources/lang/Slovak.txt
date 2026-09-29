@@ -1,7 +1,9 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (celočíselne)
+4:3 (integer)=4:3 (celočíselne)
 A scan is already in progress=Skenovanie už prebieha
 About=O programe
 About AutoBleem=O aplikácii AutoBleem
@@ -109,6 +111,7 @@ Emulation=Emulácia
 EmulationStation=EmulationStation
 Emulator=Emulátor
 Emulator config MENU=Menu Emulátora
+Emulator screen scaling:=Škálovanie obrazu emulátora:
 Emulators=Emulátory
 Enable=Zapnúť
 Enter new card name=Zadajte nový názov karty
@@ -142,6 +145,7 @@ free of=voľných z
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Slobodný softvér pod GNU GPL v3 alebo novšou - bez záruky. Zdrojový kód a licencia:
 Free space=Voľné miesto
 Full=Plná
+Full screen=Celá obrazovka
 GAME=HRA
 Game=Hra
 Game data=Dáta hier
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=POZOR: NENAŠLA SA DATABÁZA OBALO
 WAVE=VLNA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, párovanie Bluetooth a mapovanie ovládačov
-Widescreen:=Širokouhlý obraz:
 Wireless pad=Bezdrôtový ovládač
 Year:=Rok:
 |@lang|=sk

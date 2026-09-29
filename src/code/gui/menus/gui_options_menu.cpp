@@ -126,6 +126,11 @@ void GuiOptions::fill() {
     // screen (a dev host's window has no mode to change)
     if (Gui::fullscreen())
         lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
+    // how the PS1 emulator fits a game's picture to the screen: the emulator's own menu's Scaler (pcsx-abnxt's
+    // g_scaler, AB_SCALER); the classic pcsx-ab and RetroArch know only full and 4:3 (LaunchService). Under the
+    // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
+    lines.emplace_back(CFG_SCALER, _("Emulator screen scaling:"), "scaler", false,
+                       vector<string>({"1x1", "2x", "4:3", "4:3i", "full"}));
     lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
     lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
@@ -148,7 +153,6 @@ void GuiOptions::fill() {
     heading(_("Emulation"));
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
     lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
-    lines.emplace_back(CFG_WIDESCREEN, _("Widescreen:"), "aspect", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
@@ -301,6 +305,14 @@ std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &va
         if (!mode.isAuto())
             return mode.label();
         return autoLabel;
+    }
+    if (info.id == CFG_SCALER) { // the emulator menu's names, shortened: "integer scaled 2x" is "2x (integer)"
+        if (value == "2x")
+            return _("2x (integer)");
+        if (value == "4:3i")
+            return _("4:3 (integer)");
+        if (value == "full")
+            return _("Full screen");
     }
     return value;
 }
