@@ -36,8 +36,8 @@ void GuiLauncher::loop() {
         if (headersLanguage != app.lang().currentLanguage()) {
             headersLanguage = app.lang().currentLanguage();
             headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
-                     _("Edit Memory Card information"), _("Resume game from saved state point")};
+            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+                     _("Resume game from saved state point")};
         }
 
         time = gui->platform().ticks();
@@ -670,7 +670,9 @@ void GuiLauncher::loop_circleButton_Pressed() {
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;
-        arrow->visible = sselector->operation == OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
+        arrow->visible =
+            sselector->operation ==
+            OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
         sselector->cleanSaveStateImages();
         if (carousel.selectedIsValid())
             menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));

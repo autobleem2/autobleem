@@ -106,8 +106,8 @@ public:
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
 
-    void doJoyRight() override; // the value to the right; held, it goes on
-    void doJoyLeft() override;  // the value to the left; held, it goes on
+    void doJoyRight() override;  // the value to the right; held, it goes on
+    void doJoyLeft() override;   // the value to the left; held, it goes on
     void doJoyCenter() override; // the release: a put-off reload happens now
 
     void doKeyRight() override; // move option to the right

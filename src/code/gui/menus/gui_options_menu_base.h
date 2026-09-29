@@ -50,13 +50,5 @@ public:
     virtual std::string doFirstOption();
     virtual std::string doLastOption();
 
-    int computeAmountTomoveBy(unsigned int totalSize);
-    void doL1_Pressed() override;
-    void doR1_Pressed() override;
     void doStart_Pressed() override;
-
-    void doL2_Pressed() override { doFirstOption(); }
-    void doR2_Pressed() override { doLastOption(); }
-    void doHome() override { doFirstOption(); }
-    void doEnd() override { doLastOption(); }
 };

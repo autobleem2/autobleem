@@ -89,8 +89,7 @@ void GuiSetPicker::buildTabs() {
                               Ps1SelectState::GamesSubdir, row.subDirRowIndex, row.rowName});
         top = false;
     }
-    ps.entries.push_back(
-        {_("Favorite Games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
+    ps.entries.push_back({_("Favorite Games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
     ps.entries.push_back({_("Game History"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
     if (c.lightgun > 0)
         ps.entries.push_back(
