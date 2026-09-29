@@ -514,12 +514,13 @@ void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, c
 // the box mirrored in a glossy floor under it: its bottom slice, upside down, from each edge's own foot
 // down, fading out - the side covers' reflection half their height, the selected cover's a short one
 // (it would run into Play). A turned box reflects its face and spine as the box itself shows them.
-void renderReflection(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point) {
+void renderReflection(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point,
+                      unsigned char alpha) {
     const ableem::Texture &tex = game.coverPng;
     const ableem::Rect &content = game.content;
     const float nearness = std::min(1.0f, std::max(0.0f, (point.scale - 0.5f) / 0.5f));
     const float depth = 0.5f - 0.2f * nearness; // of the box's height
-    const unsigned char startAlpha = 135;
+    const auto startAlpha = static_cast<unsigned char>(135 * alpha / 255);
     const ableem::Rect slice(content.x, content.y + static_cast<int>(content.h * (1.0f - depth)), content.w,
                              static_cast<int>(content.h * depth));
     auto mirrored = [&](const ableem::VerticalEdge &e) {
@@ -767,8 +768,15 @@ void Carousel::drawShine(long now) {
 void Carousel::drawCovers(const vector<const PsCarouselGame *> &visible) {
     ableem::Renderer &renderer = gui_.renderer();
     for (const PsCarouselGame *game : visible) {
-        if (!game->placeholder && game->coverPng.valid())
-            renderReflection(renderer, *game, game->actual);
+        if (!game->coverPng.valid())
+            continue; // a cover still on its way: its stand-in has no reflection for the moment it shows
+        if (!game->placeholder) {
+            renderReflection(renderer, *game, game->actual, 255);
+        } else { // an empty box reflects as it is drawn: darker and see-through
+            PsScreenpoint point = game->actual;
+            point.shade = static_cast<int>(point.shade * PlaceholderShade);
+            renderReflection(renderer, *game, point, PlaceholderAlpha);
+        }
     }
     PsCarouselGame standIn = PsCarouselGame::emptyBox();
     for (const PsCarouselGame *game : visible) {
