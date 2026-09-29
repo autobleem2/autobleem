@@ -38,14 +38,26 @@ void GuiManager::init() {
         path = DirEntry::removeGamesPathFromFrontOfPath(path);
         const int rowsLeft = gui->text().getOpscreenRectOfTheme().x + PanelStyle::RowInset + 8;
         int pathWidth = GameDetailPane::rowsRight(*gui) - (rowsLeft + xoffset_R);
+        // a folder named as the title says nothing more: no second column then
+        const bool sameAsTitle = toLowerCopy(path) == toLowerCopy(psGame->title);
         lines.emplace_back(gui->text().elide(font, psGame->title, xoffset_R - 20),
-                           gui->text().elide(font, path, pathWidth));
+                           sameAsTitle ? "" : gui->text().elide(font, path, pathWidth));
     }
     failed = app.library().usbGames().loadFailedGames();
     for (const auto &folder : failed) {
         lines.emplace_back(gui->text().elide(font, DirEntry::getFileNameFromPath(folder.path), xoffset_R - 20),
                            _("Not added"));
     }
+}
+
+//*******************************
+// GuiManager::renderLineIndexOnRow
+//*******************************
+// the title at the left, the folder (or why it was not added) right-aligned to the rows' edge, like a value
+void GuiManager::renderLineIndexOnRow(int index, int row) {
+    gui->text().renderTextLine(lines[index].line_L, row, yoffset, XALIGN_LEFT, xoffset_L, font);
+    if (!lines[index].line_R.empty())
+        gui->text().renderRowValue(lines[index].line_R, row, yoffset, GameDetailPane::rowsRight(*gui), font);
 }
 
 //*******************************
@@ -209,7 +221,9 @@ void GuiManager::doSquare_Pressed() {
     string gameName = game->title;
     string gameSaveStateFolder = game->ssFolder;
     GuiConfirm confirm(*gui);
-    confirm.label = _("Are you sure you want to delete") + " " + gameName + "?";
+    confirm.label = _("Are you sure you want to delete %s?");
+    Strings::replaceAll(confirm.label, "%s", gameName);
+    confirm.confirmLabel = _("Delete game");
     confirm.show();
     bool delGame = confirm.result;
 
@@ -222,7 +236,9 @@ void GuiManager::doSquare_Pressed() {
             // the !SaveStates folder can be shared, so it is only offered when nothing else uses it
             if (result.saveStateFolderIsNowUnused) {
                 GuiConfirm confirm(*gui);
-                confirm.label = _("Delete !SaveState folder for game") + " " + gameName + "?";
+                confirm.label = _("Delete the !SaveState folder of %s?");
+                Strings::replaceAll(confirm.label, "%s", gameName);
+                confirm.confirmLabel = _("Delete folder");
                 confirm.show();
                 if (confirm.result)
                     app.gameCatalog().removeSaveStateFolder(result.saveStateFolder);
@@ -249,7 +265,9 @@ void GuiManager::deleteFailedFolder() {
     const string path = selectedFailed().path;
     const string name = DirEntry::getFileNameFromPath(path);
     GuiConfirm confirm(*gui);
-    confirm.label = _("Delete the folder") + " " + name + "?";
+    confirm.label = _("Delete the folder %s?");
+    Strings::replaceAll(confirm.label, "%s", name);
+    confirm.confirmLabel = _("Delete folder");
     confirm.show();
     if (confirm.result) {
         PLOG_INFO << "Deleting the folder the scan refused: " << path;
@@ -282,6 +300,7 @@ void GuiManager::doTriangle_Pressed() {
     app.audio().cursor.play();
     GuiConfirm confirm(*gui);
     confirm.label = _("Are you sure you want to flush all covers?");
+    confirm.confirmLabel = _("Flush covers");
     confirm.show();
     bool delCovers = confirm.result;
 

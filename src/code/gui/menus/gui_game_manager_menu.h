@@ -19,6 +19,7 @@ public:
 
     void init() override;
     void render() override;
+    void renderLineIndexOnRow(int index, int row) override;
 
     std::string getTitle() override;
     std::string getStatusLine() override;
