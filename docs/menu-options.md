@@ -31,7 +31,7 @@ classic start screen of earlier versions is gone.
 
 | Option | Available for | What it does |
 |---|---|---|
-| Quick menu (the gear) | everything | The Quick menu (below) - it opened Options until 2026-09-26; Options is in the System menu. |
+| Options (the gear) | everything | Options (also in the System menu). The gear opened the Quick menu from 2026-09-26 to 2026-09-29; the Quick menu is Up. |
 | Game | PS1 and RetroArch games | The game editor (below). |
 | Memory Card | PS1 games | The two-card memory card editor for the game. |
 | Resume | PS1 games with resume points | Pick a resume point to continue from. |
@@ -55,7 +55,7 @@ Every screen driven by the pad works from a keyboard on every platform (a PC wit
 In a screen where text is typed (the on-screen keyboard) the keys type instead. The Button Guide (Triangle, or
 Tab) lists the keys beside the pad buttons when a keyboard is connected or has been typed on.
 
-## Quick menu (Up, or the gear icon)
+## Quick menu (Up)
 
 A short panel over the launcher, for what a player reaches for from the carousel (2026-09-26):
 

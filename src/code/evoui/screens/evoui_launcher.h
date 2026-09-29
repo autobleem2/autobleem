@@ -151,7 +151,7 @@ public:
     // reached with L2+R2 (loop_joyButton_Pressed's powerOffShift branch)
     void loop_openSystemMenu();
     // the Quick menu: Re-Scan, Store, Network & Controllers, System menu... - d-pad Up in the Games state (and
-    // on an empty set), and the gear icon of the game's icon row
+    // on an empty set); the gear icon of the game's icon row is Options
     void loop_openQuickMenu();
     // what an item of either menu does
     void runMenuAction(SystemMenuAction action);

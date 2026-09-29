@@ -135,10 +135,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 //*******************************
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
-// the gear icon of the game's icon row: the Quick menu (it opened Options until 2026-09-26 - Options is the
-// System menu's alone now; the icon row is about the selected game, Options is global)
+// the gear icon of the game's icon row: Options, as it always was (the Quick menu had it from 2026-09-26 until
+// the owner took it back, 2026-09-29 - the Quick menu is d-pad Up's alone)
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
-    loop_openQuickMenu();
+    loop_openOptions();
 }
 
 //*******************************
@@ -478,7 +478,7 @@ void GuiLauncher::loop_openSystemMenu() {
 //*******************************
 // GuiLauncher::loop_openQuickMenu
 //*******************************
-// the Quick menu (d-pad Up in the Games state, Up on an empty set, the gear icon of the game's icon row): the
+// the Quick menu (d-pad Up in the Games state, Up on an empty set; the gear icon is Options): the
 // few things a player reaches for from the carousel, and the System menu last (the owner, 2026-09-26)
 void GuiLauncher::loop_openQuickMenu() {
     app.audio().cursor.play();
