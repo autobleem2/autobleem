@@ -1,7 +1,9 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (kokonaisluku)
+4:3 (integer)=4:3 (kokonaisluku)
 A scan is already in progress=Skannaus on jo käynnissä
 About=Tietoja
 About AutoBleem=Tietoja AutoBleemistä
@@ -109,6 +111,7 @@ Emulation=Emulointi
 EmulationStation=EmulationStation
 Emulator=Emulaattori
 Emulator config MENU=Emulaattorin konfigurointivalikko
+Emulator screen scaling:=Emulaattorin näytön skaalaus:
 Emulators=Emulaattorit
 Enable=Ota käyttöön
 Enter new card name=Kirjoita uudsi kortin nimi
@@ -142,6 +145,7 @@ free of=vapaana, yhteensä
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Vapaa ohjelmisto GNU GPL v3 -lisenssillä tai uudemmalla - ei takuuta. Lähdekoodi ja lisenssi:
 Free space=Vapaa tila
 Full=Täynnä
+Full screen=Koko näyttö
 GAME=PELI
 Game=Peli
 Game data=Pelien tiedot
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=VAROITUS: COVER DB EI LÖYTYNYT. P
 WAVE=AALTO
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth-paritus ja ohjainmääritys
-Widescreen:=Laajakuva:
 Wireless pad=Langaton ohjain
 Year:=Vuosi:
 |@lang|=fi

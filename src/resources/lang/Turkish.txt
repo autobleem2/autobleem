@@ -1,7 +1,9 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (tam sayı)
+4:3 (integer)=4:3 (tam sayı)
 A scan is already in progress=Zaten bir tarama devam ediyor
 About=Hakkında
 About AutoBleem=AutoBleem Hakkında
@@ -109,6 +111,7 @@ Emulation=Emülasyon
 EmulationStation=EmulationStation
 Emulator=Emülatör
 Emulator config MENU=Emülatör yapılandırma MENÜSÜ
+Emulator screen scaling:=Emülatör ekran ölçekleme:
 Emulators=Emülatörler
 Enable=Etkinleştir
 Enter new card name=Yeni kart adı girin
@@ -142,6 +145,7 @@ free of=boş, toplam
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=GNU GPL v3 veya sonrası altında özgür yazılım - garanti yok. Kaynak kodu ve lisans:
 Free space=Boş alan
 Full=Dolu
+Full screen=Tam ekran
 GAME=OYUN
 Game=Oyun
 Game data=Oyun verileri
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=UYARI: KAPAK VERİTABANI BULUNAMAD
 WAVE=DALGA
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, Bluetooth eşleştirme ve kontrolcü eşleme
-Widescreen:=Geniş Ekran:
 Wireless pad=Kablosuz kumanda
 Year:=Yıl:
 |@lang|=tr

@@ -1,7 +1,9 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 413
+# Untranslated: 0 / Total: 416
 
+2x (integer)=2x (întreg)
+4:3 (integer)=4:3 (întreg)
 A scan is already in progress=O scanare este deja in curs
 About=Despre
 About AutoBleem=Despre AutoBleem
@@ -109,6 +111,7 @@ Emulation=Emulare
 EmulationStation=EmulationStation
 Emulator=Emulator
 Emulator config MENU=Meniu de configurare al emulatorului
+Emulator screen scaling:=Scalarea ecranului emulatorului:
 Emulators=Emulatoare
 Enable=Activează
 Enter new card name=Adauga un nume de card nou
@@ -142,6 +145,7 @@ free of=liberi din
 Free software under the GNU GPL v3 or later - no warranty. Source and licence:=Software liber sub GNU GPL v3 sau ulterioară - fără garanție. Sursă și licență:
 Free space=Spatiu liber
 Full=Plină
+Full screen=Ecran complet
 GAME=Joc
 Game=Joc
 Game data=Datele jocurilor
@@ -411,7 +415,6 @@ WARNING: NO COVER DB FOUND. PRESS ANY BUTTON.=Atentie: Nu a fost gasit nici un C
 WAVE=VAL
 Wi-Fi=Wi-Fi
 Wi-Fi, Bluetooth pairing and controller mapping=Wi-Fi, asociere Bluetooth și maparea controlerelor
-Widescreen:=WideScreen:
 Wireless pad=Controller wireless
 Year:=An:
 |@lang|=ro

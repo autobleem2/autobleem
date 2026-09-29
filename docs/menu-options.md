@@ -111,7 +111,7 @@ top right; a warning or a failure on the notification line under it (the details
 | Show Internal Games | Whether the console's built-in games appear in the PS1 lists (not on a Raspberry Pi). |
 | Cover Style | The jewel-case frame around covers. |
 | Music / Background Music | Which track plays, and whether one plays at all. Stepping through themes no longer restarts the track. |
-| Widescreen | The PS1 emulator's aspect ratio for every game. (The picture filter is per game since 2026-09-24 - the game editor's Filter row.) |
+| Emulator screen scaling (under Display) | How the PS1 emulator scales the picture for every game (`scaler` in config.ini, `$AB_SCALER` for pcsx-abnxt): 1x1 (plain pixels), 2x (integer), 4:3, 4:3 (integer) or Full screen - pcsx-abnxt's own scaler modes. The classic pcsx-ab and RetroArch know only full screen or not. Was the on/off Widescreen until 2026-09-29 (on = Full screen, off = 4:3). (The picture filter is per game since 2026-09-24 - the game editor's Filter row.) |
 | PS1 Emulator | Which emulator plays PS1 games: `pcsx-ab`, the one AutoBleem has always shipped, or `pcsx-abnxt`, the next one (current upstream PCSX-ReARMed with AutoBleem's additions). Both use the same settings, memory cards and resume points (pcsx-ab's save-state layout, which pcsx-abnxt writes and reads too since 2026-09-24): a game left in one continues in the other. A resume point saved on the HLE BIOS (no BIOS file) is the exception - the other emulator starts the game from its beginning. |
 | Swap Player 1 / Player 2 (PS1 emulators) | Swaps the first two SDL pads' PS1 ports (`padswap` in config.ini). PS1 only - RetroArch is unaffected. |
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
@@ -121,7 +121,7 @@ top right; a warning or a failure on the notification line under it (the details
 | Language | Applied at once. |
 | Use Default Font / Font (under Fonts) | On: every screen draws in Open Sans, the launcher's own font, on every theme (a theme's `classic.font` is not read since 2026-09-29). Off: in the font chosen on the next row - any non-empty `.ttf`/`.otf` in `retroarch/fonts` or `resources/fonts` - the classic screens, the menus, the panels' titles and footers, the extensions (PSC-Bios, the Store) and the tools alike. A few parts keep their fixed look whatever this says (`ThemeAssets::fixedFonts()`): About and its hidden game, and the launcher's game details, game menu (its title, description and the resume-slot picker), hints and pad batteries. With the row on, changing the Font row only stores the choice. A font file that cannot be opened falls back to the default. `themefont`/`font` in config.ini. Applied at once. |
 
-The rows are grouped: Interface (Display first, then Theme, Cover Style, Cover shine, Language, Splash timeout), Fonts, Sound,
+The rows are grouped: Interface (Display first, then Emulator screen scaling, Theme, Cover Style, Cover shine, Language, Splash timeout), Fonts, Sound,
 Emulation, Library, Updates, Diagnostics. An on/off row shows its value as text (ON/OFF, translated) like any other row.
 The rows spread over the panel; more than fit at the font's size page (Up/Down move through them).
 Left/Right change a value one step a press; held, the value scrolls on, faster the longer it is held. A row
@@ -154,7 +154,7 @@ settings** row, and shows the Video and Emulator rows greyed out with the values
 Those rows can be selected but not changed. Cross on Unlock asks for confirmation, then deletes the custom
 file (`GameSettingsService::unlock` / `PcsxConfig::unlock`), and the rows are pcsx.cfg's again.
 
-A saved screen shape (`g_scaler3`) and filter (`plat_target.hwfilter`) beat the global Widescreen option
+A saved screen shape (`g_scaler3`) and filter (`plat_target.hwfilter`) beat the global Emulator screen scaling option
 and the editor's Filter row. An old `autobleem.cfg` or `cfg/<label>-<id>.cfg`, from the retired "Save
 AutoBleem config" entries, becomes the custom file the first time the game is opened or launched. If there
 are several, the newest one wins.
