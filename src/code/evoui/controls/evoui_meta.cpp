@@ -131,8 +131,7 @@ void PsMeta::render() {
         favoriteOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/favorite.png"));
         raOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/ra.png"));
         lightgunOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lightgun.png"));
-        lightgun2Outline =
-            PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lightgun2.png"));
+        lightgun2Outline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lightgun2.png"));
     }
 
     if (visible) {
