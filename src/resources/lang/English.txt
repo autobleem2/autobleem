@@ -1,12 +1,13 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 428
+# Untranslated: 0 / Total: 431
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
 A scan is already in progress=A scan is already in progress
 About=About
 About AutoBleem=About AutoBleem
+Accented letters=Accented letters
 Address=Address
 All apps=All apps
 All games=All games
@@ -198,6 +199,7 @@ Last played:=Last played:
 Later=Later
 Launcher=Launcher
 Leave=Leave
+Letters=Letters
 Library=Library
 LIFE LOST=LIFE LOST
 Lightgun game:=Lightgun game:
@@ -222,6 +224,7 @@ Memory Cards=Memory Cards
 Memory free=Memory free
 Merging discs:=Merging discs:
 Model=Model
+More accents=More accents
 Move=Move
 Move cursor=Move cursor
 Moving :=Moving :
