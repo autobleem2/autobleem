@@ -537,6 +537,8 @@ Nothing of it has run on a console or a Pi yet - `tools/stick_writes.sh start|st
   out in `<runtime>/exit`, `ResumePointService::setExitDir` reads it there and copies only a kept slot),
   `AB_MEMCARD_DIR` (the set played in place, `MemcardService::setDirForLaunch` - no swap),
   `AB_LOAD_STATE` (the kept slot read where it is). Without the file everything works as before.
+  pcsx-abnxt also lists `padorder`, `outputmode` and (2026-09-29) `perfoverlay`: with Options -> "Show
+  performance" on, `AB_PERF_OVERLAY=1` makes the game's HUD show FPS and CPU too, for that run only.
 - **Refused games** are regional.db's `FAILED_GAMES` (`GameDatabase::replaceFailedGames`), listed in the
   Game Manager after the games ("Not added", the reason in the pane, Square deletes the folder).
 - **Guard**: `autobleem-core/tests/core/test_quiet_stick.cpp` over `tests/support/tree_snapshot.*` (size +
