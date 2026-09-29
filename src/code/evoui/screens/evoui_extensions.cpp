@@ -155,7 +155,7 @@ void GuiExtensions::render() {
             style.label(renderer, band);
             gui->text().renderText_WithColor(fonts[FONT_15_BOLD], _("Third-party extensions"), panel.x + RowInset + 8,
                                              rowY + (HeadingHeight - fonts[FONT_15_BOLD].lineHeight()) / 2,
-                                             style.secondary, XALIGN_LEFT);
+                                             style.heading, XALIGN_LEFT);
             rowY += HeadingHeight;
             continue;
         }
@@ -182,10 +182,10 @@ void GuiExtensions::render() {
         }
         const string reason = reasonFor(e, networkUp);
         const string title = e.version.empty() ? e.title : e.title + "  " + e.version;
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 11,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 11, style.rowColor(i == selected),
+                                         XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? e.description : reason, textX, rowY + 41,
-                                         style.secondary, XALIGN_LEFT);
+                                         style.description, XALIGN_LEFT);
         if (!reason.empty())
             style.disabled(renderer, row);
         rowY += RowHeight;

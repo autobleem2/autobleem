@@ -204,16 +204,17 @@ void GuiSystemMenu::render() {
         if (row.heading) {
             style.label(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(headingFont, row.title, panel.x + TextX,
-                                             rowY + (h - headingFont.lineHeight()) / 2, style.secondary, XALIGN_LEFT);
+                                             rowY + (h - headingFont.lineHeight()) / 2, style.heading, XALIGN_LEFT);
         } else {
             if (i == selected)
                 style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(titleFont, row.title, panel.x + TextX,
-                                             rowY + (h - titleFont.lineHeight()) / 2,
-                                             i == selected ? style.text : style.secondary, XALIGN_LEFT);
+                                             rowY + (h - titleFont.lineHeight()) / 2, style.rowColor(i == selected),
+                                             XALIGN_LEFT);
             if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
                 gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
-                                                 rowY + (h - noteFont.lineHeight()) / 2, style.hint, XALIGN_RIGHT);
+                                                 rowY + (h - noteFont.lineHeight()) / 2,
+                                                 style.valueColor(i == selected), XALIGN_RIGHT);
             if (row.greyed)
                 style.disabled(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
         }
@@ -233,7 +234,7 @@ void GuiSystemMenu::render() {
     if (selected >= 0 && selected < static_cast<int>(rows.size())) {
         ableem::Font &stripFont = fonts.atSize(FONT_BOLD, StripSize);
         gui->text().renderText_WithColor(stripFont, rows[selected].description, panel.x + TextX,
-                                         stripY + (StripHeight - stripFont.lineHeight()) / 2, style.secondary,
+                                         stripY + (StripHeight - stripFont.lineHeight()) / 2, style.description,
                                          XALIGN_LEFT);
     }
 

@@ -78,13 +78,15 @@ A plugin, `Extensions/<name>/` with an `extension.ini`, run from the System menu
 launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-main
 `docs/history/launcher-extensions.md`.
 
-- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 5, since 2026-09-29)
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 6, since 2026-09-29)
   whenever the layout of a class, or the signature of a function, an extension may use changes. **AB_SDK_ABI 4**
   (2026-09-26): `Extension::runEntry(entry)` - extensions can be opened at a named entry point, e.g. `"network"`
   for the Network & Controllers hub; `extension.ini`'s `Provides=` lists them; `ExtensionCatalog::findProvider(entry)`
   finds the first installed extension that provides it.
   **AB_SDK_ABI 5** (2026-09-29): `ThemeAssets` gained the four d-pad outline textures (UIREV-2); an extension
   built for 4 is refused - rebuild it.
+  **AB_SDK_ABI 6** (2026-09-29): the theme's style roles (UIREV-29, `docs/theme-format.md`) - `LauncherTheme::Colors`,
+  `PanelStyle` and `TextRenderer` gained members; the Store and PSC-Bios must be rebuilt against it.
 
 ## Scanner processors (2026-09-24, autobleem-main `docs/archive/scanner-processors-plan.md`, `docs/history/scanner-processors.md` and `docs/history/launcher-scanner-processors.md`)
 

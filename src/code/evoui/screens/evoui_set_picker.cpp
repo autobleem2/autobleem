@@ -237,9 +237,10 @@ void GuiSetPicker::render() {
         const bool current = static_cast<int>(i) == tab;
         if (current) {
             renderer.setBlendMode(ableem::BlendMode::Blend);
-            renderer.setDrawColor(ableem::Color(style.text.r, style.text.g, style.text.b, 38));
+            const ableem::Color &band = style.selectionBand;
+            renderer.setDrawColor(ableem::Color(band.r, band.g, band.b, 38));
             renderer.fillRect(cell);
-            renderer.setDrawColor(style.text);
+            renderer.setDrawColor(band);
             renderer.fillRect(
                 ableem::Rect(cell.x, cell.y + cell.h - PanelStyle::SelectionBar, cell.w, PanelStyle::SelectionBar));
         }
@@ -248,10 +249,10 @@ void GuiSetPicker::render() {
             tabs[i].icon.setAlphaMod(current ? 255 : 120);
             renderer.copy(tabs[i].icon, nullptr, &dst);
         }
-        gui->text().renderText_WithColor(
-            fonts[FONT_15_BOLD], tabs[i].title,
-            cell.x + cell.w / 2 - gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
-            cell.y + 10 + IconSize + 4, current ? style.text : style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], tabs[i].title,
+                                         cell.x + cell.w / 2 -
+                                             gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
+                                         cell.y + 10 + IconSize + 4, style.rowColor(current), XALIGN_LEFT);
     }
     style.rule(renderer, panel, panel.y + TabsHeight - 8);
 
@@ -267,15 +268,15 @@ void GuiSetPicker::render() {
         const int w = gui->text().textWidth(fonts[FONT_15_BOLD], e.detail);
         const int detailX = panel.x + panel.w - RowInset - w;
         const string title = gui->text().elide(fonts[FONT_22_MED], e.title, detailX - x - 20);
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, x, rowY + 8,
-                                         i == t.selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, detailX, rowY + 14, style.secondary,
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, x, rowY + 8, style.rowColor(i == t.selected),
                                          XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, detailX, rowY + 14,
+                                         style.valueColor(i == t.selected), XALIGN_LEFT);
         rowY += RowHeight;
     }
     if (t.entries.empty())
         gui->text().renderText_WithColor(fonts[FONT_22_MED], _("Not installed"), panel.x + RowInset + 8,
-                                         panel.y + TabsHeight + 8, style.secondary, XALIGN_LEFT);
+                                         panel.y + TabsHeight + 8, style.description, XALIGN_LEFT);
     const int markerX = panel.x + panel.w - RowInset;
     if (t.firstVisible > 0)
         style.scrollMarker(renderer, markerX, panel.y + TabsHeight - 4, -1);

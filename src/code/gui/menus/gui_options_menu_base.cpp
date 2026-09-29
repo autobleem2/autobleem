@@ -55,9 +55,8 @@ void GuiOptionsMenuBase::renderOptionRow(const OptionsInfo &info, int y) {
         return;
     }
     gui->text().renderTextLine(label, -y, 0, XALIGN_LEFT, 0, font);
-    const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
-    const int right = panel.x + panel.w - PanelStyle::RowInset - 8;
-    gui->text().renderText(font, valueText(info, value), SCREEN_WIDTH - right, y, XALIGN_RIGHT);
+    // at the panel's right edge, in the row role's value colour (the caller sets the role)
+    gui->text().renderRowValue(valueText(info, value), -y, 0, 0, font);
 }
 
 //*******************************

@@ -97,7 +97,7 @@ void GuiUpdatePrompt::render() {
     int y = panel.y + 66;
     for (const string &line : lines) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], line, textWidth),
-                                         panel.x + TextInset, y, style.secondary, XALIGN_LEFT);
+                                         panel.x + TextInset, y, style.description, XALIGN_LEFT);
         y += LineHeight;
     }
     style.rule(renderer, panel, panel.y + headerHeight - 8);
@@ -107,9 +107,9 @@ void GuiUpdatePrompt::render() {
         if (i == selected)
             style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
+                                         style.rowColor(i == selected), XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         style.secondary, XALIGN_LEFT);
+                                         style.description, XALIGN_LEFT);
         rowY += RowHeight;
     }
 
@@ -226,12 +226,12 @@ void GuiUpdateProgress::render() {
     if (!detail.empty()) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED],
                                          gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * TextInset),
-                                         panel.x + TextInset, y, style.secondary, XALIGN_LEFT);
+                                         panel.x + TextInset, y, style.description, XALIGN_LEFT);
         y += LineHeight;
     }
     if (fraction >= 0) {
         ableem::Rect bar(panel.x + TextInset, y + 4, panel.w - 2 * TextInset, 22);
-        renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
+        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 120));
         renderer.drawRect(bar);
         renderer.setDrawColor(style.text);
         renderer.fillRect(ableem::Rect(bar.x + 2, bar.y + 2, static_cast<int>((bar.w - 4) * fraction), bar.h - 4));

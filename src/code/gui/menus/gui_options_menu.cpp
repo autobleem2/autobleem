@@ -240,12 +240,16 @@ void GuiOptions::render() {
         const int y = firstLineY + fontHeight * row;
         if (lines[i].id == CFG_HEADING) {
             gui->text().renderLabelBox(0, y);
+            TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(app.lang().translate(lines[i].descriptionToTranslate), -y, 0, XALIGN_LEFT, 0,
                                        font);
             continue;
         }
         if (i == selected)
             gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
+        // the theme's roles (UIREV-29): the selected row bright, the others dim
+        TextRenderer::RowRoleScope role(gui->text(),
+                                        i == selected ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);
         renderOptionRow(lines[i], y);
     }
     gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);

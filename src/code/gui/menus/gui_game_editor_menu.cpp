@@ -381,9 +381,13 @@ void GuiEditor::render() {
         const Row &row = rows[i];
         if (row.kind == Row::Kind::Heading) {
             gui->text().renderLabelBox(line, yoffset, right);
+            TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
             continue;
         }
+        // the theme's roles (UIREV-29): the selected row bright, the others dim
+        TextRenderer::RowRoleScope role(gui->text(), row.opt == selOption ? TextRenderer::RowRole::Selected
+                                                                          : TextRenderer::RowRole::Row);
         if (row.opt == selOption)
             gui->text().renderSelectionBox(line, yoffset, 0, ableem::Font(), right);
         if (row.kind == Row::Kind::Bool) {

@@ -42,8 +42,12 @@ void GuiEditorRA::render() {
 
     const int right = GameDetailPane::rowsRight(*gui);
     gui->text().renderLabelBox(0, yoffset, right);
-    gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
+    {
+        TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
+        gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
+    }
     gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected); // the one row, always selected
     gui->text().renderTextLineOptions(
         _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);

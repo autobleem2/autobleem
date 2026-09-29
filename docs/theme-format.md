@@ -80,7 +80,9 @@ Themes/<name>/
                    "resumeSlotLabel": { "x": 22, "y": 18 } },
     "memcardManager": { "grid": "images/memcard_grid.png", "pencil": "images/memcard_pencil.png" },
     "fonts": { "medium": "font/SST-Medium.ttf", "bold": "font/SST-Bold.ttf" },
-    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464", "selection": "#4fc3f7" }
+    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464", "selection": "#4fc3f7",
+                "row": "secondary", "rowSelected": "text", "heading": "secondary", "value": "row",
+                "description": "secondary", "footer": "text", "selectionBand": "text", "edge": "secondary" }
   },
   "sounds": { "cursor": "sounds/cursor.wav", "cancel": "sounds/cancel.wav", "homeUp": "sounds/home_up.wav",
               "homeDown": "sounds/home_down.wav", "resume": "sounds/resume_new.wav" }
@@ -111,10 +113,40 @@ Themes/<name>/
 | `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
 | `launcher.fonts` | The launcher's medium and bold ttf. Without them the shipped pair is used: `resources/fonts/OpenSans-Medium.ttf` / `-Bold.ttf` (OFL; the console's SST fonts were, until 2026-09-21). |
-| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. |
+| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. The style roles (`row`, `rowSelected`, ...) are in the table below. |
 | `sounds` | The five UI sounds. |
 
 Colours are `"#rrggbb"`; alphas are 0-255.
+
+### The style block (`launcher.colors`' roles)
+
+Every menu, list and dialog - the classic lists (Options, Game Manager, the game editors, Memory Cards,
+Hardware Information), the compact panels (Quick menu, System menu, the set picker, the update prompt,
+Confirm, Extensions, Scanner processors) and the extensions drawn with the launcher's panel style (the Store,
+PSC-Bios) - takes its colours from one block, `launcher.colors`, like a stylesheet: change a role there and
+every window follows. The look is the Quick menu's: unselected rows dim, the selected row bright.
+
+A role is `"#rrggbb"`, or the **name** of another colour in the same block (`"row": "secondary"`) that it
+takes its value from, like a CSS variable. A name is resolved after the theme is merged over the default
+theme, against the theme's own colours - so the default theme's `"row": "secondary"` means a theme that
+sets only `secondary` moves every row with it. A misspelt name counts as unset; a role left out falls back
+as the table says. `text` and `secondary` are the base colours (the default theme sets `#ffffff` and
+`#646464`, what an unset one has always meant).
+
+| Role | Key | What it colours | Falls back to |
+|---|---|---|---|
+| Row | `row` | An unselected row's text | `secondary` |
+| Selected row | `rowSelected` | The selected row's text and its value; a facts page's values (Hardware Information has no cursor, so its values read like a selected row's) | `text` |
+| Heading | `heading` | The text on a heading band between rows (Options' groups, the System menu's groups, a facts page's sections) | `secondary` |
+| Value | `value` | An unselected row's right-hand value (an option's setting, ON/OFF, the Game Manager's folder, the set picker's count, a System menu note) | `row` |
+| Description | `description` | A row's second line, a subtitle, the System menu's description strip, the footer's counter, the detail pane's labels | `secondary` |
+| Footer | `footer` | The footer's hint labels ("Select", "Back") | `text` |
+| Selection band | `selectionBand` | The selected row's translucent band and the bar at its left edge; the set picker's current tab | `text` |
+| Edge | `edge` | The panel's 1 px edge, its rules, the heading band, a button chip's edge, the detail pane's rule | `secondary` |
+
+`hint` and `selection` keep their launcher meanings above (the launcher's own footer, the resume-slot halo)
+and are not roles; a role may still name them. Panel titles, the scroll markers and a dialog's question are
+drawn in `text`.
 
 ## Installing a theme from a zip
 

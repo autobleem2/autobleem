@@ -129,9 +129,9 @@ void GuiProcessors::render() {
         } else {
             line2 = p->description;
         }
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 8,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], line2, textX, rowY + 36, style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 8, style.rowColor(i == selected),
+                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], line2, textX, rowY + 36, style.description, XALIGN_LEFT);
         if (greyed)
             style.disabled(renderer, row);
         rowY += RowHeight;

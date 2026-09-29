@@ -78,6 +78,8 @@ void GuiSelectMemcard::render() {
         if (i >= cards.size()) {
             break;
         }
+        TextRenderer::RowRoleScope role(gui->text(), // the theme's roles (UIREV-29)
+                                        i == selected ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);
         gui->text().renderTextLine(cards[i], pos, yoffset);
         pos++;
     }
