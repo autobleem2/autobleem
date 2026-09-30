@@ -179,6 +179,7 @@ screen above 720p. What to draw, the sizes and the limits per frame are autoblee
 | `keySelected` | The key under the cursor. Left out: `key` with a 1 px outline in the theme's text colour over it. | ab_gui G4e |
 | `field` | The keyboard's text field, 48 px high. The text and the blinking caret stay code-drawn. | ab_gui G4e |
 | `badge` | A plate behind each badge of the game-info row: USB/internal, HD/SD, the lock, favourite, RetroArch, the light guns (a 32 x 32 box round each 30 x 30 icon, 4 px bleed at most). Not behind the players icon or the disc. | ab_gui G5b |
+| `chip` | The plate under a named button's name - START, SELECT, L1/R1, L2/R2, L2+R2, ESC, a word like RESET - wherever buttons are drawn: the launcher's hint lines, every footer, the keyboard's footer, the Store and PSC-Bios. Drawn into the 24 px high box (28 or more wide; 2 px bleed at most; the image 32 x 32); the name stays code-drawn over it. The face buttons and the d-pad arrows are images, not chips. | ab_gui G5d |
 
 **Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
 over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is
