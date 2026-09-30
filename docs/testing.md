@@ -44,6 +44,31 @@ way, kept for a keyboard-only smoke test.
   this way writes no selection file, so on the console `rc/selection.sh` treats it as a stop, not a choice. The
   console's power button works as before.
 
+### The client's own steps (`ab_drive.py`, also in `abvm.py drive` / `sandbox drive`)
+
+These are done by the client, on top of the driver's words:
+
+- **`menu <item>`** (the L2+R2 System menu) and **`quick <item>`** (d-pad Up, the Quick menu) first wait for
+  `GuiLauncher`, then for the picture to rest (`wait_idle 300 10` - right after Options or Game Manager close the
+  launcher shows `GuiLauncher` while a busy spinner still ignores all input), then hold the chord for real (`down
+  l2`, `down r2`, 150 ms, `up r2`, `up l2`; `down up` ... `up up` for `quick`) and wait up to 2 s for
+  `GuiSystemMenu`; the whole thing is tried up to 3 times. After the pick they wait (up to 10 s) until the System
+  menu is gone, so the chosen screen is up when the step ends and a script needs no `wait_screen GuiManager`.
+  `<item>` is a title or an index: `items` is published only by the System/Quick menu, so picking by name works
+  there only - Options, Game Manager, the editors, the set picker, Extensions and the Store are walked with `tap
+  down` / `tap x`.
+- **`tap <btn>`** = one short press (`press <btn> 40`; `tap <btn> <ms>` a longer one) - `tap down` moves exactly one
+  row. **`hold <btn>`** / **`release <btn>`** = the driver's `down` / `up` (`hold <btn> <ms>` = `press <btn> <ms>`).
+  **`dpad <up|down|left|right>`** and a bare **`up`/`down`/`left`/`right`** are a tap too, `dpad center` does
+  nothing - `dpad down; wait 200; dpad center` no longer lets the key repeat fire and skip a row. Only the logical
+  names (`x o s t start select l1 r1 l2 r2` and the d-pad) are taken; `@1 tap a` and the other padsim words go to the
+  driver as before. (In `abvm.py run` these words are padsim's own, not the client's.)
+- **`home`** presses Circle until `GuiLauncher` shows (at most 6 presses) - the way out of Game Manager or Options
+  that an earlier run left open; a script can start with it.
+- **A failed run keeps its shots.** A failing step stops the run, but the replies of the steps before it are
+  printed, the shots and grabs they made are written (and, in `sandbox drive` / `run`, still brought back to
+  `--out`), then one `error: step N '<step>' failed: ...` line names the step and the exit code is non-zero.
+
 ### Virtual pads (padsim's words)
 
 The driver can make up to four pads inside the program, with the same commands as the test VM's padsim
@@ -170,8 +195,11 @@ Apps). Their docstrings are the reference; autobleem-main's `docs/pc-test-machin
 tested - extra launchers run headless in the same VM, each with its whole root in a folder on the test machine's
 disk (never the stick), their own DebugDriver port and their own lease. `sandbox start <name> --build
 ~/src/autobleem/dist/pcusb` lays a fresh pcusb build over the template, `sandbox drive <name> "<ab_drive script>"
---out DIR` drives it and brings the shots, grabs and clips back, `sandbox reset` starts it afresh in under a
-second.
+--out DIR` drives it and brings the shots, grabs and clips back (also from a run that failed halfway), `sandbox
+reset` starts it afresh in under a second. `--ext <zip or dir>` (repeatable, on `new`/`start`/`reset`) lays an
+extension over the sandbox as well - a zip is unzipped at the root (the extension zips hold `Extensions/<name>/...`),
+a directory `.../extensions/<name>/` is copied to `Extensions/<name>/`; what it replaces is kept once in
+`<sandbox>/.abvm/ext-backup/<name>`. E.g. `--ext ~/src/ext_store-theme/dist/ext_store-pcusb-1.0.1.zip`.
 
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
 (1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30`, and its outputs in its own folder:
