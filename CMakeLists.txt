@@ -383,9 +383,9 @@ configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 
 # absplash: a full-screen picture between the launcher and an emulator on the console (src/tools/absplash.cpp);
-# lib_ableem's ui only, no app code
+# lib_ableem's ui and ab_gui (the theme's spinner strip and the ring of dots, G5p2), no app code
 add_executable(absplash src/tools/absplash.cpp)
-target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
+target_link_libraries(absplash Threads::Threads ab_gui ableem ${CMAKE_DL_LIBS})
 
 # abfatflag: the FAT/exFAT dirty flag of the stick, read and cleared by the console's rc scripts around the
 # standby (src/tools/abfatflag.cpp); the engine only
