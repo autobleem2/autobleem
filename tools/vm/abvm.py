@@ -56,7 +56,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
   python tools/vm/abvm.py sandbox list                   every sandbox, running or not, and its lease
-At most ABVM_SANDBOX_SLOTS (default 1) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
+At most ABVM_SANDBOX_SLOTS (default 3; the VM has 5 vCPUs) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
 
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
@@ -797,7 +797,7 @@ SB_HOST = os.environ.get('ABVM_SANDBOXES', '~/abvm/sandboxes')
 SB_GUEST = os.environ.get('ABVM_SANDBOX_MOUNT', '/mnt/abvm')
 SB_SHARE = 'abvm-sandboxes'   # the <filesystem> target in the VM's domain XML
 SB_PORTS = range(6910, 6920)
-SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '1'))  # headless launchers running at once (the VM's CPUs)
+SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '3'))  # headless launchers running at once (the VM has 5 vCPUs since 2026-09-30)
 STICK = '/media/autobleem'
 MOUNT_UNIT = 'mnt-abvm.mount'
 
