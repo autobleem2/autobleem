@@ -168,7 +168,9 @@ void PsMenu::render() {
     const ableem::Texture *icons[4] = {&settings, &guide, &memcard, &savestate};
     const ableem::Rect input(0, 0, 118, 118);
     // the Resume icon greyed when the selected game has no resume points - still drawn, still selectable
-    const unsigned char resumeAlpha = resumeAvailable ? 255 : 120;
+    // (how faint is the theme's `inactive.resume` when it sets one, else 120)
+    const unsigned char resumeAlpha =
+        resumeAvailable ? 255 : abgui::InactiveAlphas::orToday(gui->uiContext().inactiveAlphas().resume, 120);
     savestate.setAlphaMod(resumeAlpha);
     resume.setAlphaMod(resumeAlpha);
     for (int i = 0; i < 4; i++) {

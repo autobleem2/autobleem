@@ -27,7 +27,7 @@ void GameDetailPane::render(Gui &gui) const {
     ableem::Rect pane = rect(gui);
 
     // the rule between the rows and the pane
-    style.vrule(renderer, pane.x, pane.y + 8, pane.h - 16);
+    style.vrule(gui.uiContext(), pane.x, pane.y + 8, pane.h - 16);
 
     const int innerX = pane.x + Inset;
     const int innerW = pane.w - 2 * Inset;
@@ -36,7 +36,7 @@ void GameDetailPane::render(Gui &gui) const {
     // the cover, aspect-fit into its box, centred, on a faint plate
     {
         ableem::Rect box(innerX + (innerW - CoverSize) / 2, y, CoverSize, CoverSize);
-        style.box(renderer, box, abgui::Tone::White, 12, abgui::Tone::None);
+        style.box(gui.uiContext(), box, abgui::Tone::White, 12, abgui::Tone::None);
         if (cover.valid()) {
             ableem::Size s = cover.size();
             ableem::Rect dst = box;

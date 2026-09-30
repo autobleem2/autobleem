@@ -303,6 +303,29 @@ only (never merged from `default`) and a value that is not one of the two forms 
 black veil and the row's text unchanged** (`default` and `ab2` look exactly as before). **Set**, a disabled row's text
 is drawn in the `description` role as well as being veiled - the label and the value.
 
+**How faint an inactive thing draws (`launcher.inactive`, G5r9).** Three things are drawn fainter when they are not
+active, each at alpha 120 in code: the Resume icon of a game with no resume point, the icon of a tab that is not the
+current one (the set picker), and the track under a progress bar's fill (the notification bubble's, and every
+`Style::progress` that takes the style's own track alpha - Busy's). The theme's own `inactive` block sets any of them:
+
+```json
+"inactive": { "resume": 90, "tab": 140, "barTrack": 60 }
+```
+
+| Key | What it fades | Today |
+|---|---|---|
+| `resume` | the Resume icon and its picture when the game has no resume point | 120 |
+| `tab` | a set-picker tab icon that is not the current one | 120 |
+| `barTrack` | the track behind a progress bar's fill | 120 |
+
+Each key is optional and an integer 0..255 (out of range is clamped; anything else is ignored). The block is read from
+the selected theme's own `theme.json` only (never merged from `default`). **Unset = 120 as before** - `default` and `ab2`
+look exactly as they did.
+
+**The text page's lines (`row`).** The lines of a text page (PSC-Bios's gamepad page and network hub page, a tool's
+instructions) are drawn in the classic theme's text colour. A theme that sets the `row` role in `launcher.colors`
+(a colour, or the name of another) gets them in that role instead; a theme that does not is unchanged.
+
 ## Installing a theme from a zip
 
 Copy `<name>.zip` into the themes directory next to the theme folders. The next time the app looks at the

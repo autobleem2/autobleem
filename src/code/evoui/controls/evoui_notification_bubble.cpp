@@ -114,7 +114,9 @@ void NotificationBubble::render(Gui &gui, long now) {
         y += 6;
         ableem::Rect track(panel.x + Pad, y, textWidth, BarHeight);
         gui.renderer().setBlendMode(ableem::BlendMode::Blend);
-        gui.renderer().setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
+        gui.renderer().setDrawColor(ableem::Color(
+            style.secondary.r, style.secondary.g, style.secondary.b,
+            abgui::InactiveAlphas::orToday(gui.uiContext().inactiveAlphas().barTrack, style.progressTrackAlpha)));
         gui.renderer().fillRect(track);
         // in floating point: width x bytes overflows a 32-bit long (the console's) past ~5 MB
         const int fill = static_cast<int>(static_cast<double>(textWidth) * static_cast<double>(min(done_, total_)) /

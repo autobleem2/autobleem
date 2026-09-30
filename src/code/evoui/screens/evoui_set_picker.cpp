@@ -255,7 +255,8 @@ void GuiSetPicker::draw() {
         ableem::Texture icon = gui->uiContext().icon(tabs[i].icon);
         if (icon.valid()) {
             ableem::Rect dst(cell.x + (cell.w - IconSize) / 2, cell.y + 10, IconSize, IconSize);
-            icon.setAlphaMod(current ? 255 : 120);
+            icon.setAlphaMod(current ? 255
+                                     : abgui::InactiveAlphas::orToday(gui->uiContext().inactiveAlphas().tab, 120));
             renderer.copy(icon, nullptr, &dst);
         }
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], tabs[i].title,
