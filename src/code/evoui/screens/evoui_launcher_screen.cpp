@@ -13,6 +13,7 @@
 #include "evoui_mc_manager.h"
 #include "evoui_set_picker.h"
 #include "gui/panel_style.h"
+#include <ab_gui/hint_bar.h>
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -1141,73 +1142,70 @@ void GuiLauncher::updateHintsIfNeeded() {
 }
 
 //*******************************
+// GuiLauncher::hintBarRect
+//*******************************
+// the theme's launcher.hintBar - unset, the pill most themes paint at the bottom right. What the hint lines are laid
+// out in and what the theme's `hintBar` frame is drawn into (G5e).
+ableem::Rect GuiLauncher::hintBarRect() const {
+    const LauncherTheme &theme = app.theme().launcher();
+    if (theme.hintBar.set)
+        return ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
+    return ableem::Rect(560, 624, 680, 72);
+}
+
+//*******************************
 // GuiLauncher::layoutHints
 //*******************************
-// Lays the two hint lines buildHintLines() returns out in the theme's hintBar (the pill most themes paint at
-// the bottom right), each at the largest font from 22 down to 14 that fits its own half of the bar in the
+// Lays the two hint lines buildHintLines() returns out in the theme's hintBar through abgui::HintBar (ab_gui G5e -
+// the rules are there): each at the largest font from 22 down to 14 that fits its own half of the bar in the
 // current language; below that the gaps close up, and line 2 (never line 1, which is always short) drops
 // hints from the right if it is still too wide even at the smallest font and tightest gap. A hintBar under
 // 48 px tall (an old theme that never expected two lines) shows line 1 only, at the bar's full height.
+// The launcher measures (its buttons through PanelStyle, its fixed medium fonts) and keeps the result.
 void GuiLauncher::layoutHints() {
-    const LauncherTheme &theme = app.theme().launcher();
-    ableem::Rect bar(560, 624, 680, 72);
-    if (theme.hintBar.set)
-        bar = ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
+    const ableem::Rect bar = hintBarRect();
 
     buildHintLines(hints, hints2);
-    hintsOneLineOnly = bar.h < 48;
+    hintsOneLineOnly = abgui::HintBar::oneLineOnly(bar);
     if (hintsOneLineOnly)
         hints2.clear();
 
     PanelStyle style = gui->panelStyle();
-    const int inset = 16;
-    const int iconGap = 6; // icon(s) to the label
-    static const int sizes[] = {22, 20, 18, 16, 14};
-
-    // fits `items` into `rect`'s width by shrinking the font, then the gaps, then - only when allowDrop -
-    // dropping hints from the right; positions each one's chip and label inside `rect`
-    auto layoutLine = [&](std::vector<Hint> &items, const ableem::Rect &rect, bool allowDrop, ableem::Font &outFont,
-                          int &outLabelY, int &outChipY) {
-        auto iconWidth = [&](const Hint &h) { return style.buttonsWidth(*gui, h.markers) - 6; }; // buttons() adds a gap
-        int gap = 28;
-        int total = 0;
-        for (int size : sizes) {
-            outFont =
-                size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
-            total = items.empty() ? 0 : -gap;
-            for (const Hint &h : items)
-                total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
-            if (total <= rect.w - 2 * inset)
-                break;
+    // the label font of a size: the 22 is the fixed FONT_22_MED, the smaller ones the medium face at that size
+    auto fontOf = [](int size) -> ableem::Font & {
+        return size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
+    };
+    // the measurers of one line (used only inside HintBar::layout below, while `style` and the line live)
+    const PanelStyle *panel = &style;
+    auto measureOf = [this, panel, fontOf](const std::vector<Hint> &items) {
+        const std::vector<Hint> *line = &items;
+        abgui::HintMeasure m;
+        // buttons() adds a gap after the last button: the hint's own buttons end before it
+        m.buttonsWidth = [this, panel, line](size_t i) { return panel->buttonsWidth(*gui, (*line)[i].markers) - 6; };
+        m.labelWidth = [this, line, fontOf](int size, size_t i) {
+            return gui->text().textWidth(fontOf(size), (*line)[i].label);
+        };
+        m.lineHeight = [fontOf](int size) { return fontOf(size).lineHeight(); };
+        return m;
+    };
+    // the layout's places onto the hints (a dropped hint leaves the line), its font and heights onto the members
+    auto apply = [&](std::vector<Hint> &items, const abgui::HintLineLayout &line, ableem::Font &outFont, int &outLabelY,
+                     int &outChipY) {
+        items.resize(line.places.size());
+        for (size_t i = 0; i < items.size(); i++) {
+            items[i].chipX = line.places[i].chipX;
+            items[i].labelX = line.places[i].labelX;
         }
-        while (total > rect.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
-            total -= static_cast<int>(items.size()) * 4;
-            gap -= 2;
-        }
-        while (allowDrop && total > rect.w - 2 * inset && items.size() > 1) {
-            const Hint dropped = items.back();
-            total -= iconWidth(dropped) + iconGap + gui->text().textWidth(outFont, dropped.label) + gap;
-            items.pop_back();
-        }
-        int x = rect.x + max(inset, (rect.w - total) / 2);
-        outLabelY = rect.y + (rect.h - outFont.lineHeight()) / 2;
-        outChipY = rect.y + (rect.h - 30) / 2;
-        for (Hint &h : items) {
-            const int iconW = iconWidth(h);
-            h.chipX = x;
-            h.labelX = x + iconW + iconGap;
-            x = h.labelX + gui->text().textWidth(outFont, h.label) + gap;
-        }
+        outFont = fontOf(line.fontSize);
+        outLabelY = line.labelY;
+        outChipY = line.chipY;
     };
 
-    if (hintsOneLineOnly) {
-        layoutLine(hints, bar, false, hintFont, hintLabelY, hintChipY);
-    } else {
-        const ableem::Rect top(bar.x, bar.y, bar.w, bar.h / 2);
-        const ableem::Rect bottom(bar.x, bar.y + bar.h / 2, bar.w, bar.h - bar.h / 2);
-        layoutLine(hints, top, false, hintFont, hintLabelY, hintChipY);
-        layoutLine(hints2, bottom, true, hintFont2, hintLabelY2, hintChipY2);
-    }
+    const abgui::HintBarLayout layout =
+        abgui::HintBar::layout(bar, hints.size(), measureOf(hints), hints2.size(), measureOf(hints2));
+    apply(hints, layout.line1, hintFont, hintLabelY, hintChipY);
+    if (!layout.oneLine)
+        apply(hints2, layout.line2, hintFont2, hintLabelY2, hintChipY2);
 }
 
 //*******************************
@@ -1244,6 +1242,14 @@ void GuiLauncher::draw() {
     for (auto &obj : staticElements) {
         if (behindRow(obj.get()) && !benchSkips(obj->name))
             obj->render();
+    }
+    // the theme's hintBar frame (G5e): the panel behind the two hint lines, in the footer band's place (a theme with
+    // the frame ships its footer image without the band - the art spec, 2.2), so whatever covered the band covers it;
+    // the lines are drawn over it below. No frame = nothing drawn
+    {
+        abgui::Context &ctx = gui->uiContext();
+        if (ctx.frame("hintBar").valid() && !benchSkips("hints"))
+            ctx.style().drawFrame(ctx, "hintBar", hintBarRect());
     }
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
