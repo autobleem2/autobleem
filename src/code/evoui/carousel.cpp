@@ -7,6 +7,9 @@
 #include "core/model/cover_light.h"
 #include "core/model/timing.h"
 
+#include <ab_gui/ambient.h>
+#include <ab_gui/screen_stack.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -585,7 +588,7 @@ void Carousel::render() {
     });
 
     const long now = gui_.platform().ticks();
-    drawGlow(now);
+    drawGlow();
 
     // a render target is not multisampled: with MSAA on, the row is drawn to the screen every frame, so the
     // covers keep their smooth edges at rest too (a few dozen geometry calls - the layer's saving is small then)
@@ -677,15 +680,23 @@ Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
 }
 } // namespace
 
-void Carousel::drawGlow(long now) {
+void Carousel::drawGlow() {
     if (!selectedIsValid() || !games[selected].visible || !games[selected].coverPng.valid())
         return;
     ableem::Renderer &renderer = gui_.renderer();
     const Spot spot = spotOf(games[selected], renderer.width() / 2.0f);
     if (spot.strength < 0.02f)
         return;
-    // breathing, 0.8..1 every 5.6 s
-    const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
+    // breathing, 0.8..1 every 5.6 s - sin(ticks / 900), the ticks from an ambient tween (G5o2) that starts with the
+    // first frame the glow is drawn and keeps the phase the clock itself would give
+    if (!glowRuns_) {
+        glowRuns_ = true;
+        abgui::Tweens &tweens = Gui::getInstance()->uiContext().stack().tweens();
+        const unsigned int startTicks = tweens.now(); // the tweens' own clock, which is the platform's ticks
+        glowPhase_ = abgui::ambient::clockPhaseStart(startTicks);
+        tweens.start(abgui::ambient::clockPhase(glowPhase_, startTicks), glowOwner_);
+    }
+    const float pulse = 0.9f + 0.1f * std::sin(glowPhase_ / 900.0f);
     // the theme's coverGlow frame (G5k), when it has one: round the face, its slices and bleed scaled with the cover,
     // at the glow's alpha (strength x breathing), tinted by the theme's own `tint` (selection) - instead of the square
     {

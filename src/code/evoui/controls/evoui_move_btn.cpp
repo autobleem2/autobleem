@@ -3,15 +3,28 @@
 //
 
 #include "evoui_move_btn.h"
-#include "core/model/timing.h"
+
+#include <ab_gui/ambient.h>
+#include <ab_gui/screen_stack.h>
+
+//*******************************
+// PsMoveBtn::restart
+//*******************************
+void PsMoveBtn::restart() {
+    owner.cancel();
+    started = true;
+    drawY = static_cast<float>(originaly);
+    gui->uiContext().stack().tweens().start(
+        abgui::ambient::pulse(drawY, static_cast<float>(originaly), static_cast<float>(originaly + maxMove), period),
+        owner);
+}
 
 //*******************************
 // PsMoveBtn::update
 //*******************************
 void PsMoveBtn::update(long time) {
-    if (animationStarted == 0)
-        animationStarted = time;
-    drawY = originaly + maxMove * pulseWave(time - animationStarted, period);
+    if (!started)
+        restart();
     y = originaly; // where the arrow stands; the bob is drawY
     lastTime = time;
 }
@@ -22,8 +35,6 @@ void PsMoveBtn::update(long time) {
 void PsMoveBtn::render() {
     if (!visible)
         return;
-    if (drawY == 0.0f) // not updated yet
-        drawY = static_cast<float>(originaly);
-    renderer.copy(tex, nullptr,
-                  ableem::FRect(static_cast<float>(x), drawY, static_cast<float>(w), static_cast<float>(h)));
+    const float top = started ? drawY : static_cast<float>(originaly); // not updated yet
+    renderer.copy(tex, nullptr, ableem::FRect(static_cast<float>(x), top, static_cast<float>(w), static_cast<float>(h)));
 }

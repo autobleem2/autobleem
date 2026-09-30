@@ -9,6 +9,8 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 
+#include <ab_gui/screen_stack.h>
+
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -67,6 +69,8 @@ void GuiLauncher::loop() {
         // arrow go on, which the ambient rate (30 fps) draws as well - at the same speed, they run on time
         gui->input().setFrameNeed(somethingMoves() ? ableem::Input::FrameNeed::Active
                                                    : ableem::Input::FrameNeed::Ambient);
+        // the tweens' own need on top (G5o2): the ambient loops ask Ambient, what the launcher sets already
+        gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
         if (gui->input().frameDue())
             render();
 
