@@ -747,7 +747,9 @@ void Carousel::drawShine(long now) {
         std::fabs(game.actual.angle) >= 0.5f)
         return;
     // the band crosses the face from just off its left edge to just off its right, the picture drawn at the
-    // face's height (so the band keeps its angle on any aspect) and clipped to its width (CoverLight::shineSlice)
+    // face's height (so the band keeps its angle on any aspect) and clipped to its width (CoverLight::shineSlice).
+    // A no-art box (noArt: the two-layer placeholder at its system's aspect) is composed into coverPng like real
+    // art, its `content` the face - it crosses it the same way; only an empty box or a loading stand-in has no cover
     const Spot spot = spotOf(game, renderer.width() / 2.0f);
     const float t = static_cast<float>(now - shineAt_) / ShineMs;
     const float eased = t * t * (3.0f - 2.0f * t);
