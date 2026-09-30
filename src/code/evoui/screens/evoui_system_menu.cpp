@@ -73,6 +73,10 @@ void GuiSystemMenu::init() {
         addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
         addNetwork();
+#if defined(AB_PLATFORM_PSC) || defined(AB_APPLIANCE)
+        addItem(SystemMenuAction::RestartLauncher, "Restart launcher", _("Restart launcher"),
+                _("Close AutoBleem and start it again"));
+#endif
         addItem(SystemMenuAction::SystemMenu, "System menu...", _("System menu..."),
                 _("Everything else: Options, Game Manager, Power off and more"));
     } else {

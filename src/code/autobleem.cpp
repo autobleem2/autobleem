@@ -413,14 +413,23 @@ int AutoBleem::run() {
         }
 
         // Options -> Display changed: the console leaves for rc/boot.sh to restart Weston in the new mode (the
-        // pending file says which) and start the launcher again; elsewhere the window is remade here
+        // pending file says which) and start the launcher again; elsewhere the window is remade here. With no mode
+        // to try it is the Quick menu's "Restart launcher": the same leave, and the session loop (boot.sh on the
+        // console, autobleem-session on a Pi / PC stick) starts the launcher over.
         if (session_.menuOption == MENU_OPTION_DISPLAY) {
+            const bool restartOnly = session_.pendingOutputMode.empty();
 #ifdef AB_PLATFORM_PSC
-            DirEntry::createDirs(Env::getPathToRuntimeDir());
-            DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            if (!restartOnly) {
+                DirEntry::createDirs(Env::getPathToRuntimeDir());
+                DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            }
             launcher_.writeSelectionScript();
             break;
 #else
+            if (restartOnly) {
+                launcher_.writeSelectionScript();
+                break;
+            }
             tryOutputMode(session_.pendingOutputMode);
             session_.pendingOutputMode.clear();
             session_.menuOption = MENU_OPTION_IDLE;
