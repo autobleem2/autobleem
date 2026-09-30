@@ -14,6 +14,8 @@
 #include "evoui_set_picker.h"
 #include "gui/panel_style.h"
 #include <ab_gui/hint_bar.h>
+#include <ab_gui/screen_stack.h>
+#include <ab_gui/transitions.h>
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -903,8 +905,7 @@ void GuiLauncher::loadAssets() {
 
     scanRosterChangedSinceReload = false;
 
-    fadeAlpha = 255;
-    fadeStart = gui->platform().ticks();
+    startFadeIn(LauncherFadeInDuration);
 
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
     // - pointing at Network & Controllers (its controller mapping wizard) where an extension provides it
@@ -1441,13 +1442,26 @@ void GuiLauncher::draw() {
     gui->text().setShadow(classicShadow);
 
     if (fadeAlpha > 0 && !snapshotFrame) {
-        long elapsed = gui->platform().ticks() - fadeStart;
-        fadeAlpha =
-            elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);
+        fadeAlpha = abgui::transition::fadeInAlpha(fadeMs, fadeDuration);
         renderer.setDrawColor(ableem::Color(0, 0, 0, fadeAlpha));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
+}
+
+//*******************************
+// GuiLauncher::startFadeIn
+//*******************************
+// the black overlay from fully opaque to clear over durationMs: a non-ambient tween of the milliseconds gone (so the
+// DebugDriver is busy while it runs), the alpha computed from it as before (abgui::transition::fadeInAlpha). Starting
+// it again restarts it; the start-up transitions of the plan's decision 12 (the splash's fade-in, the drop from the
+// top) are more calls like this one, with another duration.
+void GuiLauncher::startFadeIn(unsigned int durationMs) {
+    fadeOwner.cancel();
+    fadeAlpha = 255;
+    fadeMs = 0.0f;
+    fadeDuration = durationMs;
+    gui->uiContext().stack().tweens().start(abgui::transition::fadeInClock(fadeMs, durationMs), fadeOwner);
 }
 
 //*******************************

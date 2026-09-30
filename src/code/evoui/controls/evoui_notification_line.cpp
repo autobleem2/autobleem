@@ -26,12 +26,10 @@ void NotificationLine::render(Gui &gui, long now, int top) {
 // NotificationLines::create
 //*******************************
 void NotificationLines::create(int count) {
-    lines.clear();
-    for (int line = 0; line < count; ++line) {
-        NotificationLine notificationLine;
-        notificationLine.bubble.fitWidth = true;
-        lines.push_back(notificationLine);
-    }
+    // a bubble owns its tweens and is never copied or moved (they write its floats): built in place
+    lines = vector<NotificationLine>(static_cast<size_t>(count));
+    for (NotificationLine &line : lines)
+        line.bubble.fitWidth = true;
 }
 
 //*******************************

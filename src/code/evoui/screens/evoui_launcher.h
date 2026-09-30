@@ -6,6 +6,7 @@
 #include "../controls/evoui_notification_line.h"
 #include "../controls/evoui_notification_bubble.h"
 #include "gui/gui_screen.h"
+#include <ab_gui/tween.h>
 #include "../../app.h"
 #include "core/services/scan_service.h"
 #include "../controls/evoui_obj.h"
@@ -405,9 +406,13 @@ public:
 
     // a black overlay fading from fully opaque to transparent over LauncherFadeInDuration, so the launcher
     // eases in rather than cutting straight in - from black after the splash, or from whatever was on
-    // screen (a sub-screen, PCSX) the rest of the time. loadAssets() restarts it; render() draws it.
+    // screen (a sub-screen, PCSX) the rest of the time. loadAssets() restarts it (startFadeIn); render() draws it.
+    // The time gone is a tween's (non-ambient: the DebugDriver is busy while it runs), the alpha is worked out from it.
+    void startFadeIn(unsigned int durationMs);
     int fadeAlpha = 255;
-    long fadeStart = 0;
+    float fadeMs = 0; // milliseconds into the fade - the tween's value
+    unsigned int fadeDuration = LauncherFadeInDuration;
+    abgui::TweenOwner fadeOwner; // after the float it writes: it goes first and stops the tween
     std::vector<std::string> raPlaylists;
     void refreshPlaylistNames(); // after the scan rewrote playlists
 
