@@ -102,6 +102,10 @@ void PsMeta::destroy() {}
 // PsMeta::render
 //*******************************
 void PsMeta::render() {
+    // the slide's position at this frame (a hidden panel did not move before either)
+    if (visible && sliding_)
+        y = evomotion::slidInt(prevPos, nextPos, progress_);
+
     if (gameName == "") {
         return;
     }
@@ -289,26 +293,22 @@ void PsMeta::render() {
 // PsMeta::update
 //*******************************
 void PsMeta::update(long time) {
-    if (visible)
-        if (animEndTime != 0) {
-            if (animStarted == 0) {
-                animStarted = time;
-            }
-
-            if (animStarted != 0) {
-                // calculate length for point in time
-                long currentAnim = time - animStarted;
-                long totalAnimTime = animEndTime - animStarted;
-                float position = easeOutCubic(currentAnim * 1.0f / totalAnimTime);
-                int newPos = prevPos + ((nextPos - prevPos) * position);
-                y = newPos;
-            }
-
-            if (time >= animEndTime) {
-                animStarted = 0;
-                animEndTime = 0;
-                y = nextPos;
-            }
-        }
     lastTime = time;
+}
+
+//*******************************
+// PsMeta::slideTo
+//*******************************
+// from where it is now to `pos`; a slide running is replaced (it stops where it is and the new one starts there)
+void PsMeta::slideTo(int pos) {
+    owner_.cancel();
+    prevPos = y;
+    nextPos = pos;
+    progress_ = 0;
+    sliding_ = true;
+    gui->uiContext().stack().tweens().start(abgui::Tween(progress_, 0.0f, 1.0f, evomotion::MetaSlideMs).onEnd([this]() {
+        sliding_ = false;
+        y = nextPos;
+    }),
+                                            owner_);
 }
