@@ -145,7 +145,7 @@ void GuiExtensions::draw() {
         renderer.copy(background, nullptr, nullptr);
     else
         gui->renderBackground();
-    style.dim(renderer);
+    style.dim(gui->uiContext());
 
     const bool empty = count() == 0;
     const int shown = empty ? 0 : visibleRows();
@@ -219,9 +219,9 @@ void GuiExtensions::draw() {
 
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight - 4, -1);
     if (!empty && firstVisible + shown < count())
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + body + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight + body + 2, 1);
 
     vector<PanelStyle::HintItem> hints;
     if (!empty) {

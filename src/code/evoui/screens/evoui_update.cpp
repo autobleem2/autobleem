@@ -43,7 +43,7 @@ ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Textu
         renderer.copy(background, nullptr, nullptr);
     else
         gui.renderBackground();
-    style.dim(renderer);
+    style.dim(gui.uiContext());
     ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
     style.sheet(gui.uiContext(), panel);
     return panel;
@@ -100,7 +100,7 @@ void GuiUpdatePrompt::draw() {
                                          panel.x + TextInset, y, style.description, XALIGN_LEFT);
         y += LineHeight;
     }
-    style.rule(renderer, panel, panel.y + headerHeight - 8);
+    style.rule(gui->uiContext(), panel, panel.y + headerHeight - 8);
 
     int rowY = panel.y + headerHeight;
     for (int i = 0; i < static_cast<int>(items.size()); i++) {
@@ -220,7 +220,7 @@ void GuiUpdateProgress::draw() {
 
     gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + TextInset, panel.y + 18, style.text,
                                      XALIGN_LEFT);
-    style.rule(renderer, panel, panel.y + PanelStyle::HeaderHeight - 8);
+    style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
     int y = panel.y + PanelStyle::HeaderHeight + 20;
     if (!detail.empty()) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED],

@@ -217,7 +217,7 @@ void GuiSetPicker::draw() {
         renderer.copy(background, nullptr, nullptr);
     else
         gui->renderBackground();
-    style.dim(renderer);
+    style.dim(gui->uiContext());
 
     const int rows = visibleRows();
     const Tab &t = tabs[tab];
@@ -263,7 +263,7 @@ void GuiSetPicker::draw() {
                                              gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
                                          cell.y + 10 + IconSize + 4, style.rowColor(current), XALIGN_LEFT);
     }
-    style.rule(renderer, panel, panel.y + TabsHeight - 8);
+    style.rule(gui->uiContext(), panel, panel.y + TabsHeight - 8);
 
     // the rows
     int rowY = panel.y + TabsHeight;
@@ -288,9 +288,9 @@ void GuiSetPicker::draw() {
                                          panel.y + TabsHeight + 8, style.description, XALIGN_LEFT);
     const int markerX = panel.x + panel.w - RowInset;
     if (t.firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + TabsHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight - 4, -1);
     if (t.firstVisible + rows < static_cast<int>(t.entries.size()))
-        style.scrollMarker(renderer, markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
 
     style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
                  {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}}, "",
