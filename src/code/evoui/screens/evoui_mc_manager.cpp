@@ -189,12 +189,6 @@ void GuiMcManager::renderMetaInfo() {
     fact(_("Product code"), pCode, fonts[FONT_20_BOLD]);
 }
 
-void GuiMcManager::render() {
-    shared_ptr<Gui> gui(Gui::getInstance());
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
-    gui->uiContext().stack().frame([this]() { draw(); });
-}
-
 //*******************************
 // GuiMcManager::draw
 //*******************************

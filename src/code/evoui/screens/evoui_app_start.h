@@ -30,8 +30,7 @@ public:
     bool result = false;
     void setGame(PsGamePtr game) { this->game = game; };
     void init() override;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     using GuiScreen::GuiScreen;

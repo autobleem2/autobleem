@@ -25,8 +25,7 @@ enum class UpdateChoice { Later, Now, Skip };
 class GuiUpdatePrompt : public GuiScreen {
 public:
     void init() override;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     UpdateInfo info;
@@ -56,8 +55,7 @@ private:
 class GuiUpdateProgress : public GuiScreen {
 public:
     void init() override;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     ableem::Texture background;

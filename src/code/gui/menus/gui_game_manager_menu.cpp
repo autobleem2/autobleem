@@ -85,17 +85,10 @@ std::string GuiManager::translatedReason(const std::string &reason) {
 }
 
 //*******************************
-// GuiManager::render
+// GuiManager::draw
 //*******************************
-void GuiManager::render() {
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); drawList() only draws
-    gui->uiContext().stack().frame([this]() { drawList(); });
-}
-
-//*******************************
-// GuiManager::drawList
-//*******************************
-void GuiManager::drawList() {
+// what the stack's frame holds (docs/ab-gui-plan.md, G3d)
+void GuiManager::draw() {
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());

@@ -24,8 +24,7 @@ public:
 
     string rightCardName_ori;
     string cardPath_ori;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
     void init() override;
 

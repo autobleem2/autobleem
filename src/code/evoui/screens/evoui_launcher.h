@@ -53,11 +53,14 @@ public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     // spelled out rather than inherited (using GuiScreen::GuiScreen): the console's GCC 6 cannot combine an
     // inherited constructor with a member initialised from another member, which `carousel` is
-    explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {}
+    // every frame cleared to transparent black, the draw colour from then on (docs/ab-gui-plan.md, G3e)
+    explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {
+        frameColor = abgui::OptionalColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
+    }
     void init() override;
     ~GuiLauncher() override;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    bool prepareFrame() override; // before each frame: the busy state ends, the state selector follows the menu
+    void draw() override;         // the frame's picture: the stack clears before and presents after
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again

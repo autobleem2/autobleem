@@ -23,8 +23,7 @@ class GuiEditor : public GuiScreen {
 public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
-    void render() override;
-    void draw(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     PsGamePtr gameData;    // set by the caller before show()

@@ -1192,20 +1192,18 @@ void GuiLauncher::layoutHints() {
 }
 
 //*******************************
-// GuiLauncher::render
+// GuiLauncher::prepareFrame
 //*******************************
-// render method called every loop
-void GuiLauncher::render() {
+// before every frame of the loop (render() = this, then the stack's frame: cleared to transparent black - frameColor,
+// the draw colour from then on - draw(), presented; docs/ab-gui-plan.md, G3e/G3z). The renderer's own clear() and
+// present() still do the work, so a captureNextFrame() asked for before render() (the set picker's, an extension's
+// backdrop), AB_SHOT and the DebugDriver's frame copy see this frame as they did.
+bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
     if (sselector != nullptr) {
         sselector->frame = menu->savestate;
     }
-
-    // the stack clears (to transparent black, the draw colour from then on) and presents (docs/ab-gui-plan.md,
-    // G3e); draw() only draws. The renderer's own clear() and present() still do the work, so a
-    // captureNextFrame() asked for before render() (the set picker's, an extension's backdrop), AB_SHOT and the
-    // DebugDriver's frame copy see this frame as they did.
-    gui->uiContext().stack().frame(ableem::Color(0x00, 0x00, 0x00, 0x00), [this]() { draw(); });
+    return true;
 }
 
 //*******************************

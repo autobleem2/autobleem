@@ -18,8 +18,7 @@ public:
     explicit GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;
-    void render() override;
-    void drawList(); // what render() draws: the stack clears before and presents after
+    void draw() override; // the list, drawn its own way: the stack clears before and presents after
     void renderLineIndexOnRow(int index, int row) override;
 
     std::string getTitle() override;

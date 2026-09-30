@@ -216,19 +216,19 @@ vector<string> GuiOptions::getFonts() {
 }
 
 //*******************************
-// GuiOptions::render
+// GuiOptions::prepareFrame
 //*******************************
-void GuiOptions::render() {
+bool GuiOptions::prepareFrame() {
     publishToDriver(); // the DebugDriver's rows and cursor (Options draws its rows itself, not via renderLines)
     holdTick();
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); drawList() only draws
-    gui->uiContext().stack().frame([this]() { drawList(); });
+    return true;
 }
 
 //*******************************
-// GuiOptions::drawList
+// GuiOptions::draw
 //*******************************
-void GuiOptions::drawList() {
+// what the stack's frame holds (docs/ab-gui-plan.md, G3d)
+void GuiOptions::draw() {
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());

@@ -78,7 +78,7 @@ A plugin, `Extensions/<name>/` with an `extension.ini`, run from the System menu
 launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-main
 `docs/history/launcher-extensions.md`.
 
-- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 6, since 2026-09-29)
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 7, since 2026-09-30)
   whenever the layout of a class, or the signature of a function, an extension may use changes. **AB_SDK_ABI 4**
   (2026-09-26): `Extension::runEntry(entry)` - extensions can be opened at a named entry point, e.g. `"network"`
   for the Network & Controllers hub; `extension.ini`'s `Provides=` lists them; `ExtensionCatalog::findProvider(entry)`
@@ -87,6 +87,14 @@ launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-mai
   built for 4 is refused - rebuild it.
   **AB_SDK_ABI 6** (2026-09-29): the theme's style roles (UIREV-29, `docs/theme-format.md`) - `LauncherTheme::Colors`,
   `PanelStyle` and `TextRenderer` gained members; the Store and PSC-Bios must be rebuilt against it.
+  **AB_SDK_ABI 7** (2026-09-30): the ab_gui step G3z (autobleem-core `docs/ab-gui-plan.md`) - every classic screen is
+  an `abgui::Screen` (`GuiScreen` = `ClassicScreen<abgui::Screen>`: `draw()` only, `render()` the screen stack's and
+  final, the pre-frame work in `prepareFrame()`), `GuiConfirm`/`GuiTextPage`/`GuiKeyboard`/`GuiActionMenu`/
+  `GuiFactsPage` are the ab_gui widgets, `PanelStyle` an `abgui::Style`, `ableem::Event` gained `fromKey`; this
+  launcher's screens were converted the same way (`GuiLauncher` clears to transparent black through `frameColor`
+  and ends the busy state in `prepareFrame()`); the Store and PSC-Bios must be rebuilt against it.
+  **`tools/lang_tools.py extract`** also scans autobleem-core's `ab_gui/` for `translate("...")` (the widgets hand
+  their English to `_()` that way), so `update --remove-obsolete` keeps those keys.
 
 ## Scanner processors (2026-09-24, autobleem-main `docs/archive/scanner-processors-plan.md`, `docs/history/scanner-processors.md` and `docs/history/launcher-scanner-processors.md`)
 

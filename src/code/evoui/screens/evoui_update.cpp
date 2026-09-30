@@ -69,14 +69,6 @@ void GuiUpdatePrompt::init() {
 }
 
 //*******************************
-// GuiUpdatePrompt::render
-//*******************************
-void GuiUpdatePrompt::render() {
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
-    gui->uiContext().stack().frame([this]() { draw(); });
-}
-
-//*******************************
 // GuiUpdatePrompt::draw
 //*******************************
 void GuiUpdatePrompt::draw() {
@@ -177,14 +169,6 @@ void GuiUpdatePrompt::loop() {
 void GuiUpdateProgress::init() {
     style = gui->panelStyle();
     shownSince = 0;
-}
-
-//*******************************
-// GuiUpdateProgress::render
-//*******************************
-void GuiUpdateProgress::render() {
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
-    gui->uiContext().stack().frame([this]() { draw(); });
 }
 
 //*******************************

@@ -123,14 +123,6 @@ int GuiExtensions::bodyHeight() const {
 }
 
 //*******************************
-// GuiExtensions::render
-//*******************************
-void GuiExtensions::render() {
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
-    gui->uiContext().stack().frame([this]() { draw(); });
-}
-
-//*******************************
 // GuiExtensions::draw
 //*******************************
 void GuiExtensions::draw() {

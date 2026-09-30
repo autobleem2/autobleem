@@ -49,14 +49,6 @@ void GuiAppStart::init() {
 }
 
 //*******************************
-// GuiAppStart::render
-//*******************************
-void GuiAppStart::render() {
-    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
-    gui->uiContext().stack().frame([this]() { draw(); });
-}
-
-//*******************************
 // GuiAppStart::draw
 //*******************************
 void GuiAppStart::draw() {
