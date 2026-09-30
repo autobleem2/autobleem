@@ -754,28 +754,27 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
 //*******************************
 // GuiLauncher::renderPlayFrame
 //*******************************
-// Play in a theme with the `play` frame (G5j): the frame in the play button's box (540, 428, 200 x 68) grown about its
-// centre by the pulse, the `play` icon and the label side by side at the centre. The icon and the label keep their
-// size: a font cannot be scaled, and opening one per pulse step is a glyph cache each. An App's word is "Start".
+// Play in a theme with the `play` frame (G5j): the frame stands still in the play button's box (540, 428, 200 x 68);
+// the `play` icon and the label side by side pulse over it - drawn once into a texture (re-made when the word or
+// the language changes, and when the render targets were lost) and that texture grown about the box's centre by
+// playText's pulse, so no font is opened per size. An App's word is "Start".
 void GuiLauncher::renderPlayFrame() {
     const int boxX = 540, boxY = 428, boxW = 200, boxH = 68;
-    const int iconSize = 28, gap = 8, padding = 24;
+    const int iconSize = 28, gap = 8, padding = 16, margin = 4;
+    const float maxZoom = 1.20f; // PsZoomBtn's: the content must still fit the box at the top of the pulse
     abgui::Context &ctx = gui->uiContext();
-
-    const ableem::FRect pulse = playText->drawRect();
-    const float zoom = playText->ow > 0 ? pulse.w / static_cast<float>(playText->ow) : 1.0f;
-    const int w = static_cast<int>(boxW * zoom + 0.5f);
-    const int h = static_cast<int>(boxH * zoom + 0.5f);
     const int centreX = boxX + boxW / 2, centreY = boxY + boxH / 2;
-    ctx.style().drawFrame(ctx, "play", ableem::Rect(centreX - w / 2, centreY - h / 2, w, h));
+    ctx.style().drawFrame(ctx, "play", ableem::Rect(boxX, boxY, boxW, boxH));
 
     const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
     const ableem::Texture icon = ctx.icon("play");
     const int iconSpace = icon.valid() ? iconSize + gap : 0;
     const string label = ableem::Strings::upperUtf8(game != nullptr && game->app ? _("Start") : _("Play"));
+    bool remake = !playContent.valid() || playContentAt != renderer.targetsLost();
     if (label != playLabel || !playLabelFont.valid()) {
+        remake = true;
         playLabel = label;
-        const int room = boxW - 2 * padding - iconSpace;
+        const int room = static_cast<int>((boxW - 2 * padding) / maxZoom) - iconSpace;
         playLabelFont = gui->text().fittingFont(FONT_BOLD, 28, 14, label, room);
         // even the smallest size too wide: cut characters (whole UTF-8 ones) and end on "..."
         while (gui->text().textWidth(playLabelFont, playLabel) > room && playLabel != "...") {
@@ -786,16 +785,39 @@ void GuiLauncher::renderPlayFrame() {
                 cut--;
             playLabel = playLabel.substr(0, cut) + "...";
         }
-        playLabelWidth = gui->text().textWidth(playLabelFont, playLabel);
     }
-    int x = centreX - (iconSpace + playLabelWidth) / 2;
-    if (icon.valid()) {
-        const ableem::Rect iconRect(x, centreY - iconSize / 2, iconSize, iconSize);
-        renderer.copy(icon, nullptr, &iconRect);
-        x += iconSpace;
+    if (remake) {
+        const int textWidth = gui->text().textWidth(playLabelFont, playLabel);
+        playContentW = iconSpace + textWidth + 2 * margin;
+        playContentH = std::max(iconSize, playLabelFont.lineHeight()) + 2 * margin;
+        playContent = ableem::Texture::createTarget(renderer, playContentW, playContentH);
+        playContentAt = renderer.targetsLost();
+        if (playContent.valid()) {
+            const ableem::Color textColor = ctx.style().text;
+            renderer.pushTarget(&playContent);
+            renderer.setBlendMode(ableem::BlendMode::None);
+            // cleared to the text's colour at alpha 0, so the edges blended in below do not come out dark
+            renderer.setDrawColor(ableem::Color(textColor.r, textColor.g, textColor.b, 0));
+            renderer.fillRect();
+            renderer.setBlendMode(ableem::BlendMode::Blend);
+            int x = margin;
+            if (icon.valid()) {
+                const ableem::Rect iconRect(x, (playContentH - iconSize) / 2, iconSize, iconSize);
+                renderer.copy(icon, nullptr, &iconRect);
+                x += iconSpace;
+            }
+            gui->text().renderText_WithColor(playLabelFont, playLabel, x,
+                                             (playContentH - playLabelFont.lineHeight()) / 2, textColor);
+            renderer.popTarget();
+            playContent.setBlendMode(ableem::BlendMode::Blend);
+        }
     }
-    gui->text().renderText_WithColor(playLabelFont, playLabel, x, centreY - playLabelFont.lineHeight() / 2,
-                                     ctx.style().text);
+    if (!playContent.valid())
+        return;
+    const ableem::FRect pulse = playText->drawRect();
+    const float zoom = playText->ow > 0 ? pulse.w / static_cast<float>(playText->ow) : 1.0f;
+    const float w = playContentW * zoom, h = playContentH * zoom;
+    renderer.copy(playContent, nullptr, ableem::FRect(centreX - w / 2.0f, centreY - h / 2.0f, w, h));
 }
 
 //*******************************
@@ -1035,7 +1057,8 @@ void GuiLauncher::freeAssets() {
     playText = nullptr;
     playOutline = ableem::Texture();
     playTextOutline = ableem::Texture();
-    playLabel.clear(); // the fitted font goes with the fonts
+    playLabel.clear(); // the fitted font and the content texture go with the fonts
+    playContent = ableem::Texture();
     playLabelFont = ableem::Font();
     meta = nullptr;
     background = nullptr;
