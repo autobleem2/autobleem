@@ -243,15 +243,9 @@ void GuiSetPicker::draw() {
     for (size_t i = 0; i < tabs.size(); i++) {
         const ableem::Rect cell(stripX + TabWidth * static_cast<int>(i), panel.y + 1, TabWidth, TabsHeight - 10);
         const bool current = static_cast<int>(i) == tab;
-        if (current) {
-            renderer.setBlendMode(ableem::BlendMode::Blend);
-            const ableem::Color &band = style.selectionBand;
-            renderer.setDrawColor(ableem::Color(band.r, band.g, band.b, 38));
-            renderer.fillRect(cell);
-            renderer.setDrawColor(band);
-            renderer.fillRect(
-                ableem::Rect(cell.x, cell.y + cell.h - PanelStyle::SelectionBar, cell.w, PanelStyle::SelectionBar));
-        }
+        // the current tab: the theme's `tab` frame, else the band and the bar under it (ab_gui G5h)
+        if (current)
+            style.tabCell(gui->uiContext(), cell);
         ableem::Texture icon = gui->uiContext().icon(tabs[i].icon);
         if (icon.valid()) {
             ableem::Rect dst(cell.x + (cell.w - IconSize) / 2, cell.y + 10, IconSize, IconSize);
