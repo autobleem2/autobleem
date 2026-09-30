@@ -98,7 +98,7 @@ void NotificationBubble::render(Gui &gui, long now) {
     Fonts &fonts = gui.assets().themeFonts;
     const bool bar = total_ > 0;
     ableem::Rect panel(right - width + offset, top, width, height());
-    style.sheet(gui.renderer(), panel);
+    style.sheet(gui.uiContext(), panel);
 
     const int textWidth = width - 2 * Pad;
     int y = panel.y + Pad;

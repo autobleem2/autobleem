@@ -45,7 +45,7 @@ ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Textu
         gui.renderBackground();
     style.dim(renderer);
     ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
-    style.sheet(renderer, panel);
+    style.sheet(gui.uiContext(), panel);
     return panel;
 }
 } // namespace

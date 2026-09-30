@@ -147,7 +147,7 @@ screen above 720p. What to draw, the sizes and the limits per frame are autoblee
 
 | Frame | Draws | Since |
 |---|---|---|
-| `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus. (The launcher's own System/Quick menu, set picker, Extensions, Processors and update prompt follow in the next step.) | ab_gui G4a |
+| `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus - and, since G4b, the launcher's own System and Quick menu, set picker, Extensions, Processors, update prompt and notification bubble, the Store's screen and PSC-Bios's gamepad-configuration message box. (Not the pad battery plate, nor PSC-Bios's one-line countdown plate.) | ab_gui G4a, G4b |
 
 **Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
 over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is

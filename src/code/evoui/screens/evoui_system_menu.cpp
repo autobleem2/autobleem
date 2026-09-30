@@ -193,7 +193,7 @@ void GuiSystemMenu::draw() {
     const int rowsHeight = visibleHeight();
     const int panelHeight = HeaderHeight + rowsHeight + StripHeight + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    style.sheet(gui->uiContext(), panel);
 
     // every text on this screen gets the launcher's halo, like the launcher's own
     const TextRenderer::Shadow classicShadow = gui->text().shadow();

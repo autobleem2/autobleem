@@ -241,7 +241,7 @@ void GuiSetPicker::draw() {
     const int shown = max(1, min(rows, static_cast<int>(t.entries.size())));
     const int panelHeight = TabsHeight + maxShown * RowHeight + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;

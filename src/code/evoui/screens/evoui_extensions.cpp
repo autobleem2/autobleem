@@ -152,7 +152,7 @@ void GuiExtensions::draw() {
     const int body = empty ? EmptyHeight : bodyHeight();
     const int panelHeight = HeaderHeight + body + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
