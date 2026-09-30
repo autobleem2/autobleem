@@ -684,6 +684,20 @@ void Carousel::drawGlow(long now) {
     const Spot spot = spotOf(games[selected], renderer.width() / 2.0f);
     if (spot.strength < 0.02f)
         return;
+    // breathing, 0.8..1 every 5.6 s
+    const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
+    // the theme's coverGlow frame (G5k), when it has one: round the face, its slices and bleed scaled with the cover,
+    // at the glow's alpha (strength x breathing), tinted by the theme's own `tint` (selection) - instead of the square
+    {
+        abgui::Context &ctx = Gui::getInstance()->uiContext();
+        if (ctx.frame("coverGlow").valid()) {
+            const ableem::Rect face(static_cast<int>(std::lround(spot.face.x)), static_cast<int>(std::lround(spot.face.y)),
+                                    static_cast<int>(std::lround(spot.face.w)), static_cast<int>(std::lround(spot.face.h)));
+            ctx.style().drawFrame(ctx, "coverGlow", face, static_cast<unsigned char>(255 * spot.strength * pulse),
+                                  CoverLight::glowFrameScale(spot.face));
+            return;
+        }
+    }
     if (!glowTex_.valid()) {
         // a soft square of light, brightest in the middle: nested rects, each adding a little, in a target
         // (so premultiplied), drawn scaled - the linear filter rounds the steps off
@@ -708,8 +722,6 @@ void Carousel::drawGlow(long now) {
     const ableem::ThemeColor &selection = AppBase::get().theme().launcher().colors.selection;
     const ableem::Color light =
         selection.set ? ableem::Color(selection.r, selection.g, selection.b) : ableem::Color(255, 255, 255);
-    // breathing, 0.8..1 every 5.6 s
-    const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
     const float k = 0.55f * spot.strength * pulse; // a hint of light, not a lamp (the owner's look check)
     // premultiplied: the colour and the alpha both scale, or the light would not fade with them
     glowTex_.setColorMod(ableem::Color(static_cast<unsigned char>(light.r * k), static_cast<unsigned char>(light.g * k),
