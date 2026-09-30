@@ -57,6 +57,7 @@ public:
     void init() override;
     ~GuiLauncher() override;
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
 
     // these variables are used by the loop routines
     long motionStart = 0; // when the stick went left/right and stayed; 0 once it is centred again

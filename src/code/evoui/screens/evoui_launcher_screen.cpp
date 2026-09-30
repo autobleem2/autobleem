@@ -1201,9 +1201,17 @@ void GuiLauncher::render() {
         sselector->frame = menu->savestate;
     }
 
-    renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
-    renderer.clear();
+    // the stack clears (to transparent black, the draw colour from then on) and presents (docs/ab-gui-plan.md,
+    // G3e); draw() only draws. The renderer's own clear() and present() still do the work, so a
+    // captureNextFrame() asked for before render() (the set picker's, an extension's backdrop), AB_SHOT and the
+    // DebugDriver's frame copy see this frame as they did.
+    gui->uiContext().stack().frame(ableem::Color(0x00, 0x00, 0x00, 0x00), [this]() { draw(); });
+}
 
+//*******************************
+// GuiLauncher::draw
+//*******************************
+void GuiLauncher::draw() {
     // every text on this screen (meta panel, labels, notifications, the state selector) gets the halo
     // for the length of this frame, on the launcher's own setting; the classic screens shown from here
     // render on the classic one, which goes back at the end of the frame
@@ -1280,8 +1288,6 @@ void GuiLauncher::render() {
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
-
-    gui->renderer().present();
 }
 
 //*******************************
