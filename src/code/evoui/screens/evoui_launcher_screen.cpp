@@ -557,6 +557,10 @@ void GuiLauncher::pollPadBattery() {
 // C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
 // launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
 // against any theme's background image instead of floating over whatever happens to be behind them there.
+// G5l: a theme's `plate` frame (ab_gui) is that plate, and its `battery` icon the outline and nub - the charge is
+// still drawn here, into the icon's inner rect (PadBatteryCharge::rect: a fixed 2 px inset, the art spec's
+// x 2..24, y 2..11 of the 29 x 13 icon); a theme with neither draws as before. AB_FAKE_PAD_BATTERY (dev hosts,
+// PadBatteryService::list) fakes the pads.
 // A matched pad's icon also gets its short "P1"/"P2" tag (padBatteryIconTags, from padBatteryLabelsFor())
 // drawn to its left - an unmatched one gets no tag, same spot left blank, as before C12.
 // C15: the tag and the percent are drawn in FONT_15_BOLD (a fixed, always-loaded font), not `hintFont` -
@@ -592,9 +596,15 @@ void GuiLauncher::renderPadBatteries() {
     int rowHeight = iconH + 10;
     ableem::Rect plate(x - plateMargin, y - plateMargin, rowWidth + 2 * plateMargin,
                        knownCount * rowHeight - 10 + 2 * plateMargin);
-    PanelStyle plateStyle;
-    plateStyle.secondary = secColor;
-    plateStyle.sheet(renderer, plate);
+    // G5l: the theme's `plate` frame into the very same rect; no frame = the code sheet, call for call
+    abgui::Context &ctx = gui->uiContext();
+    if (!ctx.style().drawFrame(ctx, "plate", plate)) {
+        PanelStyle plateStyle;
+        plateStyle.secondary = secColor;
+        plateStyle.sheet(renderer, plate);
+    }
+    // G5l: the theme's `battery` icon (outline and nub, at its own size) replaces the code-drawn outline and nub
+    const ableem::Texture batteryIcon = ctx.icon("battery");
 
     int iconX = x + tagW;
     for (size_t i = 0; i < padBatteries.size(); i++) {
@@ -604,13 +614,22 @@ void GuiLauncher::renderPadBatteries() {
         const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
         if (!tag.empty())
             gui->text().renderText_WithColor(battFont, tag, x, y + textY, fgColor);
-        renderer.setDrawColor(secColor);
-        renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
-        renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
-        int fillW = std::max(1, (iconW - 4) * std::min(100, std::max(0, pad.percent)) / 100);
+        int glyphW = iconW + nubW, glyphH = iconH;
+        if (batteryIcon.valid()) {
+            glyphW = batteryIcon.size().w;
+            glyphH = batteryIcon.size().h;
+            const ableem::Rect iconRect(iconX, y, glyphW, glyphH);
+            renderer.copy(batteryIcon, nullptr, &iconRect);
+        } else {
+            renderer.setDrawColor(secColor);
+            renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
+            renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
+        }
+        // the charge is code-drawn into the glyph's inner rect, a fixed inset from its corner (PadBatteryCharge)
+        const PadBatteryCharge charge = PadBatteryCharge::rect(iconX, y, glyphW, glyphH, pad.percent);
         ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
         renderer.setDrawColor(fillColor);
-        renderer.fillRect(ableem::Rect(iconX + 2, y + 2, fillW, iconH - 4));
+        renderer.fillRect(ableem::Rect(charge.x, charge.y, charge.w, charge.h));
         gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
                                          fgColor);
         y += rowHeight;
