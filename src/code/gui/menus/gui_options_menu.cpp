@@ -219,6 +219,7 @@ vector<string> GuiOptions::getFonts() {
 // GuiOptions::render
 //*******************************
 void GuiOptions::render() {
+    publishToDriver(); // the DebugDriver's rows and cursor (Options draws its rows itself, not via renderLines)
     holdTick();
     renderer.clear();
     gui->renderBackground();
