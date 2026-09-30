@@ -81,11 +81,16 @@ struct PsCarouselGame : public PsGamePtr {
     // translucent inside, into coverPng/content/thickness like loadTex does for a game
     void loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind);
     void freeTex();
+    // drops the two layers of the no-art cover (background and glyphs) the games share; Carousel::freeTextures
+    static void releaseNoArtLayers();
 
 private:
     void compose(ableem::Renderer &renderer, const ableem::Texture &artTex, ableem::Texture target);
     std::string art;
     bool artResolved = false;
+    // a RetroArch game or an App whose art was not found (artPath() fell back to ra-cover/app-cover.png):
+    // compose() draws the two-layer placeholder at the system's aspect instead of that file
+    bool noArt = false;
 };
 
 //******************

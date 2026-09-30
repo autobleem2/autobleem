@@ -51,6 +51,7 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
 void Carousel::freeTextures() {
     layerValid_ = false; // a texture made later may get a freed one's address: never trust the signature then
     forEachItem([](PsCarouselGame &item) { item.freeTex(); });
+    PsCarouselGame::releaseNoArtLayers();
     placeholderTex_ = ableem::Texture();
     glowTex_ = ableem::Texture();
     shineTex_ = ableem::Texture();
