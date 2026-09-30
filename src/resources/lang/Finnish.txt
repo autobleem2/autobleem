@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -246,6 +246,7 @@ Not installed=Ei asennettu
 not used by the PS1 emulator=ei käytössä PS1-emulaattorissa
 NOTICE: At least one connected gamepad is not recognized.=HUOMAUTUS: Vähintään yhtä liitettyä ohjainta ei tunnistettu.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=HUOMAUTUS: Vähintään yhtä liitettyä ohjainta ei tunnistettu. Määritä se kohdassa Verkko ja ohjaimet.
+Notification timeout:=Ilmoituksen näyttöaika:
 OFF=POIS
 Off=Pois
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Sonyn korjaukset:
 Sound=Ääni
 Space=Väli
 Speedhack:=Nopeuden Muutin:
-Splash timeout:=Ilmoituksen näyttöaika:
+Splash screen:=
 SPREAD SHOT=HAJALAUKAUS
 Spu interpolation:=SPU-interpolointi:
 Start=Käynnistä

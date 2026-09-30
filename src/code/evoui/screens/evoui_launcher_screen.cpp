@@ -246,6 +246,21 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet i
 }
 
 //*******************************
+// GuiLauncher::infoTimeout / showInfo
+//*******************************
+// Options -> Interface -> "Notification timeout" (config.ini showingtimeout, seconds): how long the informational
+// bubbles stay; 0 = they are not shown. An error keeps its fixed time (DefaultShowingTimeout) and never asks.
+long GuiLauncher::infoTimeout() const {
+    return Strings::toInt(app.config().inifile.values["showingtimeout"], 2) * TicksPerSecond;
+}
+
+void GuiLauncher::showInfo(const string &text) {
+    const long timeout = infoTimeout();
+    if (timeout > 0)
+        notificationLines[1].setText(text, timeout);
+}
+
+//*******************************
 // GuiLauncher::showSetName
 //*******************************
 void GuiLauncher::showSetName() {
@@ -260,9 +275,9 @@ void GuiLauncher::showSetName() {
 
     string numGames = " (" + pluralGames(carousel.games.size()) + ")";
 
-    long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
+    long timeout = infoTimeout();
     if (timeout <= 0)
-        return; // Options' "Splash timeout: Skip" (0 kept it up for good until 2026-09-29)
+        return; // Options' "Notification timeout: 0" - the informational bubbles are not shown
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
@@ -645,7 +660,11 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
         if (update.finishedRomCount > 0)
             text += ", " + to_string(update.finishedRomCount) + " " + _("ROMs");
-        scanBubble.show(_("Scan complete:"), text, 0, 0, 2 * DefaultShowingTimeout); // the summary, then gone
+        // the summary, then gone; with the notification timeout at 0 the progress bubble just goes
+        if (infoTimeout() > 0)
+            scanBubble.show(_("Scan complete:"), text, 0, 0, infoTimeout());
+        else
+            scanBubble.hide();
         scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
     }
 

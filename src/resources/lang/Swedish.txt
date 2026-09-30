@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -246,6 +246,7 @@ Not installed=Inte installerad
 not used by the PS1 emulator=används inte av PS1-emulatorn
 NOTICE: At least one connected gamepad is not recognized.=OBS: Minst en ansluten handkontroll känns inte igen.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=OBS: Minst en ansluten handkontroll känns inte igen. Ställ in den under Nätverk och handkontroller.
+Notification timeout:=Visningstid för meddelande:
 OFF=AV
 Off=Av
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Sony-hack:
 Sound=Ljud
 Space=Mellanslag
 Speedhack:=SpeedHack:
-Splash timeout:=Visningstid för meddelande:
+Splash screen:=
 SPREAD SHOT=SPRIDNINGSSKOTT
 Spu interpolation:=SPU-Interpolation:
 Start=Starta

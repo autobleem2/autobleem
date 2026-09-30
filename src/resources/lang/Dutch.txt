@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -246,6 +246,7 @@ Not installed=Niet geïnstalleerd
 not used by the PS1 emulator=wordt niet gebruikt door de PS1-emulator
 NOTICE: At least one connected gamepad is not recognized.=LET OP: Ten minste één aangesloten controller wordt niet herkend.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=LET OP: Ten minste één aangesloten controller wordt niet herkend. Stel hem in via Netwerk & controllers.
+Notification timeout:=Weergavetijd melding:
 OFF=UIT
 Off=Uit
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Sony-hacks:
 Sound=Geluid
 Space=Spatie
 Speedhack:=SpeedHack:
-Splash timeout:=Weergavetijd melding:
+Splash screen:=
 SPREAD SHOT=SPREISCHOT
 Spu interpolation:=SPU interpolatie:
 Start=Starten

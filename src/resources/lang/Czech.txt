@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -246,6 +246,7 @@ Not installed=Nenainstalováno
 not used by the PS1 emulator=nepoužívá jej PS1 emulátor
 NOTICE: At least one connected gamepad is not recognized.=UPOZORNĚNÍ: Alespoň jeden připojený ovladač nebyl rozpoznán.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=UPOZORNĚNÍ: Alespoň jeden připojený ovladač nebyl rozpoznán. Nastavte jej v nabídce Síť a ovladače.
+Notification timeout:=Doba zobrazení oznámení:
 OFF=VYP
 Off=Vypnuto
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Opravy Sony:
 Sound=Zvuk
 Space=Mezera
 Speedhack:=SpeedHack:
-Splash timeout:=Doba zobrazení oznámení:
+Splash screen:=
 SPREAD SHOT=ROZPTÝLENÁ PALBA
 Spu interpolation:=Interpolace zvuku:
 Start=Start

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -246,6 +246,7 @@ Not installed=Pas installat
 not used by the PS1 emulator=pas utilizat per l'emulator PS1
 NOTICE: At least one connected gamepad is not recognized.=AVÍS : Almens una maneta connectada es pas reconeguda.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=AVÍS : Almens una maneta connectada es pas reconeguda. Configuratz-la dins Ret e manetas.
+Notification timeout:=Durada de l'anóncia:
 OFF=DESACTIVAT
 Off=Desactivat
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Correctius Sony:
 Sound=Son
 Space=Espaci
 Speedhack:=Hack velocitat :
-Splash timeout:=Durada de l'anóncia:
+Splash screen:=
 SPREAD SHOT=TIR ESPARPALHAT
 Spu interpolation:=Interpolacion Spu :
 Start=Aviar

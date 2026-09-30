@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -246,6 +246,7 @@ Not installed=Neinstalat
 not used by the PS1 emulator=nefolosit de emulatorul PS1
 NOTICE: At least one connected gamepad is not recognized.=NOTĂ: Cel puțin un controler conectat nu este recunoscut.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=NOTĂ: Cel puțin un controler conectat nu este recunoscut. Configurează-l în Rețea și controlere.
+Notification timeout:=Durata anunțului:
 OFF=OPRIT
 Off=Oprit
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Corecții Sony:
 Sound=Sunet
 Space=Spatiu
 Speedhack:=SpeedHack:
-Splash timeout:=Durata anunțului:
+Splash screen:=
 SPREAD SHOT=FOC IMPRASTIAT
 Spu interpolation:=Spu Interpolation:
 Start=Start

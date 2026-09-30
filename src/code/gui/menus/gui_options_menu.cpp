@@ -136,8 +136,11 @@ void GuiOptions::fill() {
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
     lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
-    // how long the "Showing: <set>" splash stays after a set change: 0 = not shown at all (valueText: Skip)
-    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Splash timeout:"), "showingtimeout", false, getTimeoutValues());
+    // how long the informational bubbles ("Showing: <set>", the scan's summary, ...) stay: 0 = not shown at all
+    // (valueText: Off). Errors keep their own fixed time
+    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Notification timeout:"), "showingtimeout", false, getTimeoutValues());
+    // the boot splash (Gui::display); off goes straight to the launcher
+    lines.emplace_back(CFG_SPLASH_SCREEN, _("Splash screen:"), "splashscreen", true, vector<string>({"false", "true"}));
 
     heading(_("Fonts"));
     // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its
@@ -317,7 +320,7 @@ void GuiOptions::doKeyUp() {
 //*******************************
 std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
     if (info.id == CFG_SHOWINGTIMEOUT)
-        return Strings::toInt(value, 0) <= 0 ? _("Skip") : value + "s";
+        return Strings::toInt(value, 0) <= 0 ? _("Off") : value + "s";
     if (info.id == CFG_DISPLAY) {
         const OutputMode mode = OutputMode::parse(value);
         if (!mode.isAuto())

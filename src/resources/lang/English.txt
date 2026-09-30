@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 432
+# Untranslated: 0 / Total: 433
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -252,6 +252,7 @@ Not installed=Not installed
 not used by the PS1 emulator=not used by the PS1 emulator
 NOTICE: At least one connected gamepad is not recognized.=NOTICE: At least one connected gamepad is not recognized.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.
+Notification timeout:=Notification timeout:
 OFF=OFF
 Off=Off
 OK=OK
@@ -378,7 +379,7 @@ Sony hacks:=Sony hacks:
 Sound=Sound
 Space=Space
 Speedhack:=Speedhack:
-Splash timeout:=Splash timeout:
+Splash screen:=Splash screen:
 SPREAD SHOT=SPREAD SHOT
 Spu interpolation:=Spu interpolation:
 Start=Start

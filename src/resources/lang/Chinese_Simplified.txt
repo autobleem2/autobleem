@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -246,6 +246,7 @@ Not installed=未安装
 not used by the PS1 emulator=PS1 模拟器未使用
 NOTICE: At least one connected gamepad is not recognized.=注意：至少有一个已连接的手柄无法识别。
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=注意：至少有一个已连接的手柄无法识别。请在“网络与控制器”中进行设置。
+Notification timeout:=提示显示时间:
 OFF=关
 Off=关闭
 OK=确定
@@ -371,7 +372,7 @@ Sony hacks:=Sony 修正：
 Sound=声音
 Space=空格
 Speedhack:=速度优化：
-Splash timeout:=提示显示时间:
+Splash screen:=
 SPREAD SHOT=散射
 Spu interpolation:=SPU 插值：
 Start=启动

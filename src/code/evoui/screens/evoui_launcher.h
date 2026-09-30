@@ -222,6 +222,10 @@ public:
     void rememberSelection();
     void switchSet(GameSet newSet, bool noForce);
     void showSetName();
+    // the informational bubbles (the set, a saved resume point, the controllers, the scan summary) hold for
+    // Options' "Notification timeout" seconds and are not shown at 0; the error ones keep their fixed time
+    long infoTimeout() const;
+    void showInfo(const std::string &text);
     // re-runs the current set's query and re-selects the same game by id (falling back to the first game,
     // or none) - what a scan finishing, or the Game Manager/Options changing the roster, needs: the list
     // itself may have gained, lost or reordered entries, so the old carousel index cannot be trusted.

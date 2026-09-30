@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -246,6 +246,7 @@ Not installed=Ikke installeret
 not used by the PS1 emulator=bruges ikke af PS1-emulatoren
 NOTICE: At least one connected gamepad is not recognized.=BEMÆRK: Mindst én tilsluttet controller genkendes ikke.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=BEMÆRK: Mindst én tilsluttet controller genkendes ikke. Sæt den op under Netværk og controllere.
+Notification timeout:=Visningstid for besked:
 OFF=FRA
 Off=Fra
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Sony-hacks:
 Sound=Lyd
 Space=Space
 Speedhack:=SpeedHack:
-Splash timeout:=Visningstid for besked:
+Splash screen:=
 SPREAD SHOT=SPREDNINGSSKUD
 Spu interpolation:=SPU-interpolation:
 Start=Start
