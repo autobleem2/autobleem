@@ -85,7 +85,7 @@ void GuiProcessors::draw() {
         renderer.copy(background, nullptr, nullptr);
     else
         gui->renderBackground();
-    style.dim(renderer);
+    style.dim(gui->uiContext());
 
     const bool empty = count() == 0;
     const int rows = empty ? 0 : visibleRows();
@@ -162,9 +162,9 @@ void GuiProcessors::draw() {
 
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight - 4, -1);
     if (!empty && firstVisible + rows < count())
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
 
     vector<PanelStyle::HintItem> hints;
     if (moving) {

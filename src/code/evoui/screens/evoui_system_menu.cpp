@@ -188,7 +188,7 @@ void GuiSystemMenu::draw() {
         renderer.copy(background, nullptr, nullptr);
     else
         gui->renderBackground();
-    style.dim(renderer);
+    style.dim(gui->uiContext());
 
     const int rowsHeight = visibleHeight();
     const int panelHeight = HeaderHeight + rowsHeight + StripHeight + FooterHeight;
@@ -239,13 +239,13 @@ void GuiSystemMenu::draw() {
     // scroll markers: a small triangle at the top or bottom edge of the rows when more are that way
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, rowsTop - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, rowsTop - 4, -1);
     if (last < static_cast<int>(rows.size()))
-        style.scrollMarker(renderer, markerX, rowsTop + rowsHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, rowsTop + rowsHeight + 2, 1);
 
     // the strip: the selected item's description, over a rule
     const int stripY = rowsTop + rowsHeight;
-    style.rule(renderer, panel, stripY);
+    style.rule(gui->uiContext(), panel, stripY);
     if (selected >= 0 && selected < static_cast<int>(rows.size())) {
         ableem::Font &stripFont = fonts.atSize(FONT_BOLD, StripSize);
         gui->text().renderText_WithColor(stripFont, rows[selected].description, panel.x + TextX,
