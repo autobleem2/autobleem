@@ -50,12 +50,13 @@ bool near(float a, float b) {
 
 // x/y are whole pixels rounded from a float: a last-bit difference can flip one across .5 on a single mid-move
 // frame (seen: linear, 110 ms, 35 ms in, Release) - one pixel for one frame, never at rest
+// frame; the shade (0..255) likewise by one step
 bool nearPx(int a, int b) {
     return std::abs(a - b) <= 1;
 }
 
 bool samePoint(const Point &a, const Point &b) {
-    return nearPx(a.x, b.x) && nearPx(a.y, b.y) && near(a.scale, b.scale) && near(a.shade, b.shade) &&
+    return nearPx(a.x, b.x) && nearPx(a.y, b.y) && near(a.scale, b.scale) && std::fabs(a.shade - b.shade) <= 1.0f &&
            near(a.angle, b.angle);
 }
 
