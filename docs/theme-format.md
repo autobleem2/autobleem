@@ -222,7 +222,9 @@ What to draw, the size of each and the whole list are autobleem-core's `docs/ab-
 | `extension` | The Extensions list's icon (fitted in 56 x 56) for an extension that ships none; a theme without it keeps the empty column | none | ab_gui G5c |
 | `storeInstalled` | The Store's "Installed" badge (32 x 32 in ab2.0.0): drawn at its own size at the right end of an installed item's row in the Apps and Games lists, vertically centred, 24 px in from the list panel's inner right edge. **The theme's own only** - a theme without it gets a code-drawn check mark in the `edge` colour. The row itself is a normal row (no veil) | none | ab_gui G5t |
 
-The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
+| `switchOn` / `switchOff` | A yes/no row's value (Options, the editors, the Store, PSC-Bios): drawn at its own size (60 x 30 in the art spec) with its right edge where the value text would end, vertically centred in the row, under a disabled row's veil. **The theme's own only - there are no built-in switch images**: a theme that ships neither keeps the ON/OFF text (so `default` and `ab2` do). Ship both or the missing state falls back to the text | none | ab_gui G5m |
+
+The other names of the art spec (`battery`, `play`) are read the same way and take effect in
 their own steps. A theme without `launcher.icons` looks exactly as it did.
 
 ### The launcher's logo (`launcher.logo`) and the resume picture's mask (`launcher.menuIcons.resumePictureMask`)
