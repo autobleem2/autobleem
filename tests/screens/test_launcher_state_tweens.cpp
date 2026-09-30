@@ -54,15 +54,15 @@ struct MenuState {
 };
 
 void expectSame(const MenuState &a, const MenuState &b) {
-    CHECK(a.x == b.x);
-    CHECK(a.y == b.y);
-    CHECK(a.ox == b.ox);
-    CHECK(a.oy == b.oy);
+    CHECK(a.x == doctest::Approx(b.x).epsilon(1e-5));
+    CHECK(a.y == doctest::Approx(b.y).epsilon(1e-5));
+    CHECK(a.ox == doctest::Approx(b.ox).epsilon(1e-5));
+    CHECK(a.oy == doctest::Approx(b.oy).epsilon(1e-5));
     CHECK(a.sel == b.sel);
     for (int i = 0; i < 4; i++) {
-        CHECK(a.scales[i] == b.scales[i]);
-        CHECK(a.xoff[i] == b.xoff[i]);
-        CHECK(a.yoff[i] == b.yoff[i]);
+        CHECK(a.scales[i] == doctest::Approx(b.scales[i]).epsilon(1e-5));
+        CHECK(a.xoff[i] == doctest::Approx(b.xoff[i]).epsilon(1e-5)); // FMA on the build image
+        CHECK(a.yoff[i] == doctest::Approx(b.yoff[i]).epsilon(1e-5));
     }
 }
 
