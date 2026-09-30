@@ -10,6 +10,14 @@ ab_add_test(test_abpad_core apps/test_abpad_core.cpp LIBS abpad_core)
 # itself needs a live Gui/ThemeAssets to render, which no test host here builds.
 ab_add_test(test_set_picker_layout screens/test_set_picker_layout.cpp)
 
+# The carousel's timing on tweens (autobleem-core docs/ab-gui-plan.md, G5o5): evoui/carousel_motion.h on a real
+# abgui::Tweens against a copy of the hand-written timer it replaced - a tap, a queued tap, a held-stick chain, a
+# direction change mid-move, the main cover's raise/lower/snap - every cover's place compared exactly at every frame
+# (every ms, 60 and 30 fps, a jittery schedule), and the DebugDriver busy while the covers move. A local model of the
+# carousel's bookkeeping, as above (the Carousel itself needs a live Gui).
+ab_add_test(test_carousel_motion screens/test_carousel_motion.cpp LIBS ab_gui)
+target_include_directories(test_carousel_motion PRIVATE ${CMAKE_SOURCE_DIR}/src/code)
+
 # rc/app_resolve.sh, the shell copy of AppManifest's rule, held to the same answers
 ab_add_test(test_app_resolve rc/test_app_resolve.cpp)
 target_compile_definitions(test_app_resolve PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc"

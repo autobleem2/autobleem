@@ -55,9 +55,9 @@ public:
     bool canSelectNext() const { return selectedIsValid() && selected + 1 < static_cast<int>(games.size()); }
     bool canSelectPrevious() const { return selectedIsValid() && selected > 0; }
 
-    bool scrolling = false; // an animation is in progress; input that would start another waits
-    long chainEnd = 0;      // when the last held-stick step ends: the next one starts there (stepStart)
-    long stepStart(int speed, bool eased);
+    bool scrolling = false;                // an animation is in progress; input that would start another waits
+    long chainEnd = 0;                     // when the last held-stick step ends: the next one starts there (stepStart)
+    long stepStart(int speed, bool eased); // CarouselMotion::stepStart at the platform's ticks
     PsCarousel positions;
 
     // places the covers around `selectedIndex` with no animation. With waitForCovers every shown cover is
@@ -72,7 +72,8 @@ public:
     // row moves, two at rest; true if it did any. Once a frame from the launcher's loop.
     bool pumpCovers();
     // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
-    // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next
+    // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next. Each is one tween run
+    // on the program's Tweens (carousel_motion.h, G5o5), so the DebugDriver is busy until the covers rest
     void scrollLeft(int speed, bool eased = true);
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
@@ -83,7 +84,8 @@ public:
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
     void snapMainCover(bool toGamesRow);
-    // advances every cover's animation; call once per frame before render()
+    // advances every cover's animation; call once per frame before render(). Brings the program's Tweens to now
+    // first (the stack advances them again before the frame is drawn), so the covers are placed for this pass's time
     void updatePositions();
     void render();
 
@@ -120,6 +122,14 @@ private:
     ableem::Texture spareTarget();
 
     ableem::GuiBase &gui_;
+    // the covers' timed moves (G5o5): the floats the runs write, and their owner (declared after them) that stops the
+    // runs with the carousel - or with a new row (setGames). mainMove_ is the last moveMainCover's, which
+    // snapMainCover stops
+    abgui::Tweens &uiTweens();
+    CarouselMotion::MoveRef startMove(long startedAt, int durationMs, bool eased);
+    CarouselMotion::Moves moves_;
+    CarouselMotion::MoveRef mainMove_;
+    abgui::TweenOwner movesOwner_;
     CoverLoader loader_;
     std::vector<ableem::Texture> targetPool_;
     unsigned long placement_ = 0;    // counts setInitialPositions: PsCarouselGame::lastWanted's clock
