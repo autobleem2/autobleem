@@ -181,12 +181,12 @@ void GuiExtensions::draw() {
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
             style.selection(gui->uiContext(), row);
-        const int textX = panel.x + RowInset + 8 + IconSize + 16;
         ableem::Texture icon = icons[rows[i]];
-        // an extension that ships none gets the theme's "extension" icon when it has one (no built-in: else the
-        // empty column stays), asked at draw time
+        // an extension that ships none gets the theme's "extension" icon when it has one (no built-in), asked at
+        // draw time; with neither, the title starts where the icon would be (no empty column)
         if (!icon.valid() && e.icon.empty())
             icon = gui->uiContext().icon("extension");
+        const int textX = panel.x + RowInset + 8 + (icon.valid() ? IconSize + 16 : 0);
         if (icon.valid()) {
             const ableem::Size iconSize = icon.size();
             int w = IconSize, h = IconSize;
