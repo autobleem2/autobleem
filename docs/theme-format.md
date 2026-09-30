@@ -219,6 +219,30 @@ What to draw, the size of each and the whole list are autobleem-core's `docs/ab-
 The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
 their own steps. A theme without `launcher.icons` looks exactly as it did.
 
+### The busy spinner (`launcher.spinner`)
+
+The spinner shown while a long job runs ("Applying...", a theme reload, a scan's please-wait picture) is a code-drawn
+ring of twelve dots. A theme may replace it with its own animation: **one image holding N frames side by side**, all the
+same size, played in a loop, centred where the ring is (in the busy frame and in the "please wait" picture alike).
+
+```json
+"launcher": {
+  "spinner": { "image": "images/spinner.png", "frames": 24, "fps": 24 }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `image` | The 1x strip (alpha), relative to the theme folder: `frames` frames of equal width side by side, left to right. One frame's size (the strip's width / `frames` by its height) is the spinner's size on screen; it is drawn at that size, never stretched. |
+| `image2x` | The `@2x` strip; left out, `<image>@2x.png` next to `image` is used when it exists. Exactly twice the pixels of the 1x strip each way (each frame twice the size); drawn instead of it on a screen above 720p. |
+| `frames` | How many frames the strip holds - a whole number of at least 1. Required: without it the spinner is ignored. |
+| `fps` | Frames per second. Left out (or below 1): 24. The frame shown is `elapsed x fps / 1000` modulo `frames`, the elapsed time being that of the job (the please-wait picture: the clock). |
+
+**The spinner is the theme's own**: it is read only from the selected theme's `theme.json`, never taken over from
+`default`, and a strip whose file is missing (or narrower than its `frames`) is ignored (logged). The ring of dots is
+then drawn exactly as before - a theme without `launcher.spinner` looks exactly as it did. What to draw: ab2.0.0's is
+24 frames of 64 x 64 (`images/spinner.png`, `@2x` 128 x 128 a frame) at 24 fps.
+
 ### The style block (`launcher.colors`' roles)
 
 Every menu, list and dialog - the classic lists (Options, Game Manager, the game editors, Memory Cards,
