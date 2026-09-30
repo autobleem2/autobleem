@@ -217,11 +217,69 @@ class Driver:
             if len(found) != 1:
                 raise RuntimeError(f'item {item!r} ' + ('is ambiguous' if found else 'not found') + f': {names}')
             index = found[0]
-        for _ in range(index):
-            self.cmd(f'press down {TAP_MS}')
-            self.frame_gap()
+        if not self.move_to(index):
+            for _ in range(index):  # a driver without `selected`: count the presses, as before
+                self.cmd(f'press down {TAP_MS}')
+                self.frame_gap()
         self.cmd('press x')
         return 'ok ' + names[index]
+
+    def selected(self):
+        # the DebugDriver's `selected` ("ok <index>|<name>") as (index, name); None on a driver without it
+        try:
+            reply = self.cmd('selected')
+        except RuntimeError:
+            return None
+        index, _, name = reply[3:].partition('|')
+        try:
+            return int(index), name
+        except ValueError:
+            return None
+
+    def move_to(self, index, timeout=15.0):
+        # closed loop: step the cursor until the driver says it is on row `index` - the presses are never counted,
+        # so a double move (a list's own repeat on a slow frame, a late release) is walked back instead of picking
+        # the wrong row. False on a driver without `selected`, for the caller to fall back to counting.
+        end = time.time() + timeout
+        while time.time() < end:
+            now = self.selected()
+            if now is None or now[0] < 0:
+                return False
+            if now[0] == index:
+                self.rest()  # the cursor may still be settling - look once more after the picture rests
+                again = self.selected()
+                if again and again[0] == index:
+                    return True
+                continue
+            self.cmd(f'press {"down" if now[0] < index else "up"} {TAP_MS}')
+            moved = time.time() + 1.5
+            while time.time() < moved:
+                after = self.selected()
+                if after and after[0] != now[0]:
+                    break
+                time.sleep(0.02)
+        raise RuntimeError(f'the cursor did not reach row {index} in {timeout:.0f} s (now {self.selected()})')
+
+    def select(self, item):
+        # a classic list's row (Options, Game Manager, an editor, the set picker, Extensions...) by its text as
+        # shown (translated, case-insensitive, a unique prefix will do) or its index, headings ('#...') excluded
+        # from the name match; the cursor is moved there, nothing is pressed
+        item = item.strip().strip('"\'')
+        names = self.items()
+        if item.isdigit():
+            index = int(item)
+        else:
+            wanted = item.lower()
+            rows = [(i, n) for i, n in enumerate(names) if not n.startswith('#')]
+            exact = [i for i, n in rows if n.lower() == wanted]
+            prefix = [i for i, n in rows if n.lower().startswith(wanted)]
+            found = exact or prefix
+            if len(found) != 1:
+                raise RuntimeError(f'row {item!r} ' + ('is ambiguous' if found else 'not found') + f': {names}')
+            index = found[0]
+        if not self.move_to(index):
+            raise RuntimeError('select needs a driver with `selected` (feature/driver-state or later)')
+        return f'ok {index}|{names[index] if index < len(names) else ""}'
 
     def current_screen(self):
         reply = self.cmd('screen')
@@ -239,6 +297,12 @@ class Driver:
             time.sleep(0.2)
 
     def rest(self, ms=300):
+        # no busy spinner and a picture at rest (`wait_ready`); an older driver: the picture at rest only
+        try:
+            self.cmd('wait_ready 10')
+            return
+        except RuntimeError:
+            pass
         try:
             self.cmd(f'wait_idle {ms} 10')
         except RuntimeError:
@@ -366,6 +430,9 @@ class Driver:
             return
         if words[0] == 'home':
             out.append(self.home())
+            return
+        if words[0] == 'select':
+            out.append(self.select(part.split(None, 1)[1]))
             return
         if words[0] == 'shot':
             path = part.split(None, 1)[1].strip()

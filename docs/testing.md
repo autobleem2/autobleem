@@ -69,10 +69,13 @@ These are done by the client, on top of the driver's words:
   l2`, `down r2`, 150 ms, `up r2`, `up l2`; `down up` ... `up up` for `quick`) and wait up to 2 s for
   `GuiSystemMenu`; the whole thing is tried up to 3 times. After the pick they wait (up to 10 s) until the System
   menu is gone, so the chosen screen is up when the step ends and a script needs no `wait_screen GuiManager`.
-  `<item>` is a title or an index: `items` is published only by the System/Quick menu, so picking by name works
-  there only - Options, Game Manager, the editors, the set picker, Extensions and the Store are walked with `tap
-  down` / `tap x`.
-- **`tap <btn>`** = one short press (`press <btn> 40`; `tap <btn> <ms>` a longer one) - `tap down` moves exactly one
+  `<item>` is a title (the English key) or an index. The cursor is walked there **closed-loop**: the client reads
+  the driver's `selected` after every step and presses again until it is on the row - a double move on a slow
+  frame is walked back instead of picking the wrong item (a driver without `selected` falls back to counting).
+- **`select <row>`** moves the cursor of the list showing (Options, Game Manager, an editor, the set picker,
+  Extensions, Scanner processors) to a row by its text as shown - translated, case-insensitive, a unique prefix -
+  or by its index (headings count, `#...`); nothing is pressed, so `select Language; tap right` changes that row.
+- **`tap <btn>`** = one short press (`press <btn> 60`; `tap <btn> <ms>` a longer one) - `tap down` moves exactly one
   row. **`hold <btn>`** / **`release <btn>`** = the driver's `down` / `up` (`hold <btn> <ms>` = `press <btn> <ms>`).
   **`dpad <up|down|left|right>`** and a bare **`up`/`down`/`left`/`right`** are a tap too, `dpad center` does
   nothing - `dpad down; wait 200; dpad center` no longer lets the key repeat fire and skip a row. Only the logical
