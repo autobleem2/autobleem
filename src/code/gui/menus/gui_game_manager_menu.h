@@ -19,6 +19,7 @@ public:
 
     void init() override;
     void render() override;
+    void drawList(); // what render() draws: the stack clears before and presents after
     void renderLineIndexOnRow(int index, int row) override;
 
     std::string getTitle() override;

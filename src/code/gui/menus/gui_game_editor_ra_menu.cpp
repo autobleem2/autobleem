@@ -29,6 +29,15 @@ void GuiEditorRA::init() {
 //*******************************
 void GuiEditorRA::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiEditorRA::draw
+//*******************************
+void GuiEditorRA::draw() {
+    shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameData->title,
@@ -59,7 +68,6 @@ void GuiEditorRA::render() {
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);
 
     gui->renderStatus("|@O| " + _("Back") + "|");
-    renderer.present();
 }
 
 //*******************************

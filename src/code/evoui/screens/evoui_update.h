@@ -26,6 +26,7 @@ class GuiUpdatePrompt : public GuiScreen {
 public:
     void init() override;
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
     void loop() override;
 
     UpdateInfo info;
@@ -56,6 +57,7 @@ class GuiUpdateProgress : public GuiScreen {
 public:
     void init() override;
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
     void loop() override;
 
     ableem::Texture background;

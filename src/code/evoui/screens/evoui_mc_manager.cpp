@@ -191,6 +191,15 @@ void GuiMcManager::renderMetaInfo() {
 
 void GuiMcManager::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiMcManager::draw
+//*******************************
+void GuiMcManager::draw() {
+    shared_ptr<Gui> gui(Gui::getInstance());
     // render static elements
     renderStatic();
     // Draw Memcard images and meta info
@@ -200,7 +209,6 @@ void GuiMcManager::render() {
 
     // Draw the pencil
     renderPencil(pencilMemcard, pencilColumn, pencilRow);
-    renderer.present();
 }
 
 void GuiMcManager::loop() {

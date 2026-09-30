@@ -16,6 +16,15 @@ using namespace std;
 //*******************************
 void GuiBtnGuide::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiBtnGuide::draw
+//*******************************
+void GuiBtnGuide::draw() {
+    shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
 
     gui->renderTextBar();
@@ -78,7 +87,6 @@ void GuiBtnGuide::render() {
     row(_("POWER"), _("Exit to EvoUI"));
 
     gui->renderStatus("|@O| " + _("Back") + "|");
-    renderer.present();
 }
 
 //*******************************

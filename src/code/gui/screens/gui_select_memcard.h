@@ -18,6 +18,7 @@ public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
     void loop() override;
 
     std::vector<std::string> cards;

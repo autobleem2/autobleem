@@ -178,6 +178,14 @@ void GuiSystemMenu::keepSelectedVisible() {
 // GuiSystemMenu::render
 //*******************************
 void GuiSystemMenu::render() {
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiSystemMenu::draw
+//*******************************
+void GuiSystemMenu::draw() {
     publishItems(); // the cursor moved (or the rows changed): the driver's `selected`
     // the launcher's own background, dimmed, so the menu reads as an overlay on the screen it came from
     if (background.valid())
@@ -251,7 +259,6 @@ void GuiSystemMenu::render() {
                  {{{"X"}, _("Select")}, {{"O"}, _("Back")}}, "", false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************

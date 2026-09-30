@@ -13,6 +13,7 @@
 class GuiBtnGuide : public GuiScreen {
 public:
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
 
     void loop() override;
 

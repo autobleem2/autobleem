@@ -52,6 +52,14 @@ void GuiAppStart::init() {
 // GuiAppStart::render
 //*******************************
 void GuiAppStart::render() {
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiAppStart::draw
+//*******************************
+void GuiAppStart::draw() {
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], appName,
@@ -90,7 +98,6 @@ void GuiAppStart::render() {
     if (readmeLoaded && (firstLine > 0 || lastLineShown < static_cast<int>(lines.size())))
         status += "  |@L2|/|@R2| " + _("Page");
     gui->renderStatus(status);
-    renderer.present();
 }
 
 //*******************************

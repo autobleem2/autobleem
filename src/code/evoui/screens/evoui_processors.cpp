@@ -64,6 +64,14 @@ int GuiProcessors::visibleRows() const {
 // GuiProcessors::render
 //*******************************
 void GuiProcessors::render() {
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiProcessors::draw
+//*******************************
+void GuiProcessors::draw() {
     // the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled
     if (menuVisible && ableem::DebugDriver::active()) {
         vector<string> names;
@@ -172,7 +180,6 @@ void GuiProcessors::render() {
                  false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************

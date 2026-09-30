@@ -27,6 +27,7 @@ public:
     App &app = App::get();
     void init() override;
     void render() override;
+    void draw(); // what render() draws: the stack clears before and presents after
     void loop() override;
 
     GameSetSelection selection; // in: what shows now; out: what was picked

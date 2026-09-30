@@ -221,7 +221,14 @@ vector<string> GuiOptions::getFonts() {
 void GuiOptions::render() {
     publishToDriver(); // the DebugDriver's rows and cursor (Options draws its rows itself, not via renderLines)
     holdTick();
-    renderer.clear();
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); drawList() only draws
+    gui->uiContext().stack().frame([this]() { drawList(); });
+}
+
+//*******************************
+// GuiOptions::drawList
+//*******************************
+void GuiOptions::drawList() {
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());
@@ -256,7 +263,6 @@ void GuiOptions::render() {
     gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);
 
     gui->renderStatus(getStatusLine());
-    renderer.present();
 }
 
 //*******************************

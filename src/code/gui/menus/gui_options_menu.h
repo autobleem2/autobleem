@@ -47,6 +47,7 @@ public:
     // the rows packed at the font's height, scrolling when more than fit (the base's paging), in groups
     // under heading rows the cursor skips
     void render() override;
+    void drawList(); // what render() draws: the stack clears before and presents after
     bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].id == CFG_HEADING; }
     void doKeyDown() override;
     void doKeyUp() override;

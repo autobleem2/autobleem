@@ -72,6 +72,14 @@ void GuiUpdatePrompt::init() {
 // GuiUpdatePrompt::render
 //*******************************
 void GuiUpdatePrompt::render() {
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiUpdatePrompt::draw
+//*******************************
+void GuiUpdatePrompt::draw() {
     // the header holds the title and the version lines under it; the rule sits under those
     const int headerHeight = PanelStyle::HeaderHeight + static_cast<int>(lines.size()) * LineHeight + 12;
     const int footerHeight = PanelStyle::FooterHeight;
@@ -117,7 +125,6 @@ void GuiUpdatePrompt::render() {
                  {{{"X"}, _("Select")}, {{"O"}, _("Later")}}, "", false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
@@ -176,6 +183,14 @@ void GuiUpdateProgress::init() {
 // GuiUpdateProgress::render
 //*******************************
 void GuiUpdateProgress::render() {
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiUpdateProgress::draw
+//*******************************
+void GuiUpdateProgress::draw() {
     Fonts &fonts = gui->assets().themeFonts;
     string title, detail;
     double fraction = -1; // < 0: no bar
@@ -243,7 +258,6 @@ void GuiUpdateProgress::render() {
                  over ? vector<PanelStyle::HintItem>{{{"X"}, _("OK")}} : vector<PanelStyle::HintItem>{}, "", true);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************

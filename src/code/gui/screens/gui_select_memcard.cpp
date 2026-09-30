@@ -54,6 +54,15 @@ void GuiSelectMemcard::init() {
 //*******************************
 void GuiSelectMemcard::render() {
     shared_ptr<Gui> gui(Gui::getInstance());
+    // the stack clears and presents (docs/ab-gui-plan.md, G3d); draw() only draws
+    gui->uiContext().stack().frame([this]() { draw(); });
+}
+
+//*******************************
+// GuiSelectMemcard::draw
+//*******************************
+void GuiSelectMemcard::draw() {
+    shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     const bool compact = cards.size() <= 8;
     if (compact)
@@ -93,7 +102,6 @@ void GuiSelectMemcard::render() {
     gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1|/|@R1| " +
                       _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   |@X| " + _("Select") + "  |@O| " +
                       _("Cancel") + "|");
-    renderer.present();
     if (compact)
         gui->clearCompactPanel();
 }
