@@ -440,8 +440,11 @@ void GuiEditor::draw() {
             continue;
         }
         // the theme's roles (UIREV-29): the selected row bright, the others dim
-        TextRenderer::RowRoleScope role(gui->text(), row.opt == selOption ? TextRenderer::RowRole::Selected
-                                                                          : TextRenderer::RowRole::Row);
+        // a locked row is under the theme's `disabled` role when it has one (G5t): its text in `description`
+        const bool lockedRole = row.locked && gui->uiContext().disabledVeil().set;
+        TextRenderer::RowRoleScope role(gui->text(), lockedRole             ? TextRenderer::RowRole::Disabled
+                                                     : row.opt == selOption ? TextRenderer::RowRole::Selected
+                                                                            : TextRenderer::RowRole::Row);
         if (row.opt == selOption && !framed)
             gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
         if (row.kind == Row::Kind::Bool) {
@@ -452,7 +455,7 @@ void GuiEditor::draw() {
             gui->text().renderRowValue(row.value, line, yoffset, right);
         }
         if (row.locked)
-            gui->text().renderDisabledBox(line, yoffset, right);
+            gui->text().renderDisabledBox(gui->uiContext(), line, yoffset, right);
     }
     gui->renderScrollMarkers(firstVisible > 0, firstVisible + fit < total);
 

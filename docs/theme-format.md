@@ -215,6 +215,7 @@ What to draw, the size of each and the whole list are autobleem-core's `docs/ab-
 | `tabPlayStation`, `tabRetroArch`, `tabApps` | The set picker's tabs (56 x 56; the current tab full, the others dimmed) | `tab_playstation.png`, `tab_retroarch.png`, `tab_apps.png` | ab_gui G5c |
 | `raCover`, `appCover`, `bigBox` | **Not theme keys** (the owner, 2026-09-30): the missing-art covers and the big box's edge are parts of the carousel, the same on every theme - a `launcher.icons` entry under these names is ignored. A RetroArch game or App with no art is drawn at its system's typical aspect (`resources/platform/cover_aspects.cfg`, 1:1 for an App) as two layers, the launcher's own `evoimg/cover_bg.png` (stretched, 9-slice) and a fixed 96 px `glyph_game.png` / `glyph_app.png` centred on it, inside the `bigbox.png` frame - the same on every theme. `ra-cover.png` and `app-cover.png` stay for the game editor and the App start screen (a later swap of those files is planned) | `cover_bg.png`, `glyph_game.png`, `glyph_app.png`, `bigbox.png` (+`ra-cover.png`, `app-cover.png`) | - |
 | `extension` | The Extensions list's icon (fitted in 56 x 56) for an extension that ships none; a theme without it keeps the empty column | none | ab_gui G5c |
+| `storeInstalled` | The Store's "Installed" badge (32 x 32 in ab2.0.0): drawn at its own size at the right end of an installed item's row in the Apps and Games lists, vertically centred, 24 px in from the list panel's inner right edge. **The theme's own only** - a theme without it gets a code-drawn check mark in the `edge` colour. The row itself is a normal row (no veil) | none | ab_gui G5t |
 
 The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
 their own steps. A theme without `launcher.icons` looks exactly as it did.
@@ -283,6 +284,24 @@ as the table says. `text` and `secondary` are the base colours (the default them
 `hint` and `selection` keep their launcher meanings above (the launcher's own footer, the resume-slot halo)
 and are not roles; a role may still name them. Panel titles, the scroll markers and a dialog's question are
 drawn in `text`.
+
+**The disabled-row veil (`disabled`, G5t).** A row that cannot be changed (a locked setting in the game editor, an
+extension that cannot run, a switched-off processor, a greyed System-menu item) is laid under a veil - black at alpha
+150 unless the theme says otherwise. The theme's own `disabled` role sets both, in `launcher.colors`:
+
+```json
+"colors": { "disabled": { "color": "#1b2a3a", "alpha": 110 } }
+```
+
+| Form | Meaning |
+|---|---|
+| `"disabled": "#rrggbb"` | that colour at alpha 150 |
+| `"disabled": { "color": "#rrggbb", "alpha": 0..255 }` | both; a missing colour is black, a missing alpha 150, an alpha out of range is clamped |
+
+Unlike the other roles it is **not** a name of another colour, is read from the selected theme's own `theme.json`
+only (never merged from `default`) and a value that is not one of the two forms is ignored (unset). **Unset = today's
+black veil and the row's text unchanged** (`default` and `ab2` look exactly as before). **Set**, a disabled row's text
+is drawn in the `description` role as well as being veiled - the label and the value.
 
 ## Installing a theme from a zip
 

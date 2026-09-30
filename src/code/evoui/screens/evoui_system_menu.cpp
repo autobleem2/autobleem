@@ -220,15 +220,18 @@ void GuiSystemMenu::draw() {
         } else {
             if (i == selected)
                 style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
-            gui->text().renderText_WithColor(titleFont, row.title, panel.x + TextX,
-                                             rowY + (h - titleFont.lineHeight()) / 2, style.rowColor(i == selected),
-                                             XALIGN_LEFT);
+            // a greyed row is under the theme's `disabled` role (G5t: its veil, its title in `description`)
+            gui->text().renderText_WithColor(
+                titleFont, row.title, panel.x + TextX, rowY + (h - titleFont.lineHeight()) / 2,
+                row.greyed ? style.disabledColor(gui->uiContext(), style.rowColor(i == selected))
+                           : style.rowColor(i == selected),
+                XALIGN_LEFT);
             if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
                 gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
                                                  rowY + (h - noteFont.lineHeight()) / 2,
                                                  style.valueColor(i == selected), XALIGN_RIGHT);
             if (row.greyed)
-                style.disabled(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+                style.disabled(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
         }
         rowY += h;
     }

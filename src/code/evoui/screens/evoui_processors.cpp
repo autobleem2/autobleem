@@ -149,11 +149,14 @@ void GuiProcessors::draw() {
         } else {
             line2 = p->description;
         }
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 8, style.rowColor(i == selected),
+        // a greyed row is under the theme's `disabled` role (G5t: its veil, its title in `description`)
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 8,
+                                         greyed ? style.disabledColor(gui->uiContext(), style.rowColor(i == selected))
+                                                : style.rowColor(i == selected),
                                          XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], line2, textX, rowY + 36, style.description, XALIGN_LEFT);
         if (greyed)
-            style.disabled(renderer, row);
+            style.disabled(gui->uiContext(), row);
         rowY += RowHeight;
     }
 

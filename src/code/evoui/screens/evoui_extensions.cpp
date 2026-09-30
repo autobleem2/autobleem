@@ -204,12 +204,16 @@ void GuiExtensions::draw() {
         }
         const string reason = reasonFor(e, networkUp);
         const string title = e.version.empty() ? e.title : e.title + "  " + e.version;
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 11, style.rowColor(i == selected),
+        // a row that cannot run is under the theme's `disabled` role (G5t: its veil, its text in `description`)
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 11,
+                                         reason.empty()
+                                             ? style.rowColor(i == selected)
+                                             : style.disabledColor(gui->uiContext(), style.rowColor(i == selected)),
                                          XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? e.description : reason, textX, rowY + 41,
                                          style.description, XALIGN_LEFT);
         if (!reason.empty())
-            style.disabled(renderer, row);
+            style.disabled(gui->uiContext(), row);
         rowY += RowHeight;
     }
 
