@@ -109,7 +109,7 @@ Themes/<name>/
 | `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). `textShadow: false` drops the dark halo drawn under the launcher's text (it is what keeps white text readable on a light background; on by default) and the same dark outline around the Play button's images. |
 | `launcher.snapPanel` | `{ "x", "y", "w", "h" }`: where the selected game's screenshot (RetroArch's thumbnails `Named_Snaps`, or the user's own from `retroarch/screenshots`) is drawn, aspect-fit inside the rect. Leave it out and no screenshot is drawn. |
 | `launcher.hints` | The cross/circle/triangle icons in the footer. |
-| `launcher.hintBar` | `{ "x", "y", "w", "h" }`: the frame the footer's **two** hint lines are laid out in. Line 1 is built from the launcher's state and the selected item (e.g. "Play", "Play in RetroArch", "Game menu", "Quick menu" in the Games state; "Resume slot n" / "Delete slot" / "Back" in the resume picker); line 2 always shows what still works ("Games shown", "Random", "Guide", "System"). Each line is centred in its half of the bar, at the largest font from 22 down to 14 that fits the language - so a long translation shrinks instead of spilling - and, if it is still too wide even at the tightest gap, line 2 (never line 1, which stays short) drops hints from the right until it fits. `h` under 48 px is read as "this theme never expected two lines": only line 1 is drawn, at the bar's full height. Unset means the pill most themes paint at the bottom right: x 560..1240, y 624..696. ab2 gives its whole blue band, the default theme its strip - both over 48 px tall, so both draw two lines. The d-pad hints ("|@Up|" etc.) are the launcher's own arrows (`evoimg/dpad_*.png`, `tools/make_evoimg_icons.py`), not part of the theme. |
+| `launcher.hintBar` | `{ "x", "y", "w", "h" }`: the frame the footer's **two** hint lines are laid out in. Line 1 is built from the launcher's state and the selected item (e.g. "Play", "Play in RetroArch", "Game menu", "Quick menu" in the Games state; "Resume slot n" / "Delete slot" / "Back" in the resume picker); line 2 always shows what still works ("Games shown", "Random", "Guide", "System"). Each line is centred in its half of the bar, at the largest font from 22 down to 14 that fits the language - so a long translation shrinks instead of spilling - and, if it is still too wide even at the tightest gap, line 2 (never line 1, which stays short) drops hints from the right until it fits. `h` under 48 px is read as "this theme never expected two lines": only line 1 is drawn, at the bar's full height. Unset means the pill most themes paint at the bottom right: x 560..1240, y 624..696. ab2 gives its whole blue band, the default theme its strip - both over 48 px tall, so both draw two lines. The d-pad hints ("|@Up|" etc.) are the launcher's own arrows (`evoimg/dpad_*.png`, `tools/make_evoimg_icons.py`) unless the theme gives its own in `launcher.icons` (`dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight` - below). |
 | `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
 | `launcher.fonts` | The launcher's medium and bold ttf. Without them the shipped pair is used: `resources/fonts/OpenSans-Medium.ttf` / `-Bold.ttf` (OFL; the console's SST fonts were, until 2026-09-21). |
@@ -182,6 +182,38 @@ screen above 720p. What to draw, the sizes and the limits per frame are autoblee
 **Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
 over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is
 then drawn by the code as before. A theme without `launcher.frames` looks exactly as it did.
+
+### Icons (`launcher.icons`)
+
+The launcher's small fixed pictures - the d-pad arrows in the hints, the badges of the game-info row, the set picker's
+tabs, the missing-art covers - are **icons**: images drawn at their own size, never stretched (a frame is the
+stretching kind). A theme may give any of them its own file; **every icon it leaves out falls back** - to the `default`
+theme's entry, else to the launcher's own file in `evoimg/` - so a theme may replace one icon and keep the rest.
+What to draw, the size of each and the whole list are autobleem-core's `docs/ab-gui-evoui-art-spec.md` (3.).
+
+```json
+"launcher": {
+  "iconHalo": false,
+  "icons": {
+    "dpadUp": "icons/dpad_up.png",
+    "disc": { "image": "icons/disc.png", "image2x": "icons/hi/disc.png" }
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `icons.<name>` | The 1x PNG (alpha), relative to the theme folder - or `{ "image", "image2x" }` when the `@2x` file is not `<image>@2x.png` next to it. The 1x file's size is the icon's size on screen; the `@2x` one (exactly twice) is drawn instead on a screen above 720p. A file that is not there counts as not given (logged): the icon falls back. |
+| `iconHalo` | `false`: no dark outline under the icons (the code draws one from each icon's shape - black, 1 px all round and 2 px down-right - so a light icon reads on a light background; a theme whose icons carry their own outline or glow switches it off). Left out: the `default` theme's, else on. It holds for every icon drawn, the fallen-back ones too. |
+
+| Icon | Draws | Built-in (`evoimg/`) | Since |
+|---|---|---|---|
+| `dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight` | The d-pad in the launcher's hint lines and every footer, 28 x 28 | `dpad_up.png` ... | ab_gui G5a |
+| `players`, `disc`, `usb`, `internal`, `hd`, `sd`, `lock`, `unlock`, `favorite`, `retroarch`, `lightgun`, `lightgun2` | The game-info row (30 x 30); `players` falls back to the theme's `launcher.metaPanel` | `cd.png`, `usb.png`, `ps1.png`, `hd.png`, `sd.png`, `lock.png`, `unlock.png`, `favorite.png`, `ra.png`, `lightgun.png`, `lightgun2.png` | read since G5a, drawn from G5b |
+| `tabPlayStation`, `tabRetroArch`, `tabApps`, `raCover`, `appCover`, `bigBox`, `extension` | The set picker's tabs, the missing-art covers, the big box's edge, an extension without an icon | `tab_*.png`, `ra-cover.png`, `app-cover.png`, `bigbox.png` (`extension`: none) | read since G5a, drawn from G5c |
+
+The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
+their own steps. A theme without `launcher.icons` looks exactly as it did.
 
 ### The style block (`launcher.colors`' roles)
 
