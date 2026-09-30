@@ -193,7 +193,7 @@ void PsMeta::render() {
             fullRect.y = 0;
             fullRect.w = w;
             fullRect.h = h;
-            renderer.copy(playersIcon, &fullRect, &rect);
+            copyWithOutline("players", false);
 
             int xoffset = 190, spread = 40;
             // render internal icon
