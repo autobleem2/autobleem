@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "carousel_motion.h"
 #include "core/model/ps_game.h"
 #include <vector>
 #include <ableem/ui/renderer.h>
@@ -50,9 +51,9 @@ struct PsCarouselGame : public PsGamePtr {
     PsScreenpoint actual;
     int screenPointIndex = -1;
     int nextPointIndex = -1;
-    long animationStart = 0;
-    long animationDuration = 0;
-    bool eased = true; // easeOutCubic over the animation, or linear (a held stick keeps one speed)
+    // the timed move it is on, from `current` to `destination` (G5o5: a tween run the carousel starts - eased for a
+    // tap and the main cover, linear for a held stick); unset at rest
+    CarouselMotion::MoveRef move;
     bool visible = false;
     // keep the texture: visible, or within Carousel::Lookahead games of an end of the row, so that the
     // cover a scroll brings in is already decoded (see Carousel::loadOneMissingTexture)

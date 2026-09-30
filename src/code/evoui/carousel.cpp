@@ -5,7 +5,6 @@
 #include "gui/gui.h"
 #include "app_base.h"
 #include "core/model/cover_light.h"
-#include "core/model/timing.h"
 
 #include <ab_gui/ambient.h>
 #include <ab_gui/screen_stack.h>
@@ -32,6 +31,9 @@ const long ShineDelayMs = 120;
 //*******************************
 void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
     freeTextures();
+    // the old row's moves stop with it (its covers go; the new ones start at rest)
+    movesOwner_.cancel();
+    mainMove_ = CarouselMotion::MoveRef();
 
     // copy the gamesList into the carousel - just the games there are, however few - and the empty boxes
     // for the slots the games leave bare: the kind of box the games are in (the Lightgun set mixes PS1
@@ -308,18 +310,24 @@ bool Carousel::pumpCovers() {
 }
 
 //*******************************
-// Carousel::stepStart
+// Carousel::stepStart / uiTweens / startMove
 //*******************************
 // when a scroll step begins: now - or, for a held stick's step that follows the last one (not eased, and
 // that one ended no more than a step ago), exactly where the last one ended, so the row keeps its speed
 // instead of losing the part of a frame between the end of a step and the start of the next
 long Carousel::stepStart(int speed, bool eased) {
-    const long now = gui_.platform().ticks();
-    long start = now;
-    if (!eased && chainEnd != 0 && now >= chainEnd && now - chainEnd < speed)
-        start = chainEnd;
-    chainEnd = eased ? 0 : start + speed;
-    return start;
+    return CarouselMotion::stepStart(gui_.platform().ticks(), chainEnd, speed, eased);
+}
+
+// the program's one Tweens (the screen stack's), clocked by the platform's ticks
+abgui::Tweens &Carousel::uiTweens() {
+    return Gui::getInstance()->uiContext().stack().tweens();
+}
+
+// a move of the covers that set off together: one tween run from `startedAt` (G5o5, carousel_motion.h)
+CarouselMotion::MoveRef Carousel::startMove(long startedAt, int durationMs, bool eased) {
+    return moves_.start(uiTweens(), movesOwner_, static_cast<unsigned int>(startedAt),
+                        static_cast<unsigned int>(durationMs), eased);
 }
 
 //*******************************
@@ -328,7 +336,7 @@ long Carousel::stepStart(int speed, bool eased) {
 // start scroll animation to next game
 void Carousel::scrollLeft(int speed, bool eased) {
     scrolling = true;
-    long time = stepStart(speed, eased);
+    const CarouselMotion::MoveRef move = startMove(stepStart(speed, eased), speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -339,9 +347,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
                 game.visible = false;
             }
             game.destination = positions.coverPositions[nextIndex];
-            game.animationDuration = speed;
-            game.animationStart = time;
-            game.eased = eased;
+            game.move = move;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -355,7 +361,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
 // start scroll animation to previous game
 void Carousel::scrollRight(int speed, bool eased) {
     scrolling = true;
-    long time = stepStart(speed, eased);
+    const CarouselMotion::MoveRef move = startMove(stepStart(speed, eased), speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -365,9 +371,7 @@ void Carousel::scrollRight(int speed, bool eased) {
                 game.visible = false;
             }
             game.destination = positions.coverPositions[nextIndex];
-            game.animationDuration = speed;
-            game.animationStart = time;
-            game.eased = eased;
+            game.move = move;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -394,9 +398,8 @@ void Carousel::moveMainCover(bool toGamesRow) {
     if (!selectedIsValid())
         return;
     games[selected].destination = mainCoverPoint(toGamesRow);
-    games[selected].animationStart = gui_.platform().ticks();
-    games[selected].animationDuration = 200;
-    games[selected].eased = true;
+    mainMove_ = startMove(gui_.platform().ticks(), 200, true);
+    games[selected].move = mainMove_;
 }
 
 bool Carousel::animating() const {
@@ -405,7 +408,7 @@ bool Carousel::animating() const {
     if (shineAt_ != 0 && gui_.platform().ticks() < shineAt_ + ShineMs)
         return true;
     for (const auto &game : games)
-        if (game.visible && game.animationStart != 0)
+        if (game.visible && game.move.set())
             return true;
     return false;
 }
@@ -417,7 +420,10 @@ void Carousel::snapMainCover(bool toGamesRow) {
     games[selected].destination = point;
     games[selected].actual = point;
     games[selected].current = point;
-    games[selected].animationStart = 0;
+    // its raise or lowering, if that is what it is on, stops: nothing else moves with it
+    if (games[selected].move.set() && games[selected].move.id == mainMove_.id)
+        moves_.cancel(uiTweens(), mainMove_);
+    games[selected].move = CarouselMotion::MoveRef();
 }
 
 //*******************************
@@ -427,7 +433,7 @@ void Carousel::snapMainCover(bool toGamesRow) {
 void Carousel::updateVisibility() {
     bool allAnimationFinished = true;
     forEachItem([&](const PsCarouselGame &game) {
-        if ((game.animationStart != 0) && game.visible) {
+        if (game.move.set() && game.visible) {
             allAnimationFinished = false;
         }
     });
@@ -441,29 +447,15 @@ void Carousel::updateVisibility() {
 //*******************************
 // Carousel::updatePositions
 //*******************************
-// this method runs during the loop to update positions of the covers during animation
+// this method runs during the loop to update positions of the covers during animation: the tweens to this pass's
+// time, then each visible cover part way along its move - or, the move over, on its destination (G5o5: the
+// positions the hand-written timer gave, at every time - carousel_motion.h, test_carousel_motion)
 void Carousel::updatePositions() {
-    long currentTime = gui_.platform().ticks();
+    abgui::Tweens &runs = uiTweens();
+    runs.update();
     forEachItem([&](PsCarouselGame &game) {
-        if (game.visible) {
-            if (game.animationStart != 0) {
-                long position = currentTime - game.animationStart;
-                float delta = position * 1.0f / game.animationDuration;
-                if (game.eased && delta < 1.0f)
-                    delta = easeOutCubic(delta);
-                game.actual.x = game.current.x + (game.destination.x - game.current.x) * delta;
-                game.actual.y = game.current.y + (game.destination.y - game.current.y) * delta;
-                game.actual.scale = game.current.scale + (game.destination.scale - game.current.scale) * delta;
-                game.actual.shade = game.current.shade + (game.destination.shade - game.current.shade) * delta;
-                game.actual.angle = game.current.angle + (game.destination.angle - game.current.angle) * delta;
-
-                if (delta > 1.0f) {
-                    game.actual = game.destination;
-                    game.current = game.destination;
-                    game.animationStart = 0;
-                }
-            }
-        }
+        if (game.visible)
+            CarouselMotion::advance(game, moves_, runs);
     });
     updateVisibility();
 }
@@ -702,8 +694,9 @@ void Carousel::drawGlow() {
     {
         abgui::Context &ctx = Gui::getInstance()->uiContext();
         if (ctx.frame("coverGlow").valid()) {
-            const ableem::Rect face(static_cast<int>(std::lround(spot.face.x)), static_cast<int>(std::lround(spot.face.y)),
-                                    static_cast<int>(std::lround(spot.face.w)), static_cast<int>(std::lround(spot.face.h)));
+            const ableem::Rect face(
+                static_cast<int>(std::lround(spot.face.x)), static_cast<int>(std::lround(spot.face.y)),
+                static_cast<int>(std::lround(spot.face.w)), static_cast<int>(std::lround(spot.face.h)));
             ctx.style().drawFrame(ctx, "coverGlow", face, static_cast<unsigned char>(255 * spot.strength * pulse),
                                   CoverLight::glowFrameScale(spot.face));
             return;
@@ -747,7 +740,7 @@ void Carousel::drawShine(long now) {
     if (!selectedIsValid())
         return;
     const PsCarouselGame &game = games[selected];
-    const bool resting = !scrolling && game.animationStart == 0;
+    const bool resting = !scrolling && !game.move.set();
     if (!resting) {
         shineFor_ = -1; // the row moved: the next rest shines again
         shineAt_ = 0;
