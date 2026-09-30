@@ -52,7 +52,7 @@ void GuiEditorRA::draw() {
         TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
         gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
     }
-    gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
     TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected); // the one row, always selected
     gui->text().renderTextLineOptions(
         _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),

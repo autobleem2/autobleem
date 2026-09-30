@@ -95,8 +95,13 @@ void GuiManager::draw() {
 
     gui->renderFreeSpace(); // this is why this menu's render is special instead of using the base class
 
+    // a theme's selection frame goes under the rows' text, the code-drawn band stays over them (G4c)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed)
+        renderSelectionBox();
     renderLines();
-    renderSelectionBox();
+    if (!framed)
+        renderSelectionBox();
     renderPreview();
 
     gui->renderStatus(getStatusLine());

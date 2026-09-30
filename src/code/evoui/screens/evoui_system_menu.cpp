@@ -219,7 +219,7 @@ void GuiSystemMenu::draw() {
                                              rowY + (h - headingFont.lineHeight()) / 2, style.heading, XALIGN_LEFT);
         } else {
             if (i == selected)
-                style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+                style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(titleFont, row.title, panel.x + TextX,
                                              rowY + (h - titleFont.lineHeight()) / 2, style.rowColor(i == selected),
                                              XALIGN_LEFT);

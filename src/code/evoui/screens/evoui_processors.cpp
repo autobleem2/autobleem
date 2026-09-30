@@ -127,7 +127,7 @@ void GuiProcessors::draw() {
         const ProcessorInfo *p = info(e.name);
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
-            style.selection(renderer, row);
+            style.selection(gui->uiContext(), row);
         const int textX = panel.x + RowInset + 8 + NumberWidth;
         gui->text().renderText_WithColor(fonts[FONT_22_MED], to_string(i + 1), panel.x + RowInset + 8, rowY + 8,
                                          style.hint, XALIGN_LEFT);

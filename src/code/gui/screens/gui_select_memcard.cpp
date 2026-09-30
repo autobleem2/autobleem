@@ -74,6 +74,11 @@ void GuiSelectMemcard::draw() {
         lastVisible++;
     }
 
+    // a theme's selection frame goes under the rows' text, the code-drawn band stays over them (G4c)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed && !cards.empty())
+        gui->text().renderSelectionBox(gui->uiContext(), selected - firstVisible, yoffset);
+
     int pos = 0;
     for (int i = firstVisible; i < lastVisible; i++) {
         if (i >= cards.size()) {
@@ -85,7 +90,7 @@ void GuiSelectMemcard::draw() {
         pos++;
     }
 
-    if (!cards.size() == 0) {
+    if (!framed && !cards.size() == 0) {
         gui->text().renderSelectionBox(selected - firstVisible, yoffset);
     }
     gui->renderScrollMarkers(firstVisible > 0, lastVisible < static_cast<int>(cards.size()));

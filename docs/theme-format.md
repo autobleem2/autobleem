@@ -148,6 +148,7 @@ screen above 720p. What to draw, the sizes and the limits per frame are autoblee
 | Frame | Draws | Since |
 |---|---|---|
 | `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus - and, since G4b, the launcher's own System and Quick menu, set picker, Extensions, Processors, update prompt and notification bubble, the Store's screen and PSC-Bios's gamepad-configuration message box. (Not the pad battery plate, nor PSC-Bios's one-line countdown plate.) | ab_gui G4a, G4b |
+| `selection` | The selected row, drawn into the row's full extent (the image's bleed reaching out) instead of the band and the bar at its left edge, and **under** the row's text: every classic list (Options, Game Manager, the editors, Memory Cards, the extensions' lists), the action menus, and the launcher's own System and Quick menu, set picker, Extensions, Processors and update prompt. Not the set picker's current-tab mark. A locked row's grey veil still goes over it. | ab_gui G4c |
 
 **Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
 over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is

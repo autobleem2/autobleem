@@ -180,7 +180,7 @@ void GuiExtensions::draw() {
         const ExtensionInfo &e = extensionAt(i);
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
-            style.selection(renderer, row);
+            style.selection(gui->uiContext(), row);
         const int textX = panel.x + RowInset + 8 + IconSize + 16;
         const ableem::Texture &icon = icons[rows[i]];
         if (icon.valid()) {

@@ -280,7 +280,7 @@ void GuiSetPicker::draw() {
     for (int i = t.firstVisible; i < t.firstVisible + rows && i < static_cast<int>(t.entries.size()); i++) {
         const Entry &e = t.entries[i];
         if (i == t.selected)
-            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
+            style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         const int x = panel.x + RowInset + 8 + e.indent * 24;
         // the count is drawn to the right edge first, so the title has its real available width to elide
         // into - a long title (e.g. a RetroArch playlist name) used to run under it (report.md P1)

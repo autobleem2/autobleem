@@ -254,7 +254,7 @@ void GuiOptions::draw() {
             continue;
         }
         if (i == selected)
-            gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
+            gui->text().renderSelectionBox(gui->uiContext(), 0, y, selectionBoxXOffset, font);
         // the theme's roles (UIREV-29): the selected row bright, the others dim
         TextRenderer::RowRoleScope role(gui->text(),
                                         i == selected ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);

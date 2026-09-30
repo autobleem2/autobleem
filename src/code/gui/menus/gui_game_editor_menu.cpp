@@ -432,7 +432,7 @@ void GuiEditor::draw() {
         TextRenderer::RowRoleScope role(gui->text(), row.opt == selOption ? TextRenderer::RowRole::Selected
                                                                           : TextRenderer::RowRole::Row);
         if (row.opt == selOption)
-            gui->text().renderSelectionBox(line, yoffset, 0, ableem::Font(), right);
+            gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
         if (row.kind == Row::Kind::Bool) {
             gui->text().renderTextLineOptions(row.label + (row.on ? string("|@Check|") : string("|@Uncheck|")), line,
                                               yoffset, XALIGN_LEFT, 0, right);
