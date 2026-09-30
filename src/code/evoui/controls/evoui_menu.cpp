@@ -173,12 +173,26 @@ void PsMenu::render() {
         resumeAvailable ? 255 : abgui::InactiveAlphas::orToday(gui->uiContext().inactiveAlphas().resume, 120);
     savestate.setAlphaMod(resumeAlpha);
     resume.setAlphaMod(resumeAlpha);
+    // the theme's `tile` / `tileSelected` frames (G5i), asked at draw time: one behind each icon's (zoomed) box, the
+    // selected one's while the row is open; no such frame = the icons alone, as before
+    abgui::Context &ctx = gui->uiContext();
+    const bool tileFrame = ctx.frame("tile").valid();
+    const bool selectedFrame = ctx.frame("tileSelected").valid();
+    const abgui::Style &style = ctx.style();
     for (int i = 0; i < 4; i++) {
         if (i > 0 && !enabled[i])
             continue;
         const float left = x + slots[i] + xoff[i];
         const float top = y + yoff[i];
         const float size = 118 * optionscales[i];
+        if (tileFrame || selectedFrame) {
+            const bool selected = active && i == selOption;
+            const ableem::Rect box(static_cast<int>(left + 0.5f), static_cast<int>(top + 0.5f),
+                                   static_cast<int>(size + 0.5f), static_cast<int>(size + 0.5f));
+            const unsigned char alpha = i == 3 ? resumeAlpha : 255;
+            if (!(selected && selectedFrame && style.drawFrame(ctx, "tileSelected", box, alpha)))
+                style.drawFrame(ctx, "tile", box, alpha);
+        }
         renderer.copy(*icons[i], &input, ableem::FRect(left, top, size, size));
 
         if (i == 3 && resume.valid()) {
