@@ -4,6 +4,7 @@
 #include "carousel.h"
 #include "gui/gui.h"
 #include "app_base.h"
+#include "core/model/cover_light.h"
 #include "core/model/timing.h"
 
 #include <algorithm>
@@ -646,16 +647,22 @@ void Carousel::render() {
 // Carousel::drawGlow / drawShine
 //*******************************
 namespace {
-// the selected cover's centre and size on screen, and how much it is "the selected one" - 1 in the middle
-// slot, 0 once it is half-way to the next (so the light hands over as the row scrolls)
+// the selected cover's face on screen (its box: a jewel case's square, a big box's art at its own aspect), its
+// centre and scale, and how much it is "the selected one" - 1 in the middle slot, 0 once it is half-way to the
+// next (so the light hands over as the row scrolls)
 struct Spot {
-    float cx = 0, cy = 0, size = 0, strength = 0;
+    CoverLight::Box face;
+    float cx = 0, cy = 0, scale = 1, strength = 0;
 };
 Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
     Spot spot;
     const PsScreenpoint &p = game.actual;
     const ableem::Rect &content = game.content;
-    spot.size = content.w * p.scale;
+    spot.face.x = p.x + content.x * p.scale;
+    spot.face.y = p.y + content.y * p.scale;
+    spot.face.w = content.w * p.scale;
+    spot.face.h = content.h * p.scale;
+    spot.scale = p.scale;
     spot.cx = p.x + (content.x + content.w / 2.0f) * p.scale;
     spot.cy = p.y + (content.y + content.h / 2.0f) * p.scale;
     const float off = std::min(1.0f, std::fabs(spot.cx - screenMiddle) / 150.0f);
@@ -703,9 +710,9 @@ void Carousel::drawGlow(long now) {
     glowTex_.setColorMod(ableem::Color(static_cast<unsigned char>(light.r * k), static_cast<unsigned char>(light.g * k),
                                        static_cast<unsigned char>(light.b * k)));
     glowTex_.setAlphaMod(static_cast<unsigned char>(255 * k));
-    const float margin = 44.0f * spot.size / 222.0f;
-    const float side = spot.size + 2 * margin;
-    renderer.copy(glowTex_, nullptr, ableem::FRect(spot.cx - side / 2, spot.cy - side / 2, side, side));
+    // round the face's real width and height (a tall or a wide box too), 44 px past each edge at scale 1
+    const CoverLight::Box glow = CoverLight::glowBox(spot.face, spot.scale);
+    renderer.copy(glowTex_, nullptr, ableem::FRect(glow.x, glow.y, glow.w, glow.h));
 }
 
 void Carousel::drawShine(long now) {
@@ -718,48 +725,33 @@ void Carousel::drawShine(long now) {
         shineAt_ = 0;
         return;
     }
+    ableem::Renderer &renderer = gui_.renderer();
     if (shineFor_ != selected) {
         shineFor_ = selected;
         const bool wanted = AppBase::get().config().inifile.values["covershine"] != "false";
         shineAt_ = wanted ? now + ShineDelayMs : 0;
+        // the same built-in picture on every theme (not a theme key): a square of white with one soft diagonal
+        // band in its alpha, loaded once a crossing is due - a missing file then costs one log line, not one a frame
+        if (wanted && !shineTex_.valid()) {
+            shineTex_ = ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg/sheen.png");
+            if (shineTex_.valid())
+                shineTex_.setBlendMode(ableem::BlendMode::Blend);
+        }
     }
-    if (shineAt_ == 0 || now < shineAt_ || now >= shineAt_ + ShineMs || !game.coverPng.valid() ||
+    if (shineAt_ == 0 || now < shineAt_ || now >= shineAt_ + ShineMs || !game.coverPng.valid() || !shineTex_.valid() ||
         std::fabs(game.actual.angle) >= 0.5f)
         return;
-    ableem::Renderer &renderer = gui_.renderer();
-    if (!shineTex_.valid()) {
-        // a band of light across, clear at both sides: each column its own alpha, added onto the cover
-        const int width = 64;
-        shineTex_ = ableem::Texture::createTarget(renderer, width, 4);
-        shineTex_.setBlendMode(ableem::BlendMode::Add);
-        const ableem::Color keep = renderer.drawColor();
-        renderer.pushTarget(&shineTex_);
-        renderer.setBlendMode(ableem::BlendMode::None);
-        for (int x = 0; x < width; x++) {
-            const float t = std::sin(Pi * (x + 0.5f) / width);
-            renderer.setDrawColor(ableem::Color(255, 255, 255, static_cast<unsigned char>(110 * t * t)));
-            const ableem::Rect column(x, 0, 1, 4);
-            renderer.fillRects(&column, 1);
-        }
-        renderer.popTarget();
-        renderer.setBlendMode(ableem::BlendMode::Blend);
-        renderer.setDrawColor(keep);
-    }
-    // the band runs from just off the cover's left edge to just off its right, clipped to the cover
+    // the band crosses the face from just off its left edge to just off its right, the picture drawn at the
+    // face's height (so the band keeps its angle on any aspect) and clipped to its width (CoverLight::shineSlice)
     const Spot spot = spotOf(game, renderer.width() / 2.0f);
     const float t = static_cast<float>(now - shineAt_) / ShineMs;
     const float eased = t * t * (3.0f - 2.0f * t);
-    const float left = spot.cx - spot.size / 2, right = spot.cx + spot.size / 2;
-    const float band = spot.size * 0.35f;
-    const float from = left - band + (right - left + band) * eased;
-    const float x0 = std::max(left, from), x1 = std::min(right, from + band);
-    if (x1 <= x0)
+    const ableem::Size texSize = shineTex_.size();
+    const CoverLight::ShineSlice slice = CoverLight::shineSlice(spot.face, eased, texSize.w);
+    if (!slice.visible)
         return;
-    const int texW = 64;
-    const int u0 = static_cast<int>((x0 - from) / band * texW),
-              u1 = static_cast<int>(std::ceil((x1 - from) / band * texW));
-    const ableem::Rect src(u0, 0, std::max(1, std::min(texW, u1) - u0), 4);
-    renderer.copy(shineTex_, &src, ableem::FRect(x0, spot.cy - spot.size / 2, x1 - x0, spot.size));
+    const ableem::Rect src(slice.srcX, 0, slice.srcW, texSize.h);
+    renderer.copy(shineTex_, &src, ableem::FRect(slice.dst.x, slice.dst.y, slice.dst.w, slice.dst.h));
 }
 
 //*******************************

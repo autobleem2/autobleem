@@ -138,7 +138,10 @@ private:
 
     // the selected cover's light: a soft glow behind it in the theme's selection colour, breathing slowly,
     // and - when it comes to rest - a shine that crosses its front once (Options "Cover shine", config.ini
-    // covershine). Both are drawn outside the layer, the glow under it, the shine over it.
+    // covershine): evoimg/sheen.png's diagonal band at the face's height, clipped to its width. Both follow the
+    // face's real width and height (core/model/cover_light.h) and are drawn outside the layer, the glow under
+    // it, the shine over it (only on the selected game facing the viewer - never on an empty box). shineTex_ is
+    // loaded when a crossing is due (drawShine).
     void drawGlow(long now);
     void drawShine(long now);
     ableem::Texture glowTex_, shineTex_;
