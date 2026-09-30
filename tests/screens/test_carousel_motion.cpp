@@ -41,8 +41,15 @@ struct Point {
     float angle = 0.0f;
 };
 
+// within 1e-3 (a thousandth of a pixel): the Release build fuses the float operations differently from Debug, so
+// the old timer's inline formula and the tween's out-of-line one may differ in the last bits
+bool near(float a, float b) {
+    return std::fabs(a - b) <= 1e-3f;
+}
+
 bool samePoint(const Point &a, const Point &b) {
-    return a.x == b.x && a.y == b.y && a.scale == b.scale && a.shade == b.shade && a.angle == b.angle;
+    return near(a.x, b.x) && near(a.y, b.y) && near(a.scale, b.scale) && near(a.shade, b.shade) &&
+           near(a.angle, b.angle);
 }
 
 // one cover, with both timers' fields: the old side uses the first three, the new side `move`
