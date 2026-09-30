@@ -289,12 +289,15 @@ public:
     int playTextOutlineW = 0,
         playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
     void makePlayOutline(const LauncherTheme &theme);
-    // a theme with the `play` frame (G5j) draws Play as that frame + the `play` icon + this label, in place of the
+    // a theme with the `play` frame (G5j) draws Play as that still frame + the `play` icon + this label, in place of the
     // two images and their outline: the label is the hint line's word in capitals, in the largest bold font (28
     // down to 14) that fits the button, ellipsized when even that one is too wide - refitted when the word changes
     std::string playLabel;
     ableem::Font playLabelFont;
-    int playLabelWidth = 0;
+    // icon + label drawn once into this texture (renderPlayFrame), pulsed over the still frame
+    ableem::Texture playContent;
+    int playContentW = 0, playContentH = 0;
+    unsigned long playContentAt = 0; // Renderer::targetsLost() it was drawn at
     void renderPlayFrame();
     PsMeta *meta = nullptr;
 
