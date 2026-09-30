@@ -120,8 +120,8 @@ Colours are `"#rrggbb"`; alphas are 0-255.
 
 ### Frames (`launcher.frames`)
 
-A theme may draw the boxes of the menus and dialogs - the panel, and in later steps the selected row, the heading
-band, the keyboard's keys and its text field - with its own images instead of the plain boxes the code draws. Each
+A theme may draw the boxes of the menus and dialogs - the panel, the selected row, the heading band, the
+keyboard's keys and its text field - with its own images instead of the plain boxes the code draws. Each
 is a **9-slice** PNG: cut by four lines into corners drawn 1:1, edges stretched along their length and a centre
 stretched both ways, so one small image fits a box of any size. All numbers are in the 1280x720 canvas' pixels; an
 `@2x` image next to the 1x one (`frames/panel@2x.png`, twice the size, the same numbers) is drawn instead of it on a
@@ -149,6 +149,12 @@ screen above 720p. What to draw, the sizes and the limits per frame are autoblee
 |---|---|---|
 | `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus - and, since G4b, the launcher's own System and Quick menu, set picker, Extensions, Processors, update prompt and notification bubble, the Store's screen and PSC-Bios's gamepad-configuration message box. (Not the pad battery plate, nor PSC-Bios's one-line countdown plate.) | ab_gui G4a, G4b |
 | `selection` | The selected row, drawn into the row's full extent (the image's bleed reaching out) instead of the band and the bar at its left edge, and **under** the row's text: every classic list (Options, Game Manager, the editors, Memory Cards, the extensions' lists), the action menus, and the launcher's own System and Quick menu, set picker, Extensions, Processors and update prompt. Not the set picker's current-tab mark. A locked row's grey veil still goes over it. | ab_gui G4c |
+| `heading` | The band behind a heading's text, drawn into the band's box (no bleed) instead of the faint band: the group and section headings of the classic lists, the action menus, facts pages, the button guide, and the launcher's System and Quick menu and Extensions. | ab_gui G4d |
+| `key` | An on-screen keyboard key (letters, digits, symbols): the keyboard of every screen that asks for text - the launcher's, the Store's search, PSC-Bios's Wi-Fi password. Up to 96 x 64 logical pixels, 8 px apart. The label and the arrows on Shift/Backspace stay code-drawn. | ab_gui G4e |
+| `keyFunction` | A function key (Shift, the page key, Space, Backspace, Done). Left out: `key`. | ab_gui G4e |
+| `keyLit` | Shift while it is on (once or locked). Left out: `key`. | ab_gui G4e |
+| `keySelected` | The key under the cursor. Left out: `key` with a 1 px outline in the theme's text colour over it. | ab_gui G4e |
+| `field` | The keyboard's text field, 48 px high. The text and the blinking caret stay code-drawn. | ab_gui G4e |
 
 **Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
 over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is
