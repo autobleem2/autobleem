@@ -46,26 +46,15 @@ const int IconSize = 56; // the tab icons (evoimg/tab_*.png, tools/make_evoimg_i
 } // namespace
 
 //*******************************
-// GuiSetPicker::loadIcons
-//*******************************
-vector<ableem::Texture> GuiSetPicker::loadIcons(ableem::Renderer &renderer) {
-    const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
-    return {ThemeAssets::loadImage(renderer, img + "tab_playstation.png"),
-            ThemeAssets::loadImage(renderer, img + "tab_retroarch.png"),
-            ThemeAssets::loadImage(renderer, img + "tab_apps.png")};
-}
-
-//*******************************
 // GuiSetPicker::init
 //*******************************
 void GuiSetPicker::init() {
     style = gui->panelStyle();
-    if (icons.size() != 3)
-        icons = loadIcons(renderer);
+    // the tab icons are the Context's (ab_gui G5c: a theme's launcher.icons, else evoimg/tab_*.png), asked at draw time
     tabs.clear();
-    tabs.push_back({_("PlayStation"), icons[0], {}, 0, 0});
-    tabs.push_back({_("RetroArch"), icons[1], {}, 0, 0});
-    tabs.push_back({_("Apps"), icons[2], {}, 0, 0});
+    tabs.push_back({_("PlayStation"), "tabPlayStation", {}, 0, 0});
+    tabs.push_back({_("RetroArch"), "tabRetroArch", {}, 0, 0});
+    tabs.push_back({_("Apps"), "tabApps", {}, 0, 0});
     buildTabs();
     cancelled = true;
 }
@@ -263,10 +252,11 @@ void GuiSetPicker::draw() {
             renderer.fillRect(
                 ableem::Rect(cell.x, cell.y + cell.h - PanelStyle::SelectionBar, cell.w, PanelStyle::SelectionBar));
         }
-        if (tabs[i].icon.valid()) {
+        ableem::Texture icon = gui->uiContext().icon(tabs[i].icon);
+        if (icon.valid()) {
             ableem::Rect dst(cell.x + (cell.w - IconSize) / 2, cell.y + 10, IconSize, IconSize);
-            tabs[i].icon.setAlphaMod(current ? 255 : 120);
-            renderer.copy(tabs[i].icon, nullptr, &dst);
+            icon.setAlphaMod(current ? 255 : 120);
+            renderer.copy(icon, nullptr, &dst);
         }
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], tabs[i].title,
                                          cell.x + cell.w / 2 -

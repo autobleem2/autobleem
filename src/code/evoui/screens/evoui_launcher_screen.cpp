@@ -955,7 +955,6 @@ void GuiLauncher::loadAssets() {
 //*******************************
 // memory cleanup for assets disposal
 void GuiLauncher::freeAssets() {
-    setPickerIcons.clear();
     for (auto &obj : staticElements) {
         obj->destroy();
     }

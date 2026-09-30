@@ -235,12 +235,11 @@ public:
         std::string imagePath;
     };
     GameKey selectedGameKey() const;
-    // the set picker's (Select) row counts and tab icons, kept between openings so Select opens at once;
-    // forgetSetCounts() whenever the library may have changed - a scan, an edit, a game played, a menu
+    // the set picker's (Select) row counts, kept between openings so Select opens at once (its tab icons are the
+    // Context's); forgetSetCounts() whenever the library may have changed - a scan, an edit, a game played, a menu
     // action (Game Manager, the Store, an extension), the screen reloaded
     GameQueryService::SetCounts setCounts;
     bool setCountsValid = false; // C++14 on the console: no std::optional
-    std::vector<ableem::Texture> setPickerIcons;
     void forgetSetCounts() { setCountsValid = false; }
     int findGame(const GameKey &key) const; // its index in carousel.games, -1 when it is gone
 

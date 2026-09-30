@@ -59,13 +59,10 @@ void GuiLauncher::loop_chooseSet() {
         setCountsValid = true;
     }
     const long countsDone = gui->platform().ticks();
-    if (setPickerIcons.empty())
-        setPickerIcons = GuiSetPicker::loadIcons(renderer);
     GuiSetPicker picker(*gui);
     picker.selection = selection;
     picker.raPlaylists = raPlaylists;
     picker.counts = &setCounts;
-    picker.icons = setPickerIcons;
     renderer.captureNextFrame();
     render();
     picker.background = renderer.lastCapture();

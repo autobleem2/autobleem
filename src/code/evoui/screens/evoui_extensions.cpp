@@ -182,7 +182,11 @@ void GuiExtensions::draw() {
         if (i == selected)
             style.selection(gui->uiContext(), row);
         const int textX = panel.x + RowInset + 8 + IconSize + 16;
-        const ableem::Texture &icon = icons[rows[i]];
+        ableem::Texture icon = icons[rows[i]];
+        // an extension that ships none gets the theme's "extension" icon when it has one (no built-in: else the
+        // empty column stays), asked at draw time
+        if (!icon.valid() && e.icon.empty())
+            icon = gui->uiContext().icon("extension");
         if (icon.valid()) {
             const ableem::Size iconSize = icon.size();
             int w = IconSize, h = IconSize;

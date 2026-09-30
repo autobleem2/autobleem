@@ -211,7 +211,9 @@ What to draw, the size of each and the whole list are autobleem-core's `docs/ab-
 |---|---|---|---|
 | `dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight` | The d-pad in the launcher's hint lines and every footer, 28 x 28 | `dpad_up.png` ... | ab_gui G5a |
 | `players`, `disc`, `usb`, `internal`, `hd`, `sd`, `lock`, `unlock`, `favorite`, `retroarch`, `lightgun`, `lightgun2` | The game-info row (30 x 30); `players` falls back to the theme's `launcher.metaPanel` | `cd.png`, `usb.png`, `ps1.png`, `hd.png`, `sd.png`, `lock.png`, `unlock.png`, `favorite.png`, `ra.png`, `lightgun.png`, `lightgun2.png` | ab_gui G5b (the players icon still has no halo - G5r2) |
-| `tabPlayStation`, `tabRetroArch`, `tabApps`, `raCover`, `appCover`, `bigBox`, `extension` | The set picker's tabs, the missing-art covers, the big box's edge, an extension without an icon | `tab_*.png`, `ra-cover.png`, `app-cover.png`, `bigbox.png` (`extension`: none) | read since G5a, drawn from G5c |
+| `tabPlayStation`, `tabRetroArch`, `tabApps` | The set picker's tabs (56 x 56; the current tab full, the others dimmed) | `tab_playstation.png`, `tab_retroarch.png`, `tab_apps.png` | ab_gui G5c |
+| `raCover`, `appCover`, `bigBox` | **Not theme keys** (the owner, 2026-09-30): the missing-art covers and the big box's edge are parts of the carousel, the same on every theme - a `launcher.icons` entry under these names is ignored. They stay the launcher's own `evoimg/ra-cover.png`, `app-cover.png` and `bigbox.png` (a later swap of those files is planned) | `ra-cover.png`, `app-cover.png`, `bigbox.png` | - |
+| `extension` | The Extensions list's icon (fitted in 56 x 56) for an extension that ships none; a theme without it keeps the empty column | none | ab_gui G5c |
 
 The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
 their own steps. A theme without `launcher.icons` looks exactly as it did.
