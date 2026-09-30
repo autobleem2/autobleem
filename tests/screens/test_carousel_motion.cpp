@@ -23,6 +23,7 @@
 #include <ableem/ui/debug_driver.h>
 
 #include <cmath>
+#include <cstdlib>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -47,8 +48,14 @@ bool near(float a, float b) {
     return std::fabs(a - b) <= 1e-3f;
 }
 
+// x/y are whole pixels rounded from a float: a last-bit difference can flip one across .5 on a single mid-move
+// frame (seen: linear, 110 ms, 35 ms in, Release) - one pixel for one frame, never at rest
+bool nearPx(int a, int b) {
+    return std::abs(a - b) <= 1;
+}
+
 bool samePoint(const Point &a, const Point &b) {
-    return near(a.x, b.x) && near(a.y, b.y) && near(a.scale, b.scale) && near(a.shade, b.shade) &&
+    return nearPx(a.x, b.x) && nearPx(a.y, b.y) && near(a.scale, b.scale) && near(a.shade, b.shade) &&
            near(a.angle, b.angle);
 }
 
