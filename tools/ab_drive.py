@@ -39,7 +39,13 @@ wait_idle <ms> [s], window hide|show|min|restore, quit; padsim's pad words for t
 (`@1 profile ds4 bt`, `@1 tap a`, `@2 stick left 0 -32768`, `@1 dpad down`, `@1 battery 20`, `@1 cable in`, ...
 - always with the @n in a script meant for both: a bare `press x` is the driver's logical Cross) and its
 keyboard words (`kbd tap enter`, `kbd combo ctrl+c`, `kbd type abc`). Buttons of `press`: x o s t start
-select l1 r1 l2 r2 up down left right. A `shot`/`grab` waits for a frame drawn after the last input, so
+select l1 r1 l2 r2 up down left right. Client-side single steps (logical button names only): `tap <btn>` = one
+short press (`press <btn> 40`, so `tap down` moves exactly one row; `tap <btn> <ms>` a longer one), `hold <btn>` /
+`release <btn>` = the driver's `down`/`up` (`hold <btn> <ms>` = `press <btn> <ms>`), `dpad <up|down|left|right>` =
+one short press, `dpad center` does nothing, and a bare `up`/`down`/`left`/`right` is a tap; `@1 tap a` and the other
+padsim words still go to the driver. `home` presses Circle until GuiLauncher shows (max 6) - a script can start with
+it. A failing step stops the run but keeps what was done: the replies so far are printed (shots and grabs are
+already written), then one `error: step N '...' failed: ...` line on stderr and exit code 1. A `shot`/`grab` waits for a frame drawn after the last input, so
 "press x; grab a.png" shows the result of the press. `shot` writes the frame on the machine running the
 launcher (its path, relative to that process's cwd - or its AB_DEBUG_OUT); `grab` instead reads the frame back
 over the socket and saves it at the local path given here (made absolute) - the way to get a screenshot off a
@@ -48,7 +54,9 @@ presents and, with ffmpeg on PATH, makes a.mp4 of them. Two of the client's own:
 [timeout s]` polls `screen`
 until that screen shows (a GuiScreen class name: GuiLauncher, GuiOptions, GuiConfirm, GuiSystemMenu, ...) -
 `start` waits for GuiLauncher itself, so a script may press at once - `menu <item>` opens the L2+R2 System
-menu and picks an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). <item>
+menu and picks an item, and `quick <item>` the same from the Quick menu (d-pad Up in the launcher). Each first waits for GuiLauncher and a settled picture (`wait_idle`), holds the chord for real, waits
+for the menu (up to 3 tries) and, after the pick, until the System menu is gone - the chosen screen is up when the
+step ends. <item>
 is the item's English title, in any language the launcher shows (`menu "Hardware Information"`, `menu
 options`; case does not matter, quotes are optional, a unique prefix will do - `menu hard`), or a 0-based
 index counting items only (headings are not counted). The names come from the driver's `items` reply, which
@@ -72,6 +80,21 @@ DEFAULT_HOST = '127.0.0.1'
 # and are no longer built here. Same convention as AB_PCSX_DIR / ../pcsx-ab (make_psc.sh): a sibling checkout,
 # overridable for one that lives somewhere else.
 CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
+
+
+TAP_MS = 60  # a tap's hold: over a frame of a slow machine would be better, under the 350 ms where a list repeats
+DPAD = ('up', 'down', 'left', 'right')
+BUTTONS = ('x', 'o', 's', 't', 'start', 'select', 'l1', 'r1', 'l2', 'r2') + DPAD  # the driver's logical names
+
+
+class RunFailed(RuntimeError):
+    """a step of a script failed: what the steps before it replied stays in `replies` (their shots and grabs are
+    written already), `step` is its 1-based number"""
+
+    def __init__(self, step, text, error, replies):
+        super().__init__(f'step {step} {text!r} failed: {error}')
+        self.step = step
+        self.replies = replies
 
 
 def pid_file(port):
@@ -195,60 +218,185 @@ class Driver:
                 raise RuntimeError(f'item {item!r} ' + ('is ambiguous' if found else 'not found') + f': {names}')
             index = found[0]
         for _ in range(index):
-            self.cmd('press down 40')
+            self.cmd(f'press down {TAP_MS}')
+            self.frame_gap()
         self.cmd('press x')
         return 'ok ' + names[index]
 
-    def menu(self, item):
+    def current_screen(self):
+        reply = self.cmd('screen')
+        return reply.split(' ', 1)[1] if ' ' in reply else ''
+
+    def frame_gap(self, frames=3):
+        # a press is seen by the screen on its next frame (a menu draws 10-15 a second in the VM): two presses
+        # closer than that are handled together and a list moves two rows or none - so wait for frames to be drawn
+        try:
+            start = int(self.cmd('frames').split()[1])
+            end = time.time() + 1.5
+            while time.time() < end and int(self.cmd('frames').split()[1]) < start + frames:
+                time.sleep(0.01)
+        except (RuntimeError, ValueError, IndexError):
+            time.sleep(0.2)
+
+    def rest(self, ms=300):
+        try:
+            self.cmd(f'wait_idle {ms} 10')
+        except RuntimeError:
+            time.sleep(0.6)  # an older driver without wait_idle, or a picture that never rests: a plain pause
+
+    def settle(self):
+        # the launcher is back AND takes input: right after Options / Game Manager close it shows GuiLauncher
+        # while a busy spinner still ignores every input (the busy rule) and it fades in - wait_idle rides both out
+        self.wait_screen('GuiLauncher')
+        self.rest()
+
+    def open_system_menu(self, opener):
+        # opener() sends the input that opens the menu; the whole thing is tried up to 3 times
+        last = None
+        for _ in range(3):
+            if self.current_screen() == 'GuiSystemMenu':
+                return  # a slow open that the previous try already caused
+            self.settle()
+            opener()
+            try:
+                self.wait_screen('GuiSystemMenu', 2.0)
+                self.rest()  # a press while the menu still opens can move the cursor twice
+                return
+            except RuntimeError as e:
+                last = e
+        raise RuntimeError(f'the System menu did not open in 3 tries ({last})')
+
+    def chord(self):
+        # L2+R2 as a real hold, not a blip
         self.cmd('down l2')
-        self.cmd('press r2')
-        self.cmd('up l2')
-        self.wait_screen('GuiSystemMenu')
-        return self.pick(item)
+        try:
+            self.cmd('down r2')
+            time.sleep(0.15)
+            self.cmd('up r2')
+        finally:
+            self.cmd('up l2')
+
+    def quick_key(self):
+        self.cmd('down up')
+        time.sleep(0.15)
+        self.cmd('up up')
+
+    def pick_and_wait(self, item):
+        # the chosen screen opens late: wait until the menu is gone, so no `wait_screen` is needed after it
+        reply = self.pick(item)
+        end = time.time() + 10
+        while self.current_screen() == 'GuiSystemMenu':
+            if time.time() > end:
+                raise RuntimeError(f'{item!r} was picked but the System menu is still showing after 10 s')
+            time.sleep(0.05)
+        return reply
+
+    def menu(self, item):
+        self.open_system_menu(self.chord)
+        return self.pick_and_wait(item)
 
     def quick(self, item):
-        self.cmd('press up')
-        self.wait_screen('GuiSystemMenu')
-        return self.pick(item)
+        self.open_system_menu(self.quick_key)
+        return self.pick_and_wait(item)
+
+    def home(self, max_presses=6):
+        # Circle until the launcher shows: the way out of Game Manager / Options / whatever a run left open
+        for _ in range(max_presses):
+            if self.current_screen() == 'GuiLauncher':
+                return 'ok GuiLauncher'
+            before = self.current_screen()
+            self.cmd('press o 60')
+            end = time.time() + 1.0
+            while time.time() < end and self.current_screen() == before:
+                time.sleep(0.05)
+        if self.current_screen() == 'GuiLauncher':
+            return 'ok GuiLauncher'
+        raise RuntimeError(f'home: still on {self.current_screen()} after {max_presses} presses of Circle')
+
+    @staticmethod
+    def alias(words):
+        """the client's single-step words -> the driver's own command (None: not an alias). Only the logical button
+        names are taken over, so `@1 tap a`, `hold a 300` and the rest of padsim's words still go to the driver."""
+        w = words[0]
+        if w in DPAD and len(words) == 1:
+            return f'press {w} {TAP_MS}'
+        if len(words) < 2:
+            return None
+        b = words[1]
+        if w == 'dpad':
+            # one short press per name - `dpad down; wait 200; dpad center` no longer lets the repeat fire
+            if b == 'center' and len(words) == 2:
+                return 'ping'
+            return f'press {b} {TAP_MS}' if b in DPAD and len(words) == 2 else None
+        if b not in BUTTONS:
+            return None
+        if w == 'tap' and len(words) <= 3:
+            return f'press {b} {words[2] if len(words) > 2 else TAP_MS}'
+        if w == 'hold' and len(words) == 2:
+            return f'down {b}'
+        if w == 'hold' and len(words) == 3:
+            return f'press {b} {words[2]}'
+        if w == 'release' and len(words) == 2:
+            return f'up {b}'
+        return None
 
     def run(self, script):
+        """each step's reply in a list; a failing step raises RunFailed (a RuntimeError) that carries the replies
+        of the steps done before it"""
         out = []
+        n = 0
         for part in script.split(';'):
             part = part.strip()
             if not part:
                 continue
-            words = part.split()
-            if words[0] == 'shot':
-                path = part.split(None, 1)[1].strip()
-                if self.out_prefix is None:
-                    path = os.path.abspath(path)
-                else:
-                    path = self.out_prefix + os.path.basename(path)
-                part = 'shot ' + path
-            elif words[0] == 'clip' and len(words) > 2 and words[1] == 'start':
-                name = part.split(None, 2)[2].strip()
-                stem = name[:-4] if name.endswith('.mp4') else name
-                if self.out_prefix is None:
-                    stem = os.path.abspath(stem)
-                else:
-                    stem = self.out_prefix + os.path.basename(stem)
-                part = 'clip start ' + stem
-                self.clip_out = os.path.basename(stem) + '.mp4'
-            elif words[0] == 'clip' and len(words) > 1 and words[1] == 'stop':
-                out.append(self.clip_stop())
-                continue
-            elif words[0] == 'grab':
-                out.append(self.grab(part.split(None, 1)[1].strip()))
-                continue
-            elif words[0] == 'wait_screen':
-                out.append(self.wait_screen(words[1], float(words[2]) if len(words) > 2 else 15.0))
-                continue
-            elif words[0] in ('menu', 'quick'):
-                what = part.split(None, 1)[1]
-                out.append(self.menu(what) if words[0] == 'menu' else self.quick(what))
-                continue
-            out.append(self.cmd(part))
+            n += 1
+            try:
+                self.step(part, out)
+            except (RuntimeError, OSError, ValueError, IndexError) as e:
+                raise RunFailed(n, part, e, out) from None
         return out
+
+    def step(self, part, out):
+        words = part.split()
+        aliased = self.alias(words)
+        if aliased:
+            out.append(self.cmd(aliased))
+            if aliased.startswith('press '):
+                self.frame_gap()
+            return
+        if words[0] == 'home':
+            out.append(self.home())
+            return
+        if words[0] == 'shot':
+            path = part.split(None, 1)[1].strip()
+            if self.out_prefix is None:
+                path = os.path.abspath(path)
+            else:
+                path = self.out_prefix + os.path.basename(path)
+            part = 'shot ' + path
+        elif words[0] == 'clip' and len(words) > 2 and words[1] == 'start':
+            name = part.split(None, 2)[2].strip()
+            stem = name[:-4] if name.endswith('.mp4') else name
+            if self.out_prefix is None:
+                stem = os.path.abspath(stem)
+            else:
+                stem = self.out_prefix + os.path.basename(stem)
+            part = 'clip start ' + stem
+            self.clip_out = os.path.basename(stem) + '.mp4'
+        elif words[0] == 'clip' and len(words) > 1 and words[1] == 'stop':
+            out.append(self.clip_stop())
+            return
+        elif words[0] == 'grab':
+            out.append(self.grab(part.split(None, 1)[1].strip()))
+            return
+        elif words[0] == 'wait_screen':
+            out.append(self.wait_screen(words[1], float(words[2]) if len(words) > 2 else 15.0))
+            return
+        elif words[0] in ('menu', 'quick'):
+            what = part.split(None, 1)[1]
+            out.append(self.menu(what) if words[0] == 'menu' else self.quick(what))
+            return
+        out.append(self.cmd(part))
 
     def clip_stop(self):
         # "ok <folder> <n> frames <s> s": the folder made into an MP4 next to it, where this machine can see it
@@ -476,10 +624,22 @@ def main(argv):
                 script = ';'.join(ln for ln in lines if ln and not ln.startswith('#'))
             else:
                 script = ' '.join(args)
-            for reply in d.run(script):
+            try:
+                replies = d.run(script)
+            except RunFailed as e:
+                # what was done before the failing step is not lost: its replies, then one error line
+                for reply in e.replies:
+                    print(reply)
+                print(f'error: {e}', file=sys.stderr)
+                return 1
+            for reply in replies:
                 print(reply)
         else:
-            print(d.run(cmd + ' ' + ' '.join(args))[0])
+            try:
+                print(d.run(cmd + ' ' + ' '.join(args))[0])
+            except RunFailed as e:
+                print(f'error: {e}', file=sys.stderr)
+                return 1
     finally:
         d.close()
     return 0
