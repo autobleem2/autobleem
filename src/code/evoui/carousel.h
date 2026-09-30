@@ -141,7 +141,8 @@ private:
     // covershine): evoimg/sheen.png's diagonal band at the face's height, clipped to its width. Both follow the
     // face's real width and height (core/model/cover_light.h) and are drawn outside the layer, the glow under
     // it, the shine over it (only on the selected game facing the viewer - never on an empty box). shineTex_ is
-    // loaded when a crossing is due (drawShine).
+    // loaded when a crossing is due (drawShine). A theme's `coverGlow` frame (G5k) is drawn instead of the
+    // square glow when it has one: round the face, scaled with the cover, at the glow's alpha.
     void drawGlow(long now);
     void drawShine(long now);
     ableem::Texture glowTex_, shineTex_;
