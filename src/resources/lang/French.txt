@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (entier)
 4:3 (integer)=4:3 (entier)
@@ -246,6 +246,7 @@ Not installed=Non installé
 not used by the PS1 emulator=non utilisé par l'émulateur PS1
 NOTICE: At least one connected gamepad is not recognized.=AVIS : Au moins une manette connectée n'est pas reconnue.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=AVIS : Au moins une manette connectée n'est pas reconnue. Configurez-la dans Réseau et manettes.
+Notification timeout:=Durée de l'annonce :
 OFF=DÉSACTIVÉ
 Off=Désactivé
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Correctifs Sony :
 Sound=Son
 Space=Espace
 Speedhack:=SpeedHack :
-Splash timeout:=Durée de l'annonce :
+Splash screen:=
 SPREAD SHOT=TIR EN ÉVENTAIL
 Spu interpolation:=Interpolation SPU :
 Start=Démarrer

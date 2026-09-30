@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -246,6 +246,7 @@ Not installed=No instalado
 not used by the PS1 emulator=no utilizado por el emulador de PS1
 NOTICE: At least one connected gamepad is not recognized.=AVISO: Al menos un mando conectado no se reconoce.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=AVISO: Al menos un mando conectado no se reconoce. Configúralo en Red y mandos.
+Notification timeout:=Duración del aviso:
 OFF=DESACTIVADO
 Off=Desactivado
 OK=Aceptar
@@ -371,7 +372,7 @@ Sony hacks:=Parches de Sony:
 Sound=Sonido
 Space=Espacio
 Speedhack:=SpeedHack:
-Splash timeout:=Duración del aviso:
+Splash screen:=
 SPREAD SHOT=DISPARO MULTIPLE
 Spu interpolation:=Spu Interpolation:
 Start=Iniciar

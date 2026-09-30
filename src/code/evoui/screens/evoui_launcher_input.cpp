@@ -451,7 +451,7 @@ void GuiLauncher::showPadAssignment() {
         PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()), padSwap);
         text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
     }
-    notificationLines[1].setText(text, DefaultShowingTimeout);
+    showInfo(text);
 }
 
 //*******************************
@@ -468,7 +468,7 @@ void GuiLauncher::pollPadAssignmentEmptyNotice() {
     PadAssignmentDecision decision = checkPadAssignmentEmptyNotice(padAssignmentState, time, PadEmptyNoticeDelay);
     if (!decision.show)
         return;
-    notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
+    showInfo(_("Controllers") + ": " + _("None"));
 }
 
 //*******************************

@@ -117,11 +117,12 @@ top right; a warning or a failure on the notification line under it (the details
 | Update RA Config | Whether AutoBleem writes its settings into RetroArch's config when it starts a game there. |
 | Play all PSX games with RA | Every PS1 game starts in RetroArch. |
 | Fetch box art online | Whether the scan fetches missing covers (and RetroArch's databases, when there are none) from libretro's servers. Only on a platform that can (a Pi, a PC); one probe per scan decides whether there is a network, and a cover the server does not have is not asked for again. |
-| Splash timeout | How long the "Showing: <set>" splash stays after a set change: Skip (not shown), 1s ... 20s (`showingtimeout`; 0 kept it up for ever until 2026-09-29). |
+| Notification timeout | How long the informational bubbles stay - the "Showing: <set>" bubble, the scan's "Scan complete" summary, "Resume point saved" and the controllers' P1/P2 notice: Off (0, not shown), 1s ... 20s (`showingtimeout`, default 2). Errors and refusals keep their own fixed time and always show. A stored 0 from before 2026-09-29, which meant "stay up", is converted once to 2 (`showingtimeoutmigrated=1` marks it); a 0 chosen afterwards stays. Was "Splash timeout". |
+| Splash screen | On (default) or Off: the boot splash (the theme's logo fading in and out, about 2 s). Off goes straight to the launcher (`splashscreen` in config.ini; `AB_NO_SPLASH=1` on a dev host skips it whatever this says). |
 | Language | Applied at once. |
 | Use Default Font / Font (under Fonts) | On: every screen draws in Open Sans, the launcher's own font, on every theme (a theme's `classic.font` is not read since 2026-09-29). Off: in the font chosen on the next row - any non-empty `.ttf`/`.otf` in `retroarch/fonts` or `resources/fonts` - the classic screens, the menus, the panels' titles and footers, the extensions (PSC-Bios, the Store) and the tools alike. A few parts keep their fixed look whatever this says (`ThemeAssets::fixedFonts()`): About and its hidden game, and the launcher's game details, game menu (its title, description and the resume-slot picker), hints and pad batteries. With the row on, changing the Font row only stores the choice. A font file that cannot be opened falls back to the default. `themefont`/`font` in config.ini. Applied at once. |
 
-The rows are grouped: Interface (Display first, then Emulator screen scaling, Theme, Cover Style, Cover shine, Language, Splash timeout), Fonts, Sound,
+The rows are grouped: Interface (Display first, then Emulator screen scaling, Theme, Cover Style, Cover shine, Language, Notification timeout, Splash screen), Fonts, Sound,
 Emulation, Library, Updates, Diagnostics. An on/off row shows its value as text (ON/OFF, translated) like any other row.
 The rows spread over the panel; more than fit at the font's size page (Up/Down move through them).
 Left/Right change a value one step a press; held, the value scrolls on, faster the longer it is held. A row

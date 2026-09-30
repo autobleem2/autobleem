@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -246,6 +246,7 @@ Not installed=Nenainštalované
 not used by the PS1 emulator=nepoužíva ho PS1 emulátor
 NOTICE: At least one connected gamepad is not recognized.=UPOZORNENIE: Aspoň jeden pripojený ovládač nebol rozpoznaný.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=UPOZORNENIE: Aspoň jeden pripojený ovládač nebol rozpoznaný. Nastavte ho v ponuke Sieť a ovládače.
+Notification timeout:=Doba zobrazenia oznámenia:
 OFF=VYP
 Off=Vypnutý
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Opravy Sony:
 Sound=Zvuk
 Space=Medzera
 Speedhack:=SpeedHack:
-Splash timeout:=Doba zobrazenia oznámenia:
+Splash screen:=
 SPREAD SHOT=ROZPTÝLENÁ PALBA
 Spu interpolation:=Interpolácia zvuku:
 Start=Štart

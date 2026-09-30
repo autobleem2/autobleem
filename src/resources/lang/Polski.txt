@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 1 / Total: 428
+# Untranslated: 2 / Total: 429
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -246,6 +246,7 @@ Not installed=Nie zainstalowano
 not used by the PS1 emulator=nieużywany przez emulator PS1
 NOTICE: At least one connected gamepad is not recognized.=UWAGA: Co najmniej jeden podłączony kontroler nie został rozpoznany.
 NOTICE: At least one connected gamepad is not recognized. Set it up in Network & Controllers.=UWAGA: Co najmniej jeden podłączony kontroler nie został rozpoznany. Skonfiguruj go w Sieć i kontrolery.
+Notification timeout:=Czas komunikatu:
 OFF=WYŁ.
 Off=Wyłączony
 OK=OK
@@ -371,7 +372,7 @@ Sony hacks:=Poprawki Sony:
 Sound=Dźwięk
 Space=Spacja
 Speedhack:=SpeedHack:
-Splash timeout:=Czas komunikatu:
+Splash screen:=
 SPREAD SHOT=STRZAŁ ROZPROSZONY
 Spu interpolation:=Interpolacja Spu:
 Start=Start
