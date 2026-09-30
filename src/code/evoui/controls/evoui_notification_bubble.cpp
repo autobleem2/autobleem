@@ -98,7 +98,7 @@ void NotificationBubble::render(Gui &gui, long now) {
     Fonts &fonts = gui.assets().themeFonts;
     const bool bar = total_ > 0;
     ableem::Rect panel(right - width + offset, top, width, height());
-    style.sheet(gui.uiContext(), panel);
+    style.toast(gui.uiContext(), panel);
 
     const int textWidth = width - 2 * Pad;
     int y = panel.y + Pad;
@@ -113,15 +113,9 @@ void NotificationBubble::render(Gui &gui, long now) {
     if (bar) {
         y += 6;
         ableem::Rect track(panel.x + Pad, y, textWidth, BarHeight);
-        gui.renderer().setBlendMode(ableem::BlendMode::Blend);
-        gui.renderer().setDrawColor(ableem::Color(
-            style.secondary.r, style.secondary.g, style.secondary.b,
-            abgui::InactiveAlphas::orToday(gui.uiContext().inactiveAlphas().barTrack, style.progressTrackAlpha)));
-        gui.renderer().fillRect(track);
-        // in floating point: width x bytes overflows a 32-bit long (the console's) past ~5 MB
-        const int fill = static_cast<int>(static_cast<double>(textWidth) * static_cast<double>(min(done_, total_)) /
-                                          static_cast<double>(total_));
-        gui.renderer().setDrawColor(style.text);
-        gui.renderer().fillRect(ableem::Rect(track.x, track.y, fill, BarHeight));
+        // the track in the secondary colour at the theme's barTrack alpha (else 120), the fill in the text colour
+        style.progress(gui.uiContext(), track, static_cast<unsigned long long>(min(done_, total_)),
+                       static_cast<unsigned long long>(total_), abgui::Tone::Secondary, abgui::Style::StyleAlpha,
+                       abgui::Tone::Text, abgui::Style::OwnAlpha);
     }
 }
