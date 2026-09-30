@@ -692,7 +692,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != LauncherScreenState::Resume) {
         app.audio().cursor.play();
         GuiBtnGuide guide(*gui);
-        guide.backgroundImg = background->tex;
+        BackdropScope backdrop(*this);
         guide.show();
     } else {
         if (sselector->operation == OP_LOAD) {
@@ -705,7 +705,10 @@ void GuiLauncher::loop_triangleButton_Pressed() {
                     GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
                     confirm.confirmLabel = _("Delete slot");
-                    confirm.show();
+                    {
+                        BackdropScope backdrop(*this);
+                        confirm.show();
+                    }
 
                     if (confirm.result) {
                         app.resumePoints().removeSlot(*game, slot);

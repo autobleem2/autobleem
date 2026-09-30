@@ -34,7 +34,6 @@ public:
     // the numbers on the rows, worked out by the launcher and kept until the library changes
     // (GuiLauncher::setCounts) - required
     const GameQueryService::SetCounts *counts = nullptr;
-    ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
     bool cancelled = true;
 
     using GuiScreen::GuiScreen;

@@ -1296,6 +1296,32 @@ bool GuiLauncher::prepareFrame() {
 }
 
 //*******************************
+// GuiLauncher::takeBackdrop / dropBackdrop
+//*******************************
+// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame), captured as it is
+// presented (the frame starts with the stack's clear(), so it goes straight into a render target), and handed to Gui
+// for the screens opened from here. A capture that did not come (no texture) leaves no backdrop: the screens draw the
+// theme's background, as before.
+bool GuiLauncher::takeBackdrop(bool fresh) {
+    const bool first = !gui->hasLauncherBackdrop();
+    if (!first && !fresh)
+        return false; // an outer screen's frame stands
+    const void *previous = renderer.lastCapture().native();
+    snapshotFrame = true;
+    renderer.captureNextFrame();
+    render();
+    snapshotFrame = false;
+    const ableem::Texture frame = renderer.lastCapture();
+    if (frame.valid() && frame.native() != previous) // the same texture as before = this capture did not come
+        gui->setLauncherBackdrop(frame);
+    return first && gui->hasLauncherBackdrop();
+}
+
+void GuiLauncher::dropBackdrop() {
+    gui->clearLauncherBackdrop();
+}
+
+//*******************************
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
@@ -1311,8 +1337,9 @@ void GuiLauncher::draw() {
     // Play, the game's details, the menu's band - in front of it: the covers' reflections and the selected
     // cover's glow reach below the row, under Play and beside the details, and must not be drawn over them
     auto behindRow = [](const PsObj *obj) { return obj->name == "background" || obj->name == "footer"; };
+    // the backdrop's frame (G5r5) has no hint band: the footer image (the band) and the hint bar's frame are left out
     for (auto &obj : staticElements) {
-        if (behindRow(obj.get()) && !benchSkips(obj->name))
+        if (behindRow(obj.get()) && !benchSkips(obj->name) && !(snapshotFrame && obj->name == "footer"))
             obj->render();
     }
     // the theme's hintBar frame (G5e): the panel behind the two hint lines, in the footer band's place (a theme with
@@ -1320,7 +1347,7 @@ void GuiLauncher::draw() {
     // the lines are drawn over it below. No frame = nothing drawn
     {
         abgui::Context &ctx = gui->uiContext();
-        if (ctx.frame("hintBar").valid() && !benchSkips("hints"))
+        if (ctx.frame("hintBar").valid() && !benchSkips("hints") && !snapshotFrame)
             ctx.style().drawFrame(ctx, "hintBar", hintBarRect());
     }
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
@@ -1361,29 +1388,32 @@ void GuiLauncher::draw() {
         menu->render();
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
-    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed.
-    updateHintsIfNeeded();
-    PanelStyle style = gui->panelStyle();
-    for (const Hint &hint : benchSkips("hints") ? vector<Hint>() : hints) {
-        style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
-        gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
-    }
-    if (!hintsOneLineOnly)
-        for (const Hint &hint : hints2) {
-            style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
-            gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed. Not in the backdrop's frame
+    // (G5r5), nor the pad batteries and the top-right bubbles: what a screen over it draws is its own
+    if (!snapshotFrame) {
+        updateHintsIfNeeded();
+        PanelStyle style = gui->panelStyle();
+        for (const Hint &hint : benchSkips("hints") ? vector<Hint>() : hints) {
+            style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
+            gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
         }
+        if (!hintsOneLineOnly)
+            for (const Hint &hint : hints2) {
+                style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
+                gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+            }
 
-    renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
+        renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
 
-    // the top-right corner: the scan's bubble, the notification lines stacked under it
-    if (!benchSkips("bubbles"))
-        scanBubble.render(*gui, time);
-    int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
-    extensionBubble.top = belowScan;
-    extensionBubble.render(*gui, time);
-    notificationLines.render(
-        *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
+        // the top-right corner: the scan's bubble, the notification lines stacked under it
+        if (!benchSkips("bubbles"))
+            scanBubble.render(*gui, time);
+        int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
+        extensionBubble.top = belowScan;
+        extensionBubble.render(*gui, time);
+        notificationLines.render(
+            *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
+    }
 
     for (auto &obj : frontElemets)
         if (!benchSkips("front"))
@@ -1391,7 +1421,7 @@ void GuiLauncher::draw() {
 
     gui->text().setShadow(classicShadow);
 
-    if (fadeAlpha > 0) {
+    if (fadeAlpha > 0 && !snapshotFrame) {
         long elapsed = gui->platform().ticks() - fadeStart;
         fadeAlpha =
             elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);

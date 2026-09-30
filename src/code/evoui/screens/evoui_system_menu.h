@@ -64,7 +64,6 @@ public:
     // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
     // the row is greyed with this as its description, still selectable (the caller opens the Extensions list)
     std::string networkUnavailable;
-    ableem::Texture background; // the launcher's background, drawn dimmed under the panel
 
     SystemMenuAction result = SystemMenuAction::None;
 

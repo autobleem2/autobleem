@@ -187,6 +187,37 @@ public:
     // reaches the sub-screen, not us - and the launcher would come back believing it is still held. Called
     // after every show() that can be reached with a modifier down.
     void forgetHeldModifiers();
+
+    // UIREV-26 (G5r5): every screen opened from the launcher draws over ONE snapshot of it, not over the theme's plain
+    // background. takeBackdrop() draws the launcher once without its hint band and bubbles (snapshotFrame, draw()),
+    // keeps that frame and hands it to Gui::setLauncherBackdrop - Gui's renderBackground(), the Context's
+    // backdropDrawer (the ab_gui screens, the extensions') and renderer.lastCapture() all give it while it is held.
+    // Returns true when no snapshot was held before: the caller then owns it and drops it. BackdropScope is that, for
+    // one opening: take in the constructor, drop in the destructor (or release() earlier, e.g. before the theme
+    // reloads). An opening inside another (the System menu's Memory Cards) keeps the outer frame and leaves the outer
+    // one the drop, unless `fresh`: then the frame is taken again (an extension reads renderer.lastCapture(), which
+    // must be this one).
+    bool takeBackdrop(bool fresh = false);
+    void dropBackdrop();
+    bool snapshotFrame = false; // draw(): the frame is the backdrop's - no footer band, hints, bubbles, fade
+    class BackdropScope {
+    public:
+        explicit BackdropScope(GuiLauncher &launcher, bool fresh = false)
+            : launcher_(launcher), owns_(launcher.takeBackdrop(fresh)) {}
+        BackdropScope(const BackdropScope &) = delete;
+        BackdropScope &operator=(const BackdropScope &) = delete;
+        ~BackdropScope() { release(); }
+        void release() {
+            if (owns_)
+                launcher_.dropBackdrop();
+            owns_ = false;
+        }
+
+    private:
+        GuiLauncher &launcher_;
+        bool owns_;
+    };
+
     void loop_prevNextGameFirstLetter(bool next); // false is prev, true is next
     void loop_prevGameFirstLetter();
     void loop_nextGameFirstLetter();
