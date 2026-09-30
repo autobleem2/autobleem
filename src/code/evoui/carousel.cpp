@@ -55,6 +55,10 @@ void Carousel::freeTextures() {
     placeholderTex_ = ableem::Texture();
     glowTex_ = ableem::Texture();
     shineTex_ = ableem::Texture();
+    // the shine's state goes with its texture: a new row selects game 0 again, and a stale shineFor_ == 0 meant
+    // "already shone" - no crossing, and the freed texture never reloaded (BUG-35)
+    shineFor_ = -1;
+    shineAt_ = 0;
     targetPool_.clear();
     loader_.clear();
 }
