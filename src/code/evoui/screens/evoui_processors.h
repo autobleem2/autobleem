@@ -56,6 +56,7 @@ private:
     int count() const { return static_cast<int>(sequences.entries(sequence).size()); }
     int visibleRows() const;
     void moveSelection(int step);
+    void publishItems() const; // the tab's rows and the cursor to the DebugDriver
     void switchTab(ProcessorSequence to);
     void save();
 

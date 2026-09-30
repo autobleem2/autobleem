@@ -217,12 +217,34 @@ class Driver:
             if len(found) != 1:
                 raise RuntimeError(f'item {item!r} ' + ('is ambiguous' if found else 'not found') + f': {names}')
             index = found[0]
+        screen = self.current_screen()
         if not self.move_to(index):
             for _ in range(index):  # a driver without `selected`: count the presses, as before
                 self.cmd(f'press down {TAP_MS}')
                 self.frame_gap()
+        else:
+            # the last look before Cross: still the same screen, the cursor on the target and steady - else walk again
+            for attempt in range(3):
+                if self.current_screen() == screen and self.stable_on(index):
+                    break
+                if self.current_screen() != screen:
+                    raise RuntimeError(f'{item!r}: the screen changed from {screen} before Cross was pressed')
+                self.move_to(index)
+            else:
+                raise RuntimeError(f'the cursor is not steady on row {index} (now {self.selected()})')
         self.cmd('press x')
         return 'ok ' + names[index]
+
+    def stable_on(self, index, ms=100):
+        # the driver's `selected` is row `index` on every look for `ms` ms
+        end = time.time() + ms / 1000.0
+        while True:
+            now = self.selected()
+            if not now or now[0] != index:
+                return False
+            if time.time() >= end:
+                return True
+            time.sleep(0.02)
 
     def selected(self):
         # the DebugDriver's `selected` ("ok <index>|<name>") as (index, name); None on a driver without it
@@ -246,18 +268,23 @@ class Driver:
             if now is None or now[0] < 0:
                 return False
             if now[0] == index:
-                self.rest()  # the cursor may still be settling - look once more after the picture rests
-                again = self.selected()
-                if again and again[0] == index:
+                self.rest()  # the cursor may still be settling - look again after the picture rests, and hold still
+                if self.stable_on(index):
                     return True
                 continue
             self.cmd(f'press {"down" if now[0] < index else "up"} {TAP_MS}')
             moved = time.time() + 1.5
+            changed = False
             while time.time() < moved:
                 after = self.selected()
                 if after and after[0] != now[0]:
+                    changed = True
                     break
                 time.sleep(0.02)
+            if not changed:
+                # nothing seen moving: the press may still be on its way (a slow frame) - let the picture rest, and
+                # the next look at the top decides; never press again on a reading this old
+                self.rest()
         raise RuntimeError(f'the cursor did not reach row {index} in {timeout:.0f} s (now {self.selected()})')
 
     def select(self, item):

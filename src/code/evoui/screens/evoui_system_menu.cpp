@@ -271,6 +271,7 @@ void GuiSystemMenu::moveSelection(int step) {
     }
     selected = next;
     keepSelectedVisible();
+    publishItems(); // now, not at the next frame: the driver's `selected` must never lag the cursor
 }
 
 //*******************************
@@ -307,6 +308,7 @@ void GuiSystemMenu::loop() {
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross) {
                     app.audio().cursor.play();
+                    publishItems(); // the driver sees the row this press takes
                     result = rows[selected].action;
                     menuVisible = false;
                 } else if (e.button == Button::Circle) {

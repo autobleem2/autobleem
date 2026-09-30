@@ -168,6 +168,7 @@ void GuiSetPicker::moveSelection(int step) {
     const int count = static_cast<int>(t.entries.size());
     t.selected = max(0, min(count - 1, t.selected + step));
     keepSelectedVisible();
+    publishItems();
 }
 
 void GuiSetPicker::keepSelectedVisible() {
@@ -205,16 +206,24 @@ void GuiSetPicker::pick() {
 }
 
 //*******************************
+// GuiSetPicker::publishItems
+//*******************************
+// the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed; from the frame and from every move,
+// so the driver's cursor never lags the real one
+void GuiSetPicker::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (const Entry &e : tabs[tab].entries)
+        names.push_back(e.title);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, tabs[tab].entries.empty() ? -1 : tabs[tab].selected);
+}
+
+//*******************************
 // GuiSetPicker::draw
 //*******************************
 void GuiSetPicker::draw() {
-    // the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed
-    if (menuVisible && ableem::DebugDriver::active()) {
-        vector<string> names;
-        for (const Entry &e : tabs[tab].entries)
-            names.push_back(e.title);
-        ableem::DebugDriver::publish(typeid(*this).name(), names, tabs[tab].entries.empty() ? -1 : tabs[tab].selected);
-    }
+    publishItems();
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else
@@ -327,9 +336,11 @@ void GuiSetPicker::loop() {
                 } else if (gui->input().dpadRight()) {
                     app.audio().cursor.play();
                     tab = (tab + 1) % static_cast<int>(tabs.size());
+                    publishItems();
                 } else if (gui->input().dpadLeft()) {
                     app.audio().cursor.play();
                     tab = (tab + static_cast<int>(tabs.size()) - 1) % static_cast<int>(tabs.size());
+                    publishItems();
                 }
                 hold.track(gui->input(), gui->platform().ticks());
             } else if (e.type == Event::Type::ButtonDown) {
@@ -337,10 +348,12 @@ void GuiSetPicker::loop() {
                 case Button::R1:
                     app.audio().cursor.play();
                     tab = (tab + 1) % static_cast<int>(tabs.size());
+                    publishItems();
                     break;
                 case Button::L1:
                     app.audio().cursor.play();
                     tab = (tab + static_cast<int>(tabs.size()) - 1) % static_cast<int>(tabs.size());
+                    publishItems();
                     break;
                 case Button::R2:
                     app.audio().cursor.play();
@@ -352,6 +365,7 @@ void GuiSetPicker::loop() {
                     break;
                 case Button::Cross:
                     app.audio().cursor.play();
+                    publishItems(); // the driver sees the row this press takes
                     pick();
                     menuVisible = false;
                     break;

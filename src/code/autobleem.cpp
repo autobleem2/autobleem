@@ -473,6 +473,10 @@ int AutoBleem::run() {
         }
     }
 
+    PLOG_INFO << "Quit: leaving the main loop with menuOption " << session_.menuOption
+              << (gui_->input().quitRequested() ? " (Input quit requested)" : "")
+              << (leaveForDisplay ? " (display change)" : "");
+
     // the extensions go before the services they may reach
     extensions_.shutdown();
     scans().stop();

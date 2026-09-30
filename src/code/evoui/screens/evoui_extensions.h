@@ -53,6 +53,7 @@ private:
     int visibleRows() const; // how many rows from firstVisible fit
     int bodyHeight() const;  // the rows' part of the panel
     void moveSelection(int step);
+    void publishItems() const; // the rows and the cursor to the DebugDriver
     int count() const { return static_cast<int>(rows.size()); }
     const ExtensionInfo &extensionAt(int row) const { return catalog.extensions()[rows[row]]; }
 

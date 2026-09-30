@@ -123,16 +123,24 @@ int GuiExtensions::bodyHeight() const {
 }
 
 //*******************************
+// GuiExtensions::publishItems
+//*******************************
+// the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'; from the frame and from
+// every move, so the driver's cursor never lags the real one
+void GuiExtensions::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (int i = 0; i < count(); i++)
+        names.push_back(rows[i] == HeadingRow ? "#" + _("Third-party extensions") : extensionAt(i).title);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+}
+
+//*******************************
 // GuiExtensions::draw
 //*******************************
 void GuiExtensions::draw() {
-    // the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'
-    if (menuVisible && ableem::DebugDriver::active()) {
-        vector<string> names;
-        for (int i = 0; i < count(); i++)
-            names.push_back(rows[i] == HeadingRow ? "#" + _("Third-party extensions") : extensionAt(i).title);
-        ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
-    }
+    publishItems();
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else
@@ -242,6 +250,7 @@ void GuiExtensions::moveSelection(int step) {
         firstVisible++;
     if (firstVisible == selected && selected > 0 && rows[selected - 1] == HeadingRow)
         firstVisible--; // the first third-party row shows its heading above it
+    publishItems();
 }
 
 //*******************************
@@ -277,6 +286,7 @@ void GuiExtensions::loop() {
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross && count() > 0) {
+                    publishItems(); // the driver sees the row this press takes
                     const ExtensionInfo &picked = extensionAt(selected);
                     if (reasonFor(picked, networkUp).empty()) {
                         app.audio().cursor.play();

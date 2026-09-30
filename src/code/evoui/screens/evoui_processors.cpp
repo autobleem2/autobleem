@@ -61,18 +61,26 @@ int GuiProcessors::visibleRows() const {
 }
 
 //*******************************
+// GuiProcessors::publishItems
+//*******************************
+// the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled; from the frame and from every
+// move, so the driver's cursor never lags the real one
+void GuiProcessors::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (const auto &e : sequences.entries(sequence)) {
+        const ProcessorInfo *p = info(e.name);
+        names.push_back(p ? p->title : e.name);
+    }
+    ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+}
+
+//*******************************
 // GuiProcessors::draw
 //*******************************
 void GuiProcessors::draw() {
-    // the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled
-    if (menuVisible && ableem::DebugDriver::active()) {
-        vector<string> names;
-        for (const auto &e : sequences.entries(sequence)) {
-            const ProcessorInfo *p = info(e.name);
-            names.push_back(p ? p->title : e.name);
-        }
-        ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
-    }
+    publishItems();
     if (background.valid())
         renderer.copy(background, nullptr, nullptr);
     else
@@ -196,6 +204,7 @@ void GuiProcessors::moveSelection(int step) {
         firstVisible = selected;
     else if (selected >= firstVisible + rows)
         firstVisible = selected - rows + 1;
+    publishItems();
 }
 
 //*******************************
@@ -207,6 +216,7 @@ void GuiProcessors::switchTab(ProcessorSequence to) {
     sequence = to;
     moving = false;
     selected = firstVisible = 0;
+    publishItems();
 }
 
 //*******************************
