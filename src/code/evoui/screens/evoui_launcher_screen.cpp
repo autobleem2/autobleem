@@ -862,7 +862,7 @@ void GuiLauncher::loadAssets() {
     settingsBack->setCurLen(100);
     settingsBack->visible = true;
 
-    meta = addStaticElement(new PsMeta("meta", theme.metaPanel));
+    meta = addStaticElement(new PsMeta("meta") /* the players icon is the icon set's since G5b */);
     meta->fonts = ThemeAssets::fixedFonts();
     meta->x = 785;
     meta->y = 285;

@@ -10,7 +10,8 @@
 #include "core/main.h"
 #include "core/main.h"
 #include "core/services/environment.h"
-#include "gui/panel_style.h" // PanelStyle::outlineOf, the icons' dark halo (UIREV-27)
+#include <ab_gui/context.h>
+#include <ab_gui/style.h>
 
 using namespace std;
 
@@ -105,48 +106,30 @@ void PsMeta::render() {
         return;
     }
 
-    if (!internalOffTex.valid()) {
-        string curPath = Env::getWorkingPath() + sep;
-        internalOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/ps1.png");
-        internalOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/usb.png");
-        hdOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/hd.png");
-        hdOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/sd.png");
-        lockOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lock.png");
-        lockOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/unlock.png");
-        cdTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/cd.png");
-        favoriteTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/favorite.png");
-        raTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/ra.png");
-        lightgunTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lightgun.png");
-        lightgun2Tex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lightgun2.png");
-
-        // each icon's own dark halo (UIREV-27): built once here from a fresh Image decode of the same
-        // file - a loaded Texture cannot be read back pixel by pixel. The 1x file even when an @2x icon is drawn:
-        // its pixels are the icon's logical size, which is what the halo is placed by
-        internalOnOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/ps1.png"));
-        internalOffOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/usb.png"));
-        hdOnOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/hd.png"));
-        hdOffOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/sd.png"));
-        lockOnOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lock.png"));
-        lockOffOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/unlock.png"));
-        cdOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/cd.png"));
-        favoriteOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/favorite.png"));
-        raOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/ra.png"));
-        lightgunOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lightgun.png"));
-        lightgun2Outline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/lightgun2.png"));
-    }
-
     if (visible) {
         int w, h;
         ableem::Rect rect;
         ableem::Rect fullRect;
 
-        // a meta icon plus its dark halo (UIREV-27), drawn at the same +2px margin Play's outline uses
-        auto copyWithOutline = [&](const ableem::Texture &texture, const ableem::Texture &outline) {
+        // the icons come from the Context's icon set, asked at draw time (the display release drops them); a theme
+        // without launcher.icons and without a "badge" frame gets today's files and today's calls
+        abgui::Context &ctx = gui->uiContext();
+        const bool badgeFrame = ctx.frame("badge").valid();
+        abgui::Style badgeStyle;
+        if (badgeFrame)
+            badgeStyle = ctx.style();
+
+        // a meta icon plus its dark halo (UIREV-27), drawn at the same +2px margin Play's outline uses; a badge
+        // has the theme's "badge" frame behind it when there is one (32 x 32 round a 30 x 30 icon)
+        auto copyWithOutline = [&](const string &icon, bool badge = true) {
+            const ableem::Texture outline = ctx.iconHalo(icon);
+            if (badge && badgeFrame)
+                badgeStyle.drawFrame(ctx, "badge", ableem::Rect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2));
             if (outline.valid()) {
                 ableem::Rect outlineRect(rect.x - 2, rect.y - 2, rect.w + 5, rect.h + 5);
                 renderer.copy(outline, nullptr, &outlineRect);
             }
-            renderer.copy(texture, &fullRect, &rect);
+            renderer.copy(ctx.icon(icon), &fullRect, &rect);
         };
 
         auto nameFont = fonts[FONT_28_BOLD];
@@ -197,7 +180,8 @@ void PsMeta::render() {
             // PS1 icons line
             gui->text().renderText(otherFont, players, x + 35, y + yOffset);
 
-            ableem::Size s = tex.size();
+            const ableem::Texture playersIcon = ctx.icon("players");
+            ableem::Size s = playersIcon.size();
             w = s.w;
             h = s.h;
             rect.x = x;
@@ -209,12 +193,12 @@ void PsMeta::render() {
             fullRect.y = 0;
             fullRect.w = w;
             fullRect.h = h;
-            renderer.copy(tex, &fullRect, &rect);
+            renderer.copy(playersIcon, &fullRect, &rect);
 
             int xoffset = 190, spread = 40;
             // render internal icon
             rect.x = x + 135;
-            copyWithOutline(cdTex, cdOutline);
+            copyWithOutline("disc", false);
 
             gui->text().renderText(otherFont, to_string(discs), x + 170, y + yOffset);
 
@@ -230,40 +214,40 @@ void PsMeta::render() {
             if (internal) {
                 locked = true;
                 hd = false;
-                copyWithOutline(internalOnTex, internalOnOutline);
+                copyWithOutline("internal");
             } else {
-                copyWithOutline(internalOffTex, internalOffOutline);
+                copyWithOutline("usb");
             }
 
             int spreadCount = 1;
             rect.x = x + xoffset + (spread * spreadCount);
             if (hd) {
-                copyWithOutline(hdOnTex, hdOnOutline);
+                copyWithOutline("hd");
             } else {
-                copyWithOutline(hdOffTex, hdOffOutline);
+                copyWithOutline("sd");
             }
             ++spreadCount;
             rect.x = x + xoffset + (spread * spreadCount);
             if (locked) {
-                copyWithOutline(lockOnTex, lockOnOutline);
+                copyWithOutline("lock");
             } else {
-                copyWithOutline(lockOffTex, lockOffOutline);
+                copyWithOutline("unlock");
             }
             if (favorite) {
                 ++spreadCount;
                 rect.x = x + xoffset + (spread * spreadCount);
-                copyWithOutline(favoriteTex, favoriteOutline);
+                copyWithOutline("favorite");
             }
             if (play_using_ra) {
                 ++spreadCount;
                 rect.x = x + xoffset + (spread * spreadCount);
-                copyWithOutline(raTex, raOutline);
+                copyWithOutline("retroarch");
             }
             if (lightgun) {
                 ++spreadCount;
                 rect.x = x + xoffset + (spread * spreadCount);
                 bool onePlayer = players.rfind("1 ", 0) == 0;
-                copyWithOutline(onePlayer ? lightgunTex : lightgun2Tex, onePlayer ? lightgunOutline : lightgun2Outline);
+                copyWithOutline(onePlayer ? "lightgun" : "lightgun2");
             }
         } else {
             // RetroArch game: the players line when the database knows, then the RA icon on the row the
@@ -274,7 +258,7 @@ void PsMeta::render() {
                     yOffset += 21;
                 }
                 yOffset += 21;
-                ableem::Size s = raTex.size();
+                ableem::Size s = ctx.icon("retroarch").size();
                 w = s.w;
                 h = s.h;
                 rect.x = x;
@@ -286,7 +270,7 @@ void PsMeta::render() {
                 fullRect.y = 0;
                 fullRect.w = w;
                 fullRect.h = h;
-                copyWithOutline(raTex, raOutline);
+                copyWithOutline("retroarch");
 
                 if (lightgun) {
                     rect.x += 40;
@@ -294,7 +278,7 @@ void PsMeta::render() {
                     rect.h = 30;
                     fullRect.w = 30;
                     fullRect.h = 30;
-                    copyWithOutline(lightgunTex, lightgunOutline);
+                    copyWithOutline("lightgun");
                 }
             }
         }

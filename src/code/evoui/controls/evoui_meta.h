@@ -25,31 +25,10 @@ public:
     Fonts fonts;
     ableem::Color textColor;
 
-    ableem::Texture internalOnTex;
-    ableem::Texture internalOffTex;
-    ableem::Texture hdOnTex;
-    ableem::Texture hdOffTex;
-    ableem::Texture lockOnTex;
-    ableem::Texture lockOffTex;
-    ableem::Texture cdTex;
-    ableem::Texture favoriteTex;
-    ableem::Texture raTex;
-    ableem::Texture lightgunTex;  // one player
-    ableem::Texture lightgun2Tex; // two or more
-
-    // each icon's dark halo (UIREV-27, PanelStyle::outlineOf - the same one Play and the d-pad hint arrows
-    // use), so the icons read on a light theme's background too
-    ableem::Texture internalOnOutline;
-    ableem::Texture internalOffOutline;
-    ableem::Texture hdOnOutline;
-    ableem::Texture hdOffOutline;
-    ableem::Texture lockOnOutline;
-    ableem::Texture lockOffOutline;
-    ableem::Texture cdOutline;
-    ableem::Texture favoriteOutline;
-    ableem::Texture raOutline;
-    ableem::Texture lightgunOutline;
-    ableem::Texture lightgun2Outline;
+    // the row's icons and their dark halos (UIREV-27) come from the Context's icon set by name (ab_gui G5b:
+    // "players", "disc", "usb"/"internal", "hd"/"sd", "lock"/"unlock", "favorite", "retroarch", "lightgun"/
+    // "lightgun2"), so a theme's launcher.icons replaces any of them; the optional "badge" frame goes behind each
+    // badge but the players icon and the disc
 
     int nextPos = 0;
     int prevPos = 0;
