@@ -718,6 +718,7 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
     playTextOutline = ableem::Texture();
     if (!textShadow)
         return; // the theme said no to the text's halo (launcher.textShadow false) - Play's outline goes with it
+    // the 1x files even when @2x ones are drawn (ThemeAssets::loadImage): their pixels are the logical size
     const ableem::Image button = ableem::Image::loadFile(theme.playButton);
     const ableem::Image text = ableem::Image::loadFile(theme.playText);
     playOutline = PanelStyle::outlineOf(renderer, button);

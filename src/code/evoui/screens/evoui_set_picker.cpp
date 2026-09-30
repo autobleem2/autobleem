@@ -50,9 +50,9 @@ const int IconSize = 56; // the tab icons (evoimg/tab_*.png, tools/make_evoimg_i
 //*******************************
 vector<ableem::Texture> GuiSetPicker::loadIcons(ableem::Renderer &renderer) {
     const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
-    return {ableem::Texture::loadFile(renderer, img + "tab_playstation.png"),
-            ableem::Texture::loadFile(renderer, img + "tab_retroarch.png"),
-            ableem::Texture::loadFile(renderer, img + "tab_apps.png")};
+    return {ThemeAssets::loadImage(renderer, img + "tab_playstation.png"),
+            ThemeAssets::loadImage(renderer, img + "tab_retroarch.png"),
+            ThemeAssets::loadImage(renderer, img + "tab_apps.png")};
 }
 
 //*******************************

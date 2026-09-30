@@ -107,20 +107,21 @@ void PsMeta::render() {
 
     if (!internalOffTex.valid()) {
         string curPath = Env::getWorkingPath() + sep;
-        internalOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ps1.png");
-        internalOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/usb.png");
-        hdOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/hd.png");
-        hdOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/sd.png");
-        lockOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lock.png");
-        lockOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/unlock.png");
-        cdTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
-        favoriteTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
-        raTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
-        lightgunTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun.png");
-        lightgun2Tex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun2.png");
+        internalOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/ps1.png");
+        internalOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/usb.png");
+        hdOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/hd.png");
+        hdOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/sd.png");
+        lockOnTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lock.png");
+        lockOffTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/unlock.png");
+        cdTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/cd.png");
+        favoriteTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/favorite.png");
+        raTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/ra.png");
+        lightgunTex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lightgun.png");
+        lightgun2Tex = ThemeAssets::loadImage(renderer, curPath + "evoimg/lightgun2.png");
 
         // each icon's own dark halo (UIREV-27): built once here from a fresh Image decode of the same
-        // file - a loaded Texture cannot be read back pixel by pixel
+        // file - a loaded Texture cannot be read back pixel by pixel. The 1x file even when an @2x icon is drawn:
+        // its pixels are the icon's logical size, which is what the halo is placed by
         internalOnOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/ps1.png"));
         internalOffOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/usb.png"));
         hdOnOutline = PanelStyle::outlineOf(renderer, ableem::Image::loadFile(curPath + "evoimg/hd.png"));

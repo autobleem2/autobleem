@@ -10,10 +10,10 @@ using namespace std;
 // PsMenu::PsMenu
 //*******************************
 PsMenu::PsMenu(string name1, const LauncherTheme::MenuIcons &icons) : PsObj(name1, "") {
-    settings = ableem::Texture::loadFile(renderer, icons.settings);
-    guide = ableem::Texture::loadFile(renderer, icons.guide);
-    memcard = ableem::Texture::loadFile(renderer, icons.memcard);
-    savestate = ableem::Texture::loadFile(renderer, icons.resume);
+    settings = ThemeAssets::loadImage(renderer, icons.settings);
+    guide = ThemeAssets::loadImage(renderer, icons.guide);
+    memcard = ThemeAssets::loadImage(renderer, icons.memcard);
+    savestate = ThemeAssets::loadImage(renderer, icons.resume);
     if (icons.resumePicture.set)
         resumePicture =
             ableem::Rect(icons.resumePicture.x, icons.resumePicture.y, icons.resumePicture.w, icons.resumePicture.h);

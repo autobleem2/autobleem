@@ -118,6 +118,29 @@ Themes/<name>/
 
 Colours are `"#rrggbb"`; alphas are 0-255.
 
+### High-resolution images (`@2x`)
+
+A theme may ship any of its images a second time at **exactly twice the pixels**, named `<name>@2x.<ext>` next to
+the 1x file (`background@2x.jpg` next to `background.jpg`, `images/menu_guide@2x.png` next to
+`images/menu_guide.png`). `theme.json` does not name it and does not change: on a screen above 720p (a Pi or a PC
+at 1080p - the output scale above 1) the @2x file is drawn instead of the 1x one, into the same place and the same
+size, so it looks sharp there; the console (720p) never loads it. Every number in `theme.json` stays in the 1x
+file's pixels (the 1280x720 canvas), and so do the positions the launcher places the images at.
+
+- **The 1x file is required.** The size of the 1x image is the image's size on screen, and what is measured from
+  a picture's pixels - the check switch's transparent right margin, the dark outline around the Play button's
+  images - is measured on the 1x file. An @2x file whose 1x is missing from the theme is not used (the default
+  theme's 1x is drawn, as before).
+- **Exactly twice**: a 60x30 `on.png` wants a 120x60 `on@2x.png` - the same picture, the same transparent margins,
+  the same place of everything in it. An image of another size is drawn squeezed or stretched into the 1x size.
+- It works for every image of `classic` (the background, the logo, `buttons`) and `launcher` (the background,
+  footer, Play button and text, the settings and meta panels, the arrow, `hints`, `menuIcons`,
+  `memcardManager`); frames have their own `image2x` (below). Not for fonts or sounds.
+- A theme without @2x files looks exactly as it did, at every screen size.
+
+The launcher's own icons in `evoimg/` (the meta panel's icons, the d-pad hint arrows, the set picker's tabs, the
+jewel cases and the big-box frame) follow the same rule, so a later release can ship @2x ones for them too.
+
 ### Frames (`launcher.frames`)
 
 A theme may draw the boxes of the menus and dialogs - the panel, the selected row, the heading band, the
