@@ -230,10 +230,8 @@ void GuiUpdateProgress::draw() {
     }
     if (fraction >= 0) {
         ableem::Rect bar(panel.x + TextInset, y + 4, panel.w - 2 * TextInset, 22);
-        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 120));
-        renderer.drawRect(bar);
-        renderer.setDrawColor(style.text);
-        renderer.fillRect(ableem::Rect(bar.x + 2, bar.y + 2, static_cast<int>((bar.w - 4) * fraction), bar.h - 4));
+        // the outline and the fill (or the theme's progressTrack/progressFill frames) - ab_gui G5g
+        style.progressBox(gui->uiContext(), bar, fraction);
     }
 
     // an outcome can be dismissed (any button); a running job cannot
