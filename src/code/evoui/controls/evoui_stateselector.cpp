@@ -59,13 +59,18 @@ void PsStateSelector::render() {
         float scale = 2.7f;
         x = 10;
         y = 220;
-        renderer.setDrawColor(ableem::Color(0, 0, 0, 200));
         ableem::Rect rect;
         rect.x = 0;
         rect.y = 100;
         rect.w = SCREEN_WIDTH;
         rect.h = SCREEN_HEIGHT - 200;
-        renderer.fillRect(rect);
+        // the theme's `band` frame (G5i) when it has one, else the black strip
+        abgui::Context &ctx = Gui::getInstance()->uiContext();
+        const abgui::Style &style = ctx.style();
+        if (!style.drawFrame(ctx, "band", rect)) {
+            renderer.setDrawColor(ableem::Color(0, 0, 0, 200));
+            renderer.fillRect(rect);
+        }
 
         int w = 118 * scale;
         int h = 118 * scale;
@@ -109,11 +114,22 @@ void PsStateSelector::render() {
         const ThemeColor &selection = App::get().theme().launcher().colors.selection;
         const ableem::Color white(255, 255, 255);
 
+        // the theme's tile frames (G5i): `tile` under every slot, `tileSelected` under the selected one; the halo
+        // and the red tint are today's marking of the selected slot and stay only when there is no `tileSelected`
+        const bool selectedFrame = ctx.frame("tileSelected").valid();
+        const bool tileFrame = selectedFrame || ctx.frame("tile").valid();
+
         for (int i = 0; i < 4; i++) {
             output.x = x + (118 * scale) * i;
             input = ableem::Rect(0, 0, 118, 118);
 
-            if (selSlot == i && selection.set) {
+            const bool framedSelected = tileFrame && selSlot == i && selectedFrame;
+            if (tileFrame && !(framedSelected && style.drawFrame(ctx, "tileSelected", output)))
+                style.drawFrame(ctx, "tile", output);
+
+            if (framedSelected) {
+                frame.setColorMod(white);
+            } else if (selSlot == i && selection.set) {
                 frame.setBlendMode(ableem::BlendMode::Add);
                 frame.setColorMod(TextRenderer::toColor(selection, 255));
                 for (int ring = 2; ring >= 1; ring--) {
