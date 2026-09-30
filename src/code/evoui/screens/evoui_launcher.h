@@ -297,7 +297,8 @@ public:
     // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
     // ("|@X|", "|@L2+R2|", "|@Left|/|@Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
     // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
-    // hintBar at the largest font that fits the language. updateHintsIfNeeded() rebuilds the two lines from
+    // hintBar at the largest font that fits the language (the rules: abgui::HintBar), over the theme's `hintBar`
+    // frame when it has one. updateHintsIfNeeded() rebuilds the two lines from
     // a signature of what they depend on and calls layoutHints() only when that signature changes - the
     // "cache the layout" rule - so render() can call it every frame for free.
     struct Hint {
@@ -322,7 +323,11 @@ public:
     mutable bool raInstalled_ = false;
     mutable unsigned int raCheckedAt_ = 0;
     void updateHintsIfNeeded();
+    // lays the two lines out in hintBarRect() through abgui::HintBar (ab_gui G5e, pure: fonts, places, drops)
     void layoutHints();
+    // the theme's launcher.hintBar, else the default pill (560, 624, 680 x 72): the lines' bar and the `hintBar`
+    // frame's box
+    ableem::Rect hintBarRect() const;
     std::unique_ptr<PsMenu> menu;
     PsStateSelector *sselector = nullptr;
 
