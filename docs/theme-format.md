@@ -118,6 +118,41 @@ Themes/<name>/
 
 Colours are `"#rrggbb"`; alphas are 0-255.
 
+### Frames (`launcher.frames`)
+
+A theme may draw the boxes of the menus and dialogs - the panel, and in later steps the selected row, the heading
+band, the keyboard's keys and its text field - with its own images instead of the plain boxes the code draws. Each
+is a **9-slice** PNG: cut by four lines into corners drawn 1:1, edges stretched along their length and a centre
+stretched both ways, so one small image fits a box of any size. All numbers are in the 1280x720 canvas' pixels; an
+`@2x` image next to the 1x one (`frames/panel@2x.png`, twice the size, the same numbers) is drawn instead of it on a
+screen above 720p. What to draw, the sizes and the limits per frame are autobleem-core's
+`docs/ab-gui-frames-spec.md`.
+
+```json
+"launcher": {
+  "frames": {
+    "panel": { "image": "frames/panel.png", "slice": 36, "bleed": 12, "tint": "edge" }
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `image` | The 1x PNG (alpha), relative to the theme folder. |
+| `image2x` | The `@2x` PNG; left out, `<image>@2x.png` next to `image` is used when it exists. |
+| `slice` | Where the image is cut, measured from its outer edge: a number for all four sides or `{ "left", "top", "right", "bottom" }`. |
+| `bleed` | How far the image reaches outside the box (a glow, a shadow), the same form. |
+| `fill` | `false` leaves the centre out (a rim only). |
+| `tint` | A role of `launcher.colors` (`edge`, `selectionBand`, `text`, ...) the image is multiplied by - a white frame then follows the theme's colours. Left out, the image's own colours. |
+
+| Frame | Draws | Since |
+|---|---|---|
+| `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus. (The launcher's own System/Quick menu, set picker, Extensions, Processors and update prompt follow in the next step.) | ab_gui G4a |
+
+**Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
+over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is
+then drawn by the code as before. A theme without `launcher.frames` looks exactly as it did.
+
 ### The style block (`launcher.colors`' roles)
 
 Every menu, list and dialog - the classic lists (Options, Game Manager, the game editors, Memory Cards,
