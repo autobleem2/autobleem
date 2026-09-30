@@ -752,6 +752,53 @@ void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
 }
 
 //*******************************
+// GuiLauncher::renderPlayFrame
+//*******************************
+// Play in a theme with the `play` frame (G5j): the frame in the play button's box (540, 428, 200 x 68) grown about its
+// centre by the pulse, the `play` icon and the label side by side at the centre. The icon and the label keep their
+// size: a font cannot be scaled, and opening one per pulse step is a glyph cache each. An App's word is "Start".
+void GuiLauncher::renderPlayFrame() {
+    const int boxX = 540, boxY = 428, boxW = 200, boxH = 68;
+    const int iconSize = 28, gap = 8, padding = 24;
+    abgui::Context &ctx = gui->uiContext();
+
+    const ableem::FRect pulse = playText->drawRect();
+    const float zoom = playText->ow > 0 ? pulse.w / static_cast<float>(playText->ow) : 1.0f;
+    const int w = static_cast<int>(boxW * zoom + 0.5f);
+    const int h = static_cast<int>(boxH * zoom + 0.5f);
+    const int centreX = boxX + boxW / 2, centreY = boxY + boxH / 2;
+    ctx.style().drawFrame(ctx, "play", ableem::Rect(centreX - w / 2, centreY - h / 2, w, h));
+
+    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+    const ableem::Texture icon = ctx.icon("play");
+    const int iconSpace = icon.valid() ? iconSize + gap : 0;
+    const string label = ableem::Strings::upperUtf8(game != nullptr && game->app ? _("Start") : _("Play"));
+    if (label != playLabel || !playLabelFont.valid()) {
+        playLabel = label;
+        const int room = boxW - 2 * padding - iconSpace;
+        playLabelFont = gui->text().fittingFont(FONT_BOLD, 28, 14, label, room);
+        // even the smallest size too wide: cut characters (whole UTF-8 ones) and end on "..."
+        while (gui->text().textWidth(playLabelFont, playLabel) > room && playLabel != "...") {
+            size_t cut = playLabel.size() - 1;
+            if (playLabel.size() > 3 && playLabel.compare(playLabel.size() - 3, 3, "...") == 0)
+                cut = playLabel.size() - 4;
+            while (cut > 0 && (static_cast<unsigned char>(playLabel[cut]) & 0xC0) == 0x80)
+                cut--;
+            playLabel = playLabel.substr(0, cut) + "...";
+        }
+        playLabelWidth = gui->text().textWidth(playLabelFont, playLabel);
+    }
+    int x = centreX - (iconSpace + playLabelWidth) / 2;
+    if (icon.valid()) {
+        const ableem::Rect iconRect(x, centreY - iconSize / 2, iconSize, iconSize);
+        renderer.copy(icon, nullptr, &iconRect);
+        x += iconSpace;
+    }
+    gui->text().renderText_WithColor(playLabelFont, playLabel, x, centreY - playLabelFont.lineHeight() / 2,
+                                     ctx.style().text);
+}
+
+//*******************************
 // GuiLauncher::loadAssets
 //*******************************
 // load all assets needed by the screengame i
@@ -988,6 +1035,8 @@ void GuiLauncher::freeAssets() {
     playText = nullptr;
     playOutline = ableem::Texture();
     playTextOutline = ableem::Texture();
+    playLabel.clear(); // the fitted font goes with the fonts
+    playLabelFont = ableem::Font();
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
@@ -1256,10 +1305,15 @@ void GuiLauncher::draw() {
         renderer.copy(gui->launcherLogo(), nullptr, &gui->launcherLogoRect());
     if (!benchSkips("carousel"))
         carousel.render();
-    if (playOutline.valid() && playButton != nullptr && playButton->visible && !benchSkips("playOutline"))
+    // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
+    // and their outline
+    const bool playFramed = gui->uiContext().frame("play").valid();
+    if (!playFramed && playOutline.valid() && playButton != nullptr && playButton->visible &&
+        !benchSkips("playOutline"))
         renderer.copy(playOutline, nullptr, &playOutlineRect);
     // the text's outline at the text's pulse: the text is drawn 2 px into its outline, both grown by the same zoom
-    if (playTextOutline.valid() && playText != nullptr && playText->visible && !benchSkips("playOutline")) {
+    if (!playFramed && playTextOutline.valid() && playText != nullptr && playText->visible &&
+        !benchSkips("playOutline")) {
         const ableem::FRect r = playText->drawRect();
         const float zoom = playText->ow > 0 ? r.w / static_cast<float>(playText->ow) : 1.0f;
         renderer.copy(
@@ -1267,8 +1321,16 @@ void GuiLauncher::draw() {
             ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
     }
     for (auto &obj : staticElements) {
-        if (!behindRow(obj.get()) && !benchSkips(obj->name))
-            obj->render();
+        if (behindRow(obj.get()) || benchSkips(obj->name))
+            continue;
+        if (playFramed && obj.get() == playButton)
+            continue;
+        if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
+            if (playText->visible)
+                renderPlayFrame();
+            continue;
+        }
+        obj->render();
     }
     renderSnap();
 
