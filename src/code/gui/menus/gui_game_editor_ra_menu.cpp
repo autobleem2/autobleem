@@ -47,12 +47,17 @@ void GuiEditorRA::draw() {
         ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game"), _("Lightgun game:")}, 1);
 
     const int right = GameDetailPane::rowsRight(*gui);
-    gui->text().renderLabelBox(0, yoffset, right);
+    // a theme's selection frame goes under the heading and the row's text, so it comes first (G4d)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    gui->text().renderLabelBox(gui->uiContext(), 0, yoffset, right);
     {
         TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
         gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
     }
-    gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    if (!framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
     TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected); // the one row, always selected
     gui->text().renderTextLineOptions(
         _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),

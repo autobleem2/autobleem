@@ -39,7 +39,7 @@ void GuiBtnGuide::draw() {
     const int rowHeight = max(30, textFont.lineHeight() + 2);
     int y = content.y;
     auto section = [&](const string &title, const string &keysTitle = "") {
-        style.label(renderer, ableem::Rect(content.x + 1, y, content.w - 2, rowHeight));
+        style.label(gui->uiContext(), ableem::Rect(content.x + 1, y, content.w - 2, rowHeight));
         gui->text().renderText_WithColor(buttonFont, title, xButtons, y + (rowHeight - buttonFont.lineHeight()) / 2,
                                          style.text, XALIGN_LEFT);
         if (keyboard && !keysTitle.empty())

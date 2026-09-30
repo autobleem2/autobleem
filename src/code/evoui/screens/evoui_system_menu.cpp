@@ -214,7 +214,7 @@ void GuiSystemMenu::draw() {
         const Row &row = rows[i];
         const int h = rowHeight(row);
         if (row.heading) {
-            style.label(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+            style.label(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
             gui->text().renderText_WithColor(headingFont, row.title, panel.x + TextX,
                                              rowY + (h - headingFont.lineHeight()) / 2, style.heading, XALIGN_LEFT);
         } else {

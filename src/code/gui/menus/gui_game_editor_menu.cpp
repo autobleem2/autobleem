@@ -420,10 +420,21 @@ void GuiEditor::draw() {
             firstVisible--;
     }
     firstVisible = max(0, min(firstVisible, max(0, total - fit)));
+    // a theme's selection frame goes under every row's text, so it is drawn before all of them - its bleed would
+    // cover the row above otherwise (G4d); without a frame the band is drawn with its row, as before
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed) {
+        for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
+            if (rows[i].kind != Row::Kind::Heading && rows[i].opt == selOption) {
+                gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
+                break;
+            }
+        }
+    }
     for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
         const Row &row = rows[i];
         if (row.kind == Row::Kind::Heading) {
-            gui->text().renderLabelBox(line, yoffset, right);
+            gui->text().renderLabelBox(gui->uiContext(), line, yoffset, right);
             TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
             continue;
@@ -431,7 +442,7 @@ void GuiEditor::draw() {
         // the theme's roles (UIREV-29): the selected row bright, the others dim
         TextRenderer::RowRoleScope role(gui->text(), row.opt == selOption ? TextRenderer::RowRole::Selected
                                                                           : TextRenderer::RowRole::Row);
-        if (row.opt == selOption)
+        if (row.opt == selOption && !framed)
             gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
         if (row.kind == Row::Kind::Bool) {
             gui->text().renderTextLineOptions(row.label + (row.on ? string("|@Check|") : string("|@Uncheck|")), line,

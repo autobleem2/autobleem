@@ -242,18 +242,24 @@ void GuiOptions::draw() {
         firstRender = false;
     }
     const int count = getVerticalSize();
+    // a theme's selection frame goes under every row's text, so it is drawn before all of them - its bleed would
+    // cover the row above otherwise (G4d); without a frame the band is drawn with its row, as before
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed && selected >= firstVisibleIndex && selected <= lastVisibleIndex && selected < count)
+        gui->text().renderSelectionBox(gui->uiContext(), 0, firstLineY + fontHeight * (selected - firstVisibleIndex),
+                                       selectionBoxXOffset, font);
     for (int i = firstVisibleIndex, row = 0; i <= lastVisibleIndex && i < count; i++, row++) {
         if (i < 0)
             continue;
         const int y = firstLineY + fontHeight * row;
         if (lines[i].id == CFG_HEADING) {
-            gui->text().renderLabelBox(0, y);
+            gui->text().renderLabelBox(gui->uiContext(), 0, y);
             TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(app.lang().translate(lines[i].descriptionToTranslate), -y, 0, XALIGN_LEFT, 0,
                                        font);
             continue;
         }
-        if (i == selected)
+        if (i == selected && !framed)
             gui->text().renderSelectionBox(gui->uiContext(), 0, y, selectionBoxXOffset, font);
         // the theme's roles (UIREV-29): the selected row bright, the others dim
         TextRenderer::RowRoleScope role(gui->text(),

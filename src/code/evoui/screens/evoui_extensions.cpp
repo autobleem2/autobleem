@@ -170,7 +170,7 @@ void GuiExtensions::draw() {
     for (int i = firstVisible; i < firstVisible + shown && i < count(); i++) {
         if (rows[i] == HeadingRow) {
             const ableem::Rect band(panel.x + 1, rowY, panel.w - 2, HeadingHeight);
-            style.label(renderer, band);
+            style.label(gui->uiContext(), band);
             gui->text().renderText_WithColor(fonts[FONT_15_BOLD], _("Third-party extensions"), panel.x + RowInset + 8,
                                              rowY + (HeadingHeight - fonts[FONT_15_BOLD].lineHeight()) / 2,
                                              style.heading, XALIGN_LEFT);
