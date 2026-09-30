@@ -217,9 +217,10 @@ void GuiLauncher::loop_openOptions() {
         // changed the jewel case, and an empty box kept from before would stay in the old one
         gui->loadAssets();
         carousel.freeTextures();
-        if (!carousel.games.empty()) {
-            carousel.setInitialPositions(carousel.selected);
-        } else {
+        // an empty roster too: freeTextures() dropped the shared empty box, and a placeholder with no texture
+        // is not drawn - the shelf of an empty set would stay blank (BUG-34)
+        carousel.setInitialPositions(carousel.selected);
+        if (carousel.games.empty()) {
             meta->gameName = "";
             menu->setResumePic("");
         }
