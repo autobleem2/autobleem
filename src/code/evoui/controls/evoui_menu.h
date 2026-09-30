@@ -68,7 +68,8 @@ public:
 
     void setResumePic(std::string picturePath);
     // the same picture decoded elsewhere (the launcher's background loader)
-    void setResumeTex(const ableem::Texture &picture) { resume = picture; }
+    // (through the theme's resume picture mask, when it has one - Gui::maskedResumePicture)
+    void setResumeTex(const ableem::Texture &picture);
 
     int transition = 0;
 

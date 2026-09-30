@@ -1245,6 +1245,9 @@ void GuiLauncher::draw() {
         if (behindRow(obj.get()) && !benchSkips(obj->name))
             obj->render();
     }
+    // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
+    if (gui->launcherLogo().valid())
+        renderer.copy(gui->launcherLogo(), nullptr, &gui->launcherLogoRect());
     if (!benchSkips("carousel"))
         carousel.render();
     if (playOutline.valid() && playButton != nullptr && playButton->visible && !benchSkips("playOutline"))

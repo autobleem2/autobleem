@@ -219,6 +219,17 @@ What to draw, the size of each and the whole list are autobleem-core's `docs/ab-
 The other names of the art spec (`battery`, `play`, `switchOn`, `switchOff`) are read the same way and take effect in
 their own steps. A theme without `launcher.icons` looks exactly as it did.
 
+### The launcher's logo (`launcher.logo`) and the resume picture's mask (`launcher.menuIcons.resumePictureMask`)
+
+Two optional single-image elements, the theme's **own** keys like `launcher.frames` and `launcher.icons`' entries: never
+taken from the `default` theme. A theme without them draws exactly as it did.
+
+| Key | What | Notes |
+|---|---|---|
+| `launcher.logo` | `{ "file": "images/logo.png", "x": 22, "y": 591, "w": 317, "h": 75 }` - a logo the EvolutionUI launcher screen draws at that rect (logical 1280x720 pixels), above the background and under the carousel. | For a theme whose background does not carry the logo itself. `file` and a positive `w` and `h` are required, else nothing is drawn. `@2x` twin: yes (`images/logo@2x.png`, above). ab_gui G5q |
+| `launcher.menuIcons.resumePictureMask` | A PNG (`"images/resume_mask.png"`, 1x + `@2x`) the size of the resume picture window (`resumePicture`, 68x52 by default) whose **alpha** is multiplied into the game's save-state screenshot before it is drawn - in the resume icon's window and in the resume-slot picker's 2.7x copy. | For a resume icon whose picture window is not a rectangle (cut corners, rounded corners): opaque where the picture shows, transparent where the icon's frame is. The picture is stretched over the mask, so the mask lines up with the window. Unset = the rectangle. ab_gui G5s |
+
+
 ### The style block (`launcher.colors`' roles)
 
 Every menu, list and dialog - the classic lists (Options, Game Manager, the game editors, Memory Cards,

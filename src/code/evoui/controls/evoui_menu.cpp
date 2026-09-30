@@ -4,6 +4,7 @@
 
 #include "evoui_menu.h"
 #include "core/model/timing.h"
+#include "gui/gui.h"
 using namespace std;
 
 //*******************************
@@ -193,5 +194,13 @@ void PsMenu::render() {
 // PsMenu::setResumePic
 //*******************************
 void PsMenu::setResumePic(string picturePath) {
-    resume = ableem::Texture::loadFile(renderer, picturePath);
+    setResumeTex(ableem::Texture::loadFile(renderer, picturePath));
+}
+
+//*******************************
+// PsMenu::setResumeTex
+//*******************************
+// the mask of the theme's resume icon is multiplied in here, once per picture (G5s) - not in render()
+void PsMenu::setResumeTex(const ableem::Texture &picture) {
+    resume = Gui::getInstance()->maskedResumePicture(picture);
 }

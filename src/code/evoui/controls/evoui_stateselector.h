@@ -21,6 +21,8 @@ public:
 
     void loadSaveStateImages(PsGamePtr &game, bool saving);
     void cleanSaveStateImages();
+    // a slot's picture through the theme's resume picture mask (G5s)
+    ableem::Texture masked(const std::string &picturePath);
 
     void freeImages();
 

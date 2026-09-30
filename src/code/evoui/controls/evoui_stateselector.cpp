@@ -18,6 +18,14 @@ void PsStateSelector::cleanSaveStateImages() {
 }
 
 //*******************************
+// PsStateSelector::masked
+//*******************************
+// a slot's picture through the theme's resume picture mask (G5s), once, when it is loaded
+ableem::Texture PsStateSelector::masked(const string &picturePath) {
+    return Gui::getInstance()->maskedResumePicture(ableem::Texture::loadFile(renderer, picturePath));
+}
+
+//*******************************
 // PsStateSelector::loadSaveStateImages
 //*******************************
 void PsStateSelector::loadSaveStateImages(PsGamePtr &game, bool saving) {
@@ -31,12 +39,12 @@ void PsStateSelector::loadSaveStateImages(PsGamePtr &game, bool saving) {
         slotActive[i] = false;
         if (!saving) {
             if (App::get().resumePoints().slotIsActive(*game, i)) {
-                slotImg[i] = ableem::Texture::loadFile(renderer, App::get().resumePoints().pictureForSlot(*game, i));
+                slotImg[i] = masked(App::get().resumePoints().pictureForSlot(*game, i));
                 slotActive[i] = true;
             }
         } else {
             if (App::get().resumePoints().slotIsActive(*game, i)) {
-                slotImg[i] = ableem::Texture::loadFile(renderer, App::get().resumePoints().pictureForSlot(*game, i));
+                slotImg[i] = masked(App::get().resumePoints().pictureForSlot(*game, i));
             }
             slotActive[i] = true;
         }
@@ -79,12 +87,8 @@ void PsStateSelector::render() {
 
         // where the picture goes on the resume icon, in the icon's pixels - the theme's say (ab2 centres a
         // screen on its tile), else the original frame's window; the same rect the menu row uses
-        ableem::Rect window{25, 33, 68, 52};
+        const ableem::Rect window = gui->resumePictureWindow();
         const auto &icons = App::get().theme().launcher().menuIcons;
-        if (icons.resumePicture.set) {
-            window = ableem::Rect(icons.resumePicture.x, icons.resumePicture.y, icons.resumePicture.w,
-                                  icons.resumePicture.h);
-        }
 
         // the theme's own text colour (white where the theme says nothing), the same one the launcher's other
         // labels resolve to - not a hardcoded white, which ignored a theme that set its own (UIREV-14/R3)
