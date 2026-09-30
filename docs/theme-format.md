@@ -229,6 +229,30 @@ taken from the `default` theme. A theme without them draws exactly as it did.
 | `launcher.logo` | `{ "file": "images/logo.png", "x": 22, "y": 591, "w": 317, "h": 75 }` - a logo the EvolutionUI launcher screen draws at that rect (logical 1280x720 pixels), above the background and under the carousel. | For a theme whose background does not carry the logo itself. `file` and a positive `w` and `h` are required, else nothing is drawn. `@2x` twin: yes (`images/logo@2x.png`, above). ab_gui G5q |
 | `launcher.menuIcons.resumePictureMask` | A PNG (`"images/resume_mask.png"`, 1x + `@2x`) the size of the resume picture window (`resumePicture`, 68x52 by default) whose **alpha** is multiplied into the game's save-state screenshot before it is drawn - in the resume icon's window and in the resume-slot picker's 2.7x copy. | For a resume icon whose picture window is not a rectangle (cut corners, rounded corners): opaque where the picture shows, transparent where the icon's frame is. The picture is stretched over the mask, so the mask lines up with the window. Unset = the rectangle. ab_gui G5s |
 
+### The busy spinner (`launcher.spinner`)
+
+The spinner shown while a long job runs ("Applying...", a theme reload, a scan's please-wait picture) is a code-drawn
+ring of twelve dots. A theme may replace it with its own animation: **one image holding N frames side by side**, all the
+same size, played in a loop, centred where the ring is (in the busy frame and in the "please wait" picture alike).
+
+```json
+"launcher": {
+  "spinner": { "image": "images/spinner.png", "frames": 24, "fps": 24 }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `image` | The 1x strip (alpha), relative to the theme folder: `frames` frames of equal width side by side, left to right. One frame's size (the strip's width / `frames` by its height) is the spinner's size on screen; it is drawn at that size, never stretched. |
+| `image2x` | The `@2x` strip; left out, `<image>@2x.png` next to `image` is used when it exists. Exactly twice the pixels of the 1x strip each way (each frame twice the size); drawn instead of it on a screen above 720p. |
+| `frames` | How many frames the strip holds - a whole number of at least 1. Required: without it the spinner is ignored. |
+| `fps` | Frames per second. Left out (or below 1): 24. The frame shown is `elapsed x fps / 1000` modulo `frames`, the elapsed time being that of the job (the please-wait picture: the clock). |
+
+**The spinner is the theme's own**: it is read only from the selected theme's `theme.json`, never taken over from
+`default`, and a strip whose file is missing (or narrower than its `frames`) is ignored (logged). The ring of dots is
+then drawn exactly as before - a theme without `launcher.spinner` looks exactly as it did. What to draw: ab2.0.0's is
+24 frames of 64 x 64 (`images/spinner.png`, `@2x` 128 x 128 a frame) at 24 fps.
+
 
 ### The style block (`launcher.colors`' roles)
 
