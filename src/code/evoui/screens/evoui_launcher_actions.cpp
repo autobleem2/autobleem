@@ -626,6 +626,13 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         loop_openSystemMenu();
         break;
 
+    case SystemMenuAction::RestartLauncher:
+        // AutoBleem::run() leaves as for a new display mode - with no mode to try (see there)
+        app.session().pendingOutputMode.clear();
+        app.session().menuOption = MENU_OPTION_DISPLAY;
+        menuVisible = false;
+        break;
+
     case SystemMenuAction::Options:
         loop_openOptions();
         break;
