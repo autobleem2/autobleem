@@ -31,13 +31,14 @@ void PsMenu::freeAssets() {
     resume = ableem::Texture();
 }
 
-#define ICON_GAP 130.0f
+#define ICON_GAP evomotion::IconGap
 
 //*******************************
 // PsMenu::settle
 //*******************************
 void PsMenu::settle(bool open, int restY) {
-    animationStarted = 0;
+    owner_.cancel(); // a transition cut short leaves nothing half-way
+    moving_ = false;
     y = oy = targety = restY;
     active = open;
     for (int i = 0; i < 4; i++) {
@@ -52,111 +53,77 @@ void PsMenu::settle(bool open, int restY) {
     }
 }
 
+namespace {
+// the selected icon's scale, and the offsets that keep it centred on its place
+void setScale(PsMenu &menu, int option, float scale) {
+    menu.optionscales[option] = scale;
+    menu.xoff[option] = PsMenu::zoomOffset(scale);
+    menu.yoff[option] = PsMenu::zoomOffset(scale);
+}
+} // namespace
+
 //*******************************
-// PsMenu::update
+// PsMenu::startTransition
 //*******************************
-void PsMenu::update(long time) {
-    if (animationStarted != 0) {
-        float progress = time - animationStarted;
-        progress = progress / (duration * 1.0f);
-        if (progress > 1)
-            progress = 1;
-        if (progress < 0)
-            progress = 0;
-        progress = easeOutCubic(progress);
+// a new transition replaces the one running (the tween of the old one stops where it is), as restarting did
+void PsMenu::startTransition() {
+    owner_.cancel();
+    progress_ = 0;
+    moving_ = true;
+    gui->uiContext().stack().tweens().start(
+        abgui::Tween(progress_, 0.0f, 1.0f, static_cast<unsigned int>(duration)).onEnd([this]() {
+            completeTransition();
+        }),
+        owner_);
+}
 
-        if (transition == TR_MENUON) {
-            y = oy + (progress * (targety - oy));
+//*******************************
+// PsMenu::applyProgress
+//*******************************
+// the positions of the running transition at its eased progress: the old update()'s numbers
+void PsMenu::applyProgress() {
+    if (!moving_)
+        return;
+    const float progress = progress_;
+    if (transition == TR_MENUON) {
+        y = evomotion::rowY(oy, targety, progress);
+        setScale(*this, selOption,
+                 active ? evomotion::openingScale(progress, maxZoom) : evomotion::closingScale(progress, maxZoom));
+    } else if (direction == 0) {
+        x = evomotion::optionX(0, ox, progress);
+        setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
+    } else {
+        x = evomotion::optionX(1, ox, progress);
+        setScale(*this, selOption, evomotion::openingScale(progress, maxZoom));
+    }
+}
 
-            if (active) {
-
-                optionscales[selOption] = 1 + progress * (maxZoom - 1);
-                xoff[selOption] = zoomOffset(optionscales[selOption]);
-                yoff[selOption] = zoomOffset(optionscales[selOption]);
-
-            } else {
-
-                optionscales[selOption] = 1 + (1 - progress) * (maxZoom - 1);
-                xoff[selOption] = zoomOffset(optionscales[selOption]);
-                yoff[selOption] = zoomOffset(optionscales[selOption]);
-            }
-
-            if (progress == 1) {
-                oy = y;
-                animationStarted = 0;
-                if (active) {
-
-                    optionscales[selOption] = 1 + (maxZoom - 1);
-                    xoff[selOption] = zoomOffset(optionscales[selOption]);
-                    yoff[selOption] = zoomOffset(optionscales[selOption]);
-
-                } else {
-
-                    optionscales[selOption] = 1;
-                    xoff[selOption] = zoomOffset(optionscales[selOption]);
-                    yoff[selOption] = zoomOffset(optionscales[selOption]);
-                }
-            }
-        } else {
-            // transition between menu options
-            if (direction == 0) {
-                float progress = time - animationStarted;
-                progress = progress / (duration * 1.0f);
-                if (progress > 1)
-                    progress = 1;
-                if (progress < 0)
-                    progress = 0;
-                progress = easeOutCubic(progress);
-
-                x = ox + progress * ICON_GAP;
-
-                optionscales[selOption] = 1 + (1 - progress) * (maxZoom - 1);
-                xoff[selOption] = zoomOffset(optionscales[selOption]);
-                yoff[selOption] = zoomOffset(optionscales[selOption]);
-
-                if (progress >= 1.0f) {
-                    optionscales[selOption] = 1.0;
-                    xoff[selOption] = 0;
-                    yoff[selOption] = 0;
-
-                    selOption--;
-                    optionscales[selOption] = maxZoom;
-                    xoff[selOption] = zoomOffset(optionscales[selOption]);
-                    yoff[selOption] = zoomOffset(optionscales[selOption]);
-
-                    x = ox + ICON_GAP;
-                    animationStarted = 0;
-                    ox = x;
-                }
-            } else {
-                float progress = time - animationStarted;
-                progress = progress / (duration * 1.0f);
-                if (progress > 1)
-                    progress = 1;
-                if (progress < 0)
-                    progress = 0;
-                progress = easeOutCubic(progress);
-
-                x = ox - progress * ICON_GAP;
-
-                optionscales[selOption] = 1 + progress * (maxZoom - 1);
-                xoff[selOption] = zoomOffset(optionscales[selOption]);
-                yoff[selOption] = zoomOffset(optionscales[selOption]);
-
-                if (progress >= 1.0f) {
-                    optionscales[selOption] = 1.0;
-                    xoff[selOption] = 0;
-                    yoff[selOption] = 0;
-                    selOption++;
-                    optionscales[selOption] = maxZoom;
-                    xoff[selOption] = zoomOffset(optionscales[selOption]);
-                    yoff[selOption] = zoomOffset(optionscales[selOption]);
-                    x = ox - ICON_GAP;
-                    animationStarted = 0;
-                    ox = x;
-                }
-            }
-        }
+//*******************************
+// PsMenu::completeTransition
+//*******************************
+// the end of the tween: everything at its exact resting value, the selection moved for an option move
+void PsMenu::completeTransition() {
+    moving_ = false;
+    if (transition == TR_MENUON) {
+        y = evomotion::rowY(oy, targety, 1.0f);
+        oy = y;
+        setScale(*this, selOption, active ? 1 + (maxZoom - 1) : 1.0f);
+    } else if (direction == 0) {
+        setScale(*this, selOption, 1.0f);
+        xoff[selOption] = 0;
+        yoff[selOption] = 0;
+        selOption--;
+        setScale(*this, selOption, maxZoom);
+        x = ox + ICON_GAP;
+        ox = x;
+    } else {
+        setScale(*this, selOption, 1.0f);
+        xoff[selOption] = 0;
+        yoff[selOption] = 0;
+        selOption++;
+        setScale(*this, selOption, maxZoom);
+        x = ox - ICON_GAP;
+        ox = x;
     }
 }
 
@@ -164,6 +131,7 @@ void PsMenu::update(long time) {
 // PsMenu::render
 //*******************************
 void PsMenu::render() {
+    applyProgress();
     static const float slots[4] = {0, ICON_GAP, ICON_GAP * 2, ICON_GAP * 3};
     const ableem::Texture *icons[4] = {&settings, &guide, &memcard, &savestate};
     const ableem::Rect input(0, 0, 118, 118);

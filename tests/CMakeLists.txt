@@ -19,3 +19,11 @@ target_compile_definitions(test_app_resolve PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DI
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
     ab_add_test(test_abfetch tools/test_abfetch.cpp LIBS abfetch_core)
 endif()
+
+# ab_gui G5o3: the launcher's state change on tweens - the menu row, its option move and zoom, the meta panel and the
+# settings band at every millisecond against a frozen copy of the old timers (the controls need a live Gui, see the
+# file's opening comment); evoui_motion.h is pure
+if (AB_CORE_UI)
+    ab_add_test(test_launcher_state_tweens screens/test_launcher_state_tweens.cpp LIBS ab_gui)
+    target_include_directories(test_launcher_state_tweens PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
+endif()
