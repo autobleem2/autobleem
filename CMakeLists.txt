@@ -319,10 +319,12 @@ endif()
 # ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
 # the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
 # installers) would find its symbols missing and fail to load. Ahead of the objects, so the normal link of
-# the same libraries later finds nothing left to add.
+# the same libraries later finds nothing left to add. ab_gui is part of it: the SDK's header templates
+# (GuiMenuBase) call into it, so a plugin compiled against them needs its symbols from the launcher.
 target_link_options(autobleem-gui PRIVATE
         "LINKER:--whole-archive"
-        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem> $<TARGET_FILE:ableem_engine>
+        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_gui> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem>
+        $<TARGET_FILE:ableem_engine>
         "LINKER:--no-whole-archive")
 
 # hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Built on a dev
