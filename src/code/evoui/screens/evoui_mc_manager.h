@@ -18,7 +18,6 @@ class GuiMcManager : public GuiScreen {
 public:
     string leftCardName;
     string rightCardName;
-    ableem::Texture backgroundImg;
     string card1path;
     string card2path;
 

@@ -184,10 +184,7 @@ void GuiSystemMenu::keepSelectedVisible() {
 void GuiSystemMenu::draw() {
     publishItems(); // the cursor moved (or the rows changed): the driver's `selected`
     // the launcher's own background, dimmed, so the menu reads as an overlay on the screen it came from
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
+    gui->renderBackground();
     style.dim(gui->uiContext());
 
     const int rowsHeight = visibleHeight();

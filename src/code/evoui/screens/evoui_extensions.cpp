@@ -141,10 +141,7 @@ void GuiExtensions::publishItems() const {
 //*******************************
 void GuiExtensions::draw() {
     publishItems();
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
+    gui->renderBackground();
     style.dim(gui->uiContext());
 
     const bool empty = count() == 0;

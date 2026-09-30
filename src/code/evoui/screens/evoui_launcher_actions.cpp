@@ -63,12 +63,11 @@ void GuiLauncher::loop_chooseSet() {
     picker.selection = selection;
     picker.raPlaylists = raPlaylists;
     picker.counts = &setCounts;
-    renderer.captureNextFrame();
-    render();
-    picker.background = renderer.lastCapture();
+    BackdropScope backdrop(*this); // the picker draws over the launcher's snapshot
     PLOG_INFO << "Set picker: counts " << (counted ? to_string(countsDone - started) + " ms" : string("kept"))
               << ", ready " << gui->platform().ticks() - started << " ms";
     picker.show();
+    backdrop.release();
     forgetHeldModifiers(); // reached with L2 held, maybe; its release went to the picker
     if (picker.cancelled)
         return;
@@ -132,7 +131,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
         } else {
             GuiAppStart appStartScreen(*gui);
             appStartScreen.setGame(app.session().runningGame);
-            appStartScreen.show();
+            {
+                BackdropScope backdrop(*this);
+                appStartScreen.show();
+            }
             bool result = appStartScreen.result;
             // Do not run
             if (!result) {
@@ -165,12 +167,17 @@ void GuiLauncher::loop_openOptions() {
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
     const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
     GuiOptions option(*gui);
+    BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
     option.show();
     bool exitCode = option.exitCode;
 
     if (exitCode == 0) {
-        // the theme, fonts and every cover reload: the spinner over the options panel meanwhile
+        // the theme, fonts and every cover reload: the spinner over the options panel meanwhile (still over the
+        // snapshot - that frame is the busy backdrop); the snapshot is of the old theme, so it goes before the reload.
+        // Dropped for good even inside another screen's scope (the System menu's): nothing draws over it after this
         gui->beginBusy(_("Applying settings..."), [&option]() { option.render(); });
+        backdrop.release();
+        dropBackdrop();
         app.applyOnlineSetting(); // "Fetch box art online" may have changed
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting(); // "Updates" (the channel) may have changed
@@ -235,6 +242,7 @@ void GuiLauncher::loop_openOptions() {
             menuVisible = false;
         }
     } else {
+        backdrop.release();
         render();
     }
 }
@@ -256,7 +264,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             return;
         GuiEditorRA raEditor(*gui);
         raEditor.gameData = carousel.games[carousel.selected];
-        raEditor.show();
+        {
+            BackdropScope backdrop(*this);
+            raEditor.show();
+        }
         if (raEditor.changed && selection.set == GameSet::Lightgun)
             reloadLightgunSetAfterEdit();
         return;
@@ -267,7 +278,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         editor.gameData = carousel.games[carousel.selected];
     }
 
-    editor.show();
+    {
+        BackdropScope backdrop(*this);
+        editor.show();
+    }
     if (selection.set == GameSet::Lightgun) {
         reloadLightgunSetAfterEdit();
         return;
@@ -370,11 +384,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
 
     app.audio().cursor.play();
     GuiMcManager mcManager(*gui);
-    mcManager.backgroundImg = background->tex;
     mcManager.leftCardName = leftCardName;
     mcManager.rightCardName = rightCardName;
     mcManager.card1path = cardPath1;
     mcManager.card2path = cardPath2;
+    BackdropScope backdrop(*this); // the manager and the card picker over it draw over the launcher's snapshot
     mcManager.show();
 }
 
@@ -465,6 +479,8 @@ void GuiLauncher::loop_openSystemMenu() {
             retroArchLabel = _("EmulationStation");
     }
 
+    // the menu and whatever it opens (runMenuAction below) draw over one snapshot of the launcher (G5r5)
+    BackdropScope backdrop(*this);
     SystemMenuAction action;
     {
         GuiSystemMenu systemMenu(*gui);
@@ -475,8 +491,6 @@ void GuiLauncher::loop_openSystemMenu() {
 #ifdef AB_ONLINE_UPDATE
         systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
-        if (background != nullptr)
-            systemMenu.background = background->tex;
         systemMenu.show();
         action = systemMenu.result;
     }
@@ -494,6 +508,7 @@ void GuiLauncher::loop_openSystemMenu() {
 // few things a player reaches for from the carousel, and the System menu last (the owner, 2026-09-26)
 void GuiLauncher::loop_openQuickMenu() {
     app.audio().cursor.play();
+    BackdropScope backdrop(*this); // the menu and what it opens draw over one snapshot of the launcher (G5r5)
     SystemMenuAction action;
     {
         GuiSystemMenu quickMenu(*gui);
@@ -501,8 +516,6 @@ void GuiLauncher::loop_openQuickMenu() {
         quickMenu.scanInProgress = app.scans().scanning();
         quickMenu.networkUnavailable = networkUnavailable();
         quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
-        if (background != nullptr)
-            quickMenu.background = background->tex;
         quickMenu.show();
         action = quickMenu.result;
     }
@@ -681,8 +694,7 @@ void GuiLauncher::loop_openProcessors() {
     bool changed = false;
     {
         GuiProcessors screen(*gui);
-        if (background != nullptr)
-            screen.background = background->tex;
+        BackdropScope backdrop(*this);
         screen.show();
         changed = screen.changed();
     }
@@ -704,8 +716,7 @@ void GuiLauncher::loop_openExtensions(const string &select) {
     {
         GuiExtensions list(*gui, app.extensionCatalog(), networkUp);
         list.select = select;
-        if (background != nullptr)
-            list.background = background->tex;
+        BackdropScope backdrop(*this);
         list.show();
         chosen = list.chosen;
     }
@@ -736,12 +747,14 @@ void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
     const string title = info->title;
     const string extension = info->name; // info is the catalog's: the run may scan it again
     const bool networkUp = System::hasDefaultRoute();
-    // the launcher's own frame, for an extension's screens to draw over (GuiActionMenu::background =
-    // renderer().lastCapture()) - the bare launcher, not the menu the run was picked from
-    renderer.captureNextFrame();
-    render();
+    // the launcher's snapshot, for an extension's screens to draw over: Gui's backdrop (the Context's backdropDrawer,
+    // which abgui screens draw without a background of their own) and, as before, renderer().lastCapture() - the bare
+    // launcher, without its hint band and bubbles, not the menu the run was picked from. Taken afresh even inside the
+    // menu's scope, so lastCapture() is this frame
+    BackdropScope backdrop(*this, true);
     const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
                                                         : app.extensions().runEntry(extension, entry, networkUp);
+    backdrop.release();
     forgetHeldModifiers(); // its screens ran their own loops
     gui->input().flushEvents();
     switch (why) {
@@ -827,6 +840,7 @@ void GuiLauncher::pollUpdates() {
 // The system menu's item: a check now, on the screen, then the question - or "up to date".
 void GuiLauncher::loop_softwareUpdate() {
     UpdateService &updates = app.updates();
+    BackdropScope backdrop(*this); // the confirms, the check and the question draw over the launcher's snapshot
     if (!updates.enabled()) {
         GuiConfirm confirm(*gui);
         confirm.label = _("Updates are off - turn them on in Options");
@@ -845,8 +859,6 @@ void GuiLauncher::loop_softwareUpdate() {
     updates.startCheck(::time(nullptr));
     {
         GuiUpdateProgress progress(*gui);
-        if (background != nullptr)
-            progress.background = background->tex;
         progress.show();
     }
     if (updates.status().phase == UpdateService::Phase::Checked && updates.status().info.any())
@@ -863,12 +875,11 @@ void GuiLauncher::loop_softwareUpdate() {
 void GuiLauncher::offerUpdate(bool fromMenu) {
     UpdateService &updates = app.updates();
     const time_t now = ::time(nullptr); // GuiLauncher::time is the frame clock
+    BackdropScope backdrop(*this);      // the question, the download and the closing confirm draw over the snapshot
     UpdateChoice choice;
     {
         GuiUpdatePrompt prompt(*gui);
         prompt.info = updates.status().info;
-        if (background != nullptr)
-            prompt.background = background->tex;
         prompt.show();
         choice = prompt.result;
     }
@@ -888,8 +899,6 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     UpdateService::Status outcome;
     {
         GuiUpdateProgress progress(*gui);
-        if (background != nullptr)
-            progress.background = background->tex;
         progress.show();
         outcome = progress.finalStatus;
     }

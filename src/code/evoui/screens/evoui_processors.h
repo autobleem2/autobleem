@@ -34,8 +34,6 @@ public:
     void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
-    ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
-
     // the order, an on/off switch or a "run again" changed: the caller requests a scan
     bool changed() const { return changed_; }
 

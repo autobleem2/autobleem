@@ -213,10 +213,7 @@ void GuiSetPicker::publishItems() const {
 //*******************************
 void GuiSetPicker::draw() {
     publishItems();
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
+    gui->renderBackground();
     style.dim(gui->uiContext());
 
     const int rows = visibleRows();

@@ -36,13 +36,9 @@ int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &te
     return min(MaxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
 }
 
-// the dimmed launcher under the panel; returns the panel's rect
-ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Texture &background, const PanelStyle &style,
-                       int width, int height) {
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui.renderBackground();
+// the dimmed launcher's snapshot (Gui::renderBackground) under the panel; returns the panel's rect
+ableem::Rect drawPanel(Gui &gui, const PanelStyle &style, int width, int height) {
+    gui.renderBackground();
     style.dim(gui.uiContext());
     ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
     style.sheet(gui.uiContext(), panel);
@@ -84,7 +80,7 @@ void GuiUpdatePrompt::draw() {
         texts.emplace_back(&fonts[FONT_22_MED], item.title);
         texts.emplace_back(&fonts[FONT_15_BOLD], item.description);
     }
-    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelWidthFor(*gui, texts), panelHeight);
+    ableem::Rect panel = drawPanel(*gui, style, panelWidthFor(*gui, texts), panelHeight);
     const int textWidth = panel.w - 2 * TextInset;
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
@@ -209,9 +205,8 @@ void GuiUpdateProgress::draw() {
     // sized to its content: the title's band with its rule, the detail line and the bar, the footer's band
     const int bodyHeight = 20 + (detail.empty() ? 0 : LineHeight) + (fraction >= 0 ? 34 : 0) + 12;
     const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
-    ableem::Rect panel =
-        drawPanel(renderer, *gui, background, style,
-                  panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
+    ableem::Rect panel = drawPanel(
+        *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;

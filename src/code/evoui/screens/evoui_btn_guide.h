@@ -16,7 +16,5 @@ public:
 
     void loop() override;
 
-    ableem::Texture backgroundImg;
-
     using GuiScreen::GuiScreen;
 };
