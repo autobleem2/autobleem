@@ -1504,7 +1504,7 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
         }
         this->state = LauncherScreenState::Games;
         arrow->visible = false;
-        arrow->animationStarted = time;
+        arrow->restart();
         menu->duration = 200;
         menu->targety = 520;
         menu->animationStarted = time;
@@ -1529,7 +1529,7 @@ void GuiLauncher::switchState(LauncherScreenState state, int time) {
         }
         this->state = LauncherScreenState::Set;
         arrow->visible = true;
-        arrow->animationStarted = time;
+        arrow->restart();
         menu->duration = 200;
         menu->targety = 440;
         menu->animationStarted = time;

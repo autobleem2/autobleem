@@ -3,21 +3,20 @@
 //
 
 #include "evoui_zoom_btn.h"
-#include "core/model/timing.h"
+
+#include <ab_gui/ambient.h>
+#include <ab_gui/screen_stack.h>
 
 //*******************************
 // PsZoomBtn::update
 //*******************************
-// the size is a function of the time since the pulse began, not a sum of per-frame steps: a late frame
+// the size is a function of the time since the pulse began (the tween's, not a sum of per-frame steps): a late frame
 // lands where it should, and nothing drifts
 void PsZoomBtn::update(long time) {
-    if (started == 0)
-        started = time;
-    const float zoom = 1.0f + (maxZoom - 1.0f) * pulseWave(time - started, period);
-    drawW = ow * zoom;
-    drawH = oh * zoom;
-    drawX = ox - (drawW - ow) / 2.0f;
-    drawY = oy - (drawH - oh) / 2.0f;
+    if (!started) {
+        started = true;
+        gui->uiContext().stack().tweens().start(abgui::ambient::pulse(zoom, 1.0f, maxZoom, period), owner);
+    }
     lastTime = time;
 }
 
@@ -27,7 +26,5 @@ void PsZoomBtn::update(long time) {
 void PsZoomBtn::render() {
     if (!visible)
         return;
-    if (drawW <= 0.0f) // not updated yet
-        update(lastTime);
-    renderer.copy(tex, nullptr, ableem::FRect(drawX, drawY, drawW, drawH));
+    renderer.copy(tex, nullptr, drawRect());
 }

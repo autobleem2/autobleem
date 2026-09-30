@@ -8,6 +8,7 @@
 #include "cover_loader.h"
 #include "core/model/ps_game.h"
 
+#include <ab_gui/tween.h>
 #include <ableem/ableem.h>
 
 #include <cstdint>
@@ -143,9 +144,15 @@ private:
     // it, the shine over it (only on the selected game facing the viewer - never on an empty box). shineTex_ is
     // loaded when a crossing is due (drawShine). A theme's `coverGlow` frame (G5k) is drawn instead of the
     // square glow when it has one: round the face, scaled with the cover, at the glow's alpha.
-    void drawGlow(long now);
+    void drawGlow();
     void drawShine(long now);
     ableem::Texture glowTex_, shineTex_;
+    // the breathing's clock (G5o2): an ambient tween on the program's Tweens (abgui::ambient::clockPhase) keeps
+    // glowPhase_ at the platform's ticks in ms, wrapped, started by the first frame the glow is drawn; the owner
+    // (declared after the float it writes) stops it with the carousel
+    float glowPhase_ = 0.0f;
+    bool glowRuns_ = false;
+    abgui::TweenOwner glowOwner_;
     int shineFor_ = -1; // the game the shine last crossed (-1: none since the row moved)
     long shineAt_ = 0;  // when it starts crossing
 };
