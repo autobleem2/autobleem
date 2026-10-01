@@ -556,7 +556,8 @@ void GuiLauncher::pollPadBattery() {
 //*******************************
 // a small icon (outline + a fill proportional to the charge, plus a nub) and the percent, one per known
 // pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
-// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning).
+// is secColor, the fill the theme's accent (`selection`, white when unset; hintColor under PadBatteryLowPercent,
+// so a low pad reads as a warning).
 // C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
 // launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
 // against any theme's background image instead of floating over whatever happens to be behind them there.
@@ -630,7 +631,12 @@ void GuiLauncher::renderPadBatteries() {
         }
         // the charge is code-drawn into the glyph's inner rect, a fixed inset from its corner (PadBatteryCharge)
         const PadBatteryCharge charge = PadBatteryCharge::rect(iconX, y, glyphW, glyphH, pad.percent);
-        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
+        // above the low threshold the fill is the theme's accent (selection), white when the theme sets none
+        const ableem::ThemeColor &accent = app.theme().launcher().colors.selection;
+        const PadBatteryFill accentFill = PadBatteryFill::accentOrWhite(accent.set, accent.r, accent.g, accent.b);
+        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent
+                                      ? hintColor
+                                      : ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255);
         renderer.setDrawColor(fillColor);
         renderer.fillRect(ableem::Rect(charge.x, charge.y, charge.w, charge.h));
         gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
