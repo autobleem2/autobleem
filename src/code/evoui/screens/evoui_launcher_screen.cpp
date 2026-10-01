@@ -685,8 +685,8 @@ void GuiLauncher::renderChannelWatermark(int plateBottom) {
     const int versionY = y + (ChannelWatermark::ChipHeight - versionFont.lineHeight()) / 2;
     gui->text().setAlpha(alpha);
     gui->text().renderText_WithColor(wordFont, tag.word, x + ChannelWatermark::ChipPadding, wordY, style.text);
-    gui->text().renderText_WithColor(versionFont, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap,
-                                     versionY, style.secondary);
+    gui->text().renderText_WithColor(versionFont, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap, versionY,
+                                     style.secondary);
     gui->text().setAlpha(255);
 }
 
