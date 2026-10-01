@@ -89,12 +89,13 @@ void PsMenu::applyProgress() {
         y = evomotion::rowY(oy, targety, progress);
         setScale(*this, selOption,
                  active ? evomotion::openingScale(progress, maxZoom) : evomotion::closingScale(progress, maxZoom));
-    } else if (direction == 0) {
-        x = evomotion::optionX(0, ox, progress);
-        setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
     } else {
-        x = evomotion::optionX(1, ox, progress);
+        x = evomotion::optionX(direction == 0 ? 0 : 1, ox, progress);
+        // the icon left shrinks while the one entered grows (UIREV-44), both over the same eased progress
         setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
+        const int entered = selOption + (direction == 0 ? -1 : 1);
+        if (entered >= 0 && entered < 4)
+            setScale(*this, entered, evomotion::openingScale(progress, maxZoom));
     }
 }
 
