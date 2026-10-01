@@ -1364,8 +1364,9 @@ bool GuiLauncher::prepareFrame() {
 //*******************************
 // GuiLauncher::takeBackdrop / dropBackdrop
 //*******************************
-// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame), captured as it is
-// presented (the frame starts with the stack's clear(), so it goes straight into a render target), and handed to Gui
+// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame),
+// taken silently (the frame starts with the stack's clear(), so it goes straight into a render target and the window is
+// left as it is - the System menu stays up, BUG-31), and handed to Gui
 // for the screens opened from here. A capture that did not come (no texture) leaves no backdrop: the screens draw the
 // theme's background, as before.
 bool GuiLauncher::takeBackdrop(bool fresh) {
@@ -1374,7 +1375,7 @@ bool GuiLauncher::takeBackdrop(bool fresh) {
         return false; // an outer screen's frame stands
     const void *previous = renderer.lastCapture().native();
     snapshotFrame = true;
-    renderer.captureNextFrame();
+    renderer.captureNextFrameSilently();
     render();
     snapshotFrame = false;
     const ableem::Texture frame = renderer.lastCapture();
