@@ -234,6 +234,7 @@ New card=Nová karta
 No disc name=Chýba názov disku
 No discs=Žiadne disky
 No extensions installed=Nie sú nainštalované žiadne rozšírenia
+No games here yet=Zatiaľ tu nie sú žiadne hry
 No processors for these games=Pre tieto hry nie sú žiadne procesory
 None=Žiadny
 Not added=Nepridané

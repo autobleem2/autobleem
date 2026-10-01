@@ -1404,6 +1404,11 @@ void GuiLauncher::draw() {
     }
     renderSnap();
 
+    // a set with no games shows only the empty shelf: one line under it says so
+    if (carousel.games.empty() && !snapshotFrame && !benchSkips("carousel"))
+        gui->text().renderText_WithColor(ThemeAssets::fixedFonts()[FONT_22_MED], _("No games here yet"), 0, 412,
+                                         fgColor, XALIGN_CENTER);
+
     if (!benchSkips("menu"))
         menu->render();
 
@@ -1570,6 +1575,26 @@ bool GuiLauncher::gameHasResumePoints(const PsGamePtr &game) const {
             return true;
     }
     return false;
+}
+
+//*******************************
+// GuiLauncher::syncMenuCaption
+//*******************************
+void GuiLauncher::syncMenuCaption() {
+    if (menu == nullptr || menuHead == nullptr || menuText == nullptr)
+        return;
+    // an icon move shows the caption of the icon it goes to from its first frame (the selection itself changes
+    // when the move ends)
+    int option = menu->selOption;
+    if (menu->animating() && menu->transition == TR_OPTION)
+        option += menu->direction == 0 ? -1 : 1;
+    if (option < 0 || static_cast<size_t>(option) >= headers.size() || static_cast<size_t>(option) >= texts.size())
+        return;
+    if (option == captionOption)
+        return;
+    captionOption = option;
+    menuHead->setText(headers[option], fgColor);
+    menuText->setText(texts[option], fgColor);
 }
 
 //*******************************

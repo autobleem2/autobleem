@@ -177,6 +177,7 @@ void GuiUpdateProgress::draw() {
     switch (status.phase) {
     case UpdateService::Phase::Checking:
         title = _("Checking for updates...");
+        detail = _("Loading ... Please Wait ..."); // so the body between the rules is not left empty
         break;
     case UpdateService::Phase::Downloading:
         title = _("Downloading the update");

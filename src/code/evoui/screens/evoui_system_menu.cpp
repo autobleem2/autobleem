@@ -15,17 +15,17 @@ const int PanelMargin = PanelStyle::Margin;
 const int HeaderHeight = PanelStyle::HeaderHeight;
 const int FooterHeight = PanelStyle::FooterHeight;
 // the System menu: single-line items and thin headings, so its thirteen items and three headings fit on the
-// screen with the description strip (13 x 32 + 3 x 24 + 24 = 512, all the room there is - the owner,
+// screen with the description strip (13 x 31 + 3 x 22 + 34 = 503 of the 512 there is - the owner,
 // 2026-09-26); the Quick menu's few rows are the usual single-line compact row
-const int SystemItemHeight = 32;
+const int SystemItemHeight = 31;
 const int QuickItemHeight = 44;
-const int HeadingHeight = 24;
-const int StripHeight = 24; // the selected item's description, above the footer
+const int HeadingHeight = 22;
+const int StripHeight = 34; // the selected item's description, above the footer
 const int SystemTitleSize = 20;
 const int QuickTitleSize = 22;
-const int HeadingSize = 14;
+const int HeadingSize = 16;
 const int NoteSize = 14;
-const int StripSize = 15;
+const int StripSize = 17;
 const int RowInset = PanelStyle::RowInset; // the rows' text from the panel's edge
 const int TextX = RowInset + 8;            // the header's text x
 } // namespace

@@ -234,6 +234,7 @@ New card=Uusi kortti
 No disc name=Levyn nimi puuttuu
 No discs=Ei levyjä
 No extensions installed=Laajennuksia ei ole asennettu
+No games here yet=Täällä ei ole vielä pelejä
 No processors for these games=Näille peleille ei ole prosessoreita
 None=Ei mitään
 Not added=Ei lisätty

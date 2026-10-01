@@ -234,6 +234,7 @@ New card=Yeni kart
 No disc name=Disk adı yok
 No discs=Disk yok
 No extensions installed=Yüklü eklenti yok
+No games here yet=Burada henüz oyun yok
 No processors for these games=Bu oyunlar için işlemci yok
 None=Yok
 Not added=Eklenmedi

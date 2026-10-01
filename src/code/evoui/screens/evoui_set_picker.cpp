@@ -266,12 +266,13 @@ void GuiSetPicker::draw() {
         const int x = panel.x + RowInset + 8 + e.indent * 24;
         // the count is drawn to the right edge first, so the title has its real available width to elide
         // into - a long title (e.g. a RetroArch playlist name) used to run under it (report.md P1)
-        const int w = gui->text().textWidth(fonts[FONT_15_BOLD], e.detail);
+        const int w = gui->text().textWidth(fonts[FONT_20_BOLD], e.detail);
         const int detailX = panel.x + panel.w - RowInset - w;
         const string title = gui->text().elide(fonts[FONT_22_MED], e.title, detailX - x - 20);
         gui->text().renderText_WithColor(fonts[FONT_22_MED], title, x, rowY + 8, style.rowColor(i == t.selected),
                                          XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, detailX, rowY + 14,
+        gui->text().renderText_WithColor(fonts[FONT_20_BOLD], e.detail, detailX,
+                                         rowY + (RowHeight - fonts[FONT_20_BOLD].lineHeight()) / 2,
                                          style.valueColor(i == t.selected), XALIGN_LEFT);
         rowY += RowHeight;
     }

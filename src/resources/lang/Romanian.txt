@@ -234,6 +234,7 @@ New card=Card nou
 No disc name=Lipsește numele discului
 No discs=Niciun disc
 No extensions installed=Nicio extensie instalată
+No games here yet=Încă nu există jocuri aici
 No processors for these games=Niciun procesor pentru aceste jocuri
 None=Niciunul
 Not added=Neadăugat
