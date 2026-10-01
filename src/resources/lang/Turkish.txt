@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -29,6 +29,7 @@ Auto=Otomatik
 AutoBleem=AutoBleem
 AutoBleem data=AutoBleem verileri
 AutoBleem is up to date=AutoBleem güncel
+AUTOBLEEM PRESENTS=AUTOBLEEM SUNAR
 AutoBleem resume points not available in RetroArch.=AutoBleem sürdürme noktaları RetroArch'ta bulunmaz.
 AutoBleem theme:=AutoBleem Teması
 Back=Geri
@@ -185,7 +186,6 @@ Guide=Kılavuz
 Hardware=Donanım
 Hardware Information=Donanım Bilgisi
 Hi, and welcome to AutoBleem!=Merhaba, AutoBleem'e hoş geldin!
-HIGH SCORE=EN YÜKSEK SKOR
 Hostname=Ana bilgisayar adı
 In game=Oyun İçinde
 In RetroArch game=RetroArch Oyununda
@@ -218,7 +218,6 @@ Lightgun games=Işıklı Silah Oyunları
 Linear=Doğrusal
 Link Block=Bağ Bloku
 Link end Block=Bağ Bitiş Bloku
-LIVES=CAN
 Load average=Ortalama yük
 Loading ... Please Wait ...=Yükleniyor ... Lütfen Bekleyin ...
 Loading...=Yükleniyor...
@@ -239,6 +238,7 @@ More accents=Daha fazla aksan
 Move=Taşı
 Move cursor=İmleci taşı
 Moving :=Taşınıyor:
+MUSIC=MÜZİK
 Music:=Müzik:
 Nearest=En yakın
 Needs a network connection=Ağ bağlantısı gerektirir
@@ -306,6 +306,7 @@ Product code=Ürün kodu
 PS1 emulator:=PS1 Emülatörü:
 Published by:=Yayımlayan:
 PUBLISHER=YAYINCI
+PUSH START BUTTON=START'A BAS
 Put down=Bırak
 Put the scan's processors in order, switch them on or off=Taramanın işlemcilerini sırala, aç veya kapat
 Quick menu=Hızlı menü
@@ -355,7 +356,6 @@ Scanner processors=Tarama işlemcileri
 Scanning=Taranıyor
 Scanning ROMs=ROM'lar taranıyor
 Scanning...=Taranıyor...
-SCORE=SKOR
 SDL's built-in=SDL yerleşik
 see processors.log=processors.log dosyasına bakın
 Select=Seç

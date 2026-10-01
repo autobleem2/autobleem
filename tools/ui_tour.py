@@ -91,6 +91,8 @@ def main(argv):
         run('menu about; wait_screen GuiAbout; wait 300')
         shot('about')
         run('press start; wait 1500')
+        shot('surprise-title')
+        run('press start; wait 1500')
         shot('surprise-game')
         run('press start; wait 300; press o; wait_screen GuiLauncher')
         # the PS1 game editor, its rename keyboard and memory card picker

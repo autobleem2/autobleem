@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (intera)
 4:3 (integer)=4:3 (intera)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Dati di AutoBleem
 AutoBleem is up to date=AutoBleem è aggiornato
+AUTOBLEEM PRESENTS=AUTOBLEEM PRESENTA
 AutoBleem resume points not available in RetroArch.=I punti di ripristino di AutoBleem non sono disponibili in RetroArch.
 AutoBleem theme:=Tema di AutoBleem:
 Back=Indietro
@@ -185,7 +186,6 @@ Guide=Guida
 Hardware=Hardware
 Hardware Information=Informazioni Hardware
 Hi, and welcome to AutoBleem!=Ciao e benvenuto in AutoBleem!
-HIGH SCORE=PUNTEGGIO MIGLIORE
 Hostname=Nome host
 In game=Mentre Giochi
 In RetroArch game=Mentre Giochi - in RetroArch
@@ -218,7 +218,6 @@ Lightgun games=Giochi con pistola
 Linear=Lineare
 Link Block=Blocco di Link
 Link end Block=Blocco di Fine Link
-LIVES=VITE
 Load average=Carico medio
 Loading ... Please Wait ...=Caricamento ... Attendere Prego ...
 Loading...=Caricamento...
@@ -239,6 +238,7 @@ More accents=Altri accenti
 Move=Sposta
 Move cursor=Sposta il cursore
 Moving :=Spostando :
+MUSIC=MUSICA
 Music:=Musica:
 Nearest=Più vicino
 Needs a network connection=Richiede una connessione di rete
@@ -306,6 +306,7 @@ Product code=Codice prodotto
 PS1 emulator:=Emulatore PS1:
 Published by:=Pubblicato da:
 PUBLISHER=EDITORE
+PUSH START BUTTON=PREMI START
 Put down=Posa
 Put the scan's processors in order, switch them on or off=Ordina i processori della scansione, attivali o disattivali
 Quick menu=Menu rapido
@@ -355,7 +356,6 @@ Scanner processors=Processori di scansione
 Scanning=Scansione
 Scanning ROMs=Scansione delle ROM
 Scanning...=Cercando...
-SCORE=PUNTEGGIO
 SDL's built-in=Integrato in SDL
 see processors.log=vedi processors.log
 Select=Seleziona

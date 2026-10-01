@@ -1,4 +1,7 @@
 
+	The game's pictures (the ship, the aliens, the shots, the power-ups, the explosion, the sky) are AutoBleem's own
+	artwork (UIREV-39); of Kenney's pack below only the sound effects (sfx_*.ogg) are still used.
+
 ###############################################################################
 
 	Space Shooter (Redux, plus fonts and sounds) by Kenney Vleugels (www.kenney.nl)

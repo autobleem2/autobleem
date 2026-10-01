@@ -146,6 +146,10 @@ SECTIONS = [
      'SIL Open Font License 1.1',
      'Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name \'Source\'. The licence text is in '
      'src/resources/fonts/OFL.txt.'),
+    ('Oxanium', 'src/resources/fonts/Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf - the surprise game\'s '
+     'HUD and title', 'SIL Open Font License 1.1',
+     'Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium). The licence text is in '
+     'src/resources/fonts/OFL.txt.'),
     ('Saira', 'autobleem-themes submodule, Themes/default/saira-semicondensed-medium.ttf - the classic screens\' font',
      'SIL Open Font License 1.1',
      'Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved Font Name "Saira". The licence '

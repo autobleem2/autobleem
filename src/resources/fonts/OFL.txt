@@ -10,6 +10,11 @@ NotoSansSC-Regular.otf
     Noto Sans CJK SC (https://github.com/notofonts/noto-cjk), a subset. Every font when the language is
     Chinese, and the memory card manager's font for Japanese save titles.
 
+Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf
+    Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium)
+    Static instances (wght 800, 700 and 600) of the variable font, made with fontTools. The surprise game's
+    ("BleemStrike: Reloaded") HUD, title and lettering.
+
 -----------------------------------------------------------
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
 -----------------------------------------------------------

@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -29,6 +29,7 @@ Auto=自动
 AutoBleem=AutoBleem
 AutoBleem data=AutoBleem 数据
 AutoBleem is up to date=AutoBleem 已是最新版本
+AUTOBLEEM PRESENTS=AUTOBLEEM 呈现
 AutoBleem resume points not available in RetroArch.=RetroArch 中无法使用 AutoBleem 的存档点。
 AutoBleem theme:=AutoBleem 主题：
 Back=返回
@@ -185,7 +186,6 @@ Guide=指南
 Hardware=硬件
 Hardware Information=硬件信息
 Hi, and welcome to AutoBleem!=你好，欢迎使用 AutoBleem！
-HIGH SCORE=最高分
 Hostname=主机名
 In game=游戏中
 In RetroArch game=RetroArch 游戏中
@@ -218,7 +218,6 @@ Lightgun games=光枪游戏
 Linear=线性
 Link Block=链接块
 Link end Block=链接结束块
-LIVES=生命
 Load average=平均负载
 Loading ... Please Wait ...=加载中……请稍候……
 Loading...=正在加载...
@@ -239,6 +238,7 @@ More accents=更多重音
 Move=移动
 Move cursor=移动光标
 Moving :=正在移动：
+MUSIC=音乐
 Music:=音乐：
 Nearest=最近邻
 Needs a network connection=需要网络连接
@@ -306,6 +306,7 @@ Product code=产品代码
 PS1 emulator:=PS1 模拟器：
 Published by:=发行商：
 PUBLISHER=发行商
+PUSH START BUTTON=请按开始键
 Put down=放下
 Put the scan's processors in order, switch them on or off=排列扫描处理器的顺序，启用或停用它们
 Quick menu=快捷菜单
@@ -355,7 +356,6 @@ Scanner processors=扫描处理器
 Scanning=正在扫描
 Scanning ROMs=正在扫描 ROM
 Scanning...=扫描中...
-SCORE=得分
 SDL's built-in=SDL 内置
 see processors.log=请查看 processors.log
 Select=选择

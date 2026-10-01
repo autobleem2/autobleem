@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Dáta AutoBleem
 AutoBleem is up to date=AutoBleem je aktuálny
+AUTOBLEEM PRESENTS=AUTOBLEEM PREDSTAVUJE
 AutoBleem resume points not available in RetroArch.=AutoBleem obnoví body, ktoré nie sú dostupné v RetroArch.
 AutoBleem theme:=Téma AutoBleemu:
 Back=Späť
@@ -185,7 +186,6 @@ Guide=Sprievodca
 Hardware=Hardvér
 Hardware Information=Informácie o hardvéri
 Hi, and welcome to AutoBleem!=Ahoj a vitaj v AutoBleem!
-HIGH SCORE=NAJLEPŠIE SKÓRE
 Hostname=Názov hostiteľa
 In game=V hre
 In RetroArch game=V Retroarch hre
@@ -218,7 +218,6 @@ Lightgun games=Hry so svetelnou pištoľou
 Linear=Lineárny
 Link Block=Spojiť blok
 Link end Block=Spojiť koniec bloku
-LIVES=ŽIVOTY
 Load average=Priemerná záťaž
 Loading ... Please Wait ...=Nahrávam ... Čakajte prosím ...
 Loading...=Načítava sa...
@@ -239,6 +238,7 @@ More accents=Ďalšie akcenty
 Move=Presunúť
 Move cursor=Posunúť kurzor
 Moving :=Presúvam:
+MUSIC=HUDBA
 Music:=Hudba:
 Nearest=Najbližší
 Needs a network connection=Vyžaduje sieťové pripojenie
@@ -306,6 +306,7 @@ Product code=Kód produktu
 PS1 emulator:=Emulátor PS1:
 Published by:=Vydavateľ:
 PUBLISHER=VYDAVATEĽ
+PUSH START BUTTON=STLAČTE START
 Put down=Položiť
 Put the scan's processors in order, switch them on or off=Zoraďte procesory skenovania, zapnite ich alebo vypnite
 Quick menu=Rýchla ponuka
@@ -355,7 +356,6 @@ Scanner processors=Procesory skenovania
 Scanning=Skenovanie
 Scanning ROMs=Skenovanie ROM
 Scanning...=Vyhľadávam...
-SCORE=SKÓRE
 SDL's built-in=Vstavané v SDL
 see processors.log=pozri processors.log
 Select=Vybrať

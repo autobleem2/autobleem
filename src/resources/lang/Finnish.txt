@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=AutoBleemin tiedot
 AutoBleem is up to date=AutoBleem on ajan tasalla
+AUTOBLEEM PRESENTS=AUTOBLEEM ESITTÄÄ
 AutoBleem resume points not available in RetroArch.=AutoBleem-jatkamispisteet eivät ole saatavilla RetroArchissa.
 AutoBleem theme:=AutoBleem Teema:
 Back=Takaisin
@@ -185,7 +186,6 @@ Guide=Opas
 Hardware=Laitteisto
 Hardware Information=Laitteistotiedot
 Hi, and welcome to AutoBleem!=Hei ja tervetuloa AutoBleemiin!
-HIGH SCORE=PARAS TULOS
 Hostname=Isäntänimi
 In game=Pelissä
 In RetroArch game=RetroArch pelissä
@@ -218,7 +218,6 @@ Lightgun games=Valopistoolipelit
 Linear=Lineaarinen
 Link Block=Linkki Esto
 Link end Block=Linkin päätylohko
-LIVES=ELÄMÄT
 Load average=Keskimääräinen kuorma
 Loading ... Please Wait ...=Ladataan ... Odota hetki ...
 Loading...=Ladataan...
@@ -239,6 +238,7 @@ More accents=Lisää aksentteja
 Move=Siirrä
 Move cursor=Siirrä kohdistinta
 Moving :=Liikuta :
+MUSIC=MUSIIKKI
 Music:=Musiikki:
 Nearest=Lähin
 Needs a network connection=Vaatii verkkoyhteyden
@@ -306,6 +306,7 @@ Product code=Tuotekoodi
 PS1 emulator:=PS1-emulaattori:
 Published by:=Julkaissut:
 PUBLISHER=JULKAISIJA
+PUSH START BUTTON=PAINA START-PAINIKETTA
 Put down=Laske
 Put the scan's processors in order, switch them on or off=Järjestä skannauksen prosessorit, kytke ne päälle tai pois
 Quick menu=Pikavalikko
@@ -355,7 +356,6 @@ Scanner processors=Skannauksen prosessorit
 Scanning=Skannataan
 Scanning ROMs=Skannataan ROMeja
 Scanning...=Skannataan:
-SCORE=PISTEET
 SDL's built-in=SDL:n sisäänrakennettu
 see processors.log=katso processors.log
 Select=Valitse

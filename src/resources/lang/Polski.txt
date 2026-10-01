@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Dane AutoBleem
 AutoBleem is up to date=AutoBleem jest aktualny
+AUTOBLEEM PRESENTS=AUTOBLEEM PREZENTUJE
 AutoBleem resume points not available in RetroArch.=RetroArch nie obsługuje punktów wznowienia Autobleem
 AutoBleem theme:=Skórka AutoBleem:
 Back=Wstecz
@@ -185,7 +186,6 @@ Guide=Przewodnik
 Hardware=Sprzęt
 Hardware Information=Informacje Sprzętowe
 Hi, and welcome to AutoBleem!=Cześć i witaj w AutoBleem!
-HIGH SCORE=NAJLEPSZY WYNIK
 Hostname=Nazwa hosta
 In game=W Grze
 In RetroArch game=W grze Retroarch
@@ -218,7 +218,6 @@ Lightgun games=Gry Lightgun
 Linear=Liniowy
 Link Block=Polaczony Blok
 Link end Block=Blok Koncowy
-LIVES=ŻYCIA
 Load average=Obciążenie
 Loading ... Please Wait ...=Ładuję ... Proszę czekać ...
 Loading...=Wczytywanie...
@@ -239,6 +238,7 @@ More accents=Więcej akcentów
 Move=Przenieś
 Move cursor=Przesuń kursor
 Moving :=Przenoszenie :
+MUSIC=MUZYKA
 Music:=Muzyka:
 Nearest=Najbliższy
 Needs a network connection=Wymaga połączenia z siecią
@@ -306,6 +306,7 @@ Product code=Kod produktu
 PS1 emulator:=Emulator PS1:
 Published by:=Wydawca:
 PUBLISHER=WYDAWCA
+PUSH START BUTTON=NACIŚNIJ START
 Put down=Odłóż
 Put the scan's processors in order, switch them on or off=Ustaw kolejność procesorów skanowania, włącz je lub wyłącz
 Quick menu=Szybkie menu
@@ -355,7 +356,6 @@ Scanner processors=Procesory skanowania
 Scanning=Skanowanie
 Scanning ROMs=Skanowanie ROMów
 Scanning...=Skanuję...
-SCORE=WYNIK
 SDL's built-in=Wbudowane w SDL
 see processors.log=zobacz processors.log
 Select=Wybierz

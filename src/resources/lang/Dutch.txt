@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=AutoBleem-gegevens
 AutoBleem is up to date=AutoBleem is up-to-date
+AUTOBLEEM PRESENTS=AUTOBLEEM PRESENTEERT
 AutoBleem resume points not available in RetroArch.=AutoBleem hervattingspunten zijn niet beschikbaar in RetroArch.
 AutoBleem theme:=AutoBleem Thema:
 Back=Terug
@@ -185,7 +186,6 @@ Guide=Gids
 Hardware=Hardware
 Hardware Information=Hardware informatie
 Hi, and welcome to AutoBleem!=Hoi, en welkom bij AutoBleem!
-HIGH SCORE=HOOGSTE SCORE
 Hostname=Hostnaam
 In game=In game
 In RetroArch game=In RetroArch game
@@ -218,7 +218,6 @@ Lightgun games=Lightgun-spellen
 Linear=Lineair
 Link Block=Link Blok
 Link end Block=Link Eind Blok
-LIVES=LEVENS
 Load average=Gemiddelde belasting
 Loading ... Please Wait ...=Laden... Even geduld ...
 Loading...=Laden...
@@ -239,6 +238,7 @@ More accents=Meer accenten
 Move=Verplaatsen
 Move cursor=Cursor verplaatsen
 Moving :=Verplaatsen:
+MUSIC=MUZIEK
 Music:=Muziek:
 Nearest=Dichtstbijzijnd
 Needs a network connection=Vereist een netwerkverbinding
@@ -306,6 +306,7 @@ Product code=Productcode
 PS1 emulator:=PS1-emulator:
 Published by:=Gepubliceerd door:
 PUBLISHER=UITGEVER
+PUSH START BUTTON=DRUK OP START
 Put down=Neerzetten
 Put the scan's processors in order, switch them on or off=Zet de processors van de scan op volgorde, zet ze aan of uit
 Quick menu=Snelmenu
@@ -355,7 +356,6 @@ Scanner processors=Scanprocessors
 Scanning=Scannen
 Scanning ROMs=ROM's scannen
 Scanning...=Scannen...
-SCORE=SCORE
 SDL's built-in=Ingebouwd in SDL
 see processors.log=zie processors.log
 Select=Selecteer

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Donadas AutoBleem
 AutoBleem is up to date=AutoBleem es a jorn
+AUTOBLEEM PRESENTS=AUTOBLEEM PRESENTA
 AutoBleem resume points not available in RetroArch.=Punt de represa AutoBleem pas disponible dins RetroArch.
 AutoBleem theme:=Tèma AutoBleem :
 Back=Tornar
@@ -185,7 +186,6 @@ Guide=Guida
 Hardware=Material
 Hardware Information=Entresenhas de material
 Hi, and welcome to AutoBleem!=Bonjorn e benvenguda a AutoBleem !
-HIGH SCORE=MELHOR MARCA
 Hostname=Nom d'òste
 In game=Jòcs intèrnes
 In RetroArch game=Dins un jòc RetroArch
@@ -218,7 +218,6 @@ Lightgun games=Jòcs al pistolet
 Linear=Linear
 Link Block=Link end Block
 Link end Block=Fin de blòc ligat
-LIVES=VIDAS
 Load average=Carga mejana
 Loading ... Please Wait ...=Cargament ... Esperatz ...
 Loading...=Cargament...
@@ -239,6 +238,7 @@ More accents=Mai d'accents
 Move=Desplaçar
 Move cursor=Desplaçar lo cursor
 Moving :=Desplaçament :
+MUSIC=MUSICA
 Music:=Musica :
 Nearest=Lo mai pròche
 Needs a network connection=Necessita una connexion ret
@@ -306,6 +306,7 @@ Product code=Còdi produch
 PS1 emulator:=Emulator PS1:
 Published by:=Editat per :
 PUBLISHER=EDITOR
+PUSH START BUTTON=APUEJATZ SUS START
 Put down=Pausar
 Put the scan's processors in order, switch them on or off=Ordenatz los processors de l'escaneig, activatz-los o desactivatz-los
 Quick menu=Menú rapid
@@ -355,7 +356,6 @@ Scanner processors=Processors d'escaneig
 Scanning=Escandalhatge
 Scanning ROMs=Analisi de las ROMs
 Scanning...=Analisi...
-SCORE=MARCA
 SDL's built-in=Integrat a SDL
 see processors.log=vejatz processors.log
 Select=Causir
