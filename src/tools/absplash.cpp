@@ -17,6 +17,11 @@
 //                 centred at (640, 480) of the 1280x720 picture and scaled with it, or - DIR without a strip (or
 //                 not a theme) - ab_gui's ring of dots, the busy spinner's own. No progress bar: RetroArch reports
 //                 none. Without --theme the picture is shown alone, as before.
+//   --anim sweep  a light streak runs along the cyan/magenta rule under the logo of the AutoBleem 2 picture
+//                 (the ab2.0.0 palette: cyan 00E5FF at the left, magenta at the right), one frame every 50 ms -
+//                 the boot and wake pictures use it so the screen is seen to be alive while the launcher loads.
+//   --anim-at X0,Y,X1,H   where the rule is, in thousandths of the picture (the defaults fit autobleem.jpg:
+//                 207,513,785,13 = left end, vertical centre, right end, thickness)
 #include <ab_gui/busy.h>
 #include <ab_gui/spinner.h>
 #include <ab_gui/style.h>
@@ -26,6 +31,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <sys/stat.h>
@@ -47,8 +54,53 @@ bool fileExists(const std::string &path) {
 
 int usage() {
     PLOG_ERROR << "usage: absplash IMAGE (--until-exists FILE | --until-gone FILE | --seconds S) [--timeout S] "
-                  "[--theme DIR]";
+                  "[--theme DIR] [--anim sweep] [--anim-at X0,Y,X1,H]";
     return 2;
+}
+
+// the rule under the logo in the picture, in thousandths of its width/height (autobleem.jpg, 1920x1080:
+// x 398..1507, y 554, 14 thick)
+struct AnimRule {
+    int x0 = 207, y = 513, x1 = 785, h = 13;
+};
+
+// one frame of the sweep: a streak whose bright head runs left to right along the rule and fades behind it, the
+// colour going from cyan to magenta with the position (the rule's own ends); about 1.8 s a pass, eased, a short
+// rest before the next. Drawn as 28 alpha steps of one rect each - no texture.
+void drawSweep(Renderer &r, const Rect &pic, const AnimRule &rule, unsigned int elapsedMs) {
+    constexpr unsigned int Period = 2100, Pass = 1700;
+    constexpr int Slices = 28;
+    constexpr double TailShare = 0.26; // the tail's length as a share of the rule
+    const double x0 = pic.x + pic.w * rule.x0 / 1000.0;
+    const double x1 = pic.x + pic.w * rule.x1 / 1000.0;
+    const double len = x1 - x0;
+    const int h = std::max(2, static_cast<int>(std::lround(pic.h * rule.h / 1000.0)));
+    const int cy = pic.y + static_cast<int>(std::lround(pic.h * rule.y / 1000.0));
+    const unsigned int t = elapsedMs % Period;
+    if (t >= Pass)
+        return;
+    double u = static_cast<double>(t) / Pass;
+    u = u * u * (3.0 - 2.0 * u); // smoothstep: leaves and arrives gently
+    const double tail = len * TailShare;
+    const double head = x0 + (len + tail) * u; // the head runs on past the end so the tail leaves the rule
+    r.setBlendMode(BlendMode::Blend);
+    const double step = tail / Slices;
+    for (int i = 0; i < Slices; ++i) {
+        const double sx = head - (i + 1) * step;
+        const double ex = sx + step;
+        if (ex <= x0 || sx >= x1)
+            continue;
+        const double a = 1.0 - static_cast<double>(i) / Slices; // 1 at the head, 0 at the tail's end
+        const double pos = std::min(1.0, std::max(0.0, (sx + step / 2 - x0) / len));
+        const uint8_t red = static_cast<uint8_t>(std::lround(pos * 255));
+        const uint8_t green = static_cast<uint8_t>(std::lround(229 - pos * (229 - 64)));
+        const uint8_t blue = static_cast<uint8_t>(std::lround(255 - pos * (255 - 160)));
+        r.setDrawColor(Color(red, green, blue, static_cast<uint8_t>(std::lround(a * a * 230))));
+        const int rx = static_cast<int>(std::floor(std::max(sx, x0)));
+        const int rw = static_cast<int>(std::ceil(std::min(ex, x1))) - rx;
+        if (rw > 0)
+            r.fillRect(Rect(rx, cy - h / 2, rw, h));
+    }
 }
 
 // the spinner strip of the theme in `dir` (its own theme.json only, as the launcher reads it); none = the ring
@@ -92,7 +144,8 @@ int main(int argc, char **argv) {
     if (argc < 2)
         return usage();
     std::string image = argv[1];
-    std::string untilExists, untilGone, themeDir;
+    std::string untilExists, untilGone, themeDir, anim;
+    AnimRule rule;
     double seconds = 0, timeout = 30;
     for (int i = 2; i + 1 < argc; i += 2) {
         std::string opt = argv[i], val = argv[i + 1];
@@ -106,9 +159,17 @@ int main(int argc, char **argv) {
             timeout = atof(val.c_str());
         else if (opt == "--theme")
             themeDir = val;
-        else
+        else if (opt == "--anim")
+            anim = val;
+        else if (opt == "--anim-at") {
+            if (sscanf(val.c_str(), "%d,%d,%d,%d", &rule.x0, &rule.y, &rule.x1, &rule.h) != 4)
+                return usage();
+        } else
             return usage();
     }
+    if (!anim.empty() && anim != "sweep")
+        return usage();
+    const bool sweep = anim == "sweep";
     if (untilExists.empty() && untilGone.empty() && seconds <= 0)
         return usage();
     if (seconds > 0)
@@ -154,6 +215,8 @@ int main(int argc, char **argv) {
             const unsigned int nowMs = gui.platform().ticks();
             drawSpinner(r, strip, nowMs, nowMs - startedMs, cx, cy, k);
         }
+        if (sweep)
+            drawSweep(r, dst, rule, gui.platform().ticks() - startedMs);
         r.present();
 
         const double elapsed = static_cast<double>(gui.platform().ticks()) / 1000.0 - started;
@@ -163,7 +226,8 @@ int main(int argc, char **argv) {
             break;
         if (!untilGone.empty() && !fileExists(untilGone))
             break;
-        usleep((spin ? 16 : 100) * 1000); // a playing spinner wants frames; a still picture does not
+        // a playing spinner wants frames, a sweep a frame every 50 ms (the CPU stays low); a still picture does not
+        usleep((spin ? 16 : sweep ? 50 : 100) * 1000);
     }
     return 0;
 }
