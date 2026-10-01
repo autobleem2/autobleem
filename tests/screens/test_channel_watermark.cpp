@@ -1,59 +1,82 @@
 //
-// The channel watermark's text (UIREV-40, evoui/channel_watermark.h): a release shows no tag, a tagged pre-release is
-// TESTING, commits past a tag (or a dirty tree) is NIGHTLY; the short version has no "v" and no git hash, the commit
-// count after a dot. The drawing (GuiLauncher::renderChannelWatermark) needs a live Gui and is the walk's job.
+// The channel watermark's text (UIREV-40, evoui/channel_watermark.h): the build names its channel (AB_BUILD_CHANNEL),
+// the tag follows it - DEV + the short commit hash, NIGHTLY + the short version, ALPHA / BETA / RC (the tag's own
+// word) + the short version, a release nothing. The version text is parsed only for the short version: no "v", no
+// git hash, the commit count after a dot. The drawing (GuiLauncher::renderChannelWatermark) needs a live Gui and is
+// the walk's job.
 //
 #include "doctest/doctest.h"
 
 #include "channel_watermark.h"
 
 using ChannelWatermark::Channel;
+using ChannelWatermark::channelFromName;
 using ChannelWatermark::tagFor;
 
-TEST_CASE("a release shows no watermark") {
-    CHECK_FALSE(tagFor("v2.0.0").shown());
-    CHECK_FALSE(tagFor("2.0.0").shown());
-    CHECK(tagFor("v2.0.0").word.empty());
-    CHECK(tagFor("v2.0.0").version.empty());
+TEST_CASE("the channel comes from the build's AB_BUILD_CHANNEL value; unset or unknown is dev") {
+    CHECK(channelFromName("dev") == Channel::Dev);
+    CHECK(channelFromName("nightly") == Channel::Nightly);
+    CHECK(channelFromName("prerelease") == Channel::Prerelease);
+    CHECK(channelFromName("release") == Channel::Release);
+    CHECK(channelFromName(nullptr) == Channel::Dev);
+    CHECK(channelFromName("") == Channel::Dev);
+    CHECK(channelFromName("whatever") == Channel::Dev);
 }
 
-TEST_CASE("something that is not a version shows no watermark") {
-    CHECK_FALSE(tagFor("").shown());
-    CHECK_FALSE(tagFor("dev").shown());
-    CHECK_FALSE(tagFor("v").shown());
+TEST_CASE("a dev (hand) build says DEV and its short commit hash, whatever the version text") {
+    const ChannelWatermark::Tag tag = tagFor(Channel::Dev, "v2.0.0-alpha2-470-g1760cc8", "c7357bb");
+    CHECK(tag.shown());
+    CHECK(tag.channel == Channel::Dev);
+    CHECK(tag.word == "DEV");
+    CHECK(tag.version == "c7357bb");
+    CHECK(tagFor(Channel::Dev, "nightly", "c7357bb1234567").version == "c7357bb"); // a long hash is cut to 7
+    CHECK(tagFor(Channel::Dev, "", "abc").version == "abc");
 }
 
-TEST_CASE("a tagged pre-release is TESTING") {
-    const ChannelWatermark::Tag rc = tagFor("v2.0.0-rc1");
-    CHECK(rc.channel == Channel::Testing);
-    CHECK(rc.word == "TESTING");
-    CHECK(rc.version == "2.0.0-rc1");
-
-    const ChannelWatermark::Tag alpha = tagFor("v2.0.0-alpha2");
-    CHECK(alpha.channel == Channel::Testing);
-    CHECK(alpha.version == "2.0.0-a2");
-    CHECK(tagFor("v2.0.0-beta1").version == "2.0.0-b1");
-}
-
-TEST_CASE("commits past a tag are NIGHTLY, the count after a dot and the hash gone") {
-    const ChannelWatermark::Tag nightly = tagFor("v2.0.0-alpha2-470-g1760cc8");
+TEST_CASE("a nightly says NIGHTLY and the short version: the count after a dot, the hash gone") {
+    const ChannelWatermark::Tag nightly = tagFor(Channel::Nightly, "v2.0.0-alpha2-314-g1760cc8", "1760cc8");
     CHECK(nightly.channel == Channel::Nightly);
     CHECK(nightly.word == "NIGHTLY");
-    CHECK(nightly.version == "2.0.0-a2.470");
+    CHECK(nightly.version == "2.0.0-a2.314");
 
-    CHECK(tagFor("v2.0.0-17-gabcdef0").version == "2.0.0.17");
-    CHECK(tagFor("v2.0.0-17-gabcdef0").channel == Channel::Nightly);
-    CHECK(tagFor("v2.0.0-alpha2-17").version == "2.0.0-a2.17"); // no hash in the VERSION file
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-17-gabcdef0", "").version == "2.0.0.17");
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-alpha2-17", "").version == "2.0.0-a2.17"); // no hash in the VERSION file
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-rc1-dirty", "").version == "2.0.0-rc1");
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-alpha2-17-g1760cc8-1760cc8", "").version == "2.0.0-a2.17");
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-rc1", "").word == "NIGHTLY"); // the channel is the build's, not the version's
 }
 
-TEST_CASE("a dirty tree is NIGHTLY even on a tag") {
-    const ChannelWatermark::Tag dirty = tagFor("v2.0.0-rc1-dirty");
-    CHECK(dirty.channel == Channel::Nightly);
-    CHECK(dirty.version == "2.0.0-rc1");
+TEST_CASE("a pre-release says the tag's own word and the short version") {
+    const ChannelWatermark::Tag alpha = tagFor(Channel::Prerelease, "v2.0.0-alpha1", "c7357bb");
+    CHECK(alpha.channel == Channel::Prerelease);
+    CHECK(alpha.word == "ALPHA");
+    CHECK(alpha.version == "2.0.0-a1");
+
+    const ChannelWatermark::Tag beta = tagFor(Channel::Prerelease, "v2.0.0-beta3", "");
+    CHECK(beta.word == "BETA");
+    CHECK(beta.version == "2.0.0-b3");
+
+    const ChannelWatermark::Tag rc = tagFor(Channel::Prerelease, "v2.0.0-rc1", "");
+    CHECK(rc.word == "RC");
+    CHECK(rc.version == "2.0.0-rc1");
+
+    // a word the tag does not carry: the old TESTING stays the name
+    CHECK(tagFor(Channel::Prerelease, "v2.0.0-pre0", "").word == "TESTING");
+    CHECK(tagFor(Channel::Prerelease, "v2.0.0-pre0", "").version == "2.0.0-pre0");
 }
 
-TEST_CASE("a hash the package appends after the count is dropped too") {
-    CHECK(tagFor("v2.0.0-alpha2-17-g1760cc8-1760cc8").version == "2.0.0-a2.17");
+TEST_CASE("a release shows no watermark, whatever the version text") {
+    CHECK_FALSE(tagFor(Channel::Release, "v2.0.0", "c7357bb").shown());
+    CHECK(tagFor(Channel::Release, "v2.0.0", "c7357bb").word.empty());
+    CHECK(tagFor(Channel::Release, "v2.0.0", "c7357bb").version.empty());
+    CHECK_FALSE(tagFor(Channel::Release, "v2.0.0-alpha1-12-gabcdef0", "abcdef0").shown());
+}
+
+TEST_CASE("something that is not a version gives no short version") {
+    CHECK(tagFor(Channel::Nightly, "", "").version.empty());
+    CHECK(tagFor(Channel::Nightly, "dev", "").version.empty());
+    CHECK(tagFor(Channel::Nightly, "v", "").version.empty());
+    CHECK(tagFor(Channel::Prerelease, "dev", "").word == "TESTING");
 }
 
 TEST_CASE("the tag sits under a two-pad plate and gets out of a taller one's way") {

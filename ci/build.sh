@@ -33,6 +33,8 @@
 #   AB_NO_TESTS=1   neither build nor run the test suites (a quick build for a device check)
 #   AB_NO_UPX=1     leave the shipped binaries unpacked
 #   AB_CLEAN=1      wipe each target's build directory first
+#   AB_BUILD_CHANNEL=dev|nightly|prerelease|release   the channel the launcher's corner tag names (UIREV-40); unset = dev
+#                   (a hand build says DEV + its commit); the publish workflow sets the real one
 set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO="$PWD"

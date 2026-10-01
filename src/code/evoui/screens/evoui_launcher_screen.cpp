@@ -5,6 +5,7 @@
 
 #include "evoui_launcher.h"
 #include "../channel_watermark.h"
+#include "core/version.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
@@ -650,15 +651,18 @@ int GuiLauncher::renderPadBatteries() {
 //*******************************
 // GuiLauncher::renderChannelWatermark
 //*******************************
-// UIREV-40: a nightly or testing build's tag in the top-left corner - the `chip` frame (the theme's; the code-drawn
-// chip without one) around the channel in capitals, the short version beside it in the secondary colour - the whole at
-// 80 %, so it reads as a mark, not a control. A release draws nothing. It sits at x 12, y 72, under a two-pad battery
-// plate (which ends at y 66); `plateBottom` (renderPadBatteries' return) pushes it lower for a taller plate, so it
-// never covers one. Not translated: the channel's names. The design's bold 13 / medium 14 are the launcher's fixed
-// FONT_15_BOLD here (the one small font that is always loaded).
+// UIREV-40: the build's channel tag (DEV / NIGHTLY / ALPHA / BETA / RC; a release has none) in the top-left corner -
+// the `chip` frame (the theme's; the code-drawn chip without one) around the channel in capitals, the short version
+// beside it in the secondary colour - the whole at 80 %, so it reads as a mark, not a control. A release draws
+// nothing. It sits at x 12, y 72, under a two-pad battery plate (which ends at y 66); `plateBottom`
+// (renderPadBatteries' return) pushes it lower for a taller plate, so it never covers one. Not translated: the
+// channel's names. The design's bold 13 / medium 14 are the launcher's fixed FONT_15_BOLD here (the one small font
+// that is always loaded).
 void GuiLauncher::renderChannelWatermark(int plateBottom) {
     // the build's version never changes while it runs: read once (productVersion may read a VERSION file)
-    static const ChannelWatermark::Tag tag = ChannelWatermark::tagFor(Env::productVersion());
+    static const ChannelWatermark::Tag tag =
+        ChannelWatermark::tagFor(ChannelWatermark::channelFromName(AB_BUILD_CHANNEL_NAME), Env::productVersion(),
+                                 std::string(Version::GIT_HASH));
     if (!tag.shown())
         return;
     const ableem::Font &font = ThemeAssets::fixedFonts()[FONT_15_BOLD];

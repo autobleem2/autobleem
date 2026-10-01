@@ -287,6 +287,18 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
+# the build's channel, given explicitly by whatever builds it (UIREV-40's tag): AB_BUILD_CHANNEL = dev | nightly |
+# prerelease | release, from the environment or -D; unset is dev, so a hand build says DEV. Only the launcher screen
+# reads it (channel_watermark.h), so a change recompiles that one file.
+if (NOT DEFINED AB_BUILD_CHANNEL OR AB_BUILD_CHANNEL STREQUAL "")
+    if (DEFINED ENV{AB_BUILD_CHANNEL} AND NOT "$ENV{AB_BUILD_CHANNEL}" STREQUAL "")
+        set(AB_BUILD_CHANNEL "$ENV{AB_BUILD_CHANNEL}")
+    else ()
+        set(AB_BUILD_CHANNEL "dev")
+    endif ()
+endif ()
+set_source_files_properties(src/code/evoui/screens/evoui_launcher_screen.cpp PROPERTIES
+        COMPILE_DEFINITIONS "AB_BUILD_CHANNEL_NAME=\"${AB_BUILD_CHANNEL}\"")
 if (AB_ONLINE_UPDATE)
     target_sources(ab_evoui PRIVATE
             src/code/evoui/screens/evoui_update.cpp
