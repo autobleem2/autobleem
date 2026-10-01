@@ -10,6 +10,19 @@ RC=/media/Autobleem/rc
 # where this run's logs go (RAM unless kept on the stick) - exported to everything below, the launcher too
 . $RC/ab_log.sh
 
+# CONSOLE-15 P2: selection.sh's standby() leaves System/Logs/poweroff_reason before it unmounts the stick and
+# deletes it when the standby ended in a wake. Found here, the console was reset or powered off in between: say so
+# in standby.log, with Sony's power log if it is there, once.
+POR=/media/System/Logs/poweroff_reason
+if [ -f "$POR" ]; then
+    {
+        echo "$(date) boot after a power-off request: $(cat $POR) - now uptime=$(cut -d' ' -f1 /proc/uptime)"
+        [ -f /tmp/power.log ] && { echo "-- /tmp/power.log"; cat /tmp/power.log; }
+        echo
+    } >> /media/System/Logs/standby.log
+    rm -f "$POR"
+fi
+
 # Nothing of ours in /tmp is aged out. The console boots with its clock at 2018-09-01; on a network (the
 # AutoBleem kernel's WiFi) timesyncd jumps it to today, and systemd-tmpfiles-clean.timer (15 min after boot,
 # then daily) then finds everything made at boot eight years old - /usr/lib/tmpfiles.d/tmp.conf ages /tmp
@@ -90,7 +103,14 @@ apply_output_mode() {
 while true; do
     cd $RC
     apply_output_mode
+    # CONSOLE-15 evidence: the watch log (RAM, one line per 30 s - see ab_watch.sh); it runs from a tmpfs copy
+    # and is stopped by selection.sh before the stick is unmounted, so it is started again every time round
+    sh $RC/ab_watch.sh start
+    rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     ./autobleem.sh
+    ab_sh_rc=$?
+    # autobleem.sh writes the launcher's own status; if it was killed itself, its status is the next best
+    [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
     cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg

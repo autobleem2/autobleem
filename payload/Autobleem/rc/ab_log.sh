@@ -33,6 +33,16 @@ fi
 mkdir -p "$AB_LOG_DIR" 2>/dev/null
 export AB_ROOT AB_RUNTIME_DIR AB_LOG_DIR
 
+# ab_timeout CMD...: CMD bounded to 5 s where the system has a timeout (busybox's takes the seconds first, or
+# after -t in an older one), plain otherwise - the status calls below must not hang a crash capture or a wake
+if timeout 1 true 2>/dev/null; then
+    ab_timeout() { timeout 5 "$@"; }
+elif timeout -t 1 true 2>/dev/null; then
+    ab_timeout() { timeout -t 5 "$@"; }
+else
+    ab_timeout() { "$@"; }
+fi
+
 ab_persist_logs() {
     ab_keep=$AB_ROOT/System/Logs
     mkdir -p "$ab_keep" 2>/dev/null || return 1
@@ -43,12 +53,36 @@ ab_persist_logs() {
     ab_dir=$ab_keep/crash-$ab_n
     mkdir -p "$ab_dir"
     [ "$AB_LOG_DIR" != "$ab_keep" ] && cp -f "$AB_LOG_DIR"/* "$ab_dir"/ 2>/dev/null
+    ab_rc=$(cat "$AB_RUNTIME_DIR/autobleem_exit" 2>/dev/null) # run.sh's status (rc/autobleem.sh): 139 SEGV, 137 KILL, 134 ABRT
     {
         date
         echo "${1:-}"
+        echo "autobleem.sh exit status: ${ab_rc:-unknown}"
         echo
         dmesg 2>/dev/null | tail -150
     } > "$ab_dir/reason.txt"
+    # CONSOLE-15 evidence: the whole picture of the machine at the crash (a few tens of KB, three crashes kept)
+    dmesg > "$ab_dir/dmesg.txt" 2>/dev/null
+    dmesg 2>/dev/null | grep -E 'PM: |Freezing|Restarting tasks|musb|failed to suspend|while active|-71|-110' > "$ab_dir/suspend.txt"
+    {
+        date
+        cat /proc/uptime
+        cat /sys/class/rtc/rtc0/since_epoch
+        cat /proc/loadavg
+        echo "autobleem.sh exit status: ${ab_rc:-unknown}"
+    } > "$ab_dir/uptime.txt" 2>/dev/null
+    cat /proc/meminfo > "$ab_dir/meminfo.txt" 2>/dev/null
+    {
+        echo "== iw dev wlan0 link"
+        ab_timeout iw dev wlan0 link
+        echo "== ip addr show wlan0"
+        ab_timeout ip addr show wlan0
+        echo "== ip route"
+        ab_timeout ip route
+        echo "== wpa_cli -i wlan0 status"
+        ab_timeout wpa_cli -i wlan0 status
+    } > "$ab_dir/net.txt" 2>&1
+    [ -f "$AB_RUNTIME_DIR/watch.log" ] && cp -f "$AB_RUNTIME_DIR/watch.log" "$ab_dir/watch.log" 2>/dev/null
     # the extensions' crash guard is in RAM too: where the next launcher looks for it after the reboot
     if [ -f "$AB_RUNTIME_DIR/extensions.active" ]; then
         mkdir -p "$AB_ROOT/System/Extensions"
