@@ -3,6 +3,8 @@
 //
 
 #include "evoui_meta.h"
+#include "evoui_meta_layout.h"
+#include "gui/theme_assets.h"
 #include "core/model/timing.h"
 #include "core/model/ps_game.h"
 #include "core/services/system.h"
@@ -111,187 +113,111 @@ void PsMeta::render() {
     }
 
     if (visible) {
-        int w, h;
         ableem::Rect rect;
         ableem::Rect fullRect;
 
-        // the icons come from the Context's icon set, asked at draw time (the display release drops them); a theme
-        // without launcher.icons and without a "badge" frame gets today's files and today's calls
+        // the icons come from the Context's icon set, asked at draw time (the display release drops them)
         abgui::Context &ctx = gui->uiContext();
-        const bool badgeFrame = ctx.frame("badge").valid();
-        abgui::Style badgeStyle;
-        if (badgeFrame)
-            badgeStyle = ctx.style();
+        const abgui::Style &style = ctx.style();
+        TextRenderer &text = gui->text();
+        Fonts &fixed = ThemeAssets::fixedFonts();
 
-        // a meta icon plus its dark halo (UIREV-27), drawn at the same +2px margin Play's outline uses; a badge
-        // has the theme's "badge" frame behind it when there is one (32 x 32 round a 30 x 30 icon)
-        auto copyWithOutline = [&](const string &icon, bool badge = true) {
+        // a meta icon plus its dark halo (UIREV-27), drawn at the same +2px margin Play's outline uses; the badges
+        // are bare since UIREV-35 (no plate behind them)
+        auto copyWithOutline = [&](const string &icon) {
             const ableem::Texture outline = ctx.iconHalo(icon);
-            if (badge && badgeFrame)
-                badgeStyle.drawFrame(ctx, "badge", ableem::Rect(rect.x - 1, rect.y - 1, rect.w + 2, rect.h + 2));
             if (outline.valid()) {
                 ableem::Rect outlineRect(rect.x - 2, rect.y - 2, rect.w + 5, rect.h + 5);
                 renderer.copy(outline, nullptr, &outlineRect);
             }
             renderer.copy(ctx.icon(icon), &fullRect, &rect);
         };
+        // an icon at (ix, iy), at its own size, or square when `size` is given
+        auto drawIcon = [&](const string &icon, int ix, int iy, int size) {
+            ableem::Size s = ctx.icon(icon).size();
+            rect = ableem::Rect(ix, iy, size > 0 ? size : s.w, size > 0 ? size : s.h);
+            fullRect = ableem::Rect(0, 0, rect.w, rect.h);
+            copyWithOutline(icon);
+        };
 
-        auto nameFont = fonts[FONT_28_BOLD];
-        auto otherFont = fonts[FONT_15_BOLD];
-
-        int yOffset = 0;
-        // game name line - a name too long for the screen is drawn in the largest size that fits
+        // the title - a name too long for the screen is drawn in the largest size that fits
+        auto nameFont = fixed.boldAtSize(MetaLayout::TitleSize);
         if (x + nameFont.width(gameName) > SCREEN_WIDTH)
-            nameFont = gui->text().fittingFont(FONT_BOLD, 28, 12, gameName, SCREEN_WIDTH - x);
-        gui->text().renderText(nameFont, gameName, x, y + yOffset);
+            nameFont = text.fittingFont(FONT_BOLD, MetaLayout::TitleSize, MetaLayout::TitleMinSize, gameName,
+                                        SCREEN_WIDTH - x);
+        text.renderText_WithColor(nameFont, gameName, x, y, style.text, XALIGN_LEFT);
 
-        yOffset += 35;
-        // publisher line - with the year when known (a RetroArch game the database does not know shows its
-        // core name here instead)
-        if (!year.empty() && year != "0")
-            gui->text().renderText(otherFont, publisher + ", " + year, x, y + yOffset);
-        else
-            gui->text().renderText(otherFont, publisher, x, y + yOffset);
-        if (!coreName.empty()) {
-            yOffset += 21;
-            gui->text().renderText(otherFont, coreName, x, y + yOffset);
-        }
+        // the rule under it: the `edge` role at 78 %
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200));
+        renderer.fillRect(ableem::Rect(x, y + MetaLayout::RuleY, MetaLayout::RuleWidth, 1));
 
-        // the serial/region and last-played lines are a PS1 game's; a RetroArch game or an App has neither
-        if (!foreign) {
-            // serial number line - a field with no value is left out, and with neither there is no line at all
-            string serialLine;
-            if (!serial.empty())
-                serialLine = _("Serial:") + " " + serial;
-            if (!region.empty())
-                serialLine += (serialLine.empty() ? "" : ", ") + _("Region:") + " " + region;
-            if (!serialLine.empty()) {
-                yOffset += 21;
-                gui->text().renderText(otherFont, serialLine, x, y + yOffset);
-            }
-
-            // last played line - skipped entirely (no row reserved) when there is no value to show, the
-            // same way the coreName line above skips its yOffset when there is no core name
+        // the facts grid: the label in `secondary` (bold capitals, a little lower), the value in `text`; a RetroArch
+        // game the database does not know shows its core in the publisher row (updateTexts)
 #ifdef AB_PLATFORM_PSC
-            // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
-            bool canShowLastPlayed = Env::autobleemKernel;
+        // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
+        const bool canShowLastPlayed = Env::autobleemKernel;
 #else
-            // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
-            bool canShowLastPlayed = true;
+        // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
+        const bool canShowLastPlayed = true;
 #endif
-            if (canShowLastPlayed && !last_played.empty()) {
-                yOffset += 21;
-                gui->text().renderText(otherFont, _("Last played:") + " " + last_played, x, y + yOffset);
-            }
+        const MetaLayout::Kind kind =
+            !foreign ? MetaLayout::Kind::Ps1 : (app ? MetaLayout::Kind::App : MetaLayout::Kind::RetroArch);
+        const ableem::Font &valueFont = fixed.atSize(FONT_MED, MetaLayout::ValueSize);
+        int rowY = y + MetaLayout::GridY;
+        for (const MetaLayout::Fact &fact : MetaLayout::facts(kind, publisher, year, serial, region, last_played,
+                                                              coreName, canShowLastPlayed)) {
+            // a label longer than its column (German, Polish) shrinks to fit
+            const string label = _(fact.label);
+            const ableem::Font labelFont = text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label,
+                                                            MetaLayout::LabelWidth);
+            text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary,
+                                      XALIGN_LEFT);
+            text.renderText_WithColor(valueFont, fact.value, x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
+            rowY += MetaLayout::RowPitch;
         }
 
-        yOffset += 22;
-        if (!foreign) {
-            // PS1 icons line
-            gui->text().renderText(otherFont, players, x + 35, y + yOffset);
+        // the icon row: text centred on the icons' height
+        const ableem::Font &rowFont = fonts[FONT_15_BOLD];
+        const int iconY = y + MetaLayout::IconRowY;
+        const int textY = iconY + (MetaLayout::IconSize - rowFont.lineHeight()) / 2;
+        vector<string> badges;
+        if (kind == MetaLayout::Kind::Ps1) {
+            text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text, XALIGN_LEFT);
+            drawIcon("players", x, iconY, 0);
+            drawIcon("disc", x + MetaLayout::DiscX, iconY, 0);
+            text.renderText_WithColor(rowFont, to_string(discs), x + MetaLayout::DiscCountX, textY, style.text,
+                                      XALIGN_LEFT);
 
-            const ableem::Texture playersIcon = ctx.icon("players");
-            ableem::Size s = playersIcon.size();
-            w = s.w;
-            h = s.h;
-            rect.x = x;
-            rect.y = y + yOffset - 2;
-            rect.w = w;
-            rect.h = h;
-
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.w = w;
-            fullRect.h = h;
-            copyWithOutline("players", false);
-
-            int xoffset = 190, spread = 40;
-            // render internal icon
-            rect.x = x + 135;
-            copyWithOutline("disc", false);
-
-            gui->text().renderText(otherFont, to_string(discs), x + 170, y + yOffset);
-
-            rect.x = x + xoffset;
-            rect.y = y + yOffset - 2;
-            rect.w = 30;
-            rect.h = 30;
-
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.w = 30;
-            fullRect.h = 30;
             if (internal) {
                 locked = true;
                 hd = false;
-                copyWithOutline("internal");
-            } else {
-                copyWithOutline("usb");
             }
-
-            int spreadCount = 1;
-            rect.x = x + xoffset + (spread * spreadCount);
-            if (hd) {
-                copyWithOutline("hd");
-            } else {
-                copyWithOutline("sd");
-            }
-            ++spreadCount;
-            rect.x = x + xoffset + (spread * spreadCount);
-            if (locked) {
-                copyWithOutline("lock");
-            } else {
-                copyWithOutline("unlock");
-            }
-            if (favorite) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
-                copyWithOutline("favorite");
-            }
-            if (play_using_ra) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
-                copyWithOutline("retroarch");
-            }
+            badges.push_back(internal ? "internal" : "usb");
+            badges.push_back(hd ? "hd" : "sd");
+            badges.push_back(locked ? "lock" : "unlock");
+            if (favorite)
+                badges.push_back("favorite");
+            if (play_using_ra)
+                badges.push_back("retroarch");
             if (lightgun) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
                 bool onePlayer = players.rfind("1 ", 0) == 0;
-                copyWithOutline(onePlayer ? "lightgun" : "lightgun2");
+                badges.push_back(onePlayer ? "lightgun" : "lightgun2");
             }
-        } else {
-            // RetroArch game: the players line when the database knows, then the RA icon on the row the
-            // serial line left free
-            if (!app) {
-                if (playersKnown) {
-                    gui->text().renderText(otherFont, players, x, y + yOffset);
-                    yOffset += 21;
-                }
-                yOffset += 21;
-                ableem::Size s = ctx.icon("retroarch").size();
-                w = s.w;
-                h = s.h;
-                rect.x = x;
-                rect.y = y + yOffset - 2;
-                rect.w = w;
-                rect.h = h;
-
-                fullRect.x = 0;
-                fullRect.y = 0;
-                fullRect.w = w;
-                fullRect.h = h;
-                copyWithOutline("retroarch");
-
-                if (lightgun) {
-                    rect.x += 40;
-                    rect.w = 30;
-                    rect.h = 30;
-                    fullRect.w = 30;
-                    fullRect.h = 30;
-                    copyWithOutline("lightgun");
-                }
+        } else if (kind == MetaLayout::Kind::RetroArch) {
+            // the players when the database knows, then the RA icon (and the light gun) as badges
+            if (playersKnown) {
+                text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text,
+                                          XALIGN_LEFT);
+                drawIcon("players", x, iconY, 0);
             }
+            badges.push_back("retroarch");
+            if (lightgun)
+                badges.push_back("lightgun");
         }
+        const int count = static_cast<int>(badges.size());
+        for (int i = 0; i < count; i++)
+            drawIcon(badges[i], x + MetaLayout::badgeX(count, i), iconY, MetaLayout::IconSize);
     }
 }
 
