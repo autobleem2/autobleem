@@ -398,7 +398,7 @@ int AutoBleem::run() {
             usleep(1000 * 1000);
             gui_->input().flushEvents();
             gui_->display(true);
-            session_.resumingGui = true;
+            // not resumingGui: no game just ended, so the launcher must not look for its resume point (BUG-39)
             continue;
         }
         displayLost = 0;
@@ -433,7 +433,8 @@ int AutoBleem::run() {
             tryOutputMode(session_.pendingOutputMode);
             session_.pendingOutputMode.clear();
             session_.menuOption = MENU_OPTION_IDLE;
-            session_.resumingGui = true; // the launcher comes back on the same game
+            // the launcher comes back on the same game, but not as after a game: resumingGui stays false, or
+            // it would check the last game's resume point and call the run a crash (BUG-39)
             continue;
 #endif
         }
