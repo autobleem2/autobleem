@@ -183,7 +183,8 @@ void PsMeta::render() {
             const ableem::Font labelFont =
                 text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label, MetaLayout::LabelWidth);
             text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary, XALIGN_LEFT);
-            text.renderText_WithColor(valueFont, fact.value, x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
+            text.renderText_WithColor(valueFont, text.elide(valueFont, fact.value, MetaLayout::ValueWidth),
+                                      x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
             rowY += MetaLayout::RowPitch;
         }
 

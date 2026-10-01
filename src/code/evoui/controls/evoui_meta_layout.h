@@ -31,6 +31,9 @@ constexpr int DiscCountX = 164;
 constexpr int BadgePitch = 38;
 constexpr int BadgesRight = 470; // the last badge ends here
 constexpr int MaxFacts = 3;
+// a fact's value never runs past the section: the grid is full (3 rows of RowPitch under the title, then the icon
+// row), so a long value is elided with "..." at this width instead of wrapping into the next row
+constexpr int ValueWidth = RuleWidth - ValueX;
 
 enum class Kind { Ps1, RetroArch, App };
 
