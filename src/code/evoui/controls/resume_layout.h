@@ -1,7 +1,7 @@
 //
 // ResumeLayout (UIREV-37): the numbers and the small pure rules of the resume-slot screen (PsStateSelector) - where the
-// four cards, their picture wells and texts go on the 1280 x 720 canvas, which slot is the NEWEST, how the picture's cut
-// corners are clipped, and the date's format. tests/screens/test_resume_layout holds them without a Gui;
+// four cards, their picture wells and texts go on the 1280 x 720 canvas, which slot is the NEWEST, how the picture's
+// cut corners are clipped, and the date's format. tests/screens/test_resume_layout holds them without a Gui;
 // PsStateSelector::render draws with them. The design: autobleem-design themes/ab2.0.0/design/uirev37/README.md.
 //
 #pragma once
@@ -61,7 +61,8 @@ inline Box chipBox(const Box &card, int wordW) {
 }
 
 // the slot with the latest time, when two or more slots are in use - else -1. `times[i]` is the slot's file time (0 =
-// unknown), `used[i]` whether the slot holds a state. A tie goes to the lower slot; slots without a known time never win.
+// unknown), `used[i]` whether the slot holds a state. A tie goes to the lower slot; a slot without a known time never
+// wins.
 inline int newestSlot(const time_t (&times)[SlotCount], const bool (&used)[SlotCount]) {
     int usedCount = 0;
     int best = -1;

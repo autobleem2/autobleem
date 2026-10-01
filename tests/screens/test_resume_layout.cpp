@@ -1,7 +1,7 @@
 //
-// The resume-slot screen's layout and small rules (UIREV-37, evoui/controls/resume_layout.h): the four cards' places, the
-// NEWEST slot, the picture's cut corners and the date format. The drawing (PsStateSelector::render) needs a live Gui and
-// is the walk's job.
+// The resume-slot screen's layout and small rules (UIREV-37, evoui/controls/resume_layout.h): the four cards' places,
+// the NEWEST slot, the picture's cut corners and the date format. The drawing (PsStateSelector::render) needs a live
+// Gui and is the walk's job.
 //
 #include "doctest/doctest.h"
 
