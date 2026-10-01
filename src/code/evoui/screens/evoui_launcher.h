@@ -337,7 +337,7 @@ public:
     PsMoveBtn *arrow = nullptr;
     // the footer's two hint lines: line 1 is what acts on the current selection (built from `state` and the
     // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
-    // ("|@X|", "|@L2+R2|", "|@Left|/|@Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
+    // ("|@X|", "|@L2+R2|", "|@Left+Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
     // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
     // hintBar at the largest font that fits the language (the rules: abgui::HintBar), over the theme's `hintBar`
     // frame when it has one. updateHintsIfNeeded() rebuilds the two lines from

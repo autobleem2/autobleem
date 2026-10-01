@@ -67,14 +67,14 @@ void GuiBtnGuide::draw() {
     row("|@Start|", _("Random game"), key(keyFor(Button::Start, devHost)));
     row("|@Select|", _("Choose the games shown: PlayStation, RetroArch or Apps and the group"),
         key(keyFor(Button::Select, devHost)));
-    row("|@L2| + |@R2|", _("System menu (Re-scan, RetroArch, Memory Cards, Power off, ...)"),
+    row("|@L2+R2|", _("System menu (Re-scan, RetroArch, Memory Cards, Power off, ...)"),
         key(ableem::KeyboardMap::systemMenuKey()));
     row("|@Up|", _("Quick menu (Re-scan, Store, Network & Controllers, System menu)"), key(_("Arrow up")));
     section(_("In game"));
-    row("|@Select| + |@Start|", _("Emulator config menu"));
+    row("|@Select+Start|", _("Emulator config menu"));
     row(_("RESET"), _("Quit emulation - back to AutoBleem"));
     section(_("In RetroArch game"));
-    row("|@Select| + |@Start|", _("Open RetroArch menu"));
+    row("|@Select+Start|", _("Open RetroArch menu"));
     row(_("POWER"), _("Exit to EvoUI"));
 
     gui->renderStatus("|@O| " + _("Back") + "|");

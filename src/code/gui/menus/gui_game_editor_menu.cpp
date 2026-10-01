@@ -461,7 +461,7 @@ void GuiEditor::draw() {
 
     string guiMenu = "|@L1|/|@R1| " + _("First/last") + "   |@L2|/|@R2| " + _("Page") + "   ";
     if (selOption != OPT_UNLOCK) // the unlock row has no value to choose
-        guiMenu += "|@Left|/|@Right| " + _("Choose") + "   ";
+        guiMenu += "|@Left+Right| " + _("Choose") + "   ";
     guiMenu += selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
     if (!internal) {
         guiMenu += "  |@S| " + _("Change memory card") + " ";

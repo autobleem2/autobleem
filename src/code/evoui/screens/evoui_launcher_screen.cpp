@@ -1178,7 +1178,7 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
             line1.push_back({"|@Up|", _("Quick menu")});
             line2.push_back({"|@Select|", _("Games shown")});
         } else {
-            line1.push_back({"|@Left|/|@Right|", _("Choose")});
+            line1.push_back({"|@Left+Right|", _("Choose")});
             line1.push_back({"|@Up|", _("Back to games")});
             line2.push_back({"|@T|", _("Guide")});
         }
@@ -1193,11 +1193,11 @@ void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &li
             line1.push_back({"|@X|", _("Resume slot") + " " + slotLabel});
             if (sselector->slotActive[sselector->selSlot])
                 line1.push_back({"|@T|", _("Delete slot")});
-            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@Left+Right|", _("Slot")});
             line1.push_back({"|@O|", _("Back")});
         } else {
             line1.push_back({"|@X|", _("Save to slot") + " " + slotLabel});
-            line1.push_back({"|@Left|/|@Right|", _("Slot")});
+            line1.push_back({"|@Left+Right|", _("Slot")});
             line1.push_back({"|@O|", _("Don't save")});
         }
         line2.push_back({"|@L2+R2|", _("System")});
