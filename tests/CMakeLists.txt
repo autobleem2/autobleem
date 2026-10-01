@@ -40,3 +40,7 @@ endif()
 # testing build or a release, the short version, and the tag's place under the pad plate
 ab_add_test(test_channel_watermark screens/test_channel_watermark.cpp)
 target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
+
+# UIREV-35: the game details section's rows and badge places (evoui/controls/evoui_meta_layout.h, pure)
+ab_add_test(test_meta_layout screens/test_meta_layout.cpp)
+target_include_directories(test_meta_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
