@@ -42,7 +42,7 @@ ab_add_test(test_channel_watermark screens/test_channel_watermark.cpp)
 target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
 
 # UIREV-35: the game details section's rows and badge places (evoui/controls/evoui_meta_layout.h, pure)
-ab_add_test(test_meta_layout screens/test_meta_layout.cpp)
+ab_add_test(test_meta_layout screens/test_meta_layout.cpp LIBS ab_gui)
 target_include_directories(test_meta_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
 
 # UIREV-36: the hint bar's fixed grid of role slots (evoui/controls/hint_slots.h, pure) - which item sits in which
