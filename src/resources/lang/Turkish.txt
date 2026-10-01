@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -51,6 +51,7 @@ Change memory card=Hafıza kartını değiştir
 Charging=Şarj oluyor
 Check the download site for a newer version=Daha yeni bir sürüm için indirme sitesine bakın
 Checking for updates...=Güncellemeler denetleniyor...
+Cheers, screemer=Sevgiler, screemer
 Choose=Seç
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Gösterilen oyunları seçin: PlayStation, RetroArch veya uygulamalar ve grup
 Clock=Saat hızı
@@ -126,6 +127,7 @@ Enter new name for memory card=Hafıza kartı için yeni ad girin
 Entry=Giriş
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Diğer her şey: Seçenekler, Oyun Yöneticisi, Kapat ve daha fazlası
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Her şey hazır – şimdi birkaç oyunu bellekteki Games klasörüne at, Oyunları Yeniden Tara'yı seç, harika bir konsolun olsun.
 Exit game=Oyundan çık
 Exit to=Çıkış:
 Exit to EvoUI=EvoUI'ye çık
@@ -174,6 +176,7 @@ Graphics=Grafik
 Guide=Kılavuz
 Hardware=Donanım
 Hardware Information=Donanım Bilgisi
+Hi, and welcome to AutoBleem!=Merhaba, AutoBleem'e hoş geldin!
 HIGH SCORE=EN YÜKSEK SKOR
 Hostname=Ana bilgisayar adı
 In game=Oyun İçinde

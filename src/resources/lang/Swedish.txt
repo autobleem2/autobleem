@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -51,6 +51,7 @@ Change memory card=Byt minneskort
 Charging=Laddar
 Check the download site for a newer version=Leta efter en nyare version på nedladdningssidan
 Checking for updates...=Söker efter uppdateringar...
+Cheers, screemer=Hälsningar, screemer
 Choose=Välj
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Välj vilka spel som visas: PlayStation, RetroArch eller appar och gruppen
 Clock=Klockfrekvens
@@ -126,6 +127,7 @@ Enter new name for memory card=Ange nytt namn för minneskort
 Entry=Inmatning
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Allt annat: Alternativ, Spelbibliotek, Stäng av och mer
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Allt är klart – lägg nu några spel i mappen Games på ditt minne, välj Skanna om spel, så har du en riktigt bra konsol.
 Exit game=Avsluta spel
 Exit to=Avsluta till
 Exit to EvoUI=Avsluta till EvoUI
@@ -174,6 +176,7 @@ Graphics=Grafik
 Guide=Guide
 Hardware=Hårdvara
 Hardware Information=Hårdvaruinformation
+Hi, and welcome to AutoBleem!=Hej och välkommen till AutoBleem!
 HIGH SCORE=BÄSTA RESULTAT
 Hostname=Värdnamn
 In game=I spel

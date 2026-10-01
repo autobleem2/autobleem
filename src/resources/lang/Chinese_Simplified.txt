@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -51,6 +51,7 @@ Change memory card=更换记忆卡
 Charging=充电中
 Check the download site for a newer version=请到下载站点查看更新版本
 Checking for updates...=正在检查更新...
+Cheers, screemer=祝玩得开心，screemer
 Choose=选择
 Choose the games shown: PlayStation, RetroArch or Apps and the group=选择显示的游戏：PlayStation、RetroArch 或应用，以及分组
 Clock=时钟频率
@@ -126,6 +127,7 @@ Enter new name for memory card=输入记忆卡的新名称
 Entry=条目
 Ethernet=以太网
 Everything else: Options, Game Manager, Power off and more=其他所有功能：选项、游戏管理器、关机等
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=一切都已就绪——现在把游戏放进 U 盘的 Games 文件夹，选择“重新扫描游戏”，你就拥有一台很棒的游戏机了。
 Exit game=退出游戏
 Exit to=退出到
 Exit to EvoUI=退出到 EvoUI
@@ -174,6 +176,7 @@ Graphics=图形
 Guide=指南
 Hardware=硬件
 Hardware Information=硬件信息
+Hi, and welcome to AutoBleem!=你好，欢迎使用 AutoBleem！
 HIGH SCORE=最高分
 Hostname=主机名
 In game=游戏中

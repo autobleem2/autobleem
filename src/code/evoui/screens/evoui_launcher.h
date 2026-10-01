@@ -130,6 +130,9 @@ public:
     std::set<std::string> lowBatteryNotified;
     void pollPadBattery();
     void renderPadBatteries();
+    // UIREV-43: a fresh install's welcome card, drawn where the covers would be when the PS1 "all games" set is empty
+    bool welcomeCardShows() const;
+    void renderWelcomeCard();
     // fills both padBatteryLabels and padBatteryIconTags from one pass of matchPadBatteries() - out params
     // rather than a struct-of-two-vectors to keep the call site in pollPadBattery() simple
     std::vector<std::string> padBatteryLabelsFor(const std::vector<PadBatteryInfo> &batteries,

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -51,6 +51,7 @@ Change memory card=Geheugenkaart wisselen
 Charging=Opladen
 Check the download site for a newer version=Kijk op de downloadsite voor een nieuwere versie
 Checking for updates...=Controleren op updates...
+Cheers, screemer=Groeten, screemer
 Choose=Kiezen
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Kies de getoonde spellen: PlayStation, RetroArch of apps en de groep
 Clock=Klok
@@ -126,6 +127,7 @@ Enter new name for memory card=Nieuwe naam voor memory card
 Entry=Item
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Al het andere: Options, Game Manager, Uitschakelen en meer
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Alles is ingesteld – zet nu wat games in de map Games op je stick, kies Games opnieuw scannen en je hebt een geweldige console.
 Exit game=Spel afsluiten
 Exit to=Afsluiten naar
 Exit to EvoUI=Afsluiten naar EvoUI
@@ -174,6 +176,7 @@ Graphics=Graphics
 Guide=Gids
 Hardware=Hardware
 Hardware Information=Hardware informatie
+Hi, and welcome to AutoBleem!=Hoi, en welkom bij AutoBleem!
 HIGH SCORE=HOOGSTE SCORE
 Hostname=Hostnaam
 In game=In game

@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -51,6 +51,7 @@ Change memory card=Změnit paměťovou kartu
 Charging=Nabíjení
 Check the download site for a newer version=Novější verzi hledejte na stránce ke stažení
 Checking for updates...=Kontrola aktualizací...
+Cheers, screemer=Měj se, screemer
 Choose=Vybrat
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Výběr zobrazených her: PlayStation, RetroArch nebo aplikace a skupina
 Clock=Takt
@@ -126,6 +127,7 @@ Enter new name for memory card=Zadejte nový název paměťové karty
 Entry=Položka
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Vše ostatní: Nastavení, Správce her, Vypnout a další
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Všechno je připravené – teď stačí nahrát nějaké hry do složky Games na flashce, zvolit Znovu prohledat hry a máš skvělou konzoli.
 Exit game=Ukončit hru
 Exit to=Přejít do
 Exit to EvoUI=Ukončit do EvoUI
@@ -174,6 +176,7 @@ Graphics=Grafika
 Guide=Průvodce
 Hardware=Hardware
 Hardware Information=Informace o hardwaru
+Hi, and welcome to AutoBleem!=Ahoj a vítej v AutoBleem!
 HIGH SCORE=NEJLEPŠÍ SKÓRE
 Hostname=Název hostitele
 In game=Ve hře

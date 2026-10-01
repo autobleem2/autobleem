@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -51,6 +51,7 @@ Change memory card=Skift hukommelseskort
 Charging=Oplader
 Check the download site for a newer version=Se efter en nyere version på downloadsiden
 Checking for updates...=Søger efter opdateringer...
+Cheers, screemer=Hilsen screemer
 Choose=Vælg
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Vælg de viste spil: PlayStation, RetroArch eller apps og gruppen
 Clock=Klokfrekvens
@@ -126,6 +127,7 @@ Enter new name for memory card=Indtast nyt navn for memory kort
 Entry=Post
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Alt andet: Indstillinger, Spilbibliotek, Sluk og mere
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Alt er klar – læg nu nogle spil i mappen Games på dit stik, vælg Genscan spil, så har du en fantastisk konsol.
 Exit game=Afslut spil
 Exit to=Afslut til
 Exit to EvoUI=Afslut til EvoUI
@@ -174,6 +176,7 @@ Graphics=Grafik
 Guide=Guide
 Hardware=Hardware
 Hardware Information=Hardwareinformation
+Hi, and welcome to AutoBleem!=Hej, og velkommen til AutoBleem!
 HIGH SCORE=HØJESTE SCORE
 Hostname=Værtsnavn
 In game=I spillet
