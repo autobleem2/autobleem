@@ -21,6 +21,17 @@ SEL_DISPLAY=8
 
 RC=/media/Autobleem/rc
 . $RC/ab_log.sh
+# ab_timeout comes from ab_log.sh; a stick whose ab_log.sh is older lacks it (the Wi-Fi calls below then never ran:
+# "ab_timeout: command not found", CONSOLE-15 P2 repro 3) - a bounded call here either way
+if ! type ab_timeout > /dev/null 2>&1; then
+    if timeout 1 true 2> /dev/null; then
+        ab_timeout() { timeout 5 "$@"; }
+    elif timeout -t 1 true 2> /dev/null; then
+        ab_timeout() { timeout -t 5 "$@"; }
+    else
+        ab_timeout() { "$@"; }
+    fi
+fi
 # a standby that worked is logged with the rest of the run (RAM unless kept); what went wrong - the stick
 # busy, no standby at all - goes to the stick, where it is still there after the reboot that follows
 LOG=$AB_LOG_DIR/standby.log
@@ -36,7 +47,7 @@ ab_watch_stop() {
 # (FAILLOG, synced) - straight away while /media is mounted, else (AB_MARK_REMOUNT=1) by a quick mount, append, sync,
 # umount of the same stick; a line on the stick is tagged [stick] in $SLOG so the log copy does not repeat it.
 # Only the power off writes any of it, the quiet-stick rule holds.
-AB_MARK_REMOUNT=1
+: "${AB_MARK_REMOUNT:=0}" # 1: also a quick remount per step after the umount (the stick-side trace of a reset)
 STEP=0
 mark_line() {
     STEP=$((STEP + 1))
@@ -438,9 +449,6 @@ standby() {
     rm -f /media/System/Logs/poweroff_reason # the power-off worked: a later boot is not 'after a power-off request'
     echo "$(date) mounted $DEV after $i s" >> $SLOG
     { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
-    # CONSOLE-15 P2: while the suspend is under test its trace (what the RAM log has and the stick does not) goes to the
-    # stick too; remove with the markers
-    { echo "-- a standby that woke (RAM trace)"; grep -v ' \[stick\]$' $SLOG; echo; } >> $FAILLOG
     return 0
 }
 
