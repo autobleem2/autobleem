@@ -182,7 +182,7 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show internal games:"), "origames", true,
                        vector<string>({"false", "true"}));
 #endif
-    // only where the platform can fetch at all (download_command in its ini) - the console cannot
+    // only where the platform can fetch at all (download_command in its ini)
     if (!Env::downloadCommand().empty())
         lines.emplace_back(CFG_ONLINE, _("Fetch box art online:"), "online", true, vector<string>({"true", "false"}));
     if (lines.back().id == CFG_HEADING)
