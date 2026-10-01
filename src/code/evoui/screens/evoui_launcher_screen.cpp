@@ -6,6 +6,7 @@
 #include "evoui_launcher.h"
 #include "../channel_watermark.h"
 #include "../controls/hint_slots.h"
+#include "../set_banner.h"
 #include "core/version.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
@@ -282,9 +283,9 @@ void GuiLauncher::showSetName() {
 
     string numGames = " (" + pluralGames(carousel.games.size()) + ")";
 
-    long timeout = infoTimeout();
-    if (timeout <= 0)
-        return; // Options' "Notification timeout: 0" - the informational bubbles are not shown
+    // the set banner always shows: with Options' "Notification timeout" Off it holds for the default time
+    // (Off hides the other informational bubbles only)
+    const long timeout = SetBanner::holdTicks(infoTimeout(), DefaultShowingTimeout);
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
