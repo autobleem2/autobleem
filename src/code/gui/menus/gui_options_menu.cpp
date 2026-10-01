@@ -4,7 +4,7 @@
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/theme_converter.h"
-#include "core/services/theme_installer.h"
+#include "core/services/theme_zip_cache.h"
 #include "core/services/output_mode.h"
 
 using namespace std;
@@ -24,7 +24,6 @@ string GuiOptions::getStatusLine() {
 vector<string> GuiOptions::getThemes() {
     vector<string> list;
     string uiThemePath = Env::getPathToThemesDir();
-    ThemeInstaller::installZips(uiThemePath); // a dropped <name>.zip is listed as <name>
     DirEntries uiThemeFolders = DirEntry::diru_DirsOnly(uiThemePath);
     for (const DirEntry &entry : uiThemeFolders) {
         // a theme.json, or an old-layout folder that Theme::load() will convert when it is picked
@@ -34,6 +33,9 @@ vector<string> GuiOptions::getThemes() {
             list.push_back(entry.name); // add the theme dir name
         }
     }
+    // a <name>.zip is listed as <name> without being unpacked (it is, when picked); a folder of that name wins
+    for (const string &name : ThemeZipCache::listZipThemes(uiThemePath))
+        list.push_back(name);
 
     return list;
 }
