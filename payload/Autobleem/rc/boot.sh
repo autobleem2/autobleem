@@ -90,7 +90,14 @@ apply_output_mode() {
 while true; do
     cd $RC
     apply_output_mode
+    # CONSOLE-15 evidence: the watch log (RAM, one line per 30 s - see ab_watch.sh); it runs from a tmpfs copy
+    # and is stopped by selection.sh before the stick is unmounted, so it is started again every time round
+    sh $RC/ab_watch.sh start
+    rm -f "$AB_RUNTIME_DIR/autobleem_exit"
     ./autobleem.sh
+    ab_sh_rc=$?
+    # autobleem.sh writes the launcher's own status; if it was killed itself, its status is the next best
+    [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
     cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg

@@ -26,6 +26,11 @@ RC=/media/Autobleem/rc
 LOG=$AB_LOG_DIR/standby.log
 FAILLOG=/media/System/Logs/standby.log
 
+# the watch log's helper (ab_watch.sh) runs from a tmpfs copy; this ends it before the stick is unmounted
+ab_watch_stop() {
+    [ -f /tmp/ab_watch_run.sh ] && sh /tmp/ab_watch_run.sh stop
+}
+
 AB_SELECTION=0
 [ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ] && . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
 rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
@@ -74,6 +79,7 @@ poweroff_instead() {
 # other one), and is mounted again exactly as usb_watch mounted it. Nothing here touches the console's
 # own storage. Returns 0 with the stick mounted again, 1 when it is not back within 30 s.
 standby() {
+    ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
     DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
     SLOG=/tmp/standby.log
     echo "$(date) standby: dev=$DEV" > $SLOG
@@ -186,6 +192,19 @@ standby() {
         fi
     fi
 
+    # CONSOLE-15 evidence: the network after the wake (the 3 s + the rear port's wait above), each call bounded
+    {
+        echo "$(date) network after the wake:"
+        echo "== iw dev wlan0 link"
+        ab_timeout iw dev wlan0 link
+        echo "== ip addr show wlan0"
+        ab_timeout ip addr show wlan0
+        echo "== wpa_cli -i wlan0 status"
+        ab_timeout wpa_cli -i wlan0 status
+        echo "== dmesg | tail -60"
+        dmesg 2>&1 | tail -60
+    } >> $SLOG 2>&1
+
     i=0
     while [ $i -lt 30 ]; do
         # any sd?1, not only sda1/sdb1 as usb_watch looks: a stick pulled during the standby and plugged back
@@ -256,6 +275,7 @@ case "$AB_SELECTION" in
 *)
     # no selection (or none the launcher leaves with): it did not leave the way it does - a crash, killed.
     # Its logs are in RAM, which the reboot below empties, so they go to the stick first
+    ab_watch_stop
     ab_persist_logs "autobleem-gui ended without a selection (AB_SELECTION=$AB_SELECTION) - a crash?"
     ;;
 esac
