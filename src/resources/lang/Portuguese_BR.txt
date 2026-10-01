@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (inteira)
 4:3 (integer)=4:3 (inteira)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Dados do AutoBleem
 AutoBleem is up to date=O AutoBleem está atualizado
+AUTOBLEEM PRESENTS=AUTOBLEEM APRESENTA
 AutoBleem resume points not available in RetroArch.=Os pontos de retomada do AutoBleem não estão disponíveis no RetroArch.
 AutoBleem theme:=Tema do AutoBleem:
 Back=Voltar
@@ -185,7 +186,6 @@ Guide=Guia
 Hardware=Hardware
 Hardware Information=Informações de Hardware
 Hi, and welcome to AutoBleem!=Olá, e bem-vindo ao AutoBleem!
-HIGH SCORE=MELHOR PONTUAÇÃO
 Hostname=Nome do host
 In game=Em Jogo
 In RetroArch game=No jogo RetroArch
@@ -218,7 +218,6 @@ Lightgun games=Jogos de pistola
 Linear=Linear
 Link Block=Bloco de Ligação
 Link end Block=Bloco Final de Ligação
-LIVES=VIDAS
 Load average=Carga média
 Loading ... Please Wait ...=Carregando ... Aguarde ...
 Loading...=Carregando...
@@ -239,6 +238,7 @@ More accents=Mais acentos
 Move=Mover
 Move cursor=Mover o cursor
 Moving :=Movendo:
+MUSIC=MÚSICA
 Music:=Música:
 Nearest=Mais próximo
 Needs a network connection=Requer uma conexão de rede
@@ -306,6 +306,7 @@ Product code=Código do produto
 PS1 emulator:=Emulador PS1:
 Published by:=Publicado por:
 PUBLISHER=PUBLICADORA
+PUSH START BUTTON=APERTE START
 Put down=Soltar
 Put the scan's processors in order, switch them on or off=Ordene os processadores da varredura, ative-os ou desative-os
 Quick menu=Menu rápido
@@ -355,7 +356,6 @@ Scanner processors=Processadores de varredura
 Scanning=Varredura
 Scanning ROMs=Verificando ROMs
 Scanning...=Escaneando...
-SCORE=PONTUAÇÃO
 SDL's built-in=Embutido no SDL
 see processors.log=veja processors.log
 Select=Selecionar

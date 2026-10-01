@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=AutoBleem-data
 AutoBleem is up to date=AutoBleem är uppdaterat
+AUTOBLEEM PRESENTS=AUTOBLEEM PRESENTERAR
 AutoBleem resume points not available in RetroArch.=AutoBleems spar-punkter är inte tillgängliga i RetroArch.
 AutoBleem theme:=AutoBleem-tema:
 Back=Tillbaka
@@ -185,7 +186,6 @@ Guide=Guide
 Hardware=Hårdvara
 Hardware Information=Hårdvaruinformation
 Hi, and welcome to AutoBleem!=Hej och välkommen till AutoBleem!
-HIGH SCORE=BÄSTA RESULTAT
 Hostname=Värdnamn
 In game=I spel
 In RetroArch game=I RetroArch-spel
@@ -218,7 +218,6 @@ Lightgun games=Lightgun-spel
 Linear=Linjär
 Link Block=Länkblock
 Link end Block=Slutblock länk
-LIVES=LIV
 Load average=Genomsnittlig belastning
 Loading ... Please Wait ...=Laddar ... Vänligen vänta ...
 Loading...=Läser in...
@@ -239,6 +238,7 @@ More accents=Fler accenter
 Move=Flytta
 Move cursor=Flytta markören
 Moving :=Flyttar :
+MUSIC=MUSIK
 Music:=Musik:
 Nearest=Närmaste
 Needs a network connection=Kräver en nätverksanslutning
@@ -306,6 +306,7 @@ Product code=Produktkod
 PS1 emulator:=PS1-emulator:
 Published by:=Utgivet av:
 PUBLISHER=UTGIVARE
+PUSH START BUTTON=TRYCK PÅ START
 Put down=Släpp
 Put the scan's processors in order, switch them on or off=Ordna skanningens processorer, slå på eller av dem
 Quick menu=Snabbmeny
@@ -355,7 +356,6 @@ Scanner processors=Skanningsprocessorer
 Scanning=Skannar
 Scanning ROMs=Skannar ROM-filer
 Scanning...=Scannar...
-SCORE=POÄNG
 SDL's built-in=Inbyggt i SDL
 see processors.log=se processors.log
 Select=Välj

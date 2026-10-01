@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -29,6 +29,7 @@ Auto=Auto
 AutoBleem=AutoBleem
 AutoBleem data=Date AutoBleem
 AutoBleem is up to date=AutoBleem este actualizat
+AUTOBLEEM PRESENTS=AUTOBLEEM PREZINTĂ
 AutoBleem resume points not available in RetroArch.=Punctele de reluare AutoBleem nu sunt disponibile in RetroArch.
 AutoBleem theme:=Schema de culori pentru AutoBleem:
 Back=Înapoi
@@ -185,7 +186,6 @@ Guide=Ghid
 Hardware=Hardware
 Hardware Information=Informatii Hardware
 Hi, and welcome to AutoBleem!=Salut și bun venit la AutoBleem!
-HIGH SCORE=SCOR MAXIM
 Hostname=Nume gazdă
 In game=In joc
 In RetroArch game=In jocul RetroArch
@@ -218,7 +218,6 @@ Lightgun games=Jocuri cu pistol
 Linear=Liniar
 Link Block=Bloc de Legatura
 Link end Block=Sfarsit Bloc de Legatura
-LIVES=VIETI
 Load average=Încărcare medie
 Loading ... Please Wait ...=Incarca...Te rog asteapta...
 Loading...=Se încarcă...
@@ -239,6 +238,7 @@ More accents=Mai multe accente
 Move=Mută
 Move cursor=Mută cursorul
 Moving :=Se muta:
+MUSIC=MUZICĂ
 Music:=Muzica:
 Nearest=Cel mai apropiat
 Needs a network connection=Necesită o conexiune la rețea
@@ -306,6 +306,7 @@ Product code=Cod produs
 PS1 emulator:=Emulator PS1:
 Published by:=Publicat de:
 PUBLISHER=EDITOR
+PUSH START BUTTON=APASĂ START
 Put down=Lasă jos
 Put the scan's processors in order, switch them on or off=Ordonează procesoarele scanării, pornește-le sau oprește-le
 Quick menu=Meniu rapid
@@ -355,7 +356,6 @@ Scanner processors=Procesoare de scanare
 Scanning=Scanare
 Scanning ROMs=Se scanează ROM-urile
 Scanning...=Scanez...
-SCORE=SCOR
 SDL's built-in=Integrat în SDL
 see processors.log=vezi processors.log
 Select=Selecteaza
