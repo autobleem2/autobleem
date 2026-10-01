@@ -149,6 +149,91 @@ poweroff_instead() {
     systemctl reboot
 }
 
+# CONSOLE-15 P2: suspend with a hub and a Wi-Fi dongle on the rear (OTG) port. musb refuses suspend-to-RAM
+# ("trying to suspend as a_host while active", -16) unless its root port is itself suspended (otg state A_SUSPEND), and
+# a hub whose child is active - the Wi-Fi dongle is power/control=on, wlan0 up - never suspends. So before the
+# suspend the rear devices are made idle: wlan0 down, then the device(s) on the root port (the hub) deauthorized -
+# unconfigured, its children gone, nothing left to keep it awake - and the bus is waited for until it reports
+# runtime 'suspended'. After the wake they are authorized again, the hub enumerates its children afresh (the dongle
+# is back at its own defaults) and wlan0 is brought up. The port's own host restart (swmode, below) stays the recovery
+# for a bus the resume left dead. Everything is marked; nothing is written to the console's own storage.
+rear_devs() { # the devices directly on the rear root port (1-1, not 1-1.4 or an interface)
+    for d in /sys/bus/usb/devices/$REAR_NUM-*; do
+        case "${d##*/}" in *.* | *:*) continue ;; esac
+        [ -e "$d" ] && echo "$d"
+    done
+}
+rear_kids() { # how many devices are below those (the hub's ports)
+    k=0
+    for d in /sys/bus/usb/devices/$REAR_NUM-*.*; do
+        case "${d##*/}" in *:*) continue ;; esac
+        [ -e "$d" ] && k=$((k + 1))
+    done
+    echo $k
+}
+rear_state() {
+    s="bus=$(cat $REAR_BUS/power/runtime_status 2>/dev/null)"
+    for d in /sys/bus/usb/devices/$REAR_NUM-*; do
+        case "${d##*/}" in *:*) continue ;; esac
+        [ -e "$d" ] && s="$s ${d##*/}=$(cat $d/power/runtime_status 2>/dev/null)/auth$(cat $d/authorized 2>/dev/null)/$(cat $d/power/control 2>/dev/null)"
+    done
+    echo "$s"
+}
+rear_quiesce() {
+    ab_timeout ip link set wlan0 down > /dev/null 2>&1
+    for d in $(rear_devs); do
+        echo auto > $d/power/control 2> /dev/null
+        echo 0 > $d/authorized 2> /dev/null
+    done
+    q=0
+    while [ "$(cat $REAR_BUS/power/runtime_status 2>/dev/null)" != suspended ] && [ $q -lt 6 ]; do
+        q=$((q + 1))
+        sleep 1
+    done
+    mark "rear port quiesced after $q s: $(rear_state)"
+}
+rear_hostmode() { # the glue's own switch redoes the host bring-up (see the wake below)
+    echo idle > $REAR_MODE # the first time a no-op (the switch only tracks its own writes)
+    sleep 1
+    echo host > $REAR_MODE
+}
+rear_wait_hub() { # $1 = seconds
+    w=0
+    while [ -z "$(rear_devs)" ] && [ $w -lt $1 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+}
+rear_restore() {
+    for d in $(rear_devs); do
+        [ "$(cat $d/authorized 2>/dev/null)" = 0 ] && echo 1 > $d/authorized 2> /dev/null
+    done
+    w=0
+    while [ "$(rear_kids)" -lt "$REAR_KIDS" ] && [ $w -lt 8 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+    mark_ram "rear port restored after $w s (devices below the hub: $(rear_kids) of $REAR_KIDS): $(rear_state)"
+}
+# wlan0 back up after the rear port came back; the services are touched only when it is not associated 5 s later
+wifi_restore() {
+    w=0
+    while [ ! -e /sys/class/net/wlan0 ] && [ $w -lt 8 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+    ab_timeout ip link set wlan0 up > /dev/null 2>&1
+    sleep 5
+    if ab_timeout iw dev wlan0 link 2>&1 | grep -q 'Not connected'; then
+        mark_ram "wlan0 not connected after the wake - restarting the Wi-Fi services: $(systemctl list-units --no-legend 'wpa_supplicant*' 'dhcpcd*' 'dhclient*' 2>/dev/null | awk '{print $1}' | tr '\n' ' ')"
+        for u in $(systemctl list-units --no-legend 'wpa_supplicant*' 'dhcpcd*' 'dhclient*' 2>/dev/null | awk '{print $1}'); do
+            ( systemctl restart "$u" > /dev/null 2>&1 & )
+        done
+    else
+        mark_ram "wlan0 up: $(ab_timeout iw dev wlan0 link 2>&1 | head -1)"
+    fi
+}
+
 # The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
 # wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
 # coming back dirty (Windows' "scan and fix"). The red LED alone is the AutoBleem standby; the USB bus is
@@ -172,10 +257,17 @@ standby() {
     REAR_DEV=""
     for u in /sys/bus/usb/devices/usb*; do
         case "$(readlink -f $u)" in
-        */musb-hdrc.0.auto/usb*) REAR_DEV=/sys/bus/usb/devices/${u##*/usb}-1 ;;
+        */musb-hdrc.0.auto/usb*)
+            REAR_NUM=${u##*/usb}
+            REAR_BUS=$u
+            REAR_DEV=/sys/bus/usb/devices/$REAR_NUM-1
+            ;;
         esac
     done
     [ -n "$REAR_DEV" ] && [ -e "$REAR_DEV" ] && REAR_HAD=1
+    REAR_MODE=/sys/devices/platform/mt_usb/swmode
+    REAR_KIDS=0
+    [ "$REAR_HAD" = 1 ] && REAR_KIDS=$(rear_kids)
     mkdir -p /media/System/Logs
     {
         echo "$(date) power-off requested: uptime=$(cut -d' ' -f1 /proc/uptime) rtc=$(cat /sys/class/rtc/rtc0/since_epoch 2>/dev/null) rear_dev=${REAR_DEV:-none} rear_had=$REAR_HAD wakelocks=[$(cat /sys/power/wake_lock 2>/dev/null)]"
@@ -189,15 +281,12 @@ standby() {
     state_dump >> $FAILLOG
     sync
     mark "state before the first step saved (watchdog, usb, power supplies, boot reason)"
-    # CONSOLE-15 P2 (the fix under test): a USB host on the rear (OTG) port refuses suspend-to-RAM every time (see
-    # poweroff_instead), and the steps on the way to that refusal - the gadget switched off on the same port, the
-    # LED, three refused 'echo mem' - are where a reset in the first seconds could hide. So with a rear device the
-    # power off goes straight to poweroff_instead, the stick still mounted. AB_REAR_SKIP_SUSPEND=0 in the environment
-    # (or here) gives the old path back.
-    : "${AB_REAR_SKIP_SUSPEND:=1}"
-    if [ "$REAR_HAD" = 1 ] && [ "$AB_REAR_SKIP_SUSPEND" = 1 ]; then
-        mark "rear USB device present ($REAR_DEV): no suspend attempt, straight to the power off"
-        poweroff_instead
+    # CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
+    # then refuses the suspend (see rear_quiesce above): the rear devices are made idle first, the stick still mounted
+    # so that the markers go straight to it. A real suspend is tried either way; poweroff_instead only after it failed.
+    if [ "$REAR_HAD" = 1 ]; then
+        mark "rear USB: $REAR_KIDS device(s) below the hub: $(rear_state) - quiescing"
+        rear_quiesce
     fi
     mark "umount /media next"
     n=0
@@ -247,6 +336,7 @@ standby() {
         echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
         dmesg | tail -60 | grep -iE 'failed to suspend|while active|early wake|abort|wakeup pending' >> $SLOG
         if [ $try -ge 3 ]; then
+            mark_ram "echo mem refused $try times - no real suspend possible, falling back to the power off; rear: $(rear_state 2>/dev/null) otg: $(dmesg | tail -80 | grep -iE 'musb|a_host|otg' | tail -3 | tr '\n' '|')"
             poweroff_instead
         fi
         try=$((try + 1))
@@ -254,6 +344,7 @@ standby() {
     done
     echo 1 > /sys/class/leds/green/brightness
     echo 0 > /sys/class/leds/red/brightness
+    mark_ram "echo mem returned (try $try) - the console woke"
     if [ $GADGET_ON = 1 ]; then
         # the overlay's own script brings it back as it came up at boot (the gadget, rndis0's address, ssh)
         if [ -x /etc/autobleem/rndis ] || [ -f /etc/autobleem/rndis ]; then
@@ -284,19 +375,24 @@ standby() {
     # (musb_id_pin_sw_work: VBUS, session, PHY) and the hub re-enumerates within 2 s; unbinding the driver instead
     # leaves the port dead (its probe cannot run twice). Only when something was there before the standby and is
     # still missing - the stock kernel, an empty rear port or a device that came back: nothing, no wait.
-    REAR_MODE=/sys/devices/platform/mt_usb/swmode
-    if [ "$REAR_HAD" = 1 ] && [ -w $REAR_MODE ]; then
-        j=0
-        while [ ! -e "$REAR_DEV" ] && [ $j -lt 2 ]; do
-            j=$((j + 1))
-            sleep 1
-        done
-        if [ ! -e "$REAR_DEV" ]; then
-            echo "$(date) rear USB: its device did not come back - restarting the port's host mode" >> $SLOG
-            echo idle > $REAR_MODE # the first time a no-op (the switch only tracks its own writes)
-            sleep 1
-            echo host > $REAR_MODE
+    # CONSOLE-15 P2: the rear devices were deauthorized for the suspend (rear_quiesce): when the hub is there after the
+    # wake it is authorized again and its children enumerate afresh; when the bus is dead the host restart comes first
+    if [ "$REAR_HAD" = 1 ]; then
+        mark_ram "rear port after the wake: $(rear_state)"
+        rear_wait_hub 2
+        if [ -z "$(rear_devs)" ] && [ -w $REAR_MODE ]; then
+            mark_ram "rear USB: the hub did not come back - restarting the port's host mode"
+            rear_hostmode
+            rear_wait_hub 6
         fi
+        rear_restore
+        if [ "$(rear_kids)" -lt "$REAR_KIDS" ] && [ -w $REAR_MODE ]; then
+            mark_ram "rear USB: only $(rear_kids) of $REAR_KIDS devices - restarting the port's host mode"
+            rear_hostmode
+            rear_wait_hub 6
+            rear_restore
+        fi
+        wifi_restore
     fi
 
     # CONSOLE-15 evidence: the network after the wake (the 3 s + the rear port's wait above), each call bounded
@@ -342,6 +438,9 @@ standby() {
     rm -f /media/System/Logs/poweroff_reason # the power-off worked: a later boot is not 'after a power-off request'
     echo "$(date) mounted $DEV after $i s" >> $SLOG
     { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
+    # CONSOLE-15 P2: while the suspend is under test its trace (what the RAM log has and the stick does not) goes to the
+    # stick too; remove with the markers
+    { echo "-- a standby that woke (RAM trace)"; grep -v ' \[stick\]$' $SLOG; echo; } >> $FAILLOG
     return 0
 }
 
