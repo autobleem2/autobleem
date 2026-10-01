@@ -376,7 +376,10 @@ USB stick root = `/media` on the PSC:
 ```
 
 Boot chain: the exploit payload in `/media/028c18a9-ec4b-4632-b2cf-d4e20f252e8f/` runs `Autobleem/start.sh` →
-`rc/boot.sh` (bind-mounts `rc/20-joystick.rules` over `/etc/udev/rules.d` and re-triggers udev, which is what
+`rc/boot.sh` (first `killsony.sh now` and, a second later, again; `rc/unpack_libs.sh` puts the libs pack in `/tmp/lib`
+and `absplash --anim sweep` shows the AutoBleem 2 picture from then until the launcher's window removes `/tmp/.abload` -
+the same picture, with the sweep along its rule, at the wake and after RetroArch; every step stamps the log directory's
+`boot.log` (RAM) with the uptime; then bind-mounts `rc/20-joystick.rules` over `/etc/udev/rules.d` and re-triggers udev, which is what
 lets two pads through one hub; `killsony.sh`; `backup.sh`; `rc/ssh_keys.sh` - see below) → `rc/autobleem.sh` → unpack `libs.tar.gz` (our own
 `autobleem_sdl` 2.0.18 + SDL2_image/mixer 2.6.3 + SDL2_ttf 2.20.2 from the image, SDL2 with the **Wayland** video and **ALSA**
 audio backends - the console has no X and no OSS; see "SDL2 on the console") → `bin/autobleem/run.sh` → `autobleem-gui /media`.

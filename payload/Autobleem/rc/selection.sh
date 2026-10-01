@@ -450,7 +450,8 @@ standby() {
     echo "$(date) resumed" >> $SLOG
     if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
         touch /tmp/.abload
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abload --timeout 40 > /tmp/absplash.log 2>&1 &
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --anim sweep --until-gone /tmp/.abload --timeout 40 > /tmp/absplash.log 2>&1 &
+        echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
     else
         echo "no absplash on tmpfs" >> $SLOG
     fi
