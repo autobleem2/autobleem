@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -271,8 +271,8 @@ OK=确定
 ON=开
 On=开启
 Oops! Game crashed. Resume point not available.=糟糕！游戏崩溃了。存档点不可用。
+Open=打开
 Open RetroArch menu=打开 RetroArch 菜单
-Open:=打开：
 Operating system=操作系统
 Options=选项
 Other=其他
@@ -332,7 +332,6 @@ Restart launcher=重启启动器
 Resume=继续
 Resume game from saved state point=从保存状态点继续游戏
 Resume point saved to slot=续玩点已保存到槽位
-Resume slot=恢复存档位
 RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch 与模拟器核心
 RetroArch is not installed=未安装 RetroArch
@@ -343,8 +342,8 @@ Run an installed extension=运行已安装的扩展
 Run using RetroArch=使用 RetroArch 运行
 Runs on everything again at the next scan=下次扫描时将重新处理所有内容
 Safely power off the console=安全关闭主机
+Save=保存
 Save logs=保存日志
-Save to slot=保存到存档位
 Saved in the emulator=已在模拟器中保存
 Saved to=已保存到
 Scan complete:=扫描完成：

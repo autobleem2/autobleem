@@ -6,6 +6,7 @@
 #include "../controls/evoui_notification_line.h"
 #include "../controls/evoui_notification_bubble.h"
 #include "gui/gui_screen.h"
+#include <ab_gui/hint_bar.h>
 #include <ab_gui/tween.h>
 #include "../../app.h"
 #include "core/services/scan_service.h"
@@ -339,29 +340,33 @@ public:
 
     PsObj *background = nullptr;
     PsMoveBtn *arrow = nullptr;
-    // the footer's two hint lines: line 1 is what acts on the current selection (built from `state` and the
-    // selected game), line 2 is what always works (Select/Start/Guide/System). Each hint is a marker string
-    // ("|@X|", "|@L2+R2|", "|@Left+Right|" - drawn through PanelStyle::buttons(), the launcher's own X/O/T
-    // images included: see PanelStyle::faceIcon) and its label, laid out by layoutHints() in the theme's
-    // hintBar at the largest font that fits the language (the rules: abgui::HintBar), over the theme's `hintBar`
-    // frame when it has one. updateHintsIfNeeded() rebuilds the two lines from
-    // a signature of what they depend on and calls layoutHints() only when that signature changes - the
-    // "cache the layout" rule - so render() can call it every frame for free.
+    // the footer's hint bar (UIREV-36): a fixed grid of 4 columns x 2 lines, every item at its home slot
+    // (evoui/controls/hint_slots.h: line 1 is what acts on the current selection, a slot with nothing in this state
+    // stays empty; line 2 is always Select/Start/Guide/System, an item that does nothing here is dimmed). Each hint
+    // is a marker string ("|@X|", "|@L2+R2|", "|@Left+Right|" - drawn through PanelStyle::buttons(), the launcher's
+    // own X/O/T images included: see PanelStyle::faceIcon) and its label; an empty `markers` is an empty slot. The
+    // columns and the one font are laid out once per language and bar by layoutHints() (abgui::HintBar::layoutGrid)
+    // over the theme's `hintBar` frame when it has one. updateHintsIfNeeded() rebuilds the items from a signature of
+    // what they depend on and calls layoutHints() only when that signature changes - the "cache the layout" rule -
+    // so render() can call it every frame for free.
     struct Hint {
-        std::string markers; // the chips, e.g. "|@L2+R2|" - drawn by render()
+        std::string markers; // the chips, e.g. "|@L2+R2|" - drawn by render(); empty = an empty slot
         std::string label;
+        bool dim = false; // drawn at HintSlots::DimAlpha
         int labelX = 0, chipX = 0;
     };
-    std::vector<Hint> hints;  // line 1
-    std::vector<Hint> hints2; // line 2
-    ableem::Font hintFont, hintFont2;
+    std::vector<Hint> hints;  // line 1, one per column
+    std::vector<Hint> hints2; // line 2, one per column
+    ableem::Font hintFont;    // one font for both lines
     int hintLabelY = 0, hintChipY = 0;
     int hintLabelY2 = 0, hintChipY2 = 0;
     bool hintsOneLineOnly = false; // the theme's hintBar is under 48 px tall: line 2 is not drawn at all
+    abgui::HintGridLayout hintGrid;
+    std::string hintGridKey; // the language and bar hintGrid was laid out for
     std::string lastHintSignature;
     // the two hint lines for the current state/selection, in the language it was built in
     void buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const;
-    // a short summary of everything buildHintLines() depends on - state, selOption, resume slot/operation,
+    // a short summary of everything buildHintLines() depends on - state, the resume slot's use and operation,
     // the selected game's kind, RetroArch availability, language - so layoutHints() runs only when it changes
     std::string hintSignature() const;
     // Env::retroArchInstalled() for the per-frame footer: re-checked every 2 s, not a stat per binary a frame
@@ -369,7 +374,8 @@ public:
     mutable bool raInstalled_ = false;
     mutable unsigned int raCheckedAt_ = 0;
     void updateHintsIfNeeded();
-    // lays the two lines out in hintBarRect() through abgui::HintBar (ab_gui G5e, pure: fonts, places, drops)
+    // lays the grid out in hintBarRect() through abgui::HintBar::layoutGrid (pure: font, columns) and puts the items
+    // in their slots
     void layoutHints();
     // the theme's launcher.hintBar, else the default pill (560, 624, 680 x 72): the lines' bar and the `hintBar`
     // frame's box

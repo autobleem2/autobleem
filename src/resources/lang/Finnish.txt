@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -271,8 +271,8 @@ OK=OK
 ON=PÄÄLLÄ
 On=Päällä
 Oops! Game crashed. Resume point not available.=HUPS! Peli kaatui. Jatka-piste ei ole käytettävissä.
+Open=Avaa
 Open RetroArch menu=Avaa RetroArch valikko
-Open:=Avaa:
 Operating system=Käyttöjärjestelmä
 Options=Vaihtoehdot
 Other=Muut
@@ -332,7 +332,6 @@ Restart launcher=Käynnistä launcher uudelleen
 Resume=JATKA
 Resume game from saved state point=Jatka peliä jatko-pisteestä
 Resume point saved to slot=Jatko-piste tallennettu paikkaan
-Resume slot=Jatka paikasta
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot ja emulaatio ytimet
 RetroArch is not installed=RetroArch ei ole asennettu
@@ -343,8 +342,8 @@ Run an installed extension=Käynnistä asennettu laajennus
 Run using RetroArch=Käynnistä RetroArchilla
 Runs on everything again at the next scan=Käsittelee kaiken uudelleen seuraavassa skannauksessa
 Safely power off the console=Sammuta konsoli turvallisesti
+Save=Tallenna
 Save logs=Tallenna lokit
-Save to slot=Tallenna paikkaan
 Saved in the emulator=Tallennettu emulaattoriin
 Saved to=Tallennettu kansioon
 Scan complete:=Skannaus valmis:

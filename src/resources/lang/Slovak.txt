@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -271,8 +271,8 @@ OK=OK
 ON=ZAP
 On=Zapnutý
 Oops! Game crashed. Resume point not available.=Och! Hra spadla. Bod obnovy nie je k dispozícii.
+Open=Otvoriť
 Open RetroArch menu=Otvoriť ponuku Retroarch
-Open:=Otvoriť:
 Operating system=Operačný systém
 Options=Nastavenia
 Other=Ostatné
@@ -332,7 +332,6 @@ Restart launcher=Reštartovať launcher
 Resume=OBNOVA
 Resume game from saved state point=Pokračovať v hre od uloženého stavu
 Resume point saved to slot=Bod obnovy uložený na pozíciu
-Resume slot=Obnoviť pozíciu
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot a jadrá emulácie
 RetroArch is not installed=RetroArch nie je nainštalovaný
@@ -343,8 +342,8 @@ Run an installed extension=Spustiť nainštalované rozšírenie
 Run using RetroArch=Spustiť cez RetroArch
 Runs on everything again at the next scan=Pri ďalšom skenovaní spracuje všetko znova
 Safely power off the console=Bezpečne vypnúť konzolu
+Save=Uložiť
 Save logs=Uložiť logy
-Save to slot=Uložiť do pozície
 Saved in the emulator=Uložené v emulátore
 Saved to=Uložené do
 Scan complete:=Skenovanie dokončené:

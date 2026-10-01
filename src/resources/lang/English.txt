@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -268,8 +268,8 @@ OK=OK
 ON=ON
 On=On
 Oops! Game crashed. Resume point not available.=Oops! Game crashed. Resume point not available.
+Open=Open
 Open RetroArch menu=Open RetroArch menu
-Open:=Open:
 Operating system=Operating system
 Options=Options
 Other=Other
@@ -329,7 +329,6 @@ Restart launcher=Restart launcher
 Resume=Resume
 Resume game from saved state point=Resume game from saved state point
 Resume point saved to slot=Resume point saved to slot
-Resume slot=Resume slot
 RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch and emulation cores
 RetroArch is not installed=RetroArch is not installed
@@ -340,8 +339,8 @@ Run an installed extension=Run an installed extension
 Run using RetroArch=Run using RetroArch
 Runs on everything again at the next scan=Runs on everything again at the next scan
 Safely power off the console=Safely power off the console
+Save=Save
 Save logs=Save logs
-Save to slot=Save to slot
 Saved in the emulator=Saved in the emulator
 Saved to=Saved to
 Scan complete:=Scan complete:

@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -271,8 +271,8 @@ OK=OK
 ON=WŁ.
 On=Włączony
 Oops! Game crashed. Resume point not available.=UUPS! Wysypało grę. Punkt wznowienia niedostępny.
+Open=Otwórz
 Open RetroArch menu=Otwiera Menu Retroarch
-Open:=Otwórz:
 Operating system=System operacyjny
 Options=Opcje
 Other=Inne
@@ -332,7 +332,6 @@ Restart launcher=Uruchom ponownie launcher
 Resume=WZNÓW
 Resume game from saved state point=Wznów grę od ostatnigo punktu zapisu
 Resume point saved to slot=Zapisano punkt wznowienia do slotu
-Resume slot=Wznów slot
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot i rdzenie
 RetroArch is not installed=RetroArch jest nie zainstalowany
@@ -343,8 +342,8 @@ Run an installed extension=Uruchom zainstalowane rozszerzenie
 Run using RetroArch=Uruchom za pomocą RetroArch
 Runs on everything again at the next scan=Przy następnym skanowaniu przetworzy wszystko od nowa
 Safely power off the console=Bezpiecznie wyłącz konsolę
+Save=Zapisz
 Save logs=Zapisz logi
-Save to slot=Zapisz w slocie
 Saved in the emulator=Zapisane w emulatorze
 Saved to=Zapisano w
 Scan complete:=Skanowanie zakończone:

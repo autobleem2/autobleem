@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -271,8 +271,8 @@ OK=OK
 ON=PORNIT
 On=Pornit
 Oops! Game crashed. Resume point not available.=OOPS! Game crashed. Resume point not available.
+Open=Deschide
 Open RetroArch menu=Deschide Meniul RetroArch
-Open:=Deschide:
 Operating system=Sistem de operare
 Options=Optiuni
 Other=Altele
@@ -332,7 +332,6 @@ Restart launcher=Repornește launcherul
 Resume=Continua
 Resume game from saved state point=Continua joc de la punctul salvat
 Resume point saved to slot=Continua de la puntul salvat in slotul
-Resume slot=Reia slotul
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot si nuclee de emulare
 RetroArch is not installed=RetroArch nu este instalat
@@ -343,8 +342,8 @@ Run an installed extension=Pornește o extensie instalată
 Run using RetroArch=Rulează cu RetroArch
 Runs on everything again at the next scan=Va procesa totul din nou la următoarea scanare
 Safely power off the console=Opreste consola in siguranta
+Save=Salvează
 Save logs=Salvează jurnalele
-Save to slot=Salvează în slot
 Saved in the emulator=Salvat în emulator
 Saved to=Salvate în
 Scan complete:=Scanare finalizata:

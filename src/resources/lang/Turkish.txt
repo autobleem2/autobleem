@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -271,8 +271,8 @@ OK=Tamam
 ON=AÇIK
 On=Açık
 Oops! Game crashed. Resume point not available.=HATA! Oyun çöktü. Devam noktası mevcut değil.
+Open=Aç
 Open RetroArch menu=RetroArch Menüsünü Aç
-Open:=Aç:
 Operating system=İşletim sistemi
 Options=Seçenekler
 Other=Diğer
@@ -332,7 +332,6 @@ Restart launcher=Başlatıcıyı yeniden başlat
 Resume=DEVAM ET
 Resume game from saved state point=Oyunu kayıtlı noktadan devam ettir
 Resume point saved to slot=Devam noktası slota kaydedildi
-Resume slot=Yuvayı sürdür
 RetroArch=RetroArch is not installed
 RetroArch and emulation cores=Retroboot ve çekirdek emülasyonları
 RetroArch is not installed=RetroArch yüklü değil
@@ -343,8 +342,8 @@ Run an installed extension=Yüklü bir eklentiyi çalıştır
 Run using RetroArch=RetroArch ile Çalıştır
 Runs on everything again at the next scan=Sonraki taramada her şeyi yeniden işleyecek
 Safely power off the console=Konsolu güvenle kapat
+Save=Kaydet
 Save logs=Günlükleri kaydet
-Save to slot=Yuvaya kaydet
 Saved in the emulator=Emülatörde kaydedildi
 Saved to=Kaydedildiği yer
 Scan complete:=Tarama tamamlandı:

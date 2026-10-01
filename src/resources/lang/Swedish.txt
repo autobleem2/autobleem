@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 449
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -271,8 +271,8 @@ OK=OK
 ON=PÅ
 On=På
 Oops! Game crashed. Resume point not available.=Hoppsan! Spelet kraschade. Spar-punkt ej tillgänglig.
+Open=Öppna
 Open RetroArch menu=Öppna RetroArch-meny
-Open:=Öppna:
 Operating system=Operativsystem
 Options=Alternativ
 Other=Övrigt
@@ -332,7 +332,6 @@ Restart launcher=Starta om launchern
 Resume=FORTSÄTT
 Resume game from saved state point=Fortsätt spel från befintlig sparpunkt
 Resume point saved to slot=Sparpunkt lagrad på position
-Resume slot=Återuppta plats
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot och emuleringskärnor
 RetroArch is not installed=RetroArch är inte installerat
@@ -343,8 +342,8 @@ Run an installed extension=Kör ett installerat tillägg
 Run using RetroArch=Kör med RetroArch
 Runs on everything again at the next scan=Bearbetar allt igen vid nästa skanning
 Safely power off the console=Stäng av konsolen säkert
+Save=Spara
 Save logs=Spara loggar
-Save to slot=Spara till plats
 Saved in the emulator=Sparat i emulatorn
 Saved to=Sparade i
 Scan complete:=Skanning klar:
