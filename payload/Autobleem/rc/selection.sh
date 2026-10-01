@@ -257,11 +257,12 @@ standby() {
     SLOG=/tmp/standby.log
     echo "$(date) standby: dev=$DEV" > $SLOG
     # the launcher has left and Weston shows its bare desktop - black with the mouse cursor - until the suspend
-    # blanks the screen. A full-screen black absplash (no picture: it draws black) covers it, from here until the
-    # wake; the wake picture below goes over it and the flag is removed there. RAM only, the stick is not touched.
+    # blanks the screen. A full-screen absplash with the wake picture covers it (the owner, 2026-10-01: the same
+    # picture as the wake, not black; a missing picture draws black), from here until the wake; the wake picture
+    # below goes over it and the flag is removed there. RAM only, the stick is not touched.
     if [ -x /tmp/absplash ]; then
         touch /tmp/.abdown
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/black.jpg --until-gone /tmp/.abdown --timeout 300 > /dev/null 2>&1 &
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abdown --timeout 300 > /dev/null 2>&1 &
     fi
     rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
     sync
