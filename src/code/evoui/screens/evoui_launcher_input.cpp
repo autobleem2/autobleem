@@ -124,6 +124,9 @@ void GuiLauncher::loop() {
             if (e.type == Event::Type::Quit) {
                 menuVisible = false;
                 quitRequested = true;
+                // a lost display is rebuilt in-process (AutoBleem::run) with a fresh GuiLauncher that reads the
+                // Session: the carousel's place goes there before this screen dies (BUG-40)
+                rememberSelection();
             }
             switch (e.type) {
             case Event::Type::KeyDown:

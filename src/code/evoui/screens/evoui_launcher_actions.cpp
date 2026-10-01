@@ -639,6 +639,7 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
 
     case SystemMenuAction::RestartLauncher:
         // AutoBleem::run() leaves as for a new display mode - with no mode to try (see there)
+        rememberSelection(); // the new launcher opens on the same place (BUG-40: AutoBleem::run() saves it)
         app.session().pendingOutputMode.clear();
         app.session().menuOption = MENU_OPTION_DISPLAY;
         menuVisible = false;

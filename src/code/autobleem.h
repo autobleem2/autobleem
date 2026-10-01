@@ -4,6 +4,7 @@
 #pragma once
 
 #include "app.h"
+#include "core/services/carousel_session.h"
 #include "core/services/output_mode.h"
 #include <functional>
 
@@ -36,4 +37,8 @@ private:
     void switchOutputMode(const OutputMode &mode);
     void tryOutputMode(const std::string &token);
     bool confirmPendingOutputMode();
+    // BUG-40: the carousel's place across a launcher that exits for a display change / restart and is started
+    // over (core's CarouselSession): saved as it leaves, taken once at the next start
+    void saveCarouselSession();
+    void restoreCarouselSession();
 };
