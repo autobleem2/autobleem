@@ -36,6 +36,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          Apps; no games, empty databases
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
+                                                         (with System/Extensions/store/{cache,downloads,staging,sources})
   python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
                                                          template when new; --build lays a build's dist/<target> (on
                                                          the test machine, e.g. ~/src/autobleem/dist/pcusb) over it;
@@ -929,6 +930,19 @@ def sb_copy_ext(name, ext):
     print(f'sandbox {name}: extension {", ".join(names)} laid from {os.path.basename(src)}')
 
 
+STORE_STATE_DIRS = ('cache', 'downloads', 'staging', 'sources')
+
+
+def sb_make_store_dirs(name):
+    """the Store's state directories (System/Extensions/store/...): the Store makes none of them itself, so without
+    them it cannot cache its catalog and its screens come out empty. Opened like the rest of the tree (the guest
+    checks permissions against the host's owner, see sb_open_modes), so the launcher's user can write them"""
+    base = os.path.join(sb_host(name), 'System', 'Extensions', 'store')
+    for d in STORE_STATE_DIRS:
+        os.makedirs(os.path.join(base, d), exist_ok=True)
+    sb_open_modes(os.path.join(sb_host(name), 'System', 'Extensions'))
+
+
 def sb_new(name, build=None, exts=()):
     if os.path.exists(sb_host(name)):
         raise Fail(f'sandbox {name} exists - `sandbox reset {name}` starts it afresh')
@@ -936,6 +950,7 @@ def sb_new(name, build=None, exts=()):
         raise Fail('no template yet: abvm.py sandbox template')
     subprocess.run(['cp', '-r', sb_host('_template'), sb_host(name)], check=True)
     sb_open_modes(sb_host(name))
+    sb_make_store_dirs(name)
     if build:
         sb_copy_build(name, build)
     for ext in exts:
