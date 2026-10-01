@@ -44,3 +44,8 @@ target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/sr
 # UIREV-35: the game details section's rows and badge places (evoui/controls/evoui_meta_layout.h, pure)
 ab_add_test(test_meta_layout screens/test_meta_layout.cpp)
 target_include_directories(test_meta_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
+
+# UIREV-37: the resume-slot screen's layout and rules (evoui/controls/resume_layout.h, pure) - the cards' places, the
+# NEWEST slot, the picture's cut corners, the date format
+ab_add_test(test_resume_layout screens/test_resume_layout.cpp)
+target_include_directories(test_resume_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)

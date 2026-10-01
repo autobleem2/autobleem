@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Gedown
 Downloading the update=Update downloaden
 Edit game parameters=Bewerk game parameters
 Edit memory card information=Bewerk memory card informatie
+Empty=Leeg
 Emulation=Emulatie
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -244,11 +245,13 @@ Needs a network connection=Vereist een netwerkverbinding
 Network=Netwerk
 Network & Controllers=Netwerk & controllers
 New card=Nieuwe kaart
+NEWEST=NIEUWSTE
 No disc name=Geen discnaam
 No discs=Geen discs
 No extensions installed=Geen extensies geïnstalleerd
 No games here yet=Hier zijn nog geen games
 No processors for these games=Geen processors voor deze games
+No resume point=Geen hervatpunt
 No resume points=Geen hervatpunten
 None=Geen
 Not added=Niet toegevoegd

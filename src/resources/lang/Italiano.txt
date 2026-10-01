@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (intera)
 4:3 (integer)=4:3 (intera)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Scaric
 Downloading the update=Download dell'aggiornamento
 Edit game parameters=Modifica parametri del gioco
 Edit memory card information=Modifica informazioni della Memory Card
+Empty=Vuoto
 Emulation=Emulazione
 EmulationStation=EmulationStation
 Emulator=Emulatore
@@ -244,11 +245,13 @@ Needs a network connection=Richiede una connessione di rete
 Network=Rete
 Network & Controllers=Rete e controller
 New card=Nuova card
+NEWEST=RECENTE
 No disc name=Nome del disco mancante
 No discs=Nessun disco
 No extensions installed=Nessuna estensione installata
 No games here yet=Ancora nessun gioco qui
 No processors for these games=Nessun processore per questi giochi
+No resume point=Nessun punto di ripresa
 No resume points=Nessun punto di ripresa
 None=Nessuno
 Not added=Non aggiunto

@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Pobran
 Downloading the update=Pobieranie aktualizacji
 Edit game parameters=Edytuj parametry gry
 Edit memory card information=Edytuj informacje Karty Pamięci
+Empty=Puste
 Emulation=Emulacja
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -244,11 +245,13 @@ Needs a network connection=Wymaga połączenia z siecią
 Network=Sieć
 Network & Controllers=Sieć i kontrolery
 New card=Nowa karta
+NEWEST=NAJNOWSZY
 No disc name=Brak nazwy płyty
 No discs=Brak płyt
 No extensions installed=Brak zainstalowanych rozszerzeń
 No games here yet=Tu jeszcze nie ma gier
 No processors for these games=Brak procesorów dla tych gier
+No resume point=Brak punktu wznowienia
 No resume points=Brak punktów wznowienia
 None=Brak
 Not added=Nie dodano

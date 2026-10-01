@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Ladatt
 Downloading the update=Ladataan päivitystä
 Edit game parameters=Muokkaa pelin parametrejä
 Edit memory card information=Muokkaa muistikortin
+Empty=Tyhjä
 Emulation=Emulointi
 EmulationStation=EmulationStation
 Emulator=Emulaattori
@@ -244,11 +245,13 @@ Needs a network connection=Vaatii verkkoyhteyden
 Network=Verkko
 Network & Controllers=Verkko ja ohjaimet
 New card=Uusi kortti
+NEWEST=UUSIN
 No disc name=Levyn nimi puuttuu
 No discs=Ei levyjä
 No extensions installed=Laajennuksia ei ole asennettu
 No games here yet=Täällä ei ole vielä pelejä
 No processors for these games=Näille peleille ei ole prosessoreita
+No resume point=Ei jatkamiskohtaa
 No resume points=Ei jatkamiskohtia
 None=Ei mitään
 Not added=Ei lisätty

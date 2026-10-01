@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Teleca
 Downloading the update=Telecargament de la mesa a jorn
 Edit game parameters=Modificar los paramètres del jòc
 Edit memory card information=Modificar las informacions de la carta memòria
+Empty=Void
 Emulation=Emulacion
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -244,11 +245,13 @@ Needs a network connection=Necessita una connexion ret
 Network=Ret
 Network & Controllers=Ret e manetas
 New card=Carta novèla
+NEWEST=MAI RECENT
 No disc name=Pas cap de nom de disc
 No discs=Pas cap de disc
 No extensions installed=Cap d'extension installada
 No games here yet=Cap de jòc aquí pel moment
 No processors for these games=Pas cap de processor per aquestes jòcs
+No resume point=Cap de punt de represa
 No resume points=Cap de punt de represa
 None=Cap
 Not added=Pas apondut

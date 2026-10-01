@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Staže
 Downloading the update=Stahování aktualizace
 Edit game parameters=Upravit parametry hry
 Edit memory card information=Upravit informace Paměťové karty
+Empty=Prázdné
 Emulation=Emulace
 EmulationStation=EmulationStation
 Emulator=Emulátor
@@ -244,11 +245,13 @@ Needs a network connection=Vyžaduje připojení k síti
 Network=Síť
 Network & Controllers=Síť a ovladače
 New card=Nová karta
+NEWEST=NEJNOVĚJŠÍ
 No disc name=Chybí název disku
 No discs=Žádné disky
 No extensions installed=Nejsou nainstalována žádná rozšíření
 No games here yet=Zatím tu nejsou žádné hry
 No processors for these games=Pro tyto hry nejsou žádné procesory
+No resume point=Žádný bod obnovení
 No resume points=Žádné body obnovení
 None=Žádný
 Not added=Nepřidáno

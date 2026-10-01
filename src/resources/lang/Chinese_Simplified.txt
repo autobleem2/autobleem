@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=已下
 Downloading the update=正在下载更新
 Edit game parameters=编辑游戏参数
 Edit memory card information=编辑记忆卡信息
+Empty=空
 Emulation=模拟
 EmulationStation=EmulationStation
 Emulator=模拟器
@@ -244,11 +245,13 @@ Needs a network connection=需要网络连接
 Network=网络
 Network & Controllers=网络与控制器
 New card=新建记忆卡
+NEWEST=最新
 No disc name=没有光盘名称
 No discs=没有光盘
 No extensions installed=未安装任何扩展
 No games here yet=这里还没有游戏
 No processors for these games=没有适用于这些游戏的处理器
+No resume point=没有恢复点
 No resume points=没有恢复点
 None=无
 Not added=未添加

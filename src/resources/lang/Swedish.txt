@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -120,6 +120,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Nedlad
 Downloading the update=Laddar ner uppdateringen
 Edit game parameters=Redigera spelparametrar
 Edit memory card information=Redigera minneskortsinformation
+Empty=Tom
 Emulation=Emulering
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -244,11 +245,13 @@ Needs a network connection=Kräver en nätverksanslutning
 Network=Nätverk
 Network & Controllers=Nätverk och handkontroller
 New card=Nytt kort
+NEWEST=NYAST
 No disc name=Disknamn saknas
 No discs=Inga skivor
 No extensions installed=Inga tillägg installerade
 No games here yet=Inga spel här än
 No processors for these games=Inga processorer för de här spelen
+No resume point=Ingen återupptagspunkt
 No resume points=Inga återupptagspunkter
 None=Ingen
 Not added=Inte tillagt
