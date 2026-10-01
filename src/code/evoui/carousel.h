@@ -60,11 +60,11 @@ public:
     long stepStart(int speed, bool eased); // CarouselMotion::stepStart at the platform's ticks
     PsCarousel positions;
 
-    // places the covers around `selectedIndex` with no animation. With waitForCovers every shown cover is
-    // loaded before this returns (a new set, a return from a game); without it (the end of a scroll step)
-    // nothing is loaded here - the missing covers are asked of the CoverLoader and arrive through
-    // pumpCovers(), an empty box standing in for one until then. Covers no longer shown are kept, up to
-    // coverCacheLimit(), the longest unused let go first.
+    // places the covers around `selectedIndex` with no animation. With waitForCovers (a new set, a return from a
+    // game) a shown cover the CoverLoader has already decoded goes up before this returns - nothing is decoded
+    // here; without it (the end of a scroll step) nothing is loaded here. Either way the missing covers are
+    // asked of the CoverLoader and arrive through pumpCovers(), the default box standing in for one until then.
+    // Covers no longer shown are kept, up to coverCacheLimit(), the longest unused let go first.
     void setInitialPositions(int selectedIndex, bool waitForCovers = true);
     // how many games beyond each end of the row are decoded ahead for the scroll that brings them in
     static const int Lookahead = 6;

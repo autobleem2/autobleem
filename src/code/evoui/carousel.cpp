@@ -176,14 +176,19 @@ void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
         item.wanted = true;
         item.lastWanted = placement_;
         if (item.visible && !item.coverPng.valid()) {
+            // a new row never waits for a decode: a cover the loader already has goes up now, the rest show the
+            // default box and arrive through pumpCovers() - a row of big box art opened in seconds on the console
+            // when every slot's PNG was decoded here first
             if (waitForCovers && !item.artFailed) {
                 ableem::Image image;
-                if (loader_.take(item.artPath(), image))
+                const string &path = item.artPath();
+                if (path.empty()) {
+                    item.loadTex(renderer, spareTarget()); // a dev host's internal game: no file to decode
+                    item.artFailed = !item.coverPng.valid();
+                } else if (loader_.take(path, image)) {
                     item.loadFromImage(renderer, image, spareTarget());
-                else
-                    item.loadTex(renderer, spareTarget());
-                item.artFailed = !item.coverPng.valid();
-                Gui::tickBusy();
+                    item.artFailed = !item.coverPng.valid();
+                }
             }
             // a cover still missing is shown as an empty box until it arrives
             placeholderShown = placeholderShown || !item.coverPng.valid();
