@@ -154,7 +154,7 @@ struct OldMenu : MenuState {
 
                     x = ox - progress * Gap;
 
-                    scales[sel] = 1 + progress * (MaxZoom - 1);
+                    scales[sel] = 1 + (1 - progress) * (MaxZoom - 1); // UIREV-41: the old code grew it 1 -> 1.5 here
                     xoff[sel] = zoomOff(scales[sel]);
                     yoff[sel] = zoomOff(scales[sel]);
 
@@ -216,7 +216,7 @@ struct NewMenu : MenuState {
             setScale(sel, evomotion::closingScale(progress, MaxZoom));
         } else {
             x = evomotion::optionX(1, ox, progress);
-            setScale(sel, evomotion::openingScale(progress, MaxZoom));
+            setScale(sel, evomotion::closingScale(progress, MaxZoom));
         }
     }
     void complete() {
@@ -381,6 +381,33 @@ TEST_CASE("the selection moves one icon, left and right") {
         runMenu(old2, next, clock2);
         CHECK(next.sel == 2);
         CHECK(next.x == 640 - 118 / 2 - 2 * Gap);
+    }
+}
+
+TEST_CASE("the icon the selection leaves shrinks smoothly from its zoom, in both directions (UIREV-41)") {
+    for (int direction : {0, 1}) {
+        Clocked clock;
+        NewMenu menu(clock);
+        menu.menuOn = false;
+        menu.direction = direction;
+        menu.duration = 100;
+        menu.sel = 1;
+        menu.scales[1] = MaxZoom;
+        menu.xoff[1] = menu.yoff[1] = zoomOff(MaxZoom);
+        menu.start();
+        float last = MaxZoom;
+        for (int t = Start; t < Start + 100; t++) {
+            clock.at(static_cast<unsigned int>(t));
+            menu.apply();
+            if (!menu.moving_)
+                break;
+            // never above where it was, never a jump back up: it starts at the zoom it had and only goes down
+            CHECK(menu.scales[1] <= last + 1e-4f);
+            CHECK(menu.scales[1] >= 1.0f - 1e-4f);
+            last = menu.scales[1];
+        }
+        clock.at(Start + 140);
+        CHECK(menu.scales[1] == doctest::Approx(1.0f));
     }
 }
 

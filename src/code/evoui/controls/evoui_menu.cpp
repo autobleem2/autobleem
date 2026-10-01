@@ -94,7 +94,7 @@ void PsMenu::applyProgress() {
         setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
     } else {
         x = evomotion::optionX(1, ox, progress);
-        setScale(*this, selOption, evomotion::openingScale(progress, maxZoom));
+        setScale(*this, selOption, evomotion::closingScale(progress, maxZoom));
     }
 }
 
