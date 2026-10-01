@@ -1207,8 +1207,8 @@ string GuiLauncher::hintSignature() const {
 //*******************************
 // hintLabel
 //*******************************
-// the label of a hint item, translated (the fixed labels of UIREV-36: "Open", "Resume game", "Save" - what they act on is
-// on the screen, highlighted)
+// the label of a hint item, translated (the fixed labels of UIREV-36: "Open", "Resume game", "Save" - what they act
+// on is on the screen, highlighted)
 static string hintLabel(HintSlots::Item item) {
     using HintSlots::Item;
     switch (item) {
