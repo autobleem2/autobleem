@@ -31,6 +31,73 @@ ab_watch_stop() {
     [ -f /tmp/ab_watch_run.sh ] && sh /tmp/ab_watch_run.sh stop
 }
 
+# CONSOLE-15 P2: the Power Off path writes one numbered line per step, so a reset leaves the last step done as its
+# trace (the RAM log is lost with it). mark_ram: RAM ($SLOG) and the kernel log only. mark: also on the stick
+# (FAILLOG, synced) - straight away while /media is mounted, else (AB_MARK_REMOUNT=1) by a quick mount, append, sync,
+# umount of the same stick; a line on the stick is tagged [stick] in $SLOG so the log copy does not repeat it.
+# Only the power off writes any of it, the quiet-stick rule holds.
+AB_MARK_REMOUNT=1
+STEP=0
+mark_line() {
+    STEP=$((STEP + 1))
+    MARK_LINE="$(date) step $STEP: $* up=$(cut -d' ' -f1 /proc/uptime)"
+}
+mark_ram() {
+    mark_line "$@"
+    echo "$MARK_LINE" >> $SLOG
+    echo "ab_standby: $MARK_LINE" > /dev/kmsg 2>/dev/null
+}
+mark() {
+    mark_line "$@"
+    echo "ab_standby: $MARK_LINE" > /dev/kmsg 2>/dev/null
+    if grep -q ' /media ' /proc/mounts; then
+        echo "$MARK_LINE" >> $FAILLOG
+        sync
+        echo "$MARK_LINE [stick]" >> $SLOG
+    elif [ "$AB_MARK_REMOUNT" = 1 ] && [ -n "$DEV" ] && mount "$DEV" /media 2> /dev/null; then
+        echo "$MARK_LINE" >> $FAILLOG
+        sync
+        m=0
+        until umount /media 2> /dev/null || [ $m -ge 5 ]; do
+            m=$((m + 1))
+            sleep 1
+        done
+        if [ -f /tmp/ab_stick_owned ] && [ -x /tmp/abfatflag ]; then
+            /tmp/abfatflag "$DEV" clean
+        fi
+        sync
+        echo "$MARK_LINE [stick]" >> $SLOG
+    else
+        echo "$MARK_LINE (not on the stick)" >> $SLOG
+    fi
+}
+
+# CONSOLE-15 P2: what the console looks like before the first step (read-only on /sys and /proc), into FAILLOG
+# while the stick is mounted: the watchdog (and who holds /dev/watchdog), every USB device with its name (the rear
+# port: musb-hdrc.0.auto), the power sources, the OTG glue's modes, the boot reason on the kernel's command line.
+state_dump() {
+    echo "-- state before the first step: $(uname -r)"
+    echo "cmdline: $(cat /proc/cmdline 2>/dev/null)"
+    for w in /sys/class/watchdog/watchdog*; do
+        [ -d "$w" ] || continue
+        echo "watchdog ${w##*/}: id=$(cat $w/identity 2>/dev/null) timeout=$(cat $w/timeout 2>/dev/null) timeleft=$(cat $w/timeleft 2>/dev/null) nowayout=$(cat $w/nowayout 2>/dev/null) state=$(cat $w/state 2>/dev/null)"
+    done
+    for d in /proc/[0-9]*; do
+        ls -l $d/fd 2>/dev/null | grep -q /dev/watchdog && echo "watchdog held by ${d#/proc/} $(cat $d/comm 2>/dev/null)"
+    done
+    for u in /sys/bus/usb/devices/*; do
+        [ -f "$u/idVendor" ] || continue
+        echo "usb ${u##*/}: $(cat $u/idVendor):$(cat $u/idProduct) \"$(cat $u/manufacturer 2>/dev/null)\" \"$(cat $u/product 2>/dev/null)\" ctrl=$(readlink -f $u | sed -n 's|.*/\([^/]*\)/usb[0-9]*.*|\1|p') power=$(cat $u/power/control 2>/dev/null)/$(cat $u/power/runtime_status 2>/dev/null)"
+    done
+    for p in /sys/class/power_supply/*; do
+        [ -d "$p" ] && echo "power_supply ${p##*/}: type=$(cat $p/type 2>/dev/null) online=$(cat $p/online 2>/dev/null) status=$(cat $p/status 2>/dev/null)"
+    done
+    echo "musb: charger_info=$(cat /sys/module/musb_hdrc/parameters/charger_info 2>/dev/null) swmode=$(cat /sys/devices/platform/mt_usb/swmode 2>/dev/null) mode=$(cat /sys/devices/platform/mt_usb/mode 2>/dev/null)"
+    echo "gadget=$(cat /sys/class/android_usb/android0/enable 2>/dev/null) pm: state=$(cat /sys/power/state 2>/dev/null) autosleep=$(cat /sys/power/autosleep 2>/dev/null)"
+    echo "mounts: $(grep -E ' /media | /data ' /proc/mounts | tr '\n' ';')"
+    echo
+}
+
 AB_SELECTION=0
 [ -f "$AB_RUNTIME_DIR/autobleem_cfg.sh" ] && . "$AB_RUNTIME_DIR/autobleem_cfg.sh"
 rm -f "$AB_RUNTIME_DIR/autobleem_cfg.sh"
@@ -52,9 +119,16 @@ cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 # fix" after the red LED).
 poweroff_instead() {
     echo "$(date) no standby on this console - powering off instead" >> $SLOG
-    if mount "$DEV" /media 2>> $SLOG; then
-        { cat $SLOG; echo; } >> $FAILLOG
+    mark_ram "poweroff_instead entered (dev=$DEV)"
+    # CONSOLE-15 P2: still mounted when the standby was skipped (rear host); else mounted again for the log - and when
+    # the old name is gone (the stick re-enumerated under another one in a half-done suspend) the same search as the
+    # wake's
+    if grep -q ' /media ' /proc/mounts || mount "$DEV" /media 2>> $SLOG ||
+        { DEV="$(blkid | grep "^/dev/sd[a-z]1:" | grep -E "LABEL=\"SONY.{0,4}\"" | awk -F: '{print $1}' | head -1)"; [ -n "$DEV" ] && mount "$DEV" /media 2>> $SLOG; }; then
+        mark "poweroff_instead: stick mounted ($DEV), log goes to it"
+        { grep -v ' \[stick\]$' $SLOG; echo; } >> $FAILLOG # the [stick] lines are on the stick already
         sync
+        mark "poweroff_instead: LED red, umount and shutdown -h now are next"
         n=0
         until umount /media 2>/dev/null || [ $n -ge 5 ]; do
             n=$((n + 1))
@@ -64,9 +138,12 @@ poweroff_instead() {
             /tmp/abfatflag "$DEV" clean
         fi
         sync
+    else
+        mark_ram "poweroff_instead: the stick could not be mounted for the log (dev=$DEV)"
     fi
     echo 0 > /sys/class/leds/green/brightness
     echo 1 > /sys/class/leds/red/brightness
+    mark_ram "poweroff_instead: shutdown -h now (the stick is unmounted)"
     shutdown -h now
     sleep 120 # never back here: the launcher must not start again while the system goes down
     systemctl reboot
@@ -108,6 +185,21 @@ standby() {
     } >> $FAILLOG
     echo "uptime=$(cut -d' ' -f1 /proc/uptime) standby requested" > /media/System/Logs/poweroff_reason
     sync
+    mark "power-off marker and poweroff_reason written, the watch log is stopped"
+    state_dump >> $FAILLOG
+    sync
+    mark "state before the first step saved (watchdog, usb, power supplies, boot reason)"
+    # CONSOLE-15 P2 (the fix under test): a USB host on the rear (OTG) port refuses suspend-to-RAM every time (see
+    # poweroff_instead), and the steps on the way to that refusal - the gadget switched off on the same port, the
+    # LED, three refused 'echo mem' - are where a reset in the first seconds could hide. So with a rear device the
+    # power off goes straight to poweroff_instead, the stick still mounted. AB_REAR_SKIP_SUSPEND=0 in the environment
+    # (or here) gives the old path back.
+    : "${AB_REAR_SKIP_SUSPEND:=1}"
+    if [ "$REAR_HAD" = 1 ] && [ "$AB_REAR_SKIP_SUSPEND" = 1 ]; then
+        mark "rear USB device present ($REAR_DEV): no suspend attempt, straight to the power off"
+        poweroff_instead
+    fi
+    mark "umount /media next"
     n=0
     until umount /media; do
         n=$((n + 1))
@@ -128,6 +220,7 @@ standby() {
         /tmp/abfatflag "$DEV" clean
         sync
     fi
+    mark "/media unmounted, fat flag cleared"
 
     # The AutoBleem kernel's overlay starts a USB network (RNDIS, /etc/autobleem/rndis) on the power port at
     # boot. While that gadget is up the port keeps the system awake, so suspend-to-RAM was refused at once -
@@ -141,14 +234,16 @@ standby() {
         echo "$(date) USB gadget (RNDIS) off for the standby" >> $SLOG
         sleep 1
     fi
+    mark "USB gadget handled (was on: $GADGET_ON)"
 
     echo 0 > /sys/class/leds/green/brightness
     echo 1 > /sys/class/leds/red/brightness
     sync
+    mark "LED red set, echo mem next"
     # a refused suspend fails the write (EBUSY, a wakeup source held); a real one returns after the wake.
     # Refused: what held it goes to the log, and two more tries for a passing wakelock.
     try=1
-    until echo mem > /sys/power/state 2>> $SLOG; do
+    until mark "echo mem try $try starts" && echo mem > /sys/power/state 2>> $SLOG; do
         echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
         dmesg | tail -60 | grep -iE 'failed to suspend|while active|early wake|abort|wakeup pending' >> $SLOG
         if [ $try -ge 3 ]; then
