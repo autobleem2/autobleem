@@ -3,7 +3,7 @@
 # CONSOLE-15 evidence: a watch log for the console's "sleep"/Wi-Fi problems. One line every 30 s into RAM
 # ($AB_RUNTIME_DIR/watch.log); nothing is written to the stick unless the line shows an anomaly (the Wi-Fi link
 # or its IP lost/back, the "PM: suspend" count in dmesg changed, the USB device set changed, the RTC and the
-# uptime drifting apart = the console was suspended) - then the last 300 lines go to System/Logs/watch.log
+# uptime drifting apart = the console was suspended) - then that line is appended to System/Logs/watch.log (1 MB cap, one rotation: watch.log.1)
 # (quiet-stick rule, rc/ab_log.sh). Read-only on /sys and /proc.
 #
 #   ab_watch.sh start   from boot.sh, before every start of the launcher: copies itself to tmpfs and runs there
@@ -22,7 +22,7 @@ PIDFILE=$AB_RUNTIME_DIR/ab_watch.pid
 RUN=/tmp/ab_watch_run.sh
 WLOG=$AB_RUNTIME_DIR/watch.log
 INTERVAL=30
-KEEP_RAM=1000 # lines kept in RAM (~8 h); the stick gets the last 300
+KEEP_RAM=1000 # lines kept in RAM (~8 h)
 
 watch_alive() {
     wp=$(cat "$PIDFILE" 2>/dev/null)
@@ -124,13 +124,17 @@ while true; do
     if [ -n "$prev_sig" ] && [ "$sig_all" != "$prev_sig" ]; then
         mark=" ANOMALY"
     fi
-    echo "$(date '+%m-%d %H:%M:%S') up=$up rtc=$rtc drift=$drift link=$link sig=$sig oper=$oper ip=$ip susp=$susp usb=$usb rear=$rear$jump$mark" >> "$WLOG"
+    line="$(date '+%m-%d %H:%M:%S') up=$up rtc=$rtc drift=$drift link=$link sig=$sig oper=$oper ip=$ip susp=$susp usb=$usb rear=$rear$jump$mark"
+    echo "$line" >> "$WLOG"
     prev_sig=$sig_all
 
     if [ -n "$mark" ] && grep -qs " $AB_ROOT " /proc/mounts; then
         mkdir -p "$AB_ROOT/System/Logs" 2> /dev/null
-        tail -n 300 "$WLOG" > /tmp/ab_watch.tmp 2> /dev/null && cp -f /tmp/ab_watch.tmp "$AB_ROOT/System/Logs/watch.log" 2> /dev/null
-        rm -f /tmp/ab_watch.tmp
+        # only the anomaly line is appended; 1 MB cap, one rotation (watch.log.1)
+        SW=$AB_ROOT/System/Logs/watch.log
+        sz=$(wc -c < "$SW" 2> /dev/null)
+        [ "${sz:-0}" -gt 1048576 ] && mv -f "$SW" "$SW.1" 2> /dev/null
+        echo "$line" >> "$SW" 2> /dev/null
     fi
 
     n=$((n + 1))

@@ -274,9 +274,30 @@ case "$AB_SELECTION" in
     ;;
 *)
     # no selection (or none the launcher leaves with): it did not leave the way it does - a crash, killed.
-    # Its logs are in RAM, which the reboot below empties, so they go to the stick first
+    # Its logs are in RAM, which a reboot would empty, so they go to the stick first
     ab_watch_stop
     ab_persist_logs "autobleem-gui ended without a selection (AB_SELECTION=$AB_SELECTION) - a crash?"
+    # The reboot that used to follow is a FULL RESET: Sony's boot (start_pman's "echo mem") then puts the console
+    # into standby until POWER is pressed. So a crash starts the launcher over instead (boot.sh's loop, exit 0),
+    # unless it keeps crashing: 3 crashes within 10 minutes (uptime seconds, one per line in the runtime dir -
+    # the clock is not set at boot, so not date) fall back to the reboot, and say why.
+    CRASHES=$AB_RUNTIME_DIR/crash_times
+    NOW=$(cut -d. -f1 /proc/uptime)
+    { cat "$CRASHES" 2>/dev/null; echo "$NOW"; } | tail -n 3 > "$CRASHES.new" && mv -f "$CRASHES.new" "$CRASHES"
+    RECENT=$(awk -v now="$NOW" '$1 >= now - 600 { n++ } END { print n + 0 }' "$CRASHES")
+    if [ "$RECENT" -ge 3 ]; then
+        echo "$(date) crash loop: $RECENT launcher crashes within 10 minutes (uptime $NOW s) - rebooting" >> $FAILLOG
+    else
+        echo "$(date) launcher crash $RECENT of 3 within 10 minutes - starting it again, no reboot" >> $FAILLOG
+        # what the crashed launcher can leave that would confuse a fresh start: its wake-up/update picture flags
+        # (an absplash waits on them), the hand-over files (autobleem_cfg.sh is gone already, read above).
+        # Kept on purpose: extensions.active (the extensions' crash guard - the next launcher reads it from here, as it
+        # would from the stick after a reboot) and outputmode.pending
+        # (boot.sh's apply_output_mode redoes Weston before the start, whatever mode the crash left).
+        rm -f /tmp/.abload /tmp/.abupdating "$AB_RUNTIME_DIR/autobleem_cfg.sh"
+        sync
+        exit 0
+    fi
     ;;
 esac
 
