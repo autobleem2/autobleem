@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -119,6 +119,7 @@ Downloaded into System/Updates - an appliance would run the installer now=System
 Downloading the update=Güncelleme indiriliyor
 Edit game parameters=Oyun parametrelerini düzenle
 Edit memory card information=Hafıza kartı bilgisini düzenle
+Empty=Boş
 Emulation=Emülasyon
 EmulationStation=EmulationStation
 Emulator=Emülatör
@@ -242,11 +243,13 @@ Needs a network connection=Ağ bağlantısı gerektirir
 Network=Ağ
 Network & Controllers=Ağ ve Kontrolcüler
 New card=Yeni kart
+NEWEST=EN YENİ
 No disc name=Disk adı yok
 No discs=Disk yok
 No extensions installed=Yüklü eklenti yok
 No games here yet=Burada henüz oyun yok
 No processors for these games=Bu oyunlar için işlemci yok
+No resume point=Sürdürme noktası yok
 No resume points=Sürdürme noktası yok
 None=Yok
 Not added=Eklenmedi

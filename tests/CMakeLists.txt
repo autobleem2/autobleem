@@ -40,3 +40,8 @@ endif()
 # testing build or a release, the short version, and the tag's place under the pad plate
 ab_add_test(test_channel_watermark screens/test_channel_watermark.cpp)
 target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
+
+# UIREV-37: the resume-slot screen's layout and rules (evoui/controls/resume_layout.h, pure) - the cards' places, the
+# NEWEST slot, the picture's cut corners, the date format
+ab_add_test(test_resume_layout screens/test_resume_layout.cpp)
+target_include_directories(test_resume_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)

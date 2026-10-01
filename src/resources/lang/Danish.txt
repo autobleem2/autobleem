@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -119,6 +119,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Hentet
 Downloading the update=Henter opdateringen
 Edit game parameters=Rediger spilparametre
 Edit memory card information=Rediger memory card-information
+Empty=Tom
 Emulation=Emulering
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -242,11 +243,13 @@ Needs a network connection=Kræver en netværksforbindelse
 Network=Netværk
 Network & Controllers=Netværk og controllere
 New card=Nyt kort
+NEWEST=NYESTE
 No disc name=Intet disknavn
 No discs=Ingen diske
 No extensions installed=Ingen udvidelser installeret
 No games here yet=Ingen spil her endnu
 No processors for these games=Ingen processorer til disse spil
+No resume point=Intet genoptagelsespunkt
 No resume points=Ingen genoptagelsespunkter
 None=Ingen
 Not added=Ikke tilføjet

@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 440
+# Untranslated: 0 / Total: 443
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -116,6 +116,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Downlo
 Downloading the update=Downloading the update
 Edit game parameters=Edit game parameters
 Edit memory card information=Edit memory card information
+Empty=Empty
 Emulation=Emulation
 EmulationStation=EmulationStation
 Emulator=Emulator
@@ -239,11 +240,13 @@ Needs a network connection=Needs a network connection
 Network=Network
 Network & Controllers=Network & Controllers
 New card=New card
+NEWEST=NEWEST
 No disc name=No disc name
 No discs=No discs
 No extensions installed=No extensions installed
 No games here yet=No games here yet
 No processors for these games=No processors for these games
+No resume point=No resume point
 No resume points=No resume points
 None=None
 Not added=Not added

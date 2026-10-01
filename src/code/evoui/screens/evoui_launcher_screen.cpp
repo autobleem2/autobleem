@@ -1064,7 +1064,6 @@ void GuiLauncher::loadAssets() {
 
     sselector = addFrontElement(new PsStateSelector("selector"));
     sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
-    sselector->font24 = ThemeAssets::fixedFonts()[FONT_22_MED];
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -1355,9 +1354,6 @@ void GuiLauncher::layoutHints() {
 // backdrop), AB_SHOT and the DebugDriver's frame copy see this frame as they did.
 bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
-    if (sselector != nullptr) {
-        sselector->frame = menu->savestate;
-    }
     return true;
 }
 

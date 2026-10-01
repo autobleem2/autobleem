@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -119,6 +119,7 @@ Downloaded into System/Updates - an appliance would run the installer now=Stiahn
 Downloading the update=Sťahovanie aktualizácie
 Edit game parameters=Upraviť parametre hry
 Edit memory card information=Upraviť informácie Pamäťovej karty
+Empty=Prázdne
 Emulation=Emulácia
 EmulationStation=EmulationStation
 Emulator=Emulátor
@@ -242,11 +243,13 @@ Needs a network connection=Vyžaduje sieťové pripojenie
 Network=Sieť
 Network & Controllers=Sieť a ovládače
 New card=Nová karta
+NEWEST=NAJNOVŠIE
 No disc name=Chýba názov disku
 No discs=Žiadne disky
 No extensions installed=Nie sú nainštalované žiadne rozšírenia
 No games here yet=Zatiaľ tu nie sú žiadne hry
 No processors for these games=Pre tieto hry nie sú žiadne procesory
+No resume point=Žiadny bod obnovenia
 No resume points=Žiadne body obnovenia
 None=Žiadny
 Not added=Nepridané
