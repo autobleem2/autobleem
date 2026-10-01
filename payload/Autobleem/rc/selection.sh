@@ -77,13 +77,36 @@ poweroff_instead() {
 # coming back dirty (Windows' "scan and fix"). The red LED alone is the AutoBleem standby; the USB bus is
 # reset by the resume and the stick comes back a few seconds later (the same name as before, or the
 # other one), and is mounted again exactly as usb_watch mounted it. Nothing here touches the console's
-# own storage. Returns 0 with the stick mounted again, 1 when it is not back within 30 s.
+# own storage. Returns 0 with the stick mounted again, 1 when it is not back within 60 s (30 s, then 30 s more).
 standby() {
     ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
     DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
     SLOG=/tmp/standby.log
     echo "$(date) standby: dev=$DEV" > $SLOG
     rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
+    sync
+    # CONSOLE-15 P2: the state BEFORE the dangerous step, on the stick (the umount below is the last time it can be
+    # written; a reset in the suspend leaves no other trace). Read-only on /sys and /proc; the marker is read and
+    # deleted by boot.sh at the next start. Only a power off writes this - the quiet-stick rule holds.
+    # whether anything is plugged in at the rear (micro-USB, OTG) port now: only the AutoBleem kernel runs it as a
+    # host, and a device there may not come back after the resume (see below)
+    # (the bus is found by its controller, musb-hdrc.0.auto - the front ports are musbfsh - not by its number)
+    REAR_HAD=0
+    REAR_DEV=""
+    for u in /sys/bus/usb/devices/usb*; do
+        case "$(readlink -f $u)" in
+        */musb-hdrc.0.auto/usb*) REAR_DEV=/sys/bus/usb/devices/${u##*/usb}-1 ;;
+        esac
+    done
+    [ -n "$REAR_DEV" ] && [ -e "$REAR_DEV" ] && REAR_HAD=1
+    mkdir -p /media/System/Logs
+    {
+        echo "$(date) power-off requested: uptime=$(cut -d' ' -f1 /proc/uptime) rtc=$(cat /sys/class/rtc/rtc0/since_epoch 2>/dev/null) rear_dev=${REAR_DEV:-none} rear_had=$REAR_HAD wakelocks=[$(cat /sys/power/wake_lock 2>/dev/null)]"
+        echo "-- dmesg | tail -20"
+        dmesg 2>&1 | tail -20
+        echo
+    } >> $FAILLOG
+    echo "uptime=$(cut -d' ' -f1 /proc/uptime) standby requested" > /media/System/Logs/poweroff_reason
     sync
     n=0
     until umount /media; do
@@ -124,17 +147,6 @@ standby() {
     sync
     # a refused suspend fails the write (EBUSY, a wakeup source held); a real one returns after the wake.
     # Refused: what held it goes to the log, and two more tries for a passing wakelock.
-    # whether anything is plugged in at the rear (micro-USB, OTG) port now: only the AutoBleem kernel runs it as a
-    # host, and a device there may not come back after the resume (see below)
-    # (the bus is found by its controller, musb-hdrc.0.auto - the front ports are musbfsh - not by its number)
-    REAR_HAD=0
-    REAR_DEV=""
-    for u in /sys/bus/usb/devices/usb*; do
-        case "$(readlink -f $u)" in
-        */musb-hdrc.0.auto/usb*) REAR_DEV=/sys/bus/usb/devices/${u##*/usb}-1 ;;
-        esac
-    done
-    [ -n "$REAR_DEV" ] && [ -e "$REAR_DEV" ] && REAR_HAD=1
     try=1
     until echo mem > /sys/power/state 2>> $SLOG; do
         echo "$(date) the kernel refused to suspend (try $try) - wakelocks: $(cat /sys/power/wake_lock 2>/dev/null)" >> $SLOG
@@ -206,7 +218,8 @@ standby() {
     } >> $SLOG 2>&1
 
     i=0
-    while [ $i -lt 30 ]; do
+    while [ $i -lt 60 ]; do
+        [ $i = 30 ] && echo "$(date) no stick after 30 s - retrying for another 30 s" >> $SLOG
         # any sd?1, not only sda1/sdb1 as usb_watch looks: a stick pulled during the standby and plugged back
         # can come back under a new name while the kernel still holds the old one, and the wake then found
         # nothing and rebooted (2026-09-25)
@@ -219,10 +232,19 @@ standby() {
     done
     if [ -z "$DEV" ]; then
         rm -f /tmp/.abload
+        echo "$(date) no stick within 60 s after the wake - rebooting" >> $SLOG
+        blkid | sed 's/^/  blkid: /' >> $SLOG
+        # the stick is the one place this log belongs and it is missing: to the kernel log and the journal, where
+        # it is still readable after the reboot if the system keeps them
+        while IFS= read -r l; do
+            echo "ab_standby: $l" > /dev/kmsg 2>/dev/null
+            command -v logger > /dev/null 2>&1 && logger -t ab_standby -- "$l"
+        done < $SLOG
         return 1
     fi
     rm -f /tmp/ab_stick_owned # a fresh mount: the kernel owns the flag again (clean at mount, or not ours)
     touch /media/System/.session
+    rm -f /media/System/Logs/poweroff_reason # the power-off worked: a later boot is not 'after a power-off request'
     echo "$(date) mounted $DEV after $i s" >> $SLOG
     { cat $SLOG; [ -f /tmp/absplash.log ] && sed 's/^/  absplash: /' /tmp/absplash.log; } >> $LOG
     return 0
