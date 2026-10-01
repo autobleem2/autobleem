@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -51,6 +51,7 @@ Change memory card=Zmień kartę pamięci
 Charging=Ładowanie
 Check the download site for a newer version=Sprawdź nowszą wersję na stronie pobierania
 Checking for updates...=Sprawdzanie aktualizacji...
+Cheers, screemer=Pozdrawiam, screemer
 Choose=Wybierz
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Wybierz wyświetlane gry: PlayStation, RetroArch lub aplikacje oraz grupę
 Clock=Taktowanie
@@ -126,6 +127,7 @@ Enter new name for memory card=Podaj nową nazwę dla karty pamięci
 Entry=Wprowadź
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Wszystko inne: Opcje, Menadżer gier, Wyłączanie i więcej
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Wszystko gotowe – wrzuć teraz kilka gier do folderu Games na swoim pendrivie, wybierz Ponownie skanuj gry i masz świetną konsolę.
 Exit game=Zakończ grę
 Exit to=Wyjdź do
 Exit to EvoUI=Powrót do EvoUI
@@ -174,6 +176,7 @@ Graphics=Grafika
 Guide=Przewodnik
 Hardware=Sprzęt
 Hardware Information=Informacje Sprzętowe
+Hi, and welcome to AutoBleem!=Cześć i witaj w AutoBleem!
 HIGH SCORE=NAJLEPSZY WYNIK
 Hostname=Nazwa hosta
 In game=W Grze

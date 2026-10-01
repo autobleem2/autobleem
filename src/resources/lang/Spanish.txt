@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 2 / Total: 429
+# Untranslated: 2 / Total: 433
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -51,6 +51,7 @@ Change memory card=Cambiar memory card
 Charging=Cargando
 Check the download site for a newer version=Busca una versión más reciente en el sitio de descargas
 Checking for updates...=Buscando actualizaciones...
+Cheers, screemer=Un saludo, screemer
 Choose=Elegir
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Elegir los juegos mostrados: PlayStation, RetroArch o aplicaciones y el grupo
 Clock=Frecuencia
@@ -126,6 +127,7 @@ Enter new name for memory card=Entra nuevo nombre para memory card
 Entry=Entrada
 Ethernet=Ethernet
 Everything else: Options, Game Manager, Power off and more=Todo lo demás: Opciones, Administrador de Juegos, Apagar y más
+Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got yourself a great console.=Todo está listo: ahora copia algunos juegos en la carpeta Games de tu memoria USB, elige Reescanear juegos y ya tienes una consola genial.
 Exit game=Salir del juego
 Exit to=Salir a
 Exit to EvoUI=Salir a EvoUI
@@ -174,6 +176,7 @@ Graphics=Graficos
 Guide=Guía
 Hardware=Hardware
 Hardware Information=Informacion de Hardware
+Hi, and welcome to AutoBleem!=¡Hola y bienvenido a AutoBleem!
 HIGH SCORE=PUNTUACION MAXIMA
 Hostname=Nombre de host
 In game=En Juego

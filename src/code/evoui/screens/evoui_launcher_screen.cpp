@@ -1342,6 +1342,63 @@ void GuiLauncher::dropBackdrop() {
 }
 
 //*******************************
+// GuiLauncher::welcomeCardShows
+//*******************************
+// UIREV-43: the PS1 "all games" set (not Favorites, History, folders, RetroArch, Apps) with no game in it - a fresh
+// install. The card goes the moment a scan adds games (reloadGames() fills the carousel).
+bool GuiLauncher::welcomeCardShows() const {
+    return carousel.games.empty() && selection.set == GameSet::PS1 &&
+           selection.ps1SelectState == Ps1SelectState::AllGames;
+}
+
+//*******************************
+// GuiLauncher::renderWelcomeCard
+//*******************************
+// The card in the theme's panel frame (else the code sheet) where the covers would be: a bold title, a rule in the
+// selection colour, the wrapped body and the signature. 660 wide, as tall as its content, centred on the empty
+// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png).
+void GuiLauncher::renderWelcomeCard() {
+    constexpr int boxW = 660, pad = 34, centreY = 292, linePitch = 31;
+    constexpr int titleH = 40, ruleGap = 16, signGap = 14, signH = 28, bodyTail = 18;
+    abgui::Context &ctx = gui->uiContext();
+    const abgui::Style &style = ctx.style();
+    Fonts &fonts = ThemeAssets::fixedFonts();
+    const ableem::Font &titleFont = fonts[FONT_28_BOLD];
+    const ableem::Font &bodyFont = fonts[FONT_22_MED];
+    const ableem::Font &signFont = fonts[FONT_20_BOLD];
+    const string title = _("Hi, and welcome to AutoBleem!");
+    const string signature = _("Cheers, screemer");
+    const vector<string> lines = gui->text().wrapLines(
+        bodyFont,
+        _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got "
+          "yourself a great console."),
+        boxW - 2 * pad);
+
+    const int boxH = pad + titleH + ruleGap + static_cast<int>(lines.size()) * linePitch + bodyTail + signH + pad - 6;
+    const ableem::Rect box((1280 - boxW) / 2, centreY - boxH / 2, boxW, boxH);
+    style.sheet(ctx, box); // the theme's panel frame, else the code-drawn sheet
+
+    const LauncherTheme &theme = app.theme().launcher();
+    const ableem::Color accent =
+        theme.colors.selection.set ? TextRenderer::toColor(theme.colors.selection, 255) : fgColor;
+
+    int y = box.y + pad;
+    gui->text().renderText_WithColor(titleFont, title, 0, y, fgColor, XALIGN_CENTER);
+    y += titleH;
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(ableem::Color(accent.r, accent.g, accent.b, 150));
+    renderer.fillRect(ableem::Rect(box.x + pad, y + 4, boxW - 2 * pad, 1));
+    y += ruleGap + 4;
+    for (const string &line : lines) {
+        if (!line.empty())
+            gui->text().renderText_WithColor(bodyFont, line, box.x + pad, y, fgColor);
+        y += linePitch;
+    }
+    y += signGap;
+    gui->text().renderText_WithColor(signFont, signature, box.x + boxW - pad - signFont.width(signature), y, accent);
+}
+
+//*******************************
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
@@ -1373,7 +1430,12 @@ void GuiLauncher::draw() {
     // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
     if (gui->launcherLogo().valid())
         renderer.copy(gui->launcherLogo(), nullptr, &gui->launcherLogoRect());
-    if (!benchSkips("carousel"))
+    // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
+    const bool welcome = welcomeCardShows();
+    if (welcome) {
+        if (!benchSkips("carousel"))
+            renderWelcomeCard();
+    } else if (!benchSkips("carousel"))
         carousel.render();
     // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
     // and their outline
@@ -1393,6 +1455,8 @@ void GuiLauncher::draw() {
     for (auto &obj : staticElements) {
         if (behindRow(obj.get()) || benchSkips(obj->name))
             continue;
+        if (welcome && obj.get() == arrow)
+            continue;
         if (playFramed && obj.get() == playButton)
             continue;
         if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
@@ -1404,8 +1468,8 @@ void GuiLauncher::draw() {
     }
     renderSnap();
 
-    // a set with no games shows only the empty shelf: one line under it says so
-    if (carousel.games.empty() && !snapshotFrame && !benchSkips("carousel"))
+    // any other set with no games shows only the empty shelf: one line under it says so
+    if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel"))
         gui->text().renderText_WithColor(ThemeAssets::fixedFonts()[FONT_22_MED], _("No games here yet"), 0, 412,
                                          fgColor, XALIGN_CENTER);
 
