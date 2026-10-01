@@ -984,7 +984,8 @@ void GuiLauncher::loadAssets() {
     year = "";
     players = "";
     PLOG_DEBUG << "Last Index " << selection.gameIndex;
-    if (selection.gameIndex != 0) {
+    // within the set: a place carried over a restart may name a game the library no longer has (BUG-40)
+    if (selection.gameIndex > 0 && selection.gameIndex < static_cast<int>(carousel.games.size())) {
         carousel.selected = selection.gameIndex;
         carousel.setInitialPositions(carousel.selected);
     }
