@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -751,9 +752,16 @@ void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
     // which abgui screens draw without a background of their own) and, as before, renderer().lastCapture() - the bare
     // launcher, without its hint band and bubbles, not the menu the run was picked from. Taken afresh even inside the
     // menu's scope, so lastCapture() is this frame
+    // AB_TRACE_EXT (BUG-31): the frames from here on are logged, tagged [TRACE_EXT]
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::begin("extension " + extension + " requested (entry '" + entry + "')");
     BackdropScope backdrop(*this, true);
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::line("launcher snapshot taken, handing over to the extension");
     const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
                                                         : app.extensions().runEntry(extension, entry, networkUp);
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::line("extension returned, releasing the snapshot");
     backdrop.release();
     forgetHeldModifiers(); // its screens ran their own loops
     gui->input().flushEvents();

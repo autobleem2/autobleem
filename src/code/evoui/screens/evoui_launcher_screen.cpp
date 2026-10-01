@@ -19,6 +19,7 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -1402,6 +1403,9 @@ void GuiLauncher::renderWelcomeCard() {
 // GuiLauncher::draw
 //*******************************
 void GuiLauncher::draw() {
+    if (ableem::ext_trace::active())
+        ableem::ext_trace::note(std::string("launcher draw") + (snapshotFrame ? " (snapshot frame)" : "") +
+                                " fadeAlpha=" + std::to_string(fadeAlpha));
     // every text on this screen (meta panel, labels, notifications, the state selector) gets the halo
     // for the length of this frame, on the launcher's own setting; the classic screens shown from here
     // render on the classic one, which goes back at the end of the frame
