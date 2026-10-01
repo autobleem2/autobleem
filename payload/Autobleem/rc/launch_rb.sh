@@ -90,7 +90,8 @@ show_return_splash()
 {
 	[ -x "$ABSPLASH" ] || return
 	touch /tmp/.abload
-	"$ABSPLASH" "$ABPICS/autobleem.jpg" --until-gone /tmp/.abload --timeout 20 &
+	"$ABSPLASH" "$ABPICS/autobleem.jpg" --anim sweep --until-gone /tmp/.abload --timeout 20 &
+	echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
 }
 
 # what the tree needs before RetroArch starts
