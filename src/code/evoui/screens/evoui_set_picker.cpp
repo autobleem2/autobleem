@@ -293,8 +293,8 @@ void GuiSetPicker::draw() {
     if (t.firstVisible + rows < static_cast<int>(t.entries.size()))
         style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
 
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 footerHints(), "", false);
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight), footerHints(),
+                 "", false);
 
     gui->text().setShadow(classicShadow);
 }

@@ -259,8 +259,8 @@ void GuiSystemMenu::draw() {
     }
 
     // the footer: the launcher's own button hints
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 footerHints(), "", false);
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight), footerHints(),
+                 "", false);
 
     gui->text().setShadow(classicShadow);
 }

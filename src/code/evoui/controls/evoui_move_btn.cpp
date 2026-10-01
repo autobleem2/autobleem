@@ -36,5 +36,6 @@ void PsMoveBtn::render() {
     if (!visible)
         return;
     const float top = started ? drawY : static_cast<float>(originaly); // not updated yet
-    renderer.copy(tex, nullptr, ableem::FRect(static_cast<float>(x), top, static_cast<float>(w), static_cast<float>(h)));
+    renderer.copy(tex, nullptr,
+                  ableem::FRect(static_cast<float>(x), top, static_cast<float>(w), static_cast<float>(h)));
 }
