@@ -35,21 +35,29 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
   python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
                                                          Apps; no games, empty databases
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
-  python tools/vm/abvm.py sandbox new <name> [--build <dir>]     made from the template (not started)
-  python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--size WxH]   made from the template when new;
-                                                         --build lays a build's dist/<target> (on the test machine,
-                                                         e.g. ~/src/autobleem/dist/pcusb) over it; started headless
+  python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
+                                                         (with System/Extensions/store/{cache,downloads,staging,sources})
+  python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
+                                                         template when new; --build lays a build's dist/<target> (on
+                                                         the test machine, e.g. ~/src/autobleem/dist/pcusb) over it;
+                                                         --ext (repeatable) lays an extension over it: a zip is
+                                                         unzipped at the root (it holds Extensions/<name>/...), a
+                                                         directory .../extensions/<name>/ is copied to
+                                                         Extensions/<name>/; the replaced one is kept once in
+                                                         <sandbox>/.abvm/ext-backup/<name>; started headless
                                                          in a WxH window (1280x720; ABVM_SANDBOX_SIZE), ready when
                                                          its launcher screen shows
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
                                                          300; shot a.png; clip start b.mp4; ...; clip stop); shots,
                                                          grabs and clips (MP4, ffmpeg on the test machine) come back
-                                                         to DIR - they are written into <sandbox>/.abvm/out/<run>/
+                                                         to DIR - they are written into <sandbox>/.abvm/out/<run>/;
+                                                         a failing step stops the run but the shots made before it
+                                                         still come back, then one error line and exit code 1
   python tools/vm/abvm.py sandbox logs <name> [n]        the launcher's output
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
   python tools/vm/abvm.py sandbox list                   every sandbox, running or not, and its lease
-At most ABVM_SANDBOX_SLOTS (default 1) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
+At most ABVM_SANDBOX_SLOTS (default 3; the VM has 5 vCPUs) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
 
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
@@ -94,6 +102,7 @@ import sys
 import tempfile
 import time
 import uuid
+import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REMOTE_TOOL = '~/.local/share/abvm/abvm.py'
@@ -116,17 +125,17 @@ class Fail(Exception):
 
 # ------------------------------------------------------------------ the test machine and the guest
 
-def host_run(command, check=True):
-    """a shell command on the test machine; its stdout"""
+def host_run(command, check=True, full=False):
+    """a shell command on the test machine; its stdout (full: the whole CompletedProcess, whatever its exit code)"""
     if LOCAL:
         args = ['bash', '-c', command]
     else:
         args = ['ssh', '-o', 'BatchMode=yes', HOST, command]
     r = subprocess.run(args, stdin=subprocess.DEVNULL, capture_output=True, text=True, encoding='utf-8',
                        errors='replace')
-    if check and r.returncode != 0:
+    if check and not full and r.returncode != 0:
         raise Fail(f'{command!r} on the test machine: exit {r.returncode}: {r.stderr.strip()}')
-    return r.stdout
+    return r if full else r.stdout
 
 
 _guest = None
@@ -501,7 +510,7 @@ PAD_WORDS = {'press', 'release', 'hold', 'stick', 'trigger', 'dpad', 'reset', 'p
 # the launcher's own DebugDriver words (tools/ab_drive.py): in `run` they go to the stick's launcher through the
 # test machine's forward, so one script works here and in a sandbox (`sandbox drive`)
 DRIVER_WORDS = {'screen', 'wait_screen', 'wait_idle', 'key', 'text', 'grab', 'menu', 'quick', 'items', 'frames',
-                'window', 'down', 'up'}
+                'window', 'down', 'up', 'home'}
 
 
 def steps(script):
@@ -557,6 +566,8 @@ def run_local(script, out_dir):
                 print(pad.cmd(target + step))
             else:
                 raise Fail(f'unknown step {step!r}')
+    except RuntimeError as e:  # a driver step that failed: what ran before it stays printed / on disk
+        raise Fail(str(e)) from None
     finally:
         if recorder:
             print(f'clip {os.path.basename(recorder.out)}: {recorder.stop()} frames')
@@ -566,20 +577,29 @@ def run_local(script, out_dir):
             driver.close()
 
 
-def remote_tool(args):
+def remote_error(msg):
+    # the test machine's own message, without the ssh command around it; a busy one stays exit 3 here too
+    msg = msg.rsplit('abvm: ', 1)[-1]
+    return (Busy if msg.startswith('busy:') else Fail)(msg)
+
+
+def remote_tool(args, partial=False):
+    """the tool's output from the test machine. partial: (stdout, the error or None) instead of raising - for a run
+    that fails after it made shots, which still have to be fetched"""
     who = ['--who', WHO] if WHO else []
     key = ['--lease-key', LEASE_KEY] if LEASE_KEY != 'vm' else []
     # the sandbox settings given here count there too
     env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
            if k in os.environ]
     prefix = ('env ' + ' '.join(shlex.quote(e) for e in env) + ' ') if env else ''
+    command = prefix + f'python3 {REMOTE_TOOL} --local ' + ' '.join(shlex.quote(a) for a in who + key + args)
+    if partial:
+        r = host_run(command, full=True)
+        return r.stdout, (remote_error(r.stderr.strip() or f'exit {r.returncode}') if r.returncode else None)
     try:
-        return host_run(prefix + f'python3 {REMOTE_TOOL} --local ' +
-                        ' '.join(shlex.quote(a) for a in who + key + args))
+        return host_run(command)
     except Fail as e:
-        # the test machine's own message, without the ssh command around it; a busy one stays exit 3 here too
-        msg = str(e).rsplit('abvm: ', 1)[-1]
-        raise (Busy if msg.startswith('busy:') else Fail)(msg) from None
+        raise remote_error(str(e)) from None
 
 
 # ------------------------------------------------------------------ the lease: one tester on the VM at a time
@@ -690,8 +710,11 @@ def run(script, out_dir):
         return
     stage = f'/tmp/abvm-run-{uuid.uuid4().hex[:8]}'
     try:
-        print(remote_tool(['run', script, '--out', stage]), end='')
-        if re.search(r'\b(shot|grab)\s|clip start', script):
+        out, failure = remote_tool(['run', script, '--out', stage], partial=True)
+        print(out, end='')
+        # a failed run keeps the shots it made before the failing step
+        if re.search(r'\b(shot|grab)\s|clip start', script) and host_run(f'test -d {stage} && echo yes',
+                                                                          check=False).strip():
             os.makedirs(out_dir, exist_ok=True)
             tmp = tempfile.mkdtemp(prefix='abvm-')
             from_host(stage + '/.', tmp, recursive=True)
@@ -701,11 +724,25 @@ def run(script, out_dir):
                 else:
                     save_png(os.path.join(tmp, name), os.path.join(out_dir, name))
             shutil.rmtree(tmp, ignore_errors=True)
+        if failure:
+            raise failure
     finally:
         host_run(f'rm -rf {stage}', check=False)
 
 
 # ------------------------------------------------------------------ the DebugDriver through a tunnel
+
+def _script_from_args(parts):
+    """the literal script if given as words, or --file SCRIPT.txt's contents (one command per line,
+    '#'-comments and blank lines dropped, joined with ';' the same as ab_drive.py's own --file)"""
+    if '--file' in parts:
+        i = parts.index('--file')
+        path = parts[i + 1]
+        with open(path, encoding='utf-8') as f:
+            lines = [ln.strip() for ln in f]
+        return ';'.join(ln for ln in lines if ln and not ln.startswith('#'))
+    return ' '.join(parts)
+
 
 def import_ab_drive():
     # the repository's tools/ab_drive.py, or the copy `setup` puts next to this tool on the test machine
@@ -736,7 +773,13 @@ def drive(script):
         if d is None:
             raise Fail('the DebugDriver did not answer through the tunnel')
         try:
-            for reply in d.run(script):
+            try:
+                replies = d.run(script)
+            except ab_drive.RunFailed as e:
+                for reply in e.replies:
+                    print(reply)
+                raise Fail(str(e)) from None
+            for reply in replies:
                 print(reply)
         finally:
             d.close()
@@ -755,7 +798,7 @@ SB_HOST = os.environ.get('ABVM_SANDBOXES', '~/abvm/sandboxes')
 SB_GUEST = os.environ.get('ABVM_SANDBOX_MOUNT', '/mnt/abvm')
 SB_SHARE = 'abvm-sandboxes'   # the <filesystem> target in the VM's domain XML
 SB_PORTS = range(6910, 6920)
-SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '1'))  # headless launchers running at once (the VM's CPUs)
+SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '3'))  # headless launchers running at once (the VM has 5 vCPUs since 2026-09-30)
 STICK = '/media/autobleem'
 MOUNT_UNIT = 'mnt-abvm.mount'
 
@@ -853,15 +896,65 @@ def sb_copy_build(name, build):
     sb_open_modes(os.path.join(sb_host(name), 'Autobleem'))
 
 
-def sb_new(name, build=None):
+def sb_copy_ext(name, ext):
+    """an extension laid into the sandbox's Extensions/: a zip (the extension zips hold Extensions/<name>/...) is
+    unzipped at the sandbox root, a directory (.../extensions/<name>/) is copied to Extensions/<name>/. What it
+    replaces is kept once in <sandbox>/.abvm/ext-backup/<name> (never inside Extensions/, which the launcher scans)"""
+    src = os.path.expanduser(ext[5:] if ext.startswith('host:') else ext).rstrip('/')
+    root = sb_host(name)
+    if os.path.isdir(src):
+        names = [os.path.basename(src)]
+    elif zipfile.is_zipfile(src):
+        with zipfile.ZipFile(src) as z:
+            names = sorted({p.split('/')[1] for p in z.namelist() if p.startswith('Extensions/') and p.count('/') > 1})
+        if not names:
+            raise Fail(f'{src} holds no Extensions/<name>/ - an extension zip is expected')
+    else:
+        raise Fail(f'--ext {ext}: give an extension zip or a directory .../extensions/<name>/ (on the test machine)')
+    for n in names:
+        target = os.path.join(root, 'Extensions', n)
+        backup = os.path.join(root, '.abvm', 'ext-backup', n)
+        if os.path.isdir(target):
+            if not os.path.exists(backup):
+                os.makedirs(os.path.dirname(backup), exist_ok=True)
+                shutil.copytree(target, backup)
+            shutil.rmtree(target)  # replaced whole, so nothing of the old version stays behind
+    if os.path.isdir(src):
+        shutil.copytree(src, os.path.join(root, 'Extensions', names[0]))
+    else:
+        with zipfile.ZipFile(src) as z:
+            z.extractall(root)
+    sb_open_modes(os.path.join(root, '.abvm'))
+    for n in names:
+        sb_open_modes(os.path.join(root, 'Extensions', n))
+    print(f'sandbox {name}: extension {", ".join(names)} laid from {os.path.basename(src)}')
+
+
+STORE_STATE_DIRS = ('cache', 'downloads', 'staging', 'sources')
+
+
+def sb_make_store_dirs(name):
+    """the Store's state directories (System/Extensions/store/...): the Store makes none of them itself, so without
+    them it cannot cache its catalog and its screens come out empty. Opened like the rest of the tree (the guest
+    checks permissions against the host's owner, see sb_open_modes), so the launcher's user can write them"""
+    base = os.path.join(sb_host(name), 'System', 'Extensions', 'store')
+    for d in STORE_STATE_DIRS:
+        os.makedirs(os.path.join(base, d), exist_ok=True)
+    sb_open_modes(os.path.join(sb_host(name), 'System', 'Extensions'))
+
+
+def sb_new(name, build=None, exts=()):
     if os.path.exists(sb_host(name)):
         raise Fail(f'sandbox {name} exists - `sandbox reset {name}` starts it afresh')
     if not os.path.isdir(sb_host('_template')):
         raise Fail('no template yet: abvm.py sandbox template')
     subprocess.run(['cp', '-r', sb_host('_template'), sb_host(name)], check=True)
     sb_open_modes(sb_host(name))
+    sb_make_store_dirs(name)
     if build:
         sb_copy_build(name, build)
+    for ext in exts:
+        sb_copy_ext(name, ext)
     print(f'sandbox {name} made' + (f' with {build}' if build else ''))
 
 
@@ -890,12 +983,15 @@ def sb_stop_forward(st):
         os.kill(int(pid), 15)
 
 
-def sb_start(name, build=None, size=None):
+def sb_start(name, build=None, size=None, exts=()):
     size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
     if not os.path.isdir(sb_host(name)):
-        sb_new(name, build)
-    elif build:
-        sb_copy_build(name, build)
+        sb_new(name, build, exts)
+    else:
+        if build:
+            sb_copy_build(name, build)
+        for ext in exts:
+            sb_copy_ext(name, ext)
     if sb_running(name):
         print(f'sandbox {name} already runs on port {sb_state(name)["port"]}')
         return
@@ -989,8 +1085,13 @@ def sb_drive(name, script, out_dir):
     d = sb_driver(name, out_prefix=run + '/', path_map=to_host)
     cwd = os.getcwd()
     os.chdir(run_dir)
+    failure = None
     try:
-        for reply in d.run(script):
+        try:
+            replies = d.run(script)
+        except import_ab_drive().RunFailed as e:
+            replies, failure = e.replies, e  # a failed run keeps what it made: the replies and the run's folder
+        for reply in replies:
             # the guest's paths as this machine names them
             print(re.sub(re.escape(guest_root) + r'\S*', lambda m: to_host(m.group(0)) or m.group(0), reply))
     except RuntimeError as e:
@@ -1000,6 +1101,8 @@ def sb_drive(name, script, out_dir):
         d.close()
     sb_open_modes(run_dir)
     print(f'out {run_dir}')
+    if failure:
+        raise Fail(str(failure))
 
 
 def sb_stop(name, use_driver=True):
@@ -1060,7 +1163,7 @@ def sandbox_command(args, out_dir):
     name = sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template') else ''
     if not LOCAL:
         if sub == 'drive':
-            sb_drive_remote(name, ' '.join(args[2:]), out_dir)
+            sb_drive_remote(name, _script_from_args(args[2:]), out_dir)
         else:
             print(remote_tool(['sandbox'] + args), end='')
         return
@@ -1099,18 +1202,19 @@ def sandbox_command(args, out_dir):
         if '--build' in args:
             build = args[args.index('--build') + 1]
         size = args[args.index('--size') + 1] if '--size' in args else None
+        exts = [args[i + 1] for i, a in enumerate(args) if a == '--ext' and i + 1 < len(args)]
         if sub == 'new':
-            sb_new(name, build)
+            sb_new(name, build, exts)
         elif sub == 'start':
-            sb_start(name, build, size)
+            sb_start(name, build, size, exts)
         elif sub == 'drive':
-            sb_drive(name, ' '.join(args[2:]), out_dir)
+            sb_drive(name, _script_from_args(args[2:]), out_dir)
         elif sub == 'stop':
             sb_stop(name)
         elif sub == 'reset':
             sb_stop(name)
             sb_remove(name)
-            sb_new(name, build)
+            sb_new(name, build, exts)
         elif sub == 'rm':
             sb_stop(name)
             sb_remove(name)
@@ -1118,13 +1222,13 @@ def sandbox_command(args, out_dir):
             print(f'sandbox {name} removed')
     else:
         raise Fail('sandbox list | setup | template | take <name> <task> [min] | release <name> | '
-                   'new|start <name> [--build <dist dir>] | drive <name> "<script>" | logs <name> [n] | '
+                   'new|start <name> [--build <dist dir>] [--ext <zip|dir>]... | drive <name> "<script>" | logs <name> [n] | '
                    'stop|reset|rm <name>')
 
 
 def sb_drive_remote(name, script, out_dir):
     """from a PC: the script runs on the test machine (its timing is not stretched by ssh), the grabs come back"""
-    out = remote_tool(['sandbox', 'drive', name, script])
+    out, failure = remote_tool(['sandbox', 'drive', name, script], partial=True)
     print(out, end='')
     m = re.search(r'^out (\S+)$', out, re.M)
     if m and re.search(r'\b(grab|shot)\s|clip start', script):
@@ -1135,6 +1239,8 @@ def sb_drive_remote(name, script, out_dir):
             shutil.move(os.path.join(tmp, f), os.path.join(out_dir, f))
         shutil.rmtree(tmp, ignore_errors=True)
         host_run(f'rm -rf {shlex.quote(m.group(1))}', check=False)
+    if failure:
+        raise failure
 
 
 # ------------------------------------------------------------------ status, setup, padsim
@@ -1225,11 +1331,11 @@ def main(argv):
         elif cmd == 'clip':
             clip(args[0], args[1])
         elif cmd == 'pad':
-            run(' '.join(args), out_dir)
+            run(_script_from_args(args), out_dir)
         elif cmd == 'run':
-            run(' '.join(args), out_dir)
+            run(_script_from_args(args), out_dir)
         elif cmd == 'drive':
-            drive(' '.join(args))
+            drive(_script_from_args(args))
         elif cmd == 'padsim-install':
             padsim_install()
         elif cmd == 'guest':

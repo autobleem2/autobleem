@@ -2,10 +2,16 @@
 // GuiSetPicker: the launcher's "which games" screen. See the header.
 //
 #include "evoui_set_picker.h"
+#include "../evoui_plural.h"
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
+#include <ab_gui/panel.h>
+
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -31,7 +37,6 @@ string appCategoryLabel(AppCategory category) {
 }
 
 namespace {
-const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
 const int TabsHeight = 112; // the tab strip at the top, in the header's place: the icon, the label, the rule
 const int FooterHeight = PanelStyle::FooterHeight;
@@ -42,26 +47,15 @@ const int IconSize = 56; // the tab icons (evoimg/tab_*.png, tools/make_evoimg_i
 } // namespace
 
 //*******************************
-// GuiSetPicker::loadIcons
-//*******************************
-vector<ableem::Texture> GuiSetPicker::loadIcons(ableem::Renderer &renderer) {
-    const string img = Env::getWorkingPath() + sep + "evoimg" + sep;
-    return {ableem::Texture::loadFile(renderer, img + "tab_playstation.png"),
-            ableem::Texture::loadFile(renderer, img + "tab_retroarch.png"),
-            ableem::Texture::loadFile(renderer, img + "tab_apps.png")};
-}
-
-//*******************************
 // GuiSetPicker::init
 //*******************************
 void GuiSetPicker::init() {
     style = gui->panelStyle();
-    if (icons.size() != 3)
-        icons = loadIcons(renderer);
+    // the tab icons are the Context's (ab_gui G5c: a theme's launcher.icons, else evoimg/tab_*.png), asked at draw time
     tabs.clear();
-    tabs.push_back({_("PlayStation"), icons[0], {}, 0, 0});
-    tabs.push_back({_("RetroArch"), icons[1], {}, 0, 0});
-    tabs.push_back({_("Apps"), icons[2], {}, 0, 0});
+    tabs.push_back({_("PlayStation"), "tabPlayStation", {}, 0, 0});
+    tabs.push_back({_("RetroArch"), "tabRetroArch", {}, 0, 0});
+    tabs.push_back({_("Apps"), "tabApps", {}, 0, 0});
     buildTabs();
     cancelled = true;
 }
@@ -70,7 +64,7 @@ void GuiSetPicker::init() {
 // GuiSetPicker::buildTabs
 //*******************************
 void GuiSetPicker::buildTabs() {
-    auto games = [](size_t n) { return to_string(n) + " " + _("games"); };
+    auto games = [](size_t n) { return pluralGames(n); };
     const GameQueryService::SetCounts &c = *counts;
 
     // PlayStation: all / internal / the folders / favorites / history / light-gun games
@@ -78,23 +72,22 @@ void GuiSetPicker::buildTabs() {
     ps.entries.clear();
     if (app.gameQuery().showInternalGames()) {
         ps.entries.push_back(
-            {_("All Games"), games(c.usb + c.internal), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
+            {_("All games"), games(c.usb + c.internal), 0, GameSet::PS1, Ps1SelectState::AllGames, 0, ""});
         ps.entries.push_back(
-            {_("Internal Games"), games(c.internal), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
+            {_("Internal games"), games(c.internal), 0, GameSet::PS1, Ps1SelectState::InternalOnly, 0, ""});
     }
     bool top = true;
     for (const SubDirRowInfo &row : c.rows) {
-        const string title = top ? _("USB Games") : row.rowName;
+        const string title = top ? _("USB games") : row.rowName;
         ps.entries.push_back({title, games(static_cast<size_t>(row.numGames)), top ? 0 : row.indentLevel, GameSet::PS1,
                               Ps1SelectState::GamesSubdir, row.subDirRowIndex, row.rowName});
         top = false;
     }
-    ps.entries.push_back(
-        {_("Favorite Games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
-    ps.entries.push_back({_("Game History"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
+    ps.entries.push_back({_("Favorite games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
+    ps.entries.push_back({_("Game history"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
     if (c.lightgun > 0)
         ps.entries.push_back(
-            {_("Lightgun Games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
+            {_("Lightgun games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
 
     // RetroArch: a playlist each
     Tab &ra = tabs[1];
@@ -109,7 +102,7 @@ void GuiSetPicker::buildTabs() {
     // docs/archive/app-format-plan.md's Category=)
     Tab &apps = tabs[2];
     apps.entries.clear();
-    auto appsCount = [](size_t n) { return to_string(n) + " " + _("apps"); };
+    auto appsCount = [](size_t n) { return pluralApps(n); };
     apps.entries.push_back(
         {_("All apps"), appsCount(c.apps), 0, GameSet::Apps, Ps1SelectState::AllGames, 0, "", AppCategory::All});
     for (const auto &cat : c.appCategories) {
@@ -165,6 +158,7 @@ void GuiSetPicker::moveSelection(int step) {
     const int count = static_cast<int>(t.entries.size());
     t.selected = max(0, min(count - 1, t.selected + step));
     keepSelectedVisible();
+    publishItems();
 }
 
 void GuiSetPicker::keepSelectedVisible() {
@@ -202,21 +196,46 @@ void GuiSetPicker::pick() {
 }
 
 //*******************************
-// GuiSetPicker::render
+// GuiSetPicker::publishItems
 //*******************************
-void GuiSetPicker::render() {
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
-    style.dim(renderer);
+// the DebugDriver's `items`/`selected`: the tab showing, its rows as displayed; from the frame and from every move,
+// so the driver's cursor never lags the real one
+void GuiSetPicker::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (const Entry &e : tabs[tab].entries)
+        names.push_back(e.title);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, tabs[tab].entries.empty() ? -1 : tabs[tab].selected);
+}
+
+//*******************************
+// GuiSetPicker::draw
+//*******************************
+// the footer's hints: one row, whatever the language (the panel is as wide as it needs)
+static vector<abgui::HintItem> footerHints() {
+    return {{{"X"}, _("Select")}, {{"O"}, _("Back")}, {{"L1/R1"}, _("Tab")}, {{"L2/R2"}, _("Page")}};
+}
+
+void GuiSetPicker::draw() {
+    publishItems();
+    gui->renderBackground();
+    style.dim(gui->uiContext());
 
     const int rows = visibleRows();
     const Tab &t = tabs[tab];
+    // the panel's height (so its position, since it is centred) is sized from the tab with the most rows,
+    // never the current tab alone - switching to a shorter tab (or an empty one) used to shrink the panel
+    // and re-centre it, jumping the tab strip (report.md P2)
+    int maxShown = 1;
+    for (const Tab &tb : tabs)
+        maxShown = max(maxShown, min(rows, static_cast<int>(tb.entries.size())));
     const int shown = max(1, min(rows, static_cast<int>(t.entries.size())));
-    const int panelHeight = TabsHeight + shown * RowHeight + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    const int panelHeight = TabsHeight + maxShown * RowHeight + FooterHeight;
+    // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
+    const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
+    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
+    style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
@@ -229,55 +248,55 @@ void GuiSetPicker::render() {
     for (size_t i = 0; i < tabs.size(); i++) {
         const ableem::Rect cell(stripX + TabWidth * static_cast<int>(i), panel.y + 1, TabWidth, TabsHeight - 10);
         const bool current = static_cast<int>(i) == tab;
-        if (current) {
-            renderer.setBlendMode(ableem::BlendMode::Blend);
-            renderer.setDrawColor(ableem::Color(style.text.r, style.text.g, style.text.b, 38));
-            renderer.fillRect(cell);
-            renderer.setDrawColor(style.text);
-            renderer.fillRect(
-                ableem::Rect(cell.x, cell.y + cell.h - PanelStyle::SelectionBar, cell.w, PanelStyle::SelectionBar));
-        }
-        if (tabs[i].icon.valid()) {
+        // the current tab: the theme's `tab` frame, else the band and the bar under it (ab_gui G5h)
+        if (current)
+            style.tabCell(gui->uiContext(), cell);
+        ableem::Texture icon = gui->uiContext().icon(tabs[i].icon);
+        if (icon.valid()) {
             ableem::Rect dst(cell.x + (cell.w - IconSize) / 2, cell.y + 10, IconSize, IconSize);
-            tabs[i].icon.setAlphaMod(current ? 255 : 120);
-            renderer.copy(tabs[i].icon, nullptr, &dst);
+            icon.setAlphaMod(current ? 255
+                                     : abgui::InactiveAlphas::orToday(gui->uiContext().inactiveAlphas().tab, 120));
+            renderer.copy(icon, nullptr, &dst);
         }
-        gui->text().renderText_WithColor(
-            fonts[FONT_15_BOLD], tabs[i].title,
-            cell.x + cell.w / 2 - gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
-            cell.y + 10 + IconSize + 4, current ? style.text : style.secondary, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], tabs[i].title,
+                                         cell.x + cell.w / 2 -
+                                             gui->text().textWidth(fonts[FONT_15_BOLD], tabs[i].title) / 2,
+                                         cell.y + 10 + IconSize + 4, style.rowColor(current), XALIGN_LEFT);
     }
-    style.rule(renderer, panel, panel.y + TabsHeight - 8);
+    style.rule(gui->uiContext(), panel, panel.y + TabsHeight - 8);
 
     // the rows
     int rowY = panel.y + TabsHeight;
     for (int i = t.firstVisible; i < t.firstVisible + rows && i < static_cast<int>(t.entries.size()); i++) {
         const Entry &e = t.entries[i];
         if (i == t.selected)
-            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
+            style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         const int x = panel.x + RowInset + 8 + e.indent * 24;
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], e.title, x, rowY + 8,
-                                         i == t.selected ? style.text : style.secondary, XALIGN_LEFT);
-        const int w = gui->text().textWidth(fonts[FONT_15_BOLD], e.detail);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], e.detail, panel.x + panel.w - RowInset - w, rowY + 14,
-                                         style.secondary, XALIGN_LEFT);
+        // the count is drawn to the right edge first, so the title has its real available width to elide
+        // into - a long title (e.g. a RetroArch playlist name) used to run under it (report.md P1)
+        const int w = gui->text().textWidth(fonts[FONT_20_BOLD], e.detail);
+        const int detailX = panel.x + panel.w - RowInset - w;
+        const string title = gui->text().elide(fonts[FONT_22_MED], e.title, detailX - x - 20);
+        gui->text().renderText_WithColor(fonts[FONT_22_MED], title, x, rowY + 8, style.rowColor(i == t.selected),
+                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_20_BOLD], e.detail, detailX,
+                                         rowY + (RowHeight - fonts[FONT_20_BOLD].lineHeight()) / 2,
+                                         style.valueColor(i == t.selected), XALIGN_LEFT);
         rowY += RowHeight;
     }
     if (t.entries.empty())
         gui->text().renderText_WithColor(fonts[FONT_22_MED], _("Not installed"), panel.x + RowInset + 8,
-                                         panel.y + TabsHeight + 8, style.secondary, XALIGN_LEFT);
+                                         panel.y + TabsHeight + 8, style.description, XALIGN_LEFT);
     const int markerX = panel.x + panel.w - RowInset;
     if (t.firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + TabsHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight - 4, -1);
     if (t.firstVisible + rows < static_cast<int>(t.entries.size()))
-        style.scrollMarker(renderer, markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
 
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}}, "",
-                 false);
+    // with the rule along the footer's top, as Memory Cards' footer draws it (UIREV-45)
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight), footerHints());
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
@@ -287,6 +306,10 @@ void GuiSetPicker::loop() {
     menuVisible = true;
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -303,19 +326,24 @@ void GuiSetPicker::loop() {
                 } else if (gui->input().dpadRight()) {
                     app.audio().cursor.play();
                     tab = (tab + 1) % static_cast<int>(tabs.size());
+                    publishItems();
                 } else if (gui->input().dpadLeft()) {
                     app.audio().cursor.play();
                     tab = (tab + static_cast<int>(tabs.size()) - 1) % static_cast<int>(tabs.size());
+                    publishItems();
                 }
+                hold.track(gui->input(), gui->platform().ticks());
             } else if (e.type == Event::Type::ButtonDown) {
                 switch (e.button) {
                 case Button::R1:
                     app.audio().cursor.play();
                     tab = (tab + 1) % static_cast<int>(tabs.size());
+                    publishItems();
                     break;
                 case Button::L1:
                     app.audio().cursor.play();
                     tab = (tab + static_cast<int>(tabs.size()) - 1) % static_cast<int>(tabs.size());
+                    publishItems();
                     break;
                 case Button::R2:
                     app.audio().cursor.play();
@@ -327,6 +355,7 @@ void GuiSetPicker::loop() {
                     break;
                 case Button::Cross:
                     app.audio().cursor.play();
+                    publishItems(); // the driver sees the row this press takes
                     pick();
                     menuVisible = false;
                     break;

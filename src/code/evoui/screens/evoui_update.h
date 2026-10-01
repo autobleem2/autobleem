@@ -25,11 +25,10 @@ enum class UpdateChoice { Later, Now, Skip };
 class GuiUpdatePrompt : public GuiScreen {
 public:
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     UpdateInfo info;
-    ableem::Texture background; // the launcher's background, drawn dimmed under the panel
     UpdateChoice result = UpdateChoice::Later;
 
     using GuiScreen::GuiScreen;
@@ -55,10 +54,9 @@ private:
 class GuiUpdateProgress : public GuiScreen {
 public:
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
-    ableem::Texture background;
     UpdateService::Status finalStatus; // what the service ended in
 
     using GuiScreen::GuiScreen;

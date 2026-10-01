@@ -10,10 +10,11 @@ using namespace std;
 
 string GuiOptions::getStatusLine() {
     auto id = lines[selected].id;
+    string hints = "|@L1/R1| " + _("First/last") + "   |@L2/R2| " + _("Page");
+    hints += "   |@Left+Right| " + _("Choose") + "   |@O| " + _("Back");
     if (id == CFG_THEME || id == CFG_MUSIC)
-        return "|@O| " + _("Back") + "  " + "|@Start|   " + _("Random") + "|";
-    else
-        return "|@O| " + _("Back") + "|";
+        hints += "  |@Start| " + _("Random");
+    return hints + "|";
 }
 
 //*******************************
@@ -94,8 +95,11 @@ vector<string> GuiOptions::getOutputModes() {
         list.push_back(mode.token());
     }
 #endif
-    // "Auto (1080p)": the display's own mode, asked once here - never per drawn frame
-    const ableem::Size desktop = ableem::Platform::desktopDisplaySize();
+    // "Auto (1080p)": the mode the window is in now (what Hardware Information shows), asked once here - never per
+    // drawn frame; the desktop's own mode only when there is no window yet
+    ableem::Size desktop = gui->platform().windowDisplaySize();
+    if (desktop.w <= 0 || desktop.h <= 0)
+        desktop = ableem::Platform::desktopDisplaySize();
     OutputMode own;
     own.w = desktop.w;
     own.h = desktop.h;
@@ -131,28 +135,31 @@ void GuiOptions::fill() {
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
     lines.emplace_back(CFG_SCALER, _("Emulator screen scaling:"), "scaler", false,
                        vector<string>({"1x1", "2x", "4:3", "4:3i", "full"}));
-    lines.emplace_back(CFG_THEME, _("AutoBleem Theme:"), "theme", false, getThemes());
-    lines.emplace_back(CFG_JEWEL, _("Cover Style:"), "jewel", false, getJewels());
+    lines.emplace_back(CFG_THEME, _("AutoBleem theme:"), "theme", false, getThemes());
+    lines.emplace_back(CFG_JEWEL, _("Cover style:"), "jewel", false, getJewels());
     // the shine that crosses the selected cover when the row comes to rest (Carousel::drawShine)
     lines.emplace_back(CFG_COVER_SHINE, _("Cover shine:"), "covershine", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_LANG, _("Language:"), "language", false, Lang::listLanguages(Env::getPathToLangDir()));
-    // how long the "Showing: <set>" splash stays after a set change: 0 = not shown at all (valueText: Skip)
-    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Splash timeout:"), "showingtimeout", false, getTimeoutValues());
+    // how long the informational bubbles ("Showing: <set>", the scan's summary, ...) stay: 0 = not shown at all
+    // (valueText: Off). Errors keep their own fixed time
+    lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Notification timeout:"), "showingtimeout", false, getTimeoutValues());
+    // the boot splash (Gui::display); off goes straight to the launcher
+    lines.emplace_back(CFG_SPLASH_SCREEN, _("Splash screen:"), "splashscreen", true, vector<string>({"false", "true"}));
 
     heading(_("Fonts"));
     // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its
     // name when a theme's own classic font stopped being read (2026-09-29)
-    lines.emplace_back(CFG_THEME_FONT, _("Use Default Font:"), "themefont", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_THEME_FONT, _("Use default font:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
 
     heading(_("Sound"));
     lines.emplace_back(CFG_MUSIC, _("Music:"), "music", false, getMusic());
-    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background Music:"), "nomusic", true,
+    lines.emplace_back(CFG_ENABLE_BACKGROUND_MUSIC, _("Background music:"), "nomusic", true,
                        vector<string>({"true", "false"}));
 
     heading(_("Emulation"));
     // the PS1 emulator a game starts in: the one AutoBleem has always shipped, or the next one (see Config)
-    lines.emplace_back(CFG_EMULATOR, _("PS1 Emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
+    lines.emplace_back(CFG_EMULATOR, _("PS1 emulator:"), "emulator", false, vector<string>({"pcsx-abnxt", "pcsx-ab"}));
     // C11: a positional swap of the first two SDL pads' PS1 ports (core/model/pad_assignment.h,
     // LaunchService's AB_PAD_ORDER) - PS1 only, RetroArch is unaffected, hence the row saying so; next to the
     // PS1 emulator it applies to
@@ -160,7 +167,7 @@ void GuiOptions::fill() {
                        vector<string>({"false", "true"}));
     lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
                        vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_RACONFIG, _("Update RA Config:"), "raconfig", true, vector<string>({"false", "true"}));
+    lines.emplace_back(CFG_RACONFIG, _("Update RA config:"), "raconfig", true, vector<string>({"false", "true"}));
     // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
     lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
                        vector<string>({"false", "true"}));
@@ -169,7 +176,7 @@ void GuiOptions::fill() {
 #ifdef AB_HAS_INTERNAL_GAMES
     // an appliance or a Windows PC has no built-in games to show (GameQueryService::showInternalGames is hard
     // false there)
-    lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show Internal Games:"), "origames", true,
+    lines.emplace_back(CFG_SHOW_ORIGAMES, _("Show internal games:"), "origames", true,
                        vector<string>({"false", "true"}));
 #endif
     // only where the platform can fetch at all (download_command in its ini) - the console cannot
@@ -216,11 +223,19 @@ vector<string> GuiOptions::getFonts() {
 }
 
 //*******************************
-// GuiOptions::render
+// GuiOptions::prepareFrame
 //*******************************
-void GuiOptions::render() {
+bool GuiOptions::prepareFrame() {
+    publishToDriver(); // the DebugDriver's rows and cursor (Options draws its rows itself, not via renderLines)
     holdTick();
-    renderer.clear();
+    return true;
+}
+
+//*******************************
+// GuiOptions::draw
+//*******************************
+// what the stack's frame holds (docs/ab-gui-plan.md, G3d)
+void GuiOptions::draw() {
     gui->renderBackground();
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());
@@ -234,24 +249,33 @@ void GuiOptions::render() {
         firstRender = false;
     }
     const int count = getVerticalSize();
+    // a theme's selection frame goes under every row's text, so it is drawn before all of them - its bleed would
+    // cover the row above otherwise (G4d); without a frame the band is drawn with its row, as before
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed && selected >= firstVisibleIndex && selected <= lastVisibleIndex && selected < count)
+        gui->text().renderSelectionBox(gui->uiContext(), 0, firstLineY + fontHeight * (selected - firstVisibleIndex),
+                                       selectionBoxXOffset, font);
     for (int i = firstVisibleIndex, row = 0; i <= lastVisibleIndex && i < count; i++, row++) {
         if (i < 0)
             continue;
         const int y = firstLineY + fontHeight * row;
         if (lines[i].id == CFG_HEADING) {
-            gui->text().renderLabelBox(0, y);
+            gui->text().renderLabelBox(gui->uiContext(), 0, y);
+            TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(app.lang().translate(lines[i].descriptionToTranslate), -y, 0, XALIGN_LEFT, 0,
                                        font);
             continue;
         }
-        if (i == selected)
-            gui->text().renderSelectionBox(0, y, selectionBoxXOffset, font);
+        if (i == selected && !framed)
+            gui->text().renderSelectionBox(gui->uiContext(), 0, y, selectionBoxXOffset, font);
+        // the theme's roles (UIREV-29): the selected row bright, the others dim
+        TextRenderer::RowRoleScope role(gui->text(),
+                                        i == selected ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);
         renderOptionRow(lines[i], y);
     }
     gui->renderScrollMarkers(firstVisibleIndex > 0, lastVisibleIndex < count - 1);
 
     gui->renderStatus(getStatusLine());
-    renderer.present();
 }
 
 //*******************************
@@ -300,7 +324,7 @@ void GuiOptions::doKeyUp() {
 //*******************************
 std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
     if (info.id == CFG_SHOWINGTIMEOUT)
-        return Strings::toInt(value, 0) <= 0 ? _("Skip") : value + "s";
+        return Strings::toInt(value, 0) <= 0 ? _("Off") : value + "s";
     if (info.id == CFG_DISPLAY) {
         const OutputMode mode = OutputMode::parse(value);
         if (!mode.isAuto())
@@ -348,8 +372,8 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
         return;
     if (pendingReload && pendingReloadId != id)
         flushPendingReload(); // another row's change still waiting: load it first
-    if (valueHold.held()) { // Left/Right still down: the row only shows the values; the last one loads once the
-                            // row has rested after the release (holdTick)
+    if (valueHold.held()) {   // Left/Right still down: the row only shows the values; the last one loads once the
+                              // row has rested after the release (holdTick)
         pendingReload = true;
         pendingReloadAt = 0;
         pendingReloadId = id;

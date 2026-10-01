@@ -4,8 +4,9 @@
 using namespace std;
 
 namespace {
-const int Gap = 8; // between stacked bubbles
-}
+const int Gap = 8;        // between stacked bubbles
+const int MaxWidth = 840; // a message grows with its text up to two thirds of the screen, then it is ellipsized
+} // namespace
 
 //*******************************
 // NotificationLine::setText
@@ -26,11 +27,11 @@ void NotificationLine::render(Gui &gui, long now, int top) {
 // NotificationLines::create
 //*******************************
 void NotificationLines::create(int count) {
-    lines.clear();
-    for (int line = 0; line < count; ++line) {
-        NotificationLine notificationLine;
-        notificationLine.bubble.fitWidth = true;
-        lines.push_back(notificationLine);
+    // a bubble owns its tweens and is never copied or moved (they write its floats): built in place
+    lines = vector<NotificationLine>(static_cast<size_t>(count));
+    for (NotificationLine &line : lines) {
+        line.bubble.fitWidth = true;
+        line.bubble.width = MaxWidth;
     }
 }
 

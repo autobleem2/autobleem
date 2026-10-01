@@ -56,7 +56,14 @@ show_launch_splash()
 {
 	[ -x "$ABSPLASH" ] || return
 	rm -f /tmp/.ra_up
-	"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 &
+	# the picture plays the selected theme's spinner (config.ini's "theme", the folder in /media/Themes) - a
+	# theme with no strip gets the ring of dots, no theme setting no spinner at all
+	THEME=$(sed -n 's/^theme=//p' /media/System/config.ini 2>/dev/null | tr -d '\r' | tail -1)
+	if [ -n "$THEME" ]; then
+		"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 --theme "/media/Themes/$THEME" &
+	else
+		"$ABSPLASH" "$ABPICS/retroarch.jpg" --until-exists /tmp/.ra_up --timeout 30 &
+	fi
 	N=0
 	while ! grep -q "\[Video\] Found display server" "$RALOG" 2>/dev/null; do
 		[ -e /tmp/.ra_up ] && return
@@ -83,7 +90,8 @@ show_return_splash()
 {
 	[ -x "$ABSPLASH" ] || return
 	touch /tmp/.abload
-	"$ABSPLASH" "$ABPICS/autobleem.jpg" --until-gone /tmp/.abload --timeout 20 &
+	"$ABSPLASH" "$ABPICS/autobleem.jpg" --anim sweep --until-gone /tmp/.abload --timeout 20 &
+	echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
 }
 
 # what the tree needs before RetroArch starts

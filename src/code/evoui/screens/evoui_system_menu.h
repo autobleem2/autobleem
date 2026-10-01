@@ -7,6 +7,7 @@
 #pragma once
 
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -29,9 +30,10 @@ enum class SystemMenuAction {
     SoftwareUpdate, // AB_ONLINE_UPDATE builds only
     About,
     PowerOff,
-    Network,    // Network & Controllers: the extension providing the "network" entry, only when one does
-    Store,      // the Quick menu's: the store extension, run directly
-    SystemMenu, // the Quick menu's last row: the System menu itself
+    Network,         // Network & Controllers: the extension providing the "network" entry, only when one does
+    Store,           // the Quick menu's: the store extension, run directly
+    SystemMenu,      // the Quick menu's last row: the System menu itself
+    RestartLauncher, // the Quick menu's, console / Pi / PC stick only: the launcher process starts over
 };
 
 //******************
@@ -51,7 +53,7 @@ public:
     enum class Kind { System, Quick };
 
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     Kind kind = Kind::System;
@@ -62,7 +64,6 @@ public:
     // with networkProvided: why the extension providing it cannot run ("PSC-Bios is switched off - ..."); set,
     // the row is greyed with this as its description, still selectable (the caller opens the Extensions list)
     std::string networkUnavailable;
-    ableem::Texture background; // the launcher's background, drawn dimmed under the panel
 
     SystemMenuAction result = SystemMenuAction::None;
 
@@ -80,6 +81,7 @@ private:
     };
     std::vector<Row> rows;
     int selected = 0;     // a row index, never a heading's
+    DpadHold hold;        // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0; // the first row on screen, when there are more than fit
 
     // key and title are the same words, untranslated and translated: the literal _("...") at every call is

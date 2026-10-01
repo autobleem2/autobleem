@@ -12,6 +12,7 @@
 #include "core/model/game_set.h"
 #include "core/services/game_query.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -25,7 +26,7 @@ class GuiSetPicker : public GuiScreen {
 public:
     App &app = App::get();
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     GameSetSelection selection; // in: what shows now; out: what was picked
@@ -33,10 +34,6 @@ public:
     // the numbers on the rows, worked out by the launcher and kept until the library changes
     // (GuiLauncher::setCounts) - required
     const GameQueryService::SetCounts *counts = nullptr;
-    // the three tab icons, loaded once by the launcher; empty = the picker loads them itself
-    std::vector<ableem::Texture> icons;
-    static std::vector<ableem::Texture> loadIcons(ableem::Renderer &renderer); // evoimg/tab_*.png, in tab order
-    ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
     bool cancelled = true;
 
     using GuiScreen::GuiScreen;
@@ -55,7 +52,7 @@ private:
     };
     struct Tab {
         std::string title;
-        ableem::Texture icon;
+        const char *icon = ""; // the Context's icon name ("tabPlayStation"...), fetched at draw time
         std::vector<Entry> entries;
         int selected = 0;
         int firstVisible = 0;
@@ -67,6 +64,8 @@ private:
     void buildTabs();
     int visibleRows() const;
     void moveSelection(int step);
+    void publishItems() const; // the tab's rows and the cursor to the DebugDriver
+    DpadHold hold;             // Up/Down held: the rows go on at the shared HoldRepeat pace
     void keepSelectedVisible();
     void pick();
 };

@@ -37,12 +37,55 @@ way, kept for a keyboard-only smoke test.
   decorations move (the play button, the arrow - the frame pacer's "ambient" state), or two frames that far apart
   are the same. Use these instead of `wait <ms>`: a script is then as fast as the machine and does not break on a
   slow one.
+- **`busy`** answers `ok 1` while a busy spinner shows (`Gui::beginBusy` - "Applying settings..." right after
+  Options closes, deleting a game, ...), else `ok 0`. **`wait_ready [seconds]`** waits until it is `0` AND the
+  picture has rested ~300 ms (`wait_idle`'s test), 10 s by default; on a timeout it answers `err not ready after
+  <s> s (screen <Name>, busy 0|1)`. While the spinner shows every press is dropped (and flushed at its end), yet
+  `screen` already says `GuiLauncher` - so after anything that closes Options, `wait_ready` before the next press.
+  `screen`'s reply is unchanged.
+- **`items`** lists the rows the showing screen published, `|`-separated; **`selected`** answers where the cursor
+  is: `ok <index>|<name>` (0-based into `items`; `ok -1|` when the screen published none; the name is empty
+  past the end). Published by: the System/Quick menu (English keys, no headings), the classic lists - Options,
+  Game Manager, the game editors, Memory Cards, the USB/RetroArch pickers (the row text as displayed, so
+  **translated**; a heading row is included with a leading `#`, e.g. `#Display`, so an index matches what is
+  drawn, and the cursor never rests on one) - and the launcher's set picker (the tab showing), Extensions and Scanner
+  processors (titles as displayed). A screen's rows are its own: a dialog over a list has none until it
+  publishes, and the list's come back when the dialog closes. Hardware Information has no cursor and publishes
+  nothing.
 - **`quit`** makes the program leave the way a power off does: every screen closes, the databases close, the
   process ends. So does **SIGTERM** (and SIGINT) since 2026-09-28 - `kill <pid>` or `systemctl stop` is a clean
   stop now, on every target. Before, SDL turned the signal into a window-close event, which the launcher (off a
   dev machine) took for a lost display: it rebuilt the display and carried on, so it had to be killed. Leaving
   this way writes no selection file, so on the console `rc/selection.sh` treats it as a stop, not a choice. The
   console's power button works as before.
+
+### The client's own steps (`ab_drive.py`, also in `abvm.py drive` / `sandbox drive`)
+
+These are done by the client, on top of the driver's words:
+
+- **`menu <item>`** (the L2+R2 System menu) and **`quick <item>`** (d-pad Up, the Quick menu) first wait for
+  `GuiLauncher`, then for the picture to rest (`wait_idle 300 10` - right after Options or Game Manager close the
+  launcher shows `GuiLauncher` while a busy spinner still ignores all input), then hold the chord for real (`down
+  l2`, `down r2`, 150 ms, `up r2`, `up l2`; `down up` ... `up up` for `quick`) and wait up to 2 s for
+  `GuiSystemMenu`; the whole thing is tried up to 3 times. After the pick they wait (up to 10 s) until the System
+  menu is gone, so the chosen screen is up when the step ends and a script needs no `wait_screen GuiManager`.
+  `<item>` is a title (the English key) or an index. The cursor is walked there **closed-loop**: the client reads
+  the driver's `selected` after every step and presses again until it is on the row - a double move on a slow
+  frame is walked back instead of picking the wrong item (a driver without `selected` falls back to counting).
+- **`select <row>`** moves the cursor of the list showing (Options, Game Manager, an editor, the set picker,
+  Extensions, Scanner processors) to a row by its text as shown - translated, case-insensitive, a unique prefix -
+  or by its index (headings count, `#...`); nothing is pressed, so `select Language; tap right` changes that row.
+- **`tap <btn>`** = one short press (`press <btn> 60`; `tap <btn> <ms>` a longer one) - `tap down` moves exactly one
+  row. **`hold <btn>`** / **`release <btn>`** = the driver's `down` / `up` (`hold <btn> <ms>` = `press <btn> <ms>`).
+  **`dpad <up|down|left|right>`** and a bare **`up`/`down`/`left`/`right`** are a tap too, `dpad center` does
+  nothing - `dpad down; wait 200; dpad center` no longer lets the key repeat fire and skip a row. Only the logical
+  names (`x o s t start select l1 r1 l2 r2` and the d-pad) are taken; `@1 tap a` and the other padsim words go to the
+  driver as before. (In `abvm.py run` these words are padsim's own, not the client's.)
+- **`home`** presses Circle until `GuiLauncher` shows (at most 6 presses) - the way out of Game Manager or Options
+  that an earlier run left open; a script can start with it.
+- **A failed run keeps its shots.** A failing step stops the run, but the replies of the steps before it are
+  printed, the shots and grabs they made are written (and, in `sandbox drive` / `run`, still brought back to
+  `--out`), then one `error: step N '<step>' failed: ...` line names the step and the exit code is non-zero.
 
 ### Virtual pads (padsim's words)
 
@@ -170,8 +213,11 @@ Apps). Their docstrings are the reference; autobleem-main's `docs/pc-test-machin
 tested - extra launchers run headless in the same VM, each with its whole root in a folder on the test machine's
 disk (never the stick), their own DebugDriver port and their own lease. `sandbox start <name> --build
 ~/src/autobleem/dist/pcusb` lays a fresh pcusb build over the template, `sandbox drive <name> "<ab_drive script>"
---out DIR` drives it and brings the shots, grabs and clips back, `sandbox reset` starts it afresh in under a
-second.
+--out DIR` drives it and brings the shots, grabs and clips back (also from a run that failed halfway), `sandbox
+reset` starts it afresh in under a second. `--ext <zip or dir>` (repeatable, on `new`/`start`/`reset`) lays an
+extension over the sandbox as well - a zip is unzipped at the root (the extension zips hold `Extensions/<name>/...`),
+a directory `.../extensions/<name>/` is copied to `Extensions/<name>/`; what it replaces is kept once in
+`<sandbox>/.abvm/ext-backup/<name>`. E.g. `--ext ~/src/ext_store-theme/dist/ext_store-pcusb-1.0.1.zip`.
 
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
 (1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30`, and its outputs in its own folder:

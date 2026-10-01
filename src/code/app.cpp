@@ -83,6 +83,7 @@ App::~App() = default;
 // App::requestPowerOff
 //*******************************
 void App::requestPowerOff() {
+    PLOG_INFO << "Quit: App::requestPowerOff()";
 #ifdef AB_PLATFORM_PSC
     session_.menuOption = MENU_OPTION_POWEROFF;
     gui_->input().requestQuit();

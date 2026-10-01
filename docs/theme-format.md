@@ -73,14 +73,16 @@ Themes/<name>/
     "metaPanelSlides": true,
     "textShadow": true,
     "arrow": "images/arrow.png",
-    "hints": { "cross": "images/hint_cross.png", "circle": "images/hint_circle.png", "triangle": "images/hint_triangle.png" },
+    "hints": { "cross": "images/hint_cross.png", "circle": "images/hint_circle.png", "triangle": "images/hint_triangle.png", "square": "images/hint_square.png" },
     "menuIcons": { "settings": "images/menu_settings.png", "guide": "images/menu_guide.png",
                    "memcard": "images/menu_memcard.png", "resume": "images/menu_resume.png",
                    "resumePicture": { "x": 25, "y": 33, "w": 68, "h": 52 },
                    "resumeSlotLabel": { "x": 22, "y": 18 } },
     "memcardManager": { "grid": "images/memcard_grid.png", "pencil": "images/memcard_pencil.png" },
     "fonts": { "medium": "font/SST-Medium.ttf", "bold": "font/SST-Bold.ttf" },
-    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464", "selection": "#4fc3f7" }
+    "colors": { "text": "#ffffff", "secondary": "#646464", "hint": "#646464", "selection": "#4fc3f7",
+                "row": "secondary", "rowSelected": "text", "heading": "secondary", "value": "row",
+                "description": "secondary", "footer": "text", "selectionBand": "text", "edge": "secondary" }
   },
   "sounds": { "cursor": "sounds/cursor.wav", "cancel": "sounds/cancel.wav", "homeUp": "sounds/home_up.wav",
               "homeDown": "sounds/home_down.wav", "resume": "sounds/resume_new.wav" }
@@ -93,7 +95,7 @@ Themes/<name>/
 | `music` | The background track. `loop` false plays it once. `"music": null` is a theme with no music at all - it also silences a track the user picked in Options. |
 | `classic.background` | The classic UI's full-screen background (menus, splash, dialogs). |
 | `classic.logo` | The logo file and the rect it is drawn in. Dialogs draw it at a third of the size at the menu panel's origin. |
-| `classic.font` | **Not read since 2026-09-29.** The classic screens draw in Open Sans Medium at 20 (the launcher's own, `resources/fonts`) on every theme, or the user's font from Options -> Fonts. Still parsed and converted, so an old theme loads unchanged. |
+| `classic.font` | **Not read since 2026-09-29.** The classic screens draw in the launcher's medium font (`launcher.fonts.medium`; Open Sans Medium when the theme sets none) at 20, or the user's font from Options -> Fonts. Still parsed and converted, so an old theme loads unchanged. |
 | `classic.menuLines` | Visible rows in a list menu. |
 | `classic.menuPanel` | The translucent panel behind a menu: rect, fill colour, alpha. |
 | `classic.statusBar` | The status line at the bottom: its bar (rect, colour, alpha) and `textY`, where the text is drawn. Every shipped theme keeps the bar off screen (`y: -670`), so only the text shows. |
@@ -106,15 +108,232 @@ Themes/<name>/
 | `classic.buttons` | One image per `\|@X\|` marker in UI strings: `cross circle square triangle start select l1 r1 l2 r2 check uncheck esc enter tab`. |
 | `launcher.*` | The EvolutionUI launcher's images, by what they are on screen. `metaPanelSlides: false` keeps the metadata panel in place when the menu opens (for a background drawn around it). `textShadow: false` drops the dark halo drawn under the launcher's text (it is what keeps white text readable on a light background; on by default) and the same dark outline around the Play button's images. |
 | `launcher.snapPanel` | `{ "x", "y", "w", "h" }`: where the selected game's screenshot (RetroArch's thumbnails `Named_Snaps`, or the user's own from `retroarch/screenshots`) is drawn, aspect-fit inside the rect. Leave it out and no screenshot is drawn. |
-| `launcher.hints` | The cross/circle/triangle icons in the footer. |
-| `launcher.hintBar` | `{ "x", "y", "w", "h" }`: the frame the footer's **two** hint lines are laid out in. Line 1 is built from the launcher's state and the selected item (e.g. "Play", "Play in RetroArch", "Game menu", "Quick menu" in the Games state; "Resume slot n" / "Delete slot" / "Back" in the resume picker); line 2 always shows what still works ("Games shown", "Random", "Guide", "System"). Each line is centred in its half of the bar, at the largest font from 22 down to 14 that fits the language - so a long translation shrinks instead of spilling - and, if it is still too wide even at the tightest gap, line 2 (never line 1, which stays short) drops hints from the right until it fits. `h` under 48 px is read as "this theme never expected two lines": only line 1 is drawn, at the bar's full height. Unset means the pill most themes paint at the bottom right: x 560..1240, y 624..696. ab2 gives its whole blue band, the default theme its strip - both over 48 px tall, so both draw two lines. The d-pad hints ("|@Up|" etc.) are the launcher's own arrows (`evoimg/dpad_*.png`, `tools/make_evoimg_icons.py`), not part of the theme. |
+| `launcher.hints` | The cross/circle/triangle/square icons in the footer (an unset `square` is `classic.buttons.square`, as before). A combination of keys is one chip ("L2+R2", "Select+Start", and "Left+Right" - both arrows in one chip). |
+| `launcher.hintBar` | `{ "x", "y", "w", "h" }`: the frame the footer's hints are laid out in, as a **fixed grid of 4 columns x 2 lines** (UIREV-36): every item has a home slot - column 1 the action, 2 the other action, 3 move, 4 leave - and is drawn there or not at all, so nothing moves when the state changes. Line 1 is what acts on the current selection ("Play", "Play in RetroArch", "Game menu", "Quick menu" in the Games state; "Open" / "Choose" / "Back to games" in the game menu's icon row; "Resume" / "Delete slot" / "Slot" / "Back" or "Save" / "Slot" / "Don't save" in the resume picker); a slot with nothing in the state stays empty. Line 2 is always all four of "Games shown", "Random", "Guide", "System"; one that does nothing in the state is drawn dimmed (35 %). The column widths and the one font (the largest from 22 down to 14 at which the four columns fit the bar's width less 16 on each side, in the current language) are computed once per language from the widest item each column can ever hold, never per state; an item is drawn at its column's left + 12. `h` under 48 px is read as "this theme never expected two lines": only line 1 is drawn, at the bar's full height. Unset means the pill most themes paint at the bottom right: x 560..1240, y 624..696. ab2 gives its whole blue band, the default theme its strip - both over 48 px tall, so both draw two lines. A theme's `hintBar` frame (`launcher.frames`, below) is drawn into this rect as the panel behind the two lines. The d-pad hints ("|@Up|" etc.) are the launcher's own arrows (`evoimg/dpad_*.png`, `tools/make_evoimg_icons.py`) unless the theme gives its own in `launcher.icons` (`dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight` - below). |
 | `launcher.menuIcons` | The launcher menu's four icons, 118x118 each. `resumePicture` (optional, `{ "x", "y", "w", "h" }` in the icon's own pixels) is where the save state's picture is pasted on the resume icon - draw the icon's frame around it; unset means (25, 33) 68x52, the original icon's window. `resumeSlotLabel` (optional, `{ "x", "y" }`, the same pixels) is where the resume-slot picker writes "Slot n" on its 2.7x copy of the icon, left-aligned; unset means (22, 18), the original spot above the original window - a theme that moves the window (ab2 puts a screen at the top of its tile) moves the label with it. |
 | `launcher.memcardManager` | The memory-card manager's block grid and cursor. |
-| `launcher.fonts` | The launcher's medium and bold ttf. Without them the shipped pair is used: `resources/fonts/OpenSans-Medium.ttf` / `-Bold.ttf` (OFL; the console's SST fonts were, until 2026-09-21). |
-| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. |
+| `launcher.fonts` | The launcher's medium and bold ttf. Without them the shipped pair is used: `resources/fonts/OpenSans-Medium.ttf` / `-Bold.ttf` (OFL; the console's SST fonts were, until 2026-09-21). **One font:** the medium is also the classic screens' default font (Options, the editors, the keyboard, Confirm, the Store, PSC-Bios) - "Use default font" on means it, not Open Sans. The order is the user's own font (Options -> Fonts), then a Chinese language's CJK font (for everything), then this pair, then Open Sans. About, its game and the launcher's details, game menu and hints always draw with the pair. |
+| `launcher.colors` | The launcher's text colour and the secondary (dimmer) one. `hint` is the colour of the footer's "Enter" / "Cancel" / "Button Guide" labels; leave it out and they take `secondary`. A light `hint` gets the dark halo like any other light text (unless `textShadow` is off). `selection` is the resume-slot picker's colour for the selected slot: a halo in it around the slot's tile, the other tiles dimmed; leave it out and the selected slot's tile is tinted red instead, the original way, which only shows on a white tile. The style roles (`row`, `rowSelected`, ...) are in the table below. |
 | `sounds` | The five UI sounds. |
 
 Colours are `"#rrggbb"`; alphas are 0-255.
+
+### High-resolution images (`@2x`)
+
+A theme may ship any of its images a second time at **exactly twice the pixels**, named `<name>@2x.<ext>` next to
+the 1x file (`background@2x.jpg` next to `background.jpg`, `images/menu_guide@2x.png` next to
+`images/menu_guide.png`). `theme.json` does not name it and does not change: on a screen above 720p (a Pi or a PC
+at 1080p - the output scale above 1) the @2x file is drawn instead of the 1x one, into the same place and the same
+size, so it looks sharp there; the console (720p) never loads it. Every number in `theme.json` stays in the 1x
+file's pixels (the 1280x720 canvas), and so do the positions the launcher places the images at.
+
+- **The 1x file is required.** The size of the 1x image is the image's size on screen, and what is measured from
+  a picture's pixels - the check switch's transparent right margin, the dark outline around the Play button's
+  images - is measured on the 1x file. An @2x file whose 1x is missing from the theme is not used (the default
+  theme's 1x is drawn, as before).
+- **Exactly twice**: a 60x30 `on.png` wants a 120x60 `on@2x.png` - the same picture, the same transparent margins,
+  the same place of everything in it. An image of another size is drawn squeezed or stretched into the 1x size.
+- It works for every image of `classic` (the background, the logo, `buttons`) and `launcher` (the background,
+  footer, Play button and text, the settings and meta panels, the arrow, `hints`, `menuIcons`,
+  `memcardManager`); frames have their own `image2x` (below). Not for fonts or sounds.
+- A theme without @2x files looks exactly as it did, at every screen size.
+
+The launcher's own icons in `evoimg/` (the meta panel's icons, the d-pad hint arrows, the set picker's tabs, the
+jewel cases and the big-box frame) follow the same rule, so a later release can ship @2x ones for them too.
+
+### Frames (`launcher.frames`)
+
+A theme may draw the boxes of the menus and dialogs - the panel, the selected row, the heading band, the
+keyboard's keys and its text field - with its own images instead of the plain boxes the code draws. Each
+is a **9-slice** PNG: cut by four lines into corners drawn 1:1, edges stretched along their length and a centre
+stretched both ways, so one small image fits a box of any size. All numbers are in the 1280x720 canvas' pixels; an
+`@2x` image next to the 1x one (`frames/panel@2x.png`, twice the size, the same numbers) is drawn instead of it on a
+screen above 720p. What to draw, the sizes and the limits per frame are autobleem-core's
+`docs/ab-gui-frames-spec.md`.
+
+```json
+"launcher": {
+  "frames": {
+    "panel": { "image": "frames/panel.png", "slice": 36, "bleed": 12, "tint": "edge" }
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `image` | The 1x PNG (alpha), relative to the theme folder. |
+| `image2x` | The `@2x` PNG; left out, `<image>@2x.png` next to `image` is used when it exists. |
+| `slice` | Where the image is cut, measured from its outer edge: a number for all four sides or `{ "left", "top", "right", "bottom" }`. |
+| `bleed` | How far the image reaches outside the box (a glow, a shadow), the same form. |
+| `fill` | `false` leaves the centre out (a rim only). |
+| `tint` | A role of `launcher.colors` (`edge`, `selectionBand`, `text`, ...) the image is multiplied by - a white frame then follows the theme's colours. Left out, the image's own colours. |
+
+| Frame | Draws | Since |
+|---|---|---|
+| `panel` | The sheet of every classic panel and dialog: Options and the other lists, the editors, Game Manager, Memory Cards, Hardware Information, Confirm, the text and facts pages, the keyboard, the extensions' action menus - and, since G4b, the launcher's own System and Quick menu, set picker, Extensions, Processors, update prompt and notification bubble, the Store's screen and PSC-Bios's gamepad-configuration message box. (Not the pad battery plate - that is `plate` - nor PSC-Bios's one-line countdown plate.) | ab_gui G4a, G4b |
+| `selection` | The selected row, drawn into the row's full extent (the image's bleed reaching out) instead of the band and the bar at its left edge, and **under** the row's text: every classic list (Options, Game Manager, the editors, Memory Cards, the extensions' lists), the action menus, and the launcher's own System and Quick menu, set picker, Extensions, Processors and update prompt. Not the set picker's current-tab mark. A locked row's grey veil still goes over it. | ab_gui G4c |
+| `heading` | The band behind a heading's text, drawn into the band's box (no bleed) instead of the faint band: the group and section headings of the classic lists, the action menus, facts pages, the button guide, and the launcher's System and Quick menu and Extensions. | ab_gui G4d |
+| `key` | An on-screen keyboard key (letters, digits, symbols): the keyboard of every screen that asks for text - the launcher's, the Store's search, PSC-Bios's Wi-Fi password. Up to 96 x 64 logical pixels, 8 px apart. The label and the arrows on Shift/Backspace stay code-drawn. | ab_gui G4e |
+| `keyFunction` | A function key (Shift, the page key, Space, Backspace, Done). Left out: `key`. | ab_gui G4e |
+| `keyLit` | Shift while it is on (once or locked). Left out: `key`. | ab_gui G4e |
+| `keySelected` | The key under the cursor. Left out: `key` with a 1 px outline in the theme's text colour over it. | ab_gui G4e |
+| `field` | The keyboard's text field, 48 px high. The text and the blinking caret stay code-drawn. | ab_gui G4e |
+| `badge` | A plate behind each badge of the game-info row: USB/internal, HD/SD, the lock, favourite, RetroArch, the light guns (a 32 x 32 box round each 30 x 30 icon, 4 px bleed at most). Not behind the players icon or the disc. | ab_gui G5b |
+| `chip` | The plate under a named button's name - START, SELECT, L1/R1, L2/R2, L2+R2, ESC, a word like RESET - wherever buttons are drawn: the launcher's hint lines, every footer, the keyboard's footer, the Store and PSC-Bios. Drawn into the 24 px high box (28 or more wide; 2 px bleed at most; the image 32 x 32); the name stays code-drawn over it. The face buttons and the d-pad arrows are images, not chips. | ab_gui G5d |
+| `footer` | The hint band along the bottom of every panel screen (Options, the editors, Game Manager, Memory Cards, the System and Quick menus, Extensions, Processors, the set picker, the update prompt, Confirm, the keyboard, the Store, PSC-Bios): 54 px high, as wide as the panel (64 x 62 image: 56 x 54 body, 4 px bleed, slice 16). Drawn over the panel's own frame, instead of the 1 px rule along the band's top; the hints and the counter over it. Not the launcher's own hint bar (`hintBar`). | ab_gui G5r8 |
+| `hintBar` | The panel behind the launcher's two hint lines, drawn into the `launcher.hintBar` rect (its bleed outside it; ab2.0.0: 80 x 80, slice 28, bleed 8 at most - the bar ends 10 px above the screen's bottom). It takes the place of the band a footer image paints: it is drawn right after `launcher.footer`, under the covers, the game menu and the hints, so a theme with the frame ships its footer image **without** the band (the footer is still drawn). The hints' places and sizes do not change with it. | ab_gui G5e |
+| `tab` | The set picker's **current** tab (150 x 102 cell, recommended 48 x 48, slice 16, bleed 0 - 4 at most, the cells touch), drawn into the whole cell under the tab's icon and label instead of the `selectionBand` band at 15% and the 5 px bar along the cell's bottom. The other tabs draw no frame (their icon stays at `inactive.tab`). Tint it with `selectionBand`. | ab_gui G5h |
+| `toast` | The panel of a notification bubble at the top right - the scan's and downloads' progress bubble, the set banner ("Showing: All games (24)"), a message ("Resume point saved"): 440 wide for the scan, a banner or message as wide as its text plus 24, 48 to 92 high. Drawn in the bubble's rect with its bleed outside it (ab2.0.0: 64 x 64, slice 20, bleed 8 - two stacked bubbles are 8 px apart). **A theme without `toast` keeps the `panel` frame there** (and without that the code-drawn sheet). The title, the detail line and the bar are drawn over it unchanged; the bar's own track and fill are G5g's. | ab_gui G5f |
+| `progressTrack`, `progressFill` | Every progress bar: the busy spinner's bar (400 x 6), a download's bar in the Store and PSC-Bios, the Software Update prompt's (about 700 x 22; its code-drawn outline and the fill 2 px inside it are replaced by the two frames), and - with G5f - the notification bubbles' (4 px high). The track is drawn into the whole bar, the fill into the part done, from the bar's left edge (not drawn while that is 0 px wide). Each image **16 x 8** (`@2x` 32 x 16), the whole image the box (bleed 0, 2 at most), slice left/right 4 and top/bottom 2, flat up and down (the same art serves a 4 px and a 22 px bar); `tint`: `secondary` for the track, `text` for the fill. A theme may give one of the two: the other stays code-drawn (the track `secondary` at `launcher.inactive.barTrack`, else 47%; the fill `text`). | ab_gui G5g |
+| `plate` | The plate behind the pad battery rows at the launcher's top left (from x 2, y 2; about 100-130 wide, 41 high for one pad, 64 for two - grown with the tags), instead of the dark sheet with its edge in `secondary`. Image 48 x 48 (`@2x` 96 x 96), slice 16, bleed 2 at most, centre at least 70% opaque. The tags, the `battery` icons and the percents are drawn over it. | ab_gui G5l |
+
+**Frames are opt-in and the theme's own**: they are read only from the selected theme's `theme.json`, never taken
+over from `default`, and a frame whose image is missing or smaller than its slices is ignored (logged) - that box is
+then drawn by the code as before. A theme without `launcher.frames` looks exactly as it did.
+
+### Icons (`launcher.icons`)
+
+The launcher's small fixed pictures - the d-pad arrows in the hints, the badges of the game-info row, the set picker's
+tabs, the missing-art covers - are **icons**: images drawn at their own size, never stretched (a frame is the
+stretching kind). A theme may give any of them its own file; **every icon it leaves out falls back** - to the `default`
+theme's entry, else to the launcher's own file in `evoimg/` - so a theme may replace one icon and keep the rest.
+What to draw, the size of each and the whole list are autobleem-core's `docs/ab-gui-evoui-art-spec.md` (3.).
+
+```json
+"launcher": {
+  "iconHalo": false,
+  "icons": {
+    "dpadUp": "icons/dpad_up.png",
+    "disc": { "image": "icons/disc.png", "image2x": "icons/hi/disc.png" }
+  }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `icons.<name>` | The 1x PNG (alpha), relative to the theme folder - or `{ "image", "image2x" }` when the `@2x` file is not `<image>@2x.png` next to it. The 1x file's size is the icon's size on screen; the `@2x` one (exactly twice) is drawn instead on a screen above 720p. A file that is not there counts as not given (logged): the icon falls back. |
+| `iconHalo` | `false`: no dark outline under the icons (the code draws one from each icon's shape - black, 1 px all round and 2 px down-right - so a light icon reads on a light background; a theme whose icons carry their own outline or glow switches it off). Left out: the `default` theme's, else on. It holds for every icon drawn, the fallen-back ones too. |
+
+| Icon | Draws | Built-in (`evoimg/`) | Since |
+|---|---|---|---|
+| `dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight` | The d-pad in the launcher's hint lines and every footer, 28 x 28 | `dpad_up.png` ... | ab_gui G5a |
+| `players`, `disc`, `usb`, `internal`, `hd`, `sd`, `lock`, `unlock`, `favorite`, `retroarch`, `lightgun`, `lightgun2` | The game-info row (30 x 30); `players` falls back to the theme's `launcher.metaPanel` | `cd.png`, `usb.png`, `ps1.png`, `hd.png`, `sd.png`, `lock.png`, `unlock.png`, `favorite.png`, `ra.png`, `lightgun.png`, `lightgun2.png` | ab_gui G5b (the players icon still has no halo - G5r2) |
+| `tabPlayStation`, `tabRetroArch`, `tabApps` | The set picker's tabs (56 x 56; the current tab full, the others dimmed) | `tab_playstation.png`, `tab_retroarch.png`, `tab_apps.png` | ab_gui G5c |
+| `raCover`, `appCover`, `bigBox` | **Not theme keys** (the owner, 2026-09-30): the missing-art covers and the big box's edge are parts of the carousel, the same on every theme - a `launcher.icons` entry under these names is ignored. A RetroArch game or App with no art is drawn at its system's typical aspect (`resources/platform/cover_aspects.cfg`, 1:1 for an App) as two layers, the launcher's own `evoimg/cover_bg.png` (stretched, 9-slice) and a fixed 96 px `glyph_game.png` / `glyph_app.png` centred on it, inside the `bigbox.png` frame - the same on every theme. `ra-cover.png` and `app-cover.png` stay for the game editor and the App start screen (a later swap of those files is planned) | `cover_bg.png`, `glyph_game.png`, `glyph_app.png`, `bigbox.png` (+`ra-cover.png`, `app-cover.png`) | - |
+| `extension` | The Extensions list's icon (fitted in 56 x 56) for an extension that ships none; a theme without it keeps the empty column | none | ab_gui G5c |
+| `storeInstalled` | The Store's "Installed" badge (32 x 32 in ab2.0.0): drawn at its own size at the right end of an installed item's row in the Apps and Games lists, vertically centred, 24 px in from the list panel's inner right edge. **The theme's own only** - a theme without it gets a code-drawn check mark in the `edge` colour. The row itself is a normal row (no veil) | none | ab_gui G5t |
+
+| `switchOn` / `switchOff` | A yes/no row's value (Options, the editors, the Store, PSC-Bios): drawn at its own size (60 x 30 in the art spec) with its right edge where the value text would end, vertically centred in the row, under a disabled row's veil. **The theme's own only - there are no built-in switch images**: a theme that ships neither keeps the ON/OFF text (so `default` and `ab2` do). Ship both or the missing state falls back to the text | none | ab_gui G5m |
+| `battery` | The pad battery's empty outline and nub (29 x 13 in the art spec: a 26 x 13 body and a 3 px nub on its right), drawn at its own size at each pad's row instead of the code-drawn outline. The code still fills the charge into the body's inner rect - a fixed 2 px inside the body, x 2..24 and y 2..11 of the 29 x 13 icon at 100% (`text`, `hint` when low). No built-in file: a theme without it keeps the code-drawn outline | none | ab_gui G5l |
+
+The other names of the art spec (`play`) are read the same way and take effect in
+their own steps. A theme without `launcher.icons` looks exactly as it did.
+
+### The launcher's logo (`launcher.logo`) and the resume picture's mask (`launcher.menuIcons.resumePictureMask`)
+
+Two optional single-image elements, the theme's **own** keys like `launcher.frames` and `launcher.icons`' entries: never
+taken from the `default` theme. A theme without them draws exactly as it did.
+
+| Key | What | Notes |
+|---|---|---|
+| `launcher.logo` | `{ "file": "images/logo.png", "x": 22, "y": 591, "w": 317, "h": 75 }` - a logo the EvolutionUI launcher screen draws at that rect (logical 1280x720 pixels), above the background and under the carousel. | For a theme whose background does not carry the logo itself. `file` and a positive `w` and `h` are required, else nothing is drawn. `@2x` twin: yes (`images/logo@2x.png`, above). ab_gui G5q |
+| `launcher.menuIcons.resumePictureMask` | A PNG (`"images/resume_mask.png"`, 1x + `@2x`) the size of the resume picture window (`resumePicture`, 68x52 by default) whose **alpha** is multiplied into the game's save-state screenshot before it is drawn - in the resume icon's window and in the resume-slot picker's 2.7x copy. | For a resume icon whose picture window is not a rectangle (cut corners, rounded corners): opaque where the picture shows, transparent where the icon's frame is. The picture is stretched over the mask, so the mask lines up with the window. Unset = the rectangle. ab_gui G5s |
+
+### The busy spinner (`launcher.spinner`)
+
+The spinner shown while a long job runs ("Applying...", a theme reload, a scan's please-wait picture) is a code-drawn
+ring of twelve dots. A theme may replace it with its own animation: **one image holding N frames side by side**, all the
+same size, played in a loop, centred where the ring is (in the busy frame and in the "please wait" picture alike).
+
+```json
+"launcher": {
+  "spinner": { "image": "images/spinner.png", "frames": 24, "fps": 24 }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `image` | The 1x strip (alpha), relative to the theme folder: `frames` frames of equal width side by side, left to right. One frame's size (the strip's width / `frames` by its height) is the spinner's size on screen; it is drawn at that size, never stretched. |
+| `image2x` | The `@2x` strip; left out, `<image>@2x.png` next to `image` is used when it exists. Exactly twice the pixels of the 1x strip each way (each frame twice the size); drawn instead of it on a screen above 720p. |
+| `frames` | How many frames the strip holds - a whole number of at least 1. Required: without it the spinner is ignored. |
+| `fps` | Frames per second. Left out (or below 1): 24. The frame shown is `elapsed x fps / 1000` modulo `frames`, the elapsed time being that of the job (the please-wait picture: the clock). |
+
+**The spinner is the theme's own**: it is read only from the selected theme's `theme.json`, never taken over from
+`default`, and a strip whose file is missing (or narrower than its `frames`) is ignored (logged). The ring of dots is
+then drawn exactly as before - a theme without `launcher.spinner` looks exactly as it did. What to draw: ab2.0.0's is
+24 frames of 64 x 64 (`images/spinner.png`, `@2x` 128 x 128 a frame) at 24 fps.
+
+
+### The style block (`launcher.colors`' roles)
+
+Every menu, list and dialog - the classic lists (Options, Game Manager, the game editors, Memory Cards,
+Hardware Information), the compact panels (Quick menu, System menu, the set picker, the update prompt,
+Confirm, Extensions, Scanner processors) and the extensions drawn with the launcher's panel style (the Store,
+PSC-Bios) - takes its colours from one block, `launcher.colors`, like a stylesheet: change a role there and
+every window follows. The look is the Quick menu's: unselected rows dim, the selected row bright.
+
+A role is `"#rrggbb"`, or the **name** of another colour in the same block (`"row": "secondary"`) that it
+takes its value from, like a CSS variable. A name is resolved after the theme is merged over the default
+theme, against the theme's own colours - so the default theme's `"row": "secondary"` means a theme that
+sets only `secondary` moves every row with it. A misspelt name counts as unset; a role left out falls back
+as the table says. `text` and `secondary` are the base colours (the default theme sets `#ffffff` and
+`#646464`, what an unset one has always meant).
+
+| Role | Key | What it colours | Falls back to |
+|---|---|---|---|
+| Row | `row` | An unselected row's text | `secondary` |
+| Selected row | `rowSelected` | The selected row's text and its value; a facts page's values (Hardware Information has no cursor, so its values read like a selected row's) | `text` |
+| Heading | `heading` | The text on a heading band between rows (Options' groups, the System menu's groups, a facts page's sections) | `secondary` |
+| Value | `value` | An unselected row's right-hand value (an option's setting, ON/OFF, the Game Manager's folder, the set picker's count, a System menu note) | `row` |
+| Description | `description` | A row's second line, a subtitle, the System menu's description strip, the footer's counter, the detail pane's labels | `secondary` |
+| Footer | `footer` | The footer's hint labels ("Select", "Back") | `text` |
+| Selection band | `selectionBand` | The selected row's translucent band and the bar at its left edge; the set picker's current tab | `text` |
+| Edge | `edge` | The panel's 1 px edge, its rules, the heading band, a button chip's edge, the detail pane's rule | `secondary` |
+
+`hint` and `selection` keep their launcher meanings above (the launcher's own footer, the resume-slot halo)
+and are not roles; a role may still name them. Panel titles, the scroll markers and a dialog's question are
+drawn in `text`.
+
+**The disabled-row veil (`disabled`, G5t).** A row that cannot be changed (a locked setting in the game editor, an
+extension that cannot run, a switched-off processor, a greyed System-menu item) is laid under a veil - black at alpha
+150 unless the theme says otherwise. The theme's own `disabled` role sets both, in `launcher.colors`:
+
+```json
+"colors": { "disabled": { "color": "#1b2a3a", "alpha": 110 } }
+```
+
+| Form | Meaning |
+|---|---|
+| `"disabled": "#rrggbb"` | that colour at alpha 150 |
+| `"disabled": { "color": "#rrggbb", "alpha": 0..255 }` | both; a missing colour is black, a missing alpha 150, an alpha out of range is clamped |
+
+Unlike the other roles it is **not** a name of another colour, is read from the selected theme's own `theme.json`
+only (never merged from `default`) and a value that is not one of the two forms is ignored (unset). **Unset = today's
+black veil and the row's text unchanged** (`default` and `ab2` look exactly as before). **Set**, a disabled row's text
+is drawn in the `description` role as well as being veiled - the label and the value.
+
+**How faint an inactive thing draws (`launcher.inactive`, G5r9).** Three things are drawn fainter when they are not
+active, each at alpha 120 in code: the Resume icon of a game with no resume point, the icon of a tab that is not the
+current one (the set picker), and the track under a progress bar's fill (the notification bubble's, and every
+`Style::progress` that takes the style's own track alpha - Busy's). The theme's own `inactive` block sets any of them:
+
+```json
+"inactive": { "resume": 90, "tab": 140, "barTrack": 60 }
+```
+
+| Key | What it fades | Today |
+|---|---|---|
+| `resume` | the Resume icon and its picture when the game has no resume point | 120 |
+| `tab` | a set-picker tab icon that is not the current one | 120 |
+| `barTrack` | the track behind a progress bar's fill | 120 |
+
+Each key is optional and an integer 0..255 (out of range is clamped; anything else is ignored). The block is read from
+the selected theme's own `theme.json` only (never merged from `default`). **Unset = 120 as before** - `default` and `ab2`
+look exactly as they did.
+
+**The text page's lines (`row`).** The lines of a text page (PSC-Bios's gamepad page and network hub page, a tool's
+instructions) are drawn in the classic theme's text colour. A theme that sets the `row` role in `launcher.colors`
+(a colour, or the name of another) gets them in that role instead; a theme that does not is unchanged.
 
 ## Installing a theme from a zip
 

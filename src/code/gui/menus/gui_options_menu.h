@@ -30,9 +30,10 @@ enum {
     CFG_RA_PERSIST,
     CFG_PAD_SWAP,
     CFG_DISPLAY,
-    CFG_COVER_SHINE
+    CFG_COVER_SHINE,
+    CFG_SPLASH_SCREEN
 };
-#define CFG_LAST CFG_COVER_SHINE
+#define CFG_LAST CFG_SPLASH_SCREEN
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 
@@ -46,7 +47,9 @@ public:
     void init() override;
     // the rows packed at the font's height, scrolling when more than fit (the base's paging), in groups
     // under heading rows the cursor skips
-    void render() override;
+    void draw() override;
+    // before each frame: the DebugDriver's rows and cursor, the held row's next step (holdTick)
+    bool prepareFrame() override;
     bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].id == CFG_HEADING; }
     void doKeyDown() override;
     void doKeyUp() override;
@@ -58,7 +61,7 @@ private:
     bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn
     // a held Left/Right (see doJoyRight): the step at the press, repeats from render(), the reload a row needs
     // put off to the release
-    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::Timing{400, 120, 1500, 60}; }
+    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::rows(); }
     HoldRepeat valueHold;
     bool holdTicking = false;
     bool pendingReload = false;
@@ -84,7 +87,7 @@ public:
 
     void fill();
 
-    std::string getTitle() override { return _("Configuration"); }
+    std::string getTitle() override { return _("Options"); }
     std::string getStatusLine() override;
 
     std::string valueText(const OptionsInfo &info, const std::string &value) override;
@@ -106,8 +109,8 @@ public:
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
 
-    void doJoyRight() override; // the value to the right; held, it goes on
-    void doJoyLeft() override;  // the value to the left; held, it goes on
+    void doJoyRight() override;  // the value to the right; held, it goes on
+    void doJoyLeft() override;   // the value to the left; held, it goes on
     void doJoyCenter() override; // the release: a put-off reload happens now
 
     void doKeyRight() override; // move option to the right

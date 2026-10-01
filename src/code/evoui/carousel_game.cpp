@@ -6,6 +6,7 @@
 #include "gui/gui.h"
 #include "../app.h"
 #include "core/services/retroarch.h"
+#include "core/services/cover_aspect.h"
 #include <unistd.h>
 #include <iostream>
 #include "core/services/environment.h"
@@ -53,6 +54,41 @@ static void drawNineSlice(ableem::Renderer &renderer, const Texture &frame, int 
     }
 }
 
+// The two layers of a big box that has no art (CA5): a stretchable background and a fixed-size glyph, the
+// designer's evoimg/cover_bg.png (9-slice, 4 px), glyph_game.png (a RetroArch game) and glyph_app.png (an
+// App), the same on every theme and not theme keys. Loaded on the first no-art cover through the theme
+// images' one call (the @2x above output scale 1) and dropped with the carousel's textures.
+static const int NoArtSlice = 4;
+static const int NoArtGlyphSize = 96;
+namespace {
+struct NoArtLayers {
+    Texture background;
+    Texture glyphGame;
+    Texture glyphApp;
+};
+NoArtLayers &noArtLayers() {
+    static NoArtLayers layers;
+    return layers;
+}
+
+const Texture &loadLayer(ableem::Renderer &renderer, Texture &slot, const char *name) {
+    if (!slot.valid())
+        slot = ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg" + sep + name);
+    return slot;
+}
+
+// the system's typical box shape from resources/platform/cover_aspects.cfg (CA4): 1:1 for an unlisted system
+// and for an App, which has none
+CoverAspect noArtAspect(const PsGame &game) {
+    static const CoverAspectTable table = CoverAspectTable::load(CoverAspectTable::pathFor(Env::getWorkingPath()));
+    return game.app ? CoverAspect() : table.aspectFor(game.db_name);
+}
+} // namespace
+
+void PsCarouselGame::releaseNoArtLayers() {
+    noArtLayers() = NoArtLayers();
+}
+
 //*******************************
 // PsCarouselGame::artPath
 //*******************************
@@ -60,7 +96,9 @@ static void drawNineSlice(ableem::Renderer &renderer, const Texture &frame, int 
 // else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a look in
 // the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
 // scanner used to copy next to a game. A RetroArch game: its box art, else ra-cover.png; an App: its image,
-// else app-cover.png. Worked out once and remembered - the carousel asks on every scroll.
+// else app-cover.png - for those two `noArt` is set and compose() draws the two-layer placeholder at the
+// system's aspect instead of the file (which is only still named so the cover loader has something to
+// read). Worked out once and remembered - the carousel asks on every scroll.
 const string &PsCarouselGame::artPath() {
     if (artResolved)
         return art;
@@ -86,12 +124,14 @@ const string &PsCarouselGame::artPath() {
         if (art.empty()) {
             PLOG_WARNING << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name;
             art = Env::getWorkingPath() + sep + "evoimg/ra-cover.png";
+            noArt = true;
         }
     } else {
         art = (*this)->image_path;
         if (!DirEntry::exists(art)) {
             PLOG_WARNING << "boxart image NOT found for " << art;
             art = Env::getWorkingPath() + sep + "evoimg/app-cover.png";
+            noArt = true;
         }
     }
     return art;
@@ -178,19 +218,42 @@ void PsCarouselGame::compose(ableem::Renderer &renderer, const Texture &artTex, 
         content = insetIntoCover(fullRect);
         thickness = JewelCaseThickness;
     } else {
-        // a big box: the art's own shape - a tall NES box, a wide SNES one - as large as fits, centred
-        int biggerSize = std::max(s.w, s.h);
+        // a big box: the art's own shape - a tall NES box, a wide SNES one - as large as fits, centred. With no
+        // art (CA4/CA5) the shape is the system's typical one and the face is the two-layer placeholder
+        artPath();
+        int shapeW = s.w;
+        int shapeH = s.h;
+        if (noArt) {
+            const CoverAspect aspect = noArtAspect(**this);
+            shapeW = aspect.w;
+            shapeH = aspect.h;
+        }
+        int biggerSize = std::max(shapeW, shapeH);
         if (biggerSize <= 0)
             biggerSize = 1;
         Rect outputRect;
-        outputRect.h = (226 * s.h) / biggerSize;
-        outputRect.w = (226 * s.w) / biggerSize;
+        outputRect.h = (226 * shapeH) / biggerSize;
+        outputRect.w = (226 * shapeW) / biggerSize;
         outputRect.x = (226 - outputRect.w) / 2;
         outputRect.y = (226 - outputRect.h) / 2;
         Rect box = insetIntoCover(outputRect);
-        renderer.setBlendMode(BlendMode::Add);
-        renderer.copy(artTex, &artRect, &box);
-        renderer.setBlendMode(BlendMode::Blend);
+        if (noArt) {
+            NoArtLayers &layers = noArtLayers();
+            const Texture &background = loadLayer(renderer, layers.background, "cover_bg.png");
+            if (background.valid())
+                drawNineSlice(renderer, background, NoArtSlice, box);
+            const Texture &glyph = (*this)->app ? loadLayer(renderer, layers.glyphApp, "glyph_app.png")
+                                                : loadLayer(renderer, layers.glyphGame, "glyph_game.png");
+            if (glyph.valid()) {
+                const int side = std::min(NoArtGlyphSize, std::min(box.w, box.h));
+                Rect out(box.x + (box.w - side) / 2, box.y + (box.h - side) / 2, side, side);
+                renderer.copy(glyph, nullptr, &out);
+            }
+        } else {
+            renderer.setBlendMode(BlendMode::Add);
+            renderer.copy(artTex, &artRect, &box);
+            renderer.setBlendMode(BlendMode::Blend);
+        }
         if (gui->assets().bigBoxFrame.valid())
             drawNineSlice(renderer, gui->assets().bigBoxFrame, 7, box);
         content = box;

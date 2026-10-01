@@ -939,6 +939,14 @@ Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/ope
 Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'. The licence text is in src/resources/fonts/OFL.txt.
 ```
 
+## Oxanium
+
+*src/resources/fonts/Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf - the surprise game's HUD and title* - **SIL Open Font License 1.1**
+
+```
+Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium). The licence text is in src/resources/fonts/OFL.txt.
+```
+
 ## Saira
 
 *autobleem-themes submodule, Themes/default/saira-semicondensed-medium.ttf - the classic screens' font* - **SIL Open Font License 1.1**
@@ -960,6 +968,9 @@ Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See
 *src/resources/surprise_game - the About screen's game* - **CC0 1.0**
 
 ```
+	The game's pictures (the ship, the aliens, the shots, the power-ups, the explosion, the sky) are AutoBleem's own
+	artwork (UIREV-39); of Kenney's pack below only the sound effects (sfx_*.ogg) are still used.
+
 ###############################################################################
 
 	Space Shooter (Redux, plus fonts and sounds) by Kenney Vleugels (www.kenney.nl)
