@@ -45,6 +45,11 @@ target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/sr
 ab_add_test(test_meta_layout screens/test_meta_layout.cpp)
 target_include_directories(test_meta_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
 
+# UIREV-36: the hint bar's fixed grid of role slots (evoui/controls/hint_slots.h, pure) - which item sits in which
+# slot in each state, the dimmed line 2 items
+ab_add_test(test_hint_slots screens/test_hint_slots.cpp)
+target_include_directories(test_hint_slots PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
+
 # UIREV-37: the resume-slot screen's layout and rules (evoui/controls/resume_layout.h, pure) - the cards' places, the
 # NEWEST slot, the picture's cut corners, the date format
 ab_add_test(test_resume_layout screens/test_resume_layout.cpp)

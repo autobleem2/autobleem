@@ -5,6 +5,7 @@
 
 #include "evoui_launcher.h"
 #include "../channel_watermark.h"
+#include "../controls/hint_slots.h"
 #include "core/version.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
@@ -1178,18 +1179,16 @@ bool GuiLauncher::retroArchInstalledCached() const {
 // GuiLauncher::hintSignature
 //*******************************
 // everything buildHintLines() reads, as a short string - updateHintsIfNeeded() rebuilds and re-lays-out the
-// two hint lines only when this actually changes, so render() can call it every frame for free (the "cache
+// hint grid only when this actually changes, so render() can call it every frame for free (the "cache
 // the layout" rule: the layout is redone on a state/selection/language change, not per frame).
 string GuiLauncher::hintSignature() const {
     string sig = app.lang().currentLanguage();
     sig += "|s" + to_string(static_cast<int>(state));
     if (state == LauncherScreenState::Set) {
-        sig += "|o" + to_string(menu ? menu->selOption : -1);
         sig += carousel.games.empty() ? "|empty" : "";
     } else if (state == LauncherScreenState::Resume) {
         if (sselector != nullptr) {
             sig += "|op" + to_string(sselector->operation);
-            sig += "|sl" + to_string(sselector->selSlot);
             sig += sselector->slotActive[sselector->selSlot] ? "|act" : "";
         }
     } else { // Games
@@ -1206,70 +1205,89 @@ string GuiLauncher::hintSignature() const {
 }
 
 //*******************************
+// hintLabel
+//*******************************
+// the label of a hint item, translated (the fixed labels of UIREV-36: "Open", "Resume game", "Save" - what they act on is
+// on the screen, highlighted)
+static string hintLabel(HintSlots::Item item) {
+    using HintSlots::Item;
+    switch (item) {
+    case Item::Play:
+        return _("Play");
+    case Item::Start:
+        return _("Start");
+    case Item::Open:
+        return _("Open");
+    case Item::Resume:
+        return _("Resume game");
+    case Item::Save:
+        return _("Save");
+    case Item::GamesShown:
+        return _("Games shown");
+    case Item::PlayInRetroArch:
+        return _("Play in RetroArch");
+    case Item::DeleteSlot:
+        return _("Delete slot");
+    case Item::Random:
+        return _("Random");
+    case Item::GameMenu:
+        return _("Game menu");
+    case Item::Choose:
+        return _("Choose");
+    case Item::Slot:
+        return _("Slot");
+    case Item::Guide:
+        return _("Guide");
+    case Item::QuickMenu:
+        return _("Quick menu");
+    case Item::BackToGames:
+        return _("Back to games");
+    case Item::Back:
+        return _("Back");
+    case Item::DontSave:
+        return _("Don't save");
+    case Item::System:
+        return _("System");
+    case Item::None:
+        break;
+    }
+    return "";
+}
+
+//*******************************
 // GuiLauncher::buildHintLines
 //*******************************
-// line 1: what acts on the current selection right now. Line 2: what always works (Select/Start/Guide/
-// System). "Play" not "Enter" (an App: "Start"); Circle only appears where it does something; L2+R2 says
-// "System", never "Options" (see docs/theme-format.md's hintBar entry and PLANS-menu-hints-quickmenu.md,
-// section E). The icon-row and Resume lines only ever fill line 1 - Select/Start do nothing there, so line 2
-// stays just the Guide/System pair (Resume: System alone - Circle already means Back/Don't save there).
+// the fixed grid of the hint bar (UIREV-36, evoui/controls/hint_slots.h - the slot of every item in every state):
+// line 1 is what acts on the current selection, line 2 always Select/Start/Guide/System with the idle ones dimmed.
+// "Play" not "Enter" (an App: "Start"); L2+R2 says "System", never "Options" (see docs/theme-format.md's hintBar
+// entry). Both lines come back with one entry per column; an empty `markers` is an empty slot.
 void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const {
-    line1.clear();
-    line2.clear();
+    HintSlots::State slots;
     if (state == LauncherScreenState::Set) {
-        // the game menu's icon row. Up closes it back to the games - or, on an empty set, opens the Quick
-        // menu instead (settleEmptyRoster keeps this state open on an empty roster - there is no Games
-        // state to show, so this is the "empty set" row the design calls out on its own)
-        string openLabel = _("Open:");
-        if (menu != nullptr && menu->selOption >= 0 && static_cast<size_t>(menu->selOption) < headers.size())
-            openLabel += " " + headers[menu->selOption];
-        line1.push_back({"|@X|", openLabel});
-        if (carousel.games.empty()) {
-            line1.push_back({"|@Up|", _("Quick menu")});
-            line2.push_back({"|@Select|", _("Games shown")});
-        } else {
-            line1.push_back({"|@Left+Right|", _("Choose")});
-            line1.push_back({"|@Up|", _("Back to games")});
-            line2.push_back({"|@T|", _("Guide")});
+        slots.screen = HintSlots::Screen::GameMenu;
+        slots.emptyRoster = carousel.games.empty();
+    } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
+        slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
+        slots.slotUsed = sselector->slotActive[sselector->selSlot];
+    } else {
+        slots.emptyRoster = carousel.games.empty();
+        const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+        slots.app = game != nullptr && game->app;
+        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached();
+    }
+    const HintSlots::Grid grid = HintSlots::gridFor(slots);
+    auto fill = [](const std::array<HintSlots::Cell, HintSlots::Columns> &cells, std::vector<Hint> &line) {
+        line.assign(HintSlots::Columns, Hint());
+        for (int c = 0; c < HintSlots::Columns; c++) {
+            if (cells[c].item == HintSlots::Item::None)
+                continue;
+            line[c].markers = HintSlots::markersOf(cells[c].item);
+            line[c].label = hintLabel(cells[c].item);
+            line[c].dim = cells[c].dim;
         }
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    if (state == LauncherScreenState::Resume) {
-        if (sselector == nullptr)
-            return;
-        const string slotLabel = to_string(sselector->selSlot + 1);
-        if (sselector->operation == OP_LOAD) {
-            line1.push_back({"|@X|", _("Resume slot") + " " + slotLabel});
-            if (sselector->slotActive[sselector->selSlot])
-                line1.push_back({"|@T|", _("Delete slot")});
-            line1.push_back({"|@Left+Right|", _("Slot")});
-            line1.push_back({"|@O|", _("Back")});
-        } else {
-            line1.push_back({"|@X|", _("Save to slot") + " " + slotLabel});
-            line1.push_back({"|@Left+Right|", _("Slot")});
-            line1.push_back({"|@O|", _("Don't save")});
-        }
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    // Games
-    if (carousel.games.empty()) {
-        line1.push_back({"|@Up|", _("Quick menu")});
-        line2.push_back({"|@Select|", _("Games shown")});
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
-    line1.push_back({"|@X|", game != nullptr && game->app ? _("Start") : _("Play")});
-    if (game != nullptr && !game->foreign && retroArchInstalledCached())
-        line1.push_back({"|@S|", _("Play in RetroArch")});
-    line1.push_back({"|@Down|", _("Game menu")});
-    line1.push_back({"|@Up|", _("Quick menu")});
-    line2.push_back({"|@Select|", _("Games shown")});
-    line2.push_back({"|@Start|", _("Random")});
-    line2.push_back({"|@T|", _("Guide")});
-    line2.push_back({"|@L2+R2|", _("System")});
+    };
+    fill(grid.line1, line1);
+    fill(grid.line2, line2);
 }
 
 //*******************************
@@ -1286,7 +1304,7 @@ void GuiLauncher::updateHintsIfNeeded() {
 //*******************************
 // GuiLauncher::hintBarRect
 //*******************************
-// the theme's launcher.hintBar - unset, the pill most themes paint at the bottom right. What the hint lines are laid
+// the theme's launcher.hintBar - unset, the pill most themes paint at the bottom right. What the hint grid is laid
 // out in and what the theme's `hintBar` frame is drawn into (G5e).
 ableem::Rect GuiLauncher::hintBarRect() const {
     const LauncherTheme &theme = app.theme().launcher();
@@ -1298,12 +1316,13 @@ ableem::Rect GuiLauncher::hintBarRect() const {
 //*******************************
 // GuiLauncher::layoutHints
 //*******************************
-// Lays the two hint lines buildHintLines() returns out in the theme's hintBar through abgui::HintBar (ab_gui G5e -
-// the rules are there): each at the largest font from 22 down to 14 that fits its own half of the bar in the
-// current language; below that the gaps close up, and line 2 (never line 1, which is always short) drops
-// hints from the right if it is still too wide even at the smallest font and tightest gap. A hintBar under
-// 48 px tall (an old theme that never expected two lines) shows line 1 only, at the bar's full height.
-// The launcher measures (its buttons through PanelStyle, its fixed medium fonts) and keeps the result.
+// Lays the hint grid out in the theme's hintBar through abgui::HintBar::layoutGrid (ab_gui UIREV-36 - the rules are
+// there): the columns are as wide as the widest item that can ever sit in them, in every state, and the one font is
+// the largest from 22 down to 14 at which the four fit - computed once per language and bar, never per state. An item
+// is drawn at its column's left + 12, its label elided with "..." only if a column is still too narrow at the
+// smallest font; no item is ever dropped. A hintBar under 48 px tall (an old theme that never expected two lines)
+// shows line 1 only, at the bar's full height. The launcher measures (its buttons through PanelStyle, its fixed
+// medium fonts) and keeps the result.
 void GuiLauncher::layoutHints() {
     const ableem::Rect bar = hintBarRect();
 
@@ -1317,37 +1336,49 @@ void GuiLauncher::layoutHints() {
     auto fontOf = [](int size) -> ableem::Font & {
         return size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
     };
-    // the measurers of one line (used only inside HintBar::layout below, while `style` and the line live)
-    const PanelStyle *panel = &style;
-    auto measureOf = [this, panel, fontOf](const std::vector<Hint> &items) {
-        const std::vector<Hint> *line = &items;
-        abgui::HintMeasure m;
-        // buttons() adds a gap after the last button: the hint's own buttons end before it
-        m.buttonsWidth = [this, panel, line](size_t i) { return panel->buttonsWidth(*gui, (*line)[i].markers) - 6; };
-        m.labelWidth = [this, line, fontOf](int size, size_t i) {
-            return gui->text().textWidth(fontOf(size), (*line)[i].label);
-        };
-        m.lineHeight = [fontOf](int size) { return fontOf(size).lineHeight(); };
-        return m;
-    };
-    // the layout's places onto the hints (a dropped hint leaves the line), its font and heights onto the members
-    auto apply = [&](std::vector<Hint> &items, const abgui::HintLineLayout &line, ableem::Font &outFont, int &outLabelY,
-                     int &outChipY) {
-        items.resize(line.places.size());
-        for (size_t i = 0; i < items.size(); i++) {
-            items[i].chipX = line.places[i].chipX;
-            items[i].labelX = line.places[i].labelX;
-        }
-        outFont = fontOf(line.fontSize);
-        outLabelY = line.labelY;
-        outChipY = line.chipY;
-    };
+    // buttons() adds a gap after the last button: an item's own buttons end before it
+    auto buttonsWidth = [this, &style](const string &markers) { return style.buttonsWidth(*gui, markers) - 6; };
 
-    const abgui::HintBarLayout layout =
-        abgui::HintBar::layout(bar, hints.size(), measureOf(hints), hints2.size(), measureOf(hints2));
-    apply(hints, layout.line1, hintFont, hintLabelY, hintChipY);
-    if (!layout.oneLine)
-        apply(hints2, layout.line2, hintFont2, hintLabelY2, hintChipY2);
+    // once per language and bar, whatever the state
+    const string key = app.lang().currentLanguage() + "|" + to_string(bar.x) + "," + to_string(bar.y) + "," +
+                       to_string(bar.w) + "," + to_string(bar.h);
+    if (key != hintGridKey) {
+        abgui::HintGridMeasure measure;
+        measure.columnWidth = [this, &buttonsWidth, fontOf](int size, int column) {
+            HintSlots::Item items[HintSlots::ItemCount];
+            const int count = HintSlots::itemsOfColumn(column, items);
+            int widest = 0;
+            for (int i = 0; i < count; i++)
+                widest = max(widest, buttonsWidth(HintSlots::markersOf(items[i])) + abgui::HintBar::IconGap +
+                                         gui->text().textWidth(fontOf(size), hintLabel(items[i])));
+            return widest;
+        };
+        measure.lineHeight = [fontOf](int size) { return fontOf(size).lineHeight(); };
+        hintGrid = abgui::HintBar::layoutGrid(bar, measure);
+        hintGridKey = key;
+    }
+
+    hintFont = fontOf(hintGrid.fontSize);
+    hintLabelY = hintGrid.labelY[0];
+    hintChipY = hintGrid.chipY[0];
+    hintLabelY2 = hintGrid.labelY[1];
+    hintChipY2 = hintGrid.chipY[1];
+    // the items onto their slots; a label wider than its column's room is elided (the safety net)
+    auto place = [&](std::vector<Hint> &line) {
+        for (size_t c = 0; c < line.size(); c++) {
+            Hint &hint = line[c];
+            if (hint.markers.empty())
+                continue;
+            const int buttons = buttonsWidth(hint.markers);
+            hint.chipX = hintGrid.itemX[c];
+            hint.labelX = hint.chipX + buttons + abgui::HintBar::IconGap;
+            const int labelRoom = hintGrid.itemRoom[c] - buttons - abgui::HintBar::IconGap;
+            if (gui->text().textWidth(hintFont, hint.label) > labelRoom)
+                hint.label = gui->text().elide(hintFont, hint.label, max(0, labelRoom));
+        }
+    };
+    place(hints);
+    place(hints2);
 }
 
 //*******************************
@@ -1533,15 +1564,26 @@ void GuiLauncher::draw() {
     if (!snapshotFrame) {
         updateHintsIfNeeded();
         PanelStyle style = gui->panelStyle();
-        for (const Hint &hint : benchSkips("hints") ? vector<Hint>() : hints) {
-            style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
-            gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
-        }
-        if (!hintsOneLineOnly)
-            for (const Hint &hint : hints2) {
-                style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
-                gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+        // an item that does nothing in this state (line 2) is drawn at 35 %: the chip and the label together
+        auto drawHint = [&](const Hint &hint, int chipY, int labelY) {
+            if (hint.markers.empty())
+                return;
+            if (hint.dim) {
+                gui->text().setAlpha(HintSlots::DimAlpha);
+                style.buttonsFaded(gui->uiContext(), hint.markers, hint.chipX, chipY, HintSlots::DimAlpha);
+            } else {
+                style.buttons(*gui, hint.markers, hint.chipX, chipY);
             }
+            gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, labelY, hintColor);
+            gui->text().setAlpha(255);
+        };
+        if (!benchSkips("hints")) {
+            for (const Hint &hint : hints)
+                drawHint(hint, hintChipY, hintLabelY);
+            if (!hintsOneLineOnly)
+                for (const Hint &hint : hints2)
+                    drawHint(hint, hintChipY2, hintLabelY2);
+        }
 
         // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
         renderChannelWatermark(renderPadBatteries());
