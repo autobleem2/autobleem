@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -168,7 +168,7 @@ Game file not found=Spelfilen hittades inte
 Game history=Spelhistorik
 Game ID=Spel-id
 Game Manager=Spelbibliotek
-Game manager - Select game=Spelbibliotek - Välj spel
+Game manager - Select game=Spelbibliotek - välj spel
 Game menu=Spelmeny
 GAME OVER=SPELET ÄR SLUT
 Game.ini file not found=Game.ini hittades inte
@@ -216,7 +216,7 @@ Linear=Linjär
 Link Block=Länkblock
 Link end Block=Slutblock länk
 Load average=Genomsnittlig belastning
-Loading ... Please Wait ...=Laddar ... Vänligen vänta ...
+Loading ... Please Wait ...=Laddar ... vänligen vänta ...
 Loading...=Läser in...
 Localization support=Lokaliseringshjälp
 Lock data:=Lås data:
@@ -358,9 +358,7 @@ see processors.log=se processors.log
 Select=Välj
 Select memory card=Välj minneskort
 Select or cancel highlighted option=Välj eller avbryt aktuellt alternativ
-Select PS1 Game Category=Välj PS1-spelkategori
 Select resume slot to load=VÄLJ SPARPUNKT ATT LADDA
-Select RetroArch Playlist=Välj RetroArch-plattform
 Select right card=Välj höger kort
 Select slot to save state=VÄLJ SPARPUNKT ATT SPARA TILL
 SERIAL=SERIAL

@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -168,7 +168,7 @@ Game file not found=Fichièr del jòc introbable
 Game history=Istoric dels jòcs
 Game ID=ID del jòc
 Game Manager=Gestionari de jòcs
-Game manager - Select game=Gestionari de jòcs - Causir un jòc
+Game manager - Select game=Gestionari de jòcs - causir un jòc
 Game menu=Menú del jòc
 GAME OVER=PARTIDA ACABADA
 Game.ini file not found=Fichièr Game.ini introbable
@@ -216,7 +216,7 @@ Linear=Linear
 Link Block=Link end Block
 Link end Block=Fin de blòc ligat
 Load average=Carga mejana
-Loading ... Please Wait ...=Cargament ... Esperatz ...
+Loading ... Please Wait ...=Cargament ... esperatz ...
 Loading...=Cargament...
 Localization support=Assisténcia localizacion
 Lock data:=Verrolhar las donadas :
@@ -358,9 +358,7 @@ see processors.log=vejatz processors.log
 Select=Causir
 Select memory card=Causir una carta memòria
 Select or cancel highlighted option=Activar o desactivar las opcions subrelinhadas
-Select PS1 Game Category=Causir la categoria de jòc PS1
 Select resume slot to load=CAUSISSÈTZ UN PUNT DE REPRESA A CARGAR
-Select RetroArch Playlist=Causissètz la plataforma RetroArch
 Select right card=Causir la carta drecha
 Select slot to save state=CAUSISSÈTZ UN LÒC PER SALVAGARDAR L'ESTAT
 SERIAL=NUMÈRO DE SERIA
@@ -378,7 +376,7 @@ Showing: Favorite games=Afichatge : Jòcs favorits
 Showing: Game history=Afichatge : Istoric dels jòcs
 Showing: Internal games=Afichatge : Jòcs intèrnes
 Showing: Lightgun games=Afichatge : Jòcs Lightgun
-Showing: RetroArch=Afichatge : Retroarch
+Showing: RetroArch=Afichatge : RetroArch
 Showing: USB games directory:=Afichatge : Repertòri de jòcs USB :
 Skip=Passar
 Skip this version=Ignorar aquesta version
@@ -401,7 +399,7 @@ Storage=Emmagazinatge
 Store=Botiga
 Support via Discord:=Sosten via Discord :
 Surprise=Susprisa
-Swap Player 1 / Player 2 (PS1 emulators):=Escambiar Jogaire 1 / Jogaire 2 (emuladors PS1):
+Swap Player 1 / Player 2 (PS1 emulators):=Escambiar jogaire 1 / jogaire 2 (emuladors PS1):
 Switch off=Desactivar
 Switch on=Activar
 Switched off=Desactivat

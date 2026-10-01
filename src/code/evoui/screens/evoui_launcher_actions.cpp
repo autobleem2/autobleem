@@ -13,8 +13,6 @@
 #include "gui/screens/gui_hardware_info.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "gui/menus/gui_game_editor_ra_menu.h"
-#include "../../gui/menus/gui_playlists_menu.h"
-#include "../../gui/menus/gui_game_dir_menu.h"
 #include "../../gui/menus/gui_memcards_menu.h"
 #include "../../gui/menus/gui_game_manager_menu.h"
 #include "core/services/environment.h"
