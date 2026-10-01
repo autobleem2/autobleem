@@ -19,7 +19,7 @@ using namespace std;
 //*******************************
 void GuiManager::init() {
     GuiMenuBase::init(); // call the base class init(): the classic font, like every other list
-    // the rows stop at the detail pane: the title, then the folder, each elided to its column
+    // the rows stop at the detail pane: the title only - the game's folder is a fact of the pane, not a column
     xoffset_L = 0;
     xoffset_R = 420;
     selectionBoxXOffset = 0;
@@ -31,18 +31,10 @@ void GuiManager::init() {
     psGames.clear();
     psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames()); // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);                      // sort by title
-    for (auto &psGame : psGames) {
-        // left column              right column
-        // "title"                  "path"
-        string path = DirEntry::removeSeparatorFromEndOfPath(psGame->folder);
-        path = DirEntry::removeGamesPathFromFrontOfPath(path);
-        const int rowsLeft = gui->text().getOpscreenRectOfTheme().x + PanelStyle::RowInset + 8;
-        int pathWidth = GameDetailPane::rowsRight(*gui) - (rowsLeft + xoffset_R);
-        // a folder named as the title says nothing more: no second column then
-        const bool sameAsTitle = toLowerCopy(path) == toLowerCopy(psGame->title);
-        lines.emplace_back(gui->text().elide(font, psGame->title, xoffset_R - 20),
-                           sameAsTitle ? "" : gui->text().elide(font, path, pathWidth));
-    }
+    const int titleWidth = GameDetailPane::rowsRight(*gui) - (gui->text().getOpscreenRectOfTheme().x +
+                                                              PanelStyle::RowInset + 8);
+    for (auto &psGame : psGames)
+        lines.emplace_back(gui->text().elide(font, psGame->title, titleWidth), "");
     failed = app.library().usbGames().loadFailedGames();
     for (const auto &folder : failed) {
         lines.emplace_back(gui->text().elide(font, DirEntry::getFileNameFromPath(folder.path), xoffset_R - 20),
@@ -53,7 +45,7 @@ void GuiManager::init() {
 //*******************************
 // GuiManager::renderLineIndexOnRow
 //*******************************
-// the title at the left, the folder (or why it was not added) right-aligned to the rows' edge, like a value
+// the title at the left; a folder the scan refused has the reason right-aligned to the rows' edge, like a value
 void GuiManager::renderLineIndexOnRow(int index, int row) {
     gui->text().renderTextLine(lines[index].line_L, row, yoffset, XALIGN_LEFT, xoffset_L, font);
     if (!lines[index].line_R.empty())
