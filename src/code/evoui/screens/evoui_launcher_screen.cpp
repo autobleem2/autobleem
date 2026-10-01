@@ -4,6 +4,7 @@
 //
 
 #include "evoui_launcher.h"
+#include "../channel_watermark.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
@@ -573,9 +574,9 @@ void GuiLauncher::pollPadBattery() {
 // current language/state, which is what threw the tag and the percent off the icon's centre. Both text
 // draws now compute their y from the fixed font's own line height so their visual centre lands on the
 // icon's, whatever that height turns out to be.
-void GuiLauncher::renderPadBatteries() {
+int GuiLauncher::renderPadBatteries() {
     if (padBatteries.empty())
-        return;
+        return 0;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
     int x = 16, y = 16;
@@ -593,7 +594,7 @@ void GuiLauncher::renderPadBatteries() {
             tagW = std::max(tagW, battFont.width(tag) + 6); // the tag plus a small gap before the icon
     }
     if (knownCount == 0)
-        return;
+        return 0;
 
     int rowWidth = tagW + iconW + nubW + 6 + 44; // [tag] + icon + nub + gap + room for "100%"
     int rowHeight = iconH + 10;
@@ -637,6 +638,44 @@ void GuiLauncher::renderPadBatteries() {
                                          fgColor);
         y += rowHeight;
     }
+    return plate.y + plate.h;
+}
+
+//*******************************
+// GuiLauncher::renderChannelWatermark
+//*******************************
+// UIREV-40: a nightly or testing build's tag in the top-left corner - the `chip` frame (the theme's; the code-drawn
+// chip without one) around the channel in capitals, the short version beside it in the secondary colour - the whole at
+// 80 %, so it reads as a mark, not a control. A release draws nothing. It sits at x 12, y 72, under a two-pad battery
+// plate (which ends at y 66); `plateBottom` (renderPadBatteries' return) pushes it lower for a taller plate, so it
+// never covers one. Not translated: the channel's names. The design's bold 13 / medium 14 are the launcher's fixed
+// FONT_15_BOLD here (the one small font that is always loaded).
+void GuiLauncher::renderChannelWatermark(int plateBottom) {
+    // the build's version never changes while it runs: read once (productVersion may read a VERSION file)
+    static const ChannelWatermark::Tag tag = ChannelWatermark::tagFor(Env::productVersion());
+    if (!tag.shown())
+        return;
+    const ableem::Font &font = ThemeAssets::fixedFonts()[FONT_15_BOLD];
+    abgui::Context &ctx = gui->uiContext();
+    const abgui::Style &style = ctx.style();
+    const int x = ChannelWatermark::X;
+    const int y = ChannelWatermark::yBelow(plateBottom);
+    const int wordW = gui->text().textWidth(font, tag.word);
+    const ableem::Rect chip(x, y, wordW + 2 * ChannelWatermark::ChipPadding, ChannelWatermark::ChipHeight);
+    const unsigned char alpha = ChannelWatermark::Alpha;
+    if (!style.drawFrame(ctx, "chip", chip, alpha)) {
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(ableem::Color(255, 255, 255, 24 * alpha / 255));
+        renderer.fillRect(chip);
+        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200 * alpha / 255));
+        renderer.drawRect(chip);
+    }
+    const int textY = y + (ChannelWatermark::ChipHeight - font.lineHeight()) / 2;
+    gui->text().setAlpha(alpha);
+    gui->text().renderText_WithColor(font, tag.word, x + ChannelWatermark::ChipPadding, textY, style.text);
+    gui->text().renderText_WithColor(font, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap, textY,
+                                     style.secondary);
+    gui->text().setAlpha(255);
 }
 
 //*******************************
@@ -1496,7 +1535,8 @@ void GuiLauncher::draw() {
                 gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
             }
 
-        renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
+        // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
+        renderChannelWatermark(renderPadBatteries());
 
         // the top-right corner: the scan's bubble, the notification lines stacked under it
         if (!benchSkips("bubbles"))

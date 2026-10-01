@@ -35,3 +35,8 @@ if (AB_CORE_UI)
     ab_add_test(test_launcher_state_tweens screens/test_launcher_state_tweens.cpp LIBS ab_gui)
     target_include_directories(test_launcher_state_tweens PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
 endif()
+
+# UIREV-40: the channel watermark's text (evoui/channel_watermark.h, pure) - which version strings are a nightly, a
+# testing build or a release, the short version, and the tag's place under the pad plate
+ab_add_test(test_channel_watermark screens/test_channel_watermark.cpp)
+target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)

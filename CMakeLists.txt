@@ -242,6 +242,7 @@ add_library(ab_evoui STATIC
         src/code/evoui/carousel_game.cpp
         src/code/evoui/carousel_game.h
         src/code/evoui/carousel_motion.h
+        src/code/evoui/channel_watermark.h
         src/code/evoui/cover_loader.cpp
         src/code/evoui/cover_loader.h
         src/code/evoui/controls/evoui_centerlabel.cpp

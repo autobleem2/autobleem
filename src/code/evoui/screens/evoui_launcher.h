@@ -129,7 +129,8 @@ public:
     long lastPadBatteryPoll = 0;
     std::set<std::string> lowBatteryNotified;
     void pollPadBattery();
-    void renderPadBatteries();
+    int renderPadBatteries(); // returns the plate's bottom edge (0: no plate drawn)
+    void renderChannelWatermark(int plateBottom);
     // UIREV-43: a fresh install's welcome card, drawn where the covers would be when the PS1 "all games" set is empty
     bool welcomeCardShows() const;
     void renderWelcomeCard();
