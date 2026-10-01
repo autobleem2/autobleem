@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
