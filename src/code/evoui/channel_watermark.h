@@ -1,32 +1,46 @@
 //
-// ChannelWatermark (UIREV-40): what the little tag in the EvolutionUI's top-left corner says. A nightly or testing
-// build names its channel (NIGHTLY / TESTING) and its short version; a release says nothing. Pure text work on the
-// build's version string (Env::productVersion(): the package's VERSION file, else the build's git describe), so
-// tests/screens/test_channel_watermark holds it without a Gui; GuiLauncher::renderChannelWatermark draws the result.
-//
-// The channel is read off the version, the way the site names its builds:
-//   v2.0.0                  a release: no tag
-//   v2.0.0-rc1, -alpha2     a tagged pre-release: TESTING
-//   v2.0.0-alpha2-470-gabc  commits past a tag (a nightly), or a dirty tree: NIGHTLY
-// The short version drops the leading "v" and the git hash, and writes the commit count as ".<count>":
-// "2.0.0-a2.470" (alpha/beta shortened to a/b), "2.0.0-rc1".
+// ChannelWatermark (UIREV-40): what the little tag in the EvolutionUI's top-left corner says. The build names its
+// channel itself - AB_BUILD_CHANNEL, given by whatever builds it: dev | nightly | prerelease | release, unset = dev,
+// so any hand build says DEV - and the tag follows it:
+//   dev          DEV + the build's short commit hash                         "DEV  c7357bb"
+//   nightly      NIGHTLY + the short version                                 "NIGHTLY  2.0.0-a2.314"
+//   prerelease   the tag's own word - ALPHA / BETA / RC - + the short version "ALPHA  2.0.0-a1"
+//                (a pre-release tag with any other word says TESTING)
+//   release      no tag
+// The version text (Env::productVersion(): the package's VERSION file, else the build's git describe) is only
+// parsed for the short version and the pre-release word, never for the channel: the leading "v" and the git hash go,
+// the commit count is written ".<count>", alpha/beta are shortened to a/b - "2.0.0-a2.470", "2.0.0-rc1".
+// Pure text work, so tests/screens/test_channel_watermark holds it without a Gui; GuiLauncher::renderChannelWatermark
+// draws the result.
 //
 #pragma once
 
 #include <cctype>
+#include <cstring>
 #include <string>
 #include <vector>
 
 namespace ChannelWatermark {
 
-enum class Channel { None, Testing, Nightly };
+enum class Channel { Release, Prerelease, Nightly, Dev };
 
 struct Tag {
-    Channel channel = Channel::None;
-    std::string word;    // "NIGHTLY" / "TESTING"; "" for a release
-    std::string version; // the short version
-    bool shown() const { return channel != Channel::None; }
+    Channel channel = Channel::Release;
+    std::string word;    // "DEV" / "NIGHTLY" / "ALPHA" / "BETA" / "RC" / "TESTING"; "" for a release
+    std::string version; // the short version (DEV: the short commit hash)
+    bool shown() const { return channel != Channel::Release; }
 };
+
+// the build's channel from its AB_BUILD_CHANNEL value; unset or anything unknown is a hand build: dev
+inline Channel channelFromName(const char *name) {
+    if (name && std::strcmp(name, "nightly") == 0)
+        return Channel::Nightly;
+    if (name && std::strcmp(name, "prerelease") == 0)
+        return Channel::Prerelease;
+    if (name && std::strcmp(name, "release") == 0)
+        return Channel::Release;
+    return Channel::Dev;
+}
 
 namespace detail {
 
@@ -59,16 +73,15 @@ inline std::string abbreviate(const std::string &token) {
     return token;
 }
 
-} // namespace detail
-
-// the tag for a version string; Channel::None (and empty texts) for a release or anything not a version
-inline Tag tagFor(const std::string &versionString) {
-    Tag tag;
+// the short version of a version string ("v2.0.0-alpha2-470-g1760cc8" -> "2.0.0-a2.470") and the pre-release word
+// of its tag ("ALPHA", "BETA", "RC"; empty when it has none or another one). Both empty for anything not a version.
+inline std::string shortVersion(const std::string &versionString, std::string &preWord) {
+    preWord.clear();
     std::string v = versionString;
     if (!v.empty() && (v[0] == 'v' || v[0] == 'V'))
         v.erase(0, 1);
     if (v.empty() || !std::isdigit(static_cast<unsigned char>(v[0])))
-        return tag; // "dev" and the like: not a build of a channel
+        return ""; // "dev" and the like: no version to show
 
     std::vector<std::string> tokens;
     size_t from = 0;
@@ -81,34 +94,58 @@ inline Tag tagFor(const std::string &versionString) {
         from = dash + 1;
     }
 
-    bool ahead = false; // past its tag: a nightly
-    if (!tokens.empty() && tokens.back() == "dirty") {
-        ahead = true;
+    if (!tokens.empty() && tokens.back() == "dirty")
         tokens.pop_back();
-    }
-    while (tokens.size() > 1 && detail::isHash(tokens.back())) {
-        ahead = true;
+    while (tokens.size() > 1 && isHash(tokens.back()))
         tokens.pop_back();
-    }
     std::string count;
-    if (tokens.size() > 1 && detail::allDigits(tokens.back())) {
+    if (tokens.size() > 1 && allDigits(tokens.back())) {
         count = tokens.back();
         tokens.pop_back();
-        ahead = true;
     }
     if (tokens.empty())
-        return tag;
+        return "";
 
-    const bool preRelease = tokens.size() > 1;
-    if (!ahead && !preRelease)
-        return tag; // a plain tag: a release
-
-    tag.channel = ahead ? Channel::Nightly : Channel::Testing;
-    tag.word = ahead ? "NIGHTLY" : "TESTING";
+    std::string out;
     for (size_t i = 0; i < tokens.size(); i++)
-        tag.version += (i ? "-" : "") + (i ? detail::abbreviate(tokens[i]) : tokens[i]);
+        out += (i ? "-" : "") + (i ? abbreviate(tokens[i]) : tokens[i]);
+    if (tokens.size() > 1) {
+        const std::string &t = tokens[1];
+        if (t.compare(0, 5, "alpha") == 0)
+            preWord = "ALPHA";
+        else if (t.compare(0, 4, "beta") == 0)
+            preWord = "BETA";
+        else if (t.compare(0, 2, "rc") == 0)
+            preWord = "RC";
+    }
     if (!count.empty())
-        tag.version += "." + count;
+        out += "." + count;
+    return out;
+}
+
+} // namespace detail
+
+// the tag for a build: its channel (given by the build), the version text and the commit hash it was built from
+inline Tag tagFor(Channel channel, const std::string &versionString, const std::string &commitHash) {
+    Tag tag;
+    tag.channel = channel;
+    std::string preWord;
+    switch (channel) {
+    case Channel::Release:
+        break;
+    case Channel::Dev:
+        tag.word = "DEV";
+        tag.version = commitHash.substr(0, 7);
+        break;
+    case Channel::Nightly:
+        tag.word = "NIGHTLY";
+        tag.version = detail::shortVersion(versionString, preWord);
+        break;
+    case Channel::Prerelease:
+        tag.version = detail::shortVersion(versionString, preWord);
+        tag.word = preWord.empty() ? "TESTING" : preWord;
+        break;
+    }
     return tag;
 }
 

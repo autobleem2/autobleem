@@ -47,6 +47,7 @@ jobs:
       targets: ${{ steps.t.outputs.json }}
       full: ${{ steps.t.outputs.full }}
       version: ${{ steps.v.outputs.version }}
+      channel: ${{ steps.c.outputs.channel }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, submodules: recursive }
@@ -64,6 +65,18 @@ jobs:
           # a branch build is named as the launcher names itself (generate_version.cmake): the last v* tag,
           # the commits past it and the commit - v2.0.0-alpha2-5-gabc1234 - so the file says what it is
           else echo "version=$(git describe --tags --match 'v*' 2>/dev/null || echo "$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)")" >> "$GITHUB_OUTPUT"; fi
+      # the build's channel, given to ci/build.sh as AB_BUILD_CHANNEL (the launcher's tag, UIREV-40, reads it): a
+      # v* tag with a "-" (v2.0.0-alpha1, -rc1) is a prerelease, a plain v* tag a release, a build of develop
+      # the nightly, anything else (a manual run of another branch) dev - the unset default of a hand build
+      - id: c
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*-*) c=prerelease ;;
+            refs/tags/v*) c=release ;;
+            refs/heads/develop) c=nightly ;;
+            *) c=dev ;;
+          esac
+          echo "channel=$c" >> "$GITHUB_OUTPUT"
 
   # Routes build's runner: the laptop (ab-main) when it's online, else a GitHub-hosted
   # ubuntu-24.04. See autobleem-build's route.yml for the decision order; route_runner
@@ -119,6 +132,7 @@ jobs:
           key: sccache-launcher-${{ matrix.target }}-${{ github.sha }}
           restore-keys: sccache-launcher-${{ matrix.target }}-
       - name: Build the launcher (${{ matrix.target }})
+        env: { AB_BUILD_CHANNEL: "${{ needs.plan.outputs.channel }}" }
         run: ci/build.sh ${{ matrix.target }}
       - name: Stage the launcher artifact
         id: stage
