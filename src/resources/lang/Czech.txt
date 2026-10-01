@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -17,7 +17,6 @@ Applying settings...=Použití nastavení...
 Apps=Aplikace
 apps=aplikace
 Architecture=Architektura
-Are you sure you want to delete=Opravdu chcete smazat
 Are you sure you want to delete %s?=Opravdu chcete smazat %s?
 Are you sure you want to flush all covers?=Opravdu chcete smazat všechny obaly?
 Are you sure you want to power off?=Opravdu chcete vypnout?
@@ -91,7 +90,6 @@ days=dní
 Decompressing ecm:=Rozbalování ECM:
 Defragment card=Defragmentovat kartu
 Delete=Smazat
-Delete !SaveState folder for game=Smazat složku !SaveStates pro hru
 Delete card=Smazat kartu
 Delete card '%s'?=Smazat kartu '%s'?
 Delete folder=Smazat složku
@@ -99,7 +97,6 @@ Delete game=Smazat hru
 Delete games, flush covers=Smazat hry, vymazat obálky
 Delete slot=Smazat pozici
 Delete the !SaveState folder of %s?=Smazat složku !SaveState hry %s?
-Delete the folder=Smazat složku
 Delete the folder %s?=Smazat složku %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Smazat nastavení uložená v emulátoru a znovu použít nastavení AutoBleemu?
 Diagnostics=Diagnostika

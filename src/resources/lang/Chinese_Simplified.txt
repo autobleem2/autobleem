@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -17,7 +17,6 @@ Applying settings...=正在应用设置...
 Apps=应用
 apps=应用
 Architecture=架构
-Are you sure you want to delete=确定要删除吗
 Are you sure you want to delete %s?=确定要删除 %s 吗？
 Are you sure you want to flush all covers?=确定要清除所有封面吗？
 Are you sure you want to power off?=确定要关机吗？
@@ -91,7 +90,6 @@ days=天
 Decompressing ecm:=正在解压 ecm：
 Defragment card=整理记忆卡
 Delete=删除
-Delete !SaveState folder for game=删除游戏的 !SaveState 文件夹
 Delete card=删除卡
 Delete card '%s'?=要删除卡 '%s' 吗？
 Delete folder=删除文件夹
@@ -99,7 +97,6 @@ Delete game=删除游戏
 Delete games, flush covers=删除游戏、清除封面
 Delete slot=删除存档位
 Delete the !SaveState folder of %s?=要删除 %s 的 !SaveState 文件夹吗？
-Delete the folder=删除文件夹
 Delete the folder %s?=要删除文件夹 %s 吗？
 Delete the settings saved in the emulator and use AutoBleem's again?=删除在模拟器中保存的设置并重新使用 AutoBleem 的设置？
 Diagnostics=诊断
