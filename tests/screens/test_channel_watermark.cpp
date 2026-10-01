@@ -43,7 +43,8 @@ TEST_CASE("a nightly says NIGHTLY and the short version: the count after a dot, 
     CHECK(tagFor(Channel::Nightly, "v2.0.0-alpha2-17", "").version == "2.0.0-a2.17"); // no hash in the VERSION file
     CHECK(tagFor(Channel::Nightly, "v2.0.0-rc1-dirty", "").version == "2.0.0-rc1");
     CHECK(tagFor(Channel::Nightly, "v2.0.0-alpha2-17-g1760cc8-1760cc8", "").version == "2.0.0-a2.17");
-    CHECK(tagFor(Channel::Nightly, "v2.0.0-rc1", "").word == "NIGHTLY"); // the channel is the build's, not the version's
+    CHECK(tagFor(Channel::Nightly, "v2.0.0-rc1", "").word ==
+          "NIGHTLY"); // the channel is the build's, not the version's
 }
 
 TEST_CASE("a pre-release says the tag's own word and the short version") {
@@ -94,18 +95,29 @@ TEST_CASE("the real package strings: describe, describe + -n<fingerprint>, plain
         Channel channel;
         const char *version;
     };
-    const Row rows[] = {
+    // a nightly build: the channel is the build's, the version text only gives the short version
+    const Row nightlies[] = {
         {"2.0.0-a2-314-gc7357bb-n72fd67", Channel::Nightly, "2.0.0-a2.314"}, // a nightly package's VERSION
         {"v2.0.0-a2-314-gc7357bb-n72fd67", Channel::Nightly, "2.0.0-a2.314"},
         {"2.0.0-a2-314-gc7357bb", Channel::Nightly, "2.0.0-a2.314"}, // describe only
         {"2.0.0-a2-314-gc7357bb-dirty", Channel::Nightly, "2.0.0-a2.314"},
-        {"2.0.0-a2", Channel::Testing, "2.0.0-a2"}, // a plain pre-release tag
-        {"2.0.0", Channel::None, ""},               // a plain release tag
+        {"2.0.0-a2-314-gc7357bb-n72fd67-dirty", Channel::Nightly, "2.0.0-a2.314"},
+        {"2.0.0-a2-314-n72fd67", Channel::Nightly, "2.0.0-a2.314"}, // fingerprint without the hash
     };
-    for (const Row &row : rows) {
+    for (const Row &row : nightlies) {
         INFO(row.input);
-        const ChannelWatermark::Tag tag = tagFor(row.input);
+        const ChannelWatermark::Tag tag = tagFor(row.channel, row.input, "c7357bb");
         CHECK(tag.channel == row.channel);
+        CHECK(tag.word == "NIGHTLY");
         CHECK(tag.version == row.version);
     }
+
+    // a plain pre-release tag on a pre-release build: no count, a short word the tag does not carry says TESTING
+    const ChannelWatermark::Tag pre = tagFor(Channel::Prerelease, "2.0.0-a2", "c7357bb");
+    CHECK(pre.shown());
+    CHECK(pre.version == "2.0.0-a2");
+    CHECK(pre.word == "TESTING");
+
+    // a plain release tag on a release build: nothing shown
+    CHECK_FALSE(tagFor(Channel::Release, "2.0.0", "c7357bb").shown());
 }

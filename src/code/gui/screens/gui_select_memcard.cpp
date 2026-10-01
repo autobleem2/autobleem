@@ -60,9 +60,9 @@ void GuiSelectMemcard::draw() {
     }
 
     const bool compact = cards.size() <= 8;
-    const string status = _("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) +
-                          "   |@L1/R1| " + _("First/last") + "   |@L2/R2| " + _("Page") + "   |@X| " +
-                          _("Select") + "  |@O| " + _("Cancel") + "|";
+    const string status = _("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1/R1| " +
+                          _("First/last") + "   |@L2/R2| " + _("Page") + "   |@X| " + _("Select") + "  |@O| " +
+                          _("Cancel") + "|";
     if (compact)
         gui->setCompactPanel(static_cast<int>(cards.size()), gui->assets().themeFont, status);
     gui->renderTextBar();

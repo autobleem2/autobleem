@@ -165,14 +165,13 @@ void PsMeta::render() {
             !foreign ? MetaLayout::Kind::Ps1 : (app ? MetaLayout::Kind::App : MetaLayout::Kind::RetroArch);
         const ableem::Font &valueFont = fixed.atSize(FONT_MED, MetaLayout::ValueSize);
         int rowY = y + MetaLayout::GridY;
-        for (const MetaLayout::Fact &fact : MetaLayout::facts(kind, publisher, year, serial, region, last_played,
-                                                              coreName, canShowLastPlayed)) {
+        for (const MetaLayout::Fact &fact :
+             MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed)) {
             // a label longer than its column (German, Polish) shrinks to fit
             const string label = _(fact.label);
-            const ableem::Font labelFont = text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label,
-                                                            MetaLayout::LabelWidth);
-            text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary,
-                                      XALIGN_LEFT);
+            const ableem::Font labelFont =
+                text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label, MetaLayout::LabelWidth);
+            text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary, XALIGN_LEFT);
             text.renderText_WithColor(valueFont, fact.value, x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
             rowY += MetaLayout::RowPitch;
         }

@@ -29,11 +29,11 @@ public:
     void freeImages();
 
     ableem::Texture slotImg[4];
-    bool slotActive[4];                      // the slot can be picked (load: it holds a state; save: always)
-    bool slotUsed[4] = {};                   // the slot holds a state
-    std::string slotDate[4];                 // its date as shown, "" when the console has no clock
-    int newest = -1;                         // the slot with the latest time (two or more used), else -1
-    std::string gameTitle;                   // under the heading
+    bool slotActive[4];      // the slot can be picked (load: it holds a state; save: always)
+    bool slotUsed[4] = {};   // the slot holds a state
+    std::string slotDate[4]; // its date as shown, "" when the console has no clock
+    int newest = -1;         // the slot with the latest time (two or more used), else -1
+    std::string gameTitle;   // under the heading
 
     ableem::Font font30;
 

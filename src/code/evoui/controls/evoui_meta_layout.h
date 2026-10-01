@@ -11,17 +11,17 @@
 namespace MetaLayout {
 
 // all positions are relative to the section's origin (x, y)
-constexpr int Height = 132;      // the whole section
-constexpr int TitleSize = 26;    // bold, fitted down to TitleMinSize
+constexpr int Height = 132;   // the whole section
+constexpr int TitleSize = 26; // bold, fitted down to TitleMinSize
 constexpr int TitleMinSize = 12;
-constexpr int RuleY = 34;        // 1 px rule under the title
+constexpr int RuleY = 34; // 1 px rule under the title
 constexpr int RuleWidth = 470;
-constexpr int GridY = 40;        // first fact row
+constexpr int GridY = 40; // first fact row
 constexpr int RowPitch = 20;
-constexpr int LabelSize = 12;    // bold capitals
-constexpr int LabelDrop = 3;     // the label sits this much lower than the value
+constexpr int LabelSize = 12; // bold capitals
+constexpr int LabelDrop = 3;  // the label sits this much lower than the value
 constexpr int ValueX = 118;
-constexpr int ValueSize = 16;    // medium
+constexpr int ValueSize = 16; // medium
 constexpr int LabelWidth = ValueX - 4;
 constexpr int IconRowY = 102;
 constexpr int IconSize = 30;
@@ -39,7 +39,9 @@ struct Fact {
     std::string value;
 };
 
-inline bool knownYear(const std::string &year) { return !year.empty() && year != "0"; }
+inline bool knownYear(const std::string &year) {
+    return !year.empty() && year != "0";
+}
 
 // the rows a game shows, in order; a field with nothing to show leaves its row out (no gap)
 inline std::vector<Fact> facts(Kind kind, const std::string &publisher, const std::string &year,
@@ -67,6 +69,8 @@ inline std::vector<Fact> facts(Kind kind, const std::string &publisher, const st
 }
 
 // the x (from the section's x) of badge `index` of `count`: right-aligned, the last one ends at BadgesRight
-inline int badgeX(int count, int index) { return BadgesRight - IconSize - (count - 1 - index) * BadgePitch; }
+inline int badgeX(int count, int index) {
+    return BadgesRight - IconSize - (count - 1 - index) * BadgePitch;
+}
 
 } // namespace MetaLayout
