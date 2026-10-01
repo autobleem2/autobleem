@@ -170,7 +170,14 @@ inline int yBelow(int plateBottom) {
 }
 constexpr int ChipHeight = 24;
 constexpr int ChipPadding = 7; // the word's inset in the chip; the chip is the word + 2 * this
+constexpr int WordPx = 13;     // the word: bold 13 px
+constexpr int VersionPx = 14;  // the version: medium 14 px
 constexpr int VersionGap = 8;  // the chip to the version
 constexpr int Alpha = 204;     // 80 %: a mark, not a control
+
+// the chip's width around a word `wordWidth` px wide (~35 px for "DEV")
+inline int chipWidth(int wordWidth) {
+    return wordWidth + 2 * ChipPadding;
+}
 
 } // namespace ChannelWatermark

@@ -214,7 +214,7 @@ void GuiSetPicker::publishItems() const {
 //*******************************
 // the footer's hints: one row, whatever the language (the panel is as wide as it needs)
 static vector<abgui::HintItem> footerHints() {
-    return {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}};
+    return {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1/R1"}, _("Tab")}, {{"L2/R2"}, _("Page")}};
 }
 
 void GuiSetPicker::draw() {

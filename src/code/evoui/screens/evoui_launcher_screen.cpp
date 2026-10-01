@@ -657,8 +657,7 @@ int GuiLauncher::renderPadBatteries() {
 // beside it in the secondary colour - the whole at 80 %, so it reads as a mark, not a control. A release draws
 // nothing. It sits at x 12, y 72, under a two-pad battery plate (which ends at y 66); `plateBottom`
 // (renderPadBatteries' return) pushes it lower for a taller plate, so it never covers one. Not translated: the
-// channel's names. The design's bold 13 / medium 14 are the launcher's fixed FONT_15_BOLD here (the one small font
-// that is always loaded).
+// channel's names. The design's sizes: the word bold 13, the version medium 14 (Fonts::atSize opens each once).
 void GuiLauncher::renderChannelWatermark(int plateBottom) {
     // the build's version never changes while it runs: read once (productVersion may read a VERSION file)
     static const ChannelWatermark::Tag tag =
@@ -666,13 +665,14 @@ void GuiLauncher::renderChannelWatermark(int plateBottom) {
                                  std::string(Version::GIT_HASH));
     if (!tag.shown())
         return;
-    const ableem::Font &font = ThemeAssets::fixedFonts()[FONT_15_BOLD];
+    const ableem::Font &wordFont = ThemeAssets::fixedFonts().boldAtSize(ChannelWatermark::WordPx);
+    const ableem::Font &versionFont = ThemeAssets::fixedFonts().atSize(FONT_MED, ChannelWatermark::VersionPx);
     abgui::Context &ctx = gui->uiContext();
     const abgui::Style &style = ctx.style();
     const int x = ChannelWatermark::X;
     const int y = ChannelWatermark::yBelow(plateBottom);
-    const int wordW = gui->text().textWidth(font, tag.word);
-    const ableem::Rect chip(x, y, wordW + 2 * ChannelWatermark::ChipPadding, ChannelWatermark::ChipHeight);
+    const int wordW = gui->text().textWidth(wordFont, tag.word);
+    const ableem::Rect chip(x, y, ChannelWatermark::chipWidth(wordW), ChannelWatermark::ChipHeight);
     const unsigned char alpha = ChannelWatermark::Alpha;
     if (!style.drawFrame(ctx, "chip", chip, alpha)) {
         renderer.setBlendMode(ableem::BlendMode::Blend);
@@ -681,11 +681,12 @@ void GuiLauncher::renderChannelWatermark(int plateBottom) {
         renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200 * alpha / 255));
         renderer.drawRect(chip);
     }
-    const int textY = y + (ChannelWatermark::ChipHeight - font.lineHeight()) / 2;
+    const int wordY = y + (ChannelWatermark::ChipHeight - wordFont.lineHeight()) / 2;
+    const int versionY = y + (ChannelWatermark::ChipHeight - versionFont.lineHeight()) / 2;
     gui->text().setAlpha(alpha);
-    gui->text().renderText_WithColor(font, tag.word, x + ChannelWatermark::ChipPadding, textY, style.text);
-    gui->text().renderText_WithColor(font, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap, textY,
-                                     style.secondary);
+    gui->text().renderText_WithColor(wordFont, tag.word, x + ChannelWatermark::ChipPadding, wordY, style.text);
+    gui->text().renderText_WithColor(versionFont, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap,
+                                     versionY, style.secondary);
     gui->text().setAlpha(255);
 }
 
