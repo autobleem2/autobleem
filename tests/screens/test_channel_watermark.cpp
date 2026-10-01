@@ -64,3 +64,25 @@ TEST_CASE("the tag sits under a two-pad plate and gets out of a taller one's way
     CHECK(ChannelWatermark::X == 12);
     CHECK(ChannelWatermark::Alpha == 204);
 }
+
+TEST_CASE("the real package strings: describe, describe + -n<fingerprint>, plain tags") {
+    struct Row {
+        const char *input;
+        Channel channel;
+        const char *version;
+    };
+    const Row rows[] = {
+        {"2.0.0-a2-314-gc7357bb-n72fd67", Channel::Nightly, "2.0.0-a2.314"}, // a nightly package's VERSION
+        {"v2.0.0-a2-314-gc7357bb-n72fd67", Channel::Nightly, "2.0.0-a2.314"},
+        {"2.0.0-a2-314-gc7357bb", Channel::Nightly, "2.0.0-a2.314"}, // describe only
+        {"2.0.0-a2-314-gc7357bb-dirty", Channel::Nightly, "2.0.0-a2.314"},
+        {"2.0.0-a2", Channel::Testing, "2.0.0-a2"}, // a plain pre-release tag
+        {"2.0.0", Channel::None, ""},               // a plain release tag
+    };
+    for (const Row &row : rows) {
+        INFO(row.input);
+        const ChannelWatermark::Tag tag = tagFor(row.input);
+        CHECK(tag.channel == row.channel);
+        CHECK(tag.version == row.version);
+    }
+}
