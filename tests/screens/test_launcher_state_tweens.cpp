@@ -128,6 +128,9 @@ struct OldMenu : MenuState {
                     scales[sel] = 1 + (1 - progress) * (MaxZoom - 1);
                     xoff[sel] = zoomOff(scales[sel]);
                     yoff[sel] = zoomOff(scales[sel]);
+                    scales[sel - 1] = 1 + progress * (MaxZoom - 1); // UIREV-44: the old code popped it at the end
+                    xoff[sel - 1] = zoomOff(scales[sel - 1]);
+                    yoff[sel - 1] = zoomOff(scales[sel - 1]);
 
                     if (progress >= 1.0f) {
                         scales[sel] = 1.0;
@@ -157,6 +160,9 @@ struct OldMenu : MenuState {
                     scales[sel] = 1 + (1 - progress) * (MaxZoom - 1); // UIREV-41: the old code grew it 1 -> 1.5 here
                     xoff[sel] = zoomOff(scales[sel]);
                     yoff[sel] = zoomOff(scales[sel]);
+                    scales[sel + 1] = 1 + progress * (MaxZoom - 1); // UIREV-44: the old code popped it at the end
+                    xoff[sel + 1] = zoomOff(scales[sel + 1]);
+                    yoff[sel + 1] = zoomOff(scales[sel + 1]);
 
                     if (progress >= 1.0f) {
                         scales[sel] = 1.0;
@@ -211,12 +217,10 @@ struct NewMenu : MenuState {
             y = evomotion::rowY(oy, targety, progress);
             setScale(sel,
                      active ? evomotion::openingScale(progress, MaxZoom) : evomotion::closingScale(progress, MaxZoom));
-        } else if (direction == 0) {
-            x = evomotion::optionX(0, ox, progress);
-            setScale(sel, evomotion::closingScale(progress, MaxZoom));
         } else {
-            x = evomotion::optionX(1, ox, progress);
+            x = evomotion::optionX(direction == 0 ? 0 : 1, ox, progress);
             setScale(sel, evomotion::closingScale(progress, MaxZoom));
+            setScale(sel + (direction == 0 ? -1 : 1), evomotion::openingScale(progress, MaxZoom));
         }
     }
     void complete() {
@@ -407,6 +411,40 @@ TEST_CASE("the icon the selection leaves shrinks smoothly from its zoom, in both
             last = menu.scales[1];
         }
         clock.at(Start + 140);
+        CHECK(menu.scales[1] == doctest::Approx(1.0f));
+    }
+}
+
+TEST_CASE("the icon the selection enters grows smoothly to its zoom, in both directions (UIREV-44)") {
+    for (int direction : {0, 1}) {
+        Clocked clock;
+        NewMenu menu(clock);
+        menu.menuOn = false;
+        menu.direction = direction;
+        menu.duration = 100;
+        menu.sel = 1;
+        const int entered = direction == 0 ? 0 : 2;
+        menu.scales[1] = MaxZoom;
+        menu.xoff[1] = menu.yoff[1] = zoomOff(MaxZoom);
+        menu.start();
+        float last = 1.0f;
+        bool between = false;
+        for (int t = Start; t < Start + 100; t++) {
+            clock.at(static_cast<unsigned int>(t));
+            menu.apply();
+            if (!menu.moving_)
+                break;
+            // starts at 1, only goes up, never above the zoom - and is not at either end half-way
+            CHECK(menu.scales[entered] >= last - 1e-4f);
+            CHECK(menu.scales[entered] <= MaxZoom + 1e-4f);
+            CHECK(menu.xoff[entered] == doctest::Approx(zoomOff(menu.scales[entered])));
+            between = between || (menu.scales[entered] > 1.01f && menu.scales[entered] < MaxZoom - 0.01f);
+            last = menu.scales[entered];
+        }
+        CHECK(between);
+        clock.at(Start + 140);
+        CHECK(menu.sel == entered);
+        CHECK(menu.scales[entered] == doctest::Approx(MaxZoom));
         CHECK(menu.scales[1] == doctest::Approx(1.0f));
     }
 }
