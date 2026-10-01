@@ -37,6 +37,7 @@ void GuiLauncher::loop() {
         // back into this loop, which is the one time they need translating again
         if (headersLanguage != app.lang().currentLanguage()) {
             headersLanguage = app.lang().currentLanguage();
+            captionOption = -1; // the caption is translated again too
             headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
             texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
                      _("Resume game from saved state point")};
@@ -48,6 +49,7 @@ void GuiLauncher::loop() {
         }
 
         menu->update(time);
+        syncMenuCaption();
         carousel.updatePositions();
         // the covers decoded in the background go onto the GPU, a frame at a time; once the row really rests
         // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
@@ -284,8 +286,6 @@ void GuiLauncher::loop_joyMoveLeft() {
                     menu->transition = TR_OPTION;
                     menu->direction = 0;
                     menu->duration = evomotion::OptionMoveMs;
-                    menuHead->setText(headers[menu->selOption - 1], fgColor);
-                    menuText->setText(texts[menu->selOption - 1], fgColor);
                     menu->startTransition();
                 }
             }
@@ -323,8 +323,6 @@ void GuiLauncher::loop_joyMoveRight() {
                     menu->transition = TR_OPTION;
                     menu->direction = 1;
                     menu->duration = evomotion::OptionMoveMs;
-                    menuHead->setText(headers[menu->selOption + 1], fgColor);
-                    menuText->setText(texts[menu->selOption + 1], fgColor);
                     menu->startTransition();
                 }
             }

@@ -159,10 +159,16 @@ void PsMeta::render() {
 
         // the serial/region and last-played lines are a PS1 game's; a RetroArch game or an App has neither
         if (!foreign) {
-            yOffset += 21;
-            // serial number line
-            gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x,
-                                   y + yOffset);
+            // serial number line - a field with no value is left out, and with neither there is no line at all
+            string serialLine;
+            if (!serial.empty())
+                serialLine = _("Serial:") + " " + serial;
+            if (!region.empty())
+                serialLine += (serialLine.empty() ? "" : ", ") + _("Region:") + " " + region;
+            if (!serialLine.empty()) {
+                yOffset += 21;
+                gui->text().renderText(otherFont, serialLine, x, y + yOffset);
+            }
 
             // last played line - skipped entirely (no row reserved) when there is no value to show, the
             // same way the coreName line above skips its yOffset when there is no core name

@@ -234,6 +234,7 @@ New card=Carta novèla
 No disc name=Pas cap de nom de disc
 No discs=Pas cap de disc
 No extensions installed=Cap d'extension installada
+No games here yet=Cap de jòc aquí pel moment
 No processors for these games=Pas cap de processor per aquestes jòcs
 None=Cap
 Not added=Pas apondut

@@ -234,6 +234,7 @@ New card=Nytt kort
 No disc name=Disknamn saknas
 No discs=Inga skivor
 No extensions installed=Inga tillägg installerade
+No games here yet=Inga spel här än
 No processors for these games=Inga processorer för de här spelen
 None=Ingen
 Not added=Inte tillagt

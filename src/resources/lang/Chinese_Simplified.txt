@@ -234,6 +234,7 @@ New card=新建记忆卡
 No disc name=没有光盘名称
 No discs=没有光盘
 No extensions installed=未安装任何扩展
+No games here yet=这里还没有游戏
 No processors for these games=没有适用于这些游戏的处理器
 None=无
 Not added=未添加

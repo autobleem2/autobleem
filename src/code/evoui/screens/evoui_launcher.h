@@ -321,8 +321,8 @@ public:
     int playTextOutlineW = 0,
         playTextOutlineH = 0; // the text outline's size at zoom 1 (the text + 2 px each side, +1 down-right)
     void makePlayOutline(const LauncherTheme &theme);
-    // a theme with the `play` frame (G5j) draws Play as that still frame + the `play` icon + this label, in place of the
-    // two images and their outline: the label is the hint line's word in capitals, in the largest bold font (28
+    // a theme with the `play` frame (G5j) draws Play as that still frame + the `play` icon + this label, in place of
+    // the two images and their outline: the label is the hint line's word in capitals, in the largest bold font (28
     // down to 14) that fits the button, ellipsized when even that one is too wide - refitted when the word changes
     std::string playLabel;
     ableem::Font playLabelFont;
@@ -392,6 +392,7 @@ public:
 
     PsCenterLabel *menuHead = nullptr;
     PsCenterLabel *menuText = nullptr;
+    int captionOption = -1; // the icon the caption was last set for (-1: none yet)
 
     std::string gameName;
     std::string publisher;
@@ -424,6 +425,9 @@ public:
     // the options row for the selected game: every icon for a PS1 game, settings + game editor for a
     // RetroArch game, settings alone for an App or an empty carousel (was forceSettingsOnly/showAllOptions)
     void showOptions();
+    // the game menu's caption (menuHead/menuText) is the one of the icon the cursor is on - or is moving to, while
+    // an icon move runs - set whenever that is not what it shows, so it can never lag or miss the selection
+    void syncMenuCaption();
     // any of the game's resume slots active (UIREV-13: greys the Resume icon and refuses opening the
     // picker when this is false)
     bool gameHasResumePoints(const PsGamePtr &game) const;

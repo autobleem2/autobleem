@@ -234,6 +234,7 @@ New card=Nouvelle carte
 No disc name=Pas de nom de disque
 No discs=Aucun disque
 No extensions installed=Aucune extension installée
+No games here yet=Aucun jeu ici pour l'instant
 No processors for these games=Aucun processeur pour ces jeux
 None=Aucun
 Not added=Non ajouté
