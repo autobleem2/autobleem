@@ -62,7 +62,7 @@ void GuiBtnGuide::draw() {
     row("|@X| / |@O|", _("Select or cancel highlighted option"),
         key(keyFor(Button::Cross, devHost)) + " / " + key(keyFor(Button::Circle, devHost)));
     row("|@S|", _("Run using RetroArch"), key(keyFor(Button::Square, devHost)));
-    row("|@R1| / |@L1|", _("Quick scroll to next letter"),
+    row("|@R1/L1|", _("Quick scroll to next letter"),
         key(keyFor(Button::R1, devHost)) + " / " + key(keyFor(Button::L1, devHost)));
     row("|@Start|", _("Random game"), key(keyFor(Button::Start, devHost)));
     row("|@Select|", _("Choose the games shown: PlayStation, RetroArch or Apps and the group"),
