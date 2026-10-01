@@ -95,8 +95,11 @@ vector<string> GuiOptions::getOutputModes() {
         list.push_back(mode.token());
     }
 #endif
-    // "Auto (1080p)": the display's own mode, asked once here - never per drawn frame
-    const ableem::Size desktop = ableem::Platform::desktopDisplaySize();
+    // "Auto (1080p)": the mode the window is in now (what Hardware Information shows), asked once here - never per
+    // drawn frame; the desktop's own mode only when there is no window yet
+    ableem::Size desktop = gui->platform().windowDisplaySize();
+    if (desktop.w <= 0 || desktop.h <= 0)
+        desktop = ableem::Platform::desktopDisplaySize();
     OutputMode own;
     own.w = desktop.w;
     own.h = desktop.h;
