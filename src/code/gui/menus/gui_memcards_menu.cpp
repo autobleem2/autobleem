@@ -1,4 +1,5 @@
 #include "gui_memcards_menu.h"
+#include "memcard_counter.h"
 #include <string>
 #include "gui/gui.h"
 #include "core/main.h"
@@ -21,9 +22,9 @@ void GuiMemcards::init() {
 //*******************************
 // returns the status line at the bottom
 string GuiMemcards::getStatusLine() {
-    return _("Card") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "   |@L1/R1| " +
-           _("First/last") + "   |@L2/R2| " + _("Page") + "   |@X| " + _("Rename") + "  |@S| " + _("New card") +
-           "   |@T| " + _("Delete") + "  |@O| " + _("Back") + "|";
+    return MemcardCounter::text(_("Card"), selected, getVerticalSize()) + "   |@L1/R1| " + _("First/last") +
+           "   |@L2/R2| " + _("Page") + "   |@X| " + _("Rename") + "  |@S| " + _("New card") + "   |@T| " +
+           _("Delete") + "  |@O| " + _("Back") + "|";
 }
 
 //*******************************
