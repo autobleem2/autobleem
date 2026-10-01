@@ -92,6 +92,7 @@ Themes/<name>/
 | Key | Meaning |
 |---|---|
 | `format` | `1`. |
+| `hidden` | `true` keeps the theme out of Options' "AutoBleem theme:" picker (and out of Start's random pick). The theme stays installed and still loads when `config.ini` names it, so an existing choice keeps working; picking another theme in Options just does not offer it again. A top-level key, never merged from the default theme; anything but a boolean `true` (or no key) = listed as usual. `ab2` uses it since the ab2.0.0 theme replaced it as the face of the launcher. |
 | `music` | The background track. `loop` false plays it once. `"music": null` is a theme with no music at all - it also silences a track the user picked in Options. |
 | `classic.background` | The classic UI's full-screen background (menus, splash, dialogs). |
 | `classic.logo` | The logo file and the rect it is drawn in. Dialogs draw it at a third of the size at the menu panel's origin. |

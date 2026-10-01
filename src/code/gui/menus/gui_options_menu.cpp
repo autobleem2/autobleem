@@ -1,5 +1,6 @@
 #include "gui_options_menu.h"
 #include <algorithm>
+#include <ableem/engine/theme_spec.h>
 #include "core/services/system.h"
 #include "core/services/environment.h"
 #include "core/services/theme_converter.h"
@@ -27,7 +28,9 @@ vector<string> GuiOptions::getThemes() {
     DirEntries uiThemeFolders = DirEntry::diru_DirsOnly(uiThemePath);
     for (const DirEntry &entry : uiThemeFolders) {
         // a theme.json, or an old-layout folder that Theme::load() will convert when it is picked
-        if (ThemeConverter::isThemeFolder(uiThemePath + sep + entry.name)) {
+        const string dir = uiThemePath + sep + entry.name;
+        // a theme.json with "hidden": true stays installed (and loads when config.ini names it) but is not offered
+        if (ThemeConverter::isThemeFolder(dir) && !ableem::loadThemeHidden(dir)) {
             list.push_back(entry.name); // add the theme dir name
         }
     }
