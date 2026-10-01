@@ -35,16 +35,39 @@ TEST_CASE("a RetroArch game shows its core only when the publisher is known") {
     REQUIRE(rows.size() == 2);
     CHECK(rows[1].label == "CORE");
     CHECK(rows[1].value == "snes9x");
-    // no database publisher: the caller passes the core as the publisher and no core name
-    rows = facts(Kind::RetroArch, "snes9x", "", "", "", "", "", true);
+    // no database publisher: the core is the only row, labelled CORE, never PUBLISHER
+    rows = facts(Kind::RetroArch, "", "", "", "", "", "snes9x", true);
     REQUIRE(rows.size() == 1);
+    CHECK(rows[0].label == "CORE");
     CHECK(rows[0].value == "snes9x");
 }
 
-TEST_CASE("an App shows its publisher only") {
-    const auto rows = facts(Kind::App, "Someone", "2020", "x", "y", "today", "core", true);
+TEST_CASE("an App shows its text as an unlabelled, wrapped description") {
+    auto rows = facts(Kind::App, "Someone", "2020", "x", "y", "today", "core", true);
     REQUIRE(rows.size() == 1);
+    CHECK(rows[0].label.empty());
+    CHECK(rows[0].wrapped);
     CHECK(rows[0].value == "Someone, 2020");
+    CHECK(facts(Kind::App, "", "0", "", "", "", "", true).empty());
+    // only the description wraps
+    rows = facts(Kind::RetroArch, "Studio", "1994", "", "", "", "snes9x", true);
+    CHECK_FALSE(rows[0].wrapped);
+}
+
+TEST_CASE("wrapped lines past the cap are joined onto the last one") {
+    const std::vector<std::string> lines = {"a b", "c d", "e f", "g h"};
+    CHECK(capLines(lines, 4) == lines);
+    CHECK(capLines(lines, 9) == lines);
+    const auto cut = capLines(lines, 2);
+    REQUIRE(cut.size() == 2);
+    CHECK(cut[0] == "a b");
+    CHECK(cut[1] == "c d e f g h");
+    CHECK(capLines({}, 2).empty());
+}
+
+TEST_CASE("the description's lines fit under the grid's top, inside the section") {
+    CHECK(DescriptionLines == 4);
+    CHECK(GridY + DescriptionLines * RowPitch <= Height);
 }
 
 TEST_CASE("the badges are right-aligned, 38 apart, the last ending at x + 470") {

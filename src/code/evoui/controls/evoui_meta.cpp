@@ -81,15 +81,15 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             psGame->serial = "";
             psGame->region = "";
 
-            // the publisher line is the core's name unless the database gave the game a publisher; the
-            // core then gets a line of its own
-            const bool hasPublisher = !psGame->publisher.empty();
-            updateTexts(psGame->title, hasPublisher ? psGame->publisher : psGame->core_name, to_string(psGame->year),
-                        psGame->serial, psGame->region, to_string(psGame->players) + " " + appendText, psGame->internal,
-                        psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app, App::get().clock().displayTime(psGame->last_played), _textColor);
-            if (hasPublisher)
-                coreName = psGame->core_name;
+            // the core is the CORE row's; the PUBLISHER row only shows what the database gave the game
+            updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
+                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
+                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
+                        App::get().clock().displayTime(psGame->last_played), _textColor);
+            coreName = psGame->core_name;
+            trim(coreName);
+            if (coreName == "DETECT")
+                coreName = _("Unknown Core (AutoDetect)");
             playersKnown = psGame->players > 0;
         }
     }
@@ -153,7 +153,7 @@ void PsMeta::render() {
         renderer.fillRect(ableem::Rect(x, y + MetaLayout::RuleY, MetaLayout::RuleWidth, 1));
 
         // the facts grid: the label in `secondary` (bold capitals, a little lower), the value in `text`; a RetroArch
-        // game the database does not know shows its core in the publisher row (updateTexts)
+        // game shows its core in the CORE row (updateTexts); an App's description is a wrapped, unlabelled row
 #ifdef AB_PLATFORM_PSC
         // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
         const bool canShowLastPlayed = Env::autobleemKernel;
@@ -167,6 +167,17 @@ void PsMeta::render() {
         int rowY = y + MetaLayout::GridY;
         for (const MetaLayout::Fact &fact :
              MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed)) {
+            if (fact.wrapped) {
+                // a description: no label, wrapped to the area, the last line elided when it still does not fit
+                vector<string> lines = MetaLayout::capLines(
+                    text.wrapLines(valueFont, fact.value, MetaLayout::DescriptionWidth), MetaLayout::DescriptionLines);
+                for (const string &line : lines) {
+                    text.renderText_WithColor(valueFont, text.elide(valueFont, line, MetaLayout::DescriptionWidth), x,
+                                              rowY, style.text, XALIGN_LEFT);
+                    rowY += MetaLayout::RowPitch;
+                }
+                continue;
+            }
             // a label longer than its column (German, Polish) shrinks to fit
             const string label = _(fact.label);
             const ableem::Font labelFont =
