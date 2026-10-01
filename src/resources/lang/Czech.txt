@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -12,6 +12,7 @@ Address=Adresa
 All apps=Všechny aplikace
 All games=Všechny hry
 Always=Vždy
+Animations:=Animace:
 app=aplikace
 Applying settings...=Použití nastavení...
 Apps=Aplikace

@@ -31,9 +31,10 @@ enum {
     CFG_PAD_SWAP,
     CFG_DISPLAY,
     CFG_COVER_SHINE,
-    CFG_SPLASH_SCREEN
+    CFG_SPLASH_SCREEN,
+    CFG_ANIMATIONS
 };
-#define CFG_LAST CFG_SPLASH_SCREEN
+#define CFG_LAST CFG_ANIMATIONS
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 

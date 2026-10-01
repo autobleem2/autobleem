@@ -67,7 +67,10 @@ public:
 
     SystemMenuAction result = SystemMenuAction::None;
 
-    using GuiScreen::GuiScreen;
+    // a compact panel over the launcher: it pops in and back out (UIREV-48)
+    explicit GuiSystemMenu(ableem::GuiBase &g) : GuiScreen(g) {
+        declareTransitions(abgui::ScreenTransitions(abgui::Transition::pop()));
+    }
 
 private:
     struct Row {

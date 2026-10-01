@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -12,6 +12,7 @@ Address=Adress
 All apps=Alla appar
 All games=Alla spel
 Always=Alltid
+Animations:=Animationer:
 app=appar
 Applying settings...=Tillämpar inställningar...
 Apps=Appar

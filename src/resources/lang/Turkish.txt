@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -12,6 +12,7 @@ Address=Adres
 All apps=Tüm uygulamalar
 All games=Tüm oyunlar
 Always=Her zaman
+Animations:=Animasyonlar:
 app=uygulama
 Applying settings...=Ayarlar uygulanıyor...
 Apps=Uygulamalar

@@ -56,8 +56,11 @@ public:
     // spelled out rather than inherited (using GuiScreen::GuiScreen): the console's GCC 6 cannot combine an
     // inherited constructor with a member initialised from another member, which `carousel` is
     // every frame cleared to transparent black, the draw colour from then on (docs/ab-gui-plan.md, G3e)
+    // no screen transition of its own (UIREV-48): after a game or a display change it fades in from black by itself
+    // (startFadeIn); only at start-up after the splash does the stack drop it in from the top (Gui::display)
     explicit GuiLauncher(ableem::GuiBase &g) : GuiScreen(g), carousel(*gui) {
         frameColor = abgui::OptionalColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
+        declareTransitions(abgui::ScreenTransitions(abgui::Transition::none()));
     }
     void init() override;
     ~GuiLauncher() override;

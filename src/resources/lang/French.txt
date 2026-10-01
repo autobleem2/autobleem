@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (entier)
 4:3 (integer)=4:3 (entier)
@@ -12,6 +12,7 @@ Address=Adresse
 All apps=Toutes les applications
 All games=Tous les jeux
 Always=Toujours
+Animations:=Animations :
 app=applications
 Applying settings...=Application des réglages...
 Apps=Applications

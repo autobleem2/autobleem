@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -12,6 +12,7 @@ Address=Osoite
 All apps=Kaikki sovellukset
 All games=Kaikki pelit
 Always=Aina
+Animations:=Animaatiot:
 app=sovellukset
 Applying settings...=Otetaan asetukset käyttöön...
 Apps=Sovellukset

@@ -1619,13 +1619,21 @@ void GuiLauncher::draw() {
 //*******************************
 // the black overlay from fully opaque to clear over durationMs: a non-ambient tween of the milliseconds gone (so the
 // DebugDriver is busy while it runs), the alpha computed from it as before (abgui::transition::fadeInAlpha). Starting
-// it again restarts it; the start-up transitions of the plan's decision 12 (the splash's fade-in, the drop from the
-// top) are more calls like this one, with another duration.
+// it again restarts it. The start-up drop from the top after the splash (the plan's decision 12) is the screen stack's
+// transition instead (UIREV-48), so the overlay stays off while the stack brings the launcher in.
 void GuiLauncher::startFadeIn(unsigned int durationMs) {
     fadeOwner.cancel();
+    fadeDuration = durationMs;
+    // none with the animations off (Options -> Interface -> "Animations"), and none while the screen stack brings the
+    // launcher in itself (the drop from the top after the splash, UIREV-48)
+    abgui::ScreenStack &stack = gui->uiContext().stack();
+    if (!stack.animations() || stack.bringsIn(*this)) {
+        fadeAlpha = 0;
+        fadeMs = static_cast<float>(durationMs);
+        return;
+    }
     fadeAlpha = 255;
     fadeMs = 0.0f;
-    fadeDuration = durationMs;
     gui->uiContext().stack().tweens().start(abgui::transition::fadeInClock(fadeMs, durationMs), fadeOwner);
 }
 

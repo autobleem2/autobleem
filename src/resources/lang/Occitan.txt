@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -12,6 +12,7 @@ Address=Adreça
 All apps=Totas las aplicacions
 All games=Totes los jòcs
 Always=Totjorn
+Animations:=Animacions:
 app=aplicacions
 Applying settings...=Aplicacion dels reglatges...
 Apps=Aplicacions

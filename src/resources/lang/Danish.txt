@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -12,6 +12,7 @@ Address=Adresse
 All apps=Alle apps
 All games=Alle spil
 Always=Altid
+Animations:=Animationer:
 app=apps
 Applying settings...=Anvender indstillinger...
 Apps=Apps

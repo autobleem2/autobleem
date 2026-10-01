@@ -148,6 +148,8 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_SHOWINGTIMEOUT, _("Notification timeout:"), "showingtimeout", false, getTimeoutValues());
     // the boot splash (Gui::display); off goes straight to the launcher
     lines.emplace_back(CFG_SPLASH_SCREEN, _("Splash screen:"), "splashscreen", true, vector<string>({"false", "true"}));
+    // the screen transitions (Gui::loadAssets -> ScreenStack::setAnimations): off, every screen change is instant
+    lines.emplace_back(CFG_ANIMATIONS, _("Animations:"), "animations", true, vector<string>({"false", "true"}));
 
     heading(_("Fonts"));
     // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its

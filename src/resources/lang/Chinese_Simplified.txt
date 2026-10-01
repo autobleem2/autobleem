@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 445
+# Untranslated: 0 / Total: 446
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -12,6 +12,7 @@ Address=地址
 All apps=所有应用
 All games=所有游戏
 Always=始终
+Animations:=动画：
 app=应用
 Applying settings...=正在应用设置...
 Apps=应用
