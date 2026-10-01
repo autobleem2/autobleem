@@ -88,7 +88,7 @@ void GuiAppStart::draw() {
 
     string status = "|@X| " + _("Start") + "  |@O| " + _("Back") + "|";
     if (readmeLoaded && (firstLine > 0 || lastLineShown < static_cast<int>(lines.size())))
-        status += "  |@L2|/|@R2| " + _("Page");
+        status += "  |@L2+R2| " + _("Page");
     gui->renderStatus(status);
 }
 

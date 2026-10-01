@@ -6,6 +6,8 @@
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
+#include <ab_gui/panel.h>
+
 #include <ableem/ui/debug_driver.h>
 
 #include <algorithm>
@@ -35,7 +37,6 @@ string appCategoryLabel(AppCategory category) {
 }
 
 namespace {
-const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
 const int TabsHeight = 112; // the tab strip at the top, in the header's place: the icon, the label, the rule
 const int FooterHeight = PanelStyle::FooterHeight;
@@ -211,6 +212,11 @@ void GuiSetPicker::publishItems() const {
 //*******************************
 // GuiSetPicker::draw
 //*******************************
+// the footer's hints: one row, whatever the language (the panel is as wide as it needs)
+static vector<abgui::HintItem> footerHints() {
+    return {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}};
+}
+
 void GuiSetPicker::draw() {
     publishItems();
     gui->renderBackground();
@@ -226,7 +232,9 @@ void GuiSetPicker::draw() {
         maxShown = max(maxShown, min(rows, static_cast<int>(tb.entries.size())));
     const int shown = max(1, min(rows, static_cast<int>(t.entries.size())));
     const int panelHeight = TabsHeight + maxShown * RowHeight + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
+    // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
+    const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
+    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
@@ -286,8 +294,7 @@ void GuiSetPicker::draw() {
         style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
 
     style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}}, "",
-                 false);
+                 footerHints(), "", false);
 
     gui->text().setShadow(classicShadow);
 }

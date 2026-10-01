@@ -1,6 +1,8 @@
 #include "evoui_system_menu.h"
 #include "gui/gui.h"
 
+#include <ab_gui/panel.h>
+
 #include <ableem/ui/debug_driver.h>
 
 #include <algorithm>
@@ -10,7 +12,6 @@ using namespace std;
 
 namespace {
 // the panel: as tall as its rows need, up to the screen less a margin; more rows than fit scroll
-const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
 const int HeaderHeight = PanelStyle::HeaderHeight;
 const int FooterHeight = PanelStyle::FooterHeight;
@@ -181,6 +182,11 @@ void GuiSystemMenu::keepSelectedVisible() {
 //*******************************
 // GuiSystemMenu::draw
 //*******************************
+// the footer's hints: one row, whatever the language (the panel is as wide as it needs)
+static vector<abgui::HintItem> footerHints() {
+    return {{{"X"}, _("Select")}, {{"O"}, _("Back")}};
+}
+
 void GuiSystemMenu::draw() {
     publishItems(); // the cursor moved (or the rows changed): the driver's `selected`
     // the launcher's own background, dimmed, so the menu reads as an overlay on the screen it came from
@@ -189,7 +195,9 @@ void GuiSystemMenu::draw() {
 
     const int rowsHeight = visibleHeight();
     const int panelHeight = HeaderHeight + rowsHeight + StripHeight + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
+    // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
+    const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
+    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
     style.sheet(gui->uiContext(), panel);
 
     // every text on this screen gets the launcher's halo, like the launcher's own
@@ -252,7 +260,7 @@ void GuiSystemMenu::draw() {
 
     // the footer: the launcher's own button hints
     style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 {{{"X"}, _("Select")}, {{"O"}, _("Back")}}, "", false);
+                 footerHints(), "", false);
 
     gui->text().setShadow(classicShadow);
 }
