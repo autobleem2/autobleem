@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -330,6 +330,7 @@ Resolution:=Rezoluție:
 Restart=Reporneste
 Restart launcher=Repornește launcherul
 Resume=Continua
+Resume game=Continuă
 Resume game from saved state point=Continua joc de la punctul salvat
 Resume point saved to slot=Continua de la puntul salvat in slotul
 RetroArch=RetroArch

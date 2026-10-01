@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -330,6 +330,7 @@ Resolution:=Opløsning:
 Restart=Genstart
 Restart launcher=Genstart launcher
 Resume=GENOPTAG
+Resume game=Genoptag
 Resume game from saved state point=Genoptag spil fra gemt punkt
 Resume point saved to slot=Genoptagelsespunkt gemt til slot
 RetroArch=RetroArch

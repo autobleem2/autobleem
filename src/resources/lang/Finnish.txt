@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -330,6 +330,7 @@ Resolution:=Tarkkuus:
 Restart=Käynnistä uudelleen
 Restart launcher=Käynnistä launcher uudelleen
 Resume=JATKA
+Resume game=Jatka
 Resume game from saved state point=Jatka peliä jatko-pisteestä
 Resume point saved to slot=Jatko-piste tallennettu paikkaan
 RetroArch=RetroArch

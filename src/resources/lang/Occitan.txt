@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -330,6 +330,7 @@ Resolution:=Definicion :
 Restart=Tornar aviar
 Restart launcher=Tornar aviar lo launcher
 Resume=REPRENDRE
+Resume game=Reprendre
 Resume game from saved state point=Reprendre lo jòc a un punt de represa salvagardat
 Resume point saved to slot=Punt de reprisa salvagardat al lòc
 RetroArch=RetroArch

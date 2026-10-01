@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -330,6 +330,7 @@ Resolution:=Çözünürlük:
 Restart=Yeniden Başlat
 Restart launcher=Başlatıcıyı yeniden başlat
 Resume=DEVAM ET
+Resume game=Devam et
 Resume game from saved state point=Oyunu kayıtlı noktadan devam ettir
 Resume point saved to slot=Devam noktası slota kaydedildi
 RetroArch=RetroArch is not installed

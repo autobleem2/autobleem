@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -330,6 +330,7 @@ Resolution:=分辨率：
 Restart=重新开始
 Restart launcher=重启启动器
 Resume=继续
+Resume game=继续
 Resume game from saved state point=从保存状态点继续游戏
 Resume point saved to slot=续玩点已保存到槽位
 RetroArch=RetroArch

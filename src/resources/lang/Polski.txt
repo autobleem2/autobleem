@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (całkowite)
 4:3 (integer)=4:3 (całkowite)
@@ -330,6 +330,7 @@ Resolution:=Rozdzielczość:
 Restart=Uruchom ponownie
 Restart launcher=Uruchom ponownie launcher
 Resume=WZNÓW
+Resume game=Wznów
 Resume game from saved state point=Wznów grę od ostatnigo punktu zapisu
 Resume point saved to slot=Zapisano punkt wznowienia do slotu
 RetroArch=RetroArch

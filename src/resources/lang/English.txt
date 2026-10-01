@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 446
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
@@ -327,6 +327,7 @@ Resolution:=Resolution:
 Restart=Restart
 Restart launcher=Restart launcher
 Resume=Resume
+Resume game=Resume game
 Resume game from saved state point=Resume game from saved state point
 Resume point saved to slot=Resume point saved to slot
 RetroArch=RetroArch

@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -330,6 +330,7 @@ Resolution:=Resolutie:
 Restart=Herstart
 Restart launcher=Launcher herstarten
 Resume=HERVATTEN
+Resume game=Hervatten
 Resume game from saved state point=Hervat game vanaf opgeslagen punt
 Resume point saved to slot=Hervattingspunt opgeslagen naar slot
 RetroArch=RetroArch

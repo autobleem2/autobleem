@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -330,6 +330,7 @@ Resolution:=Upplösning:
 Restart=Starta om
 Restart launcher=Starta om launchern
 Resume=FORTSÄTT
+Resume game=Fortsätt
 Resume game from saved state point=Fortsätt spel från befintlig sparpunkt
 Resume point saved to slot=Sparpunkt lagrad på position
 RetroArch=RetroArch

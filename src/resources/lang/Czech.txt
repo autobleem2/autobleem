@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 449
+# Untranslated: 0 / Total: 450
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -330,6 +330,7 @@ Resolution:=Rozlišení:
 Restart=Restartovat
 Restart launcher=Restartovat launcher
 Resume=OBNOVIT
+Resume game=Obnovit
 Resume game from saved state point=Pokračovat ve hře z uloženého stavu
 Resume point saved to slot=Bod obnovy uložený na pozici
 RetroArch=RetroArch
