@@ -244,6 +244,56 @@ wifi_restore() {
         mark_ram "wlan0 up: $(ab_timeout iw dev wlan0 link 2>&1 | head -1)"
     fi
 }
+# The rear port, Bluetooth and Wi-Fi after the wake, in the background while the launcher starts (the owner,
+# 2026-10-01: the wake picture stayed ~15 s, 13 of them this). The stick is on the front bus and the launcher takes
+# a pad whenever it shows up. Bluetooth is started again only once its adapter is back: bluetoothd kept running
+# across the hub's deauthorization saw the adapter come back as a new device, and the first connection of a paired
+# DualSense hung in its authentication for ~40 s ("paired" on the pad, nothing in the launcher) - a cold boot, where
+# bluetoothd starts with the adapter there, never did. /tmp/.abrearwake is there while this runs; a standby waits for it.
+rear_wake() {
+    RW_FROM=$(wc -l < $SLOG)
+    if [ "$REAR_HAD" = 1 ]; then
+        sleep 3 # the USB bus re-enumerates after the resume
+        mark_ram "rear port after the wake: $(rear_state)"
+        rear_wait_hub 2
+        if [ -z "$(rear_devs)" ] && [ -w $REAR_MODE ]; then
+            mark_ram "rear USB: the hub did not come back - restarting the port's host mode"
+            rear_hostmode
+            rear_wait_hub 6
+        fi
+        rear_restore
+        if [ "$(rear_kids)" -lt "$REAR_KIDS" ] && [ -w $REAR_MODE ]; then
+            mark_ram "rear USB: only $(rear_kids) of $REAR_KIDS devices - restarting the port's host mode"
+            rear_hostmode
+            rear_wait_hub 6
+            rear_restore
+        fi
+    fi
+    if [ -n "$BT_UNITS" ]; then
+        w=0
+        while [ ! -e /sys/class/bluetooth/hci0 ] && [ $w -lt 8 ]; do
+            w=$((w + 1))
+            sleep 1
+        done
+        ab_timeout systemctl start $BT_UNITS > /dev/null 2>&1
+        mark_ram "Bluetooth started again ($BT_UNITS) - adapter after $w s: $(ls /sys/class/bluetooth 2>/dev/null | tr '\n' ' ')"
+    fi
+    [ "$REAR_HAD" = 1 ] && wifi_restore
+    # CONSOLE-15 evidence: the network after the wake, each call bounded
+    {
+        echo "$(date) network after the wake:"
+        echo "== iw dev wlan0 link"
+        ab_timeout iw dev wlan0 link
+        echo "== ip addr show wlan0"
+        ab_timeout ip addr show wlan0
+        echo "== wpa_cli -i wlan0 status"
+        ab_timeout wpa_cli -i wlan0 status
+        echo "== dmesg | tail -60"
+        dmesg 2>&1 | tail -60
+    } >> $SLOG 2>&1
+    tail -n +$((RW_FROM + 1)) $SLOG >> $LOG 2>/dev/null
+    rm -f /tmp/.abrearwake
+}
 
 # The console's "power off", the way Sony's own power_manage does it - suspend to RAM, the power button
 # wakes it - but with the stick unmounted first, so it can be pulled while the console is "off" without
@@ -253,6 +303,13 @@ wifi_restore() {
 # own storage. Returns 0 with the stick mounted again, 1 when it is not back within 60 s (30 s, then 30 s more).
 standby() {
     ab_watch_stop # the watch log (CONSOLE-15) must not touch /media or run through the suspend
+    # the last wake's background part (rear_wake) still running - a power off right after a wake - ends first
+    w=0
+    while [ -f /tmp/.abrearwake ] && [ $w -lt 25 ]; do
+        w=$((w + 1))
+        sleep 1
+    done
+    rm -f /tmp/.abrearwake
     DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
     SLOG=/tmp/standby.log
     echo "$(date) standby: dev=$DEV" > $SLOG
@@ -304,6 +361,17 @@ standby() {
     # CONSOLE-15 P2: a hub with a Wi-Fi dongle on the rear port keeps its root port from suspending, and the kernel
     # then refuses the suspend (see rear_quiesce above): the rear devices are made idle first, the stick still mounted
     # so that the markers go straight to it. A real suspend is tried either way; poweroff_instead only after it failed.
+    # Bluetooth stopped for the suspend and started again by rear_wake once its adapter is back (see there). The
+    # kernel overlay's start script binds its key store over /var/lib/bluetooth again on every start - the same
+    # directory, so the extra layer changes nothing and is left alone (the pairings live there)
+    BT_UNITS=""
+    for u in bluetooth abbtagent; do
+        systemctl -q is-active $u.service 2>/dev/null && BT_UNITS="$BT_UNITS $u.service"
+    done
+    if [ -n "$BT_UNITS" ]; then
+        ab_timeout systemctl stop $BT_UNITS > /dev/null 2>&1
+        mark "Bluetooth stopped for the suspend:$BT_UNITS"
+    fi
     if [ "$REAR_HAD" = 1 ]; then
         mark "rear USB: $REAR_KIDS device(s) below the hub: $(rear_state) - quiescing"
         rear_quiesce
@@ -388,8 +456,6 @@ standby() {
     fi
     rm -f /tmp/.abdown # the black cover of the power down is done (the picture above is on top of it)
 
-    sleep 3 # the USB bus re-enumerates after the resume
-
     # The rear (OTG) port on the AutoBleem kernel: MediaTek's musb driver does not restart its host session after
     # a resume, so a hub or dongle there stays gone - WiFi and Bluetooth dead after every wake (2026-09-26: the
     # front bus came back in 2 s, the rear hub never did). Its glue's own switch redoes the host bring-up
@@ -397,37 +463,14 @@ standby() {
     # leaves the port dead (its probe cannot run twice). Only when something was there before the standby and is
     # still missing - the stock kernel, an empty rear port or a device that came back: nothing, no wait.
     # CONSOLE-15 P2: the rear devices were deauthorized for the suspend (rear_quiesce): when the hub is there after the
-    # wake it is authorized again and its children enumerate afresh; when the bus is dead the host restart comes first
-    if [ "$REAR_HAD" = 1 ]; then
-        mark_ram "rear port after the wake: $(rear_state)"
-        rear_wait_hub 2
-        if [ -z "$(rear_devs)" ] && [ -w $REAR_MODE ]; then
-            mark_ram "rear USB: the hub did not come back - restarting the port's host mode"
-            rear_hostmode
-            rear_wait_hub 6
-        fi
-        rear_restore
-        if [ "$(rear_kids)" -lt "$REAR_KIDS" ] && [ -w $REAR_MODE ]; then
-            mark_ram "rear USB: only $(rear_kids) of $REAR_KIDS devices - restarting the port's host mode"
-            rear_hostmode
-            rear_wait_hub 6
-            rear_restore
-        fi
-        wifi_restore
+    # wake it is authorized again and its children enumerate afresh; when the bus is dead the host restart comes first.
+    # All of it, Bluetooth and Wi-Fi with it, in the background (rear_wake) - the stick and the launcher do not wait.
+    if [ "$REAR_HAD" = 1 ] || [ -n "$BT_UNITS" ]; then
+        touch /tmp/.abrearwake
+        ( rear_wake ) < /dev/null > /dev/null 2>&1 &
     fi
 
-    # CONSOLE-15 evidence: the network after the wake (the 3 s + the rear port's wait above), each call bounded
-    {
-        echo "$(date) network after the wake:"
-        echo "== iw dev wlan0 link"
-        ab_timeout iw dev wlan0 link
-        echo "== ip addr show wlan0"
-        ab_timeout ip addr show wlan0
-        echo "== wpa_cli -i wlan0 status"
-        ab_timeout wpa_cli -i wlan0 status
-        echo "== dmesg | tail -60"
-        dmesg 2>&1 | tail -60
-    } >> $SLOG 2>&1
+    sleep 3 # the USB bus re-enumerates after the resume
 
     i=0
     while [ $i -lt 60 ]; do
