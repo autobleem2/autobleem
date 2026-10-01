@@ -39,6 +39,16 @@ inline bool allDigits(const std::string &s) {
     return true;
 }
 
+// the package's nightly suffix "-n<fingerprint>": "n" + 4 or more hex digits ("n72fd67")
+inline bool isFingerprint(const std::string &s) {
+    if (s.size() < 5 || s[0] != 'n')
+        return false;
+    for (size_t i = 1; i < s.size(); i++)
+        if (!std::isxdigit(static_cast<unsigned char>(s[i])))
+            return false;
+    return true;
+}
+
 // a git hash as describe writes it: "g" + 7 or more hex digits, or the bare hex digits
 inline bool isHash(const std::string &s) {
     size_t start = (!s.empty() && s[0] == 'g') ? 1 : 0;
@@ -86,7 +96,7 @@ inline Tag tagFor(const std::string &versionString) {
         ahead = true;
         tokens.pop_back();
     }
-    while (tokens.size() > 1 && detail::isHash(tokens.back())) {
+    while (tokens.size() > 1 && (detail::isHash(tokens.back()) || detail::isFingerprint(tokens.back()))) {
         ahead = true;
         tokens.pop_back();
     }
