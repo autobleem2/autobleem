@@ -54,3 +54,11 @@ target_include_directories(test_hint_slots PRIVATE ${CMAKE_SOURCE_DIR}/src/code/
 # NEWEST slot, the picture's cut corners, the date format
 ab_add_test(test_resume_layout screens/test_resume_layout.cpp)
 target_include_directories(test_resume_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
+
+# BUG-30: the set banner's hold time (evoui/set_banner.h, pure) - the notification timeout, the default when it is Off
+ab_add_test(test_set_banner screens/test_set_banner.cpp)
+target_include_directories(test_set_banner PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
+
+# BUG-41: the Memory Cards counter's text (gui/menus/memcard_counter.h, pure) - "Card n/N", "0/0" with no cards
+ab_add_test(test_memcard_counter screens/test_memcard_counter.cpp)
+target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui)
