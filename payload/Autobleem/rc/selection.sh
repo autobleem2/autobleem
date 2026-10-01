@@ -256,6 +256,13 @@ standby() {
     DEV=$(awk '$2 == "/media" { print $1 }' /proc/mounts | head -1)
     SLOG=/tmp/standby.log
     echo "$(date) standby: dev=$DEV" > $SLOG
+    # the launcher has left and Weston shows its bare desktop - black with the mouse cursor - until the suspend
+    # blanks the screen. A full-screen black absplash (no picture: it draws black) covers it, from here until the
+    # wake; the wake picture below goes over it and the flag is removed there. RAM only, the stick is not touched.
+    if [ -x /tmp/absplash ]; then
+        touch /tmp/.abdown
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/black.jpg --until-gone /tmp/.abdown --timeout 300 > /dev/null 2>&1 &
+    fi
     rm -f /media/System/.session # the session ended cleanly - checkstick.sh may clear the flag next boot
     sync
     # CONSOLE-15 P2: the state BEFORE the dangerous step, on the stick (the umount below is the last time it can be
@@ -377,6 +384,7 @@ standby() {
     else
         echo "no absplash on tmpfs" >> $SLOG
     fi
+    rm -f /tmp/.abdown # the black cover of the power down is done (the picture above is on top of it)
 
     sleep 3 # the USB bus re-enumerates after the resume
 
@@ -466,7 +474,10 @@ update() {
     fi
     if [ -x /tmp/absplash ] && [ -f /tmp/autobleem.jpg ]; then
         touch /tmp/.abupdating
-        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash /tmp/autobleem.jpg --until-gone /tmp/.abupdating --timeout 900 > /dev/null 2>&1 &
+        # the "updating, do not switch off" picture (UIREV-47), the plain one when the stick has none
+        UPIC=/tmp/updating.jpg
+        [ -f $UPIC ] || UPIC=/tmp/autobleem.jpg
+        LD_LIBRARY_PATH=/tmp/lib /tmp/absplash $UPIC --until-gone /tmp/.abupdating --timeout 900 > /dev/null 2>&1 &
     fi
     echo "$(date) installing the downloaded update" >> $ULOG
     cd /tmp

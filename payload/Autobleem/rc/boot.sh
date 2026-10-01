@@ -114,6 +114,7 @@ while true; do
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
     cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
+    cp -f /media/Autobleem/bin/autobleem/splash/updating.jpg /tmp/updating.jpg
     cd /tmp
     sh /tmp/selection.sh || break
 done
