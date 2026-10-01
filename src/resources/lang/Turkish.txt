@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -17,7 +17,6 @@ Applying settings...=Ayarlar uygulanıyor...
 Apps=Uygulamalar
 apps=uygulama
 Architecture=Mimari
-Are you sure you want to delete=Silmek istediğine emin misin
 Are you sure you want to delete %s?=%s öğesini silmek istediğine emin misin?
 Are you sure you want to flush all covers?=Tüm kapakları temizlemek istediğinizden emin misiniz?
 Are you sure you want to power off?=Kapatmak istediğinizden emin misiniz?
@@ -91,7 +90,6 @@ days=gün
 Decompressing ecm:=Ecm sıkıştırılıyor:
 Defragment card=Kartı birleştir
 Delete=Sil
-Delete !SaveState folder for game=Oyun için !SaveState klasörünü sil
 Delete card=Kartı sil
 Delete card '%s'?='%s' kartı silinsin mi?
 Delete folder=Klasörü sil
@@ -99,7 +97,6 @@ Delete game=Oyunu sil
 Delete games, flush covers=Oyunları sil, kapakları temizle
 Delete slot=Yuvayı sil
 Delete the !SaveState folder of %s?=%s için !SaveState klasörü silinsin mi?
-Delete the folder=Klasör silinsin mi:
 Delete the folder %s?=%s klasörü silinsin mi?
 Delete the settings saved in the emulator and use AutoBleem's again?=Emülatörde kaydedilen ayarlar silinip yeniden AutoBleem ayarları kullanılsın mı?
 Diagnostics=Tanılama

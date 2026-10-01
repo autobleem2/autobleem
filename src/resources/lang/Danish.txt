@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -17,7 +17,6 @@ Applying settings...=Anvender indstillinger...
 Apps=Apps
 apps=apps
 Architecture=Arkitektur
-Are you sure you want to delete=Er du sikker på, du vil slette
 Are you sure you want to delete %s?=Er du sikker på, at du vil slette %s?
 Are you sure you want to flush all covers?=Er du sikker på, at du vil rydde alle covers?
 Are you sure you want to power off?=Er du sikker på, at du vil slukke?
@@ -91,7 +90,6 @@ days=dage
 Decompressing ecm:=Dekomprimerer ecm:
 Defragment card=Defragmentér kort
 Delete=Slet
-Delete !SaveState folder for game=Slet !SaveState-mappen for spillet
 Delete card=Slet kort
 Delete card '%s'?=Slet kort '%s'?
 Delete folder=Slet mappe
@@ -99,7 +97,6 @@ Delete game=Slet spil
 Delete games, flush covers=Slet spil, ryd covers
 Delete slot=Slet plads
 Delete the !SaveState folder of %s?=Slet !SaveState-mappen for %s?
-Delete the folder=Slet mappen
 Delete the folder %s?=Slet mappen %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Slet indstillingerne gemt i emulatoren og brug AutoBleems igen?
 Diagnostics=Diagnostik

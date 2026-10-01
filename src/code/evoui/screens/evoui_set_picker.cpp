@@ -214,7 +214,7 @@ void GuiSetPicker::publishItems() const {
 //*******************************
 // the footer's hints: one row, whatever the language (the panel is as wide as it needs)
 static vector<abgui::HintItem> footerHints() {
-    return {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1", "R1"}, _("Tab")}, {{"L2", "R2"}, _("Page")}};
+    return {{{"X"}, _("Select")}, {{"O"}, _("Cancel")}, {{"L1/R1"}, _("Tab")}, {{"L2/R2"}, _("Page")}};
 }
 
 void GuiSetPicker::draw() {
@@ -293,8 +293,8 @@ void GuiSetPicker::draw() {
     if (t.firstVisible + rows < static_cast<int>(t.entries.size()))
         style.scrollMarker(gui->uiContext(), markerX, panel.y + TabsHeight + shown * RowHeight + 2, 1);
 
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 footerHints(), "", false);
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight), footerHints(),
+                 "", false);
 
     gui->text().setShadow(classicShadow);
 }

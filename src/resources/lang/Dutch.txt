@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -17,7 +17,6 @@ Applying settings...=Instellingen toepassen...
 Apps=Apps
 apps=apps
 Architecture=Architectuur
-Are you sure you want to delete=Weet je zeker dat je wilt verwijderen
 Are you sure you want to delete %s?=Weet je zeker dat je %s wilt verwijderen?
 Are you sure you want to flush all covers?=Weet je zeker dat je alle covers wilt wissen?
 Are you sure you want to power off?=Weet je zeker dat je wilt uitschakelen?
@@ -91,7 +90,6 @@ days=dagen
 Decompressing ecm:=Ecm decomprimeren:
 Defragment card=Kaart defragmenteren
 Delete=Verwijder
-Delete !SaveState folder for game=Verwijder !SaveState-map voor game
 Delete card=Verwijder kaart
 Delete card '%s'?=Kaart '%s' verwijderen?
 Delete folder=Map verwijderen
@@ -99,7 +97,6 @@ Delete game=Spel verwijderen
 Delete games, flush covers=Games verwijderen, covers wissen
 Delete slot=Slot verwijderen
 Delete the !SaveState folder of %s?=De !SaveState-map van %s verwijderen?
-Delete the folder=De map verwijderen
 Delete the folder %s?=De map %s verwijderen?
 Delete the settings saved in the emulator and use AutoBleem's again?=De in de emulator opgeslagen instellingen verwijderen en weer die van AutoBleem gebruiken?
 Diagnostics=Diagnose

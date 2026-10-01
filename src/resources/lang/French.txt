@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (entier)
 4:3 (integer)=4:3 (entier)
@@ -17,7 +17,6 @@ Applying settings...=Application des réglages...
 Apps=Applications
 apps=applications
 Architecture=Architecture
-Are you sure you want to delete=Êtes-vous sûr de vouloir supprimer
 Are you sure you want to delete %s?=Voulez-vous vraiment supprimer %s ?
 Are you sure you want to flush all covers?=Êtes-vous sûr de vouloir vider toutes les jaquettes ?
 Are you sure you want to power off?=Voulez-vous vraiment éteindre la console ?
@@ -91,7 +90,6 @@ days=jours
 Decompressing ecm:=Décompression ecm :
 Defragment card=Défragmenter la carte
 Delete=Supprimer
-Delete !SaveState folder for game=Supprimer le dossier !SaveState du jeu
 Delete card=Supprimer carte
 Delete card '%s'?=Supprimer la carte '%s' ?
 Delete folder=Supprimer le dossier
@@ -99,7 +97,6 @@ Delete game=Supprimer le jeu
 Delete games, flush covers=Supprimer des jeux, vider les jaquettes
 Delete slot=Supprimer l'emplacement
 Delete the !SaveState folder of %s?=Supprimer le dossier !SaveState de %s ?
-Delete the folder=Supprimer le dossier
 Delete the folder %s?=Supprimer le dossier %s ?
 Delete the settings saved in the emulator and use AutoBleem's again?=Supprimer les réglages enregistrés dans l'émulateur et revenir à ceux d'AutoBleem ?
 Diagnostics=Diagnostic

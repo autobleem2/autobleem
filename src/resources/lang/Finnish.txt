@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -17,7 +17,6 @@ Applying settings...=Otetaan asetukset käyttöön...
 Apps=Sovellukset
 apps=sovellukset
 Architecture=Arkkitehtuuri
-Are you sure you want to delete=Haluatko varmasti poistaa
 Are you sure you want to delete %s?=Haluatko varmasti poistaa %s?
 Are you sure you want to flush all covers?=Haluatko varmasti tyhjentää kaikki kannet?
 Are you sure you want to power off?=Haluatko varmasti sammuttaa laitteen?
@@ -91,7 +90,6 @@ days=päivää
 Decompressing ecm:=Puretaan ecm:
 Defragment card=Eheytä kortti
 Delete=Poista
-Delete !SaveState folder for game=Poista pelin !SaveState kansio
 Delete card=Poista kortti
 Delete card '%s'?=Poistetaanko kortti '%s'?
 Delete folder=Poista kansio
@@ -99,7 +97,6 @@ Delete game=Poista peli
 Delete games, flush covers=Poista pelejä, tyhjennä kansikuvat
 Delete slot=Poista paikka
 Delete the !SaveState folder of %s?=Poistetaanko kohteen %s !SaveState-kansio?
-Delete the folder=Poistetaanko kansio
 Delete the folder %s?=Poistetaanko kansio %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Poistetaanko emulaattoriin tallennetut asetukset ja käytetään taas AutoBleemin asetuksia?
 Diagnostics=Vianmääritys

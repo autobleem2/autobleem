@@ -89,6 +89,15 @@ TEST_CASE("the tag sits under a two-pad plate and gets out of a taller one's way
     CHECK(ChannelWatermark::Alpha == 204);
 }
 
+TEST_CASE("the tag's design sizes: the word bold 13, the version medium 14, the chip the word + 14") {
+    CHECK(ChannelWatermark::WordPx == 13);
+    CHECK(ChannelWatermark::VersionPx == 14);
+    CHECK(ChannelWatermark::ChipHeight == 24);
+    CHECK(ChannelWatermark::Y == 72);
+    CHECK(ChannelWatermark::chipWidth(21) == 35); // "DEV" at 13 px bold is about 21 px wide
+    CHECK(ChannelWatermark::chipWidth(0) == 14);
+}
+
 TEST_CASE("the real package strings: describe, describe + -n<fingerprint>, plain tags") {
     struct Row {
         const char *input;

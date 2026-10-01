@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -17,7 +17,6 @@ Applying settings...=Tillämpar inställningar...
 Apps=Appar
 apps=appar
 Architecture=Arkitektur
-Are you sure you want to delete=Är du säker på att du vill radera
 Are you sure you want to delete %s?=Är du säker på att du vill radera %s?
 Are you sure you want to flush all covers?=Är du säker på att du vill nollställa alla omslag?
 Are you sure you want to power off?=Är du säker på att du vill stänga av?
@@ -91,7 +90,6 @@ days=dagar
 Decompressing ecm:=Avkomprimerar ecm:
 Defragment card=Defragmentera kortet
 Delete=Radera
-Delete !SaveState folder for game=Radera !SaveState mapp för spel
 Delete card=Radera kort
 Delete card '%s'?=Radera kortet '%s'?
 Delete folder=Radera mapp
@@ -99,7 +97,6 @@ Delete game=Ta bort spel
 Delete games, flush covers=Ta bort spel, rensa omslag
 Delete slot=Ta bort plats
 Delete the !SaveState folder of %s?=Radera !SaveState-mappen för %s?
-Delete the folder=Radera mappen
 Delete the folder %s?=Radera mappen %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Radera inställningarna som sparats i emulatorn och använd AutoBleems igen?
 Diagnostics=Diagnostik

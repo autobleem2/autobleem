@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -17,7 +17,6 @@ Applying settings...=Se aplică setările...
 Apps=Aplicații
 apps=aplicații
 Architecture=Arhitectură
-Are you sure you want to delete=Esti sigur ca vrei sa stergi
 Are you sure you want to delete %s?=Sigur vrei să ștergi %s?
 Are you sure you want to flush all covers?=Esti sigur ca vrei sa stergi toate cover-urile?
 Are you sure you want to power off?=Esti sigur ca vrei sa opresti consola?
@@ -91,7 +90,6 @@ days=zile
 Decompressing ecm:=Decomprimare ecm:
 Defragment card=Defragmentează cardul
 Delete=Sterge
-Delete !SaveState folder for game=Sterge folderul !SaveState al jocului
 Delete card=Sterge card
 Delete card '%s'?=Ștergi cardul '%s'?
 Delete folder=Șterge dosarul
@@ -99,7 +97,6 @@ Delete game=Șterge jocul
 Delete games, flush covers=Sterge jocuri, curata coperti
 Delete slot=Șterge slotul
 Delete the !SaveState folder of %s?=Ștergi dosarul !SaveState al jocului %s?
-Delete the folder=Ștergi dosarul
 Delete the folder %s?=Ștergi dosarul %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Ștergi setările salvate în emulator și folosești din nou setările AutoBleem?
 Diagnostics=Diagnosticare

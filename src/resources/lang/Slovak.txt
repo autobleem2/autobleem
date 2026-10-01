@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 450
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -17,7 +17,6 @@ Applying settings...=Aplikujú sa nastavenia...
 Apps=Aplikácie
 apps=aplikácie
 Architecture=Architektúra
-Are you sure you want to delete=Ste si istý, že chcete zmazať
 Are you sure you want to delete %s?=Naozaj chcete zmazať %s?
 Are you sure you want to flush all covers?=Naozaj chcete zmazať všetky obaly?
 Are you sure you want to power off?=Naozaj chcete vypnúť konzolu?
@@ -91,7 +90,6 @@ days=dní
 Decompressing ecm:=Rozbaľovanie ECM:
 Defragment card=Defragmentovať kartu
 Delete=Zmazať
-Delete !SaveState folder for game=Odstrániť !SaveState priečinok pre hru
 Delete card=Zmazať kartu
 Delete card '%s'?=Zmazať kartu '%s'?
 Delete folder=Odstrániť priečinok
@@ -99,7 +97,6 @@ Delete game=Zmazať hru
 Delete games, flush covers=Zmazať hry, vyčistiť obaly
 Delete slot=Odstrániť pozíciu
 Delete the !SaveState folder of %s?=Odstrániť priečinok !SaveState hry %s?
-Delete the folder=Odstrániť priečinok
 Delete the folder %s?=Odstrániť priečinok %s?
 Delete the settings saved in the emulator and use AutoBleem's again?=Vymazať nastavenia uložené v emulátore a znova použiť nastavenia AutoBleemu?
 Diagnostics=Diagnostika
