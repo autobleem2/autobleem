@@ -120,12 +120,27 @@ void GuiMcManager::renderStatic() {
     }
 }
 
+void GuiMcManager::updateAnimFrame(unsigned int now) {
+    // only the slot under the pencil animates, from frame 0 at the moment the pencil comes to it: the frame is
+    // counted from that move, on the clock, so the frame cap does not change the speed
+    const int slot = pencilRow * 3 + pencilColumn;
+    if (pencilMemcard != animMemcard || slot != animSlot) {
+        animMemcard = pencilMemcard;
+        animSlot = slot;
+        moveTick = now;
+    }
+    const CardEdit *card = pencilMemcard == 1 ? memcard1.get() : memcard2.get();
+    animFrame = ableem::MemcardImage::iconFrameAt(card->image().iconFrameCount(slot), now - moveTick);
+}
+
 void GuiMcManager::renderMemCardIcons(int memcard) {
     const ableem::Rect grid = gridRect(memcard);
     CardEdit *currentCard = memcard == 1 ? memcard1.get() : memcard2.get();
     ableem::Rect output;
-    output.h = 75;
-    output.w = 75;
+    // whole-pixel scaling: the 16 px icon at 4x, centred in its 80 px slot (5x would fill the slot to its edges
+    // and close the gap between neighbours)
+    output.h = IconSize;
+    output.w = IconSize;
     for (int i = 0; i < 15; i++) {
         int col = i % 3;
         int line = i / 3;
@@ -133,8 +148,8 @@ void GuiMcManager::renderMemCardIcons(int memcard) {
         if ((pencilMemcard == memcard) && (pencilRow == line) && (pencilColumn == col)) {
             frame = animFrame;
         }
-        output.x = grid.x + IconInset + Slot * col;
-        output.y = grid.y + IconInset + Slot * line;
+        output.x = grid.x + IconInset + Slot * col + (Slot - IconSize) / 2;
+        output.y = grid.y + IconInset + Slot * line + (Slot - IconSize) / 2;
         if (currentCard->image().isUsed(i)) {
             renderer.copy(currentCard->icon(i, frame), nullptr, &output);
         }
@@ -365,9 +380,7 @@ void GuiMcManager::loop() {
                 break;
             }
         }
-        // the save icons' three frames, 100 ms each - on the clock, not counted in passes, so the frame cap
-        // (or a faster display) does not change their speed (was: every 6th pass at 60 fps)
-        animFrame = static_cast<int>((gui->platform().ticks() / 100) % 3);
+        updateAnimFrame(gui->platform().ticks());
         render();
     }
 }
