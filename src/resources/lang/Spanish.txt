@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (entero)
 4:3 (integer)=4:3 (entero)
@@ -358,9 +358,7 @@ see processors.log=consulta processors.log
 Select=Elegir
 Select memory card=Elige memory card
 Select or cancel highlighted option=Elige o cancela la opcion resaltada
-Select PS1 Game Category=Selecciona categoria de juegos PS1
 Select resume slot to load=ELIGE RANURA PARA CARGAR
-Select RetroArch Playlist=Seleccionar la plataforma de RetroArch
 Select right card=Elegir la tarjeta derecha
 Select slot to save state=ELIGE RANURA PARA GUARDAR
 SERIAL=SERIAL

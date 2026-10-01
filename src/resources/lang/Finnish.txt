@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (kokonaisluku)
 4:3 (integer)=4:3 (kokonaisluku)
@@ -358,9 +358,7 @@ see processors.log=katso processors.log
 Select=Valitse
 Select memory card=Valitse muistikortti
 Select or cancel highlighted option=Valitse tai peruuta korostettu vaihtoehto
-Select PS1 Game Category=Valitse PS1-peliluokka
 Select resume slot to load=VALITSE JATKO-PISTE JONKA HALUAT LADATA
-Select RetroArch Playlist=Valitse RetroArch alusta
 Select right card=Valitse oikea kortti
 Select slot to save state=VALITSE PAIKKA JATKO-PISTEELLE
 SERIAL=SARJA

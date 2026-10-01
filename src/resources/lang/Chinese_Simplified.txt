@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -358,9 +358,7 @@ see processors.log=请查看 processors.log
 Select=选择
 Select memory card=选择记忆卡
 Select or cancel highlighted option=选择或取消高亮选项
-Select PS1 Game Category=选择 PS1 游戏类别
 Select resume slot to load=选择要加载的存档槽位
-Select RetroArch Playlist=选择 RetroArch 播放列表
 Select right card=选择右侧记忆卡
 Select slot to save state=选择保存状态的槽位
 SERIAL=序列号

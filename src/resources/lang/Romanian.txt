@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (întreg)
 4:3 (integer)=4:3 (întreg)
@@ -358,9 +358,7 @@ see processors.log=vezi processors.log
 Select=Selecteaza
 Select memory card=Selecteaza card de memorie
 Select or cancel highlighted option=Confirma sau anuleaza optiunea subliniata
-Select PS1 Game Category=Selecteaza categoria de joc PS1
 Select resume slot to load=Selecteaza SLOT pentru incarcare
-Select RetroArch Playlist=Selectează platforma RetroArch
 Select right card=Alege cardul din dreapta
 Select slot to save state=Selecteaza SLOT pentru a salva starea curenta
 SERIAL=SERIE

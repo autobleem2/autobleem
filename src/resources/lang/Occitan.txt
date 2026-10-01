@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -358,9 +358,7 @@ see processors.log=vejatz processors.log
 Select=Causir
 Select memory card=Causir una carta memòria
 Select or cancel highlighted option=Activar o desactivar las opcions subrelinhadas
-Select PS1 Game Category=Causir la categoria de jòc PS1
 Select resume slot to load=CAUSISSÈTZ UN PUNT DE REPRESA A CARGAR
-Select RetroArch Playlist=Causissètz la plataforma RetroArch
 Select right card=Causir la carta drecha
 Select slot to save state=CAUSISSÈTZ UN LÒC PER SALVAGARDAR L'ESTAT
 SERIAL=NUMÈRO DE SERIA

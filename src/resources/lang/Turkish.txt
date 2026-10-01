@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -358,9 +358,7 @@ see processors.log=processors.log dosyasına bakın
 Select=Seç
 Select memory card=Hafıza kartı seçin
 Select or cancel highlighted option=Vurgulanan seçeneği seç veya iptal et
-Select PS1 Game Category=PS1 oyun kategorisi seçin
 Select resume slot to load=YÜKLEMEK İÇİN SLOT SEÇİN
-Select RetroArch Playlist=RetroArch platformu seç
 Select right card=Sağ kartı seç
 Select slot to save state=KAYDETMEK İÇİN SLOT SEÇİN
 SERIAL=SERİ NO

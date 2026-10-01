@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
@@ -358,9 +358,7 @@ see processors.log=viz processors.log
 Select=Vybrat
 Select memory card=Vybrat paměťovou kartu
 Select or cancel highlighted option=Vybrat nebo zrušit zvýrazněnou volbu
-Select PS1 Game Category=Vyberte kategorii her PS1
 Select resume slot to load=VYBERTE POZICI, ZE KTERÉ SE NAHRAJE PRERUŠENÁ HRA
-Select RetroArch Playlist=Vybrat platformu RetroArch
 Select right card=Vybrat pravou kartu
 Select slot to save state=VYBERTE POZICI, NA KTEROU SE ULOŽÍ ROZEHRANÁ HRA
 SERIAL=SERIAL

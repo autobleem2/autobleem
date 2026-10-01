@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
@@ -358,9 +358,7 @@ see processors.log=zie processors.log
 Select=Selecteer
 Select memory card=Selecteer memory card
 Select or cancel highlighted option=Selecteer of annuleer gemarkeerde optie
-Select PS1 Game Category=Selecteer PS1 game categorie
 Select resume slot to load=SELECTEER SLOT OM TE LADEN
-Select RetroArch Playlist=Selecteer RetroArch-platform
 Select right card=Rechterkaart kiezen
 Select slot to save state=SELECTEER SLOT OM OP TE SLAAN
 SERIAL=SERIENUMMER

@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 447
+# Untranslated: 0 / Total: 445
 
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -358,9 +358,7 @@ see processors.log=se processors.log
 Select=Välj
 Select memory card=Välj minneskort
 Select or cancel highlighted option=Välj eller avbryt aktuellt alternativ
-Select PS1 Game Category=Välj PS1-spelkategori
 Select resume slot to load=VÄLJ SPARPUNKT ATT LADDA
-Select RetroArch Playlist=Välj RetroArch-plattform
 Select right card=Välj höger kort
 Select slot to save state=VÄLJ SPARPUNKT ATT SPARA TILL
 SERIAL=SERIAL
