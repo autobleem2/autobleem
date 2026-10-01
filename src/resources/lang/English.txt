@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 443
+# Untranslated: 0 / Total: 447
 
 2x (integer)=2x (integer)
 4:3 (integer)=4:3 (integer)
