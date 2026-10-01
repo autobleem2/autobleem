@@ -1364,7 +1364,7 @@ bool GuiLauncher::prepareFrame() {
 //*******************************
 // GuiLauncher::takeBackdrop / dropBackdrop
 //*******************************
-// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame), captured
+// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame),
 // taken silently (the frame starts with the stack's clear(), so it goes straight into a render target and the window is
 // left as it is - the System menu stays up, BUG-31), and handed to Gui
 // for the screens opened from here. A capture that did not come (no texture) leaves no backdrop: the screens draw the
