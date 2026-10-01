@@ -299,6 +299,19 @@ jobs:
           private-key: ${{ secrets.AB_ADMIN_APP_KEY }}
           owner: autobleem2
           repositories: autobleem-appliance
+      # a re-run of only the failed jobs keeps `plan` (and the launchers the other targets built) from the
+      # first attempt: if a v* tag was deleted since, the name would still carry it (2026-10-01: a nightly
+      # named after the withdrawn v2.0.0-alpha2). Stop and ask for a fresh run instead of publishing that.
+      - name: Check the version still names an existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ needs.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="$V"; [[ "$V" =~ ^(.+)-[0-9]+-g[0-9a-f]+$ ]] && tag="${BASH_REMATCH[1]}"
+          [[ "$tag" == v* ]] || exit 0
+          [ "$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" --jq "[.[] | select(.ref == \"refs/tags/$tag\")] | length")" = 1 ] \
+            || { echo "::error::$V is named after tag $tag, which no longer exists - start a new run, do not re-run this one"; exit 1; }
       - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
         with:
           files: out/*.tar.gz
