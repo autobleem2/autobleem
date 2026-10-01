@@ -31,8 +31,8 @@ void GuiManager::init() {
     psGames.clear();
     psGames = PsGame::fromRecords(app.library().usbGames().loadUsbGames()); // Create list of games
     sort(psGames.begin(), psGames.end(), sortByTitle);                      // sort by title
-    const int titleWidth = GameDetailPane::rowsRight(*gui) - (gui->text().getOpscreenRectOfTheme().x +
-                                                              PanelStyle::RowInset + 8);
+    const int titleWidth =
+        GameDetailPane::rowsRight(*gui) - (gui->text().getOpscreenRectOfTheme().x + PanelStyle::RowInset + 8);
     for (auto &psGame : psGames)
         lines.emplace_back(gui->text().elide(font, psGame->title, titleWidth), "");
     failed = app.library().usbGames().loadFailedGames();
