@@ -31,6 +31,10 @@ on:
         description: force the runner router's hosted fallback (test-only)
         type: boolean
         default: false
+      channel:
+        description: preview = publish this branch's build as the rolling `preview` release (a feature branch, every target)
+        type: string
+        default: ''
 
 concurrency:
   group: publish-launcher-${{ github.ref }}
@@ -61,6 +65,8 @@ jobs:
       - id: v
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          # a preview of a feature branch: the branch may carry no v* tag at all, so it is named by its commit
+          elif [ "${{ inputs.channel }}" = preview ]; then echo "version=preview-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
           # a branch build is named as the launcher names itself (generate_version.cmake): the last v* tag,
           # the commits past it and the commit - v2.0.0-alpha2-5-gabc1234 - so the file says what it is
           else echo "version=$(git describe --tags --match 'v*' 2>/dev/null || echo "$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)")" >> "$GITHUB_OUTPUT"; fi
@@ -233,7 +239,8 @@ jobs:
     steps:
       - uses: autobleem2/autobleem-build/.github/actions/signpath-sign@develop
         with:
-          enabled: ${{ vars.AB_SIGNING_ENABLED == 'true' && github.event_name != 'pull_request' }}
+          # a preview ships unsigned at once (no hour waiting for an approval of a branch build)
+          enabled: ${{ vars.AB_SIGNING_ENABLED == 'true' && github.event_name != 'pull_request' && inputs.channel != 'preview' }}
           artifact: launcher-win64-unsigned
           path: stage
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -280,7 +287,7 @@ jobs:
   # was assembled from the old launcher. A partial manual run (fewer targets) would leave the others out.
   nightly:
     if: >-
-      !cancelled() && github.ref == 'refs/heads/develop' &&
+      !cancelled() && github.ref == 'refs/heads/develop' && inputs.channel != 'preview' &&
       (github.event_name == 'push' || needs.plan.outputs.full == 'true') &&
       needs.build.result == 'success' && (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
     needs: [plan, build, sign-win]
@@ -317,3 +324,24 @@ jobs:
           files: out/*.tar.gz
           version: ${{ needs.plan.outputs.version }}
           dispatch-token: ${{ steps.app.outputs.token }}
+
+  # a preview build (PLATFORM-20): a manual run of a feature branch with channel=preview and every target replaces
+  # the assets of the rolling `preview` pre-release. It never touches `nightly` and never starts an assembly -
+  # autobleem-main's preview workflow builds every component that has the branch, then assembles the preview.
+  preview:
+    if: >-
+      !cancelled() && github.event_name == 'workflow_dispatch' && inputs.channel == 'preview' &&
+      startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/develop' &&
+      needs.plan.outputs.full == 'true' && needs.build.result == 'success' &&
+      (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { pattern: launcher-*, path: out, merge-multiple: true }
+      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
+        with:
+          files: out/*.tar.gz
+          version: ${{ needs.plan.outputs.version }}
+          tag: preview
