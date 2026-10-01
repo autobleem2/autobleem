@@ -370,13 +370,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
         // the game's own cards, or the set it is mapped to (a game with no Game.ini says "" - its own)
         string memcard = app.memcards().activeCardName(game);
         if (memcard == MemcardService::SonyCard || memcard.empty()) {
-            leftCardName = "[1]" + _("INTERNAL");
-            rightCardName = "[2]" + _("INTERNAL");
+            leftCardName = "[1] " + _("INTERNAL");
+            rightCardName = "[2] " + _("INTERNAL");
             cardPath1 = game.ssFolder + sep + "memcards" + sep + "card1.mcd";
             cardPath2 = game.ssFolder + sep + "memcards" + sep + "card2.mcd";
         } else {
-            leftCardName = "[1]" + memcard;
-            rightCardName = "[2]" + memcard;
+            leftCardName = "[1] " + memcard;
+            rightCardName = "[2] " + memcard;
             cardPath1 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card1.mcd";
             cardPath2 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card2.mcd";
         }
