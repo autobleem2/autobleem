@@ -19,6 +19,12 @@ screen. For the loop "code -> build -> install in the VM -> try it -> fix" witho
   python tools/vm/abvm.py clip SECONDS OUT.mp4           the VM's screen as a video (ffmpeg on the test machine);
                                                          in `run`: clip start <name.mp4>; ...steps...; clip stop
   python tools/vm/abvm.py restart                        restart the launcher, wait until its DebugDriver answers
+  python tools/vm/abvm.py remount                        after a hard reset the stick's exFAT may not mount (udev made no
+                                                         /dev/disk/by-uuid link, the mount unit failed "Dependency
+                                                         failed"): finds the stick's partition from the mount unit,
+                                                         `udevadm trigger` on it, starts the mount and the launcher;
+                                                         `restart` does the same first; `status` only reports it.
+                                                         Never formats or fsck-repairs.
   python tools/vm/abvm.py shot OUT.png                   the VM's whole screen (the emulator and Apps included)
   python tools/vm/abvm.py pad "<script>"                 the virtual pad: press a; wait 300; dpad down; ...
   python tools/vm/abvm.py run "<script>" [--out DIR]     pad steps and screenshots in one go, timed on the test
@@ -34,7 +40,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          boot, the cover DBs shared read-only (_shared/db)
   python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
                                                          Apps; no games, empty databases
-  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
+  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease (release stops a launcher left running)
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
                                                          (with System/Extensions/store/{cache,downloads,staging,sources})
   python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
@@ -57,7 +63,10 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
   python tools/vm/abvm.py sandbox stop|reset|rm <name>   quit it (the driver's `quit`, a kill after 5 s) / start it
                                                          afresh from the template / delete it
   python tools/vm/abvm.py sandbox list                   every sandbox, running or not, and its lease
-At most ABVM_SANDBOX_SLOTS (default 3; the VM has 5 vCPUs) run at once - an idle launcher still uses a whole CPU; a full house is exit 3.
+At most 2 sandboxes run at once, a ceiling in the code (the VM has 5 vCPUs and an idle launcher uses a whole CPU - three
+of them hung the VM twice, 2026-10-02). ABVM_SANDBOX_SLOTS may only lower it (1). `sandbox start` counts the launchers
+that really run in the guest (state files and the guest's own process list) and refuses a third: exit 3, naming the
+running ones - `sandbox stop <name>` (with its lease) frees a slot.
 
 Scripts: steps separated by ';'. Pad steps: press/release <btn>, hold <btn> <ms>, tap <btn> (a 120 ms hold),
 stick <left|right> <x> <y>, trigger <l2|r2> <0..255>, dpad <dir|center>, reset; profile <x360|ds4|generic>
@@ -295,7 +304,79 @@ def driver_answers():
     return out not in ('', '0')
 
 
+STICK_MOUNT_UNIT = 'media-autobleem.mount'  # /media/autobleem, the stick's data partition
+
+
+def stick_source(what):
+    """the mount unit's What= as (kind, value): /dev/disk/by-uuid/X -> ('uuid', X), by-label -> ('label', ...),
+    by-partuuid -> ('partuuid', ...), a plain /dev node -> ('dev', node)"""
+    m = re.fullmatch(r'/dev/disk/by-(uuid|label|partuuid|partlabel)/(.+)', what.strip())
+    if m:
+        value = m.group(2)
+        # the unit's own escaping of a label with a space
+        return m.group(1), value.replace('\\x20', ' ')
+    return ('dev', what.strip()) if what.strip().startswith('/dev/') else (None, what.strip())
+
+
+def find_stick_partition(lsblk_out, kind, value):
+    """the partition's /dev node from `lsblk -rno NAME,UUID,LABEL,PARTUUID,PARTLABEL` (raw: spaces are \\x20), or None"""
+    column = {'uuid': 1, 'label': 2, 'partuuid': 3, 'partlabel': 4}.get(kind)
+    for line in lsblk_out.splitlines():
+        cols = [c.replace('\\x20', ' ') for c in line.split(' ')]
+        cols += [''] * (5 - len(cols))
+        if kind == 'dev':
+            if '/dev/' + cols[0] == value:
+                return value
+        elif column and cols[column] and cols[column] == value:
+            return '/dev/' + cols[0]
+    return None
+
+
+def stick_mount_state():
+    """(unit state, the unit's What=) - read only"""
+    out = guest_run(f'systemctl show -p ActiveState -p What {STICK_MOUNT_UNIT}; true', check=False)
+    props = dict(line.split('=', 1) for line in out.splitlines() if '=' in line)
+    return props.get('ActiveState', '?'), props.get('What', '')
+
+
+def remount(apply=True):
+    """a hard reset can leave the stick's exFAT unmounted: udev never made the /dev/disk/by-uuid link, so the mount
+    unit failed "Dependency failed" and the launcher stays down. Read-only checks first; only when the unit has
+    failed and the partition is there: udevadm trigger on that partition, start the mount, start the launcher.
+    Never formats, never fsck-repairs. Returns what it found/did, one line per step (apply=False: report only)."""
+    state, what = stick_mount_state()
+    if state == 'active':
+        return ['stick mount: active - nothing to do']
+    if state != 'failed':
+        return [f'stick mount: {state} (only a failed mount is recovered)']
+    lines = [f'stick mount: failed ({STICK_MOUNT_UNIT} wants {what or "?"})']
+    kind, value = stick_source(what)
+    if not kind:
+        return lines + ['cannot tell which partition the unit mounts - left alone']
+    part = find_stick_partition(
+        guest_run('lsblk -rno NAME,UUID,LABEL,PARTUUID,PARTLABEL; true', check=False), kind, value)
+    if not part:
+        return lines + [f'the partition ({kind} {value}) is not in the guest - nothing to trigger (is the stick attached?)']
+    lines.append(f'partition present: {part}')
+    if not apply:
+        return lines + ['run `abvm.py remount` (or `restart`) to trigger udev, mount it and start the launcher']
+    guest_run(f'sudo udevadm trigger --name-match={shlex.quote(part)} && sudo udevadm settle --timeout=10; true',
+              check=False)
+    lines.append(f'udevadm trigger --name-match={part}')
+    guest_run(f'sudo systemctl reset-failed {STICK_MOUNT_UNIT}; sudo systemctl start {STICK_MOUNT_UNIT}; true', check=False)
+    state = stick_mount_state()[0]
+    lines.append(f'start {STICK_MOUNT_UNIT}: {state}')
+    if state != 'active':
+        raise Fail('\n'.join(lines + [f'the stick still does not mount - see `abvm.py guest "journalctl -u {STICK_MOUNT_UNIT} '
+                                      f'-n 20 --no-pager; true"`; not formatting or repairing it']))
+    guest_run('sudo systemctl start autobleem.service; true', check=False)
+    lines.append('start autobleem.service')
+    return lines
+
+
 def restart(timeout=90):
+    for line in remount():
+        print(line)
     guest_run('sudo systemctl restart autobleem.service')
     end = time.time() + timeout
     time.sleep(2)
@@ -619,7 +700,7 @@ def lease_subject():
 LOCK_MINUTES = 30      # a lease's default length
 LOCK_KEEPALIVE = 10    # every command of the holder keeps the lease at least this many minutes ahead
 # what changes the VM or its screen; status, shot and lock itself never need the lease
-NEEDS_LEASE = {'install', 'restore', 'restart', 'clip', 'pad', 'run', 'drive', 'padsim-install', 'guest'}
+NEEDS_LEASE = {'install', 'restore', 'restart', 'remount','clip', 'pad', 'run', 'drive', 'padsim-install', 'guest'}
 WHO = os.environ.get('ABVM_WHO', '')
 
 
@@ -798,7 +879,12 @@ SB_HOST = os.environ.get('ABVM_SANDBOXES', '~/abvm/sandboxes')
 SB_GUEST = os.environ.get('ABVM_SANDBOX_MOUNT', '/mnt/abvm')
 SB_SHARE = 'abvm-sandboxes'   # the <filesystem> target in the VM's domain XML
 SB_PORTS = range(6910, 6920)
-SB_SLOTS = int(os.environ.get('ABVM_SANDBOX_SLOTS', '3'))  # headless launchers running at once (the VM has 5 vCPUs since 2026-09-30)
+SB_MAX_SLOTS = 2  # headless launchers running at once, never more (an idle one takes a whole CPU; 5 vCPUs; the VM hung at 3)
+# the environment can only lower it: a missing, garbled or too-high value is the ceiling
+try:
+    SB_SLOTS = max(1, min(SB_MAX_SLOTS, int(os.environ.get('ABVM_SANDBOX_SLOTS', SB_MAX_SLOTS))))
+except ValueError:
+    SB_SLOTS = SB_MAX_SLOTS
 STICK = '/media/autobleem'
 MOUNT_UNIT = 'mnt-abvm.mount'
 
@@ -848,6 +934,29 @@ def sb_guest_pid_alive(name, pid):
 def sb_running(name):
     st = sb_state(name)
     return st if st.get('pid') and sb_guest_pid_alive(name, st['pid']) else None
+
+
+def sb_names_in_cmdlines(text):
+    """the sandbox names whose launcher the guest's process list shows: one cmdline per line, the launcher's last
+    argument is its root <SB_GUEST>/<name>"""
+    found = set()
+    for line in text.splitlines():
+        if 'autobleem-gui' not in line:
+            continue
+        m = re.search(re.escape(SB_GUEST) + r'/([a-z0-9][a-z0-9-]*)(?:/|\s|$)', line)
+        if m:
+            found.add(m.group(1))
+    return found
+
+
+def sb_running_names(exclude=''):
+    """every sandbox that really runs, from the VM's own state: the launchers in the guest's process list (a launcher
+    whose state file was lost or reset still takes its CPU) and the state files whose pid is still that launcher"""
+    out = guest_run('for p in $(pidof autobleem-gui); do tr "\\0" " " < /proc/$p/cmdline 2>/dev/null; echo; done; true',
+                    check=False)
+    names = sb_names_in_cmdlines(out) | {n for n in sb_names() if sb_running(n)}
+    names.discard(exclude)
+    return sorted(names)
 
 
 def sb_open_modes(path):
@@ -983,8 +1092,42 @@ def sb_stop_forward(st):
         os.kill(int(pid), 15)
 
 
+def sb_full_message(running):
+    return (f'busy: {len(running)} sandboxes already run ({", ".join(running)}); at most {SB_SLOTS} may - an idle '
+            f'launcher takes a whole CPU and a third one hangs the VM. Stop one you own '
+            f'(abvm.py sandbox stop <name>, with its lease) or try again later')
+
+
+def sb_reap_unleased(names):
+    """stop the launchers among `names` whose lease is gone (expired, or released without a stop): their holder died
+    or forgot them, and each takes a whole CPU and a place under the cap. One someone holds is never touched; one
+    with no state file (no pid to stop) stays and is still counted. Returns the names still running."""
+    global LEASE_KEY
+    kept, saved = [], LEASE_KEY
+    try:
+        for n in names:
+            if not sb_running(n):  # seen only in the guest's process list: no pid of ours to stop
+                kept.append(n)
+                continue
+            LEASE_KEY = f'sb-{n}'
+            if lease_op('show') == 'free':
+                print(f'sandbox {n}: its launcher runs with no lease - stopping it')
+                sb_stop(n)
+            if sb_running(n):
+                kept.append(n)
+    finally:
+        LEASE_KEY = saved
+    return kept
+
+
 def sb_start(name, build=None, size=None, exts=()):
     size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
+    if not sb_running(name):  # refuse before the sandbox is made or a build is laid over it
+        others = sb_running_names(exclude=name)
+        if len(others) >= SB_SLOTS:
+            others = sb_reap_unleased(others)
+        if len(others) >= SB_SLOTS:
+            raise Busy(sb_full_message(others))
     if not os.path.isdir(sb_host(name)):
         sb_new(name, build, exts)
     else:
@@ -996,10 +1139,9 @@ def sb_start(name, build=None, size=None, exts=()):
         print(f'sandbox {name} already runs on port {sb_state(name)["port"]}')
         return
     sb_stop_forward(sb_state(name))  # a launcher that ended without `sandbox stop` (a crash, a SIGTERM) left it
-    running = [n for n in sb_names() if n != name and sb_running(n)]
+    running = sb_running_names(exclude=name)
     if len(running) >= SB_SLOTS:
-        raise Busy(f'busy: no free sandbox slot ({SB_SLOTS}; running: {", ".join(running)}) - '
-                   'do something else and try again later')
+        raise Busy(sb_full_message(running))
     used = {sb_state(n).get('port') for n in running}
 
     def free_here(p):
@@ -1023,7 +1165,7 @@ def sb_start(name, build=None, size=None, exts=()):
     # .abvm/power_supply; the window is `size` (the offscreen driver's own is 1024x768)
     env = (f'AB_ROOT={g} AB_RUNTIME_DIR={rt} AB_LOG_DIR={g}/System/Logs AB_DEBUG_PORT={port} AB_NO_SPLASH=1 '
            f'AB_HEADLESS=1 AB_INPUT_ISOLATED=1 SDL_VIDEODRIVER=offscreen SDL_AUDIODRIVER=dummy '
-           f'AB_WINDOW_SIZE={size} AB_DEBUG_OUT={g}/.abvm/out AB_PAD_BATTERY_DIR={g}/.abvm/power_supply AB_MAX_FPS=30')
+           f'AB_WINDOW_SIZE={size} AB_DEBUG_OUT={g}/.abvm/out AB_PAD_BATTERY_DIR={g}/.abvm/power_supply AB_MAX_FPS=10')
     extra = os.environ.get('ABVM_SANDBOX_ENV', '')  # more for the launcher, e.g. AB_FRAME_STATS=1
     if extra:
         env += ' ' + ' '.join(shlex.quote(w) for w in extra.split())
@@ -1134,6 +1276,17 @@ def sb_stop(name, use_driver=True):
     print(f'sandbox {name} stopped')
 
 
+def sb_release(name):
+    """give a sandbox's lease back - and stop its launcher first if the holder forgot to: a launcher left running
+    takes a whole CPU and a slot of the cap. Only the holder's own release (or one of a free lease) stops it; a
+    release refused because someone else holds the sandbox touches nothing."""
+    holder = lease_op('show')
+    if WHO and (holder == 'free' or holder.startswith(f'held by {WHO} (')) and sb_running(name):
+        print(f'sandbox {name}: the launcher is still running - stopping it before the release')
+        sb_stop(name)
+    print(lease_op('release', WHO))
+
+
 def sb_remove(name):
     root = sb_host(name)
     r = subprocess.run(['rm', '-rf', root], capture_output=True, text=True)
@@ -1187,7 +1340,7 @@ def sandbox_command(args, out_dir):
             minutes = int(args[3]) if len(args) > 3 else LOCK_MINUTES
             print(lease_op('take', WHO, args[2] if len(args) > 2 else '', minutes))
         else:
-            print(lease_op('release', WHO))
+            sb_release(name)
     elif sub == 'logs':
         path = os.path.join(sb_host(name), 'System', 'Logs', 'abvm-out.txt')
         n = int(args[2]) if len(args) > 2 else 40
@@ -1254,6 +1407,10 @@ def status():
     print(f'guest     {guest_address()}')
     units = guest_run('systemctl is-active autobleem.service padsim.service', check=False).split()
     print(f'launcher  {units[0] if units else "?"}' + (f' ({launcher_exe()})' if units[:1] == ['active'] else ''))
+    stick = remount(apply=False)  # read only: status holds no lease
+    print(f'stick     {stick[0]}')
+    for line in stick[1:]:
+        print(f'          {line}')
     print(f'padsim    {units[1] if len(units) > 1 else "?"}')
     print(f'driver    {"listening" if driver_answers() else "not listening"} on the guest\'s :{DRIVER_PORT}')
     tool = host_run(f'test -f {REMOTE_TOOL} && echo yes || echo no', check=False).strip() if not LOCAL else 'yes'
@@ -1326,6 +1483,8 @@ def main(argv):
             restore()
         elif cmd == 'restart':
             restart()
+        elif cmd == 'remount':
+            print('\n'.join(remount()))
         elif cmd == 'shot':
             shot(args[0])
         elif cmd == 'clip':

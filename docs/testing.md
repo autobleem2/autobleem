@@ -218,9 +218,14 @@ reset` starts it afresh in under a second. `--ext <zip or dir>` (repeatable, on 
 extension over the sandbox as well - a zip is unzipped at the root (the extension zips hold `Extensions/<name>/...`),
 a directory `.../extensions/<name>/` is copied to `Extensions/<name>/`; what it replaces is kept once in
 `<sandbox>/.abvm/ext-backup/<name>`. E.g. `--ext ~/src/ext_store-theme/dist/ext_store-pcusb-1.0.1.zip`.
+`sandbox release <name>` stops a launcher its holder left running (the same clean quit as `sandbox stop`) before it
+gives the lease back - a forgotten launcher takes a whole CPU and a place under the two-sandbox cap; a release
+refused because someone else holds the sandbox touches nothing. When the cap is full, `sandbox start` first stops
+the launchers whose lease is gone (expired - their holder died - or released without a stop) and only then refuses.
 
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
-(1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=30`, and its outputs in its own folder:
+(1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=10` (the VM draws in software, every frame costs CPU; `ABVM_SANDBOX_ENV=AB_MAX_FPS=30` for a clip
+that must be smooth), and its outputs in its own folder:
 `AB_DEBUG_OUT=<sandbox>/.abvm/out` and `AB_PAD_BATTERY_DIR=<sandbox>/.abvm/power_supply`. Since the sandbox's root
 is a folder on the test machine, the launcher writes a `shot` or a clip's frames straight onto the test machine's
 disk; `sandbox drive` gives each run its own `.abvm/out/<run>/`, turns clips into MP4 there with ffmpeg and copies
