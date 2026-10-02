@@ -1098,10 +1098,34 @@ def sb_full_message(running):
             f'(abvm.py sandbox stop <name>, with its lease) or try again later')
 
 
+def sb_reap_unleased(names):
+    """stop the launchers among `names` whose lease is gone (expired, or released without a stop): their holder died
+    or forgot them, and each takes a whole CPU and a place under the cap. One someone holds is never touched; one
+    with no state file (no pid to stop) stays and is still counted. Returns the names still running."""
+    global LEASE_KEY
+    kept, saved = [], LEASE_KEY
+    try:
+        for n in names:
+            if not sb_running(n):  # seen only in the guest's process list: no pid of ours to stop
+                kept.append(n)
+                continue
+            LEASE_KEY = f'sb-{n}'
+            if lease_op('show') == 'free':
+                print(f'sandbox {n}: its launcher runs with no lease - stopping it')
+                sb_stop(n)
+            if sb_running(n):
+                kept.append(n)
+    finally:
+        LEASE_KEY = saved
+    return kept
+
+
 def sb_start(name, build=None, size=None, exts=()):
     size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
     if not sb_running(name):  # refuse before the sandbox is made or a build is laid over it
         others = sb_running_names(exclude=name)
+        if len(others) >= SB_SLOTS:
+            others = sb_reap_unleased(others)
         if len(others) >= SB_SLOTS:
             raise Busy(sb_full_message(others))
     if not os.path.isdir(sb_host(name)):

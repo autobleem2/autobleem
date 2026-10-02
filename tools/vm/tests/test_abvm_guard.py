@@ -150,5 +150,26 @@ class Release(unittest.TestCase):
         self.release('free', True, who='').assert_not_called()
 
 
+class Reap(unittest.TestCase):
+    """a full cap first stops launchers whose lease is gone; held ones and ones with no pid of ours stay"""
+
+    def test_only_unleased_launchers_with_a_pid_are_stopped(self):
+        alive = {'dead-holder': True, 'held': True}
+        leases = {'sb-dead-holder': 'free', 'sb-held': 'held by tola (walk) since 21:00, 5 min left'}
+        stopped = []
+
+        def stop(n):
+            stopped.append(n)
+            alive[n] = False
+
+        with mock.patch.object(abvm, 'sb_running', side_effect=lambda n: {'pid': 7} if alive.get(n) else None), \
+                mock.patch.object(abvm, 'sb_stop', side_effect=stop), \
+                mock.patch.object(abvm, 'lease_op', side_effect=lambda op, *a: leases[abvm.LEASE_KEY]):
+            kept = abvm.sb_reap_unleased(['dead-holder', 'held', 'no-state'])
+        self.assertEqual(stopped, ['dead-holder'])
+        self.assertEqual(kept, ['held', 'no-state'])
+        self.assertEqual(abvm.LEASE_KEY, 'vm')
+
+
 if __name__ == '__main__':
     unittest.main()
