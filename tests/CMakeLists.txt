@@ -66,3 +66,7 @@ target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/
 # The set picker's tab list with and without the RetroArch tab (evoui/screens/set_picker_tabs.h, pure)
 ab_add_test(test_set_picker_tabs screens/test_set_picker_tabs.cpp)
 target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
+ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
+target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)

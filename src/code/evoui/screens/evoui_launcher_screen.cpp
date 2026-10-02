@@ -7,6 +7,7 @@
 #include "../channel_watermark.h"
 #include "../controls/hint_slots.h"
 #include "../set_banner.h"
+#include "ra_gates.h"
 #include "core/version.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
@@ -237,6 +238,8 @@ void GuiLauncher::rememberSelection() {
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet is not used.  probably not the intent.
+    // every way into a set passes here: one that needs RetroArch is never shown without it (ra_gates.h)
+    selection.set = setOrFallback(selection.set, Env::retroArchInstalled());
     PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
     PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set
@@ -912,6 +915,8 @@ void GuiLauncher::loadAssets() {
     texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
              _("Resume game from saved state point")};
 
+    // a remembered Lightgun set is not offered without RetroArch: back to the PlayStation set
+    app.session().launcher.set = setOrFallback(app.session().launcher.set, Env::retroArchInstalled());
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)
         selection.ps1SelectState = Ps1SelectState::AllGames; // see rememberSelection()
