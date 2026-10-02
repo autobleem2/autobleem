@@ -24,6 +24,17 @@ const int HeadingHeight = 44; // the heading between ours and the third-party on
 const char *const OurExtensions[] = {"store", "pscbios", "hello"};
 // the console's hardware tool (WiFi, time zone, pads): on the console it cannot be switched off here
 const char *const PscBiosExtension = "pscbios";
+
+// An extension's Description= is its own English line. The two the team ships are translated with the launcher's
+// language files (BUG-47) - listed here as literals so lang_tools finds their keys; any other extension's line is
+// shown as written.
+string descriptionOf(const ExtensionInfo &extension) {
+    if (extension.description == "Wi-Fi, time zone, Bluetooth and gamepads")
+        return _("Wi-Fi, time zone, Bluetooth and gamepads");
+    if (extension.description == "Download apps and games")
+        return _("Download apps and games");
+    return extension.description;
+}
 } // namespace
 
 const int GuiExtensions::HeadingRow; // odr-used by push_back (C++14)
@@ -207,8 +218,8 @@ void GuiExtensions::draw() {
                                              ? style.rowColor(i == selected)
                                              : style.disabledColor(gui->uiContext(), style.rowColor(i == selected)),
                                          XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? e.description : reason, textX, rowY + 41,
-                                         style.description, XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? descriptionOf(e) : reason, textX,
+                                         rowY + 41, style.description, XALIGN_LEFT);
         if (!reason.empty())
             style.disabled(gui->uiContext(), row);
         rowY += RowHeight;

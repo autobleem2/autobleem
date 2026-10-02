@@ -968,9 +968,17 @@ Copyright (c) 2016-2023 Viktor Kirilov
 https://opensource.org/licenses/MIT
 ```
 
+## Red Hat Text
+
+*src/resources/fonts/RedHatText-Medium.ttf, RedHatText-SemiBold.ttf - the launcher's fonts* - **SIL Open Font License 1.1**
+
+```
+Copyright 2024 The Red Hat Project Authors (https://github.com/RedHatOfficial/RedHatFont). The licence text is in src/resources/fonts/OFL.txt.
+```
+
 ## Open Sans
 
-*src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - the launcher's fonts* - **SIL Open Font License 1.1**
+*src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - a font to pick in Options* - **SIL Open Font License 1.1**
 
 ```
 Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans). The licence text is in src/resources/fonts/OFL.txt.

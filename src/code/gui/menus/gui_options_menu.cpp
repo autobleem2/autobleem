@@ -154,7 +154,7 @@ void GuiOptions::fill() {
     lines.emplace_back(CFG_ANIMATIONS, _("Animations:"), "animations", true, vector<string>({"false", "true"}));
 
     heading(_("Fonts"));
-    // "themefont" on: the default font (Open Sans, Fonts::DefaultClassicFont) on every theme - the key kept its
+    // "themefont" on: the theme's font, else the default (Red Hat Text, Fonts::DefaultClassicFont) - the key kept its
     // name when a theme's own classic font stopped being read (2026-09-29)
     lines.emplace_back(CFG_THEME_FONT, _("Use default font:"), "themefont", true, vector<string>({"false", "true"}));
     lines.emplace_back(CFG_FONT, _("Font:"), "font", false, getFonts());
@@ -332,6 +332,16 @@ void GuiOptions::doKeyUp() {
 std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &value) {
     if (info.id == CFG_SHOWINGTIMEOUT)
         return Strings::toInt(value, 0) <= 0 ? _("Off") : value + "s";
+    if (info.id == CFG_FONT) {
+        // the font really drawing the classic screens (BUG-45): the theme's, the shipped Red Hat Text, a Chinese
+        // UI's Noto, or the user's own - not the stored choice, which "Use default font" leaves unused. While a
+        // change of it is waiting to be applied the row shows the choice
+        const string &file = gui->assets().classicFontFile();
+        if (pendingReload || file.empty())
+            return value;
+        const size_t cut = file.find_last_of("/\\");
+        return cut == string::npos ? file : file.substr(cut + 1);
+    }
     if (info.id == CFG_DISPLAY) {
         const OutputMode mode = OutputMode::parse(value);
         if (!mode.isAuto())
