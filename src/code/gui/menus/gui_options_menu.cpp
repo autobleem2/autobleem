@@ -407,6 +407,10 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
 //*******************************
 void GuiOptions::loadFor(int id, const string &nextValue) {
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
+    // the launcher's snapshot under this screen is of the OLD theme: dropped once, so the panel now draws over the
+    // new theme's own background (renderBackground() falls back to it) - no readback, no per-frame cost
+    if (id == CFG_THEME)
+        gui->clearLauncherBackdrop();
     gui->beginBusy(_("Loading..."), [this]() { render(); });
     if (id == CFG_LANG)
         app.lang().load(Env::getPathToLangDir(), nextValue);
