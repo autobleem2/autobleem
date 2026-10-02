@@ -275,7 +275,7 @@ compiled into `ableem_engine` from `lib_ableem/third_party/sqlite/sqlite3ab.c`. 
   `tests/core/test_cd_image.cpp` noticed; see autobleem-main `docs/history/launcher-build.md` for the
   libmamecd-to-libchdr refresh story and the matching pcsx-ab refresh.
 - External libs: SDL2, SDL2_image, SDL2_mixer, SDL2_ttf, pthreads. Vendored, all inside lib_ableem:
-  SQLite, nlohmann json + `fifo_map`, miniz, plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
+  SQLite, nlohmann json + `fifo_map`, miniz, stb_image (the theme converter reads a background with it), plog and libchdr + lzma/zlib/zstd (`lib_ableem/third_party/`),
   `unecm.c` and SDL_FontCache (`lib_ableem/src/`).
 - `PRE_BUILD` step copies `src/resources/` next to the binary; the app expects to run from that dir.
 - **Code style** (from AutoBleem-NG): `.clang-format` at the root (LLVM, 4-space indent, 120
