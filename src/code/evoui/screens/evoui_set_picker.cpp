@@ -3,6 +3,8 @@
 //
 #include "evoui_set_picker.h"
 #include "../evoui_plural.h"
+#include "set_picker_tabs.h"
+#include "ra_gates.h"
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
@@ -54,7 +56,9 @@ void GuiSetPicker::init() {
     // the tab icons are the Context's (ab_gui G5c: a theme's launcher.icons, else evoimg/tab_*.png), asked at draw time
     tabs.clear();
     tabs.push_back({_("PlayStation"), "tabPlayStation", {}, 0, 0});
-    tabs.push_back({_("RetroArch"), "tabRetroArch", {}, 0, 0});
+    layout.retroArch = retroArch;
+    if (retroArch)
+        tabs.push_back({_("RetroArch"), "tabRetroArch", {}, 0, 0});
     tabs.push_back({_("Apps"), "tabApps", {}, 0, 0});
     buildTabs();
     cancelled = true;
@@ -85,22 +89,24 @@ void GuiSetPicker::buildTabs() {
     }
     ps.entries.push_back({_("Favorite games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
     ps.entries.push_back({_("Game history"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
-    if (c.lightgun > 0)
+    if (c.lightgun > 0 && lightgunSetAvailable(layout.retroArch))
         ps.entries.push_back(
             {_("Lightgun games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
 
-    // RetroArch: a playlist each
-    Tab &ra = tabs[1];
-    ra.entries.clear();
-    for (size_t i = 0; i < raPlaylists.size(); i++) {
-        const size_t n = i < c.playlists.size() ? static_cast<size_t>(c.playlists[i]) : 0;
-        ra.entries.push_back({raPlaylists[i], games(n), 0, GameSet::RetroArch, Ps1SelectState::AllGames,
-                              static_cast<int>(i), raPlaylists[i]});
+    // RetroArch (only with the program): a playlist each
+    if (layout.retroArch) {
+        Tab &ra = tabs[layout.retroArchTab()];
+        ra.entries.clear();
+        for (size_t i = 0; i < raPlaylists.size(); i++) {
+            const size_t n = i < c.playlists.size() ? static_cast<size_t>(c.playlists[i]) : 0;
+            ra.entries.push_back({raPlaylists[i], games(n), 0, GameSet::RetroArch, Ps1SelectState::AllGames,
+                                  static_cast<int>(i), raPlaylists[i]});
+        }
     }
 
     // Apps: "All apps" first, then one row per category present (autobleem-main
     // docs/archive/app-format-plan.md's Category=)
-    Tab &apps = tabs[2];
+    Tab &apps = tabs[layout.apps()];
     apps.entries.clear();
     auto appsCount = [](size_t n) { return pluralApps(n); };
     apps.entries.push_back(
@@ -118,7 +124,7 @@ void GuiSetPicker::buildTabs() {
     }
 
     // the tab and row of what shows now
-    tab = selection.set == GameSet::RetroArch ? 1 : selection.set == GameSet::Apps ? 2 : 0;
+    tab = layout.tabFor(selection.set);
     Tab &current = tabs[tab];
     current.selected = 0;
     for (size_t i = 0; i < current.entries.size(); i++) {

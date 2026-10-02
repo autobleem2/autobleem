@@ -6,6 +6,7 @@
 //
 #include "evoui_launcher.h"
 #include "evoui_set_picker.h"
+#include "ra_gates.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
 #include "gui/screens/gui_confirm.h"
@@ -60,6 +61,7 @@ void GuiLauncher::loop_chooseSet() {
     const long countsDone = gui->platform().ticks();
     GuiSetPicker picker(*gui);
     picker.selection = selection;
+    picker.retroArch = retroArchInstalledCached();
     picker.raPlaylists = raPlaylists;
     picker.counts = &setCounts;
     BackdropScope backdrop(*this); // the picker draws over the launcher's snapshot
@@ -108,20 +110,20 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     app.session().emuMode = EmuMode::Pcsx;
 
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
+    // (without the RetroArch program none of this applies: the game starts in PCSX, the flags stay saved - ra_gates.h)
     if (selectedIsPs1()) {
-        if (selection.set == GameSet::Lightgun)
-            return loop_squareButton_Pressed(); // a light-gun game: RetroArch's core has the guncon
+        bool playUsingRa = false;
         if (app.session().runningGame->internal) {
-            if (app.session().runningGame->play_using_ra)
-                return loop_squareButton_Pressed(); // play internal PSX game in RA
+            playUsingRa = app.session().runningGame->play_using_ra; // play internal PSX game in RA
         } else {
             IniFile gameini;
             gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
-            if (gameini.values["play_using_ra"] == "true")
-                return loop_squareButton_Pressed(); // play PSX game in RA
+            playUsingRa = gameini.values["play_using_ra"] == "true"; // play PSX game in RA
         }
-        if (app.config().inifile.values["play_all_psx_with_ra"] == "true")
-            return loop_squareButton_Pressed(); // play PSX game in RA
+        // a light-gun game (the Lightgun set): RetroArch's core has the guncon
+        if (startPs1InRetroArch(Env::retroArchInstalled(), selection.set == GameSet::Lightgun, playUsingRa,
+                                app.config().inifile.values["play_all_psx_with_ra"] == "true"))
+            return loop_squareButton_Pressed();
     }
 
     if (app.session().runningGame->foreign) {
@@ -484,6 +486,7 @@ void GuiLauncher::loop_openSystemMenu() {
     {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
+        systemMenu.retroArchInstalled = retroArchInstalledCached();
         systemMenu.scanInProgress = app.scans().scanning();
         systemMenu.networkUnavailable = networkUnavailable();
         systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();

@@ -7,6 +7,7 @@
 #include "../channel_watermark.h"
 #include "../controls/hint_slots.h"
 #include "../set_banner.h"
+#include "ra_gates.h"
 #include "core/version.h"
 #include "../evoui_plural.h"
 #include "gui/gui.h"
@@ -237,6 +238,8 @@ void GuiLauncher::rememberSelection() {
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet is not used.  probably not the intent.
+    // every way into a set passes here: one that needs RetroArch is never shown without it (ra_gates.h)
+    selection.set = setOrFallback(selection.set, Env::retroArchInstalled());
     PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
     PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set
@@ -779,7 +782,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 // exists (its index may have moved), else the first one
 void GuiLauncher::refreshPlaylistNames() {
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir()))
+    if (Env::retroArchInstalled()) // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
 
     auto pick = [&](GameSetSelection &sel) {
@@ -902,7 +905,7 @@ void GuiLauncher::loadAssets() {
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir())) {
+    if (Env::retroArchInstalled()) { // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
     }
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
@@ -912,6 +915,8 @@ void GuiLauncher::loadAssets() {
     texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
              _("Resume game from saved state point")};
 
+    // a remembered Lightgun set is not offered without RetroArch: back to the PlayStation set
+    app.session().launcher.set = setOrFallback(app.session().launcher.set, Env::retroArchInstalled());
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)
         selection.ps1SelectState = Ps1SelectState::AllGames; // see rememberSelection()

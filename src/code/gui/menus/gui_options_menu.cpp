@@ -172,12 +172,16 @@ void GuiOptions::fill() {
     // PS1 emulator it applies to
     lines.emplace_back(CFG_PAD_SWAP, _("Swap Player 1 / Player 2 (PS1 emulators):"), "padswap", true,
                        vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
-                       vector<string>({"false", "true"}));
-    lines.emplace_back(CFG_RACONFIG, _("Update RA config:"), "raconfig", true, vector<string>({"false", "true"}));
-    // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
-    lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
-                       vector<string>({"false", "true"}));
+    // the three RetroArch rows only where the RetroArch program is installed (Env::retroArchInstalled); their
+    // saved values are keyed by name and stay as they are while the rows are hidden
+    if (Env::retroArchInstalled()) {
+        lines.emplace_back(CFG_PLAY_ALL_PSX_WITH_RA, _("Play all PSX games with RA:"), "play_all_psx_with_ra", true,
+                           vector<string>({"false", "true"}));
+        lines.emplace_back(CFG_RACONFIG, _("Update RA config:"), "raconfig", true, vector<string>({"false", "true"}));
+        // RetroArch's config_save_on_exit (see Config): whether a change made in RetroArch is kept
+        lines.emplace_back(CFG_RA_PERSIST, _("Persist RetroArch config:"), "rapersist", true,
+                           vector<string>({"false", "true"}));
+    }
 
     heading(_("Library"));
 #ifdef AB_HAS_INTERNAL_GAMES

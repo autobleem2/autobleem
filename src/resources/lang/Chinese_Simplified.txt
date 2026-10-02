@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 455
+# Untranslated: 0 / Total: 457
 
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -56,6 +56,7 @@ Check the download site for a newer version=请到下载站点查看更新版本
 Checking for updates...=正在检查更新...
 Cheers, screemer=祝玩得开心，screemer
 Choose=选择
+Choose the games shown: PlayStation or Apps and the group=选择显示的游戏：PlayStation 或应用，以及分组
 Choose the games shown: PlayStation, RetroArch or Apps and the group=选择显示的游戏：PlayStation、RetroArch 或应用，以及分组
 Clock=时钟频率
 Clock:=时钟：
@@ -415,6 +416,7 @@ Switch on=启用
 Switched off=已停用
 Symbols=符号
 System=系统
+System menu (Re-scan, Memory Cards, Power off, ...)=系统菜单（重新扫描、记忆卡、关机……）
 System menu (Re-scan, RetroArch, Memory Cards, Power off, ...)=系统菜单（重新扫描、RetroArch、记忆卡、关机……）
 System menu...=系统菜单...
 Tab=标签页
