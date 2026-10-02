@@ -6,6 +6,7 @@
 #include "gui_options_menu_base.h"
 #include "gui/gui.h"
 #include "gui/hold_repeat.h"
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -101,6 +102,9 @@ public:
     std::string doOptionIndex(unsigned int index) override;
 
     int exitCode = 0;
+    // set by the screen that opened Options (the launcher): called once after a language or font reload, to take the
+    // snapshot under Options again - the old one is of the launcher in the old language and font (BUG-49)
+    std::function<void()> backdropRefresh;
     // Options -> Display changed: the OutputMode token to try (config.ini keeps the old one until the new
     // one is confirmed - GuiKeepDisplay); "" when the row was not changed
     std::string newOutputMode;
