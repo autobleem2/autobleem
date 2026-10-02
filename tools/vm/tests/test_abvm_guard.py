@@ -123,5 +123,32 @@ class Remount(unittest.TestCase):
             self.run_remount([self.FAILED, 'ActiveState=failed\n'])
 
 
+class Release(unittest.TestCase):
+    """a release stops a launcher its holder forgot to stop; never one someone else holds"""
+
+    def release(self, holder, running, who='ela'):
+        with mock.patch.object(abvm, 'WHO', who), \
+                mock.patch.object(abvm, 'sb_running', return_value={'pid': 7} if running else {}), \
+                mock.patch.object(abvm, 'sb_stop') as stop, \
+                mock.patch.object(abvm, 'lease_op', side_effect=lambda op, *a: holder if op == 'show' else 'ok'):
+            abvm.sb_release('a')
+        return stop
+
+    def test_own_lease_with_a_running_launcher_stops_it(self):
+        self.release('held by ela (walk) since 21:00, 5 min left', True).assert_called_once_with('a')
+
+    def test_free_lease_with_a_left_launcher_stops_it(self):
+        self.release('free', True).assert_called_once_with('a')
+
+    def test_someone_elses_sandbox_is_left_alone(self):
+        self.release('held by tola (walk) since 21:00, 5 min left', True).assert_not_called()
+
+    def test_nothing_running_nothing_stopped(self):
+        self.release('held by ela (walk) since 21:00, 5 min left', False).assert_not_called()
+
+    def test_no_name_stops_nothing(self):
+        self.release('free', True, who='').assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

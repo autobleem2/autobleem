@@ -40,7 +40,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          boot, the cover DBs shared read-only (_shared/db)
   python tools/vm/abvm.py sandbox template               _template from the stick: its launcher, themes, extensions,
                                                          Apps; no games, empty databases
-  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease
+  python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease (release stops a launcher left running)
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
                                                          (with System/Extensions/store/{cache,downloads,staging,sources})
   python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
@@ -1252,6 +1252,17 @@ def sb_stop(name, use_driver=True):
     print(f'sandbox {name} stopped')
 
 
+def sb_release(name):
+    """give a sandbox's lease back - and stop its launcher first if the holder forgot to: a launcher left running
+    takes a whole CPU and a slot of the cap. Only the holder's own release (or one of a free lease) stops it; a
+    release refused because someone else holds the sandbox touches nothing."""
+    holder = lease_op('show')
+    if WHO and (holder == 'free' or holder.startswith(f'held by {WHO} (')) and sb_running(name):
+        print(f'sandbox {name}: the launcher is still running - stopping it before the release')
+        sb_stop(name)
+    print(lease_op('release', WHO))
+
+
 def sb_remove(name):
     root = sb_host(name)
     r = subprocess.run(['rm', '-rf', root], capture_output=True, text=True)
@@ -1305,7 +1316,7 @@ def sandbox_command(args, out_dir):
             minutes = int(args[3]) if len(args) > 3 else LOCK_MINUTES
             print(lease_op('take', WHO, args[2] if len(args) > 2 else '', minutes))
         else:
-            print(lease_op('release', WHO))
+            sb_release(name)
     elif sub == 'logs':
         path = os.path.join(sb_host(name), 'System', 'Logs', 'abvm-out.txt')
         n = int(args[2]) if len(args) > 2 else 40

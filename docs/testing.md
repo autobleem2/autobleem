@@ -218,6 +218,9 @@ reset` starts it afresh in under a second. `--ext <zip or dir>` (repeatable, on 
 extension over the sandbox as well - a zip is unzipped at the root (the extension zips hold `Extensions/<name>/...`),
 a directory `.../extensions/<name>/` is copied to `Extensions/<name>/`; what it replaces is kept once in
 `<sandbox>/.abvm/ext-backup/<name>`. E.g. `--ext ~/src/ext_store-theme/dist/ext_store-pcusb-1.0.1.zip`.
+`sandbox release <name>` stops a launcher its holder left running (the same clean quit as `sandbox stop`) before it
+gives the lease back - a forgotten launcher takes a whole CPU and a place under the two-sandbox cap; a release
+refused because someone else holds the sandbox touches nothing.
 
 A sandbox runs with `AB_INPUT_ISOLATED=1` (the VM's own pads and keyboard never reach it), `AB_WINDOW_SIZE`
 (1280x720, `--size WxH` or `ABVM_SANDBOX_SIZE` for another), `AB_MAX_FPS=10` (the VM draws in software, every frame costs CPU; `ABVM_SANDBOX_ENV=AB_MAX_FPS=30` for a clip
