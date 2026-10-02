@@ -1432,9 +1432,15 @@ void GuiLauncher::dropBackdrop() {
 //*******************************
 // UIREV-43: the PS1 "all games" set (not Favorites, History, folders, RetroArch, Apps) with no game in it - a fresh
 // install. The card goes the moment a scan adds games (reloadGames() fills the carousel).
+// Where there are no internal games (a Pi, a PC stick, Windows) "all games" is the USB games row (the folder tree's row
+// 0): GameQueryService::gamesFor() turns AllGames into GamesSubdir there, and the set picker offers only that row.
 bool GuiLauncher::welcomeCardShows() const {
-    return carousel.games.empty() && selection.set == GameSet::PS1 &&
-           selection.ps1SelectState == Ps1SelectState::AllGames;
+    if (!carousel.games.empty() || selection.set != GameSet::PS1)
+        return false;
+    if (selection.ps1SelectState == Ps1SelectState::AllGames)
+        return true;
+    return selection.ps1SelectState == Ps1SelectState::GamesSubdir && selection.usbGameDirIndex == 0 &&
+           !app.gameQuery().showInternalGames();
 }
 
 //*******************************
