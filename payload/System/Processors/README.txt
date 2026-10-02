@@ -15,9 +15,10 @@ Each processor is a folder of its own:
         bin/linux-i386/<name>           the PC stick
         bin/windows-x86_64/<name>.exe   Windows
 
-Only the bin/ folders for your machines are needed. Unpack a processor here and the
-next scan runs it. The System menu (L2+R2) -> Scanner processors puts them in order
-and switches them on or off; sequence.ini in this folder is that order.
+Only the bin/ folders for your machines are needed. Unpack a processor here and it
+shows up in the System menu (L2+R2) -> Scanner processors switched OFF, for PS1 games
+and for RetroArch ROMs: it does nothing until you switch it on there. The same screen
+puts them in order; sequence.ini in this folder is that order and the on/off.
 
 Unzip comes with AutoBleem: it unpacks zipped PS1 games and ROMs. It is also the example
 to copy when you write your own:
