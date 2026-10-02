@@ -313,6 +313,19 @@ only (never merged from `default`) and a value that is not one of the two forms 
 black veil and the row's text unchanged** (`default` and `ab2` look exactly as before). **Set**, a disabled row's text
 is drawn in the `description` role as well as being veiled - the label and the value.
 
+**The panel sheet (`sheet`, G6c).** The sheet under every panel (Options, the lists, the dialogs, the keyboard, a
+notification bubble that has no `toast` frame) is black at alpha 200 unless the theme says otherwise. The theme's own
+`sheet` role sets the colour and the alpha, in `launcher.colors`, in the same two forms as `disabled`:
+
+```json
+"colors": { "sheet": { "color": "#1d1f28", "alpha": 200 } }
+```
+
+It is filled over the panel's rect first, then the `panel` frame (or the code-drawn edge) is drawn over it - so a
+**rim-only `panel` frame (`"fill": false`)**, which is what the bridge's is, sits on the sheet. A frame with a centre
+is drawn over the sheet too. Read from the selected theme's own `theme.json` only; a value that is not one of the two
+forms is ignored (unset). **Unset = the black sheet as before** (`default` and `ab2` look exactly as they did).
+
 **How faint an inactive thing draws (`launcher.inactive`, G5r9).** Three things are drawn fainter when they are not
 active, each at alpha 120 in code: the Resume icon of a game with no resume point, the icon of a tab that is not the
 current one (the set picker), and the track under a progress bar's fill (the notification bubble's, and every
@@ -394,6 +407,35 @@ Files at the theme's root that the json does not name are kept. A folder with la
 
 A rect is taken only when all four of its keys are there; colours (`r,g,b`) become `#rrggbb`.
 
+**The bridge (G6c).** A 1.0 theme has a background and little else, so the converter also writes - once, at
+conversion, never at run time - what makes it look tidy on the 2.0 screens:
+
+| Written | From |
+|---|---|
+| `launcher.colors`: `text`, `secondary`, `hint`, `row`, `rowSelected`, `heading`, `value`, `description`, `footer`, `selectionBand`, `edge` | derived (`ThemeColorDeriver`, `src/code/core/services/theme_color_deriver.*`) from the background's palette and the 1.0 colours (`colors.ini` `fg`/`sec`, `Text_fg`, `Main_bg`). Every text role is at least 4.5:1 on the sheet and the accent (`edge`, `selectionBand`) 3:1; a monochrome picture takes the grey accent (about `#6b6b6b`); an own text colour below 4.5:1 becomes the accent and the text a near-white |
+| `launcher.colors.sheet` `{color, alpha 200}` | the dark sheet, always (a tint of the picture's darkest dominant colour, or `Main_bg`) |
+| `launcher.colors.disabled` `{color, alpha 120}` | the sheet's colour |
+| `launcher.frames` | the ONE shared bridge set, ten 9-slice frames (`panel` - a rim only, `selection`, `heading`, `key`, `keyFunction`, `keyLit`, `keySelected`, `field`, `chip`, `badge`), every image written `bridge:frames/<name>.png` and tinted by a derived role |
+| `launcher.logo` `{file,x,y,w,h}` | `Logo` + `Lpositionx/y`, `Lw/Lh`; none for an empty rect, an empty `Logo=` or a logo file that is not there |
+| `launcher.hints.square` | `GR/Squere_Btn_ICN.png` (or `Square_Btn_ICN.png`), renamed to `images/hint_square.png` |
+| `converter` `{stamp, sum}` | the stamp (`ThemeConverter::StampVersion`) and a sum of the blocks above as written |
+
+Two 1.0 pictures are **left out** when they cannot do what 2.0 asks of them, and the default theme's is used: a button
+hint (`GR/X_Btn_ICN.png`, `Circle_Btn_ICN.png`, `Tri_Btn_ICN.png`, `Squere_Btn_ICN.png`) more than twice as tall as it
+is wide - 20 of the pack's 200 are 30 x 80 and 30 x 200 sprite strips, which the footers would draw whole - and a Play
+button (`GR/Acid_C_Btn.png`) with nothing in it (the stock one is 200 x 68 of full transparency, which 2.0 draws as a
+black box). A file that cannot be decoded is used as it is.
+
+The frames are not copied into the theme: **`bridge:` is a marker the frame reader resolves under the launcher's
+`bridge/` resources folder** (`bridge/frames/panel.png`, `@2x` next to it). A theme that is not a converted one may use it
+too. A frame whose image is not there is dropped (the code-drawn box stays).
+
+**Re-deriving.** The roles are derived once. A theme whose `converter.stamp` is below the converter's
+`StampVersion` is derived again, once, when it loads (from its own `theme.json` and background; the new stamp is
+written) - but only while the blocks the converter wrote still match the stamp's `sum`: a theme the user edited keeps
+every edit, and a `theme.json` with no stamp (written by hand, or converted before the bridge) is never touched.
+Nothing re-derives a theme while the stamp stays what it is: the stamp is raised, on purpose, by us.
+
 | PSC image | role |
 |---|---|
 | `GR/AB_BG.png` if present, else `GR/JP_US_BG.png` | `launcher.background` (an `AB_BG` sets `metaPanelSlides: false`) |
@@ -402,7 +444,7 @@ A rect is taken only when all four of its keys are there; colours (`r,g,b`) beco
 | `CB/Function_AB.png` else `CB/Function_BG.png` | `launcher.settingsPanel` |
 | `CB/PlayerOne.png` | `launcher.metaPanel` |
 | `GR/arrow.png` | `launcher.arrow` |
-| `GR/X_Btn_ICN.png`, `GR/Circle_Btn_ICN.png`, `GR/Tri_Btn_ICN.png` | `launcher.hints.*` |
+| `GR/X_Btn_ICN.png`, `GR/Circle_Btn_ICN.png`, `GR/Tri_Btn_ICN.png`, `GR/Squere_Btn_ICN.png` | `launcher.hints.cross`, `circle`, `triangle`, `square` |
 | `CB/Setting_ICN.png`, `CB/Manual_ICN.png`, `CB/MemoryCard_ICN.png`, `CB/Resume.png` | `launcher.menuIcons.*` |
 | `MC/Dot_Matrix.png`, `MC/Pencil_Carsor.png` | `launcher.memcardManager.*` |
 | `font/SST-Medium.ttf`, `font/SST-Bold.ttf` | `launcher.fonts.*` (names kept) |

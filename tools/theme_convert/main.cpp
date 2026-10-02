@@ -13,6 +13,20 @@
 
 using namespace std;
 
+// the colours the bridge derived (G6c2), so a theme's author can see them and hand-edit theme.json
+static void printRoles(const string &themeDir) {
+    const string json = themeDir + sep + "theme.json";
+    ThemeSpec spec;
+    if (!spec.load(json))
+        return;
+    const auto &c = spec.launcher.colors;
+    const ableem::ThemeSheet sheet = ableem::readThemeSheet(json);
+    cout << "  colours: sheet " << sheet.color.toHex() << " alpha " << sheet.alpha << ", text " << c.text.toHex()
+         << ", row " << c.row.color.toHex() << ", secondary " << c.secondary.toHex() << ", heading "
+         << c.heading.color.toHex() << ", edge " << c.edge.color.toHex() << ", selection band "
+         << c.selectionBand.color.toHex() << endl;
+}
+
 int main(int argc, char *argv[]) {
     if (argc == 3 && string(argv[1]) == "--one") {
         const string dir = DirEntry::removeSeparatorFromEndOfPath(argv[2]);
@@ -20,7 +34,10 @@ int main(int argc, char *argv[]) {
             cout << dir << ": nothing to do" << endl;
             return 0;
         }
-        return ThemeConverter::convert(dir) ? 0 : 1;
+        if (!ThemeConverter::convert(dir))
+            return 1;
+        printRoles(dir);
+        return 0;
     }
     if (argc != 2) {
         cout << "usage: theme_convert <themesDir> | --one <themeDir>" << endl;
@@ -42,8 +59,12 @@ int main(int argc, char *argv[]) {
             cout << entry.name << ": nothing to do" << endl;
             continue;
         }
-        if (!ThemeConverter::convert(dir))
+        if (!ThemeConverter::convert(dir)) {
             failures++;
+            continue;
+        }
+        cout << entry.name << ": converted" << endl;
+        printRoles(dir);
     }
     return failures == 0 ? 0 : 1;
 }
