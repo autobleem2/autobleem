@@ -62,3 +62,7 @@ target_include_directories(test_set_banner PRIVATE ${CMAKE_SOURCE_DIR}/src/code/
 # BUG-41: the Memory Cards counter's text (gui/menus/memcard_counter.h, pure) - "Card n/N", "0/0" with no cards
 ab_add_test(test_memcard_counter screens/test_memcard_counter.cpp)
 target_include_directories(test_memcard_counter PRIVATE ${CMAKE_SOURCE_DIR}/src/code/gui)
+
+# The set picker's tab list with and without the RetroArch tab (evoui/screens/set_picker_tabs.h, pure)
+ab_add_test(test_set_picker_tabs screens/test_set_picker_tabs.cpp)
+target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)

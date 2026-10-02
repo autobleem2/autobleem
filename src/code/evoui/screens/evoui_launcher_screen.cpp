@@ -779,7 +779,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 // exists (its index may have moved), else the first one
 void GuiLauncher::refreshPlaylistNames() {
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir()))
+    if (Env::retroArchInstalled()) // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
 
     auto pick = [&](GameSetSelection &sel) {
@@ -902,7 +902,7 @@ void GuiLauncher::loadAssets() {
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir())) {
+    if (Env::retroArchInstalled()) { // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
     }
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the

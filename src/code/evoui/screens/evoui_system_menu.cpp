@@ -104,7 +104,8 @@ void GuiSystemMenu::init() {
         addItem(SystemMenuAction::About, "About", _("About"), _("About AutoBleem"));
 
         addHeading(_("Leave"));
-        addItem(SystemMenuAction::RetroArch, "RetroArch", retroArchLabel, _("Exit to") + " " + retroArchLabel);
+        if (retroArchInstalled)
+            addItem(SystemMenuAction::RetroArch, "RetroArch", retroArchLabel, _("Exit to") + " " + retroArchLabel);
         addItem(SystemMenuAction::PowerOff, "Power off", _("Power off"), _("Safely power off the console"));
     }
 

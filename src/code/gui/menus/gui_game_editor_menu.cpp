@@ -130,11 +130,14 @@ void GuiEditor::buildRows() {
 
     heading(_("Game"));
     boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE);
-    boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN);
-    boolRow(_("Play using RA:"),
-            (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
-                                                       : gameIni.values["play_using_ra"] == "true",
-            OPT_PLAY_USING_RA);
+    // both are RetroArch-only (a flagged light-gun game always launches through RetroArch): left out without it
+    if (Env::retroArchInstalled()) {
+        boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN);
+        boolRow(_("Play using RA:"),
+                (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
+                                                           : gameIni.values["play_using_ra"] == "true",
+                OPT_PLAY_USING_RA);
+    }
     boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
 
     // the game has its own config, saved in an emulator's menu: the rows below show its values, greyed,

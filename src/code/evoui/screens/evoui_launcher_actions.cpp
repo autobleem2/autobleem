@@ -60,6 +60,7 @@ void GuiLauncher::loop_chooseSet() {
     const long countsDone = gui->platform().ticks();
     GuiSetPicker picker(*gui);
     picker.selection = selection;
+    picker.retroArch = retroArchInstalledCached();
     picker.raPlaylists = raPlaylists;
     picker.counts = &setCounts;
     BackdropScope backdrop(*this); // the picker draws over the launcher's snapshot
@@ -484,6 +485,7 @@ void GuiLauncher::loop_openSystemMenu() {
     {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
+        systemMenu.retroArchInstalled = retroArchInstalledCached();
         systemMenu.scanInProgress = app.scans().scanning();
         systemMenu.networkUnavailable = networkUnavailable();
         systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
