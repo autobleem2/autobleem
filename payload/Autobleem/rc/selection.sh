@@ -120,6 +120,44 @@ echo Custom PCSX
 cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx
 [ -f /tmp/pcsx ] && chmod +x /tmp/pcsx
 
+# The power LED while the launcher loads after a wake (the owner's report, 2026-10-02: at a first boot it blinks
+# orange/green until AutoBleem is up - that blink is Sony's own boot, boot.sh writes no LED - but after a wake from
+# the standby it went straight to solid green and looked finished long before the launcher was). The same pattern as
+# AutoBleem 1.x's flashleds(): orange (red + green) / green, 250 ms each. A background loop, its pid in
+# /tmp/.abledblink.pid; it ends by itself when the launcher removes /tmp/.abload, or after the splash's own 40 s,
+# and leaves the LED solid green. Every other LED writer stops it first (led_blink_stop, by that pid only) and
+# the loop also checks its pid file before each write, so a red set by the standby or poweroff_instead is never
+# overwritten by a late step of it.
+LEDBLINK_PID=/tmp/.abledblink.pid
+led_blink_stop() {
+    [ -s $LEDBLINK_PID ] && kill "$(cat $LEDBLINK_PID)" 2>/dev/null
+    rm -f $LEDBLINK_PID
+}
+led_blink_pause() {
+    usleep 250000 2> /dev/null || sleep 0.25 2> /dev/null || sleep 1
+}
+led_blink_start() {
+    led_blink_stop
+    : > $LEDBLINK_PID # the loop checks it is there (written before the fork, the pid follows)
+    (
+        n=0
+        while [ -f /tmp/.abload ] && [ -f $LEDBLINK_PID ] && [ $n -lt 80 ]; do
+            echo 1 > /sys/class/leds/red/brightness
+            echo 1 > /sys/class/leds/green/brightness
+            led_blink_pause
+            [ -f $LEDBLINK_PID ] || exit 0
+            echo 0 > /sys/class/leds/red/brightness
+            led_blink_pause
+            n=$((n + 1))
+        done
+        [ -f $LEDBLINK_PID ] || exit 0
+        echo 0 > /sys/class/leds/red/brightness
+        echo 1 > /sys/class/leds/green/brightness
+        rm -f $LEDBLINK_PID
+    ) < /dev/null > /dev/null 2>&1 &
+    echo $! > $LEDBLINK_PID
+}
+
 # When the kernel will not suspend at all: a real power off, as AutoBleem 1.x did it. A USB host on the
 # micro-USB (power) port - the AutoBleem kernel's OTG, a hub with the stick on it - refuses suspend-to-RAM
 # while it serves a device ("trying to suspend as a_host while active", usb1 error -16); shutdown only
@@ -152,6 +190,7 @@ poweroff_instead() {
     else
         mark_ram "poweroff_instead: the stick could not be mounted for the log (dev=$DEV)"
     fi
+    led_blink_stop
     echo 0 > /sys/class/leds/green/brightness
     echo 1 > /sys/class/leds/red/brightness
     mark_ram "poweroff_instead: shutdown -h now (the stick is unmounted)"
@@ -413,6 +452,7 @@ standby() {
     fi
     mark "USB gadget handled (was on: $GADGET_ON)"
 
+    led_blink_stop
     echo 0 > /sys/class/leds/green/brightness
     echo 1 > /sys/class/leds/red/brightness
     sync
@@ -456,6 +496,9 @@ standby() {
         echo "no absplash on tmpfs" >> $SLOG
     fi
     rm -f /tmp/.abdown # the black cover of the power down is done (the picture above is on top of it)
+    # the LED blinks as at a first boot until the launcher removes /tmp/.abload (see led_blink_start); only with the
+    # picture up - without absplash nothing holds .abload and the LED stays the solid green set above
+    [ -f /tmp/.abload ] && led_blink_start
 
     # The rear (OTG) port on the AutoBleem kernel: MediaTek's musb driver does not restart its host session after
     # a resume, so a hub or dongle there stays gone - WiFi and Bluetooth dead after every wake (2026-09-26: the
@@ -487,6 +530,9 @@ standby() {
         sleep 1
     done
     if [ -z "$DEV" ]; then
+        led_blink_stop
+        echo 1 > /sys/class/leds/green/brightness # solid green again: the reboot follows
+        echo 0 > /sys/class/leds/red/brightness
         rm -f /tmp/.abload
         echo "$(date) no stick within 60 s after the wake - rebooting" >> $SLOG
         blkid | sed 's/^/  blkid: /' >> $SLOG
