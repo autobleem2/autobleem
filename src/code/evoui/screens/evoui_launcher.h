@@ -441,6 +441,8 @@ public:
     // the game menu's caption (menuHead/menuText) is the one of the icon the cursor is on - or is moving to, while
     // an icon move runs - set whenever that is not what it shows, so it can never lag or miss the selection
     void syncMenuCaption();
+    // headers/texts translated again when the language changed since they were (also resets the caption)
+    void retranslateMenu();
     // any of the game's resume slots active (UIREV-13: greys the Resume icon and refuses opening the
     // picker when this is false)
     bool gameHasResumePoints(const PsGamePtr &game) const;

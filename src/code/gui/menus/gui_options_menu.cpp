@@ -424,6 +424,10 @@ void GuiOptions::loadFor(int id, const string &nextValue) {
     GuiOptionsMenuBase::init();
     computePagePosition();
     gui->endBusy();
+    // the language and the fonts change what the launcher under the panel shows: the snapshot is taken again, once,
+    // into a render target (no readback); after endBusy(), as the launcher's frame ends the busy state itself
+    if (id != CFG_THEME && backdropRefresh && gui->hasLauncherBackdrop())
+        backdropRefresh();
 }
 
 //*******************************

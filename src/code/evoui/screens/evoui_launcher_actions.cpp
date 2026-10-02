@@ -169,6 +169,12 @@ void GuiLauncher::loop_openOptions() {
     const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
     GuiOptions option(*gui);
     BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
+    // a language or font change: the snapshot is of the old language and font - taken again (the scope still owns it)
+    option.backdropRefresh = [this]() {
+        retranslateMenu(); // the caption under the gear is in the new language too
+        syncMenuCaption();
+        takeBackdrop(true);
+    };
     option.show();
     bool exitCode = option.exitCode;
 
