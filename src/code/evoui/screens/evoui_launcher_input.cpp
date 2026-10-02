@@ -33,15 +33,7 @@ void GuiLauncher::loop() {
     queuedScroll = 0;
 
     while (menuVisible) {
-        // the menu's headers and blurbs in the current language - Options may have changed it on the way
-        // back into this loop, which is the one time they need translating again
-        if (headersLanguage != app.lang().currentLanguage()) {
-            headersLanguage = app.lang().currentLanguage();
-            captionOption = -1; // the caption is translated again too
-            headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
-                     _("Resume game from saved state point")};
-        }
+        retranslateMenu(); // Options may have changed the language on the way back into this loop
 
         time = gui->platform().ticks();
         for (auto &obj : staticElements) {

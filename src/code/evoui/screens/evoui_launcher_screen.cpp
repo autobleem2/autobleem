@@ -1751,6 +1751,21 @@ bool GuiLauncher::gameHasResumePoints(const PsGamePtr &game) const {
 }
 
 //*******************************
+// GuiLauncher::retranslateMenu
+//*******************************
+// the menu's headers and blurbs in the current language - once per language change (the loop calls it every pass; the
+// Options screen, after a language pick, before it retakes the launcher snapshot, BUG-49)
+void GuiLauncher::retranslateMenu() {
+    if (headersLanguage == app.lang().currentLanguage())
+        return;
+    headersLanguage = app.lang().currentLanguage();
+    captionOption = -1; // the caption is translated again too
+    headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
+             _("Resume game from saved state point")};
+}
+
+//*******************************
 // GuiLauncher::syncMenuCaption
 //*******************************
 void GuiLauncher::syncMenuCaption() {
