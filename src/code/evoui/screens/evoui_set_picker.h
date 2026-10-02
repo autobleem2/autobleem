@@ -1,10 +1,10 @@
 //
 // GuiSetPicker: what Select opens in the launcher - one screen for "which games are shown": three tabs,
 // PlayStation, RetroArch (only with the program installed) and Apps (icons), L1/R1 between them; inside a tab
-// the groups as rows - all games, internal, favorites, history, light-gun games and every games folder on the PlayStation tab, a
-// playlist each on the RetroArch tab, the one Apps group on the last - Up/Down over them, L2/R2 a page,
-// Cross picks, Circle leaves things as they are. It replaces Select cycling the sets and L2+Select opening
-// a folder or playlist picker (2026-09-21).
+// the groups as rows - all games, internal, favorites, history, light-gun games and every games folder on the
+// PlayStation tab, a playlist each on the RetroArch tab, the one Apps group on the last - Up/Down over them,
+// L2/R2 a page, Cross picks, Circle leaves things as they are. It replaces Select cycling the sets and L2+Select
+// opening a folder or playlist picker (2026-09-21).
 //
 #pragma once
 
@@ -31,7 +31,7 @@ public:
     void loop() override;
 
     GameSetSelection selection; // in: what shows now; out: what was picked
-    bool retroArch = true; // false: no RetroArch tab (the program is not installed - Env::retroArchInstalled)
+    bool retroArch = true;      // false: no RetroArch tab (the program is not installed - Env::retroArchInstalled)
     std::vector<std::string> raPlaylists;
     // the numbers on the rows, worked out by the launcher and kept until the library changes
     // (GuiLauncher::setCounts) - required
