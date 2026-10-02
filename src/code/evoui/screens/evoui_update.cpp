@@ -15,6 +15,23 @@ const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
 const int LineHeight = 30;
 
+// UpdateService's failure texts are English (it is SDL-free and runs on a worker thread, with no language of its
+// own): the screen puts them through the language files (BUG-46). The folder in "cannot create <folder>" stays as is.
+string errorText(const string &error) {
+    const string create = "cannot create ";
+    if (error.compare(0, create.size(), create) == 0)
+        return _("cannot create") + " " + error.substr(create.size());
+    if (error == "cannot read the release list")
+        return _("cannot read the release list");
+    if (error == "the AutoBleem package could not be downloaded")
+        return _("the AutoBleem package could not be downloaded");
+    if (error == "the RetroArch build could not be downloaded")
+        return _("the RetroArch build could not be downloaded");
+    if (error == "cannot write pending.json")
+        return _("cannot write pending.json");
+    return error;
+}
+
 // "42.1 MB"
 string human(uint64_t bytes) {
     char buf[32];
@@ -195,7 +212,7 @@ void GuiUpdateProgress::draw() {
         break;
     case UpdateService::Phase::Failed:
         title = _("Update failed");
-        detail = status.error;
+        detail = errorText(status.error);
         break;
     default:
         title = "";
