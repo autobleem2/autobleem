@@ -238,6 +238,8 @@ void GuiLauncher::rememberSelection() {
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet is not used.  probably not the intent.
+    // every way into a set passes here: one that needs RetroArch is never shown without it (ra_gates.h)
+    selection.set = setOrFallback(selection.set, Env::retroArchInstalled());
     PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
     PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set

@@ -18,7 +18,7 @@ inline bool lightgunSetAvailable(bool retroArchInstalled) {
     return retroArchInstalled;
 }
 
-// a remembered set that is not offered any more falls back to the PlayStation set
+// a remembered set that is not offered any more (Lightgun, a RetroArch playlist) falls back to the PlayStation set
 inline GameSet setOrFallback(GameSet set, bool retroArchInstalled) {
-    return set == GameSet::Lightgun && !lightgunSetAvailable(retroArchInstalled) ? GameSet::PS1 : set;
+    return (set == GameSet::Lightgun || set == GameSet::RetroArch) && !retroArchInstalled ? GameSet::PS1 : set;
 }

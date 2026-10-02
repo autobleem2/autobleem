@@ -23,7 +23,9 @@ TEST_CASE("the Lightgun set exists only with RetroArch, a remembered one falls b
     CHECK_FALSE(lightgunSetAvailable(false));
     CHECK(setOrFallback(GameSet::Lightgun, true) == GameSet::Lightgun);
     CHECK(setOrFallback(GameSet::Lightgun, false) == GameSet::PS1);
-    for (GameSet s : {GameSet::PS1, GameSet::RetroArch, GameSet::Apps}) {
+    CHECK(setOrFallback(GameSet::RetroArch, true) == GameSet::RetroArch);
+    CHECK(setOrFallback(GameSet::RetroArch, false) == GameSet::PS1);
+    for (GameSet s : {GameSet::PS1, GameSet::Apps}) {
         CHECK(setOrFallback(s, true) == s);
         CHECK(setOrFallback(s, false) == s);
     }
