@@ -336,18 +336,28 @@ look exactly as they did.
 instructions) are drawn in the classic theme's text colour. A theme that sets the `row` role in `launcher.colors`
 (a colour, or the name of another) gets them in that role instead; a theme that does not is unchanged.
 
-## Installing a theme from a zip
+## Themes as zips
 
-Copy `<name>.zip` into the themes directory next to the theme folders. The next time the app looks at the
-themes (at start, or when the Options menu lists them) it unpacks the archive to `<name>/` and deletes
-the zip. The theme's files may be at the archive's root or inside one folder (the usual way a zip is
-made - the folder's own name does not matter, the zip's name is the theme's; `__MACOSX` and other
-dot/underscore folders are ignored). A zip in the old `theme.ini` layout is converted afterwards like any
-folder. A zip that replaces an existing `<name>/` is an update: the folder is replaced. A file that is not
-an archive, or holds no theme, is renamed `<name>.zip.bad` and left alone. Entries with `..` or absolute
-names are refused, and nothing from such an archive is written.
+Copy `<name>.zip` into the themes directory next to the theme folders and leave it there. The Options theme
+list shows it by its name, like a folder, without opening more than the archive's directory: an archive with a
+`theme.json` or `theme.ini` at its root, or inside its one folder (the folder's own name does not matter, the
+zip's name is the theme's; `__MACOSX` and other dot/underscore folders are ignored), is a theme. A folder of
+the same name wins: the zip is then neither listed nor used.
 
-`theme_convert <themesDir>` does the same installs first, then the conversions.
+A zip is unpacked only while it is the picked theme, into `<themes>/.cache/<name>/` (under the "Loading..."
+spinner). Whatever else `.cache` holds - the previously picked zip theme, a half-done unpack a power cut left -
+is deleted first, so at most one zip theme is ever unpacked. A zip in the old `theme.ini` layout is converted
+inside the cache (the converter's deletion of `theme.ini` and `colors.ini` touches only the cache, never the
+zip), and the converted cache stays, so the next start finds it and does no work; a zip replaced by another
+(a different size) is unpacked again. The cache is built in a hidden `.<name>.unzip` folder and renamed into
+place, so a cache that exists is complete. Nothing is written until the user picks a zip theme; picking a folder
+theme removes `.cache`.
+
+An archive that is not a zip, holds no theme, or has entries with `..` or absolute names (nothing is written
+from such an archive) is renamed `<name>.zip.bad` when it is picked; one that does not fit in the free space is
+left alone and the launcher falls back to the default theme.
+
+`theme_convert <themesDir>` still unpacks zips into folders first (`<name>/`, the zip deleted), then converts.
 
 ## Converting an old theme
 
