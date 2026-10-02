@@ -4,6 +4,7 @@
 #include "evoui_set_picker.h"
 #include "../evoui_plural.h"
 #include "set_picker_tabs.h"
+#include "ra_gates.h"
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
@@ -88,7 +89,7 @@ void GuiSetPicker::buildTabs() {
     }
     ps.entries.push_back({_("Favorite games"), games(c.favorites), 0, GameSet::PS1, Ps1SelectState::Favorites, 0, ""});
     ps.entries.push_back({_("Game history"), games(c.history), 0, GameSet::PS1, Ps1SelectState::History, 0, ""});
-    if (c.lightgun > 0)
+    if (c.lightgun > 0 && lightgunSetAvailable(layout.retroArch))
         ps.entries.push_back(
             {_("Lightgun games"), games(c.lightgun), 0, GameSet::Lightgun, Ps1SelectState::AllGames, 0, ""});
 
