@@ -4,6 +4,12 @@
 //
 
 #include "evoui_launcher.h"
+#include "../channel_watermark.h"
+#include "../controls/hint_slots.h"
+#include "../set_banner.h"
+#include "ra_gates.h"
+#include "core/version.h"
+#include "../evoui_plural.h"
 #include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
 #include "gui/screens/gui_confirm.h"
@@ -12,10 +18,13 @@
 #include "evoui_mc_manager.h"
 #include "evoui_set_picker.h"
 #include "gui/panel_style.h"
+#include <ab_gui/hint_bar.h>
+#include <ab_gui/screen_stack.h>
+#include <ab_gui/transitions.h>
 #include <cassert>
-#include <cmath>
 #include <memory>
 #include <vector>
+#include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -229,6 +238,8 @@ void GuiLauncher::rememberSelection() {
 // GuiLauncher::switchSet
 //*******************************
 void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet is not used.  probably not the intent.
+    // every way into a set passes here: one that needs RetroArch is never shown without it (ra_gates.h)
+    selection.set = setOrFallback(selection.set, Env::retroArchInstalled());
     PLOG_DEBUG << "Switching to Set: " << static_cast<int>(selection.set);
 
     PLOG_DEBUG << "Reloading games list"; // get fresh list of games for this set
@@ -246,39 +257,59 @@ void GuiLauncher::switchSet(GameSet newSet, bool noForce) { // Warning: newSet i
 }
 
 //*******************************
+// GuiLauncher::infoTimeout / showInfo
+//*******************************
+// Options -> Interface -> "Notification timeout" (config.ini showingtimeout, seconds): how long the informational
+// bubbles stay; 0 = they are not shown. An error keeps its fixed time (DefaultShowingTimeout) and never asks.
+long GuiLauncher::infoTimeout() const {
+    return Strings::toInt(app.config().inifile.values["showingtimeout"], 2) * TicksPerSecond;
+}
+
+void GuiLauncher::showInfo(const string &text) {
+    const long timeout = infoTimeout();
+    if (timeout > 0)
+        notificationLines[1].setText(text, timeout);
+}
+
+//*******************************
 // GuiLauncher::showSetName
 //*******************************
 void GuiLauncher::showSetName() {
     vector<string> setNames = {"Showing: PS1 games", // this is a dummy entry. setPS1SubStateNames is used.
-                               _("Showing: Retroarch") + " ", _("Showing: Lightgun Games") + " ",
+                               _("Showing: RetroArch") + " ", _("Showing: Lightgun games") + " ",
                                _("Showing: Apps") + " "};
-    vector<string> setPS1SubStateNames = {_("Showing: All Games") + " ", _("Showing: Internal Games") + " ",
-                                          _("Showing: Favorite Games") + " ", _("Showing: Game History") + " ",
-                                          _("Showing: USB Games Directory:") + " "};
+    vector<string> setPS1SubStateNames = {_("Showing: All games") + " ", _("Showing: Internal games") + " ",
+                                          _("Showing: Favorite games") + " ", _("Showing: Game history") + " ",
+                                          _("Showing: USB games directory:") + " "};
     assert(setPS1SubStateNames.size() == static_cast<size_t>(Ps1SelectState::GamesSubdir) + 1);
     assert(setNames.size() == static_cast<size_t>(GameSetLast) + 1);
 
-    string numGames = " (" + to_string(carousel.games.size()) + " " + _("games") + ")";
+    string numGames = " (" + pluralGames(carousel.games.size()) + ")";
 
-    long timeout = Strings::toInt(app.config().inifile.values["showingtimeout"], 0) * TicksPerSecond;
-    if (timeout <= 0)
-        return; // Options' "Splash timeout: Skip" (0 kept it up for good until 2026-09-29)
+    // the set banner always shows: with Options' "Notification timeout" Off it holds for the default time
+    // (Off hides the other informational bubbles only)
+    const long timeout = SetBanner::holdTicks(infoTimeout(), DefaultShowingTimeout);
 
     if (selection.set == GameSet::PS1) {
         string name = setPS1SubStateNames[static_cast<int>(selection.ps1SelectState)];
+        // every entry above carries its own trailing space (needed when a directory name follows); drop
+        // it here so it doesn't double up with numGames' own leading space (was "All Games  (21 games)")
+        if (!name.empty() && name.back() == ' ')
+            name.pop_back();
         if (selection.ps1SelectState == Ps1SelectState::GamesSubdir) {
-            name += selection.usbGameDirName;
+            name += " " + selection.usbGameDirName;
         }
         notificationLines[0].setText(name + numGames, timeout);
     } else if (selection.set == GameSet::RetroArch) {
         string playlist = DirEntry::getFileNameWithoutExtension(selection.raPlaylistName);
-        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + " " + numGames, timeout);
+        // numGames already starts with a space - no extra " " here (was a double space before the count)
+        notificationLines[0].setText(setNames[static_cast<int>(selection.set)] + playlist + numGames, timeout);
     } else if (selection.set == GameSet::Apps) {
         // Apps are counted as apps, not games ("Showing: Apps: Tools (3 apps)")
         string name = _("Showing: Apps");
         if (selection.appCategory != AppCategory::All)
             name += ": " + appCategoryLabel(selection.appCategory);
-        string numApps = " (" + to_string(carousel.games.size()) + " " + _("apps") + ")";
+        string numApps = " (" + pluralApps(carousel.games.size()) + ")";
         notificationLines[0].setText(name + numApps, timeout);
     }
 }
@@ -532,10 +563,15 @@ void GuiLauncher::pollPadBattery() {
 //*******************************
 // a small icon (outline + a fill proportional to the charge, plus a nub) and the percent, one per known
 // pad, stacked down from the top-left corner - the launcher's own theme colours, no new texture: the outline
-// is secColor, the fill fgColor (hintColor under PadBatteryLowPercent, so a low pad reads as a warning).
+// is secColor, the fill the theme's accent (`selection`, white when unset; hintColor under PadBatteryLowPercent,
+// so a low pad reads as a warning).
 // C12: a small plate (PanelStyle::sheet - the same dark sheet + secondary-colour edge every panel in the
 // launcher uses, sized to just the icons instead of a whole screen) sits behind the row, so the icons read
 // against any theme's background image instead of floating over whatever happens to be behind them there.
+// G5l: a theme's `plate` frame (ab_gui) is that plate, and its `battery` icon the outline and nub - the charge is
+// still drawn here, into the icon's inner rect (PadBatteryCharge::rect: a fixed 2 px inset, the art spec's
+// x 2..24, y 2..11 of the 29 x 13 icon); a theme with neither draws as before. AB_FAKE_PAD_BATTERY (dev hosts,
+// PadBatteryService::list) fakes the pads.
 // A matched pad's icon also gets its short "P1"/"P2" tag (padBatteryIconTags, from padBatteryLabelsFor())
 // drawn to its left - an unmatched one gets no tag, same spot left blank, as before C12.
 // C15: the tag and the percent are drawn in FONT_15_BOLD (a fixed, always-loaded font), not `hintFont` -
@@ -545,9 +581,9 @@ void GuiLauncher::pollPadBattery() {
 // current language/state, which is what threw the tag and the percent off the icon's centre. Both text
 // draws now compute their y from the fixed font's own line height so their visual centre lands on the
 // icon's, whatever that height turns out to be.
-void GuiLauncher::renderPadBatteries() {
+int GuiLauncher::renderPadBatteries() {
     if (padBatteries.empty())
-        return;
+        return 0;
     const int iconW = 26, iconH = 13, nubW = 3, nubH = 7;
     const int plateMargin = 14; // review: the icons sat tight on the plate's edge at 8px - more room now
     int x = 16, y = 16;
@@ -565,15 +601,21 @@ void GuiLauncher::renderPadBatteries() {
             tagW = std::max(tagW, battFont.width(tag) + 6); // the tag plus a small gap before the icon
     }
     if (knownCount == 0)
-        return;
+        return 0;
 
     int rowWidth = tagW + iconW + nubW + 6 + 44; // [tag] + icon + nub + gap + room for "100%"
     int rowHeight = iconH + 10;
     ableem::Rect plate(x - plateMargin, y - plateMargin, rowWidth + 2 * plateMargin,
                        knownCount * rowHeight - 10 + 2 * plateMargin);
-    PanelStyle plateStyle;
-    plateStyle.secondary = secColor;
-    plateStyle.sheet(renderer, plate);
+    // G5l: the theme's `plate` frame into the very same rect; no frame = the code sheet, call for call
+    abgui::Context &ctx = gui->uiContext();
+    if (!ctx.style().drawFrame(ctx, "plate", plate)) {
+        PanelStyle plateStyle;
+        plateStyle.secondary = secColor;
+        plateStyle.sheet(renderer, plate);
+    }
+    // G5l: the theme's `battery` icon (outline and nub, at its own size) replaces the code-drawn outline and nub
+    const ableem::Texture batteryIcon = ctx.icon("battery");
 
     int iconX = x + tagW;
     for (size_t i = 0; i < padBatteries.size(); i++) {
@@ -583,17 +625,73 @@ void GuiLauncher::renderPadBatteries() {
         const string &tag = i < padBatteryIconTags.size() ? padBatteryIconTags[i] : string();
         if (!tag.empty())
             gui->text().renderText_WithColor(battFont, tag, x, y + textY, fgColor);
-        renderer.setDrawColor(secColor);
-        renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
-        renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
-        int fillW = std::max(1, (iconW - 4) * std::min(100, std::max(0, pad.percent)) / 100);
-        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent ? hintColor : fgColor;
+        int glyphW = iconW + nubW, glyphH = iconH;
+        if (batteryIcon.valid()) {
+            glyphW = batteryIcon.size().w;
+            glyphH = batteryIcon.size().h;
+            const ableem::Rect iconRect(iconX, y, glyphW, glyphH);
+            renderer.copy(batteryIcon, nullptr, &iconRect);
+        } else {
+            renderer.setDrawColor(secColor);
+            renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
+            renderer.fillRect(ableem::Rect(iconX + iconW, y + (iconH - nubH) / 2, nubW, nubH));
+        }
+        // the charge is code-drawn into the glyph's inner rect, a fixed inset from its corner (PadBatteryCharge)
+        const PadBatteryCharge charge = PadBatteryCharge::rect(iconX, y, glyphW, glyphH, pad.percent);
+        // above the low threshold the fill is the theme's accent (selection), white when the theme sets none
+        const ableem::ThemeColor &accent = app.theme().launcher().colors.selection;
+        const PadBatteryFill accentFill = PadBatteryFill::accentOrWhite(accent.set, accent.r, accent.g, accent.b);
+        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent
+                                      ? hintColor
+                                      : ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255);
         renderer.setDrawColor(fillColor);
-        renderer.fillRect(ableem::Rect(iconX + 2, y + 2, fillW, iconH - 4));
+        renderer.fillRect(ableem::Rect(charge.x, charge.y, charge.w, charge.h));
         gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
                                          fgColor);
         y += rowHeight;
     }
+    return plate.y + plate.h;
+}
+
+//*******************************
+// GuiLauncher::renderChannelWatermark
+//*******************************
+// UIREV-40: the build's channel tag (DEV / NIGHTLY / ALPHA / BETA / RC; a release has none) in the top-left corner -
+// the `chip` frame (the theme's; the code-drawn chip without one) around the channel in capitals, the short version
+// beside it in the secondary colour - the whole at 80 %, so it reads as a mark, not a control. A release draws
+// nothing. It sits at x 12, y 72, under a two-pad battery plate (which ends at y 66); `plateBottom`
+// (renderPadBatteries' return) pushes it lower for a taller plate, so it never covers one. Not translated: the
+// channel's names. The design's sizes: the word bold 13, the version medium 14 (Fonts::atSize opens each once).
+void GuiLauncher::renderChannelWatermark(int plateBottom) {
+    // the build's version never changes while it runs: read once (productVersion may read a VERSION file)
+    static const ChannelWatermark::Tag tag =
+        ChannelWatermark::tagFor(ChannelWatermark::channelFromName(AB_BUILD_CHANNEL_NAME), Env::productVersion(),
+                                 std::string(Version::GIT_HASH));
+    if (!tag.shown())
+        return;
+    const ableem::Font &wordFont = ThemeAssets::fixedFonts().boldAtSize(ChannelWatermark::WordPx);
+    const ableem::Font &versionFont = ThemeAssets::fixedFonts().atSize(FONT_MED, ChannelWatermark::VersionPx);
+    abgui::Context &ctx = gui->uiContext();
+    const abgui::Style &style = ctx.style();
+    const int x = ChannelWatermark::X;
+    const int y = ChannelWatermark::yBelow(plateBottom);
+    const int wordW = gui->text().textWidth(wordFont, tag.word);
+    const ableem::Rect chip(x, y, ChannelWatermark::chipWidth(wordW), ChannelWatermark::ChipHeight);
+    const unsigned char alpha = ChannelWatermark::Alpha;
+    if (!style.drawFrame(ctx, "chip", chip, alpha)) {
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(ableem::Color(255, 255, 255, 24 * alpha / 255));
+        renderer.fillRect(chip);
+        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200 * alpha / 255));
+        renderer.drawRect(chip);
+    }
+    const int wordY = y + (ChannelWatermark::ChipHeight - wordFont.lineHeight()) / 2;
+    const int versionY = y + (ChannelWatermark::ChipHeight - versionFont.lineHeight()) / 2;
+    gui->text().setAlpha(alpha);
+    gui->text().renderText_WithColor(wordFont, tag.word, x + ChannelWatermark::ChipPadding, wordY, style.text);
+    gui->text().renderText_WithColor(versionFont, tag.version, chip.x + chip.w + ChannelWatermark::VersionGap, versionY,
+                                     style.secondary);
+    gui->text().setAlpha(255);
 }
 
 //*******************************
@@ -635,12 +733,16 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         scanRosterChangedSinceReload = true;
 
     if (update.finished) {
-        string text = to_string(update.finishedGameCount) + " " + _("games");
+        string text = pluralGames(static_cast<size_t>(update.finishedGameCount));
         if (update.finishedFailedCount > 0)
             text += ", " + to_string(update.finishedFailedCount) + " " + _("failed");
         if (update.finishedRomCount > 0)
             text += ", " + to_string(update.finishedRomCount) + " " + _("ROMs");
-        scanBubble.show(_("Scan complete:"), text, 0, 0, 2 * DefaultShowingTimeout); // the summary, then gone
+        // the summary, then gone; with the notification timeout at 0 the progress bubble just goes
+        if (infoTimeout() > 0)
+            scanBubble.show(_("Scan complete:"), text, 0, 0, infoTimeout());
+        else
+            scanBubble.hide();
         scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
     }
 
@@ -680,7 +782,7 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
 // exists (its index may have moved), else the first one
 void GuiLauncher::refreshPlaylistNames() {
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir()))
+    if (Env::retroArchInstalled()) // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
 
     auto pick = [&](GameSetSelection &sel) {
@@ -700,65 +802,99 @@ void GuiLauncher::refreshPlaylistNames() {
 }
 
 //*******************************
-// playOutlineOf
-//*******************************
-// one image's dark outline (TextRenderer's Shadow): its shape drawn in black at alpha 150 at each of the eight
-// 1 px offsets and once 2 px down-right, composited as the text's halo is. The texture is the image plus 2 px on
-// each side and 1 more down-right; the image sits at (2, 2) in it.
-static ableem::Texture playOutlineOf(ableem::Renderer &renderer, const ableem::Image &img) {
-    if (!img.valid())
-        return ableem::Texture();
-    const ableem::Size s = img.size();
-    const int w = s.w + 5, h = s.h + 5;
-    std::vector<float> shape(static_cast<size_t>(w * h), 0.0f);
-    for (int y = 0; y < s.h; y++)
-        for (int x = 0; x < s.w; x++)
-            shape[static_cast<size_t>((y + 2) * w + x + 2)] = img.pixel(x, y).a / 255.0f;
-
-    static const int offsets[9][2] = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}, {2, 2}};
-    const float passAlpha = 150.0f / 255.0f;
-    ableem::Texture tex = ableem::Texture::createStreaming(renderer, w, h);
-    if (!tex.valid())
-        return tex;
-    tex.setBlendMode(ableem::BlendMode::Blend);
-    {
-        ableem::PixelLock px = tex.lock();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++) {
-                float clear = 1.0f;
-                for (const auto &o : offsets) {
-                    const int sx = x - o[0], sy = y - o[1];
-                    if (sx >= 0 && sy >= 0 && sx < w && sy < h)
-                        clear *= 1.0f - passAlpha * shape[static_cast<size_t>(sy * w + sx)];
-                }
-                px.set(x, y, ableem::Color(0, 0, 0, static_cast<unsigned char>(std::lround((1.0f - clear) * 255))));
-            }
-    }
-    return tex;
-}
-
-//*******************************
 // GuiLauncher::makePlayOutline
 //*******************************
 // what keeps Play readable over the covers' reflections: the dark outline the launcher's text has around Play's
 // two images, following their transparency, the images drawn over it. Made once per theme on the CPU - one
 // texture for the button, one for the text, which the frame draws at the text's pulse so the outline zooms with
-// it. (A soft shadow and a coloured rim came first - a dead end, the owner, 2026-09-29.)
+// it. (A soft shadow and a coloured rim came first - a dead end, the owner, 2026-09-29.) The outline itself is
+// PanelStyle::outlineOf (moved to autobleem-core, UIREV-2/UIREV-27) - the same halo the d-pad hint arrows and
+// the meta icons now draw behind themselves, so there is one copy of this logic in the whole codebase.
 void GuiLauncher::makePlayOutline(const LauncherTheme &theme) {
     playOutline = ableem::Texture();
     playTextOutline = ableem::Texture();
     if (!textShadow)
         return; // the theme said no to the text's halo (launcher.textShadow false) - Play's outline goes with it
+    // the 1x files even when @2x ones are drawn (ThemeAssets::loadImage): their pixels are the logical size
     const ableem::Image button = ableem::Image::loadFile(theme.playButton);
     const ableem::Image text = ableem::Image::loadFile(theme.playText);
-    playOutline = playOutlineOf(renderer, button);
+    playOutline = PanelStyle::outlineOf(renderer, button);
     if (playOutline.valid())
         playOutlineRect = ableem::Rect(playButton->x - 2, playButton->y - 2, button.size().w + 5, button.size().h + 5);
-    playTextOutline = playOutlineOf(renderer, text);
+    playTextOutline = PanelStyle::outlineOf(renderer, text);
     if (playTextOutline.valid()) {
         playTextOutlineW = text.size().w + 5;
         playTextOutlineH = text.size().h + 5;
     }
+}
+
+//*******************************
+// GuiLauncher::renderPlayFrame
+//*******************************
+// Play in a theme with the `play` frame (G5j): the frame stands still in the play button's box (540, 428, 200 x 68);
+// the `play` icon and the label side by side pulse over it - drawn once into a texture (re-made when the word or
+// the language changes, and when the render targets were lost) and that texture grown about the box's centre by
+// playText's pulse, so no font is opened per size. An App's word is "Start".
+void GuiLauncher::renderPlayFrame() {
+    const int boxX = 540, boxY = 428, boxW = 200, boxH = 68;
+    const int iconSize = 28, gap = 8, padding = 16, margin = 4;
+    const float maxZoom = 1.20f; // PsZoomBtn's: the content must still fit the box at the top of the pulse
+    abgui::Context &ctx = gui->uiContext();
+    const int centreX = boxX + boxW / 2, centreY = boxY + boxH / 2;
+    ctx.style().drawFrame(ctx, "play", ableem::Rect(boxX, boxY, boxW, boxH));
+
+    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+    const ableem::Texture icon = ctx.icon("play");
+    const int iconSpace = icon.valid() ? iconSize + gap : 0;
+    const string label = ableem::Strings::upperUtf8(game != nullptr && game->app ? _("Start") : _("Play"));
+    bool remake = !playContent.valid() || playContentAt != renderer.targetsLost();
+    if (label != playLabel || !playLabelFont.valid()) {
+        remake = true;
+        playLabel = label;
+        const int room = static_cast<int>((boxW - 2 * padding) / maxZoom) - iconSpace;
+        playLabelFont = gui->text().fittingFont(FONT_BOLD, 28, 14, label, room);
+        // even the smallest size too wide: cut characters (whole UTF-8 ones) and end on "..."
+        while (gui->text().textWidth(playLabelFont, playLabel) > room && playLabel != "...") {
+            size_t cut = playLabel.size() - 1;
+            if (playLabel.size() > 3 && playLabel.compare(playLabel.size() - 3, 3, "...") == 0)
+                cut = playLabel.size() - 4;
+            while (cut > 0 && (static_cast<unsigned char>(playLabel[cut]) & 0xC0) == 0x80)
+                cut--;
+            playLabel = playLabel.substr(0, cut) + "...";
+        }
+    }
+    if (remake) {
+        const int textWidth = gui->text().textWidth(playLabelFont, playLabel);
+        playContentW = iconSpace + textWidth + 2 * margin;
+        playContentH = std::max(iconSize, playLabelFont.lineHeight()) + 2 * margin;
+        playContent = ableem::Texture::createTarget(renderer, playContentW, playContentH);
+        playContentAt = renderer.targetsLost();
+        if (playContent.valid()) {
+            const ableem::Color textColor = ctx.style().text;
+            renderer.pushTarget(&playContent);
+            renderer.setBlendMode(ableem::BlendMode::None);
+            // cleared to the text's colour at alpha 0, so the edges blended in below do not come out dark
+            renderer.setDrawColor(ableem::Color(textColor.r, textColor.g, textColor.b, 0));
+            renderer.fillRect();
+            renderer.setBlendMode(ableem::BlendMode::Blend);
+            int x = margin;
+            if (icon.valid()) {
+                const ableem::Rect iconRect(x, (playContentH - iconSize) / 2, iconSize, iconSize);
+                renderer.copy(icon, nullptr, &iconRect);
+                x += iconSpace;
+            }
+            gui->text().renderText_WithColor(playLabelFont, playLabel, x,
+                                             (playContentH - playLabelFont.lineHeight()) / 2, textColor);
+            renderer.popTarget();
+            playContent.setBlendMode(ableem::BlendMode::Blend);
+        }
+    }
+    if (!playContent.valid())
+        return;
+    const ableem::FRect pulse = playText->drawRect();
+    const float zoom = playText->ow > 0 ? pulse.w / static_cast<float>(playText->ow) : 1.0f;
+    const float w = playContentW * zoom, h = playContentH * zoom;
+    renderer.copy(playContent, nullptr, ableem::FRect(centreX - w / 2.0f, centreY - h / 2.0f, w, h));
 }
 
 //*******************************
@@ -769,16 +905,18 @@ void GuiLauncher::loadAssets() {
     forgetSetCounts(); // Options, a new set of playlists, a fresh screen: count again
     PLOG_DEBUG << "Loading playlists";
     raPlaylists.clear();
-    if (DirEntry::exists(Env::getPathToRetroarchDir())) {
+    if (Env::retroArchInstalled()) { // the program, as everywhere (no folder: no playlists)
         raPlaylists = app.retroArch().playlistNames();
     }
     // the members, not locals: showOptions() reads them whenever the icon row changes (a local pair of the
     // same name here once left the members empty, and the first RetroArch game selected on a fresh screen
     // - every return from a RetroArch launch - crashed on headers[0])
-    headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
+    headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
              _("Resume game from saved state point")};
 
+    // a remembered Lightgun set is not offered without RetroArch: back to the PlayStation set
+    app.session().launcher.set = setOrFallback(app.session().launcher.set, Env::retroArchInstalled());
     selection = app.session().launcher;
     if (selection.set != GameSet::PS1)
         selection.ps1SelectState = Ps1SelectState::AllGames; // see rememberSelection()
@@ -825,8 +963,7 @@ void GuiLauncher::loadAssets() {
 
     scanRosterChangedSinceReload = false;
 
-    fadeAlpha = 255;
-    fadeStart = gui->platform().ticks();
+    startFadeIn(LauncherFadeInDuration);
 
     // was the classic menu's gamepadNotice - shown once here since there is no classic menu screen to carry it
     // - pointing at Network & Controllers (its controller mapping wizard) where an extension provides it
@@ -855,7 +992,8 @@ void GuiLauncher::loadAssets() {
     year = "";
     players = "";
     PLOG_DEBUG << "Last Index " << selection.gameIndex;
-    if (selection.gameIndex != 0) {
+    // within the set: a place carried over a restart may name a game the library no longer has (BUG-40)
+    if (selection.gameIndex > 0 && selection.gameIndex < static_cast<int>(carousel.games.size())) {
         carousel.selected = selection.gameIndex;
         carousel.setInitialPositions(carousel.selected);
     }
@@ -892,7 +1030,7 @@ void GuiLauncher::loadAssets() {
     settingsBack->setCurLen(100);
     settingsBack->visible = true;
 
-    meta = addStaticElement(new PsMeta("meta", theme.metaPanel));
+    meta = addStaticElement(new PsMeta("meta") /* the players icon is the icon set's since G5b */);
     meta->fonts = ThemeAssets::fixedFonts();
     meta->x = 785;
     meta->y = 285;
@@ -939,7 +1077,6 @@ void GuiLauncher::loadAssets() {
 
     sselector = addFrontElement(new PsStateSelector("selector"));
     sselector->font30 = ThemeAssets::fixedFonts()[FONT_28_BOLD];
-    sselector->font24 = ThemeAssets::fixedFonts()[FONT_22_MED];
     sselector->visible = false;
 
     if (app.session().resumingGui) {
@@ -952,13 +1089,14 @@ void GuiLauncher::loadAssets() {
                 sselector->visible = true;
                 state = LauncherScreenState::Resume;
             } else {
-                notificationLines[1].setText(_("OOPS! Game crashed. Resume point not available."),
+                notificationLines[1].setText(_("Oops! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
             }
-        } else {
+        } else if (app.session().emuMode == EmuMode::RetroArch) {
             notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
                                          DefaultShowingTimeout);
         }
+        // EmuMode::Launcher (an App): returning to the launcher isn't a "resume points" situation - nothing to say
     }
 
     // a crash's logs, which the rc scripts took from RAM to the stick (autobleem-main's
@@ -984,7 +1122,6 @@ void GuiLauncher::loadAssets() {
 //*******************************
 // memory cleanup for assets disposal
 void GuiLauncher::freeAssets() {
-    setPickerIcons.clear();
     for (auto &obj : staticElements) {
         obj->destroy();
     }
@@ -998,6 +1135,9 @@ void GuiLauncher::freeAssets() {
     playText = nullptr;
     playOutline = ableem::Texture();
     playTextOutline = ableem::Texture();
+    playLabel.clear(); // the fitted font and the content texture go with the fonts
+    playContent = ableem::Texture();
+    playLabelFont = ableem::Font();
     meta = nullptr;
     background = nullptr;
     arrow = nullptr;
@@ -1046,18 +1186,16 @@ bool GuiLauncher::retroArchInstalledCached() const {
 // GuiLauncher::hintSignature
 //*******************************
 // everything buildHintLines() reads, as a short string - updateHintsIfNeeded() rebuilds and re-lays-out the
-// two hint lines only when this actually changes, so render() can call it every frame for free (the "cache
+// hint grid only when this actually changes, so render() can call it every frame for free (the "cache
 // the layout" rule: the layout is redone on a state/selection/language change, not per frame).
 string GuiLauncher::hintSignature() const {
     string sig = app.lang().currentLanguage();
     sig += "|s" + to_string(static_cast<int>(state));
     if (state == LauncherScreenState::Set) {
-        sig += "|o" + to_string(menu ? menu->selOption : -1);
         sig += carousel.games.empty() ? "|empty" : "";
     } else if (state == LauncherScreenState::Resume) {
         if (sselector != nullptr) {
             sig += "|op" + to_string(sselector->operation);
-            sig += "|sl" + to_string(sselector->selSlot);
             sig += sselector->slotActive[sselector->selSlot] ? "|act" : "";
         }
     } else { // Games
@@ -1074,70 +1212,89 @@ string GuiLauncher::hintSignature() const {
 }
 
 //*******************************
+// hintLabel
+//*******************************
+// the label of a hint item, translated (the fixed labels of UIREV-36: "Open", "Resume game", "Save" - what they act
+// on is on the screen, highlighted)
+static string hintLabel(HintSlots::Item item) {
+    using HintSlots::Item;
+    switch (item) {
+    case Item::Play:
+        return _("Play");
+    case Item::Start:
+        return _("Start");
+    case Item::Open:
+        return _("Open");
+    case Item::Resume:
+        return _("Resume game");
+    case Item::Save:
+        return _("Save");
+    case Item::GamesShown:
+        return _("Games shown");
+    case Item::PlayInRetroArch:
+        return _("Play in RetroArch");
+    case Item::DeleteSlot:
+        return _("Delete slot");
+    case Item::Random:
+        return _("Random");
+    case Item::GameMenu:
+        return _("Game menu");
+    case Item::Choose:
+        return _("Choose");
+    case Item::Slot:
+        return _("Slot");
+    case Item::Guide:
+        return _("Guide");
+    case Item::QuickMenu:
+        return _("Quick menu");
+    case Item::BackToGames:
+        return _("Back to games");
+    case Item::Back:
+        return _("Back");
+    case Item::DontSave:
+        return _("Don't save");
+    case Item::System:
+        return _("System");
+    case Item::None:
+        break;
+    }
+    return "";
+}
+
+//*******************************
 // GuiLauncher::buildHintLines
 //*******************************
-// line 1: what acts on the current selection right now. Line 2: what always works (Select/Start/Guide/
-// System). "Play" not "Enter" (an App: "Start"); Circle only appears where it does something; L2+R2 says
-// "System", never "Options" (see docs/theme-format.md's hintBar entry and PLANS-menu-hints-quickmenu.md,
-// section E). The icon-row and Resume lines only ever fill line 1 - Select/Start do nothing there, so line 2
-// stays just the Guide/System pair (Resume: System alone - Circle already means Back/Don't save there).
+// the fixed grid of the hint bar (UIREV-36, evoui/controls/hint_slots.h - the slot of every item in every state):
+// line 1 is what acts on the current selection, line 2 always Select/Start/Guide/System with the idle ones dimmed.
+// "Play" not "Enter" (an App: "Start"); L2+R2 says "System", never "Options" (see docs/theme-format.md's hintBar
+// entry). Both lines come back with one entry per column; an empty `markers` is an empty slot.
 void GuiLauncher::buildHintLines(std::vector<Hint> &line1, std::vector<Hint> &line2) const {
-    line1.clear();
-    line2.clear();
+    HintSlots::State slots;
     if (state == LauncherScreenState::Set) {
-        // the game menu's icon row. Up closes it back to the games - or, on an empty set, opens the Quick
-        // menu instead (settleEmptyRoster keeps this state open on an empty roster - there is no Games
-        // state to show, so this is the "empty set" row the design calls out on its own)
-        string openLabel = _("Open:");
-        if (menu != nullptr && menu->selOption >= 0 && static_cast<size_t>(menu->selOption) < headers.size())
-            openLabel += " " + headers[menu->selOption];
-        line1.push_back({"|@X|", openLabel});
-        if (carousel.games.empty()) {
-            line1.push_back({"|@Up|", _("Quick menu")});
-            line2.push_back({"|@Select|", _("Games shown")});
-        } else {
-            line1.push_back({"|@Left|/|@Right|", _("Choose")});
-            line1.push_back({"|@Up|", _("Back to games")});
-            line2.push_back({"|@T|", _("Guide")});
+        slots.screen = HintSlots::Screen::GameMenu;
+        slots.emptyRoster = carousel.games.empty();
+    } else if (state == LauncherScreenState::Resume && sselector != nullptr) {
+        slots.screen = sselector->operation == OP_LOAD ? HintSlots::Screen::ResumeLoad : HintSlots::Screen::ResumeSave;
+        slots.slotUsed = sselector->slotActive[sselector->selSlot];
+    } else {
+        slots.emptyRoster = carousel.games.empty();
+        const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
+        slots.app = game != nullptr && game->app;
+        slots.retroArch = game != nullptr && !game->foreign && retroArchInstalledCached();
+    }
+    const HintSlots::Grid grid = HintSlots::gridFor(slots);
+    auto fill = [](const std::array<HintSlots::Cell, HintSlots::Columns> &cells, std::vector<Hint> &line) {
+        line.assign(HintSlots::Columns, Hint());
+        for (int c = 0; c < HintSlots::Columns; c++) {
+            if (cells[c].item == HintSlots::Item::None)
+                continue;
+            line[c].markers = HintSlots::markersOf(cells[c].item);
+            line[c].label = hintLabel(cells[c].item);
+            line[c].dim = cells[c].dim;
         }
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    if (state == LauncherScreenState::Resume) {
-        if (sselector == nullptr)
-            return;
-        const string slotLabel = to_string(sselector->selSlot + 1);
-        if (sselector->operation == OP_LOAD) {
-            line1.push_back({"|@X|", _("Resume slot") + " " + slotLabel});
-            if (sselector->slotActive[sselector->selSlot])
-                line1.push_back({"|@T|", _("Delete slot")});
-            line1.push_back({"|@Left|/|@Right|", _("Slot")});
-            line1.push_back({"|@O|", _("Back")});
-        } else {
-            line1.push_back({"|@X|", _("Save to slot") + " " + slotLabel});
-            line1.push_back({"|@Left|/|@Right|", _("Slot")});
-            line1.push_back({"|@O|", _("Don't save")});
-        }
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    // Games
-    if (carousel.games.empty()) {
-        line1.push_back({"|@Up|", _("Quick menu")});
-        line2.push_back({"|@Select|", _("Games shown")});
-        line2.push_back({"|@L2+R2|", _("System")});
-        return;
-    }
-    const PsGame *game = carousel.selectedIsValid() ? carousel.games[carousel.selected].get() : nullptr;
-    line1.push_back({"|@X|", game != nullptr && game->app ? _("Start") : _("Play")});
-    if (game != nullptr && !game->foreign && retroArchInstalledCached())
-        line1.push_back({"|@S|", _("Play in RetroArch")});
-    line1.push_back({"|@Down|", _("Game menu")});
-    line1.push_back({"|@Up|", _("Quick menu")});
-    line2.push_back({"|@Select|", _("Games shown")});
-    line2.push_back({"|@Start|", _("Random")});
-    line2.push_back({"|@T|", _("Guide")});
-    line2.push_back({"|@L2+R2|", _("System")});
+    };
+    fill(grid.line1, line1);
+    fill(grid.line2, line2);
 }
 
 //*******************************
@@ -1152,88 +1309,202 @@ void GuiLauncher::updateHintsIfNeeded() {
 }
 
 //*******************************
+// GuiLauncher::hintBarRect
+//*******************************
+// the theme's launcher.hintBar - unset, the pill most themes paint at the bottom right. What the hint grid is laid
+// out in and what the theme's `hintBar` frame is drawn into (G5e).
+ableem::Rect GuiLauncher::hintBarRect() const {
+    const LauncherTheme &theme = app.theme().launcher();
+    if (theme.hintBar.set)
+        return ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
+    return ableem::Rect(560, 624, 680, 72);
+}
+
+//*******************************
 // GuiLauncher::layoutHints
 //*******************************
-// Lays the two hint lines buildHintLines() returns out in the theme's hintBar (the pill most themes paint at
-// the bottom right), each at the largest font from 22 down to 14 that fits its own half of the bar in the
-// current language; below that the gaps close up, and line 2 (never line 1, which is always short) drops
-// hints from the right if it is still too wide even at the smallest font and tightest gap. A hintBar under
-// 48 px tall (an old theme that never expected two lines) shows line 1 only, at the bar's full height.
+// Lays the hint grid out in the theme's hintBar through abgui::HintBar::layoutGrid (ab_gui UIREV-36 - the rules are
+// there): the columns are as wide as the widest item that can ever sit in them, in every state, and the one font is
+// the largest from 22 down to 14 at which the four fit - computed once per language and bar, never per state. An item
+// is drawn at its column's left + 12, its label elided with "..." only if a column is still too narrow at the
+// smallest font; no item is ever dropped. A hintBar under 48 px tall (an old theme that never expected two lines)
+// shows line 1 only, at the bar's full height. The launcher measures (its buttons through PanelStyle, its fixed
+// medium fonts) and keeps the result.
 void GuiLauncher::layoutHints() {
-    const LauncherTheme &theme = app.theme().launcher();
-    ableem::Rect bar(560, 624, 680, 72);
-    if (theme.hintBar.set)
-        bar = ableem::Rect(theme.hintBar.x, theme.hintBar.y, theme.hintBar.w, theme.hintBar.h);
+    const ableem::Rect bar = hintBarRect();
 
     buildHintLines(hints, hints2);
-    hintsOneLineOnly = bar.h < 48;
+    hintsOneLineOnly = abgui::HintBar::oneLineOnly(bar);
     if (hintsOneLineOnly)
         hints2.clear();
 
     PanelStyle style = gui->panelStyle();
-    const int inset = 16;
-    const int iconGap = 6; // icon(s) to the label
-    static const int sizes[] = {22, 20, 18, 16, 14};
+    // the label font of a size: the 22 is the fixed FONT_22_MED, the smaller ones the medium face at that size
+    auto fontOf = [](int size) -> ableem::Font & {
+        return size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
+    };
+    // buttons() adds a gap after the last button: an item's own buttons end before it
+    auto buttonsWidth = [this, &style](const string &markers) { return style.buttonsWidth(*gui, markers) - 6; };
 
-    // fits `items` into `rect`'s width by shrinking the font, then the gaps, then - only when allowDrop -
-    // dropping hints from the right; positions each one's chip and label inside `rect`
-    auto layoutLine = [&](std::vector<Hint> &items, const ableem::Rect &rect, bool allowDrop, ableem::Font &outFont,
-                          int &outLabelY, int &outChipY) {
-        auto iconWidth = [&](const Hint &h) { return style.buttonsWidth(*gui, h.markers) - 6; }; // buttons() adds a gap
-        int gap = 28;
-        int total = 0;
-        for (int size : sizes) {
-            outFont =
-                size == 22 ? ThemeAssets::fixedFonts()[FONT_22_MED] : ThemeAssets::fixedFonts().atSize(FONT_MED, size);
-            total = items.empty() ? 0 : -gap;
-            for (const Hint &h : items)
-                total += iconWidth(h) + iconGap + gui->text().textWidth(outFont, h.label) + gap;
-            if (total <= rect.w - 2 * inset)
-                break;
-        }
-        while (total > rect.w - 2 * inset && gap > 10) { // the smallest font still too wide: closer together
-            total -= static_cast<int>(items.size()) * 4;
-            gap -= 2;
-        }
-        while (allowDrop && total > rect.w - 2 * inset && items.size() > 1) {
-            const Hint dropped = items.back();
-            total -= iconWidth(dropped) + iconGap + gui->text().textWidth(outFont, dropped.label) + gap;
-            items.pop_back();
-        }
-        int x = rect.x + max(inset, (rect.w - total) / 2);
-        outLabelY = rect.y + (rect.h - outFont.lineHeight()) / 2;
-        outChipY = rect.y + (rect.h - 30) / 2;
-        for (Hint &h : items) {
-            const int iconW = iconWidth(h);
-            h.chipX = x;
-            h.labelX = x + iconW + iconGap;
-            x = h.labelX + gui->text().textWidth(outFont, h.label) + gap;
+    // once per language and bar, whatever the state
+    const string key = app.lang().currentLanguage() + "|" + to_string(bar.x) + "," + to_string(bar.y) + "," +
+                       to_string(bar.w) + "," + to_string(bar.h);
+    if (key != hintGridKey) {
+        abgui::HintGridMeasure measure;
+        measure.columnWidth = [this, &buttonsWidth, fontOf](int size, int column) {
+            HintSlots::Item items[HintSlots::ItemCount];
+            const int count = HintSlots::itemsOfColumn(column, items);
+            int widest = 0;
+            for (int i = 0; i < count; i++)
+                widest = max(widest, buttonsWidth(HintSlots::markersOf(items[i])) + abgui::HintBar::IconGap +
+                                         gui->text().textWidth(fontOf(size), hintLabel(items[i])));
+            return widest;
+        };
+        measure.lineHeight = [fontOf](int size) { return fontOf(size).lineHeight(); };
+        hintGrid = abgui::HintBar::layoutGrid(bar, measure);
+        hintGridKey = key;
+    }
+
+    hintFont = fontOf(hintGrid.fontSize);
+    hintLabelY = hintGrid.labelY[0];
+    hintChipY = hintGrid.chipY[0];
+    hintLabelY2 = hintGrid.labelY[1];
+    hintChipY2 = hintGrid.chipY[1];
+    // the items onto their slots; a label wider than its column's room is elided (the safety net)
+    auto place = [&](std::vector<Hint> &line) {
+        for (size_t c = 0; c < line.size(); c++) {
+            Hint &hint = line[c];
+            if (hint.markers.empty())
+                continue;
+            const int buttons = buttonsWidth(hint.markers);
+            hint.chipX = hintGrid.itemX[c];
+            hint.labelX = hint.chipX + buttons + abgui::HintBar::IconGap;
+            const int labelRoom = hintGrid.itemRoom[c] - buttons - abgui::HintBar::IconGap;
+            if (gui->text().textWidth(hintFont, hint.label) > labelRoom)
+                hint.label = gui->text().elide(hintFont, hint.label, max(0, labelRoom));
         }
     };
-
-    if (hintsOneLineOnly) {
-        layoutLine(hints, bar, false, hintFont, hintLabelY, hintChipY);
-    } else {
-        const ableem::Rect top(bar.x, bar.y, bar.w, bar.h / 2);
-        const ableem::Rect bottom(bar.x, bar.y + bar.h / 2, bar.w, bar.h - bar.h / 2);
-        layoutLine(hints, top, false, hintFont, hintLabelY, hintChipY);
-        layoutLine(hints2, bottom, true, hintFont2, hintLabelY2, hintChipY2);
-    }
+    place(hints);
+    place(hints2);
 }
 
 //*******************************
-// GuiLauncher::render
+// GuiLauncher::prepareFrame
 //*******************************
-// render method called every loop
-void GuiLauncher::render() {
+// before every frame of the loop (render() = this, then the stack's frame: cleared to transparent black - frameColor,
+// the draw colour from then on - draw(), presented; docs/ab-gui-plan.md, G3e/G3z). The renderer's own clear() and
+// present() still do the work, so a captureNextFrame() asked for before render() (the set picker's, an extension's
+// backdrop), AB_SHOT and the DebugDriver's frame copy see this frame as they did.
+bool GuiLauncher::prepareFrame() {
     gui->endBusy(); // the reload after a game, or after Options, is over once the launcher draws
-    if (sselector != nullptr) {
-        sselector->frame = menu->savestate;
+    return true;
+}
+
+//*******************************
+// GuiLauncher::takeBackdrop / dropBackdrop
+//*******************************
+// UIREV-26 (G5r5): the launcher drawn once without the hint band and the bubbles (snapshotFrame),
+// taken silently (the frame starts with the stack's clear(), so it goes straight into a render target and the window is
+// left as it is - the System menu stays up, BUG-31), and handed to Gui
+// for the screens opened from here. A capture that did not come (no texture) leaves no backdrop: the screens draw the
+// theme's background, as before.
+bool GuiLauncher::takeBackdrop(bool fresh) {
+    const bool first = !gui->hasLauncherBackdrop();
+    if (!first && !fresh)
+        return false; // an outer screen's frame stands
+    const void *previous = renderer.lastCapture().native();
+    snapshotFrame = true;
+    renderer.captureNextFrameSilently();
+    render();
+    snapshotFrame = false;
+    const ableem::Texture frame = renderer.lastCapture();
+    if (frame.valid() && frame.native() != previous) // the same texture as before = this capture did not come
+        gui->setLauncherBackdrop(frame);
+    return first && gui->hasLauncherBackdrop();
+}
+
+void GuiLauncher::dropBackdrop() {
+    gui->clearLauncherBackdrop();
+}
+
+//*******************************
+// GuiLauncher::welcomeCardShows
+//*******************************
+// UIREV-43: the PS1 "all games" set (not Favorites, History, folders, RetroArch, Apps) with no game in it - a fresh
+// install. The card goes the moment a scan adds games (reloadGames() fills the carousel).
+// Where there are no internal games (a Pi, a PC stick, Windows) "all games" is the USB games row (the folder tree's row
+// 0): GameQueryService::gamesFor() turns AllGames into GamesSubdir there, and the set picker offers only that row.
+bool GuiLauncher::welcomeCardShows() const {
+    if (!carousel.games.empty() || selection.set != GameSet::PS1)
+        return false;
+    if (selection.ps1SelectState == Ps1SelectState::AllGames)
+        return true;
+    return selection.ps1SelectState == Ps1SelectState::GamesSubdir && selection.usbGameDirIndex == 0 &&
+           !app.gameQuery().showInternalGames();
+}
+
+//*******************************
+// GuiLauncher::renderWelcomeCard
+//*******************************
+// The card in the theme's panel frame (else the code sheet) where the covers would be: a bold title, a rule in the
+// selection colour, the wrapped body and the signature. 660 wide, as tall as its content, centred on the empty
+// cover's centre; all numbers at the 1280x720 logical canvas (the designer's welcome-a.png).
+void GuiLauncher::renderWelcomeCard() {
+    constexpr int boxW = 660, pad = 34, centreY = 292, linePitch = 31;
+    constexpr int titleH = 40, ruleGap = 16, signGap = 14, signH = 28, bodyTail = 18;
+    abgui::Context &ctx = gui->uiContext();
+    const abgui::Style &style = ctx.style();
+    Fonts &fonts = ThemeAssets::fixedFonts();
+    const ableem::Font &titleFont = fonts[FONT_28_BOLD];
+    const ableem::Font &bodyFont = fonts[FONT_22_MED];
+    const ableem::Font &signFont = fonts[FONT_20_BOLD];
+    const string title = _("Hi, and welcome to AutoBleem!");
+    const string signature = _("Cheers, screemer");
+    // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
+    // console and the PC stick a USB stick
+#if defined(AB_PLATFORM_RPI)
+    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-Scan Games, "
+                          "and you've got yourself a great console.");
+#elif defined(AB_PLATFORM_WIN)
+    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-Scan "
+                          "Games, and you've got yourself a great console.");
+#else
+    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and "
+                          "you've got yourself a great console.");
+#endif
+    const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
+
+    const int boxH = pad + titleH + ruleGap + static_cast<int>(lines.size()) * linePitch + bodyTail + signH + pad - 6;
+    const ableem::Rect box((1280 - boxW) / 2, centreY - boxH / 2, boxW, boxH);
+    style.sheet(ctx, box); // the theme's panel frame, else the code-drawn sheet
+
+    const LauncherTheme &theme = app.theme().launcher();
+    const ableem::Color accent =
+        theme.colors.selection.set ? TextRenderer::toColor(theme.colors.selection, 255) : fgColor;
+
+    int y = box.y + pad;
+    gui->text().renderText_WithColor(titleFont, title, 0, y, fgColor, XALIGN_CENTER);
+    y += titleH;
+    renderer.setBlendMode(ableem::BlendMode::Blend);
+    renderer.setDrawColor(ableem::Color(accent.r, accent.g, accent.b, 150));
+    renderer.fillRect(ableem::Rect(box.x + pad, y + 4, boxW - 2 * pad, 1));
+    y += ruleGap + 4;
+    for (const string &line : lines) {
+        if (!line.empty())
+            gui->text().renderText_WithColor(bodyFont, line, box.x + pad, y, fgColor);
+        y += linePitch;
     }
+    y += signGap;
+    gui->text().renderText_WithColor(signFont, signature, box.x + boxW - pad - signFont.width(signature), y, accent);
+}
 
-    renderer.setDrawColor(ableem::Color(0x00, 0x00, 0x00, 0x00));
-    renderer.clear();
-
+//*******************************
+// GuiLauncher::draw
+//*******************************
+void GuiLauncher::draw() {
+    if (ableem::ext_trace::active())
+        ableem::ext_trace::note(std::string("launcher draw") + (snapshotFrame ? " (snapshot frame)" : "") +
+                                " fadeAlpha=" + std::to_string(fadeAlpha));
     // every text on this screen (meta panel, labels, notifications, the state selector) gets the halo
     // for the length of this frame, on the launcher's own setting; the classic screens shown from here
     // render on the classic one, which goes back at the end of the frame
@@ -1246,54 +1517,107 @@ void GuiLauncher::render() {
     // Play, the game's details, the menu's band - in front of it: the covers' reflections and the selected
     // cover's glow reach below the row, under Play and beside the details, and must not be drawn over them
     auto behindRow = [](const PsObj *obj) { return obj->name == "background" || obj->name == "footer"; };
+    // the backdrop's frame (G5r5) has no hint band: the footer image (the band) and the hint bar's frame are left out
     for (auto &obj : staticElements) {
-        if (behindRow(obj.get()) && !benchSkips(obj->name))
+        if (behindRow(obj.get()) && !benchSkips(obj->name) && !(snapshotFrame && obj->name == "footer"))
             obj->render();
     }
-    if (!benchSkips("carousel"))
+    // the theme's hintBar frame (G5e): the panel behind the two hint lines, in the footer band's place (a theme with
+    // the frame ships its footer image without the band - the art spec, 2.2), so whatever covered the band covers it;
+    // the lines are drawn over it below. No frame = nothing drawn
+    {
+        abgui::Context &ctx = gui->uiContext();
+        if (ctx.frame("hintBar").valid() && !benchSkips("hints") && !snapshotFrame)
+            ctx.style().drawFrame(ctx, "hintBar", hintBarRect());
+    }
+    // the theme's logo element (G5q), above the background and under the carousel; none = nothing drawn
+    if (gui->launcherLogo().valid())
+        renderer.copy(gui->launcherLogo(), nullptr, &gui->launcherLogoRect());
+    // an empty "all games" shelf gives way to the welcome card: no empty cover frame, no arrow
+    const bool welcome = welcomeCardShows();
+    if (welcome) {
+        if (!benchSkips("carousel"))
+            renderWelcomeCard();
+    } else if (!benchSkips("carousel"))
         carousel.render();
-    if (playOutline.valid() && playButton != nullptr && playButton->visible && !benchSkips("playOutline"))
+    // a theme with the `play` frame (G5j) draws Play as that frame, the icon and the label - not the two images
+    // and their outline
+    const bool playFramed = gui->uiContext().frame("play").valid();
+    if (!playFramed && playOutline.valid() && playButton != nullptr && playButton->visible &&
+        !benchSkips("playOutline"))
         renderer.copy(playOutline, nullptr, &playOutlineRect);
     // the text's outline at the text's pulse: the text is drawn 2 px into its outline, both grown by the same zoom
-    if (playTextOutline.valid() && playText != nullptr && playText->visible && !benchSkips("playOutline")) {
+    if (!playFramed && playTextOutline.valid() && playText != nullptr && playText->visible &&
+        !benchSkips("playOutline")) {
         const ableem::FRect r = playText->drawRect();
         const float zoom = playText->ow > 0 ? r.w / static_cast<float>(playText->ow) : 1.0f;
-        renderer.copy(playTextOutline, nullptr,
-                      ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
+        renderer.copy(
+            playTextOutline, nullptr,
+            ableem::FRect(r.x - 2.0f * zoom, r.y - 2.0f * zoom, playTextOutlineW * zoom, playTextOutlineH * zoom));
     }
     for (auto &obj : staticElements) {
-        if (!behindRow(obj.get()) && !benchSkips(obj->name))
-            obj->render();
+        if (behindRow(obj.get()) || benchSkips(obj->name))
+            continue;
+        if (welcome && obj.get() == arrow)
+            continue;
+        if (playFramed && obj.get() == playButton)
+            continue;
+        if (playFramed && obj.get() == playText) { // its pulse drives the frame, in the images' place in the order
+            if (playText->visible)
+                renderPlayFrame();
+            continue;
+        }
+        obj->render();
     }
     renderSnap();
+
+    // any other set with no games shows only the empty shelf: one line under it says so
+    if (carousel.games.empty() && !welcome && !snapshotFrame && !benchSkips("carousel"))
+        gui->text().renderText_WithColor(ThemeAssets::fixedFonts()[FONT_22_MED], _("No games here yet"), 0, 412,
+                                         fgColor, XALIGN_CENTER);
 
     if (!benchSkips("menu"))
         menu->render();
 
     // the footer's two hint lines, built from the state and the selection - see buildHintLines(). Rebuilt
-    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed.
-    updateHintsIfNeeded();
-    PanelStyle style = gui->panelStyle();
-    for (const Hint &hint : benchSkips("hints") ? vector<Hint>() : hints) {
-        style.buttons(*gui, hint.markers, hint.chipX, hintChipY);
-        gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, hintLabelY, hintColor);
-    }
-    if (!hintsOneLineOnly)
-        for (const Hint &hint : hints2) {
-            style.buttons(*gui, hint.markers, hint.chipX, hintChipY2);
-            gui->text().renderText_WithColor(hintFont2, hint.label, hint.labelX, hintLabelY2, hintColor);
+    // (and re-laid-out) only when updateHintsIfNeeded() finds they actually changed. Not in the backdrop's frame
+    // (G5r5), nor the pad batteries and the top-right bubbles: what a screen over it draws is its own
+    if (!snapshotFrame) {
+        updateHintsIfNeeded();
+        PanelStyle style = gui->panelStyle();
+        // an item that does nothing in this state (line 2) is drawn at 35 %: the chip and the label together
+        auto drawHint = [&](const Hint &hint, int chipY, int labelY) {
+            if (hint.markers.empty())
+                return;
+            if (hint.dim) {
+                gui->text().setAlpha(HintSlots::DimAlpha);
+                style.buttonsFaded(gui->uiContext(), hint.markers, hint.chipX, chipY, HintSlots::DimAlpha);
+            } else {
+                style.buttons(*gui, hint.markers, hint.chipX, chipY);
+            }
+            gui->text().renderText_WithColor(hintFont, hint.label, hint.labelX, labelY, hintColor);
+            gui->text().setAlpha(255);
+        };
+        if (!benchSkips("hints")) {
+            for (const Hint &hint : hints)
+                drawHint(hint, hintChipY, hintLabelY);
+            if (!hintsOneLineOnly)
+                for (const Hint &hint : hints2)
+                    drawHint(hint, hintChipY2, hintLabelY2);
         }
 
-    renderPadBatteries(); // top-left corner, one icon per known wireless pad (C8)
+        // top-left corner, one icon per known wireless pad (C8); the channel tag (UIREV-40) under its plate
+        renderChannelWatermark(renderPadBatteries());
 
-    // the top-right corner: the scan's bubble, the notification lines stacked under it
-    if (!benchSkips("bubbles"))
-        scanBubble.render(*gui, time);
-    int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
-    extensionBubble.top = belowScan;
-    extensionBubble.render(*gui, time);
-    notificationLines.render(
-        *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
+        // the top-right corner: the scan's bubble, the notification lines stacked under it
+        if (!benchSkips("bubbles"))
+            scanBubble.render(*gui, time);
+        int belowScan = scanBubble.visible() ? scanBubble.top + scanBubble.height() + 8 : scanBubble.top;
+        extensionBubble.top = belowScan;
+        extensionBubble.render(*gui, time);
+        notificationLines.render(
+            *gui, time, extensionBubble.visible() ? extensionBubble.top + extensionBubble.height() + 8 : belowScan);
+    }
 
     for (auto &obj : frontElemets)
         if (!benchSkips("front"))
@@ -1301,16 +1625,35 @@ void GuiLauncher::render() {
 
     gui->text().setShadow(classicShadow);
 
-    if (fadeAlpha > 0) {
-        long elapsed = gui->platform().ticks() - fadeStart;
-        fadeAlpha =
-            elapsed >= LauncherFadeInDuration ? 0 : 255 - (255 * static_cast<int>(elapsed) / LauncherFadeInDuration);
+    if (fadeAlpha > 0 && !snapshotFrame) {
+        fadeAlpha = abgui::transition::fadeInAlpha(fadeMs, fadeDuration);
         renderer.setDrawColor(ableem::Color(0, 0, 0, fadeAlpha));
         renderer.setBlendMode(ableem::BlendMode::Blend);
         renderer.fillRect();
     }
+}
 
-    gui->renderer().present();
+//*******************************
+// GuiLauncher::startFadeIn
+//*******************************
+// the black overlay from fully opaque to clear over durationMs: a non-ambient tween of the milliseconds gone (so the
+// DebugDriver is busy while it runs), the alpha computed from it as before (abgui::transition::fadeInAlpha). Starting
+// it again restarts it. The start-up drop from the top after the splash (the plan's decision 12) is the screen stack's
+// transition instead (UIREV-48), so the overlay stays off while the stack brings the launcher in.
+void GuiLauncher::startFadeIn(unsigned int durationMs) {
+    fadeOwner.cancel();
+    fadeDuration = durationMs;
+    // none with the animations off (Options -> Interface -> "Animations"), and none while the screen stack brings the
+    // launcher in itself (the drop from the top after the splash, UIREV-48)
+    abgui::ScreenStack &stack = gui->uiContext().stack();
+    if (!stack.animations() || stack.bringsIn(*this)) {
+        fadeAlpha = 0;
+        fadeMs = static_cast<float>(durationMs);
+        return;
+    }
+    fadeAlpha = 255;
+    fadeMs = 0.0f;
+    gui->uiContext().stack().tweens().start(abgui::transition::fadeInClock(fadeMs, durationMs), fadeOwner);
 }
 
 //*******************************
@@ -1353,50 +1696,38 @@ void GuiLauncher::prevCarouselGame(int speed, bool eased) {
 void GuiLauncher::switchState(LauncherScreenState state, int time) {
     if (state == LauncherScreenState::Games) {
         app.audio().home_up.play();
-        settingsBack->animEndTime = time + 100;
-        settingsBack->animStarted = time;
-        settingsBack->prevLen = settingsBack->h;
-        settingsBack->nextLen = 100;
+        settingsBack->slideTo(100);
         playButton->visible = true;
         playText->visible = true;
         if (!staticMeta) {
-            meta->animEndTime = time + 200;
-            meta->animStarted = time;
-            meta->nextPos = 285;
-            meta->prevPos = meta->y;
+            meta->slideTo(285);
         }
         this->state = LauncherScreenState::Games;
         arrow->visible = false;
-        arrow->animationStarted = time;
-        menu->duration = 200;
+        arrow->restart();
+        menu->duration = evomotion::MenuSlideMs;
         menu->targety = 520;
-        menu->animationStarted = time;
         menu->active = false;
+        menu->startTransition();
         menuHead->visible = false;
         menuText->visible = false;
 
         carousel.moveMainCover(state == LauncherScreenState::Games);
     } else {
         app.audio().home_down.play();
-        settingsBack->animEndTime = time + 100;
-        settingsBack->animStarted = time;
-        settingsBack->prevLen = settingsBack->h;
-        settingsBack->nextLen = 280;
+        settingsBack->slideTo(280);
         playButton->visible = false;
         playText->visible = false;
         if (!staticMeta) {
-            meta->animEndTime = time + 200;
-            meta->animStarted = time;
-            meta->nextPos = 215;
-            meta->prevPos = meta->y;
+            meta->slideTo(215);
         }
         this->state = LauncherScreenState::Set;
         arrow->visible = true;
-        arrow->animationStarted = time;
-        menu->duration = 200;
+        arrow->restart();
+        menu->duration = evomotion::MenuSlideMs;
         menu->targety = 440;
-        menu->animationStarted = time;
         menu->active = true;
+        menu->startTransition();
         menuHead->visible = true;
         menuText->visible = true;
         carousel.moveMainCover(state == LauncherScreenState::Games);
@@ -1421,6 +1752,54 @@ void GuiLauncher::settleEmptyRoster() {
 }
 
 //*******************************
+// GuiLauncher::gameHasResumePoints
+//*******************************
+bool GuiLauncher::gameHasResumePoints(const PsGamePtr &game) const {
+    if (game == nullptr || game->foreign)
+        return false;
+    for (int slot = 0; slot < ResumePointService::SlotCount; slot++) {
+        if (app.resumePoints().slotIsActive(*game, slot))
+            return true;
+    }
+    return false;
+}
+
+//*******************************
+// GuiLauncher::retranslateMenu
+//*******************************
+// the menu's headers and blurbs in the current language - once per language change (the loop calls it every pass; the
+// Options screen, after a language pick, before it retakes the launcher snapshot, BUG-49)
+void GuiLauncher::retranslateMenu() {
+    if (headersLanguage == app.lang().currentLanguage())
+        return;
+    headersLanguage = app.lang().currentLanguage();
+    captionOption = -1; // the caption is translated again too
+    headers = {_("Settings"), _("Game"), _("Memory card"), _("Resume")};
+    texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit memory card information"),
+             _("Resume game from saved state point")};
+}
+
+//*******************************
+// GuiLauncher::syncMenuCaption
+//*******************************
+void GuiLauncher::syncMenuCaption() {
+    if (menu == nullptr || menuHead == nullptr || menuText == nullptr)
+        return;
+    // an icon move shows the caption of the icon it goes to from its first frame (the selection itself changes
+    // when the move ends)
+    int option = menu->selOption;
+    if (menu->animating() && menu->transition == TR_OPTION)
+        option += menu->direction == 0 ? -1 : 1;
+    if (option < 0 || static_cast<size_t>(option) >= headers.size() || static_cast<size_t>(option) >= texts.size())
+        return;
+    if (option == captionOption)
+        return;
+    captionOption = option;
+    menuHead->setText(headers[option], fgColor);
+    menuText->setText(texts[option], fgColor);
+}
+
+//*******************************
 // GuiLauncher::showOptions
 //*******************************
 void GuiLauncher::showOptions() {
@@ -1433,8 +1812,12 @@ void GuiLauncher::showOptions() {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
         }
     }
-    if (!enabled[3])
+    if (!enabled[3]) {
         menu->resume = ableem::Texture(); // no resume icon, no picture of another game's resume point
+        menu->resumeAvailable = true;
+    } else {
+        menu->resumeAvailable = gameHasResumePoints(carousel.games[carousel.selected]);
+    }
     bool same = true;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);

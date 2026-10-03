@@ -211,7 +211,6 @@ add_library(ab_ui STATIC
         src/code/gui/screens/gui_select_memcard.h
         src/code/gui/screens/gui_keep_display.cpp
         src/code/gui/screens/gui_keep_display.h
-        src/code/gui/menus/gui_game_dir_menu.h
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h
         src/code/gui/menus/gui_game_editor_menu.cpp
@@ -225,7 +224,6 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_options_menu.h
         src/code/gui/menus/gui_options_menu_base.cpp
         src/code/gui/menus/gui_options_menu_base.h
-        src/code/gui/menus/gui_playlists_menu.h
 )
 target_link_libraries(ab_ui ab_classic)
 target_include_directories(ab_ui PUBLIC src/code)
@@ -241,6 +239,8 @@ add_library(ab_evoui STATIC
         src/code/evoui/carousel.h
         src/code/evoui/carousel_game.cpp
         src/code/evoui/carousel_game.h
+        src/code/evoui/carousel_motion.h
+        src/code/evoui/channel_watermark.h
         src/code/evoui/cover_loader.cpp
         src/code/evoui/cover_loader.h
         src/code/evoui/controls/evoui_centerlabel.cpp
@@ -285,6 +285,18 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
+# the build's channel, given explicitly by whatever builds it (UIREV-40's tag): AB_BUILD_CHANNEL = dev | nightly |
+# prerelease | release, from the environment or -D; unset is dev, so a hand build says DEV. Only the launcher screen
+# reads it (channel_watermark.h), so a change recompiles that one file.
+if (NOT DEFINED AB_BUILD_CHANNEL OR AB_BUILD_CHANNEL STREQUAL "")
+    if (DEFINED ENV{AB_BUILD_CHANNEL} AND NOT "$ENV{AB_BUILD_CHANNEL}" STREQUAL "")
+        set(AB_BUILD_CHANNEL "$ENV{AB_BUILD_CHANNEL}")
+    else ()
+        set(AB_BUILD_CHANNEL "dev")
+    endif ()
+endif ()
+set_source_files_properties(src/code/evoui/screens/evoui_launcher_screen.cpp PROPERTIES
+        COMPILE_DEFINITIONS "AB_BUILD_CHANNEL_NAME=\"${AB_BUILD_CHANNEL}\"")
 if (AB_ONLINE_UPDATE)
     target_sources(ab_evoui PRIVATE
             src/code/evoui/screens/evoui_update.cpp
@@ -319,10 +331,12 @@ endif()
 # ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
 # the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
 # installers) would find its symbols missing and fail to load. Ahead of the objects, so the normal link of
-# the same libraries later finds nothing left to add.
+# the same libraries later finds nothing left to add. ab_gui is part of it: the SDK's header templates
+# (GuiMenuBase) call into it, so a plugin compiled against them needs its symbols from the launcher.
 target_link_options(autobleem-gui PRIVATE
         "LINKER:--whole-archive"
-        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem> $<TARGET_FILE:ableem_engine>
+        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_gui> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem>
+        $<TARGET_FILE:ableem_engine>
         "LINKER:--no-whole-archive")
 
 # hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Built on a dev
@@ -381,9 +395,9 @@ configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 
 # absplash: a full-screen picture between the launcher and an emulator on the console (src/tools/absplash.cpp);
-# lib_ableem's ui only, no app code
+# lib_ableem's ui and ab_gui (the theme's spinner strip and the ring of dots, G5p2), no app code
 add_executable(absplash src/tools/absplash.cpp)
-target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
+target_link_libraries(absplash Threads::Threads ab_gui ableem ${CMAKE_DL_LIBS})
 
 # abfatflag: the FAT/exFAT dirty flag of the stick, read and cleared by the console's rc scripts around the
 # standby (src/tools/abfatflag.cpp); the engine only

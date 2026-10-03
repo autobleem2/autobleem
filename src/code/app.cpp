@@ -83,6 +83,7 @@ App::~App() = default;
 // App::requestPowerOff
 //*******************************
 void App::requestPowerOff() {
+    PLOG_INFO << "Quit: App::requestPowerOff()";
 #ifdef AB_PLATFORM_PSC
     session_.menuOption = MENU_OPTION_POWEROFF;
     gui_->input().requestQuit();
@@ -121,8 +122,8 @@ void App::applyUpdateSetting() {
     // this program's describe: a nightly in which only an emulator changed has the same launcher but a new
     // name. A build that was never packaged (a dev host) falls back to the describe
     c.installedVersion = Env::productVersion();
-    // the catalogs through the scan's command (with its short timeout) where there is one; the console has
-    // none - its scan stays offline - and uses the update's own. %r is the launcher's own folder, where the
+    // the catalogs through the scan's command (with its short timeout) where there is one, else the update's
+    // own. %r is the launcher's own folder, where the
     // console's downloader (abfetch) is: the command is run from wherever the launcher happens to be
     string updateCommand = Env::updateDownloadCommand();
     Strings::replaceAll(updateCommand, "%r", Env::getWorkingPath());

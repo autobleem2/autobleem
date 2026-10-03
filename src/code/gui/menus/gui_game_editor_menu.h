@@ -23,7 +23,7 @@ class GuiEditor : public GuiScreen {
 public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     PsGamePtr gameData;    // set by the caller before show()
@@ -57,10 +57,13 @@ public:
         bool locked = false;
     };
     std::vector<Row> rows;
+    void publishToDriver(int selectedIndex) const; // rows + cursor for the DebugDriver (render())
     int firstVisible = 0;
     void buildRows();
-    void moveSelection(int step); // to the next/previous option row
-    int selectedRow() const;      // the index in `rows` of selOption
+    void moveSelection(int step);        // to the next/previous option row
+    void selectNear(int index, int dir); // the option row at index, else the next one in dir, else back
+    void pageSelection(int dir);         // L2/R2: a page of rows up or down
+    int selectedRow() const;             // the index in `rows` of selOption
     // a held d-pad: Up/Down (the cursor) or Left/Right (the value, holdOnValue) - see startHold
     HoldRepeat hold;
     bool holdOnValue = false;

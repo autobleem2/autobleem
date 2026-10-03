@@ -42,6 +42,19 @@ def header_block(rel, first, last):
     return '\n'.join(out).strip('\n')
 
 
+def tail_block(rel, first):
+    """the text of a header from the line matching `first` to the end of its closing comment"""
+    lines = read(rel).splitlines()
+    for i, line in enumerate(lines):
+        if re.search(first, line):
+            body = lines[i:]
+            while body and body[-1].strip() in ('*/', ''):
+                body.pop()
+            return '
+'.join(body)
+    raise SystemExit('no ' + first + ' in ' + rel)
+
+
 ZLIB_LICENCE = '''This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
 arising from the use of this software.
@@ -101,6 +114,8 @@ SECTIONS = [
                                                                             r'Permission is hereby granted', r'^\s*SOFTWARE\.')),
     ('miniz', 'lib_ableem/third_party/miniz - zip reading and writing, CRC-32', 'MIT',
      read('lib_ableem/third_party/miniz/LICENSE')),
+    ('stb_image', "lib_ableem/third_party/stb - PNG and JPEG decoding of a 1.0 theme's background (the theme converter)",
+     'MIT or Public domain', tail_block('lib_ableem/third_party/stb/stb_image.h', r'available under 2 licenses')),
     ('plog', 'lib_ableem/third_party/plog - logging', 'MIT', read('lib_ableem/third_party/plog/LICENSE')),
     ('libchdr', 'lib_ableem/third_party/libchdr - CHD disc images', 'BSD-3-Clause',
      read('lib_ableem/third_party/libchdr/LICENSE.txt')),
@@ -138,13 +153,21 @@ SECTIONS = [
      'https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.'),
     ('doctest', 'tests/third_party/doctest - the unit tests only, in no package', 'MIT',
      'Copyright (c) 2016-2023 Viktor Kirilov\n\nhttps://opensource.org/licenses/MIT'),
-    ('Open Sans', 'src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - the launcher\'s fonts',
+    ('Red Hat Text', 'src/resources/fonts/RedHatText-Medium.ttf, RedHatText-SemiBold.ttf - the launcher\'s fonts',
+     'SIL Open Font License 1.1',
+     'Copyright 2024 The Red Hat Project Authors (https://github.com/RedHatOfficial/RedHatFont). The licence text is '
+     'in src/resources/fonts/OFL.txt.'),
+    ('Open Sans', 'src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - a font to pick in Options',
      'SIL Open Font License 1.1',
      'Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans). The licence text is '
      'in src/resources/fonts/OFL.txt.'),
     ('Noto Sans CJK SC', 'src/resources/fonts/NotoSansSC-Regular.otf - Chinese, and Japanese save titles',
      'SIL Open Font License 1.1',
      'Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name \'Source\'. The licence text is in '
+     'src/resources/fonts/OFL.txt.'),
+    ('Oxanium', 'src/resources/fonts/Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf - the surprise game\'s '
+     'HUD and title', 'SIL Open Font License 1.1',
+     'Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium). The licence text is in '
      'src/resources/fonts/OFL.txt.'),
     ('Saira', 'autobleem-themes submodule, Themes/default/saira-semicondensed-medium.ttf - the classic screens\' font',
      'SIL Open Font License 1.1',

@@ -27,9 +27,7 @@ void GameDetailPane::render(Gui &gui) const {
     ableem::Rect pane = rect(gui);
 
     // the rule between the rows and the pane
-    renderer.setBlendMode(ableem::BlendMode::Blend);
-    renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 160));
-    renderer.fillRect(ableem::Rect(pane.x, pane.y + 8, 1, pane.h - 16));
+    style.vrule(gui.uiContext(), pane.x, pane.y + 8, pane.h - 16);
 
     const int innerX = pane.x + Inset;
     const int innerW = pane.w - 2 * Inset;
@@ -38,8 +36,7 @@ void GameDetailPane::render(Gui &gui) const {
     // the cover, aspect-fit into its box, centred, on a faint plate
     {
         ableem::Rect box(innerX + (innerW - CoverSize) / 2, y, CoverSize, CoverSize);
-        renderer.setDrawColor(ableem::Color(255, 255, 255, 12));
-        renderer.fillRect(box);
+        style.box(gui.uiContext(), box, abgui::Tone::White, 12, abgui::Tone::None);
         if (cover.valid()) {
             ableem::Size s = cover.size();
             ableem::Rect dst = box;
@@ -70,7 +67,8 @@ void GameDetailPane::render(Gui &gui) const {
         y += dst.h + 12;
     }
 
-    // the facts: the label in the secondary colour, the value under it in the text colour
+    // the facts: the label in the description colour, the value under it bright - the pane is about the
+    // selected row, so its values read like that row (the theme's roles, UIREV-29)
     Fonts &fonts = gui.assets().themeFonts;
     const ableem::Font &labelFont = fonts[FONT_15_BOLD];
     const ableem::Font &valueFont = fonts[FONT_20_BOLD];
@@ -78,10 +76,10 @@ void GameDetailPane::render(Gui &gui) const {
     for (const auto &fact : facts) {
         if (y + 42 > bottom)
             break;
-        gui.text().renderText_WithColor(labelFont, fact.first, innerX, y, style.secondary, XALIGN_LEFT);
+        gui.text().renderText_WithColor(labelFont, fact.first, innerX, y, style.description, XALIGN_LEFT);
         y += 18;
         gui.text().renderText_WithColor(valueFont, gui.text().elide(valueFont, fact.second, innerW), innerX, y,
-                                        style.text, XALIGN_LEFT);
+                                        style.rowSelected, XALIGN_LEFT);
         y += 30;
     }
 }

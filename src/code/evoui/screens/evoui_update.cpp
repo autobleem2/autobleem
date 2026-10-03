@@ -15,6 +15,23 @@ const int RowHeight = PanelStyle::RowHeight;
 const int RowInset = PanelStyle::RowInset;
 const int LineHeight = 30;
 
+// UpdateService's failure texts are English (it is SDL-free and runs on a worker thread, with no language of its
+// own): the screen puts them through the language files (BUG-46). The folder in "cannot create <folder>" stays as is.
+string errorText(const string &error) {
+    const string create = "cannot create ";
+    if (error.compare(0, create.size(), create) == 0)
+        return _("cannot create") + " " + error.substr(create.size());
+    if (error == "cannot read the release list")
+        return _("cannot read the release list");
+    if (error == "the AutoBleem package could not be downloaded")
+        return _("the AutoBleem package could not be downloaded");
+    if (error == "the RetroArch build could not be downloaded")
+        return _("the RetroArch build could not be downloaded");
+    if (error == "cannot write pending.json")
+        return _("cannot write pending.json");
+    return error;
+}
+
 // "42.1 MB"
 string human(uint64_t bytes) {
     char buf[32];
@@ -36,16 +53,12 @@ int panelWidthFor(Gui &gui, const vector<pair<const ableem::Font *, string>> &te
     return min(MaxPanelWidth, max(PanelWidth, widest + 2 * TextInset));
 }
 
-// the dimmed launcher under the panel; returns the panel's rect
-ableem::Rect drawPanel(ableem::Renderer &renderer, Gui &gui, const ableem::Texture &background, const PanelStyle &style,
-                       int width, int height) {
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui.renderBackground();
-    style.dim(renderer);
+// the dimmed launcher's snapshot (Gui::renderBackground) under the panel; returns the panel's rect
+ableem::Rect drawPanel(Gui &gui, const PanelStyle &style, int width, int height) {
+    gui.renderBackground();
+    style.dim(gui.uiContext());
     ableem::Rect panel{(SCREEN_WIDTH - width) / 2, (SCREEN_HEIGHT - height) / 2, width, height};
-    style.sheet(renderer, panel);
+    style.sheet(gui.uiContext(), panel);
     return panel;
 }
 } // namespace
@@ -69,9 +82,9 @@ void GuiUpdatePrompt::init() {
 }
 
 //*******************************
-// GuiUpdatePrompt::render
+// GuiUpdatePrompt::draw
 //*******************************
-void GuiUpdatePrompt::render() {
+void GuiUpdatePrompt::draw() {
     // the header holds the title and the version lines under it; the rule sits under those
     const int headerHeight = PanelStyle::HeaderHeight + static_cast<int>(lines.size()) * LineHeight + 12;
     const int footerHeight = PanelStyle::FooterHeight;
@@ -84,7 +97,7 @@ void GuiUpdatePrompt::render() {
         texts.emplace_back(&fonts[FONT_22_MED], item.title);
         texts.emplace_back(&fonts[FONT_15_BOLD], item.description);
     }
-    ableem::Rect panel = drawPanel(renderer, *gui, background, style, panelWidthFor(*gui, texts), panelHeight);
+    ableem::Rect panel = drawPanel(*gui, style, panelWidthFor(*gui, texts), panelHeight);
     const int textWidth = panel.w - 2 * TextInset;
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
@@ -97,19 +110,19 @@ void GuiUpdatePrompt::render() {
     int y = panel.y + 66;
     for (const string &line : lines) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED], gui->text().elide(fonts[FONT_22_MED], line, textWidth),
-                                         panel.x + TextInset, y, style.secondary, XALIGN_LEFT);
+                                         panel.x + TextInset, y, style.description, XALIGN_LEFT);
         y += LineHeight;
     }
-    style.rule(renderer, panel, panel.y + headerHeight - 8);
+    style.rule(gui->uiContext(), panel, panel.y + headerHeight - 8);
 
     int rowY = panel.y + headerHeight;
     for (int i = 0; i < static_cast<int>(items.size()); i++) {
         if (i == selected)
-            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
+            style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
         gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
+                                         style.rowColor(i == selected), XALIGN_LEFT);
         gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         style.secondary, XALIGN_LEFT);
+                                         style.description, XALIGN_LEFT);
         rowY += RowHeight;
     }
 
@@ -117,7 +130,6 @@ void GuiUpdatePrompt::render() {
                  {{{"X"}, _("Select")}, {{"O"}, _("Later")}}, "", false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
@@ -173,16 +185,16 @@ void GuiUpdateProgress::init() {
 }
 
 //*******************************
-// GuiUpdateProgress::render
+// GuiUpdateProgress::draw
 //*******************************
-void GuiUpdateProgress::render() {
-    const int panelHeight = 190;
+void GuiUpdateProgress::draw() {
     Fonts &fonts = gui->assets().themeFonts;
     string title, detail;
     double fraction = -1; // < 0: no bar
     switch (status.phase) {
     case UpdateService::Phase::Checking:
         title = _("Checking for updates...");
+        detail = _("Loading ... Please Wait ..."); // so the body between the rules is not left empty
         break;
     case UpdateService::Phase::Downloading:
         title = _("Downloading the update");
@@ -200,37 +212,47 @@ void GuiUpdateProgress::render() {
         break;
     case UpdateService::Phase::Failed:
         title = _("Update failed");
-        detail = status.error;
+        detail = errorText(status.error);
         break;
     default:
         title = "";
         break;
     }
-    ableem::Rect panel =
-        drawPanel(renderer, *gui, background, style,
-                  panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
+    const bool over =
+        status.phase != UpdateService::Phase::Checking && status.phase != UpdateService::Phase::Downloading;
+    // sized to its content: the title's band with its rule, the detail line and the bar, the footer's band
+    const int bodyHeight = 20 + (detail.empty() ? 0 : LineHeight) + (fraction >= 0 ? 34 : 0) + 12;
+    const int panelHeight = PanelStyle::HeaderHeight + bodyHeight + PanelStyle::FooterHeight;
+    ableem::Rect panel = drawPanel(
+        *gui, style, panelWidthFor(*gui, {{&fonts[FONT_28_BOLD], title}, {&fonts[FONT_22_MED], detail}}), panelHeight);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
     shadow.enabled = style.textShadow;
     gui->text().setShadow(shadow);
 
-    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + RowInset, panel.y + 24, style.text,
+    gui->text().renderText_WithColor(fonts[FONT_28_BOLD], title, panel.x + TextInset, panel.y + 18, style.text,
                                      XALIGN_LEFT);
-    if (!detail.empty())
+    style.rule(gui->uiContext(), panel, panel.y + PanelStyle::HeaderHeight - 8);
+    int y = panel.y + PanelStyle::HeaderHeight + 20;
+    if (!detail.empty()) {
         gui->text().renderText_WithColor(fonts[FONT_22_MED],
-                                         gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * RowInset),
-                                         panel.x + RowInset, panel.y + 74, style.secondary, XALIGN_LEFT);
+                                         gui->text().elide(fonts[FONT_22_MED], detail, panel.w - 2 * TextInset),
+                                         panel.x + TextInset, y, style.description, XALIGN_LEFT);
+        y += LineHeight;
+    }
     if (fraction >= 0) {
-        ableem::Rect bar(panel.x + RowInset, panel.y + 124, panel.w - 2 * RowInset, 22);
-        renderer.setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
-        renderer.drawRect(bar);
-        renderer.setDrawColor(style.text);
-        renderer.fillRect(ableem::Rect(bar.x + 2, bar.y + 2, static_cast<int>((bar.w - 4) * fraction), bar.h - 4));
+        ableem::Rect bar(panel.x + TextInset, y + 4, panel.w - 2 * TextInset, 22);
+        // the outline and the fill (or the theme's progressTrack/progressFill frames) - ab_gui G5g
+        style.progressBox(gui->uiContext(), bar, fraction);
     }
 
+    // an outcome can be dismissed (any button); a running job cannot
+    style.footer(*gui,
+                 ableem::Rect(panel.x, panel.y + panel.h - PanelStyle::FooterHeight, panel.w, PanelStyle::FooterHeight),
+                 over ? vector<PanelStyle::HintItem>{{{"X"}, _("OK")}} : vector<PanelStyle::HintItem>{}, "", true);
+
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************

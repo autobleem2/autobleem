@@ -12,11 +12,9 @@
 //******************
 class GuiBtnGuide : public GuiScreen {
 public:
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
 
     void loop() override;
-
-    ableem::Texture backgroundImg;
 
     using GuiScreen::GuiScreen;
 };

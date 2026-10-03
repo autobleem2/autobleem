@@ -3,7 +3,10 @@
 #include "core/services/scan_service.h"
 #include "gui/gui.h"
 
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -58,21 +61,35 @@ int GuiProcessors::visibleRows() const {
 }
 
 //*******************************
-// GuiProcessors::render
+// GuiProcessors::publishItems
 //*******************************
-void GuiProcessors::render() {
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
-    style.dim(renderer);
+// the DebugDriver's `items`/`selected`: the tab's processors in their order, as titled; from the frame and from every
+// move, so the driver's cursor never lags the real one
+void GuiProcessors::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (const auto &e : sequences.entries(sequence)) {
+        const ProcessorInfo *p = info(e.name);
+        names.push_back(p ? p->title : e.name);
+    }
+    ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+}
+
+//*******************************
+// GuiProcessors::draw
+//*******************************
+void GuiProcessors::draw() {
+    publishItems();
+    gui->renderBackground();
+    style.dim(gui->uiContext());
 
     const bool empty = count() == 0;
     const int rows = empty ? 0 : visibleRows();
     const int body = empty ? EmptyHeight : rows * RowHeight;
     const int panelHeight = HeaderHeight + body + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
@@ -107,7 +124,7 @@ void GuiProcessors::render() {
         const ProcessorInfo *p = info(e.name);
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
-            style.selection(renderer, row);
+            style.selection(gui->uiContext(), row);
         const int textX = panel.x + RowInset + 8 + NumberWidth;
         gui->text().renderText_WithColor(fonts[FONT_22_MED], to_string(i + 1), panel.x + RowInset + 8, rowY + 8,
                                          style.hint, XALIGN_LEFT);
@@ -129,19 +146,22 @@ void GuiProcessors::render() {
         } else {
             line2 = p->description;
         }
+        // a greyed row is under the theme's `disabled` role (G5t: its veil, its title in `description`)
         gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 8,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], line2, textX, rowY + 36, style.secondary, XALIGN_LEFT);
+                                         greyed ? style.disabledColor(gui->uiContext(), style.rowColor(i == selected))
+                                                : style.rowColor(i == selected),
+                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], line2, textX, rowY + 36, style.description, XALIGN_LEFT);
         if (greyed)
-            style.disabled(renderer, row);
+            style.disabled(gui->uiContext(), row);
         rowY += RowHeight;
     }
 
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight - 4, -1);
     if (!empty && firstVisible + rows < count())
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
 
     vector<PanelStyle::HintItem> hints;
     if (moving) {
@@ -160,7 +180,6 @@ void GuiProcessors::render() {
                  false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
@@ -185,6 +204,7 @@ void GuiProcessors::moveSelection(int step) {
         firstVisible = selected;
     else if (selected >= firstVisible + rows)
         firstVisible = selected - rows + 1;
+    publishItems();
 }
 
 //*******************************
@@ -196,6 +216,7 @@ void GuiProcessors::switchTab(ProcessorSequence to) {
     sequence = to;
     moving = false;
     selected = firstVisible = 0;
+    publishItems();
 }
 
 //*******************************
@@ -217,6 +238,10 @@ void GuiProcessors::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -233,6 +258,7 @@ void GuiProcessors::loop() {
                     app.audio().cursor.play();
                     moveSelection(1);
                 }
+                hold.track(gui->input(), gui->platform().ticks());
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Square && count() > 0) {

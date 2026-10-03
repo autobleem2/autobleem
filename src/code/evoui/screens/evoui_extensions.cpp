@@ -2,7 +2,10 @@
 #include "core/services/environment.h"
 #include "gui/gui.h"
 
+#include <ableem/ui/debug_driver.h>
+
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
@@ -21,6 +24,17 @@ const int HeadingHeight = 44; // the heading between ours and the third-party on
 const char *const OurExtensions[] = {"store", "pscbios", "hello"};
 // the console's hardware tool (WiFi, time zone, pads): on the console it cannot be switched off here
 const char *const PscBiosExtension = "pscbios";
+
+// An extension's Description= is its own English line. The two the team ships are translated with the launcher's
+// language files (BUG-47) - listed here as literals so lang_tools finds their keys; any other extension's line is
+// shown as written.
+string descriptionOf(const ExtensionInfo &extension) {
+    if (extension.description == "Wi-Fi, time zone, Bluetooth and gamepads")
+        return _("Wi-Fi, time zone, Bluetooth and gamepads");
+    if (extension.description == "Download apps and games")
+        return _("Download apps and games");
+    return extension.description;
+}
 } // namespace
 
 const int GuiExtensions::HeadingRow; // odr-used by push_back (C++14)
@@ -120,21 +134,33 @@ int GuiExtensions::bodyHeight() const {
 }
 
 //*******************************
-// GuiExtensions::render
+// GuiExtensions::publishItems
 //*******************************
-void GuiExtensions::render() {
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
-    style.dim(renderer);
+// the DebugDriver's `items`/`selected`: the rows as drawn, the heading with a leading '#'; from the frame and from
+// every move, so the driver's cursor never lags the real one
+void GuiExtensions::publishItems() const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (int i = 0; i < count(); i++)
+        names.push_back(rows[i] == HeadingRow ? "#" + _("Third-party extensions") : extensionAt(i).title);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, count() == 0 ? -1 : selected);
+}
+
+//*******************************
+// GuiExtensions::draw
+//*******************************
+void GuiExtensions::draw() {
+    publishItems();
+    gui->renderBackground();
+    style.dim(gui->uiContext());
 
     const bool empty = count() == 0;
     const int shown = empty ? 0 : visibleRows();
     const int body = empty ? EmptyHeight : bodyHeight();
     const int panelHeight = HeaderHeight + body + FooterHeight;
     ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    style.sheet(gui->uiContext(), panel);
 
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
     TextRenderer::Shadow shadow;
@@ -152,19 +178,23 @@ void GuiExtensions::render() {
     for (int i = firstVisible; i < firstVisible + shown && i < count(); i++) {
         if (rows[i] == HeadingRow) {
             const ableem::Rect band(panel.x + 1, rowY, panel.w - 2, HeadingHeight);
-            style.label(renderer, band);
+            style.label(gui->uiContext(), band);
             gui->text().renderText_WithColor(fonts[FONT_15_BOLD], _("Third-party extensions"), panel.x + RowInset + 8,
                                              rowY + (HeadingHeight - fonts[FONT_15_BOLD].lineHeight()) / 2,
-                                             style.secondary, XALIGN_LEFT);
+                                             style.heading, XALIGN_LEFT);
             rowY += HeadingHeight;
             continue;
         }
         const ExtensionInfo &e = extensionAt(i);
         const ableem::Rect row(panel.x + 1, rowY, panel.w - 2, RowHeight);
         if (i == selected)
-            style.selection(renderer, row);
-        const int textX = panel.x + RowInset + 8 + IconSize + 16;
-        const ableem::Texture &icon = icons[rows[i]];
+            style.selection(gui->uiContext(), row);
+        ableem::Texture icon = icons[rows[i]];
+        // an extension that ships none gets the theme's "extension" icon when it has one (no built-in), asked at
+        // draw time; with neither, the title starts where the icon would be (no empty column)
+        if (!icon.valid() && e.icon.empty())
+            icon = gui->uiContext().icon("extension");
+        const int textX = panel.x + RowInset + 8 + (icon.valid() ? IconSize + 16 : 0);
         if (icon.valid()) {
             const ableem::Size iconSize = icon.size();
             int w = IconSize, h = IconSize;
@@ -182,20 +212,24 @@ void GuiExtensions::render() {
         }
         const string reason = reasonFor(e, networkUp);
         const string title = e.version.empty() ? e.title : e.title + "  " + e.version;
+        // a row that cannot run is under the theme's `disabled` role (G5t: its veil, its text in `description`)
         gui->text().renderText_WithColor(fonts[FONT_22_MED], title, textX, rowY + 11,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? e.description : reason, textX, rowY + 41,
-                                         style.secondary, XALIGN_LEFT);
+                                         reason.empty()
+                                             ? style.rowColor(i == selected)
+                                             : style.disabledColor(gui->uiContext(), style.rowColor(i == selected)),
+                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], reason.empty() ? descriptionOf(e) : reason, textX,
+                                         rowY + 41, style.description, XALIGN_LEFT);
         if (!reason.empty())
-            style.disabled(renderer, row);
+            style.disabled(gui->uiContext(), row);
         rowY += RowHeight;
     }
 
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight - 4, -1);
     if (!empty && firstVisible + shown < count())
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + body + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, panel.y + HeaderHeight + body + 2, 1);
 
     vector<PanelStyle::HintItem> hints;
     if (!empty) {
@@ -203,6 +237,8 @@ void GuiExtensions::render() {
         hints.push_back({{"O"}, _("Back")});
         if (!lockedOn(extensionAt(selected)))
             hints.push_back({{"T"}, extensionAt(selected).disabled ? _("Enable") : _("Disable")});
+        hints.push_back({{"L1", "R1"}, _("First/last")});
+        hints.push_back({{"L2", "R2"}, _("Page")});
     } else {
         hints.push_back({{"O"}, _("Back")});
     }
@@ -210,7 +246,6 @@ void GuiExtensions::render() {
                  false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
@@ -231,6 +266,7 @@ void GuiExtensions::moveSelection(int step) {
         firstVisible++;
     if (firstVisible == selected && selected > 0 && rows[selected - 1] == HeadingRow)
         firstVisible--; // the first third-party row shows its heading above it
+    publishItems();
 }
 
 //*******************************
@@ -242,6 +278,10 @@ void GuiExtensions::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -258,9 +298,11 @@ void GuiExtensions::loop() {
                     app.audio().cursor.play();
                     moveSelection(1);
                 }
+                hold.track(gui->input(), gui->platform().ticks());
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross && count() > 0) {
+                    publishItems(); // the driver sees the row this press takes
                     const ExtensionInfo &picked = extensionAt(selected);
                     if (reasonFor(picked, networkUp).empty()) {
                         app.audio().cursor.play();

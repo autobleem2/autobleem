@@ -7,6 +7,7 @@
 
 #include "core/services/extension_catalog.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <string>
@@ -25,12 +26,11 @@ public:
         : GuiScreen(gui), catalog(catalog), networkUp(networkUp) {}
 
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
-    ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
-    std::string chosen;         // the extension to run; "" = none (Circle)
-    std::string select;         // the extension the cursor starts on; "" = the first row
+    std::string chosen; // the extension to run; "" = none (Circle)
+    std::string select; // the extension the cursor starts on; "" = the first row
 
     // why an extension cannot run now, as the row shows it; "" = it can
     static std::string reasonFor(const ExtensionInfo &extension, bool networkUp);
@@ -46,11 +46,13 @@ private:
     std::vector<int> rows;              // the list as shown: catalog indices, HeadingRow for the heading
     static const int HeadingRow = -1;
     int selected = 0; // an index into rows, never the heading
+    DpadHold hold;    // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0;
     int rowHeight(int row) const;
     int visibleRows() const; // how many rows from firstVisible fit
     int bodyHeight() const;  // the rows' part of the panel
     void moveSelection(int step);
+    void publishItems() const; // the rows and the cursor to the DebugDriver
     int count() const { return static_cast<int>(rows.size()); }
     const ExtensionInfo &extensionAt(int row) const { return catalog.extensions()[rows[row]]; }
 

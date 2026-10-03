@@ -250,6 +250,27 @@ bool AutoBleem::confirmPendingOutputMode() {
 }
 
 //*******************************
+// AutoBleem::saveCarouselSession / restoreCarouselSession
+//*******************************
+// The launcher leaves to be started over (a display change or "Restart launcher": rc/boot.sh on the console, the
+// session script on a Pi / PC stick) - its carousel place goes to a small file in the runtime dir and the next
+// start puts it back into the Session, so GuiLauncher::loadAssets() opens on the same set and game (BUG-40).
+// Not the after-game state: session_.resumingGui is untouched, so no resume point is looked for (BUG-39).
+void AutoBleem::saveCarouselSession() {
+    if (CarouselSession::save(CarouselSession::file(), session_.launcher))
+        PLOG_INFO << "Carousel place saved for the next start (set " << static_cast<int>(session_.launcher.set)
+                  << ", game " << session_.launcher.gameIndex << ")";
+    else
+        PLOG_WARNING << "Could not save the carousel place";
+}
+
+void AutoBleem::restoreCarouselSession() {
+    if (CarouselSession::take(CarouselSession::file(), session_.launcher))
+        PLOG_INFO << "Carousel place restored (set " << static_cast<int>(session_.launcher.set) << ", game "
+                  << session_.launcher.gameIndex << ")";
+}
+
+//*******************************
 // AutoBleem::launchGame
 //*******************************
 void AutoBleem::launchGame() {
@@ -308,6 +329,8 @@ int AutoBleem::run() {
         DirEntry::exists(Env::getPathToRetroarchDir() + sep +
                          "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
+
+    restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
     gui_->display(false);
     unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
@@ -374,6 +397,7 @@ int AutoBleem::run() {
     int displayLost = 0;
     if (leaveForDisplay) {
         session_.menuOption = MENU_OPTION_DISPLAY;
+        saveCarouselSession(); // leaving again for the old mode: the place restored above goes on to the next start
         launcher_.writeSelectionScript();
     }
     while (!leaveForDisplay) {
@@ -398,7 +422,7 @@ int AutoBleem::run() {
             usleep(1000 * 1000);
             gui_->input().flushEvents();
             gui_->display(true);
-            session_.resumingGui = true;
+            // not resumingGui: no game just ended, so the launcher must not look for its resume point (BUG-39)
             continue;
         }
         displayLost = 0;
@@ -413,18 +437,30 @@ int AutoBleem::run() {
         }
 
         // Options -> Display changed: the console leaves for rc/boot.sh to restart Weston in the new mode (the
-        // pending file says which) and start the launcher again; elsewhere the window is remade here
+        // pending file says which) and start the launcher again; elsewhere the window is remade here. With no mode
+        // to try it is the Quick menu's "Restart launcher": the same leave, and the session loop (boot.sh on the
+        // console, autobleem-session on a Pi / PC stick) starts the launcher over.
         if (session_.menuOption == MENU_OPTION_DISPLAY) {
+            const bool restartOnly = session_.pendingOutputMode.empty();
 #ifdef AB_PLATFORM_PSC
-            DirEntry::createDirs(Env::getPathToRuntimeDir());
-            DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            if (!restartOnly) {
+                DirEntry::createDirs(Env::getPathToRuntimeDir());
+                DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            }
+            saveCarouselSession();
             launcher_.writeSelectionScript();
             break;
 #else
+            if (restartOnly) {
+                saveCarouselSession();
+                launcher_.writeSelectionScript();
+                break;
+            }
             tryOutputMode(session_.pendingOutputMode);
             session_.pendingOutputMode.clear();
             session_.menuOption = MENU_OPTION_IDLE;
-            session_.resumingGui = true; // the launcher comes back on the same game
+            // the launcher comes back on the same game, but not as after a game: resumingGui stays false, or
+            // it would check the last game's resume point and call the run a crash (BUG-39)
             continue;
 #endif
         }
@@ -463,6 +499,10 @@ int AutoBleem::run() {
             break;
         }
     }
+
+    PLOG_INFO << "Quit: leaving the main loop with menuOption " << session_.menuOption
+              << (gui_->input().quitRequested() ? " (Input quit requested)" : "")
+              << (leaveForDisplay ? " (display change)" : "");
 
     // the extensions go before the services they may reach
     extensions_.shutdown();

@@ -9,6 +9,7 @@
 #include "core/services/processor_sequences.h"
 #include "core/services/processor_state.h"
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "gui/panel_style.h"
 
 #include <set>
@@ -30,10 +31,8 @@ public:
     explicit GuiProcessors(ableem::GuiBase &gui) : GuiScreen(gui) {}
 
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
-
-    ableem::Texture background; // the launcher's frame, drawn dimmed under the panel
 
     // the order, an on/off switch or a "run again" changed: the caller requests a scan
     bool changed() const { return changed_; }
@@ -48,12 +47,14 @@ private:
     bool moving = false;         // Square picked the selected row up
     std::set<std::string> rerun; // Triangle: forgotten, runs on everything again
     int selected = 0;
+    DpadHold hold; // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0;
 
     const ProcessorInfo *info(const std::string &name) const;
     int count() const { return static_cast<int>(sequences.entries(sequence).size()); }
     int visibleRows() const;
     void moveSelection(int step);
+    void publishItems() const; // the tab's rows and the cursor to the DebugDriver
     void switchTab(ProcessorSequence to);
     void save();
 

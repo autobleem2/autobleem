@@ -9,6 +9,8 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 
+#include <ab_gui/screen_stack.h>
+
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -31,14 +33,7 @@ void GuiLauncher::loop() {
     queuedScroll = 0;
 
     while (menuVisible) {
-        // the menu's headers and blurbs in the current language - Options may have changed it on the way
-        // back into this loop, which is the one time they need translating again
-        if (headersLanguage != app.lang().currentLanguage()) {
-            headersLanguage = app.lang().currentLanguage();
-            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"),
-                     _("Edit Memory Card information"), _("Resume game from saved state point")};
-        }
+        retranslateMenu(); // Options may have changed the language on the way back into this loop
 
         time = gui->platform().ticks();
         for (auto &obj : staticElements) {
@@ -46,6 +41,7 @@ void GuiLauncher::loop() {
         }
 
         menu->update(time);
+        syncMenuCaption();
         carousel.updatePositions();
         // the covers decoded in the background go onto the GPU, a frame at a time; once the row really rests
         // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
@@ -67,6 +63,9 @@ void GuiLauncher::loop() {
         // arrow go on, which the ambient rate (30 fps) draws as well - at the same speed, they run on time
         gui->input().setFrameNeed(somethingMoves() ? ableem::Input::FrameNeed::Active
                                                    : ableem::Input::FrameNeed::Ambient);
+        // what the tweens running ask for on top: the ambient loops ask Ambient, the state-change transitions
+        // hold Active until they end
+        gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
         if (gui->input().frameDue())
             render();
 
@@ -117,6 +116,9 @@ void GuiLauncher::loop() {
             if (e.type == Event::Type::Quit) {
                 menuVisible = false;
                 quitRequested = true;
+                // a lost display is rebuilt in-process (AutoBleem::run) with a fresh GuiLauncher that reads the
+                // Session: the carousel's place goes there before this screen dies (BUG-40)
+                rememberSelection();
             }
             switch (e.type) {
             case Event::Type::KeyDown:
@@ -223,7 +225,7 @@ void GuiLauncher::benchStep() {
             nextCarouselGame(CarouselScrollDuration);
         else
             prevCarouselGame(CarouselScrollDuration);
-    } else if (menu->animationStarted == 0) {
+    } else if (!menu->animating()) {
         switchState(state == LauncherScreenState::Games ? LauncherScreenState::Set : LauncherScreenState::Games,
                     static_cast<int>(now));
     }
@@ -251,9 +253,8 @@ bool GuiLauncher::benchSkips(const string &part) {
 bool GuiLauncher::somethingMoves() const {
     return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
            L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
-           (menu && menu->animationStarted != 0) || (meta && meta->animEndTime != 0) ||
-           (settingsBack && settingsBack->animEndTime != 0) || notificationLines.animating() ||
-           scanBubble.animating() || extensionBubble.animating();
+           gui->uiContext().stack().tweens().busy() || notificationLines.animating() || scanBubble.animating() ||
+           extensionBubble.animating();
 }
 
 //*******************************
@@ -275,14 +276,12 @@ void GuiLauncher::loop_joyMoveLeft() {
 
         if (menu->lastEnabled() > 0) {
             if (!selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
-                if (menu->animationStarted == 0) {
+                if (!menu->animating()) {
                     app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 0;
-                    menu->duration = 100;
-                    menuHead->setText(headers[menu->selOption - 1], fgColor);
-                    menuText->setText(texts[menu->selOption - 1], fgColor);
-                    menu->animationStarted = time;
+                    menu->duration = evomotion::OptionMoveMs;
+                    menu->startTransition();
                 }
             }
         }
@@ -314,14 +313,12 @@ void GuiLauncher::loop_joyMoveRight() {
 
         if (menu->lastEnabled() > 0) {
             if (menu->selOption < menu->lastEnabled()) {
-                if (menu->animationStarted == 0) {
+                if (!menu->animating()) {
                     app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 1;
-                    menu->duration = 100;
-                    menuHead->setText(headers[menu->selOption + 1], fgColor);
-                    menuText->setText(texts[menu->selOption + 1], fgColor);
-                    menu->animationStarted = time;
+                    menu->duration = evomotion::OptionMoveMs;
+                    menu->startTransition();
                 }
             }
         }
@@ -343,7 +340,7 @@ void GuiLauncher::loop_joyMoveUp() {
     }
     if (state == LauncherScreenState::Games) {
         // the Quick menu, above the games as the icon row is below them (the owner, 2026-09-26)
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             motionStart = 0;
             loop_openQuickMenu();
         }
@@ -351,11 +348,11 @@ void GuiLauncher::loop_joyMoveUp() {
         if (carousel.games.empty()) {
             // an empty set: no games to go up to (settleEmptyRoster), so the Quick menu - Re-Scan and the
             // Store are what an empty set needs
-            if (menu->animationStarted == 0)
+            if (!menu->animating())
                 loop_openQuickMenu();
             return;
         }
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
@@ -371,7 +368,7 @@ void GuiLauncher::loop_joyMoveDown() {
         return;
     }
     if (state == LauncherScreenState::Games) {
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Set, time);
             motionStart = 0;
@@ -451,7 +448,7 @@ void GuiLauncher::showPadAssignment() {
         PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()), padSwap);
         text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
     }
-    notificationLines[1].setText(text, DefaultShowingTimeout);
+    showInfo(text);
 }
 
 //*******************************
@@ -468,7 +465,7 @@ void GuiLauncher::pollPadAssignmentEmptyNotice() {
     PadAssignmentDecision decision = checkPadAssignmentEmptyNotice(padAssignmentState, time, PadEmptyNoticeDelay);
     if (!decision.show)
         return;
-    notificationLines[1].setText(_("Controllers") + ": " + _("None"), DefaultShowingTimeout);
+    showInfo(_("Controllers") + ": " + _("None"));
 }
 
 //*******************************
@@ -615,7 +612,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
     // with the game menu's icon row open, Select (and L2+Select) still change the set: the row closes
     // first, the way Up closes it, and the switch goes on from the Games state
     if (state == LauncherScreenState::Set) {
-        if (menu->animationStarted != 0)
+        if (menu->animating())
             return;
         menu->transition = TR_MENUON;
         switchState(LauncherScreenState::Games, time);
@@ -658,7 +655,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
             app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
             return;
         }
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
@@ -670,7 +667,9 @@ void GuiLauncher::loop_circleButton_Pressed() {
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;
-        arrow->visible = sselector->operation == OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
+        arrow->visible =
+            sselector->operation ==
+            OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
         sselector->cleanSaveStateImages();
         if (carousel.selectedIsValid())
             menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
@@ -690,7 +689,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != LauncherScreenState::Resume) {
         app.audio().cursor.play();
         GuiBtnGuide guide(*gui);
-        guide.backgroundImg = background->tex;
+        BackdropScope backdrop(*this);
         guide.show();
     } else {
         if (sselector->operation == OP_LOAD) {
@@ -702,7 +701,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 
                     GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
-                    confirm.show();
+                    confirm.confirmLabel = _("Delete slot");
+                    {
+                        BackdropScope backdrop(*this);
+                        confirm.show();
+                    }
 
                     if (confirm.result) {
                         app.resumePoints().removeSlot(*game, slot);

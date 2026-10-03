@@ -8,6 +8,7 @@
 #include "cover_loader.h"
 #include "core/model/ps_game.h"
 
+#include <ab_gui/tween.h>
 #include <ableem/ableem.h>
 
 #include <cstdint>
@@ -54,16 +55,16 @@ public:
     bool canSelectNext() const { return selectedIsValid() && selected + 1 < static_cast<int>(games.size()); }
     bool canSelectPrevious() const { return selectedIsValid() && selected > 0; }
 
-    bool scrolling = false; // an animation is in progress; input that would start another waits
-    long chainEnd = 0;      // when the last held-stick step ends: the next one starts there (stepStart)
-    long stepStart(int speed, bool eased);
+    bool scrolling = false;                // an animation is in progress; input that would start another waits
+    long chainEnd = 0;                     // when the last held-stick step ends: the next one starts there (stepStart)
+    long stepStart(int speed, bool eased); // CarouselMotion::stepStart at the platform's ticks
     PsCarousel positions;
 
-    // places the covers around `selectedIndex` with no animation. With waitForCovers every shown cover is
-    // loaded before this returns (a new set, a return from a game); without it (the end of a scroll step)
-    // nothing is loaded here - the missing covers are asked of the CoverLoader and arrive through
-    // pumpCovers(), an empty box standing in for one until then. Covers no longer shown are kept, up to
-    // coverCacheLimit(), the longest unused let go first.
+    // places the covers around `selectedIndex` with no animation. With waitForCovers (a new set, a return from a
+    // game) a shown cover the CoverLoader has already decoded goes up before this returns - nothing is decoded
+    // here; without it (the end of a scroll step) nothing is loaded here. Either way the missing covers are
+    // asked of the CoverLoader and arrive through pumpCovers(), the default box standing in for one until then.
+    // Covers no longer shown are kept, up to coverCacheLimit(), the longest unused let go first.
     void setInitialPositions(int selectedIndex, bool waitForCovers = true);
     // how many games beyond each end of the row are decoded ahead for the scroll that brings them in
     static const int Lookahead = 6;
@@ -71,7 +72,8 @@ public:
     // row moves, two at rest; true if it did any. Once a frame from the launcher's loop.
     bool pumpCovers();
     // start the scroll animation towards the next / previous game, `speed` milliseconds long; eased
-    // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next
+    // (easeOutCubic) for a tap, linear for a held stick so that one step runs into the next. Each is one tween run
+    // on the program's Tweens (carousel_motion.h, G5o5), so the DebugDriver is busy until the covers rest
     void scrollLeft(int speed, bool eased = true);
     void scrollRight(int speed, bool eased = true);
     // the selected cover moves up to make room for the game menu, and back down when it closes
@@ -82,7 +84,8 @@ public:
     // the same two places, taken at once with no animation - for a screen that comes back with the menu
     // still open, or a reload that must not drop the cover while the menu shows
     void snapMainCover(bool toGamesRow);
-    // advances every cover's animation; call once per frame before render()
+    // advances every cover's animation; call once per frame before render(). Brings the program's Tweens to now
+    // first (the stack advances them again before the frame is drawn), so the covers are placed for this pass's time
     void updatePositions();
     void render();
 
@@ -119,6 +122,14 @@ private:
     ableem::Texture spareTarget();
 
     ableem::GuiBase &gui_;
+    // the covers' timed moves (G5o5): the floats the runs write, and their owner (declared after them) that stops the
+    // runs with the carousel - or with a new row (setGames). mainMove_ is the last moveMainCover's, which
+    // snapMainCover stops
+    abgui::Tweens &uiTweens();
+    CarouselMotion::MoveRef startMove(long startedAt, int durationMs, bool eased);
+    CarouselMotion::Moves moves_;
+    CarouselMotion::MoveRef mainMove_;
+    abgui::TweenOwner movesOwner_;
     CoverLoader loader_;
     std::vector<ableem::Texture> targetPool_;
     unsigned long placement_ = 0;    // counts setInitialPositions: PsCarouselGame::lastWanted's clock
@@ -138,10 +149,20 @@ private:
 
     // the selected cover's light: a soft glow behind it in the theme's selection colour, breathing slowly,
     // and - when it comes to rest - a shine that crosses its front once (Options "Cover shine", config.ini
-    // covershine). Both are drawn outside the layer, the glow under it, the shine over it.
-    void drawGlow(long now);
+    // covershine): evoimg/sheen.png's diagonal band at the face's height, clipped to its width. Both follow the
+    // face's real width and height (core/model/cover_light.h) and are drawn outside the layer, the glow under
+    // it, the shine over it (only on the selected game facing the viewer - never on an empty box). shineTex_ is
+    // loaded when a crossing is due (drawShine). A theme's `coverGlow` frame (G5k) is drawn instead of the
+    // square glow when it has one: round the face, scaled with the cover, at the glow's alpha.
+    void drawGlow();
     void drawShine(long now);
     ableem::Texture glowTex_, shineTex_;
+    // the breathing's clock (G5o2): an ambient tween on the program's Tweens (abgui::ambient::clockPhase) keeps
+    // glowPhase_ at the platform's ticks in ms, wrapped, started by the first frame the glow is drawn; the owner
+    // (declared after the float it writes) stops it with the carousel
+    float glowPhase_ = 0.0f;
+    bool glowRuns_ = false;
+    abgui::TweenOwner glowOwner_;
     int shineFor_ = -1; // the game the shine last crossed (-1: none since the row moved)
     long shineAt_ = 0;  // when it starts crossing
 };

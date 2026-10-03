@@ -18,7 +18,8 @@ public:
     explicit GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;
-    void render() override;
+    void draw() override; // the list, drawn its own way: the stack clears before and presents after
+    void renderLineIndexOnRow(int index, int row) override;
 
     std::string getTitle() override;
     std::string getStatusLine() override;
@@ -45,6 +46,13 @@ private:
     const ableem::FailedGame &selectedFailed() const { return failed[selected - psGames.size()]; }
     void deleteFailedFolder();
     void settleSelection(); // after a delete: the cursor inside the list again
+
+    // a delete failure outlives the frame it happened on: getStatusLine() shows it instead of the hints
+    // until it times out (renderStatus() alone draws and returns - the very next render() call, from the
+    // rescan/init() right after, would otherwise overwrite it before it is ever presented)
+    void showError(const std::string &message);
+    std::string errorMessage;
+    unsigned int errorMessageUntil = 0;
 
     // the selected game's cover and screenshot, on the left where the editor puts its cover; loaded when
     // the selection changes (a Texture dies with this stack object, before any launch)

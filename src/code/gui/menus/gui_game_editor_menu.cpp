@@ -10,6 +10,10 @@
 #include "core/main.h"
 #include "core/services/environment.h"
 
+#include <ableem/ui/debug_driver.h>
+
+#include <typeinfo>
+
 using namespace std;
 
 #define OPT_FIRST 0
@@ -92,6 +96,20 @@ bool GuiEditor::nxtEmulator() const {
 }
 
 //*******************************
+// GuiEditor::publishToDriver
+//*******************************
+// the DebugDriver's `items` and `selected`: the rows as drawn, a heading band with a leading '#' (translated
+// labels), the cursor's row index among them
+void GuiEditor::publishToDriver(int selectedIndex) const {
+    if (!menuVisible || !ableem::DebugDriver::active())
+        return;
+    vector<string> names;
+    for (const Row &row : rows)
+        names.push_back((row.kind == Row::Kind::Heading ? "#" : "") + row.label);
+    ableem::DebugDriver::publish(typeid(*this).name(), names, selectedIndex);
+}
+
+//*******************************
 // GuiEditor::buildRows / selectedRow / moveSelection
 //*******************************
 void GuiEditor::buildRows() {
@@ -112,11 +130,14 @@ void GuiEditor::buildRows() {
 
     heading(_("Game"));
     boolRow(_("Favorite:"), gameData->internal ? gameData->favorite : gameIni.values["favorite"] == "1", OPT_FAVORITE);
-    boolRow(_("Lightgun Game:"), gameData->lightgun, OPT_LIGHTGUN);
-    boolRow(_("Play using RA:"),
-            (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
-                                                       : gameIni.values["play_using_ra"] == "true",
-            OPT_PLAY_USING_RA);
+    // both are RetroArch-only (a flagged light-gun game always launches through RetroArch): left out without it
+    if (Env::retroArchInstalled()) {
+        boolRow(_("Lightgun game:"), gameData->lightgun, OPT_LIGHTGUN);
+        boolRow(_("Play using RA:"),
+                (gameData->internal || gameData->lightgun) ? gameData->play_using_ra
+                                                           : gameIni.values["play_using_ra"] == "true",
+                OPT_PLAY_USING_RA);
+    }
     boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
 
     // the game has its own config, saved in an emulator's menu: the rows below show its values, greyed,
@@ -159,9 +180,9 @@ void GuiEditor::buildRows() {
     valueRow(_("Frameskip:"), frameskipNames[pcsx.frameskip], OPT_FRAMESKIP);
 
     heading(_("Emulator"));
-    boolRow(_("SpeedHack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
+    boolRow(_("Speedhack:"), pcsx.speedhack == 1, OPT_SPEEDHACK);
     valueRow(_("Clock:"), to_string(pcsx.clock), OPT_CLOCK_PSX);
-    valueRow(_("Spu Interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
+    valueRow(_("Spu interpolation:"), to_string(pcsx.interpolation), OPT_INTERPOLATION);
     boolRow(_("Boot logo:"), pcsx.bootLogo != 0, OPT_BOOTLOGO);
     if (nxt) // Sony's per-title overrides (the console's emulator had them); off unless a game asks
         boolRow(_("Sony hacks:"), pcsx.sonyHacks, OPT_SONYHACKS);
@@ -193,6 +214,30 @@ void GuiEditor::moveSelection(int step) {
     }
 }
 
+// the option row at `index` (a heading is no place for the cursor): the next one in `dir`'s direction, else
+// the nearest the other way
+void GuiEditor::selectNear(int index, int dir) {
+    const int size = static_cast<int>(rows.size());
+    index = max(0, min(index, size - 1));
+    for (int j = index; j >= 0 && j < size; j += dir) {
+        if (rows[j].opt >= 0) {
+            selOption = rows[j].opt;
+            return;
+        }
+    }
+    for (int j = index; j >= 0 && j < size; j -= dir) {
+        if (rows[j].opt >= 0) {
+            selOption = rows[j].opt;
+            return;
+        }
+    }
+}
+
+void GuiEditor::pageSelection(int dir) {
+    const int fit = gui->classicRowsThatFit(gui->assets().themeFont);
+    selectNear(selectedRow() + dir * fit, dir);
+}
+
 //*******************************
 // GuiEditor::unlockSettings
 //*******************************
@@ -200,6 +245,7 @@ void GuiEditor::unlockSettings() {
     shared_ptr<Gui> gui(Gui::getInstance());
     GuiConfirm confirm(*gui);
     confirm.label = _("Delete the settings saved in the emulator and use AutoBleem's again?");
+    confirm.confirmLabel = _("Delete");
     confirm.show();
     if (!confirm.result)
         return;
@@ -322,9 +368,9 @@ void GuiEditor::init() {
 }
 
 //*******************************
-// GuiEditor::render
+// GuiEditor::draw
 //*******************************
-void GuiEditor::render() {
+void GuiEditor::draw() {
     shared_ptr<Gui> gui(Gui::getInstance());
     const bool internal = settings.internal;
     IniFile &gameIni = settings.ini;
@@ -332,15 +378,26 @@ void GuiEditor::render() {
 
     gui->renderBackground();
     gui->renderTextBar();
-    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], gameIni.values["title"],
+    // a game with no title in its metadata (an empty Game.ini "title=", or - internal games - an unrecognised
+    // one) falls back to the folder name rather than showing a blank header (UIREV-18)
+    string title = gameIni.values["title"];
+    if (title.empty())
+        title = internal ? DirEntry::getFileNameFromPath(DirEntry::removeSeparatorFromEndOfPath(gameData->folder))
+                         : gameIni.entry;
+    int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], title,
                                                       gui->classicPanel().w - 2 * PanelStyle::RowInset));
 
     // the pane on the right: the cover and the game's facts
     pane.cover = cover;
     pane.facts.clear();
     pane.facts.emplace_back(_("Published by:"), gameIni.values["publisher"]);
-    pane.facts.emplace_back(_("Year:"), gameIni.values["year"]);
-    pane.facts.emplace_back(_("Players"), gameIni.values["players"]);
+    // year 0 and a players count of 0 both mean "unknown" here, not a real value - skip the row rather
+    // than show a fact that reads as broken; pane.render draws whatever facts are in the vector, so
+    // leaving one out closes the gap by itself
+    if (!gameIni.values["year"].empty() && gameIni.values["year"] != "0")
+        pane.facts.emplace_back(_("Year:"), gameIni.values["year"]);
+    if (!gameIni.values["players"].empty() && gameIni.values["players"] != "0")
+        pane.facts.emplace_back(_("Players:"), gameIni.values["players"]);
     pane.facts.emplace_back(_("Folder:"), internal ? gameData->folder : gameIni.entry);
     pane.facts.emplace_back(_("Memory Card:"), gameIni.values["memcard"] == "SONY"
                                                    ? string(_("Internal"))
@@ -355,6 +412,7 @@ void GuiEditor::render() {
     const int fit = gui->classicRowsThatFit(font);
     const int total = static_cast<int>(rows.size());
     const int sel = selectedRow();
+    publishToDriver(sel);
     if (sel >= 0) {
         if (sel < firstVisible)
             firstVisible = sel;
@@ -365,15 +423,33 @@ void GuiEditor::render() {
             firstVisible--;
     }
     firstVisible = max(0, min(firstVisible, max(0, total - fit)));
+    // a theme's selection frame goes under every row's text, so it is drawn before all of them - its bleed would
+    // cover the row above otherwise (G4d); without a frame the band is drawn with its row, as before
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed) {
+        for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
+            if (rows[i].kind != Row::Kind::Heading && rows[i].opt == selOption) {
+                gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
+                break;
+            }
+        }
+    }
     for (int i = firstVisible, line = 0; i < total && line < fit; i++, line++) {
         const Row &row = rows[i];
         if (row.kind == Row::Kind::Heading) {
-            gui->text().renderLabelBox(line, yoffset, right);
+            gui->text().renderLabelBox(gui->uiContext(), line, yoffset, right);
+            TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
             gui->text().renderTextLine(row.label, line, yoffset, XALIGN_LEFT);
             continue;
         }
-        if (row.opt == selOption)
-            gui->text().renderSelectionBox(line, yoffset, 0, ableem::Font(), right);
+        // the theme's roles (UIREV-29): the selected row bright, the others dim
+        // a locked row is under the theme's `disabled` role when it has one (G5t): its text in `description`
+        const bool lockedRole = row.locked && gui->uiContext().disabledVeil().set;
+        TextRenderer::RowRoleScope role(gui->text(), lockedRole             ? TextRenderer::RowRole::Disabled
+                                                     : row.opt == selOption ? TextRenderer::RowRole::Selected
+                                                                            : TextRenderer::RowRole::Row);
+        if (row.opt == selOption && !framed)
+            gui->text().renderSelectionBox(gui->uiContext(), line, yoffset, 0, ableem::Font(), right);
         if (row.kind == Row::Kind::Bool) {
             gui->text().renderTextLineOptions(row.label + (row.on ? string("|@Check|") : string("|@Uncheck|")), line,
                                               yoffset, XALIGN_LEFT, 0, right);
@@ -382,11 +458,14 @@ void GuiEditor::render() {
             gui->text().renderRowValue(row.value, line, yoffset, right);
         }
         if (row.locked)
-            gui->text().renderDisabledBox(line, yoffset, right);
+            gui->text().renderDisabledBox(gui->uiContext(), line, yoffset, right);
     }
     gui->renderScrollMarkers(firstVisible > 0, firstVisible + fit < total);
 
-    string guiMenu = selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
+    string guiMenu = "|@L1/R1| " + _("First/last") + "   |@L2/R2| " + _("Page") + "   ";
+    if (selOption != OPT_UNLOCK) // the unlock row has no value to choose
+        guiMenu += "|@Left+Right| " + _("Choose") + "   ";
+    guiMenu += selOption == OPT_UNLOCK ? "|@X| " + _("Unlock") + "  |@T| " + _("Rename") : "|@T| " + _("Rename");
     if (!internal) {
         guiMenu += "  |@S| " + _("Change memory card") + " ";
         if (gameIni.values["memcard"] == "SONY") {
@@ -395,8 +474,6 @@ void GuiEditor::render() {
     }
     guiMenu += " |@O| " + _("Back") + "|";
     gui->renderStatus(guiMenu);
-
-    renderer.present();
 }
 
 //*******************************
@@ -432,6 +509,17 @@ void GuiEditor::loop() {
                 break;
 
             case Event::Type::ButtonDown:
+                // L1/R1 the first and last row, L2/R2 a page (the cursor only ever rests on an option row)
+                if (e.button == Button::L1 || e.button == Button::R1 || e.button == Button::L2 ||
+                    e.button == Button::R2) {
+                    app.audio().cursor.play();
+                    const bool down = e.button == Button::R1 || e.button == Button::R2;
+                    if (e.button == Button::L1 || e.button == Button::R1)
+                        selectNear(down ? static_cast<int>(rows.size()) - 1 : 0, down ? -1 : 1);
+                    else
+                        pageSelection(down ? 1 : -1);
+                    break;
+                }
                 if (!internal) {
                     if (gameIni.values["memcard"] == "SONY") {
                         if (e.button == Button::Start) {
@@ -531,7 +619,7 @@ void GuiEditor::startHold(bool value, int step) {
     if (hold.held() && holdOnValue == value && hold.step() == step)
         return; // the same direction still down
     holdOnValue = value;
-    hold.press(step, gui->platform().ticks(), value ? HoldRepeat::Timing{400, 120, 1500, 60} : HoldRepeat::rows());
+    hold.press(step, gui->platform().ticks());
     holdStep(step);
 }
 

@@ -4,7 +4,10 @@
 #include "carousel.h"
 #include "gui/gui.h"
 #include "app_base.h"
-#include "core/model/timing.h"
+#include "core/model/cover_light.h"
+
+#include <ab_gui/ambient.h>
+#include <ab_gui/screen_stack.h>
 
 #include <algorithm>
 #include <cmath>
@@ -28,6 +31,9 @@ const long ShineDelayMs = 120;
 //*******************************
 void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
     freeTextures();
+    // the old row's moves stop with it (its covers go; the new ones start at rest)
+    movesOwner_.cancel();
+    mainMove_ = CarouselMotion::MoveRef();
 
     // copy the gamesList into the carousel - just the games there are, however few - and the empty boxes
     // for the slots the games leave bare: the kind of box the games are in (the Lightgun set mixes PS1
@@ -50,9 +56,14 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
 void Carousel::freeTextures() {
     layerValid_ = false; // a texture made later may get a freed one's address: never trust the signature then
     forEachItem([](PsCarouselGame &item) { item.freeTex(); });
+    PsCarouselGame::releaseNoArtLayers();
     placeholderTex_ = ableem::Texture();
     glowTex_ = ableem::Texture();
     shineTex_ = ableem::Texture();
+    // the shine's state goes with its texture: a new row selects game 0 again, and a stale shineFor_ == 0 meant
+    // "already shone" - no crossing, and the freed texture never reloaded (BUG-35)
+    shineFor_ = -1;
+    shineAt_ = 0;
     targetPool_.clear();
     loader_.clear();
 }
@@ -165,14 +176,19 @@ void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
         item.wanted = true;
         item.lastWanted = placement_;
         if (item.visible && !item.coverPng.valid()) {
+            // a new row never waits for a decode: a cover the loader already has goes up now, the rest show the
+            // default box and arrive through pumpCovers() - a row of big box art opened in seconds on the console
+            // when every slot's PNG was decoded here first
             if (waitForCovers && !item.artFailed) {
                 ableem::Image image;
-                if (loader_.take(item.artPath(), image))
+                const string &path = item.artPath();
+                if (path.empty()) {
+                    item.loadTex(renderer, spareTarget()); // a dev host's internal game: no file to decode
+                    item.artFailed = !item.coverPng.valid();
+                } else if (loader_.take(path, image)) {
                     item.loadFromImage(renderer, image, spareTarget());
-                else
-                    item.loadTex(renderer, spareTarget());
-                item.artFailed = !item.coverPng.valid();
-                Gui::tickBusy();
+                    item.artFailed = !item.coverPng.valid();
+                }
             }
             // a cover still missing is shown as an empty box until it arrives
             placeholderShown = placeholderShown || !item.coverPng.valid();
@@ -299,18 +315,24 @@ bool Carousel::pumpCovers() {
 }
 
 //*******************************
-// Carousel::stepStart
+// Carousel::stepStart / uiTweens / startMove
 //*******************************
 // when a scroll step begins: now - or, for a held stick's step that follows the last one (not eased, and
 // that one ended no more than a step ago), exactly where the last one ended, so the row keeps its speed
 // instead of losing the part of a frame between the end of a step and the start of the next
 long Carousel::stepStart(int speed, bool eased) {
-    const long now = gui_.platform().ticks();
-    long start = now;
-    if (!eased && chainEnd != 0 && now >= chainEnd && now - chainEnd < speed)
-        start = chainEnd;
-    chainEnd = eased ? 0 : start + speed;
-    return start;
+    return CarouselMotion::stepStart(gui_.platform().ticks(), chainEnd, speed, eased);
+}
+
+// the program's one Tweens (the screen stack's), clocked by the platform's ticks
+abgui::Tweens &Carousel::uiTweens() {
+    return Gui::getInstance()->uiContext().stack().tweens();
+}
+
+// a move of the covers that set off together: one tween run from `startedAt` (G5o5, carousel_motion.h)
+CarouselMotion::MoveRef Carousel::startMove(long startedAt, int durationMs, bool eased) {
+    return moves_.start(uiTweens(), movesOwner_, static_cast<unsigned int>(startedAt),
+                        static_cast<unsigned int>(durationMs), eased);
 }
 
 //*******************************
@@ -319,7 +341,7 @@ long Carousel::stepStart(int speed, bool eased) {
 // start scroll animation to next game
 void Carousel::scrollLeft(int speed, bool eased) {
     scrolling = true;
-    long time = stepStart(speed, eased);
+    const CarouselMotion::MoveRef move = startMove(stepStart(speed, eased), speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -330,9 +352,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
                 game.visible = false;
             }
             game.destination = positions.coverPositions[nextIndex];
-            game.animationDuration = speed;
-            game.animationStart = time;
-            game.eased = eased;
+            game.move = move;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -346,7 +366,7 @@ void Carousel::scrollLeft(int speed, bool eased) {
 // start scroll animation to previous game
 void Carousel::scrollRight(int speed, bool eased) {
     scrolling = true;
-    long time = stepStart(speed, eased);
+    const CarouselMotion::MoveRef move = startMove(stepStart(speed, eased), speed, eased);
     forEachItem([&](PsCarouselGame &game) {
         if (game.visible) {
             int nextIndex = game.screenPointIndex;
@@ -356,9 +376,7 @@ void Carousel::scrollRight(int speed, bool eased) {
                 game.visible = false;
             }
             game.destination = positions.coverPositions[nextIndex];
-            game.animationDuration = speed;
-            game.animationStart = time;
-            game.eased = eased;
+            game.move = move;
 
             game.screenPointIndex = nextIndex;
             game.current = game.actual;
@@ -385,9 +403,8 @@ void Carousel::moveMainCover(bool toGamesRow) {
     if (!selectedIsValid())
         return;
     games[selected].destination = mainCoverPoint(toGamesRow);
-    games[selected].animationStart = gui_.platform().ticks();
-    games[selected].animationDuration = 200;
-    games[selected].eased = true;
+    mainMove_ = startMove(gui_.platform().ticks(), 200, true);
+    games[selected].move = mainMove_;
 }
 
 bool Carousel::animating() const {
@@ -396,7 +413,7 @@ bool Carousel::animating() const {
     if (shineAt_ != 0 && gui_.platform().ticks() < shineAt_ + ShineMs)
         return true;
     for (const auto &game : games)
-        if (game.visible && game.animationStart != 0)
+        if (game.visible && game.move.set())
             return true;
     return false;
 }
@@ -408,7 +425,10 @@ void Carousel::snapMainCover(bool toGamesRow) {
     games[selected].destination = point;
     games[selected].actual = point;
     games[selected].current = point;
-    games[selected].animationStart = 0;
+    // its raise or lowering, if that is what it is on, stops: nothing else moves with it
+    if (games[selected].move.set() && games[selected].move.id == mainMove_.id)
+        moves_.cancel(uiTweens(), mainMove_);
+    games[selected].move = CarouselMotion::MoveRef();
 }
 
 //*******************************
@@ -418,7 +438,7 @@ void Carousel::snapMainCover(bool toGamesRow) {
 void Carousel::updateVisibility() {
     bool allAnimationFinished = true;
     forEachItem([&](const PsCarouselGame &game) {
-        if ((game.animationStart != 0) && game.visible) {
+        if (game.move.set() && game.visible) {
             allAnimationFinished = false;
         }
     });
@@ -432,29 +452,15 @@ void Carousel::updateVisibility() {
 //*******************************
 // Carousel::updatePositions
 //*******************************
-// this method runs during the loop to update positions of the covers during animation
+// this method runs during the loop to update positions of the covers during animation: the tweens to this pass's
+// time, then each visible cover part way along its move - or, the move over, on its destination (G5o5: the
+// positions the hand-written timer gave, at every time - carousel_motion.h, test_carousel_motion)
 void Carousel::updatePositions() {
-    long currentTime = gui_.platform().ticks();
+    abgui::Tweens &runs = uiTweens();
+    runs.update();
     forEachItem([&](PsCarouselGame &game) {
-        if (game.visible) {
-            if (game.animationStart != 0) {
-                long position = currentTime - game.animationStart;
-                float delta = position * 1.0f / game.animationDuration;
-                if (game.eased && delta < 1.0f)
-                    delta = easeOutCubic(delta);
-                game.actual.x = game.current.x + (game.destination.x - game.current.x) * delta;
-                game.actual.y = game.current.y + (game.destination.y - game.current.y) * delta;
-                game.actual.scale = game.current.scale + (game.destination.scale - game.current.scale) * delta;
-                game.actual.shade = game.current.shade + (game.destination.shade - game.current.shade) * delta;
-                game.actual.angle = game.current.angle + (game.destination.angle - game.current.angle) * delta;
-
-                if (delta > 1.0f) {
-                    game.actual = game.destination;
-                    game.current = game.destination;
-                    game.animationStart = 0;
-                }
-            }
-        }
+        if (game.visible)
+            CarouselMotion::advance(game, moves_, runs);
     });
     updateVisibility();
 }
@@ -579,7 +585,7 @@ void Carousel::render() {
     });
 
     const long now = gui_.platform().ticks();
-    drawGlow(now);
+    drawGlow();
 
     // a render target is not multisampled: with MSAA on, the row is drawn to the screen every frame, so the
     // covers keep their smooth edges at rest too (a few dozen geometry calls - the layer's saving is small then)
@@ -646,16 +652,22 @@ void Carousel::render() {
 // Carousel::drawGlow / drawShine
 //*******************************
 namespace {
-// the selected cover's centre and size on screen, and how much it is "the selected one" - 1 in the middle
-// slot, 0 once it is half-way to the next (so the light hands over as the row scrolls)
+// the selected cover's face on screen (its box: a jewel case's square, a big box's art at its own aspect), its
+// centre and scale, and how much it is "the selected one" - 1 in the middle slot, 0 once it is half-way to the
+// next (so the light hands over as the row scrolls)
 struct Spot {
-    float cx = 0, cy = 0, size = 0, strength = 0;
+    CoverLight::Box face;
+    float cx = 0, cy = 0, scale = 1, strength = 0;
 };
 Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
     Spot spot;
     const PsScreenpoint &p = game.actual;
     const ableem::Rect &content = game.content;
-    spot.size = content.w * p.scale;
+    spot.face.x = p.x + content.x * p.scale;
+    spot.face.y = p.y + content.y * p.scale;
+    spot.face.w = content.w * p.scale;
+    spot.face.h = content.h * p.scale;
+    spot.scale = p.scale;
     spot.cx = p.x + (content.x + content.w / 2.0f) * p.scale;
     spot.cy = p.y + (content.y + content.h / 2.0f) * p.scale;
     const float off = std::min(1.0f, std::fabs(spot.cx - screenMiddle) / 150.0f);
@@ -665,13 +677,36 @@ Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
 }
 } // namespace
 
-void Carousel::drawGlow(long now) {
+void Carousel::drawGlow() {
     if (!selectedIsValid() || !games[selected].visible || !games[selected].coverPng.valid())
         return;
     ableem::Renderer &renderer = gui_.renderer();
     const Spot spot = spotOf(games[selected], renderer.width() / 2.0f);
     if (spot.strength < 0.02f)
         return;
+    // breathing, 0.8..1 every 5.6 s - sin(ticks / 900), the ticks from an ambient tween (G5o2) that starts with the
+    // first frame the glow is drawn and keeps the phase the clock itself would give
+    if (!glowRuns_) {
+        glowRuns_ = true;
+        abgui::Tweens &tweens = Gui::getInstance()->uiContext().stack().tweens();
+        const unsigned int startTicks = tweens.now(); // the tweens' own clock, which is the platform's ticks
+        glowPhase_ = abgui::ambient::clockPhaseStart(startTicks);
+        tweens.start(abgui::ambient::clockPhase(glowPhase_, startTicks), glowOwner_);
+    }
+    const float pulse = 0.9f + 0.1f * std::sin(glowPhase_ / 900.0f);
+    // the theme's coverGlow frame (G5k), when it has one: round the face, its slices and bleed scaled with the cover,
+    // at the glow's alpha (strength x breathing), tinted by the theme's own `tint` (selection) - instead of the square
+    {
+        abgui::Context &ctx = Gui::getInstance()->uiContext();
+        if (ctx.frame("coverGlow").valid()) {
+            const ableem::Rect face(
+                static_cast<int>(std::lround(spot.face.x)), static_cast<int>(std::lround(spot.face.y)),
+                static_cast<int>(std::lround(spot.face.w)), static_cast<int>(std::lround(spot.face.h)));
+            ctx.style().drawFrame(ctx, "coverGlow", face, static_cast<unsigned char>(255 * spot.strength * pulse),
+                                  CoverLight::glowFrameScale(spot.face));
+            return;
+        }
+    }
     if (!glowTex_.valid()) {
         // a soft square of light, brightest in the middle: nested rects, each adding a little, in a target
         // (so premultiplied), drawn scaled - the linear filter rounds the steps off
@@ -696,70 +731,55 @@ void Carousel::drawGlow(long now) {
     const ableem::ThemeColor &selection = AppBase::get().theme().launcher().colors.selection;
     const ableem::Color light =
         selection.set ? ableem::Color(selection.r, selection.g, selection.b) : ableem::Color(255, 255, 255);
-    // breathing, 0.8..1 every 5.6 s
-    const float pulse = 0.9f + 0.1f * std::sin(static_cast<float>(now) / 900.0f);
     const float k = 0.55f * spot.strength * pulse; // a hint of light, not a lamp (the owner's look check)
     // premultiplied: the colour and the alpha both scale, or the light would not fade with them
     glowTex_.setColorMod(ableem::Color(static_cast<unsigned char>(light.r * k), static_cast<unsigned char>(light.g * k),
                                        static_cast<unsigned char>(light.b * k)));
     glowTex_.setAlphaMod(static_cast<unsigned char>(255 * k));
-    const float margin = 44.0f * spot.size / 222.0f;
-    const float side = spot.size + 2 * margin;
-    renderer.copy(glowTex_, nullptr, ableem::FRect(spot.cx - side / 2, spot.cy - side / 2, side, side));
+    // round the face's real width and height (a tall or a wide box too), 44 px past each edge at scale 1
+    const CoverLight::Box glow = CoverLight::glowBox(spot.face, spot.scale);
+    renderer.copy(glowTex_, nullptr, ableem::FRect(glow.x, glow.y, glow.w, glow.h));
 }
 
 void Carousel::drawShine(long now) {
     if (!selectedIsValid())
         return;
     const PsCarouselGame &game = games[selected];
-    const bool resting = !scrolling && game.animationStart == 0;
+    const bool resting = !scrolling && !game.move.set();
     if (!resting) {
         shineFor_ = -1; // the row moved: the next rest shines again
         shineAt_ = 0;
         return;
     }
+    ableem::Renderer &renderer = gui_.renderer();
     if (shineFor_ != selected) {
         shineFor_ = selected;
         const bool wanted = AppBase::get().config().inifile.values["covershine"] != "false";
         shineAt_ = wanted ? now + ShineDelayMs : 0;
+        // the same built-in picture on every theme (not a theme key): a square of white with one soft diagonal
+        // band in its alpha, loaded once a crossing is due - a missing file then costs one log line, not one a frame
+        if (wanted && !shineTex_.valid()) {
+            shineTex_ = ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg/sheen.png");
+            if (shineTex_.valid())
+                shineTex_.setBlendMode(ableem::BlendMode::Blend);
+        }
     }
-    if (shineAt_ == 0 || now < shineAt_ || now >= shineAt_ + ShineMs || !game.coverPng.valid() ||
+    if (shineAt_ == 0 || now < shineAt_ || now >= shineAt_ + ShineMs || !game.coverPng.valid() || !shineTex_.valid() ||
         std::fabs(game.actual.angle) >= 0.5f)
         return;
-    ableem::Renderer &renderer = gui_.renderer();
-    if (!shineTex_.valid()) {
-        // a band of light across, clear at both sides: each column its own alpha, added onto the cover
-        const int width = 64;
-        shineTex_ = ableem::Texture::createTarget(renderer, width, 4);
-        shineTex_.setBlendMode(ableem::BlendMode::Add);
-        const ableem::Color keep = renderer.drawColor();
-        renderer.pushTarget(&shineTex_);
-        renderer.setBlendMode(ableem::BlendMode::None);
-        for (int x = 0; x < width; x++) {
-            const float t = std::sin(Pi * (x + 0.5f) / width);
-            renderer.setDrawColor(ableem::Color(255, 255, 255, static_cast<unsigned char>(110 * t * t)));
-            const ableem::Rect column(x, 0, 1, 4);
-            renderer.fillRects(&column, 1);
-        }
-        renderer.popTarget();
-        renderer.setBlendMode(ableem::BlendMode::Blend);
-        renderer.setDrawColor(keep);
-    }
-    // the band runs from just off the cover's left edge to just off its right, clipped to the cover
+    // the band crosses the face from just off its left edge to just off its right, the picture drawn at the
+    // face's height (so the band keeps its angle on any aspect) and clipped to its width (CoverLight::shineSlice).
+    // A no-art box (noArt: the two-layer placeholder at its system's aspect) is composed into coverPng like real
+    // art, its `content` the face - it crosses it the same way; only an empty box or a loading stand-in has no cover
     const Spot spot = spotOf(game, renderer.width() / 2.0f);
     const float t = static_cast<float>(now - shineAt_) / ShineMs;
     const float eased = t * t * (3.0f - 2.0f * t);
-    const float left = spot.cx - spot.size / 2, right = spot.cx + spot.size / 2;
-    const float band = spot.size * 0.35f;
-    const float from = left - band + (right - left + band) * eased;
-    const float x0 = std::max(left, from), x1 = std::min(right, from + band);
-    if (x1 <= x0)
+    const ableem::Size texSize = shineTex_.size();
+    const CoverLight::ShineSlice slice = CoverLight::shineSlice(spot.face, eased, texSize.w);
+    if (!slice.visible)
         return;
-    const int texW = 64;
-    const int u0 = static_cast<int>((x0 - from) / band * texW),
-              u1 = static_cast<int>(std::ceil((x1 - from) / band * texW));
-    const ableem::Rect src(u0, 0, std::max(1, std::min(texW, u1) - u0), 4);
-    renderer.copy(shineTex_, &src, ableem::FRect(x0, spot.cy - spot.size / 2, x1 - x0, spot.size));
+    const ableem::Rect src(slice.srcX, 0, slice.srcW, texSize.h);
+    renderer.copy(shineTex_, &src, ableem::FRect(slice.dst.x, slice.dst.y, slice.dst.w, slice.dst.h));
 }
 
 //*******************************

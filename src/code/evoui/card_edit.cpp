@@ -27,7 +27,9 @@ CardEdit::CardEdit(ableem::Renderer &renderer) : renderer_(renderer) {
 
     for (auto &icon : icons_) {
         for (auto &frame : icon) {
-            frame = Texture::createStreaming(renderer_, MemcardImage::IconSize, MemcardImage::IconSize);
+            // nearest filtering: the icons are drawn at a whole multiple, colour 0 is transparent
+            frame = Texture::createStreamingNearest(renderer_, MemcardImage::IconSize, MemcardImage::IconSize);
+            frame.setBlendMode(ableem::BlendMode::Blend);
         }
     }
 

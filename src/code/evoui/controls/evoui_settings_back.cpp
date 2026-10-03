@@ -16,40 +16,48 @@ void PsSettingsBack::setCurLen(int len) {
     w = SCREEN_WIDTH;
     nextLen = len;
     prevLen = len;
-    animEndTime = 0;
+    owner_.cancel();
+    sliding_ = false;
 }
 
 //*******************************
 // PsSettingsBack::update
 //*******************************
 void PsSettingsBack::update(long time) {
-    if (visible)
-        if (animEndTime != 0) {
-            if (animStarted == 0) {
-                animStarted = time;
-                prevLen = h;
-            }
-
-            if (animStarted != 0) {
-                // calculate length for point in time
-                long currentAnim = time - animStarted;
-                long totalAnimTime = animEndTime - animStarted;
-                float position = easeOutCubic(currentAnim * 1.0f / totalAnimTime);
-                int newSize = prevLen + ((nextLen - prevLen) * position);
-                y = 632 - newSize;
-                h = newSize;
-                x = 0;
-                w = SCREEN_WIDTH;
-            }
-
-            if (time >= animEndTime) {
-                animStarted = 0;
-                animEndTime = 0;
-                y = 632 - nextLen;
-                h = nextLen;
-                x = 0;
-                w = SCREEN_WIDTH;
-            }
-        }
     lastTime = time;
+}
+
+//*******************************
+// PsSettingsBack::slideTo
+//*******************************
+void PsSettingsBack::slideTo(int len) {
+    owner_.cancel();
+    prevLen = h;
+    nextLen = len;
+    progress_ = 0;
+    sliding_ = true;
+    gui->uiContext().stack().tweens().start(
+        abgui::Tween(progress_, 0.0f, 1.0f, evomotion::SettingsBandMs).onEnd([this]() {
+            sliding_ = false;
+            y = 632 - nextLen;
+            h = nextLen;
+            x = 0;
+            w = SCREEN_WIDTH;
+        }),
+        owner_);
+}
+
+//*******************************
+// PsSettingsBack::render
+//*******************************
+void PsSettingsBack::render() {
+    // the band's length at this frame (a hidden band did not move before either)
+    if (visible && sliding_) {
+        const int newSize = evomotion::slidInt(prevLen, nextLen, progress_);
+        y = 632 - newSize;
+        h = newSize;
+        x = 0;
+        w = SCREEN_WIDTH;
+    }
+    PsObj::render();
 }

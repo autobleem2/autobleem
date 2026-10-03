@@ -6,6 +6,10 @@
 #include "../../app.h"
 #include "core/services/environment.h"
 
+#include <ableem/ui/debug_driver.h>
+
+#include <typeinfo>
+
 using namespace std;
 
 #define OPT_LIGHTGUN 1
@@ -21,9 +25,9 @@ void GuiEditorRA::init() {
 }
 
 //*******************************
-// GuiEditorRA::render
+// GuiEditorRA::draw
 //*******************************
-void GuiEditorRA::render() {
+void GuiEditorRA::draw() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
@@ -39,17 +43,27 @@ void GuiEditorRA::render() {
     if (gameData->year > 0)
         pane.facts.emplace_back(_("Year:"), to_string(gameData->year));
     pane.render(*gui);
+    if (menuVisible) // the DebugDriver's rows: the heading band and the one option, the cursor on it
+        ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game"), _("Lightgun game:")}, 1);
 
     const int right = GameDetailPane::rowsRight(*gui);
-    gui->text().renderLabelBox(0, yoffset, right);
-    gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
-    gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    // a theme's selection frame goes under the heading and the row's text, so it comes first (G4d)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    gui->text().renderLabelBox(gui->uiContext(), 0, yoffset, right);
+    {
+        TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
+        gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
+    }
+    if (!framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected); // the one row, always selected
     gui->text().renderTextLineOptions(
-        _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
+        _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);
 
     gui->renderStatus("|@O| " + _("Back") + "|");
-    renderer.present();
 }
 
 //*******************************

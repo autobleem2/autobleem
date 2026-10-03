@@ -6,6 +6,7 @@
 #include "gui_options_menu_base.h"
 #include "gui/gui.h"
 #include "gui/hold_repeat.h"
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -30,9 +31,11 @@ enum {
     CFG_RA_PERSIST,
     CFG_PAD_SWAP,
     CFG_DISPLAY,
-    CFG_COVER_SHINE
+    CFG_COVER_SHINE,
+    CFG_SPLASH_SCREEN,
+    CFG_ANIMATIONS
 };
-#define CFG_LAST CFG_COVER_SHINE
+#define CFG_LAST CFG_ANIMATIONS
 #define CFG_SIZE (CFG_LAST + 1)
 #define CFG_HEADING (-1) // a group heading row: not an option, never selected
 
@@ -46,7 +49,9 @@ public:
     void init() override;
     // the rows packed at the font's height, scrolling when more than fit (the base's paging), in groups
     // under heading rows the cursor skips
-    void render() override;
+    void draw() override;
+    // before each frame: the DebugDriver's rows and cursor, the held row's next step (holdTick)
+    bool prepareFrame() override;
     bool skipSelectingThisLineWhenMovingByOne(int index) override { return lines[index].id == CFG_HEADING; }
     void doKeyDown() override;
     void doKeyUp() override;
@@ -58,7 +63,7 @@ private:
     bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn
     // a held Left/Right (see doJoyRight): the step at the press, repeats from render(), the reload a row needs
     // put off to the release
-    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::Timing{400, 120, 1500, 60}; }
+    static HoldRepeat::Timing valueHoldTiming() { return HoldRepeat::rows(); }
     HoldRepeat valueHold;
     bool holdTicking = false;
     bool pendingReload = false;
@@ -84,7 +89,7 @@ public:
 
     void fill();
 
-    std::string getTitle() override { return _("Configuration"); }
+    std::string getTitle() override { return _("Options"); }
     std::string getStatusLine() override;
 
     std::string valueText(const OptionsInfo &info, const std::string &value) override;
@@ -97,6 +102,9 @@ public:
     std::string doOptionIndex(unsigned int index) override;
 
     int exitCode = 0;
+    // set by the screen that opened Options (the launcher): called once after a language or font reload, to take the
+    // snapshot under Options again - the old one is of the launcher in the old language and font (BUG-49)
+    std::function<void()> backdropRefresh;
     // Options -> Display changed: the OutputMode token to try (config.ini keeps the old one until the new
     // one is confirmed - GuiKeepDisplay); "" when the row was not changed
     std::string newOutputMode;
@@ -106,8 +114,8 @@ public:
     void doCircle_Pressed() override;
     void doCross_Pressed() override;
 
-    void doJoyRight() override; // the value to the right; held, it goes on
-    void doJoyLeft() override;  // the value to the left; held, it goes on
+    void doJoyRight() override;  // the value to the right; held, it goes on
+    void doJoyLeft() override;   // the value to the left; held, it goes on
     void doJoyCenter() override; // the release: a put-off reload happens now
 
     void doKeyRight() override; // move option to the right

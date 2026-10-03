@@ -2,7 +2,8 @@
 """
 The language files: src/resources/lang/<Language>.txt, one "English text=Translated text" per line.
 
-    python tools/lang_tools.py extract              # English.txt from every _("...") in SRC_DIRS
+    python tools/lang_tools.py extract              # English.txt from every _("...") in SRC_DIRS and every
+                                                    # translate("...") in TRANSLATE_DIRS (ab_gui)
     python tools/lang_tools.py update               # every other file gets English.txt's keys (missing -> empty)
     python tools/lang_tools.py update --remove-obsolete
     python tools/lang_tools.py validate [FILE...]   # format, duplicates, keys not in English.txt; exit 1 on a problem
@@ -29,16 +30,21 @@ SRC_DIRS = [
     REPO / 'autobleem-core' / 'src' / 'code',
     REPO / 'autobleem-core' / 'lib_ableem' / 'src',
 ]
+# ab_gui (autobleem-core's UI library) has no _(): its widgets hand their English to the program's translator as
+# ctx.translate("..."), and the launcher's language files hold those strings too - so without --src-dir these
+# trees are scanned for translate("...") as well
+TRANSLATE_DIRS = [
+    REPO / 'autobleem-core' / 'ab_gui',
+]
 LANG_DIR = REPO / 'src' / 'resources' / 'lang'
 SOURCE = 'English'
 
 
-def extract_strings(src_dirs) -> set:
-    """every _("...") in the C++ sources: a literal, or adjacent literals the way clang-format splits a long
-    one ("..." "..."), joined; a _( inside another identifier (runLines_("x")) is not one; comments skipped"""
-    call = re.compile(r'(?<![A-Za-z0-9_])_\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)')
-    literal = re.compile(r'"((?:[^"\\]|\\.)*)"')
-    strings = set()
+LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
+
+
+def source_texts(src_dirs):
+    """every C++ source under the trees, its // comments cut off"""
     paths = [path for src_dir in src_dirs if src_dir.is_dir()
              for ext in ('*.cpp', '*.h') for path in src_dir.rglob(ext)]
     for path in paths:
@@ -46,10 +52,64 @@ def extract_strings(src_dirs) -> set:
         for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
             cut = line.find('//')
             lines.append(line if cut == -1 else line[:cut])
-        for pieces in call.findall('\n'.join(lines)):
-            text = ''.join(literal.findall(pieces)).replace('\\"', '"')
-            if text:
-                strings.add(text)
+        yield '\n'.join(lines)
+
+
+def extract_strings(src_dirs) -> set:
+    """every _("...") in the C++ sources: a literal, or adjacent literals the way clang-format splits a long
+    one ("..." "..."), joined; a _( inside another identifier (runLines_("x")) is not one; comments skipped"""
+    call = re.compile(r'(?<![A-Za-z0-9_])_\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)')
+    strings = set()
+    for text in source_texts(src_dirs):
+        for pieces in call.findall(text):
+            joined = ''.join(LITERAL.findall(pieces)).replace('\\"', '"')
+            if joined:
+                strings.add(joined)
+    return strings
+
+
+def call_argument(text: str, start: int) -> str:
+    """the argument of the call whose '(' is at text[start]: up to the matching ')', string literals skipped over"""
+    depth, i = 0, start
+    while i < len(text):
+        c = text[i]
+        if c == '"':
+            match = LITERAL.match(text, i)
+            i = match.end() if match else i + 1
+            continue
+        if c == '(':
+            depth += 1
+        elif c == ')':
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:i]
+        i += 1
+    return ''
+
+
+def extract_translated(src_dirs) -> set:
+    """every string an ab_gui widget hands its translator: translate("...") (adjacent literals joined, as for _()),
+    and each literal of a choice between literals, translate(on ? "ON" : "OFF"); an argument that builds its text
+    (a '+', a call) gives nothing - its pieces are not keys"""
+    call = re.compile(r'(?<![A-Za-z0-9_])translate\(')
+    strings = set()
+    for text in source_texts(src_dirs):
+        for match in call.finditer(text):
+            argument = call_argument(text, match.end() - 1)
+            literals = LITERAL.findall(argument)
+            outside = LITERAL.sub('', argument)
+            if not literals or '+' in outside or '(' in outside:
+                continue
+            if outside.strip() == '':
+                keys = [''.join(literals)]
+            elif '?' in outside:
+                keys = literals
+            else:
+                continue
+            for key in keys:
+                key = key.replace('\\"', '"')
+                if key:
+                    strings.add(key)
     return strings
 
 
@@ -105,10 +165,11 @@ def language_files(lang_dir: Path):
 
 def cmd_extract(args):
     src_dirs = [Path(d) for d in args.src_dir] if args.src_dir else SRC_DIRS
-    for d in src_dirs:
+    translate_dirs = [] if args.src_dir else TRANSLATE_DIRS
+    for d in src_dirs + translate_dirs:
         if not d.is_dir():
             print(f'{d}: not there, skipped', file=sys.stderr)
-    strings = extract_strings(src_dirs)
+    strings = extract_strings(src_dirs) | extract_translated(translate_dirs)
     path = Path(args.lang_dir) / f'{SOURCE}.txt'
     write_key_value(path, {s: s for s in strings}, SOURCE)
     print(f'{path}: {len(strings)} strings')

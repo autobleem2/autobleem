@@ -7,7 +7,7 @@
 //*******************************
 struct OptionsInfo {
     int id;                             // ex: CFG_THEME
-    std::string descriptionToTranslate; // ex: _("AutoBleem Theme:")
+    std::string descriptionToTranslate; // ex: _("AutoBleem theme:")
     std::string iniKey;                 // ex: "theme"
     bool keyIsBoolean;                  // if it's false/true we substitute the switch icons
     std::vector<std::string> choices;
@@ -18,6 +18,9 @@ struct OptionsInfo {
         : id(_id), descriptionToTranslate(_descriptionToTranslate), iniKey(_iniKey), keyIsBoolean(_keyIsBoolean),
           choices(_choices) {}
 };
+
+// the row's name for the DebugDriver: the label as displayed (translated), without the value
+std::string driverRowName(const OptionsInfo &info);
 
 //*******************************
 // class GuiOptionsMenuBase
@@ -50,13 +53,5 @@ public:
     virtual std::string doFirstOption();
     virtual std::string doLastOption();
 
-    int computeAmountTomoveBy(unsigned int totalSize);
-    void doL1_Pressed() override;
-    void doR1_Pressed() override;
     void doStart_Pressed() override;
-
-    void doL2_Pressed() override { doFirstOption(); }
-    void doR2_Pressed() override { doLastOption(); }
-    void doHome() override { doFirstOption(); }
-    void doEnd() override { doLastOption(); }
 };
