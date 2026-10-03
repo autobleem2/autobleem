@@ -1460,11 +1460,19 @@ void GuiLauncher::renderWelcomeCard() {
     const ableem::Font &signFont = fonts[FONT_20_BOLD];
     const string title = _("Hi, and welcome to AutoBleem!");
     const string signature = _("Cheers, screemer");
-    const vector<string> lines = gui->text().wrapLines(
-        bodyFont,
-        _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and you've got "
-          "yourself a great console."),
-        boxW - 2 * pad);
+    // where the games go depends on the platform: the Pi reads its SD card, Windows the AutoBleem folder, the
+    // console and the PC stick a USB stick
+#if defined(AB_PLATFORM_RPI)
+    const string body = _("Everything's set up - now drop some games into Games on your SD card, hit Re-Scan Games, "
+                          "and you've got yourself a great console.");
+#elif defined(AB_PLATFORM_WIN)
+    const string body = _("Everything's set up - now drop some games into Games in your AutoBleem folder, hit Re-Scan "
+                          "Games, and you've got yourself a great console.");
+#else
+    const string body = _("Everything's set up - now drop some games into Games on your stick, hit Re-Scan Games, and "
+                          "you've got yourself a great console.");
+#endif
+    const vector<string> lines = gui->text().wrapLines(bodyFont, body, boxW - 2 * pad);
 
     const int boxH = pad + titleH + ruleGap + static_cast<int>(lines.size()) * linePitch + bodyTail + signH + pad - 6;
     const ableem::Rect box((1280 - boxW) / 2, centreY - boxH / 2, boxW, boxH);
