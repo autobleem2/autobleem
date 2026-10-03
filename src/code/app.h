@@ -20,6 +20,9 @@
 #include "core/services/update_service.h"
 #endif
 #include <ableem/engine/thumbnail_lookup.h>
+#include "core/services/extension_catalog.h"
+#include "core/services/plugin_loader.h"
+#include "gui/extension_runtime.h"
 
 //******************
 // App
@@ -59,6 +62,29 @@ public:
 #endif
     Session &session() { return session_; }
 
+    // what "power off" means for the launcher: on the console the screens unwind (Input::requestQuit) and
+    // AutoBleem::run() leaves with MENU_OPTION_POWEROFF for rc/selection.sh's standby; everywhere else it
+    // is System::powerOff() as before (a halt on an appliance, exit on a PC). The power button and the
+    // system menu's item both come here.
+    void requestPowerOff();
+
+    // the extensions (docs/extensions-plan.md): what is in Extensions/, and the loaded plugins' life
+    ExtensionCatalog &extensionCatalog() { return extensionCatalog_; }
+    ExtensionRuntime &extensions() { return extensions_; }
+    // what the extensions asked the launcher for, for GuiLauncher to act on in its own frame: taken once
+    struct ExtensionRequests {
+        bool reloadApps = false;
+        bool reloadConfig = false;
+        // the bubble: `changed` when a notify()/clearNotification() came in since the last take
+        bool bubbleChanged = false;
+        bool bubbleVisible = false;
+        std::string bubbleTitle, bubbleDetail;
+        uint64_t bubbleDone = 0, bubbleTotal = 0;
+        std::string message; // a line for the notification line ("<name> stopped AutoBleem and was disabled")
+    };
+    ExtensionRequests takeExtensionRequests();
+    ExtensionRequests &extensionRequests() { return extensionRequests_; }
+
 protected:
     ableem::GameLibrary gameLibrary;
     Session session_;
@@ -76,4 +102,11 @@ protected:
 #endif
     std::unique_ptr<ProcessRunner> runner_;
     LaunchService launcher_{cfg_, session_, gameLibrary, memcards_, resumePoints_, *runner_};
+
+    // last, so the extensions are shut down and destroyed first, while every service they may reach is
+    // still there
+    ExtensionRequests extensionRequests_;
+    NativePluginLoader pluginLoader_;
+    ExtensionCatalog extensionCatalog_;
+    ExtensionRuntime extensions_;
 };

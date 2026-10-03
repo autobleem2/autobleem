@@ -3,7 +3,7 @@
 //
 #pragma once
 
-#include "../core/main.h"
+#include "core/main.h"
 
 #include <ableem/ableem.h>
 

@@ -61,8 +61,8 @@ static int runAutobleem(int argc, char *argv[]) {
     }
     (void)launcherMutex; // held until the process ends
 #endif
-    // stdout/stderr go to /media/System/Logs/AB_*.txt (see run.sh). without this they are block buffered and the
-    // last lines before a crash never reach the file, which is exactly when they are needed.
+    // stdout/stderr go to AB_out.txt/AB_err.txt in the logs dir (see run.sh). without this they are block buffered
+    // and the last lines before a crash never reach the file, which is exactly when they are needed.
     cout.setf(ios::unitbuf);
     cerr.setf(ios::unitbuf);
 
@@ -103,12 +103,26 @@ static int runAutobleem(int argc, char *argv[]) {
         }
         return EXIT_SUCCESS;
     }
-    // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well
-    DirEntry::createDir(Env::getPathToLogsDir());
-    ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
+    // the rolling structured log next to AB_out.txt; console lines keep going to stdout as well. In RAM
+    // (<runtime>/logs, a quarter of the size) unless "Keep logs on the stick" is on - autobleem-main's
+    // docs/archive/quiet-stick-plan.md; a crash takes them to System/Logs (rc/ab_log.sh's ab_persist_logs)
+    Env::setKeepLogs(Env::keepLogsRequested());
+    Env::exportLogDirs();
+    if (Env::keepLogs())
+        ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log");
+    else
+        ableem::Log::addFile(Env::getPathToLogsDir() + sep + "autobleem.log", 256 * 1024, 2);
 
-    // the first thing in a log anyone sends in: which build this is
-    PLOG_INFO << "AutoBleem " << Version::FULL_VERSION << ", built " << Version::BUILD_TIMESTAMP << " UTC, "
+    // the package's version, for every program started from here (the emulators, the console tools) to show
+    // as the launcher does - Env::productVersion()
+    Env::exportProductVersion();
+    // which binaries of a multi-platform App this machine runs, for a run.sh started by hand
+    Env::writePlatformKeysFile();
+
+    // the first thing in a log anyone sends in: which build this is - the package's version, then the
+    // launcher's own commit
+    PLOG_INFO << "AutoBleem " << Env::productVersion() << " (launcher " << Version::GIT_BRANCH << "@"
+              << Version::GIT_HASH << Version::GIT_DIRTY_FLAG << ", built " << Version::BUILD_TIMESTAMP << " UTC), "
               << Env::platformName();
     for (int i = 0; i < argc; i++)
         PLOG_INFO << "  argv[" << i << "] = " << argv[i];

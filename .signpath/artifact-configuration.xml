@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The SignPath project's default artifact configuration - paste it there; SignPath reads its own copy, not
+     this file. The artifact is publish-launcher.yml's launcher-win64-unsigned (the Windows product's program
+     folder as AutoBleem/, plus the NSIS script as nsis/): only the launcher is ours to sign - the SDL2 and
+     runtime DLLs next to it are third-party and stay as their authors ship them. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="AutoBleem/autobleem-gui.exe">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

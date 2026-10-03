@@ -3,13 +3,17 @@
 //
 
 #include "evoui_meta.h"
-#include "../../core/model/timing.h"
-#include "../../core/model/ps_game.h"
-#include "../../core/services/system.h"
+#include "evoui_meta_layout.h"
+#include "gui/theme_assets.h"
+#include "core/model/timing.h"
+#include "core/model/ps_game.h"
+#include "core/services/system.h"
 #include "../../app.h"
-#include "../../core/main.h"
-#include "../../core/main.h"
-#include "../../core/services/environment.h"
+#include "core/main.h"
+#include "core/main.h"
+#include "core/services/environment.h"
+#include <ab_gui/context.h>
+#include <ab_gui/style.h>
 
 using namespace std;
 
@@ -77,15 +81,15 @@ void PsMeta::updateTexts(PsGamePtr &psGame, ableem::Color _textColor) {
             psGame->serial = "";
             psGame->region = "";
 
-            // the publisher line is the core's name unless the database gave the game a publisher; the
-            // core then gets a line of its own
-            const bool hasPublisher = !psGame->publisher.empty();
-            updateTexts(psGame->title, hasPublisher ? psGame->publisher : psGame->core_name, to_string(psGame->year),
-                        psGame->serial, psGame->region, to_string(psGame->players) + " " + appendText, psGame->internal,
-                        psGame->hd, psGame->locked, psGame->cds, psGame->favorite, psGame->play_using_ra,
-                        psGame->foreign, psGame->app, App::get().clock().displayTime(psGame->last_played), _textColor);
-            if (hasPublisher)
-                coreName = psGame->core_name;
+            // the core is the CORE row's; the PUBLISHER row only shows what the database gave the game
+            updateTexts(psGame->title, psGame->publisher, to_string(psGame->year), psGame->serial, psGame->region,
+                        to_string(psGame->players) + " " + appendText, psGame->internal, psGame->hd, psGame->locked,
+                        psGame->cds, psGame->favorite, psGame->play_using_ra, psGame->foreign, psGame->app,
+                        App::get().clock().displayTime(psGame->last_played), _textColor);
+            coreName = psGame->core_name;
+            trim(coreName);
+            if (coreName == "DETECT")
+                coreName = _("Unknown Core (AutoDetect)");
             playersKnown = psGame->players > 0;
         }
     }
@@ -100,175 +104,131 @@ void PsMeta::destroy() {}
 // PsMeta::render
 //*******************************
 void PsMeta::render() {
+    // the slide's position at this frame (a hidden panel did not move before either)
+    if (visible && sliding_)
+        y = evomotion::slidInt(prevPos, nextPos, progress_);
+
     if (gameName == "") {
         return;
     }
 
-    if (!internalOffTex.valid()) {
-        string curPath = Env::getWorkingPath() + sep;
-        internalOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ps1.png");
-        internalOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/usb.png");
-        hdOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/hd.png");
-        hdOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/sd.png");
-        lockOnTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lock.png");
-        lockOffTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/unlock.png");
-        cdTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/cd.png");
-        favoriteTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/favorite.png");
-        raTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/ra.png");
-        lightgunTex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun.png");
-        lightgun2Tex = ableem::Texture::loadFile(renderer, curPath + "evoimg/lightgun2.png");
-    }
-
     if (visible) {
-        int w, h;
         ableem::Rect rect;
         ableem::Rect fullRect;
 
-        auto nameFont = fonts[FONT_28_BOLD];
-        auto otherFont = fonts[FONT_15_BOLD];
+        // the icons come from the Context's icon set, asked at draw time (the display release drops them)
+        abgui::Context &ctx = gui->uiContext();
+        const abgui::Style &style = ctx.style();
+        TextRenderer &text = gui->text();
+        Fonts &fixed = ThemeAssets::fixedFonts();
 
-        int yOffset = 0;
-        // game name line - a name too long for the screen is drawn in the largest size that fits
+        // a meta icon plus its dark halo (UIREV-27), drawn at the same +2px margin Play's outline uses; the badges
+        // are bare since UIREV-35 (no plate behind them)
+        auto copyWithOutline = [&](const string &icon) {
+            const ableem::Texture outline = ctx.iconHalo(icon);
+            if (outline.valid()) {
+                ableem::Rect outlineRect(rect.x - 2, rect.y - 2, rect.w + 5, rect.h + 5);
+                renderer.copy(outline, nullptr, &outlineRect);
+            }
+            renderer.copy(ctx.icon(icon), &fullRect, &rect);
+        };
+        // an icon at (ix, iy), at its own size, or square when `size` is given
+        auto drawIcon = [&](const string &icon, int ix, int iy, int size) {
+            ableem::Size s = ctx.icon(icon).size();
+            rect = ableem::Rect(ix, iy, size > 0 ? size : s.w, size > 0 ? size : s.h);
+            fullRect = ableem::Rect(0, 0, rect.w, rect.h);
+            copyWithOutline(icon);
+        };
+
+        // the title - a name too long for the screen is drawn in the largest size that fits
+        auto nameFont = fixed.boldAtSize(MetaLayout::TitleSize);
         if (x + nameFont.width(gameName) > SCREEN_WIDTH)
-            nameFont = gui->text().fittingFont(FONT_BOLD, 28, 12, gameName, SCREEN_WIDTH - x);
-        gui->text().renderText(nameFont, gameName, x, y + yOffset);
+            nameFont = text.fittingFont(FONT_BOLD, MetaLayout::TitleSize, MetaLayout::TitleMinSize, gameName,
+                                        SCREEN_WIDTH - x);
+        text.renderText_WithColor(nameFont, gameName, x, y, style.text, XALIGN_LEFT);
 
-        yOffset += 35;
-        // publisher line - with the year when known (a RetroArch game the database does not know shows its
-        // core name here instead)
-        if (!year.empty() && year != "0")
-            gui->text().renderText(otherFont, publisher + ", " + year, x, y + yOffset);
-        else
-            gui->text().renderText(otherFont, publisher, x, y + yOffset);
-        if (!coreName.empty()) {
-            yOffset += 21;
-            gui->text().renderText(otherFont, coreName, x, y + yOffset);
-        }
+        // the rule under it: the `edge` role at 78 %
+        renderer.setBlendMode(ableem::BlendMode::Blend);
+        renderer.setDrawColor(ableem::Color(style.edge.r, style.edge.g, style.edge.b, 200));
+        renderer.fillRect(ableem::Rect(x, y + MetaLayout::RuleY, MetaLayout::RuleWidth, 1));
 
-        // the serial/region and last-played lines are a PS1 game's; a RetroArch game or an App has neither
-        if (!foreign) {
-            yOffset += 21;
-            // serial number line
-            gui->text().renderText(otherFont, _("Serial:") + " " + serial + ", " + _("Region:") + " " + region, x,
-                                   y + yOffset);
-
-            yOffset += 21;
-            // last played line
+        // the facts grid: the label in `secondary` (bold capitals, a little lower), the value in `text`; a RetroArch
+        // game shows its core in the CORE row (updateTexts); an App's description is a wrapped, unlabelled row
 #ifdef AB_PLATFORM_PSC
-            // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
-            if (Env::autobleemKernel)
-                gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+        // the stock console has no clock to have known the time: only the AutoBleem kernel gives it one
+        const bool canShowLastPlayed = Env::autobleemKernel;
 #else
-            // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
-            gui->text().renderText(otherFont, _("Last Played:") + " " + last_played, x, y + yOffset);
+        // every other machine keeps time (Clock::displayTime blanks a time it could not have known)
+        const bool canShowLastPlayed = true;
 #endif
+        const MetaLayout::Kind kind =
+            !foreign ? MetaLayout::Kind::Ps1 : (app ? MetaLayout::Kind::App : MetaLayout::Kind::RetroArch);
+        const ableem::Font &valueFont = fixed.atSize(FONT_MED, MetaLayout::ValueSize);
+        int rowY = y + MetaLayout::GridY;
+        for (const MetaLayout::Fact &fact :
+             MetaLayout::facts(kind, publisher, year, serial, region, last_played, coreName, canShowLastPlayed)) {
+            if (fact.wrapped) {
+                // a description: no label, wrapped to the area, the last line elided when it still does not fit
+                vector<string> lines = MetaLayout::capLines(
+                    text.wrapLines(valueFont, fact.value, MetaLayout::DescriptionWidth), MetaLayout::DescriptionLines);
+                for (const string &line : lines) {
+                    text.renderText_WithColor(valueFont, text.elide(valueFont, line, MetaLayout::DescriptionWidth), x,
+                                              rowY, style.text, XALIGN_LEFT);
+                    rowY += MetaLayout::RowPitch;
+                }
+                continue;
+            }
+            // a label longer than its column (German, Polish) shrinks to fit
+            const string label = _(fact.label);
+            const ableem::Font labelFont =
+                text.fittingFont(FONT_BOLD, MetaLayout::LabelSize, 8, label, MetaLayout::LabelWidth);
+            text.renderText_WithColor(labelFont, label, x, rowY + MetaLayout::LabelDrop, style.secondary, XALIGN_LEFT);
+            text.renderText_WithColor(valueFont, text.elide(valueFont, fact.value, MetaLayout::ValueWidth),
+                                      x + MetaLayout::ValueX, rowY, style.text, XALIGN_LEFT);
+            rowY += MetaLayout::RowPitch;
         }
 
-        yOffset += 22;
-        if (!foreign) {
-            // PS1 icons line
-            gui->text().renderText(otherFont, players, x + 35, y + yOffset);
+        // the icon row: text centred on the icons' height
+        const ableem::Font &rowFont = fonts[FONT_15_BOLD];
+        const int iconY = y + MetaLayout::IconRowY;
+        const int textY = iconY + (MetaLayout::IconSize - rowFont.lineHeight()) / 2;
+        vector<string> badges;
+        if (kind == MetaLayout::Kind::Ps1) {
+            text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text, XALIGN_LEFT);
+            drawIcon("players", x, iconY, 0);
+            drawIcon("disc", x + MetaLayout::DiscX, iconY, 0);
+            text.renderText_WithColor(rowFont, to_string(discs), x + MetaLayout::DiscCountX, textY, style.text,
+                                      XALIGN_LEFT);
 
-            ableem::Size s = tex.size();
-            w = s.w;
-            h = s.h;
-            rect.x = x;
-            rect.y = y + yOffset - 2;
-            rect.w = w;
-            rect.h = h;
-
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.w = w;
-            fullRect.h = h;
-            renderer.copy(tex, &fullRect, &rect);
-
-            int xoffset = 190, spread = 40;
-            // render internal icon
-            rect.x = x + 135;
-            renderer.copy(cdTex, &fullRect, &rect);
-
-            gui->text().renderText(otherFont, to_string(discs), x + 170, y + yOffset);
-
-            rect.x = x + xoffset;
-            rect.y = y + yOffset - 2;
-            rect.w = 30;
-            rect.h = 30;
-
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.w = 30;
-            fullRect.h = 30;
             if (internal) {
                 locked = true;
                 hd = false;
-                renderer.copy(internalOnTex, &fullRect, &rect);
-            } else {
-                renderer.copy(internalOffTex, &fullRect, &rect);
             }
-
-            int spreadCount = 1;
-            rect.x = x + xoffset + (spread * spreadCount);
-            if (hd) {
-                renderer.copy(hdOnTex, &fullRect, &rect);
-            } else {
-                renderer.copy(hdOffTex, &fullRect, &rect);
-            }
-            ++spreadCount;
-            rect.x = x + xoffset + (spread * spreadCount);
-            if (locked) {
-                renderer.copy(lockOnTex, &fullRect, &rect);
-            } else {
-                renderer.copy(lockOffTex, &fullRect, &rect);
-            }
-            if (favorite) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
-                renderer.copy(favoriteTex, &fullRect, &rect);
-            }
-            if (play_using_ra) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
-                renderer.copy(raTex, &fullRect, &rect);
-            }
+            badges.push_back(internal ? "internal" : "usb");
+            badges.push_back(hd ? "hd" : "sd");
+            badges.push_back(locked ? "lock" : "unlock");
+            if (favorite)
+                badges.push_back("favorite");
+            if (play_using_ra)
+                badges.push_back("retroarch");
             if (lightgun) {
-                ++spreadCount;
-                rect.x = x + xoffset + (spread * spreadCount);
-                renderer.copy(players.rfind("1 ", 0) == 0 ? lightgunTex : lightgun2Tex, &fullRect, &rect);
+                bool onePlayer = players.rfind("1 ", 0) == 0;
+                badges.push_back(onePlayer ? "lightgun" : "lightgun2");
             }
-        } else {
-            // RetroArch game: the players line when the database knows, then the RA icon on the row the
-            // serial line left free
-            if (!app) {
-                if (playersKnown) {
-                    gui->text().renderText(otherFont, players, x, y + yOffset);
-                    yOffset += 21;
-                }
-                yOffset += 21;
-                ableem::Size s = raTex.size();
-                w = s.w;
-                h = s.h;
-                rect.x = x;
-                rect.y = y + yOffset - 2;
-                rect.w = w;
-                rect.h = h;
-
-                fullRect.x = 0;
-                fullRect.y = 0;
-                fullRect.w = w;
-                fullRect.h = h;
-                renderer.copy(raTex, &fullRect, &rect);
-
-                if (lightgun) {
-                    rect.x += 40;
-                    rect.w = 30;
-                    rect.h = 30;
-                    fullRect.w = 30;
-                    fullRect.h = 30;
-                    renderer.copy(lightgunTex, &fullRect, &rect);
-                }
+        } else if (kind == MetaLayout::Kind::RetroArch) {
+            // the players when the database knows, then the RA icon (and the light gun) as badges
+            if (playersKnown) {
+                text.renderText_WithColor(rowFont, players, x + MetaLayout::PlayersTextX, textY, style.text,
+                                          XALIGN_LEFT);
+                drawIcon("players", x, iconY, 0);
             }
+            badges.push_back("retroarch");
+            if (lightgun)
+                badges.push_back("lightgun");
         }
+        const int count = static_cast<int>(badges.size());
+        for (int i = 0; i < count; i++)
+            drawIcon(badges[i], x + MetaLayout::badgeX(count, i), iconY, MetaLayout::IconSize);
     }
 }
 
@@ -276,26 +236,22 @@ void PsMeta::render() {
 // PsMeta::update
 //*******************************
 void PsMeta::update(long time) {
-    if (visible)
-        if (animEndTime != 0) {
-            if (animStarted == 0) {
-                animStarted = time;
-            }
-
-            if (animStarted != 0) {
-                // calculate length for point in time
-                long currentAnim = time - animStarted;
-                long totalAnimTime = animEndTime - animStarted;
-                float position = easeOutCubic(currentAnim * 1.0f / totalAnimTime);
-                int newPos = prevPos + ((nextPos - prevPos) * position);
-                y = newPos;
-            }
-
-            if (time >= animEndTime) {
-                animStarted = 0;
-                animEndTime = 0;
-                y = nextPos;
-            }
-        }
     lastTime = time;
+}
+
+//*******************************
+// PsMeta::slideTo
+//*******************************
+// from where it is now to `pos`; a slide running is replaced (it stops where it is and the new one starts there)
+void PsMeta::slideTo(int pos) {
+    owner_.cancel();
+    prevPos = y;
+    nextPos = pos;
+    progress_ = 0;
+    sliding_ = true;
+    gui->uiContext().stack().tweens().start(abgui::Tween(progress_, 0.0f, 1.0f, evomotion::MetaSlideMs).onEnd([this]() {
+        sliding_ = false;
+        y = nextPos;
+    }),
+                                            owner_);
 }

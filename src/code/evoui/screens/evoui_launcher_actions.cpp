@@ -6,23 +6,25 @@
 //
 #include "evoui_launcher.h"
 #include "evoui_set_picker.h"
-#include "../../gui/gui.h"
+#include "ra_gates.h"
+#include "gui/gui.h"
 #include "../../gui/menus/gui_options_menu.h"
-#include "../../gui/screens/gui_confirm.h"
-#include "../../gui/screens/gui_about.h"
-#include "../../gui/screens/gui_hardware_info.h"
+#include "gui/screens/gui_confirm.h"
+#include "gui/screens/gui_about.h"
+#include "gui/screens/gui_hardware_info.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
-#include "../../gui/menus/gui_game_editor_ra_menu.h"
-#include "../../gui/menus/gui_playlists_menu.h"
-#include "../../gui/menus/gui_game_dir_menu.h"
+#include "gui/menus/gui_game_editor_ra_menu.h"
 #include "../../gui/menus/gui_memcards_menu.h"
 #include "../../gui/menus/gui_game_manager_menu.h"
-#include "../../core/services/environment.h"
-#include "../../core/services/system.h"
-#include "../../core/services/launch.h"
+#include "core/services/environment.h"
+#include "core/services/system.h"
+#include "core/services/launch.h"
+#include "core/services/output_mode.h"
 #include "evoui_mc_manager.h"
 #include "evoui_app_start.h"
 #include "evoui_system_menu.h"
+#include "evoui_extensions.h"
+#include "evoui_processors.h"
 #ifdef AB_ONLINE_UPDATE
 #include "evoui_update.h"
 #include <ctime>
@@ -30,9 +32,18 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ableem/engine/ext_trace.h>
 #include <ableem/engine/log.h>
 
 using namespace std;
+
+namespace {
+// the Quick menu's Store item: the extension shipped with every package (Extensions/store/)
+const char *const StoreExtension = "store";
+// the entry an extension names in Provides= to offer Wi-Fi, Bluetooth pairing and controller mapping - PSC-Bios
+// on the console, a Pi and the PC stick: the "Network & Controllers" item
+const char *const NetworkEntry = "network";
+} // namespace
 
 //*******************************
 // GuiLauncher::loop_chooseSet
@@ -41,19 +52,29 @@ using namespace std;
 // groups in each (was Select cycling the sets and L2+Select opening a folder or playlist picker)
 void GuiLauncher::loop_chooseSet() {
     powerOffShift = false;
+    const long started = gui->platform().ticks();
+    const bool counted = !setCountsValid;
+    if (counted) {
+        setCounts = app.gameQuery().setCounts(raPlaylists);
+        setCountsValid = true;
+    }
+    const long countsDone = gui->platform().ticks();
     GuiSetPicker picker(*gui);
     picker.selection = selection;
+    picker.retroArch = retroArchInstalledCached();
     picker.raPlaylists = raPlaylists;
-    renderer.captureNextFrame();
-    render();
-    picker.background = renderer.lastCapture();
+    picker.counts = &setCounts;
+    BackdropScope backdrop(*this); // the picker draws over the launcher's snapshot
+    PLOG_INFO << "Set picker: counts " << (counted ? to_string(countsDone - started) + " ms" : string("kept"))
+              << ", ready " << gui->platform().ticks() - started << " ms";
     picker.show();
+    backdrop.release();
     forgetHeldModifiers(); // reached with L2 held, maybe; its release went to the picker
     if (picker.cancelled)
         return;
 
     selection = picker.selection;
-    switchSet(selection.set, true);
+    switchSet(selection.set, false); // the icon row follows the set: an empty one leaves settings alone
     menuHead->setText(headers[0], fgColor);
     menuText->setText(texts[0], fgColor);
     showSetName();
@@ -69,7 +90,7 @@ void GuiLauncher::loop_chooseSet() {
 // GuiLauncher::loop_crossButtonPressed_STATE_GAMES
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
-    if (carousel.games.empty()) {
+    if (carousel.games.empty() || refuseLicenceProtected()) {
         return;
     }
 
@@ -81,26 +102,28 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     rememberSelection();
     menuVisible = false;
 
-    if (selectedIsPs1())
+    if (selectedIsPs1()) {
         app.gameCatalog().recordGamePlayed(app.session().runningGame);
+        forgetSetCounts(); // Game History changed
+    }
 
     app.session().emuMode = EmuMode::Pcsx;
 
     // if it's a PS1 game see if the user wants to play it in RetroArch instead
+    // (without the RetroArch program none of this applies: the game starts in PCSX, the flags stay saved - ra_gates.h)
     if (selectedIsPs1()) {
-        if (selection.set == GameSet::Lightgun)
-            return loop_squareButton_Pressed(); // a light-gun game: RetroArch's core has the guncon
+        bool playUsingRa = false;
         if (app.session().runningGame->internal) {
-            if (app.session().runningGame->play_using_ra)
-                return loop_squareButton_Pressed(); // play internal PSX game in RA
+            playUsingRa = app.session().runningGame->play_using_ra; // play internal PSX game in RA
         } else {
             IniFile gameini;
             gameini.load(carousel.games[carousel.selected]->folder + sep + GAME_INI);
-            if (gameini.values["play_using_ra"] == "true")
-                return loop_squareButton_Pressed(); // play PSX game in RA
+            playUsingRa = gameini.values["play_using_ra"] == "true"; // play PSX game in RA
         }
-        if (app.config().inifile.values["play_all_psx_with_ra"] == "true")
-            return loop_squareButton_Pressed(); // play PSX game in RA
+        // a light-gun game (the Lightgun set): RetroArch's core has the guncon
+        if (startPs1InRetroArch(Env::retroArchInstalled(), selection.set == GameSet::Lightgun, playUsingRa,
+                                app.config().inifile.values["play_all_psx_with_ra"] == "true"))
+            return loop_squareButton_Pressed();
     }
 
     if (app.session().runningGame->foreign) {
@@ -109,7 +132,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
         } else {
             GuiAppStart appStartScreen(*gui);
             appStartScreen.setGame(app.session().runningGame);
-            appStartScreen.show();
+            {
+                BackdropScope backdrop(*this);
+                appStartScreen.show();
+            }
             bool result = appStartScreen.result;
             // Do not run
             if (!result) {
@@ -124,20 +150,41 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
 //*******************************
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS
 //*******************************
+// the gear icon of the game's icon row: Options, as it always was (the Quick menu had it from 2026-09-26 until
+// the owner took it back, 2026-09-29 - the Quick menu is d-pad Up's alone)
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
+    loop_openOptions();
+}
+
+//*******************************
+// GuiLauncher::loop_openOptions
+//*******************************
+// the System menu's Options: the screen, then everything it may have changed reloaded
+void GuiLauncher::loop_openOptions() {
     app.audio().cursor.play();
     GameSet lastSet = selection.set;
     Ps1SelectState lastPS1_SelectState = selection.ps1SelectState;
     int lastUSBGameDirIndex = selection.usbGameDirIndex;
     int lastRAPlaylistIndex = selection.raPlaylistIndex;
-    int lastGame = carousel.selected;
+    const GameKey lastGame = selectedGameKey(); // by id: setGames puts the row back on its first game
     GuiOptions option(*gui);
+    BackdropScope backdrop(*this); // Options and what it opens draw over the launcher's snapshot
+    // a language or font change: the snapshot is of the old language and font - taken again (the scope still owns it)
+    option.backdropRefresh = [this]() {
+        retranslateMenu(); // the caption under the gear is in the new language too
+        syncMenuCaption();
+        takeBackdrop(true);
+    };
     option.show();
     bool exitCode = option.exitCode;
 
     if (exitCode == 0) {
-        // the theme, fonts and every cover reload: the spinner over the options panel meanwhile
+        // the theme, fonts and every cover reload: the spinner over the options panel meanwhile (still over the
+        // snapshot - that frame is the busy backdrop); the snapshot is of the old theme, so it goes before the reload.
+        // Dropped for good even inside another screen's scope (the System menu's): nothing draws over it after this
         gui->beginBusy(_("Applying settings..."), [&option]() { option.render(); });
+        backdrop.release();
+        dropBackdrop();
         app.applyOnlineSetting(); // "Fetch box art online" may have changed
 #ifdef AB_ONLINE_UPDATE
         app.applyUpdateSetting(); // "Updates" (the channel) may have changed
@@ -150,10 +197,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
             selection.ps1SelectState = lastPS1_SelectState;
         selection.usbGameDirIndex = lastUSBGameDirIndex;
         selection.raPlaylistIndex = lastRAPlaylistIndex;
-        carousel.selected = lastGame;
         bool resetCarouselPosition = false;
 
         switchSet(selection.set, false);
+        // back on the game the row was on (Options may have re-sorted it); gone -> the first game, as setGames left it
+        const int found = findGame(lastGame);
+        if (found != -1)
+            carousel.selected = found;
         showSetName();
 
         if (resetCarouselPosition) {
@@ -174,21 +224,32 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
             }
         }
 
-        if (!carousel.games.empty()) {
-            gui->loadAssets();
-            for (auto &game : carousel.games) {
-                game.freeTex();
-            }
-            carousel.setInitialPositions(carousel.selected);
-        } else {
-            gui->loadAssets();
+        // the covers and the empty boxes both recomposed over the reloaded assets: Cover Style may have
+        // changed the jewel case, and an empty box kept from before would stay in the old one
+        gui->loadAssets();
+        carousel.freeTextures();
+        // an empty roster too: freeTextures() dropped the shared empty box, and a placeholder with no texture
+        // is not drawn - the shelf of an empty set would stay blank (BUG-34)
+        carousel.setInitialPositions(carousel.selected);
+        if (carousel.games.empty()) {
             meta->gameName = "";
             menu->setResumePic("");
         }
 
-        state = LauncherScreenState::Games;
+        // the state is loadAssets()'s: Games, or Set with the row open when the set is empty
         gui->endBusy();
+
+        // Options -> Display changed: the launcher closes so AutoBleem::run() can try the mode (on the console
+        // through rc/boot.sh, a launcher restart) - and comes back on the same game
+        if (!option.newOutputMode.empty()) {
+            app.config().inifile.values[OutputMode::ConfigKey] = option.previousOutputMode();
+            rememberSelection();
+            app.session().pendingOutputMode = option.newOutputMode;
+            app.session().menuOption = MENU_OPTION_DISPLAY;
+            menuVisible = false;
+        }
     } else {
+        backdrop.release();
         render();
     }
 }
@@ -197,6 +258,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS() {
 // GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
+    forgetSetCounts(); // favourite, light gun, title may change
     if (carousel.games.empty()) {
         return;
     }
@@ -209,7 +271,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
             return;
         GuiEditorRA raEditor(*gui);
         raEditor.gameData = carousel.games[carousel.selected];
-        raEditor.show();
+        {
+            BackdropScope backdrop(*this);
+            raEditor.show();
+        }
         if (raEditor.changed && selection.set == GameSet::Lightgun)
             reloadLightgunSetAfterEdit();
         return;
@@ -220,7 +285,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         editor.gameData = carousel.games[carousel.selected];
     }
 
-    editor.show();
+    {
+        BackdropScope backdrop(*this);
+        editor.show();
+    }
     if (selection.set == GameSet::Lightgun) {
         reloadLightgunSetAfterEdit();
         return;
@@ -309,13 +377,13 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
         // the game's own cards, or the set it is mapped to (a game with no Game.ini says "" - its own)
         string memcard = app.memcards().activeCardName(game);
         if (memcard == MemcardService::SonyCard || memcard.empty()) {
-            leftCardName = "[1]" + _("INTERNAL");
-            rightCardName = "[2]" + _("INTERNAL");
+            leftCardName = "[1] " + _("INTERNAL");
+            rightCardName = "[2] " + _("INTERNAL");
             cardPath1 = game.ssFolder + sep + "memcards" + sep + "card1.mcd";
             cardPath2 = game.ssFolder + sep + "memcards" + sep + "card2.mcd";
         } else {
-            leftCardName = "[1]" + memcard;
-            rightCardName = "[2]" + memcard;
+            leftCardName = "[1] " + memcard;
+            rightCardName = "[2] " + memcard;
             cardPath1 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card1.mcd";
             cardPath2 = Env::getPathToMemCardsDir() + sep + memcard + sep + "card2.mcd";
         }
@@ -323,11 +391,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD() {
 
     app.audio().cursor.play();
     GuiMcManager mcManager(*gui);
-    mcManager.backgroundImg = background->tex;
     mcManager.leftCardName = leftCardName;
     mcManager.rightCardName = rightCardName;
     mcManager.card1path = cardPath1;
     mcManager.card2path = cardPath2;
+    BackdropScope backdrop(*this); // the manager and the card picker over it draw over the launcher's snapshot
     mcManager.show();
 }
 
@@ -338,23 +406,18 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE()
     if (carousel.games.empty()) {
         return;
     }
-    bool resumeAvailable = false;
-    for (int i = 0; i < 4; i++) {
-        if (carousel.selectedIsValid() && app.resumePoints().slotIsActive(*carousel.games[carousel.selected], i)) {
-            resumeAvailable = true;
-        }
-    }
+    const bool resumeAvailable = carousel.selectedIsValid() && gameHasResumePoints(carousel.games[carousel.selected]);
 
     if (resumeAvailable) {
         app.audio().cursor.play();
         sselector->visible = true;
-        if (carousel.selectedIsValid())
-            sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
+        sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
         state = LauncherScreenState::Resume;
         sselector->selSlot = 0;
         sselector->operation = OP_LOAD;
     } else {
         app.audio().cancel.play();
+        notificationLines[1].setText(_("No resume points"), DefaultShowingTimeout);
     }
 }
 
@@ -367,6 +430,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
         int slot = sselector->selSlot;
 
         if (sselector->operation == OP_LOAD) {
+            if (refuseLicenceProtected()) {
+                return;
+            }
             if (app.resumePoints().slotIsActive(*game, slot)) {
                 app.audio().cursor.play();
                 app.session().startingGame = true;
@@ -384,10 +450,10 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
             app.resumePoints().saveAfterLaunch(*carousel.games[carousel.selected], sselector->selSlot);
             app.resumePoints().storePictureForSlot(*carousel.games[carousel.selected], sselector->selSlot);
             sselector->visible = false;
-            arrow->visible = true;
+            arrow->visible =
+                sselector->operation == OP_LOAD; // only back in the menu (Set) - not in Games after the emulator
             app.audio().resume.play();
-            notificationLines[1].setText(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1),
-                                         DefaultShowingTimeout);
+            showInfo(_("Resume point saved to slot") + " " + to_string(sselector->selSlot + 1));
 
             menu->setResumePic(
                 app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
@@ -405,9 +471,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 // GuiLauncher::loop_openSystemMenu
 //*******************************
 // the system menu: everything the classic main menu used to offer, now reached with L2+R2 (the background-scan
-// work's step 4, see CLAUDE.md; moved off a bare R2 so reaching for it can no longer be mistaken for the L2+R2
-// power-off it replaced - Power Off is one of its own items now). GuiSystemMenu only picks; every action below is what
-// ClassicMenuScreen used to do for the same item.
+// work's step 4, see docs/developer-guide.md; moved off a bare R2 so reaching for it can no longer be mistaken for the
+// L2+R2 power-off it replaced - Power Off is one of its own items now). GuiSystemMenu only picks; every action below is
+// what ClassicMenuScreen used to do for the same item.
 void GuiLauncher::loop_openSystemMenu() {
     app.audio().cursor.play();
 
@@ -420,16 +486,19 @@ void GuiLauncher::loop_openSystemMenu() {
             retroArchLabel = _("EmulationStation");
     }
 
+    // the menu and whatever it opens (runMenuAction below) draw over one snapshot of the launcher (G5r5)
+    BackdropScope backdrop(*this);
     SystemMenuAction action;
     {
         GuiSystemMenu systemMenu(*gui);
         systemMenu.retroArchLabel = retroArchLabel;
+        systemMenu.retroArchInstalled = retroArchInstalledCached();
         systemMenu.scanInProgress = app.scans().scanning();
+        systemMenu.networkUnavailable = networkUnavailable();
+        systemMenu.networkProvided = networkProvided() || !systemMenu.networkUnavailable.empty();
 #ifdef AB_ONLINE_UPDATE
         systemMenu.updateAvailable = app.updates().status().info.any();
 #endif
-        if (background != nullptr)
-            systemMenu.background = background->tex;
         systemMenu.show();
         action = systemMenu.result;
     }
@@ -437,7 +506,74 @@ void GuiLauncher::loop_openSystemMenu() {
     // loops too - without this the launcher came back with the L2 shift still on, and every button behaved
     // as if L2 were down until it was pressed and released again
     forgetHeldModifiers();
+    runMenuAction(action);
+}
 
+//*******************************
+// GuiLauncher::loop_openQuickMenu
+//*******************************
+// the Quick menu (d-pad Up in the Games state, Up on an empty set; the gear icon is Options): the
+// few things a player reaches for from the carousel, and the System menu last (the owner, 2026-09-26)
+void GuiLauncher::loop_openQuickMenu() {
+    app.audio().cursor.play();
+    BackdropScope backdrop(*this); // the menu and what it opens draw over one snapshot of the launcher (G5r5)
+    SystemMenuAction action;
+    {
+        GuiSystemMenu quickMenu(*gui);
+        quickMenu.kind = GuiSystemMenu::Kind::Quick;
+        quickMenu.scanInProgress = app.scans().scanning();
+        quickMenu.networkUnavailable = networkUnavailable();
+        quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
+        quickMenu.show();
+        action = quickMenu.result;
+    }
+    forgetHeldModifiers();
+    if (action == SystemMenuAction::SystemMenu)
+        loop_openSystemMenu();
+    else
+        runMenuAction(action);
+}
+
+//*******************************
+// GuiLauncher::networkProvided
+//*******************************
+// an installed extension that can run here offers the "network" entry: the Network & Controllers item shows
+bool GuiLauncher::networkProvided() {
+    app.extensionCatalog().scan();
+    return app.extensionCatalog().findProvider(NetworkEntry) != nullptr;
+}
+
+//*******************************
+// GuiLauncher::networkUnavailable
+//*******************************
+// the owner's rule (2026-09-26): an installed provider that cannot run keeps the item on the menu, greyed,
+// saying why - hidden only when nothing provides it at all
+string GuiLauncher::networkUnavailable(string *extension) {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info = app.extensionCatalog().findUnavailableProvider(NetworkEntry);
+    if (info == nullptr)
+        return "";
+    if (extension != nullptr)
+        *extension = info->name;
+    switch (info->problem()) {
+    case ExtensionProblem::Disabled:
+        return info->title + " " + _("is switched off - enable it in Extensions");
+    case ExtensionProblem::NotBuiltForThisSystem:
+        return info->title + " " + _("is not built for this system");
+    case ExtensionProblem::WrongAbi:
+        return info->title + " " + _("is built for a different AutoBleem - update it");
+    default:
+        return info->title + " " + _("could not be loaded - see Extensions");
+    }
+}
+
+//*******************************
+// GuiLauncher::runMenuAction
+//*******************************
+// what an item of the System or the Quick menu does - GuiSystemMenu only picks; every action below is what
+// ClassicMenuScreen used to do for the same item
+void GuiLauncher::runMenuAction(SystemMenuAction action) {
+    forgetSetCounts(); // Game Manager, the Store, an extension may change what there is
     switch (action) {
     case SystemMenuAction::None:
         break;
@@ -483,39 +619,55 @@ void GuiLauncher::loop_openSystemMenu() {
     }
 
     case SystemMenuAction::HardwareInfo: {
-        // the console runs the PSC-Bios app from the Apps folder (it also sets up the pads and wifi
-        // there); a Pi or a PC has no such app, and a console without it installed gets the same
-        // built-in screen instead of nothing
-        string pscBios = Env::getPathToAppsDir() + sep + "pscbios" + sep + "run.sh";
-#ifdef AB_ROOT_RELATIVE_LAYOUT
-        const bool runPscBios = false;
-#else
-        const bool runPscBios = DirEntry::exists(pscBios);
-#endif
-        if (!runPscBios) {
-            GuiHardwareInfo infoScreen(*gui);
-            infoScreen.show();
-            break;
-        }
-        app.audio().close();
-        gui->input().flushPads();
-        System::runAndWait(pscBios, {});
-        gui->input().flushEvents();
-        gui->input().probePads();
-        app.audio().restart();
-        app.audio().playMusic();
+        // the built-in facts page on every platform (the owner, 2026-09-26): PSC-Bios's setup screens are
+        // Network & Controllers now, and its facts page is this one's
+        GuiHardwareInfo infoScreen(*gui);
+        infoScreen.show();
         break;
     }
 
+    case SystemMenuAction::Network: {
+        // greyed (installed, cannot run): the Extensions list at it, where it can be switched on
+        string unavailable;
+        if (!networkUnavailable(&unavailable).empty())
+            loop_openExtensions(unavailable);
+        else
+            runExtensionEntry("", NetworkEntry);
+        break;
+    }
+
+    case SystemMenuAction::Store:
+        runExtensionEntry(StoreExtension, "");
+        break;
+
+    case SystemMenuAction::SystemMenu:
+        loop_openSystemMenu();
+        break;
+
+    case SystemMenuAction::RestartLauncher:
+        // AutoBleem::run() leaves as for a new display mode - with no mode to try (see there)
+        rememberSelection(); // the new launcher opens on the same place (BUG-40: AutoBleem::run() saves it)
+        app.session().pendingOutputMode.clear();
+        app.session().menuOption = MENU_OPTION_DISPLAY;
+        menuVisible = false;
+        break;
+
     case SystemMenuAction::Options:
-        // same screen, same reload, as the settings icon in the Set overlay
-        loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
+        loop_openOptions();
         break;
 
     case SystemMenuAction::SoftwareUpdate:
 #ifdef AB_ONLINE_UPDATE
         loop_softwareUpdate();
 #endif
+        break;
+
+    case SystemMenuAction::Extensions:
+        loop_openExtensions();
+        break;
+
+    case SystemMenuAction::Processors:
+        loop_openProcessors();
         break;
 
     case SystemMenuAction::About: {
@@ -527,13 +679,157 @@ void GuiLauncher::loop_openSystemMenu() {
     case SystemMenuAction::PowerOff: {
         GuiConfirm confirm(*gui);
         confirm.label = _("Are you sure you want to power off?");
+        confirm.confirmLabel = _("Power off");
         confirm.show();
         if (confirm.result) {
             gui->drawText(_("POWERING OFF... PLEASE WAIT"));
-            System::powerOff();
+            app.requestPowerOff(); // the console's standby (AutoBleem::run() leaves), a halt elsewhere
         }
         break;
     }
+    }
+}
+
+//*******************************
+// GuiLauncher::loop_openProcessors
+//*******************************
+// the sequences are what a running scan reads, so they are not edited under it; a change asks for a scan,
+// which is where it takes effect (and "Run again" is done)
+void GuiLauncher::loop_openProcessors() {
+    if (app.scans().scanning()) {
+        notificationLines[1].setText(_("Wait for the scan to finish"), DefaultShowingTimeout);
+        return;
+    }
+    bool changed = false;
+    {
+        GuiProcessors screen(*gui);
+        BackdropScope backdrop(*this);
+        screen.show();
+        changed = screen.changed();
+    }
+    forgetHeldModifiers();
+    if (changed)
+        app.scans().requestScan();
+}
+
+//*******************************
+// GuiLauncher::loop_openExtensions
+//*******************************
+// the Extensions list (every folder in Extensions/, read again each time it opens), then the chosen one's
+// run(): its own screens on our Gui, back here when it is done. A refusal is shown on the row already; what
+// comes back from run() is reported on the notification line.
+void GuiLauncher::loop_openExtensions(const string &select) {
+    app.extensionCatalog().scan();
+    const bool networkUp = System::hasDefaultRoute();
+    string chosen;
+    {
+        GuiExtensions list(*gui, app.extensionCatalog(), networkUp);
+        list.select = select;
+        BackdropScope backdrop(*this);
+        list.show();
+        chosen = list.chosen;
+    }
+    forgetHeldModifiers();
+    if (chosen.empty())
+        return;
+    runExtensionEntry(chosen, "");
+}
+
+//*******************************
+// GuiLauncher::runExtensionEntry
+//*******************************
+// one extension run from a menu item: by name (entry ""), or at an entry - by the one providing it when name
+// is "" (Network & Controllers). Its screens run on our Gui; what comes back is reported on the notification
+// line, and what it asked the launcher for is done afterwards.
+void GuiLauncher::runExtensionEntry(const string &name, const string &entry) {
+    app.extensionCatalog().scan();
+    const ExtensionInfo *info =
+        name.empty() ? app.extensionCatalog().findProvider(entry) : app.extensionCatalog().find(name);
+    if (info == nullptr) {
+        // the Store ships with every package, so this is a stick someone tidied; a provider went missing
+        // between the menu and here
+        notificationLines[1].setText(name == StoreExtension ? _("The Store is not installed")
+                                                            : _("Not available on this system"),
+                                     DefaultShowingTimeout);
+        return;
+    }
+    const string title = info->title;
+    const string extension = info->name; // info is the catalog's: the run may scan it again
+    const bool networkUp = System::hasDefaultRoute();
+    // the launcher's snapshot, for an extension's screens to draw over: Gui's backdrop (the Context's backdropDrawer,
+    // which abgui screens draw without a background of their own) and, as before, renderer().lastCapture() - the bare
+    // launcher, without its hint band and bubbles, not the menu the run was picked from. Taken afresh even inside the
+    // menu's scope, so lastCapture() is this frame
+    // AB_TRACE_EXT (BUG-31): the frames from here on are logged, tagged [TRACE_EXT]
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::begin("extension " + extension + " requested (entry '" + entry + "')");
+    BackdropScope backdrop(*this, true);
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::line("launcher snapshot taken, handing over to the extension");
+    const ExtensionRuntime::Refusal why = entry.empty() ? app.extensions().run(extension, networkUp)
+                                                        : app.extensions().runEntry(extension, entry, networkUp);
+    if (ableem::ext_trace::enabled())
+        ableem::ext_trace::line("extension returned, releasing the snapshot");
+    backdrop.release();
+    forgetHeldModifiers(); // its screens ran their own loops
+    gui->input().flushEvents();
+    switch (why) {
+    case ExtensionRuntime::Refusal::None:
+        break;
+    case ExtensionRuntime::Refusal::Failed:
+    case ExtensionRuntime::Refusal::LoadFailed:
+    case ExtensionRuntime::Refusal::WrongAbi:
+        notificationLines[1].setText(title + " " + _("closed with an error"), 2 * DefaultShowingTimeout);
+        break;
+    case ExtensionRuntime::Refusal::Offline:
+        notificationLines[1].setText(_("Needs a network connection"), DefaultShowingTimeout);
+        break;
+    case ExtensionRuntime::Refusal::Disabled:
+        notificationLines[1].setText(title + " " + _("is disabled - see Extensions"), DefaultShowingTimeout);
+        break;
+    default: // not found, not built for this machine, an entry it does not handle
+        notificationLines[1].setText(title + " " + _("is not available on this system"), DefaultShowingTimeout);
+        break;
+    }
+    applyExtensionRequests();
+}
+
+//*******************************
+// GuiLauncher::applyExtensionRequests
+//*******************************
+// once a frame (and after an extension's run()): the bubble an extension fed, a message for the line, and
+// the reloads it asked for - done here, in the launcher's own frame, never from inside an extension's call
+void GuiLauncher::applyExtensionRequests() {
+    App::ExtensionRequests r = app.takeExtensionRequests();
+    if (r.bubbleChanged) {
+        if (r.bubbleVisible) {
+            // the percentage next to the detail says what the bar shows - in 64 bits, as the extension
+            // reports its bytes (a Store download is past a 32-bit count's reach on the console)
+            string detail = r.bubbleDetail;
+            if (r.bubbleTotal > 0)
+                detail += "  " + to_string(min(r.bubbleDone, r.bubbleTotal) * 100 / r.bubbleTotal) + "%";
+            extensionBubble.show(r.bubbleTitle, detail, static_cast<int64_t>(r.bubbleDone),
+                                 static_cast<int64_t>(r.bubbleTotal), 0);
+        } else {
+            extensionBubble.hide();
+        }
+    }
+    if (!r.message.empty())
+        notificationLines[1].setText(r.message, 2 * DefaultShowingTimeout);
+    if (r.reloadConfig) {
+        // what closing Options does: config.ini read again, the theme and every cover reloaded
+        Config fresh;
+        app.config().inifile.values = fresh.inifile.values;
+        app.applyOnlineSetting();
+#ifdef AB_ONLINE_UPDATE
+        app.applyUpdateSetting();
+#endif
+        freeAssets();
+        loadAssets();
+        switchSet(selection.set, false);
+        showSetName();
+    } else if (r.reloadApps && selection.set == GameSet::Apps && !carousel.scrolling) {
+        reloadGames();
     }
 }
 
@@ -560,6 +856,7 @@ void GuiLauncher::pollUpdates() {
 // The system menu's item: a check now, on the screen, then the question - or "up to date".
 void GuiLauncher::loop_softwareUpdate() {
     UpdateService &updates = app.updates();
+    BackdropScope backdrop(*this); // the confirms, the check and the question draw over the launcher's snapshot
     if (!updates.enabled()) {
         GuiConfirm confirm(*gui);
         confirm.label = _("Updates are off - turn them on in Options");
@@ -568,11 +865,16 @@ void GuiLauncher::loop_softwareUpdate() {
     }
     if (updates.status().phase == UpdateService::Phase::Downloading)
         return;
+    if (updates.config().networkUp && !updates.config().networkUp()) {
+        // the console without WiFi (or without the AutoBleem kernel, which brings it): nothing to ask
+        GuiConfirm confirm(*gui);
+        confirm.label = _("Not connected");
+        confirm.show();
+        return;
+    }
     updates.startCheck(::time(nullptr));
     {
         GuiUpdateProgress progress(*gui);
-        if (background != nullptr)
-            progress.background = background->tex;
         progress.show();
     }
     if (updates.status().phase == UpdateService::Phase::Checked && updates.status().info.any())
@@ -583,17 +885,17 @@ void GuiLauncher::loop_softwareUpdate() {
 // GuiLauncher::offerUpdate
 //*******************************
 // The question, and what follows a yes: the download with its bar, then - on a Pi - out to the session
-// loop with MENU_OPTION_UPDATE, which runs autobleem-update over System/Updates; a dev host stops at the
-// downloaded files, there is no installer to run on it.
+// loop with MENU_OPTION_UPDATE, which runs autobleem-update over System/Updates, and on the console out to
+// rc/selection.sh, which runs abupdate over it; a dev host stops at the downloaded files, there is no
+// installer to run on it.
 void GuiLauncher::offerUpdate(bool fromMenu) {
     UpdateService &updates = app.updates();
     const time_t now = ::time(nullptr); // GuiLauncher::time is the frame clock
+    BackdropScope backdrop(*this);      // the question, the download and the closing confirm draw over the snapshot
     UpdateChoice choice;
     {
         GuiUpdatePrompt prompt(*gui);
         prompt.info = updates.status().info;
-        if (background != nullptr)
-            prompt.background = background->tex;
         prompt.show();
         choice = prompt.result;
     }
@@ -613,23 +915,25 @@ void GuiLauncher::offerUpdate(bool fromMenu) {
     UpdateService::Status outcome;
     {
         GuiUpdateProgress progress(*gui);
-        if (background != nullptr)
-            progress.background = background->tex;
         progress.show();
         outcome = progress.finalStatus;
     }
     if (outcome.phase != UpdateService::Phase::Downloaded)
         return;
-#if defined(AB_APPLIANCE)
-    // the session loop takes it from here (payload_linux/system/autobleem-session.sh)
+#if defined(AB_APPLIANCE) || defined(AB_PLATFORM_PSC)
+    // the session loop takes it from here (autobleem-appliance's payload_linux/system/autobleem-session.sh; the
+    // console's rc/boot.sh -> selection.sh -> abupdate)
     app.session().menuOption = MENU_OPTION_UPDATE;
     menuVisible = false;
 #elif defined(AB_PLATFORM_WIN)
-    // the downloaded installer, silently and with the launcher restarted after: it waits for this
-    // process to leave (the launcher's mutex, main.cpp) before it touches the program folder
+    // the downloaded installer, shown (not /S - the owner asked: a silent background update looked like
+    // nothing happened) and with the launcher restarted after. /RESTART alone: the setup wizard's progress
+    // is on screen while it works, and it waits for this process to leave (the launcher's mutex, main.cpp)
+    // before it touches the program folder
     {
         const string setup = Env::getPathToSystemDir() + sep + "Updates" + sep + outcome.info.autobleem.name;
-        if (System::startDetached(setup, {"/S", "/RESTART"})) {
+        if (System::startDetached(setup, {"/RESTART"})) {
+            gui->drawText(_("The update is downloaded - the installer is opening..."));
             app.session().menuOption = MENU_OPTION_UPDATE;
             menuVisible = false;
         } else {

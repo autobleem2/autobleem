@@ -1,7 +1,0 @@
-selawik-light.ttf is Selawik Light 1.01 by Microsoft (https://github.com/microsoft/Selawik), an open
-source replacement for Segoe UI, used here as the theme's classic-screens font.
-
-This Font Software is licensed under the SIL Open Font License, Version 1.1.
-http://opensource.org/licenses/OFL-1.1
-
-The full licence text: https://openfontlicense.org/open-font-license-official-text/

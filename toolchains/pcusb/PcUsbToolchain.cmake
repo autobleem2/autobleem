@@ -1,5 +1,6 @@
-# Cross-compile AutoBleem for the 32-bit PC USB stick (payload_linux/, Debian 12 Bookworm i386) with Debian's
-# own multiarch cross compiler - the Docker image's pcusb stage (docker/Dockerfile): crossbuild-essential-i386
+# Cross-compile AutoBleem for the 32-bit PC USB stick (autobleem-appliance's payload_linux/, Debian 12
+# Bookworm i386) with Debian's
+# own multiarch cross compiler - autobleem-build's Docker image, its pcusb stage (docker/Dockerfile): crossbuild-essential-i386
 # is i686-linux-gnu-gcc, the :i386 dev packages put SDL2's headers, .so links and sdl2-config.cmake under
 # /usr/lib/i386-linux-gnu. There is no Windows-hosted toolchain for this target (unlike the Pis' SysGCC) -
 # it builds on the server: docker/run.sh ci/build.sh pcusb.

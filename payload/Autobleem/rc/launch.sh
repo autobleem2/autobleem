@@ -2,20 +2,21 @@
 
 #PCSX launcher for AutoBleem
 
-# Everything this script says goes to System/Logs/launch.log (a header per launch, the arguments as given);
-# pcsx-ab's own output to System/Logs/pcsx.log, fresh for every launch, with its exit status at the end -
-# so a game that comes straight back to the launcher leaves a trace instead of noise in AB_out/AB_err.
-LOGS=/media/System/Logs
-mkdir -p "$LOGS"
-exec >> "$LOGS/launch.log" 2>&1
+# Everything this script says goes to launch.log in the logs dir (a header, the arguments as given); pcsx-ab's
+# own output to pcsx.log there, with its exit status at the end - both fresh for every launch, so a game that
+# comes straight back to the launcher leaves a trace instead of noise in AB_out/AB_err. The logs dir is RAM
+# unless the logs are kept (rc/ab_log.sh); a crash takes them to System/Logs/crash-<n>.
+. /media/Autobleem/rc/ab_log.sh
+LOGS=$AB_LOG_DIR
+exec > "$LOGS/launch.log" 2>&1
 echo "=== launch.sh $(date '+%Y-%m-%d %H:%M:%S')"
 echo "args: $@"
 
-# copy configuration to it's place
+# copy configuration to it's place - when it differs: this runs on every launch
 if [[ $5 == *"/gaadata"* ]]; then
   echo "Internal game"
 else
-  cp "$5/pcsx.cfg" "$1/pcsx.cfg"
+  cmp -s "$5/pcsx.cfg" "$1/pcsx.cfg" 2>/dev/null || cp "$5/pcsx.cfg" "$1/pcsx.cfg"
 fi
 
 
@@ -33,6 +34,13 @@ if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
   EMU_DIR=/media/Autobleem/bin/emu
 fi
 echo "emulator: $EMU_DIR"
+# $8 is the game's filter as pcsx-abnxt numbers it (0 Nearest, 1 Linear, 2 Sharp .. 6 CRT-Pi) and nxt gets it as
+# is; the classic pcsx-ab counts the other way round (0 bilinear, 1 nearest) and has nothing else: all but
+# Linear are nearest there
+FILTER="${8:-0}"
+if [ "$EMU_DIR" != /media/Autobleem/bin/emunxt ]; then
+  if [ "$FILTER" = "1" ]; then FILTER=0; else FILTER=1; fi
+fi
 LANG_OPT=()
 if [ "$EMU_DIR" = /media/Autobleem/bin/emunxt ] && [ -n "${11:-}" ]; then
   LANG_OPT=(-language "${11}")
@@ -60,12 +68,14 @@ ln -s "$EMU_DIR/plugins" /tmp/runpcsx/plugins
 
 if [ "$6" == "0" ]
 then
-  /tmp/pcsx -filter $8 -ratio $7 -lang $3 -region 4 -enter 1 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
+  /tmp/pcsx -filter $FILTER -ratio $7 -lang $3 -region 4 -enter 1 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
 else
-  /tmp/pcsx -filter $8 -ratio $7 -lang $3 -region 4 -enter 1 -load $6 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
+  /tmp/pcsx -filter $FILTER -ratio $7 -lang $3 -region 4 -enter 1 -load $6 "${LANG_OPT[@]}" -cdfile "$2" > "$LOGS/pcsx.log" 2>&1
 fi
 rc=$?
 echo "pcsx-ab exited with status $rc" | tee -a "$LOGS/pcsx.log"
+# 0 is every way out of the emulator's own menu; anything else came from its crash handler
+[ $rc -ne 0 ] && ab_persist_logs "pcsx-ab exited with status $rc: $2"
 
 echo FINISHED
 

@@ -1,10 +1,14 @@
 //
 // GuiEditorRA: the game editor for a RetroArch game - the one thing it can set is the light-gun flag.
 //
-#include "gui_game_editor_ra_menu.h"
-#include "../gui.h"
+#include "gui/menus/gui_game_editor_ra_menu.h"
+#include "gui/gui.h"
 #include "../../app.h"
-#include "../../core/services/environment.h"
+#include "core/services/environment.h"
+
+#include <ableem/ui/debug_driver.h>
+
+#include <typeinfo>
 
 using namespace std;
 
@@ -21,9 +25,9 @@ void GuiEditorRA::init() {
 }
 
 //*******************************
-// GuiEditorRA::render
+// GuiEditorRA::draw
 //*******************************
-void GuiEditorRA::render() {
+void GuiEditorRA::draw() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
     gui->renderTextBar();
@@ -39,17 +43,27 @@ void GuiEditorRA::render() {
     if (gameData->year > 0)
         pane.facts.emplace_back(_("Year:"), to_string(gameData->year));
     pane.render(*gui);
+    if (menuVisible) // the DebugDriver's rows: the heading band and the one option, the cursor on it
+        ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game"), _("Lightgun game:")}, 1);
 
     const int right = GameDetailPane::rowsRight(*gui);
-    gui->text().renderLabelBox(0, yoffset, right);
-    gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
-    gui->text().renderSelectionBox(OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    // a theme's selection frame goes under the heading and the row's text, so it comes first (G4d)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    gui->text().renderLabelBox(gui->uiContext(), 0, yoffset, right);
+    {
+        TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
+        gui->text().renderTextLine(_("Game"), 0, yoffset, XALIGN_LEFT);
+    }
+    if (!framed)
+        gui->text().renderSelectionBox(gui->uiContext(), OPT_LIGHTGUN, yoffset, 0, ableem::Font(), right);
+    TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected); // the one row, always selected
     gui->text().renderTextLineOptions(
-        _("Lightgun Game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
+        _("Lightgun game:") + (app.lightguns().isLightgun(*gameData) ? string("|@Check|") : string("|@Uncheck|")),
         OPT_LIGHTGUN, yoffset, XALIGN_LEFT, 0, right);
 
     gui->renderStatus("|@O| " + _("Back") + "|");
-    renderer.present();
 }
 
 //*******************************
@@ -59,6 +73,10 @@ void GuiEditorRA::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     while (menuVisible) {
+        // nothing animates here: sleep until a press, and redraw 4 times a second meanwhile (the performance
+        // overlay, the DebugDriver's shots)
+        if (!gui->input().waitForEvent(250))
+            render();
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {

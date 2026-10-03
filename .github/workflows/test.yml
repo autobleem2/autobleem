@@ -1,6 +1,6 @@
 # The launcher's test gate: ci/build.sh native (a host build, every unit-test suite, the language files'
 # validation, the format check and clang-tidy) on every push and pull request, on a GitHub-hosted runner.
-# It was ci.yml's `native` job; ci.yml (the monolith's build-and-publish pipeline) is disabled since the
+# It was ci.yml's `native` job; ci.yml (the monolith's build-and-publish pipeline, deleted 2026-09-23) went when the
 # compile-once model took over (publish-launcher.yml + autobleem2/autobleem-appliance), which left the
 # launcher with no test run at all. Gated by AB_CI_ENABLED.
 name: test
@@ -11,18 +11,47 @@ on:
   pull_request:
     branches: [develop, master]
   workflow_dispatch:
+    inputs:
+      force_fallback:
+        description: force the runner router's hosted fallback (test-only)
+        type: boolean
+        default: false
 
 concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Routes native's runner: the laptop (ab-main) when it's online, else a GitHub-hosted
+  # ubuntu-24.04 - never for a pull_request, which route.yml sends to hosted on its own
+  # before it even looks at a runner. See autobleem-build's route.yml for the decision
+  # order; route_runner re-exports its output through a plain job, which is the only
+  # way a downstream job's runs-on: can read it (a job with its own uses: can't be read
+  # directly by runs-on:, a GitHub limitation - see ROUTE-report.md).
+  route:
+    if: vars.AB_CI_ENABLED == 'true'
+    uses: autobleem2/autobleem-build/.github/workflows/route.yml@develop
+    with:
+      force_fallback: ${{ inputs.force_fallback == true }}
+    secrets: inherit
+
+  route_runner:
+    needs: route
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      runs_on: ${{ needs.route.outputs.runs_on }}
+    steps:
+      - run: echo "runner - ${{ needs.route.outputs.runner }}"
+
   native:
     name: native (tests, format, lint)
     if: vars.AB_CI_ENABLED == 'true'
-    runs-on: ubuntu-24.04
+    needs: route_runner
+    runs-on: ${{ fromJSON(needs.route_runner.outputs.runs_on) }}
+    timeout-minutes: 30
     container:
-      image: ghcr.io/autobleem2/autobleem-build:latest
+      image: ghcr.io/autobleem2/autobleem-build:${{ startsWith(github.ref, 'refs/tags/v') && 'latest' || 'develop' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -33,6 +62,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # git describe needs the tags
+          submodules: recursive
       - name: Restore sccache cache
         uses: actions/cache@v6
         with:

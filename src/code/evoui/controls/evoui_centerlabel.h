@@ -5,7 +5,7 @@
 #pragma once
 
 #include "evoui_obj.h"
-#include "../../gui/gui_font.h"
+#include "gui/gui_font.h"
 
 //******************
 // PsCenterLabel

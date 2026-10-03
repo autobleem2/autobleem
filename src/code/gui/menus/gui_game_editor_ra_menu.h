@@ -2,11 +2,11 @@
 // GuiEditorRA: the game editor for a RetroArch game - the one thing it can set is the light-gun flag.
 //
 #pragma once
-#include "../gui_screen.h"
+#include "gui/gui_screen.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
-#include "../../core/main.h"
-#include "../../core/model/ps_game.h"
+#include "core/main.h"
+#include "core/model/ps_game.h"
 
 //********************
 // GuiEditorRA
@@ -18,7 +18,7 @@ class GuiEditorRA : public GuiScreen {
 public:
     App &app = App::get(); // the game model, over GuiScreen's AppBase (see gui_screen.h)
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
     PsGamePtr gameData;   // set by the caller before show()
     bool changed = false; // the flag was toggled - the caller reloads a Lightgun set

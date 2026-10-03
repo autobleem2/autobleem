@@ -14,11 +14,15 @@ import re
 import sys
 
 REPO = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-TP = os.path.join(REPO, 'lib_ableem', 'third_party')
+TP = os.path.join(REPO, 'autobleem-core', 'lib_ableem', 'third_party')  # the submodule
 
 
 def read(rel):
-    with open(os.path.join(REPO, rel), encoding='utf-8', errors='replace') as f:
+    # lib_ableem/ and tests/third_party live in the autobleem-core submodule since 2026-09-23
+    path = os.path.join(REPO, rel)
+    if not os.path.exists(path):
+        path = os.path.join(REPO, 'autobleem-core', rel)
+    with open(path, encoding='utf-8', errors='replace') as f:
         return f.read().strip('\n')
 
 
@@ -36,6 +40,19 @@ def header_block(rel, first, last):
             if re.search(last, line):
                 break
     return '\n'.join(out).strip('\n')
+
+
+def tail_block(rel, first):
+    """the text of a header from the line matching `first` to the end of its closing comment"""
+    lines = read(rel).splitlines()
+    for i, line in enumerate(lines):
+        if re.search(first, line):
+            body = lines[i:]
+            while body and body[-1].strip() in ('*/', ''):
+                body.pop()
+            return '
+'.join(body)
+    raise SystemExit('no ' + first + ' in ' + rel)
 
 
 ZLIB_LICENCE = '''This software is provided 'as-is', without any express or implied
@@ -97,6 +114,8 @@ SECTIONS = [
                                                                             r'Permission is hereby granted', r'^\s*SOFTWARE\.')),
     ('miniz', 'lib_ableem/third_party/miniz - zip reading and writing, CRC-32', 'MIT',
      read('lib_ableem/third_party/miniz/LICENSE')),
+    ('stb_image', "lib_ableem/third_party/stb - PNG and JPEG decoding of a 1.0 theme's background (the theme converter)",
+     'MIT or Public domain', tail_block('lib_ableem/third_party/stb/stb_image.h', r'available under 2 licenses')),
     ('plog', 'lib_ableem/third_party/plog - logging', 'MIT', read('lib_ableem/third_party/plog/LICENSE')),
     ('libchdr', 'lib_ableem/third_party/libchdr - CHD disc images', 'BSD-3-Clause',
      read('lib_ableem/third_party/libchdr/LICENSE.txt')),
@@ -106,13 +125,25 @@ SECTIONS = [
      read('lib_ableem/third_party/libchdr/deps/zstd-1.5.6/LICENSE')),
     ('LZMA SDK', 'lib_ableem/third_party/libchdr/deps/lzma-24.05 and lib_ableem/third_party/lzma-7z (the 7z reader)',
      'Public domain', read('lib_ableem/third_party/libchdr/deps/lzma-24.05/LICENSE')),
-    ('SDL_FontCache', 'lib_ableem/src/ui/SDL_FontCache.c/.h - text rendering', 'MIT',
+    ('Mbed TLS', 'third_party/mbedtls (3.6.7) - TLS in abfetch, the console\'s update downloader', 'Apache-2.0',
+     'Copyright The Mbed TLS Contributors. Mbed TLS is offered under Apache-2.0 OR GPL-2.0-or-later; AutoBleem '
+     'takes it under Apache-2.0 (compatible with GPL-3.0). Only a subset of library/ is vendored, unmodified, '
+     'with a configuration of our own (third_party/mbedtls/autobleem_config.h).\n\n' +
+     read('third_party/mbedtls/LICENSE')),
+    ('Mozilla CA certificate bundle', 'src/tools/abfetch/cacert.pem - shipped next to abfetch on the console',
+     'MPL-2.0',
+     'The root certificates of Mozilla\'s NSS (certdata.txt), as extracted by the curl project '
+     '(https://curl.se/docs/caextract.html), unmodified. This Source Code Form is subject to the terms of the '
+     'Mozilla Public License, v. 2.0; a copy is at https://mozilla.org/MPL/2.0/.'),
+    ('SDL_FontCache','lib_ableem/src/ui/SDL_FontCache.c/.h - text rendering', 'MIT',
      'Copyright (c) 2019 Jonathan Dearborn\n\n' + header_block('lib_ableem/src/ui/SDL_FontCache.h',
                                                                 r'Permission is hereby granted', r'THE SOFTWARE\.')),
     ('SDL2, SDL2_image, SDL2_mixer, SDL2_ttf',
      'linked by every program; shipped as shared libraries in the console package (Autobleem/lib/libs.tar.gz) '
      'and the Windows package', 'zlib',
      'Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>\n\n' + ZLIB_LICENCE),
+    ('SDL_GameControllerDB', 'src/resources/gamecontrollerdb.txt - the pad mappings every launcher build loads '
+     '(tools/update_gamecontrollerdb.py)', 'zlib', read('src/resources/gamecontrollerdb.LICENSE')),
     ('libogg, libvorbis, libvorbisfile', 'shipped in the console package (Autobleem/lib/libs.tar.gz) for SDL2_mixer',
      'BSD-3-Clause', BSD3_XIPH),
     ('GNU libiconv', 'shipped in the console package (Autobleem/lib/libs.tar.gz) as a shared library, unmodified',
@@ -122,7 +153,11 @@ SECTIONS = [
      'https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.'),
     ('doctest', 'tests/third_party/doctest - the unit tests only, in no package', 'MIT',
      'Copyright (c) 2016-2023 Viktor Kirilov\n\nhttps://opensource.org/licenses/MIT'),
-    ('Open Sans', 'src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - the launcher\'s fonts',
+    ('Red Hat Text', 'src/resources/fonts/RedHatText-Medium.ttf, RedHatText-SemiBold.ttf - the launcher\'s fonts',
+     'SIL Open Font License 1.1',
+     'Copyright 2024 The Red Hat Project Authors (https://github.com/RedHatOfficial/RedHatFont). The licence text is '
+     'in src/resources/fonts/OFL.txt.'),
+    ('Open Sans', 'src/resources/fonts/OpenSans-Medium.ttf, OpenSans-Bold.ttf - a font to pick in Options',
      'SIL Open Font License 1.1',
      'Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans). The licence text is '
      'in src/resources/fonts/OFL.txt.'),
@@ -130,12 +165,18 @@ SECTIONS = [
      'SIL Open Font License 1.1',
      'Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name \'Source\'. The licence text is in '
      'src/resources/fonts/OFL.txt.'),
-    ('Saira', 'payload/Themes/default/saira-semicondensed-medium.ttf - the classic screens\' font',
+    ('Oxanium', 'src/resources/fonts/Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf - the surprise game\'s '
+     'HUD and title', 'SIL Open Font License 1.1',
+     'Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium). The licence text is in '
+     'src/resources/fonts/OFL.txt.'),
+    ('Saira', 'autobleem-themes submodule, Themes/default/saira-semicondensed-medium.ttf - the classic screens\' font',
      'SIL Open Font License 1.1',
      'Copyright 2016 The Saira Project Authors (omnibus.type@gmail.com), with Reserved Font Name "Saira". The licence '
-     'text is in payload/Themes/default/OFL.txt.'),
-    ('Selawik', 'payload/Themes/ab2/selawik-light.ttf - the ab2 theme\'s font', 'SIL Open Font License 1.1',
-     'Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See payload/Themes/ab2/OFL.txt.'),
+     'text is in the submodule\'s Themes/default/OFL.txt.'),
+    ('Selawik', 'autobleem-themes submodule, Themes/ab2/selawik-light.ttf - the ab2 theme\'s font',
+     'SIL Open Font License 1.1',
+     'Copyright 2015 Microsoft Corporation (https://github.com/microsoft/Selawik). See the submodule\'s '
+     'Themes/ab2/OFL.txt.'),
     ('Space Shooter Redux (Kenney) and "Venus" (SketchyLogic)', 'src/resources/surprise_game - the About screen\'s game',
      'CC0 1.0', read('src/resources/surprise_game/license.txt')),
     ('libretro-database, libretro-thumbnails', 'fetched at run time or by the installers, never in the repository',

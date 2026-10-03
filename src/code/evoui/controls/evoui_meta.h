@@ -4,9 +4,11 @@
 
 #pragma once
 
+#include <ab_gui/tween.h>
+#include "evoui_motion.h"
 #include "evoui_obj.h"
-#include "../../core/model/ps_game.h"
-#include "../../gui/gui_font.h"
+#include "core/model/ps_game.h"
+#include "gui/gui_font.h"
 
 class PsGame;
 
@@ -25,22 +27,17 @@ public:
     Fonts fonts;
     ableem::Color textColor;
 
-    ableem::Texture internalOnTex;
-    ableem::Texture internalOffTex;
-    ableem::Texture hdOnTex;
-    ableem::Texture hdOffTex;
-    ableem::Texture lockOnTex;
-    ableem::Texture lockOffTex;
-    ableem::Texture cdTex;
-    ableem::Texture favoriteTex;
-    ableem::Texture raTex;
-    ableem::Texture lightgunTex;  // one player
-    ableem::Texture lightgun2Tex; // two or more
+    // the row's icons and their dark halos (UIREV-27) come from the Context's icon set by name (ab_gui G5b:
+    // "players", "disc", "usb"/"internal", "hd"/"sd", "lock"/"unlock", "favorite", "retroarch", "lightgun"/
+    // "lightgun2"), so a theme's launcher.icons replaces any of them; the badges are bare since UIREV-35 (no plate).
+    // The section is the compact facts grid of evoui_meta_layout.h (132 px high, colours from the Context's Style)
 
+    // the panel's slide to another y (200 ms, easeOutCubic): a non-ambient tween (ab_gui G5o3) started here; a new
+    // one starts from where the panel is. `nextPos`/`prevPos` are its ends.
+    void slideTo(int pos);
+    bool sliding() const { return sliding_; }
     int nextPos = 0;
     int prevPos = 0;
-    long animEndTime = 0;
-    long animStarted = 0;
 
     bool internal = false;
     bool hd = false;
@@ -68,4 +65,9 @@ public:
     void update(long time) override;
 
     using PsObj::PsObj;
+
+private:
+    float progress_ = 0; // the slide's eased progress, written by its tween
+    bool sliding_ = false;
+    abgui::TweenOwner owner_; // the tween stops with the panel
 };

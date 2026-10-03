@@ -15,6 +15,33 @@
 #   ./make_psc.sh -k         the old spelling of the default, still accepted
 #   AB_PSC_HOST=other-host ./make_psc.sh
 set -e
+
+# ---------------------------------------------------------------------------------------------
+# Superseded by the Docker image. This script builds against the 2019 Sony toolchain at
+# /opt/toolchain, whose sysroot carries SDL2 **2.0.4** - while the console actually runs our own
+# **2.0.14**, unpacked from Autobleem/lib/libs.tar.gz at boot. So lib_ableem may use anything SDL
+# 2.0.14 has (the screenshot capture uses SDL_CreateRGBSurfaceWithFormat, which is 2.0.5) and this
+# toolchain cannot link it. The failure is a pile of undefined references, which reads like a broken
+# tree rather than a stale sysroot - hence this notice rather than letting it run into that.
+#
+# The image's own toolchain builds SDL2 2.0.14 from source, the same version the console runs, so it
+# has no such gap, and it is what releases are built with:
+#
+#     ssh psc-build; cd ~/autobleem; docker/run.sh ci/build.sh psc
+#
+# AB_FORCE_SONY_TOOLCHAIN=1 runs this anyway - it will work again if that sysroot ever gets an SDL2
+# of 2.0.5 or newer.
+# ---------------------------------------------------------------------------------------------
+if [ -z "${AB_FORCE_SONY_TOOLCHAIN:-}" ]; then
+    echo "make_psc.sh builds against the 2019 Sony toolchain, whose SDL2 is 2.0.4 - older than the" >&2
+    echo "2.0.14 the console actually runs, and too old to link what lib_ableem uses today." >&2
+    echo >&2
+    echo "Build the console in the image instead:" >&2
+    echo "    docker/run.sh ci/build.sh psc        (on psc-build, in ~/autobleem)" >&2
+    echo >&2
+    echo "AB_FORCE_SONY_TOOLCHAIN=1 runs this anyway." >&2
+    exit 1
+fi
 cd "$(dirname "$0")"
 
 HOST="${AB_PSC_HOST:-psc-build}"                            # a Host entry in ~/.ssh/config (see above)
@@ -58,8 +85,9 @@ $SSH "cd $REMOTE_DIR && $REMOTE_CMAKE -S . -B build_psc -DCMAKE_BUILD_TYPE=Relea
 # than the toolchain's own, so a C++ library feature that needs a newer symbol version links here and
 # fails to load there; and an RPATH/RUNPATH would point at the server's sysroot. Checked on the server
 # with the toolchain's readelf before the binary comes back (AutoBleem-NG's docker-validate.sh gates).
-# the launcher and the console tools under apps/, each where its build leaves it
-BINARIES="autobleem-gui apps/pscbios/pscbios apps/abflashkit/abflashkit"
+# the launcher and its four helpers (absplash, abfatflag, abupdate, abfetch - src/tools/), each where its
+# build leaves it
+BINARIES="autobleem-gui absplash abfatflag abupdate abfetch"
 echo "==> checking the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH"
 for bin in $BINARIES; do
     $SSH "cd $REMOTE_DIR && bash tools/check_psc_binary.sh build_psc/$bin $TOOLCHAIN" || {
@@ -71,19 +99,17 @@ done
 echo "==> fetching results"
 rm -rf build_psc/dist
 mkdir -p build_psc/dist
-$SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES" | tar xzf - --no-same-permissions -C build_psc/dist
+$SSH "cd $REMOTE_DIR/build_psc && tar czf - $BINARIES cacert.pem" | tar xzf - --no-same-permissions -C build_psc/dist # + abfetch's CA bundle
 # UPX takes the stripped binary to a third of its size (3.1 MB -> 1 MB on the Pi build); the console
 # unpacks it in memory at start. AB_NO_UPX=1 skips it - a packed binary is no use to gdb.
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
-    for bin in $BINARIES; do upx -q --best --lzma build_psc/dist/$bin; done
+    for bin in $BINARIES; do
+        [ "$bin" = abfatflag ] && continue # 10 KB, which upx refuses
+        upx -q --best --lzma build_psc/dist/$bin
+    done
 fi
-# the tools go straight into the payload's Apps folders (with their resources), the launcher stays in
-# dist/ for the release script to pick up
-echo "==> payload/Apps: pscbios, abflashkit"
-for tool in pscbios abflashkit; do
-    cp build_psc/dist/apps/$tool/$tool payload/Apps/$tool/$tool
-    cp -r apps/$tool/resources/. payload/Apps/$tool/
-done
+# the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
+# launcher took core as a submodule (2026-09-23); this script no longer builds or stages them
 echo "==> build_psc/dist:"
 find build_psc/dist -type f | xargs ls -l

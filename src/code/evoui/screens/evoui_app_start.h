@@ -7,8 +7,8 @@
 
 #include "../../app.h"
 #include "../../gui/game_detail_pane.h"
-#include "../../gui/gui_screen.h"
-#include "../../core/model/ps_game.h"
+#include "gui/gui_screen.h"
+#include "core/model/ps_game.h"
 
 #include <string>
 #include <vector>
@@ -30,7 +30,7 @@ public:
     bool result = false;
     void setGame(PsGamePtr game) { this->game = game; };
     void init() override;
-    void render() override;
+    void draw() override; // the frame's picture: the stack clears before and presents after
     void loop() override;
 
     using GuiScreen::GuiScreen;

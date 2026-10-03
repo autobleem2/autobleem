@@ -38,7 +38,7 @@ fi
 # the sources we own (the vendored .c files are not C++ and never analysed)
 sources() {
     if [ ${#files[@]} -gt 0 ]; then printf '%s\n' "${files[@]}"; return; fi
-    find src/code apps lib_ableem/src lib_ableem/examples tests/core tests/apps tests/support tests/doctest_main.cpp tools/theme_convert \
+    find src/code apps tests/apps tools/theme_convert \
         -path '*/third_party' -prune -o -type f -name '*.cpp' -print
 }
 # one spelling per file: forward slashes, "dir/../" folded away

@@ -62,11 +62,12 @@ INSTALL NOTES - copies onto the (already cleaned, or already-fresh) drive:
   build_psc/dist/autobleem-gui  -> Autobleem/bin/autobleem/autobleem-gui   (run ./make_psc.sh first)
   src/resources/                -> Autobleem/bin/autobleem/
   payload/Autobleem/{rc,start.sh,lib,bin/emu}  -> Autobleem/...
-  db/covers*.db                 -> Autobleem/bin/db/           (optional - see README/CLAUDE.md)
+  db/covers*.db                 -> Autobleem/bin/db/           (optional - see README/docs/developer-guide.md)
   payload/Apps/<name>/          -> Apps/<name>/                (each app folder replaced whole - the two
                                                                  console tools; the third-party apps are
                                                                  the download repository's psc/apps pack)
-  payload/Themes/<name>/        -> Themes/<name>/              (each theme folder replaced whole)
+  autobleem-themes/Themes/<name>/ -> Themes/<name>/            (each theme folder replaced whole; the
+                                                                 autobleem-themes submodule, since D5)
   payload/RetroArch/            -> RetroArch/                  (the README files and bios/biospack.txt,
                                                                  merged over what is there)
   payload/Docs/                 -> Docs/                       (the manuals and release notes)
@@ -864,9 +865,10 @@ def stage_install(root: Path, opts, dry_run: bool):
     payload_ab = REPO_ROOT / 'payload' / 'Autobleem'
     resources = REPO_ROOT / 'src' / 'resources'
     dist_binary = REPO_ROOT / 'build_psc' / 'dist' / 'autobleem-gui'
+    dist_helpers = [REPO_ROOT / 'build_psc' / 'dist' / n for n in ('absplash', 'abfatflag')]  # src/tools/
     db_dir = REPO_ROOT / 'db'
     payload_apps = REPO_ROOT / 'payload' / 'Apps'
-    payload_themes = REPO_ROOT / 'payload' / 'Themes'
+    payload_themes = REPO_ROOT / 'autobleem-themes' / 'Themes'  # the themes' own repo, submodule at autobleem-themes/
     payload_retroarch = REPO_ROOT / 'payload' / 'RetroArch'
 
     usb_autobleem = find_ci(root, 'Autobleem') or (root / 'Autobleem')
@@ -917,6 +919,12 @@ def stage_install(root: Path, opts, dry_run: bool):
                 os.chmod(dst, os.stat(dst).st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
             except OSError:
                 pass
+        for helper in dist_helpers:
+            if helper.is_file():
+                if dry_run:
+                    log(f'[DRYRUN] would copy {helper} -> {dst.parent / helper.name}')
+                else:
+                    shutil.copy2(helper, dst.parent / helper.name)
 
     covers = sorted(db_dir.glob('covers*.db')) if db_dir.is_dir() else []
     if not covers:

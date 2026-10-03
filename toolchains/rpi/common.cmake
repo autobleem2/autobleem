@@ -4,7 +4,7 @@
 # Two kinds of host build for a Pi:
 #   - the Windows PC, with a "SysGCC for Raspberry Pi" toolchain (a sysroot rsynced from a real Pi, no SDL
 #     headers - the toolchain dir's cmake/FindSDL2.cmake borrows them from toolchains/rpi/sdl2-devkit)
-#   - a Debian host (the Docker image, docker/Dockerfile's pi stage) with Debian's own crossbuild-essential-*
+#   - a Debian host (autobleem-build's Docker image, its docker/Dockerfile's pi stage) with Debian's own crossbuild-essential-*
 #     and the multiarch libsdl2*-dev:<arch> packages: real headers, .so links and sdl2-config.cmake under
 #     /usr/lib/<triplet>, nothing borrowed. Raspberry Pi OS is Debian, so this is the closer sysroot.
 # ab_rpi_toolchain() picks the first when its directory exists, the second otherwise.
@@ -20,6 +20,19 @@ macro(ab_rpi_toolchain _triplet _sysgcc_root _module_dir)
         set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
         set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
         set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+        # and packages, or a find_package() in a third-party project we are cross-building finds the
+        # *host's* library and puts its headers on the cross compile line - which is what happened
+        # building OpenJazz, where MSYS2's libxmp landed in front of the sysroot. The console's
+        # toolchain has always set this; these had not.
+        set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+        # pkg-config, too. CMAKE_FIND_ROOT_PATH_MODE_PACKAGE does not govern it: pkg_check_modules() shells out
+        # to whatever pkg-config is on PATH, which on an MSYS2 host answers about MSYS2's own libraries. That is
+        # how a cross build of Chocolate Doom picked up the host SDL2 and, with it, -Dmain=SDL_main - so its
+        # main() compiled as SDL_main and nothing linked. Pointing pkg-config at the sysroot (at a directory
+        # that need not even exist) makes it answer "not found", which is the truth and is harmless.
+        set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
+        set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
+        unset(ENV{PKG_CONFIG_PATH})
         list(APPEND CMAKE_MODULE_PATH "${_module_dir}")
         set(AB_RPI_TOOLCHAIN_KIND "sysgcc")
     else()

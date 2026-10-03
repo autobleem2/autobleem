@@ -3,10 +3,10 @@
 //
 #pragma once
 
-#include "gui_two_column_string_menu.h"
+#include "gui/menus/gui_two_column_string_menu.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
-#include "../../core/model/ps_game.h"
+#include "core/model/ps_game.h"
 #include <ableem/ui/texture.h>
 
 //********************
@@ -18,7 +18,8 @@ public:
     explicit GuiManager(ableem::GuiBase &_gui) : GuiTwoColumnStringMenu(_gui) {}
 
     void init() override;
-    void render() override;
+    void draw() override; // the list, drawn its own way: the stack clears before and presents after
+    void renderLineIndexOnRow(int index, int row) override;
 
     std::string getTitle() override;
     std::string getStatusLine() override;
@@ -33,9 +34,26 @@ public:
     void doDelete() override { doSquare_Pressed(); }
 
     PsGames psGames;
+    // the folders the scan found but did not add, after the games (regional.db's FAILED_GAMES - they used to
+    // be listed in gamesThatFailedVerifyCheck.txt): the folder, and why, in the detail pane; Square deletes one
+    ableem::FailedGames failed;
     static bool sortByTitle(PsGamePtr i, PsGamePtr j) { return lessCaseInsensitive(i->title, j->title); }
+    // UsbGame::verify()'s reasons, which the scan keeps in English, in the language on screen
+    static std::string translatedReason(const std::string &reason);
 
 private:
+    bool onFailed() const { return selected >= static_cast<int>(psGames.size()); }
+    const ableem::FailedGame &selectedFailed() const { return failed[selected - psGames.size()]; }
+    void deleteFailedFolder();
+    void settleSelection(); // after a delete: the cursor inside the list again
+
+    // a delete failure outlives the frame it happened on: getStatusLine() shows it instead of the hints
+    // until it times out (renderStatus() alone draws and returns - the very next render() call, from the
+    // rescan/init() right after, would otherwise overwrite it before it is ever presented)
+    void showError(const std::string &message);
+    std::string errorMessage;
+    unsigned int errorMessageUntil = 0;
+
     // the selected game's cover and screenshot, on the left where the editor puts its cover; loaded when
     // the selection changes (a Texture dies with this stack object, before any launch)
     void renderPreview();

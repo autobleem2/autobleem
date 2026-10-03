@@ -1,70 +1,205 @@
 #include "evoui_system_menu.h"
-#include "../../gui/gui.h"
+#include "gui/gui.h"
+
+#include <ab_gui/panel.h>
+
+#include <ableem/ui/debug_driver.h>
 
 #include <algorithm>
+#include <typeinfo>
 
 using namespace std;
 
 namespace {
 // the panel: as tall as its rows need, up to the screen less a margin; more rows than fit scroll
-const int PanelWidth = 800;
 const int PanelMargin = PanelStyle::Margin;
 const int HeaderHeight = PanelStyle::HeaderHeight;
 const int FooterHeight = PanelStyle::FooterHeight;
-const int RowHeight = PanelStyle::RowHeight;
+// the System menu: single-line items and thin headings, so its thirteen items and three headings fit on the
+// screen with the description strip (13 x 31 + 3 x 22 + 34 = 503 of the 512 there is - the owner,
+// 2026-09-26); the Quick menu's few rows are the usual single-line compact row
+const int SystemItemHeight = 31;
+const int QuickItemHeight = 44;
+const int HeadingHeight = 22;
+const int StripHeight = 34; // the selected item's description, above the footer
+const int SystemTitleSize = 20;
+const int QuickTitleSize = 22;
+const int HeadingSize = 16;
+const int NoteSize = 14;
+const int StripSize = 17;
 const int RowInset = PanelStyle::RowInset; // the rows' text from the panel's edge
+const int TextX = RowInset + 8;            // the header's text x
 } // namespace
+
+//*******************************
+// GuiSystemMenu::addItem / addHeading
+//*******************************
+void GuiSystemMenu::addItem(SystemMenuAction action, const string &key, const string &title, const string &description,
+                            const string &note) {
+    Row row;
+    row.action = action;
+    row.key = key;
+    row.title = title;
+    row.description = description;
+    row.note = note;
+    rows.push_back(row);
+}
+
+void GuiSystemMenu::addHeading(const string &title) {
+    Row row;
+    row.heading = true;
+    row.title = title;
+    rows.push_back(row);
+}
 
 //*******************************
 // GuiSystemMenu::init
 //*******************************
 void GuiSystemMenu::init() {
-    items.clear();
-    items.push_back(
-        {SystemMenuAction::RescanGames, _("Re-Scan Games"),
-         scanInProgress ? _("A scan is already in progress") : _("Look for new, changed or removed games")});
-    items.push_back({SystemMenuAction::RetroArch, retroArchLabel, _("Exit to") + " " + retroArchLabel});
-    items.push_back({SystemMenuAction::MemoryCards, _("Memory Cards"), _("Create, rename or manage memory card sets")});
-    items.push_back({SystemMenuAction::GameManager, _("Game Manager"), _("Delete games, flush covers")});
-    items.push_back(
-        {SystemMenuAction::HardwareInfo, _("Hardware Information"), _("Controller and system information")});
-    items.push_back({SystemMenuAction::Options, _("Options"), _("Customize AutoBleem settings")});
-#ifdef AB_ONLINE_UPDATE
-    items.push_back({SystemMenuAction::SoftwareUpdate, _("Software Update"),
-                     updateAvailable ? _("An update is available") : _("Check the download site for a newer version")});
+    rows.clear();
+    const string scanNote = scanInProgress ? _("Scan running") : "";
+    const string rescanWhat = _("Look for new, changed or removed games");
+    const string networkWhat = _("Wi-Fi, Bluetooth pairing and controller mapping");
+
+    // greyed when the extension providing it is installed but cannot run: the description says why
+    auto addNetwork = [&]() {
+        if (!networkProvided)
+            return;
+        addItem(SystemMenuAction::Network, "Network & Controllers", _("Network & Controllers"),
+                networkUnavailable.empty() ? networkWhat : networkUnavailable);
+        rows.back().greyed = !networkUnavailable.empty();
+    };
+
+    if (kind == Kind::Quick) {
+        addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
+        addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
+        addNetwork();
+#if defined(AB_PLATFORM_PSC) || defined(AB_APPLIANCE)
+        addItem(SystemMenuAction::RestartLauncher, "Restart launcher", _("Restart launcher"),
+                _("Close AutoBleem and start it again"));
 #endif
-    items.push_back({SystemMenuAction::About, _("About"), _("About AutoBleem")});
-    items.push_back({SystemMenuAction::PowerOff, _("Power Off"), _("Safely power off the console")});
+        addItem(SystemMenuAction::SystemMenu, "System menu...", _("System menu..."),
+                _("Everything else: Options, Game Manager, Power off and more"));
+    } else {
+        // the two used most, on top with no heading (the owner, 2026-09-25/26): the Store is an extension
+        addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
+        addItem(SystemMenuAction::Extensions, "Extensions", _("Extensions"), _("Run an installed extension"));
+
+        addHeading(_("Library"));
+        addItem(SystemMenuAction::GameManager, "Game Manager", _("Game Manager"), _("Delete games, flush covers"));
+        addItem(SystemMenuAction::MemoryCards, "Memory Cards", _("Memory Cards"),
+                _("Create, rename or manage memory card sets"));
+        addItem(SystemMenuAction::Processors, "Scanner processors", _("Scanner processors"),
+                _("Put the scan's processors in order, switch them on or off"));
+
+        addHeading(_("System"));
+        addItem(SystemMenuAction::Options, "Options", _("Options"), _("Customize AutoBleem settings"));
+        addNetwork();
+        addItem(SystemMenuAction::HardwareInfo, "Hardware Information", _("Hardware Information"),
+                _("Controller and system information"));
+#ifdef AB_ONLINE_UPDATE
+        addItem(SystemMenuAction::SoftwareUpdate, "Software Update", _("Software Update"),
+                _("Check the download site for a newer version"), updateAvailable ? _("Update available") : "");
+#endif
+        addItem(SystemMenuAction::About, "About", _("About"), _("About AutoBleem"));
+
+        addHeading(_("Leave"));
+        if (retroArchInstalled)
+            addItem(SystemMenuAction::RetroArch, "RetroArch", retroArchLabel, _("Exit to") + " " + retroArchLabel);
+        addItem(SystemMenuAction::PowerOff, "Power off", _("Power off"), _("Safely power off the console"));
+    }
+
     selected = 0;
     firstVisible = 0;
     result = SystemMenuAction::None;
-
     style = gui->panelStyle();
+    publishItems();
 }
 
 //*******************************
-// GuiSystemMenu::visibleRows
+// GuiSystemMenu::publishItems
 //*******************************
-int GuiSystemMenu::visibleRows() const {
-    int roomForRows = SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - FooterHeight;
-    return max(1, min(static_cast<int>(items.size()), roomForRows / RowHeight));
+void GuiSystemMenu::publishItems() const {
+    // the keys of the items only (no headings), and the cursor's place among them
+    vector<string> keys;
+    int cursor = -1;
+    for (int i = 0; i < static_cast<int>(rows.size()); i++) {
+        if (rows[i].heading)
+            continue;
+        if (i == selected)
+            cursor = static_cast<int>(keys.size());
+        keys.push_back(rows[i].key);
+    }
+    ableem::DebugDriver::publish(typeid(*this).name(), keys, cursor);
 }
 
 //*******************************
-// GuiSystemMenu::render
+// GuiSystemMenu::rowHeight / roomForRows / visibleRowCount / visibleHeight
 //*******************************
-void GuiSystemMenu::render() {
+int GuiSystemMenu::rowHeight(const Row &row) const {
+    if (row.heading)
+        return HeadingHeight;
+    return kind == Kind::Quick ? QuickItemHeight : SystemItemHeight;
+}
+
+int GuiSystemMenu::roomForRows() const {
+    return SCREEN_HEIGHT - 2 * PanelMargin - HeaderHeight - StripHeight - FooterHeight;
+}
+
+int GuiSystemMenu::visibleRowCount() const {
+    int used = 0;
+    int count = 0;
+    for (int i = firstVisible; i < static_cast<int>(rows.size()); i++) {
+        if (used + rowHeight(rows[i]) > roomForRows())
+            break;
+        used += rowHeight(rows[i]);
+        count++;
+    }
+    return max(1, count);
+}
+
+int GuiSystemMenu::visibleHeight() const {
+    int used = 0;
+    const int last = min(static_cast<int>(rows.size()), firstVisible + visibleRowCount());
+    for (int i = firstVisible; i < last; i++)
+        used += rowHeight(rows[i]);
+    return used;
+}
+
+//*******************************
+// GuiSystemMenu::keepSelectedVisible
+//*******************************
+// scrolled up to the selected item, its heading comes along; scrolled down, the rows above go one at a time
+void GuiSystemMenu::keepSelectedVisible() {
+    if (selected < firstVisible) {
+        firstVisible = selected;
+        if (firstVisible > 0 && rows[firstVisible - 1].heading)
+            firstVisible--;
+    }
+    while (selected >= firstVisible + visibleRowCount() && firstVisible < selected)
+        firstVisible++;
+}
+
+//*******************************
+// GuiSystemMenu::draw
+//*******************************
+// the footer's hints: one row, whatever the language (the panel is as wide as it needs)
+static vector<abgui::HintItem> footerHints() {
+    return {{{"X"}, _("Select")}, {{"O"}, _("Back")}};
+}
+
+void GuiSystemMenu::draw() {
+    publishItems(); // the cursor moved (or the rows changed): the driver's `selected`
     // the launcher's own background, dimmed, so the menu reads as an overlay on the screen it came from
-    if (background.valid())
-        renderer.copy(background, nullptr, nullptr);
-    else
-        gui->renderBackground();
-    style.dim(renderer);
+    gui->renderBackground();
+    style.dim(gui->uiContext());
 
-    const int rows = visibleRows();
-    const int panelHeight = HeaderHeight + rows * RowHeight + FooterHeight;
-    ableem::Rect panel{(SCREEN_WIDTH - PanelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, PanelWidth, panelHeight};
-    style.sheet(renderer, panel);
+    const int rowsHeight = visibleHeight();
+    const int panelHeight = HeaderHeight + rowsHeight + StripHeight + FooterHeight;
+    // a footer is one row and the window makes room for it (abgui::Panel::compactWidth)
+    const int panelWidth = abgui::Panel::compactWidth(gui->uiContext(), footerHints(), "");
+    ableem::Rect panel{(SCREEN_WIDTH - panelWidth) / 2, (SCREEN_HEIGHT - panelHeight) / 2, panelWidth, panelHeight};
+    style.sheet(gui->uiContext(), panel);
 
     // every text on this screen gets the launcher's halo, like the launcher's own
     const TextRenderer::Shadow classicShadow = gui->text().shadow();
@@ -73,43 +208,79 @@ void GuiSystemMenu::render() {
     gui->text().setShadow(shadow);
 
     Fonts &fonts = gui->assets().themeFonts;
-    int rowY = style.header(*gui, panel, _("System"));
-    for (int i = firstVisible; i < firstVisible + rows && i < static_cast<int>(items.size()); i++) {
-        if (i == selected)
-            style.selection(renderer, ableem::Rect(panel.x + 1, rowY, panel.w - 2, RowHeight));
-        gui->text().renderText_WithColor(fonts[FONT_22_MED], items[i].title, panel.x + RowInset + 8, rowY + 7,
-                                         i == selected ? style.text : style.secondary, XALIGN_LEFT);
-        gui->text().renderText_WithColor(fonts[FONT_15_BOLD], items[i].description, panel.x + RowInset + 8, rowY + 35,
-                                         style.secondary, XALIGN_LEFT);
-        rowY += RowHeight;
+    ableem::Font &titleFont = fonts.atSize(FONT_MED, kind == Kind::Quick ? QuickTitleSize : SystemTitleSize);
+    ableem::Font &headingFont = fonts.atSize(FONT_BOLD, HeadingSize);
+    ableem::Font &noteFont = fonts.atSize(FONT_BOLD, NoteSize);
+    const int rightEdge = panel.x + panel.w - TextX;
+
+    int rowY = style.header(*gui, panel, kind == Kind::Quick ? _("Quick menu") : _("System"));
+    const int rowsTop = rowY;
+    const int last = min(static_cast<int>(rows.size()), firstVisible + visibleRowCount());
+    for (int i = firstVisible; i < last; i++) {
+        const Row &row = rows[i];
+        const int h = rowHeight(row);
+        if (row.heading) {
+            style.label(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+            gui->text().renderText_WithColor(headingFont, row.title, panel.x + TextX,
+                                             rowY + (h - headingFont.lineHeight()) / 2, style.heading, XALIGN_LEFT);
+        } else {
+            if (i == selected)
+                style.selection(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+            // a greyed row is under the theme's `disabled` role (G5t: its veil, its title in `description`)
+            gui->text().renderText_WithColor(
+                titleFont, row.title, panel.x + TextX, rowY + (h - titleFont.lineHeight()) / 2,
+                row.greyed ? style.disabledColor(gui->uiContext(), style.rowColor(i == selected))
+                           : style.rowColor(i == selected),
+                XALIGN_LEFT);
+            if (!row.note.empty()) // XALIGN_RIGHT takes the margin from the screen's right edge
+                gui->text().renderText_WithColor(noteFont, row.note, SCREEN_WIDTH - rightEdge,
+                                                 rowY + (h - noteFont.lineHeight()) / 2,
+                                                 style.valueColor(i == selected), XALIGN_RIGHT);
+            if (row.greyed)
+                style.disabled(gui->uiContext(), ableem::Rect(panel.x + 1, rowY, panel.w - 2, h));
+        }
+        rowY += h;
     }
 
     // scroll markers: a small triangle at the top or bottom edge of the rows when more are that way
     const int markerX = panel.x + panel.w - RowInset;
     if (firstVisible > 0)
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight - 4, -1);
-    if (firstVisible + rows < static_cast<int>(items.size()))
-        style.scrollMarker(renderer, markerX, panel.y + HeaderHeight + rows * RowHeight + 2, 1);
+        style.scrollMarker(gui->uiContext(), markerX, rowsTop - 4, -1);
+    if (last < static_cast<int>(rows.size()))
+        style.scrollMarker(gui->uiContext(), markerX, rowsTop + rowsHeight + 2, 1);
+
+    // the strip: the selected item's description, over a rule
+    const int stripY = rowsTop + rowsHeight;
+    style.rule(gui->uiContext(), panel, stripY);
+    if (selected >= 0 && selected < static_cast<int>(rows.size())) {
+        ableem::Font &stripFont = fonts.atSize(FONT_BOLD, StripSize);
+        gui->text().renderText_WithColor(stripFont, rows[selected].description, panel.x + TextX,
+                                         stripY + (StripHeight - stripFont.lineHeight()) / 2, style.description,
+                                         XALIGN_LEFT);
+    }
 
     // the footer: the launcher's own button hints
-    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight),
-                 {{{"X"}, _("Select")}, {{"O"}, _("Back")}}, "", false);
+    style.footer(*gui, ableem::Rect(panel.x, panel.y + panel.h - FooterHeight, panel.w, FooterHeight), footerHints(),
+                 "", false);
 
     gui->text().setShadow(classicShadow);
-    renderer.present();
 }
 
 //*******************************
 // GuiSystemMenu::moveSelection
 //*******************************
+// the next item that way, past the headings, wrapping round at either end
 void GuiSystemMenu::moveSelection(int step) {
-    const int count = static_cast<int>(items.size());
-    selected = (selected + step + count) % count;
-    const int rows = visibleRows();
-    if (selected < firstVisible)
-        firstVisible = selected;
-    else if (selected >= firstVisible + rows)
-        firstVisible = selected - rows + 1;
+    const int count = static_cast<int>(rows.size());
+    int next = selected;
+    for (int tries = 0; tries < count; tries++) {
+        next = (next + step + count) % count;
+        if (!rows[next].heading)
+            break;
+    }
+    selected = next;
+    keepSelectedVisible();
+    publishItems(); // now, not at the next frame: the driver's `selected` must never lag the cursor
 }
 
 //*******************************
@@ -117,8 +288,14 @@ void GuiSystemMenu::moveSelection(int step) {
 //*******************************
 void GuiSystemMenu::loop() {
     menuVisible = true;
+    gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
-        render();
+        if (gui->input().frameDue())
+            render();
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
+            app.audio().cursor.play();
+            moveSelection(dir);
+        });
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
@@ -135,11 +312,13 @@ void GuiSystemMenu::loop() {
                     app.audio().cursor.play();
                     moveSelection(1);
                 }
+                hold.track(gui->input(), gui->platform().ticks());
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::Cross) {
                     app.audio().cursor.play();
-                    result = items[selected].action;
+                    publishItems(); // the driver sees the row this press takes
+                    result = rows[selected].action;
                     menuVisible = false;
                 } else if (e.button == Button::Circle) {
                     app.audio().cancel.play();
@@ -152,4 +331,5 @@ void GuiSystemMenu::loop() {
             }
         }
     }
+    ableem::DebugDriver::setItems({});
 }

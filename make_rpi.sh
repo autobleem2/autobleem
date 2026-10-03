@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Cross-compile for a 32-bit Raspberry Pi OS userland, using the Windows-hosted "SysGCC for Raspberry Pi"
 # toolchain at C:\sysGCC\raspberry (not the PSC toolchain - see make_psc.sh for that). The result goes into
-# build_rpi/; tools/make_rpi_package.sh turns it into the installable tarball (see payload_linux/README.md).
+# build_rpi/; autobleem-appliance's tools/make_rpi_package.sh turns it into the installable tarball (DOCS-5,
+# 2026-09-27 - packaging moved there with payload_linux/; see that repo's payload_linux/README.md).
 #
 # Run it the way make_win.sh is run, from the MSYS2 UCRT64 shell. The toolchain file names the compilers by
 # absolute path, so C:\sysGCC\raspberry\bin deliberately does NOT go on PATH: its rm.exe/mkdir.exe/make.exe

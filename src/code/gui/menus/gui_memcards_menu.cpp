@@ -1,9 +1,10 @@
 #include "gui_memcards_menu.h"
+#include "memcard_counter.h"
 #include <string>
-#include "../gui.h"
-#include "../../core/main.h"
-#include "../screens/gui_confirm.h"
-#include "../screens/gui_keyboard.h"
+#include "gui/gui.h"
+#include "core/main.h"
+#include "gui/screens/gui_confirm.h"
+#include "gui/screens/gui_keyboard.h"
 
 using namespace std;
 
@@ -21,9 +22,9 @@ void GuiMemcards::init() {
 //*******************************
 // returns the status line at the bottom
 string GuiMemcards::getStatusLine() {
-    return _("Card") + " " + to_string(selected + 1) + "/" + to_string(getVerticalSize()) + "   |@L2|/|@R2| " +
-           _("Page") + "   |@X| " + _("Rename") + "  |@S| " + _("New card") + "   |@T| " + _("Delete") + "  |@O| " +
-           _("Back") + "|";
+    return MemcardCounter::text(_("Card"), selected, getVerticalSize()) + "   |@L1/R1| " + _("First/last") +
+           "   |@L2/R2| " + _("Page") + "   |@X| " + _("Rename") + "  |@S| " + _("New card") + "   |@T| " +
+           _("Delete") + "  |@O| " + _("Back") + "|";
 }
 
 //*******************************
@@ -84,7 +85,9 @@ void GuiMemcards::doTriangle_Pressed() {
     app.audio().cursor.play();
     if (getVerticalSize() != 0) {
         GuiConfirm guiConfirm(*gui);
-        guiConfirm.label = _("Delete card") + " '" + lines[selected] + "' ?";
+        guiConfirm.label = _("Delete card '%s'?");
+        Strings::replaceAll(guiConfirm.label, "%s", lines[selected]);
+        guiConfirm.confirmLabel = _("Delete card");
         guiConfirm.show();
         bool result = guiConfirm.result;
 

@@ -8,8 +8,11 @@
 //
 #pragma once
 
-#include "../../gui/panel_style.h"
+#include "gui/panel_style.h"
 
+#include <ab_gui/tween.h>
+
+#include <cstdint>
 #include <string>
 
 class Gui;
@@ -17,11 +20,14 @@ class Gui;
 class NotificationBubble {
 public:
     // shows (or updates) the bubble: `title` bold, `detail` under it, done/total as a bar when total > 0.
-    // holdMs: how long it stays after this call (0 = until hide() or the next show)
-    void show(const std::string &title, const std::string &detail, int done, int total, long holdMs);
+    // holdMs: how long it stays after this call (0 = until hide() or the next show). done/total are 64-bit:
+    // an extension reports bytes, and a download past 2 GB must not turn negative on the 32-bit console
+    void show(const std::string &title, const std::string &detail, int64_t done, int64_t total, long holdMs);
     // the fade-out starts now (a scan that finished, its summary shown for holdMs, then this)
     void hide();
     bool visible() const { return state_ != State::Hidden; }
+    // sliding in or fading out: the screen draws every frame meanwhile (a shown bubble is still)
+    bool animating() const { return state_ == State::SlidingIn || state_ == State::FadingOut; }
 
     // once a frame, over the launcher's other elements
     void render(Gui &gui, long now);
@@ -37,11 +43,19 @@ public:
 
 private:
     enum class State { Hidden, SlidingIn, Shown, FadingOut };
+    // starts the slide in or out as though it had begun at `since` (ticks): a linear tween of slideMs_, the time into
+    // the slide, from what is gone of it now to its end (ab_gui/transitions.h); its end moves the state on. Any slide
+    // still running stops first.
+    void startSlide(State slide, long since);
+
     State state_ = State::Hidden;
-    long stateSince_ = 0; // when the state began
-    long hideAt_ = 0;     // Shown: when to start fading (0 = never)
+    long stateSince_ = 0; // when the slide began (for a slide that resumes: when it would have)
+    long hideAt_ = 0;     // Shown: when to start fading (0 = never) - a timestamp, not a tween: the hold is not busy
 
     std::string title_, detail_;
-    int done_ = 0, total_ = 0;
+    int64_t done_ = 0, total_ = 0;
     long now_ = 0;
+
+    float slideMs_ = 0;            // the time into the current slide - the tween's value
+    abgui::TweenOwner slideOwner_; // after the float it writes: it goes first and stops the tween
 };

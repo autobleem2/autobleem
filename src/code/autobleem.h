@@ -4,6 +4,9 @@
 #pragma once
 
 #include "app.h"
+#include "core/services/carousel_session.h"
+#include "core/services/output_mode.h"
+#include <functional>
 
 //******************
 // AutoBleem
@@ -23,5 +26,19 @@ public:
 private:
     static std::unique_ptr<ProcessRunner> makeProcessRunner();
     bool openLibrary(); // covers dir + regional.db + internal.db
-    void launchGame();  // the MENU_OPTION_START handling
+    // everything around a program run in front of the launcher - the mixer and the pads released, the
+    // display given up (a Pi) or kept with a picture on it (Windows), `body` run, the way back to the
+    // carousel; `retroArch` picks the picture and how long the machine gets to settle after
+    void runOutside(bool retroArch, const std::function<void()> &body);
+    void launchGame();       // the MENU_OPTION_START handling
+    void runRetroArchMenu(); // MENU_OPTION_RETRO in direct mode: RetroArch's own menu, then back
+    // Options -> Display (OutputMode, MENU_OPTION_DISPLAY) - see autobleem.cpp
+    void takeEmulatorOutputMode();
+    void switchOutputMode(const OutputMode &mode);
+    void tryOutputMode(const std::string &token);
+    bool confirmPendingOutputMode();
+    // BUG-40: the carousel's place across a launcher that exits for a display change / restart and is started
+    // over (core's CarouselSession): saved as it leaves, taken once at the next start
+    void saveCarouselSession();
+    void restoreCarouselSession();
 };

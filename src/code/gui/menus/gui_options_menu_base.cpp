@@ -10,6 +10,13 @@ void GuiOptionsMenuBase::init() {
 }
 
 //*******************************
+// driverRowName(OptionsInfo)
+//*******************************
+std::string driverRowName(const OptionsInfo &info) {
+    return _(info.descriptionToTranslate);
+}
+
+//*******************************
 // void GuiOptionsMenuBase::getBooleanSymbolText
 //*******************************
 std::string GuiOptionsMenuBase::getBooleanSymbolText(const OptionsInfo &info, const std::string &value) {
@@ -55,9 +62,8 @@ void GuiOptionsMenuBase::renderOptionRow(const OptionsInfo &info, int y) {
         return;
     }
     gui->text().renderTextLine(label, -y, 0, XALIGN_LEFT, 0, font);
-    const ableem::Rect panel = gui->text().getOpscreenRectOfTheme();
-    const int right = panel.x + panel.w - PanelStyle::RowInset - 8;
-    gui->text().renderText(font, valueText(info, value), SCREEN_WIDTH - right, y, XALIGN_RIGHT);
+    // at the panel's right edge, in the row role's value colour (the caller sets the role)
+    gui->text().renderRowValue(valueText(info, value), -y, 0, 0, font);
 }
 
 //*******************************
@@ -189,60 +195,6 @@ string GuiOptionsMenuBase::doLastOption() {
             return ""; // index is not within range
     } else
         return "";
-}
-
-//*******************************
-// void GuiOptionsMenuBase::computeAmountTomoveBy()
-//*******************************
-int GuiOptionsMenuBase::computeAmountTomoveBy(unsigned int totalSize) {
-    if (totalSize == 0)
-        return 0;
-    else if (totalSize <= 10)
-        return 2;
-    else if (totalSize <= 50)
-        return 5;
-    else if (totalSize <= 100)
-        return 5;
-    else
-        return totalSize / 20;
-}
-
-//*******************************
-// void GuiOptionsMenuBase::doL1_Pressed()
-//*******************************
-void GuiOptionsMenuBase::doL1_Pressed() {
-    do {
-        int size = getChoicesSize();
-        if (size > 0) {
-            auto &info = lines[selected];
-            string value = app.config().inifile.values[info.iniKey];
-            int index = getCurrentOptionIndex(info, value) - computeAmountTomoveBy(size);
-            if (index < 0)
-                doFirstOption();
-            else
-                doOptionIndex(index);
-        }
-        render();
-    } while (fastForwardUntilAnotherEvent());
-}
-
-//*******************************
-// void GuiOptionsMenuBase::doR1_Pressed()
-//*******************************
-void GuiOptionsMenuBase::doR1_Pressed() {
-    do {
-        int size = getChoicesSize();
-        if (size > 0) {
-            auto &info = lines[selected];
-            string value = app.config().inifile.values[info.iniKey];
-            int index = getCurrentOptionIndex(info, value) + computeAmountTomoveBy(size);
-            if (index >= size)
-                doLastOption();
-            else
-                doOptionIndex(index);
-        }
-        render();
-    } while (fastForwardUntilAnotherEvent());
 }
 
 //*******************************

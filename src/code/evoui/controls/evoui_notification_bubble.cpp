@@ -2,17 +2,19 @@
 // NotificationBubble: the launcher's top-right corner panels - the scan's, the messages'. See the header.
 //
 #include "evoui_notification_bubble.h"
-#include "../../gui/gui.h"
-#include "../../core/model/timing.h"
+#include "gui/gui.h"
+
+#include <ab_gui/screen_stack.h>
+#include <ab_gui/transitions.h>
 
 #include <algorithm>
 
 using namespace std;
 
 namespace {
-const int SlideMs = 250;     // in from the edge, out to it
-const int TitleHeight = 24;  // the title's row
-const int DetailHeight = 22; // the detail's row
+const long SlideMs = abgui::transition::BubbleSlideMs; // in from the edge, out to it
+const int TitleHeight = 24;                            // the title's row
+const int DetailHeight = 22;                           // the detail's row
 const int BarHeight = 4;
 const int Pad = 12;
 } // namespace
@@ -20,19 +22,18 @@ const int Pad = 12;
 //*******************************
 // NotificationBubble::show
 //*******************************
-void NotificationBubble::show(const string &title, const string &detail, int done, int total, long holdMs) {
+void NotificationBubble::show(const string &title, const string &detail, int64_t done, int64_t total, long holdMs) {
     // the clock is the platform's: a show() before the first render() (the launcher's "Showing:" line is
     // set while its assets load) must not count its hold from 0
     now_ = Gui::getInstance()->platform().ticks();
     title_ = title;
     detail_ = detail;
-    done_ = done;
-    total_ = total;
+    done_ = max<int64_t>(0, done);
+    total_ = max<int64_t>(0, total);
     if (state_ == State::Hidden || state_ == State::FadingOut) {
         // a bubble on its way out comes back from where it is
         const long elapsed = state_ == State::FadingOut ? max(0L, SlideMs - (now_ - stateSince_)) : 0;
-        state_ = State::SlidingIn;
-        stateSince_ = now_ - elapsed;
+        startSlide(State::SlidingIn, now_ - elapsed);
     }
     hideAt_ = holdMs > 0 ? now_ + holdMs : 0;
 }
@@ -43,8 +44,27 @@ void NotificationBubble::show(const string &title, const string &detail, int don
 void NotificationBubble::hide() {
     if (state_ == State::Hidden || state_ == State::FadingOut)
         return;
-    state_ = State::FadingOut;
-    stateSince_ = now_;
+    startSlide(State::FadingOut, now_);
+}
+
+//*******************************
+// NotificationBubble::startSlide
+//*******************************
+// The slide is a tween of the time into it (linear, to the slide's end), drawn through the old easeOutCubic curve
+// (abgui::transition::bubbleProgress) - so it lands where the hand-written timer did at every moment, also when it
+// begins late (hide() from a frame after the last render: `since` is that render's time) or resumes (a show() on the
+// way out).
+// Its end is what moves the state on: a slide in ends Shown, a slide out Hidden. The hold between them is hideAt_,
+// looked at in render() - no tween, so a bubble that stays for seconds is not busy; only the two slides are.
+void NotificationBubble::startSlide(State slide, long since) {
+    slideOwner_.cancel();
+    state_ = slide;
+    stateSince_ = since;
+    const long gone = max(0L, static_cast<long>(Gui::getInstance()->platform().ticks()) - since);
+    slideMs_ = static_cast<float>(min(gone, SlideMs));
+    const State ends = slide == State::SlidingIn ? State::Shown : State::Hidden;
+    Gui::getInstance()->uiContext().stack().tweens().start(
+        abgui::transition::slideClock(slideMs_, slideMs_).onEnd([this, ends]() { state_ = ends; }), slideOwner_);
 }
 
 //*******************************
@@ -74,23 +94,16 @@ void NotificationBubble::render(Gui &gui, long now) {
     now_ = now;
     if (state_ == State::Hidden)
         return;
-    if (state_ == State::SlidingIn && now - stateSince_ >= SlideMs) {
-        state_ = State::Shown;
-        stateSince_ = now;
-    }
+    // the slides end in the tweens (before the frame); the hold ends here
     if (state_ == State::Shown && hideAt_ != 0 && now >= hideAt_)
         hide();
-    if (state_ == State::FadingOut && now - stateSince_ >= SlideMs) {
-        state_ = State::Hidden;
+    if (state_ == State::Hidden)
         return;
-    }
 
     // the slide: the bubble's offset past the right edge, eased
     float progress = 1.0f;
-    if (state_ == State::SlidingIn)
-        progress = easeOutCubic(static_cast<float>(now - stateSince_) / SlideMs);
-    else if (state_ == State::FadingOut)
-        progress = 1.0f - easeOutCubic(static_cast<float>(now - stateSince_) / SlideMs);
+    if (state_ != State::Shown)
+        progress = abgui::transition::bubbleProgress(state_ == State::FadingOut, slideMs_);
     const int width = panelWidth(gui);
     const int offset = static_cast<int>((1.0f - progress) * (width + 16));
 
@@ -98,7 +111,7 @@ void NotificationBubble::render(Gui &gui, long now) {
     Fonts &fonts = gui.assets().themeFonts;
     const bool bar = total_ > 0;
     ableem::Rect panel(right - width + offset, top, width, height());
-    style.sheet(gui.renderer(), panel);
+    style.toast(gui.uiContext(), panel);
 
     const int textWidth = width - 2 * Pad;
     int y = panel.y + Pad;
@@ -113,11 +126,9 @@ void NotificationBubble::render(Gui &gui, long now) {
     if (bar) {
         y += 6;
         ableem::Rect track(panel.x + Pad, y, textWidth, BarHeight);
-        gui.renderer().setBlendMode(ableem::BlendMode::Blend);
-        gui.renderer().setDrawColor(ableem::Color(style.secondary.r, style.secondary.g, style.secondary.b, 120));
-        gui.renderer().fillRect(track);
-        const int fill = static_cast<int>(static_cast<long>(textWidth) * min(done_, total_) / total_);
-        gui.renderer().setDrawColor(style.text);
-        gui.renderer().fillRect(ableem::Rect(track.x, track.y, fill, BarHeight));
+        // the track in the secondary colour at the theme's barTrack alpha (else 120), the fill in the text colour
+        style.progress(gui.uiContext(), track, static_cast<unsigned long long>(min(done_, total_)),
+                       static_cast<unsigned long long>(total_), abgui::Tone::Secondary, abgui::Style::StyleAlpha,
+                       abgui::Tone::Text, abgui::Style::OwnAlpha);
     }
 }

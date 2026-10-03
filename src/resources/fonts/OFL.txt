@@ -1,14 +1,25 @@
 The fonts in this folder are licensed under the SIL Open Font License, Version 1.1 (below).
 
+RedHatText-Medium.ttf, RedHatText-SemiBold.ttf
+    Copyright 2024 The Red Hat Project Authors (https://github.com/RedHatOfficial/RedHatFont)
+    Medium and SemiBold instances of Red Hat Text. The launcher's medium and bold text - the fonts of a theme
+    that ships none (the ab2.0.0 theme ships the same pair itself).
+
 OpenSans-Medium.ttf, OpenSans-Bold.ttf
     Copyright 2020 The Open Sans Project Authors (https://github.com/googlefonts/opensans)
     Static instances (wght 500 and 700, wdth 100) of the variable font, made with fontTools.
-    The launcher's medium and bold text - the stand-in for the PlayStation Classic's own SST fonts.
+    The launcher's text before UIREV-31 (the stand-in for the PlayStation Classic's own SST fonts); now a font
+    a user may pick in Options (Font).
 
 NotoSansSC-Regular.otf
     Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
     Noto Sans CJK SC (https://github.com/notofonts/noto-cjk), a subset. Every font when the language is
     Chinese, and the memory card manager's font for Japanese save titles.
+
+Oxanium-ExtraBold.ttf, Oxanium-Bold.ttf, Oxanium-SemiBold.ttf
+    Copyright 2019 The Oxanium Project Authors (https://github.com/sevmeyer/oxanium)
+    Static instances (wght 800, 700 and 600) of the variable font, made with fontTools. The surprise game's
+    ("BleemStrike: Reloaded") HUD, title and lettering.
 
 -----------------------------------------------------------
 SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007

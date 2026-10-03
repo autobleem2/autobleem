@@ -9,7 +9,7 @@
 # LaunchService::launchPcsx passes, in this order:
 #   $1 ssFolder   the game's !SaveStates folder      $6 resume   1 to load the resume state, 0 for a cold boot
 #   $2 cdfile     the .cue/.pbp/.chd to run          $7 aspect   1 widescreen, 0 4:3
-#   $3 lang                                          $8 filter   1 bilinear, 0 nearest
+#   $3 lang                                          $8 filter   0 Nearest, 1 Linear, 2 Sharp .. 6 CRT-Pi
 #   $4 region     (the console's script ignores it   $9 pad      always "NA"
 #                 and passes -region 4; so does this)
 #   $5 gameFolder the game's own folder            $10 emulator  pcsx-ab (bin/emu) or pcsx-abnxt (bin/emunxt)
@@ -44,6 +44,12 @@ if [ ! -f "$EMU_DIR/pcsx-ab" ]; then
   EMU_DIR="$DATA_MOUNT/Autobleem/bin/emu"
 fi
 echo "AUTOBLEEM: emulator $EMU_DIR"
+# FILTER is the game's filter as pcsx-abnxt numbers it (0 Nearest, 1 Linear, 2 Sharp .. 6 CRT-Pi) and nxt
+# gets it as is; the classic pcsx-ab counts the other way round (0 bilinear, 1 nearest) and has nothing
+# else: all but Linear are nearest there
+if [ "$EMU_DIR" != "$DATA_MOUNT/Autobleem/bin/emunxt" ]; then
+    if [ "$FILTER" = "1" ]; then FILTER=0; else FILTER=1; fi
+fi
 BIOS_DIR="$DATA_MOUNT/System/Bios"
 RA_DIR="$DATA_MOUNT/RetroArch"
 RUN_DIR=/tmp/runpcsx
@@ -52,8 +58,9 @@ echo "AUTOBLEEM: starting PS1 game"
 echo "Cmd: $*"
 
 # the per-game pcsx.cfg belongs next to the save states, the way the console's launch.sh puts it there
+# (only when it differs - every launch comes here)
 if [ -f "$GAME_FOLDER/pcsx.cfg" ] && [ -n "$SS_FOLDER" ]; then
-    cp -f "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg"
+    cmp -s "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg" 2>/dev/null || cp -f "$GAME_FOLDER/pcsx.cfg" "$SS_FOLDER/pcsx.cfg"
 fi
 
 #*******************************

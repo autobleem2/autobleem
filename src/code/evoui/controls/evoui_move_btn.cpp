@@ -4,31 +4,38 @@
 
 #include "evoui_move_btn.h"
 
+#include <ab_gui/ambient.h>
+#include <ab_gui/screen_stack.h>
+
+//*******************************
+// PsMoveBtn::restart
+//*******************************
+void PsMoveBtn::restart() {
+    owner.cancel();
+    started = true;
+    drawY = static_cast<float>(originaly);
+    gui->uiContext().stack().tweens().start(
+        abgui::ambient::pulse(drawY, static_cast<float>(originaly), static_cast<float>(originaly + maxMove), period),
+        owner);
+}
+
 //*******************************
 // PsMoveBtn::update
 //*******************************
 void PsMoveBtn::update(long time) {
-    int duration = 500;
-
-    float progress = time - animationStarted;
-
-    progress = progress / (duration * 1.0f);
-    if (progress > 1)
-        progress = 1;
-    if (progress < 0)
-        progress = 0;
-
-    if (!up) {
-        y = originaly + maxMove * progress;
-
-    } else {
-        y = (originaly + maxMove) - maxMove * progress;
-    }
-
-    if (progress >= 1.0f) {
-        up = !up;
-        animationStarted = time;
-    }
-
+    if (!started)
+        restart();
+    y = originaly; // where the arrow stands; the bob is drawY
     lastTime = time;
+}
+
+//*******************************
+// PsMoveBtn::render
+//*******************************
+void PsMoveBtn::render() {
+    if (!visible)
+        return;
+    const float top = started ? drawY : static_cast<float>(originaly); // not updated yet
+    renderer.copy(tex, nullptr,
+                  ableem::FRect(static_cast<float>(x), top, static_cast<float>(w), static_cast<float>(h)));
 }

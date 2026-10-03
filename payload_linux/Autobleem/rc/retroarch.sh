@@ -21,4 +21,8 @@ if ! command -v retroarch >/dev/null 2>&1; then
 fi
 
 echo "AUTOBLEEM: starting RetroArch"
-exec retroarch --config "$RA_CONFIG" --menu
+# what the launcher starts RetroArch with on top of retroarch.cfg - config_save_on_exit (Options ->
+# "Persist RetroArch config") and a game's own settings - in RAM (LaunchService::prepareRaAppend)
+RA_APPEND=()
+[ -f "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg" ] && RA_APPEND=(--appendconfig "${AB_RUNTIME_DIR:-/tmp/autobleem}/ra-append.cfg")
+exec retroarch --config "$RA_CONFIG" "${RA_APPEND[@]}" --menu

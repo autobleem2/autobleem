@@ -16,7 +16,7 @@ option(AB_ENABLE_CHD "Enable CHD image support (builds the vendored libchdr)" ON
 # and core/services/environment.h derives the semantic macros the code checks (AB_DEBUG_HOST, AB_APPLIANCE,
 # AB_ROOT_RELATIVE_LAYOUT, AB_HAS_INTERNAL_GAMES) - the sources never test the CPU or the OS for this.
 #   psc    the PlayStation Classic (the console): the /media tree, /gaadata's internal games, offline updates
-#   rpi    the Raspberry Pi appliance (payload_linux/): forks the emulators, halts for real, no internal games,
+#   rpi    the Raspberry Pi appliance (autobleem-appliance's payload_linux/): forks the emulators, halts for real, no internal games,
 #          everything on the exFAT data partition given on the command line, the online update
 #   pcusb  the 32-bit PC USB-stick appliance: rpi's semantics on x86
 #   win    the Windows product (the NSIS installer): a real target on a desktop OS
@@ -44,16 +44,36 @@ string(TOUPPER "${AB_TARGET}" _ab_target_upper)
 message(STATUS "Building for target ${AB_TARGET} (AB_PLATFORM_${_ab_target_upper})")
 add_compile_definitions(AB_PLATFORM_${_ab_target_upper})
 
-# The launcher's online update (core/services/update_service.*, the update dialogs): the appliances, the
-# Windows product and the dev hosts check the download repository for a newer AutoBleem/RetroArch and fetch
-# it; the console updates from a stick, offline, and carries none of this code - its branch below switches
-# it off.
-option(AB_ONLINE_UPDATE "Build the online update check and download (everything but the console)" ON)
+# MSYS2 UCRT64 packaging regression (seen from mingw-w64-ucrt-x86_64-gcc 16.2.0-3, 2026-09): the gcc driver's
+# own specs only add -D_UCRT when -mcrtdll=ucrt is passed explicitly (`gcc -dumpspecs`'s `*cpp:` rule) - there
+# is no `self_spec` defaulting that in for the ucrt64 environment any more, so mingw-w64's <cstdlib> (which
+# gates at_quick_exit/quick_exit on _UCRT) fails to declare them on a from-scratch build: "'at_quick_exit' has
+# not been declared in '::'". An already-configured build dir keeps its object files and never retriggers
+# this, which is why it looked intermittent. Scoped to exactly that toolchain - MinGW GNU gcc whose binary
+# resolves under a ucrt64 tree - so llvm-mingw (Clang, no ucrt64 path) and the Debian mingw-w64 gcc-posix
+# cross compiler (toolchains/mingw/, no ucrt64 path either) are untouched; harmless again once MSYS2 fixes
+# the packaging, since the compiler would then define it on its own. add_compile_definitions() (not
+# CMAKE_CXX_FLAGS) because the Debug branch below overwrites CMAKE_CXX_FLAGS wholesale. Repeated here (not
+# just in autobleem-core's own CMakeLists) because this file's own targets (ab_ui, ab_evoui, autobleem-gui)
+# are a sibling directory scope of that submodule, not a child of it.
+if (MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    get_filename_component(_ab_cxx_compiler_real "${CMAKE_CXX_COMPILER}" REALPATH)
+    if (_ab_cxx_compiler_real MATCHES "/ucrt64/" OR "$ENV{MSYSTEM}" STREQUAL "UCRT64")
+        message(STATUS "Building: MSYS2 UCRT64 gcc without a default -D_UCRT detected - defining it (see CMakeLists.txt comment)")
+        add_compile_definitions(_UCRT)
+    endif()
+endif()
+
+# The launcher's online update (core/services/update_service.*, the update dialogs): every target checks the
+# download repository for a newer AutoBleem (and RetroArch, on the appliances) and fetches it. The console
+# too since 2026-09-23 - only when it has a network (the AutoBleem kernel's WiFi; a stock console never has
+# one), with src/tools/abfetch - its own downloader, on the stick - and src/tools/abupdate lays the package
+# over the stick.
+option(AB_ONLINE_UPDATE "Build the online update check and download" ON)
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 if (AB_TARGET STREQUAL "psc")
 	message(STATUS "Building for ARM (the console)")
-	set(AB_ONLINE_UPDATE OFF) # the console has no network: its updater is offline (see the option above)
 	# The console is a Cortex-A35 (ARMv8-A, run in AArch32) with NEON. GCC 8+ spells that armv8-a+simd;
 	# an older GCC - the Stretch gcc-6 the Docker image builds with, the newest whose libstdc++ matches the
 	# console's glibc 2.24 - takes the -mfpu spelling (its old branch here was armv7ve without NEON).
@@ -67,6 +87,9 @@ if (AB_TARGET STREQUAL "psc")
 		SET(CMAKE_C_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
 		SET(CMAKE_CXX_FLAGS "-mfloat-abi=hard -march=armv8-a -mfpu=neon-vfpv4 -Os -s")
 	endif()
+	# 64-bit file offsets on the 32-bit console: without them stat() fails (EOVERFLOW) on a file over 2 GB,
+	# so a big Store download or disc image reads as size 0. The PC stick's toolchain does the same.
+	add_definitions(-D_FILE_OFFSET_BITS=64)
 
 	# the Sony sysroot is wherever toolchains/psc/PSCtoolchainV8.cmake found the toolchain (AB_PSC_TOOLCHAIN);
 	# the old hard-coded /opt/toolchain/... is only the fallback for a toolchain that is merely on PATH
@@ -144,161 +167,39 @@ if (AB_ENABLE_CLANG_TIDY)
         message(WARNING "AB_ENABLE_CLANG_TIDY is on but clang-tidy was not found")
     endif()
 endif()
-set(ABLEEM_ENABLE_CHD ${AB_ENABLE_CHD} CACHE BOOL "" FORCE)
-add_subdirectory(lib_ableem)
+# autobleem-core (the submodule, github.com/autobleem2/autobleem-core): lib_ableem (the SDL-free engine and
+# the SDL ui library), ab_core (the model and services - no SDL, no screens), ab_classic (the classic UI any
+# program draws with: Gui, AppBase, the splash/confirm/keyboard/about/hardware-info screens, the list menus)
+# and ab_installer (the stick installer the console's own updater runs). The one copy the launcher and the
+# tool repos share since 2026-09-23 - the launcher kept its own until then. Its version stamp (core/version.h)
+# is this repository's git describe (AB_VERSION_SOURCE_DIR defaults to the top-level project).
+set(AB_VERSION_FALLBACK "v2.0.0-pre0")
+# the tests' switch is shared: core's suites build with the launcher's (both off on the cross toolchains)
+option(AB_BUILD_TESTS "Build the unit tests (autobleem-core's and the launcher's own)" ON)
+set(AB_CORE_UI ON CACHE BOOL "" FORCE)
+add_subdirectory(autobleem-core)
 
 if (NOT AB_ENABLE_CHD)
     message(STATUS "CHD support disabled")
     add_compile_definitions(AB_NO_CHD)
 endif()
-
-# ab_core: the app's model and services layer, the first of the three targets the 2026-09 refactor split src/code into.
-# It links ableem_engine and nothing else, so the linker - not a convention - is what keeps it free of SDL and
-# of screens. That is what makes it testable without a window.
-#
-# It starts small on purpose: only files that already have no Gui and no App::get() in them could move here
-# without a content change. theme.*, scanner.* and util_time.* are core-shaped but each still reaches the UI
-# or the composition root, so they stay in the app target until a later step gives them a seam. ab_ui and ab_evoui are not split out yet either - Gui::menuSelection()
-# constructs GuiLauncher while ~20 launcher files use Gui, so the two would be a link cycle rather than a
-# layering. Phase C step 14 (menuSelection -> ClassicMenuScreen) is what removes that cycle.
-add_library(ab_core STATIC
-        src/code/core/main.h
-        src/code/core/model/game_set.h
-        src/code/core/model/ps_game.cpp
-        src/code/core/model/ps_game.h
-        src/code/core/model/session.h
-        src/code/core/model/timing.h
-        src/code/core/services/config.cpp
-        src/code/core/services/environment.cpp
-        src/code/core/services/environment.h
-        src/code/core/services/environment_setup.cpp
-        src/code/core/services/environment_setup.h
-        src/code/core/services/windows_host.cpp
-        src/code/core/services/windows_host.h
-        src/code/core/services/clock.cpp
-        src/code/core/services/clock.h
-        src/code/core/services/config.h
-        src/code/core/services/game_catalog.cpp
-        src/code/core/services/game_catalog.h
-        src/code/core/services/game_query.cpp
-        src/code/core/services/game_query.h
-        src/code/core/services/game_settings.cpp
-        src/code/core/services/lightgun.cpp
-        src/code/core/services/game_settings.h
-        src/code/core/services/launch.cpp
-        src/code/core/services/launch.h
-        src/code/core/services/memcard.cpp
-        src/code/core/services/memcard.h
-        src/code/core/services/platform_config.cpp
-        src/code/core/services/platform_config.h
-        src/code/core/services/process_runner.cpp
-        src/code/core/services/process_runner.h
-        src/code/core/services/resume_point.cpp
-        src/code/core/services/resume_point.h
-        src/code/core/services/retroarch.cpp
-        src/code/core/services/retroarch.h
-        src/code/core/services/scan_service.cpp
-        src/code/core/services/scan_service.h
-        src/code/core/services/online_assets.cpp
-        src/code/core/services/online_assets.h
-        src/code/core/services/system.cpp
-        src/code/core/services/system.h
-        src/code/core/services/system_info.cpp
-        src/code/core/services/system_info.h
-        src/code/core/services/theme.cpp
-        src/code/core/services/theme.h
-        src/code/core/services/theme_converter.cpp
-        src/code/core/services/theme_converter.h
-        src/code/core/services/theme_installer.cpp
-        src/code/core/services/theme_installer.h
-        )
-target_link_libraries(ab_core ableem_engine)
 if (AB_ONLINE_UPDATE)
     message(STATUS "Online update: on")
     add_compile_definitions(AB_ONLINE_UPDATE)
-    target_sources(ab_core PRIVATE
-            src/code/core/services/update_service.cpp
-            src/code/core/services/update_service.h)
-endif()
-if (WIN32)
-    # SystemInfoService: the adapters' addresses (GetAdaptersAddresses) and inet_ntop;
-    # WindowsHost: the Documents folder (SHGetKnownFolderPath) and the registry
-    target_link_libraries(ab_core iphlpapi ws2_32 shell32 ole32 advapi32)
 endif()
 
-# core/version.h: the version, commit and build time, regenerated on every build (see the script). The
-# fallback is what a tree without git tags reports; it used to be config.ini's Version= key.
-set(AB_VERSION_FALLBACK "v2.0.0-pre0")
-add_custom_target(ab_version
-        COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DBINARY_DIR=${CMAKE_BINARY_DIR}
-                -DVERSION_FALLBACK=${AB_VERSION_FALLBACK} -P ${CMAKE_SOURCE_DIR}/cmake/generate_version.cmake
-        BYPRODUCTS ${CMAKE_BINARY_DIR}/generated/core/version.h
-        COMMENT "core/version.h from git")
-add_dependencies(ab_core ab_version)
-target_include_directories(ab_core PUBLIC ${CMAKE_BINARY_DIR}/generated)
-
-# ab_core's tests. Host builds only - there is no reason to cross-compile them, and both cross toolchain files
-# (toolchains/psc, toolchains/rpi) switch AB_BUILD_TESTS off. Every service extracted from the screens from here on arrives with its tests
-# in the same commit (the refactor's rule, see CLAUDE.md "Tests").
-option(AB_BUILD_TESTS "Build the ab_core unit tests" ON)
+# the launcher's own tests (abpad) on core's harness, and the theme converter host tool riding on the same
+# switch (it ships nowhere)
 if (AB_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 
     # theme_convert <themesDir>: the ThemeInstaller over every zip and the ThemeConverter over every theme
-    # folder, for converting payload/Themes or a theme being worked on ahead of the app doing it on first load. A host tool, so it rides on the
-    # tests' switch; it ships nowhere.
+    # folder, for converting the autobleem-themes submodule's Themes/ or a theme being worked on ahead of
+    # the app doing it on first load
     add_executable(theme_convert tools/theme_convert/main.cpp)
-    target_include_directories(theme_convert PRIVATE src/code)
     target_link_libraries(theme_convert ab_core)
 endif()
-
-# ab_classic: the classic UI as a library any program can draw with - Gui (the window, the theme's assets,
-# the text renderer), AppBase (config.ini, the language, the theme, the clock, the UI audio: the model
-# every classic screen holds as `app`), the screens that need nothing but that model (splash, confirm,
-# keyboard, about, hardware information) and the list-menu framework. Links ab_core and ableem. The console
-# tools under apps/ link this and nothing above it; nothing in here knows a game exists.
-add_library(ab_classic STATIC
-        src/code/app_base.cpp
-        src/code/app_base.h
-        src/code/gui/app_audio.cpp
-        src/code/gui/app_audio.h
-        src/code/gui/gui.cpp
-        src/code/gui/gui.h
-        src/code/gui/gui_font.cpp
-        src/code/gui/gui_font.h
-        src/code/gui/gui_screen.h
-        src/code/gui/menus/gui_menu_base.h
-        src/code/gui/menus/gui_string_menu.h
-        src/code/gui/menus/gui_two_column_string_menu.h
-        src/code/gui/screens/gui_about.cpp
-        src/code/gui/screens/gui_about.h
-        src/code/gui/screens/gui_confirm.cpp
-        src/code/gui/screens/gui_confirm.h
-        src/code/gui/screens/gui_action_menu.cpp
-        src/code/gui/screens/gui_action_menu.h
-        src/code/gui/screens/gui_facts_page.cpp
-        src/code/gui/screens/gui_facts_page.h
-        src/code/gui/screens/gui_hardware_info.cpp
-        src/code/gui/screens/gui_hardware_info.h
-        src/code/gui/screens/gui_keyboard.cpp
-        src/code/gui/screens/gui_keyboard.h
-        src/code/gui/screens/gui_splash.cpp
-        src/code/gui/screens/gui_splash.h
-        src/code/gui/screens/gui_text_page.cpp
-        src/code/gui/screens/gui_text_page.h
-        src/code/gui/starfx.cpp
-        src/code/gui/starfx.h
-        src/code/gui/surprise_game.cpp
-        src/code/gui/surprise_game.h
-        src/code/gui/panel_style.cpp
-        src/code/gui/panel_style.h
-        src/code/gui/text_renderer.cpp
-        src/code/gui/text_renderer.h
-        src/code/gui/theme_assets.cpp
-        src/code/gui/theme_assets.h
-)
-target_link_libraries(ab_classic ab_core ableem)
 
 # ab_ui: AutoBleem's model on top of the classic UI - App (the game library, the session, every game
 # service) and the classic screens that edit games, memory cards and the options. Links ab_classic. Nothing
@@ -308,7 +209,8 @@ add_library(ab_ui STATIC
         src/code/app.h
         src/code/gui/screens/gui_select_memcard.cpp
         src/code/gui/screens/gui_select_memcard.h
-        src/code/gui/menus/gui_game_dir_menu.h
+        src/code/gui/screens/gui_keep_display.cpp
+        src/code/gui/screens/gui_keep_display.h
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h
         src/code/gui/menus/gui_game_editor_menu.cpp
@@ -322,9 +224,9 @@ add_library(ab_ui STATIC
         src/code/gui/menus/gui_options_menu.h
         src/code/gui/menus/gui_options_menu_base.cpp
         src/code/gui/menus/gui_options_menu_base.h
-        src/code/gui/menus/gui_playlists_menu.h
 )
 target_link_libraries(ab_ui ab_classic)
+target_include_directories(ab_ui PUBLIC src/code)
 
 # ab_evoui: the EvolutionUI launcher (src/code/evoui/) - the screen, the carousel, the launcher's own
 # sub-screens, and under controls/ the PsObj family of animated elements it is built from.
@@ -337,6 +239,10 @@ add_library(ab_evoui STATIC
         src/code/evoui/carousel.h
         src/code/evoui/carousel_game.cpp
         src/code/evoui/carousel_game.h
+        src/code/evoui/carousel_motion.h
+        src/code/evoui/channel_watermark.h
+        src/code/evoui/cover_loader.cpp
+        src/code/evoui/cover_loader.h
         src/code/evoui/controls/evoui_centerlabel.cpp
         src/code/evoui/controls/evoui_centerlabel.h
         src/code/evoui/controls/evoui_menu.cpp
@@ -367,6 +273,10 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_mc_manager.cpp
         src/code/evoui/screens/evoui_mc_manager.h
         src/code/evoui/screens/evoui_system_menu.cpp
+        src/code/evoui/screens/evoui_extensions.cpp
+        src/code/evoui/screens/evoui_extensions.h
+        src/code/evoui/screens/evoui_processors.cpp
+        src/code/evoui/screens/evoui_processors.h
         src/code/evoui/screens/evoui_set_picker.cpp
         src/code/evoui/screens/evoui_set_picker.h
         src/code/evoui/screens/evoui_system_menu.h
@@ -375,6 +285,18 @@ add_library(ab_evoui STATIC
         src/code/evoui/screens/evoui_launcher_screen.cpp
 )
 target_link_libraries(ab_evoui ab_ui)
+# the build's channel, given explicitly by whatever builds it (UIREV-40's tag): AB_BUILD_CHANNEL = dev | nightly |
+# prerelease | release, from the environment or -D; unset is dev, so a hand build says DEV. Only the launcher screen
+# reads it (channel_watermark.h), so a change recompiles that one file.
+if (NOT DEFINED AB_BUILD_CHANNEL OR AB_BUILD_CHANNEL STREQUAL "")
+    if (DEFINED ENV{AB_BUILD_CHANNEL} AND NOT "$ENV{AB_BUILD_CHANNEL}" STREQUAL "")
+        set(AB_BUILD_CHANNEL "$ENV{AB_BUILD_CHANNEL}")
+    else ()
+        set(AB_BUILD_CHANNEL "dev")
+    endif ()
+endif ()
+set_source_files_properties(src/code/evoui/screens/evoui_launcher_screen.cpp PROPERTIES
+        COMPILE_DEFINITIONS "AB_BUILD_CHANNEL_NAME=\"${AB_BUILD_CHANNEL}\"")
 if (AB_ONLINE_UPDATE)
     target_sources(ab_evoui PRIVATE
             src/code/evoui/screens/evoui_update.cpp
@@ -395,11 +317,58 @@ target_link_libraries(autobleem-gui
          ${CMAKE_DL_LIBS}
 )
 
+# the extensions (docs/extensions-plan.md): a plugin binds to the launcher's own copy of the SDK, so the
+# executable exports its symbols - -rdynamic on Linux; on Windows every symbol, with an import library
+# (libautobleem-gui.dll.a) the plugins link against. The file name is part of that: a plugin imports from
+# "autobleem-gui.exe" by name.
+set_target_properties(autobleem-gui PROPERTIES ENABLE_EXPORTS ON)
+if (MINGW)
+    target_link_options(autobleem-gui PRIVATE -Wl,--export-all-symbols)
+    # but not the GCC runtime linked in statically (-static-libgcc -static-libstdc++): an extension carries
+    # its own copy (the toolchain file), and _Unwind_Resume from both was a duplicate definition
+    target_link_options(autobleem-gui PRIVATE -Wl,--exclude-libs=libgcc.a:libgcc_eh.a:libstdc++.a:libsupc++.a)
+endif()
+# ...and all of the SDK, not just what the launcher itself calls: from a static library the linker takes only
+# the objects something references, so a plugin using a part of the SDK the launcher does not (the Store's
+# installers) would find its symbols missing and fail to load. Ahead of the objects, so the normal link of
+# the same libraries later finds nothing left to add. ab_gui is part of it: the SDK's header templates
+# (GuiMenuBase) call into it, so a plugin compiled against them needs its symbols from the launcher.
+target_link_options(autobleem-gui PRIVATE
+        "LINKER:--whole-archive"
+        $<TARGET_FILE:ab_classic> $<TARGET_FILE:ab_gui> $<TARGET_FILE:ab_core> $<TARGET_FILE:ableem>
+        $<TARGET_FILE:ableem_engine>
+        "LINKER:--no-whole-archive")
+
+# hello: the SDK's sample extension and smoke test - one themed screen, a background bubble. Built on a dev
+# host only (staged in <build>/extensions/hello/, put on the dev stick by tools/make_usb.py): never on a
+# device target, so no package or hand-made bundle can pick it up (the owner's call, 2026-09-24)
+if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "")
+    set(sample_default ON)
+else ()
+    set(sample_default OFF)
+endif ()
+option(AB_BUILD_SAMPLE_EXTENSION "Build hello, the SDK's sample extension (a dev host's)" ${sample_default})
+if (AB_BUILD_SAMPLE_EXTENSION)
+    ab_add_extension(hello HOST autobleem-gui
+            SOURCES extensions/hello/hello.cpp
+            INI ${CMAKE_SOURCE_DIR}/extensions/hello/extension.ini)
+endif ()
+
+# extensions from their own source folders - an ext_<name> repository's checkout, e.g. ../ext_store - built
+# with the launcher, the way in until the SDK package exists: each folder's CMakeLists.txt calls
+# ab_add_extension(<name> HOST ${AB_EXTENSION_HOST} ...), and is staged in <build>/extensions/ like hello
+set(AB_EXTENSION_DIRS "" CACHE STRING "extension source folders to build with the launcher, ;-separated")
+set(AB_EXTENSION_HOST autobleem-gui)
+foreach (dir ${AB_EXTENSION_DIRS})
+    get_filename_component(dir_name "${dir}" NAME)
+    add_subdirectory("${dir}" "${CMAKE_BINARY_DIR}/extension-sources/${dir_name}")
+endforeach ()
+
 if (AB_TARGET STREQUAL "win")
     # the Windows product: a GUI-subsystem exe (no console window behind the launcher - the log is
     # System/Logs/autobleem.log), with the icon and a version block (src/win/autobleem.rc; the numbers from
     # the last tag at configure time - core/version.h stays the truth about the build)
-    execute_process(COMMAND git describe --tags --abbrev=0 WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    execute_process(COMMAND git describe --tags --abbrev=0 --exclude nightly WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE AB_RC_TAG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
     if (NOT AB_RC_TAG)
         set(AB_RC_TAG ${AB_VERSION_FALLBACK})
@@ -426,21 +395,32 @@ configure_file(src/resources/default.png default.png COPYONLY)
 configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 
 # absplash: a full-screen picture between the launcher and an emulator on the console (src/tools/absplash.cpp);
-# lib_ableem's ui only, no app code
+# lib_ableem's ui and ab_gui (the theme's spinner strip and the ring of dots, G5p2), no app code
 add_executable(absplash src/tools/absplash.cpp)
-target_link_libraries(absplash Threads::Threads ableem ${CMAKE_DL_LIBS})
+target_link_libraries(absplash Threads::Threads ab_gui ableem ${CMAKE_DL_LIBS})
 
+# abfatflag: the FAT/exFAT dirty flag of the stick, read and cleared by the console's rc scripts around the
+# standby (src/tools/abfatflag.cpp); the engine only
+add_executable(abfatflag src/tools/abfatflag.cpp)
+target_link_libraries(abfatflag ableem_engine)
 
-# the console tools under apps/ (PSC-Bios, ABFlashKit): built for the console and the dev hosts on
-# ab_classic; the appliances and the Windows product have no PSC kernel to configure or flash
+# abupdate: the console's own update - rc/selection.sh runs it (from tmpfs) after the launcher left with
+# MENU_OPTION_UPDATE, and it lays System/Updates' stick package over the stick with autobleem-core's
+# InstallerJob, the PC installer's own code (src/tools/abupdate.cpp); no SDL
+add_executable(abupdate src/tools/abupdate.cpp)
+target_link_libraries(abupdate ab_installer Threads::Threads)
+
+# abfetch: the console's own HTTPS downloader (src/tools/abfetch) - the online update fetches with it from
+# the stick instead of relying on a curl in the kernel payload. The console and the dev hosts (its tests,
+# and trying the console's update on a PC); the other targets fetch with their system's curl
 if (AB_TARGET STREQUAL "psc" OR AB_TARGET STREQUAL "dev")
-    add_subdirectory(apps/pscbios)
-    add_subdirectory(apps/abflashkit)
+    add_subdirectory(src/tools/abfetch)
 endif()
 
-# UpdateRoms: the PC-side ROM scanner for a stick in a card reader, and the installer, which makes the
-# stick from a PC - PC programs (the targets have the launcher's own scan)
-if (AB_TARGET STREQUAL "dev" OR AB_TARGET STREQUAL "win")
-    add_subdirectory(apps/updateroms)
-    add_subdirectory(apps/installer)
-endif()
+
+# abpad: the virtual gamepad shim's logic. Built everywhere - the tests need it on a dev host and the
+# shim itself is built for the targets that have Apps (docs/virtual-gamepad-plan.md)
+add_subdirectory(apps/abpad)
+
+# the console tools (PSC-Bios, ABFlashKit) are autobleem2/autobleem-console-tools, UpdateRoms and the PC
+# installers autobleem2/autobleem-pc-tools - each built and released by its own repository

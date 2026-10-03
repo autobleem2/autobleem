@@ -2,9 +2,11 @@
 # compose with the separately-published emulators/payload/themes - the compile-once/assemble-many model.
 # This does NOT build the old monolithic package; it builds only the launcher tree (AB_NO_PCSX=1 uses the
 # checked-in emulators, so no emulator repos are needed) and ships launcher-<platform>.tar.gz laid out as
-# the payload the launcher repo contributes: Autobleem/bin/autobleem (autobleem-gui + resources),
-# Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) and Themes/ (the five themes ship with the
-# launcher - they stay in payload/Themes in the repo, no theme pack). Assembly extracts it over the payload.
+# the payload the launcher repo contributes: Autobleem/bin/autobleem (autobleem-gui + resources) and
+# Autobleem/bin/abpad (the virtual-gamepad daemon + preload shim) - no Themes/ any more (D5 step 3,
+# 2026-09-27: themes reach a release package only through the appliance's own stage_themes, straight from
+# autobleem2/autobleem-themes - this artifact carrying them too was redundant, not something else needed).
+# Assembly extracts it over the payload.
 # The psc target's artifact also carries the psc skeleton (payload/'s exploit dir, Autobleem/rc,
 # Autobleem/start.sh, Autobleem/lib/libs.tar.gz, Docs/, Games/) - autobleem-appliance's assemble-psc.sh has
 # nowhere else to get it from, since payload/ lives only in this repo. Deliberately NOT included: RetroArch/
@@ -16,12 +18,23 @@ name: publish-launcher
 on:
   push:
     tags: ['v*']
+    # develop too, for the rolling `nightly` pre-release the appliance's development build is assembled from
+    branches: [develop]
+    paths-ignore: ['docs/**', '**.md']
   workflow_dispatch:
     inputs:
       targets:
-        description: launcher targets (space separated; rpi rpi64 pcusb psc)
+        description: launcher targets (space separated; rpi rpi64 pcusb psc win)
         type: string
-        default: 'rpi rpi64 pcusb psc'
+        default: 'rpi rpi64 pcusb psc win'
+      force_fallback:
+        description: force the runner router's hosted fallback (test-only)
+        type: boolean
+        default: false
+      channel:
+        description: preview = publish this branch's build as the rolling `preview` release (a feature branch, every target)
+        type: string
+        default: ''
 
 concurrency:
   group: publish-launcher-${{ github.ref }}
@@ -36,28 +49,73 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       targets: ${{ steps.t.outputs.json }}
+      full: ${{ steps.t.outputs.full }}
       version: ${{ steps.v.outputs.version }}
+      channel: ${{ steps.c.outputs.channel }}
     steps:
       - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, submodules: recursive }
       - id: t
         run: |
-          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc"
+          t="${{ inputs.targets }}"; [ -n "$t" ] || t="rpi rpi64 pcusb psc win"
           echo "json=$(printf '%s\n' $t | jq -R . | jq -cs .)" >> "$GITHUB_OUTPUT"
+          # every target built: what may replace the rolling nightly (a partial run would leave some out)
+          full=true
+          for x in rpi rpi64 pcusb psc win; do case " $(echo $t) " in *" $x "*) ;; *) full=false ;; esac; done
+          echo "full=$full" >> "$GITHUB_OUTPUT"
       - id: v
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          else echo "version=$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"; fi
+          # a preview of a feature branch: the branch may carry no v* tag at all, so it is named by its commit
+          elif [ "${{ inputs.channel }}" = preview ]; then echo "version=preview-$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          # a branch build is named as the launcher names itself (generate_version.cmake): the last v* tag,
+          # the commits past it and the commit - v2.0.0-alpha2-5-gabc1234 - so the file says what it is
+          else echo "version=$(git describe --tags --match 'v*' 2>/dev/null || echo "$(date -u +%Y%m%d)-$(git rev-parse --short HEAD)")" >> "$GITHUB_OUTPUT"; fi
+      # the build's channel, given to ci/build.sh as AB_BUILD_CHANNEL (the launcher's tag, UIREV-40, reads it): a
+      # v* tag with a "-" (v2.0.0-alpha1, -rc1) is a prerelease, a plain v* tag a release, a build of develop
+      # the nightly, anything else (a manual run of another branch) dev - the unset default of a hand build
+      - id: c
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*-*) c=prerelease ;;
+            refs/tags/v*) c=release ;;
+            refs/heads/develop) c=nightly ;;
+            *) c=dev ;;
+          esac
+          echo "channel=$c" >> "$GITHUB_OUTPUT"
+
+  # Routes build's runner: the laptop (ab-main) when it's online, else a GitHub-hosted
+  # ubuntu-24.04. See autobleem-build's route.yml for the decision order; route_runner
+  # re-exports its output through a plain job, which is the only way a downstream job's
+  # runs-on: can read it (a job with its own uses: can't be read directly by runs-on:,
+  # a GitHub limitation - see ROUTE-report.md). plan/sign-win/release/nightly don't
+  # compile and stay on ubuntu-24.04 untouched.
+  route:
+    if: vars.AB_CI_ENABLED == 'true'
+    uses: autobleem2/autobleem-build/.github/workflows/route.yml@develop
+    with:
+      force_fallback: ${{ inputs.force_fallback == true }}
+    secrets: inherit
+
+  route_runner:
+    needs: route
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      runs_on: ${{ needs.route.outputs.runs_on }}
+    steps:
+      - run: echo "runner - ${{ needs.route.outputs.runner }}"
 
   build:
-    needs: plan
+    needs: [plan, route_runner]
     strategy:
       fail-fast: false
       matrix:
         target: ${{ fromJSON(needs.plan.outputs.targets) }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(needs.route_runner.outputs.runs_on) }}
+    timeout-minutes: 60
     container:
-      image: ghcr.io/autobleem2/autobleem-build:latest
+      image: ghcr.io/autobleem2/autobleem-build:${{ startsWith(github.ref, 'refs/tags/v') && 'latest' || 'develop' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +124,7 @@ jobs:
       SCCACHE_CACHE_SIZE: 2G
     steps:
       - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
+        with: { fetch-depth: 0, submodules: recursive }
       # sccache with a local on-disk cache persisted across runs by actions/cache. NOT sccache's built-in
       # gha backend: GitHub retired the legacy artifact-cache API (v1) it calls. actions/cache@v6 uses the
       # current service, and ci/build.sh already runs sccache from PATH honouring SCCACHE_DIR. Caches are
@@ -80,28 +138,45 @@ jobs:
           key: sccache-launcher-${{ matrix.target }}-${{ github.sha }}
           restore-keys: sccache-launcher-${{ matrix.target }}-
       - name: Build the launcher (${{ matrix.target }})
+        env: { AB_BUILD_CHANNEL: "${{ needs.plan.outputs.channel }}" }
         run: ci/build.sh ${{ matrix.target }}
       - name: Stage the launcher artifact
         id: stage
         run: |
           set -e
           V="${{ needs.plan.outputs.version }}"
+          if [ "${{ matrix.target }}" = win ]; then
+            # the Windows product's share: the program folder make_win_package.sh --product staged (the
+            # full-screen exe, resources, DLLs, Themes, dataroot.txt.example) as AutoBleem/, and the NSIS script
+            # + icon as nsis/ - autobleem-appliance's assemble-win.sh adds both PS1 emulators (their win64
+            # releases) and AutoBleemWinSetup.exe (autobleem-pc-tools') and builds AutoBleemSetup-<v>.exe
+            PK=build_mingw_product/package/AutoBleem
+            [ -f "$PK/autobleem-gui.exe" ] || { echo "::error::no $PK/autobleem-gui.exe"; exit 1; }
+            rm -rf stage out && mkdir -p stage/nsis out
+            cp -a "$PK" stage/AutoBleem
+            rm -rf stage/AutoBleem/AutoBleemWinSetup.exe stage/AutoBleem/emu stage/AutoBleem/emunxt
+            cp installer/windows/autobleem.nsi src/win/autobleem.ico stage/nsis/
+            # uploaded unsigned below; sign-win signs autobleem-gui.exe and makes launcher-win64-<v>.tar.gz
+            echo "plat=win64" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # the artifact mirrors the payload root the launcher repo contributes, so assembly
           # extracts it straight over the staged payload:
-          #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag on psc)
+          #   Autobleem/bin/autobleem  the gui + its resources (+ absplash/abfatflag/abupdate/abfetch on psc)
           #   Autobleem/bin/abpad      the virtual-gamepad daemon + preload shim
-          #   Themes                   the five themes (owner's rule: themes stay in the repo, no theme pack)
-          # The emulators, the payload skeleton (payload_linux/ or payload/), the console tools
-          # (pscbios/abflashkit), and the install-time downloads (cover DBs, samples, RetroArch-psc) are
-          # other components' artifacts / site fetches, not this one.
+          # The emulators, the payload skeleton (payload_linux/ or payload/), the themes (their own release,
+          # autobleem2/autobleem-themes, staged by the appliance's own stage_themes - D5 step 3, 2026-09-27),
+          # the console tools (pscbios/abflashkit), and the install-time downloads (cover DBs, samples,
+          # RetroArch-psc) are other components' artifacts / site fetches, not this one.
           BIN=stage/Autobleem/bin
-          rm -rf stage out && mkdir -p "$BIN/autobleem" "$BIN/abpad" stage/Themes out
+          rm -rf stage out && mkdir -p "$BIN/autobleem" "$BIN/abpad" out
           if [ "${{ matrix.target }}" = psc ]; then
             D=build_psc; P=psc
             # absplash (the full-screen picture around a launch) and abfatflag (the stick's dirty flag) are
             # psc-only tools built alongside the launcher - the Linux appliances have neither.
-            cp "$D/autobleem-gui" "$D/absplash" "$D/abfatflag" "$BIN/autobleem/"
-            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" "$BIN/autobleem/absplash" || true
+            cp "$D/autobleem-gui" "$D/absplash" "$D/abfatflag" "$D/abupdate" "$D/abfetch" "$BIN/autobleem/"
+            cp src/tools/abfetch/cacert.pem "$BIN/autobleem/" # abfetch's CA bundle (the update downloads with it)
+            upx -q --best --lzma "$BIN/autobleem/autobleem-gui" "$BIN/autobleem/absplash" "$BIN/autobleem/abupdate" "$BIN/autobleem/abfetch" || true
             cp -a src/resources/. "$BIN/autobleem/"
             # internal.db KEPT here (unlike the Linux appliances): the console has built-in games
             # (AB_HAS_INTERNAL_GAMES is psc/dev only)
@@ -122,34 +197,89 @@ jobs:
           else
             echo "::warning::no abpad built in $D/apps/abpad - Apps would run without the virtual gamepad"
           fi
-          cp -a payload/Themes/. stage/Themes/
           if [ "${{ matrix.target }}" = psc ]; then
             # the psc skeleton this repo owns and nothing else has: the exploit dir, Autobleem/{rc,start.sh},
-            # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - still
-            # the checked-in archive; regenerating it from this same job's SDL build is a follow-up, not
-            # done here), Docs/ and Games/. RetroArch/ and Apps/ are deliberately left out: the assembler
+            # Autobleem/lib/libs.tar.gz (the SDL2 libs rc/autobleem.sh unpacks to /tmp/lib at boot - see
+            # below), Docs/ and Games/. RetroArch/ and Apps/ are deliberately left out: the assembler
             # bundles neither - RetroArch, its cores/libs/apps packs and the BIOS files are all fetched by
             # AutoBleemInstaller.exe at install time (the PC has network, the console never will), and Apps/
             # (pscbios, abflashkit) is autobleem-console-tools' own artifact.
             find payload -maxdepth 1 -mindepth 1 ! -name Apps ! -name RetroArch ! -name Autobleem ! -name Themes \
               -exec cp -a {} stage/ \;
             cp -a payload/Autobleem/rc payload/Autobleem/start.sh stage/Autobleem/
-            mkdir -p stage/Autobleem/lib
-            cp payload/Autobleem/lib/libs.tar.gz stage/Autobleem/lib/
+            # libs.tar.gz: the SDL2 family the launcher was just built against (the image's /opt/psc/sdl2 -
+            # SDL2 2.0.14, image/mixer 2.6.3, ttf 2.20.2) replaces the checked-in archive's 2019/2020 SDL2
+            # libs; the rest of it (libiconv, libogg, libvorbis*) stays, macOS ._* forks and the "name 2"
+            # duplicates go. tools/make_psc_package.sh does the same. The checked-in archive alone does not
+            # run this launcher: its SDL2_mixer 2.0.x has no Mix_LoadWAV symbol (a macro there), and the
+            # launcher dies at start with "undefined symbol: Mix_LoadWAV".
+            SDL_LIB=/opt/psc/sdl2/lib
+            ls "$SDL_LIB"/libSDL2-2.0.so.0.* "$SDL_LIB"/libSDL2_mixer-2.0.so.0.* >/dev/null \
+              || { echo "::error::no SDL2 build in $SDL_LIB - cannot make libs.tar.gz"; exit 1; }
+            LIBS="$PWD/stage-libs"; rm -rf "$LIBS"; mkdir -p "$LIBS" stage/Autobleem/lib
+            tar -xzf payload/Autobleem/lib/libs.tar.gz -C "$LIBS" --exclude='._*' --exclude='* *' --exclude='libSDL2*'
+            cp -P "$SDL_LIB"/libSDL2*.so* "$LIBS/"
+            (cd "$LIBS" && tar -czf "$OLDPWD/stage/Autobleem/lib/libs.tar.gz" --owner=0 --group=0 .)
+            rm -rf "$LIBS"
+            tar -tzf stage/Autobleem/lib/libs.tar.gz | grep -q 'libSDL2_mixer-2.0.so.0.[1-9][0-9][0-9]' \
+              || { echo "::error::libs.tar.gz has no SDL2_mixer 2.x (x >= 1)"; exit 1; }
+            echo "libs.tar.gz: $(tar -tzf stage/Autobleem/lib/libs.tar.gz | grep -E '\.so\.[0-9]+\.[0-9]+' | sed 's|^\./||' | tr '\n' ' ')"
           fi
           find stage -type f -name placeholder -delete
           tar -czf "out/launcher-$P-$V.tar.gz" -C stage .
           echo "plat=$P" >> "$GITHUB_OUTPUT"
           echo "top: $(tar tzf out/launcher-$P-$V.tar.gz | sed 's#/.*##' | sort -u | tr '\n' ' ')"; ls -l out
       - uses: actions/upload-artifact@v7
+        if: matrix.target != 'win'
         with:
           name: launcher-${{ steps.stage.outputs.plat }}
           path: out/*.tar.gz
           retention-days: 30
+      - uses: actions/upload-artifact@v7
+        if: matrix.target == 'win'
+        with:
+          name: launcher-win64-unsigned
+          path: stage/
+          retention-days: 7
+
+  sign-win:
+    # autobleem-gui.exe's Authenticode signature through SignPath (.signpath/artifact-configuration.xml;
+    # autobleem-build's signpath-sign action has the rules): a v* tag must come back signed, a develop build
+    # ships unsigned when nobody approves it within the hour. Hosted runner, like every job before it.
+    needs: [plan, build]
+    if: contains(fromJSON(needs.plan.outputs.targets), 'win')
+    runs-on: ubuntu-24.04
+    permissions: { actions: read, contents: read }
+    steps:
+      - uses: autobleem2/autobleem-build/.github/actions/signpath-sign@develop
+        with:
+          # a preview ships unsigned at once (no hour waiting for an approval of a branch build)
+          enabled: ${{ vars.AB_SIGNING_ENABLED == 'true' && github.event_name != 'pull_request' && inputs.channel != 'preview' }}
+          artifact: launcher-win64-unsigned
+          path: stage
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
+          required: ${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Pack
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          tar -czf "out/launcher-win64-${{ needs.plan.outputs.version }}.tar.gz" -C stage .
+          ls -l out
+      - uses: actions/upload-artifact@v7
+        with:
+          name: launcher-win64
+          path: out/*.tar.gz
+          retention-days: 30
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [plan, build]
+    # sign-win is skipped by a manual run without win - that must not skip this too
+    if: >-
+      !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' &&
+      (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
     runs-on: ubuntu-24.04
     permissions: { contents: write }
     steps:
@@ -162,3 +292,70 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" \
             --title "AutoBleem ${GITHUB_REF_NAME}" --generate-notes $prerelease out/*.tar.gz || \
           gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" out/*.tar.gz --clobber
+
+  # the rolling development build: every successful build of develop replaces the assets of the `nightly`
+  # pre-release (autobleem-build's nightly-release action), which autobleem-appliance's nightly assembly
+  # fetches the way it fetches a v* release, and then starts that assembly (dispatch-token). A push publishes
+  # it, and so does a manual run with every target - autobleem-main's release.py nightly refreshes a stale
+  # launcher by dispatch, and until 2026-09-26 that run rebuilt it and then skipped this job, so the nightly
+  # was assembled from the old launcher. A partial manual run (fewer targets) would leave the others out.
+  nightly:
+    if: >-
+      !cancelled() && github.ref == 'refs/heads/develop' && inputs.channel != 'preview' &&
+      (github.event_name == 'push' || needs.plan.outputs.full == 'true') &&
+      needs.build.result == 'success' && (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { pattern: launcher-*, path: out, merge-multiple: true }
+      # the admin App's token, so the new nightly starts autobleem-appliance's assembly at once (a repository
+      # without AB_ADMIN_APP_ID skips this, and the appliance's schedule assembles it instead)
+      - id: app
+        if: vars.AB_ADMIN_APP_ID != ''
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AB_ADMIN_APP_ID }}
+          private-key: ${{ secrets.AB_ADMIN_APP_KEY }}
+          owner: autobleem2
+          repositories: autobleem-appliance
+      # a re-run of only the failed jobs keeps `plan` (and the launchers the other targets built) from the
+      # first attempt: if a v* tag was deleted since, the name would still carry it (2026-10-01: a nightly
+      # named after the withdrawn v2.0.0-alpha2). Stop and ask for a fresh run instead of publishing that.
+      - name: Check the version still names an existing tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ needs.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="$V"; [[ "$V" =~ ^(.+)-[0-9]+-g[0-9a-f]+$ ]] && tag="${BASH_REMATCH[1]}"
+          [[ "$tag" == v* ]] || exit 0
+          [ "$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$tag" --jq "[.[] | select(.ref == \"refs/tags/$tag\")] | length")" = 1 ] \
+            || { echo "::error::$V is named after tag $tag, which no longer exists - start a new run, do not re-run this one"; exit 1; }
+      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
+        with:
+          files: out/*.tar.gz
+          version: ${{ needs.plan.outputs.version }}
+          dispatch-token: ${{ steps.app.outputs.token }}
+
+  # a preview build (PLATFORM-20): a manual run of a feature branch with channel=preview and every target replaces
+  # the assets of the rolling `preview` pre-release. It never touches `nightly` and never starts an assembly -
+  # autobleem-main's preview workflow builds every component that has the branch, then assembles the preview.
+  preview:
+    if: >-
+      !cancelled() && github.event_name == 'workflow_dispatch' && inputs.channel == 'preview' &&
+      startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/develop' &&
+      needs.plan.outputs.full == 'true' && needs.build.result == 'success' &&
+      (needs.sign-win.result == 'success' || needs.sign-win.result == 'skipped')
+    needs: [plan, build, sign-win]
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { pattern: launcher-*, path: out, merge-multiple: true }
+      - uses: autobleem2/autobleem-build/.github/actions/nightly-release@develop
+        with:
+          files: out/*.tar.gz
+          version: ${{ needs.plan.outputs.version }}
+          tag: preview

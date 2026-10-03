@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gui_string_menu.h"
+#include "gui/menus/gui_string_menu.h"
 #include "../../app.h"
 #include <vector>
 #include <string>
@@ -15,7 +15,7 @@ public:
 
     void init() override;
 
-    std::string getTitle() override { return _("Custom Memory Cards"); }
+    std::string getTitle() override { return _("Custom memory cards"); }
     std::string getStatusLine() override; // returns the status line at the bottom
 
     void doCircle_Pressed() override;

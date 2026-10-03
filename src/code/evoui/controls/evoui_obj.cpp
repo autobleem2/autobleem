@@ -18,7 +18,9 @@ PsObj::PsObj(string name1, string texPath) : gui(Gui::getInstance()), renderer(g
 // PsObj::load
 //*******************************
 void PsObj::load(const string &imagePath) {
-    tex = ableem::Texture::loadFile(renderer, imagePath);
+    // the theme's @2x when the output is above scale 1 and it ships one: its size() is logical, so w/h and the
+    // source rect render() crops with stay what the 1x image gives
+    tex = ThemeAssets::loadImage(renderer, imagePath);
     ableem::Size size = tex.size();
     w = size.w;
     h = size.h;

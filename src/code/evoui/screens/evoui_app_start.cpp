@@ -4,8 +4,8 @@
 // hand-drawn lines over the background).
 //
 #include "evoui_app_start.h"
-#include "../../gui/gui.h"
-#include "../../core/services/environment.h"
+#include "gui/gui.h"
+#include "core/services/environment.h"
 
 #include <algorithm>
 #include <fstream>
@@ -22,7 +22,8 @@ void GuiAppStart::init() {
     lines.clear();
     readmeLoaded = false;
     firstLine = 0;
-    if (DirEntry::exists(game->readme_path)) {
+    // an App without a readme= key has readme_path "<folder>/" - the folder itself, which "exists"
+    if (DirEntry::exists(game->readme_path) && !DirEntry::isDirectory(game->readme_path)) {
         ifstream t(game->readme_path);
         string line;
         while (getline(t, line)) {
@@ -30,25 +31,27 @@ void GuiAppStart::init() {
                 line.pop_back();
             lines.push_back(line);
         }
-        readmeLoaded = true;
+        readmeLoaded = any_of(lines.begin(), lines.end(), [](const string &l) { return !l.empty(); });
     }
-    pane.cover = DirEntry::exists(game->image_path)
+    pane.cover = DirEntry::exists(game->image_path) && !DirEntry::isDirectory(game->image_path)
                      ? ableem::Texture::loadFile(renderer, game->image_path)
                      : ableem::Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/app-cover.png");
     pane.facts.clear();
     if (!game->publisher.empty())
         pane.facts.emplace_back(_("Published by:"), game->publisher);
+    // "." (getFileNameFromPath left with nothing to split off) means the folder isn't really set - same
+    // as the empty case just above, skip the row instead of showing a meaningless value
     const string folder = DirEntry::getFileNameFromPath(DirEntry::removeSeparatorFromEndOfPath(game->folder));
-    if (!folder.empty())
+    if (!folder.empty() && folder != ".")
         pane.facts.emplace_back(_("Folder:"), folder);
     if (!game->startup.empty())
-        pane.facts.emplace_back(_("Startup"), DirEntry::getFileNameFromPath(game->startup));
+        pane.facts.emplace_back(_("Startup:"), DirEntry::getFileNameFromPath(game->startup));
 }
 
 //*******************************
-// GuiAppStart::render
+// GuiAppStart::draw
 //*******************************
-void GuiAppStart::render() {
+void GuiAppStart::draw() {
     gui->renderBackground();
     gui->renderTextBar();
     int yoffset = gui->renderHeader(gui->text().elide(gui->assets().themeFonts[FONT_28_BOLD], appName,
@@ -64,8 +67,7 @@ void GuiAppStart::render() {
     rowsThatFit = max(1, (bottom - yoffset) / lineHeight);
     const ableem::Color color = gui->panelStyle().text;
     if (!readmeLoaded) {
-        gui->text().renderText_WithColor(font, _("ReadMe file not found"), x, yoffset, gui->panelStyle().secondary,
-                                         XALIGN_LEFT);
+        gui->text().renderText_WithColor(font, _("ReadMe file not found"), x, yoffset, color, XALIGN_LEFT);
     } else {
         firstLine = max(0, min(firstLine, max(0, static_cast<int>(lines.size()) - 1)));
         int y = yoffset;
@@ -84,11 +86,10 @@ void GuiAppStart::render() {
         gui->renderScrollMarkers(firstLine > 0, lastLineShown < static_cast<int>(lines.size()));
     }
 
-    string status = "|@X| " + _("OK") + "  |@O| " + _("Cancel") + "|";
+    string status = "|@X| " + _("Start") + "  |@O| " + _("Back") + "|";
     if (readmeLoaded && (firstLine > 0 || lastLineShown < static_cast<int>(lines.size())))
-        status += "  |@L2|/|@R2| " + _("Page");
+        status += "  |@L2/R2| " + _("Page");
     gui->renderStatus(status);
-    renderer.present();
 }
 
 //*******************************

@@ -1,5 +1,5 @@
 # Drives the Windows development build of autobleem-gui for smoke testing without a gamepad.
-# Starts the exe on a fake usb root (layout: see CLAUDE.md "Smoke test layout"), posts key messages straight to
+# Starts the exe on a fake usb root (layout: see docs/developer-guide.md "Smoke test layout"), posts key messages straight to
 # its window (no focus needed), takes a full screen shot after every key, and stops it at the end.
 # stdout/stderr go to <usb>\System\Logs\AB_out.txt / AB_err.txt, screenshots to the folder above <usb>.
 #

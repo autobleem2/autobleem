@@ -3,12 +3,13 @@
 //
 
 #include "carousel_game.h"
-#include "../gui/gui.h"
+#include "gui/gui.h"
 #include "../app.h"
-#include "../core/services/retroarch.h"
+#include "core/services/retroarch.h"
+#include "core/services/cover_aspect.h"
 #include <unistd.h>
 #include <iostream>
-#include "../core/services/environment.h"
+#include "core/services/environment.h"
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -53,176 +54,214 @@ static void drawNineSlice(ableem::Renderer &renderer, const Texture &frame, int 
     }
 }
 
-//*******************************
-// PsCarouselGame::loadTex
-//*******************************
-void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
-    shared_ptr<Gui> gui(Gui::getInstance());
+// The two layers of a big box that has no art (CA5): a stretchable background and a fixed-size glyph, the
+// designer's evoimg/cover_bg.png (9-slice, 4 px), glyph_game.png (a RetroArch game) and glyph_app.png (an
+// App), the same on every theme and not theme keys. Loaded on the first no-art cover through the theme
+// images' one call (the @2x above output scale 1) and dropped with the carousel's textures.
+static const int NoArtSlice = 4;
+static const int NoArtGlyphSize = 96;
+namespace {
+struct NoArtLayers {
+    Texture background;
+    Texture glyphGame;
+    Texture glyphApp;
+};
+NoArtLayers &noArtLayers() {
+    static NoArtLayers layers;
+    return layers;
+}
 
+const Texture &loadLayer(ableem::Renderer &renderer, Texture &slot, const char *name) {
+    if (!slot.valid())
+        slot = ThemeAssets::loadImage(renderer, Env::getWorkingPath() + sep + "evoimg" + sep + name);
+    return slot;
+}
+
+// the system's typical box shape from resources/platform/cover_aspects.cfg (CA4): 1:1 for an unlisted system
+// and for an App, which has none
+CoverAspect noArtAspect(const PsGame &game) {
+    static const CoverAspectTable table = CoverAspectTable::load(CoverAspectTable::pathFor(Env::getWorkingPath()));
+    return game.app ? CoverAspect() : table.aspectFor(game.db_name);
+}
+} // namespace
+
+void PsCarouselGame::releaseNoArtLayers() {
+    noArtLayers() = NoArtLayers();
+}
+
+//*******************************
+// PsCarouselGame::artPath
+//*******************************
+// The image file the cover is made from. A PS1 game: the PNG next to it (the user's, or the covers db's),
+// else what the scan found in RetroArch's thumbnails tree (while that file is still there), else a look in
+// the tree now - an internal game, or one scanned before the tree existed - else the placeholder the
+// scanner used to copy next to a game. A RetroArch game: its box art, else ra-cover.png; an App: its image,
+// else app-cover.png - for those two `noArt` is set and compose() draws the two-layer placeholder at the
+// system's aspect instead of the file (which is only still named so the cover loader has something to
+// read). Worked out once and remembered - the carousel asks on every scroll.
+const string &PsCarouselGame::artPath() {
+    if (artResolved)
+        return art;
+    artResolved = true;
     if (!(*this)->foreign) {
-        if (!coverPng.valid()) {
-            // note: the render target is RGBA8888 rather than the original's ABGR32 - SDL blends identically
-            // either way since the renderer converts at draw time, only the in-memory byte order differs.
-            Texture renderSurface = Texture::createTarget(renderer, 226, 226);
-            Rect fullRect;
-
-            renderer.setTarget(&renderSurface);
-            renderer.setBlendMode(BlendMode::None);
-            renderSurface.setBlendMode(BlendMode::None);
-            renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
-            renderer.fillRect();
-            renderSurface.setBlendMode(BlendMode::Blend);
-            renderer.setBlendMode(BlendMode::Blend);
-
-            // the user's (or the covers db's) PNG next to the game, else what the scan found in
-            // RetroArch's thumbnails tree (while that file is still there), else a look in the tree now -
-            // an internal game, or a game scanned before the tree existed
-            string imagePath = (*this)->folder + sep + (*this)->base + ".png";
-            renderer.setTarget(nullptr);
-            if (!DirEntry::exists(imagePath)) {
-                imagePath = (*this)->coverPath;
-                if (imagePath.empty() || !DirEntry::exists(imagePath)) {
-                    imagePath = App::get().thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName,
-                                                                   (*this)->title, (*this)->recordName);
-                }
+        art = (*this)->folder + sep + (*this)->base + ".png";
+        if (!DirEntry::exists(art)) {
+            art = (*this)->coverPath;
+            if (art.empty() || !DirEntry::exists(art)) {
+                art = App::get().thumbnails().findBoxArt(ableem::ThumbnailLookup::PlayStationDbName, (*this)->title,
+                                                         (*this)->recordName);
             }
-            if (!imagePath.empty()) {
-                coverPng = Texture::loadFile(renderer, imagePath);
-            } else {
-                coverPng = Texture();
+        }
 #ifdef AB_DEBUG_HOST
-                if ((*this)->internal) {
-                    GameMetadata md;
-                    if (App::get().library().metadata().findBySerial((*this)->serial, md) && !md.bytes.empty()) {
-                        coverPng = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
-                    }
-                }
+        if (art.empty() && (*this)->internal)
+            return art; // the metadata's own picture, which loadTex reads
 #endif
-                if (!coverPng.valid()) { // the placeholder the scanner used to copy next to the game
-                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
-                }
-            }
-
-            if (coverPng.valid()) {
-                renderer.setTarget(&renderSurface);
-                fullRect.x = 0;
-                fullRect.y = 0;
-                fullRect.h = 226, fullRect.w = 226;
-
-                Size s = coverPng.size();
-                fullRect.w = s.w;
-                fullRect.h = s.h;
-
-                Rect outputRect;
-                if (gui->assets().cdJewel.valid()) {
-                    outputRect.x = 23;
-                    outputRect.y = 5;
-                    outputRect.h = 217;
-                    outputRect.w = 199;
-                } else {
-                    outputRect.x = 0;
-                    outputRect.y = 0;
-                    outputRect.h = 226;
-                    outputRect.w = 226;
-                }
-                if (coverPng.valid()) {
-                    renderer.setBlendMode(BlendMode::Add);
-                    Rect inset = insetIntoCover(outputRect);
-                    renderer.copy(coverPng, &fullRect, &inset);
-                    renderer.setBlendMode(BlendMode::Blend);
-                }
-                coverPng = Texture();
-
-                fullRect.x = 0;
-                fullRect.y = 0;
-                fullRect.h = 226, fullRect.w = 226;
-                if (gui->assets().cdJewel.valid()) {
-                    Rect inset = insetIntoCover(fullRect);
-                    renderer.copy(gui->assets().cdJewel, &fullRect, &inset);
-                }
-                content = insetIntoCover(fullRect);
-                thickness = JewelCaseThickness;
-                coverPng = renderSurface;
-            }
-            renderer.setTarget(nullptr);
-            renderer.setBlendMode(BlendMode::Blend);
+        if (art.empty())
+            art = Env::getWorkingPath() + sep + "default.png";
+    } else if (!(*this)->app) {
+        // Named_Boxarts, Titles, Snaps - png or jpg, tags stripped, fuzzy on the region
+        art = App::get().thumbnails().findBoxArt((*this)->db_name, (*this)->title);
+        if (art.empty()) {
+            PLOG_WARNING << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name;
+            art = Env::getWorkingPath() + sep + "evoimg/ra-cover.png";
+            noArt = true;
         }
     } else {
-        if (!coverPng.valid()) {
-            Texture renderSurface = Texture::createTarget(renderer, 226, 226);
-            Rect fullRect;
-
-            renderer.setTarget(&renderSurface);
-            renderer.setBlendMode(BlendMode::None);
-            renderSurface.setBlendMode(BlendMode::None);
-            renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
-            renderer.fillRect();
-            renderSurface.setBlendMode(BlendMode::Blend);
-            renderer.setBlendMode(BlendMode::Blend);
-
-            renderer.setTarget(nullptr);
-            string imagePath;
-            if (!(*this)->app) {
-                // Named_Boxarts, Titles, Snaps - png or jpg, tags stripped, fuzzy on the region
-                imagePath = App::get().thumbnails().findBoxArt((*this)->db_name, (*this)->title);
-                if (!imagePath.empty()) {
-                    coverPng = Texture::loadFile(renderer, imagePath);
-                } else {
-                    // use default
-                    PLOG_WARNING << "boxart image NOT found for " << (*this)->title << " in " << (*this)->db_name;
-                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/ra-cover.png");
-                }
-            } else {
-                imagePath = (*this)->image_path;
-
-                if (DirEntry::exists(imagePath)) {
-                    coverPng = Texture::loadFile(renderer, imagePath);
-                } else {
-                    // use default
-                    PLOG_WARNING << "boxart image NOT found for " << imagePath;
-                    coverPng = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "evoimg/app-cover.png");
-                }
-            }
-
-            renderer.setTarget(&renderSurface);
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.h = 226, fullRect.w = 226;
-
-            Size s = coverPng.size();
-            fullRect.w = s.w;
-            fullRect.h = s.h;
-            Rect outputRect;
-
-            // a big box: the art's own shape - a tall NES box, a wide SNES one - as large as fits, centred
-            int biggerSize = fullRect.w > fullRect.h ? fullRect.w : fullRect.h;
-            if (biggerSize <= 0)
-                biggerSize = 1;
-            outputRect.h = (226 * fullRect.h) / biggerSize;
-            outputRect.w = (226 * fullRect.w) / biggerSize;
-            outputRect.x = (226 - outputRect.w) / 2;
-            outputRect.y = (226 - outputRect.h) / 2;
-            Rect box = insetIntoCover(outputRect);
-
-            renderer.setBlendMode(BlendMode::Add);
-            renderer.copy(coverPng, &fullRect, &box);
-            renderer.setBlendMode(BlendMode::Blend);
-            if (gui->assets().bigBoxFrame.valid()) {
-                drawNineSlice(renderer, gui->assets().bigBoxFrame, 7, box);
-            }
-            content = box;
-            thickness = BigBoxThickness;
-
-            coverPng = Texture();
-            fullRect.x = 0;
-            fullRect.y = 0;
-            fullRect.h = 226, fullRect.w = 226;
-            coverPng = renderSurface;
-
-            renderer.setTarget(nullptr);
-            renderer.setBlendMode(BlendMode::Blend);
+        art = (*this)->image_path;
+        if (!DirEntry::exists(art)) {
+            PLOG_WARNING << "boxart image NOT found for " << art;
+            art = Env::getWorkingPath() + sep + "evoimg/app-cover.png";
+            noArt = true;
         }
     }
+    return art;
+}
+
+//*******************************
+// PsCarouselGame::loadTex / loadFromImage
+//*******************************
+void PsCarouselGame::loadTex(ableem::Renderer &renderer, Texture target) {
+    if (coverPng.valid())
+        return;
+    const string &path = artPath();
+    Texture artTex;
+#ifdef AB_DEBUG_HOST
+    if (path.empty() && (*this)->internal) {
+        GameMetadata md;
+        if (App::get().library().metadata().findBySerial((*this)->serial, md) && !md.bytes.empty())
+            artTex = Texture::loadMemory(renderer, md.bytes.data(), md.bytes.size());
+        if (!artTex.valid())
+            artTex = Texture::loadFile(renderer, Env::getWorkingPath() + sep + "default.png");
+    }
+#endif
+    if (!path.empty())
+        artTex = Texture::loadFile(renderer, path);
+    compose(renderer, artTex, target);
+}
+
+void PsCarouselGame::loadFromImage(ableem::Renderer &renderer, const ableem::Image &image, Texture target) {
+    compose(renderer, Texture::fromImage(renderer, image), target);
+}
+
+//*******************************
+// PsCarouselGame::compose
+//*******************************
+// The cover in its 226x226 render target, inset by CoverMargin into transparent black: a PS1 game's art in
+// the theme's jewel case, a RetroArch game's or an App's at its own shape in the big-box frame.
+void PsCarouselGame::compose(ableem::Renderer &renderer, const Texture &artTex, Texture target) {
+    const bool bigBox = (*this)->foreign;
+    if (!artTex.valid() && !bigBox) {
+        coverPng = Texture(); // no picture: no cover (a big box still gets its empty frame)
+        return;
+    }
+    shared_ptr<Gui> gui(Gui::getInstance());
+    if (!target.valid())
+        target = Texture::createTarget(renderer, 226, 226);
+
+    // note: the render target is RGBA8888 rather than the original's ABGR32 - SDL blends identically either
+    // way since the renderer converts at draw time, only the in-memory byte order differs.
+    renderer.pushTarget(&target);
+    renderer.setBlendMode(BlendMode::None);
+    target.setBlendMode(BlendMode::None);
+    renderer.setDrawColor(Color(0, 0, 0, 0)); // transparent black: no light fringe where an edge blends
+    renderer.fillRect();
+    target.setBlendMode(BlendMode::Blend);
+    renderer.setBlendMode(BlendMode::Blend);
+
+    const Size s = artTex.size();
+    const Rect artRect(0, 0, s.w, s.h);
+    const Rect fullRect(0, 0, 226, 226);
+    if (!bigBox) {
+        // the jewel case's window is (25,7)-(222,219) in every frame evoimg ships (198x213); the art fills it
+        // a pixel under the frame all round, at its own proportions - the part that does not fit is cut from
+        // both sides evenly, never stretched (the square art used to be pulled 9% taller, 2 px off to the left)
+        Rect outputRect = gui->assets().cdJewel.valid() ? Rect(24, 6, 200, 215) : fullRect;
+        Rect source = artRect;
+        if (s.w > 0 && s.h > 0) {
+            const float want = static_cast<float>(outputRect.w) / outputRect.h;
+            if (static_cast<float>(s.w) / s.h > want) {
+                source.w = static_cast<int>(s.h * want + 0.5f);
+                source.x = (s.w - source.w) / 2;
+            } else {
+                source.h = static_cast<int>(s.w / want + 0.5f);
+                source.y = (s.h - source.h) / 2;
+            }
+        }
+        Rect inset = insetIntoCover(outputRect);
+        renderer.setBlendMode(BlendMode::Add);
+        renderer.copy(artTex, &source, &inset);
+        renderer.setBlendMode(BlendMode::Blend);
+        if (gui->assets().cdJewel.valid()) {
+            Rect box = insetIntoCover(fullRect);
+            renderer.copy(gui->assets().cdJewel, &fullRect, &box);
+        }
+        content = insetIntoCover(fullRect);
+        thickness = JewelCaseThickness;
+    } else {
+        // a big box: the art's own shape - a tall NES box, a wide SNES one - as large as fits, centred. With no
+        // art (CA4/CA5) the shape is the system's typical one and the face is the two-layer placeholder
+        artPath();
+        int shapeW = s.w;
+        int shapeH = s.h;
+        if (noArt) {
+            const CoverAspect aspect = noArtAspect(**this);
+            shapeW = aspect.w;
+            shapeH = aspect.h;
+        }
+        int biggerSize = std::max(shapeW, shapeH);
+        if (biggerSize <= 0)
+            biggerSize = 1;
+        Rect outputRect;
+        outputRect.h = (226 * shapeH) / biggerSize;
+        outputRect.w = (226 * shapeW) / biggerSize;
+        outputRect.x = (226 - outputRect.w) / 2;
+        outputRect.y = (226 - outputRect.h) / 2;
+        Rect box = insetIntoCover(outputRect);
+        if (noArt) {
+            NoArtLayers &layers = noArtLayers();
+            const Texture &background = loadLayer(renderer, layers.background, "cover_bg.png");
+            if (background.valid())
+                drawNineSlice(renderer, background, NoArtSlice, box);
+            const Texture &glyph = (*this)->app ? loadLayer(renderer, layers.glyphApp, "glyph_app.png")
+                                                : loadLayer(renderer, layers.glyphGame, "glyph_game.png");
+            if (glyph.valid()) {
+                const int side = std::min(NoArtGlyphSize, std::min(box.w, box.h));
+                Rect out(box.x + (box.w - side) / 2, box.y + (box.h - side) / 2, side, side);
+                renderer.copy(glyph, nullptr, &out);
+            }
+        } else {
+            renderer.setBlendMode(BlendMode::Add);
+            renderer.copy(artTex, &artRect, &box);
+            renderer.setBlendMode(BlendMode::Blend);
+        }
+        if (gui->assets().bigBoxFrame.valid())
+            drawNineSlice(renderer, gui->assets().bigBoxFrame, 7, box);
+        content = box;
+        thickness = BigBoxThickness;
+    }
+    renderer.popTarget();
+    renderer.setBlendMode(BlendMode::Blend);
+    coverPng = target;
 }
 
 //*******************************
@@ -235,7 +274,7 @@ void PsCarouselGame::loadTex(ableem::Renderer &renderer) {
 void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind) {
     shared_ptr<Gui> gui(Gui::getInstance());
     Texture renderSurface = Texture::createTarget(renderer, 226, 226);
-    renderer.setTarget(&renderSurface);
+    renderer.pushTarget(&renderSurface);
     renderer.setBlendMode(BlendMode::None);
     renderSurface.setBlendMode(BlendMode::None);
     renderer.setDrawColor(Color(0, 0, 0, 0));
@@ -246,7 +285,7 @@ void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind
     Rect fullRect(0, 0, 226, 226);
     const Color glass(12, 12, 16, 150);
     if (kind == BoxKind::JewelCase) {
-        Rect inside = insetIntoCover(gui->assets().cdJewel.valid() ? Rect(23, 5, 199, 217) : fullRect);
+        Rect inside = insetIntoCover(gui->assets().cdJewel.valid() ? Rect(24, 6, 200, 215) : fullRect);
         renderer.setDrawColor(glass);
         renderer.fillRect(inside);
         Rect box = insetIntoCover(fullRect);
@@ -264,7 +303,7 @@ void PsCarouselGame::loadPlaceholderTex(ableem::Renderer &renderer, BoxKind kind
         thickness = BigBoxThickness;
     }
     coverPng = renderSurface;
-    renderer.setTarget(nullptr);
+    renderer.popTarget();
     renderer.setBlendMode(BlendMode::Blend);
 }
 

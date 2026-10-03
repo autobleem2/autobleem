@@ -3,13 +3,18 @@
 // The handlers that open another screen or start a game are in launcher_actions.cpp.
 //
 #include "evoui_launcher.h"
-#include "../../gui/gui.h"
-#include "../../gui/screens/gui_confirm.h"
+#include "gui/gui.h"
+#include "gui/screens/gui_confirm.h"
 #include "evoui_btn_guide.h"
-#include "../../core/model/timing.h"
+#include "core/model/timing.h"
+#include "core/model/pad_assignment.h"
+
+#include <ab_gui/screen_stack.h>
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <sstream>
 #include <ableem/engine/log.h>
 
 using namespace std;
@@ -28,14 +33,7 @@ void GuiLauncher::loop() {
     queuedScroll = 0;
 
     while (menuVisible) {
-        // the menu's headers and blurbs in the current language - Options may have changed it on the way
-        // back into this loop, which is the one time they need translating again
-        if (headersLanguage != app.lang().currentLanguage()) {
-            headersLanguage = app.lang().currentLanguage();
-            headers = {_("SETTINGS"), _("GAME"), _("MEMORY CARD"), _("RESUME")};
-            texts = {_("Customize AutoBleem settings"), _("Edit game parameters"), _("Edit Memory Card information"),
-                     _("Resume game from saved state point")};
-        }
+        retranslateMenu(); // Options may have changed the language on the way back into this loop
 
         time = gui->platform().ticks();
         for (auto &obj : staticElements) {
@@ -43,20 +41,40 @@ void GuiLauncher::loop() {
         }
 
         menu->update(time);
+        syncMenuCaption();
         carousel.updatePositions();
-        if (!carousel.scrolling) {
-            // the frame the carousel rests in does the loads a scroll put off; the idle frames after it
-            // get the covers just past the ends of the row decoded, one a frame
-            if (settleLoadsPending)
-                finishSettleLoads();
-            else
-                carousel.loadOneMissingTexture();
-        }
+        // the covers decoded in the background go onto the GPU, a frame at a time; once the row really rests
+        // - not between the steps of a held stick, nor with a tap waiting - the snap and the resume picture
+        // are asked for, and shown when decoded
+        carousel.pumpCovers();
+        if (settleLoadsPending && !carousel.scrolling && motionStart == 0 && queuedScroll == 0 &&
+            benchMode() != BenchHold)
+            finishSettleLoads();
+        pollSettleLoads();
         applyScanUpdate(app.scans().poll());
+        app.extensions().poll();
+        applyExtensionRequests();
+        pollPadBattery();
+        pollPadAssignmentEmptyNotice();
 #ifdef AB_ONLINE_UPDATE
         pollUpdates();
 #endif
-        render();
+        // the frame rate: every frame while something moves; at rest only the play button's pulse and the
+        // arrow go on, which the ambient rate (30 fps) draws as well - at the same speed, they run on time
+        gui->input().setFrameNeed(somethingMoves() ? ableem::Input::FrameNeed::Active
+                                                   : ableem::Input::FrameNeed::Ambient);
+        // what the tweens running ask for on top: the ambient loops ask Ambient, the state-change transitions
+        // hold Active until they end
+        gui->uiContext().stack().tweens().applyFrameNeed(gui->input());
+        if (gui->input().frameDue())
+            render();
+
+        // CONSOLE-13: a held direction's release can be read by a screen opened over this one (Options, and
+        // the busy job that ends it) and never reach this loop; Input's own d-pad state is the truth - it is
+        // reset when a busy job ends - so a hold nothing holds any more stops here, instead of the carousel
+        // running on by itself
+        if (motionStart != 0 && !gui->input().dpadLeft() && !gui->input().dpadRight())
+            motionStart = 0;
 
         if (!carousel.scrolling && state == LauncherScreenState::Games) {
             if (queuedScroll != 0) {
@@ -73,9 +91,22 @@ void GuiLauncher::loop() {
                     nextCarouselGame(CarouselHeldScrollDuration, false);
                 else
                     prevCarouselGame(CarouselHeldScrollDuration, false);
+            } else if (benchMode() == BenchHold && !carousel.games.empty()) {
+                if (benchDir == 0 && !carousel.canSelectNext())
+                    benchDir = 1;
+                else if (benchDir == 1 && !carousel.canSelectPrevious())
+                    benchDir = 0;
+                if (benchDir == 0)
+                    nextCarouselGame(CarouselHeldScrollDuration, false);
+                else
+                    prevCarouselGame(CarouselHeldScrollDuration, false);
             }
         }
 
+        // an animation a button starts begins now, not when this pass began: frameDue() may have waited up to
+        // an ambient frame for the input, and a start from before that would open the animation part way in
+        time = gui->platform().ticks();
+        benchStep();
         while (gui->input().poll(e)) {
             // this is for pc Only - the window's own close button. Closing this screen alone is not enough:
             // AutoBleem::run() would just show a fresh GuiLauncher again (session().menuOption is nothing
@@ -85,6 +116,9 @@ void GuiLauncher::loop() {
             if (e.type == Event::Type::Quit) {
                 menuVisible = false;
                 quitRequested = true;
+                // a lost display is rebuilt in-process (AutoBleem::run) with a fresh GuiLauncher that reads the
+                // Session: the carousel's place goes there before this screen dies (BUG-40)
+                rememberSelection();
             }
             switch (e.type) {
             case Event::Type::KeyDown:
@@ -122,6 +156,10 @@ void GuiLauncher::loop() {
             case Event::Type::ButtonUp:
                 loop_joyButtonReleased(); // button released
                 break;
+            case Event::Type::PadAdded:
+            case Event::Type::PadRemoved:
+                showPadAssignment();
+                break;
             default:
                 break;
 
@@ -150,6 +188,76 @@ void GuiLauncher::loop() {
 }
 
 //*******************************
+// GuiLauncher::benchMode / benchSkips
+//*******************************
+int GuiLauncher::benchMode() {
+    static const int mode = [] {
+        const char *v = getenv("AB_BENCH_SCROLL");
+        if (!v || !*v || strcmp(v, "0") == 0)
+            return static_cast<int>(BenchOff);
+        if (strcmp(v, "tap") == 0)
+            return static_cast<int>(BenchTap);
+        if (strcmp(v, "menu") == 0)
+            return static_cast<int>(BenchMenu);
+        return static_cast<int>(BenchHold);
+    }();
+    return mode;
+}
+
+//*******************************
+// GuiLauncher::benchStep
+//*******************************
+// the measuring mode's taps and menu toggles (the held stick runs in the loop's own chaining)
+void GuiLauncher::benchStep() {
+    const int mode = benchMode();
+    if (mode != BenchTap && mode != BenchMenu)
+        return;
+    const long now = gui->platform().ticks();
+    if (now - benchLast < (mode == BenchTap ? 350 : 700) || carousel.scrolling || carousel.games.empty())
+        return;
+    benchLast = now;
+    if (mode == BenchTap) {
+        if (benchDir == 0 && !carousel.canSelectNext())
+            benchDir = 1;
+        else if (benchDir == 1 && !carousel.canSelectPrevious())
+            benchDir = 0;
+        if (benchDir == 0)
+            nextCarouselGame(CarouselScrollDuration);
+        else
+            prevCarouselGame(CarouselScrollDuration);
+    } else if (!menu->animating()) {
+        switchState(state == LauncherScreenState::Games ? LauncherScreenState::Set : LauncherScreenState::Games,
+                    static_cast<int>(now));
+    }
+}
+
+bool GuiLauncher::benchSkips(const string &part) {
+    static const vector<string> parts = [] {
+        vector<string> list;
+        const char *v = getenv("AB_SKIP");
+        if (v && *v) {
+            stringstream ss(v);
+            string item;
+            while (getline(ss, item, ','))
+                list.push_back(item);
+            PLOG_INFO << "AB_SKIP: " << v;
+        }
+        return list;
+    }();
+    return !parts.empty() && find(parts.begin(), parts.end(), part) != parts.end();
+}
+
+//*******************************
+// GuiLauncher::somethingMoves
+//*******************************
+bool GuiLauncher::somethingMoves() const {
+    return carousel.animating() || settleLoadsPending || motionStart != 0 || queuedScroll != 0 ||
+           L1_isPressedForFastForward || R1_isPressedForFastForward || fadeAlpha > 0 ||
+           gui->uiContext().stack().tweens().busy() || notificationLines.animating() || scanBubble.animating() ||
+           extensionBubble.animating();
+}
+
+//*******************************
 // GuiLauncher::loop_joyMoveLeft
 //*******************************
 void GuiLauncher::loop_joyMoveLeft() {
@@ -168,14 +276,12 @@ void GuiLauncher::loop_joyMoveLeft() {
 
         if (menu->lastEnabled() > 0) {
             if (!selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
-                if (menu->animationStarted == 0) {
+                if (!menu->animating()) {
                     app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 0;
-                    menu->duration = 100;
-                    menuHead->setText(headers[menu->selOption - 1], fgColor);
-                    menuText->setText(texts[menu->selOption - 1], fgColor);
-                    menu->animationStarted = time;
+                    menu->duration = evomotion::OptionMoveMs;
+                    menu->startTransition();
                 }
             }
         }
@@ -207,14 +313,12 @@ void GuiLauncher::loop_joyMoveRight() {
 
         if (menu->lastEnabled() > 0) {
             if (menu->selOption < menu->lastEnabled()) {
-                if (menu->animationStarted == 0) {
+                if (!menu->animating()) {
                     app.audio().cursor.play();
                     menu->transition = TR_OPTION;
                     menu->direction = 1;
-                    menu->duration = 100;
-                    menuHead->setText(headers[menu->selOption + 1], fgColor);
-                    menuText->setText(texts[menu->selOption + 1], fgColor);
-                    menu->animationStarted = time;
+                    menu->duration = evomotion::OptionMoveMs;
+                    menu->startTransition();
                 }
             }
         }
@@ -234,12 +338,21 @@ void GuiLauncher::loop_joyMoveUp() {
     if (carousel.scrolling) {
         return;
     }
-    if (state == LauncherScreenState::Set) {
+    if (state == LauncherScreenState::Games) {
+        // the Quick menu, above the games as the icon row is below them (the owner, 2026-09-26)
+        if (!menu->animating()) {
+            motionStart = 0;
+            loop_openQuickMenu();
+        }
+    } else if (state == LauncherScreenState::Set) {
         if (carousel.games.empty()) {
-            app.audio().cancel.play(); // nothing up there to go to (settleEmptyRoster)
+            // an empty set: no games to go up to (settleEmptyRoster), so the Quick menu - Re-Scan and the
+            // Store are what an empty set needs
+            if (!menu->animating())
+                loop_openQuickMenu();
             return;
         }
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
@@ -255,12 +368,104 @@ void GuiLauncher::loop_joyMoveDown() {
         return;
     }
     if (state == LauncherScreenState::Games) {
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Set, time);
             motionStart = 0;
         }
     }
+}
+
+//*******************************
+// psPlayerSlotLabel (local)
+//*******************************
+// the enum's UI text, literal _() calls at each branch so tools/lang_tools.py's extract (which only
+// recognises a literal string inside _(...), not a runtime value) picks up the three keys.
+static string psPlayerSlotLabel(PsPlayerSlot slot) {
+    switch (slot) {
+    case PsPlayerSlot::Player1:
+        return _("Player 1");
+    case PsPlayerSlot::Player2:
+        return _("Player 2");
+    case PsPlayerSlot::Unused:
+    default:
+        return _("not used by the PS1 emulator");
+    }
+}
+
+//*******************************
+// GuiLauncher::currentPadAssignment
+//*******************************
+// ableem::Input::pads() in its own (ascending SDL device-index) order, as the id pair
+// decidePadAssignmentChange() compares - each pad's guid+name, so a like-named pad on a different port
+// still counts as a change, and a replugged identical pad on the same port does not.
+PadAssignment GuiLauncher::currentPadAssignment() const {
+    PadAssignment result;
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    for (size_t i = 0; i < pads.size() && i < 2; i++)
+        result.ids.push_back(pads[i].guid + "|" + pads[i].name);
+    return result;
+}
+
+//*******************************
+// GuiLauncher::seedPadAssignment
+//*******************************
+// records the current assignment as already "shown", with no NotificationLine - called from
+// loadAssets() (startup, and every time the display is reacquired after a game), so SDL's start-up
+// PadAdded burst and the pad flush/reopen around a launch never pop the notice by themselves; only an
+// assignment that differs from this seed (a live PadAdded/PadRemoved after that) will.
+void GuiLauncher::seedPadAssignment() {
+    padAssignmentState = PadAssignmentState();
+    padAssignmentState.lastShown = currentPadAssignment();
+}
+
+//*******************************
+// GuiLauncher::showPadAssignment
+//*******************************
+// pcsx-ab/pcsx-abnxt assign PS1 port 1/2 by ascending SDL device-index at (re)probe time -
+// ableem::Input::pads() already enumerates in that same order, so this is what a game started right
+// now would use. Only pops the NotificationLine when decidePadAssignmentChange() says the P1/P2
+// assignment actually changed from what was last shown - not on every PadAdded/PadRemoved, which SDL
+// also fires at start-up (seedPadAssignment() covers that) and during a re-enumeration's momentary
+// empty reading (decidePadAssignmentChange() never shows an empty reading directly any more - C16 - it
+// only starts pollPadAssignmentEmptyNotice()'s delay, which is what actually shows "Controllers: None").
+void GuiLauncher::showPadAssignment() {
+    PadAssignment current = currentPadAssignment();
+    PadAssignmentDecision decision = decidePadAssignmentChange(current, padAssignmentState, time);
+    if (!decision.show)
+        return;
+
+    // decision.show is only ever true here for a non-empty `current` - an empty reading never shows
+    // directly (see above), so this is always the "who plays as P1/P2 now" text, never "None".
+    vector<ableem::PadInfo> pads = gui->input().pads();
+    // Options -> "Swap Player 1 / Player 2" (C11): this notice must say the same thing LaunchService's
+    // AB_PAD_ORDER is about to tell the emulator, or a swapped user sees their own pad mislabelled here.
+    bool padSwap = app.config().inifile.values["padswap"] == "true";
+    string text;
+    for (size_t i = 0; i < pads.size() && i < 2; i++) {
+        if (!text.empty())
+            text += ", ";
+        PsPlayerSlot slot = psPlayerSlot(static_cast<int>(i), static_cast<int>(pads.size()), padSwap);
+        text += psPlayerSlotLabel(slot) + ": " + pads[i].name;
+    }
+    showInfo(text);
+}
+
+//*******************************
+// GuiLauncher::pollPadAssignmentEmptyNotice
+//*******************************
+// C16: called every frame (loop(), alongside pollPadBattery()) - the counterpart to showPadAssignment()'s
+// live-event check, for the one case an event alone can never resolve: unplugging the *only* connected
+// pad. SDL fires one PadRemoved for that, never a second "still gone" event to tell a real unplug apart
+// from a re-enumeration blip, so showPadAssignment() only starts a pending timer for it
+// (decidePadAssignmentChange()) rather than showing anything. This is what shows "Controllers: None" once
+// that timer has run for PadEmptyNoticeDelay with nothing reconnecting; a pad that comes back first is
+// caught by showPadAssignment()'s own live PadAdded, which clears the pending timer before it ever fires.
+void GuiLauncher::pollPadAssignmentEmptyNotice() {
+    PadAssignmentDecision decision = checkPadAssignmentEmptyNotice(padAssignmentState, time, PadEmptyNoticeDelay);
+    if (!decision.show)
+        return;
+    showInfo(_("Controllers") + ": " + _("None"));
 }
 
 //*******************************
@@ -320,8 +525,8 @@ void GuiLauncher::loop_joyButton_Pressed() {
 // GuiLauncher::loop_prevNextGameFirstLetter
 //*******************************
 void GuiLauncher::loop_prevNextGameFirstLetter(bool next) { // false is prev, true is next
-    app.audio().cursor.play();
-
+    // one sound per press, played below where the jump is decided: a cursor.play() here as well put the
+    // same sound on two mixer channels at once, twice as loud as a d-pad step
     if (state == LauncherScreenState::Games) {
         if (carousel.games.empty()) {
             return;
@@ -407,7 +612,7 @@ void GuiLauncher::loop_selectButton_Pressed() {
     // with the game menu's icon row open, Select (and L2+Select) still change the set: the row closes
     // first, the way Up closes it, and the switch goes on from the Games state
     if (state == LauncherScreenState::Set) {
-        if (menu->animationStarted != 0)
+        if (menu->animating())
             return;
         menu->transition = TR_MENUON;
         switchState(LauncherScreenState::Games, time);
@@ -450,7 +655,7 @@ void GuiLauncher::loop_circleButton_Pressed() {
             app.audio().cancel.play(); // the row stays open on an empty set (settleEmptyRoster)
             return;
         }
-        if (menu->animationStarted == 0) {
+        if (!menu->animating()) {
             menu->transition = TR_MENUON;
             switchState(LauncherScreenState::Games, time);
             motionStart = 0;
@@ -462,7 +667,9 @@ void GuiLauncher::loop_circleButton_Pressed() {
     } else if (state == LauncherScreenState::Resume) {
         app.audio().cursor.play();
         sselector->visible = false;
-        arrow->visible = true;
+        arrow->visible =
+            sselector->operation ==
+            OP_LOAD; // the menu's arrow: after the emulator's save picker (OP_SAVE) the row is back in Games, no menu
         sselector->cleanSaveStateImages();
         if (carousel.selectedIsValid())
             menu->setResumePic(app.resumePoints().lastPicture(*carousel.games[carousel.selected]));
@@ -482,7 +689,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
     if (state != LauncherScreenState::Resume) {
         app.audio().cursor.play();
         GuiBtnGuide guide(*gui);
-        guide.backgroundImg = background->tex;
+        BackdropScope backdrop(*this);
         guide.show();
     } else {
         if (sselector->operation == OP_LOAD) {
@@ -494,7 +701,11 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 
                     GuiConfirm confirm(*gui);
                     confirm.label = _("Are you sure?");
-                    confirm.show();
+                    confirm.confirmLabel = _("Delete slot");
+                    {
+                        BackdropScope backdrop(*this);
+                        confirm.show();
+                    }
 
                     if (confirm.result) {
                         app.resumePoints().removeSlot(*game, slot);
@@ -526,10 +737,14 @@ void GuiLauncher::loop_squareButton_Pressed() {
             if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
                 return;
             }
+            if (refuseLicenceProtected()) {
+                return;
+            }
             app.session().startingGame = true;
             if (carousel.selectedIsValid()) {
                 app.session().runningGame = carousel.games[carousel.selected];
                 app.gameCatalog().recordGamePlayed(app.session().runningGame);
+                forgetSetCounts(); // Game History changed
             }
             app.session().resumePoint = -1;
             rememberSelection();

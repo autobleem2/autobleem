@@ -3,7 +3,7 @@
 A running list of things that might be worth doing, before they're worth planning. Each entry is a quick
 "is this possible, and how big is it" writeup - not an implementation plan. When an idea is picked up for
 real, it gets its own plan (and, once done, this entry is removed or marked done - see "Finished plans
-leave docs/" in CLAUDE.md's spirit, though a *researched-but-not-started* idea can just stay here).
+leave docs/" in docs/developer-guide.md's spirit, though a *researched-but-not-started* idea can just stay here).
 
 Rough complexity scale used below: **S** (a sitting, one file or a script), **M** (a few files, one
 subsystem, a day or two), **L** (touches several subsystems / new infrastructure), **XL** (a new toolchain,
@@ -13,10 +13,10 @@ target, or a build pipeline change).
 
 ## Prebuilt Raspberry Pi image for Raspberry Pi Imager
 
-**Status:** done (2026-09-19). `tools/make_rpi_image.sh` builds both architectures on the Pi 400;
-`tools/rpi_imager_local_manifest.py` makes the local Imager manifest that enables Imager's customisation
-screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
-ask for WiFi when there is none, bounded root growth - CLAUDE.md's "Flashable image for Raspberry Pi Imager"
+**Status:** done (2026-09-19). autobleem-appliance's `tools/make_rpi_image.sh` builds both architectures on
+the Pi 400; its `tools/rpi_imager_local_manifest.py` (DOCS-5/6 moved both there, alongside payload_linux/)
+makes the local Imager manifest that enables Imager's customisation screen. Two flashes so far: the first (no presets) showed what the first boot had to become (own the screen,
+ask for WiFi when there is none, bounded root growth - docs/developer-guide.md's "Flashable image for Raspberry Pi Imager"
 has the story); the second (arm64, Imager presets via the manifest) ran end to end into the launcher. The
 `v2.0.0-pre0-933bd2f` armhf + arm64 images are built and checked. **Not yet verified:** the interactive WiFi
 prompt on a flash without presets, and any armhf image boot. Everything below is the pre-implementation
@@ -66,7 +66,7 @@ SoC.
   missing is entirely the *distro/appliance* side - getting a PC to boot into that binary with nothing else
   running.
 - **X11/Wayland turn out not to be needed.** SDL2 talks to the DRM/KMS device directly (`SDL_VIDEODRIVER=kmsdrm`),
-  which is exactly what the Pi's `autobleem.service` already sets (`payload_linux/system/autobleem.service`) to
+  which is exactly what the Pi's `autobleem.service` already sets (autobleem-appliance's `payload_linux/system/autobleem.service`) to
   draw straight to the screen from a plain systemd service on a virtual terminal, no compositor. The same
   should work on a PC with a KMS-capable driver (Intel/AMD's kernel modesetting drivers, and Nouveau for
   Nvidia - the closed Nvidia driver is the one common case that does *not* do KMS the same way and would be
@@ -79,7 +79,7 @@ SoC.
      Linux - Alpine specifically has a documented "diskless"/USB-install mode plus an `apkovl` overlay
      mechanism built exactly for "always boot straight into one app" appliances), then apply a genericized
      version of the Pi's own playbook on top: a systemd unit that owns tty1 the way
-     `payload_linux/system/autobleem.service`/`autobleem-session.sh` do, `SDL_VIDEODRIVER=kmsdrm`, packages
+     autobleem-appliance's `payload_linux/system/autobleem.service`/`autobleem-session.sh` do, `SDL_VIDEODRIVER=kmsdrm`, packages
      from the distro's own repo (SDL2, RetroArch) instead of cross-compiled. This reuses the Pi port's
      pattern almost line for line - no new mechanism, just a new base OS and native (not cross-compiled) x86
      packages.
@@ -110,60 +110,37 @@ SoC.
 
 ## Port to Atari VCS 800 as a sideloaded app reading a USB stick
 
-**Status:** researched, not started.
+**Status:** researched against the real OS (2026-09-22); has its own plan now -
+[`docs/atari-vcs-plan.md`](atari-vcs-plan.md). A tester with a unit is available. **Not started; one
+on-hardware test gates the whole shape.**
 
-The Atari VCS 800 is a real, confirmed device: an AMD "Bobcat"/Zen-based embedded APU (R1606G, x86_64,
-Radeon Vega 3 graphics), 8 GB RAM, 32 GB flash, running a Debian-based OS Atari calls **Atari Mode** - a
-locked-down launcher UI - with a separate **PC Mode** that boots an entirely different OS from an external
-drive (disconnect the drive, it boots back into Atari Mode). [Atari's own support
-docs](https://support.atari.com/hc/en-us/articles/17386515521563-Operating-System) and
-[technical specs](https://support.atari.com/hc/en-us/articles/17386531014043-Technical-Specifications)
-confirm the hardware and OS; community sources describe homebrew/sideloaded content as distributed via
-**AppImage** (the standard single-file Linux app format) and note that plugging in a USB drive is what
-"unlocks the open Sandbox" for sideloading, with no separate developer registration needed for that.
+The Atari VCS 800 is the 2021 console: AMD R1606G (x86-64, Radeon Vega 3), 8 GB RAM, 32 GB eMMC.
+**Atari Mode** is the stock locked-down launcher where third-party software is sideloaded as a `.bundle`
+run by a `homebrew-daemon` in a sandbox; **PC Mode** boots a different OS from an external drive (unplug it,
+back to Atari Mode). The owner downloaded Atari's recovery image (`atari-flasher-ab-upgrade.img`); unpacking
+its payload (`atari.img.gz` -> a GPT with A/B EFI, A/B dm-verity rootfs, `var`, 10.9 GB storage) and reading
+the rootfs gave first-hand ground truth - the plan doc has the full table. Highlights:
 
-This idea is specifically "AutoBleem as a tile inside Atari Mode's own launcher, reading games off a USB
-stick" - not the same as booting PC Mode from a USB drive, which is really just a generic x86_64 PC in an
-Atari-shaped box and would be the [PC Linux USB idea above](#pc-linux-build-that-bootsruns-from-a-usb-stick-like-the-original-console)
-with one specific, well-known, already-mainline-supported GPU (amdgpu/Mesa) instead of arbitrary hardware -
-notably *easier* than that idea on the driver-compatibility front, if it ever came to that.
-
-- **What already works, unchanged:** `make_sys.sh` already builds a native Linux x86_64 `autobleem-gui`
-  (see the PC-Linux-USB idea above), and `EnvironmentSetup::fromRoot()` (1-arg command line) is exactly
-  "point me at a USB-stick-shaped root and I'll find Games/, System/Databases/, themes/ under it" -
-  precisely what "reads a USB stick" needs, no new environment/path logic. Gamepad input goes through
-  `ableem::Input`/`Joystick` over SDL2's normal joystick/game-controller API
-  (`lib_ableem/include/ableem/ui/joystick.h`), which should see Atari's Bluetooth Classic/Modern
-  controllers as ordinary SDL controllers the same way it already does on Windows/Linux/Pi - Atari's own
-  material describes both controllers as "PC compatible."
-- **What's genuinely new and unverified (no public SDK access to check these without a devkit or a unit):**
-  1. **How a sandboxed AppImage actually gets its window/screen.** Atari Mode's own launcher almost
-     certainly owns the display (some compositor, X11 or Wayland - not confirmed which); a sideloaded app
-     is unlikely to get raw DRM/KMS master the way the Pi appliance does, so this would run as an ordinary
-     windowed/fullscreen-windowed SDL2 app under whatever session Atari Mode provides, not as a boot-owning
-     appliance - simpler in one way (no systemd/tty1 plumbing to write) but means the direct-KMS trick from
-     the PC-Linux-USB idea doesn't apply here.
-  2. **Filesystem access to an arbitrary USB stick from inside the sandbox** - whether a sideloaded AppImage
-     can read any mounted USB drive by path, or only a specific app-private storage folder Atari's sandbox
-     hands it. This decides whether `fromRoot()` can point straight at the stick or whether the games need
-     to live inside the app's own sandboxed data directory instead (still workable, just a different root).
-  3. **Whether the sandbox allows spawning a second process** - `LaunchService`/`System::runAndWait` fork
-     and exec pcsx-ab as a separate binary next to the launcher; if AppImage sideloads run under any kind of
-     per-app process/container isolation that blocks executing a sibling bint binary, PCSX launches would need
-     a different mechanism (or the whole thing would need to be one static binary with PCSX linked in,
-     unlike every other AutoBleem target today).
-  4. **pcsx-ab's own x86_64 buildability** - `pcsx-rearmed-develop` is developed and tested there for ARM
-     targets (console, Pi); whether it already has a working plain x86_64 Linux build (interpreter core, no
-     ARM dynarec, same situation as any desktop Linux build) needs checking in that repo, not this one.
-- **Complexity: L**, *if* items 1-3 above turn out to be permissive (ordinary windowed SDL2 app, USB path
-  access, normal process spawning all allowed) - then this is mostly packaging (`make_sys.sh` build +
-  resources into an AppImage) plus verifying pcsx-ab builds for x86_64, no new subsystems. **Jumps to XL**
-  if the sandbox turns out to restrict any of those (would need e.g. a different launch mechanism for PCSX,
-  or a rethink of where "the USB stick" lives from the app's point of view).
-- **Open questions before building:** getting hands-on with an actual VCS 800 unit (or at minimum,
-  developer documentation beyond the public support site - Atari's own "Developers" support page exists but
-  wasn't readable during this research pass) is the real blocker to answering points 1-3 above; everything
-  else is groundwork this repo already has.
+- **OS: Apertis v2021 (= Debian Buster amd64), by Collabora**; **Weston (Wayland) kiosk-shell + Xwayland**,
+  1920x1080 - the *same* Wayland stack the PSC already runs on. **SDL2 2.0.16 preinstalled**, and it is
+  Atari's **patched SDL2** with built-in SDL_GameController mappings for both pads; OpenGL + Vulkan
+  preinstalled. So the app and input layers work essentially unchanged (`make_sys.sh` already builds native
+  x86-64; `EnvironmentSetup::fromRoot()` is the one-root layout; fullscreen exists from the Windows product).
+- **The decisive finding (answers the old open questions): the sideload sandbox blocks the USB premise.**
+  Per the OS's own `homebrew-daemon` docs, a bundle sees only its own files (read-only), a private per-user
+  `$HOME` (read/write, isolated, wiped per new user), `/tmp`, and HID devices in `/dev` - "don't assume
+  access to any other directories." A USB stick mounted at `/media/...` is outside the container, so an
+  Atari-Mode bundle **cannot be assumed to read a USB game library**. Process spawning within the bundle is
+  fine, so a *bundled* pcsx-ab runs and saves into `$HOME`. The SDK is public
+  ([bundle-gen](https://github.com/atari-vcs/bundle-gen), `ghcr.io/atari-vcs/vcs-build-container`,
+  [native-example-bundle](https://github.com/atari-vcs/native-example-bundle)); no devkit needed.
+- **Two paths, in the plan:** (A) an Atari-Mode `.bundle` with data in `$HOME` - works, but self-contained,
+  no USB library unless the gating test says otherwise; (B) a **PC-Mode USB appliance** - the real
+  "read the stick" experience, which is just the PC-Linux-USB idea above on this one known, mainline GPU
+  (amdgpu/Mesa), the easy case of it.
+- **Complexity:** L for either path if the app/pad/USB probe passes on hardware; the remaining new work is a
+  native x86-64 appliance target + a native pcsx-ab Linux build + `bundle-gen` packaging (Path A) or the
+  PC-Linux-USB appliance retargeted to the VCS (Path B). See the plan for steps and the gating test.
 
 ---
 
@@ -199,7 +176,7 @@ system carousel before you drop into a platform's game list.
 - **The one real gap: there is no system-logo artwork anywhere in this repo today** (checked - no
   `xmb`/console-logo/system-logo assets under `lib_ableem/`, `payload/`, or `src/resources/`). A Recalbox-style
   wheel lives or dies on that art, and it doesn't exist yet for the ~50+ systems `RA_ROM_SYSTEMS` in
-  `payload_linux/install.sh` lists. Options, in rising effort: start with **text tiles** (system name rendered
+  autobleem-appliance's `payload_linux/install.sh` lists. Options, in rising effort: start with **text tiles** (system name rendered
   onto a plain tile via `TextRenderer`, the same "no art yet" fallback the empty-box placeholder already
   models) so the screen works day one; then source or commission real per-system logos later (community
   logo packs exist for ES/Recalbox-style themes, but licensing/attribution would need checking per pack,
@@ -242,7 +219,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   commits, 25 files changed**. Two groups:
   - **Build-system files** (`Dockerfile`, `Makefile.psc`, `config.mak.psc`, `.dockerignore`) - their own
     Docker/GCC9 cross toolchain, not reusable as-is (we build on the Sony crosstool-NG toolchain via
-    `make_psc.sh` on the remote build server - see CLAUDE.md's Build section). Skip these outright.
+    `make_psc.sh` on the remote build server - see docs/developer-guide.md's Build section). Skip these outright.
   - **Source changes**, worth assessing one at a time rather than as a block:
     - **`frontend/psc_m3u.c`/`.h`** (new, ~165 lines total) - minimal in-frontend `.m3u` playlist parsing
       that drives an eject->next-disc swap for **separate per-disc image files** (`.cue`/`.bin`/`.chd`). This
@@ -283,7 +260,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   than merging them mechanically - there's no shared history for `git cherry-pick`/`git merge` to work with.
 - **Open questions before building:** whether m3u playlists are something AutoBleem's own scanner should
   start generating for multi-disc USB games once pcsx-ab can read them (today `GameScanner::mergeMultiDiscFolders`
-  hands pcsx-ab only the first disc's `.cue` and generates the `.m3u` for RetroArch only - see CLAUDE.md's
+  hands pcsx-ab only the first disc's `.cue` and generates the `.m3u` for RetroArch only - see docs/developer-guide.md's
   "DiscSuffix" note); what exactly `psc_launcher.c`'s two bug-fix commits do, unread so far.
 
 ---
@@ -331,7 +308,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
 - **A real starting point exists, just not in this codebase**: RetroArch's own shader zoo has GLSL ports of
   the well-known CRT shaders (`crt-easymode`, `crt-lottes`, `zfast-crt`, ...) - AutoBleem's own Pi installer
   already fetches a `shaders_glsl` bundle from `buildbot.libretro.com/assets/frontend/shaders_glsl.zip` for
-  RetroArch itself (`payload_linux/install.sh`'s `download_retroarch_content()`). That's RetroArch's own
+  RetroArch itself (autobleem-appliance's `payload_linux/install.sh`'s `download_retroarch_content()`). That's RetroArch's own
   shader *loader* infrastructure, not reusable directly by pcsx-ab, but the shader *source* (GLSL fragment
   shaders, mostly self-contained math over a source texture + screen coordinates) is a real, permissively-
   licensed (RetroArch's shader repos are public/BSD-ish per-shader) reference to port one or two of the
@@ -350,7 +327,7 @@ this was being researched, so whatever is there now is a fixed target, not a mov
   GLES2/3 context instead) is actually available on the PSC's GPU, since a fixed-function GLES1 pipeline
   can't run a fragment shader at all; performance headroom on both the PSC's embedded GPU and a Pi at
   1080p/60 for a full-screen shader pass every frame, on top of what the carousel/launcher already costs
-  (see `docs/IDEAS.md`'s sibling entries and CLAUDE.md's carousel-perf notes for how tight that budget
+  (see `docs/IDEAS.md`'s sibling entries and docs/developer-guide.md's carousel-perf notes for how tight that budget
   already is on a Pi).
 
 ---

@@ -3,7 +3,7 @@
 
     python tools/make_usb.py <usbRoot> [--fresh] [--build <buildDir>]
 
-The layout is CLAUDE.md's "Smoke test layout": the payload's rc scripts and themes, src/resources next to the
+The layout is docs/developer-guide.md's "Smoke test layout": the payload's rc scripts and themes, src/resources next to the
 binary, the cover DBs, a copy of internal.db, and one fake PS1 game (a generated bin/cue whose ISO holds a
 SLUS_012.34 file, so the scanner finds a serial). A fake RetroArch install too - a stub binary (what makes
 the app treat RetroArch as present), one fake core with an .info naming three systems, and a few tiny zipped
@@ -23,6 +23,10 @@ import sys
 import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# ABFlashKit and PSC-Bios moved to their own repository on 2026-09-23 (docs/developer-guide.md, "Where the code lives") and
+# build there now, not here - same sibling-checkout convention as ab_drive.py's CONSOLE_TOOLS_DIR / make_psc.sh's
+# AB_PCSX_DIR.
+CONSOLE_TOOLS_DIR = os.environ.get('AB_CONSOLE_TOOLS_DIR', os.path.join(REPO, '..', 'autobleem-console-tools'))
 
 
 def copy_tree(src, dst):
@@ -192,7 +196,7 @@ def make_cover_db(path):
 
 
 # the console tools under apps/ that are staged into usb/Apps/<tool>/ for a visual test on Windows
-TOOLS = ['pscbios', 'abflashkit']
+TOOLS = ['abflashkit'] # PSC-Bios is an extension since 2026-09-24: build_win/extensions/, staged below
 
 # the fake RetroArch: one core that "plays" three systems, and a couple of ROMs per system. The names are
 # real no-intro names so the thumbnail lookup has something to match once a thumbnail pack is dropped in.
@@ -235,6 +239,41 @@ def make_fake_retroarch(usb):
                 z.writestr('%s.%s' % (game, ext), b'fake rom ' + game.encode('utf-8'))
 
 
+# fake Apps for the set picker's category rows (autobleem-main docs/archive/app-format-plan.md's Category=): a couple of Games,
+# one Emulators, one Tools, one Media, and one with no Category at all (falls under "Other") - enough for
+# every row the Apps tab can show, plus "All apps". Real Apps (abflashkit, pscbios) never get a Category
+# here: the app_* repos and the Store catalog carry their own later, not this batch.
+FAKE_APPS = [
+    ('Retro Blaster', 'Games'),
+    ('Puzzle Quest', 'Games'),
+    ('SNES Companion', 'Emulators'),
+    ('Terminal', 'Tools'),
+    ('Movie Player', 'Media'),
+    ('Mystery Tool', None), # no Category= at all -> Other
+]
+
+
+def make_fake_apps(usb):
+    """usb/Apps/<name>/app.ini, one per FAKE_APPS entry, each with a stub bin/dev/<name> binary so it is
+    runnable on the Windows dev build too (Env::appPlatformKeys() tries "dev" first there)."""
+    for title, category in FAKE_APPS:
+        folder = os.path.join(usb, 'Apps', title.replace(' ', ''))
+        os.makedirs(os.path.join(folder, 'bin', 'dev'), exist_ok=True)
+        binary = os.path.join(folder, 'bin', 'dev', title.replace(' ', ''))
+        if not os.path.exists(binary):
+            with open(binary, 'w') as f:
+                f.write('#!/bin/sh\n# a stand-in: AppManifest only asks whether the file exists\n')
+        ini_path = os.path.join(folder, 'app.ini')
+        if os.path.exists(ini_path):
+            continue # keep what a previous run wrote, like the rest of make_usb.py's fixtures
+        with open(ini_path, 'w', encoding='utf-8') as f:
+            f.write('Title=%s\n' % title)
+            f.write('Author=AutoBleem\n')
+            f.write('Exec=bin/{key}/%s\n' % title.replace(' ', ''))
+            if category:
+                f.write('Category=%s\n' % category)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('usb', help='the USB root to create or refresh')
@@ -255,25 +294,59 @@ def main():
         shutil.copy2(exe, app)
     else:
         print('note: no', exe, '- build first (make_win.sh), then run this again or let the build task copy it')
+    # the console's update helpers, next to the launcher as on a stick: abfetch (+ its CA bundle) fetches,
+    # abupdate lays the downloaded package over the stick - so the console's update can be tried on a PC
+    for helper in ('abfetch.exe', 'cacert.pem', 'abupdate.exe'):
+        if os.path.exists(os.path.join(args.build, helper)):
+            shutil.copy2(os.path.join(args.build, helper), app)
 
     replace_tree(os.path.join(REPO, 'payload', 'Autobleem', 'rc'), os.path.join(usb, 'Autobleem', 'rc'))
-    replace_tree(os.path.join(REPO, 'payload', 'Themes'), os.path.join(usb, 'Themes'))
+    # the five themes: their own repository now (autobleem2/autobleem-themes), a submodule at autobleem-themes/
+    replace_tree(os.path.join(REPO, 'autobleem-themes', 'Themes'), os.path.join(usb, 'Themes'))
+    # the scanner processors' folder and its README (once: the processors in it are the tester's)
+    processors = os.path.join(usb, 'System', 'Processors')
+    os.makedirs(processors, exist_ok=True)
+    if not os.path.exists(os.path.join(processors, 'README.txt')):
+        shutil.copy(os.path.join(REPO, 'payload', 'System', 'Processors', 'README.txt'), processors)
+    # and the extensions' (their folders come from the build, below)
+    extensions = os.path.join(usb, 'Extensions')
+    os.makedirs(extensions, exist_ok=True)
+    if not os.path.exists(os.path.join(extensions, 'README.txt')):
+        shutil.copy(os.path.join(REPO, 'payload', 'Extensions', 'README.txt'), extensions)
     if os.path.isdir(os.path.join(REPO, 'payload', 'Apps')):
         replace_tree(os.path.join(REPO, 'payload', 'Apps'), os.path.join(usb, 'Apps'))
 
     # the console tools built from apps/: each one's resources plus its Windows exe over the payload's copy,
-    # so that usb/Apps/<tool>/<tool>.exe <usb root> is the visual test of it
+    # so that usb/Apps/<tool>/<tool>.exe <usb root> is the visual test of it. Since the D5 split (2026-09-23)
+    # they build in autobleem-console-tools' own tree, not this one - try the sibling checkout's build dir
+    # first (CONSOLE_TOOLS_DIR above), then this repo's own (a checkout that still has one).
     for tool in TOOLS:
-        src = os.path.join(REPO, 'apps', tool, 'resources')
+        src = os.path.join(CONSOLE_TOOLS_DIR, 'apps', tool, 'resources')
+        tool_build = CONSOLE_TOOLS_DIR
+        if not os.path.isdir(src):
+            src = os.path.join(REPO, 'apps', tool, 'resources')
+            tool_build = REPO
         if not os.path.isdir(src):
             continue
         dst = os.path.join(usb, 'Apps', tool)
         copy_tree(src, dst)
-        tool_exe = os.path.join(args.build, 'apps', tool, tool + '.exe')
+        tool_exe = os.path.join(tool_build, 'build_win', 'apps', tool, tool + '.exe')
+        if not os.path.exists(tool_exe):
+            tool_exe = os.path.join(args.build, 'apps', tool, tool + '.exe')
         if os.path.exists(tool_exe):
             shutil.copy2(tool_exe, dst)
         else:
             print('note: no', tool_exe, '- build first for the', tool, 'visual test')
+
+    # the extensions the build staged (<build>/extensions/<name>/ - the hello sample): the Extensions list's
+    # test. PSC-Bios is built in the console-tools sibling checkout now (CONSOLE_TOOLS_DIR above) - its
+    # build_win/extensions/ is checked too, alongside this repo's own build dir.
+    for staged in (os.path.join(CONSOLE_TOOLS_DIR, 'build_win', 'extensions'), os.path.join(args.build, 'extensions')):
+        if os.path.isdir(staged):
+            for name in sorted(os.listdir(staged)):
+                # an extension has its extension.ini; store-server (abstored, a program of its own) is not one
+                if os.path.isfile(os.path.join(staged, name, 'extension.ini')):
+                    replace_tree(os.path.join(staged, name), os.path.join(usb, 'Extensions', name))
 
     db_dir = os.path.join(usb, 'Autobleem', 'bin', 'db')
     os.makedirs(db_dir, exist_ok=True)
@@ -301,6 +374,7 @@ def main():
     make_fake_games(games, max(1, args.games))
     make_fake_memcards(games)
     make_fake_retroarch(usb)
+    make_fake_apps(usb)
 
     # UpdateRoms, the PC-side scanner, in the stick's root as a release lays it out (the DLLs come from
     # PATH here; tools/make_updateroms_bundle.sh gathers them for a real stick)

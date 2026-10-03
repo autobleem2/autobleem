@@ -1,13 +1,13 @@
 #pragma once
 
-#include "gui_menu_base.h"
+#include "gui/menus/gui_menu_base.h"
 
 //*******************************
 // struct OptionsInfo
 //*******************************
 struct OptionsInfo {
     int id;                             // ex: CFG_THEME
-    std::string descriptionToTranslate; // ex: _("AutoBleem Theme:")
+    std::string descriptionToTranslate; // ex: _("AutoBleem theme:")
     std::string iniKey;                 // ex: "theme"
     bool keyIsBoolean;                  // if it's false/true we substitute the switch icons
     std::vector<std::string> choices;
@@ -19,6 +19,9 @@ struct OptionsInfo {
           choices(_choices) {}
 };
 
+// the row's name for the DebugDriver: the label as displayed (translated), without the value
+std::string driverRowName(const OptionsInfo &info);
+
 //*******************************
 // class GuiOptionsMenuBase
 //*******************************
@@ -29,7 +32,7 @@ public:
 
     virtual std::string getBooleanSymbolText(const OptionsInfo &info, const std::string &value);
     virtual std::string getLineText(const OptionsInfo &info);
-    // the value as the row shows it (a screen maps a stored value to a label - "--" to "Theme Default")
+    // the value as the row shows it (a screen maps a stored value to a label - "0" to "Skip")
     virtual std::string valueText(const OptionsInfo &info, const std::string &value);
 
     // a row at y: the label left, the value (a check switch or text) at the right edge
@@ -50,13 +53,5 @@ public:
     virtual std::string doFirstOption();
     virtual std::string doLastOption();
 
-    int computeAmountTomoveBy(unsigned int totalSize);
-    void doL1_Pressed() override;
-    void doR1_Pressed() override;
     void doStart_Pressed() override;
-
-    void doL2_Pressed() override { doFirstOption(); }
-    void doR2_Pressed() override { doLastOption(); }
-    void doHome() override { doFirstOption(); }
-    void doEnd() override { doLastOption(); }
 };

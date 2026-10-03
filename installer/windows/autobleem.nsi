@@ -1,4 +1,4 @@
-; AutoBleem for Windows - the NSIS installer (docs/pc-targets-plan.md, phase C2).
+; AutoBleem for Windows - the NSIS installer (autobleem-main/docs/pc-targets-plan.md, phase C2).
 ;
 ; Per user, no administrator rights: the program goes to %LOCALAPPDATA%\Programs\AutoBleem, the data tree
 ; (games, settings, themes, RetroArch) to a folder of the user's choosing - Documents\AutoBleem by default.
@@ -66,20 +66,36 @@ Var Restart
 !define MUI_FINISHPAGE_TEXT "AutoBleem is installed. Put your games into$\r$\n$DataRoot\Games$\r$\n(one folder per game) - the launcher finds them by itself."
 !define MUI_COMPONENTSPAGE_SMALLDESC
 
+; an update from the launcher (/RESTART) shows only the install progress - the questions were answered at
+; the first install and are kept in the registry, so skip straight past them to the instfiles page
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !insertmacro MUI_PAGE_WELCOME
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom DataFolderPage DataFolderLeave
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipWhenUpdating
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "English"
 
+; skip a page when this is an update started with /RESTART (the launcher's Software Update)
+Function SkipWhenUpdating
+  ${If} $Restart == 1
+    Abort
+  ${EndIf}
+FunctionEnd
+
 ;*******************************
 ; the data folder page
 ;*******************************
 Function DataFolderPage
+  ${If} $Restart == 1
+    Abort ; an update: the data folder is already chosen (registry), go straight to the progress
+  ${EndIf}
   !insertmacro MUI_HEADER_TEXT "Data folder" "Where the games, settings and themes go"
   nsDialogs::Create 1018
   Pop $0
@@ -142,7 +158,14 @@ Section "AutoBleem (required)" SecProgram
   RMDir /r "$INSTDIR\lang"
   RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\emu"
-  File /r "${STAGE}/*.*"   ; a forward slash: the Linux makensis (the image) takes no backslash here
+  RMDir /r "$INSTDIR\Extensions" ; the shipped extensions (the Store): AutoBleemWinSetup copies them into the data folder
+  ; the Linux makensis (the image) takes no backslash in a File spec, the Windows one no forward slash
+!ifdef NSIS_WIN32_MAKENSIS
+  !searchreplace STAGE_WIN "${STAGE}" "/" "\"
+  File /r "${STAGE_WIN}\*.*"
+!else
+  File /r "${STAGE}/*.*"
+!endif
   WriteRegStr HKCU "${REGKEY}" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${REGKEY}" "DataRoot" "$DataRoot"
   WriteRegStr HKCU "${REGKEY}" "Version" "${VERSION}"
@@ -215,7 +238,13 @@ Section "-Setup"
   ${If} ${SectionIsSelected} ${SecSamples}
     StrCpy $0 '$0 --samples'
   ${EndIf}
-  ${If} ${Silent}
+  ${If} $Restart == 1
+    ; the launcher's Software Update: a visible progress window, keeping what is installed (--update), and
+    ; the instfiles page closes itself so the whole thing runs without a click
+    SetAutoClose true
+    DetailPrint "AutoBleemWinSetup --run --update$0"
+    ExecWait '"$INSTDIR\${SETUP}" --run --update$0' $1
+  ${ElseIf} ${Silent}
     DetailPrint "AutoBleemWinSetup --quiet --update$0"
     ExecWait '"$INSTDIR\${SETUP}" --quiet --update$0' $1
   ${Else}
@@ -252,8 +281,9 @@ Function .onInit
   ${IfNot} ${Errors}
     StrCpy $Restart 1
   ${EndIf}
-  ; the launcher holds this mutex while it runs: an update waits for it to leave (the launcher's own
-  ; Software Update exits after starting us), a user is asked
+  ; the launcher holds this mutex while it runs: an update (launched with /RESTART) exits right after
+  ; starting us, so wait a while for it to leave before doing anything - in both silent and shown mode, so
+  ; the shown update does not greet the user with a "still running" box while the launcher is on its way out
   StrCpy $2 0
   loop:
     System::Call 'kernel32::OpenMutex(i 0x100000, i 0, t "${MUTEX}") p .r1'
@@ -261,14 +291,16 @@ Function .onInit
       Goto ready
     ${EndIf}
     System::Call 'kernel32::CloseHandle(p r1)'
-    ${If} ${Silent}
-      IntOp $2 $2 + 1
-      ${If} $2 > 60
-        Abort
-      ${EndIf}
+    IntOp $2 $2 + 1
+    ${If} $2 <= 60
       Sleep 500
       Goto loop
     ${EndIf}
+    ; still there after ~30 s: a silent run gives up, a user is asked to close it
+    ${If} ${Silent}
+      Abort
+    ${EndIf}
+    StrCpy $2 0
     MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "AutoBleem is running. Close it (the Power Off item in its menu), then click Retry." IDRETRY loop
     Abort
   ready:

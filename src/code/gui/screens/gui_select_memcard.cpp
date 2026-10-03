@@ -2,13 +2,14 @@
 // Created by screemer on 2019-01-25.
 //
 
+#include <algorithm>
 #include "gui_select_memcard.h"
 
 #include <string>
-#include "../gui.h"
-#include "../../core/main.h"
-#include "gui_confirm.h"
-#include "gui_keyboard.h"
+#include "gui/gui.h"
+#include "core/main.h"
+#include "gui/screens/gui_confirm.h"
+#include "gui/screens/gui_keyboard.h"
 using namespace std;
 
 //*******************************
@@ -49,20 +50,23 @@ void GuiSelectMemcard::init() {
 }
 
 //*******************************
-// GuiSelectMemcard::render
+// GuiSelectMemcard::draw
 //*******************************
-void GuiSelectMemcard::render() {
+void GuiSelectMemcard::draw() {
     shared_ptr<Gui> gui(Gui::getInstance());
     gui->renderBackground();
-    const bool compact = cards.size() <= 8;
-    if (compact)
-        gui->setCompactPanel(static_cast<int>(cards.size()), gui->assets().themeFont);
-    gui->renderTextBar();
-    int yoffset = gui->renderHeader(_("Select memory card"));
-
     if (selected >= cards.size()) {
         selected = cards.size() - 1;
     }
+
+    const bool compact = cards.size() <= 8;
+    const string status = _("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L1/R1| " +
+                          _("First/last") + "   |@L2/R2| " + _("Page") + "   |@X| " + _("Select") + "  |@O| " +
+                          _("Cancel") + "|";
+    if (compact)
+        gui->setCompactPanel(static_cast<int>(cards.size()), gui->assets().themeFont, status);
+    gui->renderTextBar();
+    int yoffset = gui->renderHeader(_("Select memory card"));
 
     if (selected < firstVisible) {
         firstVisible--;
@@ -73,23 +77,28 @@ void GuiSelectMemcard::render() {
         lastVisible++;
     }
 
+    // a theme's selection frame goes under the rows' text, the code-drawn band stays over them (G4c)
+    const bool framed = gui->text().selectionFramed(gui->uiContext());
+    if (framed && !cards.empty())
+        gui->text().renderSelectionBox(gui->uiContext(), selected - firstVisible, yoffset);
+
     int pos = 0;
     for (int i = firstVisible; i < lastVisible; i++) {
         if (i >= cards.size()) {
             break;
         }
+        TextRenderer::RowRoleScope role(gui->text(), // the theme's roles (UIREV-29)
+                                        i == selected ? TextRenderer::RowRole::Selected : TextRenderer::RowRole::Row);
         gui->text().renderTextLine(cards[i], pos, yoffset);
         pos++;
     }
 
-    if (!cards.size() == 0) {
+    if (!framed && !cards.size() == 0) {
         gui->text().renderSelectionBox(selected - firstVisible, yoffset);
     }
     gui->renderScrollMarkers(firstVisible > 0, lastVisible < static_cast<int>(cards.size()));
 
-    gui->renderStatus(_("Card") + " " + to_string(selected + 1) + "/" + to_string(cards.size()) + "   |@L2|/|@R2| " +
-                      _("Page") + "     |@X| " + _("Select") + "  |@O| " + _("Cancel") + "|");
-    renderer.present();
+    gui->renderStatus(status);
     if (compact)
         gui->clearCompactPanel();
 }
@@ -101,6 +110,10 @@ void GuiSelectMemcard::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     bool menuVisible = true;
     while (menuVisible) {
+        // nothing animates here: sleep until a press, and redraw 4 times a second meanwhile (the performance
+        // overlay, the DebugDriver's shots)
+        if (!gui->input().waitForEvent(250))
+            render();
         Event e;
         while (gui->input().poll(e)) {
             // this is for pc Only
@@ -154,6 +167,14 @@ void GuiSelectMemcard::loop() {
                         selected = 0;
                     }
                     firstVisible = selected;
+                    lastVisible = firstVisible + maxVisible;
+                    render();
+                };
+
+                if ((e.button == Button::L1 || e.button == Button::R1) && !cards.empty()) {
+                    app.audio().home_down.play(); // the first and the last card
+                    selected = e.button == Button::L1 ? 0 : static_cast<int>(cards.size()) - 1;
+                    firstVisible = std::max(0, std::min(selected, static_cast<int>(cards.size()) - maxVisible));
                     lastVisible = firstVisible + maxVisible;
                     render();
                 };

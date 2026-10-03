@@ -6,6 +6,7 @@
 #include "core/services/system.h"
 #include <ctime>
 #include "evoui/screens/evoui_launcher.h"
+#include "gui/screens/gui_keep_display.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -16,10 +17,26 @@
 
 using namespace std;
 
+#ifdef AB_APPLIANCE
+// How long the waiting picture is held before the display is handed to the game. It is not a delay
+// for its own sake: without it the picture is drawn and taken away in the same instant and the
+// hand-over looks like a flicker. A game takes seconds to come up, so this is not felt.
+constexpr int WaitingPictureDuration = 400; // ms
+#endif
+
 //*******************************
 // AutoBleem::AutoBleem
 //*******************************
-AutoBleem::AutoBleem() : App(makeProcessRunner()) {}
+AutoBleem::AutoBleem() : App(makeProcessRunner()) {
+#ifdef AB_PLATFORM_PSC
+    // the console's power button: AppBase wired it to a halt; the launcher's power off is the standby
+    // (App::requestPowerOff) - the tools under apps/ keep the halt
+    gui_->platform().setPowerOffHandler([this]() {
+        gui_->drawText(_("POWERING OFF... PLEASE WAIT"));
+        requestPowerOff();
+    });
+#endif
+}
 
 #ifdef AB_DEBUG_HOST
 namespace {
@@ -43,7 +60,8 @@ unique_ptr<ProcessRunner> AutoBleem::makeProcessRunner() {
 #if defined(AB_DEBUG_HOST)
     return unique_ptr<ProcessRunner>(new SplashProcessRunner());
 #elif defined(AB_PLATFORM_WIN)
-    return unique_ptr<ProcessRunner>(new WinProcessRunner());
+    // the window stays up behind the emulator's: its events are pumped (and dropped) through the run
+    return unique_ptr<ProcessRunner>(new WinProcessRunner([]() { Gui::getInstance()->input().flushEvents(); }));
 #else
     return unique_ptr<ProcessRunner>(new ForkProcessRunner());
 #endif
@@ -69,10 +87,11 @@ bool AutoBleem::openLibrary() {
 }
 
 //*******************************
-// AutoBleem::launchGame
+// AutoBleem::runOutside
 //*******************************
-void AutoBleem::launchGame() {
-    PLOG_INFO << "Starting game";
+void AutoBleem::runOutside(bool retroArch, const std::function<void()> &body) {
+    // the extensions first: they may hold textures, and their threads should leave the machine to the game
+    extensions_.suspend();
     gui_->finish(); // fades the music out and closes the mixer
 
     gui_->input().flushPads();
@@ -80,18 +99,184 @@ void AutoBleem::launchGame() {
     // Without a compositor - a Raspberry Pi on KMS/DRM - our window is the DRM master and pcsx-ab's
     // SDL_Init(VIDEO) fails while it exists, so the window goes too; display(true) below rebuilds it.
     if (runner_->needsExclusiveDisplay()) {
+#ifdef AB_APPLIANCE
+        // An appliance - a Pi or the PC stick - is the whole session: bare KMS, no compositor, and a
+        // text console on the tty underneath. Two things follow, and neither applies to the console
+        // (Weston mediates there, which is what lets absplash hold a picture over a running game).
+        //
+        // First, the waiting picture has to be shown *before* the display goes, because there is only
+        // one DRM master: a separate splash process holding it would stop the emulator starting, and
+        // waiting for the launcher's window to come back would deadlock against it. So the last thing
+        // we scan out is the picture, and it is what stands there while the game loads.
+        //
+        // Second, giving the display up puts the tty back into text mode, and whatever was last
+        // printed on it comes back - a login prompt, a systemd line, the tail of a script. Blanked,
+        // the gap reads as black instead of as somebody else's terminal.
+        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
+        usleep(WaitingPictureDuration * 1000); // long enough to be seen rather than flicker
         gui_->releaseDisplay();
+        System::blankConsole();
+#else
+        gui_->releaseDisplay();
+#endif
     }
-    // on a desktop the emulator opens its own window over ours: ours goes out of the way for the run
-    if (runner_->minimisesLauncherWindow()) {
-        gui_->minimizeWindow();
+    // on a desktop the emulator opens its own window over ours, which stays: the picture the console's
+    // absplash shows around a RetroArch run is what is under the emulator's window, and what shows the
+    // moment that window goes - not the desktop, and not a carousel that is not ready to be used yet
+    if (runner_->keepsLauncherWindow()) {
+        gui_->showSplashPicture(retroArch ? "retroarch.jpg" : "autobleem.jpg");
     }
 
-    launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint);
+    body();
+    takeEmulatorOutputMode();
 
-    if (runner_->minimisesLauncherWindow()) {
-        gui_->restoreWindow();
+    if (runner_->keepsLauncherWindow()) {
+        gui_->showSplashPicture("autobleem.jpg");
+        gui_->raiseWindow(); // Windows hands the focus back to us by itself; this makes sure of it
     }
+
+    // a moment for the machine to settle before the window comes back: on the PSC the GPU frees the
+    // emulator's memory a few seconds after the process is gone, and a RetroArch 1.22.2 session (its XMB
+    // alone holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at
+    // 300 ms and at 1 s (twice, after Quake; the third rebuild at ~4 s held), so 2 s here and the
+    // rebuild-on-loss in run() for the rest. A desktop keeps its window and needs none of that.
+    if (runner_->needsExclusiveDisplay()) {
+#ifdef AB_APPLIANCE
+        // the game has just put the tty back into text mode on its way out, so blank it again: this
+        // is the other half of the hand-over, and the wait below would otherwise be spent looking at
+        // a console rather than at black
+        System::blankConsole();
+#endif
+        usleep((retroArch ? 2000 : 300) * 1000);
+    }
+
+    gui_->input().probePads();
+    // remove all events if something left
+    gui_->input().flushEvents();
+
+    // RetroArch may have saved a screenshot or an auto save state just now: forget the listings
+    thumbnails().clearCache();
+
+    gui_->display(true);
+    session_.resumingGui = true; // the launcher fades back in over the game that just ended
+    extensions_.resume();
+
+    // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
+    // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
+    unlink("/tmp/.abload");
+}
+
+//*******************************
+// AutoBleem::takeEmulatorOutputMode
+//*******************************
+// The display mode the player picked in the emulator's own menu (<runtime>/outputmode, OutputMode) becomes the
+// launcher's: config.ini, and the window made after the game. Not on the console, where the mode is Weston's -
+// the emulator there cannot change it.
+void AutoBleem::takeEmulatorOutputMode() {
+    string token;
+    if (!OutputMode::readToken(OutputMode::emulatorFile(), token))
+        return;
+    DirEntry::removeFile(OutputMode::emulatorFile());
+#ifndef AB_PLATFORM_PSC
+    const OutputMode mode = OutputMode::parse(token);
+    string &value = cfg_.inifile.values[OutputMode::ConfigKey];
+    if (mode.token() == OutputMode::parse(value).token())
+        return;
+    PLOG_INFO << "The emulator switched the display to " << mode.token() << " - the launcher follows";
+    value = mode.token();
+    cfg_.save();
+    ableem::Platform::setOutputMode(mode.w, mode.h);
+#endif
+}
+
+//*******************************
+// AutoBleem::switchOutputMode / tryOutputMode / confirmPendingOutputMode
+//*******************************
+// Options -> Display off the console: the window made again in the new mode, in-process - everything that
+// holds a texture let go first, as for a game (runOutside)
+void AutoBleem::switchOutputMode(const OutputMode &mode) {
+    extensions_.suspend();
+    gui_->finish();
+    gui_->releaseDisplay();
+#ifdef AB_APPLIANCE
+    System::blankConsole();
+#endif
+    ableem::Platform::setOutputMode(mode.w, mode.h);
+    gui_->input().flushEvents();
+    gui_->display(true);
+    gui_->endBusy();
+    extensions_.resume();
+}
+
+// the new mode on the screen, and kept only with a Cross within GuiKeepDisplay::Seconds - else the old one back
+void AutoBleem::tryOutputMode(const string &token) {
+    string &value = cfg_.inifile.values[OutputMode::ConfigKey];
+    const OutputMode was = OutputMode::parse(value);
+    const OutputMode want = OutputMode::parse(token);
+    PLOG_INFO << "Trying display mode " << want.token() << " (was " << was.token() << ")";
+    switchOutputMode(want);
+    GuiKeepDisplay keep(*gui_);
+    keep.modeLabel = want.isAuto() ? _("Auto") : want.label();
+    keep.show();
+    if (keep.result) {
+        value = want.token();
+        cfg_.save();
+        PLOG_INFO << "Display mode " << want.token() << " kept";
+    } else {
+        PLOG_INFO << "Display mode " << want.token() << " not confirmed - back to " << was.token();
+        switchOutputMode(was);
+    }
+}
+
+// The console, right after the start: rc/boot.sh started Weston in the pending mode Options asked for (the
+// launcher left for it). Kept with a Cross - config.ini takes it; not kept, the launcher leaves again (false)
+// and boot.sh goes back to config.ini's mode. No pending file: nothing to ask.
+bool AutoBleem::confirmPendingOutputMode() {
+    string token;
+    if (!OutputMode::readToken(OutputMode::pendingFile(), token))
+        return true;
+    DirEntry::removeFile(OutputMode::pendingFile()); // asked once: a crash from here comes back in the old mode
+    GuiKeepDisplay keep(*gui_);
+    keep.modeLabel = OutputMode::parse(token).label();
+    keep.show();
+    if (!keep.result) {
+        PLOG_INFO << "Display mode " << token << " not confirmed - leaving for the previous one";
+        return false;
+    }
+    cfg_.inifile.values[OutputMode::ConfigKey] = OutputMode::parse(token).token();
+    cfg_.save();
+    PLOG_INFO << "Display mode " << token << " kept";
+    return true;
+}
+
+//*******************************
+// AutoBleem::saveCarouselSession / restoreCarouselSession
+//*******************************
+// The launcher leaves to be started over (a display change or "Restart launcher": rc/boot.sh on the console, the
+// session script on a Pi / PC stick) - its carousel place goes to a small file in the runtime dir and the next
+// start puts it back into the Session, so GuiLauncher::loadAssets() opens on the same set and game (BUG-40).
+// Not the after-game state: session_.resumingGui is untouched, so no resume point is looked for (BUG-39).
+void AutoBleem::saveCarouselSession() {
+    if (CarouselSession::save(CarouselSession::file(), session_.launcher))
+        PLOG_INFO << "Carousel place saved for the next start (set " << static_cast<int>(session_.launcher.set)
+                  << ", game " << session_.launcher.gameIndex << ")";
+    else
+        PLOG_WARNING << "Could not save the carousel place";
+}
+
+void AutoBleem::restoreCarouselSession() {
+    if (CarouselSession::take(CarouselSession::file(), session_.launcher))
+        PLOG_INFO << "Carousel place restored (set " << static_cast<int>(session_.launcher.set) << ", game "
+                  << session_.launcher.gameIndex << ")";
+}
+
+//*******************************
+// AutoBleem::launchGame
+//*******************************
+void AutoBleem::launchGame() {
+    PLOG_INFO << "Starting game";
+    const bool retroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
+    runOutside(retroArch, [this]() { launcher_.launch(session_.runningGame, session_.emuMode, session_.resumePoint); });
 
     bool reloadFavHist{false};
     if (session_.runningGame->foreign)
@@ -103,29 +288,21 @@ void AutoBleem::launchGame() {
         retroArch_.reloadFavoritesAndHistory(); // they could have changed
     }
 
-    // a moment for the machine to settle before the window comes back: on the PSC the GPU frees the
-    // emulator's memory a few seconds after the process is gone, and a RetroArch 1.22.2 session (its XMB
-    // alone holds hundreds of icon textures) leaves a lot to free - the launcher's own uploads failed at
-    // 300 ms and at 1 s (twice, after Quake; the third rebuild at ~4 s held), so 2 s here and the
-    // rebuild-on-loss in run() for the rest
-    bool wasRetroArch = (session_.runningGame && session_.runningGame->foreign) || session_.emuMode != EmuMode::Pcsx;
-    usleep((wasRetroArch ? 2000 : 300) * 1000);
-
-    gui_->input().probePads();
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.startingGame = false;
-    // remove all events if something left
-    gui_->input().flushEvents();
+}
 
-    // RetroArch may have saved a screenshot or an auto save state just now: forget the listings
-    thumbnails().clearCache();
-
-    gui_->display(true);
-    session_.resumingGui = true; // the launcher fades back in over the game that just ended
-
-    // RetroBoot's return splash (abimage, the AutoBleem 2 emblem) waits for this file to go; it used to
-    // be rc/launch_rb.sh that removed it, before our window existed - a black gap between the two
-    unlink("/tmp/.abload");
+//*******************************
+// AutoBleem::runRetroArchMenu
+//*******************************
+// The system menu's RetroArch item where there is no rc/retroarch.sh to leave to (the Windows product):
+// RetroArch's own menu in front of the launcher, and its playlists re-read after - the user may have
+// scanned content in there.
+void AutoBleem::runRetroArchMenu() {
+    PLOG_INFO << "Starting RetroArch's menu";
+    runOutside(true, [this]() { launcher_.launchRetroArchMenu(); });
+    retroArch_.reloadPlaylists();
+    retroArch_.reloadFavoritesAndHistory();
 }
 
 //*******************************
@@ -153,7 +330,19 @@ int AutoBleem::run() {
                          "retroboot/emulationstation/.emulationstation/gamelists/psx/gamelist.xml");
     bool thereAreRawGameFilesInGamesDir = GameScanner::hasLooseGameFiles(pathToGamesDir);
 
+    restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
+
     gui_->display(false);
+    unlink("/tmp/.abload"); // the console's wake-up picture (rc/selection.sh's standby) waits for this
+
+    // Options -> Display on the console: rc/boot.sh has just restarted Weston in the mode to try - kept, or the
+    // launcher leaves again at once for the old one. Elsewhere the mode is tried in-process, nothing is pending.
+#ifdef AB_PLATFORM_PSC
+    const bool leaveForDisplay = !confirmPendingOutputMode();
+#else
+    DirEntry::removeFile(OutputMode::pendingFile());
+    const bool leaveForDisplay = false;
+#endif
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
@@ -188,6 +377,17 @@ int AutoBleem::run() {
         scans().requestScan();
     }
 
+    // the extensions (docs/extensions-plan.md): what is in Extensions/, the crash guard's verdict on the last
+    // run - an extension that was running when the launcher died is disabled and the user told - and the
+    // background ones started
+    extensionCatalog_.scan();
+    const string crashed = extensionCatalog_.takeCrashed();
+    if (!crashed.empty()) {
+        const ExtensionInfo *info = extensionCatalog_.find(crashed);
+        extensionRequests_.message = (info ? info->title : crashed) + " " + _("stopped AutoBleem and was disabled");
+    }
+    extensions_.startBackground();
+
     // On the console a Quit event is never a window's close button: it is SDL giving up on the display -
     // seen on the PSC on 2026-09-20 coming back from RetroArch 1.22.2 (Doom): the GPU had not returned the
     // emulator's memory yet, the launcher's first buffer uploads failed ("PVR: glBufferSubData: No memory
@@ -195,15 +395,26 @@ int AutoBleem::run() {
     // the Quit that followed took the whole program out through selection.sh's reboot. So the display is
     // rebuilt a few times, a second apart, before that is accepted.
     int displayLost = 0;
-    while (true) {
+    if (leaveForDisplay) {
+        session_.menuOption = MENU_OPTION_DISPLAY;
+        saveCarouselSession(); // leaving again for the old mode: the place restored above goes on to the next start
+        launcher_.writeSelectionScript();
+    }
+    while (!leaveForDisplay) {
         bool quitRequested = false;
         {
             GuiLauncher launcherScreen(*gui_);
             launcherScreen.show();
             quitRequested = launcherScreen.quitRequested;
         }
+        if (session_.menuOption == MENU_OPTION_POWEROFF) {
+            launcher_.writeSelectionScript(); // the console's rc/selection.sh does the standby
+            break;
+        }
         if (quitRequested) {
-            if (gui_->platform().isDevHost() || ++displayLost > 3) {
+            // Input's quit request (SIGTERM/SIGINT, the DebugDriver's `quit`) is a leave, never a lost
+            // display, and no selection is written for it (rc/selection.sh finds none: a stop, not a choice)
+            if (gui_->platform().isDevHost() || gui_->input().quitRequested() || ++displayLost > 3) {
                 break; // the window's own close button - see GuiLauncher::loop()'s comment - or hopeless
             }
             PLOG_WARNING << "The display went away (attempt " << displayLost << " of 3) - rebuilding it";
@@ -211,7 +422,7 @@ int AutoBleem::run() {
             usleep(1000 * 1000);
             gui_->input().flushEvents();
             gui_->display(true);
-            session_.resumingGui = true;
+            // not resumingGui: no game just ended, so the launcher must not look for its resume point (BUG-39)
             continue;
         }
         displayLost = 0;
@@ -225,30 +436,86 @@ int AutoBleem::run() {
             session_.menuOption = MENU_OPTION_START;
         }
 
-        launcher_.writeSelectionScript();
+        // Options -> Display changed: the console leaves for rc/boot.sh to restart Weston in the new mode (the
+        // pending file says which) and start the launcher again; elsewhere the window is remade here. With no mode
+        // to try it is the Quick menu's "Restart launcher": the same leave, and the session loop (boot.sh on the
+        // console, autobleem-session on a Pi / PC stick) starts the launcher over.
+        if (session_.menuOption == MENU_OPTION_DISPLAY) {
+            const bool restartOnly = session_.pendingOutputMode.empty();
+#ifdef AB_PLATFORM_PSC
+            if (!restartOnly) {
+                DirEntry::createDirs(Env::getPathToRuntimeDir());
+                DirEntry::writeFileIfChanged(OutputMode::pendingFile(), session_.pendingOutputMode + "\n");
+            }
+            saveCarouselSession();
+            launcher_.writeSelectionScript();
+            break;
+#else
+            if (restartOnly) {
+                saveCarouselSession();
+                launcher_.writeSelectionScript();
+                break;
+            }
+            tryOutputMode(session_.pendingOutputMode);
+            session_.pendingOutputMode.clear();
+            session_.menuOption = MENU_OPTION_IDLE;
+            // the launcher comes back on the same game, but not as after a game: resumingGui stays false, or
+            // it would check the last game's resume point and call the run a crash (BUG-39)
+            continue;
+#endif
+        }
+
+        // for the rc scripts, when the process is about to leave - never for a game, which comes back here:
+        // a selection left over from one would hide a later crash from them (autobleem-main's
+        // docs/archive/quiet-stick-plan.md)
+        if (session_.menuOption != MENU_OPTION_START)
+            launcher_.writeSelectionScript();
 
         if (session_.menuOption == MENU_OPTION_START) {
-            scans().setWatching(false); // the emulator gets the CPU, not the scanner
+            scans().setWatching(false);           // the emulator gets the CPU, not the scanner
+            scans().setProcessorsSuspended(true); // nor the stick: a processor rewriting a disc image stops
             launchGame();
+            scans().setProcessorsSuspended(false);
             scans().setWatching(true);
             session_.menuOption = MENU_OPTION_IDLE;
             continue;
         }
 
-        // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item, or a
-        // future one like it); Circle alone in the launcher is a no-op - there is nothing else to show -
-        // so any other return from show() is unexpected and the safest thing is to just show it again
+        // the launcher closed asking to exit to RetroArch/EmulationStation (the system menu's item): on a
+        // desktop that is RetroArch run in front of us and the launcher again after; on the console and the
+        // Pi the process leaves and rc/retroarch.sh takes over
+        if (session_.menuOption == MENU_OPTION_RETRO && Env::directLaunch()) {
+            scans().setWatching(false);
+            scans().setProcessorsSuspended(true);
+            runRetroArchMenu();
+            scans().setProcessorsSuspended(false);
+            scans().setWatching(true);
+            session_.menuOption = MENU_OPTION_IDLE;
+            continue;
+        }
+        // Circle alone in the launcher is a no-op - there is nothing else to show - so any other return
+        // from show() is unexpected and the safest thing is to just show it again
         if (session_.menuOption == MENU_OPTION_RETRO || session_.menuOption == MENU_OPTION_UPDATE) {
             break;
         }
     }
 
+    PLOG_INFO << "Quit: leaving the main loop with menuOption " << session_.menuOption
+              << (gui_->input().quitRequested() ? " (Input quit requested)" : "")
+              << (leaveForDisplay ? " (display change)" : "");
+
+    // the extensions go before the services they may reach
+    extensions_.shutdown();
     scans().stop();
 
     // close the databases before the gui goes away.
     gameLibrary.close();
 
-    Gui::splash(_("Loading ... Please Wait ..."));
+    if (session_.menuOption == MENU_OPTION_POWEROFF) {
+        gui_->drawText(_("POWERING OFF... PLEASE WAIT")); // the standby follows within a second
+    } else {
+        Gui::splash(_("Loading ... Please Wait ..."));
+    }
     gui_->finish();
 
     return EXIT_SUCCESS;
