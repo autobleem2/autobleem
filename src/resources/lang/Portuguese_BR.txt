@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(padrão)
 2x (integer)=2x (inteira)
 4:3 (integer)=4:3 (inteira)
 A scan is already in progress=Uma varredura já está em andamento

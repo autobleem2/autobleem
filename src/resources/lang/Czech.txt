@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(výchozí)
 2x (integer)=2x (celočíselně)
 4:3 (integer)=4:3 (celočíselně)
 A scan is already in progress=Prohledávání již probíhá

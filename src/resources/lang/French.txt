@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(par défaut)
 2x (integer)=2x (entier)
 4:3 (integer)=4:3 (entier)
 A scan is already in progress=Une analyse est déjà en cours

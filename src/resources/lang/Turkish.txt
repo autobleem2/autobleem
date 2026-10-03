@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(varsayılan)
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
 A scan is already in progress=Zaten bir tarama devam ediyor

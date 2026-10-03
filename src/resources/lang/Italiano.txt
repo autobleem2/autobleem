@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(predefinito)
 2x (integer)=2x (intera)
 4:3 (integer)=4:3 (intera)
 A scan is already in progress=È già in corso una scansione

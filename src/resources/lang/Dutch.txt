@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(standaard)
 2x (integer)=2x (geheel)
 4:3 (integer)=4:3 (geheel)
 A scan is already in progress=Er is al een scan bezig

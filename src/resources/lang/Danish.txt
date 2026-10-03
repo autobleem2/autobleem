@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(standard)
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
 A scan is already in progress=En scanning er allerede i gang

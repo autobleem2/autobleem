@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(default)=(默认)
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
 A scan is already in progress=扫描已在进行中
