@@ -278,6 +278,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
         }
         if (raEditor.changed && selection.set == GameSet::Lightgun)
             reloadLightgunSetAfterEdit();
+        updateMeta(false); // the details panel keeps its own copy of the texts: the core may have changed
         return;
     }
 
@@ -603,6 +604,8 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
     case SystemMenuAction::RetroArchCores: {
         GuiRaCores coresScreen(*gui);
         coresScreen.show();
+        if (coresScreen.changed)
+            updateMeta(false); // the games' cores moved: the shelf's details show the new one
         break;
     }
 
