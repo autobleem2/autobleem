@@ -70,3 +70,8 @@ target_include_directories(test_set_picker_tabs PRIVATE ${CMAKE_SOURCE_DIR}/src/
 # The RetroArch-installed gates (evoui/screens/ra_gates.h, pure): a PS1 game's emulator, the Lightgun set
 ab_add_test(test_ra_gates screens/test_ra_gates.cpp)
 target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/screens)
+
+# The PSC's core picks and ROM folders (src/resources/platform/psc.cores.cfg, roms_skip.cfg) against the console's real
+# core set: autobleem-core's tests/data/psc-info, the info/ folder of the cores tarball the PSC installs
+ab_add_test(test_psc_cores platform/test_psc_cores.cpp)
+target_compile_definitions(test_psc_cores PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURCE_DIR}/src/resources/platform")
