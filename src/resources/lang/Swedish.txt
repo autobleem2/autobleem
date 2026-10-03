@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(ändrad)
 (default)=(standard)
 2x (integer)=2x (heltal)
 4:3 (integer)=4:3 (heltal)
@@ -57,6 +58,7 @@ Check the download site for a newer version=Leta efter en nyare version på nedl
 Checking for updates...=Söker efter uppdateringar...
 Cheers, screemer=Hälsningar, screemer
 Choose=Välj
+Choose the core that plays each system=Välj core för varje system
 Choose the games shown: PlayStation or Apps and the group=Välj vilka spel som visas: PlayStation eller appar och gruppen
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Välj vilka spel som visas: PlayStation, RetroArch eller appar och gruppen
 Clock=Klockfrekvens
@@ -74,6 +76,7 @@ Controller mappings=Handkontrollsmappningar
 Controllers=Handkontroller
 Copy=Kopiera
 CORE=CORE
+Core that plays each system=Core för varje system
 Core:=Core:
 Cores=Kärnor
 could not be loaded - see Extensions=kunde inte laddas - se Tillägg
@@ -347,6 +350,7 @@ Resume game from saved state point=Fortsätt spel från befintlig sparpunkt
 Resume point saved to slot=Sparpunkt lagrad på position
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot och emuleringskärnor
+RetroArch cores=RetroArch-cores
 RetroArch is not installed=RetroArch är inte installerat
 ROMs=ROM-filer
 Run=Kör

@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(已更改)
 (default)=(默认)
 2x (integer)=2x (整数)
 4:3 (integer)=4:3 (整数)
@@ -57,6 +58,7 @@ Check the download site for a newer version=请到下载站点查看更新版本
 Checking for updates...=正在检查更新...
 Cheers, screemer=祝玩得开心，screemer
 Choose=选择
+Choose the core that plays each system=为每个系统选择核心
 Choose the games shown: PlayStation or Apps and the group=选择显示的游戏：PlayStation 或应用，以及分组
 Choose the games shown: PlayStation, RetroArch or Apps and the group=选择显示的游戏：PlayStation、RetroArch 或应用，以及分组
 Clock=时钟频率
@@ -74,6 +76,7 @@ Controller mappings=手柄映射
 Controllers=控制器
 Copy=复制
 CORE=核心
+Core that plays each system=各系统的核心
 Core:=核心：
 Cores=核心数
 could not be loaded - see Extensions=无法加载 - 请查看扩展
@@ -347,6 +350,7 @@ Resume game from saved state point=从保存状态点继续游戏
 Resume point saved to slot=续玩点已保存到槽位
 RetroArch=RetroArch
 RetroArch and emulation cores=RetroArch 与模拟器核心
+RetroArch cores=RetroArch 核心
 RetroArch is not installed=未安装 RetroArch
 ROMs=ROM
 Run=运行

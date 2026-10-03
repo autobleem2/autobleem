@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(modificat)
 (default)=(per defaut)
 2x (integer)=2x (entièr)
 4:3 (integer)=4:3 (entièr)
@@ -57,6 +58,7 @@ Check the download site for a newer version=Verificatz lo site de telecargament 
 Checking for updates...=Recèrca de mesas a jorn...
 Cheers, screemer=A lèu, screemer
 Choose=Causir
+Choose the core that plays each system=Causir lo core per cada sistèma
 Choose the games shown: PlayStation or Apps and the group=Causir los jòcs afichats : PlayStation o aplicacions e lo grop
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Causir los jòcs afichats : PlayStation, RetroArch o aplicacions e lo grop
 Clock=Frequéncia
@@ -74,6 +76,7 @@ Controller mappings=Associacions de las manetas
 Controllers=Manètas
 Copy=Copiar
 CORE=CORE
+Core that plays each system=Core per sistèma
 Core:=Core:
 Cores=Còrs
 could not be loaded - see Extensions=a pas pogut èsser cargada - vejatz Extensions
@@ -347,6 +350,7 @@ Resume game from saved state point=Reprendre lo jòc a un punt de represa salvag
 Resume point saved to slot=Punt de reprisa salvagardat al lòc
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e còrs d'emulacion
+RetroArch cores=Cores RetroArch
 RetroArch is not installed=RetroArch es pas installat
 ROMs=ROMs
 Run=Aviar

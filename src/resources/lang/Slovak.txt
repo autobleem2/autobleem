@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(zmenené)
 (default)=(predvolené)
 2x (integer)=2x (celočíselne)
 4:3 (integer)=4:3 (celočíselne)
@@ -57,6 +58,7 @@ Check the download site for a newer version=Novšiu verziu hľadajte na stránke
 Checking for updates...=Kontrola aktualizácií...
 Cheers, screemer=Maj sa, screemer
 Choose=Vybrať
+Choose the core that plays each system=Vyberte jadro pre každý systém
 Choose the games shown: PlayStation or Apps and the group=Výber zobrazených hier: PlayStation alebo aplikácie a skupina
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Výber zobrazených hier: PlayStation, RetroArch alebo aplikácie a skupina
 Clock=Takt
@@ -74,6 +76,7 @@ Controller mappings=Mapovania ovládačov
 Controllers=Ovládače
 Copy=Kopírovať
 CORE=JADRO
+Core that plays each system=Jadro pre každý systém
 Core:=Jadro:
 Cores=Jadrá
 could not be loaded - see Extensions=sa nedalo načítať - pozri Rozšírenia
@@ -347,6 +350,7 @@ Resume game from saved state point=Pokračovať v hre od uloženého stavu
 Resume point saved to slot=Bod obnovy uložený na pozíciu
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot a jadrá emulácie
+RetroArch cores=Jadrá RetroArch
 RetroArch is not installed=RetroArch nie je nainštalovaný
 ROMs=ROMy
 Run=Spustiť

@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(alterado)
 (default)=(padrão)
 2x (integer)=2x (inteira)
 4:3 (integer)=4:3 (inteira)
@@ -57,6 +58,7 @@ Check the download site for a newer version=Verifique o site de download por uma
 Checking for updates...=Verificando atualizações...
 Cheers, screemer=Abraços, screemer
 Choose=Escolher
+Choose the core that plays each system=Escolha o core de cada sistema
 Choose the games shown: PlayStation or Apps and the group=Escolha os jogos exibidos: PlayStation ou apps e o grupo
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Escolha os jogos exibidos: PlayStation, RetroArch ou apps e o grupo
 Clock=Frequência
@@ -74,6 +76,7 @@ Controller mappings=Mapeamentos de controle
 Controllers=Controles
 Copy=Copiar
 CORE=CORE
+Core that plays each system=Core de cada sistema
 Core:=Core:
 Cores=Núcleos
 could not be loaded - see Extensions=não pôde ser carregada - veja Extensões
@@ -347,6 +350,7 @@ Resume game from saved state point=Continuar jogo salvo
 Resume point saved to slot=Jogo salvo no slot
 RetroArch=RetroArch
 RetroArch and emulation cores=Retroboot e núcleos de emulação
+RetroArch cores=Cores do RetroArch
 RetroArch is not installed=RetroArch não está instalado
 ROMs=ROMs
 Run=Executar

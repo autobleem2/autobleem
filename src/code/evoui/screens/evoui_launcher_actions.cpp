@@ -14,6 +14,7 @@
 #include "gui/screens/gui_hardware_info.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
 #include "gui/menus/gui_game_editor_ra_menu.h"
+#include "gui/menus/gui_ra_cores_menu.h"
 #include "../../gui/menus/gui_memcards_menu.h"
 #include "../../gui/menus/gui_game_manager_menu.h"
 #include "core/services/environment.h"
@@ -522,6 +523,7 @@ void GuiLauncher::loop_openQuickMenu() {
         GuiSystemMenu quickMenu(*gui);
         quickMenu.kind = GuiSystemMenu::Kind::Quick;
         quickMenu.scanInProgress = app.scans().scanning();
+        quickMenu.retroArchInstalled = retroArchInstalledCached(); // the RetroArch cores row needs it
         quickMenu.networkUnavailable = networkUnavailable();
         quickMenu.networkProvided = networkProvided() || !quickMenu.networkUnavailable.empty();
         quickMenu.show();
@@ -595,6 +597,12 @@ void GuiLauncher::runMenuAction(SystemMenuAction action) {
         }
         app.session().menuOption = MENU_OPTION_RETRO;
         menuVisible = false;
+        break;
+    }
+
+    case SystemMenuAction::RetroArchCores: {
+        GuiRaCores coresScreen(*gui);
+        coresScreen.show();
         break;
     }
 

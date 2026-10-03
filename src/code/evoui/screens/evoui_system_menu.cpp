@@ -73,6 +73,9 @@ void GuiSystemMenu::init() {
     if (kind == Kind::Quick) {
         addItem(SystemMenuAction::RescanGames, "Re-scan games", _("Re-scan games"), rescanWhat, scanNote);
         addItem(SystemMenuAction::Store, "Store", _("Store"), _("Browse and install games, apps and extensions"));
+        if (retroArchInstalled)
+            addItem(SystemMenuAction::RetroArchCores, "RetroArch cores", _("RetroArch cores"),
+                    _("Choose the core that plays each system"));
         addNetwork();
 #if defined(AB_PLATFORM_PSC) || defined(AB_APPLIANCE)
         addItem(SystemMenuAction::RestartLauncher, "Restart launcher", _("Restart launcher"),

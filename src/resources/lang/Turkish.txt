@@ -2,6 +2,7 @@
 # Format: English Text=Translated Text
 # Untranslated: 0 / Total: 457
 
+(changed)=(değiştirildi)
 (default)=(varsayılan)
 2x (integer)=2x (tam sayı)
 4:3 (integer)=4:3 (tam sayı)
@@ -57,6 +58,7 @@ Check the download site for a newer version=Daha yeni bir sürüm için indirme 
 Checking for updates...=Güncellemeler denetleniyor...
 Cheers, screemer=Sevgiler, screemer
 Choose=Seç
+Choose the core that plays each system=Her sistem için çekirdeği seçin
 Choose the games shown: PlayStation or Apps and the group=Gösterilen oyunları seçin: PlayStation veya uygulamalar ve grup
 Choose the games shown: PlayStation, RetroArch or Apps and the group=Gösterilen oyunları seçin: PlayStation, RetroArch veya uygulamalar ve grup
 Clock=Saat hızı
@@ -74,6 +76,7 @@ Controller mappings=Kumanda eşlemeleri
 Controllers=Kumandalar
 Copy=Kopyala
 CORE=ÇEKİRDEK
+Core that plays each system=Her sistem için çekirdek
 Core:=Çekirdek:
 Cores=Çekirdekler
 could not be loaded - see Extensions=yüklenemedi - Eklentiler'e bakın
@@ -347,6 +350,7 @@ Resume game from saved state point=Oyunu kayıtlı noktadan devam ettir
 Resume point saved to slot=Devam noktası slota kaydedildi
 RetroArch=RetroArch is not installed
 RetroArch and emulation cores=Retroboot ve çekirdek emülasyonları
+RetroArch cores=RetroArch çekirdekleri
 RetroArch is not installed=RetroArch yüklü değil
 ROMs=ROM'lar
 Run=Çalıştır

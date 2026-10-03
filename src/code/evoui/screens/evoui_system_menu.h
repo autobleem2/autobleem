@@ -34,6 +34,7 @@ enum class SystemMenuAction {
     Store,           // the Quick menu's: the store extension, run directly
     SystemMenu,      // the Quick menu's last row: the System menu itself
     RestartLauncher, // the Quick menu's, console / Pi / PC stick only: the launcher process starts over
+    RetroArchCores,  // the Quick menu's, with RetroArch installed: the core that plays each system
 };
 
 //******************
