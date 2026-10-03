@@ -677,9 +677,12 @@ current manual (https://autobleem.retromenele.pl/manuals/). Facts to keep right 
 **FAT32 only** (exFAT needs the AutoBleem kernel), and the About screen's easter egg is not mentioned.
 
 **`tools/manual_shots.py` stays in this repo** - the one piece of the user manuals that has to run against a
-built launcher: through the DebugDriver on the Windows dev build (`--lang Polski --show`; needs `make_win.sh`
-and `tools/make_usb.py usb`) it walks the launcher, PSC-Bios and ABFlashKit through their screens with the
-stick's `config.ini` switched to each language, and captures the UpdateRoms/installer windows by title. It
-writes into a **sibling `autobleem-manuals` checkout**'s `manuals/images/<lang>/*.jpg` by default (pass
-`--out-dir` otherwise); a new language is a folder under that repo's `manuals/` plus this script's `LANGS`
-entry.
+launcher: it takes the screenshots in a VM sandbox (`tools/vm/abvm.py`) from a **release package** on the test
+machine (`--package '~/autobleem-pcusb-i386-<ver>.tar.gz'`, quoted), so they show what a user of that release
+gets - its launcher, themes (the default ab2.0.0), extensions and VERSION; the sandbox template alone is only as
+new as the stick it was made from. Per language the sandbox is made afresh (`sandbox reset --package ...
+--games 50 --set Language=<name>`), started once to scan and fetch covers, started again and walked through the
+screens in one drive; the shots replace the JPEGs a **sibling `autobleem-manuals` checkout**'s
+`manuals/images/<lang>/` already has (`--manuals DIR` otherwise, `--add-new` for the rest). A new language is a
+folder under that repo's `manuals/` plus this script's `LANGS` entry. PSC-Bios and ABFlashKit (console
+hardware), lanshare (Windows) and a few more (`NOT_HERE`) are not taken there - they come from a console or a Pi.
