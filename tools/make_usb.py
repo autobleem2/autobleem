@@ -170,9 +170,10 @@ def make_fake_games(games_dir, count):
         make_fake_game(os.path.join(games_dir, sub) if sub else games_dir, title, serial)
 
 
-def make_fake_memcards(games_dir):
-    """three memory card sets from the blank cards in src/resources/memcard, for the memory card screens"""
-    template = os.path.join(REPO, 'src', 'resources', 'memcard')
+def make_fake_memcards(games_dir, template=None):
+    """three memory card sets from the blank cards in src/resources/memcard (or `template`, e.g. an installed
+    launcher's own memcard/ folder), for the memory card screens"""
+    template = template or os.path.join(REPO, 'src', 'resources', 'memcard')
     for name in ('Fighting games', 'RPG saves', 'Kids'):
         folder = os.path.join(games_dir, '!MemCards', name)
         if os.path.exists(folder):
@@ -253,16 +254,20 @@ FAKE_APPS = [
 ]
 
 
+FAKE_APP_KEYS = ('dev', 'pcusb')  # the Windows dev build and the PC stick (a VM sandbox) - see Env::appPlatformKeys()
+
+
 def make_fake_apps(usb):
-    """usb/Apps/<name>/app.ini, one per FAKE_APPS entry, each with a stub bin/dev/<name> binary so it is
-    runnable on the Windows dev build too (Env::appPlatformKeys() tries "dev" first there)."""
+    """usb/Apps/<name>/app.ini, one per FAKE_APPS entry, each with a stub bin/<key>/<name> binary for every
+    FAKE_APP_KEYS key, so it is listed and runnable on the Windows dev build and in a PC-stick VM sandbox."""
     for title, category in FAKE_APPS:
         folder = os.path.join(usb, 'Apps', title.replace(' ', ''))
-        os.makedirs(os.path.join(folder, 'bin', 'dev'), exist_ok=True)
-        binary = os.path.join(folder, 'bin', 'dev', title.replace(' ', ''))
-        if not os.path.exists(binary):
-            with open(binary, 'w') as f:
-                f.write('#!/bin/sh\n# a stand-in: AppManifest only asks whether the file exists\n')
+        for key in FAKE_APP_KEYS:
+            os.makedirs(os.path.join(folder, 'bin', key), exist_ok=True)
+            binary = os.path.join(folder, 'bin', key, title.replace(' ', ''))
+            if not os.path.exists(binary):
+                with open(binary, 'w') as f:
+                    f.write('#!/bin/sh\n# a stand-in: AppManifest only asks whether the file exists\n')
         ini_path = os.path.join(folder, 'app.ini')
         if os.path.exists(ini_path):
             continue # keep what a previous run wrote, like the rest of make_usb.py's fixtures

@@ -52,7 +52,15 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          Extensions/<name>/; the replaced one is kept once in
                                                          <sandbox>/.abvm/ext-backup/<name>; started headless
                                                          in a WxH window (1280x720; ABVM_SANDBOX_SIZE), ready when
-                                                         its launcher screen shows
+                                                         its launcher screen shows. Both also take:
+                                                         --package <tar.gz|dir>: a release package (e.g.
+                                                         autobleem-pcusb-i386-<ver>.tar.gz) laid over it - its
+                                                         launcher, Themes/, extensions/ and VERSION, the look a
+                                                         user gets (the template is only as new as the stick);
+                                                         --games N: N fake PS1 games, 3 memory card sets, Apps
+                                                         (make_usb.py's), the covers from the shared DBs;
+                                                         --set Key=Value (repeatable): a line in the launcher's
+                                                         config.ini, laid last (e.g. --set Language=Polski)
   python tools/vm/abvm.py sandbox drive <name> "<script>" [--out DIR]   an ab_drive.py script (@1 tap a; wait_idle
                                                          300; shot a.png; clip start b.mp4; ...; clip stop); shots,
                                                          grabs and clips (MP4, ffmpeg on the test machine) come back
@@ -97,6 +105,8 @@ Where things are comes from the environment, never from this file (no addresses 
   ABVM_PADSIM    the padsim channel's socket on the test machine (default: /tmp/<domain>-padsim.sock)
   ABVM_DRIVER    the guest's DebugDriver port (default: 6900); ABVM_LOCAL_PORT the local end (default: 16900)
   ABVM_WHO       who is testing - the lease's holder
+  ABVM_REMOTE_TOOL  this tool's copy on the test machine (default: ~/.local/share/abvm/abvm.py) - another path
+                 tries a branch's abvm there (`setup` copies to it) without touching the copy everyone uses
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
@@ -114,7 +124,7 @@ import uuid
 import zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REMOTE_TOOL = '~/.local/share/abvm/abvm.py'
+REMOTE_TOOL = os.environ.get('ABVM_REMOTE_TOOL', '~/.local/share/abvm/abvm.py')
 
 HOST = os.environ.get('ABVM_HOST', 'bleemmachine')
 DOMAIN = os.environ.get('ABVM_DOMAIN', 'pcusb-test')
@@ -1005,6 +1015,98 @@ def sb_copy_build(name, build):
     sb_open_modes(os.path.join(sb_host(name), 'Autobleem'))
 
 
+def sb_copy_package(name, package):
+    """a release package (autobleem-<target>-<arch>-<ver>.tar.gz, or the folder it unpacks to) laid over the
+    sandbox: its launcher (Autobleem/), each theme in Themes/, each extension in extensions/ and VERSION - what a
+    user of that release gets, where the template is only as new as the stick it was made from"""
+    src = os.path.expanduser(package[5:] if package.startswith('host:') else package)
+    unpacked = None
+    if os.path.isfile(src):
+        unpacked = tempfile.mkdtemp(prefix='abvm-package-')
+        subprocess.run(['tar', 'xzf', src, '-C', unpacked], check=True)
+        tops = os.listdir(unpacked)
+        src = os.path.join(unpacked, tops[0]) if len(tops) == 1 else unpacked
+    root = sb_host(name)
+    try:
+        if not os.path.isdir(os.path.join(src, 'Autobleem')):
+            raise Fail(f'--package {package}: no Autobleem/ in it - give a release package (on the test machine)')
+        subprocess.run(['cp', '-r', os.path.join(src, 'Autobleem'), root], check=True)
+        sb_open_modes(os.path.join(root, 'Autobleem'))
+        themes = os.path.join(src, 'Themes')
+        for theme in sorted(os.listdir(themes)) if os.path.isdir(themes) else []:
+            target = os.path.join(root, 'Themes', theme)
+            if os.path.isdir(target):
+                shutil.rmtree(target)  # replaced whole, so nothing of the old version stays behind
+            shutil.copytree(os.path.join(themes, theme), target, symlinks=True)
+        if os.path.isdir(themes):
+            sb_open_modes(os.path.join(root, 'Themes'))
+        extensions = os.path.join(src, 'extensions')
+        for ext in sorted(os.listdir(extensions)) if os.path.isdir(extensions) else []:
+            if os.path.isdir(os.path.join(extensions, ext)):
+                sb_copy_ext(name, os.path.join(extensions, ext))
+        if os.path.isfile(os.path.join(src, 'VERSION')):
+            shutil.copy(os.path.join(src, 'VERSION'), os.path.join(root, 'VERSION'))
+    finally:
+        if unpacked:
+            shutil.rmtree(unpacked, ignore_errors=True)
+    print(f'sandbox {name}: release package {os.path.basename(package.rstrip("/"))} laid')
+
+
+def import_make_usb():
+    # the repository's tools/make_usb.py, or the copy `setup` puts next to this tool on the test machine
+    sys.path[:0] = [HERE, os.path.join(HERE, '..')]
+    import make_usb
+    return make_usb
+
+
+def sb_add_games(name, count):
+    """make_usb.py's fake PS1 games (count, over a few folders), its three memory card sets (from the launcher's own
+    blank cards) and fake Apps in the sandbox; the launcher's scan names the games from the shared cover DBs. Kept
+    on a restart (make_usb skips what is there)"""
+    make_usb = import_make_usb()
+    games = os.path.join(sb_host(name), 'Games')
+    make_usb.make_fake_games(games, count)
+    make_usb.make_fake_memcards(games, os.path.join(sb_host(name), 'Autobleem', 'bin', 'autobleem', 'memcard'))
+    make_usb.make_fake_apps(sb_host(name))
+    for d in ('Games', 'Apps'):
+        sb_open_modes(os.path.join(sb_host(name), d))
+
+
+def sb_set_config(name, sets):
+    """Key=Value lines in the sandbox launcher's config.ini - a line with that key replaced, else added at the end.
+    Laid after --build/--package, which bring their own config.ini (a dist's has no Language= line)"""
+    path = os.path.join(sb_host(name), 'Autobleem', 'bin', 'autobleem', 'config.ini')
+    lines = open(path, encoding='utf-8').read().splitlines() if os.path.exists(path) else []
+    for s in sets:
+        key, sep, value = s.partition('=')
+        if not sep or not key.strip():
+            raise Fail(f'--set {s!r}: Key=Value, e.g. --set Language=Polski')
+        key = key.strip()
+        hits = [i for i, line in enumerate(lines) if line.split('=', 1)[0].strip().lower() == key.lower()]
+        if hits:
+            lines[hits[0]] = f'{key}={value}'
+        else:
+            lines.append(f'{key}={value}')
+    with open(path, 'w', encoding='utf-8', newline='\n') as f:
+        f.write('\n'.join(lines) + '\n')
+    print(f'sandbox {name}: config.ini ' + ', '.join(sets))
+
+
+def sb_lay(name, build=None, exts=(), package=None, games=0, sets=()):
+    """what `new`/`start` lay over the sandbox, in this order: a release package, a build, extensions, fake games,
+    config lines - so a build under test wins over the package, and --set over both"""
+    if package:
+        sb_copy_package(name, package)
+    if build:
+        sb_copy_build(name, build)
+    for ext in exts:
+        sb_copy_ext(name, ext)
+    if games:
+        sb_add_games(name, games)
+    if sets:
+        sb_set_config(name, sets)
+
+
 def sb_copy_ext(name, ext):
     """an extension laid into the sandbox's Extensions/: a zip (the extension zips hold Extensions/<name>/...) is
     unzipped at the sandbox root, a directory (.../extensions/<name>/) is copied to Extensions/<name>/. What it
@@ -1052,7 +1154,7 @@ def sb_make_store_dirs(name):
     sb_open_modes(os.path.join(sb_host(name), 'System', 'Extensions'))
 
 
-def sb_new(name, build=None, exts=()):
+def sb_new(name, **lay):
     if os.path.exists(sb_host(name)):
         raise Fail(f'sandbox {name} exists - `sandbox reset {name}` starts it afresh')
     if not os.path.isdir(sb_host('_template')):
@@ -1060,11 +1162,8 @@ def sb_new(name, build=None, exts=()):
     subprocess.run(['cp', '-r', sb_host('_template'), sb_host(name)], check=True)
     sb_open_modes(sb_host(name))
     sb_make_store_dirs(name)
-    if build:
-        sb_copy_build(name, build)
-    for ext in exts:
-        sb_copy_ext(name, ext)
-    print(f'sandbox {name} made' + (f' with {build}' if build else ''))
+    sb_lay(name, **lay)
+    print(f'sandbox {name} made' + (f' with {lay["build"]}' if lay.get('build') else ''))
 
 
 def sb_forward(port):
@@ -1120,7 +1219,7 @@ def sb_reap_unleased(names):
     return kept
 
 
-def sb_start(name, build=None, size=None, exts=()):
+def sb_start(name, size=None, **lay):
     size = size or os.environ.get('ABVM_SANDBOX_SIZE', '1280x720')
     if not sb_running(name):  # refuse before the sandbox is made or a build is laid over it
         others = sb_running_names(exclude=name)
@@ -1129,12 +1228,9 @@ def sb_start(name, build=None, size=None, exts=()):
         if len(others) >= SB_SLOTS:
             raise Busy(sb_full_message(others))
     if not os.path.isdir(sb_host(name)):
-        sb_new(name, build, exts)
+        sb_new(name, **lay)
     else:
-        if build:
-            sb_copy_build(name, build)
-        for ext in exts:
-            sb_copy_ext(name, ext)
+        sb_lay(name, **lay)
     if sb_running(name):
         print(f'sandbox {name} already runs on port {sb_state(name)["port"]}')
         return
@@ -1351,15 +1447,19 @@ def sandbox_command(args, out_dir):
             raise Fail(f'sandbox {sub} <name>')
         LEASE_KEY = f'sb-{name}'
         lease_op('check', WHO)
-        build = None
-        if '--build' in args:
-            build = args[args.index('--build') + 1]
-        size = args[args.index('--size') + 1] if '--size' in args else None
-        exts = [args[i + 1] for i, a in enumerate(args) if a == '--ext' and i + 1 < len(args)]
+        def one(flag):
+            return args[args.index(flag) + 1] if flag in args else None
+
+        def every(flag):
+            return [args[i + 1] for i, a in enumerate(args) if a == flag and i + 1 < len(args)]
+
+        size = one('--size')
+        lay = dict(build=one('--build'), exts=every('--ext'), package=one('--package'),
+                   games=int(one('--games') or 0), sets=every('--set'))
         if sub == 'new':
-            sb_new(name, build, exts)
+            sb_new(name, **lay)
         elif sub == 'start':
-            sb_start(name, build, size, exts)
+            sb_start(name, size, **lay)
         elif sub == 'drive':
             sb_drive(name, _script_from_args(args[2:]), out_dir)
         elif sub == 'stop':
@@ -1367,7 +1467,7 @@ def sandbox_command(args, out_dir):
         elif sub == 'reset':
             sb_stop(name)
             sb_remove(name)
-            sb_new(name, build, exts)
+            sb_new(name, **lay)
         elif sub == 'rm':
             sb_stop(name)
             sb_remove(name)
@@ -1419,11 +1519,13 @@ def status():
 
 
 def setup():
-    host_run('mkdir -p ~/.local/share/abvm')
+    host_run(f'mkdir -p {os.path.dirname(REMOTE_TOOL)}')
     to_host(os.path.abspath(__file__), REMOTE_TOOL)
     # the DebugDriver's client, for `sandbox drive` there
     to_host(os.path.join(HERE, '..', 'ab_drive.py'), os.path.dirname(REMOTE_TOOL) + '/ab_drive.py')
-    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py)')
+    # the fake games and Apps, for `sandbox new|start --games N` there
+    to_host(os.path.join(HERE, '..', 'make_usb.py'), os.path.dirname(REMOTE_TOOL) + '/make_usb.py')
+    print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, make_usb.py)')
 
 
 BATTERY_DROPIN = '/etc/systemd/system/autobleem.service.d/padsim-battery.conf'

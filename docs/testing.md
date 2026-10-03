@@ -218,6 +218,13 @@ reset` starts it afresh in under a second. `--ext <zip or dir>` (repeatable, on 
 extension over the sandbox as well - a zip is unzipped at the root (the extension zips hold `Extensions/<name>/...`),
 a directory `.../extensions/<name>/` is copied to `Extensions/<name>/`; what it replaces is kept once in
 `<sandbox>/.abvm/ext-backup/<name>`. E.g. `--ext ~/src/ext_store-theme/dist/ext_store-pcusb-1.0.1.zip`.
+The template is only as new as the stick it was made from (its themes, extensions, VERSION): `--package
+<autobleem-pcusb-...tar.gz or its folder>` lays a whole release over it - launcher, `Themes/`, `extensions/`,
+`VERSION` - for the look a user of that release gets. `--games N` adds make_usb.py's N fake games, its three memory
+card sets and the fake Apps; `--set Key=Value` (repeatable) writes a line of the launcher's `config.ini` last, e.g.
+`--set Language=Polski` (a build's own config has no `Language=`, and `--build` replaces the config). The order is
+package, build, extensions, games, config. `ABVM_REMOTE_TOOL=<path>` + `abvm.py setup` tries a branch's abvm on the
+test machine without touching the copy everyone uses.
 `sandbox release <name>` stops a launcher its holder left running (the same clean quit as `sandbox stop`) before it
 gives the lease back - a forgotten launcher takes a whole CPU and a place under the two-sandbox cap; a release
 refused because someone else holds the sandbox touches nothing. When the cap is full, `sandbox start` first stops
