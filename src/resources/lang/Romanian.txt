@@ -487,3 +487,4 @@ Strong=Puternice
 Ask=Întreabă
 Last slot=Ultimul slot
 Never=Niciodată
+This core cannot save its state=Acest nucleu nu își poate salva starea

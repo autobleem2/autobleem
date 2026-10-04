@@ -487,3 +487,4 @@ Strong=Voimakkaat
 Ask=Kysy
 Last slot=Viimeisin paikka
 Never=Ei koskaan
+This core cannot save its state=Tämä ydin ei voi tallentaa tilaansa

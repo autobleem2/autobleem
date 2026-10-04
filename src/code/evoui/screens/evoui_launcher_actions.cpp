@@ -463,6 +463,7 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
 
             menu->setResumePic(
                 app.resumePoints().pictureForSlot(*carousel.games[carousel.selected], sselector->selSlot));
+            showOptions(); // the game has a slot now: the Resume icon is no longer greyed
 
             if (sselector->operation == OP_LOAD) {
                 state = LauncherScreenState::Set;

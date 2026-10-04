@@ -487,3 +487,4 @@ Strong=Mocne
 Ask=Pytaj
 Last slot=Ostatni slot
 Never=Nigdy
+This core cannot save its state=Ten rdzeń nie robi zapisów stanu

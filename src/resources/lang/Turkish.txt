@@ -487,3 +487,4 @@ Strong=Güçlü
 Ask=Sor
 Last slot=Son yuva
 Never=Asla
+This core cannot save its state=Bu çekirdek durumunu kaydedemiyor

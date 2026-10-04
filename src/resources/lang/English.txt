@@ -487,3 +487,4 @@ Strong=Strong
 Ask=Ask
 Last slot=Last slot
 Never=Never
+This core cannot save its state=This core cannot save its state

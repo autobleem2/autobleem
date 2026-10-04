@@ -487,3 +487,4 @@ Strong=Silné
 Ask=Opýtať sa
 Last slot=Posledný slot
 Never=Nikdy
+This core cannot save its state=Toto jadro nedokáže uložiť svoj stav

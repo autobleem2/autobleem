@@ -487,3 +487,4 @@ Strong=Forti
 Ask=Chiedi
 Last slot=Ultimo slot
 Never=Mai
+This core cannot save its state=Questo core non può salvare il proprio stato

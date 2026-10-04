@@ -487,3 +487,4 @@ Strong=Starka
 Ask=Fråga
 Last slot=Senaste platsen
 Never=Aldrig
+This core cannot save its state=Den här kärnan kan inte spara sitt tillstånd

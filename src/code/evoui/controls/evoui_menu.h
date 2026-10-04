@@ -54,12 +54,19 @@ public:
     void startTransition();
     bool animating() const { return moving_; }
 
-    // which of the four icons are shown, left to right - always a prefix: settings alone for an App,
-    // settings + game editor for a RetroArch game, all four for a PS1 game (GuiLauncher::showOptions)
+    // which of the four positions are shown, left to right - always a prefix: settings alone for an App,
+    // settings + game editor (+ resume, in the memory card's place) for a RetroArch game, all four for a PS1 game
+    // (GuiLauncher::showOptions)
     bool enabled[4] = {true, true, true, true};
     // the Resume icon (index 3) is still selectable with no resume points, just greyed - so the cursor can
     // pass it and Cross can tell the player why nothing happens (GuiLauncher::showOptions)
     bool resumeAvailable = true;
+    // A RetroArch game has no memory card here: its Resume icon takes the memory card's place (position 2), so the
+    // row is a plain run of three icons with no gap. Positions and the icons they show: optionAt(). enabled[3] is
+    // then false (position 3 does not exist).
+    bool resumeAtMemcard = false;
+    // the icon kind at a position of the row: 0 settings, 1 game editor, 2 memory card, 3 resume
+    int optionAt(int position) const { return resumeAtMemcard && position == 2 ? 3 : position; }
     int lastEnabled() const {
         int last = 0;
         for (int i = 0; i < 4; i++)

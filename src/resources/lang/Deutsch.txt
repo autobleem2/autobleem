@@ -487,3 +487,4 @@ Strong=Stark
 Ask=Fragen
 Last slot=Letzter Slot
 Never=Nie
+This core cannot save its state=Dieser Core kann seinen Zustand nicht speichern

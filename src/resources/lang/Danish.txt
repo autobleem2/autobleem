@@ -487,3 +487,4 @@ Strong=Kraftige
 Ask=Spørg
 Last slot=Seneste plads
 Never=Aldrig
+This core cannot save its state=Denne kerne kan ikke gemme sin tilstand

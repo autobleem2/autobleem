@@ -151,6 +151,7 @@ void PsMenu::render() {
     for (int i = 0; i < 4; i++) {
         if (i > 0 && !enabled[i])
             continue;
+        const int kind = optionAt(i); // which icon this position shows
         const float left = x + slots[i] + xoff[i];
         const float top = y + yoff[i];
         const float size = 118 * optionscales[i];
@@ -158,19 +159,19 @@ void PsMenu::render() {
             const bool selected = active && i == selOption;
             const ableem::Rect box(static_cast<int>(left + 0.5f), static_cast<int>(top + 0.5f),
                                    static_cast<int>(size + 0.5f), static_cast<int>(size + 0.5f));
-            const unsigned char alpha = i == 3 ? resumeAlpha : 255;
+            const unsigned char alpha = kind == 3 ? resumeAlpha : 255;
             if (!(selected && selectedFrame && style.drawFrame(ctx, "tileSelected", box, alpha)))
                 style.drawFrame(ctx, "tile", box, alpha);
         }
-        renderer.copy(*icons[i], &input, ableem::FRect(left, top, size, size));
+        renderer.copy(*icons[kind], &input, ableem::FRect(left, top, size, size));
 
-        if (i == 3 && resume.valid()) {
+        if (kind == 3 && resume.valid()) {
             const ableem::Size s = resume.size();
             const ableem::Rect whole(0, 0, s.w, s.h);
             renderer.copy(resume, &whole,
-                          ableem::FRect(left + resumePicture.x * optionscales[3],
-                                        top + resumePicture.y * optionscales[3], resumePicture.w * optionscales[3],
-                                        resumePicture.h * optionscales[3]));
+                          ableem::FRect(left + resumePicture.x * optionscales[i],
+                                        top + resumePicture.y * optionscales[i], resumePicture.w * optionscales[i],
+                                        resumePicture.h * optionscales[i]));
         }
     }
 }

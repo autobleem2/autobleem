@@ -1100,6 +1100,9 @@ void GuiLauncher::loadAssets() {
                     sselector->loadSaveStateImages(game, true);
                     sselector->visible = true;
                     state = LauncherScreenState::Resume;
+                } else if (app.resumePoints().raSupportsStates(*game) && app.resumePoints().raAutoSaveFailed(*game)) {
+                    // the core says it can save, RetroArch tried on the way out and failed (its own log says so)
+                    notificationLines[1].setText(_("This core cannot save its state"), DefaultShowingTimeout);
                 }
             } else {
                 // one of our PS1 games played in RetroArch's PS1 core: no slots of ours
@@ -1801,6 +1804,7 @@ void GuiLauncher::syncMenuCaption() {
     int option = menu->selOption;
     if (menu->animating() && menu->transition == TR_OPTION)
         option += menu->direction == 0 ? -1 : 1;
+    option = menu->optionAt(option); // a RetroArch game's Resume stands where the memory card does
     if (option < 0 || static_cast<size_t>(option) >= headers.size() || static_cast<size_t>(option) >= texts.size())
         return;
     if (option == captionOption)
@@ -1815,23 +1819,27 @@ void GuiLauncher::syncMenuCaption() {
 //*******************************
 void GuiLauncher::showOptions() {
     bool enabled[4] = {true, false, false, false}; // an App, or nothing selected: AutoBleem settings only
+    bool raRow = false;                            // a RetroArch game: Resume where the memory card would be
     if (carousel.selectedIsValid()) {
         const PsGame &game = *carousel.games[carousel.selected];
         if (!game.foreign) {
             enabled[1] = enabled[2] = enabled[3] = true; // a PS1 game: editor, memory cards, resume points
         } else if (!game.app) {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
-            // and its save-state slots - for a core that can save (a ScummVM or DOSBox game has none)
-            enabled[3] = app.resumePoints().raSupportsStates(game);
+            // and its save-state slots in the memory card's place - for a core that can save (a ScummVM or DOSBox
+            // game has none)
+            enabled[2] = app.resumePoints().raSupportsStates(game);
+            raRow = true;
         }
     }
-    if (!enabled[3]) {
+    const bool hasResume = raRow ? enabled[2] : enabled[3];
+    if (!hasResume) {
         menu->resume = ableem::Texture(); // no resume icon, no picture of another game's resume point
         menu->resumeAvailable = true;
     } else {
         menu->resumeAvailable = gameHasResumePoints(carousel.games[carousel.selected]);
     }
-    bool same = true;
+    bool same = menu->resumeAtMemcard == raRow;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);
     if (same)
@@ -1839,6 +1847,7 @@ void GuiLauncher::showOptions() {
 
     for (int i = 0; i < 4; i++)
         menu->enabled[i] = enabled[i];
+    menu->resumeAtMemcard = raRow;
     menu->selOption = 0;
     menu->x = 640 - 118 / 2;
     menu->ox = menu->x;

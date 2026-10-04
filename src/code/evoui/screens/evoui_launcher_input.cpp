@@ -709,6 +709,7 @@ void GuiLauncher::loop_triangleButton_Pressed() {
 
                     if (confirm.result) {
                         app.resumePoints().removeSlot(*game, slot);
+                        showOptions(); // the Resume icon greys when that was the last slot
                     }
                     sselector->cleanSaveStateImages();
                     sselector->loadSaveStateImages(carousel.games[carousel.selected], false);
@@ -776,13 +777,14 @@ void GuiLauncher::loop_crossButton_Pressed() {
 //*******************************
 void GuiLauncher::loop_crossButtonPressed_STATE_SET() {
     app.session().resumingGui = false;
-    if (selOptionIs(menu->selOption, LauncherMenuOption::ResumeFromSavestate)) {
+    const int option = menu->optionAt(menu->selOption); // a RetroArch game's Resume stands where the memory card does
+    if (selOptionIs(option, LauncherMenuOption::ResumeFromSavestate)) {
         loop_crossButtonPressed_STATE_SET__OPT_RESUME_FROM_SAVESTATE();
-    } else if (selOptionIs(menu->selOption, LauncherMenuOption::EditMemcardInfo)) {
+    } else if (selOptionIs(option, LauncherMenuOption::EditMemcardInfo)) {
         loop_crossButtonPressed_STATE_SET__OPT_EDIT_MEMCARD();
-    } else if (selOptionIs(menu->selOption, LauncherMenuOption::EditGameSettings)) {
+    } else if (selOptionIs(option, LauncherMenuOption::EditGameSettings)) {
         loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS();
-    } else if (selOptionIs(menu->selOption, LauncherMenuOption::AbSettings)) {
+    } else if (selOptionIs(option, LauncherMenuOption::AbSettings)) {
         loop_crossButtonPressed_STATE_SET__OPT_AB_SETTINGS();
     }
 }

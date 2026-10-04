@@ -487,3 +487,4 @@ Strong=Fuertes
 Ask=Preguntar
 Last slot=Última ranura
 Never=Nunca
+This core cannot save its state=Este núcleo no puede guardar su estado

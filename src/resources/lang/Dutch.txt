@@ -487,3 +487,4 @@ Strong=Sterk
 Ask=Vragen
 Last slot=Laatste slot
 Never=Nooit
+This core cannot save its state=Deze core kan zijn status niet opslaan

@@ -487,3 +487,4 @@ Strong=强
 Ask=询问
 Last slot=最近的存档位
 Never=从不
+This core cannot save its state=此核心无法保存状态

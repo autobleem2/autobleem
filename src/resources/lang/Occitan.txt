@@ -487,3 +487,4 @@ Strong=Fòrtas
 Ask=Demandar
 Last slot=Darrièr emplaçament
 Never=Jamai
+This core cannot save its state=Aqueste nuclèu pòt pas salvar son estat
