@@ -123,7 +123,8 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 
 **The pad output of an App (`PadMode=`, 2026-10-04).** One output per App, chosen by the user (the launcher exports
 `AB_APP_PAD_MODE`), else the App's `app.ini` `PadMode=` (`proc_pe` copies it from `pad=` in `rc/pe_compat.ini`), else
-that `pad=`, else `psc`. `app_env.sh` turns it into `AB_PAD_VIRTUAL`, which the shim reads over every profile, and
+that `pad=`, else `psc-kernel` (the default of every PE App since 2026-10-04: every mod reaches it, a static SDL or raw
+evdev too; `psc`, the shim, is a choice in Game settings). `app_env.sh` turns it into `AB_PAD_VIRTUAL`, which the shim reads over every profile, and
 `pe_env.sh` writes exactly one `virtual =` line into `pad.pe.ini`. `psc` = the console's pad as PE's own `sdl_remap_arm.so`
 delivers it to a mod (`controllerView` in `apps/abpad/src/core/virtual_pad.*`, matched to the behaviour of
 PE's libraries): the name "Sony Interactive Entertainment Controller",
@@ -131,7 +132,9 @@ the console's ids and button numbers (Triangle, Circle, Cross, Square, L2, R2, L
 d-pad on axes 0/1 at the ends, the left stick on the same axes raw past +-16384 and 0 inside it, L2/R2 buttons at a
 full pull (`TriggerFullPull`), nothing else (no right stick, no stick clicks, no PS button). DraStic's own
 `drastic_sdl_remap.so` turns that into a hat and its own button numbers: `pe_env.sh` exports `AB_PAD_REMAP` with the
-name of the library abpad stands in for, and the shim does the same (`ModRemap`, `drasticButton`, `drasticHat`).
+name of the library abpad stands in for, and the shim does the same (`ModRemap`, `drasticButton`, `drasticHat`) - in
+the shim mode only: on the kernel pad (DraStic's default) its own library runs unchanged, the kernel pad being what
+it was written for.
 **`Dpad2Analog=` / `Analog2Dpad=`** (app.ini, 1/0; `proc_pe` copies them from `dpad2analog=` / `analog2dpad=` of
 `pe_compat.ini`; the Game settings rows override them, exported as `AB_APP_DPAD2ANALOG` / `AB_APP_ANALOG2DPAD`) become
 `AB_PAD_MOVEMENT` in `app_env.sh` / `pe_run.sh` (`MovementAid`); unset, `analog2dpad` is on, as PE does. `x360` =
@@ -149,7 +152,9 @@ a held pad's physical device - event, js, mouse, hidraw - and their `/run/udev/d
 sensors and touchpad included) and `app_run.sh` / `pe_run.sh` start the App through `abpadd --hide-run LIST -- cmd`:
 a private mount namespace with `/dev/null` bound over each of them, so the App enumerates only the virtual pads (the
 rest of the system is untouched; the namespace goes with the App). udev gives the virtual one `ID_INPUT_JOYSTICK=1`.
-Hotkeys and Reset keep working: the hotkey reads the daemon's own view of the pad, Reset is another device.
+Hotkeys and Reset keep working: the hotkey reads the daemon's own view of the pad, and the Reset button's device
+(`gpio-keys` on the console, any non-keyboard device with `KEY_PLAYPAUSE`) is in the hide list in every mode, the shim
+included - OpenLara opens and `EVIOCGRAB`s every event node it finds, which silenced Reset for the daemon.
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 

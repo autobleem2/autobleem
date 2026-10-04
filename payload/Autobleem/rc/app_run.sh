@@ -29,7 +29,7 @@ fi
 cd "$AB_APP_DIR" || exit 1
 # Args= follows the shell's quoting ("two words" is one argument)
 if [ "$AB_PAD_HIDE" = 1 ]; then
-    # the kernel pad: the App starts where the held pads cannot be seen (rc/app_env.sh, abpadd --hide-run)
+    # the App starts where the held pads (the kernel pad) and the Reset button cannot be seen (rc/app_env.sh)
     eval "exec \"\$AB_PAD_DIR/abpadd\" --hide-run \"\$AB_PAD_HIDE_LIST\" -- \"\$AB_APP_EXEC\" $AB_APP_ARGS"
 fi
 eval "exec \"\$AB_APP_EXEC\" $AB_APP_ARGS"

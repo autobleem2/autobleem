@@ -48,12 +48,13 @@ fi
 # ---------------------------------------------------------------------------------------------
 # The pad output (docs: PadMode): the user's choice (AB_APP_PAD_MODE from the launcher), else the App's own PadMode=
 # (proc_pe writes it from pad= in pe_compat.ini), else this launcher's pad= in pe_compat.ini (an App converted
-# before PadMode existed), else the console's own pad. app_env.sh then turns it into the shim's one answer.
+# before PadMode existed), else the console's own pad as a real device (psc-kernel: every mod reaches it, whatever SDL
+# it carries or none; psc, the shim, is a choice in Game settings). app_env.sh then turns it into abpadd's mode.
 if [ -z "$AB_APP_PAD_MODE" ]; then
     AB_APP_PAD_MODE=$(sed -n 's/^[Pp][Aa][Dd][Mm][Oo][Dd][Ee][[:space:]]*=[[:space:]]*//p' "$AB_APP_DIR/app.ini" 2>/dev/null | tail -n 1 | tr -d '\r' | tr 'A-Z' 'a-z')
 fi
 [ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=$(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_LAUNCHER" pad)
-[ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=psc
+[ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=psc-kernel
 export AB_APP_PAD_MODE
 # the d-pad / stick flags the same way: the user's choice, else the App's Dpad2Analog=/Analog2Dpad= (app_env.sh reads
 # those), else this launcher's dpad2analog=/analog2dpad= in pe_compat.ini
@@ -105,8 +106,8 @@ pe_log "starting $PE_LAUNCHER with $PE_SHELL (PROJECT_ERIS_PATH=$PE_BOUND_PATH)"
 pe_trail
 cd "$PE_LAUNCHTMP" || cd "$AB_APP_DIR" || exit 1
 if [ "$AB_PAD_HIDE" = 1 ]; then
-    # the kernel pad: the mod starts where the held pads' nodes are /dev/null, so the virtual pad is the only one it
-    # finds (abpadd --hide-run execs the shell: the pid stays the mod's)
+    # the mod starts where the held pads' nodes (the kernel pad) and the Reset button are /dev/null, so it finds only
+    # the virtual pads and cannot grab Reset (abpadd --hide-run execs the shell: the pid stays the mod's)
     "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- "$PE_SHELL" ./launch.sh &
 else
     "$PE_SHELL" ./launch.sh &

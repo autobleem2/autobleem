@@ -537,7 +537,7 @@ int runHidden(const string &listFile, char **argv) {
                     fprintf(log, "abpad: could not hide %s: %s\n", path.c_str(), strerror(errno));
                 }
             }
-            fprintf(log, "abpad: the App runs with %d node(s) of the real pads hidden\n", hidden);
+            fprintf(log, "abpad: the App runs with %d node(s) hidden (the held pads, the Reset button)\n", hidden);
         }
     }
     if (log != stderr) {

@@ -20,7 +20,9 @@
 // result on the device - so the App finds exactly one pad per player, the virtual one, with no shim. The device and
 // the grabs are file descriptors: they go when the daemon does, a SIGKILL included. It also writes <shm>.hide, the
 // nodes of the held pads, and `abpadd --hide-run <shm>.hide -- PROGRAM ARGS` starts the App in a mount namespace of its
-// own where those are /dev/null - so the App does not even enumerate them (a grabbed node is silent, not gone).
+// own where those are /dev/null - so the App does not even enumerate them (a grabbed node is silent, not gone). The
+// list always has the console's Reset button device (gpio-keys), in the shim mode too: an App that grabs every event
+// node would silence Reset.
 
 #include "core/kernel_pad.h"
 #include "core/mapping.h"
@@ -325,12 +327,38 @@ void takeOverForKernel(Slot *slots, int player, SDL_Joystick *joystick) {
 }
 
 //*******************************
+// resetNodes - the event nodes that can send the console's Reset button (KEY_PLAYPAUSE, see ResetWatch)
+//*******************************
+// buttonsOnly: only a device that is not a keyboard (no KEY_A) - the console's gpio-keys. Those are kept from the App:
+// a program that opens and EVIOCGRABs every event node (OpenLara's console build does) would otherwise take Reset
+// from us. A keyboard that has a play key (a PC's) stays the App's.
+vector<string> resetNodes(bool buttonsOnly) {
+    vector<string> paths;
+    for (int i = 0; i < 32; ++i) {
+        string path = "/dev/input/event" + to_string(i);
+        int fd = ::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd < 0) {
+            continue;
+        }
+        unsigned char keys[KEY_MAX / 8 + 1] = {};
+        if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keys)), keys) >= 0 &&
+            (keys[KEY_PLAYPAUSE / 8] & (1 << (KEY_PLAYPAUSE % 8))) != 0 &&
+            (!buttonsOnly || (keys[KEY_A / 8] & (1 << (KEY_A % 8))) == 0)) {
+            paths.push_back(path);
+        }
+        ::close(fd);
+    }
+    return paths;
+}
+
+//*******************************
 // writeHideList - what the App's start (abpadd --hide-run) puts out of its sight
 //*******************************
 // Written before the state block exists, which the App's start waits for, so the list is complete when it is read.
-// A pad plugged in later is held but not hidden (the App is already running); the log says so.
+// A pad plugged in later is held but not hidden (the App is already running); the log says so. The held pads only
+// with the kernel pad (the shim's App reads them through its SDL); the Reset button's device always.
 void writeHideList(const string &path, const Slot *slots) {
-    vector<string> held;
+    vector<string> held = resetNodes(true);
     for (int i = 0; i < MaxPads; ++i) {
         if (!slots[i].heldPath.empty()) {
             held.push_back(slots[i].heldPath);
@@ -351,8 +379,8 @@ void writeHideList(const string &path, const Slot *slots) {
     }
     fclose(file);
     rename(temporary.c_str(), path.c_str());
-    say("abpadd: %d node(s) of the held pads to hide from the App, in %s", static_cast<int>(nodes.size()),
-        path.c_str());
+    say("abpadd: %d node(s) of the held pads and the Reset button to hide from the App, in %s",
+        static_cast<int>(nodes.size()), path.c_str());
 }
 #endif
 
@@ -585,22 +613,15 @@ private:
         if (pid_ <= 0) {
             return;
         }
-        for (int i = 0; i < 32; ++i) {
-            string path = "/dev/input/event" + to_string(i);
+        for (const string &path : resetNodes(false)) {
             int fd = ::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
             if (fd < 0) {
                 continue;
             }
-            unsigned char keys[KEY_MAX / 8 + 1] = {};
-            if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keys)), keys) >= 0 &&
-                (keys[KEY_PLAYPAUSE / 8] & (1 << (KEY_PLAYPAUSE % 8))) != 0) {
-                char name[128] = {};
-                ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name);
-                say("abpadd: watching %s (%s) for Reset", path.c_str(), name);
-                fds_.push_back(fd);
-            } else {
-                ::close(fd);
-            }
+            char name[128] = {};
+            ioctl(fd, EVIOCGNAME(sizeof(name) - 1), name);
+            say("abpadd: watching %s (%s) for Reset", path.c_str(), name);
+            fds_.push_back(fd);
         }
 #endif
     }
@@ -963,8 +984,8 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < SDL_NumJoysticks(); ++i) {
             addPad(slots, i);
         }
-        writeHideList(shmPath + ".hide", slots);
     }
+    writeHideList(shmPath + ".hide", slots); // the shim's slots are still empty here: the Reset button only
 #endif
 
     ShmBlock block;

@@ -203,8 +203,8 @@ if [ -n "$AB_APP_DPAD2ANALOG$AB_APP_ANALOG2DPAD" ]; then
 fi
 export AB_APP_DPAD2ANALOG AB_APP_ANALOG2DPAD
 
-# the kernel pad hides the held pads' nodes from the App: abpadd writes the list, the App is started through
-# "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- <program> (rc/app_run.sh, rc/pe_run.sh)
+# the held pads' nodes (the kernel pad) and the Reset button are hidden from the App: abpadd writes the list, the App
+# is started through "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- <program> (rc/app_run.sh, rc/pe_run.sh)
 AB_PAD_HIDE_LIST=/tmp/abpad.state.hide
 AB_PAD_HIDE= # 1 once the daemon has written the list for this run
 export AB_PAD_HIDE_LIST AB_PAD_HIDE
@@ -229,9 +229,14 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
         # the kernel pad: no shim in front of the App's SDL (it would translate a pad that is already the right
         # one), and no hidapi in it either - that would find the real pad through /dev/hidraw, past the grab
         export SDL_JOYSTICK_HIDAPI=0
-        [ -f "$AB_PAD_HIDE_LIST" ] && AB_PAD_HIDE=1 && export AB_PAD_HIDE
     else
         export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
+    fi
+    # the held pads (the kernel pad) and the console's Reset button (any mode: a program that grabs every event node
+    # would take Reset from the daemon) - only when the daemon listed something
+    if [ -s "$AB_PAD_HIDE_LIST" ]; then
+        AB_PAD_HIDE=1
+        export AB_PAD_HIDE
     fi
 
     # the defaults, then this App's own on top - either may be absent

@@ -12,6 +12,7 @@
 #include "core/services/system.h"
 #include "core/main.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -181,7 +182,7 @@ TEST_CASE("pe_run.sh puts the power flag back to what it was, even when the mod 
     CHECK(pe.tmp.readFile("power/disable") == "1");
 }
 
-TEST_CASE("pe_run.sh: the pad output is the launcher's choice, else the App's PadMode, else pe_compat.ini, else psc") {
+TEST_CASE("pe_run.sh: pad output = the user's choice, else the App's PadMode, else pe_compat.ini, else psc-kernel") {
     if (!haveSh()) {
         MESSAGE("no sh on this machine - pe_run.sh is not run");
         return;
@@ -193,10 +194,21 @@ TEST_CASE("pe_run.sh: the pad output is the launcher's choice, else the App's Pa
         return (at == string::npos) ? string("<none>") : log.substr(at, log.find('\n', at) - at);
     };
 
-    SUBCASE("nothing says: the console's own pad") {
+    SUBCASE("nothing says: the console's own pad as a real device") {
         PeRun pe;
         pe.run(run);
+        CHECK(trail(pe).find("AB_APP_PAD_MODE=psc-kernel ") != string::npos);
+        CHECK(trail(pe).find("AB_PAD_KERNEL=psc") != string::npos);
+    }
+    SUBCASE("the shim is still a choice") {
+        PeRun pe;
+        pe.tmp.writeFile("Apps/pe-demo/app.ini", "PadMode=psc\n");
+        pe.run(run);
         CHECK(trail(pe).find("AB_APP_PAD_MODE=psc ") != string::npos);
+        const string line = trail(pe);
+        const string shim = "AB_PAD_VIRTUAL=psc AB_PAD_KERNEL="; // the shim's answer, no kernel pad
+        CHECK(line.size() >= shim.size());
+        CHECK(line.compare(line.size() - min(line.size(), shim.size()), string::npos, shim) == 0);
     }
     SUBCASE("the App's PadMode") {
         PeRun pe;
