@@ -32,6 +32,13 @@ echo glu > "$S/applib/libGLU.so.1"
 printf 1 > "$S/power/disable"
 echo "030000004c050000da0c000011010000,Pad,a:b2,platform:Linux" > "$S/Autobleem/rc/pe_gamecontrollerdb.txt"
 echo "user data" > "$S/Apps/pe-demo/save.dat"
+mkdir -p "$S/Autobleem/bin/abpad"
+echo "ABPAD SHIM" > "$S/Autobleem/bin/abpad/libabpad.so"
+echo "THE MODS OWN REMAP" > "$S/Apps/pe-demo/drastic_sdl_remap.so"
+printf "
+[demo]
+remap=drastic_sdl_remap.so
+" >> "$S/Autobleem/rc/pe_compat.ini"
 
 cat > "$S/Apps/pe-demo/launch.sh" <<'MOD'
 #!/bin/sh
@@ -47,6 +54,7 @@ killall() {
 source "$PE_VOLATILE/project_eris.cfg"
 OUT="$APP_OUT"
 echo "pep=$PROJECT_ERIS_PATH" >> $OUT
+echo "remap_seen=$(cat ./drastic_sdl_remap.so)" >> $OUT
 echo "mounted_tree=$(grep -c " $PE_MOUNT_POINT " /proc/mounts)" >> $OUT
 # the absolute path the original mods use
 ABS="$PROJECT_ERIS_PATH/etc/project_eris/SUP/launchers/demo"
@@ -92,7 +100,9 @@ check "a write through the bind lands in the app folder" hello "$(get ipc)"
 check "killall sdl_display finds the stand-in" yes "$(get sdl_display_running)"
 check "and stops it" no "$(get sdl_display_after)"
 check "dialog answer, first allowed letter" 100 "$(get answer)"
-check "lib/ has gl4es" "libGL.so.1 libGLU.so.1 " "$(get lib)"
+check "abpad is bound over the mod's remap for the run" "ABPAD SHIM" "$(get remap_seen)"
+check "and the mod's own file is back after" "THE MODS OWN REMAP" "$(cat "$S/Apps/pe-demo/drastic_sdl_remap.so")"
+check "lib/ has gl4es (from rc/pe/lib) and the pad remap link" "libGL.so.1 libGLU.so.1 sdl_remap_arm.so " "$(get lib)"
 check "nothing mounted after" 0 "$(grep -c "$S" /proc/mounts)"
 check "the placeholder is an empty folder again" "" "$(ls -A "$S/media/project_eris")"
 check "the app's data is untouched" "user data" "$(cat "$S/Apps/pe-demo/save.dat")"

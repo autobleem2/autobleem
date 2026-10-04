@@ -97,6 +97,11 @@ pe_unmount_stale() {
     if pe_mounted "$PE_MOUNT_POINT"; then
         umount "$PE_MOUNT_POINT" 2>/dev/null || umount -l "$PE_MOUNT_POINT" 2>/dev/null
     fi
+    for pe_r in $(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_FILENAME" remap | tr ',' ' '); do
+        while pe_mounted "$AB_APP_DIR/$pe_r"; do
+            umount "$AB_APP_DIR/$pe_r" 2>/dev/null || umount -l "$AB_APP_DIR/$pe_r" 2>/dev/null || break
+        done
+    done
 }
 
 pe_prepare() {
@@ -121,14 +126,25 @@ pe_prepare() {
     for pe_tool in sdl_text_display sdl_input_text_display sdl_display; do
         cp -f "$PE_RC_DIR/pe/$pe_tool" "$PE_ROOT/bin/$pe_tool" && chmod 755 "$PE_ROOT/bin/$pe_tool"
     done
-    # gl4es is in the libs pack rc/app_env.sh linked into /tmp/applib
+    # lib/: what Project Eris gave its mods in ${PROJECT_ERIS_PATH}/lib (some mods set LD_LIBRARY_PATH to this and
+    # nothing else). gl4es (libGL, libGLU; MIT) ships with the launcher in rc/pe/lib - the libs pack is not
+    # something every stick has - and the pack's copy in /tmp/applib is the fallback. Our SDL2 goes in as well:
+    # a mod that points the loader at this folder alone would otherwise run on the firmware's old SDL2 (2.0.4),
+    # which the pad shim and the console's Wayland patch were not made for.
     for pe_lib in libGL.so.1 libGLU.so.1; do
-        if [ -e "${PE_APPLIB:-/tmp/applib}/$pe_lib" ]; then
+        if [ -e "$PE_RC_DIR/pe/lib/$pe_lib" ]; then
+            ln -sf "$PE_RC_DIR/pe/lib/$pe_lib" "$PE_ROOT/lib/$pe_lib"
+        elif [ -e "${PE_APPLIB:-/tmp/applib}/$pe_lib" ]; then
             ln -sf "${PE_APPLIB:-/tmp/applib}/$pe_lib" "$PE_ROOT/lib/$pe_lib"
         else
-            pe_log "no $pe_lib in ${PE_APPLIB:-/tmp/applib} - a mod that needs gl4es will not start"
+            pe_log "no $pe_lib (neither $PE_RC_DIR/pe/lib nor ${PE_APPLIB:-/tmp/applib}) - a mod that needs gl4es will not start"
         fi
     done
+    if [ -e "${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0" ]; then
+        ln -sf "${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0" "$PE_ROOT/lib/libSDL2-2.0.so.0"
+    else
+        pe_log "no ${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0 - the mods use the firmware's SDL2"
+    fi
     # the mods preload sdl_remap_arm.so to make the console pad readable: abpad's shim does that job here
     if [ -f "$AB_PAD_DIR/libabpad.so" ]; then
         ln -sf "$AB_PAD_DIR/libabpad.so" "$PE_ROOT/lib/sdl_remap_arm.so"
@@ -146,6 +162,20 @@ pe_prepare() {
         AB_PAD_DEFAULTS=$PE_RUN_DIR/pad.pe.ini
         export AB_PAD_DEFAULTS
     fi
+
+    # the mods' own pad-remap preloads (remap= in rc/pe_compat.ini, a file name in the App's folder, DraStic's
+    # drastic_sdl_remap.so): abpad's shim is bound over each for the run - the file on the stick is not touched
+    PE_REMAP_BOUND=
+    for pe_r in $(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_FILENAME" remap | tr ',' ' '); do
+        case "$pe_r" in */* | .*) continue ;; esac
+        if [ -f "$AB_APP_DIR/$pe_r" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
+            if mount -o bind "$AB_PAD_DIR/libabpad.so" "$AB_APP_DIR/$pe_r" 2>/dev/null; then
+                PE_REMAP_BOUND="$PE_REMAP_BOUND $pe_r"
+            else
+                pe_log "could not bind abpad over $pe_r - the mod keeps its own remap"
+            fi
+        fi
+    done
 
     # d: the placeholder on the stick (empty)
     mkdir -p "$PE_MOUNT_POINT" 2>/dev/null
@@ -224,6 +254,52 @@ CFG
     return 0
 }
 
+# pe_trail: what the pad layer was given for this launch, into pe_run.log (the RAM tree is gone after the run, so the
+# facts are written down while they are true). Format, one block per launch, lines "pad: <what>: <value>":
+#   LD_PRELOAD, AB_PAD_DEFAULTS, AB_PAD_PROFILE, AB_APP_VIRTUAL_PAD, SDL_GAMECONTROLLERCONFIG_FILE, LD_LIBRARY_PATH
+#   pad.pe.ini: the defaults the shim reads (virtual = psc last)
+#   abpad.state / mappings: whether the daemon published, and the pads it resolved (name and GUID)
+#   input: the kernel's input devices (name + handlers) - a pad with no js/event handler is invisible to any SDL
+#   binary <name>: for each program in the App's folder, whether it names libSDL2 (the preload can reach it) or
+#   carries its own SDL (it cannot: only SDL_GAMECONTROLLERCONFIG_FILE and the kernel's own devices help)
+#   remap: the mod's remap files abpad was bound over
+pe_trail() {
+    pe_log "pad: LD_PRELOAD=$LD_PRELOAD"
+    pe_log "pad: AB_PAD_DEFAULTS=$AB_PAD_DEFAULTS AB_PAD_PROFILE=$AB_PAD_PROFILE AB_APP_VIRTUAL_PAD=$AB_APP_VIRTUAL_PAD"
+    pe_log "pad: SDL_GAMECONTROLLERCONFIG_FILE=$SDL_GAMECONTROLLERCONFIG_FILE LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    if [ -n "$AB_PAD_DEFAULTS" ] && [ -f "$AB_PAD_DEFAULTS" ]; then
+        grep -v '^[[:space:]]*\(#\|$\)' "$AB_PAD_DEFAULTS" | while read -r pe_l; do pe_log "pad: pad.pe.ini: $pe_l"; done
+    fi
+    if [ -f /tmp/abpad.state ]; then pe_log "pad: abpad.state: published"; else pe_log "pad: abpad.state: NOT there (no daemon)"; fi
+    if [ -f /tmp/abpad.state.mappings ]; then
+        grep -v '^#' /tmp/abpad.state.mappings | cut -d, -f1,2 | while read -r pe_l; do pe_log "pad: mappings: $pe_l"; done
+    else
+        pe_log "pad: mappings: none"
+    fi
+    grep -E '^(N: Name|H: Handlers)' /proc/bus/input/devices 2>/dev/null | cut -c1-100 | while read -r pe_l; do
+        pe_log "pad: input: $pe_l"
+    done
+    for pe_b in "$AB_APP_DIR"/*; do
+        [ -f "$pe_b" ] && [ -x "$pe_b" ] || continue
+        [ "$(head -c 4 "$pe_b" 2>/dev/null | tail -c 3)" = ELF ] || continue
+        case "$pe_b" in *.so | *.so.*) continue ;; esac
+        if grep -q 'libSDL2-2.0.so.0' "$pe_b" 2>/dev/null; then
+            pe_log "pad: binary $(basename "$pe_b"): names libSDL2 (the preload reaches it)"
+        else
+            pe_log "pad: binary $(basename "$pe_b"): no libSDL2 name (own SDL or none: the preload cannot reach it)"
+        fi
+    done
+    pe_log "pad: remap files bound over by abpad:${PE_REMAP_BOUND:- none}"
+}
+
+# the abpad logs' last lines after the run (the shim writes a load line per process into abpad.log)
+pe_trail_end() {
+    for pe_f in "$AB_ABPAD_LOG_DIR/abpadd.log" "$AB_ABPAD_LOG_DIR/abpad.log"; do
+        [ -f "$pe_f" ] || continue
+        tail -n 25 "$pe_f" 2>/dev/null | while read -r pe_l; do pe_log "pad: $(basename "$pe_f"): $pe_l"; done
+    done
+}
+
 # pe_cleanup: everything pe_prepare did, in the reverse order. Safe to call twice.
 pe_cleanup() {
     [ -n "$PE_CLEANED" ] && return 0
@@ -244,6 +320,9 @@ pe_cleanup() {
         rm -f "$PE_LAUNCHTMP"
     fi
     rm -f "$PE_VOLATILE/project_eris.cfg" /tmp/launchfilecommand 2>/dev/null
+    for pe_r in $PE_REMAP_BOUND; do
+        umount "$AB_APP_DIR/$pe_r" 2>/dev/null || umount -l "$AB_APP_DIR/$pe_r" 2>/dev/null
+    done
     # d: the App's folder first, then the tree; the tree is only deleted once nothing of the stick is mounted in it
     # (rm -rf through a bind mount would reach the App's own files)
     if [ -n "$PE_APP_BOUND" ]; then

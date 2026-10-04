@@ -20,3 +20,4 @@ pcsx-ab binary
 *.bin binary
 *.iso binary
 *.chd binary
+payload/Autobleem/rc/pe/lib/*.so* binary

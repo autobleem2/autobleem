@@ -50,8 +50,7 @@ def tail_block(rel, first):
             body = lines[i:]
             while body and body[-1].strip() in ('*/', ''):
                 body.pop()
-            return '
-'.join(body)
+            return '\n'.join(body)
     raise SystemExit('no ' + first + ' in ' + rel)
 
 
@@ -183,6 +182,8 @@ SECTIONS = [
      'see the libretro projects',
      'Game metadata (.rdb) and box art come from https://github.com/libretro/libretro-database and '
      'https://github.com/libretro/libretro-thumbnails under their own terms.'),
+    ('gl4es', 'payload/Autobleem/rc/pe/lib/libGL.so.1, libGLU.so.1 - the OpenGL-on-GLES library the PE apps load',
+     'MIT', read('payload/Autobleem/rc/pe/lib/LICENSE.gl4es')),
     ('pcsx-ab, pcsx-abnxt, RetroArch', 'separate programs the launcher starts; their binaries ship in the packages',
      'GPL-2.0-or-later (the emulators), GPL-3.0-or-later (RetroArch)',
      'Sources: https://github.com/autobleem/pcsx-ab2, https://github.com/autobleem/pcsx-abnxt, '

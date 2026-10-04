@@ -76,6 +76,7 @@ pe_on_term() {
 trap pe_on_term TERM INT HUP
 
 pe_log "starting $PE_LAUNCHER with $PE_SHELL (PROJECT_ERIS_PATH=$PE_BOUND_PATH)"
+pe_trail
 cd "$PE_LAUNCHTMP" || cd "$AB_APP_DIR" || exit 1
 "$PE_SHELL" ./launch.sh &
 PE_CHILD=$!
@@ -88,6 +89,7 @@ while kill -0 "$PE_CHILD" 2>/dev/null; do
 done
 [ -z "$PE_TERMED" ] || PE_RC=143
 pe_log "the mod ended with $PE_RC"
+pe_trail_end
 
 trap - TERM INT HUP
 cd /

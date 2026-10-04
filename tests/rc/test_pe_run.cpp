@@ -71,17 +71,18 @@ struct PeRun {
             "launcher_filename=\"demo\"\r\nlauncher_title=\"Demo Game\"\r\nlauncher_publisher=\"Someone\"\r\n");
         tmp.writeFile("Apps/pe-demo/app.ini", "Title=Demo Game\nExec.psc=run.sh\nStartup=run.sh\nCategory=PE\n");
         tmp.writeFile("Apps/pe-demo/launch.sh", FakeLaunch);
-        tmp.makeSubDir("applib");
-        tmp.writeFile("applib/libGL.so.1", "gl");
-        tmp.writeFile("applib/libGLU.so.1", "glu");
+        // the libs pack is NOT installed on this stick (no applib): gl4es comes with the launcher, rc/pe/lib
+        tmp.makeSubDir("sdl");
+        tmp.writeFile("sdl/libSDL2-2.0.so.0", "sdl");
         tmp.makeSubDir("power");
         tmp.writeFile("power/disable", "1");
         tmp.makeSubDir("vol");
         // the trimmed pad table the package carries, as a stand-in beside the scripts is not needed: pe_env.sh reads
         // PE_RC_DIR/pe_gamecontrollerdb.txt, so the scripts are copied together with one
-        tmp.makeSubDir("Autobleem/rc/pe");
-        for (const char *f : {"pe_run.sh", "pe_env.sh", "app_env.sh", "app_resolve.sh", "pe_compat.ini",
-                              "pe/sdl_display", "pe/sdl_text_display", "pe/sdl_input_text_display"}) {
+        tmp.makeSubDir("Autobleem/rc/pe/lib");
+        for (const char *f :
+             {"pe_run.sh", "pe_env.sh", "app_env.sh", "app_resolve.sh", "pe_compat.ini", "pe/sdl_display",
+              "pe/sdl_text_display", "pe/sdl_input_text_display", "pe/lib/libGL.so.1", "pe/lib/libGLU.so.1"}) {
             REQUIRE(DirEntry::copy(string(AB_RC_DIR) + "/" + f, tmp.at(string("Autobleem/rc/") + f)));
         }
         tmp.writeFile("Autobleem/rc/pe_gamecontrollerdb.txt",
@@ -93,8 +94,9 @@ struct PeRun {
         const string r = slashes(tmp.path());
         return "export AB_ROOT='" + r + "' AB_RUNTIME_DIR='" + r + "/rt' AB_LOG_DIR='" + r + "/rt/logs'\n" +
                "export PE_TREE='" + r + "/pe' PE_VOLATILE='" + r + "/vol' PE_POWER_FLAG='" + r +
-               "/power/disable' PE_MOUNT_POINT='" + r + "/media/project_eris' PE_APPLIB='" + r + "/applib'\n" +
-               "export AB_APP_VIRTUAL_PAD=0 APP_OUT='" + r + "/out.txt'\n" + "export HOME='" + r + "/home'\n";
+               "/power/disable' PE_MOUNT_POINT='" + r + "/media/project_eris' PE_APPLIB='" + r +
+               "/applib' PE_SDL_DIR='" + r + "/sdl'\n" + "export AB_APP_VIRTUAL_PAD=0 APP_OUT='" + r + "/out.txt'\n" +
+               "export HOME='" + r + "/home'\n";
     }
 
     vector<string> run(const string &body) {
@@ -136,7 +138,7 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK(pe.out("log_path") == root + "/rt/logs/pe");
     CHECK(pe.out("selected_theme") == "modmyclassic");
     CHECK(pe.out("bin") == "sdl_display sdl_input_text_display sdl_text_display ");
-    CHECK(pe.out("lib") == "libGL.so.1 libGLU.so.1 ");
+    CHECK(pe.out("lib") == "libGL.so.1 libGLU.so.1 libSDL2-2.0.so.0 "); // gl4es without the libs pack, and our SDL2
     CHECK(pe.out("db_bytes") != "<missing>");
     CHECK(pe.out("path_has_bin") == "1");
     CHECK(pe.out("power_now") == "2"); // the mod's own write is the mod's
@@ -156,6 +158,12 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK(DirEntry::exists(pe.tmp.at("Apps/pe-demo/app.ini")));
     string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
     CHECK(log.find("starting demo") != string::npos);
+    CHECK(log.find("no libGL") == string::npos); // gl4es was found with no libs pack
+    // the pad trail: written while it is true, it outlives the RAM tree
+    CHECK(log.find("pad: LD_PRELOAD=") != string::npos);
+    CHECK(log.find("pad: AB_PAD_DEFAULTS=") != string::npos);
+    CHECK(log.find("pad: abpad.state: ") != string::npos);
+    CHECK(log.find("pad: remap files bound over by abpad: none") != string::npos);
     CHECK(pe.tmp.readFile("rt/logs/pe/dialogs.log").find("sdl_text_display: Loading") != string::npos);
 }
 
