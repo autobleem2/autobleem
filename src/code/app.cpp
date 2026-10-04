@@ -1,6 +1,7 @@
 #include "app.h"
 #include "gui/extension_host_base.h"
 #include "core/services/environment.h"
+#include "core/services/retroarch_version.h"
 #include "core/services/system.h"
 #include "core/version.h"
 
@@ -163,12 +164,9 @@ void App::applyUpdateSetting() {
     // installed is the stamp the PC installer (and abupdate) writes next to the binary - no stamp, no RetroArch
     // here, no check. abupdate applies the downloaded zip (rc/selection.sh)
     c.arch = "zip";
-    {
-        ifstream stamp(Env::getPathToUSBRoot() + sep + "RetroArch" + sep + "bin" + sep + "VERSION");
-        string version;
-        if (stamp && getline(stamp, version))
-            c.installedRetroArch = Strings::trim(version);
-    }
+    // the stamp is a bare version on its first line, or the zip's own key=value file (retroarch_version=,
+    // psc_build=) on a stick updated before the zip carried the first line
+    c.installedRetroArch = retroarch_version::installed(Env::getPathToUSBRoot());
 #else
     const char *platform = getenv("AB_UPDATE_PLATFORM");
     c.platformKey = platform != nullptr && *platform != 0 ? platform : "win";
