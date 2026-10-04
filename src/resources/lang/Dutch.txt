@@ -498,3 +498,5 @@ PSC pad=PSC-controller
 Xbox 360 pad=Xbox 360-controller
 PSC pad (system)=PSC-controller (systeem)
 Xbox 360 pad (system)=Xbox 360-controller (systeem)
+D-pad as stick:=D-pad als stick:
+Stick as d-pad:=Stick als D-pad:

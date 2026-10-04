@@ -498,3 +498,5 @@ PSC pad=Manèta PSC
 Xbox 360 pad=Manèta Xbox 360
 PSC pad (system)=Manèta PSC (sistèma)
 Xbox 360 pad (system)=Manèta Xbox 360 (sistèma)
+D-pad as stick:=Crotz coma manet :
+Stick as d-pad:=Manet coma crotz :

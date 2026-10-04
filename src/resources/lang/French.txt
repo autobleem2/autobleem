@@ -498,3 +498,5 @@ PSC pad=Manette PSC
 Xbox 360 pad=Manette Xbox 360
 PSC pad (system)=Manette PSC (système)
 Xbox 360 pad (system)=Manette Xbox 360 (système)
+D-pad as stick:=Croix comme stick :
+Stick as d-pad:=Stick comme croix :

@@ -498,3 +498,5 @@ PSC pad=PSC-ohjain
 Xbox 360 pad=Xbox 360 -ohjain
 PSC pad (system)=PSC-ohjain (järjestelmä)
 Xbox 360 pad (system)=Xbox 360 -ohjain (järjestelmä)
+D-pad as stick:=Ristiohjain tikkuna:
+Stick as d-pad:=Tikku ristiohjaimena:

@@ -498,3 +498,5 @@ PSC pad=PSC 手柄
 Xbox 360 pad=Xbox 360 手柄
 PSC pad (system)=PSC 手柄（系统）
 Xbox 360 pad (system)=Xbox 360 手柄（系统）
+D-pad as stick:=方向键当摇杆：
+Stick as d-pad:=摇杆当方向键：

@@ -498,3 +498,5 @@ PSC pad=Mando PSC
 Xbox 360 pad=Mando Xbox 360
 PSC pad (system)=Mando PSC (sistema)
 Xbox 360 pad (system)=Mando Xbox 360 (sistema)
+D-pad as stick:=Cruceta como stick:
+Stick as d-pad:=Stick como cruceta:

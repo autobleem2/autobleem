@@ -498,3 +498,5 @@ PSC pad=Ovladač PSC
 Xbox 360 pad=Ovladač Xbox 360
 PSC pad (system)=Ovladač PSC (systémový)
 Xbox 360 pad (system)=Ovladač Xbox 360 (systémový)
+D-pad as stick:=D-pad jako páčka:
+Stick as d-pad:=Páčka jako D-pad:

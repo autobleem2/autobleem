@@ -498,3 +498,5 @@ PSC pad=PSC kumandası
 Xbox 360 pad=Xbox 360 kumandası
 PSC pad (system)=PSC kumandası (sistem)
 Xbox 360 pad (system)=Xbox 360 kumandası (sistem)
+D-pad as stick:=Yön tuşları çubuk gibi:
+Stick as d-pad:=Çubuk yön tuşları gibi:

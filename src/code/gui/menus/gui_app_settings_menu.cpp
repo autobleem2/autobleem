@@ -16,8 +16,19 @@
 using namespace std;
 
 namespace {
-const int OptPadMode = 1; // the row the cursor is on (the heading is row 0)
+// the rows (the heading is row 0)
+const int OptPadMode = 1;
+const int OptDpad2Analog = 2;
+const int OptAnalog2Dpad = 3;
+const int OptLast = OptAnalog2Dpad;
+
+// a flag value ("1" / "0" / "") as the row's index: 0 Automatic, 1 On, 2 Off
+int flagIndex(const string &value) {
+    if (value == "1")
+        return 1;
+    return value == "0" ? 2 : 0;
 }
+} // namespace
 
 //*******************************
 // GuiAppSettings::init
@@ -34,6 +45,15 @@ void GuiAppSettings::init() {
     const vector<string> &modes = AppSettings::padModes();
     const auto found = find(modes.begin(), modes.end(), chosen);
     padModeIndex_ = chosen.empty() || found == modes.end() ? 0 : static_cast<int>(found - modes.begin()) + 1;
+
+    flags_[0].key = AppSettings::Dpad2AnalogKey;
+    flags_[0].iniKey = "dpad2analog";
+    flags_[1].key = AppSettings::Analog2DpadKey;
+    flags_[1].iniKey = "analog2dpad";
+    for (FlagRow &flag : flags_) {
+        flag.appOwn = AppSettings::normalizeFlag(manifest.value(flag.iniKey));
+        flag.index = flagIndex(AppSettings::flagOverride(gameData->base, flag.key));
+    }
 }
 
 //*******************************
@@ -74,6 +94,32 @@ void GuiAppSettings::stepPadMode(int step) {
 }
 
 //*******************************
+// GuiAppSettings::flagLabel / flagValue / stepFlag
+//*******************************
+string GuiAppSettings::flagLabel(int row) const {
+    return row == OptDpad2Analog ? _("D-pad as stick:") : _("Stick as d-pad:");
+}
+
+string GuiAppSettings::flagValue(const FlagRow &flag) const {
+    if (flag.index == 1)
+        return _("On");
+    if (flag.index == 2)
+        return _("Off");
+    if (flag.appOwn.empty())
+        return _("Automatic");
+    // Automatic with a value of the App's own: say which
+    return _("Automatic") + " (" + (flag.appOwn == "1" ? _("On") : _("Off")) + ")";
+}
+
+void GuiAppSettings::stepFlag(FlagRow &flag, int step) {
+    const int next = (flag.index + step + 3) % 3;
+    const string value = next == 1 ? "1" : (next == 2 ? "0" : "");
+    if (!AppSettings::setFlagOverride(gameData->base, flag.key, value))
+        return; // could not be written: the row keeps showing what is saved
+    flag.index = next;
+}
+
+//*******************************
 // GuiAppSettings::draw
 //*******************************
 void GuiAppSettings::draw() {
@@ -89,29 +135,35 @@ void GuiAppSettings::draw() {
         pane.facts.emplace_back(_("Published by:"), gameData->publisher);
     pane.render(*gui);
     if (menuVisible) // the DebugDriver's rows: the heading band, then the options, the cursor's index among them
-        ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game settings"), _("Pad mode:")}, OptPadMode);
+        ableem::DebugDriver::publish(
+            typeid(*this).name(),
+            {"#" + _("Game settings"), _("Pad mode:"), flagLabel(OptDpad2Analog), flagLabel(OptAnalog2Dpad)},
+            selected_);
 
     const int right = GameDetailPane::rowsRight(*gui);
     // a theme's selection frame goes under the heading and the rows' text, so it comes first
     const bool framed = gui->text().selectionFramed(gui->uiContext());
     if (framed)
-        gui->text().renderSelectionBox(gui->uiContext(), OptPadMode, yoffset, 0, ableem::Font(), right);
+        gui->text().renderSelectionBox(gui->uiContext(), selected_, yoffset, 0, ableem::Font(), right);
     gui->text().renderLabelBox(gui->uiContext(), 0, yoffset, right);
     {
         TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Heading);
         gui->text().renderTextLine(_("Game settings"), 0, yoffset, XALIGN_LEFT);
     }
     if (!framed)
-        gui->text().renderSelectionBox(gui->uiContext(), OptPadMode, yoffset, 0, ableem::Font(), right);
+        gui->text().renderSelectionBox(gui->uiContext(), selected_, yoffset, 0, ableem::Font(), right);
 
-    {
-        TextRenderer::RowRoleScope role(gui->text(), TextRenderer::RowRole::Selected);
+    for (int row = OptPadMode; row <= OptLast; ++row) {
+        TextRenderer::RowRoleScope role(gui->text(), selected_ == row ? TextRenderer::RowRole::Selected
+                                                                      : TextRenderer::RowRole::Row);
         const ableem::Font &font = gui->assets().themeFont;
-        const string label = _("Pad mode:");
+        const string label = row == OptPadMode ? _("Pad mode:") : flagLabel(row);
+        const string value = row == OptPadMode ? padModeValue() : flagValue(flags_[row - OptDpad2Analog]);
+        // the value sits at the right edge: what is left of the row after the label and a gap is its room
         const int room =
             right - gui->classicContent().x - gui->text().textWidth(font, label) - 3 * PanelStyle::RowInset;
-        gui->text().renderTextLine(label, OptPadMode, yoffset, XALIGN_LEFT);
-        gui->text().renderRowValue(gui->text().elide(font, padModeValue(), max(room, 0)), OptPadMode, yoffset, right);
+        gui->text().renderTextLine(label, row, yoffset, XALIGN_LEFT);
+        gui->text().renderRowValue(gui->text().elide(font, value, max(room, 0)), row, yoffset, right);
     }
 
     gui->renderStatus("|@Left+Right| " + _("Choose") + "   |@O| " + _("Back") + "|");
@@ -136,9 +188,20 @@ void GuiAppSettings::loop() {
             switch (e.type) {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
-                if (gui->input().dpadRight() || gui->input().dpadLeft()) {
+                if (gui->input().dpadDown() || gui->input().dpadUp()) {
+                    const int to = min(OptLast, max(OptPadMode, selected_ + (gui->input().dpadDown() ? 1 : -1)));
+                    if (to != selected_) {
+                        app.audio().cursor.play();
+                        selected_ = to;
+                        render();
+                    }
+                } else if (gui->input().dpadRight() || gui->input().dpadLeft()) {
                     app.audio().cursor.play();
-                    stepPadMode(gui->input().dpadRight() ? 1 : -1);
+                    const int step = gui->input().dpadRight() ? 1 : -1;
+                    if (selected_ == OptPadMode)
+                        stepPadMode(step);
+                    else
+                        stepFlag(flags_[selected_ - OptDpad2Analog], step);
                     render();
                 }
                 break;
