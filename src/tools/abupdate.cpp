@@ -148,7 +148,9 @@ int main(int argc, char **argv) {
     options.channel.clear(); // the package is given - no channel to fetch it from
     options.coversJapan = options.coversUsa = options.coversPal = false; // the stick has its own
     options.retroarch = options.bios = options.samples = false;
-    options.scratchDir = "/tmp/abupdate"; // not on the stick being replaced
+    // not on the stick being replaced, and not "/tmp/abupdate": selection.sh runs a copy of this program under that
+    // name, so a folder could not be made there (the RetroArch zip could not be unpacked)
+    options.scratchDir = "/tmp/abupdate-work";
     CommandDownloader downloader(download);
     Printer printer;
     string error;

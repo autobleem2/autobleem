@@ -561,6 +561,10 @@ standby() {
 update() {
     ULOG=/media/System/Logs/update.log
     cp -f /media/Autobleem/bin/autobleem/abupdate /tmp/abupdate 2>/dev/null && chmod +x /tmp/abupdate
+    # abupdate downloads through abfetch beside it (ownDir()), with abfetch's cacert.pem beside that: the same
+    # copy, or UpdateRoms is skipped with "/tmp/abfetch: No such file"
+    cp -f /media/Autobleem/bin/autobleem/abfetch /tmp/abfetch 2>/dev/null && chmod +x /tmp/abfetch
+    cp -f /media/Autobleem/bin/autobleem/cacert.pem /tmp/cacert.pem 2>/dev/null
     if [ ! -x /tmp/abupdate ]; then
         echo "$(date) no abupdate on the stick - the update is not installed" >> $ULOG
         return
@@ -575,9 +579,10 @@ update() {
     echo "$(date) installing the downloaded update" >> $ULOG
     cd /tmp
     LD_LIBRARY_PATH=/tmp/lib /tmp/abupdate /media >> $ULOG 2>&1
-    echo "$(date) abupdate exit status $?" >> $ULOG
+    st=$? # before $(date) below: that sets $? itself
+    echo "$(date) abupdate exit status $st" >> $ULOG
     sync
-    rm -f /tmp/.abupdating /tmp/abupdate
+    rm -f /tmp/.abupdating /tmp/abupdate /tmp/abfetch /tmp/cacert.pem
     # the emulator copy above was the old one (autobleem.sh unpacks the new libraries itself)
     cp -f /media/Autobleem/bin/emu/pcsx-ab /tmp/pcsx 2>/dev/null && chmod +x /tmp/pcsx
 }
