@@ -156,45 +156,60 @@ else
     rm -f "$AB_ABPAD_LOG_DIR/.wtest"
 fi
 
+# The pad output this App wants (PadMode= in app.ini, or the user's choice, which the launcher passes as
+# AB_APP_PAD_MODE):
+#   psc, x360             the console's own pad / a standard Xbox 360 pad, through the shim. The shim reads
+#                         AB_PAD_VIRTUAL over any profile, so there is exactly one answer whatever pad.ini says.
+#   psc-kernel, x360-kernel   the same pad as a real input device (abpadd --kernel): for an App no preload reaches
+#                         (a static SDL, raw /dev/input). No shim then - the App finds the virtual pad and nothing else.
+# Empty = the App's old behaviour (the profile's virtual =, x360 by default).
+if [ -z "$AB_APP_PAD_MODE" ] && command -v ab_ini_value > /dev/null 2>&1; then
+    AB_APP_PAD_MODE=$(ab_ini_value padmode | tr 'A-Z' 'a-z')
+fi
+AB_PAD_KERNEL=
+case "$AB_APP_PAD_MODE" in
+    psc) AB_PAD_VIRTUAL=psc; export AB_PAD_VIRTUAL ;;
+    x360) AB_PAD_VIRTUAL=x360; export AB_PAD_VIRTUAL ;;
+    psc-kernel) AB_PAD_KERNEL=psc ;;
+    x360-kernel) AB_PAD_KERNEL=x360 ;;
+esac
+if [ -n "$AB_PAD_KERNEL" ]; then unset AB_PAD_VIRTUAL; fi
+export AB_APP_PAD_MODE AB_PAD_KERNEL
+
 if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
+    # a block left by the last run would pass for the new daemon being ready (the wait below looks for the file)
+    rm -f /tmp/abpad.state /tmp/abpad.state.mappings
     env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" AB_PAD_DB="$AB_PAD_DB" \
-        "$AB_PAD_DIR/abpadd" --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
+        "$AB_PAD_DIR/abpadd" ${AB_PAD_KERNEL:+--kernel $AB_PAD_KERNEL} --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 
     # the daemon lets a pad settle before publishing (a multi-mode pad is taken over by hidapi a
     # second or two after it is first opened), so wait for it rather than have the App ask too early
     ab_waited=0
-    while [ ! -f /tmp/abpad.state ] && [ $ab_waited -lt 60 ]; do
+    while [ ! -f /tmp/abpad.state ] && [ $ab_waited -lt 100 ]; do
         ab_waited=$((ab_waited + 1))
         sleep 0.1
     done
 
     AB_PAD_LOG="$AB_ABPAD_LOG_DIR/abpad.log"
     export AB_PAD_LOG
-    export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
+    if [ -n "$AB_PAD_KERNEL" ]; then
+        # the kernel pad: no shim in front of the App's SDL (it would translate a pad that is already the right
+        # one), and no hidapi in it either - that would find the real pad through /dev/hidraw, past the grab
+        export SDL_JOYSTICK_HIDAPI=0
+    else
+        export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
+    fi
 
     # the defaults, then this App's own on top - either may be absent
     AB_PAD_DEFAULTS_FILE="$AB_ROOT"/Autobleem/rc/pad.default.ini
     [ -f "$AB_PAD_DEFAULTS_FILE" ] && export AB_PAD_DEFAULTS="$AB_PAD_DEFAULTS_FILE"
     [ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
 
-    # The pad output this App wants (docs: PadMode= in app.ini, or the user's choice, which the launcher passes as
-    # AB_APP_PAD_MODE): psc = the console's own pad, x360 = a standard Xbox 360 pad, both through the shim (psc-kernel and x360-kernel fall back to the shim until the uinput mode exists). The
-    # shim reads AB_PAD_VIRTUAL over any profile, so there is exactly one answer whatever pad.ini says. Empty =
-    # the App's old behaviour (the profile's virtual =, x360 by default).
-    if [ -z "$AB_APP_PAD_MODE" ] && command -v ab_ini_value > /dev/null 2>&1; then
-        AB_APP_PAD_MODE=$(ab_ini_value padmode | tr 'A-Z' 'a-z')
-    fi
-    case "$AB_APP_PAD_MODE" in
-        psc | psc-kernel) AB_PAD_VIRTUAL=psc; export AB_PAD_VIRTUAL ;;
-        x360 | x360-kernel) AB_PAD_VIRTUAL=x360; export AB_PAD_VIRTUAL ;;
-    esac
-    export AB_APP_PAD_MODE
-
     # For an App the preload cannot reach - one statically linked against SDL - the mapping the
     # daemon actually resolved. Deliberately not our gamecontrollerdb.txt: a file given this way
     # overrides SDL's built-in table, and for a pad SDL already knows the built-in entry is the right
     # one while ours may be a stale line for another of that pad's modes.
-    [ -f /tmp/abpad.state.mappings ] && export SDL_GAMECONTROLLERCONFIG_FILE=/tmp/abpad.state.mappings
+    if [ -z "$AB_PAD_KERNEL" ] && [ -f /tmp/abpad.state.mappings ]; then export SDL_GAMECONTROLLERCONFIG_FILE=/tmp/abpad.state.mappings; fi
 elif [ -d /usr/sony ] && [ -x "$AB_PAD_DIR/abpadd" ]; then
     # The console's Reset button ends every App (the owner's rule, 2026-09-25): an App that reads the
     # pads itself still gets the daemon, in the mode that only watches Reset (no SDL, no preload) -

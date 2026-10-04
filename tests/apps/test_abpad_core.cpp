@@ -3,6 +3,7 @@
 // app's SDL is answered with, the shared-memory handover between the two, the per-app profile and the
 // key table keyboard mode sends.
 
+#include "core/kernel_pad.h"
 #include "core/key_names.h"
 #include "core/mapping.h"
 #include "core/profile.h"
@@ -718,4 +719,169 @@ TEST_CASE("the d-pad and the stick stand in for each other") {
         profile.loadStream(text);
         CHECK(profile.movement == MovementAid::StickToDpad);
     }
+}
+
+namespace {
+
+// a device with the plan's keys and axes, as the kernel would show it to a reader
+EvdevPadState deviceOf(VirtualPadKind kind) {
+    const UinputPlan &plan = uinputPlan(kind);
+    vector<EvdevAbs> abs;
+    for (const UinputAxis &axis : plan.abs) {
+        abs.push_back({axis.code, axis.min, axis.max});
+    }
+    return EvdevPadState(plan.keys, abs);
+}
+
+// the frame a state puts on the virtual device, read back from the device the way abpadd reads a real one
+ControllerState throughTheKernel(VirtualPadKind kind, const ControllerState &physical) {
+    const VirtualLayout &layout = virtualLayout(kind);
+    EvdevFrame frame = evdevFrame(kind, buildRawState(layout, controllerView(kind, physical)));
+    EvdevPadState device = deviceOf(kind);
+    for (const auto &key : frame.keys) {
+        device.setKey(key.first, key.second);
+    }
+    for (const auto &abs : frame.abs) {
+        device.setAbs(abs.first, abs.second);
+    }
+    return applyMapping(layout.mapping, device.raw());
+}
+} // namespace
+
+TEST_CASE("kernel pad: the virtual device is the layout's own pad - what an App reads from it is what the shim shows") {
+    SUBCASE("the console pad: ten buttons from BTN_A, two axes of 0..2") {
+        const UinputPlan &plan = uinputPlan(VirtualPadKind::Psc);
+        CHECK(plan.name == "Playstation Classic Controller");
+        CHECK(plan.vendor == 0x054c);
+        CHECK(plan.product == 0x0cda);
+        CHECK(plan.version == 0x0111);
+        REQUIRE(plan.keys.size() == 10);
+        CHECK(plan.keys.front() == 0x130); // BTN_A
+        CHECK(plan.keys.back() == 0x139);  // BTN_TR2
+        REQUIRE(plan.abs.size() == 2);
+        CHECK(plan.abs[0].max == 2);
+        EvdevPadState device = deviceOf(VirtualPadKind::Psc);
+        CHECK(device.buttonCount() == 10);
+        CHECK(device.axisCount() == 2);
+        CHECK(device.hatCount() == 0);
+    }
+
+    SUBCASE("the standard pad: eleven buttons, six axes, one hat") {
+        const UinputPlan &plan = uinputPlan(VirtualPadKind::X360);
+        CHECK(plan.vendor == 0x045e);
+        CHECK(plan.product == 0x028e);
+        EvdevPadState device = deviceOf(VirtualPadKind::X360);
+        CHECK(device.buttonCount() == 11);
+        CHECK(device.axisCount() == 6);
+        CHECK(device.hatCount() == 1);
+    }
+
+    SUBCASE("every element survives the trip to the kernel and back, for both pads") {
+        for (VirtualPadKind kind : {VirtualPadKind::Psc, VirtualPadKind::X360}) {
+            for (Element element :
+                 {Element::A, Element::B, Element::X, Element::Y, Element::Back, Element::Start, Element::LeftShoulder,
+                  Element::RightShoulder, Element::DpUp, Element::DpDown, Element::DpLeft, Element::DpRight}) {
+                INFO("pad " << virtualPadKindName(kind) << " element " << elementName(element));
+                ControllerState physical = pressing({element});
+                ControllerState read = throughTheKernel(kind, physical);
+                ControllerState shown = controllerView(kind, physical);
+                if (kind == VirtualPadKind::Psc) {
+                    shown.set(Element::LeftX, static_cast<int16_t>(0)); // the console pad has no stick to put them on
+                    shown.set(Element::LeftY, static_cast<int16_t>(0));
+                }
+                CHECK(read == shown);
+            }
+            CHECK(throughTheKernel(kind, ControllerState()) == controllerView(kind, ControllerState()));
+        }
+    }
+
+    SUBCASE("the console pad: the stick is the d-pad, the right stick is nothing") {
+        ControllerState read =
+            throughTheKernel(VirtualPadKind::Psc, physicalPad({{Element::LeftX, 30000}, {Element::RightY, -30000}}));
+        CHECK(read.button(Element::DpRight));
+        CHECK(read.axis(Element::RightY) == 0);
+        CHECK_FALSE(read.button(Element::DpUp));
+    }
+
+    SUBCASE("the standard pad keeps its sticks and triggers") {
+        ControllerState physical = physicalPad(
+            {{Element::LeftX, 12000}, {Element::RightY, -20000}, {Element::LeftTrigger, 32767}, {Element::DpLeft, 1}});
+        ControllerState read = throughTheKernel(VirtualPadKind::X360, physical);
+        CHECK(read.axis(Element::LeftX) > 11000);
+        CHECK(read.axis(Element::LeftX) < 13000);
+        CHECK(read.axis(Element::RightY) < -19000);
+        CHECK(read.axis(Element::LeftTrigger) > 32000);
+        CHECK(read.axis(Element::RightTrigger) == 0);
+        CHECK(read.button(Element::DpLeft));
+    }
+
+    SUBCASE("a rest frame puts the console pad axes at their middle and the triggers at the bottom") {
+        EvdevFrame psc = evdevFrame(VirtualPadKind::Psc, buildRawState(virtualLayout(VirtualPadKind::Psc), {}));
+        CHECK(psc.abs[0].second == 1);
+        CHECK(psc.abs[1].second == 1);
+        EvdevFrame x360 = evdevFrame(VirtualPadKind::X360, buildRawState(virtualLayout(VirtualPadKind::X360), {}));
+        CHECK(x360.abs[2].second == 0);
+        CHECK(x360.abs[5].second == 0);
+        CHECK(x360.abs[0].second == 0);
+    }
+}
+
+TEST_CASE("kernel pad: a real pad read from its evdev node is numbered as SDL numbers it") {
+    // a DualSense under hid-playstation: BTN_SOUTH.. in code order, X Y Z RX RY RZ and a hat
+    const char *const line = "030000004c050000e60c000000810000,PS5 Controller,a:b0,b:b1,x:b3,y:b2,back:b8,guide:b10,"
+                             "start:b9,leftstick:b11,rightstick:b12,leftshoulder:b4,rightshoulder:b5,"
+                             "dpup:h0.1,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,leftx:a0,lefty:a1,rightx:a2,"
+                             "righty:a3,lefttrigger:a4,righttrigger:a5,platform:Linux,";
+    PadMapping mapping;
+    REQUIRE(PadMapping::parseLine(line, mapping));
+    vector<int> keys = {0x130, 0x131, 0x132, 0x133, 0x134, 0x135, 0x136, 0x137, 0x138, 0x139, 0x13a, 0x13b, 0x13c};
+    vector<EvdevAbs> abs = {{0x00, 0, 255}, {0x01, 0, 255}, {0x02, 0, 255}, {0x03, 0, 255},
+                            {0x04, 0, 255}, {0x05, 0, 255}, {0x10, -1, 1},  {0x11, -1, 1}};
+    EvdevPadState pad(keys, abs);
+    CHECK(pad.buttonCount() == 13);
+    CHECK(pad.axisCount() == 6);
+    CHECK(pad.hatCount() == 1);
+
+    pad.setKey(0x130, 1);
+    CHECK(applyMapping(mapping, pad.raw()).button(Element::A));
+    pad.setKey(0x130, 0);
+    pad.setAbs(0x01, 0); // stick fully up
+    CHECK(applyMapping(mapping, pad.raw()).axis(Element::LeftY) < -32000);
+    pad.setAbs(0x01, 128);
+    pad.setAbs(0x11, 1); // hat down
+    ControllerState read = applyMapping(mapping, pad.raw());
+    CHECK(read.button(Element::DpDown));
+    CHECK_FALSE(read.button(Element::DpUp));
+    pad.setAbs(0x11, 0);
+
+    pad.setAbs(0x04, 0);
+    CHECK(applyMapping(mapping, pad.raw()).axis(Element::LeftTrigger) == 0);
+    pad.setAbs(0x04, 255);
+    CHECK(applyMapping(mapping, pad.raw()).axis(Element::LeftTrigger) > 32000);
+}
+
+TEST_CASE("kernel pad: the console's own pad - two axes of 0..2 - reads as a d-pad") {
+    PadMapping mapping;
+    REQUIRE(PadMapping::parseLine(kPscLine, mapping));
+    vector<int> keys;
+    for (int code = 0x130; code <= 0x139; ++code) {
+        keys.push_back(code);
+    }
+    EvdevPadState pad(keys, {{0, 0, 2}, {1, 0, 2}});
+    pad.setAbs(0, 1);
+    pad.setAbs(1, 1);
+    ControllerState idle = applyMapping(mapping, pad.raw());
+    CHECK_FALSE(idle.button(Element::DpLeft));
+    CHECK_FALSE(idle.button(Element::DpRight));
+    CHECK_FALSE(idle.button(Element::DpUp));
+    CHECK_FALSE(idle.button(Element::DpDown));
+    pad.setAbs(0, 0);
+    CHECK(applyMapping(mapping, pad.raw()).button(Element::DpLeft));
+    pad.setAbs(0, 2);
+    CHECK(applyMapping(mapping, pad.raw()).button(Element::DpRight));
+    pad.setAbs(0, 1);
+    pad.setAbs(1, 0);
+    CHECK(applyMapping(mapping, pad.raw()).button(Element::DpUp));
+    pad.setKey(0x132, 1); // BTN_C = b2 = Cross = A
+    CHECK(applyMapping(mapping, pad.raw()).button(Element::A));
 }

@@ -210,10 +210,11 @@ TEST_CASE("pe_run.sh: the pad output is the launcher's choice, else the App's Pa
         pe.run("AB_APP_PAD_MODE=psc\nexport AB_APP_PAD_MODE\n" + run);
         CHECK(trail(pe).find("AB_APP_PAD_MODE=psc ") != string::npos);
     }
-    SUBCASE("a kernel mode is passed on as it is") {
+    SUBCASE("a kernel mode asks abpadd for a device and gives the shim no answer") {
         PeRun pe;
         pe.run("AB_APP_PAD_MODE=x360-kernel\nexport AB_APP_PAD_MODE\n" + run);
         CHECK(trail(pe).find("AB_APP_PAD_MODE=x360-kernel ") != string::npos);
+        CHECK(trail(pe).find("AB_PAD_VIRTUAL= AB_PAD_KERNEL=x360") != string::npos); // no shim answer: the kernel's
     }
 }
 

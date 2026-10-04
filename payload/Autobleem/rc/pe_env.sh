@@ -146,7 +146,9 @@ pe_prepare() {
         pe_log "no ${PE_SDL_DIR:-/tmp/lib}/libSDL2-2.0.so.0 - the mods use the firmware's SDL2"
     fi
     # the mods preload sdl_remap_arm.so to make the console pad readable: abpad's shim does that job here
-    if [ -f "$AB_PAD_DIR/libabpad.so" ]; then
+    if [ -n "$AB_PAD_KERNEL" ]; then
+        pe_log "kernel pad ($AB_APP_PAD_MODE): the shim is not linked as sdl_remap_arm.so, the App reads the virtual device"
+    elif [ -f "$AB_PAD_DIR/libabpad.so" ]; then
         ln -sf "$AB_PAD_DIR/libabpad.so" "$PE_ROOT/lib/sdl_remap_arm.so"
     else
         pe_log "no abpad shim ($AB_PAD_DIR/libabpad.so) - the pad is not remapped"
@@ -171,7 +173,7 @@ pe_prepare() {
     PE_REMAP_BOUND=
     for pe_r in $(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_FILENAME" remap | tr ',' ' '); do
         case "$pe_r" in */* | .*) continue ;; esac
-        if [ -f "$AB_APP_DIR/$pe_r" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
+        if [ -z "$AB_PAD_KERNEL" ] && [ -f "$AB_APP_DIR/$pe_r" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
             if mount -o bind "$AB_PAD_DIR/libabpad.so" "$AB_APP_DIR/$pe_r" 2>/dev/null; then
                 PE_REMAP_BOUND="$PE_REMAP_BOUND $pe_r"
             else
@@ -269,7 +271,7 @@ CFG
 pe_trail() {
     pe_log "pad: LD_PRELOAD=$LD_PRELOAD"
     pe_log "pad: AB_PAD_DEFAULTS=$AB_PAD_DEFAULTS AB_PAD_PROFILE=$AB_PAD_PROFILE AB_APP_VIRTUAL_PAD=$AB_APP_VIRTUAL_PAD"
-    pe_log "pad: mode: AB_APP_PAD_MODE=$AB_APP_PAD_MODE AB_PAD_VIRTUAL=$AB_PAD_VIRTUAL"
+    pe_log "pad: mode: AB_APP_PAD_MODE=$AB_APP_PAD_MODE AB_PAD_VIRTUAL=$AB_PAD_VIRTUAL AB_PAD_KERNEL=$AB_PAD_KERNEL"
     pe_log "pad: SDL_GAMECONTROLLERCONFIG_FILE=$SDL_GAMECONTROLLERCONFIG_FILE LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
     if [ -n "$AB_PAD_DEFAULTS" ] && [ -f "$AB_PAD_DEFAULTS" ]; then
         grep -v '^[[:space:]]*\(#\|$\)' "$AB_PAD_DEFAULTS" | while read -r pe_l; do pe_log "pad: pad.pe.ini: $pe_l"; done

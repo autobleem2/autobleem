@@ -8,16 +8,24 @@
 // It is a separate process because it has to be: an SDL 1.2 app cannot have a libSDL2 loaded beside
 // its own SDL, both exporting SDL_Init, SDL_PollEvent and SDL_NumJoysticks.
 //
-//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--probe] [--exit-only] [--verbose]
+//   abpadd [--shm PATH] [--db FILE] [--watch-pid N] [--rate HZ] [--kernel psc|x360] [--probe] [--exit-only]
+//          [--verbose]
 //
 // --probe prints what SDL makes of every pad and exits, which is how to find out on a console whether
 // a pad is mapped at all and what the launcher would call it. --exit-only watches the console's Reset
 // button for the app and does nothing else (an App with VirtualPad=false - see ResetWatch).
+//
+// --kernel psc|x360 is the kernel pad (core/kernel_pad.h) for an App no preload reaches: the daemon makes a uinput
+// device with that pad's identity before anything else, holds the real pads with EVIOCGRAB, reads them, and puts the
+// result on the device - so the App finds exactly one pad per player, the virtual one, with no shim. The device and
+// the grabs are file descriptors: they go when the daemon does, a SIGKILL included.
 
+#include "core/kernel_pad.h"
 #include "core/mapping.h"
 #include "core/profile.h"
 #include "core/shared_state.h"
 #include "core/shm_block.h"
+#include "core/virtual_pad.h"
 
 #define SDL_MAIN_HANDLED // a console program: SDL must not rename our main
 #include <SDL2/SDL.h>
@@ -30,6 +38,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -42,6 +51,10 @@
 #include <sys/ioctl.h>
 #include <sys/prctl.h>
 #endif
+#endif
+
+#ifdef __linux__
+#include "daemon/kernel_pad_linux.h"
 #endif
 
 using namespace std;
@@ -95,9 +108,103 @@ struct Slot {
     SDL_JoystickID instance = -1;
     string name;
     string guid;
+#ifdef __linux__
+    // kernel pad: a pad SDL reads through evdev is read here instead (SDL's own handle goes quiet under the grab)...
+    unique_ptr<GrabbedPad> grabbed;
+    // ...and a pad it reads through hidapi has its event nodes held for the App's sake
+    Siblings siblings;
+    string heldPath; // the event node the grab is on, for the next pad not to be given the same one
+#endif
 
     bool occupied() const { return controller != nullptr; }
 };
+
+#ifdef __linux__
+//*******************************
+// Kernel - the kernel pad mode (--kernel), one virtual device per player
+//*******************************
+struct Kernel {
+    bool enabled = false;
+    VirtualPadKind kind = VirtualPadKind::Psc;
+    unique_ptr<UinputPad> pads[MaxPads];
+    // SDL lists our virtual pads as joysticks, and the console's own pad has exactly their identity, so a path or an
+    // id cannot tell them apart (SDL 2.0.18 has no path call at all). What can: a joystick that was not there when a
+    // virtual pad was made, has the virtual pad's ids and turns up while one is still unaccounted for, is that pad.
+    vector<SDL_JoystickID> seenBefore;
+    vector<SDL_JoystickID> ownIds;
+    int pendingOwn = 0;
+    bool snapshotTaken = false;
+
+    void markReal(SDL_JoystickID id) {
+        if (!has(seenBefore, id)) {
+            seenBefore.push_back(id);
+        }
+    }
+
+    static bool has(const vector<SDL_JoystickID> &list, SDL_JoystickID id) {
+        for (SDL_JoystickID one : list) {
+            if (one == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // true when this SDL device index is one of our virtual pads
+    bool isOwn(int deviceIndex) {
+        SDL_JoystickID id = SDL_JoystickGetDeviceInstanceID(deviceIndex);
+        if (has(ownIds, id)) {
+            return true;
+        }
+        const UinputPlan &plan = uinputPlan(kind);
+        if (pendingOwn > 0 && !has(seenBefore, id) && SDL_JoystickGetDeviceVendor(deviceIndex) == plan.vendor &&
+            SDL_JoystickGetDeviceProduct(deviceIndex) == plan.product) {
+            ownIds.push_back(id);
+            --pendingOwn;
+            return true;
+        }
+        markReal(id);
+        return false;
+    }
+
+    vector<string> ownPaths() const {
+        vector<string> paths;
+        for (const unique_ptr<UinputPad> &pad : pads) {
+            if (pad && !pad->eventPath().empty()) {
+                paths.push_back(pad->eventPath());
+            }
+        }
+        return paths;
+    }
+
+    bool ensure(int player) {
+        if (!enabled) {
+            return false;
+        }
+        if (!pads[player]) {
+            string error;
+            if (!snapshotTaken) {
+                // what is plugged in before our first virtual pad: the real ones, whatever their ids
+                for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+                    markReal(SDL_JoystickGetDeviceInstanceID(i));
+                }
+                snapshotTaken = true;
+            }
+            pads[player] = UinputPad::create(kind, error);
+            if (!pads[player]) {
+                say("abpadd: kernel pad for player %d: %s", player + 1, error.c_str());
+                return false;
+            }
+            ++pendingOwn;
+            say("abpadd: kernel pad for player %d is %s at %s", player + 1, uinputPlan(kind).name.c_str(),
+                pads[player]->eventPath().c_str());
+        }
+        return true;
+    }
+};
+
+Kernel g_kernel;
+#endif
 
 string guidOf(SDL_JoystickGUID guid) {
     char text[64];
@@ -116,7 +223,7 @@ string guidOf(SDL_JoystickGUID guid) {
 // disagree about the same pad.
 void settle(int milliseconds) {
     Uint32 until = SDL_GetTicks() + static_cast<Uint32>(milliseconds);
-    while (SDL_GetTicks() < until) {
+    while (SDL_GetTicks() < until && !g_stop) {
         SDL_Event drain;
         while (SDL_PollEvent(&drain)) {
         }
@@ -168,10 +275,63 @@ bool ensureMapping(int deviceIndex) {
     return SDL_IsGameController(deviceIndex) == SDL_TRUE;
 }
 
+#ifdef __linux__
+//*******************************
+// takeOverForKernel - the real pad is held, the App sees the virtual one
+//*******************************
+void takeOverForKernel(Slot *slots, int player, SDL_Joystick *joystick) {
+    Slot &slot = slots[player];
+    if (!g_kernel.ensure(player)) {
+        return; // no uinput: the App is left with the real pad rather than none, and the log says so
+    }
+    if (string(driverOf(slot.guid)) == "evdev") {
+        // the node SDL reads, found by the pad's ids (SDL 2.0.18 cannot say which it is); two pads with the same ids
+        // are told apart by taking the nodes in order - they are the same pad to everything after this
+        vector<string> taken = g_kernel.ownPaths();
+        for (int i = 0; i < MaxPads; ++i) {
+            if (!slots[i].heldPath.empty()) {
+                taken.push_back(slots[i].heldPath);
+            }
+        }
+        string path = findEventNode(SDL_JoystickGetVendor(joystick), SDL_JoystickGetProduct(joystick),
+                                    SDL_JoystickGetProductVersion(joystick), taken);
+        char *text = SDL_GameControllerMapping(slot.controller);
+        PadMapping mapping;
+        if (path.empty()) {
+            say("abpadd: player %d: no event node found for it - the App will see this pad as well as the virtual one",
+                player + 1);
+        } else if (text != nullptr && PadMapping::parseLine(text, mapping)) {
+            string error;
+            slot.grabbed = GrabbedPad::open(path, mapping, error);
+            if (slot.grabbed) {
+                slot.heldPath = path;
+                say("abpadd: player %d is held at %s", player + 1, path.c_str());
+            } else {
+                say("abpadd: %s - the App will see this pad as well as the virtual one", error.c_str());
+            }
+        }
+        if (text != nullptr) {
+            SDL_free(text);
+        }
+    } else {
+        // hidapi: SDL reads the hid report, the event nodes are only what an App could open
+        slot.siblings.grab(SDL_JoystickGetVendor(joystick), SDL_JoystickGetProduct(joystick), g_kernel.ownPaths());
+        say("abpadd: player %d: %d event node(s) held", player + 1, static_cast<int>(slot.siblings.count()));
+    }
+}
+#endif
+
 //*******************************
 // addPad / removePad
 //*******************************
 void addPad(Slot *slots, int deviceIndex) {
+#ifdef __linux__
+    if (g_kernel.enabled && g_kernel.isOwn(deviceIndex)) {
+        // our own virtual pads are joysticks to SDL too: never one of the players
+        chatter("abpadd: device %d is our own kernel pad", deviceIndex);
+        return;
+    }
+#endif
     if (!ensureMapping(deviceIndex)) {
         chatter("abpadd: device %d is not a pad we can use", deviceIndex);
         return;
@@ -201,6 +361,9 @@ void addPad(Slot *slots, int deviceIndex) {
             slots[i].guid = guidOf(SDL_JoystickGetGUID(joystick));
             say("abpadd: player %d is %s (%s, through %s)", i + 1, slots[i].name.c_str(), slots[i].guid.c_str(),
                 driverOf(slots[i].guid));
+#ifdef __linux__
+            takeOverForKernel(slots, i, joystick);
+#endif
             return;
         }
     }
@@ -212,8 +375,19 @@ void removePad(Slot *slots, SDL_JoystickID instance) {
     for (int i = 0; i < MaxPads; ++i) {
         if (slots[i].occupied() && slots[i].instance == instance) {
             say("abpadd: player %d (%s) was unplugged", i + 1, slots[i].name.c_str());
+#ifdef __linux__
+            slots[i].grabbed.reset();
+            slots[i].heldPath.clear();
+            slots[i].siblings.release();
+            if (i > 0) {
+                g_kernel.pads[i].reset(); // player one keeps its device; a second goes with its pad
+            }
+#endif
             SDL_GameControllerClose(slots[i].controller);
-            slots[i] = Slot();
+            slots[i].controller = nullptr;
+            slots[i].instance = -1;
+            slots[i].name.clear();
+            slots[i].guid.clear();
             return;
         }
     }
@@ -623,6 +797,7 @@ int main(int argc, char *argv[]) {
     bool probeOnly = false;
     bool watchOnly = false;
     bool exitOnlyMode = false;
+    string kernelMode; // "psc" / "x360": the kernel pad
 
     for (int i = 1; i < argc; ++i) {
         string argument = argv[i];
@@ -639,6 +814,8 @@ int main(int argc, char *argv[]) {
             rate = atoi(argv[++i]);
         } else if (argument == "--watch-pid" && hasNext) {
             watchPid = atol(argv[++i]);
+        } else if (argument == "--kernel" && hasNext) {
+            kernelMode = argv[++i];
         } else if (argument == "--probe") {
             probeOnly = true;
         } else if (argument == "--watch") {
@@ -649,7 +826,8 @@ int main(int argc, char *argv[]) {
             g_verbose = true;
         } else {
             say("usage: abpadd [--shm PATH] [--db FILE] [--mappings FILE] [--watch-pid N]");
-            say("              [--quit-hotkey a+b] [--rate HZ] [--probe] [--watch] [--exit-only] [--verbose]");
+            say("              [--quit-hotkey a+b] [--rate HZ] [--kernel psc|x360] [--probe] [--watch]");
+            say("              [--exit-only] [--verbose]");
             return argument == "--help" ? 0 : 2;
         }
     }
@@ -714,6 +892,34 @@ int main(int argc, char *argv[]) {
 
     warnIfNotPrivileged();
 
+#ifdef __linux__
+    // the kernel pad exists before the App can look for one: before the state block that the App's start waits for
+    if (!kernelMode.empty()) {
+        g_kernel.enabled = true;
+        g_kernel.kind = virtualPadKindFromName(kernelMode);
+        if (!g_kernel.ensure(0)) {
+            say("abpadd: no kernel pad - the App gets the real pads as they are");
+            g_kernel.enabled = false;
+        }
+    }
+#else
+    (void)kernelMode;
+#endif
+
+    Slot slots[MaxPads];
+    bool kernelScanned = false;
+#ifdef __linux__
+    if (g_kernel.enabled) {
+        // the real pads are held before the state block exists: the App's start waits for that block, so it never
+        // gets a moment with both the real pad and the virtual one in view
+        settle(3000);
+        kernelScanned = true;
+        for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+            addPad(slots, i);
+        }
+    }
+#endif
+
     ShmBlock block;
     if (!block.create(shmPath, sizeof(SharedState))) {
         say("abpadd: %s", block.error().c_str());
@@ -733,12 +939,13 @@ int main(int argc, char *argv[]) {
     }
     ResetWatch resetWatch(watchPid, shared);
 
-    Slot slots[MaxPads];
     // whatever is already plugged in when we start, once it has stopped changing shape under us;
     // everything after that arrives as an event
-    settle(3000);
-    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
-        addPad(slots, i);
+    if (!kernelScanned) {
+        settle(3000);
+        for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+            addPad(slots, i);
+        }
     }
     for (int i = 0; i < MaxPads; ++i) {
         if (slots[i].occupied()) {
@@ -781,11 +988,29 @@ int main(int argc, char *argv[]) {
         int highest = 0;
         for (int i = 0; i < MaxPads; ++i) {
             if (slots[i].occupied()) {
+#ifdef __linux__
+                if (slots[i].grabbed && !slots[i].grabbed->poll()) {
+                    slots[i].grabbed.reset(); // gone; SDL says so in a moment
+                }
+                pads[i] = slots[i].grabbed ? slots[i].grabbed->state() : readPad(slots[i].controller);
+#else
                 pads[i] = readPad(slots[i].controller);
+#endif
                 connected[i] = true;
                 highest = i + 1;
             }
         }
+#ifdef __linux__
+        if (g_kernel.enabled) {
+            const VirtualLayout &layout = virtualLayout(g_kernel.kind);
+            for (int i = 0; i < MaxPads; ++i) {
+                if (g_kernel.pads[i]) {
+                    // a slot with no pad is a pad at rest
+                    g_kernel.pads[i]->update(buildRawState(layout, controllerView(g_kernel.kind, pads[i])));
+                }
+            }
+        }
+#endif
         publishPads(*shared, pads, connected, highest);
         quitWatch.check(pads, connected, highest, rate);
         resetWatch.check(rate);
@@ -801,10 +1026,19 @@ int main(int argc, char *argv[]) {
     }
 
     for (Slot &slot : slots) {
+#ifdef __linux__
+        slot.grabbed.reset(); // the grab goes first, then the virtual pad
+        slot.siblings.release();
+#endif
         if (slot.occupied()) {
             SDL_GameControllerClose(slot.controller);
         }
     }
+#ifdef __linux__
+    for (unique_ptr<UinputPad> &pad : g_kernel.pads) {
+        pad.reset();
+    }
+#endif
     block.close();
     SDL_Quit();
     say("abpadd: stopped");

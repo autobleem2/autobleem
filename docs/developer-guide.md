@@ -129,7 +129,16 @@ that `pad=`, else `psc`. `app_env.sh` turns it into `AB_PAD_VIRTUAL`, which the 
 axes, the left stick pressed into the d-pad past a threshold, nothing else (no right stick, no stick clicks, L2/R2
 buttons), and the same through the game-controller API, so nothing of the physical DualSense leaks past it. `x360` =
 the standard Xbox 360 pad (six axes with the triggers resting low, a hat). `psc-kernel` / `x360-kernel` are for Apps
-that no preload reaches (a static SDL, raw evdev); until abpadd makes a uinput device they run through the shim.
+that no preload reaches (a static SDL, raw evdev): `abpadd --kernel psc|x360` (`app_env.sh` starts it, with no shim in
+the App and `SDL_JOYSTICK_HIDAPI=0`) makes a uinput device with that pad's identity and codes (`core/kernel_pad.*`: the
+plan, the frames; `daemon/kernel_pad_linux.*`: uinput, `EVIOCGRAB`) before it publishes its state block, holds the real
+pads with `EVIOCGRAB` - a pad SDL reads through evdev is then read by the daemon itself, numbered as SDL's evdev driver
+numbers it and read through the mapping SDL resolved; a pad SDL reads through hidapi has its event nodes grabbed - and
+puts the same controller view the shim would answer on the device. The device and the grabs are file descriptors, so
+the kernel removes them when the daemon ends, a SIGKILL included (nothing stale to sweep). The daemon tells its own
+devices from real pads by `SDL_JoystickPath` (SDL 2.0.14+) against the event node `UI_GET_SYSNAME` names. A grabbed
+real pad is silent but still listed to an App that enumerates; udev gives the virtual one `ID_INPUT_JOYSTICK=1`.
+Hotkeys and Reset keep working: the hotkey reads the daemon's own view of the pad, Reset is another device.
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 

@@ -6,6 +6,8 @@
 # ours and cheap: no sqlite, no miniz, no SDL. The tests link it next to ab_core, which is fine there.
 
 add_library(abpad_core STATIC
+        src/core/kernel_pad.cpp
+        src/core/kernel_pad.h
         src/core/key_names.cpp
         src/core/key_names.h
         src/core/mapping.cpp
@@ -28,6 +30,9 @@ set_target_properties(abpad_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # directory is not ours to rely on, and this one wants SDL2 alone (no image/mixer/ttf).
 if (NOT AB_TARGET STREQUAL "win")
     add_executable(abpadd src/daemon/abpadd.cpp)
+    if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_sources(abpadd PRIVATE src/daemon/kernel_pad_linux.cpp src/daemon/kernel_pad_linux.h)
+    endif()
     target_link_libraries(abpadd abpad_core)
     if (MINGW)
         find_package(PkgConfig REQUIRED)
