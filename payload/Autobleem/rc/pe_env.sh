@@ -156,9 +156,12 @@ pe_prepare() {
     else
         pe_log "no $PE_RC_DIR/pe_gamecontrollerdb.txt - the mods that read it get no pad table"
     fi
-    # PE mods get the console's own pad layout as the virtual pad, with the App's pad.ini still on top
+    # the pad output of this run (pe_run.sh worked it out into AB_PAD_VIRTUAL): the defaults without their own
+    # `virtual =` line, and exactly one of ours - the App's pad.ini may still say more on top of this
     if [ -n "$AB_PAD_DEFAULTS" ] && [ -f "$AB_PAD_DEFAULTS" ]; then
-        { cat "$AB_PAD_DEFAULTS"; printf '\n# PE apps: the console pad as it is\nvirtual = psc\n'; } > "$PE_RUN_DIR/pad.pe.ini"
+        { grep -v '^[[:space:]]*\(virtual\|pad\)[[:space:]]*=' "$AB_PAD_DEFAULTS"
+          [ -n "$AB_PAD_VIRTUAL" ] && printf '\n# PE apps: the pad output of this run (%s)\nvirtual = %s\n' "$AB_APP_PAD_MODE" "$AB_PAD_VIRTUAL"
+        } > "$PE_RUN_DIR/pad.pe.ini"
         AB_PAD_DEFAULTS=$PE_RUN_DIR/pad.pe.ini
         export AB_PAD_DEFAULTS
     fi
@@ -266,6 +269,7 @@ CFG
 pe_trail() {
     pe_log "pad: LD_PRELOAD=$LD_PRELOAD"
     pe_log "pad: AB_PAD_DEFAULTS=$AB_PAD_DEFAULTS AB_PAD_PROFILE=$AB_PAD_PROFILE AB_APP_VIRTUAL_PAD=$AB_APP_VIRTUAL_PAD"
+    pe_log "pad: mode: AB_APP_PAD_MODE=$AB_APP_PAD_MODE AB_PAD_VIRTUAL=$AB_PAD_VIRTUAL"
     pe_log "pad: SDL_GAMECONTROLLERCONFIG_FILE=$SDL_GAMECONTROLLERCONFIG_FILE LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
     if [ -n "$AB_PAD_DEFAULTS" ] && [ -f "$AB_PAD_DEFAULTS" ]; then
         grep -v '^[[:space:]]*\(#\|$\)' "$AB_PAD_DEFAULTS" | while read -r pe_l; do pe_log "pad: pad.pe.ini: $pe_l"; done

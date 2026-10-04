@@ -181,6 +181,42 @@ TEST_CASE("pe_run.sh puts the power flag back to what it was, even when the mod 
     CHECK(pe.tmp.readFile("power/disable") == "1");
 }
 
+TEST_CASE("pe_run.sh: the pad output is the launcher's choice, else the App's PadMode, else pe_compat.ini, else psc") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pe_run.sh is not run");
+        return;
+    }
+    const string run = "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n";
+    auto trail = [](PeRun &pe) {
+        string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+        size_t at = log.rfind("pad: mode: ");
+        return (at == string::npos) ? string("<none>") : log.substr(at, log.find('\n', at) - at);
+    };
+
+    SUBCASE("nothing says: the console's own pad") {
+        PeRun pe;
+        pe.run(run);
+        CHECK(trail(pe).find("AB_APP_PAD_MODE=psc ") != string::npos);
+    }
+    SUBCASE("the App's PadMode") {
+        PeRun pe;
+        pe.tmp.writeFile("Apps/pe-demo/app.ini", "PadMode=x360\n");
+        pe.run(run);
+        CHECK(trail(pe).find("AB_APP_PAD_MODE=x360 ") != string::npos);
+    }
+    SUBCASE("the launcher's value wins over the App's") {
+        PeRun pe;
+        pe.tmp.writeFile("Apps/pe-demo/app.ini", "PadMode=x360\n");
+        pe.run("AB_APP_PAD_MODE=psc\nexport AB_APP_PAD_MODE\n" + run);
+        CHECK(trail(pe).find("AB_APP_PAD_MODE=psc ") != string::npos);
+    }
+    SUBCASE("a kernel mode is passed on as it is") {
+        PeRun pe;
+        pe.run("AB_APP_PAD_MODE=x360-kernel\nexport AB_APP_PAD_MODE\n" + run);
+        CHECK(trail(pe).find("AB_APP_PAD_MODE=x360-kernel ") != string::npos);
+    }
+}
+
 TEST_CASE("pe_run.sh refuses a launcher the compat list blocks: a message for the launcher, a line in the log") {
     if (!haveSh()) {
         MESSAGE("no sh on this machine - pe_run.sh is not run");

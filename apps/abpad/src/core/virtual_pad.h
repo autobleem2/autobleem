@@ -43,6 +43,14 @@ const char *virtualPadKindName(VirtualPadKind kind);
 // the controller state as the virtual pad's own raw buttons, axes and hats
 RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &controller);
 
+// What the app's GameController API answers on a pad of this kind, from the physical pad's state. X360: the state
+// as it is (the caller adds the movement aid). Psc: the console pad as a program ported for it sees it - the d-pad is
+// the only direction (a stick pushed past the threshold presses it; both are also the left stick's two axes at
+// full travel, which is how the original product's pad table reads it), L2/R2 are buttons (their trigger axes are
+// 0 or full), and there is no right stick, no stick click and no guide: nothing an idle stick or trigger does is
+// ever input.
+ControllerState controllerView(VirtualPadKind kind, const ControllerState &physical);
+
 } // namespace abpad
 
 #endif

@@ -143,4 +143,40 @@ RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &co
     return raw;
 }
 
+//*******************************
+// controllerView
+//*******************************
+ControllerState controllerView(VirtualPadKind kind, const ControllerState &physical) {
+    if (kind != VirtualPadKind::Psc) {
+        return physical;
+    }
+    ControllerState view;
+    for (Element element : {Element::A, Element::B, Element::X, Element::Y, Element::Back, Element::Start,
+                            Element::LeftShoulder, Element::RightShoulder}) {
+        view.set(element, physical.button(element));
+    }
+    // L2/R2: buttons on the console's pad. A trigger counts past the same travel an axis does as a button.
+    view.set(Element::LeftTrigger, static_cast<int16_t>(physical.held(Element::LeftTrigger) ? 32767 : 0));
+    view.set(Element::RightTrigger, static_cast<int16_t>(physical.held(Element::RightTrigger) ? 32767 : 0));
+
+    // the d-pad, fed by the left stick past its threshold; two opposite directions cancel
+    bool left = physical.button(Element::DpLeft) || physical.axis(Element::LeftX) <= -AxisButtonThreshold;
+    bool right = physical.button(Element::DpRight) || physical.axis(Element::LeftX) >= AxisButtonThreshold;
+    bool up = physical.button(Element::DpUp) || physical.axis(Element::LeftY) <= -AxisButtonThreshold;
+    bool down = physical.button(Element::DpDown) || physical.axis(Element::LeftY) >= AxisButtonThreshold;
+    if (left && right) {
+        left = right = false;
+    }
+    if (up && down) {
+        up = down = false;
+    }
+    view.set(Element::DpLeft, left);
+    view.set(Element::DpRight, right);
+    view.set(Element::DpUp, up);
+    view.set(Element::DpDown, down);
+    view.set(Element::LeftX, static_cast<int16_t>(left ? -32767 : (right ? 32767 : 0)));
+    view.set(Element::LeftY, static_cast<int16_t>(up ? -32767 : (down ? 32767 : 0)));
+    return view;
+}
+
 } // namespace abpad

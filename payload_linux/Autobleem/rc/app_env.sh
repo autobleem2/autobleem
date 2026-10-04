@@ -177,6 +177,19 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
     [ -f "$AB_PAD_DEFAULTS_FILE" ] && export AB_PAD_DEFAULTS="$AB_PAD_DEFAULTS_FILE"
     [ -f "$AB_APP_DIR/pad.ini" ] && export AB_PAD_PROFILE="$AB_APP_DIR/pad.ini"
 
+    # The pad output this App wants (docs: PadMode= in app.ini, or the user's choice, which the launcher passes as
+    # AB_APP_PAD_MODE): psc = the console's own pad, x360 = a standard Xbox 360 pad, both through the shim (psc-kernel and x360-kernel fall back to the shim until the uinput mode exists). The
+    # shim reads AB_PAD_VIRTUAL over any profile, so there is exactly one answer whatever pad.ini says. Empty =
+    # the App's old behaviour (the profile's virtual =, x360 by default).
+    if [ -z "$AB_APP_PAD_MODE" ] && command -v ab_ini_value > /dev/null 2>&1; then
+        AB_APP_PAD_MODE=$(ab_ini_value padmode | tr 'A-Z' 'a-z')
+    fi
+    case "$AB_APP_PAD_MODE" in
+        psc | psc-kernel) AB_PAD_VIRTUAL=psc; export AB_PAD_VIRTUAL ;;
+        x360 | x360-kernel) AB_PAD_VIRTUAL=x360; export AB_PAD_VIRTUAL ;;
+    esac
+    export AB_APP_PAD_MODE
+
     # For an App the preload cannot reach - one statically linked against SDL - the mapping the
     # daemon actually resolved. Deliberately not our gamecontrollerdb.txt: a file given this way
     # overrides SDL's built-in table, and for a pad SDL already knows the built-in entry is the right

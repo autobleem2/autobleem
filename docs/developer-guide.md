@@ -121,6 +121,16 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 `/media/project_eris` - and removes it all after the mod, also after a TERM (Reset). Tests: `tests/rc/test_pe_run.cpp`
 (the real scripts on a fake mod), `tests/tools/test_make_pe_gamecontrollerdb.py`.
 
+**The pad output of an App (`PadMode=`, 2026-10-04).** One output per App, chosen by the user (the launcher exports
+`AB_APP_PAD_MODE`), else the App's `app.ini` `PadMode=` (`proc_pe` copies it from `pad=` in `rc/pe_compat.ini`), else
+that `pad=`, else `psc`. `app_env.sh` turns it into `AB_PAD_VIRTUAL`, which the shim reads over every profile, and
+`pe_env.sh` writes exactly one `virtual =` line into `pad.pe.ini`. `psc` = the console's pad as the shim gives it
+(`controllerView` in `apps/abpad/src/core/virtual_pad.*`): the console's GUID and button numbers, the d-pad on the two
+axes, the left stick pressed into the d-pad past a threshold, nothing else (no right stick, no stick clicks, L2/R2
+buttons), and the same through the game-controller API, so nothing of the physical DualSense leaks past it. `x360` =
+the standard Xbox 360 pad (six axes with the triggers resting low, a hat). `psc-kernel` / `x360-kernel` are for Apps
+that no preload reaches (a static SDL, raw evdev); until abpadd makes a uinput device they run through the shim.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

@@ -242,7 +242,11 @@ void ShimState::update() {
         if (pad < snapshot.padCount && snapshot.connected[pad]) {
             controller = snapshot.pads[pad];
         }
-        applyMovementAid(controller, profile_.movement);
+        if (profile_.virtualPad == VirtualPadKind::Psc) {
+            controller = controllerView(VirtualPadKind::Psc, controller); // the console pad has its own movement
+        } else {
+            applyMovementAid(controller, profile_.movement);
+        }
         ControllerState previous = controller_[pad];
         controller_[pad] = controller;
 

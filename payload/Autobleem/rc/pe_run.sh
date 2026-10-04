@@ -46,6 +46,16 @@ fi
 # ---------------------------------------------------------------------------------------------
 # What every App gets, then the PE tree around the mod.
 # ---------------------------------------------------------------------------------------------
+# The pad output (docs: PadMode): the user's choice (AB_APP_PAD_MODE from the launcher), else the App's own PadMode=
+# (proc_pe writes it from pad= in pe_compat.ini), else this launcher's pad= in pe_compat.ini (an App converted
+# before PadMode existed), else the console's own pad. app_env.sh then turns it into the shim's one answer.
+if [ -z "$AB_APP_PAD_MODE" ]; then
+    AB_APP_PAD_MODE=$(sed -n 's/^[Pp][Aa][Dd][Mm][Oo][Dd][Ee][[:space:]]*=[[:space:]]*//p' "$AB_APP_DIR/app.ini" 2>/dev/null | tail -n 1 | tr -d '\r' | tr 'A-Z' 'a-z')
+fi
+[ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=$(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_LAUNCHER" pad)
+[ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=psc
+export AB_APP_PAD_MODE
+
 . "$RC_DIR/app_env.sh"
 
 PE_SHELL=sh

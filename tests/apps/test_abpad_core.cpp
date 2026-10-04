@@ -12,6 +12,8 @@
 
 #include <initializer_list>
 #include <sstream>
+#include <utility>
+#include <vector>
 #include <string>
 
 using namespace abpad;
@@ -183,6 +185,164 @@ TEST_CASE("a pad shown to an app that was ported for the console's own") {
         for (bool pressed : raw.buttons) {
             CHECK(pressed == false);
         }
+    }
+}
+
+// The two pad outputs a PE app can be given (PadMode= psc / x360): what the game-controller API and the raw joystick
+// both answer, from a physical pad's state as the daemon publishes it.
+namespace {
+ControllerState physicalPad(initializer_list<pair<Element, int>> values) {
+    ControllerState state;
+    for (const auto &v : values) {
+        if (isAxis(v.first)) {
+            state.set(v.first, static_cast<int16_t>(v.second));
+        } else {
+            state.set(v.first, v.second != 0);
+        }
+    }
+    return state;
+}
+
+// the raw joystick the psc output gives for a physical state
+RawPadState pscRaw(const ControllerState &physical) {
+    return buildRawState(virtualLayout(VirtualPadKind::Psc), controllerView(VirtualPadKind::Psc, physical));
+}
+} // namespace
+
+TEST_CASE("psc output: the console pad's numbers, the d-pad on the axes, the left stick digitised into it") {
+    const VirtualLayout &layout = virtualLayout(VirtualPadKind::Psc);
+    CHECK(layout.guid == "030000004c050000da0c000011010000");
+    CHECK(layout.name == "Playstation Classic Controller");
+
+    SUBCASE("the buttons keep the console's numbers: Triangle 0, Circle 1, Cross 2, Square 3, L1 6, R1 7, Select 8, "
+            "Start 9") {
+        CHECK(pscRaw(physicalPad({{Element::Y, 1}})).buttons[0]);
+        CHECK(pscRaw(physicalPad({{Element::B, 1}})).buttons[1]);
+        CHECK(pscRaw(physicalPad({{Element::A, 1}})).buttons[2]);
+        CHECK(pscRaw(physicalPad({{Element::X, 1}})).buttons[3]);
+        CHECK(pscRaw(physicalPad({{Element::LeftShoulder, 1}})).buttons[6]);
+        CHECK(pscRaw(physicalPad({{Element::RightShoulder, 1}})).buttons[7]);
+        CHECK(pscRaw(physicalPad({{Element::Back, 1}})).buttons[8]);
+        CHECK(pscRaw(physicalPad({{Element::Start, 1}})).buttons[9]);
+    }
+
+    SUBCASE("a d-pad press is the axis at full travel, one direction per axis") {
+        CHECK(pscRaw(physicalPad({{Element::DpLeft, 1}})).axes[0] == -32767);
+        CHECK(pscRaw(physicalPad({{Element::DpRight, 1}})).axes[0] == 32767);
+        CHECK(pscRaw(physicalPad({{Element::DpUp, 1}})).axes[1] == -32767);
+        CHECK(pscRaw(physicalPad({{Element::DpDown, 1}})).axes[1] == 32767);
+        CHECK(pscRaw(physicalPad({{Element::DpLeft, 1}, {Element::DpRight, 1}})).axes[0] == 0);
+    }
+
+    SUBCASE("the left stick presses the d-pad past the threshold only") {
+        CHECK(pscRaw(physicalPad({{Element::LeftX, 32767}})).axes[0] == 32767);
+        CHECK(pscRaw(physicalPad({{Element::LeftX, -32768}})).axes[0] == -32767);
+        CHECK(pscRaw(physicalPad({{Element::LeftY, -20000}})).axes[1] == -32767);
+        CHECK(pscRaw(physicalPad({{Element::LeftY, 16384}})).axes[1] == 32767);
+        CHECK(pscRaw(physicalPad({{Element::LeftX, 16383}, {Element::LeftY, -16383}})).axes[0] == 0);
+        CHECK(pscRaw(physicalPad({{Element::LeftX, 16383}, {Element::LeftY, -16383}})).axes[1] == 0);
+    }
+
+    SUBCASE("idle sticks and triggers, and the parts the console pad does not have, never produce input") {
+        // an idle DualSense stick rests near the middle, not at 0
+        ControllerState idle = physicalPad({{Element::LeftX, 128},
+                                            {Element::LeftY, 128},
+                                            {Element::RightX, 128},
+                                            {Element::RightY, -128},
+                                            {Element::LeftTrigger, 0}});
+        RawPadState raw = pscRaw(idle);
+        for (bool pressed : raw.buttons) {
+            CHECK(pressed == false);
+        }
+        CHECK(raw.axes[0] == 0);
+        CHECK(raw.axes[1] == 0);
+        // a right stick pushed hard, a stick click, the guide button: nothing to put them on
+        raw = pscRaw(physicalPad({{Element::RightX, 32767},
+                                  {Element::RightY, -32768},
+                                  {Element::LeftStick, 1},
+                                  {Element::RightStick, 1},
+                                  {Element::Guide, 1}}));
+        for (bool pressed : raw.buttons) {
+            CHECK(pressed == false);
+        }
+        CHECK(raw.axes[0] == 0);
+        CHECK(raw.axes[1] == 0);
+    }
+
+    SUBCASE("L2 and R2 are buttons: a half-pulled trigger is nothing, a pulled one is the button") {
+        CHECK(pscRaw(physicalPad({{Element::LeftTrigger, 15000}})).buttons[4] == false);
+        CHECK(pscRaw(physicalPad({{Element::LeftTrigger, 32767}})).buttons[4]);
+        CHECK(pscRaw(physicalPad({{Element::RightTrigger, 32767}})).buttons[5]);
+    }
+
+    SUBCASE("the game-controller view is the pad's own: the d-pad as buttons and as the left stick, nothing more") {
+        ControllerState view =
+            controllerView(VirtualPadKind::Psc,
+                           physicalPad({{Element::DpUp, 1}, {Element::RightX, 30000}, {Element::LeftTrigger, 32767}}));
+        CHECK(view.button(Element::DpUp));
+        CHECK(view.axis(Element::LeftY) == -32767);
+        CHECK(view.axis(Element::LeftX) == 0);
+        CHECK(view.axis(Element::RightX) == 0);
+        CHECK(view.axis(Element::LeftTrigger) == 32767); // a button read as a trigger, as SDL does with the table
+        CHECK(controllerView(VirtualPadKind::Psc, physicalPad({{Element::LeftX, 128}, {Element::LeftY, 128}})) ==
+              ControllerState());
+    }
+}
+
+TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers at the bottom at rest") {
+    const VirtualLayout &layout = virtualLayout(VirtualPadKind::X360);
+    CHECK(layout.guid == "030000005e0400008e02000010010000");
+    CHECK(layout.axisCount == 6);
+    CHECK(layout.hatCount == 1);
+    CHECK(layout.buttonCount == 11);
+
+    // the order xpad reports: A B X Y LB RB Back Start Guide LS RS
+    const Element order[] = {Element::A,
+                             Element::B,
+                             Element::X,
+                             Element::Y,
+                             Element::LeftShoulder,
+                             Element::RightShoulder,
+                             Element::Back,
+                             Element::Start,
+                             Element::Guide,
+                             Element::LeftStick,
+                             Element::RightStick};
+    for (int i = 0; i < 11; ++i) {
+        INFO("button " << i);
+        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, pressing({order[i]})));
+        for (int b = 0; b < 11; ++b) {
+            CHECK(raw.buttons[b] == (b == i));
+        }
+    }
+
+    SUBCASE("rest: sticks in the middle, triggers at -32768, nothing pressed, no hat") {
+        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, ControllerState()));
+        CHECK(raw.axes == vector<int16_t>{0, 0, -32768, 0, 0, -32768});
+        CHECK(raw.hats[0] == 0);
+    }
+
+    SUBCASE("sticks and triggers on LX LY LT RX RY RT, the d-pad on the hat") {
+        ControllerState physical = physicalPad({{Element::LeftX, 1000},
+                                                {Element::LeftY, -2000},
+                                                {Element::RightX, 3000},
+                                                {Element::RightY, -4000},
+                                                {Element::LeftTrigger, 32767},
+                                                {Element::DpDown, 1},
+                                                {Element::DpLeft, 1}});
+        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, physical));
+        CHECK(raw.axes[0] == 1000);
+        CHECK(raw.axes[1] == -2000);
+        CHECK(raw.axes[2] == 32766);
+        CHECK(raw.axes[3] == 3000);
+        CHECK(raw.axes[4] == -4000);
+        CHECK(raw.axes[5] == -32768);
+        CHECK(raw.hats[0] == (4 | 8));
+    }
+
+    SUBCASE("the game-controller view is the physical pad as it is") {
+        ControllerState physical = physicalPad({{Element::RightX, 3000}, {Element::A, 1}});
+        CHECK(controllerView(VirtualPadKind::X360, physical) == physical);
     }
 }
 
