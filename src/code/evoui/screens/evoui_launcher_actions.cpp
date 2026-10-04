@@ -130,6 +130,9 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
     if (app.session().runningGame->foreign) {
         if (!app.session().runningGame->app) {
             app.session().emuMode = EmuMode::RetroArch;
+            // the game editor's Resume row "Last slot": Play continues from the newest slot (-1: it has none)
+            if (app.raOptions().get(*app.session().runningGame).resume == RaGameOptions::ResumeLast)
+                app.session().resumePoint = app.resumePoints().newestSlot(*app.session().runningGame);
         } else {
             GuiAppStart appStartScreen(*gui);
             appStartScreen.setGame(app.session().runningGame);

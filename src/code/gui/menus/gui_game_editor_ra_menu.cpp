@@ -15,6 +15,14 @@ using namespace std;
 
 #define OPT_LIGHTGUN 1
 #define OPT_CORE 2
+#define OPT_ASPECT 3
+#define OPT_INTEGER 4
+#define OPT_SMOOTHING 5
+#define OPT_SCANLINES 6
+#define OPT_FPS 7
+#define OPT_ANALOG 8
+#define OPT_RESUME 9
+#define OPT_LAST OPT_RESUME
 
 //*******************************
 // GuiEditorRA::init
@@ -35,6 +43,7 @@ void GuiEditorRA::init() {
             break;
         }
     }
+    options_ = app.raOptions().get(*gameData);
     selOption = OPT_LIGHTGUN;
 }
 
@@ -64,6 +73,105 @@ void GuiEditorRA::cycleCore(int step) {
 }
 
 //*******************************
+// GuiEditorRA::optionLabel / optionValue / stepOption
+//*******************************
+string GuiEditorRA::optionLabel(int option) const {
+    switch (option) {
+    case OPT_ASPECT:
+        return _("Aspect ratio:");
+    case OPT_INTEGER:
+        return _("Integer scaling:");
+    case OPT_SMOOTHING:
+        return _("Smoothing:");
+    case OPT_SCANLINES:
+        return _("Scanlines:");
+    case OPT_FPS:
+        return _("Show FPS:");
+    case OPT_ANALOG:
+        return _("Analog stick as D-pad:");
+    default:
+        return _("Resume:");
+    }
+}
+
+string GuiEditorRA::optionValue(int option) const {
+    auto tri = [](int v) {
+        return v == RaGameOptions::TriDefault ? _("Default") : v == RaGameOptions::TriOn ? _("On") : _("Off");
+    };
+    switch (option) {
+    case OPT_ASPECT:
+        switch (options_.aspect) {
+        case RaGameOptions::AspectCore:
+            return _("From core");
+        case RaGameOptions::Aspect43:
+            return _("4:3");
+        case RaGameOptions::AspectFull:
+            return _("Full screen");
+        case RaGameOptions::AspectPixel:
+            return _("Pixel 1:1");
+        default:
+            return _("Default");
+        }
+    case OPT_INTEGER:
+        return tri(options_.integerScaling);
+    case OPT_SMOOTHING:
+        return tri(options_.smoothing);
+    case OPT_SCANLINES:
+        switch (options_.scanlines) {
+        case RaGameOptions::ScanOff:
+            return _("Off");
+        case RaGameOptions::ScanLight:
+            return _("Light");
+        case RaGameOptions::ScanStrong:
+            return _("Strong");
+        default:
+            return _("Default");
+        }
+    case OPT_FPS:
+        return tri(options_.showFps);
+    case OPT_ANALOG:
+        return tri(options_.analogAsDpad);
+    default:
+        switch (options_.resume) {
+        case RaGameOptions::ResumeLast:
+            return _("Last slot");
+        case RaGameOptions::ResumeNever:
+            return _("Never");
+        default:
+            return _("Ask");
+        }
+    }
+}
+
+void GuiEditorRA::stepOption(int option, int step) {
+    auto next = [step](int value, int count) { return (value + step + count) % count; };
+    switch (option) {
+    case OPT_ASPECT:
+        options_.aspect = next(options_.aspect, RaGameOptions::AspectCount);
+        break;
+    case OPT_INTEGER:
+        options_.integerScaling = next(options_.integerScaling, RaGameOptions::TriCount);
+        break;
+    case OPT_SMOOTHING:
+        options_.smoothing = next(options_.smoothing, RaGameOptions::TriCount);
+        break;
+    case OPT_SCANLINES:
+        options_.scanlines = next(options_.scanlines, RaGameOptions::ScanCount);
+        break;
+    case OPT_FPS:
+        options_.showFps = next(options_.showFps, RaGameOptions::TriCount);
+        break;
+    case OPT_ANALOG:
+        options_.analogAsDpad = next(options_.analogAsDpad, RaGameOptions::TriCount);
+        break;
+    default:
+        options_.resume = next(options_.resume, RaGameOptions::ResumeCount);
+        break;
+    }
+    app.raOptions().set(*gameData, options_);
+}
+
+//*******************************
 // GuiEditorRA::draw
 //*******************************
 void GuiEditorRA::draw() {
@@ -81,9 +189,13 @@ void GuiEditorRA::draw() {
     if (gameData->year > 0)
         pane.facts.emplace_back(_("Year:"), to_string(gameData->year));
     pane.render(*gui);
-    if (menuVisible) // the DebugDriver's rows: the heading band, then the two options, the cursor's index among them
-        ableem::DebugDriver::publish(typeid(*this).name(), {"#" + _("Game"), _("Lightgun game:"), _("Core:")},
-                                     selOption);
+    {
+        std::vector<std::string> rows = {"#" + _("Game"), _("Lightgun game:"), _("Core:")};
+        for (int option = OPT_ASPECT; option <= OPT_LAST; option++)
+            rows.push_back(optionLabel(option));
+        if (menuVisible) // the DebugDriver's rows: the heading band, then the options, the cursor's index among them
+            ableem::DebugDriver::publish(typeid(*this).name(), rows, selOption);
+    }
 
     const int right = GameDetailPane::rowsRight(*gui);
     // a theme's selection frame goes under the heading and the rows' text, so it comes first (G4d)
@@ -117,6 +229,17 @@ void GuiEditorRA::draw() {
         gui->text().renderRowValue(gui->text().elide(font, coreValue(), max(room, 0)), OPT_CORE, yoffset, right);
     }
 
+    for (int option = OPT_ASPECT; option <= OPT_LAST; option++) {
+        TextRenderer::RowRoleScope role(gui->text(), selOption == option ? TextRenderer::RowRole::Selected
+                                                                         : TextRenderer::RowRole::Row);
+        const ableem::Font &font = gui->assets().themeFont;
+        const string label = optionLabel(option);
+        const int room =
+            right - gui->classicContent().x - gui->text().textWidth(font, label) - 3 * PanelStyle::RowInset;
+        gui->text().renderTextLine(label, option, yoffset, XALIGN_LEFT);
+        gui->text().renderRowValue(gui->text().elide(font, optionValue(option), max(room, 0)), option, yoffset, right);
+    }
+
     gui->renderStatus("|@Left+Right| " + _("Choose") + "   |@O| " + _("Back") + "|");
 }
 
@@ -140,7 +263,8 @@ void GuiEditorRA::loop() {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
                 if (gui->input().dpadDown() || gui->input().dpadUp()) {
-                    const int to = gui->input().dpadDown() ? OPT_CORE : OPT_LIGHTGUN;
+                    const int to =
+                        std::min(OPT_LAST, std::max(OPT_LIGHTGUN, selOption + (gui->input().dpadDown() ? 1 : -1)));
                     if (to != selOption) {
                         app.audio().cursor.play();
                         selOption = to;
@@ -154,8 +278,10 @@ void GuiEditorRA::loop() {
                             app.lightguns().setRetroArchLightgun(*gameData, right);
                             changed = true;
                         }
-                    } else {
+                    } else if (selOption == OPT_CORE) {
                         cycleCore(right ? 1 : -1);
+                    } else {
+                        stepOption(selOption, right ? 1 : -1);
                     }
                     render();
                 }

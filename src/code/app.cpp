@@ -60,6 +60,7 @@ App::App(std::unique_ptr<ProcessRunner> runner)
       }) {
     gameQuery_.setRetroArchGames(&retroArch_);
     gameQuery_.setLightguns(&lightguns_);
+    launcher_.setRaOptions(&raOptions_);
 }
 
 //*******************************

@@ -44,6 +44,7 @@ public:
     GameCatalogService &gameCatalog() { return gameCatalog_; }
     GameSettingsService &gameSettings() { return gameSettings_; }
     LightgunService &lightguns() { return lightguns_; }
+    RaOptionsService &raOptions() { return raOptions_; }
     LaunchService &launcher() { return launcher_; }
     MemcardService &memcards() { return memcards_; }
     ResumePointService &resumePoints() { return resumePoints_; }
@@ -92,6 +93,7 @@ protected:
     GameCatalogService gameCatalog_{gameLibrary, gameQuery_};
     GameSettingsService gameSettings_{gameLibrary};
     LightgunService lightguns_{gameLibrary};
+    RaOptionsService raOptions_;
     MemcardService memcards_{gameLibrary};
     ResumePointService resumePoints_;
     RetroArchService retroArch_;
