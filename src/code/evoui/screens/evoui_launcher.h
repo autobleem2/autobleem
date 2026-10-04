@@ -405,7 +405,8 @@ public:
 
     PsCenterLabel *menuHead = nullptr;
     PsCenterLabel *menuText = nullptr;
-    int captionOption = -1; // the icon the caption was last set for (-1: none yet)
+    int captionOption = -1;  // the icon the caption was last set for (-1: none yet)
+    bool menuForApp = false; // the icon row was last set up for an App (its Game icon is "Game settings")
 
     std::string gameName;
     std::string publisher;

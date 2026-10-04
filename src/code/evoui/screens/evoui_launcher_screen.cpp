@@ -1813,6 +1813,11 @@ void GuiLauncher::syncMenuCaption() {
     if (option == captionOption)
         return;
     captionOption = option;
+    if (option == 1 && menuForApp) { // an App's Game icon opens its Game settings
+        menuHead->setText(_("Game settings"), fgColor);
+        menuText->setText(_("Change how this program is started"), fgColor);
+        return;
+    }
     menuHead->setText(headers[option], fgColor);
     menuText->setText(texts[option], fgColor);
 }
@@ -1821,13 +1826,17 @@ void GuiLauncher::syncMenuCaption() {
 // GuiLauncher::showOptions
 //*******************************
 void GuiLauncher::showOptions() {
-    bool enabled[4] = {true, false, false, false}; // an App, or nothing selected: AutoBleem settings only
+    bool enabled[4] = {true, false, false, false}; // nothing selected: AutoBleem settings only
     bool raRow = false;                            // a RetroArch game: Resume where the memory card would be
+    bool forApp = false;                           // an App: settings, and its Game settings
     if (carousel.selectedIsValid()) {
         const PsGame &game = *carousel.games[carousel.selected];
         if (!game.foreign) {
             enabled[1] = enabled[2] = enabled[3] = true; // a PS1 game: editor, memory cards, resume points
-        } else if (!game.app) {
+        } else if (game.app) {
+            enabled[1] = true; // an App: its Game settings
+            forApp = true;
+        } else {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
             // and its save-state slots in the memory card's place - for a core that can save (a ScummVM or DOSBox
             // game has none)
@@ -1842,7 +1851,7 @@ void GuiLauncher::showOptions() {
     } else {
         menu->resumeAvailable = gameHasResumePoints(carousel.games[carousel.selected]);
     }
-    bool same = menu->resumeAtMemcard == raRow;
+    bool same = menu->resumeAtMemcard == raRow && menuForApp == forApp;
     for (int i = 0; i < 4; i++)
         same = same && (menu->enabled[i] == enabled[i]);
     if (same)
@@ -1851,6 +1860,8 @@ void GuiLauncher::showOptions() {
     for (int i = 0; i < 4; i++)
         menu->enabled[i] = enabled[i];
     menu->resumeAtMemcard = raRow;
+    menuForApp = forApp;
+    captionOption = -1; // the Game icon's caption is the App's "Game settings" now, or the editor's again
     menu->selOption = 0;
     menu->x = 640 - 118 / 2;
     menu->ox = menu->x;
