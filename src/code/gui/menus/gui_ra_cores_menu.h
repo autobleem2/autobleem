@@ -4,6 +4,7 @@
 //
 #pragma once
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "../../app.h"
 #include "core/main.h"
 #include "core/services/retroarch.h"
@@ -44,4 +45,5 @@ private:
     std::vector<int> start_; // each row's core when the window opened
     int selected_ = 0;
     int firstVisible_ = 0;
+    DpadHold hold_; // Up/Down held: the cursor goes on at the shared HoldRepeat pace
 };

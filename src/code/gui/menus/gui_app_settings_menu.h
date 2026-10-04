@@ -4,6 +4,7 @@
 //
 #pragma once
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
 #include "core/main.h"
@@ -51,4 +52,5 @@ private:
     int padModeIndex_ = 0;   // 0 = Automatic, 1.. the AppSettings::padModes() entry
     FlagRow flags_[2];       // D-pad as stick, Stick as d-pad
     int selected_ = 1;       // the row the cursor is on (the heading is row 0)
+    DpadHold hold_;          // Up/Down held: the cursor goes on at the shared HoldRepeat pace
 };

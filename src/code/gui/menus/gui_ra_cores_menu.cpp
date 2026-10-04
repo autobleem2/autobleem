@@ -142,10 +142,19 @@ void GuiRaCores::save() {
 void GuiRaCores::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
+    // one step of the cursor: at the press, and again for every repeat of a held Up/Down
+    const auto moveCursor = [&](int dir) {
+        app.audio().cursor.play();
+        select(selected_ + dir);
+        render();
+    };
+    // nothing animates here: a frame after a press and four times a second meanwhile, every pass while Up/Down is
+    // held (DpadHold)
+    gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle);
     while (menuVisible) {
-        // nothing animates here: sleep until a press, and redraw 4 times a second meanwhile
-        if (!gui->input().waitForEvent(250))
+        if (gui->input().frameDue())
             render();
+        hold_.tick(gui->input(), gui->platform().ticks(), moveCursor);
         Event e;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit)
@@ -153,10 +162,9 @@ void GuiRaCores::loop() {
             switch (e.type) {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
+                hold_.track(gui->input(), gui->platform().ticks());
                 if (gui->input().dpadDown() || gui->input().dpadUp()) {
-                    app.audio().cursor.play();
-                    select(selected_ + (gui->input().dpadDown() ? 1 : -1));
-                    render();
+                    moveCursor(gui->input().dpadDown() ? 1 : -1);
                 } else if (gui->input().dpadRight() || gui->input().dpadLeft()) {
                     app.audio().cursor.play();
                     change(gui->input().dpadRight() ? 1 : -1);
