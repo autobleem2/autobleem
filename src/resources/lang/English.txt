@@ -1,6 +1,6 @@
 # AutoBleem English Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(changed)
 (default)=(default)
@@ -488,3 +488,5 @@ Ask=Ask
 Last slot=Last slot
 Never=Never
 This core cannot save its state=This core cannot save its state
+PE apps=PE apps
+cannot run on this console=cannot run on this console

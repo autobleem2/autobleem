@@ -34,6 +34,8 @@ string appCategoryLabel(AppCategory category) {
         return _("Media");
     case AppCategory::Other:
         return _("Other");
+    case AppCategory::PE:
+        return _("PE apps");
     }
     return _(appCategoryName(category));
 }

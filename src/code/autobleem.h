@@ -31,6 +31,7 @@ private:
     // carousel; `retroArch` picks the picture and how long the machine gets to settle after
     void runOutside(bool retroArch, const std::function<void()> &body);
     void launchGame();       // the MENU_OPTION_START handling
+    void takeAppMessage();   // what an App left in <runtime>/app-message.txt, on the notification line
     void runRetroArchMenu(); // MENU_OPTION_RETRO in direct mode: RetroArch's own menu, then back
     // Options -> Display (OutputMode, MENU_OPTION_DISPLAY) - see autobleem.cpp
     void takeEmulatorOutputMode();

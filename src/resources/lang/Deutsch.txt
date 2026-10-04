@@ -1,6 +1,6 @@
 # AutoBleem Deutsch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(geändert)
 (default)=(Standard)
@@ -488,3 +488,5 @@ Ask=Fragen
 Last slot=Letzter Slot
 Never=Nie
 This core cannot save its state=Dieser Core kann seinen Zustand nicht speichern
+PE apps=PE-Apps
+cannot run on this console=läuft nicht auf dieser Konsole

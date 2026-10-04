@@ -75,3 +75,13 @@ target_include_directories(test_ra_gates PRIVATE ${CMAKE_SOURCE_DIR}/src/code/ev
 # core set: autobleem-core's tests/data/psc-info, the info/ folder of the cores tarball the PSC installs
 ab_add_test(test_psc_cores platform/test_psc_cores.cpp)
 target_compile_definitions(test_psc_cores PRIVATE AB_PLATFORM_DIR="${CMAKE_SOURCE_DIR}/src/resources/platform")
+
+# rc/pe_run.sh + rc/pe_env.sh, the start of a PE App: the real scripts on a fake mod (the bind mount needs root and
+# is only checked there), and the trimmed pad table the mods read (tools/make_pe_gamecontrollerdb.py)
+ab_add_test(test_pe_run rc/test_pe_run.cpp)
+target_compile_definitions(test_pe_run PRIVATE AB_RC_DIR="${CMAKE_SOURCE_DIR}/payload/Autobleem/rc")
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if (Python3_Interpreter_FOUND)
+    add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}
+             ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_make_pe_gamecontrollerdb.py)
+endif()

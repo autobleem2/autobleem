@@ -1,6 +1,6 @@
 # AutoBleem Portuguese_BR Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(alterado)
 (default)=(padrão)
@@ -488,3 +488,5 @@ Ask=Perguntar
 Last slot=Último slot
 Never=Nunca
 This core cannot save its state=Este núcleo não consegue salvar o estado
+PE apps=Apps PE
+cannot run on this console=não pode rodar neste console

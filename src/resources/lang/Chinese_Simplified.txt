@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(已更改)
 (default)=(默认)
@@ -488,3 +488,5 @@ Ask=询问
 Last slot=最近的存档位
 Never=从不
 This core cannot save its state=此核心无法保存状态
+PE apps=PE 应用
+cannot run on this console=无法在此主机上运行

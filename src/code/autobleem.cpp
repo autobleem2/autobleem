@@ -288,8 +288,33 @@ void AutoBleem::launchGame() {
         retroArch_.reloadFavoritesAndHistory(); // they could have changed
     }
 
+    takeAppMessage();
+
     session_.runningGame.reset(); // replace with shared_ptr pointing to nullptr
     session_.startingGame = false;
+}
+
+//*******************************
+// AutoBleem::takeAppMessage
+//*******************************
+// An App's script that refuses to run (rc/pe_run.sh on a launcher the compat list blocks) cannot draw anything
+// itself: it leaves <runtime>/app-message.txt - line 1 the App's title, line 2 the reason - and the launcher
+// says it on its notification line when it is back. The file is taken (removed) either way.
+void AutoBleem::takeAppMessage() {
+    const string path = Env::getPathToRuntimeDir() + sep + "app-message.txt";
+    if (!DirEntry::exists(path))
+        return;
+    string contents;
+    DirEntry::readFile(path, contents);
+    vector<string> lines = Strings::getTokens(
+        contents, '\n'); // empty tokens are dropped: the reason is line 2 only if the title is line 1
+    remove(path.c_str());
+    if (lines.empty() || Strings::trim(lines[0]).empty())
+        return;
+    string text = Strings::trim(lines[0]) + " " + _("cannot run on this console");
+    if (lines.size() > 1 && !Strings::trim(lines[1]).empty())
+        text += " - " + Strings::trim(lines[1]);
+    extensionRequests_.message = text;
 }
 
 //*******************************

@@ -1,6 +1,6 @@
 # AutoBleem French Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(modifié)
 (default)=(par défaut)
@@ -488,3 +488,5 @@ Ask=Demander
 Last slot=Dernier emplacement
 Never=Jamais
 This core cannot save its state=Ce cœur ne peut pas sauvegarder son état
+PE apps=Applis PE
+cannot run on this console=ne peut pas fonctionner sur cette console

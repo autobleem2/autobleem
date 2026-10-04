@@ -1,6 +1,6 @@
 # AutoBleem Dutch Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(gewijzigd)
 (default)=(standaard)
@@ -488,3 +488,5 @@ Ask=Vragen
 Last slot=Laatste slot
 Never=Nooit
 This core cannot save its state=Deze core kan zijn status niet opslaan
+PE apps=PE-apps
+cannot run on this console=kan niet draaien op deze console

@@ -1,6 +1,6 @@
 # AutoBleem Spanish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(cambiado)
 (default)=(predeterminado)
@@ -488,3 +488,5 @@ Ask=Preguntar
 Last slot=Última ranura
 Never=Nunca
 This core cannot save its state=Este núcleo no puede guardar su estado
+PE apps=Aplicaciones PE
+cannot run on this console=no puede ejecutarse en esta consola

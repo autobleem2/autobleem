@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# The process a PE mod's script stops with "killall sdl_display" (or kill $PID) when it is done with a message on
+# screen. A mod's text dialog is not drawn in this step - the tool that "shows" it (sdl_text_display) starts this
+# one so the mod has a process to stop. It does nothing and ends when it is told to.
+trap 'kill $PE_SLEEP 2>/dev/null; exit 0' TERM INT HUP
+sleep 86400 &
+PE_SLEEP=$!
+wait $PE_SLEEP

@@ -105,6 +105,10 @@ else
 fi
 
 
+# the pad table the PE apps read: our table trimmed under 100 KB (a mod passes it as one environment string, which
+# Linux caps at 128 KB; the full table is 526 KB) - tools/make_pe_gamecontrollerdb.py
+python3 "$REPO/tools/make_pe_gamecontrollerdb.py" "$REPO/src/resources/gamecontrollerdb.txt" "$STAGE/Autobleem/rc/pe_gamecontrollerdb.txt"
+
 # the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
 # launcher took core as a submodule (2026-09-23): autobleem-appliance's assemble-psc.sh puts them on the
 # stick, not this script - apps/pscbios and apps/abflashkit are gone from this tree

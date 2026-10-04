@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# A PE mod's question - sdl_input_text_display TEXT [X Y SIZE FONT R G B BGIMAGE ONLY BGCOLOR] - which waits for a
+# button and exits with its code: 100 Cross (X), 101 Circle (O), 102 Square (S), 103 Triangle (T). ONLY (argument
+# 10) lists the buttons that may answer, as letters ("XO", "XOST"). In this step nothing is drawn and nobody is
+# asked: the answer is fixed - the first allowed letter (the mods put the safe, usual choice first), Cross when
+# ONLY is missing or names none of them. The question goes to the dialogs log.
+RUN_DIR=${PE_RUN_DIR:-/tmp/pe}
+mkdir -p "$RUN_DIR" 2>/dev/null
+ONLY=${10}
+echo "sdl_input_text_display: $1 [$ONLY]" >> "${PE_DIALOG_LOG:-$RUN_DIR/dialogs.log}" 2>/dev/null
+while [ -n "$ONLY" ]; do
+    rest=${ONLY#?}
+    letter=${ONLY%"$rest"}
+    ONLY=$rest
+    case "$letter" in
+        X | x) exit 100 ;;
+        O | o) exit 101 ;;
+        S | s) exit 102 ;;
+        T | t) exit 103 ;;
+    esac
+done
+exit 100

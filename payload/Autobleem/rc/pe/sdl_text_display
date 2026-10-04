@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# A PE mod's "show this text" call - sdl_text_display TEXT [X Y SIZE FONT R G B BGIMAGE BGCOLOR] - which does not
+# wait. In this step nothing is drawn: the text goes to the dialogs log, and one sdl_display process is started
+# (once per run) so the mod's own "killall sdl_display" has something to stop, as it has with the original tool.
+# Always succeeds.
+RUN_DIR=${PE_RUN_DIR:-/tmp/pe}
+mkdir -p "$RUN_DIR" 2>/dev/null
+echo "sdl_text_display: $1" >> "${PE_DIALOG_LOG:-$RUN_DIR/dialogs.log}" 2>/dev/null
+HERE=$(cd "$(dirname "$0")" && pwd)
+if [ -x "$HERE/sdl_display" ]; then
+    PIDFILE="$RUN_DIR/sdl_display.pid"
+    if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+        exit 0
+    fi
+    "$HERE/sdl_display" > /dev/null 2>&1 < /dev/null &
+    echo $! > "$PIDFILE"
+fi
+exit 0

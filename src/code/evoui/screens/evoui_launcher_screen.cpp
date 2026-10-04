@@ -766,11 +766,14 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
     // a games-directory scan affects the PS1 set, a ROM pass the RetroArch one; leave the rest alone, and
     // never interrupt a scroll animation - reloadGames() repositions the carousel outright.
     // the picker's counts are about every set, not just the one on screen
-    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty())
+    if (scanRosterChangedSinceReload || update.finished || !update.playlistsWritten.empty() || update.appsChanged)
         forgetSetCounts();
 
     bool setAffected = selection.set == GameSet::PS1 || selection.set == GameSet::RetroArch;
     if (scanRosterChangedSinceReload && setAffected && !carousel.scrolling) {
+        reloadGames();
+    } else if (update.appsChanged && selection.set == GameSet::Apps && !carousel.scrolling) {
+        // a processor changed Apps/ (a PE package turned into an App): the Apps set is read again
         reloadGames();
     }
 }

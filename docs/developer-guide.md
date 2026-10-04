@@ -106,6 +106,21 @@ resolved by `AppManifest`), run by the scan over the games before it reads them.
 `ProcessorState`, `tools/proc_check.py`) and the bundled `proc_unzip` -> autobleem-main
 `docs/history/launcher-scanner-processors.md`. Its source repository is named `proc_<name>` (the owner's rule).
 
+### PE apps (`Kinds=mods`, 2026-10-04, todo APPS-7)
+
+The console runs the programs of PE mod packages as Apps. `Mods/*.mod` is turned into `Apps/pe-<name>/` by the
+`proc_pe` processor (`Kinds=mods`, started once per scan with `--start --mods`, core `ScanService::runModsProcessors`;
+the Apps list reloads when `Apps/` changed). The App's `app.ini` has `Exec.psc=run.sh` + `Startup=run.sh` +
+`Category=PE` (only the console finds a program, so a Pi or PC never lists it; the "PE apps" row of the Apps picker),
+and its generated `run.sh` calls `rc/pe_run.sh <app folder>`: `rc/pe_compat.ini` refuses the launchers that delete
+the console's games (the reason reaches the launcher through `<runtime>/app-message.txt`), `rc/pe_env.sh` builds in
+RAM (`/tmp/pe`) what the mod's own, unedited `launch.sh` expects - `/var/volatile/project_eris.cfg`, the
+`launchtmp` link, `PROJECT_ERIS_PATH` (the dialog stand-ins in `rc/pe/` that answer with fixed choices, gl4es, abpad
+as `sdl_remap_arm.so`, the pad table `rc/pe_gamecontrollerdb.txt` that `tools/make_pe_gamecontrollerdb.py` trims
+from ours at package time, under the 128 KB limit of one environment string) bind-mounted onto an empty
+`/media/project_eris` - and removes it all after the mod, also after a TERM (Reset). Tests: `tests/rc/test_pe_run.cpp`
+(the real scripts on a fake mod), `tests/tools/test_make_pe_gamecontrollerdb.py`.
+
 ## Where the code lives (2026-09-23) - read this before the sections below
 
 The launcher takes **`lib_ableem`, `ab_core`, `ab_classic` and `ab_installer` from the `autobleem-core`

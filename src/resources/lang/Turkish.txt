@@ -1,6 +1,6 @@
 # AutoBleem Turkish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(değiştirildi)
 (default)=(varsayılan)
@@ -488,3 +488,5 @@ Ask=Sor
 Last slot=Son yuva
 Never=Asla
 This core cannot save its state=Bu çekirdek durumunu kaydedemiyor
+PE apps=PE uygulamaları
+cannot run on this console=bu konsolda çalışamaz

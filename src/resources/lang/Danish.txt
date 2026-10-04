@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(ændret)
 (default)=(standard)
@@ -488,3 +488,5 @@ Ask=Spørg
 Last slot=Seneste plads
 Never=Aldrig
 This core cannot save its state=Denne kerne kan ikke gemme sin tilstand
+PE apps=PE-apps
+cannot run on this console=kan ikke køre på denne konsol

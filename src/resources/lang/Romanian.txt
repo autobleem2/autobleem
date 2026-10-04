@@ -1,6 +1,6 @@
 # AutoBleem Romanian Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 457
+# Untranslated: 0 / Total: 459
 
 (changed)=(modificat)
 (default)=(implicit)
@@ -488,3 +488,5 @@ Ask=Întreabă
 Last slot=Ultimul slot
 Never=Niciodată
 This core cannot save its state=Acest nucleu nu își poate salva starea
+PE apps=Aplicații PE
+cannot run on this console=nu poate rula pe această consolă
