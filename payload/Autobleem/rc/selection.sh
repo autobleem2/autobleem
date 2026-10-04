@@ -6,7 +6,8 @@
 # runtime dir (RAM, rc/ab_log.sh) on its way out (LaunchService::writeSelectionScript):
 #   4  exit to RetroArch (the launcher's L2+R2 system menu): RetroArch's own menu, then the launcher again
 #   6  install the update the launcher downloaded into System/Updates (a console with a network - the
-#      AutoBleem kernel's WiFi): abupdate lays it over the stick, then the new launcher starts
+#      AutoBleem kernel's WiFi): abupdate lays it over the stick (the AutoBleem package, and/or RetroArch's
+#      zip over RetroArch/bin), then the new launcher starts
 #   7  power off: the standby below, then the launcher again when the power button wakes the console
 #   8  a new display mode (Options -> Display): straight back to boot.sh, which restarts Weston in it and
 #      starts the launcher again - no reboot

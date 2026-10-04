@@ -110,7 +110,7 @@ void App::applyOnlineSetting() {
 // "rpi64" by the CPU, RetroArch's version from the stamp install.sh writes; the PC stick is "pcusb" with
 // the i386 RetroArch. Where RetroArch's catalog is on the site comes from the platform ini
 // (retroarch_catalog, Env::retroArchCatalog()). The console is "psc-fs" (the stick package abupdate lays
-// over the stick; its RetroArch is the PC installer's business), checked only when it has a default route.
+// over the stick, and the RetroArch zip it lays over RetroArch/bin), checked only when it has a default route.
 // A dev host tests the flow with AB_UPDATE_PLATFORM (a release key such as rpi) and
 // AB_UPDATE_RETROARCH_VERSION in the environment; without them it looks for the "win" package and checks no
 // RetroArch.
@@ -158,6 +158,16 @@ void App::applyUpdateSetting() {
     // USB network to a PC, which is no way out - only a default route counts
     c.platformKey = "psc-fs";
     c.networkUp = [] { return System::hasDefaultRoute(); };
+    // RetroArch: the site lists the console's build as the one "zip" of psc/retroarch/latest.json; what is
+    // installed is the stamp the PC installer (and abupdate) writes next to the binary - no stamp, no RetroArch
+    // here, no check. abupdate applies the downloaded zip (rc/selection.sh)
+    c.arch = "zip";
+    {
+        ifstream stamp(Env::getPathToUSBRoot() + sep + "RetroArch" + sep + "bin" + sep + "VERSION");
+        string version;
+        if (stamp && getline(stamp, version))
+            c.installedRetroArch = Strings::trim(version);
+    }
 #else
     const char *platform = getenv("AB_UPDATE_PLATFORM");
     c.platformKey = platform != nullptr && *platform != 0 ? platform : "win";
