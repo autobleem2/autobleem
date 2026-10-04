@@ -93,10 +93,31 @@ public:
     void grab(int vendor, int product, const std::vector<std::string> &ownPaths);
     void release();
     size_t count() const { return fds_.size(); }
+    const std::vector<std::string> &paths() const { return paths_; }
 
 private:
     std::vector<int> fds_;
+    std::vector<std::string> paths_;
 };
+
+//*******************************
+// Hiding the real pads from the App (the kernel pad mode)
+//*******************************
+// A grab silences a node but leaves it in view: the App still enumerates it - as joystick 0 ahead of the virtual pad,
+// and with its siblings (a DualSense's motion sensors are a 6-axis joystick of their own). The original product never
+// had that: its one pad was the console's. So the App is started in a mount namespace of its own where every node of
+// the held pads is /dev/null (pad-mapping.md 0.2).
+//
+// hiddenNodes: for each held event node, every node of the same physical device - its event, js and mouse nodes, its
+// hidraw nodes - and each one's udev database entry (/run/udev/data/c<major>:<minor>, where libudev reads
+// ID_INPUT_JOYSTICK from). A device made through uinput (no physical parent) counts as its own; `own` (our virtual
+// pads) never.
+std::vector<std::string> hiddenNodes(const std::vector<std::string> &heldEventPaths,
+                                     const std::vector<std::string> &own);
+// runHidden: abpadd --hide-run LIST -- PROGRAM ARGS: a private mount namespace, /dev/null bound over every path
+// LIST names (one per line; a missing or empty LIST hides nothing), then exec PROGRAM. A step that fails is said on
+// stderr and skipped - the program always runs.
+int runHidden(const std::string &listFile, char **argv);
 
 } // namespace abpad
 

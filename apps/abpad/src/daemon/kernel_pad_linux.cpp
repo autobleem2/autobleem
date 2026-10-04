@@ -1,13 +1,17 @@
 #include "daemon/kernel_pad_linux.h"
 
 #include <cerrno>
+#include <climits>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
+#include <sched.h>
 #include <sys/ioctl.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -347,6 +351,7 @@ void Siblings::release() {
         ::close(fd);
     }
     fds_.clear();
+    paths_.clear();
 }
 
 void Siblings::grab(int vendor, int product, const vector<string> &ownPaths) {
@@ -371,10 +376,176 @@ void Siblings::grab(int vendor, int product, const vector<string> &ownPaths) {
         }
         if (take && ioctl(fd, EVIOCGRAB, 1) == 0) {
             fds_.push_back(fd);
+            paths_.push_back(path);
         } else {
             ::close(fd);
         }
     }
+}
+
+//*******************************
+// hiddenNodes
+//*******************************
+namespace {
+
+string realPathOf(const string &path) {
+    char buffer[PATH_MAX];
+    return realpath(path.c_str(), buffer) ? string(buffer) : string();
+}
+
+string parentOf(const string &path) {
+    size_t slash = path.find_last_of('/');
+    return slash == string::npos || slash == 0 ? string() : path.substr(0, slash);
+}
+
+string baseNameOf(const string &path) {
+    size_t slash = path.find_last_of('/');
+    return slash == string::npos ? path : path.substr(slash + 1);
+}
+
+// the inputN directory of an input class node ("event1", "js0", "mouse0")
+string inputDirOf(const string &nodeName) {
+    return realPathOf("/sys/class/input/" + nodeName + "/device");
+}
+
+// the physical device an inputN directory belongs to: .../<HID device>/input/inputN -> the HID device, so a pad's
+// buttons, its motion sensors and its touchpad are one; a uinput device (/sys/devices/virtual/input/inputN) is its own
+string groupOfInputDir(const string &inputDir) {
+    string parent = parentOf(inputDir);
+    if (parent.empty() || parent == "/sys/devices/virtual/input" || baseNameOf(parent) != "input") {
+        return inputDir;
+    }
+    return parentOf(parent);
+}
+
+vector<string> entriesOf(const string &directory) {
+    vector<string> names;
+    DIR *dir = opendir(directory.c_str());
+    if (dir) {
+        while (dirent *entry = readdir(dir)) {
+            if (entry->d_name[0] != '.') {
+                names.push_back(entry->d_name);
+            }
+        }
+        closedir(dir);
+    }
+    return names;
+}
+
+bool contains(const vector<string> &list, const string &value) {
+    for (const string &one : list) {
+        if (one == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// the node and its udev entry, each only when it is there
+void addNode(vector<string> &out, const string &devicePath, const string &sysDevFile) {
+    struct stat facts;
+    if (stat(devicePath.c_str(), &facts) == 0 && !contains(out, devicePath)) {
+        out.push_back(devicePath);
+    }
+    string number = readLine(sysDevFile); // "13:65"
+    if (!number.empty()) {
+        string udev = "/run/udev/data/c" + number;
+        if (stat(udev.c_str(), &facts) == 0 && !contains(out, udev)) {
+            out.push_back(udev);
+        }
+    }
+}
+
+} // namespace
+
+vector<string> hiddenNodes(const vector<string> &heldEventPaths, const vector<string> &own) {
+    vector<string> groups;
+    for (const string &path : heldEventPaths) {
+        string inputDir = inputDirOf(baseNameOf(path));
+        if (!inputDir.empty() && !contains(groups, groupOfInputDir(inputDir))) {
+            groups.push_back(groupOfInputDir(inputDir));
+        }
+    }
+    vector<string> ownInputs;
+    for (const string &path : own) {
+        ownInputs.push_back(inputDirOf(baseNameOf(path)));
+    }
+
+    vector<string> nodes;
+    if (groups.empty()) {
+        return nodes;
+    }
+    for (const string &name : entriesOf("/sys/class/input")) {
+        if (name.compare(0, 5, "event") != 0 && name.compare(0, 2, "js") != 0 && name.compare(0, 5, "mouse") != 0) {
+            continue;
+        }
+        string inputDir = inputDirOf(name);
+        if (inputDir.empty() || contains(ownInputs, inputDir) || !contains(groups, groupOfInputDir(inputDir))) {
+            continue;
+        }
+        addNode(nodes, "/dev/input/" + name, "/sys/class/input/" + name + "/dev");
+    }
+    for (const string &name : entriesOf("/sys/class/hidraw")) {
+        if (contains(groups, realPathOf("/sys/class/hidraw/" + name + "/device"))) {
+            addNode(nodes, "/dev/" + name, "/sys/class/hidraw/" + name + "/dev");
+        }
+    }
+    return nodes;
+}
+
+//*******************************
+// runHidden
+//*******************************
+int runHidden(const string &listFile, char **argv) {
+    FILE *log = stderr;
+    const char *logPath = getenv("AB_PAD_LOG");
+    if (logPath && *logPath) {
+        FILE *opened = fopen(logPath, "a");
+        if (opened) {
+            log = opened;
+        }
+    }
+    vector<string> paths;
+    FILE *list = fopen(listFile.c_str(), "r");
+    if (list) {
+        char line[512];
+        while (fgets(line, sizeof(line), list)) {
+            string path = line;
+            while (!path.empty() && (path.back() == '\n' || path.back() == '\r' || path.back() == ' ')) {
+                path.pop_back();
+            }
+            if (!path.empty() && path[0] == '/') {
+                paths.push_back(path);
+            }
+        }
+        fclose(list);
+    }
+
+    if (!paths.empty()) {
+        // a namespace of our own, private all the way down - only then may anything be mounted, or the binds would
+        // reach the launcher's view too
+        if (unshare(CLONE_NEWNS) != 0) {
+            fprintf(log, "abpad: no mount namespace (%s) - the App sees the real pads as well\n", strerror(errno));
+        } else if (mount(nullptr, "/", nullptr, MS_REC | MS_PRIVATE, nullptr) != 0) {
+            fprintf(log, "abpad: cannot make the namespace private (%s) - nothing hidden\n", strerror(errno));
+        } else {
+            int hidden = 0;
+            for (const string &path : paths) {
+                if (mount("/dev/null", path.c_str(), nullptr, MS_BIND, nullptr) == 0) {
+                    ++hidden;
+                } else {
+                    fprintf(log, "abpad: could not hide %s: %s\n", path.c_str(), strerror(errno));
+                }
+            }
+            fprintf(log, "abpad: the App runs with %d node(s) of the real pads hidden\n", hidden);
+        }
+    }
+    if (log != stderr) {
+        fclose(log);
+    }
+    execvp(argv[0], argv);
+    fprintf(stderr, "abpadd --hide-run: cannot run %s: %s\n", argv[0], strerror(errno));
+    return 127;
 }
 
 } // namespace abpad

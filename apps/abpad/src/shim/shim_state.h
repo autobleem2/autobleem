@@ -91,7 +91,8 @@ private:
     ShmBlock block_;
     const SharedState *shared_ = nullptr;
     std::string shmPath_;
-    unsigned attemptsLeft_ = 600; // the daemon may still be starting; stop looking after a while
+    ModRemap remap_ = ModRemap::None; // a mod's own remap library this shim stands in for (AB_PAD_REMAP)
+    unsigned attemptsLeft_ = 600;     // the daemon may still be starting; stop looking after a while
 
     RawPadState raw_[MaxPads];
     ControllerState controller_[MaxPads];

@@ -1,5 +1,7 @@
 #include "core/virtual_pad.h"
 
+#include <cstdint>
+
 using namespace std;
 
 namespace abpad {
@@ -14,21 +16,53 @@ const char *const kX360Line = "030000005e0400008e02000010010000,Microsoft X-Box 
                               "leftshoulder:b4,rightshoulder:b5,dpup:h0.1,dpright:h0.2,dpdown:h0.4,dpleft:h0.8,"
                               "leftx:a0,lefty:a1,rightx:a3,righty:a4,lefttrigger:a2,righttrigger:a5,platform:Linux,";
 
-const char *const kPscLine = "030000004c050000da0c000011010000,Playstation Classic Controller,"
+// The console's own pad exactly as the original product's pad table has it (pad-mapping.md 1.3): the real device's
+// name, its GUID (USB 054c:0cda version 0111), and the d-pad - two axes of 0..2 - as the left stick.
+const char *const kPscLine = "030000004c050000da0c000011010000,Sony Interactive Entertainment Controller,"
                              "a:b2,b:b1,x:b3,y:b0,back:b8,start:b9,"
                              "leftshoulder:b6,lefttrigger:b4,rightshoulder:b7,righttrigger:b5,"
-                             "dpup:-a1,dpdown:+a1,dpleft:-a0,dpright:+a0,platform:Linux,";
+                             "leftx:a0,lefty:a1,platform:Linux,";
 
-VirtualLayout makeLayout(const char *line, int buttons, int axes, int hats, bool triggersRestLow) {
+struct LayoutFacts {
+    int buttons;
+    int axes;
+    int hats;
+    bool triggersRestLow;
+    uint16_t vendor;
+    uint16_t product;
+    uint16_t version;
+    int controllerType;
+};
+
+VirtualLayout makeLayout(const char *line, const LayoutFacts &facts) {
     VirtualLayout layout;
     PadMapping::parseLine(line, layout.mapping);
     layout.name = layout.mapping.name;
     layout.guid = layout.mapping.guid;
-    layout.buttonCount = buttons;
-    layout.axisCount = axes;
-    layout.hatCount = hats;
-    layout.triggerAxesRestAtMinimum = triggersRestLow;
+    layout.buttonCount = facts.buttons;
+    layout.axisCount = facts.axes;
+    layout.hatCount = facts.hats;
+    layout.triggerAxesRestAtMinimum = facts.triggersRestLow;
+    layout.vendor = facts.vendor;
+    layout.product = facts.product;
+    layout.version = facts.version;
+    layout.controllerType = facts.controllerType;
     return layout;
+}
+
+// the value the console pad's d-pad axis takes: an end for the d-pad, else the left stick's own value past half
+// travel when it may feed the d-pad (the remap passed it on as it was), else the centre
+int16_t pscAxis(bool negative, bool positive, int16_t stick, bool stickFeeds) {
+    if (negative != positive) {
+        return negative ? static_cast<int16_t>(-32768) : static_cast<int16_t>(32767);
+    }
+    if (negative) {
+        return 0; // both ends at once: nothing
+    }
+    if (stickFeeds && (stick > AxisButtonThreshold || stick < -AxisButtonThreshold)) {
+        return stick;
+    }
+    return 0;
 }
 
 } // namespace
@@ -37,8 +71,8 @@ VirtualLayout makeLayout(const char *line, int buttons, int axes, int hats, bool
 // virtualLayout
 //*******************************
 const VirtualLayout &virtualLayout(VirtualPadKind kind) {
-    static const VirtualLayout x360 = makeLayout(kX360Line, 11, 6, 1, true);
-    static const VirtualLayout psc = makeLayout(kPscLine, 10, 2, 0, false);
+    static const VirtualLayout x360 = makeLayout(kX360Line, {11, 6, 1, true, 0x045e, 0x028e, 0x0110, 1});
+    static const VirtualLayout psc = makeLayout(kPscLine, {10, 2, 0, false, 0x054c, 0x0cda, 0x0111, 0});
     return (kind == VirtualPadKind::Psc) ? psc : x360;
 }
 
@@ -146,37 +180,53 @@ RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &co
 //*******************************
 // controllerView
 //*******************************
-ControllerState controllerView(VirtualPadKind kind, const ControllerState &physical) {
+ControllerState controllerView(VirtualPadKind kind, const ControllerState &physical, MovementAid aid) {
     if (kind != VirtualPadKind::Psc) {
-        return physical;
+        ControllerState view = physical;
+        applyMovementAid(view, aid);
+        return view;
     }
     ControllerState view;
     for (Element element : {Element::A, Element::B, Element::X, Element::Y, Element::Back, Element::Start,
                             Element::LeftShoulder, Element::RightShoulder}) {
         view.set(element, physical.button(element));
     }
-    // L2/R2: buttons on the console's pad. A trigger counts past the same travel an axis does as a button.
-    view.set(Element::LeftTrigger, static_cast<int16_t>(physical.held(Element::LeftTrigger) ? 32767 : 0));
-    view.set(Element::RightTrigger, static_cast<int16_t>(physical.held(Element::RightTrigger) ? 32767 : 0));
+    // L2/R2: buttons on the console's pad, pressed by a trigger at (nearly) full pull
+    view.set(Element::LeftTrigger,
+             static_cast<int16_t>(physical.axis(Element::LeftTrigger) >= TriggerFullPull ? 32767 : 0));
+    view.set(Element::RightTrigger,
+             static_cast<int16_t>(physical.axis(Element::RightTrigger) >= TriggerFullPull ? 32767 : 0));
 
-    // the d-pad, fed by the left stick past its threshold; two opposite directions cancel
-    bool left = physical.button(Element::DpLeft) || physical.axis(Element::LeftX) <= -AxisButtonThreshold;
-    bool right = physical.button(Element::DpRight) || physical.axis(Element::LeftX) >= AxisButtonThreshold;
-    bool up = physical.button(Element::DpUp) || physical.axis(Element::LeftY) <= -AxisButtonThreshold;
-    bool down = physical.button(Element::DpDown) || physical.axis(Element::LeftY) >= AxisButtonThreshold;
-    if (left && right) {
-        left = right = false;
-    }
-    if (up && down) {
-        up = down = false;
-    }
-    view.set(Element::DpLeft, left);
-    view.set(Element::DpRight, right);
-    view.set(Element::DpUp, up);
-    view.set(Element::DpDown, down);
-    view.set(Element::LeftX, static_cast<int16_t>(left ? -32767 : (right ? 32767 : 0)));
-    view.set(Element::LeftY, static_cast<int16_t>(up ? -32767 : (down ? 32767 : 0)));
+    // the d-pad on the left stick's axes; the stick feeds them past half travel when Analog2Dpad is on
+    const bool stickFeeds = aid == MovementAid::StickToDpad || aid == MovementAid::Both;
+    view.set(Element::LeftX, pscAxis(physical.button(Element::DpLeft), physical.button(Element::DpRight),
+                                     physical.axis(Element::LeftX), stickFeeds));
+    view.set(Element::LeftY, pscAxis(physical.button(Element::DpUp), physical.button(Element::DpDown),
+                                     physical.axis(Element::LeftY), stickFeeds));
     return view;
+}
+
+//*******************************
+// modRemapFromFileName / drasticButton / drasticHat
+//*******************************
+ModRemap modRemapFromFileName(const string &fileName) {
+    string name = fileName;
+    size_t slash = name.find_last_of('/');
+    if (slash != string::npos) {
+        name = name.substr(slash + 1);
+    }
+    return name == "drastic_sdl_remap.so" ? ModRemap::Drastic : ModRemap::None;
+}
+
+int drasticButton(int pscButton) {
+    // Triangle, Circle, Cross, Square, L2, R2, L1, R1, Select, Start -> DraStic's numbers (pad-mapping.md 1.2)
+    static const int numbers[10] = {3, 1, 0, 2, 8, 9, 4, 5, 7, 6};
+    return (pscButton >= 0 && pscButton < 10) ? numbers[pscButton] : -1;
+}
+
+uint8_t drasticHat(int16_t axis0, int16_t axis1) {
+    int mask = (axis0 > 0 ? 2 : (axis0 < 0 ? 8 : 0)) | (axis1 > 0 ? 4 : (axis1 < 0 ? 1 : 0));
+    return static_cast<uint8_t>(mask);
 }
 
 } // namespace abpad

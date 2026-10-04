@@ -98,12 +98,17 @@ RawPadState EvdevPadState::raw() const {
     RawPadState state;
     state.buttons = buttons_;
     for (const Axis &axis : axes_) {
-        int span = axis.info.max - axis.info.min;
-        int value = 0;
+        // SDL's evdev joystick driver's own correction (AxisCorrect, no flat): twice the value against the sum of the
+        // ends, scaled by 2^28 / span and shifted down 13 - so 0..2 reads -32768 / 0 / 32767 and 0..255 with the
+        // centre at 128 reads 128, as an App's SDL reads the same device
+        long long span = static_cast<long long>(axis.info.max) - axis.info.min;
+        long long value = 0;
         if (span > 0) {
-            value = static_cast<int>((static_cast<long long>(axis.value - axis.info.min) * 65535) / span) - 32768;
+            long long ends = static_cast<long long>(axis.info.max) + axis.info.min;
+            long long scale = (1LL << 28) / span;
+            value = ((static_cast<long long>(axis.value) * 2 - ends) * scale) >> 13;
         }
-        state.axes.push_back(static_cast<int16_t>(clampInt(value, -32768, 32767)));
+        state.axes.push_back(static_cast<int16_t>(value < -32768 ? -32768 : (value > 32767 ? 32767 : value)));
     }
     for (const Hat &hat : hats_) {
         int mask = (hat.y < 0 ? 1 : 0) | (hat.x > 0 ? 2 : 0) | (hat.y > 0 ? 4 : 0) | (hat.x < 0 ? 8 : 0);
@@ -181,7 +186,7 @@ ControllerState applyMapping(const PadMapping &mapping, const RawPadState &raw) 
 const UinputPlan &uinputPlan(VirtualPadKind kind) {
     static const UinputPlan psc = [] {
         UinputPlan plan;
-        plan.name = "Playstation Classic Controller";
+        plan.name = "Sony Interactive Entertainment Controller"; // the real pad's own name (pad-mapping.md 1.4)
         plan.bus = 0x0003;
         plan.vendor = 0x054c;
         plan.product = 0x0cda;

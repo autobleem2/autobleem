@@ -55,6 +55,22 @@ fi
 [ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=$(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_LAUNCHER" pad)
 [ -n "$AB_APP_PAD_MODE" ] || AB_APP_PAD_MODE=psc
 export AB_APP_PAD_MODE
+# the d-pad / stick flags the same way: the user's choice, else the App's Dpad2Analog=/Analog2Dpad= (app_env.sh reads
+# those), else this launcher's dpad2analog=/analog2dpad= in pe_compat.ini
+pe_app_ini_flag() {
+    awk -v want="$1" '{ sub(/\r$/, "") } index($0, "=") > 0 {
+            k = substr($0, 1, index($0, "=") - 1); v = substr($0, index($0, "=") + 1)
+            gsub(/^[ \t]+|[ \t]+$/, "", k); gsub(/^[ \t]+|[ \t]+$/, "", v)
+            if (tolower(k) == want) found = v
+        } END { printf "%s", found }' "$AB_APP_DIR/app.ini" 2>/dev/null
+}
+if [ -z "$AB_APP_DPAD2ANALOG" ] && [ -z "$(pe_app_ini_flag dpad2analog)" ]; then
+    AB_APP_DPAD2ANALOG=$(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_LAUNCHER" dpad2analog)
+fi
+if [ -z "$AB_APP_ANALOG2DPAD" ] && [ -z "$(pe_app_ini_flag analog2dpad)" ]; then
+    AB_APP_ANALOG2DPAD=$(pe_ini_get "$PE_RC_DIR/pe_compat.ini" "$PE_LAUNCHER" analog2dpad)
+fi
+export AB_APP_DPAD2ANALOG AB_APP_ANALOG2DPAD
 
 . "$RC_DIR/app_env.sh"
 
@@ -88,7 +104,13 @@ trap pe_on_term TERM INT HUP
 pe_log "starting $PE_LAUNCHER with $PE_SHELL (PROJECT_ERIS_PATH=$PE_BOUND_PATH)"
 pe_trail
 cd "$PE_LAUNCHTMP" || cd "$AB_APP_DIR" || exit 1
-"$PE_SHELL" ./launch.sh &
+if [ "$AB_PAD_HIDE" = 1 ]; then
+    # the kernel pad: the mod starts where the held pads' nodes are /dev/null, so the virtual pad is the only one it
+    # finds (abpadd --hide-run execs the shell: the pid stays the mod's)
+    "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- "$PE_SHELL" ./launch.sh &
+else
+    "$PE_SHELL" ./launch.sh &
+fi
 PE_CHILD=$!
 wait "$PE_CHILD"
 PE_RC=$?

@@ -506,19 +506,19 @@ const char *SDL_GameControllerGetSerial(void *handle) {
 }
 
 Uint16 SDL_GameControllerGetVendor(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x045e; // Microsoft, to match the pad we claim to be
+    return indexOf(handle) < 0 ? 0 : shim().layout().vendor; // the pad we claim to be
 }
 
 Uint16 SDL_GameControllerGetProduct(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x028e; // the wired Xbox 360 pad
+    return indexOf(handle) < 0 ? 0 : shim().layout().product;
 }
 
 Uint16 SDL_GameControllerGetProductVersion(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x0110;
+    return indexOf(handle) < 0 ? 0 : shim().layout().version;
 }
 
 int SDL_GameControllerGetType(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 1; // SDL_CONTROLLER_TYPE_XBOX360
+    return indexOf(handle) < 0 ? 0 : shim().layout().controllerType;
 }
 
 int SDL_GameControllerGetPlayerIndex(void *handle) {
@@ -547,15 +547,15 @@ const char *SDL_JoystickGetSerial(void *handle) {
 }
 
 Uint16 SDL_JoystickGetVendor(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x045e;
+    return indexOf(handle) < 0 ? 0 : shim().layout().vendor;
 }
 
 Uint16 SDL_JoystickGetProduct(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x028e;
+    return indexOf(handle) < 0 ? 0 : shim().layout().product;
 }
 
 Uint16 SDL_JoystickGetProductVersion(void *handle) {
-    return indexOf(handle) < 0 ? 0 : 0x0110;
+    return indexOf(handle) < 0 ? 0 : shim().layout().version;
 }
 
 int SDL_JoystickGetType(void *handle) {
@@ -631,7 +631,7 @@ int SDL_GameControllerTypeForIndex(int index) {
         Fn real = REAL("SDL_GameControllerTypeForIndex", Fn);
         return real ? real(index) : 0;
     }
-    return (index >= 0 && index < state.padCount()) ? 1 : 0; // SDL_CONTROLLER_TYPE_XBOX360
+    return (index >= 0 && index < state.padCount()) ? state.layout().controllerType : 0;
 }
 
 //*******************************

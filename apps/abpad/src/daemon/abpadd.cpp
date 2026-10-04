@@ -18,7 +18,9 @@
 // --kernel psc|x360 is the kernel pad (core/kernel_pad.h) for an App no preload reaches: the daemon makes a uinput
 // device with that pad's identity before anything else, holds the real pads with EVIOCGRAB, reads them, and puts the
 // result on the device - so the App finds exactly one pad per player, the virtual one, with no shim. The device and
-// the grabs are file descriptors: they go when the daemon does, a SIGKILL included.
+// the grabs are file descriptors: they go when the daemon does, a SIGKILL included. It also writes <shm>.hide, the
+// nodes of the held pads, and `abpadd --hide-run <shm>.hide -- PROGRAM ARGS` starts the App in a mount namespace of its
+// own where those are /dev/null - so the App does not even enumerate them (a grabbed node is silent, not gone).
 
 #include "core/kernel_pad.h"
 #include "core/mapping.h"
@@ -126,6 +128,8 @@ struct Slot {
 struct Kernel {
     bool enabled = false;
     VirtualPadKind kind = VirtualPadKind::Psc;
+    // the per-App movement flags (AB_PAD_MOVEMENT, from Dpad2Analog=/Analog2Dpad=), as the shim reads them
+    MovementAid aid = MovementAid::Both;
     unique_ptr<UinputPad> pads[MaxPads];
     // SDL lists our virtual pads as joysticks, and the console's own pad has exactly their identity, so a path or an
     // id cannot tell them apart (SDL 2.0.18 has no path call at all). What can: a joystick that was not there when a
@@ -318,6 +322,37 @@ void takeOverForKernel(Slot *slots, int player, SDL_Joystick *joystick) {
         slot.siblings.grab(SDL_JoystickGetVendor(joystick), SDL_JoystickGetProduct(joystick), g_kernel.ownPaths());
         say("abpadd: player %d: %d event node(s) held", player + 1, static_cast<int>(slot.siblings.count()));
     }
+}
+
+//*******************************
+// writeHideList - what the App's start (abpadd --hide-run) puts out of its sight
+//*******************************
+// Written before the state block exists, which the App's start waits for, so the list is complete when it is read.
+// A pad plugged in later is held but not hidden (the App is already running); the log says so.
+void writeHideList(const string &path, const Slot *slots) {
+    vector<string> held;
+    for (int i = 0; i < MaxPads; ++i) {
+        if (!slots[i].heldPath.empty()) {
+            held.push_back(slots[i].heldPath);
+        }
+        for (const string &sibling : slots[i].siblings.paths()) {
+            held.push_back(sibling);
+        }
+    }
+    vector<string> nodes = hiddenNodes(held, g_kernel.ownPaths());
+    string temporary = path + ".new";
+    FILE *file = fopen(temporary.c_str(), "w");
+    if (!file) {
+        say("abpadd: cannot write %s - the App will see the real pads too", temporary.c_str());
+        return;
+    }
+    for (const string &node : nodes) {
+        fprintf(file, "%s\n", node.c_str());
+    }
+    fclose(file);
+    rename(temporary.c_str(), path.c_str());
+    say("abpadd: %d node(s) of the held pads to hide from the App, in %s", static_cast<int>(nodes.size()),
+        path.c_str());
 }
 #endif
 
@@ -787,6 +822,12 @@ int watch(const string &shmPath) {
 // main
 //*******************************
 int main(int argc, char *argv[]) {
+#ifdef __linux__
+    // abpadd --hide-run LIST -- PROGRAM ARGS: the App's start, not the daemon (kernel_pad_linux.h, runHidden)
+    if (argc >= 5 && string(argv[1]) == "--hide-run" && string(argv[3]) == "--") {
+        return runHidden(argv[2], argv + 4);
+    }
+#endif
     string shmPath = defaultShmPath();
     const char *dbFromEnvironment = getenv("AB_PAD_DB");
     string dbPaths = dbFromEnvironment ? dbFromEnvironment : "";
@@ -897,6 +938,11 @@ int main(int argc, char *argv[]) {
     if (!kernelMode.empty()) {
         g_kernel.enabled = true;
         g_kernel.kind = virtualPadKindFromName(kernelMode);
+        const char *movement = getenv("AB_PAD_MOVEMENT");
+        if (movement && *movement) {
+            g_kernel.aid = movementAidFromName(movement);
+        }
+        say("abpadd: kernel pad movement %s", movementAidName(g_kernel.aid));
         if (!g_kernel.ensure(0)) {
             say("abpadd: no kernel pad - the App gets the real pads as they are");
             g_kernel.enabled = false;
@@ -917,6 +963,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < SDL_NumJoysticks(); ++i) {
             addPad(slots, i);
         }
+        writeHideList(shmPath + ".hide", slots);
     }
 #endif
 
@@ -1006,7 +1053,8 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < MaxPads; ++i) {
                 if (g_kernel.pads[i]) {
                     // a slot with no pad is a pad at rest
-                    g_kernel.pads[i]->update(buildRawState(layout, controllerView(g_kernel.kind, pads[i])));
+                    g_kernel.pads[i]->update(
+                        buildRawState(layout, controllerView(g_kernel.kind, pads[i], g_kernel.aid)));
                 }
             }
         }

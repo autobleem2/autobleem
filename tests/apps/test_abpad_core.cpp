@@ -22,7 +22,7 @@ using namespace std;
 
 namespace {
 
-// the real line for the console's own pad, as src/resources/gamecontrollerdb.txt carries it. The shim
+// the community line for the console's own pad, as src/resources/gamecontrollerdb.txt carries it. The shim
 // never resolves it - SDL does - but it is the clearest statement of why any of this exists: b0 is
 // Triangle here and A on the pad every Linux port was written against.
 const char *const kPscLine = "030000004c050000da0c000011010000,Playstation Classic Controller,"
@@ -171,8 +171,9 @@ TEST_CASE("a pad shown to an app that was ported for the console's own") {
     }
 
     SUBCASE("the d-pad goes onto the axes, because that is where that pad has it") {
-        RawPadState raw = buildRawState(layout, pressing({Element::DpLeft}));
-        CHECK(raw.axes[0] == -32767);
+        RawPadState raw =
+            buildRawState(layout, controllerView(VirtualPadKind::Psc, pressing({Element::DpLeft}), MovementAid::Both));
+        CHECK(raw.axes[0] == -32768);
         CHECK(raw.axes[1] == 0);
     }
 
@@ -189,9 +190,11 @@ TEST_CASE("a pad shown to an app that was ported for the console's own") {
     }
 }
 
-// The two pad outputs a PE app can be given (PadMode= psc / x360): what the game-controller API and the raw joystick
-// both answer, from a physical pad's state as the daemon publishes it.
+// The two pad outputs a PE app can be given (PadMode= psc / x360, the shim and the kernel device), from a DualSense as
+// the console's hid-playstation reports it (pad-mapping.md 1.5): sticks and triggers 0..255 with the centre at 128, the
+// d-pad a hat of -1..1. The fixture reads it the way the daemon does (SDL's evdev numbering, SDL's PS5 line).
 namespace {
+
 ControllerState physicalPad(initializer_list<pair<Element, int>> values) {
     ControllerState state;
     for (const auto &v : values) {
@@ -204,89 +207,233 @@ ControllerState physicalPad(initializer_list<pair<Element, int>> values) {
     return state;
 }
 
-// the raw joystick the psc output gives for a physical state
-RawPadState pscRaw(const ControllerState &physical) {
-    return buildRawState(virtualLayout(VirtualPadKind::Psc), controllerView(VirtualPadKind::Psc, physical));
+const char *const kDualSenseLine =
+    "050000004c050000e60c000000810000,PS5 Controller,a:b0,b:b1,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,"
+    "dpup:h0.1,guide:b10,leftshoulder:b4,leftstick:b11,lefttrigger:a2,leftx:a0,lefty:a1,rightshoulder:b5,"
+    "rightstick:b12,righttrigger:a5,rightx:a3,righty:a4,start:b9,x:b3,y:b2,platform:Linux,";
+
+// the kernel's codes of a DualSense on the console (hid-playstation: KEY 7fdb0000 at 0x120, ABS 3003f)
+constexpr int Cross = 0x130, Circle = 0x131, Triangle = 0x133, Square = 0x134, L1 = 0x136, R1 = 0x137, Create = 0x13a,
+              Options = 0x13b, PsButton = 0x13c;
+constexpr int AbsLX = 0x00, AbsLY = 0x01, AbsL2 = 0x02, AbsRX = 0x03, AbsRY = 0x04, AbsR2 = 0x05, HatX = 0x10,
+              HatY = 0x11;
+
+// a DualSense at rest, then these keys held and these axes/hat set to the kernel's values
+ControllerState dualSense(initializer_list<pair<int, int>> abs, initializer_list<int> keys = {}) {
+    static PadMapping mapping;
+    static bool parsed = PadMapping::parseLine(kDualSenseLine, mapping);
+    REQUIRE(parsed);
+    EvdevPadState pad({0x130, 0x131, 0x133, 0x134, 0x136, 0x137, 0x138, 0x139, 0x13a, 0x13b, 0x13c, 0x13d, 0x13e},
+                      {{AbsLX, 0, 255},
+                       {AbsLY, 0, 255},
+                       {AbsL2, 0, 255},
+                       {AbsRX, 0, 255},
+                       {AbsRY, 0, 255},
+                       {AbsR2, 0, 255},
+                       {HatX, -1, 1},
+                       {HatY, -1, 1}});
+    for (int code : {AbsLX, AbsLY, AbsRX, AbsRY}) {
+        pad.setAbs(code, 128);
+    }
+    pad.setAbs(AbsL2, 0);
+    pad.setAbs(AbsR2, 0);
+    for (const auto &value : abs) {
+        pad.setAbs(value.first, value.second);
+    }
+    for (int key : keys) {
+        pad.setKey(key, 1);
+    }
+    return applyMapping(mapping, pad.raw());
 }
+
+// what each output gives for it
+RawPadState pscRaw(const ControllerState &physical, MovementAid aid = MovementAid::Both) {
+    return buildRawState(virtualLayout(VirtualPadKind::Psc), controllerView(VirtualPadKind::Psc, physical, aid));
+}
+
+RawPadState x360Raw(const ControllerState &physical, MovementAid aid = MovementAid::Both) {
+    return buildRawState(virtualLayout(VirtualPadKind::X360), controllerView(VirtualPadKind::X360, physical, aid));
+}
+
+// the kernel device's value for an ABS code
+int deviceValue(VirtualPadKind kind, const ControllerState &physical, int code, MovementAid aid = MovementAid::Both) {
+    EvdevFrame frame = evdevFrame(kind, buildRawState(virtualLayout(kind), controllerView(kind, physical, aid)));
+    for (const auto &abs : frame.abs) {
+        if (abs.first == code) {
+            return abs.second;
+        }
+    }
+    return -999;
+}
+
+int deviceKey(VirtualPadKind kind, const ControllerState &physical, int code) {
+    EvdevFrame frame =
+        evdevFrame(kind, buildRawState(virtualLayout(kind), controllerView(kind, physical, MovementAid::Both)));
+    for (const auto &key : frame.keys) {
+        if (key.first == code) {
+            return key.second;
+        }
+    }
+    return -999;
+}
+
+bool anyButton(const RawPadState &raw) {
+    for (bool pressed : raw.buttons) {
+        if (pressed) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
 
-TEST_CASE("psc output: the console pad's numbers, the d-pad on the axes, the left stick digitised into it") {
+TEST_CASE("the DualSense fixture reads as SDL reads the console's DualSense") {
+    ControllerState idle = dualSense({});
+    CHECK(idle.axis(Element::LeftX) == 128); // the centre, 128 of 0..255, as SDL corrects it
+    CHECK(idle.axis(Element::LeftY) == 128);
+    CHECK(idle.axis(Element::LeftTrigger) == 0);
+    CHECK(dualSense({{AbsLX, 0}}).axis(Element::LeftX) == -32768);
+    CHECK(dualSense({{AbsLX, 255}}).axis(Element::LeftX) == 32767);
+    CHECK(dualSense({{AbsL2, 255}}).axis(Element::LeftTrigger) == 32767);
+    CHECK(dualSense({{HatX, -1}}).button(Element::DpLeft));
+    CHECK(dualSense({{HatY, 1}}).button(Element::DpDown));
+    CHECK(dualSense({}, {Cross}).button(Element::A));
+    CHECK(dualSense({}, {Triangle}).button(Element::Y));
+}
+
+TEST_CASE("psc output (shim): the console pad exactly as the original remap made a pad into it") {
     const VirtualLayout &layout = virtualLayout(VirtualPadKind::Psc);
     CHECK(layout.guid == "030000004c050000da0c000011010000");
-    CHECK(layout.name == "Playstation Classic Controller");
+    CHECK(layout.name == "Sony Interactive Entertainment Controller"); // the real pad's, which the mods test for
+    CHECK(layout.vendor == 0x054c);
+    CHECK(layout.product == 0x0cda);
+    CHECK(layout.buttonCount == 10);
+    CHECK(layout.axisCount == 2);
+    CHECK(layout.hatCount == 0);
 
-    SUBCASE("the buttons keep the console's numbers: Triangle 0, Circle 1, Cross 2, Square 3, L1 6, R1 7, Select 8, "
-            "Start 9") {
-        CHECK(pscRaw(physicalPad({{Element::Y, 1}})).buttons[0]);
-        CHECK(pscRaw(physicalPad({{Element::B, 1}})).buttons[1]);
-        CHECK(pscRaw(physicalPad({{Element::A, 1}})).buttons[2]);
-        CHECK(pscRaw(physicalPad({{Element::X, 1}})).buttons[3]);
-        CHECK(pscRaw(physicalPad({{Element::LeftShoulder, 1}})).buttons[6]);
-        CHECK(pscRaw(physicalPad({{Element::RightShoulder, 1}})).buttons[7]);
-        CHECK(pscRaw(physicalPad({{Element::Back, 1}})).buttons[8]);
-        CHECK(pscRaw(physicalPad({{Element::Start, 1}})).buttons[9]);
-    }
-
-    SUBCASE("a d-pad press is the axis at full travel, one direction per axis") {
-        CHECK(pscRaw(physicalPad({{Element::DpLeft, 1}})).axes[0] == -32767);
-        CHECK(pscRaw(physicalPad({{Element::DpRight, 1}})).axes[0] == 32767);
-        CHECK(pscRaw(physicalPad({{Element::DpUp, 1}})).axes[1] == -32767);
-        CHECK(pscRaw(physicalPad({{Element::DpDown, 1}})).axes[1] == 32767);
-        CHECK(pscRaw(physicalPad({{Element::DpLeft, 1}, {Element::DpRight, 1}})).axes[0] == 0);
-    }
-
-    SUBCASE("the left stick presses the d-pad past the threshold only") {
-        CHECK(pscRaw(physicalPad({{Element::LeftX, 32767}})).axes[0] == 32767);
-        CHECK(pscRaw(physicalPad({{Element::LeftX, -32768}})).axes[0] == -32767);
-        CHECK(pscRaw(physicalPad({{Element::LeftY, -20000}})).axes[1] == -32767);
-        CHECK(pscRaw(physicalPad({{Element::LeftY, 16384}})).axes[1] == 32767);
-        CHECK(pscRaw(physicalPad({{Element::LeftX, 16383}, {Element::LeftY, -16383}})).axes[0] == 0);
-        CHECK(pscRaw(physicalPad({{Element::LeftX, 16383}, {Element::LeftY, -16383}})).axes[1] == 0);
-    }
-
-    SUBCASE("idle sticks and triggers, and the parts the console pad does not have, never produce input") {
-        // an idle DualSense stick rests near the middle, not at 0
-        ControllerState idle = physicalPad({{Element::LeftX, 128},
-                                            {Element::LeftY, 128},
-                                            {Element::RightX, 128},
-                                            {Element::RightY, -128},
-                                            {Element::LeftTrigger, 0}});
-        RawPadState raw = pscRaw(idle);
-        for (bool pressed : raw.buttons) {
-            CHECK(pressed == false);
+    SUBCASE("idle and small drift give no input") {
+        for (const ControllerState &pad : {dualSense({}), dualSense({{AbsLX, 140}, {AbsLY, 116}}),
+                                           dualSense({{AbsLX, 180}, {AbsLY, 70}, {AbsRX, 0}, {AbsL2, 30}})}) {
+            RawPadState raw = pscRaw(pad);
+            CHECK_FALSE(anyButton(raw));
+            CHECK(raw.axes[0] == 0);
+            CHECK(raw.axes[1] == 0);
         }
-        CHECK(raw.axes[0] == 0);
-        CHECK(raw.axes[1] == 0);
-        // a right stick pushed hard, a stick click, the guide button: nothing to put them on
-        raw = pscRaw(physicalPad({{Element::RightX, 32767},
-                                  {Element::RightY, -32768},
-                                  {Element::LeftStick, 1},
-                                  {Element::RightStick, 1},
-                                  {Element::Guide, 1}}));
-        for (bool pressed : raw.buttons) {
-            CHECK(pressed == false);
+    }
+
+    SUBCASE("the buttons keep the console's numbers: Triangle 0, Circle 1, Cross 2, Square 3, L2 4, R2 5, L1 6, R1 7, "
+            "Select 8, Start 9; PS is nothing") {
+        CHECK(pscRaw(dualSense({}, {Triangle})).buttons[0]);
+        CHECK(pscRaw(dualSense({}, {Circle})).buttons[1]);
+        CHECK(pscRaw(dualSense({}, {Cross})).buttons[2]);
+        CHECK(pscRaw(dualSense({}, {Square})).buttons[3]);
+        CHECK(pscRaw(dualSense({{AbsL2, 255}})).buttons[4]);
+        CHECK(pscRaw(dualSense({{AbsR2, 255}})).buttons[5]);
+        CHECK(pscRaw(dualSense({}, {L1})).buttons[6]);
+        CHECK(pscRaw(dualSense({}, {R1})).buttons[7]);
+        CHECK(pscRaw(dualSense({}, {Create})).buttons[8]);
+        CHECK(pscRaw(dualSense({}, {Options})).buttons[9]);
+        CHECK_FALSE(anyButton(pscRaw(dualSense({}, {PsButton}))));
+    }
+
+    SUBCASE("L2/R2 at full pull only (a half pull is nothing)") {
+        CHECK_FALSE(pscRaw(dualSense({{AbsL2, 128}})).buttons[4]);
+        CHECK_FALSE(pscRaw(dualSense({{AbsR2, 200}})).buttons[5]);
+        CHECK(pscRaw(dualSense({{AbsL2, 254}})).buttons[4]);
+    }
+
+    SUBCASE("the d-pad is the two axes at their ends: -32768 / 32767") {
+        CHECK(pscRaw(dualSense({{HatX, -1}})).axes[0] == -32768);
+        CHECK(pscRaw(dualSense({{HatX, 1}})).axes[0] == 32767);
+        CHECK(pscRaw(dualSense({{HatY, -1}})).axes[1] == -32768);
+        CHECK(pscRaw(dualSense({{HatY, 1}})).axes[1] == 32767);
+        CHECK(pscRaw(dualSense({{HatX, -1}, {HatY, 1}})).axes == vector<int16_t>{-32768, 32767});
+    }
+
+    SUBCASE("Analog2Dpad (the default): the stick feeds the same axes past half travel, with its own value") {
+        CHECK(pscRaw(dualSense({{AbsLX, 0}})).axes[0] == -32768);
+        CHECK(pscRaw(dualSense({{AbsLX, 255}})).axes[0] == 32767);
+        CHECK(pscRaw(dualSense({{AbsLY, 0}})).axes[1] == -32768);
+        CHECK(pscRaw(dualSense({{AbsLX, 224}})).axes[0] == 24800);              // 3/4 right: passed on as it is
+        CHECK(pscRaw(dualSense({{AbsLX, 190}})).axes[0] == 0);                  // under half travel: nothing
+        CHECK(pscRaw(dualSense({{AbsLX, 255}, {HatX, -1}})).axes[0] == -32768); // the d-pad wins over the stick
+        CHECK(pscRaw(dualSense({{AbsLX, 0}}), MovementAid::StickToDpad).axes[0] == -32768);
+    }
+
+    SUBCASE("Analog2Dpad off: the stick is nothing, the d-pad still steers; Dpad2Analog adds nothing") {
+        for (MovementAid aid : {MovementAid::AsIs, MovementAid::DpadToStick}) {
+            CHECK(pscRaw(dualSense({{AbsLX, 0}, {AbsLY, 255}}), aid).axes == vector<int16_t>{0, 0});
+            CHECK(pscRaw(dualSense({{HatX, 1}}), aid).axes[0] == 32767);
         }
-        CHECK(raw.axes[0] == 0);
-        CHECK(raw.axes[1] == 0);
     }
 
-    SUBCASE("L2 and R2 are buttons: a half-pulled trigger is nothing, a pulled one is the button") {
-        CHECK(pscRaw(physicalPad({{Element::LeftTrigger, 15000}})).buttons[4] == false);
-        CHECK(pscRaw(physicalPad({{Element::LeftTrigger, 32767}})).buttons[4]);
-        CHECK(pscRaw(physicalPad({{Element::RightTrigger, 32767}})).buttons[5]);
-    }
-
-    SUBCASE("the game-controller view is the pad's own: the d-pad as buttons and as the left stick, nothing more") {
+    SUBCASE("the game-controller view is the PE table's: the d-pad as the left stick, no d-pad buttons") {
         ControllerState view =
-            controllerView(VirtualPadKind::Psc,
-                           physicalPad({{Element::DpUp, 1}, {Element::RightX, 30000}, {Element::LeftTrigger, 32767}}));
-        CHECK(view.button(Element::DpUp));
-        CHECK(view.axis(Element::LeftY) == -32767);
+            controllerView(VirtualPadKind::Psc, dualSense({{HatY, -1}, {AbsRX, 255}, {AbsL2, 255}}), MovementAid::Both);
+        CHECK(view.axis(Element::LeftY) == -32768);
         CHECK(view.axis(Element::LeftX) == 0);
+        CHECK_FALSE(view.button(Element::DpUp));
         CHECK(view.axis(Element::RightX) == 0);
-        CHECK(view.axis(Element::LeftTrigger) == 32767); // a button read as a trigger, as SDL does with the table
-        CHECK(controllerView(VirtualPadKind::Psc, physicalPad({{Element::LeftX, 128}, {Element::LeftY, 128}})) ==
-              ControllerState());
+        CHECK(view.axis(Element::LeftTrigger) == 32767);
+        CHECK(controllerView(VirtualPadKind::Psc, dualSense({{AbsLX, 150}}), MovementAid::Both) == ControllerState());
+    }
+}
+
+TEST_CASE("psc output standing in for DraStic's own remap: the d-pad as hat 0, DraStic's button numbers") {
+    CHECK(modRemapFromFileName("drastic_sdl_remap.so") == ModRemap::Drastic);
+    CHECK(modRemapFromFileName("/media/Apps/pe-drastic/drastic_sdl_remap.so") == ModRemap::Drastic);
+    CHECK(modRemapFromFileName("sdl_remap_arm.so") == ModRemap::None);
+    // Triangle 3, Circle 1, Cross 0, Square 2, L2 8, R2 9, L1 4, R1 5, Select 7, Start 6 (drastic.cfg: A=1025 is
+    // Circle)
+    const int expected[10] = {3, 1, 0, 2, 8, 9, 4, 5, 7, 6};
+    for (int b = 0; b < 10; ++b) {
+        CHECK(drasticButton(b) == expected[b]);
+    }
+    CHECK(drasticButton(10) == -1);
+    // from the console pad's axes as the psc output makes them
+    CHECK(drasticHat(0, 0) == 0);
+    RawPadState left = pscRaw(dualSense({{HatX, -1}}));
+    CHECK(drasticHat(left.axes[0], left.axes[1]) == 8);
+    RawPadState upRight = pscRaw(dualSense({{HatX, 1}, {HatY, -1}}));
+    CHECK(drasticHat(upRight.axes[0], upRight.axes[1]) == (1 | 2));
+    RawPadState drift = pscRaw(dualSense({{AbsLX, 150}, {AbsLY, 100}}));
+    CHECK(drasticHat(drift.axes[0], drift.axes[1]) == 0);
+}
+
+TEST_CASE("psc output (kernel device): the console pad's 0..2 axes and BTN_A..BTN_TR2") {
+    SUBCASE("idle and small drift: both axes in the middle, no key") {
+        for (const ControllerState &pad : {dualSense({}), dualSense({{AbsLX, 140}, {AbsLY, 116}, {AbsL2, 40}})}) {
+            CHECK(deviceValue(VirtualPadKind::Psc, pad, 0x00) == 1);
+            CHECK(deviceValue(VirtualPadKind::Psc, pad, 0x01) == 1);
+            for (int code = 0x130; code <= 0x139; ++code) {
+                CHECK(deviceKey(VirtualPadKind::Psc, pad, code) == 0);
+            }
+        }
+    }
+
+    SUBCASE("the d-pad and (Analog2Dpad) the stick put the axes at their ends") {
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{HatX, -1}}), 0x00) == 0);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{HatX, 1}}), 0x00) == 2);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{HatY, -1}}), 0x01) == 0);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{HatY, 1}}), 0x01) == 2);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{AbsLX, 255}}), 0x00) == 2);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{AbsLY, 0}}), 0x01) == 0);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{AbsLX, 224}}), 0x00) == 2);
+        CHECK(deviceValue(VirtualPadKind::Psc, dualSense({{AbsLX, 255}}), 0x00, MovementAid::AsIs) == 1);
+    }
+
+    SUBCASE("the keys are the console's: BTN_A Triangle .. BTN_TR2 Start") {
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Triangle}), 0x130) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Circle}), 0x131) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Cross}), 0x132) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Square}), 0x133) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({{AbsL2, 255}}), 0x134) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({{AbsR2, 255}}), 0x135) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {L1}), 0x136) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {R1}), 0x137) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Create}), 0x138) == 1);
+        CHECK(deviceKey(VirtualPadKind::Psc, dualSense({}, {Options}), 0x139) == 1);
     }
 }
 
@@ -296,6 +443,8 @@ TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers a
     CHECK(layout.axisCount == 6);
     CHECK(layout.hatCount == 1);
     CHECK(layout.buttonCount == 11);
+    CHECK(layout.vendor == 0x045e);
+    CHECK(layout.controllerType == 1);
 
     // the order xpad reports: A B X Y LB RB Back Start Guide LS RS
     const Element order[] = {Element::A,
@@ -311,16 +460,29 @@ TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers a
                              Element::RightStick};
     for (int i = 0; i < 11; ++i) {
         INFO("button " << i);
-        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, pressing({order[i]})));
+        RawPadState raw = x360Raw(pressing({order[i]}), MovementAid::AsIs);
         for (int b = 0; b < 11; ++b) {
             CHECK(raw.buttons[b] == (b == i));
         }
     }
 
     SUBCASE("rest: sticks in the middle, triggers at -32768, nothing pressed, no hat") {
-        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, ControllerState()));
+        RawPadState raw = x360Raw(ControllerState());
         CHECK(raw.axes == vector<int16_t>{0, 0, -32768, 0, 0, -32768});
         CHECK(raw.hats[0] == 0);
+    }
+
+    SUBCASE(
+        "a DualSense at rest or drifting: no button, no hat, triggers at the bottom, the sticks barely off centre") {
+        for (const ControllerState &pad : {dualSense({}), dualSense({{AbsLX, 140}, {AbsLY, 116}})}) {
+            RawPadState raw = x360Raw(pad);
+            CHECK_FALSE(anyButton(raw));
+            CHECK(raw.hats[0] == 0);
+            CHECK(raw.axes[2] == -32768);
+            CHECK(raw.axes[5] == -32768);
+            CHECK(raw.axes[0] < 4000);
+            CHECK(raw.axes[0] > -4000);
+        }
     }
 
     SUBCASE("sticks and triggers on LX LY LT RX RY RT, the d-pad on the hat") {
@@ -331,7 +493,7 @@ TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers a
                                                 {Element::LeftTrigger, 32767},
                                                 {Element::DpDown, 1},
                                                 {Element::DpLeft, 1}});
-        RawPadState raw = buildRawState(layout, controllerView(VirtualPadKind::X360, physical));
+        RawPadState raw = x360Raw(physical, MovementAid::AsIs);
         CHECK(raw.axes[0] == 1000);
         CHECK(raw.axes[1] == -2000);
         CHECK(raw.axes[2] == 32766);
@@ -341,10 +503,29 @@ TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers a
         CHECK(raw.hats[0] == (4 | 8));
     }
 
-    SUBCASE("the game-controller view is the physical pad as it is") {
-        ControllerState physical = physicalPad({{Element::RightX, 3000}, {Element::A, 1}});
-        CHECK(controllerView(VirtualPadKind::X360, physical) == physical);
+    SUBCASE("the flags: Dpad2Analog - the d-pad moves the stick; Analog2Dpad - the stick presses the d-pad") {
+        CHECK(x360Raw(dualSense({{HatX, -1}}), MovementAid::DpadToStick).axes[0] == -32767);
+        CHECK(x360Raw(dualSense({{HatX, -1}}), MovementAid::AsIs).axes[0] == 128); // the stick at rest, as it is
+        CHECK(x360Raw(dualSense({{AbsLX, 0}}), MovementAid::StickToDpad).hats[0] == 8);
+        CHECK(x360Raw(dualSense({{AbsLX, 0}}), MovementAid::AsIs).hats[0] == 0);
+        CHECK(x360Raw(dualSense({{AbsLY, 255}, {HatX, 1}}), MovementAid::Both).hats[0] == (2 | 4));
+        CHECK(x360Raw(dualSense({{AbsLX, 150}}), MovementAid::Both).hats[0] == 0); // drift presses nothing
     }
+
+    SUBCASE("the game-controller view is the physical pad as it is (as-is)") {
+        ControllerState physical = physicalPad({{Element::RightX, 3000}, {Element::A, 1}});
+        CHECK(controllerView(VirtualPadKind::X360, physical, MovementAid::AsIs) == physical);
+    }
+}
+
+TEST_CASE("x360 output (kernel device): the triggers 0..255 at rest, the hat") {
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({}), 0x02) == 0);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({}), 0x05) == 0);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({}), 0x10) == 0);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({{AbsL2, 255}}), 0x02) >= 254);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({{HatX, -1}}), 0x10) == -1);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({{AbsLX, 0}}), 0x10, MovementAid::StickToDpad) == -1);
+    CHECK(deviceValue(VirtualPadKind::X360, dualSense({{AbsLX, 0}}), 0x10, MovementAid::AsIs) == 0);
 }
 
 TEST_CASE("a pad no database knows is given a mapping rather than left invisible") {
@@ -736,7 +917,7 @@ EvdevPadState deviceOf(VirtualPadKind kind) {
 // the frame a state puts on the virtual device, read back from the device the way abpadd reads a real one
 ControllerState throughTheKernel(VirtualPadKind kind, const ControllerState &physical) {
     const VirtualLayout &layout = virtualLayout(kind);
-    EvdevFrame frame = evdevFrame(kind, buildRawState(layout, controllerView(kind, physical)));
+    EvdevFrame frame = evdevFrame(kind, buildRawState(layout, controllerView(kind, physical, MovementAid::AsIs)));
     EvdevPadState device = deviceOf(kind);
     for (const auto &key : frame.keys) {
         device.setKey(key.first, key.second);
@@ -751,7 +932,7 @@ ControllerState throughTheKernel(VirtualPadKind kind, const ControllerState &phy
 TEST_CASE("kernel pad: the virtual device is the layout's own pad - what an App reads from it is what the shim shows") {
     SUBCASE("the console pad: ten buttons from BTN_A, two axes of 0..2") {
         const UinputPlan &plan = uinputPlan(VirtualPadKind::Psc);
-        CHECK(plan.name == "Playstation Classic Controller");
+        CHECK(plan.name == "Sony Interactive Entertainment Controller");
         CHECK(plan.vendor == 0x054c);
         CHECK(plan.product == 0x0cda);
         CHECK(plan.version == 0x0111);
@@ -784,23 +965,32 @@ TEST_CASE("kernel pad: the virtual device is the layout's own pad - what an App 
                 INFO("pad " << virtualPadKindName(kind) << " element " << elementName(element));
                 ControllerState physical = pressing({element});
                 ControllerState read = throughTheKernel(kind, physical);
-                ControllerState shown = controllerView(kind, physical);
-                if (kind == VirtualPadKind::Psc) {
-                    shown.set(Element::LeftX, static_cast<int16_t>(0)); // the console pad has no stick to put them on
-                    shown.set(Element::LeftY, static_cast<int16_t>(0));
-                }
+                ControllerState shown = controllerView(kind, physical, MovementAid::AsIs);
                 CHECK(read == shown);
             }
-            CHECK(throughTheKernel(kind, ControllerState()) == controllerView(kind, ControllerState()));
+            CHECK(throughTheKernel(kind, ControllerState()) ==
+                  controllerView(kind, ControllerState(), MovementAid::AsIs));
         }
     }
 
     SUBCASE("the console pad: the stick is the d-pad, the right stick is nothing") {
         ControllerState read =
             throughTheKernel(VirtualPadKind::Psc, physicalPad({{Element::LeftX, 30000}, {Element::RightY, -30000}}));
-        CHECK(read.button(Element::DpRight));
+        CHECK(read.axis(Element::LeftX) == 0); // as-is: the stick does not feed the d-pad
         CHECK(read.axis(Element::RightY) == 0);
-        CHECK_FALSE(read.button(Element::DpUp));
+        ControllerState fed = applyMapping(virtualLayout(VirtualPadKind::Psc).mapping, [] {
+            EvdevPadState device = deviceOf(VirtualPadKind::Psc);
+            EvdevFrame frame =
+                evdevFrame(VirtualPadKind::Psc,
+                           buildRawState(virtualLayout(VirtualPadKind::Psc),
+                                         controllerView(VirtualPadKind::Psc, physicalPad({{Element::LeftX, 30000}}),
+                                                        MovementAid::Both)));
+            for (const auto &abs : frame.abs) {
+                device.setAbs(abs.first, abs.second);
+            }
+            return device.raw();
+        }());
+        CHECK(fed.axis(Element::LeftX) == 32767);
     }
 
     SUBCASE("the standard pad keeps its sticks and triggers") {

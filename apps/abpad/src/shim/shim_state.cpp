@@ -53,6 +53,15 @@ ShimState::ShimState() {
 
     active_ = profile_.mode != PadMode::Off;
     shmPath_ = defaultShmPath();
+    // standing in for a mod's own remap library (rc/pe_env.sh binds us over it and says which): only on the console
+    // pad, which is what such a library was written over
+    const char *remap = getenv("AB_PAD_REMAP");
+    if (remap && *remap && profile_.virtualPad == VirtualPadKind::Psc) {
+        remap_ = modRemapFromFileName(remap);
+        if (remap_ != ModRemap::None) {
+            log("abpad: standing in for %s - its d-pad hat and button numbers too", remap);
+        }
+    }
     if (!active_) {
         log("abpad: mode is off - standing aside");
         return;
@@ -144,9 +153,25 @@ void ShimState::diff(int pad, const RawPadState &before, const RawPadState &afte
             ShimEvent event;
             event.kind = after.buttons[i] ? ShimEvent::Kind::ButtonDown : ShimEvent::Kind::ButtonUp;
             event.pad = pad;
-            event.index = static_cast<int>(i);
+            event.index = remap_ == ModRemap::Drastic ? drasticButton(static_cast<int>(i)) : static_cast<int>(i);
+            if (event.index >= 0) {
+                events_.push_back(event);
+            }
+        }
+    }
+    if (remap_ == ModRemap::Drastic) {
+        // DraStic's remap reports the d-pad axes as hat 0 and nothing else as an axis (the console pad has no more)
+        uint8_t was = drasticHat(before.axis(0), before.axis(1));
+        uint8_t now = drasticHat(after.axis(0), after.axis(1));
+        if (was != now) {
+            ShimEvent event;
+            event.kind = ShimEvent::Kind::HatMotion;
+            event.pad = pad;
+            event.index = 0;
+            event.value = now;
             events_.push_back(event);
         }
+        return;
     }
     for (size_t i = 0; i < after.axes.size(); ++i) {
         if (before.axis(static_cast<int>(i)) != after.axes[i]) {
@@ -242,11 +267,7 @@ void ShimState::update() {
         if (pad < snapshot.padCount && snapshot.connected[pad]) {
             controller = snapshot.pads[pad];
         }
-        if (profile_.virtualPad == VirtualPadKind::Psc) {
-            controller = controllerView(VirtualPadKind::Psc, controller); // the console pad has its own movement
-        } else {
-            applyMovementAid(controller, profile_.movement);
-        }
+        controller = controllerView(profile_.virtualPad, controller, profile_.movement);
         ControllerState previous = controller_[pad];
         controller_[pad] = controller;
 

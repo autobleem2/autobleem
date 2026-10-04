@@ -124,10 +124,17 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 **The pad output of an App (`PadMode=`, 2026-10-04).** One output per App, chosen by the user (the launcher exports
 `AB_APP_PAD_MODE`), else the App's `app.ini` `PadMode=` (`proc_pe` copies it from `pad=` in `rc/pe_compat.ini`), else
 that `pad=`, else `psc`. `app_env.sh` turns it into `AB_PAD_VIRTUAL`, which the shim reads over every profile, and
-`pe_env.sh` writes exactly one `virtual =` line into `pad.pe.ini`. `psc` = the console's pad as the shim gives it
-(`controllerView` in `apps/abpad/src/core/virtual_pad.*`): the console's GUID and button numbers, the d-pad on the two
-axes, the left stick pressed into the d-pad past a threshold, nothing else (no right stick, no stick clicks, L2/R2
-buttons), and the same through the game-controller API, so nothing of the physical DualSense leaks past it. `x360` =
+`pe_env.sh` writes exactly one `virtual =` line into `pad.pe.ini`. `psc` = the console's pad as PE's own `sdl_remap_arm.so`
+delivers it to a mod (`controllerView` in `apps/abpad/src/core/virtual_pad.*`, matched to the behaviour of
+PE's libraries): the name "Sony Interactive Entertainment Controller",
+the console's ids and button numbers (Triangle, Circle, Cross, Square, L2, R2, L1, R1, Select, Start = b0..b9), the
+d-pad on axes 0/1 at the ends, the left stick on the same axes raw past +-16384 and 0 inside it, L2/R2 buttons at a
+full pull (`TriggerFullPull`), nothing else (no right stick, no stick clicks, no PS button). DraStic's own
+`drastic_sdl_remap.so` turns that into a hat and its own button numbers: `pe_env.sh` exports `AB_PAD_REMAP` with the
+name of the library abpad stands in for, and the shim does the same (`ModRemap`, `drasticButton`, `drasticHat`).
+**`Dpad2Analog=` / `Analog2Dpad=`** (app.ini, 1/0; `proc_pe` copies them from `dpad2analog=` / `analog2dpad=` of
+`pe_compat.ini`; the Game settings rows override them, exported as `AB_APP_DPAD2ANALOG` / `AB_APP_ANALOG2DPAD`) become
+`AB_PAD_MOVEMENT` in `app_env.sh` / `pe_run.sh` (`MovementAid`); unset, `analog2dpad` is on, as PE does. `x360` =
 the standard Xbox 360 pad (six axes with the triggers resting low, a hat). `psc-kernel` / `x360-kernel` are for Apps
 that no preload reaches (a static SDL, raw evdev): `abpadd --kernel psc|x360` (`app_env.sh` starts it, with no shim in
 the App and `SDL_JOYSTICK_HIDAPI=0`) makes a uinput device with that pad's identity and codes (`core/kernel_pad.*`: the
@@ -137,7 +144,11 @@ numbers it and read through the mapping SDL resolved; a pad SDL reads through hi
 puts the same controller view the shim would answer on the device. The device and the grabs are file descriptors, so
 the kernel removes them when the daemon ends, a SIGKILL included (nothing stale to sweep). The daemon tells its own
 devices from real pads by `SDL_JoystickPath` (SDL 2.0.14+) against the event node `UI_GET_SYSNAME` names. A grabbed
-real pad is silent but still listed to an App that enumerates; udev gives the virtual one `ID_INPUT_JOYSTICK=1`.
+real pad is silent but still listed to an App that enumerates, so the daemon writes `<state block>.hide` (every node of
+a held pad's physical device - event, js, mouse, hidraw - and their `/run/udev/data` entries, a DualSense's motion
+sensors and touchpad included) and `app_run.sh` / `pe_run.sh` start the App through `abpadd --hide-run LIST -- cmd`:
+a private mount namespace with `/dev/null` bound over each of them, so the App enumerates only the virtual pads (the
+rest of the system is untouched; the namespace goes with the App). udev gives the virtual one `ID_INPUT_JOYSTICK=1`.
 Hotkeys and Reset keep working: the hotkey reads the daemon's own view of the pad, Reset is another device.
 
 ## Where the code lives (2026-09-23) - read this before the sections below

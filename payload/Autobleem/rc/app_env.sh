@@ -176,9 +176,42 @@ esac
 if [ -n "$AB_PAD_KERNEL" ]; then unset AB_PAD_VIRTUAL; fi
 export AB_APP_PAD_MODE AB_PAD_KERNEL
 
+# The d-pad and the stick standing in for each other (Dpad2Analog= / Analog2Dpad= in app.ini, 1 or 0, or the user's
+# choice, which the launcher passes as AB_APP_DPAD2ANALOG / AB_APP_ANALOG2DPAD): Dpad2Analog - the d-pad also moves
+# the left stick; Analog2Dpad - the left stick also presses the d-pad (on the console pad output: feeds its d-pad).
+# One that is not set keeps the profile's default (both on); neither set = the profile decides, as before.
+if command -v ab_ini_value > /dev/null 2>&1; then
+    [ -n "$AB_APP_DPAD2ANALOG" ] || AB_APP_DPAD2ANALOG=$(ab_ini_value dpad2analog)
+    [ -n "$AB_APP_ANALOG2DPAD" ] || AB_APP_ANALOG2DPAD=$(ab_ini_value analog2dpad)
+fi
+ab_flag() {
+    case "$(echo "$1" | tr 'A-Z' 'a-z')" in
+        1 | true | yes | on) echo 1 ;;
+        0 | false | no | off) echo 0 ;;
+    esac
+}
+AB_APP_DPAD2ANALOG=$(ab_flag "$AB_APP_DPAD2ANALOG")
+AB_APP_ANALOG2DPAD=$(ab_flag "$AB_APP_ANALOG2DPAD")
+if [ -n "$AB_APP_DPAD2ANALOG$AB_APP_ANALOG2DPAD" ]; then
+    case "${AB_APP_DPAD2ANALOG:-1}${AB_APP_ANALOG2DPAD:-1}" in
+        11) AB_PAD_MOVEMENT=both ;;
+        10) AB_PAD_MOVEMENT=dpad-to-stick ;;
+        01) AB_PAD_MOVEMENT=stick-to-dpad ;;
+        *) AB_PAD_MOVEMENT=as-is ;;
+    esac
+    export AB_PAD_MOVEMENT
+fi
+export AB_APP_DPAD2ANALOG AB_APP_ANALOG2DPAD
+
+# the kernel pad hides the held pads' nodes from the App: abpadd writes the list, the App is started through
+# "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- <program> (rc/app_run.sh, rc/pe_run.sh)
+AB_PAD_HIDE_LIST=/tmp/abpad.state.hide
+AB_PAD_HIDE= # 1 once the daemon has written the list for this run
+export AB_PAD_HIDE_LIST AB_PAD_HIDE
+
 if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
     # a block left by the last run would pass for the new daemon being ready (the wait below looks for the file)
-    rm -f /tmp/abpad.state /tmp/abpad.state.mappings
+    rm -f /tmp/abpad.state /tmp/abpad.state.mappings "$AB_PAD_HIDE_LIST"
     env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" AB_PAD_DB="$AB_PAD_DB" \
         "$AB_PAD_DIR/abpadd" ${AB_PAD_KERNEL:+--kernel $AB_PAD_KERNEL} --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 
@@ -196,6 +229,7 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
         # the kernel pad: no shim in front of the App's SDL (it would translate a pad that is already the right
         # one), and no hidapi in it either - that would find the real pad through /dev/hidraw, past the grab
         export SDL_JOYSTICK_HIDAPI=0
+        [ -f "$AB_PAD_HIDE_LIST" ] && AB_PAD_HIDE=1 && export AB_PAD_HIDE
     else
         export LD_PRELOAD="$AB_PAD_DIR/libabpad.so"
     fi

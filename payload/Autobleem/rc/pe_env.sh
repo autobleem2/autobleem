@@ -176,6 +176,9 @@ pe_prepare() {
         if [ -z "$AB_PAD_KERNEL" ] && [ -f "$AB_APP_DIR/$pe_r" ] && [ -f "$AB_PAD_DIR/libabpad.so" ]; then
             if mount -o bind "$AB_PAD_DIR/libabpad.so" "$AB_APP_DIR/$pe_r" 2>/dev/null; then
                 PE_REMAP_BOUND="$PE_REMAP_BOUND $pe_r"
+                # the shim then also does what that library did (DraStic's: the d-pad as hat 0, its button numbers)
+                AB_PAD_REMAP=$pe_r
+                export AB_PAD_REMAP
             else
                 pe_log "could not bind abpad over $pe_r - the mod keeps its own remap"
             fi
@@ -272,6 +275,12 @@ pe_trail() {
     pe_log "pad: LD_PRELOAD=$LD_PRELOAD"
     pe_log "pad: AB_PAD_DEFAULTS=$AB_PAD_DEFAULTS AB_PAD_PROFILE=$AB_PAD_PROFILE AB_APP_VIRTUAL_PAD=$AB_APP_VIRTUAL_PAD"
     pe_log "pad: mode: AB_APP_PAD_MODE=$AB_APP_PAD_MODE AB_PAD_VIRTUAL=$AB_PAD_VIRTUAL AB_PAD_KERNEL=$AB_PAD_KERNEL"
+    pe_log "pad: flags: Dpad2Analog=$AB_APP_DPAD2ANALOG Analog2Dpad=$AB_APP_ANALOG2DPAD AB_PAD_MOVEMENT=$AB_PAD_MOVEMENT AB_PAD_REMAP=$AB_PAD_REMAP"
+    if [ "$AB_PAD_HIDE" = 1 ]; then
+        pe_log "pad: hidden from the mod: $(tr '\n' ' ' < "$AB_PAD_HIDE_LIST" 2>/dev/null)"
+    elif [ -n "$AB_PAD_KERNEL" ]; then
+        pe_log "pad: hidden from the mod: nothing (no list from abpadd) - it sees the real pads too"
+    fi
     pe_log "pad: SDL_GAMECONTROLLERCONFIG_FILE=$SDL_GAMECONTROLLERCONFIG_FILE LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
     if [ -n "$AB_PAD_DEFAULTS" ] && [ -f "$AB_PAD_DEFAULTS" ]; then
         grep -v '^[[:space:]]*\(#\|$\)' "$AB_PAD_DEFAULTS" | while read -r pe_l; do pe_log "pad: pad.pe.ini: $pe_l"; done
@@ -289,7 +298,10 @@ pe_trail() {
         [ -f "$pe_b" ] && [ -x "$pe_b" ] || continue
         [ "$(head -c 4 "$pe_b" 2>/dev/null | tail -c 3)" = ELF ] || continue
         case "$pe_b" in *.so | *.so.*) continue ;; esac
-        if grep -q 'libSDL2-2.0.so.0' "$pe_b" 2>/dev/null; then
+        if grep -q 'SDL_GAMECONTROLLERCONFIG' "$pe_b" 2>/dev/null; then
+            # SDL's own hint names inside the program: SDL is built in (Commander Genius, tyr-quake), whatever it links
+            pe_log "pad: binary $(basename "$pe_b"): carries SDL inside (the preload cannot reach it - use psc-kernel)"
+        elif grep -q 'libSDL2-2.0.so.0' "$pe_b" 2>/dev/null; then
             pe_log "pad: binary $(basename "$pe_b"): names libSDL2 (the preload reaches it)"
         else
             pe_log "pad: binary $(basename "$pe_b"): no libSDL2 name (own SDL or none: the preload cannot reach it)"
