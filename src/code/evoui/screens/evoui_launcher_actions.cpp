@@ -13,6 +13,7 @@
 #include "gui/screens/gui_about.h"
 #include "gui/screens/gui_hardware_info.h"
 #include "../../gui/menus/gui_game_editor_menu.h"
+#include "gui/menus/gui_app_settings_menu.h"
 #include "gui/menus/gui_game_editor_ra_menu.h"
 #include "gui/menus/gui_ra_cores_menu.h"
 #include "../../gui/menus/gui_memcards_menu.h"
@@ -271,8 +272,14 @@ void GuiLauncher::loop_crossButtonPressed_STATE_SET__OPT_EDIT_GAME_SETTINGS() {
 
     // a RetroArch game has its own, one-row editor
     if (carousel.selectedIsValid() && carousel.games[carousel.selected]->foreign) {
-        if (carousel.games[carousel.selected]->app)
+        if (carousel.games[carousel.selected]->app) {
+            // an App's Game settings: opened from the same icon, over the same snapshot
+            GuiAppSettings appSettings(*gui);
+            appSettings.gameData = carousel.games[carousel.selected];
+            BackdropScope backdrop(*this);
+            appSettings.show();
             return;
+        }
         GuiEditorRA raEditor(*gui);
         raEditor.gameData = carousel.games[carousel.selected];
         {

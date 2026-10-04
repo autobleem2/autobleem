@@ -214,6 +214,7 @@ add_library(ab_ui STATIC
         src/code/gui/game_detail_pane.cpp
         src/code/gui/game_detail_pane.h
         src/code/gui/menus/gui_game_editor_menu.cpp
+        src/code/gui/menus/gui_app_settings_menu.cpp
         src/code/gui/menus/gui_game_editor_ra_menu.cpp
         src/code/gui/menus/gui_ra_cores_menu.cpp
         src/code/gui/menus/gui_ra_cores_menu.h
