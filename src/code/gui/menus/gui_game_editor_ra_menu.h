@@ -44,6 +44,7 @@ private:
     std::string optionLabel(int option) const;
     std::string optionValue(int option) const;
     void stepOption(int option, int step);
+    int lastOption() const; // the last row shown (no Resume row for a core without savestates)
 
     ableem::CoreInfos cores_; // what plays the game's system, the default first
     int coreIndex = 0;        // the one the game uses now

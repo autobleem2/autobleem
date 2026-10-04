@@ -73,6 +73,14 @@ void GuiEditorRA::cycleCore(int step) {
 }
 
 //*******************************
+// GuiEditorRA::lastOption
+//*******************************
+// the last row shown: the Resume row only for a core that can save states (one that cannot has no slots to resume)
+int GuiEditorRA::lastOption() const {
+    return app.resumePoints().raSupportsStates(*gameData) ? OPT_RESUME : OPT_RESUME - 1;
+}
+
+//*******************************
 // GuiEditorRA::optionLabel / optionValue / stepOption
 //*******************************
 string GuiEditorRA::optionLabel(int option) const {
@@ -96,7 +104,7 @@ string GuiEditorRA::optionLabel(int option) const {
 
 string GuiEditorRA::optionValue(int option) const {
     auto tri = [](int v) {
-        return v == RaGameOptions::TriDefault ? _("Default") : v == RaGameOptions::TriOn ? _("On") : _("Off");
+        return v == RaGameOptions::TriDefault ? _("Default") : v == RaGameOptions::TriOn ? _("ON") : _("OFF");
     };
     switch (option) {
     case OPT_ASPECT:
@@ -191,7 +199,7 @@ void GuiEditorRA::draw() {
     pane.render(*gui);
     {
         std::vector<std::string> rows = {"#" + _("Game"), _("Lightgun game:"), _("Core:")};
-        for (int option = OPT_ASPECT; option <= OPT_LAST; option++)
+        for (int option = OPT_ASPECT; option <= lastOption(); option++)
             rows.push_back(optionLabel(option));
         if (menuVisible) // the DebugDriver's rows: the heading band, then the options, the cursor's index among them
             ableem::DebugDriver::publish(typeid(*this).name(), rows, selOption);
@@ -229,7 +237,7 @@ void GuiEditorRA::draw() {
         gui->text().renderRowValue(gui->text().elide(font, coreValue(), max(room, 0)), OPT_CORE, yoffset, right);
     }
 
-    for (int option = OPT_ASPECT; option <= OPT_LAST; option++) {
+    for (int option = OPT_ASPECT; option <= lastOption(); option++) {
         TextRenderer::RowRoleScope role(gui->text(), selOption == option ? TextRenderer::RowRole::Selected
                                                                          : TextRenderer::RowRole::Row);
         const ableem::Font &font = gui->assets().themeFont;
@@ -264,7 +272,7 @@ void GuiEditorRA::loop() {
             case Event::Type::DpadUp:
                 if (gui->input().dpadDown() || gui->input().dpadUp()) {
                     const int to =
-                        std::min(OPT_LAST, std::max(OPT_LIGHTGUN, selOption + (gui->input().dpadDown() ? 1 : -1)));
+                        std::min(lastOption(), std::max(OPT_LIGHTGUN, selOption + (gui->input().dpadDown() ? 1 : -1)));
                     if (to != selOption) {
                         app.audio().cursor.play();
                         selOption = to;
