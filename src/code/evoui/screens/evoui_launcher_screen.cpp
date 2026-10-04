@@ -1093,8 +1093,19 @@ void GuiLauncher::loadAssets() {
                                              DefaultShowingTimeout);
             }
         } else if (app.session().emuMode == EmuMode::RetroArch) {
-            notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
-                                         DefaultShowingTimeout);
+            if (game->foreign && !game->app) {
+                // a RetroArch game: RetroArch wrote its state on the way out (a core that cannot save, or a
+                // run that did not end cleanly, wrote none) - the same slot picker as after a PS1 game
+                if (app.resumePoints().raStateWritten(*game)) {
+                    sselector->loadSaveStateImages(game, true);
+                    sselector->visible = true;
+                    state = LauncherScreenState::Resume;
+                }
+            } else {
+                // one of our PS1 games played in RetroArch's PS1 core: no slots of ours
+                notificationLines[1].setText(_("AutoBleem resume points not available in RetroArch."),
+                                             DefaultShowingTimeout);
+            }
         }
         // EmuMode::Launcher (an App): returning to the launcher isn't a "resume points" situation - nothing to say
     }
@@ -1755,7 +1766,7 @@ void GuiLauncher::settleEmptyRoster() {
 // GuiLauncher::gameHasResumePoints
 //*******************************
 bool GuiLauncher::gameHasResumePoints(const PsGamePtr &game) const {
-    if (game == nullptr || game->foreign)
+    if (game == nullptr || (game->foreign && game->app))
         return false;
     for (int slot = 0; slot < ResumePointService::SlotCount; slot++) {
         if (app.resumePoints().slotIsActive(*game, slot))
@@ -1810,6 +1821,8 @@ void GuiLauncher::showOptions() {
             enabled[1] = enabled[2] = enabled[3] = true; // a PS1 game: editor, memory cards, resume points
         } else if (!game.app) {
             enabled[1] = true; // a RetroArch game: its (light-gun) editor
+            // and its save-state slots - for a core that can save (a ScummVM or DOSBox game has none)
+            enabled[3] = app.resumePoints().raSupportsStates(game);
         }
     }
     if (!enabled[3]) {

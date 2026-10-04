@@ -442,7 +442,8 @@ void GuiLauncher::loop_crossButtonPressed_STATE_RESUME() {
                 app.session().resumePoint = slot;
                 rememberSelection();
                 sselector->cleanSaveStateImages();
-                app.session().emuMode = EmuMode::Pcsx;
+                // a RetroArch game resumes in RetroArch (the launch puts the slot where RetroArch loads it)
+                app.session().emuMode = game->foreign ? EmuMode::RetroArch : EmuMode::Pcsx;
                 menuVisible = false;
             } else {
                 app.audio().cancel.play();
