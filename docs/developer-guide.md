@@ -169,6 +169,15 @@ rest of the system is untouched; the namespace goes with the App). udev gives th
 Hotkeys and Reset keep working: the hotkey reads the daemon's own view of the pad, and the Reset button's device
 (`gpio-keys` on the console, any non-keyboard device with `KEY_PLAYPAUSE`) is in the hide list in every mode, the shim
 included - OpenLara opens and `EVIOCGRAB`s every event node it finds, which silenced Reset for the daemon.
+**A pad's touchpad and motion sensors (2026-10-05)**, in every mode (the shim's and the kernel pad's, not
+`--exit-only`): a DualSense's touchpad is a mouse to the compositor, so a cursor showed over the App's window. At its
+start the daemon picks every event node that moves a pointer (relative axes, `ABS_MT_POSITION_X`,
+`INPUT_PROP_POINTER`) or is a motion sensor (`INPUT_PROP_ACCELEROMETER`) and belongs to a physical device that also
+has a gamepad node (`padPointerNodes`, core/kernel_pad.*), holds it with `EVIOCGRAB` (`PointerHold` - nobody else gets
+its events, the compositor included) and adds its own nodes (event, mouseN, udev entries) and `/dev/input/mice` to the
+hide list. A real mouse, a keyboard's touchpad and the pad's own buttons are not taken. A pad plugged in after the App
+started is not covered. No App of ours reads a mouse through `/dev/input` (on the console a mouse comes through the
+compositor).
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 

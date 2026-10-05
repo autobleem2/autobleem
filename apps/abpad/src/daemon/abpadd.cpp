@@ -37,6 +37,7 @@
 #undef main
 #endif
 
+#include <algorithm>
 #include <csignal>
 #include <cstdarg>
 #include <cstdio>
@@ -357,7 +358,7 @@ vector<string> resetNodes(bool buttonsOnly) {
 // Written before the state block exists, which the App's start waits for, so the list is complete when it is read.
 // A pad plugged in later is held but not hidden (the App is already running); the log says so. The held pads only
 // with the kernel pad (the shim's App reads them through its SDL); the Reset button's device always.
-void writeHideList(const string &path, const Slot *slots) {
+void writeHideList(const string &path, const Slot *slots, const vector<string> &pointerNodes) {
     vector<string> held = resetNodes(true);
     for (int i = 0; i < MaxPads; ++i) {
         if (!slots[i].heldPath.empty()) {
@@ -368,6 +369,11 @@ void writeHideList(const string &path, const Slot *slots) {
         }
     }
     vector<string> nodes = hiddenNodes(held, g_kernel.ownPaths());
+    for (const string &node : pointerNodes) {
+        if (find(nodes.begin(), nodes.end(), node) == nodes.end()) {
+            nodes.push_back(node);
+        }
+    }
     string temporary = path + ".new";
     FILE *file = fopen(temporary.c_str(), "w");
     if (!file) {
@@ -379,7 +385,8 @@ void writeHideList(const string &path, const Slot *slots) {
     }
     fclose(file);
     rename(temporary.c_str(), path.c_str());
-    say("abpadd: %d node(s) of the held pads and the Reset button to hide from the App, in %s",
+    say("abpadd: %d node(s) of the held pads, the pads' touchpads and motion sensors, the mice and the Reset button "
+        "to hide from the App, in %s",
         static_cast<int>(nodes.size()), path.c_str());
 }
 #endif
@@ -985,7 +992,16 @@ int main(int argc, char *argv[]) {
             addPad(slots, i);
         }
     }
-    writeHideList(shmPath + ".hide", slots); // the shim's slots are still empty here: the Reset button only
+    // every mode: a pad's touchpad and motion sensors are held (the compositor would move a cursor over the App with
+    // the touchpad) and hidden, with the mice; the grabs go with the daemon
+    vector<string> pointerPaths = padPointerNodes(inputNodeFacts());
+    PointerHold pointers;
+    pointers.grab(pointerPaths, g_kernel.ownPaths());
+    for (const string &held : pointers.paths()) {
+        say("abpadd: a pad's touchpad or motion sensor is held at %s", held.c_str());
+    }
+    // the shim's slots are still empty here: no held pad, its touchpad and the Reset button only
+    writeHideList(shmPath + ".hide", slots, pointerNodesToHide(pointerPaths));
 #endif
 
     ShmBlock block;
