@@ -92,6 +92,9 @@ cp -a "$BUILD_DIR/abupdate" "$APP/abupdate"
 # it checks the server against
 cp -a "$BUILD_DIR/abfetch" "$APP/abfetch"
 cp "$REPO/src/tools/abfetch/cacert.pem" "$APP/cacert.pem"
+# abdialog: the two dialogs a PE mod calls (src/tools/abdialog) - rc/pe_env.sh links it into the mod's bin/ as
+# sdl_display and sdl_choicedisplay
+cp -a "$BUILD_DIR/abdialog" "$APP/abdialog"
 
 # the virtual gamepad (docs/virtual-gamepad-plan.md): the daemon that reads the pads and the shim an
 # App is preloaded with. Both are optional at run time - rc/app_env.sh checks for them and an App runs
@@ -112,7 +115,7 @@ python3 "$REPO/tools/make_pe_gamecontrollerdb.py" "$REPO/src/resources/gamecontr
 # the console tools (pscbios, abflashkit) are autobleem2/autobleem-console-tools' own release since the
 # launcher took core as a submodule (2026-09-23): autobleem-appliance's assemble-psc.sh puts them on the
 # stick, not this script - apps/pscbios and apps/abflashkit are gone from this tree
-PACK=("$APP/autobleem-gui" "$APP/absplash" "$APP/abupdate" "$APP/abfetch") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
+PACK=("$APP/autobleem-gui" "$APP/absplash" "$APP/abupdate" "$APP/abfetch" "$APP/abdialog") # not abfatflag: 10 KB, which upx refuses (NotCompressibleException)
 
 if [ -z "${AB_NO_UPX:-}" ] && command -v upx >/dev/null 2>&1; then
     echo "==> packing with upx"
@@ -162,7 +165,7 @@ fi
 # git's directory keepers have no business on a stick; the executable bit does not survive a zip made on
 # Windows, which is why rc/autobleem.sh chmods what it runs, but from here it can be right
 find "$STAGE" -type f -name placeholder -delete
-chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$APP/abfetch" \
+chmod +x "$APP/autobleem-gui" "$APP/absplash" "$APP/abfatflag" "$APP/abupdate" "$APP/abfetch" "$APP/abdialog" \
          "$STAGE"/Autobleem/*.sh "$STAGE"/Autobleem/rc/*.sh "$STAGE"/Apps/*/*.sh 2>/dev/null || true
 
 echo "==> $ZIP"

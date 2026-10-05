@@ -27,6 +27,7 @@ REPO = Path(__file__).resolve().parent.parent
 # whose screens and services the launcher shows too; a directory that is not there (no submodule) is skipped
 SRC_DIRS = [
     REPO / 'src' / 'code',
+    REPO / 'src' / 'tools',  # the console helpers with a screen of their own (abdialog)
     REPO / 'autobleem-core' / 'src' / 'code',
     REPO / 'autobleem-core' / 'lib_ableem' / 'src',
 ]

@@ -189,7 +189,7 @@ build_psc() {
     ninja -C build_psc -j "$JOBS"
     banner "psc: the binaries against the console's glibc 2.24 / GLIBCXX 3.4.22, no RPATH ($ab_check_psc_binary)"
     local bin
-    for bin in autobleem-gui absplash abfatflag abupdate abfetch apps/abpad/abpadd apps/abpad/libabpad.so; do
+    for bin in autobleem-gui absplash abfatflag abupdate abfetch abdialog apps/abpad/abpadd apps/abpad/libabpad.so; do
         bash "$ab_check_psc_binary" "build_psc/$bin" "$toolchain"
     done
     banner "psc: package"
@@ -212,6 +212,11 @@ stage_launcher() { # stage_launcher DIR TARGET - dist/<target>/Autobleem/bin/{au
     dist_reset "$target"
     mkdir -p "$bin/autobleem" "$bin/abpad"
     cp "$dir/autobleem-gui" "$bin/autobleem/"
+    # the PE dialogs (src/tools/abdialog): a PE App is a console product, but the PC stick's VM is where their look is
+    # checked, so the build carries them there
+    if [ -f "$dir/abdialog" ]; then
+        cp "$dir/abdialog" "$bin/autobleem/"
+    fi
     cp -a src/resources/. "$bin/autobleem/"
     rm -f "$bin/autobleem/internal.db"   # an appliance has no built-in games (AB_HAS_INTERNAL_GAMES is psc/dev only)
     if [ -f "$dir/apps/abpad/abpadd" ] && [ -f "$dir/apps/abpad/libabpad.so" ]; then

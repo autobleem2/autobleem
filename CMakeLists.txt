@@ -402,6 +402,12 @@ configure_file(src/resources/pcsx.cfg pcsx.cfg COPYONLY)
 add_executable(absplash src/tools/absplash.cpp)
 target_link_libraries(absplash Threads::Threads ab_gui ableem ${CMAKE_DL_LIBS})
 
+# abdialog: the text screen and the question a PE mod's launch.sh calls (src/tools/abdialog); the classic UI over
+# the theme, run under the names the 2020 tools had. Not on Windows: PE Apps are a console product
+if (NOT AB_TARGET STREQUAL "win")
+    add_subdirectory(src/tools/abdialog)
+endif()
+
 # abfatflag: the FAT/exFAT dirty flag of the stick, read and cleared by the console's rc scripts around the
 # standby (src/tools/abfatflag.cpp); the engine only
 add_executable(abfatflag src/tools/abfatflag.cpp)
