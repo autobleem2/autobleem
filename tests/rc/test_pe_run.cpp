@@ -168,6 +168,69 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK(pe.tmp.readFile("rt/logs/pe/dialogs.log").find("sdl_text_display: Loading") != string::npos);
 }
 
+// the dialog program (abdialog) stood in for by a script: it is linked into the mod's bin/ as sdl_display and
+// sdl_choicedisplay, the scripts hand it the command file and the options, and its exit code is the mod's answer
+const char *const FakeDialogProgram = "#!/bin/sh\n"
+                                      "name=$(basename \"$0\")\n"
+                                      "echo \"$name $*\" >> \"$FAKE_LOG\"\n"
+                                      "case \"$name\" in\n"
+                                      "sdl_choicedisplay)\n"
+                                      "    while [ $# -gt 0 ]; do [ \"$1\" = -file ] && cmd=$2; shift; done\n"
+                                      "    cat \"$cmd\" >> \"$FAKE_LOG.choice\"\n"
+                                      "    grep -q NODISPLAY \"$cmd\" && exit 3\n"
+                                      "    exit 102 ;;\n"
+                                      "*)\n"
+                                      "    trap 'kill $FAKE_SLEEP 2>/dev/null; exit 0' TERM INT HUP\n"
+                                      "    sleep 86400 &\n"
+                                      "    FAKE_SLEEP=$!\n"
+                                      "    wait $FAKE_SLEEP ;;\n"
+                                      "esac\n";
+
+const char *const DialogLaunch =
+    "#!/bin/sh\n"
+    "source \"/var/volatile/project_eris.cfg\" 2>/dev/null || source \"$PE_VOLATILE/project_eris.cfg\"\n"
+    "OUT=\"$APP_OUT\"\n"
+    "echo \"bin=$(ls \"$PROJECT_ERIS_PATH/bin\" | tr '\\n' ' ')\" >> $OUT\n"
+    "sdl_text_display 'Hello\\nWorld' 1 2 3 f 4 5 6 bg\n"
+    "cp \"$PE_RUN_DIR/sdldisplaycmd\" \"$OUT.display\"\n"
+    "echo \"display_rc=$?\" >> $OUT\n"
+    "sdl_input_text_display ' ' 0 0 12 f 0 0 0 /x/doom_controller_select.png XO\n"
+    "echo \"answer_dialog=$?\" >> $OUT\n"
+    "sdl_input_text_display NODISPLAY 0 0 12 f 0 0 0 bg TS\n"
+    "echo \"answer_no_display=$?\" >> $OUT\n"
+    "exit 0\n";
+
+TEST_CASE("pe_run.sh: the dialogs are abdialog under the 2020 names, and without a display the answer is fixed") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pe_run.sh is not run");
+        return;
+    }
+    PeRun pe;
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", DialogLaunch);
+    pe.tmp.writeFile("fake_abdialog", FakeDialogProgram);
+    pe.run("chmod +x \"$AB_ROOT/fake_abdialog\"\n"
+           "export PE_DIALOG_BIN=\"$AB_ROOT/fake_abdialog\" FAKE_LOG=\"$AB_ROOT/fake.log\"\n"
+           "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n");
+
+    CHECK(pe.out("bin") == "sdl_choicedisplay sdl_display sdl_input_text_display sdl_text_display ");
+    const string log = pe.tmp.readFile("fake.log");
+    CHECK(log.find("sdl_display -file ") != string::npos); // the text screen, started once
+    CHECK(log.find("sdl_choicedisplay -controller-db ") != string::npos);
+    CHECK(log.find(" -only XO -file ") != string::npos);
+    // the texts and the picture as the 2020 script's records
+    const string display = pe.tmp.readFile("out.txt.display");
+    CHECK(display.find("IMAGE\t640\t360\tbg\n") != string::npos);
+    CHECK(display.find("FTEXT\t1\t2\t3\tf\t4\t5\t6\tHello\\nWorld\n") != string::npos);
+    const string choice = pe.tmp.readFile("fake.log.choice");
+    CHECK(choice.find("doom_controller_select.png") != string::npos);
+    CHECK(choice.find("FTEXT\t0\t0\t12\tf\t0\t0\t0\t \n") != string::npos);
+    // the program's exit code is the answer; its "no display" (3) is the fixed rule, the first allowed letter
+    CHECK(pe.out("answer_dialog") == "102");
+    CHECK(pe.out("answer_no_display") == "103");
+    CHECK(pe.tmp.readFile("rt/logs/pe/dialogs.log").find("no dialog (3)") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe"))); // and the text screen was taken down with the rest
+}
+
 TEST_CASE("pe_run.sh puts the power flag back to what it was, even when the mod left a 2") {
     if (!haveSh()) {
         MESSAGE("no sh on this machine - pe_run.sh is not run");

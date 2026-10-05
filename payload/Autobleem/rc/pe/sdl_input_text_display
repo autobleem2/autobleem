@@ -2,13 +2,54 @@
 #
 # A PE mod's question - sdl_input_text_display TEXT [X Y SIZE FONT R G B BGIMAGE ONLY BGCOLOR] - which waits for a
 # button and exits with its code: 100 Cross (X), 101 Circle (O), 102 Square (S), 103 Triangle (T). ONLY (argument
-# 10) lists the buttons that may answer, as letters ("XO", "XOST"). In this step nothing is drawn and nobody is
-# asked: the answer is fixed - the first allowed letter (the mods put the safe, usual choice first), Cross when
-# ONLY is missing or names none of them. The question goes to the dialogs log.
+# 10) lists the buttons that may answer, as letters ("XO", "XOST"). Its interface is the 2020 tool's
+# (src/tools/abdialog/dialog_cmd.h has it): the arguments go into a command file and sdl_choicedisplay - AutoBleem's
+# own dialog in the current theme - asks and exits with the answer. The mods pass " " as the text and a picture that
+# says what the buttons mean: the picture (third-party art) is not used, its name picks the words instead. The
+# position, size, font and colour are the 2020 screen's and are not used.
+# Where the dialog cannot run (the program is not on the stick, or there is no display: it exits 3) nobody is asked
+# and the answer is fixed - the first allowed letter (the mods put the safe, usual choice first), Cross when ONLY is
+# missing or names none of them. The question goes to the dialogs log. Exit 1 with no text, as the original did.
+if [ -z "$1" ]; then
+    echo "usage: $0 <TEXT> <TEXTX> <TEXTY> <FONTSIZE> <FONT> <R> <G> <B> <BGIMAGEPATH> <ONLY> <TEXTBGCOLOR (0xAARRGGBB)>" >&2
+    exit 1
+fi
 RUN_DIR=${PE_RUN_DIR:-/tmp/pe}
 mkdir -p "$RUN_DIR" 2>/dev/null
+LOG=${PE_DIALOG_LOG:-$RUN_DIR/dialogs.log}
 ONLY=${10}
-echo "sdl_input_text_display: $1 [$ONLY]" >> "${PE_DIALOG_LOG:-$RUN_DIR/dialogs.log}" 2>/dev/null
+echo "sdl_input_text_display: $1 [$ONLY]" >> "$LOG" 2>/dev/null
+
+HERE=$(cd "$(dirname "$0")" && pwd)
+if [ -x "$HERE/sdl_choicedisplay" ]; then
+    CMD=$RUN_DIR/sdlinputdisplaycmd
+    {
+        printf 'IMAGE\t640\t360\t%s\n' "$9"
+        if [ -z "${11}" ]; then
+            printf 'FTEXT\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "${2:-640}" "${3:-120}" "${4:-12}" "$5" "${6:-255}" "${7:-255}" "${8:-255}" "$1"
+        else
+            printf 'FTEXTWBG\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "${2:-640}" "${3:-120}" "${4:-12}" "$5" "${6:-255}" "${7:-255}" "${8:-255}" "${11}" "$1"
+        fi
+    } > "$CMD" 2>/dev/null
+    if [ -d "${PE_SDL_DIR:-/tmp/lib}" ]; then
+        LD_LIBRARY_PATH="${PE_SDL_DIR:-/tmp/lib}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        export LD_LIBRARY_PATH
+    fi
+    unset AB_DEBUG_PORT
+    if [ -n "$AB_DIALOG_DEBUG_PORT" ]; then
+        AB_DEBUG_PORT=$AB_DIALOG_DEBUG_PORT
+        export AB_DEBUG_PORT
+    fi
+    "$HERE/sdl_choicedisplay" -controller-db "$HERE/../etc/boot_menu/gamecontrollerdb.txt" -only "$ONLY" -file "$CMD" \
+        2>> "$(dirname "$LOG")/abdialog.log" < /dev/null
+    RC=$?
+    rm -f "$CMD"
+    case "$RC" in
+        3 | 126 | 127) echo "sdl_input_text_display: no dialog ($RC) - the fixed answer" >> "$LOG" 2>/dev/null ;;
+        *) exit "$RC" ;;
+    esac
+fi
+
 while [ -n "$ONLY" ]; do
     rest=${ONLY#?}
     letter=${ONLY%"$rest"}

@@ -26,6 +26,7 @@
 : "${PE_POWER_FLAG:=/data/power/disable}"
 : "${PE_MOUNT_POINT:=/media/project_eris}"
 : "${PE_RC_DIR:=$AB_ROOT/Autobleem/rc}"
+: "${PE_DIALOG_BIN:=$AB_ROOT/Autobleem/bin/autobleem/abdialog}"
 PE_ROOT=$PE_TREE/project_eris
 PE_RUN_DIR=$PE_TREE/run
 PE_LOG_DIR=$AB_LOG_DIR/pe
@@ -126,6 +127,16 @@ pe_prepare() {
     for pe_tool in sdl_text_display sdl_input_text_display sdl_display; do
         cp -f "$PE_RC_DIR/pe/$pe_tool" "$PE_ROOT/bin/$pe_tool" && chmod 755 "$PE_ROOT/bin/$pe_tool"
     done
+    # the dialogs are one program (abdialog, src/tools/abdialog) run under the names the 2020 tools had: sdl_display
+    # (the text screen, which the mod stops with `killall sdl_display` - the process is found by that name) and
+    # sdl_choicedisplay (the question). Links, so the process carries the name. Without the program on the stick
+    # sdl_display stays the stand-in copied above and the question is answered by its fixed rule.
+    if [ -x "$PE_DIALOG_BIN" ]; then
+        ln -sf "$PE_DIALOG_BIN" "$PE_ROOT/bin/sdl_display"
+        ln -sf "$PE_DIALOG_BIN" "$PE_ROOT/bin/sdl_choicedisplay"
+    else
+        pe_log "no $PE_DIALOG_BIN - the dialogs show nothing and answer by their fixed rule"
+    fi
     # lib/: what Project Eris gave its mods in ${PROJECT_ERIS_PATH}/lib (some mods set LD_LIBRARY_PATH to this and
     # nothing else). gl4es (libGL, libGLU; MIT) ships with the launcher in rc/pe/lib - the libs pack is not
     # something every stick has - and the pack's copy in /tmp/applib is the fallback. Our SDL2 goes in as well:
