@@ -38,11 +38,10 @@ vector<string> GuiOptions::getThemes() {
         list.push_back(name);
 
     // in the CRT 4:3 mode only the themes with a 4:3 layout (a zip theme is not unpacked here: it has none to show)
-    return OutputMode::themesFor(OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]), list,
-                                 [&](const string &name) {
-                                     return ableem::ThemeSpec::supports4x3(uiThemePath + sep + name + sep +
-                                                                           "theme.json");
-                                 });
+    return OutputMode::themesFor(
+        OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]), list, [&](const string &name) {
+            return ableem::ThemeSpec::supports4x3(uiThemePath + sep + name + sep + "theme.json");
+        });
 }
 
 //*******************************
