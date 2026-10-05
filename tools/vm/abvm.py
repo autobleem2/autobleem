@@ -106,11 +106,14 @@ Where things are comes from the environment, never from this file (no addresses 
   ABVM_DRIVER    the guest's DebugDriver port (default: 6900); ABVM_LOCAL_PORT the local end (default: 16900)
   ABVM_WHO       who is testing - the lease's holder
   ABVM_REMOTE_TOOL  this tool's copy on the test machine (default: ~/.local/share/abvm/abvm.py) - another path
-                 tries a branch's abvm there (`setup` copies to it) without touching the copy everyone uses
+                 tries a branch's abvm there (`setup` copies to it) without touching the copy everyone uses.
+                 The copy there (this tool, ab_drive.py, make_usb.py) is compared by content hash with the PC's files
+                 before the first remote call of every run, and refreshed (atomically) when it differs.
 docs/pc-test-machine.md (autobleem-main) describes the machine, the VM and padsim.
 
 Never pipes into ssh (on Windows the EOF never arrives): files go by scp, commands as arguments.
 """
+import hashlib
 import os
 import re
 import shlex
@@ -674,10 +677,81 @@ def remote_error(msg):
     return (Busy if msg.startswith('busy:') else Fail)(msg)
 
 
+def local_sources():
+    """(name on the test machine, this side's file) of everything the test machine's copy consists of; the tool last"""
+    tools = os.path.join(HERE, '..')
+    return [('ab_drive.py', os.path.join(tools, 'ab_drive.py')),
+            ('make_usb.py', os.path.join(tools, 'make_usb.py')),
+            (os.path.basename(REMOTE_TOOL), os.path.abspath(__file__))]
+
+
+def _normalised(path):
+    # a Windows checkout may be CRLF; the copy sent (and so its hash) is always LF
+    with open(path, 'rb') as f:
+        return f.read().replace(b'\r\n', b'\n')
+
+
+def tool_version():
+    """this side's version: name -> sha256 of each file the test machine's copy consists of"""
+    return {name: hashlib.sha256(_normalised(path)).hexdigest() for name, path in local_sources()}
+
+
+def remote_version():
+    """the same on the test machine, from the files themselves (a file that is missing is simply not in the dict)"""
+    names = ' '.join(shlex.quote(n) for n, _ in local_sources())
+    out = host_run(f'cd {os.path.dirname(REMOTE_TOOL)} 2>/dev/null && sha256sum {names} 2>/dev/null', check=False)
+    found = {}
+    for line in out.splitlines():
+        parts = line.split(None, 1)
+        if len(parts) == 2:
+            found[parts[1].strip().lstrip('*')] = parts[0]
+    return found
+
+
+def push_remote():
+    """put this side's copy on the test machine. Every file goes under a temp name first and is renamed into place
+    (the tool last), so a caller running right now sees the old file or the new one, never half of one - and a process
+    already running keeps its old file (the rename leaves the old inode alone). Leases and sandboxes are not touched."""
+    folder = os.path.dirname(REMOTE_TOOL)
+    host_run(f'mkdir -p {folder}')
+    tag = uuid.uuid4().hex[:8]
+    stage = tempfile.mkdtemp(prefix='abvm-setup-')
+    moves = []
+    try:
+        for name, path in local_sources():
+            local = os.path.join(stage, name)
+            with open(local, 'wb') as f:
+                f.write(_normalised(path))
+            temp = f'{folder}/.{name}.{tag}.new'
+            to_host(local, temp)
+            moves.append(f'mv -f {temp} {folder}/{name}')
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+    host_run(' && '.join(moves))
+
+
+_remote_checked = False
+
+
+def ensure_remote_current():
+    """once per invocation, before the first call of the test machine's copy: if it differs from this side's files,
+    refresh it (what `setup` does) and say so on stderr"""
+    global _remote_checked
+    if LOCAL or _remote_checked:
+        return
+    _remote_checked = True
+    mine, theirs = tool_version(), remote_version()
+    stale = sorted(n for n in mine if theirs.get(n) != mine[n])
+    if stale:
+        print(f'abvm: the copy on the test machine is stale ({", ".join(stale)}) - refreshing it', file=sys.stderr)
+        push_remote()
+
+
 def remote_tool(args, partial=False):
     """the tool's output from the test machine. partial: (stdout, the error or None) instead of raising - for a run
     that fails after it made shots, which still have to be fetched"""
-    who = ['--who', WHO] if WHO else []
+    ensure_remote_current()
+    who =['--who', WHO] if WHO else []
     key = ['--lease-key', LEASE_KEY] if LEASE_KEY != 'vm' else []
     # the sandbox settings given here count there too
     env = [f'{k}={os.environ[k]}' for k in ('ABVM_SANDBOX_SLOTS', 'ABVM_SANDBOX_SIZE', 'ABVM_SANDBOX_ENV')
@@ -1406,9 +1480,25 @@ def sb_list():
     LEASE_KEY = 'vm'
 
 
+SANDBOX_FLAGS = ('--build', '--ext', '--package', '--games', '--set', '--size')
+
+
+def check_sandbox_flags(rest):
+    """sandbox new|start|reset <name> [flags]: an unknown flag, or one without its value, is an error - never ignored"""
+    i = 0
+    while i < len(rest):
+        if rest[i] not in SANDBOX_FLAGS:
+            raise Fail(f'sandbox: unknown argument {rest[i]!r} (flags: {" ".join(SANDBOX_FLAGS)})')
+        if i + 1 >= len(rest):
+            raise Fail(f'sandbox: {rest[i]} needs a value')
+        i += 2
+
+
 def sandbox_command(args, out_dir):
     global LEASE_KEY
     sub = args[0] if args else 'list'
+    if sub in ('new', 'start', 'reset'):
+        check_sandbox_flags(args[2:])
     name = sb_name(args[1]) if len(args) > 1 and sub not in ('list', 'setup', 'template') else ''
     if not LOCAL:
         if sub == 'drive':
@@ -1513,18 +1603,19 @@ def status():
         print(f'          {line}')
     print(f'padsim    {units[1] if len(units) > 1 else "?"}')
     print(f'driver    {"listening" if driver_answers() else "not listening"} on the guest\'s :{DRIVER_PORT}')
-    tool = host_run(f'test -f {REMOTE_TOOL} && echo yes || echo no', check=False).strip() if not LOCAL else 'yes'
-    print(f'abvm      {"on the test machine" if tool == "yes" else "not on the test machine - run `abvm.py setup`"}')
+    if not LOCAL:
+        mine, theirs = tool_version(), remote_version()
+        stale = sorted(n for n in mine if theirs.get(n) != mine[n])
+        print(f'abvm      {"on the test machine, current" if not stale else "stale on the test machine (" + ", ".join(stale) + ") - the next remote call refreshes it, or run `abvm.py setup`"}')
+    else:
+        print('abvm      on the test machine')
     return 0
 
 
 def setup():
-    host_run(f'mkdir -p {os.path.dirname(REMOTE_TOOL)}')
-    to_host(os.path.abspath(__file__), REMOTE_TOOL)
-    # the DebugDriver's client, for `sandbox drive` there
-    to_host(os.path.join(HERE, '..', 'ab_drive.py'), os.path.dirname(REMOTE_TOOL) + '/ab_drive.py')
-    # the fake games and Apps, for `sandbox new|start --games N` there
-    to_host(os.path.join(HERE, '..', 'make_usb.py'), os.path.dirname(REMOTE_TOOL) + '/make_usb.py')
+    # the tool, the DebugDriver's client (`sandbox drive` there) and the fake games and Apps (`--games N` there);
+    # every remote call refreshes them by itself when they differ (ensure_remote_current) - this is the manual form
+    push_remote()
     print(f'copied to {HOST}:{REMOTE_TOOL} (and ab_drive.py, make_usb.py)')
 
 
@@ -1602,7 +1693,8 @@ def main(argv):
         elif cmd == 'guest':
             print(guest_run(' '.join(args)), end='')
         else:
-            print(__doc__)
+            print(f'abvm: unknown command {cmd!r}', file=sys.stderr)
+            print(__doc__, file=sys.stderr)
             return 2
     except Busy as e:
         print(f'abvm: {e}', file=sys.stderr)
