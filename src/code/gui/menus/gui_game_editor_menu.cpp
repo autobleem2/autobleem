@@ -36,6 +36,7 @@ using namespace std;
 #define OPT_UNLOCK 16  // only while the game has its own config
 #define OPT_NOSEAMS 17 // Remove seams: with Resolution
 #define OPT_DITHERING 18
+#define OPT_RESUME 19 // Resume: ask / last slot / never (EMU-26)
 
 namespace {
 
@@ -139,6 +140,12 @@ void GuiEditor::buildRows() {
                 OPT_PLAY_USING_RA);
     }
     boolRow(_("Lock data:"), gameIni.values["automation"] == "0", OPT_LOCK);
+    // the same row as a RetroArch game's (EMU-25): what Play does with the game's resume slots
+    valueRow(_("Resume:"),
+             settings.resume == ResumePointService::Last    ? _("Last slot")
+             : settings.resume == ResumePointService::Never ? _("Never")
+                                                            : _("Ask"),
+             OPT_RESUME);
 
     // the game has its own config, saved in an emulator's menu: the rows below show its values, greyed,
     // until the settings are unlocked (PcsxConfig)
@@ -250,10 +257,10 @@ void GuiEditor::unlockSettings() {
     if (!confirm.result)
         return;
     app.gameSettings().unlock(settings);
-    // the unlock row is gone; the cursor lands on the first of the rows it freed, the one after Lock data
+    // the unlock row is gone; the cursor lands on the first of the rows it freed, the one after Resume
     // (Resolution is not on every platform)
     buildRows();
-    selOption = OPT_LOCK;
+    selOption = OPT_RESUME;
     moveSelection(1);
 }
 
@@ -287,6 +294,11 @@ void GuiEditor::processOptionChange(bool direction) {
 
     case OPT_LOCK:
         svc.setLocked(settings, direction);
+        break;
+
+    case OPT_RESUME: // Ask / Last slot / Never, round the ends as the RetroArch editor's row does
+        svc.setResume(settings,
+                      (settings.resume + step + ResumePointService::ModeCount) % ResumePointService::ModeCount);
         break;
 
     case OPT_HIGHRES: // 1x / 2x

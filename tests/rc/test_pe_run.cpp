@@ -266,15 +266,21 @@ TEST_CASE("pe_run.sh: a TERM (the Reset button) stops the mod and its children, 
                      "sleep 300 &\n" // the game is a child of the script
                      "echo $! > \"$APP_OUT.child\"\n"
                      "wait\n");
-    vector<string> lines =
-        pe.run("sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\" &\n"
-               "PID=$!\n"
-               "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
-               "sleep 0.3\n"
-               "kill -TERM $PID\n"
-               "wait $PID\n"
-               "echo rc=$?\n"
-               "if kill -0 $(cat \"$APP_OUT.child\") 2>/dev/null; then echo child=alive; else echo child=gone; fi\n");
+    vector<string> lines = pe.run(
+        "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\" &\n"
+        "PID=$!\n"
+        "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
+        "sleep 0.3\n"
+        "kill -TERM $PID\n"
+        "wait $PID\n"
+        "echo rc=$?\n"
+        // gone = no process, or a zombie: the killed child is reparented to PID 1, and a PID 1 that does not
+        // reap (a CI container's `tail -f /dev/null`) leaves it a zombie, which kill -0 still finds. Polled
+        // for up to 3 s rather than read once: the signal and the exit are not instant on a loaded runner.
+        "C=$(cat \"$APP_OUT.child\")\n"
+        "gone() { [ ! -r /proc/$C/stat ] || [ \"$(sed 's/.*) //' /proc/$C/stat 2>/dev/null | cut -c1)\" = Z ]; }\n"
+        "n=0; while ! gone && [ $n -lt 30 ]; do sleep 0.1; n=$((n+1)); done\n"
+        "if gone; then echo child=gone; else echo child=alive; fi\n");
     REQUIRE(lines.size() >= 2);
     CHECK(lines[lines.size() - 2] == "rc=143");
     CHECK(lines.back() == "child=gone");
