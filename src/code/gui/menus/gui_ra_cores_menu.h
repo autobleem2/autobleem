@@ -46,6 +46,6 @@ private:
     std::vector<int> start_; // each row's core when the window opened
     int selected_ = 0;
     int firstVisible_ = 0;
-    DpadHold hold_; // Up/Down held: the cursor goes on at the shared HoldRepeat pace
+    DpadHold hold_;       // Up/Down held: the cursor goes on at the shared HoldRepeat pace
     ValueHold valueHold_; // Left/Right held: the value goes on at the same pace
 };
