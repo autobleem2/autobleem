@@ -46,6 +46,7 @@ namespace {
 constexpr int SpinnerX = 640;
 constexpr int SpinnerY = 480;
 constexpr int PictureWidth = 1280;
+constexpr int PictureHeight = 720;
 
 bool fileExists(const std::string &path) {
     struct stat st;
@@ -237,9 +238,13 @@ int main(int argc, char **argv) {
         }
         if (spin) {
             // the spinner scales with the picture: 64x64 logical at 1x, the same share of it at any size
-            const double k = static_cast<double>(dst.w) / PictureWidth;
-            const int cx = dst.x + static_cast<int>(std::lround(SpinnerX * k));
-            const int cy = dst.y + static_cast<int>(std::lround(SpinnerY * k));
+            // a 4:3 picture (the CRT mode's retroarch-4x3.jpg): the free spot under the lockup is the centre, 2/3 down;
+            // the size follows the picture's height (720 in the 16:9 one)
+            const bool fourThree = dst.w * 3 <= dst.h * 4;
+            const double k = fourThree ? static_cast<double>(dst.h) / PictureHeight
+                                       : static_cast<double>(dst.w) / PictureWidth;
+            const int cx = dst.x + (fourThree ? dst.w / 2 : static_cast<int>(std::lround(SpinnerX * k)));
+            const int cy = dst.y + (fourThree ? dst.h * 2 / 3 : static_cast<int>(std::lround(SpinnerY * k)));
             const unsigned int nowMs = gui.platform().ticks();
             drawSpinner(r, strip, nowMs, nowMs - startedMs, cx, cy, k);
         }
