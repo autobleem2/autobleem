@@ -148,14 +148,22 @@ void GuiRaCores::loop() {
         select(selected_ + dir);
         render();
     };
-    // nothing animates here: a frame after a press and four times a second meanwhile, every pass while Up/Down is
-    // held (DpadHold)
+    // one step of the core on the cursor's row: at the press, and again for every repeat of a held Left/Right
+    const auto changeValue = [&](int step) {
+        app.audio().cursor.play();
+        change(step);
+        render();
+    };
+    // nothing animates here: a frame after a press and four times a second meanwhile, every pass while Up/Down or
+    // Left/Right is held (DpadHold, ValueHold)
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle);
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
         hold_.tick(gui->input(), gui->platform().ticks(), moveCursor);
+        valueHold_.tick(gui->input(), gui->platform().ticks(), changeValue);
         Event e;
+        int valueDir = 0;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit)
                 menuVisible = false;
@@ -163,12 +171,11 @@ void GuiRaCores::loop() {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
                 hold_.track(gui->input(), gui->platform().ticks());
+                valueDir = valueHold_.press(gui->input(), gui->platform().ticks());
                 if (gui->input().dpadDown() || gui->input().dpadUp()) {
                     moveCursor(gui->input().dpadDown() ? 1 : -1);
-                } else if (gui->input().dpadRight() || gui->input().dpadLeft()) {
-                    app.audio().cursor.play();
-                    change(gui->input().dpadRight() ? 1 : -1);
-                    render();
+                } else if (valueDir != 0) {
+                    changeValue(valueDir);
                 }
                 break;
             case Event::Type::ButtonDown:

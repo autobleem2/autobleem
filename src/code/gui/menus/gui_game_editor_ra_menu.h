@@ -4,6 +4,7 @@
 #pragma once
 #include "gui/gui_screen.h"
 #include "gui/hold_repeat.h"
+#include "value_hold.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
 #include "core/main.h"
@@ -52,4 +53,5 @@ private:
     RaGameOptions options_;   // the game's options, as RaOptionsService has them
     int selOption = 1;        // the row the cursor is on: 1 the light-gun flag, 2 the core, 3.. the options
     DpadHold hold_;           // Up/Down held: the cursor goes on at the shared HoldRepeat pace
+    ValueHold valueHold_; // Left/Right held: the value goes on at the same pace
 };

@@ -5,6 +5,7 @@
 #pragma once
 #include "gui/gui_screen.h"
 #include "gui/hold_repeat.h"
+#include "value_hold.h"
 #include "../game_detail_pane.h"
 #include "../../app.h"
 #include "core/main.h"
@@ -53,4 +54,5 @@ private:
     FlagRow flags_[2];       // D-pad as stick, Stick as d-pad
     int selected_ = 1;       // the row the cursor is on (the heading is row 0)
     DpadHold hold_;          // Up/Down held: the cursor goes on at the shared HoldRepeat pace
+    ValueHold valueHold_; // Left/Right held: the value goes on at the same pace
 };

@@ -266,14 +266,32 @@ void GuiEditorRA::loop() {
             render();
         }
     };
+    // one step of the value on the cursor's row: at the press, and again for every repeat of a held Left/Right
+    const auto changeValue = [&](int dir) {
+        app.audio().cursor.play();
+        const bool right = dir > 0;
+        if (selOption == OPT_LIGHTGUN) {
+            if (right != app.lightguns().isLightgun(*gameData)) {
+                app.lightguns().setRetroArchLightgun(*gameData, right);
+                changed = true;
+            }
+        } else if (selOption == OPT_CORE) {
+            cycleCore(dir);
+        } else {
+            stepOption(selOption, dir);
+        }
+        render();
+    };
     // nothing animates here: a frame after a press and four times a second meanwhile (the performance overlay, the
-    // DebugDriver's shots), every pass while Up/Down is held (DpadHold)
+    // DebugDriver's shots), every pass while Up/Down or Left/Right is held (DpadHold, ValueHold)
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle);
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
         hold_.tick(gui->input(), gui->platform().ticks(), moveCursor);
+        valueHold_.tick(gui->input(), gui->platform().ticks(), changeValue);
         Event e;
+        int valueDir = 0;
         while (gui->input().poll(e)) {
             if (e.type == Event::Type::Quit) {
                 menuVisible = false;
@@ -282,22 +300,11 @@ void GuiEditorRA::loop() {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
                 hold_.track(gui->input(), gui->platform().ticks());
+                valueDir = valueHold_.press(gui->input(), gui->platform().ticks());
                 if (gui->input().dpadDown() || gui->input().dpadUp()) {
                     moveCursor(gui->input().dpadDown() ? 1 : -1);
-                } else if (gui->input().dpadRight() || gui->input().dpadLeft()) {
-                    app.audio().cursor.play();
-                    const bool right = gui->input().dpadRight();
-                    if (selOption == OPT_LIGHTGUN) {
-                        if (right != app.lightguns().isLightgun(*gameData)) {
-                            app.lightguns().setRetroArchLightgun(*gameData, right);
-                            changed = true;
-                        }
-                    } else if (selOption == OPT_CORE) {
-                        cycleCore(right ? 1 : -1);
-                    } else {
-                        stepOption(selOption, right ? 1 : -1);
-                    }
-                    render();
+                } else if (valueDir != 0) {
+                    changeValue(valueDir);
                 }
                 break;
             case Event::Type::ButtonDown:
