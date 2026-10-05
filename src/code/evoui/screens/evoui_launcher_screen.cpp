@@ -526,35 +526,24 @@ void GuiLauncher::pollPadBattery() {
     padBatteries = padBatteryService.list();
     padBatteryLabels = padBatteryLabelsFor(padBatteries, padBatteryIconTags);
 
-    set<string> stillLow;
-    for (size_t i = 0; i < padBatteries.size(); ++i) {
-        const PadBatteryInfo &pad = padBatteries[i];
-        if (!pad.known())
-            continue;
-        const string &label = padBatteryLabels[i];
-        if (pad.percent <= PadBatteryLowPercent) {
-            stillLow.insert(pad.address);
-            if (lowBatteryNotified.find(pad.address) == lowBatteryNotified.end()) {
-                lowBatteryNotified.insert(pad.address);
-                notificationLines[1].setText(label + ": " + _("battery low") + " (" + to_string(pad.percent) + "%)", 0);
-            }
-        } else if (pad.percent >= PadBatteryLowResetPercent) {
-            lowBatteryNotified.erase(pad.address);
+    // PadBatteryAlert (core/model/pad_battery_alert.h) owns the rules: one warning per low pad, taken down when the
+    // pad is charging, back over the reset level, or gone
+    for (const PadBatteryAlert::Event &event : lowBatteryAlert.update(padBatteries)) {
+        if (event.kind == PadBatteryAlert::Kind::Show) {
+            const PadBatteryInfo &pad = padBatteries[event.index];
+            const string text =
+                padBatteryLabels[event.index] + ": " + _("battery low") + " (" + to_string(pad.percent) + "%)";
+            lowBatteryText[event.address] = text;
+            notificationLines[1].setText(text, 0);
+        } else {
+            auto shown = lowBatteryText.find(event.address);
+            if (shown == lowBatteryText.end())
+                continue;
+            // line 1 is shared: take it down only while it still shows this pad's warning
+            if (notificationLines[1].visible() && notificationLines[1].bubble.title() == shown->second)
+                notificationLines[1].bubble.hide();
+            lowBatteryText.erase(shown);
         }
-    }
-    // a pad that vanished (unplugged, or its battery node went away) gets to be renotified if it comes back
-    // low - erase everything list() no longer reports rather than letting the set grow forever
-    for (auto it = lowBatteryNotified.begin(); it != lowBatteryNotified.end();) {
-        bool present = false;
-        for (const PadBatteryInfo &pad : padBatteries)
-            if (pad.address == *it) {
-                present = true;
-                break;
-            }
-        if (!present)
-            it = lowBatteryNotified.erase(it);
-        else
-            ++it;
     }
 }
 
@@ -616,6 +605,9 @@ int GuiLauncher::renderPadBatteries() {
     }
     // G5l: the theme's `battery` icon (outline and nub, at its own size) replaces the code-drawn outline and nub
     const ableem::Texture batteryIcon = ctx.icon("battery");
+    // ... and its `batteryCharging` icon (the bolt alone on a transparent canvas of the same size) is drawn over the
+    // outline and the charge while a pad is charging; none = a code-drawn bolt of the same shape
+    const ableem::Texture batteryChargingIcon = ctx.icon("batteryCharging");
 
     int iconX = x + tagW;
     for (size_t i = 0; i < padBatteries.size(); i++) {
@@ -641,11 +633,30 @@ int GuiLauncher::renderPadBatteries() {
         // above the low threshold the fill is the theme's accent (selection), white when the theme sets none
         const ableem::ThemeColor &accent = app.theme().launcher().colors.selection;
         const PadBatteryFill accentFill = PadBatteryFill::accentOrWhite(accent.set, accent.r, accent.g, accent.b);
-        ableem::Color fillColor = pad.percent <= PadBatteryLowPercent
+        // a pad on a charger is not "low" however empty it is - it is filling up
+        ableem::Color fillColor = pad.percent <= PadBatteryAlert::LowPercent && !PadBatteryAlert::onCharger(pad)
                                       ? hintColor
                                       : ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255);
         renderer.setDrawColor(fillColor);
         renderer.fillRect(ableem::Rect(charge.x, charge.y, charge.w, charge.h));
+        if (pad.charging()) {
+            if (batteryChargingIcon.valid()) {
+                // the theme's bolt overlay (transparent canvas of the battery icon's size), over the outline and charge
+                const ableem::Rect boltRect(iconX, y, batteryChargingIcon.size().w, batteryChargingIcon.size().h);
+                renderer.copy(batteryChargingIcon, nullptr, &boltRect);
+            } else {
+                // the code-drawn bolt: the same shape in the battery (accent) colour, a dark edge under it
+                const std::vector<PadBatteryBolt::Strip> bolt = PadBatteryBolt::strips(iconX, y, glyphW, glyphH);
+                const int grow = PadBatteryBolt::Outline;
+                renderer.setDrawColor(ableem::Color(14, 22, 30, 255));
+                for (const PadBatteryBolt::Strip &strip : bolt)
+                    renderer.fillRect(
+                        ableem::Rect(strip.x - grow, strip.y - grow, strip.w + 2 * grow, strip.h + 2 * grow));
+                renderer.setDrawColor(ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255));
+                for (const PadBatteryBolt::Strip &strip : bolt)
+                    renderer.fillRect(ableem::Rect(strip.x, strip.y, strip.w, strip.h));
+            }
+        }
         gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
                                          fgColor);
         y += rowHeight;

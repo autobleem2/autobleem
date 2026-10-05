@@ -105,6 +105,30 @@ struct EvdevFrame {
 };
 EvdevFrame evdevFrame(VirtualPadKind kind, const RawPadState &raw);
 
+//*******************************
+// padPointerNodes - a pad's pointer and motion nodes (a DualSense's touchpad and motion sensors)
+//*******************************
+// A pad can be more than a pad: a DualSense is also a touchpad - a mouse to the compositor, so a cursor shows over the
+// App's window when a thumb brushes it - and a motion sensor. The daemon reads each event node's facts (sysfs and the
+// ioctls); this picks, in every App mode, the nodes it holds (EVIOCGRAB: nobody else, the compositor included, gets
+// their events) and hides from the App. Only a pad's: a node counts when its physical device (group) also has a
+// gamepad node, so a real mouse, a keyboard's touchpad or the console's Reset button are never taken.
+struct InputNodeFacts {
+    std::string path;     // "/dev/input/event3"
+    std::string group;    // the physical device it belongs to (a pad's buttons, sensors and touchpad share one)
+    bool gamepad = false; // joystick or gamepad buttons (BTN_JOYSTICK..BTN_THUMBR)
+    bool pointer = false; // moves a pointer: relative axes, a touch surface (ABS_MT_POSITION_X) or INPUT_PROP_POINTER
+    bool motion = false;  // INPUT_PROP_ACCELEROMETER
+};
+
+// the kernel's numbers (linux/input-event-codes.h)
+constexpr int EvdevBtnGamepadLast = 0x13f; // BTN_JOYSTICK (0x120) .. the end of the gamepad range
+constexpr int EvdevAbsMtPositionX = 0x35;
+constexpr int EvdevPropPointer = 0x00;
+constexpr int EvdevPropAccelerometer = 0x06;
+
+std::vector<std::string> padPointerNodes(const std::vector<InputNodeFacts> &nodes);
+
 } // namespace abpad
 
 #endif

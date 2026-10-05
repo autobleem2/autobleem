@@ -23,10 +23,12 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 #include "core/services/pad_battery.h"
+#include "core/model/pad_battery_alert.h"
 #include "core/model/pad_battery_match.h"
 #include "core/services/game_query.h"
 #include <vector>
 #include <memory>
+#include <map>
 #include <set>
 #include "gui/gui.h"
 
@@ -115,9 +117,11 @@ public:
     // C8: a small battery indicator per wireless pad, top-left corner - PadBatteryService (ab_core) reads
     // the kernel's power_supply sysfs tree, same as PSC-Bios's pairing screen. Polled at most every
     // PadBatteryPollInterval (core/model/timing.h), never every frame - a handful of sysfs reads is cheap,
-    // but there is no reason to do it 60 times a second. lowBatteryNotified is which pads (by address)
-    // already got the one-time "battery low" NotificationLine since they last climbed back over
-    // PadBatteryLowResetPercent (or vanished) - so a reading sitting at 12% for ten minutes says it once.
+    // but there is no reason to do it 60 times a second. lowBatteryAlert (core/model/pad_battery_alert.h) decides
+    // when a pad gets the one-time "battery low" NotificationLine and when it is taken down again (the pad on a
+    // charger, back over the reset level, gone) - so a reading sitting at 12% for ten minutes says it once.
+    // lowBatteryText is the text each pad's notice was shown with, so a dismissal only hides the bubble while it
+    // still shows that very text (line 1 is shared with every other message).
     // C12: each reading is also matched to the SDL pad it belongs to (matchPadBatteries(),
     // core/model/pad_battery_match.h - by the pad's own serial against the sysfs address), so the label is
     // "Player 1"/"Player 2" when that match succeeds; padBatteryLabelsFor() falls back to the old generic
@@ -131,7 +135,8 @@ public:
     std::vector<std::string> padBatteryIconTags; // padBatteryIconTags[i] is padBatteries[i]'s short icon
                                                  // tag ("P1"/"P2"/""), recomputed together with the above
     long lastPadBatteryPoll = 0;
-    std::set<std::string> lowBatteryNotified;
+    PadBatteryAlert lowBatteryAlert;
+    std::map<std::string, std::string> lowBatteryText;
     void pollPadBattery();
     int renderPadBatteries(); // returns the plate's bottom edge (0: no plate drawn)
     void renderChannelWatermark(int plateBottom);
