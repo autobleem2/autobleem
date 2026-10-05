@@ -48,39 +48,6 @@ pe_cfg_get() {
     sed -n -e "s/^$2=//p" "$1" 2>/dev/null | head -n 1 | tr -d '\r"'
 }
 
-# pe_children PID: the pid and every process below it, from /proc (no job control, no pgrep)
-pe_tree() {
-    pe_all=" $1 "
-    pe_more=1
-    while [ "$pe_more" = 1 ]; do
-        pe_more=0
-        for pe_st in /proc/[0-9]*/stat; do
-            [ -r "$pe_st" ] || continue
-            read -r pe_line < "$pe_st" 2>/dev/null || continue
-            pe_pid=${pe_st#/proc/}
-            pe_pid=${pe_pid%/stat}
-            pe_rest=${pe_line##*) } # after the command name (which may hold blanks): "S ppid pgrp ..."
-            set -- $pe_rest
-            case "$pe_all" in
-                *" $2 "*)
-                    case "$pe_all" in
-                        *" $pe_pid "*) ;;
-                        *) pe_all="$pe_all$pe_pid "; pe_more=1 ;;
-                    esac
-                    ;;
-            esac
-        done
-    done
-    echo $pe_all
-}
-
-# pe_signal SIG PID: the signal to the process and all below it
-pe_signal() {
-    for pe_p in $(pe_tree "$2"); do
-        kill "-$1" "$pe_p" 2>/dev/null
-    done
-}
-
 pe_mounted() {
     grep -q " $1 " /proc/mounts 2>/dev/null
 }

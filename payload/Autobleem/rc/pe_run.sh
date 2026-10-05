@@ -9,7 +9,8 @@
 # launcher the compat list blocks (rc/pe_compat.ini), builds the RAM environment the mod's own launch.sh expects
 # (rc/pe_env.sh) and runs that launch.sh, unchanged, as a child - then takes everything down again and exits with
 # the child's status. A TERM (the Reset button: rc/abpad asks, then SIGTERM, then SIGKILL after 3 s) stops the mod
-# and its children, with a second of grace, and still cleans up.
+# and everything it started, with a second of grace, and still cleans up; what the mod leaves running when its
+# launch.sh ends is stopped the same way (rc/app_env.sh, "The App's processes").
 
 if [ -z "$1" ] || ! AB_APP_DIR=$(cd "$1" 2>/dev/null && pwd); then
     echo "usage: $0 <app folder>" >&2
@@ -79,28 +80,17 @@ PE_SHELL=sh
 command -v bash > /dev/null 2>&1 && PE_SHELL=bash # the mods are #!/bin/sh scripts that use source, [[ ]], arrays
 
 PE_CLEANED=
-PE_CHILD=
-PE_TERMED=
 if ! pe_prepare; then
     pe_log "could not build the environment for $PE_LAUNCHER"
     pe_cleanup
     exit 1
 fi
 
-# A TERM/INT/HUP (Reset, Start+Select) stops the mod and everything it started: TERM, a second, KILL
-pe_on_term() {
-    PE_TERMED=1
-    [ -n "$PE_CHILD" ] || return 0
-    pe_log "told to stop - stopping the mod"
-    pe_signal TERM "$PE_CHILD"
-    pe_n=0
-    while [ "$pe_n" -lt 5 ] && kill -0 "$PE_CHILD" 2>/dev/null; do
-        sleep 0.2
-        pe_n=$((pe_n + 1))
-    done
-    kill -0 "$PE_CHILD" 2>/dev/null && pe_signal KILL "$PE_CHILD"
-}
-trap pe_on_term TERM INT HUP
+# The mod is an App like any other (rc/app_env.sh, "The App's processes"): a TERM/INT/HUP (Reset, Start+Select) stops
+# all of it, and when its launch.sh ends whatever it left running is stopped too - the launcher never comes back while
+# any of it holds the screen
+AB_APP_LOG=pe_log
+trap ab_app_on_term TERM INT HUP
 
 pe_log "starting $PE_LAUNCHER with $PE_SHELL (PROJECT_ERIS_PATH=$PE_BOUND_PATH)"
 pe_trail
@@ -108,19 +98,12 @@ cd "$PE_LAUNCHTMP" || cd "$AB_APP_DIR" || exit 1
 if [ "$AB_PAD_HIDE" = 1 ]; then
     # the mod starts where the held pads' nodes (the kernel pad) and the Reset button are /dev/null, so it finds only
     # the virtual pads and cannot grab Reset (abpadd --hide-run execs the shell: the pid stays the mod's)
-    "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- "$PE_SHELL" ./launch.sh &
+    ab_app_start "$AB_PAD_DIR/abpadd" --hide-run "$AB_PAD_HIDE_LIST" -- "$PE_SHELL" ./launch.sh
 else
-    "$PE_SHELL" ./launch.sh &
+    ab_app_start "$PE_SHELL" ./launch.sh
 fi
-PE_CHILD=$!
-wait "$PE_CHILD"
+ab_app_wait
 PE_RC=$?
-# a trap interrupts wait: go on until the child is really gone
-while kill -0 "$PE_CHILD" 2>/dev/null; do
-    wait "$PE_CHILD"
-    PE_RC=$?
-done
-[ -z "$PE_TERMED" ] || PE_RC=143
 pe_log "the mod ended with $PE_RC"
 pe_trail_end
 

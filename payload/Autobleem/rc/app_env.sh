@@ -225,6 +225,9 @@ if [ "$AB_APP_VIRTUAL_PAD" != 0 ] && [ -x "$AB_PAD_DIR/abpadd" ] && [ -f "$AB_PA
 
     AB_PAD_LOG="$AB_ABPAD_LOG_DIR/abpad.log"
     export AB_PAD_LOG
+    # one App's lines: the shim and abpadd --hide-run append to it, so without this the trail of an App the shim never
+    # reached (a kernel-pad App) showed the last shim App's lines as its own
+    : > "$AB_PAD_LOG" 2>/dev/null
     if [ -n "$AB_PAD_KERNEL" ]; then
         # the kernel pad: no shim in front of the App's SDL (it would translate a pad that is already the right
         # one), and no hidapi in it either - that would find the real pad through /dev/hidraw, past the grab
@@ -256,3 +259,140 @@ elif [ -d /usr/sony ] && [ -x "$AB_PAD_DIR/abpadd" ]; then
     env LD_LIBRARY_PATH="$AB_PAD_LD_LIBRARY_PATH" \
         "$AB_PAD_DIR/abpadd" --exit-only --watch-pid $$ > "$AB_ABPAD_LOG_DIR/abpadd.log" 2>&1 &
 fi
+
+# ---------------------------------------------------------------------------------------------
+# The App's processes, and the one way they end (rc/app_run.sh, rc/pe_run.sh).
+#
+# An App is its program and everything that program starts, however it starts it: a child, a child's child, a
+# program whose parent has already gone (it is then init's, and no walk down from the App finds it any more), one in
+# a session of its own. So the runner starts the program with a mark in its environment, AB_APP_ID - inherited by
+# everything below it - and the App's processes are the ones that carry the mark, and everything below them.
+#
+# The runner does not exec the program: it stays its parent, so it is the one that ends the App, and the launcher
+# (which waits for the runner) never comes back while any of it runs:
+#   - the program ends by itself: whatever it left running is stopped (a mod's launch.sh that ended while the game it
+#     started played on, holding the screen - OpenJazz on the console, 2026-10-05);
+#   - a TERM/INT/HUP (Reset, Start+Select: abpadd TERMs the runner, which it watches, and KILLs it 1.5 to 3 s later)
+#     stops all of it.
+# Either way: TERM to every process of the App, a second for them to go, KILL to what is left, then up to 2 s for the
+# kernel to take them (one stuck in a driver may not go: the log names it). The runner's own pid, abpadd and the
+# runner's helpers do not carry the mark and are never touched.
+#
+#   ab_app_start PROGRAM ARGS...   starts it in the background (AB_APP_PID), its stdin the runner's; the program is
+#                                  a file to run, not a shell function
+#   ab_app_wait                    waits for it, then stops what it left; returns its status (143 after a stop)
+#   ab_app_on_term                 the TERM/INT/HUP trap: trap ab_app_on_term TERM INT HUP
+# AB_APP_LOG may name a function that takes a line for the log (pe_run.sh: pe_log); stderr otherwise.
+# ---------------------------------------------------------------------------------------------
+AB_APP_PID=
+AB_APP_STOPPED=
+
+ab_app_log() {
+    if [ -n "$AB_APP_LOG" ]; then "$AB_APP_LOG" "$*"; else echo "app: $*" >&2; fi
+}
+
+# ab_app_live PIDS: the ones that still run (gone and zombies left out); /proc, no forks
+ab_app_live() {
+    ab_live=
+    for ab_p in "$@"; do
+        read -r ab_line < "/proc/$ab_p/stat" 2>/dev/null || continue
+        set -- ${ab_line##*) } # after the command name (which may hold blanks): "S ppid pgrp ..."
+        case "$1" in Z | X | x) continue ;; esac
+        ab_live="$ab_live $ab_p"
+    done
+    echo $ab_live
+}
+
+# ab_app_procs [all]: the App's processes that still run - the ones with the mark, everything below them, and with
+# "all" the program itself (it may have cleared its environment)
+ab_app_procs() {
+    ab_found=" "
+    [ "$1" = all ] && [ -n "$AB_APP_PID" ] && ab_found=" $AB_APP_PID "
+    if [ -n "$AB_APP_ID" ]; then
+        # the mark is "x<runner pid>x<seconds>x": no App's mark is the start of another's
+        for ab_e in $(grep -l -F "AB_APP_ID=$AB_APP_ID" /proc/[0-9]*/environ 2>/dev/null); do
+            ab_p=${ab_e#/proc/}
+            ab_p=${ab_p%/environ}
+            case "$ab_found" in *" $ab_p "*) ;; *) ab_found="$ab_found$ab_p " ;; esac
+        done
+    fi
+    ab_more=1
+    while [ "$ab_more" = 1 ] && [ "$ab_found" != " " ]; do
+        ab_more=0
+        for ab_st in /proc/[0-9]*/stat; do
+            ab_p=${ab_st#/proc/}
+            ab_p=${ab_p%/stat}
+            case "$ab_found" in *" $ab_p "*) continue ;; esac
+            read -r ab_line < "$ab_st" 2>/dev/null || continue
+            set -- ${ab_line##*) }
+            case "$ab_found" in *" $2 "*) ab_found="$ab_found$ab_p " ab_more=1 ;; esac
+        done
+    done
+    ab_app_live $ab_found
+}
+
+# ab_app_names PIDS: "pid (command line)" each, for the log
+ab_app_names() {
+    for ab_p in "$@"; do
+        printf '%s (%s) ' "$ab_p" "$(tr '\0' ' ' < "/proc/$ab_p/cmdline" 2>/dev/null | cut -c1-80)"
+    done
+}
+
+# ab_app_stop [all] WHY: TERM, a second, KILL, up to 2 s more - see above
+ab_app_stop() {
+    ab_mode=$1
+    ab_left=$(ab_app_procs "$ab_mode")
+    [ -n "$ab_left" ] || return 0
+    ab_app_log "$2 - TERM to $(ab_app_names $ab_left)"
+    kill -TERM $ab_left 2>/dev/null
+    # the known ones only while waiting (cheap); the whole App again before the KILL
+    ab_n=0
+    while [ -n "$ab_left" ] && [ "$ab_n" -lt 10 ]; do
+        sleep 0.1
+        ab_left=$(ab_app_live $ab_left)
+        ab_n=$((ab_n + 1))
+    done
+    ab_left=$(ab_app_procs "$ab_mode")
+    [ -n "$ab_left" ] || return 0
+    ab_app_log "still running a second after the TERM - KILL to $(ab_app_names $ab_left)"
+    kill -KILL $ab_left 2>/dev/null
+    ab_n=0
+    while [ -n "$ab_left" ] && [ "$ab_n" -lt 20 ]; do
+        sleep 0.1
+        ab_left=$(ab_app_live $ab_left)
+        ab_n=$((ab_n + 1))
+    done
+    [ -z "$ab_left" ] || ab_app_log "still there after the KILL (held in the kernel): $(ab_app_names $ab_left)"
+}
+
+ab_app_on_term() {
+    AB_APP_STOPPED=1
+    [ -n "$AB_APP_PID" ] || return 0
+    ab_app_stop all "told to stop"
+}
+
+ab_app_start() {
+    AB_APP_ID="x$$x$(date +%s 2>/dev/null)x"
+    # the explicit stdin: a background command of a shell without job control would get /dev/null (none open: as is)
+    if { : <&0; } 2>/dev/null; then
+        AB_APP_ID=$AB_APP_ID "$@" <&0 &
+    else
+        AB_APP_ID=$AB_APP_ID "$@" &
+    fi
+    AB_APP_PID=$!
+    # a TERM that came before the pid was known
+    [ -z "$AB_APP_STOPPED" ] || ab_app_stop all "told to stop while starting"
+}
+
+ab_app_wait() {
+    wait "$AB_APP_PID"
+    ab_rc=$?
+    # a trap interrupts wait: go on until the program is really gone
+    while kill -0 "$AB_APP_PID" 2>/dev/null; do
+        wait "$AB_APP_PID"
+        ab_rc=$?
+    done
+    ab_app_stop "" "the program ended ($ab_rc) and left these running"
+    [ -z "$AB_APP_STOPPED" ] || ab_rc=143
+    return "$ab_rc"
+}

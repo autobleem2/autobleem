@@ -353,6 +353,116 @@ TEST_CASE("pe_run.sh: a TERM (the Reset button) stops the mod and its children, 
     CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
     CHECK(pe.tmp.readFile("power/disable") == "1");
 }
+
+namespace {
+// the driver's tail: whether the pid in FILE still runs once the runner has returned - read at once, not polled (the
+// runner must not come back before it is gone); a zombie counts as gone (see the TERM test above)
+string goneCheck(const string &file) {
+    return "C=$(cat \"" + file +
+           "\")\n"
+           "if [ ! -r /proc/$C/stat ] || [ \"$(sed 's/.*) //' /proc/$C/stat 2>/dev/null | cut -c1)\" = Z ]; then "
+           "echo child=gone; else echo child=alive; kill -KILL $C; fi\n";
+}
+} // namespace
+
+// OpenJazz on the console, 2026-10-05: the mod's launch.sh ended while the game it started ran on, so the launcher
+// came back under a program that held the screen, and Reset (abpadd watches the runner, which was gone) did nothing
+TEST_CASE("pe_run.sh: Reset stops a child that ignores TERM (TERM, then KILL), and the clean-up still happens") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", "#!/bin/sh\n"
+                                               "(trap '' TERM; exec sleep 300) &\n" // TERM is ignored across the exec
+                                               "echo $! > \"$APP_OUT.child\"\n"
+                                               "wait\n");
+    vector<string> lines =
+        pe.run("sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\" &\n"
+               "PID=$!\n"
+               "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
+               "sleep 0.3\n"
+               "kill -TERM $PID\n"
+               "wait $PID\n"
+               "echo rc=$?\n" +
+               goneCheck("$APP_OUT.child"));
+    REQUIRE(lines.size() >= 2);
+    CHECK(lines[lines.size() - 2] == "rc=143");
+    CHECK(lines.back() == "child=gone");
+    const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+    CHECK(log.find("told to stop - TERM to ") != string::npos);
+    CHECK(log.find("still running a second after the TERM - KILL to ") != string::npos);
+    CHECK(log.find("the mod ended with 143") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("vol/launchtmp")));
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
+    CHECK(pe.tmp.readFile("power/disable") == "1");
+}
+
+TEST_CASE("pe_run.sh: what the mod leaves running when its launch.sh ends is stopped before the runner returns") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    // the game's parent goes at once (a subshell that only starts it), so the game is nobody's below the mod any more;
+    // it ignores TERM as well, and launch.sh then ends normally
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", "#!/bin/sh\n"
+                                               "(trap '' TERM; sleep 300 & echo $! > \"$APP_OUT.child\")\n"
+                                               "exit 0\n");
+    vector<string> lines = pe.run("sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\necho rc=$?\n" +
+                                  goneCheck("$APP_OUT.child"));
+    REQUIRE(lines.size() >= 2);
+    CHECK(lines[lines.size() - 2] == "rc=0"); // the mod's own status: it was not told to stop
+    CHECK(lines.back() == "child=gone");
+    const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+    CHECK(log.find("the program ended (0) and left these running - TERM to ") != string::npos);
+    CHECK(log.find("sleep 300") != string::npos); // named in the log
+    CHECK(log.find("KILL to ") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
+}
+
+TEST_CASE("app_run.sh: the same rule - a TERM stops the App and what it started, and what it leaves is stopped") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    REQUIRE(DirEntry::copy(string(AB_RC_DIR) + "/app_run.sh", pe.tmp.at("Autobleem/rc/app_run.sh")));
+    pe.tmp.makeSubDir("Apps/demo");
+    // the App: a child that ignores TERM, written down, then the App waits (TERM case) or ends at once (left case)
+    pe.tmp.writeFile("Apps/demo/game", "#!/bin/sh\n"
+                                       "(trap '' TERM; sleep 300 & echo $! > \"$APP_OUT.child\")\n"
+                                       "[ \"$1\" = wait ] && sleep 300\n"
+                                       "exit 5\n");
+    const string start = "chmod +x \"$AB_ROOT/Apps/demo/game\"\n"
+                         "export AB_APP_DIR=\"$AB_ROOT/Apps/demo\" AB_APP_EXEC=\"$AB_ROOT/Apps/demo/game\"\n";
+
+    SUBCASE("the App ends by itself") {
+        vector<string> lines = pe.run(start +
+                                      "export AB_APP_ARGS=now\n"
+                                      "sh \"$AB_ROOT/Autobleem/rc/app_run.sh\" 2>/dev/null\necho rc=$?\n" +
+                                      goneCheck("$APP_OUT.child"));
+        REQUIRE(lines.size() >= 2);
+        CHECK(lines[lines.size() - 2] == "rc=5");
+        CHECK(lines.back() == "child=gone");
+    }
+    SUBCASE("Reset") {
+        vector<string> lines =
+            pe.run(start +
+                   "export AB_APP_ARGS=wait\n"
+                   "sh \"$AB_ROOT/Autobleem/rc/app_run.sh\" 2>/dev/null &\n"
+                   "PID=$!\n"
+                   "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
+                   "sleep 0.3\n"
+                   "kill -TERM $PID\n"
+                   "wait $PID\n"
+                   "echo rc=$?\n" +
+                   goneCheck("$APP_OUT.child"));
+        REQUIRE(lines.size() >= 2);
+        CHECK(lines[lines.size() - 2] == "rc=143");
+        CHECK(lines.back() == "child=gone");
+    }
+}
 #endif
 
 TEST_CASE(
