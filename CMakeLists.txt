@@ -246,6 +246,7 @@ add_library(ab_evoui STATIC
         src/code/evoui/channel_watermark.h
         src/code/evoui/cover_loader.cpp
         src/code/evoui/cover_loader.h
+        src/code/evoui/evoui_layout.h
         src/code/evoui/controls/evoui_centerlabel.cpp
         src/code/evoui/controls/evoui_centerlabel.h
         src/code/evoui/controls/evoui_menu.cpp

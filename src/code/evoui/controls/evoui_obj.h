@@ -24,6 +24,8 @@ public:
     std::string name;
 
     ableem::Texture tex;
+    // the part of the image drawn into (x, y, w, h); w 0 = its top-left w x h (the image at its own size)
+    ableem::Rect src;
 
     bool visible = false;
     long lastTime = 0;

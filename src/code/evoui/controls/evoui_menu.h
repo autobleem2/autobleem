@@ -77,7 +77,10 @@ public:
     int direction = 0;
 
     // the offset that keeps an icon drawn at `scale` centred on its unzoomed place
-    static float zoomOffset(float scale) { return evomotion::zoomOffset(scale); }
+    // the icons' size and the pitch from one to the next: 118 and evomotion::IconGap on 16:9, the 4:3 layout's own
+    int iconSize = 118;
+    float pitch = evomotion::IconGap;
+    float zoomOffset(float scale) const { return evomotion::zoomOffset(scale, static_cast<float>(iconSize)); }
 
     void freeAssets();
     void render() override;
