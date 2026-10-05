@@ -14,6 +14,9 @@
 #include <ableem/engine/log.h>
 #include <ableem/engine/update_catalog.h>
 #include "core/version.h"
+#include <ableem/engine/theme_spec.h>
+#include "core/services/default_theme.h"
+#include "core/services/environment.h"
 
 using namespace std;
 
@@ -222,6 +225,7 @@ void AutoBleem::tryOutputMode(const string &token) {
         value = want.token();
         cfg_.save();
         PLOG_INFO << "Display mode " << want.token() << " kept";
+        useDefaultThemeFor(want);
     } else {
         PLOG_INFO << "Display mode " << want.token() << " not confirmed - back to " << was.token();
         switchOutputMode(was);
@@ -246,7 +250,27 @@ bool AutoBleem::confirmPendingOutputMode() {
     cfg_.inifile.values[OutputMode::ConfigKey] = OutputMode::parse(token).token();
     cfg_.save();
     PLOG_INFO << "Display mode " << token << " kept";
+    useDefaultThemeFor(OutputMode::parse(token));
     return true;
+}
+
+// The CRT 4:3 mode has been kept (the player confirmed it works): a theme without a 4:3 layout is replaced by the
+// default theme - only now, never while the mode is still being tried, so a mode the display cannot show costs the
+// player nothing. The assets are loaded again from the new theme.
+void AutoBleem::useDefaultThemeFor(const OutputMode &kept) {
+    string &theme = cfg_.inifile.values["theme"];
+    if (theme == DefaultTheme::Name)
+        return;
+    const string themes = Env::getPathToThemesDir();
+    const bool supports = ableem::ThemeSpec::supports4x3(themes + sep + theme + sep + "theme.json");
+    if (!OutputMode::needsDefaultTheme(kept, supports))
+        return;
+    if (!DirEntry::isDirectory(themes + sep + DefaultTheme::Name))
+        return; // nothing to switch to
+    PLOG_INFO << "Theme " << theme << " has no 4:3 layout - switching to " << DefaultTheme::Name;
+    theme = DefaultTheme::Name;
+    cfg_.save();
+    gui_->loadAssets(true);
 }
 
 //*******************************

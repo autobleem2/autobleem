@@ -38,6 +38,7 @@ private:
     void switchOutputMode(const OutputMode &mode);
     void tryOutputMode(const std::string &token);
     bool confirmPendingOutputMode();
+    void useDefaultThemeFor(const OutputMode &kept); // the CRT 4:3 mode kept: a theme without a 4:3 layout goes
     // BUG-40: the carousel's place across a launcher that exits for a display change / restart and is started
     // over (core's CarouselSession): saved as it leaves, taken once at the next start
     void saveCarouselSession();
