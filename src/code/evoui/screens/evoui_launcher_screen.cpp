@@ -605,7 +605,8 @@ int GuiLauncher::renderPadBatteries() {
     }
     // G5l: the theme's `battery` icon (outline and nub, at its own size) replaces the code-drawn outline and nub
     const ableem::Texture batteryIcon = ctx.icon("battery");
-    // ... and its `batteryCharging` icon (same size) stands in for it while a pad is charging; none = a code bolt
+    // ... and its `batteryCharging` icon (the bolt alone on a transparent canvas of the same size) is drawn over the
+    // outline and the charge while a pad is charging; none = a code-drawn bolt of the same shape
     const ableem::Texture batteryChargingIcon = ctx.icon("batteryCharging");
 
     int iconX = x + tagW;
@@ -617,16 +618,11 @@ int GuiLauncher::renderPadBatteries() {
         if (!tag.empty())
             gui->text().renderText_WithColor(battFont, tag, x, y + textY, fgColor);
         int glyphW = iconW + nubW, glyphH = iconH;
-        // a pad on a charger: the theme's `batteryCharging` icon (drawn over the charge, below) or a code-drawn bolt
-        const bool charging = pad.charging();
-        const bool chargingIcon = charging && batteryChargingIcon.valid();
-        const ableem::Texture &outlineIcon = chargingIcon ? batteryChargingIcon : batteryIcon;
-        if (outlineIcon.valid()) {
-            glyphW = outlineIcon.size().w;
-            glyphH = outlineIcon.size().h;
+        if (batteryIcon.valid()) {
+            glyphW = batteryIcon.size().w;
+            glyphH = batteryIcon.size().h;
             const ableem::Rect iconRect(iconX, y, glyphW, glyphH);
-            if (!chargingIcon)
-                renderer.copy(outlineIcon, nullptr, &iconRect);
+            renderer.copy(batteryIcon, nullptr, &iconRect);
         } else {
             renderer.setDrawColor(secColor);
             renderer.drawRect(ableem::Rect(iconX, y, iconW, iconH));
@@ -643,20 +639,23 @@ int GuiLauncher::renderPadBatteries() {
                                       : ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255);
         renderer.setDrawColor(fillColor);
         renderer.fillRect(ableem::Rect(charge.x, charge.y, charge.w, charge.h));
-        if (chargingIcon) {
-            // the icon is an outline with a clear middle: over the charge, so its bolt shows on top
-            const ableem::Rect iconRect(iconX, y, glyphW, glyphH);
-            renderer.copy(outlineIcon, nullptr, &iconRect);
-        } else if (charging) {
-            // the code-drawn bolt: a dark outline (grown strips) under it, so it reads on any fill
-            const std::vector<PadBatteryBolt::Strip> bolt = PadBatteryBolt::strips(iconX, y, glyphW, glyphH);
-            const int grow = PadBatteryBolt::Outline;
-            renderer.setDrawColor(ableem::Color(0, 0, 0, 255));
-            for (const PadBatteryBolt::Strip &strip : bolt)
-                renderer.fillRect(ableem::Rect(strip.x - grow, strip.y - grow, strip.w + 2 * grow, strip.h + 2 * grow));
-            renderer.setDrawColor(fgColor);
-            for (const PadBatteryBolt::Strip &strip : bolt)
-                renderer.fillRect(ableem::Rect(strip.x, strip.y, strip.w, strip.h));
+        if (pad.charging()) {
+            if (batteryChargingIcon.valid()) {
+                // the theme's bolt overlay (transparent canvas of the battery icon's size), over the outline and charge
+                const ableem::Rect boltRect(iconX, y, batteryChargingIcon.size().w, batteryChargingIcon.size().h);
+                renderer.copy(batteryChargingIcon, nullptr, &boltRect);
+            } else {
+                // the code-drawn bolt: the same shape in the battery (accent) colour, a dark edge under it
+                const std::vector<PadBatteryBolt::Strip> bolt = PadBatteryBolt::strips(iconX, y, glyphW, glyphH);
+                const int grow = PadBatteryBolt::Outline;
+                renderer.setDrawColor(ableem::Color(14, 22, 30, 255));
+                for (const PadBatteryBolt::Strip &strip : bolt)
+                    renderer.fillRect(
+                        ableem::Rect(strip.x - grow, strip.y - grow, strip.w + 2 * grow, strip.h + 2 * grow));
+                renderer.setDrawColor(ableem::Color(accentFill.r, accentFill.g, accentFill.b, 255));
+                for (const PadBatteryBolt::Strip &strip : bolt)
+                    renderer.fillRect(ableem::Rect(strip.x, strip.y, strip.w, strip.h));
+            }
         }
         gui->text().renderText_WithColor(battFont, to_string(pad.percent) + "%", iconX + iconW + nubW + 6, y + textY,
                                          fgColor);
