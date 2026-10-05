@@ -254,23 +254,23 @@ bool AutoBleem::confirmPendingOutputMode() {
     return true;
 }
 
-// The CRT 4:3 mode has been kept (the player confirmed it works): a theme without a 4:3 layout is replaced by the
-// default theme - only now, never while the mode is still being tried, so a mode the display cannot show costs the
-// player nothing. The assets are loaded again from the new theme.
-void AutoBleem::useDefaultThemeFor(const OutputMode &kept) {
+// The CRT 4:3 mode is in use - kept (the player confirmed it works) or already in config.ini at the start: a theme
+// without a 4:3 layout is replaced by the default theme - never while the mode is still being tried, so a mode the
+// display cannot show costs the player nothing. The assets are loaded again from the new theme, and the launcher
+// says so on its notification line.
+void AutoBleem::useDefaultThemeFor(const OutputMode &inUse) {
     string &theme = cfg_.inifile.values["theme"];
-    if (theme == DefaultTheme::Name)
-        return;
     const string themes = Env::getPathToThemesDir();
-    const bool supports = ableem::ThemeSpec::supports4x3(themes + sep + theme + sep + "theme.json");
-    if (!OutputMode::needsDefaultTheme(kept, supports))
+    const string target = OutputMode::themeToSwitchTo(
+        inUse, theme, ableem::ThemeSpec::supports4x3(themes + sep + theme + sep + "theme.json"), DefaultTheme::Name,
+        DirEntry::isDirectory(themes + sep + DefaultTheme::Name));
+    if (target.empty())
         return;
-    if (!DirEntry::isDirectory(themes + sep + DefaultTheme::Name))
-        return; // nothing to switch to
-    PLOG_INFO << "Theme " << theme << " has no 4:3 layout - switching to " << DefaultTheme::Name;
-    theme = DefaultTheme::Name;
+    PLOG_INFO << "Theme " << theme << " has no 4:3 layout - switching to " << target;
+    theme = target;
     cfg_.save();
     gui_->loadAssets(true);
+    extensionRequests_.message = _("Theme switched to the default (CRT 4:3)"); // the launcher's notification line
 }
 
 //*******************************
@@ -392,6 +392,9 @@ int AutoBleem::run() {
     DirEntry::removeFile(OutputMode::pendingFile());
     const bool leaveForDisplay = false;
 #endif
+    // the CRT 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use
+    if (!leaveForDisplay)
+        useDefaultThemeFor(OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]));
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
