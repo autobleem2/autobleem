@@ -35,7 +35,8 @@ struct NotificationLines {
     std::vector<NotificationLine> lines;
     NotificationLine &operator[](int i) { return lines[i]; };
 
-    void create(int count);
+    // `count` lines, each growing with its text up to `maxWidth` (two thirds of the 1280 canvas), at `right`
+    void create(int count, int maxWidth = 840, int right = 1280 - 16);
     // draws the visible lines one under the other from `top`, 8 px apart; returns the y below the last
     int render(Gui &gui, long now, int top);
     bool animating() const {

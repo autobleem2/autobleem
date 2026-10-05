@@ -5,6 +5,7 @@
 #pragma once
 
 #include "carousel_motion.h"
+#include "evoui_layout.h"
 #include "core/model/ps_game.h"
 #include <vector>
 #include <ableem/ui/renderer.h>
@@ -105,12 +106,20 @@ public:
     static const int SideCovers = 14;
     static const int Slots = 2 * SideCovers + 1;
     static const int MiddleSlot = SideCovers;
+    // the row this carousel has: SideCovers a side on 16:9, the layout's own count on 4:3 (the shelf reaches the right
+    // edge from a centre left of the middle)
+    int sideCovers() const { return geometry.sideCovers; }
+    int slots() const { return 2 * sideCovers() + 1; }
+    int middleSlot() const { return sideCovers(); }
 
     int activeItem = 0;
     int cycleMax = 0;
     int cycleDuration = 0;
     int previousActiveElement = 0;
     std::vector<PsScreenpoint> coverPositions;
+    // where the row stands and how big (the launcher's layout: 1280x720, or the 4:3 canvas's); initCoverPositions
+    // places the slots from it
+    EvoLayout::Carousel geometry;
 
     void initCoverPositions();
 

@@ -322,10 +322,11 @@ void PsCarouselGame::freeTex() {
 // an outer cover is rightly drawn behind its inner neighbour where the two overlap. The step between
 // neighbours shrinks with their size so the row reads as evenly spaced in depth; the twelfth is the last one
 // partly on screen and the fourteenth's box is wholly off it (its left edge at -65 for the left side).
-PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
-    static const float turnByDistance[] = {0, 40, 52, 60, 66, 70, 72};
-    const float turn = distance <= 6 ? turnByDistance[distance] : 72.0f;
-    const float nearestScale = 0.5f, shrinkPerCover = 0.035f;
+namespace {
+// the 1280x720 shelf, its numbers as constants - kept apart so it stays exactly what it was (its float steps rounded as
+// shelfScale/shelfStep say: the 32-bit PC stick's x87 maths would move an outer cover a pixel otherwise)
+PsScreenpoint wideCoverPoint(int distance, int side, float turn) {
+    const float nearestScale = 0.5f;
     const int nearestOffset = 190, nearestStep = 50;
     const int nearestShade = 255, darkenPerCover = 15;
     const int middleY = 100 + static_cast<int>(226 * nearestScale) / 2; // the row's centre line
@@ -333,8 +334,8 @@ PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
     float scale = nearestScale;
     int offset = nearestOffset;
     for (int d = 2; d <= distance; d++) {
-        scale = nearestScale * (1.0f - shrinkPerCover * (d - 1));
-        offset += static_cast<int>(nearestStep * scale / nearestScale);
+        scale = shelfScale(nearestScale, d);
+        offset += shelfStep(nearestStep, scale, nearestScale);
     }
     const int boxWidth = static_cast<int>(226 * scale);
 
@@ -351,6 +352,24 @@ PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
     }
     return point;
 }
+} // namespace
+
+PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
+    static const float turnByDistance[] = {0, 40, 52, 60, 66, 70, 72};
+    const float turn = distance <= 6 ? turnByDistance[distance] : 72.0f;
+    if (geometry.isWide())
+        return wideCoverPoint(distance, side, turn);
+    // the 4:3 layout's shelf: its place, size and spacing (EvoLayout::Carousel::shelfSlot)
+    const EvoLayout::ShelfSlot slot = geometry.shelfSlot(distance, side);
+    PsScreenpoint point;
+    point.scale = slot.scale;
+    // darker further out, from 255 to 60 at the outermost as on 16:9 (15 a cover over 14), over this row's length
+    point.shade = 255 - 195 * (distance - 1) / std::max(1, sideCovers() - 1);
+    point.x = slot.x;
+    point.y = slot.y;
+    point.angle = side == 0 ? -turn : turn;
+    return point;
+}
 
 //*******************************
 // PsCarousel::initCoverPositions
@@ -358,18 +377,18 @@ PsScreenpoint PsCarousel::createCoverPoint(int distance, int side) {
 void PsCarousel::initCoverPositions() {
     coverPositions.clear();
 
-    for (int distance = SideCovers; distance >= 1; distance--) {
+    for (int distance = sideCovers(); distance >= 1; distance--) {
         coverPositions.push_back(createCoverPoint(distance, 0));
     }
 
     PsScreenpoint point;
-    point.x = 640 - 113;
-    point.y = 180;
-    point.scale = 1;
+    point.x = geometry.mainX();
+    point.y = geometry.mainY(false);
+    point.scale = geometry.mainScale;
     point.shade = 255;
     coverPositions.push_back(point);
 
-    for (int distance = 1; distance <= SideCovers; distance++) {
+    for (int distance = 1; distance <= sideCovers(); distance++) {
         coverPositions.push_back(createCoverPoint(distance, 1));
     }
 }

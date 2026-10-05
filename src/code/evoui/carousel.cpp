@@ -41,8 +41,8 @@ void Carousel::setGames(const PsGames &gamesList, BoxKind kind) {
     games.clear();
     for_each(begin(gamesList), end(gamesList), [&](const PsGamePtr &game) { games.emplace_back(game); });
     boxKind = games.empty() ? kind : (games.front()->foreign ? BoxKind::BigBox : BoxKind::JewelCase);
-    leftFill.assign(PsCarousel::Slots, PsCarouselGame::emptyBox());
-    rightFill.assign(PsCarousel::Slots, PsCarouselGame::emptyBox());
+    leftFill.assign(positions.slots(), PsCarouselGame::emptyBox());
+    rightFill.assign(positions.slots(), PsCarouselGame::emptyBox());
 
     PLOG_DEBUG << "Setting initial positions";
     selected = games.empty() ? -1 : 0;
@@ -143,8 +143,8 @@ void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
     });
 
     const int middle = games.empty() ? 0 : selectedIndex;
-    for (int slot = 0; slot < PsCarousel::Slots; slot++) {
-        PsCarouselGame *item = itemAt(middle + slot - PsCarousel::MiddleSlot);
+    for (int slot = 0; slot < positions.slots(); slot++) {
+        PsCarouselGame *item = itemAt(middle + slot - positions.middleSlot());
         if (!item)
             continue;
         item->current = positions.coverPositions[slot];
@@ -154,8 +154,8 @@ void Carousel::setInitialPositions(int selectedIndex, bool waitForCovers) {
 
     // the lookahead: the games just past the two ends of the row are decoded ahead
     for (int i = 1; i <= Lookahead; i++) {
-        PsCarouselGame *before = itemAt(middle - PsCarousel::MiddleSlot - i);
-        PsCarouselGame *after = itemAt(middle + PsCarousel::MiddleSlot + i);
+        PsCarouselGame *before = itemAt(middle - positions.middleSlot() - i);
+        PsCarouselGame *after = itemAt(middle + positions.middleSlot() + i);
         if (before && !before->placeholder)
             before->wanted = true;
         if (after && !after->placeholder)
@@ -258,7 +258,7 @@ ableem::Texture Carousel::spareTarget() {
 void Carousel::requestMissingCovers(int middle) {
     vector<string> paths;
     const int count = static_cast<int>(games.size());
-    for (int d = 0; d <= PsCarousel::MiddleSlot + Lookahead; d++) {
+    for (int d = 0; d <= positions.middleSlot() + Lookahead; d++) {
         for (int side : {1, -1}) {
             if (d == 0 && side < 0)
                 continue;
@@ -286,7 +286,7 @@ bool Carousel::pumpCovers() {
     bool did = false;
     const int count = static_cast<int>(games.size());
     const int middle = selectedIsValid() ? selected : 0;
-    for (int d = 0; d <= PsCarousel::MiddleSlot + Lookahead && budget > 0; d++) {
+    for (int d = 0; d <= positions.middleSlot() + Lookahead && budget > 0; d++) {
         for (int side : {1, -1}) {
             if ((d == 0 && side < 0) || budget == 0)
                 continue;
@@ -389,11 +389,11 @@ void Carousel::scrollRight(int speed, bool eased) {
 //*******************************
 namespace {
 // where the selected cover sits: in the row (the Games state), or raised above the game menu
-PsScreenpoint mainCoverPoint(bool toGamesRow) {
+PsScreenpoint mainCoverPoint(const EvoLayout::Carousel &geometry, bool toGamesRow) {
     PsScreenpoint point;
-    point.x = 640 - 113;
-    point.y = toGamesRow ? 180 : 90;
-    point.scale = 1;
+    point.x = geometry.mainX();
+    point.y = geometry.mainY(!toGamesRow);
+    point.scale = geometry.mainScale;
     point.shade = toGamesRow ? 255 : 220;
     return point;
 }
@@ -402,7 +402,7 @@ PsScreenpoint mainCoverPoint(bool toGamesRow) {
 void Carousel::moveMainCover(bool toGamesRow) {
     if (!selectedIsValid())
         return;
-    games[selected].destination = mainCoverPoint(toGamesRow);
+    games[selected].destination = mainCoverPoint(positions.geometry, toGamesRow);
     mainMove_ = startMove(gui_.platform().ticks(), 200, true);
     games[selected].move = mainMove_;
 }
@@ -421,7 +421,7 @@ bool Carousel::animating() const {
 void Carousel::snapMainCover(bool toGamesRow) {
     if (!selectedIsValid())
         return;
-    PsScreenpoint point = mainCoverPoint(toGamesRow);
+    PsScreenpoint point = mainCoverPoint(positions.geometry, toGamesRow);
     games[selected].destination = point;
     games[selected].actual = point;
     games[selected].current = point;
@@ -477,6 +477,11 @@ const float Pi = 3.14159265f;
 const float PlaceholderShade = 0.55f;
 const unsigned char PlaceholderAlpha = 150;
 
+// how near the selected size a cover is: 0 at the shelf's nearest (0.5 on 16:9), 1 at the selected cover's (1)
+float nearnessOf(const EvoLayout::Carousel &geometry, float scale) {
+    return std::min(1.0f, std::max(0.0f, (scale - geometry.sideScale) / (geometry.mainScale - geometry.sideScale)));
+}
+
 // draws one cover as a box standing upright and turned `point.angle` degrees about its vertical axis: the
 // front face as a perspective trapezoid, and the spine on the edge nearer to the viewer. The box is the
 // game's `content` rect of its 226x226 texture (a jewel case fills it, a big box is the art's own shape),
@@ -520,11 +525,11 @@ void renderTurnedCover(ableem::Renderer &renderer, const PsCarouselGame &game, c
 // the box mirrored in a glossy floor under it: its bottom slice, upside down, from each edge's own foot
 // down, fading out - the side covers' reflection half their height, the selected cover's a short one
 // (it would run into Play). A turned box reflects its face and spine as the box itself shows them.
-void renderReflection(ableem::Renderer &renderer, const PsCarouselGame &game, const PsScreenpoint &point,
-                      unsigned char alpha) {
+void renderReflection(ableem::Renderer &renderer, const EvoLayout::Carousel &geometry, const PsCarouselGame &game,
+                      const PsScreenpoint &point, unsigned char alpha) {
     const ableem::Texture &tex = game.coverPng;
     const ableem::Rect &content = game.content;
-    const float nearness = std::min(1.0f, std::max(0.0f, (point.scale - 0.5f) / 0.5f));
+    const float nearness = nearnessOf(geometry, point.scale);
     const float depth = 0.5f - 0.2f * nearness; // of the box's height
     const auto startAlpha = static_cast<unsigned char>(135 * alpha / 255);
     const ableem::Rect slice(content.x, content.y + static_cast<int>(content.h * (1.0f - depth)), content.w,
@@ -568,13 +573,22 @@ void renderReflection(ableem::Renderer &renderer, const PsCarouselGame &game, co
 void Carousel::render() {
     ableem::Renderer &renderer = gui_.renderer();
     reloadLostTextures();
-    const float screenMiddle = renderer.width() / 2.0f;
+    const float screenMiddle = static_cast<float>(positions.geometry.centreX); // the row's middle (640 on 16:9)
 
     // far to near, so that a cover nearer the middle is drawn over the one behind it
     vector<const PsCarouselGame *> visible;
+    // the 4:3 shelf runs past the left edge: a box wholly off the canvas is not drawn (the 1280x720 one draws its row
+    // as it always did)
+    const bool cull = !positions.geometry.isWide();
+    auto onCanvas = [&](const PsCarouselGame &game) {
+        const float size = 226 * game.actual.scale;
+        const float margin = size * 0.2f; // a turned box's near edge reaches a little past its unturned box
+        return game.actual.x + size + margin >= 0 && game.actual.x - margin <= renderer.width();
+    };
     forEachItem([&](const PsCarouselGame &game) {
         // a game whose cover is still on its way stands as an empty box (drawCovers)
-        if (game.visible && (game.coverPng.valid() || (!game.placeholder && placeholderTex_.valid())))
+        if (game.visible && (game.coverPng.valid() || (!game.placeholder && placeholderTex_.valid())) &&
+            (!cull || onCanvas(game)))
             visible.push_back(&game);
     });
     auto distanceFromMiddle = [&](const PsCarouselGame *game) {
@@ -628,7 +642,8 @@ void Carousel::render() {
             drawShine(now);
             return;
         }
-        if (!layer_.valid()) {
+        // one canvas's size (a 4:3 output's launcher draws on 640x480, every other screen on 1280x720)
+        if (!layer_.valid() || layer_.size().w != renderer.width() || layer_.size().h != renderer.height()) {
             layer_ = ableem::Texture::createTarget(renderer, renderer.width(), renderer.height());
             layer_.setBlendMode(ableem::BlendMode::Premultiplied);
         }
@@ -659,7 +674,7 @@ struct Spot {
     CoverLight::Box face;
     float cx = 0, cy = 0, scale = 1, strength = 0;
 };
-Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
+Spot spotOf(const PsCarouselGame &game, const EvoLayout::Carousel &geometry) {
     Spot spot;
     const PsScreenpoint &p = game.actual;
     const ableem::Rect &content = game.content;
@@ -670,8 +685,8 @@ Spot spotOf(const PsCarouselGame &game, float screenMiddle) {
     spot.scale = p.scale;
     spot.cx = p.x + (content.x + content.w / 2.0f) * p.scale;
     spot.cy = p.y + (content.y + content.h / 2.0f) * p.scale;
-    const float off = std::min(1.0f, std::fabs(spot.cx - screenMiddle) / 150.0f);
-    const float big = std::min(1.0f, std::max(0.0f, (p.scale - 0.5f) / 0.5f));
+    const float off = std::min(1.0f, std::fabs(spot.cx - static_cast<float>(geometry.centreX)) / geometry.lightRange);
+    const float big = nearnessOf(geometry, p.scale);
     spot.strength = (1.0f - off) * big;
     return spot;
 }
@@ -681,7 +696,7 @@ void Carousel::drawGlow() {
     if (!selectedIsValid() || !games[selected].visible || !games[selected].coverPng.valid())
         return;
     ableem::Renderer &renderer = gui_.renderer();
-    const Spot spot = spotOf(games[selected], renderer.width() / 2.0f);
+    const Spot spot = spotOf(games[selected], positions.geometry);
     if (spot.strength < 0.02f)
         return;
     // breathing, 0.8..1 every 5.6 s - sin(ticks / 900), the ticks from an ambient tween (G5o2) that starts with the
@@ -771,7 +786,7 @@ void Carousel::drawShine(long now) {
     // face's height (so the band keeps its angle on any aspect) and clipped to its width (CoverLight::shineSlice).
     // A no-art box (noArt: the two-layer placeholder at its system's aspect) is composed into coverPng like real
     // art, its `content` the face - it crosses it the same way; only an empty box or a loading stand-in has no cover
-    const Spot spot = spotOf(game, renderer.width() / 2.0f);
+    const Spot spot = spotOf(game, positions.geometry);
     const float t = static_cast<float>(now - shineAt_) / ShineMs;
     const float eased = t * t * (3.0f - 2.0f * t);
     const ableem::Size texSize = shineTex_.size();
@@ -791,11 +806,11 @@ void Carousel::drawCovers(const vector<const PsCarouselGame *> &visible) {
         if (!game->coverPng.valid())
             continue; // a cover still on its way: its stand-in has no reflection for the moment it shows
         if (!game->placeholder) {
-            renderReflection(renderer, *game, game->actual, 255);
+            renderReflection(renderer, positions.geometry, *game, game->actual, 255);
         } else { // an empty box reflects as it is drawn: darker and see-through
             PsScreenpoint point = game->actual;
             point.shade = static_cast<int>(point.shade * PlaceholderShade);
-            renderReflection(renderer, *game, point, PlaceholderAlpha);
+            renderReflection(renderer, positions.geometry, *game, point, PlaceholderAlpha);
         }
     }
     PsCarouselGame standIn = PsCarouselGame::emptyBox();

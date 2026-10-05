@@ -10,10 +10,10 @@
 // PsSettingsBack::setCurLen
 //*******************************
 void PsSettingsBack::setCurLen(int len) {
-    y = 632 - len;
+    y = bottom - len;
     h = len;
     x = 0;
-    w = SCREEN_WIDTH;
+    w = width;
     nextLen = len;
     prevLen = len;
     owner_.cancel();
@@ -39,10 +39,10 @@ void PsSettingsBack::slideTo(int len) {
     gui->uiContext().stack().tweens().start(
         abgui::Tween(progress_, 0.0f, 1.0f, evomotion::SettingsBandMs).onEnd([this]() {
             sliding_ = false;
-            y = 632 - nextLen;
+            y = bottom - nextLen;
             h = nextLen;
             x = 0;
-            w = SCREEN_WIDTH;
+            w = width;
         }),
         owner_);
 }
@@ -54,10 +54,10 @@ void PsSettingsBack::render() {
     // the band's length at this frame (a hidden band did not move before either)
     if (visible && sliding_) {
         const int newSize = evomotion::slidInt(prevLen, nextLen, progress_);
-        y = 632 - newSize;
+        y = bottom - newSize;
         h = newSize;
         x = 0;
-        w = SCREEN_WIDTH;
+        w = width;
     }
     PsObj::render();
 }

@@ -42,6 +42,10 @@ ab_add_test(test_channel_watermark screens/test_channel_watermark.cpp)
 target_include_directories(test_channel_watermark PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
 
 # UIREV-35: the game details section's rows and badge places (evoui/controls/evoui_meta_layout.h, pure)
+# the launcher's layout profile: the 1280x720 numbers and the 4:3 canvas's from layout4x3 (evoui/evoui_layout.h, pure)
+ab_add_test(test_evoui_layout screens/test_evoui_layout.cpp)
+target_include_directories(test_evoui_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui)
+
 ab_add_test(test_meta_layout screens/test_meta_layout.cpp LIBS ab_gui)
 target_include_directories(test_meta_layout PRIVATE ${CMAKE_SOURCE_DIR}/src/code/evoui/controls)
 
