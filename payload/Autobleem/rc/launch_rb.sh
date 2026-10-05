@@ -90,9 +90,7 @@ show_return_splash()
 {
 	[ -x "$ABSPLASH" ] || return
 	touch /tmp/.abload
-	pic=autobleem.jpg # the 4:3 one while Weston runs the CRT 4:3 mode (boot.sh's /tmp/weston.mode)
-	[ "$(cat /tmp/weston.mode 2>/dev/null)" = 720x480 ] && [ -f "$ABPICS/autobleem-4x3.jpg" ] && pic=autobleem-4x3.jpg
-	"$ABSPLASH" "$ABPICS/$pic" --anim sweep --until-gone /tmp/.abload --timeout 20 &
+	"$ABSPLASH" "$ABPICS/autobleem.jpg" --anim sweep --until-gone /tmp/.abload --timeout 20 &
 	echo $! > /tmp/.absplash.pid # boot.sh shows no second picture over this one
 }
 

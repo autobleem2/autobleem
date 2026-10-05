@@ -52,6 +52,15 @@ bool fileExists(const std::string &path) {
     return stat(path.c_str(), &st) == 0;
 }
 
+// "<dir>/name.jpg" -> "<dir>/name-4x3.jpg"
+std::string crtTwin(const std::string &image) {
+    const size_t dot = image.find_last_of('.');
+    const size_t slash = image.find_last_of('/');
+    if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
+        return image + "-4x3";
+    return image.substr(0, dot) + "-4x3" + image.substr(dot);
+}
+
 int usage() {
     PLOG_ERROR << "usage: absplash IMAGE (--until-exists FILE | --until-gone FILE | --seconds S) [--timeout S] "
                   "[--theme DIR] [--anim sweep] [--anim-at X0,Y,X1,H]";
@@ -189,6 +198,12 @@ int main(int argc, char **argv) {
     GuiBase gui("absplash");
     gui.platform().setPowerOffHandler([]() {}); // the console's front buttons are not ours to act on
     Renderer &r = gui.renderer();
+    // the CRT 4:3 mode (a 720x480 window): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
+    // one place for every splash of the launcher, the emulator and App hand-overs, the update and the power-off
+    const Size shown = gui.platform().windowDisplaySize();
+    const std::string twin = crtTwin(image);
+    if (((shown.w == 720 && shown.h == 480) || (r.width() == 720 && r.height() == 480)) && fileExists(twin))
+        image = twin;
     Texture tex = Texture::loadFile(r, image);
     if (!tex.valid()) {
         PLOG_WARNING << "absplash: could not load " << image << " - black it is";
