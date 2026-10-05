@@ -112,7 +112,10 @@ resolved by `AppManifest`), run by the scan over the games before it reads them.
 
 The console runs the programs of PE mod packages as Apps. `Mods/*.mod` is turned into `Apps/pe-<name>/` by the
 `proc_pe` processor (`Kinds=mods`, started once per scan with `--start --mods`, core `ScanService::runModsProcessors`;
-the Apps list reloads when `Apps/` changed). The App's `app.ini` has `Exec.psc=run.sh` + `Startup=run.sh` +
+the Apps list reloads when `Apps/` changed). After a successful conversion `proc_pe` moves the `.mod` to `Mods/done/`
+(never deleted, never scanned; a failed package stays in `Mods/` and is retried; a `.mod` dropped again replaces the
+copy in `done/`; the App never goes with a missing `.mod`) - so "installed" for the Store is the `.mod` in `Mods/` or
+`Mods/done/`, or the marker `Apps/.pe_state/<file>.ini` (core `ModInstaller::present`). The App's `app.ini` has `Exec.psc=run.sh` + `Startup=run.sh` +
 `Category=PE` (only the console finds a program, so a Pi or PC never lists it; the "PE apps" row of the Apps picker),
 and its generated `run.sh` calls `rc/pe_run.sh <app folder>`: `rc/pe_compat.ini` refuses the launchers that delete
 the console's games (the reason reaches the launcher through `<runtime>/app-message.txt`), `rc/pe_env.sh` builds in
