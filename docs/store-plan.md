@@ -106,7 +106,7 @@ behind it:
 |---|---|---|
 | `app` | `Apps/<name>/` (`app.ini` + `startup`) | our catalog; a TSV line |
 | `ps1` | `Games/<title>/` (cue/bin, chd, pbp, img; the scan does the rest) | our catalog (homebrew and freeware); a TSV line |
-| `pe` (the "PE Apps" tab) | `Mods/<file>.mod` - the same place a user's own mod goes; the next scan makes the App (`Apps/pe-<name>/`) through the mods processor | our catalog (programs we build from public source); a TSV line |
+| `pe` (the "PE Apps" tab) | `Mods/<file>.mod` - the same place a user's own mod goes; the next scan makes the App (`Apps/pe-<name>/`) through the mods processor, which then moves the `.mod` to `Mods/done/` | our catalog (programs we build from public source); a TSV line |
 | later: `rom:<system>` | `RetroArch/roms/<system>/` (then the ROM scan writes the playlist) | TSV |
 | later: `theme` | `Themes/<name>/` (`ThemeInstaller`, as a dropped zip is today) | our catalog; TSV |
 
@@ -144,10 +144,12 @@ launcher's `app.cpp`. `repo_url` comes from the platform ini.
 - A `pe` item has one file, the `.mod` (a Debian archive of type `USB_MOD`). Installing moves it into `Mods/`
   (renamed whole, or copied as `<name>.part` and renamed, so a scan never meets half a file) and asks the launcher
   for a scan: the mods processor (`proc_pe`) turns it into an App exactly as it does for a package the user
-  dropped there by hand. Removing deletes the `.mod`, the Apps made from it (every `Apps/pe-*` whose `app.ini` says
-  `PeSource=<the file>`) and the processor's marker `Apps/.pe_state/<file>.ini`. An update installs the new `.mod` and
-  retires the old one; the processor replaces the App and keeps the player's files. The same package dropped in
-  `Mods/` by hand counts as installed.
+  dropped there by hand, and then moves the `.mod` to `Mods/done/` (not deleted: the original stays; `done/` is never
+  scanned). Removing deletes the `.mod` - from `Mods/` and from `Mods/done/` - the Apps made from it (every `Apps/pe-*`
+  whose `app.ini` says `PeSource=<the file>`) and the processor's marker `Apps/.pe_state/<file>.ini`. An update installs
+  the new `.mod` and retires the old one in both places; the processor replaces the App and keeps the player's files.
+  Installed = the `.mod` in `Mods/` or in `Mods/done/`, or the marker: the same package dropped by hand counts as
+  installed.
 
 ### TSV sources (`StoreSourceTsv`)
 
