@@ -49,10 +49,10 @@ private:
     DpadHold hold;    // Up/Down held: the rows go on at the shared HoldRepeat pace
     int firstVisible = 0;
     int rowHeight(int row) const;
-    int visibleRows() const; // how many rows from firstVisible fit
-    int bodyHeight() const;  // the rows' part of the panel
-    void moveSelection(int step);
-    void publishItems() const; // the rows and the cursor to the DebugDriver
+    int visibleRows() const;                           // how many rows from firstVisible fit
+    int bodyHeight() const;                            // the rows' part of the panel
+    void moveSelection(int step, bool repeat = false); // a press wraps, a held key's repeat stops at the end
+    void publishItems() const;                         // the rows and the cursor to the DebugDriver
     int count() const { return static_cast<int>(rows.size()); }
     const ExtensionInfo &extensionAt(int row) const { return catalog.extensions()[rows[row]]; }
 

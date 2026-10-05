@@ -207,18 +207,17 @@ int GuiEditor::selectedRow() const {
     return -1;
 }
 
-void GuiEditor::moveSelection(int step) {
+// a press wraps past the last/first option row, a held d-pad's repeat stops there (abgui::stepIndex)
+void GuiEditor::moveSelection(int step, bool repeat) {
     int i = selectedRow();
     if (i < 0)
         i = step > 0 ? -1 : static_cast<int>(rows.size());
     // a locked row can be landed on - the list scrolls with the cursor, and its values are worth reading -
     // but not changed (processOptionChange)
-    for (int j = i + step; j >= 0 && j < static_cast<int>(rows.size()); j += step) {
-        if (rows[j].opt >= 0) {
-            selOption = rows[j].opt;
-            return;
-        }
-    }
+    const int count = static_cast<int>(rows.size());
+    const int to = abgui::stepIndex(i, step, count, repeat, [&](int k) { return rows[k].opt < 0; });
+    if (to >= 0 && to < count)
+        selOption = rows[to].opt;
 }
 
 // the option row at `index` (a heading is no place for the cursor): the next one in `dir`'s direction, else
@@ -268,7 +267,9 @@ void GuiEditor::unlockSettings() {
 // GuiEditor::processOptionChange
 //*******************************
 // right (direction true) is "on" / "more", left is "off" / "less"
-void GuiEditor::processOptionChange(bool direction) {
+// A value row (text or number, more than on/off) takes a press past its last value round to the first (and back); a
+// held key's `repeat` stops at the end (abgui::stepIndex). The on/off switches are set by the direction, not stepped.
+void GuiEditor::processOptionChange(bool direction, bool repeat) {
     GameSettingsService &svc = app.gameSettings();
     const PcsxSettings &pcsx = settings.pcsx;
     const string platform = Env::platformName();
@@ -276,6 +277,15 @@ void GuiEditor::processOptionChange(bool direction) {
     int sel = selectedRow();
     if (sel >= 0 && rows[sel].locked)
         return; // the game's own config speaks for it, or the row is greyed (buildRows)
+    // the value after `current` of `count` (0..count-1)
+    auto next = [&](int current, int count) { return abgui::stepIndex(current, step, count, repeat); };
+    // the entry after `current` in a platform's list of values (the first when it is not in it)
+    auto nextIn = [&](const vector<int> &values, int current) {
+        const auto at = find(values.begin(), values.end(), current);
+        if (values.empty() || at == values.end())
+            return values.empty() ? current : values.front();
+        return values[next(static_cast<int>(at - values.begin()), static_cast<int>(values.size()))];
+    };
 
     switch (selOption) {
     case OPT_FAVORITE:
@@ -297,12 +307,11 @@ void GuiEditor::processOptionChange(bool direction) {
         break;
 
     case OPT_RESUME: // Ask / Last slot / Never, round the ends as the RetroArch editor's row does
-        svc.setResume(settings,
-                      (settings.resume + step + ResumePointService::ModeCount) % ResumePointService::ModeCount);
+        svc.setResume(settings, next(settings.resume, ResumePointService::ModeCount));
         break;
 
     case OPT_HIGHRES: // 1x / 2x
-        svc.setHighres(settings, direction);
+        svc.setHighres(settings, next(pcsx.highres != 0 ? 1 : 0, 2) != 0);
         break;
 
     case OPT_NOSEAMS:
@@ -310,7 +319,7 @@ void GuiEditor::processOptionChange(bool direction) {
         break;
 
     case OPT_DITHERING: // Off / On / Always
-        svc.setDithering(settings, pcsx.dither + step);
+        svc.setDithering(settings, next(pcsx.dither, GameSettingsService::DitheringCount));
         break;
 
     case OPT_SPEEDHACK:
@@ -318,27 +327,29 @@ void GuiEditor::processOptionChange(bool direction) {
         break;
 
     case OPT_SCANLINES: // Off / 1 / 2 / 3
-        svc.setScanlines(settings, pcsx.scanlines + step);
+        svc.setScanlines(settings, next(pcsx.scanlines, GameSettingsService::ScanlineModes));
         break;
 
     case OPT_SCANLINELV:
-        svc.setScanlineLevel(settings, pcsx.scanlineLevel + step);
+        svc.setScanlineLevel(settings, next(pcsx.scanlineLevel, 101)); // 0..100
         break;
 
     case OPT_CLOCK_PSX:
-        svc.setClock(settings, pcsx.clock + step);
+        svc.setClock(settings, next(pcsx.clock, 101)); // 0..100
         break;
 
     case OPT_FRAMESKIP:
-        svc.setFrameskip(settings, pcsx.frameskip + step);
+        svc.setFrameskip(settings, next(pcsx.frameskip, GameSettingsService::FrameskipCount));
         break;
 
     case OPT_INTERPOLATION:
-        svc.setInterpolation(settings, pcsx.interpolation + step);
+        svc.setInterpolation(settings, next(pcsx.interpolation, 4)); // 0..3
         break;
 
     case OPT_PLUGIN:
-        svc.setGpuPlugin(settings, direction ? GameSettingsService::PeopsGpu : GameSettingsService::BuiltinGpu);
+        svc.setGpuPlugin(settings, next(pcsx.gpu == GameSettingsService::PeopsGpu ? 1 : 0, 2) != 0
+                                       ? GameSettingsService::PeopsGpu
+                                       : GameSettingsService::BuiltinGpu);
         break;
 
     case OPT_BOOTLOGO:
@@ -346,8 +357,7 @@ void GuiEditor::processOptionChange(bool direction) {
         break;
 
     case OPT_SMOOTHING: // this platform's scalers
-        svc.setSmoothing(
-            settings, GameSettingsService::stepIn(GameSettingsService::smoothingsFor(platform), pcsx.smoothing, step));
+        svc.setSmoothing(settings, nextIn(GameSettingsService::smoothingsFor(platform), pcsx.smoothing));
         break;
 
     case OPT_SONYHACKS:
@@ -355,8 +365,7 @@ void GuiEditor::processOptionChange(bool direction) {
         break;
 
     case OPT_FILTER: // this platform's filters
-        svc.setFilter(settings,
-                      GameSettingsService::stepIn(GameSettingsService::filtersFor(platform), pcsx.filter, step));
+        svc.setFilter(settings, nextIn(GameSettingsService::filtersFor(platform), pcsx.filter));
         break;
     }
 }
@@ -632,7 +641,7 @@ void GuiEditor::startHold(bool value, int step) {
         return; // the same direction still down
     holdOnValue = value;
     hold.press(step, gui->platform().ticks());
-    holdStep(step);
+    holdStep(step, false); // the press: wraps
 }
 
 void GuiEditor::holdTick() {
@@ -646,13 +655,28 @@ void GuiEditor::holdTick() {
         return;
     }
     for (int steps = hold.due(gui->platform().ticks()); steps != 0; steps -= hold.step())
-        holdStep(hold.step());
+        holdStep(hold.step(), true); // a repeat: stops at the end
 }
 
-void GuiEditor::holdStep(int step) {
-    app.audio().cursor.play();
-    if (holdOnValue)
-        processOptionChange(step > 0);
-    else
-        moveSelection(step);
+void GuiEditor::holdStep(int step, bool repeat) {
+    const int before = selOption;
+    if (holdOnValue) {
+        const PcsxSettings was = settings.pcsx;
+        const int resumeWas = settings.resume;
+        processOptionChange(step > 0, repeat);
+        const PcsxSettings &now = settings.pcsx;
+        const bool same = was.highres == now.highres && was.noSeams == now.noSeams && was.speedhack == now.speedhack &&
+                          was.clock == now.clock && was.frameskip == now.frameskip && was.dither == now.dither &&
+                          was.scanlines == now.scanlines && was.scanlineLevel == now.scanlineLevel &&
+                          was.interpolation == now.interpolation && was.bootLogo == now.bootLogo &&
+                          was.smoothing == now.smoothing && was.sonyHacks == now.sonyHacks &&
+                          was.filter == now.filter && was.gpu == now.gpu && resumeWas == settings.resume;
+        // a repeat that finds the last value (or a locked row) stays put, silently; a press always clicks
+        if (!repeat || !same)
+            app.audio().cursor.play();
+    } else {
+        moveSelection(step, repeat);
+        if (selOption != before) // a repeat at the end stays put, silently
+            app.audio().cursor.play();
+    }
 }

@@ -33,7 +33,7 @@ public:
     std::string lastName; // an internal game's new title - the caller writes it to the database
     bool changes = false; // the game was renamed
 
-    void processOptionChange(bool direction);
+    void processOptionChange(bool direction, bool repeat = false); // repeat: a held key's step - no wrap
     // Cross on the "Unlock the settings" row: after a confirmation, the game's own config (saved in an
     // emulator's menu) is deleted and its pcsx.cfg rows are AutoBleem's to edit again (PcsxConfig)
     void unlockSettings();
@@ -60,16 +60,16 @@ public:
     void publishToDriver(int selectedIndex) const; // rows + cursor for the DebugDriver (render())
     int firstVisible = 0;
     void buildRows();
-    void moveSelection(int step);        // to the next/previous option row
-    void selectNear(int index, int dir); // the option row at index, else the next one in dir, else back
-    void pageSelection(int dir);         // L2/R2: a page of rows up or down
-    int selectedRow() const;             // the index in `rows` of selOption
+    void moveSelection(int step, bool repeat = false); // to the next/previous option row (a press wraps)
+    void selectNear(int index, int dir);               // the option row at index, else the next one in dir, else back
+    void pageSelection(int dir);                       // L2/R2: a page of rows up or down
+    int selectedRow() const;                           // the index in `rows` of selOption
     // a held d-pad: Up/Down (the cursor) or Left/Right (the value, holdOnValue) - see startHold
     HoldRepeat hold;
     bool holdOnValue = false;
     void startHold(bool value, int step);
     void holdTick();
-    void holdStep(int step);
+    void holdStep(int step, bool repeat);
 
     using GuiScreen::GuiScreen;
     ableem::Texture cover;

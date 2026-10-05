@@ -272,16 +272,10 @@ void GuiSystemMenu::draw() {
 //*******************************
 // GuiSystemMenu::moveSelection
 //*******************************
-// the next item that way, past the headings, wrapping round at either end
-void GuiSystemMenu::moveSelection(int step) {
+// the next item that way, past the headings: a press wraps round at either end, a held key's repeat stops there
+void GuiSystemMenu::moveSelection(int step, bool repeat) {
     const int count = static_cast<int>(rows.size());
-    int next = selected;
-    for (int tries = 0; tries < count; tries++) {
-        next = (next + step + count) % count;
-        if (!rows[next].heading)
-            break;
-    }
-    selected = next;
+    selected = abgui::stepIndex(selected, step, count, repeat, [&](int i) { return rows[i].heading; });
     keepSelectedVisible();
     publishItems(); // now, not at the next frame: the driver's `selected` must never lag the cursor
 }
@@ -295,9 +289,11 @@ void GuiSystemMenu::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
-        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
-            app.audio().cursor.play();
-            moveSelection(dir);
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir, bool repeat) {
+            const int before = selected;
+            moveSelection(dir, repeat);
+            if (selected != before) // a repeat at the end stays put, silently
+                app.audio().cursor.play();
         });
         Event e;
         while (gui->input().poll(e)) {

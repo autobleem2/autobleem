@@ -100,7 +100,7 @@ private:
     int visibleRowCount() const; // from firstVisible, as many as fit in roomForRows()
     int visibleHeight() const;   // their height
     void keepSelectedVisible();
-    void moveSelection(int step);
+    void moveSelection(int step, bool repeat = false); // a press wraps, a held key's repeat stops at the end
 
     PanelStyle style; // the shared look, resolved at init
 };

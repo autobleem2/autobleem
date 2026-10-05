@@ -370,10 +370,13 @@ string GuiOptions::doPrevNextOption(OptionsInfo &info, bool next) {
     int id = info.id;
 
     // do the default action
+    const string was = app.config().inifile.values[info.iniKey];
     string nextValue = GuiOptionsMenuBase::doPrevNextOption(info, next);
 
-    // after doing the default these need special action afterwards
-    reloadFor(id, nextValue);
+    // after doing the default these need special action afterwards (a repeat that found the last value changed
+    // nothing: nothing to reload)
+    if (!valueRepeat || nextValue != was)
+        reloadFor(id, nextValue);
     return nextValue;
 }
 
@@ -543,8 +546,10 @@ void GuiOptions::holdTick() {
         return;
     }
     holdTicking = true;
+    valueRepeat = true; // a repeat stops at the last value, the press that started the hold wrapped
     for (int steps = valueHold.due(gui->platform().ticks()); steps != 0; steps -= valueHold.step())
         valueHold.step() > 0 ? doKeyRight() : doKeyLeft();
+    valueRepeat = false;
     holdTicking = false;
 }
 
@@ -581,14 +586,22 @@ bool GuiOptions::userFontInUse() {
 // GuiOptions::doKeyRight
 //*******************************
 void GuiOptions::doKeyRight() {
-    app.audio().cursor.play();
-    doPrevNextOption(true);
+    stepValue(true);
 }
 
 //*******************************
 // GuiOptions::doKeyLeft
 //*******************************
 void GuiOptions::doKeyLeft() {
-    app.audio().cursor.play();
-    doPrevNextOption(false);
+    stepValue(false);
+}
+
+// the click, then the row's next value - but a repeat that finds the last value stays put, silently
+void GuiOptions::stepValue(bool next) {
+    if (!validSelectedIndex())
+        return;
+    const string was = app.config().inifile.values[lines[selected].iniKey];
+    doPrevNextOption(next);
+    if (!valueRepeat || app.config().inifile.values[lines[selected].iniKey] != was)
+        app.audio().cursor.play();
 }

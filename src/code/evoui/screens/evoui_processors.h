@@ -53,8 +53,8 @@ private:
     const ProcessorInfo *info(const std::string &name) const;
     int count() const { return static_cast<int>(sequences.entries(sequence).size()); }
     int visibleRows() const;
-    void moveSelection(int step);
-    void publishItems() const; // the tab's rows and the cursor to the DebugDriver
+    void moveSelection(int step, bool repeat = false); // a press wraps, a held key's repeat stops at the end
+    void publishItems() const;                         // the tab's rows and the cursor to the DebugDriver
     void switchTab(ProcessorSequence to);
     void save();
 

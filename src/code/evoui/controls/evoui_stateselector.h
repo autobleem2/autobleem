@@ -28,6 +28,7 @@ public:
 
     void freeImages();
 
+    static const int SlotCount = 4; // the slots on offer
     ableem::Texture slotImg[4];
     bool slotActive[4];      // the slot can be picked (load: it holds a state; save: always)
     bool slotUsed[4] = {};   // the slot holds a state

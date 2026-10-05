@@ -45,6 +45,8 @@ public:
 
     virtual unsigned int getCurrentOptionIndex(OptionsInfo &info, const std::string &current);
     virtual std::string getPrevNextOption(OptionsInfo &info, const std::string &current, bool next);
+    // true while a held Left/Right repeats its step: the value stops at the last/first choice instead of wrapping
+    bool valueRepeat = false;
     virtual std::string doPrevNextOption(OptionsInfo &info, bool next);
     virtual std::string doPrevNextOption(bool next);
     virtual std::string doRandomOption() { return ""; } // only a few lines will use this.  most will just return.

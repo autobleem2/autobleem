@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "gui/gui_screen.h"
+#include "gui/hold_repeat.h"
 #include "../../app.h"
 
 #define MC_CUSTOM 0
@@ -28,6 +29,7 @@ public:
 
     int listType = MC_CUSTOM;
     std::string cardSelected = "";
+    DpadHold hold; // Up/Down held: the cursor goes on at the shared HoldRepeat pace, and stops at the end
 
     using GuiScreen::GuiScreen;
 };

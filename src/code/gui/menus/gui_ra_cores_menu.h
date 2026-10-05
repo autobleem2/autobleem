@@ -36,7 +36,8 @@ public:
     static std::string valueText(const RACorePlatform &row, int choice);
 
 private:
-    void change(int step);
+    void change(int step, bool repeat = false); // the core on the row (a press wraps, a repeat stops)
+    void move(int step, bool repeat = false);   // the cursor a row (a press wraps, a repeat stops)
     void select(int row);
     void publish() const;
     void save();

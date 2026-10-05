@@ -84,9 +84,11 @@ string GuiAppSettings::padModeValue() const {
 //*******************************
 // GuiAppSettings::stepPadMode
 //*******************************
-void GuiAppSettings::stepPadMode(int step) {
+void GuiAppSettings::stepPadMode(int step, bool repeat) {
     const int count = static_cast<int>(AppSettings::padModes().size()) + 1;
-    const int next = (padModeIndex_ + step + count) % count;
+    const int next = abgui::stepIndex(padModeIndex_, step, count, repeat); // a press wraps, a repeat stops
+    if (next == padModeIndex_)
+        return;
     const string mode = next == 0 ? "" : AppSettings::padModes()[static_cast<size_t>(next) - 1];
     if (!AppSettings::setPadModeOverride(gameData->base, mode))
         return; // could not be written: the row keeps showing what is saved
@@ -111,8 +113,10 @@ string GuiAppSettings::flagValue(const FlagRow &flag) const {
     return _("Automatic") + " (" + (flag.appOwn == "1" ? _("On") : _("Off")) + ")";
 }
 
-void GuiAppSettings::stepFlag(FlagRow &flag, int step) {
-    const int next = (flag.index + step + 3) % 3;
+void GuiAppSettings::stepFlag(FlagRow &flag, int step, bool repeat) {
+    const int next = abgui::stepIndex(flag.index, step, 3, repeat); // a press wraps, a repeat stops
+    if (next == flag.index)
+        return;
     const string value = next == 1 ? "1" : (next == 2 ? "0" : "");
     if (!AppSettings::setFlagOverride(gameData->base, flag.key, value))
         return; // could not be written: the row keeps showing what is saved
@@ -175,9 +179,10 @@ void GuiAppSettings::draw() {
 void GuiAppSettings::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
-    // one step of the cursor: at the press, and again for every repeat of a held Up/Down
-    const auto moveCursor = [&](int dir) {
-        const int to = min(OptLast, max(OptPadMode, selected_ + dir));
+    // one step of the cursor: at the press (it wraps), and again for every repeat of a held Up/Down (it stops at the
+    // end)
+    const auto moveCursor = [&](int dir, bool repeat = false) {
+        const int to = OptPadMode + abgui::stepIndex(selected_ - OptPadMode, dir, OptLast - OptPadMode + 1, repeat);
         if (to != selected_) {
             app.audio().cursor.play();
             selected_ = to;
@@ -185,12 +190,15 @@ void GuiAppSettings::loop() {
         }
     };
     // one step of the value on the cursor's row: at the press, and again for every repeat of a held Left/Right
-    const auto changeValue = [&](int step) {
-        app.audio().cursor.play();
+    const auto changeValue = [&](int step, bool repeat = false) {
+        int &value = selected_ == OptPadMode ? padModeIndex_ : flags_[selected_ - OptDpad2Analog].index;
+        const int before = value;
         if (selected_ == OptPadMode)
-            stepPadMode(step);
+            stepPadMode(step, repeat);
         else
-            stepFlag(flags_[selected_ - OptDpad2Analog], step);
+            stepFlag(flags_[selected_ - OptDpad2Analog], step, repeat);
+        if (value != before) // a repeat at the last value stays put, silently
+            app.audio().cursor.play();
         render();
     };
     // nothing animates here: a frame after a press and four times a second meanwhile (the performance overlay, the

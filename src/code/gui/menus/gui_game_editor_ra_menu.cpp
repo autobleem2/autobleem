@@ -62,14 +62,17 @@ string GuiEditorRA::coreValue() const {
 //*******************************
 // GuiEditorRA::cycleCore
 //*******************************
-void GuiEditorRA::cycleCore(int step) {
+bool GuiEditorRA::cycleCore(int step, bool repeat) {
     const int count = static_cast<int>(cores_.size());
     if (count < 2)
-        return;
-    const int next = (coreIndex + step + count) % count;
+        return false;
+    const int next = abgui::stepIndex(coreIndex, step, count, repeat); // a press wraps, a repeat stops
+    if (next == coreIndex)
+        return false;
     if (!app.retroArch().setGameCore(*gameData, cores_[next]))
-        return; // the entry could not be written: the row keeps showing what the game uses
+        return false; // the entry could not be written: the row keeps showing what the game uses
     coreIndex = next;
+    return true;
 }
 
 //*******************************
@@ -151,8 +154,9 @@ string GuiEditorRA::optionValue(int option) const {
     }
 }
 
-void GuiEditorRA::stepOption(int option, int step) {
-    auto next = [step](int value, int count) { return (value + step + count) % count; };
+bool GuiEditorRA::stepOption(int option, int step, bool repeat) {
+    const RaGameOptions before = options_;
+    auto next = [step, repeat](int value, int count) { return abgui::stepIndex(value, step, count, repeat); };
     switch (option) {
     case OPT_ASPECT:
         options_.aspect = next(options_.aspect, RaGameOptions::AspectCount);
@@ -176,7 +180,10 @@ void GuiEditorRA::stepOption(int option, int step) {
         options_.resume = next(options_.resume, RaGameOptions::ResumeCount);
         break;
     }
+    if (before == options_)
+        return false; // a repeat at the last value
     app.raOptions().set(*gameData, options_);
+    return true;
 }
 
 //*******************************
@@ -258,8 +265,10 @@ void GuiEditorRA::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     // one step of the cursor: at the press, and again for every repeat of a held Up/Down
-    const auto moveCursor = [&](int dir) {
-        const int to = std::min(lastOption(), std::max(OPT_LIGHTGUN, selOption + dir));
+    const auto moveCursor = [&](int dir, bool repeat = false) {
+        // a press wraps past the last row to the first, a repeat stops at the end
+        const int to =
+            OPT_LIGHTGUN + abgui::stepIndex(selOption - OPT_LIGHTGUN, dir, lastOption() - OPT_LIGHTGUN + 1, repeat);
         if (to != selOption) {
             app.audio().cursor.play();
             selOption = to;
@@ -267,19 +276,21 @@ void GuiEditorRA::loop() {
         }
     };
     // one step of the value on the cursor's row: at the press, and again for every repeat of a held Left/Right
-    const auto changeValue = [&](int dir) {
-        app.audio().cursor.play();
+    const auto changeValue = [&](int dir, bool repeat = false) {
         const bool right = dir > 0;
+        bool moved = true;
         if (selOption == OPT_LIGHTGUN) {
             if (right != app.lightguns().isLightgun(*gameData)) {
                 app.lightguns().setRetroArchLightgun(*gameData, right);
                 changed = true;
             }
         } else if (selOption == OPT_CORE) {
-            cycleCore(dir);
+            moved = cycleCore(dir, repeat);
         } else {
-            stepOption(selOption, dir);
+            moved = stepOption(selOption, dir, repeat);
         }
+        if (moved) // a repeat at the last value stays put, silently
+            app.audio().cursor.play();
         render();
     };
     // nothing animates here: a frame after a press and four times a second meanwhile (the performance overlay, the

@@ -36,7 +36,7 @@ private:
     std::string padModeName(int index) const;
     std::string padModeValue() const;
     // Left/Right on the row: the next (+1) or previous (-1) value, wrapping, saved at once
-    void stepPadMode(int step);
+    void stepPadMode(int step, bool repeat = false);
 
     // a flag row (Dpad2Analog / Analog2Dpad): its label, its value text, a step of it
     struct FlagRow {
@@ -47,7 +47,7 @@ private:
     };
     std::string flagLabel(int row) const;
     std::string flagValue(const FlagRow &flag) const;
-    void stepFlag(FlagRow &flag, int step);
+    void stepFlag(FlagRow &flag, int step, bool repeat = false);
 
     std::string appPadMode_; // the App's own app.ini PadMode= ("" = none)
     int padModeIndex_ = 0;   // 0 = Automatic, 1.. the AppSettings::padModes() entry

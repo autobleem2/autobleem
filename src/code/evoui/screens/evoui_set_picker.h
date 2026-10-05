@@ -69,9 +69,9 @@ private:
 
     void buildTabs();
     int visibleRows() const;
-    void moveSelection(int step);
-    void publishItems() const; // the tab's rows and the cursor to the DebugDriver
-    DpadHold hold;             // Up/Down held: the rows go on at the shared HoldRepeat pace
+    void moveSelection(int step, bool repeat = false); // a press wraps, a held key's repeat stops at the end
+    void publishItems() const;                         // the tab's rows and the cursor to the DebugDriver
+    DpadHold hold;                                     // Up/Down held: the rows go on at the shared HoldRepeat pace
     void keepSelectedVisible();
     void pick();
 };

@@ -119,6 +119,8 @@ unsigned int GuiOptionsMenuBase::getCurrentOptionIndex(OptionsInfo &info, const 
 //*******************************
 std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo &info, const std::string &current, bool next) {
     const vector<string> &list = info.choices;
+    if (list.empty())
+        return current;
     // find current position
     int pos = 0;
     for (int i = 0; i < list.size(); i++) {
@@ -127,17 +129,9 @@ std::string GuiOptionsMenuBase::getPrevNextOption(OptionsInfo &info, const std::
             break;
         }
     }
-    if (next) {
-        pos++;
-        if (pos >= list.size()) {
-            pos = list.size() - 1;
-        }
-    } else {
-        pos--;
-        if (pos < 0)
-            pos = 0;
-    }
-
+    // a press at the last value wraps to the first (and back), a held key's repeat stops there (abgui::stepIndex); an
+    // on/off switch is set by the direction, so it never wraps
+    pos = abgui::stepIndex(pos, next ? 1 : -1, static_cast<int>(list.size()), valueRepeat || info.keyIsBoolean);
     return list[pos];
 }
 

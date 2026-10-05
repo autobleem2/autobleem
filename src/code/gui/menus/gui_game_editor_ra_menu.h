@@ -39,13 +39,13 @@ private:
     // the Core row's text for the core at `coreIndex`: its short name, and "(default)" on the first
     std::string coreValue() const;
     // Left/Right on the Core row: the next (+1) or previous (-1) core, wrapping, written to the playlist
-    void cycleCore(int step);
+    bool cycleCore(int step, bool repeat = false); // a press wraps, a repeat stops
 
     // The game's options below the core (OPT_ASPECT...): the row's label and its value now, and a step (+1/-1,
     // wrapping) through the row's values, saved at once
     std::string optionLabel(int option) const;
     std::string optionValue(int option) const;
-    void stepOption(int option, int step);
+    bool stepOption(int option, int step, bool repeat = false); // a press wraps, a repeat stops
     int lastOption() const; // the last row shown (no Resume row for a core without savestates)
 
     ableem::CoreInfos cores_; // what plays the game's system, the default first

@@ -58,6 +58,7 @@ public:
 
 private:
     void settleOnOption(int direction);
+    void stepValue(bool next);     // doKeyRight/doKeyLeft: the row's next/previous value
     std::string outputModeOnEntry; // the Display row's value when the screen opened
     std::string autoLabel;         // "Auto (1080p)", made by getOutputModes()
     bool userFontInUse();          // "Use Default Font" off: the Font row's choice is what is drawn

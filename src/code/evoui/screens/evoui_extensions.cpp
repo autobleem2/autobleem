@@ -251,11 +251,11 @@ void GuiExtensions::draw() {
 //*******************************
 // GuiExtensions::moveSelection
 //*******************************
-void GuiExtensions::moveSelection(int step) {
+void GuiExtensions::moveSelection(int step, bool repeat) {
     if (count() == 0)
         return;
-    if (step == 1 || step == -1)
-        selected = (selected + step + count()) % count(); // a row at a time wraps
+    if (step == 1 || step == -1) // a row at a time: a press wraps, a held key's repeat stops at the end
+        selected = abgui::stepIndex(selected, step, count(), repeat, [&](int i) { return rows[i] == HeadingRow; });
     else
         selected = max(0, min(count() - 1, selected + step)); // a page stops at the ends
     if (rows[selected] == HeadingRow) // never on the heading: on past it (it is never first or last)
@@ -278,9 +278,11 @@ void GuiExtensions::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
-        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
-            app.audio().cursor.play();
-            moveSelection(dir);
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir, bool repeat) {
+            const int before = selected;
+            moveSelection(dir, repeat);
+            if (selected != before) // a repeat at the end stays put, silently
+                app.audio().cursor.play();
         });
         Event e;
         while (gui->input().poll(e)) {

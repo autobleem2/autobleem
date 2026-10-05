@@ -107,12 +107,17 @@ void GuiRaCores::draw() {
 //*******************************
 // GuiRaCores::change / select
 //*******************************
-void GuiRaCores::change(int step) {
+// a press wraps past the last core to the first (and back), a held key's repeat stops there (abgui::stepIndex)
+void GuiRaCores::change(int step, bool repeat) {
     if (rows_.empty())
         return;
     RACorePlatform &row = rows_[selected_];
-    const int count = static_cast<int>(row.cores.size());
-    row.current = (row.current + step + count) % count;
+    row.current = abgui::stepIndex(row.current, step, static_cast<int>(row.cores.size()), repeat);
+}
+
+// one row up/down: a press wraps, a repeat stops at the first/last row
+void GuiRaCores::move(int step, bool repeat) {
+    selected_ = abgui::stepIndex(selected_, step, static_cast<int>(rows_.size()), repeat);
 }
 
 void GuiRaCores::select(int row) {
@@ -143,16 +148,24 @@ void GuiRaCores::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     menuVisible = true;
     // one step of the cursor: at the press, and again for every repeat of a held Up/Down
-    const auto moveCursor = [&](int dir) {
-        app.audio().cursor.play();
-        select(selected_ + dir);
-        render();
+    const auto moveCursor = [&](int dir, bool repeat = false) {
+        const int before = selected_;
+        move(dir, repeat);
+        if (selected_ != before) { // a repeat at the end stays put, silently
+            app.audio().cursor.play();
+            render();
+        }
     };
     // one step of the core on the cursor's row: at the press, and again for every repeat of a held Left/Right
-    const auto changeValue = [&](int step) {
-        app.audio().cursor.play();
-        change(step);
-        render();
+    const auto changeValue = [&](int step, bool repeat = false) {
+        if (rows_.empty())
+            return;
+        const int before = rows_[selected_].current;
+        change(step, repeat);
+        if (rows_[selected_].current != before) { // a repeat at the last core stays put, silently
+            app.audio().cursor.play();
+            render();
+        }
     };
     // nothing animates here: a frame after a press and four times a second meanwhile, every pass while Up/Down or
     // Left/Right is held (DpadHold, ValueHold)

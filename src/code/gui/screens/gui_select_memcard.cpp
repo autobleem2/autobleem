@@ -68,11 +68,11 @@ void GuiSelectMemcard::draw() {
     gui->renderTextBar();
     int yoffset = gui->renderHeader(_("Select memory card"));
 
-    if (selected < firstVisible) {
+    while (selected < firstVisible) { // (a held key can have taken several steps since the last frame)
         firstVisible--;
         lastVisible--;
     }
-    if (selected >= lastVisible) {
+    while (selected >= lastVisible) {
         firstVisible++;
         lastVisible++;
     }
@@ -109,10 +109,29 @@ void GuiSelectMemcard::draw() {
 void GuiSelectMemcard::loop() {
     shared_ptr<Gui> gui(Gui::getInstance());
     bool menuVisible = true;
+    // one step of the cursor: a press wraps past the last card to the first (and back), a held key's repeat (DpadHold)
+    // stops at the end
+    const auto moveCursor = [&](int dir, bool repeat) {
+        if (cards.empty())
+            return;
+        const int to = abgui::stepIndex(selected, dir, static_cast<int>(cards.size()), repeat);
+        if (to == selected)
+            return;
+        app.audio().cursor.play();
+        const bool wrapped = to != selected + dir;
+        selected = to;
+        if (wrapped) {
+            firstVisible = std::max(0, std::min(selected, static_cast<int>(cards.size()) - maxVisible));
+            lastVisible = firstVisible + maxVisible;
+        }
+        render();
+    };
     while (menuVisible) {
+        hold.tick(gui->input(), gui->platform().ticks(), moveCursor);
         // nothing animates here: sleep until a press, and redraw 4 times a second meanwhile (the performance
-        // overlay, the DebugDriver's shots)
-        if (!gui->input().waitForEvent(250))
+        // overlay, the DebugDriver's shots); a few ms while Up/Down is held, for the repeats' pace
+        const bool held = gui->input().dpadUp() || gui->input().dpadDown();
+        if (!gui->input().waitForEvent(held ? 10 : 250))
             render();
         Event e;
         while (gui->input().poll(e)) {
@@ -123,29 +142,11 @@ void GuiSelectMemcard::loop() {
             switch (e.type) {
             case Event::Type::DpadDown:
             case Event::Type::DpadUp:
-                if (gui->input().dpadDown()) {
-
-                    app.audio().cursor.play();
-                    selected++;
-                    if (selected >= cards.size()) {
-                        selected = 0;
-                        firstVisible = selected;
-                        lastVisible = firstVisible + maxVisible;
-                    }
-                    render();
-                }
-                if (gui->input().dpadUp()) {
-
-                    app.audio().cursor.play();
-                    selected--;
-                    if (selected < 0) {
-                        selected = cards.size() - 1;
-                        firstVisible = selected;
-                        lastVisible = firstVisible + maxVisible;
-                    }
-                    render();
-                }
-
+                if (gui->input().dpadDown())
+                    moveCursor(1, false);
+                else if (gui->input().dpadUp())
+                    moveCursor(-1, false);
+                hold.track(gui->input(), gui->platform().ticks());
                 break;
             case Event::Type::ButtonDown:
                 if (e.button == Button::R2) {

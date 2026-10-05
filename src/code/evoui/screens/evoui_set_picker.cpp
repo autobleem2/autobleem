@@ -159,12 +159,15 @@ int GuiSetPicker::visibleRows() const {
     return max(1, room / RowHeight);
 }
 
-void GuiSetPicker::moveSelection(int step) {
+void GuiSetPicker::moveSelection(int step, bool repeat) {
     Tab &t = tabs[tab];
     if (t.entries.empty())
         return;
     const int count = static_cast<int>(t.entries.size());
-    t.selected = max(0, min(count - 1, t.selected + step));
+    if (step == 1 || step == -1) // a row at a time: a press wraps, a held key's repeat stops at the end
+        t.selected = abgui::stepIndex(t.selected, step, count, repeat);
+    else // a page stops at the ends
+        t.selected = max(0, min(count - 1, t.selected + step));
     keepSelectedVisible();
     publishItems();
 }
@@ -314,9 +317,11 @@ void GuiSetPicker::loop() {
     menuVisible = true;
     gui->input().setFrameNeed(ableem::Input::FrameNeed::Idle); // nothing moves between presses
     while (menuVisible) {
-        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
-            app.audio().cursor.play();
-            moveSelection(dir);
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir, bool repeat) {
+            const int before = tabs[tab].selected;
+            moveSelection(dir, repeat);
+            if (tabs[tab].selected != before) // a repeat at the end stays put, silently
+                app.audio().cursor.play();
         });
         Event e;
         while (gui->input().poll(e)) {

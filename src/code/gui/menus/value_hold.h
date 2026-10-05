@@ -2,8 +2,10 @@
 // ValueHold: a held Left/Right taking its value step again and again, for the editors whose loop sleeps between
 // presses (GuiEditorRA, GuiAppSettings, GuiRaCores) - the DpadHold of Up/Down, for the value. The same HoldRepeat pace
 // as the PS1 game editor's values and the Options rows (HoldRepeat::rows()).
-//   on Dpad events:  if (const int dir = valueHold.press(input, now)) { change the value by dir; }
-//   once a pass:     valueHold.tick(input, now, [&](int dir) { change the value by dir; });
+//   on Dpad events:  if (const int dir = valueHold.press(input, now)) { change the value by dir; }  (a press: wraps)
+//   once a pass:     valueHold.tick(input, now, [&](int dir, bool repeat) { change the value by dir; });
+// The press wraps past the last value to the first (and back), a repeat stops at the end - the one rule of every menu
+// (abgui::stepIndex, <ab_gui/hold_repeat.h>): `repeat` is true for every step tick() gives.
 // While a direction is held the loop runs every pass (FrameNeed::Active); released, it goes back to Idle.
 //
 #pragma once
@@ -35,7 +37,7 @@ public:
             return;
         }
         for (int n = hold_.due(now); n != 0; n -= dir)
-            step(dir);
+            abgui::detail::callStep(step, dir, 0);
     }
 
 private:

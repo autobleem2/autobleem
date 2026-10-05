@@ -186,14 +186,14 @@ void GuiProcessors::draw() {
 // GuiProcessors::moveSelection
 //*******************************
 // with a row picked up, the row moves with the cursor
-void GuiProcessors::moveSelection(int step) {
+void GuiProcessors::moveSelection(int step, bool repeat) {
     if (count() == 0)
         return;
     int target;
     if (moving)
         target = max(0, min(count() - 1, selected + step)); // carrying one: no wrap
-    else if (step == 1 || step == -1)
-        target = (selected + step + count()) % count();
+    else if (step == 1 || step == -1)                       // a press wraps, a held key's repeat stops at the end
+        target = abgui::stepIndex(selected, step, count(), repeat);
     else
         target = max(0, min(count() - 1, selected + step));
     if (moving && sequences.move(sequence, selected, target))
@@ -238,9 +238,11 @@ void GuiProcessors::loop() {
     while (menuVisible) {
         if (gui->input().frameDue())
             render();
-        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir) {
-            app.audio().cursor.play();
-            moveSelection(dir);
+        hold.tick(gui->input(), gui->platform().ticks(), [&](int dir, bool repeat) {
+            const int before = selected;
+            moveSelection(dir, repeat);
+            if (selected != before) // a repeat at the end stays put, silently
+                app.audio().cursor.play();
         });
         Event e;
         while (gui->input().poll(e)) {

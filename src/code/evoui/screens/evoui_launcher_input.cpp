@@ -9,6 +9,7 @@
 #include "core/model/timing.h"
 #include "core/model/pad_assignment.h"
 
+#include <ab_gui/hold_repeat.h>
 #include <ab_gui/screen_stack.h>
 
 #include <algorithm>
@@ -287,10 +288,9 @@ void GuiLauncher::loop_joyMoveLeft() {
         }
 
     } else if (state == LauncherScreenState::Resume) {
-        if (sselector->selSlot != 0) {
-            app.audio().cursor.play();
-            sselector->selSlot--;
-        }
+        // the slots: a press at the first goes round to the last (the held d-pad sends no repeats here)
+        app.audio().cursor.play();
+        sselector->selSlot = abgui::stepIndex(sselector->selSlot, -1, PsStateSelector::SlotCount, false);
     }
 }
 
@@ -324,10 +324,8 @@ void GuiLauncher::loop_joyMoveRight() {
         }
 
     } else if (state == LauncherScreenState::Resume) {
-        if (sselector->selSlot != 3) {
-            app.audio().cursor.play();
-            sselector->selSlot++;
-        }
+        app.audio().cursor.play();
+        sselector->selSlot = abgui::stepIndex(sselector->selSlot, 1, PsStateSelector::SlotCount, false);
     }
 }
 
