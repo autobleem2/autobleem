@@ -1,6 +1,9 @@
 #include "core/virtual_pad.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <utility>
 
 using namespace std;
 
@@ -178,12 +181,41 @@ RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &co
 }
 
 //*******************************
+// applyStickDeadzone
+//*******************************
+void applyStickDeadzone(int16_t &x, int16_t &y) {
+    constexpr double full = 32767.0;
+    double distance = sqrt(static_cast<double>(x) * x + static_cast<double>(y) * y);
+    if (distance <= StickDeadzone) {
+        x = 0;
+        y = 0;
+        return;
+    }
+    double past = (min(distance, full) - StickDeadzone) * full / (full - StickDeadzone);
+    double scale = past / distance;
+    auto scaled = [scale, full](int16_t value) {
+        double v = value * scale;
+        return static_cast<int16_t>(lround(max(-32768.0, min(full, v))));
+    };
+    x = scaled(x);
+    y = scaled(y);
+}
+
+//*******************************
 // controllerView
 //*******************************
 ControllerState controllerView(VirtualPadKind kind, const ControllerState &physical, MovementAid aid) {
     if (kind != VirtualPadKind::Psc) {
         ControllerState view = physical;
-        applyMovementAid(view, aid);
+        applyMovementAid(view, aid); // on the pad's own values: the stick presses the d-pad at the same push as before
+        for (const auto &stick :
+             {make_pair(Element::LeftX, Element::LeftY), make_pair(Element::RightX, Element::RightY)}) {
+            int16_t x = view.axis(stick.first);
+            int16_t y = view.axis(stick.second);
+            applyStickDeadzone(x, y);
+            view.set(stick.first, x);
+            view.set(stick.second, y);
+        }
         return view;
     }
     ControllerState view;

@@ -10,6 +10,7 @@
 #include "core/shared_state.h"
 #include "core/virtual_pad.h"
 #include "doctest/doctest.h"
+#include "pad_descriptions.h"
 
 #include <initializer_list>
 #include <sstream>
@@ -472,49 +473,65 @@ TEST_CASE("x360 output: the standard pad - six axes, the d-pad a hat, triggers a
         CHECK(raw.hats[0] == 0);
     }
 
-    SUBCASE(
-        "a DualSense at rest or drifting: no button, no hat, triggers at the bottom, the sticks barely off centre") {
-        for (const ControllerState &pad : {dualSense({}), dualSense({{AbsLX, 140}, {AbsLY, 116}})}) {
+    SUBCASE("a DualSense at rest or drifting: no button, no hat, triggers at the bottom, the sticks exactly centred") {
+        for (const ControllerState &pad :
+             {dualSense({}), dualSense({{AbsLX, 140}, {AbsLY, 116}}), dualSense({{AbsRX, 120}, {AbsRY, 136}})}) {
             RawPadState raw = x360Raw(pad);
             CHECK_FALSE(anyButton(raw));
             CHECK(raw.hats[0] == 0);
-            CHECK(raw.axes[2] == -32768);
-            CHECK(raw.axes[5] == -32768);
-            CHECK(raw.axes[0] < 4000);
-            CHECK(raw.axes[0] > -4000);
+            CHECK(raw.axes == vector<int16_t>{0, 0, -32768, 0, 0, -32768});
         }
     }
 
-    SUBCASE("sticks and triggers on LX LY LT RX RY RT, the d-pad on the hat") {
-        ControllerState physical = physicalPad({{Element::LeftX, 1000},
-                                                {Element::LeftY, -2000},
-                                                {Element::RightX, 3000},
-                                                {Element::RightY, -4000},
+    SUBCASE("sticks and triggers on LX LY LT RX RY RT, the d-pad on the hat; a stick past the deadzone rescaled") {
+        ControllerState physical = physicalPad({{Element::LeftX, 24000},
+                                                {Element::LeftY, 0},
+                                                {Element::RightX, 0},
+                                                {Element::RightY, -32767},
                                                 {Element::LeftTrigger, 32767},
                                                 {Element::DpDown, 1},
                                                 {Element::DpLeft, 1}});
         RawPadState raw = x360Raw(physical, MovementAid::AsIs);
-        CHECK(raw.axes[0] == 1000);
-        CHECK(raw.axes[1] == -2000);
+        CHECK(raw.axes[0] == 21168); // (24000 - 8000) * 32767 / (32767 - 8000)
+        CHECK(raw.axes[1] == 0);
         CHECK(raw.axes[2] == 32766);
-        CHECK(raw.axes[3] == 3000);
-        CHECK(raw.axes[4] == -4000);
+        CHECK(raw.axes[3] == 0);
+        CHECK(raw.axes[4] == -32767); // full travel is still full travel
         CHECK(raw.axes[5] == -32768);
         CHECK(raw.hats[0] == (4 | 8));
     }
 
     SUBCASE("the flags: Dpad2Analog - the d-pad moves the stick; Analog2Dpad - the stick presses the d-pad") {
         CHECK(x360Raw(dualSense({{HatX, -1}}), MovementAid::DpadToStick).axes[0] == -32767);
-        CHECK(x360Raw(dualSense({{HatX, -1}}), MovementAid::AsIs).axes[0] == 128); // the stick at rest, as it is
+        CHECK(x360Raw(dualSense({{HatX, -1}}), MovementAid::AsIs).axes[0] == 0); // the stick at rest
         CHECK(x360Raw(dualSense({{AbsLX, 0}}), MovementAid::StickToDpad).hats[0] == 8);
         CHECK(x360Raw(dualSense({{AbsLX, 0}}), MovementAid::AsIs).hats[0] == 0);
         CHECK(x360Raw(dualSense({{AbsLY, 255}, {HatX, 1}}), MovementAid::Both).hats[0] == (2 | 4));
         CHECK(x360Raw(dualSense({{AbsLX, 150}}), MovementAid::Both).hats[0] == 0); // drift presses nothing
     }
 
-    SUBCASE("the game-controller view is the physical pad as it is (as-is)") {
-        ControllerState physical = physicalPad({{Element::RightX, 3000}, {Element::A, 1}});
+    SUBCASE("the game-controller view is the physical pad as it is (as-is), past the deadzone") {
+        ControllerState physical = physicalPad({{Element::RightX, 32767}, {Element::A, 1}});
         CHECK(controllerView(VirtualPadKind::X360, physical, MovementAid::AsIs) == physical);
+    }
+
+    SUBCASE("the deadzone is radial and keeps the direction") {
+        int16_t x = 8001, y = 0;
+        applyStickDeadzone(x, y);
+        CHECK(x == 1);
+        x = 5000; // 5000 and 6000 together are 7810 from the centre: still inside
+        y = 6000;
+        applyStickDeadzone(x, y);
+        CHECK((x == 0 && y == 0));
+        x = 20000;
+        y = -15000; // 25000 from the centre -> 22491, the same direction
+        applyStickDeadzone(x, y);
+        CHECK(x == 17993);
+        CHECK(y == -13495);
+        x = -32768;
+        y = 0;
+        applyStickDeadzone(x, y);
+        CHECK(x == -32767);
     }
 }
 
@@ -995,11 +1012,10 @@ TEST_CASE("kernel pad: the virtual device is the layout's own pad - what an App 
 
     SUBCASE("the standard pad keeps its sticks and triggers") {
         ControllerState physical = physicalPad(
-            {{Element::LeftX, 12000}, {Element::RightY, -20000}, {Element::LeftTrigger, 32767}, {Element::DpLeft, 1}});
+            {{Element::LeftX, 24000}, {Element::RightY, -32767}, {Element::LeftTrigger, 32767}, {Element::DpLeft, 1}});
         ControllerState read = throughTheKernel(VirtualPadKind::X360, physical);
-        CHECK(read.axis(Element::LeftX) > 11000);
-        CHECK(read.axis(Element::LeftX) < 13000);
-        CHECK(read.axis(Element::RightY) < -19000);
+        CHECK(read.axis(Element::LeftX) == 21168); // past the deadzone, rescaled
+        CHECK(read.axis(Element::RightY) == -32767);
         CHECK(read.axis(Element::LeftTrigger) > 32000);
         CHECK(read.axis(Element::RightTrigger) == 0);
         CHECK(read.button(Element::DpLeft));
@@ -1113,4 +1129,270 @@ TEST_CASE("a pad's touchpad and motion sensors are held and hidden; its buttons,
     CHECK(padPointerNodes(odd) == vector<string>{"/dev/input/event3"});
     // no pad at all: a mouse stays the App's (and the compositor's)
     CHECK(padPointerNodes({nodes[4]}).empty());
+}
+
+// The pad model as one table (the round-4 plan): every pad in pad_descriptions.h goes through the whole chain - its
+// evdev node read as abpadd reads it, its gamecontrollerdb line (or the guess), the output of each mode - and comes
+// out as the expected pad. The expected values are written from the 2020 console pad's facts (pad-mapping.md 1.2)
+// and the Xbox 360 layout, not from the code.
+namespace {
+
+using padfixtures::PadControl;
+using padfixtures::PadDescription;
+
+// what each mode puts out for one element. psc: the console pad's key (BTN_A Triangle .. BTN_TR2 Start) and its raw
+// button number; x360: xpad's key (0: the triggers, ABS_Z / ABS_RZ at full pull) and the standard layout's button
+// number
+struct Expected {
+    Element element;
+    int pscKey;
+    int pscButton;
+    int x360Key;
+    int x360Button;
+};
+
+const Expected kExpected[] = {
+    {Element::Y, 0x130, 0, 0x134, 3},
+    {Element::B, 0x131, 1, 0x131, 1},
+    {Element::A, 0x132, 2, 0x130, 0},
+    {Element::X, 0x133, 3, 0x133, 2},
+    {Element::LeftTrigger, 0x134, 4, 0, -1},
+    {Element::RightTrigger, 0x135, 5, 0, -1},
+    {Element::LeftShoulder, 0x136, 6, 0x136, 4},
+    {Element::RightShoulder, 0x137, 7, 0x137, 5},
+    {Element::Back, 0x138, 8, 0x13a, 6},
+    {Element::Start, 0x139, 9, 0x13b, 7},
+};
+
+// a pad's device state: at rest, then these controls applied, then these axes set
+EvdevPadState padState(const PadDescription &pad, const vector<PadControl> &controls,
+                       const vector<pair<int, int>> &axes = {}) {
+    EvdevPadState device(pad.keys, pad.abs);
+    for (const auto &rest : pad.rest) {
+        device.setAbs(rest.first, rest.second);
+    }
+    for (const PadControl &control : controls) {
+        if (control.type == padfixtures::EvKey) {
+            device.setKey(control.code, control.value);
+        } else {
+            device.setAbs(control.code, control.value);
+        }
+    }
+    for (const auto &axis : axes) {
+        device.setAbs(axis.first, axis.second);
+    }
+    return device;
+}
+
+PadMapping mappingOf(const PadDescription &pad) {
+    if (pad.line.empty()) {
+        EvdevPadState device(pad.keys, pad.abs);
+        return guessMapping("03000000ffff0000ffff000000000000", "", device.buttonCount(), device.axisCount(),
+                            device.hatCount());
+    }
+    PadMapping mapping;
+    REQUIRE(PadMapping::parseLine(pad.line, mapping));
+    return mapping;
+}
+
+// the four outputs of one physical state
+struct Outputs {
+    EvdevFrame pscKernel;
+    RawPadState pscShim;
+    EvdevFrame x360Kernel;
+    RawPadState x360Shim;
+};
+
+Outputs outputsOf(const PadDescription &pad, const EvdevPadState &device, MovementAid aid = MovementAid::Both) {
+    ControllerState logical = applyMapping(mappingOf(pad), device.raw());
+    Outputs out;
+    out.pscShim = buildRawState(virtualLayout(VirtualPadKind::Psc), controllerView(VirtualPadKind::Psc, logical, aid));
+    out.pscKernel = evdevFrame(VirtualPadKind::Psc, out.pscShim);
+    out.x360Shim =
+        buildRawState(virtualLayout(VirtualPadKind::X360), controllerView(VirtualPadKind::X360, logical, aid));
+    out.x360Kernel = evdevFrame(VirtualPadKind::X360, out.x360Shim);
+    return out;
+}
+
+int frameValue(const EvdevFrame &frame, int code) {
+    for (const auto &key : frame.keys) {
+        if (key.first == code) {
+            return key.second;
+        }
+    }
+    for (const auto &abs : frame.abs) {
+        if (abs.first == code) {
+            return abs.second;
+        }
+    }
+    return -999;
+}
+
+int keysDown(const EvdevFrame &frame) {
+    int down = 0;
+    for (const auto &key : frame.keys) {
+        down += key.second != 0 ? 1 : 0;
+    }
+    return down;
+}
+
+int buttonsDown(const RawPadState &raw) {
+    int down = 0;
+    for (bool pressed : raw.buttons) {
+        down += pressed ? 1 : 0;
+    }
+    return down;
+}
+
+// at rest, in every mode: no key, the console pad's axes in the middle (1 of 0..2), the standard pad's sticks at 0,
+// its triggers at the bottom, no hat
+void checkRest(const Outputs &out) {
+    CHECK(keysDown(out.pscKernel) == 0);
+    CHECK(frameValue(out.pscKernel, 0x00) == 1);
+    CHECK(frameValue(out.pscKernel, 0x01) == 1);
+    CHECK(buttonsDown(out.pscShim) == 0);
+    CHECK(out.pscShim.axes == vector<int16_t>{0, 0});
+    CHECK(keysDown(out.x360Kernel) == 0);
+    for (int code : {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x10, 0x11}) {
+        INFO("x360 ABS " << code);
+        CHECK(frameValue(out.x360Kernel, code) == 0);
+    }
+    CHECK(buttonsDown(out.x360Shim) == 0);
+    CHECK(out.x360Shim.axes == vector<int16_t>{0, 0, -32768, 0, 0, -32768});
+    CHECK(out.x360Shim.hats == vector<uint8_t>{0});
+}
+
+const PadControl *controlFor(const PadDescription &pad, Element element) {
+    for (const PadControl &control : pad.controls) {
+        if (control.element == element) {
+            return &control;
+        }
+    }
+    return nullptr;
+}
+
+int restOf(const PadDescription &pad, int code) {
+    for (const auto &rest : pad.rest) {
+        if (rest.first == code) {
+            return rest.second;
+        }
+    }
+    return 0;
+}
+
+struct Direction {
+    Element element;
+    int pscCode;
+    int pscValue;
+    size_t shimAxis;
+    int16_t shimValue;
+    int hatCode;
+    int hatValue;
+    uint8_t hatMask;
+};
+
+} // namespace
+
+TEST_CASE("the pad model: every known pad, through the whole chain, is the 2020 console pad (and the standard pad)") {
+    const Direction directions[] = {{Element::DpLeft, 0x00, 0, 0, -32768, 0x10, -1, 8},
+                                    {Element::DpRight, 0x00, 2, 0, 32767, 0x10, 1, 2},
+                                    {Element::DpUp, 0x01, 0, 1, -32768, 0x11, -1, 1},
+                                    {Element::DpDown, 0x01, 2, 1, 32767, 0x11, 1, 4}};
+
+    for (const PadDescription &pad : padfixtures::knownPads()) {
+        INFO("pad: " << pad.label << " (" << pad.source << ")");
+
+        // at rest, and resting a little off centre (a worn stick): nothing, in every mode
+        checkRest(outputsOf(pad, padState(pad, {})));
+        if (pad.leftX >= 0) {
+            INFO("resting off centre");
+            checkRest(outputsOf(pad, padState(pad, {},
+                                              {{pad.leftX, restOf(pad, pad.leftX) + pad.drift},
+                                               {pad.leftY, restOf(pad, pad.leftY) - pad.drift}})));
+        }
+
+        // the buttons: each one is its key and nothing else
+        for (const Expected &expected : kExpected) {
+            const PadControl *control = controlFor(pad, expected.element);
+            if (control == nullptr) {
+                continue; // the pad has no such button (a guessed pad has no triggers)
+            }
+            INFO("element " << elementName(expected.element));
+            Outputs out = outputsOf(pad, padState(pad, {*control}));
+            CHECK(frameValue(out.pscKernel, expected.pscKey) == 1);
+            CHECK(keysDown(out.pscKernel) == 1);
+            CHECK(frameValue(out.pscKernel, 0x00) == 1);
+            CHECK(frameValue(out.pscKernel, 0x01) == 1);
+            CHECK(out.pscShim.buttons[static_cast<size_t>(expected.pscButton)]);
+            CHECK(buttonsDown(out.pscShim) == 1);
+            if (expected.x360Key != 0) {
+                CHECK(frameValue(out.x360Kernel, expected.x360Key) == 1);
+                CHECK(keysDown(out.x360Kernel) == 1);
+                CHECK(out.x360Shim.buttons[static_cast<size_t>(expected.x360Button)]);
+                CHECK(buttonsDown(out.x360Shim) == 1);
+            } else {
+                CHECK(frameValue(out.x360Kernel, expected.element == Element::LeftTrigger ? 0x02 : 0x05) >= 254);
+                CHECK(keysDown(out.x360Kernel) == 0);
+            }
+        }
+
+        // the d-pad: the console pad's axes at their ends, the standard pad's hat
+        for (const Direction &direction : directions) {
+            const PadControl *control = controlFor(pad, direction.element);
+            REQUIRE(control != nullptr);
+            INFO("d-pad " << elementName(direction.element));
+            Outputs out = outputsOf(pad, padState(pad, {*control}), MovementAid::AsIs);
+            CHECK(frameValue(out.pscKernel, direction.pscCode) == direction.pscValue);
+            CHECK(keysDown(out.pscKernel) == 0);
+            CHECK(out.pscShim.axes[direction.shimAxis] == direction.shimValue);
+            CHECK(frameValue(out.x360Kernel, direction.hatCode) == direction.hatValue);
+            CHECK(out.x360Shim.hats[0] == direction.hatMask);
+            CHECK(frameValue(out.x360Kernel, 0x00) == 0); // as-is: the stick stays put
+        }
+
+        // the left stick all the way left: the console pad's d-pad (Analog2Dpad, the default) or nothing (off); the
+        // standard pad's stick at full travel; seven eighths right: rescaled past the deadzone, short of full
+        if (pad.leftX >= 0) {
+            int low = 0;
+            int high = 0;
+            for (const EvdevAbs &abs : pad.abs) {
+                if (abs.code == pad.leftX) {
+                    low = abs.min;
+                    high = abs.max;
+                }
+            }
+            Outputs left = outputsOf(pad, padState(pad, {}, {{pad.leftX, low}}));
+            CHECK(frameValue(left.pscKernel, 0x00) == 0);
+            CHECK(left.pscShim.axes[0] == -32768);
+            Outputs leftAsIs = outputsOf(pad, padState(pad, {}, {{pad.leftX, low}}), MovementAid::AsIs);
+            CHECK(frameValue(leftAsIs.pscKernel, 0x00) == 1);
+            CHECK(frameValue(leftAsIs.x360Kernel, 0x00) == -32767);
+            CHECK(frameValue(leftAsIs.x360Kernel, 0x10) == 0);
+            Outputs most =
+                outputsOf(pad, padState(pad, {}, {{pad.leftX, low + (high - low) * 15 / 16}}), MovementAid::AsIs);
+            CHECK(frameValue(most.x360Kernel, 0x00) > 16000);
+            CHECK(frameValue(most.x360Kernel, 0x00) < 32767);
+        }
+    }
+}
+
+TEST_CASE("the 2020 floor: the console pad device is the real pad, fact by fact (pad-mapping.md 1.2)") {
+    const UinputPlan &plan = uinputPlan(VirtualPadKind::Psc);
+    CHECK(plan.name == "Sony Interactive Entertainment Controller");
+    CHECK(plan.bus == 0x0003);
+    CHECK(plan.vendor == 0x054c);
+    CHECK(plan.product == 0x0cda);
+    CHECK(plan.version == 0x0111);
+    CHECK(virtualLayout(VirtualPadKind::Psc).guid == "030000004c050000da0c000011010000");
+    REQUIRE(plan.keys.size() == 10);
+    for (size_t i = 0; i < plan.keys.size(); ++i) {
+        CHECK(plan.keys[i] == 0x130 + static_cast<int>(i)); // BTN_A .. BTN_TR2: b0..b9 in SDL's numbering
+    }
+    REQUIRE(plan.abs.size() == 2); // no hat, no other axis
+    CHECK(plan.abs[0].code == 0x00);
+    CHECK(plan.abs[1].code == 0x01);
+    for (const UinputAxis &axis : plan.abs) {
+        CHECK(axis.min == 0);
+        CHECK(axis.max == 2);
+    }
 }
