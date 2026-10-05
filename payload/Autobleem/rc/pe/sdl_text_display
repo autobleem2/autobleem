@@ -34,11 +34,15 @@ if [ -x "$HERE/sdl_display" ]; then
     if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
         exit 0
     fi
-    # the program finds the launcher's SDL family where the console keeps it, and never the launcher's debug port
+    # the program finds the launcher's SDL family where the console keeps it, never the launcher's debug port
     if [ -d "${PE_SDL_DIR:-/tmp/lib}" ]; then
         LD_LIBRARY_PATH="${PE_SDL_DIR:-/tmp/lib}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
         export LD_LIBRARY_PATH
     fi
+    # no sound: the dialog has no use for it, and the mod opens the sound device itself (a text screen that is
+    # still up when the game starts must not hold it)
+    SDL_AUDIODRIVER=dummy
+    export SDL_AUDIODRIVER
     unset AB_DEBUG_PORT
     if [ -n "$AB_DIALOG_DEBUG_PORT" ]; then
         AB_DEBUG_PORT=$AB_DIALOG_DEBUG_PORT
