@@ -78,6 +78,9 @@ mount -o bind /tmp/20-joystick.rules /etc/udev/rules.d/20-joystick.rules
 udevadm control --reload-rules
 udevadm trigger
 bt "udev rules reloaded and triggered"
+# no mouse cursor from a pad's touchpad: its seat rule into /run, a pad already connected announced again
+sh $RC/pad_seat.sh
+bt "pad touchpad seat rule in place"
 
 # kernel modules the stick carries beyond the firmware's (xpad.ko for Xbox pads - the site's libs pack,
 # unpacked by the installer into Autobleem/lib/modules) - only for a kernel without its own: the AutoBleem

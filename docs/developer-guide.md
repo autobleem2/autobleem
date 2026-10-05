@@ -177,7 +177,26 @@ has a gamepad node (`padPointerNodes`, core/kernel_pad.*), holds it with `EVIOCG
 its events, the compositor included) and adds its own nodes (event, mouseN, udev entries) and `/dev/input/mice` to the
 hide list. A real mouse, a keyboard's touchpad and the pad's own buttons are not taken. A pad plugged in after the App
 started is not covered. No App of ours reads a mouse through `/dev/input` (on the console a mouse comes through the
-compositor).
+compositor). The grab stops the cursor moving but not being drawn - Weston draws one while its seat has any pointer:
+**the cursor itself** is gone because the touchpad and motion-sensors nodes never reach Weston's seat
+(`rc/99-autobleem-pad-seat.rules`, put into `/run/udev/rules.d` at boot by `rc/pad_seat.sh`, which also announces an
+already connected pad's nodes to udev again; the kernel payload carries the same line): they get `ID_SEAT` of a seat
+nobody runs. The console's libinput 1.4.1 skips a device of another seat; it knows neither `LIBINPUT_IGNORE_DEVICE`
+nor cares about cleared `ID_INPUT_*`, which is why the payload's older rule did not help.
+
+**The pad model (2026-10-05, the round-4 pad plan, Foundry `!autobleem\out\pad-mapping-r4\plan.md`).** Every `.mod` -
+ours and the original 2020 packages alike - gets what the 2020 environment gave it: the console's own pad, raw
+(`psc-kernel`, the default; PE preloaded `sdl_remap_arm.so` for its own menu only, never for a mod). What we add over
+2020: any pad SDL knows (our gamecontrollerdb, its built-in table, or the guess for an unknown one) becomes that same
+pad, with no mapping step. `pe_compat.ini` therefore sets **no pad for any mod** (a `pad=` there would also reach the
+original package of the same launcher name; `test_pe_run.cpp` guards it) - a port of ours that wants Cross first says
+so in its own config, in the console pad's numbers. The x360 outputs (a choice in Game settings) pass the sticks
+through a radial deadzone (`StickDeadzone` 8000, rescaled to full travel; `applyStickDeadzone` in `core/virtual_pad.*`)
+- without it a pad resting a few counts off centre walked a game that steers on the stick (Commander Genius); the
+console pad outputs need none (nothing inside half travel). Tests: the table test in `tests/apps/test_abpad_core.cpp`
+sends the pads of `tests/apps/pad_descriptions.h` (the owner's DualSense recorded; the PSC pad, two DualShock 4
+layouts, Xbox 360/One, an 8BitDo, a generic HID pad and an unknown one written from their drivers' layouts) through
+the whole chain in every mode, plus the 2020 facts of the console pad device one by one.
 
 ## Where the code lives (2026-09-23) - read this before the sections below
 
