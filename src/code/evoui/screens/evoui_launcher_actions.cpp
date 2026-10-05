@@ -149,6 +149,11 @@ void GuiLauncher::loop_crossButtonPressed_STATE_GAMES() {
             }
             app.session().emuMode = EmuMode::Launcher;
         }
+    } else {
+        // the game editor's Resume row "Last slot" (EMU-26): Play continues from the newest slot (-1: it has none);
+        // "Ask" and "Never" start from the beginning, the Resume icon is the picker
+        const PsGame &game = *app.session().runningGame;
+        app.session().resumePoint = app.resumePoints().slotForPlay(game, GameSettingsService::resumeModeOf(game));
     }
 }
 

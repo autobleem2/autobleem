@@ -1088,9 +1088,14 @@ void GuiLauncher::loadAssets() {
 
         if (app.session().emuMode == EmuMode::Pcsx) {
             if (app.resumePoints().exitedCleanly(*game)) {
-                sselector->loadSaveStateImages(game, true);
-                sselector->visible = true;
-                state = LauncherScreenState::Resume;
+                if (GameSettingsService::resumeModeOf(*game) == ResumePointService::Never) {
+                    // the game editor's Resume row "Never" (EMU-26): the state the emulator wrote is not offered
+                    app.resumePoints().discardRun(*game);
+                } else {
+                    sselector->loadSaveStateImages(game, true);
+                    sselector->visible = true;
+                    state = LauncherScreenState::Resume;
+                }
             } else {
                 notificationLines[1].setText(_("Oops! Game crashed. Resume point not available."),
                                              DefaultShowingTimeout);
