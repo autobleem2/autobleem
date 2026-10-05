@@ -123,6 +123,15 @@ from ours at package time, under the 128 KB limit of one environment string) bin
 `/media/project_eris` - and removes it all after the mod, also after a TERM (Reset). Tests: `tests/rc/test_pe_run.cpp`
 (the real scripts on a fake mod), `tests/tools/test_make_pe_gamecontrollerdb.py`.
 
+**An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with
+`ab_app_start` (`rc/app_env.sh`, "The App's processes") and stay its parent: the program gets a mark in its
+environment (`AB_APP_ID`), which everything it starts inherits, a process whose parent has gone included. On a
+TERM/INT/HUP (Reset, Start+Select: abpadd TERMs the runner it watches) and when the program ends by itself, every
+process with the mark and everything below them gets a TERM, a second, then a KILL; the runner returns - and the
+launcher comes back - only when none is left. (OpenJazz on the console: its `launch.sh` ended while the game ran on
+and held the screen, and Reset did nothing because abpadd had gone with the runner.) An App's own `run.sh` that
+`exec`s its program keeps the old behaviour: abpadd signals that pid only.
+
 **The pad output of an App (`PadMode=`, 2026-10-04).** One output per App, chosen by the user (the launcher exports
 `AB_APP_PAD_MODE`), else the App's `app.ini` `PadMode=` (`proc_pe` copies it from `pad=` in `rc/pe_compat.ini`), else
 that `pad=`, else `psc-kernel` (the default of every PE App since 2026-10-04: every mod reaches it, a static SDL or raw
