@@ -42,7 +42,7 @@ at /mnt/abvm), never the stick. They need their own lease, not the VM's:
                                                          Apps; no games, empty databases
   python tools/vm/abvm.py sandbox take <name> <task> [min] / release <name>        the sandbox's lease (release stops a launcher left running)
   python tools/vm/abvm.py sandbox new <name> [--build <dir>] [--ext <zip|dir>]...   made from the template (not started)
-                                                         (with System/Extensions/store/{cache,downloads,staging,sources})
+                                                         (with Mods/ and System/Extensions/store/{cache,cache/pictures,downloads,staging,sources})
   python tools/vm/abvm.py sandbox start <name> [--build <dir>] [--ext <zip|dir>]... [--size WxH]   made from the
                                                          template when new; --build lays a build's dist/<target> (on
                                                          the test machine, e.g. ~/src/autobleem/dist/pcusb) over it;
@@ -1215,17 +1215,27 @@ def sb_copy_ext(name, ext):
     print(f'sandbox {name}: extension {", ".join(names)} laid from {os.path.basename(src)}')
 
 
-STORE_STATE_DIRS = ('cache', 'downloads', 'staging', 'sources')
+STORE_STATE_DIRS = ('cache', os.path.join('cache', 'pictures'), 'downloads', 'staging', 'sources')
+# every directory the launcher and the Store write to, relative to the sandbox root. The launcher makes some of them
+# itself inside the guest, where they end up owned by the guest's user (libvirt-qemu on the host) and cannot be
+# chmod'ed from here - so they are made, by the host's owner, before the first start
+WRITTEN_DIRS = ('Mods', 'Apps')
 
 
 def sb_make_store_dirs(name):
-    """the Store's state directories (System/Extensions/store/...): the Store makes none of them itself, so without
-    them it cannot cache its catalog and its screens come out empty. Opened like the rest of the tree (the guest
-    checks permissions against the host's owner, see sb_open_modes), so the launcher's user can write them"""
-    base = os.path.join(sb_host(name), 'System', 'Extensions', 'store')
+    """the directories the launcher and the Store write to: Mods/ (the Store's .mod install), Apps/ and the Store's
+    state dirs System/Extensions/store/{cache,cache/pictures,downloads,staging,sources} (the Store makes none of them
+    itself, so without them it cannot cache its catalog or its pictures - curl exit 23 - and its screens come out
+    empty). Made here by the host's owner and opened like the rest of the tree (the guest checks permissions against
+    the host's owner, see sb_open_modes), so the launcher's user can write them"""
+    root = sb_host(name)
+    base = os.path.join(root, 'System', 'Extensions', 'store')
     for d in STORE_STATE_DIRS:
         os.makedirs(os.path.join(base, d), exist_ok=True)
-    sb_open_modes(os.path.join(sb_host(name), 'System', 'Extensions'))
+    for d in WRITTEN_DIRS:
+        os.makedirs(os.path.join(root, d), exist_ok=True)
+        sb_open_modes(os.path.join(root, d))
+    sb_open_modes(os.path.join(root, 'System', 'Extensions'))
 
 
 def sb_new(name, **lay):
