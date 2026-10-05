@@ -1,6 +1,6 @@
 # AutoBleem Polski Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 460
+# Untranslated: 0 / Total: 461
 
 (changed)=(zmieniony)
 (default)=(domyślny)
@@ -433,6 +433,7 @@ Testing=Testerzy
 The installer could not be started - it is in System/Updates=Nie udało się uruchomić instalatora - jest w System/Updates
 The Store is not installed=Store nie jest zainstalowany
 The update is downloaded - the installer is opening...=Aktualizacja pobrana - otwieranie instalatora...
+Theme switched to the default (CRT 4:3)=Motyw zmieniony na domyślny (CRT 4:3)
 Third-party extensions=Rozszerzenia innych firm
 This game is protected by its PSN licence and cannot be started=Ta gra jest chroniona licencją PSN i nie można jej uruchomić
 This PS1 emulator does not support swapping pads yet=Ten emulator PS1 nie obsługuje jeszcze zamiany padów

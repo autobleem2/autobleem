@@ -1,6 +1,6 @@
 # AutoBleem Finnish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 460
+# Untranslated: 0 / Total: 461
 
 (changed)=(muutettu)
 (default)=(oletus)
@@ -433,6 +433,7 @@ Testing=Testausta
 The installer could not be started - it is in System/Updates=Asennusohjelmaa ei voitu käynnistää - se on kansiossa System/Updates
 The Store is not installed=Storea ei ole asennettu
 The update is downloaded - the installer is opening...=Päivitys on ladattu - asennusohjelma avautuu...
+Theme switched to the default (CRT 4:3)=Teema vaihdettu oletusteemaan (CRT 4:3)
 Third-party extensions=Kolmannen osapuolen laajennukset
 This game is protected by its PSN licence and cannot be started=Tämä peli on suojattu PSN-lisenssillään, eikä sitä voi käynnistää
 This PS1 emulator does not support swapping pads yet=Tämä PS1-emulaattori ei vielä tue ohjainten vaihtoa
