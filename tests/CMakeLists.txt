@@ -85,3 +85,8 @@ if (Python3_Interpreter_FOUND)
     add_test(NAME test_make_pe_gamecontrollerdb COMMAND ${Python3_EXECUTABLE}
              ${CMAKE_CURRENT_SOURCE_DIR}/tools/test_make_pe_gamecontrollerdb.py)
 endif()
+
+# abdialog (src/tools/abdialog), the PE dialogs: the options, the command file the scripts write, the answer codes
+if (NOT AB_TARGET STREQUAL "win")
+    ab_add_test(test_abdialog tools/test_abdialog.cpp LIBS abdialog_core)
+endif()

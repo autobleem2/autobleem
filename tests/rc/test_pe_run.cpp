@@ -43,6 +43,7 @@ const char *const FakeLaunch =
     "echo \"pwd=$(pwd -P)\" >> $OUT\n"
     "echo \"project_eris_path=$PROJECT_ERIS_PATH\" >> $OUT\n"
     "echo \"mountpoint=$MOUNTPOINT\" >> $OUT\n"
+    "echo \"app_title=$PE_APP_TITLE\" >> $OUT\n"
     "echo \"log_path=$RUNTIME_LOG_PATH\" >> $OUT\n"
     "echo \"selected_theme=$SELECTED_THEME\" >> $OUT\n"
     "echo \"bin=$(ls \"$PROJECT_ERIS_PATH/bin\" | tr '\\n' ' ')\" >> $OUT\n"
@@ -136,6 +137,7 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK((path == root + "/media/project_eris" || path == root + "/pe/project_eris"));
     CHECK(pe.out("pwd") == slashes(pe.tmp.at("Apps/pe-demo"))); // launchtmp is the App's folder
     CHECK(pe.out("mountpoint") == "/media");
+    CHECK(pe.out("app_title") == "Demo Game"); // app.ini's Title: the text screen's title
     CHECK(pe.out("log_path") == root + "/rt/logs/pe");
     CHECK(pe.out("selected_theme") == "modmyclassic");
     CHECK(pe.out("bin") == "sdl_display sdl_input_text_display sdl_text_display ");
@@ -166,6 +168,69 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK(log.find("pad: abpad.state: ") != string::npos);
     CHECK(log.find("pad: remap files bound over by abpad: none") != string::npos);
     CHECK(pe.tmp.readFile("rt/logs/pe/dialogs.log").find("sdl_text_display: Loading") != string::npos);
+}
+
+// the dialog program (abdialog) stood in for by a script: it is linked into the mod's bin/ as sdl_display and
+// sdl_choicedisplay, the scripts hand it the command file and the options, and its exit code is the mod's answer
+const char *const FakeDialogProgram = "#!/bin/sh\n"
+                                      "name=$(basename \"$0\")\n"
+                                      "echo \"$name $*\" >> \"$FAKE_LOG\"\n"
+                                      "case \"$name\" in\n"
+                                      "sdl_choicedisplay)\n"
+                                      "    while [ $# -gt 0 ]; do [ \"$1\" = -file ] && cmd=$2; shift; done\n"
+                                      "    cat \"$cmd\" >> \"$FAKE_LOG.choice\"\n"
+                                      "    grep -q NODISPLAY \"$cmd\" && exit 3\n"
+                                      "    exit 102 ;;\n"
+                                      "*)\n"
+                                      "    trap 'kill $FAKE_SLEEP 2>/dev/null; exit 0' TERM INT HUP\n"
+                                      "    sleep 86400 &\n"
+                                      "    FAKE_SLEEP=$!\n"
+                                      "    wait $FAKE_SLEEP ;;\n"
+                                      "esac\n";
+
+const char *const DialogLaunch =
+    "#!/bin/sh\n"
+    "source \"/var/volatile/project_eris.cfg\" 2>/dev/null || source \"$PE_VOLATILE/project_eris.cfg\"\n"
+    "OUT=\"$APP_OUT\"\n"
+    "echo \"bin=$(ls \"$PROJECT_ERIS_PATH/bin\" | tr '\\n' ' ')\" >> $OUT\n"
+    "sdl_text_display 'Hello\\nWorld' 1 2 3 f 4 5 6 bg\n"
+    "cp \"$PE_RUN_DIR/sdldisplaycmd\" \"$OUT.display\"\n"
+    "echo \"display_rc=$?\" >> $OUT\n"
+    "sdl_input_text_display ' ' 0 0 12 f 0 0 0 /x/doom_controller_select.png XO\n"
+    "echo \"answer_dialog=$?\" >> $OUT\n"
+    "sdl_input_text_display NODISPLAY 0 0 12 f 0 0 0 bg TS\n"
+    "echo \"answer_no_display=$?\" >> $OUT\n"
+    "exit 0\n";
+
+TEST_CASE("pe_run.sh: the dialogs are abdialog under the 2020 names, and without a display the answer is fixed") {
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pe_run.sh is not run");
+        return;
+    }
+    PeRun pe;
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", DialogLaunch);
+    pe.tmp.writeFile("fake_abdialog", FakeDialogProgram);
+    pe.run("chmod +x \"$AB_ROOT/fake_abdialog\"\n"
+           "export PE_DIALOG_BIN=\"$AB_ROOT/fake_abdialog\" FAKE_LOG=\"$AB_ROOT/fake.log\"\n"
+           "sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\n");
+
+    CHECK(pe.out("bin") == "sdl_choicedisplay sdl_display sdl_input_text_display sdl_text_display ");
+    const string log = pe.tmp.readFile("fake.log");
+    CHECK(log.find("sdl_display -file ") != string::npos); // the text screen, started once
+    CHECK(log.find("sdl_choicedisplay -controller-db ") != string::npos);
+    CHECK(log.find(" -only XO -file ") != string::npos);
+    // the texts and the picture as the 2020 script's records
+    const string display = pe.tmp.readFile("out.txt.display");
+    CHECK(display.find("IMAGE\t640\t360\tbg\n") != string::npos);
+    CHECK(display.find("FTEXT\t1\t2\t3\tf\t4\t5\t6\tHello\\nWorld\n") != string::npos);
+    const string choice = pe.tmp.readFile("fake.log.choice");
+    CHECK(choice.find("doom_controller_select.png") != string::npos);
+    CHECK(choice.find("FTEXT\t0\t0\t12\tf\t0\t0\t0\t \n") != string::npos);
+    // the program's exit code is the answer; its "no display" (3) is the fixed rule, the first allowed letter
+    CHECK(pe.out("answer_dialog") == "102");
+    CHECK(pe.out("answer_no_display") == "103");
+    CHECK(pe.tmp.readFile("rt/logs/pe/dialogs.log").find("no dialog (3)") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe"))); // and the text screen was taken down with the rest
 }
 
 TEST_CASE("pe_run.sh puts the power flag back to what it was, even when the mod left a 2") {
@@ -287,6 +352,116 @@ TEST_CASE("pe_run.sh: a TERM (the Reset button) stops the mod and its children, 
     CHECK_FALSE(DirEntry::exists(pe.tmp.at("vol/launchtmp")));
     CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
     CHECK(pe.tmp.readFile("power/disable") == "1");
+}
+
+namespace {
+// the driver's tail: whether the pid in FILE still runs once the runner has returned - read at once, not polled (the
+// runner must not come back before it is gone); a zombie counts as gone (see the TERM test above)
+string goneCheck(const string &file) {
+    return "C=$(cat \"" + file +
+           "\")\n"
+           "if [ ! -r /proc/$C/stat ] || [ \"$(sed 's/.*) //' /proc/$C/stat 2>/dev/null | cut -c1)\" = Z ]; then "
+           "echo child=gone; else echo child=alive; kill -KILL $C; fi\n";
+}
+} // namespace
+
+// OpenJazz on the console, 2026-10-05: the mod's launch.sh ended while the game it started ran on, so the launcher
+// came back under a program that held the screen, and Reset (abpadd watches the runner, which was gone) did nothing
+TEST_CASE("pe_run.sh: Reset stops a child that ignores TERM (TERM, then KILL), and the clean-up still happens") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", "#!/bin/sh\n"
+                                               "(trap '' TERM; exec sleep 300) &\n" // TERM is ignored across the exec
+                                               "echo $! > \"$APP_OUT.child\"\n"
+                                               "wait\n");
+    vector<string> lines =
+        pe.run("sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\" &\n"
+               "PID=$!\n"
+               "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
+               "sleep 0.3\n"
+               "kill -TERM $PID\n"
+               "wait $PID\n"
+               "echo rc=$?\n" +
+               goneCheck("$APP_OUT.child"));
+    REQUIRE(lines.size() >= 2);
+    CHECK(lines[lines.size() - 2] == "rc=143");
+    CHECK(lines.back() == "child=gone");
+    const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+    CHECK(log.find("told to stop - TERM to ") != string::npos);
+    CHECK(log.find("still running a second after the TERM - KILL to ") != string::npos);
+    CHECK(log.find("the mod ended with 143") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("vol/launchtmp")));
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
+    CHECK(pe.tmp.readFile("power/disable") == "1");
+}
+
+TEST_CASE("pe_run.sh: what the mod leaves running when its launch.sh ends is stopped before the runner returns") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    // the game's parent goes at once (a subshell that only starts it), so the game is nobody's below the mod any more;
+    // it ignores TERM as well, and launch.sh then ends normally
+    pe.tmp.writeFile("Apps/pe-demo/launch.sh", "#!/bin/sh\n"
+                                               "(trap '' TERM; sleep 300 & echo $! > \"$APP_OUT.child\")\n"
+                                               "exit 0\n");
+    vector<string> lines = pe.run("sh \"$AB_ROOT/Autobleem/rc/pe_run.sh\" \"$AB_ROOT/Apps/pe-demo\"\necho rc=$?\n" +
+                                  goneCheck("$APP_OUT.child"));
+    REQUIRE(lines.size() >= 2);
+    CHECK(lines[lines.size() - 2] == "rc=0"); // the mod's own status: it was not told to stop
+    CHECK(lines.back() == "child=gone");
+    const string log = pe.tmp.readFile("rt/logs/pe/pe_run.log");
+    CHECK(log.find("the program ended (0) and left these running - TERM to ") != string::npos);
+    CHECK(log.find("sleep 300") != string::npos); // named in the log
+    CHECK(log.find("KILL to ") != string::npos);
+    CHECK_FALSE(DirEntry::exists(pe.tmp.at("pe")));
+}
+
+TEST_CASE("app_run.sh: the same rule - a TERM stops the App and what it started, and what it leaves is stopped") {
+    if (!haveSh() || !DirEntry::exists("/proc/self/stat")) {
+        MESSAGE("no sh or no /proc here - the test is skipped");
+        return;
+    }
+    PeRun pe;
+    REQUIRE(DirEntry::copy(string(AB_RC_DIR) + "/app_run.sh", pe.tmp.at("Autobleem/rc/app_run.sh")));
+    pe.tmp.makeSubDir("Apps/demo");
+    // the App: a child that ignores TERM, written down, then the App waits (TERM case) or ends at once (left case)
+    pe.tmp.writeFile("Apps/demo/game", "#!/bin/sh\n"
+                                       "(trap '' TERM; sleep 300 & echo $! > \"$APP_OUT.child\")\n"
+                                       "[ \"$1\" = wait ] && sleep 300\n"
+                                       "exit 5\n");
+    const string start = "chmod +x \"$AB_ROOT/Apps/demo/game\"\n"
+                         "export AB_APP_DIR=\"$AB_ROOT/Apps/demo\" AB_APP_EXEC=\"$AB_ROOT/Apps/demo/game\"\n";
+
+    SUBCASE("the App ends by itself") {
+        vector<string> lines = pe.run(start +
+                                      "export AB_APP_ARGS=now\n"
+                                      "sh \"$AB_ROOT/Autobleem/rc/app_run.sh\" 2>/dev/null\necho rc=$?\n" +
+                                      goneCheck("$APP_OUT.child"));
+        REQUIRE(lines.size() >= 2);
+        CHECK(lines[lines.size() - 2] == "rc=5");
+        CHECK(lines.back() == "child=gone");
+    }
+    SUBCASE("Reset") {
+        vector<string> lines =
+            pe.run(start +
+                   "export AB_APP_ARGS=wait\n"
+                   "sh \"$AB_ROOT/Autobleem/rc/app_run.sh\" 2>/dev/null &\n"
+                   "PID=$!\n"
+                   "n=0; while [ ! -f \"$APP_OUT.child\" ] && [ $n -lt 100 ]; do sleep 0.1; n=$((n+1)); done\n"
+                   "sleep 0.3\n"
+                   "kill -TERM $PID\n"
+                   "wait $PID\n"
+                   "echo rc=$?\n" +
+                   goneCheck("$APP_OUT.child"));
+        REQUIRE(lines.size() >= 2);
+        CHECK(lines[lines.size() - 2] == "rc=143");
+        CHECK(lines.back() == "child=gone");
+    }
 }
 #endif
 

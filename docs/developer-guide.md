@@ -78,7 +78,7 @@ A plugin, `Extensions/<name>/` with an `extension.ini`, run from the System menu
 launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-main
 `docs/history/launcher-extensions.md`.
 
-- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 8, since 2026-10-02)
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 9, since 2026-10-05)
   whenever the layout of a class, or the signature of a function, an extension may use changes. **AB_SDK_ABI 4**
   (2026-09-26): `Extension::runEntry(entry)` - extensions can be opened at a named entry point, e.g. `"network"`
   for the Network & Controllers hub; `extension.ini`'s `Provides=` lists them; `ExtensionCatalog::findProvider(entry)`
@@ -95,6 +95,8 @@ launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-mai
   and ends the busy state in `prepareFrame()`); the Store and PSC-Bios must be rebuilt against it.
   **AB_SDK_ABI 8** (2026-10-02): `DownloadRequest` keeps a `.part` on chosen statuses (`keepPartOnStatus`, the Downloader's layout
   changed); the Store and PSC-Bios must be rebuilt.
+  **AB_SDK_ABI 9** (2026-10-05): `ableem::StoreItem` gained `sourceUrl` (PE Apps in the Store; the Store builds the
+  items itself); the Store and PSC-Bios must be rebuilt.
   **`tools/lang_tools.py extract`** also scans autobleem-core's `ab_gui/` for `translate("...")` (the widgets hand
   their English to `_()` that way), so `update --remove-obsolete` keeps those keys.
 
@@ -110,7 +112,10 @@ resolved by `AppManifest`), run by the scan over the games before it reads them.
 
 The console runs the programs of PE mod packages as Apps. `Mods/*.mod` is turned into `Apps/pe-<name>/` by the
 `proc_pe` processor (`Kinds=mods`, started once per scan with `--start --mods`, core `ScanService::runModsProcessors`;
-the Apps list reloads when `Apps/` changed). The App's `app.ini` has `Exec.psc=run.sh` + `Startup=run.sh` +
+the Apps list reloads when `Apps/` changed). After a successful conversion `proc_pe` moves the `.mod` to `Mods/done/`
+(never deleted, never scanned; a failed package stays in `Mods/` and is retried; a `.mod` dropped again replaces the
+copy in `done/`; the App never goes with a missing `.mod`) - so "installed" for the Store is the `.mod` in `Mods/` or
+`Mods/done/`, or the marker `Apps/.pe_state/<file>.ini` (core `ModInstaller::present`). The App's `app.ini` has `Exec.psc=run.sh` + `Startup=run.sh` +
 `Category=PE` (only the console finds a program, so a Pi or PC never lists it; the "PE apps" row of the Apps picker),
 and its generated `run.sh` calls `rc/pe_run.sh <app folder>`: `rc/pe_compat.ini` refuses the launchers that delete
 the console's games (the reason reaches the launcher through `<runtime>/app-message.txt`), `rc/pe_env.sh` builds in
@@ -120,6 +125,15 @@ as `sdl_remap_arm.so`, the pad table `rc/pe_gamecontrollerdb.txt` that `tools/ma
 from ours at package time, under the 128 KB limit of one environment string) bind-mounted onto an empty
 `/media/project_eris` - and removes it all after the mod, also after a TERM (Reset). Tests: `tests/rc/test_pe_run.cpp`
 (the real scripts on a fake mod), `tests/tools/test_make_pe_gamecontrollerdb.py`.
+
+**An App ends whole (2026-10-05).** `rc/pe_run.sh` and `rc/app_run.sh` start the App's program with
+`ab_app_start` (`rc/app_env.sh`, "The App's processes") and stay its parent: the program gets a mark in its
+environment (`AB_APP_ID`), which everything it starts inherits, a process whose parent has gone included. On a
+TERM/INT/HUP (Reset, Start+Select: abpadd TERMs the runner it watches) and when the program ends by itself, every
+process with the mark and everything below them gets a TERM, a second, then a KILL; the runner returns - and the
+launcher comes back - only when none is left. (OpenJazz on the console: its `launch.sh` ended while the game ran on
+and held the screen, and Reset did nothing because abpadd had gone with the runner.) An App's own `run.sh` that
+`exec`s its program keeps the old behaviour: abpadd signals that pid only.
 
 **The pad output of an App (`PadMode=`, 2026-10-04).** One output per App, chosen by the user (the launcher exports
 `AB_APP_PAD_MODE`), else the App's `app.ini` `PadMode=` (`proc_pe` copies it from `pad=` in `rc/pe_compat.ini`), else

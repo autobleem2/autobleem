@@ -26,6 +26,7 @@
 : "${PE_POWER_FLAG:=/data/power/disable}"
 : "${PE_MOUNT_POINT:=/media/project_eris}"
 : "${PE_RC_DIR:=$AB_ROOT/Autobleem/rc}"
+: "${PE_DIALOG_BIN:=$AB_ROOT/Autobleem/bin/autobleem/abdialog}"
 PE_ROOT=$PE_TREE/project_eris
 PE_RUN_DIR=$PE_TREE/run
 PE_LOG_DIR=$AB_LOG_DIR/pe
@@ -45,39 +46,6 @@ pe_ini_get() {
 # pe_cfg_get FILE KEY: a launcher.cfg value (launcher_filename="openlara"), quotes and CR dropped
 pe_cfg_get() {
     sed -n -e "s/^$2=//p" "$1" 2>/dev/null | head -n 1 | tr -d '\r"'
-}
-
-# pe_children PID: the pid and every process below it, from /proc (no job control, no pgrep)
-pe_tree() {
-    pe_all=" $1 "
-    pe_more=1
-    while [ "$pe_more" = 1 ]; do
-        pe_more=0
-        for pe_st in /proc/[0-9]*/stat; do
-            [ -r "$pe_st" ] || continue
-            read -r pe_line < "$pe_st" 2>/dev/null || continue
-            pe_pid=${pe_st#/proc/}
-            pe_pid=${pe_pid%/stat}
-            pe_rest=${pe_line##*) } # after the command name (which may hold blanks): "S ppid pgrp ..."
-            set -- $pe_rest
-            case "$pe_all" in
-                *" $2 "*)
-                    case "$pe_all" in
-                        *" $pe_pid "*) ;;
-                        *) pe_all="$pe_all$pe_pid "; pe_more=1 ;;
-                    esac
-                    ;;
-            esac
-        done
-    done
-    echo $pe_all
-}
-
-# pe_signal SIG PID: the signal to the process and all below it
-pe_signal() {
-    for pe_p in $(pe_tree "$2"); do
-        kill "-$1" "$pe_p" 2>/dev/null
-    done
 }
 
 pe_mounted() {
@@ -107,6 +75,11 @@ pe_unmount_stale() {
 pe_prepare() {
     PE_FILENAME=$(pe_cfg_get "$AB_APP_DIR/launcher.cfg" launcher_filename)
     [ -n "$PE_FILENAME" ] || PE_FILENAME=$(basename "$AB_APP_DIR" | sed 's/^pe-//')
+    # the App's name, which the dialogs' text screen carries as its title: app.ini's Title (or Name), else the mod's
+    # launcher_title; none = the screen says "Message"
+    PE_APP_TITLE=$(sed -n 's/^[[:space:]]*[Tt][Ii][Tt][Ll][Ee][[:space:]]*=[[:space:]]*//p;s/^[[:space:]]*[Nn][Aa][Mm][Ee][[:space:]]*=[[:space:]]*//p' "$AB_APP_DIR/app.ini" 2>/dev/null | head -n 1 | tr -d '\r')
+    [ -n "$PE_APP_TITLE" ] || PE_APP_TITLE=$(pe_cfg_get "$AB_APP_DIR/launcher.cfg" launcher_title)
+    export PE_APP_TITLE
     PE_LAUNCHTMP=$PE_VOLATILE/launchtmp
     PE_MOUNTED=
     PE_APP_BOUND=
@@ -126,6 +99,16 @@ pe_prepare() {
     for pe_tool in sdl_text_display sdl_input_text_display sdl_display; do
         cp -f "$PE_RC_DIR/pe/$pe_tool" "$PE_ROOT/bin/$pe_tool" && chmod 755 "$PE_ROOT/bin/$pe_tool"
     done
+    # the dialogs are one program (abdialog, src/tools/abdialog) run under the names the 2020 tools had: sdl_display
+    # (the text screen, which the mod stops with `killall sdl_display` - the process is found by that name) and
+    # sdl_choicedisplay (the question). Links, so the process carries the name. Without the program on the stick
+    # sdl_display stays the stand-in copied above and the question is answered by its fixed rule.
+    if [ -x "$PE_DIALOG_BIN" ]; then
+        ln -sf "$PE_DIALOG_BIN" "$PE_ROOT/bin/sdl_display"
+        ln -sf "$PE_DIALOG_BIN" "$PE_ROOT/bin/sdl_choicedisplay"
+    else
+        pe_log "no $PE_DIALOG_BIN - the dialogs show nothing and answer by their fixed rule"
+    fi
     # lib/: what Project Eris gave its mods in ${PROJECT_ERIS_PATH}/lib (some mods set LD_LIBRARY_PATH to this and
     # nothing else). gl4es (libGL, libGLU; MIT) ships with the launcher in rc/pe/lib - the libs pack is not
     # something every stick has - and the pack's copy in /tmp/applib is the fallback. Our SDL2 goes in as well:
