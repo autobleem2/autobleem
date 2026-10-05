@@ -19,9 +19,41 @@ class StoreDirs(unittest.TestCase):
                     mock.patch.object(abvm.subprocess, 'run', side_effect=lambda cmd, **kw: os.makedirs(cmd[-1])):
                 os.makedirs(os.path.join(host, '_template'))
                 abvm.sb_new('sb1')
-            for d in ('cache', 'downloads', 'staging', 'sources'):
-                self.assertTrue(os.path.isdir(os.path.join(host, 'sb1', 'System', 'Extensions', 'store', d)), d)
+            store = os.path.join(host, 'sb1', 'System', 'Extensions', 'store')
+            for d in ('cache', os.path.join('cache', 'pictures'), 'downloads', 'staging', 'sources'):
+                self.assertTrue(os.path.isdir(os.path.join(store, d)), d)
             self.assertIn(os.path.join(host, 'sb1', 'System', 'Extensions'), opened)
+
+    def test_new_sandbox_has_mods_and_apps_made_and_opened(self):
+        with tempfile.TemporaryDirectory() as host:
+            opened = []
+            with mock.patch.object(abvm, 'SB_HOST', host),                     mock.patch.object(abvm, 'sb_open_modes', opened.append),                     mock.patch.object(abvm.subprocess, 'run', side_effect=lambda cmd, **kw: os.makedirs(cmd[-1])):
+                os.makedirs(os.path.join(host, '_template'))
+                abvm.sb_new('sb1')
+            for d in ('Mods', 'Apps'):
+                self.assertTrue(os.path.isdir(os.path.join(host, 'sb1', d)), d)
+                self.assertIn(os.path.join(host, 'sb1', d), opened)
+
+    def test_existing_dirs_are_kept_not_failed_on(self):
+        with tempfile.TemporaryDirectory() as host:
+            os.makedirs(os.path.join(host, 'sb1', 'Mods'))
+            with mock.patch.object(abvm, 'SB_HOST', host), mock.patch.object(abvm, 'sb_open_modes', lambda p: None):
+                abvm.sb_make_store_dirs('sb1')
+                abvm.sb_make_store_dirs('sb1')
+            self.assertTrue(os.path.isdir(os.path.join(host, 'sb1', 'Mods')))
+
+    def test_reset_recreates_the_dirs(self):
+        with tempfile.TemporaryDirectory() as host:
+            calls = []
+            with mock.patch.object(abvm, 'SB_HOST', host),                     mock.patch.object(abvm, 'sb_open_modes', lambda p: None),                     mock.patch.object(abvm.subprocess, 'run', side_effect=lambda cmd, **kw: os.makedirs(cmd[-1])),                     mock.patch.object(abvm, 'sb_stop', lambda n: calls.append('stop')),                     mock.patch.object(abvm, 'sb_remove', lambda n: shutil.rmtree(abvm.sb_host(n))):
+                os.makedirs(os.path.join(host, '_template'))
+                abvm.sb_new('sb1')
+                abvm.sb_stop('sb1')
+                abvm.sb_remove('sb1')
+                self.assertFalse(os.path.exists(os.path.join(host, 'sb1')))
+                abvm.sb_new('sb1')
+            self.assertTrue(os.path.isdir(os.path.join(host, 'sb1', 'System', 'Extensions', 'store', 'cache', 'pictures')))
+            self.assertTrue(os.path.isdir(os.path.join(host, 'sb1', 'Mods')))
 
 
 def write(path, text=''):
