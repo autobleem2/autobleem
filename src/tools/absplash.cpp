@@ -46,10 +46,20 @@ namespace {
 constexpr int SpinnerX = 640;
 constexpr int SpinnerY = 480;
 constexpr int PictureWidth = 1280;
+constexpr int PictureHeight = 720;
 
 bool fileExists(const std::string &path) {
     struct stat st;
     return stat(path.c_str(), &st) == 0;
+}
+
+// "<dir>/name.jpg" -> "<dir>/name-4x3.jpg"
+std::string crtTwin(const std::string &image) {
+    const size_t dot = image.find_last_of('.');
+    const size_t slash = image.find_last_of('/');
+    if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
+        return image + "-4x3";
+    return image.substr(0, dot) + "-4x3" + image.substr(dot);
 }
 
 int usage() {
@@ -62,6 +72,15 @@ int usage() {
 // x 398..1507, y 554, 14 thick)
 struct AnimRule {
     int x0 = 207, y = 513, x1 = 785, h = 13;
+    // the 4:3 picture (autobleem-4x3.jpg, the CRT mode's): the same rule, in a picture cut to the 4:3 centre
+    static AnimRule forPicture(int w, int h) {
+        AnimRule rule;
+        if (w * 3 <= h * 4) { // 4:3 or narrower
+            rule.x0 = 110;
+            rule.x1 = 880;
+        }
+        return rule;
+    }
 };
 
 // one frame of the sweep: a streak whose bright head runs left to right along the rule and fades behind it, the
@@ -146,6 +165,7 @@ int main(int argc, char **argv) {
     std::string image = argv[1];
     std::string untilExists, untilGone, themeDir, anim;
     AnimRule rule;
+    bool ruleGiven = false;
     double seconds = 0, timeout = 30;
     for (int i = 2; i + 1 < argc; i += 2) {
         std::string opt = argv[i], val = argv[i + 1];
@@ -164,6 +184,7 @@ int main(int argc, char **argv) {
         else if (opt == "--anim-at") {
             if (sscanf(val.c_str(), "%d,%d,%d,%d", &rule.x0, &rule.y, &rule.x1, &rule.h) != 4)
                 return usage();
+            ruleGiven = true;
         } else
             return usage();
     }
@@ -178,9 +199,17 @@ int main(int argc, char **argv) {
     GuiBase gui("absplash");
     gui.platform().setPowerOffHandler([]() {}); // the console's front buttons are not ours to act on
     Renderer &r = gui.renderer();
+    // the CRT 4:3 mode (a 720x480 window): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
+    // one place for every splash of the launcher, the emulator and App hand-overs, the update and the power-off
+    const Size shown = gui.platform().windowDisplaySize();
+    const std::string twin = crtTwin(image);
+    if (((shown.w == 720 && shown.h == 480) || (r.width() == 720 && r.height() == 480)) && fileExists(twin))
+        image = twin;
     Texture tex = Texture::loadFile(r, image);
     if (!tex.valid()) {
         PLOG_WARNING << "absplash: could not load " << image << " - black it is";
+    } else if (!ruleGiven) {
+        rule = AnimRule::forPicture(tex.size().w, tex.size().h);
     }
 
     // the theme's spinner, when a theme was named: its strip, or (none) the ring of dots
@@ -209,9 +238,13 @@ int main(int argc, char **argv) {
         }
         if (spin) {
             // the spinner scales with the picture: 64x64 logical at 1x, the same share of it at any size
-            const double k = static_cast<double>(dst.w) / PictureWidth;
-            const int cx = dst.x + static_cast<int>(std::lround(SpinnerX * k));
-            const int cy = dst.y + static_cast<int>(std::lround(SpinnerY * k));
+            // a 4:3 picture (the CRT mode's retroarch-4x3.jpg): the free spot under the lockup is the centre, 2/3 down;
+            // the size follows the picture's height (720 in the 16:9 one)
+            const bool fourThree = dst.w * 3 <= dst.h * 4;
+            const double k = fourThree ? static_cast<double>(dst.h) / PictureHeight
+                                       : static_cast<double>(dst.w) / PictureWidth;
+            const int cx = dst.x + (fourThree ? dst.w / 2 : static_cast<int>(std::lround(SpinnerX * k)));
+            const int cy = dst.y + (fourThree ? dst.h * 2 / 3 : static_cast<int>(std::lround(SpinnerY * k)));
             const unsigned int nowMs = gui.platform().ticks();
             drawSpinner(r, strip, nowMs, nowMs - startedMs, cx, cy, k);
         }

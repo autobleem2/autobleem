@@ -1,6 +1,6 @@
 # AutoBleem Occitan Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 1 / Total: 461
 
 (changed)=(modificat)
 (default)=(per defaut)
@@ -85,6 +85,7 @@ Cover style:=Estil cobèrtura :
 Crash logs:=Jornals del plantatge :
 Create, rename or manage memory card sets=Crear, renomenar o gerir de jòcs de cartas memòria
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=Fichièr CUE introbable
 Custom=Personalizada
@@ -432,6 +433,7 @@ Testing=Ensag
 The installer could not be started - it is in System/Updates=L'installador a pas pogut èsser aviat - es dins System/Updates
 The Store is not installed=Lo Store es pas installat
 The update is downloaded - the installer is opening...=La mesa a jorn es telecargada - l'installador se dobrís...
+Theme switched to the default (CRT 4:3)=
 Third-party extensions=Extensions tèrças
 This game is protected by its PSN licence and cannot be started=Aqueste jòc es protegit per sa licéncia PSN e se pòt pas aviar
 This PS1 emulator does not support swapping pads yet=Aqueste emulador PS1 pren pas encara en carga l'escambi dels manetas

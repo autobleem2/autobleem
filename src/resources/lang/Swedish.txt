@@ -1,6 +1,6 @@
 # AutoBleem Swedish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 461
 
 (changed)=(ändrad)
 (default)=(standard)
@@ -85,6 +85,7 @@ Cover style:=Omslagsstil:
 Crash logs:=Kraschloggar:
 Create, rename or manage memory card sets=Skapa, byt namn på eller hantera minneskortsuppsättningar
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-filen hittades inte
 Custom=Anpassad
@@ -432,6 +433,7 @@ Testing=Testning
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunde inte startas - det ligger i System/Updates
 The Store is not installed=Store är inte installerad
 The update is downloaded - the installer is opening...=Uppdateringen är nedladdad - installationsprogrammet öppnas...
+Theme switched to the default (CRT 4:3)=Tema ändrat till standardtemat (CRT 4:3)
 Third-party extensions=Tillägg från tredje part
 This game is protected by its PSN licence and cannot be started=Det här spelet skyddas av sin PSN-licens och kan inte startas
 This PS1 emulator does not support swapping pads yet=Den här PS1-emulatorn stöder ännu inte att byta handkontroller

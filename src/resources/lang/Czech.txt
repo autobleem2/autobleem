@@ -1,6 +1,6 @@
 # AutoBleem Czech Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 461
 
 (changed)=(změněno)
 (default)=(výchozí)
@@ -85,6 +85,7 @@ Cover style:=Styl obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvořit, přejmenovat nebo spravovat sady paměťových karet
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=Soubor CUE nenalezen
 Custom=Vlastní
@@ -432,6 +433,7 @@ Testing=Testování
 The installer could not be started - it is in System/Updates=Instalátor se nepodařilo spustit - je v System/Updates
 The Store is not installed=Store není nainstalován
 The update is downloaded - the installer is opening...=Aktualizace je stažena - otevírá se instalátor...
+Theme switched to the default (CRT 4:3)=Motiv změněn na výchozí (CRT 4:3)
 Third-party extensions=Rozšíření třetích stran
 This game is protected by its PSN licence and cannot be started=Tato hra je chráněna licencí PSN a nelze ji spustit
 This PS1 emulator does not support swapping pads yet=Tento emulátor PS1 zatím nepodporuje prohození ovladačů

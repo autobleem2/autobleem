@@ -1,6 +1,6 @@
 # AutoBleem Italiano Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 461
 
 (changed)=(modificato)
 (default)=(predefinito)
@@ -85,6 +85,7 @@ Cover style:=Stile delle cover:
 Crash logs:=Log del crash:
 Create, rename or manage memory card sets=Crea, rinomina o gestisci i set di memory card
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=File CUE non trovato
 Custom=Personalizza
@@ -432,6 +433,7 @@ Testing=Testing
 The installer could not be started - it is in System/Updates=Impossibile avviare l'installer - si trova in System/Updates
 The Store is not installed=Lo Store non è installato
 The update is downloaded - the installer is opening...=L'aggiornamento è stato scaricato - apertura dell'installer...
+Theme switched to the default (CRT 4:3)=Tema cambiato con quello predefinito (CRT 4:3)
 Third-party extensions=Estensioni di terze parti
 This game is protected by its PSN licence and cannot be started=Questo gioco è protetto dalla sua licenza PSN e non può essere avviato
 This PS1 emulator does not support swapping pads yet=Questo emulatore PS1 non supporta ancora lo scambio dei controller

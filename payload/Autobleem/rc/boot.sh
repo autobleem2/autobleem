@@ -28,7 +28,15 @@ bt "boot.sh started, Sony's UI killed"
 sh $RC/unpack_libs.sh
 bt "libraries unpacked to /tmp/lib"
 cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
+# the pictures on tmpfs, each with its 4:3 twin (<name>-4x3.jpg, 720x480 for the CRT mode) when the package has one:
+# absplash itself shows the twin when the window it opens is 720x480, so no script has to know the mode
+copy_pictures() {
+    for pic in "$@"; do
+        cp -f /media/Autobleem/bin/autobleem/splash/$pic.jpg /tmp/$pic.jpg
+        cp -f /media/Autobleem/bin/autobleem/splash/$pic-4x3.jpg /tmp/$pic-4x3.jpg 2>/dev/null
+    done
+}
+copy_pictures autobleem
 SPLASH_PID=/tmp/.absplash.pid
 show_splash() {
     # already up (the wake's or the return's picture): nothing to start - one on the screen at a time
@@ -109,19 +117,20 @@ bt "checkstick.sh done"
 $RC/ssh_keys.sh
 bt "ssh_keys.sh done"
 
-# Options -> Display: Weston's output mode, 720p (the firmware's) or 1080p. The console's HDMI driver reads no
-# EDID, so a client cannot switch modes: Weston is restarted with a CEA 1080p60 modeline from a RAM copy of its
+# Options -> Display: Weston's output mode, 720p (the firmware's), 1080p or 720x480 ("CRT 4:3": 480p, for a CRT
+# behind an HDMI converter). The console's HDMI driver reads no EDID, so a client cannot switch modes: Weston is
+# restarted with a CEA modeline (1080p60, 480p60) from a RAM copy of its
 # ini, bind-mounted over it - nothing on the console's own storage is written, and a reboot is the firmware's
 # 720p again. Run before every start of the launcher (the boot, after a standby, after the launcher left for a
 # new mode - AB_SELECTION 8), and only when the wanted mode differs from the running one (~3 s of black). The
 # wanted mode: the launcher's pending one (outputmode.pending in the runtime dir - being tried, the launcher asks
-# to keep it), else config.ini's outputmode; anything but 1080 is 720. The copy is rewritten in place (cat >),
+# to keep it), else config.ini's outputmode; anything but 1080 and 720x480 is 720. The copy is rewritten in place (cat >),
 # never replaced: the bind mount holds its inode.
 WESTON_INI=/etc/xdg/weston/weston.ini
 apply_output_mode() {
     want=$(cat "$AB_RUNTIME_DIR/outputmode.pending" 2>/dev/null | tr -d '\r' | head -1)
     [ -n "$want" ] || want=$(sed -n 's/^outputmode=//p' /media/System/config.ini 2>/dev/null | tr -d '\r' | tail -1)
-    [ "$want" = 1080 ] || want=720
+    case "$want" in 1080 | 720x480) ;; *) want=720 ;; esac
     have=$(cat /tmp/weston.mode 2>/dev/null)
     [ -n "$have" ] || have=720
     [ "$want" = "$have" ] && return
@@ -130,22 +139,26 @@ apply_output_mode() {
         cp -f /tmp/weston.orig.ini /tmp/weston.ini
         mount -o bind /tmp/weston.ini $WESTON_INI
     fi
-    if [ "$want" = 1080 ]; then
-        sed 's/^mode=1280x720$/mode=148.50 1920 2008 2052 2200 1080 1084 1089 1125 +hsync +vsync/' \
-            /tmp/weston.orig.ini > /tmp/weston.ini
+    case "$want" in
+        1080) modeline='148.50 1920 2008 2052 2200 1080 1084 1089 1125 +hsync +vsync' ;;
+        720x480) modeline='27.00 720 736 798 858 480 489 495 525 -hsync -vsync' ;; # CEA 480p60, VIC 2/3
+        *) modeline= ;;
+    esac
+    if [ -n "$modeline" ]; then
+        sed "s/^mode=1280x720\$/mode=$modeline/" /tmp/weston.orig.ini > /tmp/weston.ini
     else
         cat /tmp/weston.orig.ini > /tmp/weston.ini
     fi
-    echo "$(date) boot: Weston restarted in ${want}p (was ${have}p)" >> "$AB_LOG_DIR/display.log"
+    echo "$(date) boot: Weston restarted in ${want} (was ${have})" >> "$AB_LOG_DIR/display.log"
     # the picture's window dies with the compositor: stopped (our own pid), and shown again once Weston is back
     [ -s $SPLASH_PID ] && kill "$(cat $SPLASH_PID)" 2>/dev/null
     rm -f $SPLASH_PID
-    bt "Weston restart to ${want}p"
+    bt "Weston restart to ${want}"
     systemctl restart weston
     sleep 3
     echo "$want" > /tmp/weston.mode
     show_splash
-    bt "Weston back in ${want}p"
+    bt "Weston back in ${want}"
 }
 
 # The launcher, and after it whatever it asked for: selection.sh comes back (exit 0) after a standby or a
@@ -171,9 +184,7 @@ while true; do
     [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-    cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
-    cp -f /media/Autobleem/bin/autobleem/splash/updating.jpg /tmp/updating.jpg
-    cp -f /media/Autobleem/bin/autobleem/splash/poweroff.jpg /tmp/poweroff.jpg
+    copy_pictures autobleem updating poweroff
     cd /tmp
     sh /tmp/selection.sh || break
 done

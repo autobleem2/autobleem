@@ -1,6 +1,6 @@
 # AutoBleem Danish Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 461
 
 (changed)=(ændret)
 (default)=(standard)
@@ -85,6 +85,7 @@ Cover style:=Cover-stil:
 Crash logs:=Nedbrudslog:
 Create, rename or manage memory card sets=Opret, omdøb eller administrer memory card-sæt
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-filen blev ikke fundet
 Custom=Tilpasset
@@ -432,6 +433,7 @@ Testing=Test
 The installer could not be started - it is in System/Updates=Installationsprogrammet kunne ikke startes - det ligger i System/Updates
 The Store is not installed=Store er ikke installeret
 The update is downloaded - the installer is opening...=Opdateringen er hentet - installationsprogrammet åbnes...
+Theme switched to the default (CRT 4:3)=Tema skiftet til standardtemaet (CRT 4:3)
 Third-party extensions=Tredjepartsudvidelser
 This game is protected by its PSN licence and cannot be started=Dette spil er beskyttet af sin PSN-licens og kan ikke startes
 This PS1 emulator does not support swapping pads yet=Denne PS1-emulator understøtter endnu ikke ombytning af controllere
