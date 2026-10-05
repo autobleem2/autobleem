@@ -28,7 +28,17 @@ bt "boot.sh started, Sony's UI killed"
 sh $RC/unpack_libs.sh
 bt "libraries unpacked to /tmp/lib"
 cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
+# the launcher's picture on tmpfs (/tmp/autobleem.jpg, what every absplash call here and in selection.sh shows):
+# the 4:3 one (720x480, already stretched for the 480p output) while Weston runs the CRT 4:3 mode, else the 16:9 one
+pick_splash() {
+    pic=autobleem.jpg
+    if [ "$(cat /tmp/weston.mode 2>/dev/null)" = 720x480 ] &&
+        [ -f /media/Autobleem/bin/autobleem/splash/autobleem-4x3.jpg ]; then
+        pic=autobleem-4x3.jpg
+    fi
+    cp -f /media/Autobleem/bin/autobleem/splash/$pic /tmp/autobleem.jpg
+}
+pick_splash
 SPLASH_PID=/tmp/.absplash.pid
 show_splash() {
     # already up (the wake's or the return's picture): nothing to start - one on the screen at a time
@@ -149,6 +159,7 @@ apply_output_mode() {
     systemctl restart weston
     sleep 3
     echo "$want" > /tmp/weston.mode
+    pick_splash # the picture of the new mode
     show_splash
     bt "Weston back in ${want}"
 }
@@ -176,7 +187,7 @@ while true; do
     [ -f "$AB_RUNTIME_DIR/autobleem_exit" ] || echo $ab_sh_rc > "$AB_RUNTIME_DIR/autobleem_exit"
     cp -f $RC/selection.sh /tmp/selection.sh
     cp -f /media/Autobleem/bin/autobleem/absplash /tmp/absplash && chmod +x /tmp/absplash
-    cp -f /media/Autobleem/bin/autobleem/splash/autobleem.jpg /tmp/autobleem.jpg
+    pick_splash
     cp -f /media/Autobleem/bin/autobleem/splash/updating.jpg /tmp/updating.jpg
     cp -f /media/Autobleem/bin/autobleem/splash/poweroff.jpg /tmp/poweroff.jpg
     cd /tmp

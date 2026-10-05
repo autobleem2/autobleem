@@ -62,6 +62,15 @@ int usage() {
 // x 398..1507, y 554, 14 thick)
 struct AnimRule {
     int x0 = 207, y = 513, x1 = 785, h = 13;
+    // the 4:3 picture (autobleem-4x3.jpg, the CRT mode's): the same rule, in a picture cut to the 4:3 centre
+    static AnimRule forPicture(int w, int h) {
+        AnimRule rule;
+        if (w * 3 <= h * 4) { // 4:3 or narrower
+            rule.x0 = 110;
+            rule.x1 = 880;
+        }
+        return rule;
+    }
 };
 
 // one frame of the sweep: a streak whose bright head runs left to right along the rule and fades behind it, the
@@ -146,6 +155,7 @@ int main(int argc, char **argv) {
     std::string image = argv[1];
     std::string untilExists, untilGone, themeDir, anim;
     AnimRule rule;
+    bool ruleGiven = false;
     double seconds = 0, timeout = 30;
     for (int i = 2; i + 1 < argc; i += 2) {
         std::string opt = argv[i], val = argv[i + 1];
@@ -164,6 +174,7 @@ int main(int argc, char **argv) {
         else if (opt == "--anim-at") {
             if (sscanf(val.c_str(), "%d,%d,%d,%d", &rule.x0, &rule.y, &rule.x1, &rule.h) != 4)
                 return usage();
+            ruleGiven = true;
         } else
             return usage();
     }
@@ -181,6 +192,8 @@ int main(int argc, char **argv) {
     Texture tex = Texture::loadFile(r, image);
     if (!tex.valid()) {
         PLOG_WARNING << "absplash: could not load " << image << " - black it is";
+    } else if (!ruleGiven) {
+        rule = AnimRule::forPicture(tex.size().w, tex.size().h);
     }
 
     // the theme's spinner, when a theme was named: its strip, or (none) the ring of dots
