@@ -106,6 +106,7 @@ behind it:
 |---|---|---|
 | `app` | `Apps/<name>/` (`app.ini` + `startup`) | our catalog; a TSV line |
 | `ps1` | `Games/<title>/` (cue/bin, chd, pbp, img; the scan does the rest) | our catalog (homebrew and freeware); a TSV line |
+| `pe` (the "PE Apps" tab) | `Mods/<file>.mod` - the same place a user's own mod goes; the next scan makes the App (`Apps/pe-<name>/`) through the mods processor | our catalog (programs we build from public source); a TSV line |
 | later: `rom:<system>` | `RetroArch/roms/<system>/` (then the ROM scan writes the playlist) | TSV |
 | later: `theme` | `Themes/<name>/` (`ThemeInstaller`, as a dropped zip is today) | our catalog; TSV |
 
@@ -136,6 +137,17 @@ launcher's `app.cpp`. `repo_url` comes from the platform ini.
 - `requires` names something that must be installed first. The console's Apps need the libs pack in
   `Autobleem/lib/apps`, so `pack/psc-libs` maps to the existing `psc/libs/latest.json`.
 - A catalog item always carries a `sha256`.
+- `licence` (an SPDX id) and `source_url` are shown in the item's details (labels "Licence" and "Source code").
+  `source_url` is where the corresponding source of a GPL item is kept (an http(s) address; anything else is
+  dropped). It is **only shown, never downloaded**: the source archive is never in `files` (it would land on the
+  stick).
+- A `pe` item has one file, the `.mod` (a Debian archive of type `USB_MOD`). Installing moves it into `Mods/`
+  (renamed whole, or copied as `<name>.part` and renamed, so a scan never meets half a file) and asks the launcher
+  for a scan: the mods processor (`proc_pe`) turns it into an App exactly as it does for a package the user
+  dropped there by hand. Removing deletes the `.mod`, the Apps made from it (every `Apps/pe-*` whose `app.ini` says
+  `PeSource=<the file>`) and the processor's marker `Apps/.pe_state/<file>.ini`. An update installs the new `.mod` and
+  retires the old one; the processor replaces the App and keeps the player's files. The same package dropped in
+  `Mods/` by hand counts as installed.
 
 ### TSV sources (`StoreSourceTsv`)
 
@@ -152,6 +164,7 @@ app	Acme Player	https://acme.example/acme-player-psc.zip						1.2
 
 - **Columns are named by a header line** (the first non-comment line whose fields include `url`), so they
   come in any order and more can be added. Unknown columns are ignored.
+- The columns `author`, `licence` and `source_url` fill the details pane's "Author", "Licence" and "Source code".
 - **Without a header**, a line is `title<TAB>url[<TAB>size]`, `kind` is `ps1`, and a bare list of links
   works. This is our own format. It is not designed to be compatible with PSC Store's, and no file of
   theirs is used to test against (decision 5).
