@@ -1,6 +1,6 @@
 # AutoBleem Slovak Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 460
 
 (changed)=(zmenené)
 (default)=(predvolené)
@@ -85,6 +85,7 @@ Cover style:=Štýl obalu:
 Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvoriť, premenovať alebo spravovať sady pamäťových kariet
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=Súbor CUE sa nenašiel
 Custom=Vlastné

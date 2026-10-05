@@ -1,6 +1,6 @@
 # AutoBleem Chinese_Simplified Translation
 # Format: English Text=Translated Text
-# Untranslated: 0 / Total: 459
+# Untranslated: 0 / Total: 460
 
 (changed)=(已更改)
 (default)=(默认)
@@ -85,6 +85,7 @@ Cover style:=封面样式：
 Crash logs:=崩溃日志：
 Create, rename or manage memory card sets=创建、重命名或管理记忆卡组
 CRT (fast)=CRT (fast)
+CRT 4:3=CRT 4:3
 CRT-Pi=CRT-Pi
 Cue file not found=找不到CUE文件
 Custom=自定义
