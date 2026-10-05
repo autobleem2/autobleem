@@ -479,3 +479,67 @@ TEST_CASE(
         CHECK(ini.find(string("[") + name + "]\nskip=1\nreason=AutoBleem has its own App\n") != string::npos);
     CHECK(ini.find('\r') == string::npos);
 }
+
+TEST_CASE("pe_compat.ini sets no pad for any mod: every .mod gets the 2020 console pad, the original packages too") {
+    // the round-4 pad plan: one model for every App; a port that wants another layout changes its own config. A pad=
+    // line here would also reach the original 2020 package of the same launcher name (D2 of the plan).
+    string ini;
+    REQUIRE(DirEntry::readFile(string(AB_RC_DIR) + "/pe_compat.ini", ini));
+    for (const char *key : {"\npad=", "\ndpad2analog=", "\nanalog2dpad="}) {
+        INFO(key);
+        CHECK(ini.find(key) == string::npos);
+    }
+    // the one documented quirk: DraStic's own remap library, which the shim stands in for when the user picks psc
+    CHECK(ini.find("[drastic]\nremap=drastic_sdl_remap.so\n") != string::npos);
+}
+
+TEST_CASE("no cursor from a pad's touchpad: boot.sh puts the seat rule into /run and announces a connected pad again") {
+    string rule;
+    REQUIRE(DirEntry::readFile(string(AB_RC_DIR) + "/99-autobleem-pad-seat.rules", rule));
+    // every name hid-sony and hid-playstation give a pad's touchpad and motion-sensors node, and the seat libinput
+    // 1.4.1 reads (it skips a device whose ID_SEAT is not seat0)
+    for (const char *name : {"*Wireless Controller Touchpad", "*DualSense*Touchpad", "*DualShock*Touchpad",
+                             "*Wireless Controller Motion Sensors", "*DualSense*Motion Sensors"}) {
+        INFO(name);
+        CHECK(rule.find(name) != string::npos);
+    }
+    CHECK(rule.find("ENV{ID_SEAT}=\"seat-autobleem-none\"") != string::npos);
+    CHECK(rule.find('\r') == string::npos);
+    string boot;
+    REQUIRE(DirEntry::readFile(string(AB_RC_DIR) + "/boot.sh", boot));
+    CHECK(boot.find("sh $RC/pad_seat.sh") != string::npos);
+
+    if (!haveSh()) {
+        MESSAGE("no sh on this machine - pad_seat.sh is not run");
+        return;
+    }
+    // a fake sysfs: a DualSense's buttons, motion sensors and touchpad, and a mouse
+    TempDir tmp("pad_seat");
+    tmp.makeSubDir("rc");
+    for (const char *f : {"pad_seat.sh", "99-autobleem-pad-seat.rules"}) {
+        REQUIRE(DirEntry::copy(string(AB_RC_DIR) + "/" + f, tmp.at(string("rc/") + f)));
+    }
+    const pair<const char *, const char *> nodes[] = {{"event1", "DualSense Wireless Controller"},
+                                                      {"event2", "DualSense Wireless Controller Motion Sensors"},
+                                                      {"event3", "DualSense Wireless Controller Touchpad"},
+                                                      {"event4", "Logitech USB Optical Mouse"}};
+    for (const auto &node : nodes) {
+        tmp.makeSubDir(string("sys/") + node.first + "/device");
+        tmp.writeFile(string("sys/") + node.first + "/device/name", string(node.second) + "\n");
+        tmp.writeFile(string("sys/") + node.first + "/uevent", "");
+    }
+    tmp.writeFile("udevadm", "#!/bin/sh\necho \"$*\" >> \"$(dirname \"$0\")/udevadm.log\"\n");
+    const string r = slashes(tmp.path());
+    tmp.writeFile("driver.sh", "export AB_PAD_SEAT_RULES_DIR='" + r + "/run/udev/rules.d' AB_PAD_SEAT_SYSFS='" + r +
+                                   "/sys' AB_PAD_SEAT_UDEVADM='sh " + r + "/udevadm'\nsh '" + r + "/rc/pad_seat.sh'\n");
+    vector<string> lines = System::execUnixCommandLines("sh \"" + slashes(tmp.at("driver.sh")) + "\"");
+    CHECK(tmp.readFile("run/udev/rules.d/99-autobleem-pad-seat.rules") == rule);
+    CHECK(Strings::trim(tmp.readFile("udevadm.log")) == "control --reload-rules");
+    // the touchpad and the motion sensors are announced again ("remove", then "add" - the last write is what stays
+    // in the fake file); the pad's buttons and the mouse are not touched
+    CHECK(Strings::trim(tmp.readFile("sys/event2/uevent")) == "add");
+    CHECK(Strings::trim(tmp.readFile("sys/event3/uevent")) == "add");
+    CHECK(tmp.readFile("sys/event1/uevent").empty());
+    CHECK(tmp.readFile("sys/event4/uevent").empty());
+    CHECK(lines.size() == 2);
+}

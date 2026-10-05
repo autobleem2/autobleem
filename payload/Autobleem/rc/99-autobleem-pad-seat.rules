@@ -1,0 +1,8 @@
+# No mouse cursor from a pad's touchpad (the round-4 pad plan, D4). A DualShock 4 / DualSense also shows its touchpad
+# and its motion sensors as input devices; Weston (libinput 1.4.1 on the console) took the touchpad as a pointer and
+# drew a cursor over every App. That libinput does not know LIBINPUT_IGNORE_DEVICE and does not care that ID_INPUT_*
+# were cleared (the kernel payload's 99-autobleem-no-pointer.rules does both) - but it does skip a device whose
+# ID_SEAT is not its own seat (seat0). So these nodes get a seat nobody runs. SDL and abpadd do not read ID_SEAT.
+# rc/pad_seat.sh installs this file into /run/udev/rules.d at boot (tmpfs - nothing on the console's own storage) for a
+# kernel payload that does not carry the same line yet. A real USB mouse is left alone.
+ACTION!="remove", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="*Wireless Controller Touchpad|*DualSense*Touchpad|*DualShock*Touchpad|*Wireless Controller Motion Sensors|*DualSense*Motion Sensors|*DualShock*Motion Sensors", ENV{ID_SEAT}="seat-autobleem-none"

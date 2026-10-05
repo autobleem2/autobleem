@@ -54,9 +54,19 @@ RawPadState buildRawState(const VirtualLayout &layout, const ControllerState &co
 // still presses it
 constexpr int16_t TriggerFullPull = 32000;
 
+// a stick the X360 output passes on reads 0 until it is pushed this far from the centre (radially, both axes
+// together), and from there grows to full travel again - so a pad that rests a little off centre (a DualSense rests
+// up to a few percent off) is a stick at rest to the App, not a slow walk to one side. XInput's own left-stick
+// deadzone (7849), rounded. The console pad output needs none: it reads nothing inside half travel (the 2020 rule).
+constexpr int StickDeadzone = 8000;
+// the deadzone applied to one stick's two axes: inside it both are 0, outside the distance past it is rescaled to the
+// whole travel, the direction kept
+void applyStickDeadzone(int16_t &x, int16_t &y);
+
 // What the app's GameController API answers on a pad of this kind, from the physical pad's state, with the per-App
 // movement flags (`aid`: DpadToStick = Dpad2Analog, StickToDpad = Analog2Dpad).
-// X360: the state as it is, the d-pad and the stick standing in for each other as `aid` says.
+// X360: the state as it is, the d-pad and the stick standing in for each other as `aid` says (read from the pad as it
+// is), then each stick through applyStickDeadzone.
 // Psc: the console pad as the original remap made any pad into it (pad-mapping.md 1.1): the d-pad on the left stick's
 // two axes at their ends (-32768 / 32767 - the console pad's table reads its d-pad as leftx/lefty), a pushed left stick
 // feeding the same axes with its own value once past half travel (only with Analog2Dpad, which is on by default: the
