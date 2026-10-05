@@ -531,8 +531,8 @@ void GuiLauncher::pollPadBattery() {
     for (const PadBatteryAlert::Event &event : lowBatteryAlert.update(padBatteries)) {
         if (event.kind == PadBatteryAlert::Kind::Show) {
             const PadBatteryInfo &pad = padBatteries[event.index];
-            const string text = padBatteryLabels[event.index] + ": " + _("battery low") + " (" +
-                                to_string(pad.percent) + "%)";
+            const string text =
+                padBatteryLabels[event.index] + ": " + _("battery low") + " (" + to_string(pad.percent) + "%)";
             lowBatteryText[event.address] = text;
             notificationLines[1].setText(text, 0);
         } else {
