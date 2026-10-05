@@ -265,6 +265,43 @@ same size, played in a loop, centred where the ring is (in the busy frame and in
 then drawn exactly as before - a theme without `launcher.spinner` looks exactly as it did. What to draw: ab2.0.0's is
 24 frames of 64 x 64 (`images/spinner.png`, `@2x` 128 x 128 a frame) at 24 fps.
 
+### The 4:3 layout (`layout4x3`, CRT 480p)
+
+On a 4:3 output (width / height 1.5 or less - the "CRT 4:3" 720x480 mode) the launcher draws on a **640x480 canvas**
+of square pixels, which the renderer stretches 1.125x across the 720x480 output (pixel aspect 8:9) - a 4:3 screen shows
+it undistorted. A theme **supports 4:3 when its `theme.json` has a top-level `layout4x3` object** (the theme picker
+offers only those while the output is 4:3). A theme without one is drawn as on 720p, letterboxed at its own shape
+(720 x 360 at y 60). The classic screens and every menu (Options, the System menu, ...) stay letterboxed on any theme.
+
+```json
+"layout4x3": {
+  "images": { "background": "images/launcher_background_4x3.png" },
+  "carousel": { "centreX": 196, "centreY": 214, "coverMax": 146 },
+  "playButton": { "x": 130, "y": 300, "w": 132, "h": 45 }
+}
+```
+
+`images` names the 4:3 pictures (relative to the theme folder; a missing file falls back): `background` (640x480; none
+= the 16:9 background's middle), `footer` (none = no footer picture - the `hintBar` frame stands), `settingsPanel` (the
+band behind the menu row; none = the 16:9 one). Every other key is a number in 640x480 pixels, each optional - the
+launcher has its own 4:3 default for every one (ab2.0.0's values below), so `"layout4x3": {}` is a working 4:3 layout:
+
+| Block | Keys (ab2.0.0's value) |
+|---|---|
+| `logo` | the `launcher.logo` picture's box: `x` 14, `y` 12, `w` 158, `h` 38 (a `w` of 0 keeps the 16:9 box) |
+| `carousel` | the selected cover's centre `centreX` 196, `centreY` 214 and size `coverMax` 146; `raise` 58 (up for the open menu); the shelf of side covers `shelfY` 60, `shelfH` 76, `sideScale` 0.6 (of the 16:9 shelf's size and spacing), `sideCovers` 19 (per side: enough that the right one ends past the canvas's edge; a cover wholly off the canvas is not drawn) |
+| `playButton` | the `play` frame's box (the Play images' place and size on a theme without it): `x` 130, `y` 300, `w` 132, `h` 45 |
+| `meta` | the game's details: `x` 340, `y` 162, `yRaised` 162 (with the menu open - it stays clear of the raised cover), `w` 292, `h` 110 (never over a cover or its way to the shelf); fonts `titleSize` 21, `labelSize` 11, `valueSize` 14, `infoSize` 13 |
+| `arrow` | `x` 186, `y` 237, `w` 20 (the height follows the image) |
+| `menuRow` | the selected icon's left `x` 164, `y` 330 (closed) and `yOpen` 286, `icon` 65 (size), `gap` 24 (between icons) |
+| `menuCaption` | the open row's caption, centred on `x` 196: the name at `y` 372 in `size` 16, the line at `textY` 394 in `textSize` 13 |
+| `band` | the settings band behind the row: it ends at `bottom` 418, `closed` 60 / `open` 170 tall |
+| `hintBar` | `x` 8, `y` 418, `w` 624, `h` 58, `scale` 0.75 (the hints are laid out as on a bar 1/scale its size and drawn scaled into it) - the two hint lines and the `hintBar` frame (`launcher.hintBar` is the 16:9 one) |
+
+Kept out of `ThemeSpec` (no SDK change) and read from the theme's own `theme.json` only (`ableem::loadThemeLayout4x3`).
+The welcome card, the resume-slot picker and a `snapPanel` have no 4:3 design yet: on the 4:3 canvas they are drawn as
+on 1280x720 and letterboxed into it.
+
 
 ### The style block (`launcher.colors`' roles)
 
