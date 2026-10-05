@@ -37,7 +37,12 @@ vector<string> GuiOptions::getThemes() {
     for (const string &name : ThemeZipCache::listZipThemes(uiThemePath))
         list.push_back(name);
 
-    return list;
+    // in the CRT 4:3 mode only the themes with a 4:3 layout (a zip theme is not unpacked here: it has none to show)
+    return OutputMode::themesFor(OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]), list,
+                                 [&](const string &name) {
+                                     return ableem::ThemeSpec::supports4x3(uiThemePath + sep + name + sep +
+                                                                           "theme.json");
+                                 });
 }
 
 //*******************************
@@ -86,11 +91,12 @@ vector<string> GuiOptions::getTimeoutValues() {
 //*******************************
 // GuiOptions::getOutputModes
 //*******************************
-// The console: 720p or 1080p - Weston's mode, set by rc/boot.sh (its HDMI driver reads no EDID, so there is
-// nothing to list). Elsewhere: the display's own mode (auto) and every mode its EDID lists at 50 Hz or more.
+// The console: 720p, 1080p or 720x480 (CRT 4:3) - Weston's mode, set by rc/boot.sh (its HDMI driver reads no EDID,
+// so there is nothing to list). Elsewhere: the display's own mode (auto) and every mode its EDID lists at 50 Hz or
+// more; the CRT 4:3 mode, when it is listed, comes right after 720p and 1080p.
 vector<string> GuiOptions::getOutputModes() {
 #ifdef AB_PLATFORM_PSC
-    vector<string> list{"720", "1080"};
+    vector<string> list{"720", "1080", OutputMode::CrtToken()};
 #else
     vector<string> list{"auto"};
     for (const ableem::DisplayMode &m : ableem::Platform::displayModes()) {
@@ -99,6 +105,7 @@ vector<string> GuiOptions::getOutputModes() {
         mode.h = m.h;
         list.push_back(mode.token());
     }
+    list = OutputMode::placeCrt(list);
 #endif
     // "Auto (1080p)": the mode the window is in now (what Hardware Information shows), asked once here - never per
     // drawn frame; the desktop's own mode only when there is no window yet
@@ -299,8 +306,8 @@ void GuiOptions::init() {
     string &mode = app.config().inifile.values[OutputMode::ConfigKey];
     mode = OutputMode::parse(mode).token(); // "1920x1080" is "1080", as the row lists it
 #ifdef AB_PLATFORM_PSC
-    if (mode != "1080")
-        mode = "720"; // what rc/boot.sh runs Weston in for anything but 1080
+    if (mode != "1080" && mode != OutputMode::CrtToken())
+        mode = "720"; // what rc/boot.sh runs Weston in for anything but 1080 and the CRT mode
 #endif
     outputModeOnEntry = mode;
     newOutputMode.clear();
