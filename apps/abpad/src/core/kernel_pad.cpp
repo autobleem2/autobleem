@@ -249,4 +249,26 @@ EvdevFrame evdevFrame(VirtualPadKind kind, const RawPadState &raw) {
     return frame;
 }
 
+//*******************************
+// padPointerNodes
+//*******************************
+vector<string> padPointerNodes(const vector<InputNodeFacts> &nodes) {
+    vector<string> padGroups;
+    for (const InputNodeFacts &node : nodes) {
+        if (node.gamepad && !node.pointer && !node.group.empty() &&
+            find(padGroups.begin(), padGroups.end(), node.group) == padGroups.end()) {
+            padGroups.push_back(node.group);
+        }
+    }
+    vector<string> picked;
+    for (const InputNodeFacts &node : nodes) {
+        bool padsOwn = !node.group.empty() && find(padGroups.begin(), padGroups.end(), node.group) != padGroups.end();
+        bool notThePad = node.pointer || !node.gamepad; // the pad's own buttons stay the App's (the shim reads them)
+        if (padsOwn && notThePad && (node.pointer || node.motion)) {
+            picked.push_back(node.path);
+        }
+    }
+    return picked;
+}
+
 } // namespace abpad

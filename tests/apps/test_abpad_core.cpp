@@ -1075,3 +1075,42 @@ TEST_CASE("kernel pad: the console's own pad - two axes of 0..2 - reads as a d-p
     pad.setKey(0x132, 1); // BTN_C = b2 = Cross = A
     CHECK(applyMapping(mapping, pad.raw()).button(Element::A));
 }
+
+namespace {
+InputNodeFacts inputNode(const string &path, const string &group, bool gamepad, bool pointer, bool motion) {
+    InputNodeFacts node;
+    node.path = path;
+    node.group = group;
+    node.gamepad = gamepad;
+    node.pointer = pointer;
+    node.motion = motion;
+    return node;
+}
+} // namespace
+
+TEST_CASE("a pad's touchpad and motion sensors are held and hidden; its buttons, real mice and Reset are not") {
+    const string dualSense = "/sys/devices/platform/usb/1-1/0003:054C:0CE6.0001";
+    const string mouse = "/sys/devices/platform/usb/1-2/0003:046D:C077.0002";
+    const string keyboard = "/sys/devices/platform/usb/1-3/0003:046D:C534.0003";
+    // Reset; the pad's buttons, motion sensors and touchpad; a mouse; a keyboard's touchpad; our kernel pad; a pointer
+    // of no known physical device
+    const vector<InputNodeFacts> nodes = {
+        inputNode("/dev/input/event0", "/sys/devices/platform/gpio-keys", false, false, false),
+        inputNode("/dev/input/event1", dualSense, true, false, false),
+        inputNode("/dev/input/event2", dualSense, false, false, true),
+        inputNode("/dev/input/event3", dualSense, false, true, false),
+        inputNode("/dev/input/event4", mouse, false, true, false),
+        inputNode("/dev/input/event5", keyboard, false, true, false),
+        inputNode("/dev/input/event6", "/sys/devices/virtual/input/input9", true, false, false),
+        inputNode("/dev/input/event7", "", false, true, false),
+    };
+    CHECK(padPointerNodes(nodes) == vector<string>{"/dev/input/event2", "/dev/input/event3"});
+
+    // a pad without a touchpad or sensors (the console's own): nothing
+    CHECK(padPointerNodes({nodes[0], nodes[1]}).empty());
+    // a touchpad that also reports buttons in the joystick range is still a pointer, and taken
+    vector<InputNodeFacts> odd = {nodes[1], inputNode("/dev/input/event3", dualSense, true, true, false)};
+    CHECK(padPointerNodes(odd) == vector<string>{"/dev/input/event3"});
+    // no pad at all: a mouse stays the App's (and the compositor's)
+    CHECK(padPointerNodes({nodes[4]}).empty());
+}

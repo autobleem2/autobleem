@@ -494,6 +494,91 @@ vector<string> hiddenNodes(const vector<string> &heldEventPaths, const vector<st
 }
 
 //*******************************
+// inputNodeFacts / PointerHold / pointerNodesToHide
+//*******************************
+vector<InputNodeFacts> inputNodeFacts() {
+    vector<InputNodeFacts> facts;
+    for (const string &name : entriesOf("/sys/class/input")) {
+        if (name.compare(0, 5, "event") != 0) {
+            continue;
+        }
+        InputNodeFacts node;
+        node.path = "/dev/input/" + name;
+        string inputDir = inputDirOf(name);
+        node.group = inputDir.empty() ? string() : groupOfInputDir(inputDir);
+        int fd = ::open(node.path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd < 0) {
+            continue;
+        }
+        unsigned char keys[KEY_MAX / 8 + 1] = {};
+        unsigned char rel[REL_MAX / 8 + 1] = {};
+        unsigned char abs[ABS_MAX / 8 + 1] = {};
+        unsigned char props[INPUT_PROP_MAX / 8 + 1] = {};
+        ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keys)), keys);
+        ioctl(fd, EVIOCGBIT(EV_REL, sizeof(rel)), rel);
+        ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(abs)), abs);
+        ioctl(fd, EVIOCGPROP(sizeof(props)), props);
+        ::close(fd);
+        for (int code = BTN_JOYSTICK; code <= EvdevBtnGamepadLast && !node.gamepad; ++code) {
+            node.gamepad = testBit(keys, code);
+        }
+        node.pointer = testBit(rel, REL_X) || testBit(abs, EvdevAbsMtPositionX) || testBit(props, EvdevPropPointer);
+        node.motion = testBit(props, EvdevPropAccelerometer);
+        facts.push_back(node);
+    }
+    return facts;
+}
+
+PointerHold::~PointerHold() {
+    for (int fd : fds_) {
+        ioctl(fd, EVIOCGRAB, 0);
+        ::close(fd);
+    }
+}
+
+void PointerHold::grab(const vector<string> &eventPaths, const vector<string> &ownPaths) {
+    for (const string &path : eventPaths) {
+        if (contains(ownPaths, path) || contains(paths_, path)) {
+            continue;
+        }
+        int fd = ::open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+        if (fd < 0) {
+            continue;
+        }
+        if (ioctl(fd, EVIOCGRAB, 1) == 0) {
+            fds_.push_back(fd);
+            paths_.push_back(path);
+        } else {
+            ::close(fd); // held already (a hidapi pad's siblings): silent either way
+        }
+    }
+}
+
+vector<string> pointerNodesToHide(const vector<string> &eventPaths) {
+    vector<string> nodes;
+    vector<string> inputs;
+    for (const string &path : eventPaths) {
+        string inputDir = inputDirOf(baseNameOf(path));
+        if (!inputDir.empty() && !contains(inputs, inputDir)) {
+            inputs.push_back(inputDir);
+        }
+    }
+    if (!inputs.empty()) {
+        for (const string &name : entriesOf("/sys/class/input")) {
+            if (name.compare(0, 5, "event") != 0 && name.compare(0, 2, "js") != 0 && name.compare(0, 5, "mouse") != 0) {
+                continue;
+            }
+            if (contains(inputs, inputDirOf(name))) {
+                addNode(nodes, "/dev/input/" + name, "/sys/class/input/" + name + "/dev");
+            }
+        }
+    }
+    // every mouse at once, a pad's touchpad included: no App of ours reads a mouse from here
+    addNode(nodes, "/dev/input/mice", "/sys/class/input/mice/dev");
+    return nodes;
+}
+
+//*******************************
 // runHidden
 //*******************************
 int runHidden(const string &listFile, char **argv) {

@@ -101,6 +101,26 @@ private:
 };
 
 //*******************************
+// PointerHold - a pad's touchpad and motion sensors, held in every App mode (core: padPointerNodes)
+//*******************************
+// inputNodeFacts: every /dev/input/eventN with what padPointerNodes needs to know of it. PointerHold grabs the nodes
+// it is given (not our own, not one held already), so the compositor gets no pointer from a pad's touchpad, and
+// pointerNodesToHide lists, for the App's start, each one's own nodes (the event node, the mouseN the kernel made for
+// it, their udev entries) plus /dev/input/mice - not the pad's buttons, which the shim's App still reads.
+std::vector<InputNodeFacts> inputNodeFacts();
+class PointerHold {
+public:
+    ~PointerHold();
+    void grab(const std::vector<std::string> &eventPaths, const std::vector<std::string> &ownPaths);
+    const std::vector<std::string> &paths() const { return paths_; }
+
+private:
+    std::vector<int> fds_;
+    std::vector<std::string> paths_;
+};
+std::vector<std::string> pointerNodesToHide(const std::vector<std::string> &eventPaths);
+
+//*******************************
 // Hiding the real pads from the App (the kernel pad mode)
 //*******************************
 // A grab silences a node but leaves it in view: the App still enumerates it - as joystick 0 ahead of the virtual pad,
