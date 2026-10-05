@@ -43,6 +43,7 @@ const char *const FakeLaunch =
     "echo \"pwd=$(pwd -P)\" >> $OUT\n"
     "echo \"project_eris_path=$PROJECT_ERIS_PATH\" >> $OUT\n"
     "echo \"mountpoint=$MOUNTPOINT\" >> $OUT\n"
+    "echo \"app_title=$PE_APP_TITLE\" >> $OUT\n"
     "echo \"log_path=$RUNTIME_LOG_PATH\" >> $OUT\n"
     "echo \"selected_theme=$SELECTED_THEME\" >> $OUT\n"
     "echo \"bin=$(ls \"$PROJECT_ERIS_PATH/bin\" | tr '\\n' ' ')\" >> $OUT\n"
@@ -136,6 +137,7 @@ TEST_CASE("pe_run.sh builds the environment, runs the mod's launch.sh unchanged,
     CHECK((path == root + "/media/project_eris" || path == root + "/pe/project_eris"));
     CHECK(pe.out("pwd") == slashes(pe.tmp.at("Apps/pe-demo"))); // launchtmp is the App's folder
     CHECK(pe.out("mountpoint") == "/media");
+    CHECK(pe.out("app_title") == "Demo Game"); // app.ini's Title: the text screen's title
     CHECK(pe.out("log_path") == root + "/rt/logs/pe");
     CHECK(pe.out("selected_theme") == "modmyclassic");
     CHECK(pe.out("bin") == "sdl_display sdl_input_text_display sdl_text_display ");

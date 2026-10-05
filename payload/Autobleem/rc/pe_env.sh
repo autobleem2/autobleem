@@ -108,6 +108,11 @@ pe_unmount_stale() {
 pe_prepare() {
     PE_FILENAME=$(pe_cfg_get "$AB_APP_DIR/launcher.cfg" launcher_filename)
     [ -n "$PE_FILENAME" ] || PE_FILENAME=$(basename "$AB_APP_DIR" | sed 's/^pe-//')
+    # the App's name, which the dialogs' text screen carries as its title: app.ini's Title (or Name), else the mod's
+    # launcher_title; none = the screen says "Message"
+    PE_APP_TITLE=$(sed -n 's/^[[:space:]]*[Tt][Ii][Tt][Ll][Ee][[:space:]]*=[[:space:]]*//p;s/^[[:space:]]*[Nn][Aa][Mm][Ee][[:space:]]*=[[:space:]]*//p' "$AB_APP_DIR/app.ini" 2>/dev/null | head -n 1 | tr -d '\r')
+    [ -n "$PE_APP_TITLE" ] || PE_APP_TITLE=$(pe_cfg_get "$AB_APP_DIR/launcher.cfg" launcher_title)
+    export PE_APP_TITLE
     PE_LAUNCHTMP=$PE_VOLATILE/launchtmp
     PE_MOUNTED=
     PE_APP_BOUND=

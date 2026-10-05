@@ -70,7 +70,9 @@ class TextDisplay : public abgui::TextPage {
 public:
     TextDisplay(ableem::GuiBase &gui, abgui::Context &context, string commandFile)
         : abgui::TextPage(gui, context), file_(std::move(commandFile)) {
-        title = _("Message");
+        // the App's name (rc/pe_env.sh exports it); without one, the word
+        const char *app = getenv("PE_APP_TITLE");
+        title = app && *app ? string(app) : _("Message");
         reload();
     }
 
