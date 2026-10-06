@@ -98,7 +98,8 @@ vector<string> GuiOptions::getOutputModes() {
     vector<string> list{"720", "1080", OutputMode::CrtToken()};
 #else
     vector<string> list{"auto"};
-    for (const ableem::DisplayMode &m : ableem::Platform::displayModes()) {
+    const vector<ableem::DisplayMode> modes = ableem::Platform::displayModes();
+    for (const ableem::DisplayMode &m : modes) {
         OutputMode mode;
         mode.w = m.w;
         mode.h = m.h;
@@ -106,9 +107,15 @@ vector<string> GuiOptions::getOutputModes() {
     }
     list = OutputMode::placeCrt(list);
 #endif
-    // "Auto (1080p)": the mode the window is in now (what Hardware Information shows), asked once here - never per
-    // drawn frame; the desktop's own mode only when there is no window yet
-    ableem::Size desktop = gui->platform().windowDisplaySize();
+    // "Auto (1080p)": the mode Auto would really pick - the display's own, its biggest listed one - and not the one
+    // the window runs in now (800x600 after a live switch); asked once here, never per drawn frame. No list (the
+    // console, which has none): the window's mode, else the desktop's
+    ableem::Size desktop;
+#ifndef AB_PLATFORM_PSC
+    desktop = ableem::Platform::largestMode(modes);
+#endif
+    if (desktop.w <= 0 || desktop.h <= 0)
+        desktop = gui->platform().windowDisplaySize();
     if (desktop.w <= 0 || desktop.h <= 0)
         desktop = ableem::Platform::desktopDisplaySize();
     OutputMode own;
