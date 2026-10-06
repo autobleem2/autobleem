@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
     GuiBase gui("absplash", GuiBase::ScreenWidth, GuiBase::ScreenHeight, 1.0f, 0, fullscreen);
     gui.platform().setPowerOffHandler([]() {}); // the console's front buttons are not ours to act on
     Renderer &r = gui.renderer();
-    // the CRT 4:3 mode (a 720x480 window): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
+    // a 4:3 output (720x480, 640x480, 1024x768 ...): the picture's 4:3 twin, <name>-4x3.<ext> next to it, when there is one -
     // one place for every splash of the launcher, the emulator and App hand-overs, the update and the power-off
     const Size shown = gui.platform().windowDisplaySize();
     const Size window = gui.platform().windowSize();
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
     // the CRT's safe area: the whole picture (and the spinner) go inside the margin the launcher's Options keep
     r.setSafeMargin(crtOutput ? crtMarginFromConfig() : 0);
     bool useTwin = false;
-    if ((crtOutput || (r.width() == 720 && r.height() == 480)) && fileExists(twin)) {
+    if ((crtOutput || r.fourByThreeOutput()) && fileExists(twin)) { // every 4:3 output, square pixels or not
         image = twin;
         useTwin = true;
     }
@@ -332,7 +332,7 @@ int main(int argc, char **argv) {
             const int cy = dst.y + (fourThree ? dst.h * 82 / 100 : static_cast<int>(std::lround(SpinnerY * k)));
             const unsigned int nowMs = gui.platform().ticks();
             drawSpinner(r, strip, spinLayer, nowMs, nowMs - startedMs, cx, cy, k,
-                        fillCanvas ? 8.0 / 9.0 : 1.0); // pixel aspect 8:9 of the 640x480 canvas on 720x480
+                        fillCanvas && crtOutput ? 8.0 / 9.0 : 1.0); // pixel aspect 8:9 of the 640x480 canvas on 720x480 only
         }
         if (sweep)
             drawSweep(r, dst, rule, gui.platform().ticks() - startedMs);

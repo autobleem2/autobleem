@@ -411,9 +411,17 @@ int AutoBleem::run() {
     DirEntry::removeFile(OutputMode::pendingFile());
     const bool leaveForDisplay = false;
 #endif
-    // the CRT 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use
-    if (!leaveForDisplay)
-        useDefaultThemeFor(OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]));
+    // a 4:3 mode config.ini already holds (a theme installed or chosen since): no confirm - it is in use. "auto" is
+    // the window the display gave (a 4:3 monitor on a Pi or a PC stick)
+    if (!leaveForDisplay) {
+        OutputMode inUse = OutputMode::parse(cfg_.inifile.values[OutputMode::ConfigKey]);
+        if (inUse.isAuto()) {
+            const ableem::Size window = gui_->platform().windowSize();
+            inUse.w = window.w;
+            inUse.h = window.h;
+        }
+        useDefaultThemeFor(inUse);
+    }
 
     if (!gameLibrary.metadata().hasRdb() && !gameLibrary.covers().hasAnyRegion()) {
         // was ClassicMenuScreen::init()'s check; still worth stopping for before anything else runs, since
