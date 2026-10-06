@@ -78,7 +78,7 @@ A plugin, `Extensions/<name>/` with an `extension.ini`, run from the System menu
 launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-main
 `docs/history/launcher-extensions.md`.
 
-- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 9, since 2026-10-05)
+- **ABI**: `AB_SDK_STAMP` in `gui/extension.h`, a macro on purpose. Bump `AB_SDK_ABI` (currently 10, since 2026-10-05)
   whenever the layout of a class, or the signature of a function, an extension may use changes. **AB_SDK_ABI 4**
   (2026-09-26): `Extension::runEntry(entry)` - extensions can be opened at a named entry point, e.g. `"network"`
   for the Network & Controllers hub; `extension.ini`'s `Provides=` lists them; `ExtensionCatalog::findProvider(entry)`
@@ -97,6 +97,9 @@ launcher (hidden visibility, plog chaining) and the ABI history -> autobleem-mai
   changed); the Store and PSC-Bios must be rebuilt.
   **AB_SDK_ABI 9** (2026-10-05): `ableem::StoreItem` gained `sourceUrl` (PE Apps in the Store; the Store builds the
   items itself); the Store and PSC-Bios must be rebuilt.
+  **AB_SDK_ABI 10** (2026-10-05): `ExtensionHost::requestRescan(ScanScope)` - the scan covers only what changed
+  (`core/model/scan_scope.h`: Apps, Mods, PS1, ROMs; `ScanService::requestScan(scope)`, the watcher's `checkForChanges()` returns
+  the changed trees); the Store and PSC-Bios must be rebuilt.
   **`tools/lang_tools.py extract`** also scans autobleem-core's `ab_gui/` for `translate("...")` (the widgets hand
   their English to `_()` that way), so `update --remove-obsolete` keeps those keys.
 

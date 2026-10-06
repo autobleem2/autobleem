@@ -23,9 +23,9 @@ public:
     LauncherExtensionHost(App &app, const ExtensionInfo &extension)
         : ExtensionHostBase(app, extension, Env::getPathToExtensionsStateDir()), launcher(app) {}
 
-    void requestRescan() override {
-        PLOG_INFO << "[" << name() << "] asked for a rescan";
-        launcher.scans().requestScan();
+    void requestRescan(ScanScope scope) override {
+        PLOG_INFO << "[" << name() << "] asked for a rescan, scope " << scope;
+        launcher.scans().requestScan(scope);
     }
     void reloadApps() override { launcher.extensionRequests().reloadApps = true; }
     void reloadConfig() override { launcher.extensionRequests().reloadConfig = true; }
