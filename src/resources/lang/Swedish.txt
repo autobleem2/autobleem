@@ -297,6 +297,7 @@ P2=P2
 Page=Sida
 pcsx.cfg file not found=pcsx.cfg hittades inte
 Persist RetroArch config:=Behåll RetroArch-inställningar:
+Picture height:=Bildhöjd:
 Platform=Plattform
 Play=Spela
 Play all PSX games with RA:=Spela alla PSX-spel med RA:

@@ -297,6 +297,7 @@ P2=P2
 Page=Sayfa
 pcsx.cfg file not found=pcsx.cfg dosyası bulunamadı
 Persist RetroArch config:=RetroArch ayarlarını koru:
+Picture height:=Görüntü yüksekliği:
 Platform=Platform
 Play=Oyna
 Play all PSX games with RA:=Tüm PSX oyunlarını RA ile oyna:

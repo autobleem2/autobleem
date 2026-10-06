@@ -297,6 +297,7 @@ P2=P2
 Page=Strana
 pcsx.cfg file not found=Súbor pcsx.cfg sa nenašiel
 Persist RetroArch config:=Uchovať nastavenia RetroArch:
+Picture height:=Výška obrazu:
 Platform=Platforma
 Play=Hrať
 Play all PSX games with RA:=Hrať všetky PSX hry cez RA:

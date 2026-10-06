@@ -297,6 +297,7 @@ P2=P2
 Page=页
 pcsx.cfg file not found=找不到pcsx.cfg文件
 Persist RetroArch config:=保存RetroArch配置：
+Picture height:=画面高度:
 Platform=平台
 Play=开始
 Play all PSX games with RA:=所有 PSX 游戏用 RA 运行：

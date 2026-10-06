@@ -297,6 +297,7 @@ P2=P2
 Page=Pagina
 pcsx.cfg file not found=pcsx.cfg niet gevonden
 Persist RetroArch config:=RetroArch-configuratie bewaren:
+Picture height:=Beeldhoogte:
 Platform=Platform
 Play=Spelen
 Play all PSX games with RA:=Speel alle PSX games met RA:
