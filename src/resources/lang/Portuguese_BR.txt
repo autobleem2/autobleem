@@ -86,6 +86,7 @@ Crash logs:=Logs da falha:
 Create, rename or manage memory card sets=Crie, renomeie ou gerencie conjuntos de cartões de memória
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=Margem CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Arquivo CUE não encontrado
 Custom=Person.

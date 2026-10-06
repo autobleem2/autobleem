@@ -141,6 +141,10 @@ void GuiOptions::fill() {
     // screen (a dev host's window has no mode to change)
     if (Gui::fullscreen())
         lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
+    // the CRT's safe area (overscan): only while the CRT 4:3 mode runs; applied at once
+    if (Gui::fullscreen() && OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]).isCrt())
+        lines.emplace_back(CFG_CRT_MARGIN, _("CRT margin:"), OutputMode::MarginKey, false,
+                           vector<string>({"0", "5", "8", "10"}));
     // how the PS1 emulator fits a game's picture to the screen: the emulator's own menu's Scaler (pcsx-abnxt's
     // g_scaler, AB_SCALER); the classic pcsx-ab and RetroArch know only full and 4:3 (LaunchService). Under the
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
@@ -358,6 +362,8 @@ std::string GuiOptions::valueText(const OptionsInfo &info, const std::string &va
             return mode.label();
         return autoLabel;
     }
+    if (info.id == CFG_CRT_MARGIN)
+        return value + "%";
     if (info.id == CFG_SCALER) { // the emulator menu's names, shortened: "integer scaled 2x" is "2x (integer)"
         if (value == "2x")
             return _("2x (integer)");
@@ -396,6 +402,8 @@ void GuiOptions::reloadFor(int id, const string &nextValue) {
         Env::setKeepLogsMarker(nextValue == "true"); // what the rc scripts look at, from the next boot
     if (id == CFG_PERFOVERLAY)
         renderer.setPerfOverlay(nextValue == "true"); // at once, from the next frame
+    if (id == CFG_CRT_MARGIN)
+        renderer.setSafeMargin(OutputMode::crtMargin(nextValue)); // at once, from the next frame
     const bool theme = id == CFG_THEME || id == CFG_MUSIC || id == CFG_ENABLE_BACKGROUND_MUSIC;
     const bool fonts = id == CFG_LANG || id == CFG_THEME_FONT || (id == CFG_FONT && userFontInUse());
     if (!theme && !fonts)

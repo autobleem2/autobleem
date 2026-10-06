@@ -86,6 +86,7 @@ Crash logs:=Journaux du plantage :
 Create, rename or manage memory card sets=Créer, renommer ou gérer des jeux de cartes mémoire
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=Marge CRT :
 CRT-Pi=CRT-Pi
 Cue file not found=Fichier CUE introuvable
 Custom=Personnalisée

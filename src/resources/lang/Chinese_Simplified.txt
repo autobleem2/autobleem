@@ -86,6 +86,7 @@ Crash logs:=崩溃日志：
 Create, rename or manage memory card sets=创建、重命名或管理记忆卡组
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=CRT 边距:
 CRT-Pi=CRT-Pi
 Cue file not found=找不到CUE文件
 Custom=自定义

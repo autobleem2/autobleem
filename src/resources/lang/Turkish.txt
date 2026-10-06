@@ -86,6 +86,7 @@ Crash logs:=Çökme günlükleri:
 Create, rename or manage memory card sets=Hafıza kartı setleri oluştur, yeniden adlandır veya yönet
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=CRT kenar boşluğu:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE dosyası bulunamadı
 Custom=Özel

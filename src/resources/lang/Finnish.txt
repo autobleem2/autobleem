@@ -86,6 +86,7 @@ Crash logs:=Kaatumislokit:
 Create, rename or manage memory card sets=Luo, nimeä uudelleen tai hallitse muistikorttisarjoja
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=CRT-reunus:
 CRT-Pi=CRT-Pi
 Cue file not found=CUE-tiedostoa ei löytynyt
 Custom=Mukautettu

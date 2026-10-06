@@ -86,6 +86,7 @@ Crash logs:=Jurnale eroare:
 Create, rename or manage memory card sets=Creeaza, redenumeste sau gestioneaza seturi de carduri de memorie
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=Margine CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Fișierul CUE nu a fost găsit
 Custom=Personalizat

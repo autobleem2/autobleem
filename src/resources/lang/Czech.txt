@@ -86,6 +86,7 @@ Crash logs:=Logy pádu:
 Create, rename or manage memory card sets=Vytvořit, přejmenovat nebo spravovat sady paměťových karet
 CRT (fast)=CRT (fast)
 CRT 4:3=CRT 4:3
+CRT margin:=Okraj CRT:
 CRT-Pi=CRT-Pi
 Cue file not found=Soubor CUE nenalezen
 Custom=Vlastní

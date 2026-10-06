@@ -34,7 +34,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cctype>
 #include <cstdlib>
+#include <fstream>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -61,6 +63,30 @@ std::string crtTwin(const std::string &image) {
     if (dot == std::string::npos || (slash != std::string::npos && dot < slash))
         return image + "-4x3";
     return image.substr(0, dot) + "-4x3" + image.substr(dot);
+}
+
+// config.ini's "crtmargin" (the launcher writes "Crtmargin="; any case, CRLF-safe) - the CRT safe margin in percent per
+// side, DefaultSafeMargin when there is none. The file is <AB_ROOT or /media>/Autobleem/bin/autobleem/config.ini, the
+// launcher's own; this tool runs from tmpfs, so it cannot find it by its own place.
+int crtMarginFromConfig() {
+    const char *root = std::getenv("AB_ROOT");
+    std::ifstream in(std::string(root && *root ? root : "/media") + "/Autobleem/bin/autobleem/config.ini");
+    std::string line;
+    int margin = DefaultSafeMargin;
+    while (std::getline(in, line)) {
+        while (!line.empty() && (line.back() == '\r'))
+            line.pop_back();
+        const size_t eq = line.find('=');
+        if (eq == std::string::npos)
+            continue;
+        std::string key = line.substr(0, eq);
+        for (char &c : key)
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        const std::string value = line.substr(eq + 1);
+        if (key == "crtmargin" && !value.empty() && value.find_first_not_of("0123456789") == std::string::npos)
+            margin = clampSafeMargin(std::atoi(value.c_str()));
+    }
+    return margin;
 }
 
 int usage() {
@@ -239,13 +265,15 @@ int main(int argc, char **argv) {
     const Size window = gui.platform().windowSize();
     const std::string twin = crtTwin(image);
     const bool crtOutput = (window.w == 720 && window.h == 480) || (shown.w == 720 && shown.h == 480);
+    // the CRT's safe area: the whole picture (and the spinner) go inside the margin the launcher's Options keep
+    r.setSafeMargin(crtOutput ? crtMarginFromConfig() : 0);
     bool useTwin = false;
     if ((crtOutput || (r.width() == 720 && r.height() == 480)) && fileExists(twin)) {
         image = twin;
         useTwin = true;
     }
     Texture tex = Texture::loadFile(r, image);
-    PLOG_INFO << "absplash: window " << window.w << "x" << window.h << ", display mode " << shown.w << "x" << shown.h
+    PLOG_INFO << "absplash: safe margin " << r.safeMargin() << "%, window " << window.w << "x" << window.h << ", display mode " << shown.w << "x" << shown.h
               << ", canvas " << r.width() << "x" << r.height() << ", 4:3 output " << (r.fourByThreeOutput() ? "yes" : "no")
               << ", picture " << image << " " << (tex.valid() ? tex.size().w : 0) << "x"
               << (tex.valid() ? tex.size().h : 0) << (useTwin ? " (the 4:3 twin)" : "");
