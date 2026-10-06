@@ -71,6 +71,25 @@ inline std::string elide(const std::string &text, int width, const Measure &meas
 }
 
 //******************
+// clipChars
+//******************
+// `text` cut to `max` characters (whole UTF-8 characters) with "..." in place of the rest: for a facts page, whose
+// labels and header are not elided by the page and whose font the code cannot measure
+inline std::string clipChars(const std::string &text, size_t max) {
+    size_t chars = 0, end = 0;
+    std::vector<size_t> starts;
+    for (size_t i = 0; i < text.size(); i++)
+        if ((static_cast<unsigned char>(text[i]) & 0xC0) != 0x80) {
+            starts.push_back(i);
+            chars++;
+        }
+    if (chars <= max)
+        return text;
+    end = max > 3 ? starts[max - 3] : 0;
+    return text.substr(0, end) + "...";
+}
+
+//******************
 // secondLine
 //******************
 // "<package title> (<source label>) - <kind name>" on one line: when it is too wide the kind goes first, then the

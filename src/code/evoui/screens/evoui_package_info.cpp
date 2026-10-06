@@ -10,6 +10,8 @@
 using namespace std;
 
 namespace {
+const size_t LabelChars = 26;     // a label is not elided by the page: it is cut here, so it never meets its value
+const size_t TitleChars = 40;     // the header likewise
 const size_t MaxReadmeLines = 24; // the readme's first lines: the page is a summary, not a reader
 
 // the readme's non-blank lines, the first MaxReadmeLines of them, each trimmed
@@ -38,6 +40,13 @@ string locationOf(const string &root) {
 } // namespace
 
 //*******************************
+// GuiPackageInfo::title
+//*******************************
+string GuiPackageInfo::title() {
+    return packagepicker::clipChars(package.title, TitleChars);
+}
+
+//*******************************
 // GuiPackageInfo::init
 //*******************************
 void GuiPackageInfo::init() {
@@ -52,7 +61,7 @@ vector<abgui::FactsSection> GuiPackageInfo::build() const {
     vector<abgui::FactsSection> out;
 
     abgui::FactsSection facts;
-    facts.title = package.title;
+    facts.title = packagepicker::clipChars(package.title, TitleChars);
     if (!package.version.empty())
         facts.rows.push_back({_("Version"), package.version});
     if (!package.licence.empty())
@@ -69,7 +78,9 @@ vector<abgui::FactsSection> GuiPackageInfo::build() const {
     }
     for (const PackageGame &game : package.games)
         contents.rows.push_back(
-            {game.variant.empty() ? game.title : game.title + " (" + game.variant + ")", packageKindLabel(game.kind)});
+            {packagepicker::clipChars(game.variant.empty() ? game.title : game.title + " (" + game.variant + ")",
+                                      LabelChars),
+             packageKindLabel(game.kind)});
     out.push_back(contents);
 
     abgui::FactsSection about;

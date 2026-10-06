@@ -121,9 +121,10 @@ bool GuiLauncher::chooseGameData(const PsGamePtr &game) {
         message.label = _("%1 needs game data it can run: %2.");
         message.label.replace(message.label.find("%1"), 2, game->title);
         message.label.replace(message.label.find("%2"), 2, kinds);
-        message.label += "\n\n" + _("Put the game's files into the Packages folder on the stick (for example "
-                                    "Packages/Doom/DOOM2.WAD), or get a package from the Store. Your own files are "
-                                    "only read, never changed.");
+        // one paragraph: the dialog's wrapper has no line breaks
+        message.label += " " + _("Put the game's files into the Packages folder on the stick (for example "
+                                 "Packages/Doom/DOOM2.WAD), or get a package from the Store. Your own files are "
+                                 "only read, never changed.");
         message.confirmLabel = _("OK");
         message.cancelLabel = _("Back");
         BackdropScope backdrop(*this);

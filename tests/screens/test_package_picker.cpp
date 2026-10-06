@@ -67,6 +67,15 @@ TEST_CASE("elide: whole characters, one line, the ellipsis only when something w
     CHECK(elide("anything", 0, tenPerChar) == "anything"); // no width known: as it is
 }
 
+TEST_CASE("clipChars: whole characters, the dots count, nothing cut when it fits") {
+    CHECK(clipChars("short", 26) == "short");
+    CHECK(clipChars("exactly ten", 11) == "exactly ten");
+    CHECK(clipChars("abcdefghijklmnop", 10) == "abcdefg...");
+    CHECK(clipChars("zażółć gęślą jaźń", 10) == "zażółć ...");
+    CHECK(clipChars("abc", 2) == "...");
+    CHECK(clipChars("", 5) == "");
+}
+
 TEST_CASE("the second line: package, source and kind; the kind goes first, then the package title shortens") {
     // 16:9: plenty of room for all three
     CHECK(secondLine("Freedoom", "Store", "Doom data", 600, tenPerChar) == "Freedoom (Store) - Doom data");

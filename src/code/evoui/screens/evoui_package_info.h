@@ -21,7 +21,7 @@ public:
     void init() override;
 
 protected:
-    std::string title() override { return package.title; }
+    std::string title() override;
     std::vector<abgui::FactsSection> collect() override { return sections; }
 
 private:
