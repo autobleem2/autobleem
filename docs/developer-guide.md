@@ -630,7 +630,10 @@ folders) in its `app.ini`, and the launcher joins them when it starts.
   real copy") and the player's read-only `Packages/packages.ini`. `package_service.*` scans `Packages/` into an
   index **held in RAM only** (nothing is written or created by a scan - the quiet stick; a missing `Packages/` is an
   empty index) and answers `entriesFor(AppManifest)`: the games an engine can run, ordered by the kind's place in
-  `Uses=`, then the title. `PackageInstaller` (`content_installer.*`) installs a Store zip with a `package.ini`;
+  `Uses=`, then the title. A recognised folder is one package (id `u/<folder>`), except that **each loose game file
+  of a folder holding two or more is a package of its own** (`FREEDOOM1.WAD` + `FREEDOOM2.WAD` = two Packages-row
+  entries, titled by the game, id `u/<folder>/<file>`); a data dir (Quake's `id1`, Theme Hospital's `DATA`, a DOS game)
+  stays whole. `PackageInstaller` (`content_installer.*`) installs a Store zip with a `package.ini`;
   `AppInstaller`/`PackageInstaller` honour `Replaces=` / `Migrate=` (saves copied, the old App parked in
   `Apps/.replaced/`, nothing deleted). `ScanPackages` (16) is in `ScanAll`; the watcher compares
   `PackageService::signatureOf` in RAM.
