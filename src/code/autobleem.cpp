@@ -392,8 +392,9 @@ int AutoBleem::run() {
     restoreCarouselSession(); // a display change / restart left the carousel's place: the launcher opens on it
 
     gui_->display(false);
-    // the CRT's safe area (overscan): the 4:3 frame goes into a centred rectangle of the 720x480 output, the margin from
-    // config.ini - only while the window really is the CRT mode (before the keep-mode question, which is drawn in it too)
+    // the CRT's safe area (overscan): the 4:3 frame goes into a centred rectangle of the 720x480 output, the margin
+    // from config.ini - only while the window really is the CRT mode (before the keep-mode question, which is drawn in
+    // it too)
     {
         const ableem::Size window = gui_->platform().windowSize();
         const bool crt = OutputMode::parse(OutputMode::CrtToken()).shownAt(window.w, window.h);
