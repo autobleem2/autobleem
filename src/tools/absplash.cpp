@@ -295,13 +295,13 @@ int main(int argc, char **argv) {
         }
         if (spin) {
             // the spinner scales with the picture: 64x64 logical at 1x, the same share of it at any size
-            // a 4:3 picture (the CRT mode's retroarch-4x3.jpg): the free spot under the lockup is the centre, 2/3 down;
+            // a 4:3 picture (the CRT mode's retroarch-4x3.jpg): the free spot under the lockup is the centre, 82% down (under the caption of every -4x3 picture: autobleem, retroarch, updating, poweroff);
             // the size follows the picture's height (720 in the 16:9 one)
             const bool fourThree = dst.w * 3 <= dst.h * 4;
             const double k = fourThree ? static_cast<double>(dst.h) / PictureHeight
                                        : static_cast<double>(dst.w) / PictureWidth;
             const int cx = dst.x + (fourThree ? dst.w / 2 : static_cast<int>(std::lround(SpinnerX * k)));
-            const int cy = dst.y + (fourThree ? dst.h * 2 / 3 : static_cast<int>(std::lround(SpinnerY * k)));
+            const int cy = dst.y + (fourThree ? dst.h * 82 / 100 : static_cast<int>(std::lround(SpinnerY * k)));
             const unsigned int nowMs = gui.platform().ticks();
             drawSpinner(r, strip, spinLayer, nowMs, nowMs - startedMs, cx, cy, k,
                         fillCanvas ? 8.0 / 9.0 : 1.0); // pixel aspect 8:9 of the 640x480 canvas on 720x480
