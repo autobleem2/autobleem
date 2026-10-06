@@ -148,10 +148,16 @@ void GuiOptions::fill() {
     // screen (a dev host's window has no mode to change)
     if (Gui::fullscreen())
         lines.emplace_back(CFG_DISPLAY, _("Display:"), OutputMode::ConfigKey, false, getOutputModes());
-    // the CRT's safe area (overscan): only while the CRT 4:3 mode runs; applied at once
-    if (Gui::fullscreen() && OutputMode::parse(app.config().inifile.values[OutputMode::ConfigKey]).isCrt())
-        lines.emplace_back(CFG_CRT_MARGIN, _("CRT margin:"), OutputMode::MarginKey, false,
+    // the safe area (overscan): on any 4:3 output - the tube (720x480, its own setting, 5 % unless set) and a VGA mode
+    // (640x480, 800x600 ..., a setting of its own, 0 unless set); hidden on a wide one; applied at once
+    if (Gui::fullscreen() && renderer.fourByThreeOutput()) {
+        const ableem::Size window = gui->platform().windowSize();
+        OutputMode shown;
+        shown.w = window.w;
+        shown.h = window.h;
+        lines.emplace_back(CFG_CRT_MARGIN, _("CRT margin:"), OutputMode::marginKeyFor(shown), false,
                            vector<string>({"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}));
+    }
     // how the PS1 emulator fits a game's picture to the screen: the emulator's own menu's Scaler (pcsx-abnxt's
     // g_scaler, AB_SCALER); the classic pcsx-ab and RetroArch know only full and 4:3 (LaunchService). Under the
     // display mode, the owner's place for it (2026-09-29); it replaced the Widescreen switch
