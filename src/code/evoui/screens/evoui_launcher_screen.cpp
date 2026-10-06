@@ -759,6 +759,9 @@ void GuiLauncher::applyScanUpdate(const ScanUpdate &update) {
         else
             scanBubble.hide();
         scanRosterChangedSinceReload = true; // sub-dir rows and cross-folder duplicates only settle once done
+    } else if (update.scanEnded) {
+        // a scoped scan with no summary (a PE package in Mods/, Apps, Packages): the processor's bubble would stay
+        scanBubble.hide();
     }
 
     // the ROM pass rewrote playlists (the service has re-read them by now): the playlist names may have
