@@ -85,7 +85,7 @@ void GuiManager::draw() {
     gui->renderTextBar();
     yoffset = gui->renderHeader(getTitle());
 
-    gui->renderFreeSpace(); // this is why this menu's render is special instead of using the base class
+    gui->renderFreeSpace(getTitle()); // this is why this menu's render is special instead of using the base class
 
     // a theme's selection frame goes under the rows' text, the code-drawn band stays over them (G4c)
     const bool framed = gui->text().selectionFramed(gui->uiContext());
