@@ -246,7 +246,6 @@ void ShmBlock::close() {
     if (data_) {
         munmap(data_, size_);
         data_ = nullptr;
-        data_ = nullptr;
     }
     if (fd_ >= 0) {
         ::close(fd_); // which drops the flock
