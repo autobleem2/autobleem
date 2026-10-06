@@ -579,7 +579,7 @@ defaults, which both the services and the screens need.
 
 Payload (`payload/`): the release USB tree — `rc/*.sh` scripts, `RetroArch/`'s skeleton, and
 `Docs/README.txt` (which points to the site's current user manual). **The five themes (`ab2`, `aergb`,
-`autobleem`, `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
+`Legacy of 2018` (was `autobleem`), `default`, `evolution`) no longer live here** (D5, 2026-09-26): they are
 `github.com/autobleem2/autobleem-themes`, a submodule at `autobleem-themes/` (`Themes/` inside it, pinned
 to its `develop` branch like `autobleem-core`) - `tools/make_usb.py` and this repo's own packaging scripts
 (`tools/make_psc_package.sh`/`make_win_package.sh`) all take the themes from there; autobleem-appliance's own

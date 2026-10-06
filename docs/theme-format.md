@@ -11,7 +11,7 @@ Written 2026-09-17, when the format replaced `theme.ini`. The code that reads it
 
 **The five shipped themes moved to their own repository** (D5, 2026-09-26):
 `github.com/autobleem2/autobleem-themes`, a submodule of this repo at `autobleem-themes/` (its `Themes/`
-holds `ab2`, `aergb`, `autobleem`, `default`, `evolution` - was `payload/Themes/` here). The dev stick
+holds `ab2`, `aergb`, `Legacy of 2018` (folder `Themes/Legacy of 2018`; until 2026-10-06 `autobleem`), `default`, `evolution` - was `payload/Themes/` here). The dev stick
 (`tools/make_usb.py`) and every packaging script take the themes from that submodule now; a real console/
 Pi/PC/Windows package gets its `Themes/` staged by `autobleem2/autobleem-appliance` going forward, not by
 this repo. `Theme::load()` always reads `<root>/Themes/default` at run time - whatever assembles a stick
